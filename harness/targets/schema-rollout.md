@@ -158,6 +158,14 @@ Skript unter `tools/` und `examples/`, das `make schema-rollout` aufruft, durch
 `rollout-restore.sh` geht; der Guard-Test unten sichert und stellt beide Dateien
 selbst wieder her.
 
+**Grenzen der Rücknahme:** Zwei gleichzeitig laufende Aufrufe teilen dieselben
+zwei Dateien; der zweite sichert den Zwischenstand des ersten als Zustand vor
+dem Lauf, und beide schreiben ohnehin dieselben Erzeugnisse. Ein `SIGKILL` des
+Skripts lässt die Erzeugnisse verändert (`trap` fängt es nicht). Die
+Aufrufer-Prüfung liest Einzelzeilen mit `make … schema-rollout`; eine
+Fortsetzungszeile, `$MAKE`, ein Makefile-Rezept oder ein Compose-Kommando sieht
+sie nicht.
+
 ## Belege
 
 - `bash tools/harness/run-schema-rollout-guard-test.sh` — sechs Läufe gegen eine

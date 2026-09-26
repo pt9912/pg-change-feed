@@ -10,6 +10,10 @@
 # Beispiel-Skripte); der Betrieb ruft `make schema-rollout` direkt und behält
 # Report und Rollback-Artefakt (harness/targets/schema-rollout.md).
 #
+# Grenzen: zwei gleichzeitig laufende Aufrufe teilen dieselben zwei Dateien —
+# der zweite sichert den Zwischenstand des ersten als „Zustand vor dem Lauf“;
+# ein SIGKILL lässt die Erzeugnisse verändert (kein trap fängt ihn).
+#
 # Aufruf: rollout-restore.sh <Kommando> [Argumente …]
 set -uo pipefail
 if [ $# -eq 0 ]; then

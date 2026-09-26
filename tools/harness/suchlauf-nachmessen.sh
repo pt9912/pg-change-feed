@@ -5,7 +5,9 @@
 # Arbeitsbaum), zählt die Trefferzeilen und vergleicht sie mit dem Soll.
 # Die Plan-Datei ist immer aus dem Suchraum ausgeschlossen, unter ihrem
 # Dateinamen in jedem Verzeichnis (der Plan wandert durch die
-# Lifecycle-Verzeichnisse). Vertrag, Grenze und Exit-Codes:
+# Lifecycle-Verzeichnisse). Eine Plan-Zeile führt keinen Shell-Code aus: der
+# Zerleger expandiert nichts, Optionen und Pathspec-Magic stehen auf einer
+# Allow-List (check_opts, check_paths). Vertrag, Grenze und Exit-Codes:
 # harness/sensors/suchlauf-nachmessen.md (AGENTS.md §3.13).
 #
 # Aufruf: suchlauf-nachmessen.sh <Plan-Datei>
@@ -75,12 +77,79 @@ split_words() {
   return 0
 }
 
+# check_opts: prüft die Optionswörter einer Zeile (Array opts) gegen die
+# Allow-List; jede andere Option kann Befehle ausführen (-O, --open-files-in-pager),
+# Dateien lesen (-f, --no-index) oder ändert den Suchraum. Erlaubt: -e <Muster>,
+# Klammern und die Kurzoptionen aus [iwEFGPvIahHocLln] (auch gebündelt), die
+# Langformen der Verknüpfung und Muster-Art; höchstens ein Suchwort, und keines
+# neben -e. Bei einem Verstoß steht die Meldung in ERR.
+check_opts() {
+  local i=0 n=${#opts[@]} w positional=0 have_e=0
+  ERR=''
+  while [ "$i" -lt "$n" ]; do
+    w=${opts[$i]}
+    case $w in
+      -e)
+        i=$((i + 1))
+        if [ "$i" -ge "$n" ]; then ERR="Option '-e' ohne Muster"; return 1; fi
+        have_e=1
+        ;;
+      --and | --or | --not | --all-match | --ignore-case | --word-regexp | \
+        --extended-regexp | --fixed-strings | --basic-regexp | --perl-regexp | \
+        --invert-match | --count | --files-with-matches | --files-without-match | \
+        --text | '(' | ')') ;;
+      --*)
+        ERR="Option '$w' ist nicht erlaubt"; return 1
+        ;;
+      -*)
+        if [[ ! $w =~ ^-[iwEFGPvIahHocLln]+$ ]]; then
+          ERR="Option '$w' ist nicht erlaubt (erlaubt: -e <Muster>, -i -w -E -F -G -P -v -I -a -h -H -o -c -l -L -n, --and --or --not --all-match)"
+          return 1
+        fi
+        ;;
+      *) positional=$((positional + 1)) ;;
+    esac
+    i=$((i + 1))
+  done
+  if [ "$have_e" -eq 1 ] && [ "$positional" -gt 0 ]; then
+    ERR="Suchwort neben -e (jedes Muster steht hinter einem -e)"; return 1
+  fi
+  if [ "$positional" -gt 1 ]; then
+    ERR="mehr als ein Suchwort vor '--' (weitere Muster stehen hinter -e)"; return 1
+  fi
+  return 0
+}
+
+# check_paths: prüft die Pathspec-Wörter (Array paths); ein Wort mit `:` am
+# Anfang ist nur als `:!`, `:^` oder `:(exclude|glob|literal|icase|top,…)` erlaubt.
+magic_re='^:\((exclude|glob|literal|icase|top)(,(exclude|glob|literal|icase|top))*\)'
+short_re='^:[!^]'
+check_paths() {
+  local p
+  ERR=''
+  for p in ${paths[@]+"${paths[@]}"}; do
+    if [[ $p == :* ]] && [[ ! $p =~ $short_re ]] && [[ ! $p =~ $magic_re ]]; then
+      ERR="Pathspec '$p' ist nicht erlaubt (erlaubt: :! :^ :(exclude|glob|literal|icase|top))"
+      return 1
+    fi
+  done
+  return 0
+}
+
 # Erster Durchgang: jede Zeile prüfen, bevor ein Befehl läuft.
 stands=(); solls=(); optss=(); pathss=()
 bad=0
 for line in "${lines[@]}"; do
   if ! split_words "$line"; then
     echo "suchlauf-nachmessen: Anführungszeichen nicht geschlossen: $line" >&2
+    bad=1; continue
+  fi
+  empty=0
+  for w in "${WORDS[@]}"; do
+    if [ -z "$w" ]; then empty=1; fi
+  done
+  if [ "$empty" -eq 1 ]; then
+    echo "suchlauf-nachmessen: leeres Argument in der Zeile: $line" >&2
     bad=1; continue
   fi
   if [ ${#WORDS[@]} -lt 3 ]; then
@@ -117,6 +186,14 @@ for line in "${lines[@]}"; do
     echo "suchlauf-nachmessen: Zeile ohne Suchmuster: $line" >&2
     bad=1; continue
   fi
+  if ! check_opts; then
+    echo "suchlauf-nachmessen: $ERR: $line" >&2
+    bad=1; continue
+  fi
+  if ! check_paths; then
+    echo "suchlauf-nachmessen: $ERR: $line" >&2
+    bad=1; continue
+  fi
   stands+=("$stand"); solls+=("$soll")
   # Argumente als eine mit US (0x1f) getrennte Zeichenkette merken.
   optss+=("$(IFS=$'\x1f'; printf '%s' "${opts[*]}")")
@@ -128,21 +205,28 @@ fi
 
 # Zweiter Durchgang: messen.
 failures=0
+errf=$(mktemp "${TMPDIR:-/tmp}/suchlauf-nachmessen.XXXXXX") || exit 2
+trap 'rm -f "$errf"' EXIT
 for i in "${!lines[@]}"; do
   IFS=$'\x1f' read -r -a opts <<<"${optss[$i]}"
   paths=()
   if [ -n "${pathss[$i]}" ]; then IFS=$'\x1f' read -r -a paths <<<"${pathss[$i]}"; fi
   stand=${stands[$i]}
+  # stdout trägt die Trefferzeilen, stderr wird getrennt gehalten und nicht gezählt.
   if [ "$stand" = "diff" ]; then
-    out=$(git grep -n "${opts[@]}" -- ${paths[@]+"${paths[@]}"} "${excludes[@]}" 2>&1)
+    out=$(git grep -n "${opts[@]}" -- ${paths[@]+"${paths[@]}"} "${excludes[@]}" 2>"$errf")
   else
-    out=$(git grep -n "${opts[@]}" "$stand" -- ${paths[@]+"${paths[@]}"} "${excludes[@]}" 2>&1)
+    out=$(git grep -n "${opts[@]}" "$stand" -- ${paths[@]+"${paths[@]}"} "${excludes[@]}" 2>"$errf")
   fi
   rc=$?
   if [ "$rc" -gt 1 ]; then
     echo "suchlauf-nachmessen: git grep endete mit Exit $rc: ${lines[$i]}" >&2
-    printf '%s\n' "$out" >&2
+    cat "$errf" >&2
     exit 2
+  fi
+  if [ -s "$errf" ]; then
+    echo "suchlauf-nachmessen: Hinweis von git grep (nicht gezählt): ${lines[$i]}" >&2
+    cat "$errf" >&2
   fi
   if [ -z "$out" ]; then ist=0; else ist=$(printf '%s\n' "$out" | wc -l); fi
   if [ "$ist" -eq "${solls[$i]}" ]; then

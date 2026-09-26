@@ -38,10 +38,11 @@ Spec-Stelle).
 **Ziel:** Das Suchlauf-Feld eines Slice-Plans ist maschinell nachmessbar: jede
 Suchzeile steht als Zeile eines Codeblocks mit dem Etikett `suchlauf`, und
 `make suchlauf-nachmessen PLAN=<Datei>` führt sie aus und druckt Soll und Ist.
-Dazu stellt `tools/schema/apply-rollout.sh` die Rollout-Artefakte
+Dazu stellt der Wrapper `tools/schema/rollout-restore.sh` die Rollout-Artefakte
 `tools/schema/plan.yaml` und `tools/schema/down.sql` nach dem Lauf wieder her,
-so dass `make test-store` und `make test-replication` den Arbeitsbaum
-unverändert lassen.
+der `make schema-rollout` als Vorbedingung ruft (`tools/schema/apply-rollout.sh`
+und sechs weitere direkte Aufrufer), so dass `make test-store` und
+`make test-replication` den Arbeitsbaum unverändert lassen.
 
 **Form der Suchzeile** (ein Codeblock je Plan-Feld, eine Zeile je Messung; das
 Etikett `suchlauf` kennzeichnet, was das Werkzeug ausführt — dieses Beispiel
@@ -90,12 +91,15 @@ Suchraum ausgeschlossen.
       ebenfalls mit Exit ≠ 0 (leer ist nicht bestanden). `make
       suchlauf-nachmessen PLAN=<Datei>` ruft es auf; ohne `PLAN` bricht das
       Ziel mit `$(error …)` ab, bevor ein Befehl läuft. *Zu belegen durch:*
-      `make test-suchlauf-nachmessen` (Tabellentest, netzlos) mit fünf Fällen —
+      `make test-suchlauf-nachmessen` (Tabellentest, netzlos) mit elf Fällen —
       stimmt · weicht ab · Selbstverweis ausgeschlossen · `HEAD` abgelehnt ·
-      kein Block —, je an seine Eingabe gebunden: die Mutation „Ausschluss der
-      Plan-Datei entfernt“ färbt den Selbstverweis-Fall rot, „Zahlenvergleich
-      umgekehrt“ den Abweichungs-Fall (Mutationen und gesehenes Rot im
-      Bericht).
+      kein Block · Commit-Stand mit Pathspec · erlaubte Optionen · Optionen und
+      Pathspec-Magic außerhalb der Allow-List · `git grep`-Fehler · nicht
+      geschlossener Block · Zeilenform —, je an seine Eingabe gebunden: die
+      Mutation „Ausschluss der Plan-Datei entfernt“ färbt den
+      Selbstverweis-Fall rot, „Zahlenvergleich umgekehrt“ den Abweichungs-Fall,
+      „Optionsprüfung entfernt“ den Fall, in dem ein `-O`-Kommando seine
+      Marker-Datei anlegt (Mutationen und gesehenes Rot im Bericht).
 - [x] Die Träger nennen das Werkzeug und seine Grenze:
       `harness/sensors/suchlauf-nachmessen.md` (Vertrag, Form der Zeile, Grenze
       „prüft Zahlen und Stände, nicht die Vollständigkeit von Suchraum und
@@ -107,10 +111,12 @@ Suchraum ausgeschlossen.
       in `.harness/skills/reviewer.md` (Nachmessen mit dem Werkzeug, wo eine
       `suchlauf`-Zeile vorliegt). *Zu belegen durch:* Lesen der fünf Stellen und
       `make docs-check`.
-- [x] Die Rollout-Artefakte bleiben unverändert: `tools/schema/apply-rollout.sh`
-      sichert `tools/schema/plan.yaml` und `tools/schema/down.sql` vor
-      `make schema-rollout` in ein `mktemp`-Verzeichnis und stellt sie nach dem
-      Lauf wieder her, auch bei einem Fehlschlag (Vorbild: der Guard-Test
+- [x] Die Rollout-Artefakte bleiben unverändert: der Wrapper
+      `tools/schema/rollout-restore.sh` sichert `tools/schema/plan.yaml` und
+      `tools/schema/down.sql` vor dem Kommando in ein `mktemp`-Verzeichnis und
+      stellt sie nach dem Lauf wieder her, auch bei einem Fehlschlag;
+      `tools/schema/apply-rollout.sh` und die sechs weiteren direkten Aufrufer
+      von `make schema-rollout` rufen es durch den Wrapper (Vorbild: der Guard-Test
       `tools/harness/run-schema-rollout-guard-test.sh`, der beide sichert und
       in `cleanup` zurückstellt); eine vor dem Lauf lokal geänderte Datei
       bleibt in diesem Zustand. *Zu belegen durch:* ein realer `make
@@ -121,7 +127,7 @@ Suchraum ausgeschlossen.
       Belege).
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
@@ -156,18 +162,20 @@ Rücknahme in `apply-rollout.sh`, drei Liefer-Punkte).
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `tools/harness/suchlauf-nachmessen.sh` | neu | liest die Blöcke, `git grep` je Zeile, Soll/Ist, Exit-Code; die Plan-Datei ist immer ausgeschlossen. |
-| `tools/harness/run-suchlauf-nachmessen-tests.sh` | neu | Tabellentest mit den fünf Fällen des ersten Liefer-Punkts, an die Eingabe gebunden. |
+| `tools/harness/run-suchlauf-nachmessen-tests.sh` | neu | Tabellentest mit den fünf Fällen des ersten Liefer-Punkts, an die Eingabe gebunden; in der Fixrunde nach dem Review um sechs Fälle erweitert (Commit-Stand mit Pathspec, erlaubte Optionen, Optionen und Pathspec-Magic außerhalb der Allow-List mit Marker-Datei, `git grep`-Fehler, nicht geschlossener Block, Zeilenform). |
 | `Makefile` | update | Ziele `suchlauf-nachmessen` (Pflicht-Argument `PLAN`) und `test-suchlauf-nachmessen`; Zeilen in `make help`. |
 | `harness/sensors/suchlauf-nachmessen.md` | neu | Vertrag und benannte Grenze; der Name im Verzeichnis der Sensor-Dokus. |
 | `harness/README.md` | update | eine Zeile in der Werkzeug-Tabelle §Sensors („kein Gate“). |
 | `AGENTS.md` §3.13, `.claude/commands/implement-slice.md` Schritt 18, `.harness/skills/reviewer.md` | update | Träger nennen Form, Aufruf und Grenze des Werkzeugs. |
 | `tools/schema/apply-rollout.sh` | update | Sicherung und Wiederherstellung von `plan.yaml` und `down.sql` (auch im Fehlerfall, `trap`) — nicht im Skript selbst, sondern über `rollout-restore.sh` (nächste Zeile): das Skript ruft `make schema-rollout` durch den Wrapper. |
-| `tools/schema/rollout-restore.sh` | neu (Nachzug) | Wrapper `rollout-restore.sh <Kommando…>`: sichert `plan.yaml` und `down.sql` in ein `mktemp`-Verzeichnis, führt das Kommando aus, stellt beide danach wieder her (`trap … EXIT`, auch bei Fehlschlag; lokal geänderte Datei bleibt so, fehlende bleibt fehlend), Exit-Code des Kommandos. Ort der Rücknahme (Entscheidung des Implementers, der Plan lässt `apply-rollout.sh` oder das Target offen): weder im Target `schema-rollout` — im Betrieb sind Report und Rollback-Artefakt sein Erzeugnis, das der Betreiber behält — noch in `apply-rollout.sh` allein — sechs weitere Skripte rufen `make schema-rollout` direkt (Aufrufer-Messung: Feld §3.13, Zeile 7/8). Ein Wrapper deckt alle Aufrufer mit einer Stelle. |
+| `tools/schema/rollout-restore.sh` | neu (Nachzug) | Wrapper `rollout-restore.sh <Kommando…>`: sichert `plan.yaml` und `down.sql` in ein `mktemp`-Verzeichnis, führt das Kommando aus, stellt beide danach wieder her (`trap … EXIT`, auch bei Fehlschlag; lokal geänderte Datei bleibt so, fehlende bleibt fehlend), Exit-Code des Kommandos. Ort der Rücknahme: weder im Target `schema-rollout` — im Betrieb sind Report und Rollback-Artefakt sein Erzeugnis, das der Betreiber behält — noch in `apply-rollout.sh` allein — sechs weitere Skripte rufen `make schema-rollout` direkt (Aufrufer-Messung: Feld §3.13, Zeile 7/8). Ein Wrapper deckt alle sieben Aufrufer mit einer Stelle; §1 und der dritte DoD-Punkt nennen ihn als Ort der Rücknahme. |
 | `tools/harness/run-integration-tests.sh`, `tools/harness/run-sdk-csharp-integration-tests.sh`, `tools/harness/run-sdk-kotlin-integration-tests.sh`, `tools/harness/run-sdk-python-integration-tests.sh`, `tools/bench-lib.sh`, `examples/bootstrap.sh` | update (Nachzug) | je ein `make schema-rollout`-Aufruf läuft durch `rollout-restore.sh`; die Kommentare zu Report und Rollback-Artefakt in `run-integration-tests.sh` und `apply-rollout.sh` nennen die Rücknahme. `tools/harness/run-schema-rollout-guard-test.sh` bleibt (sichert und stellt beide Dateien selbst wieder her, Aufrufer-Prüfung nimmt es aus). |
 | `tools/harness/run-rollout-restore-tests.sh`, `Makefile` (`test-rollout-restore`) | neu (Nachzug) | Tabellentest für den Wrapper (schreibt · scheitert · lokale Änderung bleibt · fehlende Datei bleibt fehlend · ohne Kommando) und die Aufrufer-Prüfung im Repo: jede Shell-Zeile unter `tools/`/`examples/` mit `make … schema-rollout` trägt `rollout-restore.sh`. |
 | `harness/targets/schema-rollout.md` | update (Nachzug) | Abschnitt „Erzeugnisse in Test-, Bench- und Beispiel-Läufen“: welche Läufe die Rücknahme tragen. |
 | Ausschluss der Plan-Datei | Abweichung vom Plan-Wortlaut | Der Plan nennt `':!<Plan-Datei>'`; das Werkzeug schließt sie über ihren **Dateinamen in jedem Verzeichnis** aus (`:(exclude,glob)**/<Dateiname>`): der Plan liegt am Parent-Stand unter einem anderen Lifecycle-Verzeichnis, ein Pfad-Ausschluss zählte dort ihn selbst mit (im Test `stimmt`/`Selbstverweis` an einem Parent mit dem Plan unter `next/` gebunden). Der Pfad-Ausschluss allein bindet keinen Fall (Mutation ohne ihn: alle fünf Fälle grün). |
-| Form der Zeile | Festlegung | `<Stand>` ist eine Hex-Kennung (7 bis 40 Ziffern) oder `diff`; ein alleinstehendes `--` trennt Optionen und Muster vom Pathspec (der Stand steht vor dem `--`, das Werkzeug setzt ihn); `'…'`/`"…"` gruppieren ohne Expansion (eigener Zerleger, kein `eval`: eine Plan-Zeile führt keinen Shell-Code aus). Kein Namens- oder `HEAD`-Stand: er bewegt sich. |
+| Form der Zeile | Festlegung | `<Stand>` ist eine Hex-Kennung (7 bis 40 Ziffern) oder `diff`; ein alleinstehendes `--` trennt Optionen und Muster vom Pathspec (der Stand steht vor dem `--`, das Werkzeug setzt ihn); `'…'`/`"…"` gruppieren ohne Expansion (eigener Zerleger, kein `eval`). Eine Plan-Zeile führt keinen Kommando-Code aus: Optionen vor `--` stehen auf einer Allow-List (`-e <Muster>`, `-i -w -E -F -G -P -v -I -a -h -H -o -c -l -L -n`, `--and --or --not --all-match` und die Langformen der Muster-Art; jede andere Option, darunter `-O`, `--open-files-in-pager`, `-f`, `--no-index`, endet mit Exit 2), Pathspec-Magic ist auf `:!`, `:^` und `:(exclude\|glob\|literal\|icase\|top)` begrenzt, ein leeres Argument wird abgelehnt (Beleg: `make test-suchlauf-nachmessen`, Fall mit Marker-Datei). Kein Namens- oder `HEAD`-Stand: er bewegt sich. |
+| `tools/schema/rollout-restore.sh`, `harness/targets/schema-rollout.md` | update (Fixrunde) | Die Grenzen des Wrappers stehen im Skriptkopf und im Vertrag: zwei gleichzeitige Aufrufe teilen dieselben zwei Dateien, ein `SIGKILL` lässt die Erzeugnisse verändert, die Aufrufer-Prüfung liest nur Einzelzeilen. |
+| `harness/sensors/suchlauf-nachmessen.md`, `harness/README.md`, `Makefile` | update (Fixrunde) | Vertrag nennt die erlaubten Optionen, die Pathspec-Magic, das leere Argument, die getrennte Standardfehlerausgabe und die Host-Werkzeuge (`bash`, `git`, `realpath`); Testzahl elf in Sensor-Doku, README-Zeile und `make help`. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die Form des
 Suchlauf-Felds und das Werkzeug, das es nachmisst“ und „welche Läufe
@@ -209,8 +217,9 @@ nachgemessen.
 
 - `in-progress` → `next` (zu groß, zurück zur Zerlegung): falls Werkzeug,
   Träger-Zeilen und Rollout-Rücknahme nicht in einem Review tragen — der
-  abtrennbare Teil ist der dritte Liefer-Punkt (Rücknahme in
-  `apply-rollout.sh`), unabhängig vom Werkzeug, als eigener Slice.
+  abtrennbare Teil ist der dritte Liefer-Punkt (Rücknahme der
+  Rollout-Artefakte über den Wrapper `rollout-restore.sh`), unabhängig vom
+  Werkzeug, als eigener Slice.
 - `in-progress` → `open` (blockiert): falls `git` im Werkzeug nur in einem
   gepinnten Image zulässig ist, das dieses Repo nicht führt (Architect-Frage zu
   [`AGENTS.md`](../../../../AGENTS.md) §3.1, siehe §6).

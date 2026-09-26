@@ -112,7 +112,7 @@ suchlauf-nachmessen: ## Misst die suchlauf-Blöcke eines Slice-Plans nach: make 
 	@bash tools/harness/suchlauf-nachmessen.sh "$(PLAN)"
 
 .PHONY: test-suchlauf-nachmessen
-test-suchlauf-nachmessen: ## Tabellentest gegen tools/harness/suchlauf-nachmessen.sh (fünf Fälle gegen ein Wegwerf-Repo, netzlos)
+test-suchlauf-nachmessen: ## Tabellentest gegen tools/harness/suchlauf-nachmessen.sh (elf Fälle gegen ein Wegwerf-Repo, netzlos)
 	@bash tools/harness/run-suchlauf-nachmessen-tests.sh
 
 .PHONY: test-rollout-restore
