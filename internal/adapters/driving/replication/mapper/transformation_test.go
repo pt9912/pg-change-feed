@@ -532,6 +532,118 @@ func TestExcludedColumnIsUnreachableForEveryRuleKind(t *testing.T) {
 	}
 }
 
+// Jede Regel des Regelstands wird gegen die Relation geprüft, an jeder
+// Position: die nicht anwendbare Regel steht an erster, an mittlerer und an
+// letzter Stelle, und der Fehler nennt genau sie. Rot färbende Mutationen:
+// `checkTransformations` prüft nur `rules[:1]` (Fälle 1, 3 und 4), nur
+// `rules[1:]` (Fall 2) bzw. `rules[:len(rules)-1]` (Fälle 1 und 3).
+func TestConsumeEveryRuleIsCheckedForApplicability(t *testing.T) {
+	cases := []struct {
+		name     string
+		rules    []model.Transformation
+		wantErr  error
+		wantRule string
+	}{
+		{
+			name: "zweite Regel nicht anwendbar, erste anwendbar",
+			rules: []model.Transformation{
+				renameRule(t, "erste", "name", "customer_name"),
+				renameRule(t, "zweite", "unbekannt", "x"),
+			},
+			wantErr:  domainerrors.ErrTransformationColumnMissing,
+			wantRule: `"zweite"`,
+		},
+		{
+			name: "erste Regel nicht anwendbar, zweite anwendbar",
+			rules: []model.Transformation{
+				renameRule(t, "erste", "unbekannt", "x"),
+				renameRule(t, "zweite", "name", "customer_name"),
+			},
+			wantErr:  domainerrors.ErrTransformationColumnMissing,
+			wantRule: `"erste"`,
+		},
+		{
+			name: "letzte von drei Regeln nicht anwendbar",
+			rules: []model.Transformation{
+				renameRule(t, "erste", "name", "customer_name"),
+				renameRule(t, "zweite", "id", "pk"),
+				renameRule(t, "dritte", "secret", "id"),
+			},
+			wantErr:  domainerrors.ErrTransformationTargetCollides,
+			wantRule: `"dritte"`,
+		},
+		{
+			name: "mittlere von drei Regeln nicht anwendbar",
+			rules: []model.Transformation{
+				renameRule(t, "erste", "id", "pk"),
+				renameRule(t, "zweite", "name", "secret"),
+				renameRule(t, "dritte", "secret", "hidden"),
+			},
+			wantErr:  domainerrors.ErrTransformationTargetCollides,
+			wantRule: `"zweite"`,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assembler := newAssembler(t, ruleTables(nil, c.rules...))
+			count, err := consumeChangeError(t, assembler, decode.Change{
+				Relation: feedRelation(), Operation: decode.OpInsert,
+				New: []*string{pointer("1"), pointer("s"), pointer("Ada")},
+			})
+			if !stderrors.Is(err, mapper.ErrTransformationNotApplicable) || !stderrors.Is(err, c.wantErr) {
+				t.Fatalf("Fehler = %v, wollen ErrTransformationNotApplicable mit %v", err, c.wantErr)
+			}
+			if !strings.Contains(err.Error(), c.wantRule) {
+				t.Fatalf("Fehler %q nennt nicht die Regel %s", err, c.wantRule)
+			}
+			if count != 0 {
+				t.Fatalf("Change-Anzahl = %d, wollen 0", count)
+			}
+		})
+	}
+}
+
+// Zwei Regeln auf verschiedene Spalten mit gleichem Zielnamen sind je einzeln
+// anwendbar; treffen beide im selben Bild, endet die Änderung als nicht
+// anwendbare Regel statt mit zwei gleichnamigen Schlüsseln — an beiden Images
+// (Insert: Neu-Image, Delete: Alt-Image). Trägt eine der beiden Spalten
+// keinen Wert, steht nur ein Schlüssel im Bild und die Änderung geht durch.
+// Rot färbende Mutationen: in `Assembler.change` den Fehler eines der beiden
+// `BuildRowImage`-Aufrufe ohne `imageError` zurückgeben (der Fehler trägt dann
+// `ErrTransformationNotApplicable` nicht); in `BuildRowImage` die Prüfung
+// gegen die umbenannten Schlüssel entfernen.
+func TestConsumeTwoRulesWithSameTargetAreNotApplicableWhenBothMatch(t *testing.T) {
+	ctx := context.Background()
+	rules := []model.Transformation{renameRule(t, "a", "name", "z"), renameRule(t, "b", "secret", "z")}
+	for _, c := range []struct {
+		name  string
+		event decode.Change
+	}{
+		{"Neu-Image", decode.Change{Relation: feedRelation(), Operation: decode.OpInsert,
+			New: []*string{pointer("1"), pointer("s"), pointer("Ada")}}},
+		{"Alt-Image", decode.Change{Relation: feedRelation(), Operation: decode.OpDelete,
+			Old: []*string{pointer("1"), pointer("s"), pointer("Ada")}}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			count, err := consumeChangeError(t, newAssembler(t, ruleTables(nil, rules...)), c.event)
+			if !stderrors.Is(err, mapper.ErrTransformationNotApplicable) || !stderrors.Is(err, domainerrors.ErrTransformationTargetCollides) {
+				t.Fatalf("Fehler = %v, wollen ErrTransformationNotApplicable mit ErrTransformationTargetCollides", err)
+			}
+			if count != 0 {
+				t.Fatalf("Change-Anzahl = %d, wollen 0", count)
+			}
+		})
+	}
+
+	single := consumedChange(t, ctx, newAssembler(t, ruleTables(nil, rules...)), 1, decode.Change{
+		Relation: feedRelation(), Operation: decode.OpInsert,
+		New: []*string{pointer("1"), nil, pointer("Ada")},
+	})
+	if string(single.NewImage) != `{"id":"1","z":"Ada"}` {
+		t.Fatalf("Neu-Image mit einer wertlosen Quellspalte: %s", single.NewImage)
+	}
+}
+
 // Die Auswertung ist deterministisch: gleiche Regelmenge und Relation
 // ergeben am Ausgang des Assemblers byte-gleiche Images, über getrennte
 // Assembler-Instanzen und wiederholte Aufrufe.

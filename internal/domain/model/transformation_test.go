@@ -232,6 +232,52 @@ func TestBuildRowImageRenameColumn(t *testing.T) {
 	}
 }
 
+// `BuildRowImage` schreibt nie zwei gleichnamige Schlüssel: ein Zielname, der
+// einer Spalte aus `columns` gleicht (davor oder dahinter stehend,
+// ausgeschlossen, wertlos) oder dem Zielnamen einer anderen im Bild
+// umbenannten Spalte, liefert `ErrTransformationTargetCollides` und kein
+// Bild; trägt die zweite der beiden Quellspalten keinen Wert, steht nur ein
+// Schlüssel im Bild. Rot färbende Mutationen: die Prüfung gegen `columns`
+// (Fälle 1 bis 4) bzw. gegen die umbenannten Schlüssel (Fall 5) entfernen.
+func TestBuildRowImageNeverWritesTwoEqualKeys(t *testing.T) {
+	all := []*string{textValue("7"), textValue("s"), textValue("Ada"), textValue("o")}
+	cases := []struct {
+		name     string
+		values   []*string
+		excluded []string
+		rules    []Transformation
+	}{
+		{"Zielname gleicht einer späteren Spalte", all, nil,
+			[]Transformation{mustRename(t, "r", "name", "status")}},
+		{"Zielname gleicht einer früheren Spalte", all, nil,
+			[]Transformation{mustRename(t, "r", "status", "name")}},
+		{"Zielname gleicht einer ausgeschlossenen Spalte", all, []string{"secret"},
+			[]Transformation{mustRename(t, "r", "name", "secret")}},
+		{"Zielname gleicht einer wertlosen Spalte",
+			[]*string{textValue("7"), nil, textValue("Ada"), nil}, nil,
+			[]Transformation{mustRename(t, "r", "name", "status")}},
+		{"zwei Regeln mit gleichem Zielnamen", all, nil,
+			[]Transformation{mustRename(t, "a", "name", "z"), mustRename(t, "b", "status", "z")}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got, err := BuildRowImage(transformationColumns, c.values, c.excluded, c.rules)
+			if !stderrors.Is(err, domainerrors.ErrTransformationTargetCollides) {
+				t.Fatalf("Fehler = %v, wollen ErrTransformationTargetCollides", err)
+			}
+			if got != nil {
+				t.Fatalf("Bild %q, wollen kein Bild", got)
+			}
+		})
+	}
+
+	got, err := BuildRowImage(transformationColumns, []*string{textValue("7"), nil, textValue("Ada"), nil}, nil,
+		[]Transformation{mustRename(t, "a", "name", "z"), mustRename(t, "b", "status", "z")})
+	if err != nil || string(got) != `{"id":"7","z":"Ada"}` {
+		t.Fatalf("zwei Regeln, eine Quellspalte wertlos: Bild %q, Fehler %v, wollen {\"id\":\"7\",\"z\":\"Ada\"}", got, err)
+	}
+}
+
 // Ein fehlendes Bild bleibt fehlend, mit und ohne Regel (`LH-FA-CAP-008`).
 func TestBuildRowImageRuleKeepsAbsentImageAbsent(t *testing.T) {
 	got, err := BuildRowImage(transformationColumns, nil, nil, []Transformation{mustRename(t, "r", "name", "customer_name")})

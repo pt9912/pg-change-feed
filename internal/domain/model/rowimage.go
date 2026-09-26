@@ -3,6 +3,9 @@ package model
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+
+	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 )
 
 // BuildRowImage trägt das JSON-Row-Image (`SPEC-002`, `ADR-0016`) einer
@@ -26,9 +29,14 @@ import (
 // Quell- noch unter einem Zielnamen. Ein umbenannter Schlüssel behält die
 // Position seiner Quellspalte. Eine leere Regelmenge liefert dieselben Bytes
 // wie ein Aufruf ohne Regeln. Die Anwendbarkeit der Regeln (`SPEC-030`)
-// prüft der Aufrufer vor dem Aufruf mit `Transformation.CheckApplicable`;
-// eine nicht anwendbare Regel wirkt hier nicht, ein kollidierender Zielname
-// ergäbe zwei gleichnamige Schlüssel.
+// prüft der Aufrufer vor dem Aufruf mit `Transformation.CheckApplicable`,
+// damit eine Änderung als nicht anwendbar endet, bevor ein Bild entsteht.
+// Eine Regel, deren Spalte nicht in `columns` steht, trifft keine Spalte und
+// wirkt nicht. Die Funktion schreibt nie zwei gleichnamige Schlüssel:
+// gleicht der Zielname einer treffenden Regel einer Spalte aus `columns`
+// (ausgeschlossene und wertlose eingeschlossen) oder dem Zielnamen einer
+// anderen im Bild umbenannten Spalte, liefert sie
+// `ErrTransformationTargetCollides` und kein Bild.
 //
 // Die Funktion ist rein: sie hält keinen Zustand, liest ihre Eingaben nur
 // und teilt keinen Speicher mit ihnen. Sie ist die eine Konstruktionsstelle
@@ -42,11 +50,18 @@ func BuildRowImage(columns []string, values []*string, excluded []string, rules 
 	var image bytes.Buffer
 	image.WriteByte('{')
 	first := true
+	renamed := make([]string, 0, 4)
 	for i, column := range columns {
 		if i >= len(values) || values[i] == nil || containsName(excluded, column) {
 			continue
 		}
 		key, text := applyTransformations(rules, column, *values[i])
+		if key != column {
+			if containsName(columns, key) || containsName(renamed, key) {
+				return nil, fmt.Errorf("%w: %s", domainerrors.ErrTransformationTargetCollides, key)
+			}
+			renamed = append(renamed, key)
+		}
 		name, err := json.Marshal(key)
 		if err != nil {
 			return nil, err

@@ -59,10 +59,12 @@ var ErrIncompatibleSchemaChange = errors.New("Fehlerklasse schema: Relation-Änd
 // Bindung, die auf die Relation einer Änderung nicht anwendbar ist: ihre
 // Spalte fehlt in der Relation, oder ihr Zielname gleicht einer Spalte der
 // Relation (`SPEC-030`, Anwendbarkeit; `model.Transformation.CheckApplicable`
-// nennt den Grund). `Consume` meldet den Fehler statt eines Changes, bevor
-// ein Wert serialisiert wird; `receive.Stream` beendet damit den Lauf, die
-// Transaktion erreicht `Capture` nicht und wird nicht bestätigt
-// (Fehlerklasse `schema`, `SPEC-008`, `LH-FA-ADM-003`).
+// nennt den Grund). `Consume` meldet den Fehler statt eines Changes, vor
+// jeder Serialisierung; ausgenommen ist die Kollision zweier Regeln mit
+// gleichem Zielnamen, die erst die Row-Image-Konstruktion an einer Zeile
+// findet, die beide Werte trägt, und ohne Bild meldet. `receive.Stream`
+// beendet damit den Lauf, die Transaktion erreicht `Capture` nicht und wird
+// nicht bestätigt (Fehlerklasse `schema`, `SPEC-008`, `LH-FA-ADM-003`).
 var ErrTransformationNotApplicable = errors.New("Fehlerklasse schema: Transformationsregel auf die Änderung nicht anwendbar")
 
 // TableBinding trägt die am Port getragenen Kennungen einer aktivierten
@@ -267,11 +269,11 @@ func (a *Assembler) change(event decode.Change) (*model.Change, error) {
 
 	newImage, err := model.BuildRowImage(columns, event.New, binding.ExcludedColumns, binding.Transformations)
 	if err != nil {
-		return nil, err
+		return nil, imageError(err, event.Relation)
 	}
 	oldImage, err := model.BuildRowImage(columns, event.Old, binding.ExcludedColumns, binding.Transformations)
 	if err != nil {
-		return nil, err
+		return nil, imageError(err, event.Relation)
 	}
 
 	change, err := model.NewChange(
@@ -584,6 +586,19 @@ func checkTransformations(rules []model.Transformation, columns []string, relati
 		}
 	}
 	return nil
+}
+
+// imageError ordnet den Kollisions-Fehler der Row-Image-Konstruktion
+// (`model.ErrTransformationTargetCollides`: zwei Regeln mit demselben
+// Zielnamen treffen im selben Bild, ihre Konfliktfreiheit untereinander hält
+// K3 am Antrag, `SPEC-019`) als nicht anwendbare Regel ein, damit
+// `classifyRunError` ihn der Klasse `schema` zuordnet; jeder andere Fehler
+// bleibt unverändert.
+func imageError(err error, relation *decode.Relation) error {
+	if errors.Is(err, domainerrors.ErrTransformationTargetCollides) {
+		return fmt.Errorf("%w: an %s: %w", ErrTransformationNotApplicable, relation.QualifiedName(), err)
+	}
+	return err
 }
 
 // appendExcluded trägt einen Spaltennamen an eine Ausschluss-Liste an und
