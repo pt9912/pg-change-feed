@@ -1,5 +1,5 @@
 Zustand: **geplant** — Ausgang: **geplant** →
-[`slice-harness-suchlauf-nachmessen`](../../../open/slice-harness-suchlauf-nachmessen.md),
+`slice-harness-suchlauf-nachmessen`,
 dritter Liefer-Punkt: `tools/schema/apply-rollout.sh` sichert `tools/schema/plan.yaml`
 und `tools/schema/down.sql` vor dem Rollout und stellt sie nach dem Lauf wieder her
 (Vorbild: der Guard-Test `tools/harness/run-schema-rollout-guard-test.sh`) ·

@@ -4,7 +4,7 @@ Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Findin
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
 ab 10×). Ausgang unverändert **verkörpert**; der Suchlauf-Anteil (jede der acht
 Belegdateien der Backfill-Welle nennt ein Suchlauf-Feld) ist **geplant** →
-[`slice-harness-suchlauf-nachmessen`](../../../open/slice-harness-suchlauf-nachmessen.md)
+`slice-harness-suchlauf-nachmessen`
 (Nachmess-Werkzeug; kein Sensor auf Prosa, `ADR-0083` bleibt unberührt)
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §3.2 und §3.5).
