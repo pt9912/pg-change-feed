@@ -1,5 +1,5 @@
-Zustand: **geplant** — Ausgang: **geplant** → `slice-start-vorlauf-grenze` (wellenlos, `open/`
-nach der Anlage durch den Planner; Umsetzung von `ADR-0128`: `START_REPLICATION` im Stream-Lauf,
+Zustand: **geplant** — Ausgang: **geplant** → `slice-start-vorlauf-grenze` (wellenlos, `open/`,
+Plan `docs/plan/planning/open/slice-start-vorlauf-grenze.md`; Umsetzung von `ADR-0128`: `START_REPLICATION` im Stream-Lauf,
 Frist von 30 s im Vorlauf, bei Ablauf startet der Stream und der Antrag bleibt `pending`;
 Architect-Verdikt `architect-verdict-welle-transformationen-offene-fragen` §2). Zähler
 (abgeleitet): 2× (evidence/slice-transformationen-start-reihenfolge.md,
