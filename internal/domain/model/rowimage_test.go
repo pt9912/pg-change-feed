@@ -17,63 +17,67 @@ func textValue(value string) *string { return &value }
 
 var rowImageColumns = []string{"id", "secret", "name", "a\"b<"}
 
+// rowImageByteCases sind die Referenz-Fälle der Byte-Tabelle; Eingaben und
+// Erwartung stehen einmal und tragen `TestBuildRowImageBytes` (ohne Regeln)
+// ebenso wie den Vergleich mit einer leeren Regelmenge.
+var rowImageByteCases = []struct {
+	name     string
+	values   []*string
+	excluded []string
+	want     string
+}{
+	{
+		name:   "leere Werteliste ohne tragenden Wert",
+		values: []*string{},
+		want:   `{}`,
+	},
+	{
+		name:   "NULL-Wert entfällt",
+		values: []*string{textValue("1"), nil, textValue("x"), nil},
+		want:   `{"id":"1","name":"x"}`,
+	},
+	{
+		name:     "ausgeschlossene Spalte entfällt samt Wert",
+		values:   []*string{textValue("1"), textValue("geheim"), textValue("x"), textValue("y")},
+		excluded: []string{"secret"},
+		want:     "{\"id\":\"1\",\"name\":\"x\",\"a\\\"b\x5cu003c\":\"y\"}",
+	},
+	{
+		name:   "alle Werte abwesend",
+		values: []*string{nil, nil, nil, nil},
+		want:   `{}`,
+	},
+	{
+		name:   "leerer String ist Wert, keine Abwesenheit",
+		values: []*string{textValue(""), nil, nil, nil},
+		want:   `{"id":""}`,
+	},
+	{
+		name:   "weniger Werte als Spalten",
+		values: []*string{textValue("1"), textValue("s")},
+		want:   `{"id":"1","secret":"s"}`,
+	},
+	{
+		name:   "mehr Werte als Spalten",
+		values: []*string{textValue("1"), textValue("s"), textValue("n"), textValue("q"), textValue("extra")},
+		want:   "{\"id\":\"1\",\"secret\":\"s\",\"name\":\"n\",\"a\\\"b\x5cu003c\":\"q\"}",
+	},
+	{
+		name:   "Maskierung von <, >, &, Anführungszeichen, Umlaut, Steuerzeichen, Backslash, U+2028",
+		values: []*string{textValue("<a>&\"b\" \xc3\xbc \x01\n\t\\ \xe2\x80\xa8"), nil, nil, nil},
+		want:   "{\"id\":\"\x5cu003ca\x5cu003e\x5cu0026\\\"b\\\" \xc3\xbc \x5cu0001\x5cn\x5ct\x5c\x5c \x5cu2028\"}",
+	},
+	{
+		name:   "ungültiges UTF-8 wird zum Ersatzzeichen",
+		values: []*string{textValue("\xff"), nil, nil, nil},
+		want:   "{\"id\":\"\xef\xbf\xbd\"}",
+	},
+}
+
 func TestBuildRowImageBytes(t *testing.T) {
-	cases := []struct {
-		name     string
-		values   []*string
-		excluded []string
-		want     string
-	}{
-		{
-			name:   "leere Werteliste ohne tragenden Wert",
-			values: []*string{},
-			want:   `{}`,
-		},
-		{
-			name:   "NULL-Wert entfällt",
-			values: []*string{textValue("1"), nil, textValue("x"), nil},
-			want:   `{"id":"1","name":"x"}`,
-		},
-		{
-			name:     "ausgeschlossene Spalte entfällt samt Wert",
-			values:   []*string{textValue("1"), textValue("geheim"), textValue("x"), textValue("y")},
-			excluded: []string{"secret"},
-			want:     "{\"id\":\"1\",\"name\":\"x\",\"a\\\"b\x5cu003c\":\"y\"}",
-		},
-		{
-			name:   "alle Werte abwesend",
-			values: []*string{nil, nil, nil, nil},
-			want:   `{}`,
-		},
-		{
-			name:   "leerer String ist Wert, keine Abwesenheit",
-			values: []*string{textValue(""), nil, nil, nil},
-			want:   `{"id":""}`,
-		},
-		{
-			name:   "weniger Werte als Spalten",
-			values: []*string{textValue("1"), textValue("s")},
-			want:   `{"id":"1","secret":"s"}`,
-		},
-		{
-			name:   "mehr Werte als Spalten",
-			values: []*string{textValue("1"), textValue("s"), textValue("n"), textValue("q"), textValue("extra")},
-			want:   "{\"id\":\"1\",\"secret\":\"s\",\"name\":\"n\",\"a\\\"b\x5cu003c\":\"q\"}",
-		},
-		{
-			name:   "Maskierung von <, >, &, Anführungszeichen, Umlaut, Steuerzeichen, Backslash, U+2028",
-			values: []*string{textValue("<a>&\"b\" \xc3\xbc \x01\n\t\\ \xe2\x80\xa8"), nil, nil, nil},
-			want:   "{\"id\":\"\x5cu003ca\x5cu003e\x5cu0026\\\"b\\\" \xc3\xbc \x5cu0001\x5cn\x5ct\x5c\x5c \x5cu2028\"}",
-		},
-		{
-			name:   "ungültiges UTF-8 wird zum Ersatzzeichen",
-			values: []*string{textValue("\xff"), nil, nil, nil},
-			want:   "{\"id\":\"\xef\xbf\xbd\"}",
-		},
-	}
-	for _, c := range cases {
+	for _, c := range rowImageByteCases {
 		t.Run(c.name, func(t *testing.T) {
-			got, err := BuildRowImage(rowImageColumns, c.values, c.excluded)
+			got, err := BuildRowImage(rowImageColumns, c.values, c.excluded, nil)
 			if err != nil {
 				t.Fatalf("BuildRowImage: %v", err)
 			}
@@ -90,7 +94,7 @@ func TestBuildRowImageBytes(t *testing.T) {
 // Eine nil-Werteliste ist Abwesenheit des Bildes (`LH-FA-CAP-008`): weder
 // Objekt noch Fehler — unterscheidbar von der leeren Liste (`{}`).
 func TestBuildRowImageNilValuesIsAbsent(t *testing.T) {
-	got, err := BuildRowImage(rowImageColumns, nil, nil)
+	got, err := BuildRowImage(rowImageColumns, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("BuildRowImage: %v", err)
 	}
@@ -104,7 +108,7 @@ func TestBuildRowImageNilValuesIsAbsent(t *testing.T) {
 // eine nicht geführte Spalte bleibt.
 func TestBuildRowImageExcludedValueNowhere(t *testing.T) {
 	values := []*string{textValue("1"), textValue("streng-geheim"), textValue("x"), nil}
-	got, err := BuildRowImage(rowImageColumns, values, []string{"secret", "unbekannt"})
+	got, err := BuildRowImage(rowImageColumns, values, []string{"secret", "unbekannt"}, nil)
 	if err != nil {
 		t.Fatalf("BuildRowImage: %v", err)
 	}
@@ -123,13 +127,13 @@ func TestBuildRowImagePureAndConcurrent(t *testing.T) {
 	columns := []string{"id", "secret", "name"}
 	excluded := []string{"secret"}
 	values := []*string{textValue("1"), textValue("s"), textValue("x")}
-	first, err := BuildRowImage(columns, values, excluded)
+	first, err := BuildRowImage(columns, values, excluded, nil)
 	if err != nil {
 		t.Fatalf("BuildRowImage: %v", err)
 	}
 	want := string(first)
 	first[0] = '!'
-	second, err := BuildRowImage(columns, values, excluded)
+	second, err := BuildRowImage(columns, values, excluded, nil)
 	if err != nil {
 		t.Fatalf("BuildRowImage: %v", err)
 	}
@@ -145,7 +149,7 @@ func TestBuildRowImagePureAndConcurrent(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			results[i], _ = BuildRowImage(columns, values, excluded)
+			results[i], _ = BuildRowImage(columns, values, excluded, nil)
 		}()
 	}
 	wg.Wait()
@@ -165,7 +169,7 @@ func BenchmarkBuildRowImage(b *testing.B) {
 	excluded := []string{"secret"}
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		if _, err := BuildRowImage(columns, values, excluded); err != nil {
+		if _, err := BuildRowImage(columns, values, excluded, nil); err != nil {
 			b.Fatal(err)
 		}
 	}

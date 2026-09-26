@@ -1510,7 +1510,8 @@ func classifyRunError(err error) model.ErrorClass {
 		return model.ErrorClassConfiguration
 	case errors.Is(err, decode.ErrSchema),
 		errors.Is(err, mapper.ErrTruncateUnsupported),
-		errors.Is(err, mapper.ErrIncompatibleSchemaChange):
+		errors.Is(err, mapper.ErrIncompatibleSchemaChange),
+		errors.Is(err, mapper.ErrTransformationNotApplicable):
 		return model.ErrorClassSchema
 	case errors.Is(err, receive.ErrReplication),
 		errors.Is(err, outbound.ErrReplication),

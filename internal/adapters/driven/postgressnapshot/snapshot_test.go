@@ -726,12 +726,12 @@ func checkParity(t *testing.T, dsn string, admin *pgconn.PgConn, set typeSet, vi
 				t.Errorf("Zeile %s, Spalte %s (Typ %s): WAL %s ≠ Backfill %s", id, name, set.ddlOf(name), showText(walRow.values[i]), showText(row[i]))
 			}
 		}
-		image, err := model.BuildRowImage(columns, row, nil)
+		image, err := model.BuildRowImage(columns, row, nil, nil)
 		if err != nil {
 			t.Fatalf("BuildRowImage: %v", err)
 		}
 		images[id] = image
-		walImage, err := model.BuildRowImage(walRow.columns, walRow.values, nil)
+		walImage, err := model.BuildRowImage(walRow.columns, walRow.values, nil, nil)
 		if err != nil {
 			t.Fatalf("BuildRowImage (WAL): %v", err)
 		}

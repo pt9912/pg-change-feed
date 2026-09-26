@@ -124,4 +124,26 @@ var (
 	// gebaut wurden (`ADR-0111` Teilfrage 4, `LH-QA-SEC-004`). Fehlerklasse
 	// `configuration` (`SPEC-008`).
 	ErrExclusionStateChanged = stderrors.New("Ausschlussstand während des Backfills geändert")
+
+	// ErrInvalidTransformation: eine Transformationsregel verletzt die
+	// Invarianten ihres Regeltyps — `column` oder `to` leer, mit dem
+	// Zeichen U+0000, oder `to` länger als 63 Byte in UTF-8 (`SPEC-030`,
+	// Bezeichner, `LH-FA-CFG-007`).
+	ErrInvalidTransformation = stderrors.New("ungültige Transformationsregel")
+
+	// ErrTransformationTargetIsColumn: der Zielname von `rename_column`
+	// gleicht der Quellspalte; die Quellspalte ist ein Spaltenname der
+	// Quelltabelle, der Fall gehört zu K3 (`SPEC-019`, `SPEC-030`
+	// Randfälle), nicht zur Form der Regel.
+	ErrTransformationTargetIsColumn = stderrors.New("Zielname gleicht der Quellspalte")
+
+	// ErrTransformationColumnMissing: die Spalte einer Regel kommt in den
+	// Spalten der Änderung nicht vor — die Regel ist nicht anwendbar
+	// (`SPEC-030`, Anwendbarkeit).
+	ErrTransformationColumnMissing = stderrors.New("Spalte der Regel fehlt in den Spalten der Änderung")
+
+	// ErrTransformationTargetCollides: der Zielname einer Regel gleicht
+	// einer Spalte der Änderung — die Regel ist nicht anwendbar, das Bild
+	// trüge zwei gleichnamige Schlüssel (`SPEC-030`, Anwendbarkeit).
+	ErrTransformationTargetCollides = stderrors.New("Zielname kollidiert mit einer Spalte der Änderung")
 )

@@ -483,7 +483,10 @@ func (b blockBuilder) build(blockNumber int, rows [][]*string, excluded []string
 	}
 	for i, row := range rows {
 		sequence := int64(i + 1)
-		image, err := model.BuildRowImage(b.columns, row, excluded)
+		// Der Run übergibt keine Transformationsregeln (`ADR-0112`
+		// Folgepflicht 7): die Grenze hat die Adresse
+		// `slice-transformationen-backfill-pfad`.
+		image, err := model.BuildRowImage(b.columns, row, excluded, nil)
 		if err != nil {
 			return nil, err
 		}

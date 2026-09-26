@@ -19,11 +19,23 @@ import (
 // wird nie serialisiert. Eine nil-Werteliste liefert kein Bild (nil, kein
 // Fehler); eine Werteliste ohne tragenden Wert liefert `{}`.
 //
+// `rules` sind die Transformationsregeln der Tabelle (`LH-FA-CFG-007`,
+// `SPEC-030`). Sie werden in derselben Schleife und erst nach dem Ausschluss
+// und der Abwesenheits-Prüfung ausgewertet: eine ausgeschlossene oder
+// abwesende Spalte erreicht keine Regel, ihr Schlüssel steht weder unter dem
+// Quell- noch unter einem Zielnamen. Ein umbenannter Schlüssel behält die
+// Position seiner Quellspalte. Eine leere Regelmenge liefert dieselben Bytes
+// wie ein Aufruf ohne Regeln. Die Anwendbarkeit der Regeln (`SPEC-030`)
+// prüft der Aufrufer vor dem Aufruf mit `Transformation.CheckApplicable`;
+// eine nicht anwendbare Regel wirkt hier nicht, ein kollidierender Zielname
+// ergäbe zwei gleichnamige Schlüssel.
+//
 // Die Funktion ist rein: sie hält keinen Zustand, liest ihre Eingaben nur
 // und teilt keinen Speicher mit ihnen. Sie ist die eine Konstruktionsstelle
 // für Row Images (`ADR-0111` Teilfrage 2): jeder Pfad, der ein Row Image
-// erzeugt, ruft sie; gerufen wird sie vom Replication-Mapper.
-func BuildRowImage(columns []string, values []*string, excluded []string) ([]byte, error) {
+// erzeugt, ruft sie — der Replication-Mapper mit dem Regelstand der Bindung,
+// der Backfill-Lauf mit leerer Regelmenge.
+func BuildRowImage(columns []string, values []*string, excluded []string, rules []Transformation) ([]byte, error) {
 	if values == nil {
 		return nil, nil
 	}
@@ -34,11 +46,12 @@ func BuildRowImage(columns []string, values []*string, excluded []string) ([]byt
 		if i >= len(values) || values[i] == nil || containsName(excluded, column) {
 			continue
 		}
-		name, err := json.Marshal(column)
+		key, text := applyTransformations(rules, column, *values[i])
+		name, err := json.Marshal(key)
 		if err != nil {
 			return nil, err
 		}
-		value, err := json.Marshal(*values[i])
+		value, err := json.Marshal(text)
 		if err != nil {
 			return nil, err
 		}
@@ -54,9 +67,9 @@ func BuildRowImage(columns []string, values []*string, excluded []string) ([]byt
 	return image.Bytes(), nil
 }
 
-// containsName meldet, ob ein Spaltenname in einer Ausschluss-Liste steht;
-// die Liste trägt die Ausschlüsse einer Tabelle und bleibt klein, die
-// lineare Suche damit ohne eigenen Index.
+// containsName meldet, ob ein Spaltenname in einer Namensliste steht (die
+// Ausschlüsse einer Tabelle, die Spalten einer Relation); die Listen bleiben
+// klein, die lineare Suche damit ohne eigenen Index.
 func containsName(names []string, name string) bool {
 	for _, candidate := range names {
 		if candidate == name {

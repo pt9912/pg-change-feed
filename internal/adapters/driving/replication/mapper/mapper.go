@@ -55,6 +55,16 @@ var ErrBeginWithoutCommit = errors.New("Fehlerklasse replication: BEGIN während
 // Änderung stillschweigend zu übernehmen.
 var ErrIncompatibleSchemaChange = errors.New("Fehlerklasse schema: Relation-Änderung nicht sicher als Obermenge interpretierbar")
 
+// ErrTransformationNotApplicable trägt eine Transformationsregel der
+// Bindung, die auf die Relation einer Änderung nicht anwendbar ist: ihre
+// Spalte fehlt in der Relation, oder ihr Zielname gleicht einer Spalte der
+// Relation (`SPEC-030`, Anwendbarkeit; `model.Transformation.CheckApplicable`
+// nennt den Grund). `Consume` meldet den Fehler statt eines Changes, bevor
+// ein Wert serialisiert wird; `receive.Stream` beendet damit den Lauf, die
+// Transaktion erreicht `Capture` nicht und wird nicht bestätigt
+// (Fehlerklasse `schema`, `SPEC-008`, `LH-FA-ADM-003`).
+var ErrTransformationNotApplicable = errors.New("Fehlerklasse schema: Transformationsregel auf die Änderung nicht anwendbar")
+
 // TableBinding trägt die am Port getragenen Kennungen einer aktivierten
 // Tabelle (`SPEC-001`): die Tabelle und die Schema-Version, die die
 // Changes dieser Tabelle referenzieren (`LH-FA-SCH-005`). Die
@@ -71,10 +81,21 @@ var ErrIncompatibleSchemaChange = errors.New("Fehlerklasse schema: Relation-Änd
 // unverändert — jeder Nachtrag ersetzt sie unter `tablesMu` durch eine
 // neue (`Assembler.ExcludeColumn`/`IncludeColumn`), ein Leser hält
 // seinen Schnappschuss ohne eigene Sperre.
+//
+// `Transformations` trägt den Regelstand der Tabelle (`LH-FA-CFG-007`,
+// `ADR-0112` Teilfrage 6): die Regeln, die die Row-Image-Konstruktion nach
+// dem Ausschluss auswertet, je Regel unter ihrem Regelnamen. Die Liste
+// hat denselben Vertrag wie `ExcludedColumns` — ab dem Schreiben
+// unverändert, jeder Nachtrag ersetzt sie unter `tablesMu`
+// (`Assembler.SetTransformation`/`RemoveTransformation`), ein Leser hält
+// seinen Schnappschuss ohne eigene Sperre. Regelstand und Ausschlussstand
+// überleben `AddBinding` bei getragener Bindung und den Nachtrag der
+// Schema-Version.
 type TableBinding struct {
 	TableID         model.SourceTableID
 	SchemaVersion   model.SchemaVersionID
 	ExcludedColumns []string
+	Transformations []model.Transformation
 }
 
 // Assembler baut aus den dekodierten Ereignissen committed
@@ -89,8 +110,9 @@ type TableBinding struct {
 // `tables` wird über `tablesMu` synchronisiert (`ADR-0050`): der
 // Capture-Stream liest sie aus `Consume`/`change`/`observeRelation` in
 // seiner eigenen Goroutine, die Administrations-Goroutine schreibt
-// zusätzliche Bindungen über `AddBinding`/`RemoveBinding` und den
-// Ausschlussstand einer Bindung über `ExcludeColumn`/`IncludeColumn` aus
+// zusätzliche Bindungen über `AddBinding`/`RemoveBinding`, den
+// Ausschlussstand einer Bindung über `ExcludeColumn`/`IncludeColumn` und ihren
+// Regelstand über `SetTransformation`/`RemoveTransformation` aus
 // einer zweiten Goroutine — ohne Synchronisation wäre der gleichzeitige Zugriff
 // eine Data Race (`go test -race`). Ein `sync.RWMutex` statt eines
 // Kommando-Kanals in `Consume`: die Lese-Seite (jede Änderung im
@@ -215,11 +237,18 @@ func (a *Assembler) TransactionOpen() bool {
 // (`SPEC-002`). `event.Relation.Schema`/`.Name` sind hier bereits bekannt
 // (die `TableBinding`-Map ist nach dem qualifizierten Namen indiziert) und
 // gehen ohne neuen Lookup in `Change.Schema`/`.Table` ein (`ADR-0056`,
-// NATS-Notify-Pfad).
+// NATS-Notify-Pfad). Der Regelstand der Bindung (`LH-FA-CFG-007`) wird vor
+// jeder Serialisierung gegen die Spalten der Relation geprüft; eine nicht
+// anwendbare Regel endet als `ErrTransformationNotApplicable`, ohne dass ein
+// Bild entsteht oder die Sequenz vorrückt.
 func (a *Assembler) change(event decode.Change) (*model.Change, error) {
 	binding, activated := a.lookupBinding(event.Relation.QualifiedName())
 	if !activated {
 		return nil, nil
+	}
+	columns := columnNames(event.Relation)
+	if err := checkTransformations(binding.Transformations, columns, event.Relation); err != nil {
+		return nil, err
 	}
 	a.open.sequence++
 	sequence := a.open.sequence
@@ -236,12 +265,11 @@ func (a *Assembler) change(event decode.Change) (*model.Change, error) {
 		return nil, fmt.Errorf("%w: unbekannte Operation %d", domainerrors.ErrInvalidOperation, event.Operation)
 	}
 
-	columns := columnNames(event.Relation)
-	newImage, err := model.BuildRowImage(columns, event.New, binding.ExcludedColumns)
+	newImage, err := model.BuildRowImage(columns, event.New, binding.ExcludedColumns, binding.Transformations)
 	if err != nil {
 		return nil, err
 	}
-	oldImage, err := model.BuildRowImage(columns, event.Old, binding.ExcludedColumns)
+	oldImage, err := model.BuildRowImage(columns, event.Old, binding.ExcludedColumns, binding.Transformations)
 	if err != nil {
 		return nil, err
 	}
@@ -407,14 +435,16 @@ func (a *Assembler) lookupBinding(qualified string) (TableBinding, bool) {
 // Administrations-Goroutine (`ADR-0050`) ruft sie auf, wenn eine über SQL
 // beantragte Aktivierung real ausgeführt wurde, für eine bislang nicht
 // aktivierte Tabelle aus einer zweiten Goroutine. Trägt die Tabelle
-// bereits eine Bindung, bleiben deren `ExcludedColumns` stehen: der
-// Aufruf setzt `TableID`/`SchemaVersion` neu und übernimmt alle übrigen
-// Felder der getragenen Bindung (`ADR-0059` Teilfrage 3).
+// bereits eine Bindung, bleiben deren `ExcludedColumns` und
+// `Transformations` stehen: der Aufruf setzt `TableID`/`SchemaVersion` neu
+// und übernimmt alle übrigen Felder der getragenen Bindung (`ADR-0059`
+// Teilfrage 3, `ADR-0112` Teilfrage 6).
 func (a *Assembler) AddBinding(qualified string, binding TableBinding) {
 	a.tablesMu.Lock()
 	defer a.tablesMu.Unlock()
 	if existing, activated := a.tables[qualified]; activated {
 		binding.ExcludedColumns = existing.ExcludedColumns
+		binding.Transformations = existing.Transformations
 	}
 	a.tables[qualified] = binding
 }
@@ -423,9 +453,9 @@ func (a *Assembler) AddBinding(qualified string, binding TableBinding) {
 // synchronisiert auf eine neu registrierte Version und lässt ihre übrigen
 // Felder unangetastet (`observeRelation`, `ADR-0015` Folgepflicht,
 // `LH-FA-SCH-005`): der Ausschlussstand der Bindung überlebt den
-// Schema-Versions-Nachtrag (`ADR-0059` Teilfrage 3). Eine nicht mehr
-// getragene Bindung bleibt ohne Wirkung — der Nachtrag belebt sie nicht
-// neu.
+// Schema-Versions-Nachtrag (`ADR-0059` Teilfrage 3), ebenso ihr Regelstand
+// (`ADR-0112` Teilfrage 6). Eine nicht mehr getragene Bindung bleibt ohne
+// Wirkung — der Nachtrag belebt sie nicht neu.
 func (a *Assembler) setSchemaVersion(qualified string, version model.SchemaVersionID) {
 	a.tablesMu.Lock()
 	defer a.tablesMu.Unlock()
@@ -471,6 +501,89 @@ func (a *Assembler) IncludeColumn(qualified, column string) {
 	}
 	binding.ExcludedColumns = removeExcluded(binding.ExcludedColumns, column)
 	a.tables[qualified] = binding
+}
+
+// SetTransformation trägt eine Regel synchronisiert in den Regelstand einer
+// getragenen Bindung nach (`LH-FA-CFG-007`, `ADR-0112` Teilfrage 6): ab dem
+// Aufruf wertet die Row-Image-Konstruktion der Tabelle sie aus. Trägt die
+// Bindung bereits eine Regel unter demselben Namen, ersetzt die neue sie an
+// ihrer Stelle; die Konfliktfreiheit der Regelmenge (K1–K4, `SPEC-019`)
+// prüft der Aufrufer, dieser Aufruf prüft sie nicht. Eine nicht getragene
+// Bindung bleibt ohne Wirkung — derselbe idempotente Vertrag wie
+// `ExcludeColumn`. Die Liste wird neu aufgebaut, ein Leser-Schnappschuss
+// bleibt gültig.
+func (a *Assembler) SetTransformation(qualified string, rule model.Transformation) {
+	a.tablesMu.Lock()
+	defer a.tablesMu.Unlock()
+	binding, activated := a.tables[qualified]
+	if !activated {
+		return
+	}
+	binding.Transformations = withTransformation(binding.Transformations, rule)
+	a.tables[qualified] = binding
+}
+
+// RemoveTransformation nimmt die Regel unter dem Namen synchronisiert aus
+// dem Regelstand einer getragenen Bindung (`LH-FA-CFG-007`) — das
+// Gegenstück zu `SetTransformation`. Eine nicht getragene Bindung und ein
+// nicht geführter Name bleiben ohne Wirkung; die Liste wird auch ohne
+// Treffer neu aufgebaut, damit kein Leser-Schnappschuss auf ihrem Speicher
+// liegt.
+func (a *Assembler) RemoveTransformation(qualified, name string) {
+	a.tablesMu.Lock()
+	defer a.tablesMu.Unlock()
+	binding, activated := a.tables[qualified]
+	if !activated {
+		return
+	}
+	binding.Transformations = withoutTransformation(binding.Transformations, name)
+	a.tables[qualified] = binding
+}
+
+// withTransformation liefert eine neue Regelliste mit der Regel: eine Regel
+// gleichen Namens wird an ihrer Stelle ersetzt, sonst hinten angehängt. Der
+// Rückgabewert teilt keinen Speicher mit der übergebenen Liste.
+func withTransformation(rules []model.Transformation, rule model.Transformation) []model.Transformation {
+	next := make([]model.Transformation, 0, len(rules)+1)
+	replaced := false
+	for _, existing := range rules {
+		if existing.Name() == rule.Name() {
+			next = append(next, rule)
+			replaced = true
+			continue
+		}
+		next = append(next, existing)
+	}
+	if !replaced {
+		next = append(next, rule)
+	}
+	return next
+}
+
+// withoutTransformation liefert eine neue Regelliste ohne die Regel unter dem
+// Namen; der Rückgabewert teilt keinen Speicher mit der übergebenen Liste.
+func withoutTransformation(rules []model.Transformation, name string) []model.Transformation {
+	next := make([]model.Transformation, 0, len(rules))
+	for _, rule := range rules {
+		if rule.Name() != name {
+			next = append(next, rule)
+		}
+	}
+	return next
+}
+
+// checkTransformations prüft jede Regel gegen die Spalten der Relation
+// (`model.Transformation.CheckApplicable`) und meldet die erste nicht
+// anwendbare als `ErrTransformationNotApplicable`, mit Regelname, Tabelle
+// und Grund. `columns` sind die Spaltennamen der Relation. Ohne Regeln
+// kostet der Aufruf nichts.
+func checkTransformations(rules []model.Transformation, columns []string, relation *decode.Relation) error {
+	for _, rule := range rules {
+		if err := rule.CheckApplicable(columns); err != nil {
+			return fmt.Errorf("%w: Regel %q an %s: %w", ErrTransformationNotApplicable, rule.Name(), relation.QualifiedName(), err)
+		}
+	}
+	return nil
 }
 
 // appendExcluded trägt einen Spaltennamen an eine Ausschluss-Liste an und
