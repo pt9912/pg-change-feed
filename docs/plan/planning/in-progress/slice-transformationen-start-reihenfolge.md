@@ -75,7 +75,7 @@ Code belegt“.
 
 ## 2. Definition of Done
 
-- [ ] Der Vorlauf steht: `Run` verarbeitet die offenen Anträge (ein synchroner
+- [x] Der Vorlauf steht: `Run` verarbeitet die offenen Anträge (ein synchroner
       Durchlauf von `processAdministrationRequests` über dieselben
       `administrationDeps` wie die Goroutine) **vor** `stream.Run`; die
       Goroutine läuft danach unverändert weiter; ein Lesefehler im Vorlauf
@@ -85,7 +85,7 @@ Code belegt“.
       trägt die Bindung im `Assembler` nach, bevor der Stream startet. *Zu
       belegen durch:* `make test` (Whitebox in `internal/bootstrap`, Fakes für
       Antrags-Port und Assembler).
-- [ ] Die Ordnung ist ohne Datenbank prüfbar und an ihre Eingabe gebunden: die
+- [x] Die Ordnung ist ohne Datenbank prüfbar und an ihre Eingabe gebunden: die
       Sequenz „Vorlauf, dann Stream“ steht an einer Stelle, die ein Test mit
       Fakes aufruft (kleine Extraktion aus `Run`, kein Umbau der Verdrahtung);
       ein Test belegt, dass ein `pending` stehender
@@ -93,25 +93,25 @@ Code belegt“.
       Stream-Start-Fake aufgerufen wird, und färbt sich rot, wenn die
       Reihenfolge vertauscht wird (Mutation). *Zu belegen durch:* `make test`
       mit Race-Detector und die Mutation im Bericht.
-- [ ] Der Dauerbetrieb bleibt unverändert: `make test-integration` bleibt real
+- [x] Der Dauerbetrieb bleibt unverändert: `make test-integration` bleibt real
       grün (bestehende Belege der SQL-Administration einschließlich des
       Live-Reload-Belegs ohne `docker restart`); `make coverage-gate` grün. *Zu
       belegen durch:* ein realer, grüner `make test-integration`-Lauf.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: entfällt — keine Betreiber-Oberfläche; die Aussage zur
+- [x] Doku-Update: entfällt — keine Betreiber-Oberfläche; die Aussage zur
       Startreihenfolge steht, sofern das Handbuch sie trägt (Suchlauf), im
       Handbuch-Abschnitt von `slice-transformationen-betriebsdoku`.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
@@ -127,18 +127,33 @@ Code belegt“.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/bootstrap/wiring.go` (+ Whitebox-Test) | update | Vorlauf-Durchlauf vor `stream.Run`; die Sequenz an einer testbaren Stelle; `administrationDeps` wird vor dem Goroutinen-Start gebildet. |
-| `harness/README.md`, `docs/user/benutzerhandbuch.md` | prüfen | Aussagen über die Startreihenfolge und über „Anträge werden verarbeitet“ (Suchlauf) nachziehen bzw. an `betriebsdoku` melden. |
+| `internal/bootstrap/wiring.go` | update | **Geliefert.** Neue Funktion `runStreamAfterAdministrationPass(ctx, deps, startLoop, runStream)`: erst `processAdministrationRequests` (Vorlauf), dann `startLoop` (die Goroutine), dann `runStream`. Die `administrationDeps` werden vor dem Start gebildet (Variable `administration`), der Goroutinen-Start ist die Funktion `startAdministration`; `Run` ruft die Sequenz mit `stream.Run` als viertem Argument. Der Vorlauf steht **vor** dem Goroutinen-Start, damit zu keinem Zeitpunkt zwei Durchläufe dieselbe Queue lesen. Gelesen am Start (Schritt 12): `reconcileBackfillRuns` und der Start des Backfill-Workers stehen in `Run` vor dem Aufruf der Sequenz (Risiko §6, zweiter Punkt), der Kontext des Vorlaufs ist `streamCtx` (abgeleitet aus `ctx`, ein Abbruch durch die WAL-Schwelle beendet den Vorlauf mit). |
+| `internal/bootstrap/administration_startorder_internal_test.go` | neu (Plan-Nachzug) | Sechs Tests ohne Datenbank: Ordnung an einem `pending` stehenden `remove_transformation`-Antrag (Stream-Fake sieht Vermerk `applied` und Rohform), Ordnung für `enable`, Lesefehler hält den Start nicht an und der Stream-Ausgang bleibt der Rückgabewert, hängende Abfrage hält den Stream-Start an und der Abbruch des Kontexts beendet den Vorlauf, und zwei Tests über die Quelltext-Gestalt von `Run` (`stream.Run` nur als Argument der Sequenz; Abgleich und Worker-Start vor ihr). Grund der Quelltext-Tests: `Run` braucht die Datenbank, kein netzloser Lauf erreicht die Aufrufstelle. |
+| `harness/README.md`, `docs/user/benutzerhandbuch.md` | prüfen | **Ergebnis: keine Änderung.** Keine der beiden Dateien beschreibt die Reihenfolge von Antrags-Verarbeitung und Stream-Start (Suchlauf unten, Zeilen 3 bis 4 und 7 bis 8); die Handbuch-Stellen zur Administrations-Goroutine (§4) sagen „verarbeitet offene Anträge … ohne Neustart“ und bleiben wahr. Der Abhilfe-Ablauf gehört zu `slice-transformationen-betriebsdoku` (Adresse). Keine Betreiber-Oberfläche berührt: `git diff --name-only ce229b8e -- internal/bootstrap/ tools/schema/ internal/adapters/driving/` trifft nur `wiring.go` und die Testdatei, keine Umgebungsvariable, keine SQL-Funktion, keinen Endpunkt. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Reihenfolge von
 Antrags-Verarbeitung und Stream-Start“; beide Stände gemessen):**
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Beschreibungen der Reihenfolge im Code | `grep -n 'runAdministration\|stream.Run\|processAdministrationRequests' internal/bootstrap/wiring.go` | *(Implementer trägt ein)* | Doc-Kommentare an `Run`, `runAdministration` und `processAdministrationRequests` beschreiben den Vorlauf |
-| Beschreibungen in Doku | `grep -rn 'Administrations-Goroutine\|Antrags-Queue' docs/user harness spec` | *(Implementer trägt ein)* | Aussagen über den Start nachziehen; Handbuch-Stellen an `betriebsdoku` melden |
-| Kommentare, die eine Reihenfolge behaupten | `grep -rn 'vor stream.Run\|nach stream.Run' internal --include=*.go` | *(Implementer trägt ein)* | jede Behauptung ist durch den Test dieses Slice getragen oder wird gestrichen (`BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`, offen, 2×) |
-| Startpfad des Backfill-Workers und des Start-Abgleichs (aus `slice-backfill-sql-administration`) | Lesen von `Run` in `internal/bootstrap/wiring.go` | *(Implementer trägt ein)* | Abgleich `running` → `interrupted` und Worker-Start stehen vor dem Vorlauf, sonst sieht die Annahme des Vorlaufs einen noch nicht abgeglichenen Run (Risiko §6) |
+| Beschreibungen der Reihenfolge im Code | Zeilen 1–2 im Block unten (Parent `ce229b8e`) | **Gefunden.** Symbole `runAdministration`/`stream.Run`/`processAdministrationRequests` in `wiring.go`: Parent 15, Diff 18. Die drei Doc-Kommentare (`Run`-Kopf: beschreibt keine Reihenfolge und bleibt; Kommentar an der Goroutine, Kommentar an `processAdministrationRequests`) sind gelesen: der Kommentar an der Goroutine nennt jetzt den Vorlauf und den Ort der Sequenz; `runStreamAfterAdministrationPass` trägt die Zusage der Sequenz. **Nichtgefunden:** kein Kommentar des Parent nennt die Reihenfolge von Goroutinen-Start und `stream.Run` (Zeile 5 im Block unten trifft am Parent 0). | Kommentar an der Goroutine im Ist-Ton, neuer Doc-Kommentar |
+| Beschreibungen in Doku | Zeilen 3–4 im Block unten | **Gefunden.** `Administrations-Goroutine`/`Antrags-Queue` in `docs/user`, `harness`, `spec`: Parent 10, Diff 10 (unverändert). Gelesen: Handbuch §4 (zwei Stellen) sagt „verarbeitet offene Anträge (`LISTEN`/`NOTIFY`-Weckung mit periodischem Fallback-Poll)“, die Zeilen zu Rollen und Umgebungsvariable nennen die Queue, `SPEC-019` beschreibt die Queue. **Nichtgefunden:** keine Stelle in `docs/user`, `harness`, `spec` beschreibt die Reihenfolge von Antrags-Verarbeitung und Stream-Start (Zeilen 7–8 suchen beide Schreibweisen des Worts Startreihenfolge und treffen in Träger-Dokumenten ausschließlich Pläne der Welle und Code). | keiner; die Prozedur „Abhilfe nach einer nicht anwendbaren Regel“ (mit der Aussage zur Reihenfolge) trägt `slice-transformationen-betriebsdoku` (Adresse, Frist: dessen Closure) |
+| Kommentare, die eine Reihenfolge behaupten | Zeilen 5–6 im Block unten | **Gefunden.** „vor“ oder „nach“ vor `stream.Run` in `internal` (Zeilen 5–6): Parent 0, Diff 1 (`wiring.go`, Kommentar an der Goroutine: „steht mit ihm vor `stream.Run`“). **Nichtgefunden:** kein weiterer Kommentar behauptet eine Reihenfolge zu `stream.Run`. Die eine Behauptung trägt `TestRunCallsTheStreamOnlyThroughTheOrderedSequence` (Aufrufstelle) und die Tests der Sequenz. | keiner |
+| Startpfad des Backfill-Workers und des Start-Abgleichs (aus `slice-backfill-sql-administration`) | Lesen von `Run` in `internal/bootstrap/wiring.go` am Start | **Gefunden.** Die Folge in `Run` ist Bindungsaufbau (`activatedTableBindings`, `stream.BindCapture`) → `reconcileBackfillRuns` → Worker-Start → Sequenz (Vorlauf, Goroutine, `stream.Run`); der Abgleich `running` → `interrupted` und der Worker-Start stehen vor dem Vorlauf. **Nichtgefunden:** kein Pfad, auf dem der Vorlauf vor dem Abgleich läuft; das Wecksignal `backfillWake` besteht seit dem Anlegen vor dem Worker-Start (Kapazität 1, verschmelzend). Gebunden durch `TestRunReconcilesAndStartsTheBackfillWorkerBeforeTheAdministrationPass`. | keiner |
+| Andere Pläne, die die Ordnung als Träger nennen | Zeilen 7–8 im Block unten | **Gefunden.** Zeilen 7–8: Parent 7 (vier in `welle-transformationen`, zwei in `slice-transformationen-e2e-abhilfe`, einer der Code-Kommentar zum Backfill-Start), Diff 8 (dazu der Kopfkommentar der neuen Testdatei). `slice-transformationen-e2e-abhilfe` (§1, §2, §4, §6) nennt „den Ordnungs-Test aus `start-reihenfolge`“ und die Startreihenfolge als Voraussetzung; `welle-transformationen` §3/§4/§5 beschreibt den Slice. Beide Aussagen bleiben wahr. **Nichtgefunden:** kein Plan behauptet eine Beschaffenheit der Ordnung, die der Slice ändert. Ein Träger außerhalb der Suche (ausgenommen `docs/plan/adr`): [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) führt die Abhilfe im gescheiterten Prozess als „erwartet, nicht am Code belegt“ (`git grep -n 'nicht am Code belegt' -- docs/plan/adr`: 1 Treffer in `ADR-0112`, Parent und Diff) — die Aussage ist eine `Accepted` ADR und bleibt unberührt (`AGENTS.md` §3.5); ihren Beleg trägt `slice-transformationen-e2e-abhilfe`. | Meldung an `e2e-abhilfe` (Fremddatei): die Tests tragen die Namen `TestRunStreamAfterAdministrationPass…` und `TestRun…` in `internal/bootstrap/administration_startorder_internal_test.go` (Frist: Start von `e2e-abhilfe`) |
+
+```suchlauf
+ce229b8e 15 -n -E 'runAdministration|stream\.Run|processAdministrationRequests' -- internal/bootstrap/wiring.go
+diff 18 -n -E 'runAdministration|stream\.Run|processAdministrationRequests' -- internal/bootstrap/wiring.go
+ce229b8e 10 -n -E 'Administrations-Goroutine|Antrags-Queue' -- docs/user harness spec
+diff 10 -n -E 'Administrations-Goroutine|Antrags-Queue' -- docs/user harness spec
+ce229b8e 0 -n -E 'vor .?stream\.Run|nach .?stream\.Run' -- internal
+diff 1 -n -E 'vor .?stream\.Run|nach .?stream\.Run' -- internal
+ce229b8e 7 -n -E 'Startreihenfolge|Start-Reihenfolge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/adr'
+diff 8 -n -E 'Startreihenfolge|Start-Reihenfolge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/adr'
+ce229b8e 1 -n -F 'nicht am Code belegt' -- docs/plan/adr
+diff 1 -n -F 'nicht am Code belegt' -- docs/plan/adr
+```
 
 ## 4. Trigger
 
