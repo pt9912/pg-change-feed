@@ -89,7 +89,7 @@ Assembler-Methoden setzbar — kein SQL-Weg.
 
 ## 2. Definition of Done
 
-- [ ] `rename_column` wirkt auf beide Images: der Schlüssel `column` steht
+- [x] `rename_column` wirkt auf beide Images: der Schlüssel `column` steht
       unter `to`, am Ausgang des `Assembler` an der Position seiner
       Quellspalte (Relation-Spaltenreihenfolge; Festlegung von
       [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
@@ -104,7 +104,7 @@ Assembler-Methoden setzbar — kein SQL-Weg.
       diesem Slice gleich sind. *Zu belegen durch:* `make test` (Race-Detector)
       — bestehende Mapper- und Domänen-Tests ohne geänderte Erwartungswerte,
       neue Tests je Eigenschaft.
-- [ ] Der `Assembler` trägt den Regelstand und die Prüfung:
+- [x] Der `Assembler` trägt den Regelstand und die Prüfung:
       `SetTransformation`/`RemoveTransformation` ersetzen die Liste unter
       `tablesMu`, `AddBinding`-Merge und `setSchemaVersion` erhalten sie, ein
       Leser hält seinen Schnappschuss ohne eigene Sperre; ist die `column`
@@ -119,7 +119,7 @@ Assembler-Methoden setzbar — kein SQL-Weg.
       den erst diese Prüfung fängt: Zielname kollidiert nach einer kompatiblen
       Spalten-Erweiterung; die spalten-entfernenden Fälle enden weiterhin
       vorher an `relationOther`.
-- [ ] Die Fitness Function von
+- [x] Die Fitness Function von
       [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
       steht: ein Eigenschaftstest im `mapper`-Paket (Regeltyp × ausgeschlossene
       Spalte: das Image trägt weder den Quellschlüssel noch einen Zielnamen
@@ -135,7 +135,7 @@ Assembler-Methoden setzbar — kein SQL-Weg.
       `coverage`-Stufe des Dockerfile schließt nur die Pakete
       `postgresstorage`, `postgresack`, `postgressnapshot` und
       `replication/receive` selbst aus; kein neues Paket).
-- [ ] Der Kommentar-Träger folgt: der Doc-Kommentar von `TableBinding` und
+- [x] Der Kommentar-Träger folgt: der Doc-Kommentar von `TableBinding` und
       `AddBinding` nennt den Regelstand neben `ExcludedColumns`;
       `ErrTransformationNotApplicable` trägt einen Kommentar, der nur zusagt,
       was der Code trägt (der Erfassungspfad endet, kein ACK) — keine
@@ -149,16 +149,16 @@ Assembler-Methoden setzbar — kein SQL-Weg.
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: entfällt — kein öffentlicher Vertrag berührt (das
+- [x] Doku-Update: entfällt — kein öffentlicher Vertrag berührt (das
       Nachrichtenschema bleibt, keine Betreiber-Oberfläche); die Spec trägt
       `slice-transformationen-spec-nachzug`, das Handbuch
       `slice-transformationen-betriebsdoku`.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
@@ -180,6 +180,31 @@ Assembler-Methoden setzbar — kein SQL-Weg.
 | `internal/adapters/driving/replication/mapper/mapper_test.go` (+ Datei für den Eigenschaftstest) | update / neu | Regeltests, Eigenschaftstest [`LH-QA-SEC-004`](../../../../spec/lastenheft.md), Determinismus, Nebenläufigkeit — nach dem Muster der `ExcludeColumn`-Tests. |
 | `internal/bootstrap/wiring.go` (+ Test) | update | `classifyRunError` bildet `ErrTransformationNotApplicable` auf `model.ErrorClassSchema` ab. |
 | Aufrufer der gemeinsamen Funktion im Backfill-Pfad (falls vorhanden) | update | reicht bis `backfill-pfad` die leere Regelmenge, ausdrücklich benannt. |
+| `internal/application/usecase/backfill/service.go` | update | der Aufrufer im Backfill-Pfad (`blockBuilder.build`) übergibt `nil` als Regelmenge; der Kommentar an der Aufrufstelle nennt die Grenze mit der Adresse `slice-transformationen-backfill-pfad`. |
+| `internal/domain/errors/errors.go` | update | vier Sentinels: `ErrInvalidTransformation` (Form), `ErrTransformationTargetIsColumn` (K3-Fall `to` gleich `column`, eigener Sentinel), `ErrTransformationColumnMissing` und `ErrTransformationTargetCollides` (die beiden Gründe der Nichtanwendbarkeit). |
+| `internal/domain/model/rowimage_test.go`, `internal/adapters/driven/postgressnapshot/snapshot_test.go` | update | Aufrufer der Signatur nachgezogen; die Byte-Tabelle steht als Paketvariable `rowImageByteCases`, damit derselbe Satz Referenz-Bytes den Vergleich mit einer leeren Regelmenge trägt — Erwartungswerte unverändert. |
+| `internal/domain/model/transformation_test.go` | neu | Konstruktor-Invarianten je Eingabe, Regeltyp-Menge, `CheckApplicable`, Wirkung in `BuildRowImage` (Position, Abwesenheit, Ausschluss, Maskierung, leere Regelmenge, Reinheit unter `-race`). |
+| `internal/adapters/driving/replication/mapper/transformation_test.go`, `transformation_internal_test.go`, `mapper_bench_test.go` | neu | die Mapper-Tests liegen in eigenen Dateien statt in `mapper_test.go` (dort unverändert): Wirkung auf beide Images, Metadaten, Nichtanwendbarkeit, Live-Reload, Erhalt, Fitness-Function-Tests; der Whitebox-Test hält die Schnappschuss-Zusage (Liste wird neu aufgebaut); der Benchmark misst die Kosten der Prüfung. |
+| `internal/bootstrap/heartbeat_internal_test.go` | update | zwei Fälle für `ErrTransformationNotApplicable` in der Sentinel-Tabelle von `classifyRunError`. |
+
+**Festlegungen dieses Slice** (Auslegungen, wo der Plan-Text offen lässt; keine Abweichung von
+[`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)):
+
+- **Der Regelname ist Teil der Domänen-Regel** (`NewRenameColumn(name, column, to)`, Invariante
+  nur „nicht leer“): `RemoveTransformation` und das Ersetzen adressieren je Name
+  (K1). Alphabet und Länge des Namens prüft weiter der Aufrufer, der ihn entgegennimmt
+  (`antragsweg-usecase`, Text `Regelname ist ungültig`) — die Domäne nimmt diese Prüfung nicht vorweg.
+- **Die Anwendbarkeit ist eine Domänen-Methode** (`Transformation.CheckApplicable`,
+  `SPEC-030` Anwendbarkeit); `mapper.ErrTransformationNotApplicable` wrappt Regelname, Tabelle
+  und den Domänen-Grund. Der Backfill-Pfad ruft dieselbe Methode gegen die Snapshot-Spalten
+  (Übergabe an `backfill-pfad`).
+- **`BuildRowImage` prüft die Anwendbarkeit nicht selbst.** Sie ist Vorbedingung des Aufrufers und im
+  Doc-Kommentar benannt; eine nicht anwendbare Regel wirkt in der Funktion nicht. Der Mapper prüft
+  je Änderung vor jeder Serialisierung.
+- **`SetTransformation` ersetzt eine Regel unter demselben Namen an ihrer Stelle**, statt einen zweiten
+  Eintrag anzulegen; K1 bleibt Prüfung des Use Case.
+- **Auswertung je Spalte:** die erste Regel, deren Quellspalte die Spalte ist, entscheidet (K2 hält
+  je Quellspalte höchstens eine).
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „Signatur und
 Aufrufer der gemeinsamen Row-Image-Funktion“, „der Feldsatz von
@@ -188,10 +213,46 @@ abbildet“; beide Stände gemessen):**
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Aufrufer der gemeinsamen Funktion | `grep -rn` nach dem Funktionsnamen der gemeinsamen Funktion (am Start gemessen) über `internal --include=*.go` | *(Implementer trägt ein)* | jeden Aufrufer nachziehen; der Backfill-Pfad übergibt die leere Menge, mit Kommentar-Bezug auf `backfill-pfad`. Übergabe aus `slice-backfill-row-image-gemeinsam` (Kopplung K1), am Stand `89053d3b` nachgemessen (`git grep -n 'BuildRowImage' HEAD -- 'internal/*.go'`, ohne Tests): die Funktion ist `model.BuildRowImage` in `internal/domain/model/rowimage.go` mit positionaler Signatur `(columns []string, values []*string, excluded []string) ([]byte, error)`; sie hat zwei Aufrufstellen in `Assembler.change` (`mapper.go`, je Bild eine, `columns` einmal je Änderung über `columnNames`); ein Regel-Parameter ändert diese zwei und den künftigen Backfill-Aufrufer. Am Start neu messen |
-| Anlage- und Merge-Stellen von Bindungen | `grep -rn 'TableBinding{' internal --include=*.go` | *(Implementer trägt ein)* | Stellen, die eine Bindung anlegen oder mergen, tragen den Regelstand mit (in diesem Slice: `AddBinding`-Merge, `setSchemaVersion`); die Anlage aus der Datenbank trägt `antragsweg-usecase` |
-| Feldsatz-Beschreibungen von `ExcludedColumns` | `grep -rn 'ExcludedColumns' internal docs spec harness` | *(Implementer trägt ein)* | Doc-Kommentare, die den Feldsatz aufzählen, nennen den Regelstand; Doku-Träger melden an `betriebsdoku` |
-| Aufzählungen der Sentinels der Klasse `schema` | `grep -rn 'ErrIncompatibleSchemaChange' internal docs spec harness` | *(Implementer trägt ein)* | Aufzählungen (Kommentar an `classifyRunError`, Doku) um den neuen Sentinel ergänzen; die Handbuch-Zeile `schema` (§6) an `betriebsdoku` melden |
+| Aufrufer der gemeinsamen Funktion | `git grep -n BuildRowImage` über `internal/*.go`, Parent `1852b2f9` und Diff (Block unten, Zeilen 1–4) | Parent: 32 Trefferzeilen, davon 10 außerhalb der Tests; drei Aufrufstellen im Produktivcode (`Assembler.change` zwei, `blockBuilder.build` eine), neun in Tests (`rowimage_test.go` sieben, `snapshot_test.go` zwei), der Rest Doc-Kommentare (`snapshot.go`, `tablesnapshot.go`, `service.go`, `mapper.go`) und die Definition. Diff: 49 (17 mehr: die neuen Tests), außerhalb der Tests weiter 10. Nichtgefunden: kein weiterer Aufrufer, kein zweiter Bild-Erzeuger im Produktivcode (`json.Marshal` an Row Images: nur `rowimage.go`; `natsstream/publisher.go` und `http/sse.go` marshalen fertige Changes, keine Bilder). | alle drei Aufrufer und alle neun Test-Aufrufer nachgezogen; der Backfill-Aufrufer übergibt `nil`, Kommentar an der Stelle nennt `slice-transformationen-backfill-pfad`. Die Doc-Kommentare beschreiben die Funktion ohne Signatur und bleiben wahr. |
+| Beschreibungen der Signatur in Doku | `git grep -n 'BuildRowImage(columns'` über `docs spec harness` ohne `docs/reviews`, `done/`, Baseline (Block unten, Zeile 9) | Parent 3: `docs/plan/adr/0115-backfill-spaltenwerte-text-ergebnisformat.md` (Zeilen 129, 196: die Signatur mit drei Parametern und „bleibt unverändert“) und `docs/plan/planning/open/slice-transformationen-backfill-pfad.md` (Zeile 172: der Aufruf mit drei Argumenten). Diff: 3, unverändert. | **gemeldet, nicht mitgeändert** (fremde Dateien): die ADR ist `Accepted` und unberührbar (`AGENTS.md` §3.5), ihre Aussage beschreibt den Stand der Entscheidung; der Plan `backfill-pfad` nennt die Signatur als Übergabe — der Planner zieht die Zeile bei der Closure dieses Slice nach (Signatur trägt jetzt den vierten Parameter `rules []Transformation`). |
+| Anlage- und Merge-Stellen von Bindungen | `git grep -n 'TableBinding{'` über `internal/*.go` (Block unten, Zeilen 5–8) | Parent: 43 Trefferzeilen, davon 5 außerhalb der Tests: `wiring.go` (`parseTables` mit zwei Zeilen, `activatedTableBindings`, Aktivierungs-Zweig der Antrags-Verarbeitung) und `config_file.go` (`mergeTables`). Diff: 52 (9 mehr, nur Tests), außerhalb der Tests weiter 5. Nichtgefunden: kein Ort, der einen Regelstand aus der Datenbank ableitet (der Feldsatz kennt `Transformations` erst mit diesem Slice: `git grep -c Transformations 1852b2f9 -- internal` druckt keine Datei). | in diesem Slice tragen `AddBinding`-Merge und `setSchemaVersion` den Regelstand mit; die drei Anlagestellen in `wiring.go`/`config_file.go` legen Bindungen ohne Regelstand an (`Transformations` nil) — die Anlage aus der Datenbank trägt `antragsweg-usecase`, so im Plan festgelegt. |
+| Feldsatz-Beschreibungen von `ExcludedColumns` | `git grep -n ExcludedColumns` über `internal docs spec harness` ohne `docs/reviews`, `done/`, Baseline (Block unten, Zeilen 10–11) | Parent: 79 Trefferzeilen in 22 Dateien; die Beschreibung des Feldsatzes von `TableBinding` steht nur in `mapper.go` (Doc-Kommentare von `TableBinding`, `AddBinding`, `setSchemaVersion`); die übrigen Fundstellen sind Port, Adapter, Verdrahtung und Tests des Ausschlussstands. Diff: 81 (`mapper.go` eine mehr, `transformation_test.go` eine). Nichtgefunden: keine Doku außerhalb von `mapper.go`, die die Felder der Bindung aufzählt (`docs/user` trägt den Namen nicht). | die drei Doc-Kommentare in `mapper.go` nennen den Regelstand neben `ExcludedColumns` (`TableBinding`, `AddBinding`, `setSchemaVersion`, `Assembler`); die Ausschluss-Ports und ihre Adapter beschreiben keinen Feldsatz und bleiben. |
+| Aufzählungen der Sentinels der Klasse `schema` | `git grep -n ErrIncompatibleSchemaChange` über `internal docs spec harness` ohne `docs/reviews`, `done/`, Baseline (Block unten, Zeilen 12–13) | Parent: 29 Trefferzeilen; Aufzählungen der Sentinels der Klasse `schema` stehen an zwei Stellen im Code: `classifyRunError` in `wiring.go` und die Sentinel-Tabelle in `heartbeat_internal_test.go`. Die übrigen: `mapper.go`/`mapper_test.go` (Erzeuger und Tests), ADR-0059/-0063/-0112 (`Accepted`, unberührbar), `harness/README.md` (Zeile `make test-integration`) und `docs/user/e2e-abdeckung.md` (Erzeugnis) beschreiben den Pfad der Spaltenentfernung, keine Aufzählung; `slice-transformationen-e2e-abhilfe.md` ist ein offener Plan mit eigener Adresse. Diff: 32 (drei mehr in `transformation_test.go`). Nichtgefunden: keine Aufzählung in Spec oder Handbuch, die den Sentinel namentlich trägt. | `classifyRunError` und die Sentinel-Tabelle tragen den neuen Sentinel; die Handbuch-Zeile `schema` (§6, `docs/user/benutzerhandbuch.md`) nennt keinen Sentinel und ist die Adresse von `slice-transformationen-betriebsdoku` (Meldung, kein Nachzug hier: keine Betreiber-Oberfläche). |
+
+```suchlauf
+1852b2f9 32 -n BuildRowImage -- internal/*.go
+diff 49 -n BuildRowImage -- internal/*.go
+1852b2f9 10 -n BuildRowImage -- internal/*.go :!internal/**/*_test.go
+diff 10 -n BuildRowImage -- internal/*.go :!internal/**/*_test.go
+1852b2f9 43 -n TableBinding{ -- internal/*.go
+diff 52 -n TableBinding{ -- internal/*.go
+1852b2f9 5 -n TableBinding{ -- internal/*.go :!internal/**/*_test.go
+diff 5 -n TableBinding{ -- internal/*.go :!internal/**/*_test.go
+1852b2f9 3 -n BuildRowImage(columns -- docs spec harness :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 3 -n BuildRowImage(columns -- docs spec harness :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+1852b2f9 79 -n ExcludedColumns -- internal docs spec harness :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 81 -n ExcludedColumns -- internal docs spec harness :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+1852b2f9 29 -n ErrIncompatibleSchemaChange -- internal docs spec harness :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 32 -n ErrIncompatibleSchemaChange -- internal docs spec harness :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+```
+
+**Belege des Laufs (Implementer):**
+
+- Sensoren: `make test` (Race-Detector) Exit 0, 42 Pakete `ok`; `make a-check` Exit 0, `gesamt: 0 Befund(e)`; `make coverage-gate` Exit 0, `coverage-gate: OK — Coverage 83.70% erfüllt Schwelle 80%` (Domäne und `replication/mapper` liegen in der gemessenen Fläche, kein neues Paket).
+- Ausgang von §6 „Byte-Abweichung ohne Regel“: die Byte-Tabelle `rowImageByteCases` (Referenz-Bytes der Backfill-Welle) läuft mit `nil` und mit einer leeren, nicht-nil Regelliste durch dieselbe Erwartung; `git diff -w 1852b2f9 -- internal/domain/model/rowimage_test.go` zeigt keine geänderte Erwartungs-Zeichenkette (nur die Verschiebung der Tabelle in eine Paketvariable und das vierte Argument `nil`).
+- Kosten der Prüfung (§6): `BenchmarkAssemblerChange` (zwölf Spalten, `Consume` Begin/Change/Commit, `go test -bench -count 6 -benchtime 2s`, im Toolchain-Container von `make test` ohne `-race`, `make` trägt kein Ziel für einen Go-Benchmark, daher derselbe `docker run` mit anderem Kommando) am Parent-Stand 4777–4958 ns/op, 2444 B/op, 86 allocs/op; am Diff-Stand ohne Regel 5005–5213 ns/op, 2444 B/op, 86 allocs/op; mit zwei Regeln (`BenchmarkAssemblerChangeWithRules`) 5233–5439 ns/op, 2444 B/op, 86 allocs/op. Die Allokationen bleiben gleich; die Laufzeit-Spanne liegt in der Größenordnung von 0,2–0,6 µs je Änderung und ist am selben Host in getrennten Läufen gemessen, nicht gegen Rauschen abgesichert.
+- Kandidatenläufe: `git diff --name-only 1852b2f9 -- docs/user/benutzerhandbuch.md` druckt nichts (Handbuch unberührt, keine Versionshistorie-Pflicht); `git diff --name-only 1852b2f9 -- internal/bootstrap/ tools/schema/ internal/adapters/driving/` trifft `mapper.go`, die Mapper-Tests, `wiring.go` (eine `case`-Zeile in `classifyRunError`) und `heartbeat_internal_test.go` — keine neue Umgebungsvariable, keine SQL-Funktion, kein Endpunkt, also keine neue Betreiber-Oberfläche; Slice-Link-Kandidatenlauf auf die berührten Dokumente: 0 Treffer. §3.7-Probe (`git diff --name-only 1852b2f9 -- '*.go' | xargs -r grep -nE 'slice-[0-9]+|welle-[0-9]+|…'`): 0 Treffer; die namentliche Adresse `slice-transformationen-backfill-pfad` an der Aufrufstelle in `service.go` steht als benannte Grenze, Subjekt ist der Run.
+- Zusage · mutierte Eingabe · gesehenes Rot (alle Mutationen einzeln gefahren, danach per `cmp` gegen die Sicherungskopie zurückgenommen):
+  - `to` höchstens 63 Byte · Grenze auf 64 · `TestNewRenameColumnInvariants` (beide 64-Byte-Fälle); `to` ohne U+0000 · Prüfung entfernt · Fall „Zielname mit U+0000“; `column` ohne U+0000 · Prüfung entfernt · „Spalte mit U+0000“; `column` nicht leer · Prüfung entfernt · „Spalte leer“; `to` nicht leer · Prüfung entfernt · „Zielname leer“; `to` gleich `column` · Prüfung entfernt · „Zielname gleicht der Quellspalte“ und `TestNewRenameColumnTargetIsColumnIsNotAFormViolation`; Regelname nicht leer · Prüfung entfernt · „Regelname leer“.
+  - Anwendbarkeit, Spalte fehlt · Prüfung in `CheckApplicable` entfernt · `TestCheckApplicable` (drei Fälle) und `TestConsumeRuleColumnMissingInRelationIsNotApplicable`; Anwendbarkeit, Zielname kollidiert · Prüfung entfernt · `TestCheckApplicable` (Fall Kollision) und beide Fälle von `TestConsumeRuleTargetCollidesWithRelationColumnIsNotApplicable` samt `TestConsumeRuleTargetCollisionAfterCompatibleExtension`.
+  - Ausschluss gilt zuerst · (a) Ausschluss-Prüfung in `BuildRowImage` entfernt, (b) Regeln vor dem Ausschluss ausgewertet (der Ausschluss prüft den Zielschlüssel) · (a) `TestBuildRowImageBytes`, `TestBuildRowImageExcludedValueNowhere`, `TestBuildRowImageRenameColumn` und im `mapper`-Paket `TestExcludedColumnIsUnreachableForEveryRuleKind`; (b) `TestBuildRowImageRenameColumn` (Fall „ausgeschlossene Spalte trägt weder …“) und `TestExcludedColumnIsUnreachableForEveryRuleKind`.
+  - Wirkung von `rename_column` · Zielname nicht gesetzt / Wert verändert / umbenannter Schlüssel ans Ende gesetzt · `TestBuildRowImageRenameColumn` (alle Wirkungsfälle bzw. die beiden Positionsfälle „mittlere Spalte“ und „erste Spalte“); Abwesenheit · NULL-Wert einer umbenannten Spalte erzeugt einen Zielschlüssel · Fall „NULL bleibt Abwesenheit, kein Zielschlüssel“; leere Regelmenge liefert dieselben Bytes · Auswertung verändert den Wert bei leerer Menge · `TestBuildRowImageBytes` (jeder Fall mit Wert) und `TestBuildRowImageEmptyRuleSetKeepsBytes`.
+  - Regeltypen aus der Domänen-Menge aufgezählt · die Menge trägt einen unbekannten Typ · `TestExcludedColumnIsUnreachableForEveryRuleKind` (bricht mit „nicht abgedeckt“ ab).
+  - Regelstand am Assembler · `binding.Transformations` in `change` durch `nil` (beide Images) · `TestConsumeRenameColumnAppliesToBothImages` und sechs weitere; nur das Alt-Image ohne Regelstand · `TestConsumeRenameColumnAppliesToBothImages`, `TestExcludedColumnIsUnreachableForEveryRuleKind`; Prüfung nicht gerufen · vier `NotApplicable`-Tests; Prüfung hinter dem Vorrücken der Sequenz · `TestConsumeRuleRemedyRestoresCapture`; `AddBinding` erhält den Regelstand nicht · `TestAddBindingKeepsRuleState`; `setSchemaVersion` verliert den Regelstand · `TestConsumeRuleSurvivesSchemaBump` und `TestConsumeRuleTargetCollisionAfterCompatibleExtension`; `SetTransformation` ohne Sperre · `TestAssemblerTransformationsAreRaceFree` unter `-race` (`WARNING: DATA RACE`).
+  - Schnappschuss ohne eigene Sperre · Ersetzen bzw. Anhängen bzw. Entfernen in der übergebenen Liste · `TestTransformationListsAreReplacedNotMutated` (je der zugehörige Fall); Set/Remove auf einer nicht getragenen Bindung · Bindung belebt (Set bzw. Remove) · `TestSetAndRemoveTransformationOnLiveBinding`; Entfernen ignoriert den Namen · `TestSetAndRemoveTransformationOnLiveBinding`; Ersetzen unter demselben Namen hängt an · `TestSetAndRemoveTransformationOnLiveBinding` und der Schnappschuss-Fall „Ersetzen“.
+  - Fehlerklasse · `ErrTransformationNotApplicable` aus `classifyRunError` entfernt · beide neuen Fälle von `TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes`; der Grund nicht als `%w` im Fehler · `TestConsumeRuleColumnMissingInRelationIsNotApplicable`, `…TargetCollides…` und `…AfterCompatibleExtension`.
+  - Schichtkante · Domäne importiert `internal/application/port/outbound` · `make a-check` Exit 2, `wrong-direction: domain -> ports`.
+  - Nicht mutiert (Grund): die Doc-Kommentare (kein Wächter, Leser: Reviewer, Verifier); die Metadaten-Gleichheit (`TestConsumeRenameColumnLeavesMetadataUnchanged`) beruht auf `reflect.DeepEqual` über den ganzen `model.Change`, eine Mutation an `change` würde ein weiteres Feld verändern müssen — nicht einzeln gefahren.
 
 ## 4. Trigger
 
