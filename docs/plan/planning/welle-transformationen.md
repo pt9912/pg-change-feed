@@ -124,8 +124,25 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   mehr unter den Waisen; der Träger ist die Zeile in
   [`docs/user/e2e-abdeckung.md`](../../user/e2e-abdeckung.md), die der Runner
   von `make test-integration` schreibt (die Datei ist ein Erzeugnis, kein
-  Lauf-Beleg). [`LH-FA-CFG-008`](../../../spec/lastenheft.md) bleibt als Waise
+  Lauf-Beleg). Die Deckung besteht seit der Phase „Backfill-Regelstand“ von
+  `slice-transformationen-backfill-pfad`; `slice-transformationen-e2e-wirkung`
+  fügt vier Träger hinzu (gemessen mit `make doc-trace` am Parent-Stand
+  `38c7b3bc` und am Arbeitsbaum der Closure: je 80 Anforderungen, 1 Waise).
+  [`LH-FA-CFG-008`](../../../spec/lastenheft.md) bleibt als Waise
   sichtbar — das Routing hat keine Umsetzung (§6).
+- **Die Restfläche der Zustellwege ist entschieden** (Adresse der Grenze aus
+  `slice-transformationen-e2e-wirkung` §3): `make test-integration` belegt die
+  Form „alle Wege dieselbe“ für das Neu-Bild einer eingefügten Zeile auf den
+  fünf Wegen; UPDATE, DELETE und das Alt-Bild sind über `cdc.changes` belegt und
+  auf den vier weiteren Wegen aus der Architektur hergeleitet (alle Wege lesen
+  dieselbe Change, [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  Teilfrage 6 Option D), nicht erprobt. Kein offener Slice trägt die Restfläche
+  (`slice-sdk-regel-realserver-e2e` führt `old_image` einer UPDATE-/DELETE-Change
+  ausdrücklich als nicht Gegenstand). Ein Architect-Verdikt liegt vor, das
+  entweder einen Folge-Slice mit Kennung beauftragt oder die Aussage im
+  Closure-Bericht mit der gemessenen Menge (INSERT, Neu-Bild, fünf Wege) und der
+  Kennzeichnung „hergeleitet“ für den Rest führt
+  ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B).
 - Die Regelauswertung liegt an genau einer Stelle: der Suchlauf über
   `internal/**` nach der Row-Image-Konstruktion und nach den Aufrufern der
   Regelauswertung (Befehl und Fundstellen im Closure-Bericht) findet eine
@@ -165,7 +182,7 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 | slice-transformationen-antragsweg-usecase | Use Cases `SetTransformation`/`RemoveTransformation` mit K1–K4, Regelstand-Port, Store-Adapter, Verdrahtung in `applyAdministrationRequest`, `activatedTableBindings` und Aktivierungs-Zweig | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 3, [`ADR-0065`](../adr/0065-spaltenausschluss-dauerhafter-traeger.md) |
 | slice-transformationen-backfill-pfad | Regelauswertung im Backfill-Run, Fail-closed um den Regelstand, Nichtanwendbarkeit im Run, E2E-Beleg | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 7 |
 | slice-transformationen-map-value | Regeltyp `map_value` in der Domäne — ohne Änderung an Antragsweg und Wirkort | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 4 |
-| slice-transformationen-e2e-wirkung | `make test-integration`: Regel per SQL, alle Zustellwege, Boundary, Neustart, Ausschluss+Regel; [`LH-FA-CFG-007`](../../../spec/lastenheft.md) verlässt die Waisen | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 5 |
+| slice-transformationen-e2e-wirkung | `make test-integration`: Regel per SQL, alle Zustellwege, Boundary, Neustart, Ausschluss+Regel; vier weitere E2E-Träger für [`LH-FA-CFG-007`](../../../spec/lastenheft.md) im RTM-Träger | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 5 |
 | slice-transformationen-start-reihenfolge | offene Anträge werden vor `stream.Run` verarbeitet — Ordnung deterministisch und ohne Datenbank prüfbar | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 5, Bedingung (c) |
 | slice-transformationen-e2e-abhilfe | Nichtanwendbarkeit und das Abhilfe-Akzeptanzkriterium (a)–(d) am laufenden System | [`LH-FA-CFG-007`](../../../spec/lastenheft.md) Negative, [`LH-FA-ADM-003`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 5 |
 | slice-transformationen-betriebsdoku | Benutzerhandbuch: Regel-Konfiguration, Rohform-Konsequenz, Abhilfe, Fehlerklasse; SDK-Beleg (Bild-Schlüssel opak) | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 6 |

@@ -315,7 +315,7 @@ Variable statt über `.new_image[` läuft.
 | Träger | Befund | Behandlung |
 |---|---|---|
 | `open/slice-transformationen-betriebsdoku.md` | Nicht-Umfang-Satz „Server ohne Regeln“, Ziel (1), DoD Punkt 1 (SDK-Beleg) und §4 Start | bei der Anlage nachgezogen: der Satz nennt diesen Slice, Ziel (1) und DoD Punkt 1 nennen seinen Beleg, §4 trägt die Kante (Frist: Anlage dieses Plans, erfüllt). |
-| `open/slice-transformationen-e2e-wirkung.md` | Nicht-Umfang-Satz „SDK-Realserver-E2E“ | bei der Anlage nachgezogen: der Satz nennt diesen Slice. |
+| `slice-transformationen-e2e-wirkung` | Nicht-Umfang-Satz „SDK-Realserver-E2E“ | bei der Anlage nachgezogen: der Satz nennt diesen Slice. |
 | `welle-transformationen.md` §3, §5 | Kriterium-Satz zum SDK-Beleg, Kanten-Aufzählung, „Intern“ | bei der Anlage nachgezogen: Kriterium nennt die Realserver-Läufe, §5 trägt die Kante und die Entscheidung „wellenlos“. |
 | `in-progress/roadmap.md` Drift-Log | Kante zu einem wellenlosen Slice ist eine Umplanung | eine Zeile beim Anlegen; die Roadmap führt wellenlose Slices sonst nicht. |
 | `harness/README.md` §Sensors, `harness/mk/sdk.mk`, Kopf-Kommentar des C#-Runners | beschreiben „vier Phasen“ und den Inhalt der Läufe (Zeilen 8 und 9 des Feldes; `harness/README.md` trägt die drei Zeilen der Ziele) | der Implementer zieht sie nach (DoD Doku-Update). |
