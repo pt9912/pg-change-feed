@@ -353,6 +353,30 @@ WHERE source_id = $1
   AND request_kind IN ('exclude_column', 'include_column')
 ORDER BY requested_at, administration_request_id`
 
+// SelectAppliedTransformationRequests liest die `applied`-Zeilen der beiden
+// Transformations-Antragsarten einer Quelle (`LH-FA-CFG-007`, `SPEC-019`):
+// der Adapter faltet sie zum Regelstand je Tabelle
+// (`model.FoldTransformations`). Ordnung und Zweitschlüssel wie in
+// SelectAppliedColumnRequests: `requested_at` ist zwischen zwei Anträgen
+// derselben Transaktion nicht unterscheidend, `administration_request_id`
+// macht die Reihenfolge deterministisch. `COALESCE` normalisiert das
+// NULL-bare `rule_spec` (bei `remove_transformation` leer) auf den leeren
+// Text; die Regelform steht als JSON-Text (`jsonb` nach `text`).
+const SelectAppliedTransformationRequests = `
+SELECT schema_name, table_name, request_kind, COALESCE(rule_name, ''), COALESCE(rule_spec::text, '')
+FROM cdc.administration_request
+WHERE source_id = $1
+  AND status = 'applied'
+  AND request_kind IN ('set_transformation', 'remove_transformation')
+ORDER BY requested_at, administration_request_id`
+
+// SelectTableColumns liest die Spaltennamen einer Tabelle über den Katalog
+// in der Reihenfolge der Tabelle (`LH-FA-CFG-007`, K3/K4 in `SPEC-019`) —
+// dieselbe Katalog-Quelle wie SelectTableColumnExists
+// (information_schema.columns), hier als Liste statt als Existenzprüfung.
+const SelectTableColumns = `
+SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2 ORDER BY ordinal_position`
+
 // UpdateAdministrationRequestApplied vermerkt einen erfolgreich
 // verarbeiteten Antrag; die WHERE-Klausel trägt die Idempotenz — ein
 // bereits vermerkter Antrag (nicht mehr `pending`) bleibt unverändert und

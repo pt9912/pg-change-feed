@@ -13,6 +13,8 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/removetransformation"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/settransformation"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -335,6 +337,7 @@ func TestProcessAdministrationRequestsEnableAppliesAndBindsAssembler(t *testing.
 		disableTables:   &fakeDisableTableUseCase{},
 		schemaStore:     schemaStore,
 		columnExclusion: &fakeColumnExclusionPort{},
+		transformations: &fakeTransformationPort{},
 		assembler:       assembler,
 		publication:     "cdc_pub",
 		log:             &recordingLog{},
@@ -631,106 +634,535 @@ func TestProcessAdministrationRequestsMarksFailedWhenUseCaseErrors(t *testing.T)
 	}
 }
 
-// TestApplyAdministrationRequestRejectsUnprocessedKind trägt den
-// `default`-Zweig: eine Antragsart außerhalb der verarbeiteten Menge endet
-// über einen sichtbaren Fehler, statt still übersprungen zu werden — die
-// beiden Transformations-Antragsarten (`LH-FA-CFG-007`), die die Antrags-Queue
-// annimmt, und eine unbekannte Art. Der Fehlertext nennt die Antragsart des
-// Antrags und die fünf verarbeiteten Antragsarten.
-func TestApplyAdministrationRequestRejectsUnprocessedKind(t *testing.T) {
-	ctx := context.Background()
-	assembler, err := mapper.NewAssembler("src-admin", map[string]mapper.TableBinding{}, nil)
+// fakeTransformationPort trägt den `outbound.TransformationPort` als
+// In-Memory-Stub. Ohne `derivedFrom` liefert er den festen Stand `rules`;
+// mit `derivedFrom` leitet er den Regelstand wie der Store aus den
+// **vermerkten** (`applied`) Anträgen des Request-Fakes ab — in der Ordnung
+// von `history`, gefaltet je Tabelle —, ein noch `pending` stehender oder
+// `failed` vermerkter Antrag trägt keinen Stand. `columns` sind die
+// Katalog-Spalten je Tabelle.
+type fakeTransformationPort struct {
+	rules       map[string][]model.Transformation
+	columns     map[string][]string
+	derivedFrom *fakeAdministrationRequestPort
+	history     []model.AdministrationRequest
+	err         error
+}
+
+func (f *fakeTransformationPort) TransformationRules(ctx context.Context, source model.SourceID) (map[string][]model.Transformation, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	if f.derivedFrom == nil {
+		return f.rules, nil
+	}
+	f.derivedFrom.mu.Lock()
+	applied := map[model.AdministrationRequestID]bool{}
+	for _, id := range f.derivedFrom.applied {
+		applied[id] = true
+	}
+	f.derivedFrom.mu.Unlock()
+	records := map[string][]model.TransformationRecord{}
+	for _, request := range f.history {
+		if !applied[request.ID] || request.Source != source {
+			continue
+		}
+		if request.Kind != model.AdministrationRequestSetTransformation && request.Kind != model.AdministrationRequestRemoveTransformation {
+			continue
+		}
+		qualified := request.Schema + "." + request.Table
+		records[qualified] = append(records[qualified], model.TransformationRecord{Kind: request.Kind, Name: request.RuleName, Spec: request.RuleSpec})
+	}
+	state := map[string][]model.Transformation{}
+	for qualified, list := range records {
+		folded, err := model.FoldTransformations(list)
+		if err != nil {
+			return nil, err
+		}
+		if len(folded) > 0 {
+			state[qualified] = folded
+		}
+	}
+	return state, nil
+}
+
+func (f *fakeTransformationPort) SourceColumns(ctx context.Context, schema, table string) ([]string, error) {
+	return f.columns[schema+"."+table], nil
+}
+
+var _ outbound.TransformationPort = (*fakeTransformationPort)(nil)
+
+// ruleTable ist die Tabelle der Regel-Tests: die Spalten `id` und `secret`
+// entsprechen dem Relation-Aufbau von `assemblerRowImage`.
+const ruleTable = "orders_rules"
+
+// ruleColumns sind die Katalog-Spalten von `ruleTable`; `renamed_secret` und
+// `note` gehören nur zum Katalog (K3, K2).
+var ruleColumns = map[string][]string{"public." + ruleTable: {"id", "secret", "note"}}
+
+func mustRenameRule(t *testing.T, name, column, to string) model.Transformation {
+	t.Helper()
+	rule, err := model.NewRenameColumn(name, column, to)
+	if err != nil {
+		t.Fatalf("NewRenameColumn(%q, %q, %q): %v", name, column, to, err)
+	}
+	return rule
+}
+
+func ruleSpecText(column, to string) string {
+	return `{"kind": "rename_column", "column": "` + column + `", "to": "` + to + `"}`
+}
+
+func setRuleRequest(id, name, spec string) model.AdministrationRequest {
+	return model.AdministrationRequest{
+		ID: model.AdministrationRequestID(id), Source: "src-admin", Schema: "public", Table: ruleTable,
+		RuleName: name, RuleSpec: spec, Kind: model.AdministrationRequestSetTransformation,
+	}
+}
+
+func removeRuleRequest(id, name string) model.AdministrationRequest {
+	return model.AdministrationRequest{
+		ID: model.AdministrationRequestID(id), Source: "src-admin", Schema: "public", Table: ruleTable,
+		RuleName: name, Kind: model.AdministrationRequestRemoveTransformation,
+	}
+}
+
+// ruleFixture baut die Verdrahtung der Regel-Tests: die Antrags-Queue mit den
+// übergebenen Anträgen, den Regelstand, den der Store aus den vermerkten
+// Anträgen ableitet, die beiden realen Use Cases und einen Assembler, dessen
+// Tabelle `public.orders_rules` gebunden ist.
+func ruleFixture(t *testing.T, requests ...model.AdministrationRequest) (administrationDeps, *fakeAdministrationRequestPort, *mapper.Assembler) {
+	t.Helper()
+	queue := &fakeAdministrationRequestPort{pending: append([]model.AdministrationRequest(nil), requests...)}
+	port := &fakeTransformationPort{derivedFrom: queue, history: requests, columns: ruleColumns}
+	assembler, err := mapper.NewAssembler("src-admin", map[string]mapper.TableBinding{
+		"public." + ruleTable: {TableID: "tbl-rules", SchemaVersion: "sv-rules"},
+	}, nil)
 	if err != nil {
 		t.Fatalf("NewAssembler: %v", err)
 	}
 	deps := administrationDeps{
-		activation:    &fakeTableActivationPort{},
-		enableTables:  &fakeEnableTableUseCase{},
-		disableTables: &fakeDisableTableUseCase{},
-		schemaStore:   &fakeSchemaStorePort{},
-		assembler:     assembler,
-		publication:   "cdc_pub",
-		log:           &recordingLog{},
+		requests:              queue,
+		activation:            &fakeTableActivationPort{},
+		enableTables:          &fakeEnableTableUseCase{},
+		disableTables:         &fakeDisableTableUseCase{},
+		schemaStore:           &fakeSchemaStorePort{},
+		columnExclusion:       &fakeColumnExclusionPort{},
+		transformations:       port,
+		setTransformations:    settransformation.NewSetTransformationService(port),
+		removeTransformations: removetransformation.NewRemoveTransformationService(port),
+		assembler:             assembler,
+		source:                "src-admin",
+		publication:           "cdc_pub",
+		log:                   &recordingLog{},
 	}
+	return deps, queue, assembler
+}
 
-	for _, kind := range []model.AdministrationRequestKind{
-		model.AdministrationRequestSetTransformation,
-		model.AdministrationRequestRemoveTransformation,
-		model.AdministrationRequestKind("truncate"),
-	} {
-		request := model.AdministrationRequest{
-			ID: "req-unprocessed", Source: "src-admin", Schema: "public", Table: "orders_admin_unprocessed",
-			RuleName: "umbenennung", Kind: kind,
+func failureOf(queue *fakeAdministrationRequestPort, id string) (string, bool) {
+	queue.mu.Lock()
+	defer queue.mu.Unlock()
+	message, found := queue.failed[model.AdministrationRequestID(id)]
+	return message, found
+}
+
+func isApplied(queue *fakeAdministrationRequestPort, id string) bool {
+	queue.mu.Lock()
+	defer queue.mu.Unlock()
+	for _, applied := range queue.applied {
+		if string(applied) == id {
+			return true
 		}
-		err := applyAdministrationRequest(ctx, deps, request)
-		if err == nil {
-			t.Fatalf("applyAdministrationRequest(%q) = nil, wollen einen Fehler", kind)
-		}
-		if !strings.Contains(err.Error(), fmt.Sprintf("%q", kind)) {
-			t.Fatalf("Fehlertext %q nennt die Antragsart %q nicht", err.Error(), kind)
-		}
-		for _, processed := range []string{"enable", "disable", "exclude_column", "include_column", "backfill"} {
-			if !strings.Contains(err.Error(), processed) {
-				t.Fatalf("Fehlertext %q nennt die verarbeitete Antragsart %q nicht", err.Error(), processed)
-			}
+	}
+	return false
+}
+
+const rawImage = `{"id":"1","secret":"geheim"}`
+
+// TestApplyAdministrationRequestRejectsKindOutsideTheClosedSet trägt den
+// `default`-Zweig: eine Antragsart außerhalb der geschlossenen Menge der
+// Domäne endet über einen sichtbaren Fehler, statt still übersprungen zu
+// werden. Der Fehlertext nennt die Antragsart des Antrags und alle sieben
+// verarbeiteten Antragsarten.
+func TestApplyAdministrationRequestRejectsKindOutsideTheClosedSet(t *testing.T) {
+	deps, _, _ := ruleFixture(t)
+	err := applyAdministrationRequest(context.Background(), deps, model.AdministrationRequest{
+		ID: "req-unprocessed", Source: "src-admin", Schema: "public", Table: ruleTable, Kind: "truncate",
+	})
+	const want = `Antragsart "truncate" gehört nicht zu den verarbeiteten Antragsarten enable/disable/exclude_column/include_column/backfill/set_transformation/remove_transformation`
+	if err == nil || err.Error() != want {
+		t.Fatalf("Fehler = %v, wollen %q", err, want)
+	}
+}
+
+// TestApplyAdministrationRequestHandlesEveryKindOfTheClosedSet bindet die
+// Aufzählung der verarbeiteten Antragsarten an die Fälle des `switch`: jede
+// Art der geschlossenen Menge der Domäne trägt einen Zweig und endet nicht im
+// `default`. Rot färbende Mutation: einen `case` aus `applyAdministrationRequest`
+// streichen (z. B. `AdministrationRequestSetTransformation`) — die Art endet im
+// `default`-Fehler, und das Fenster „Funktion vorhanden, Wirkung fehlt“
+// (`LH-FA-CFG-007`) wäre wieder offen. Die Grenze: eine Art, die der
+// Konstruktor annimmt und `AdministrationRequestKinds` nicht aufzählt, sieht
+// dieser Test nicht; der Domänen-Test bindet den Konstruktor an die Aufzählung
+// nur in die eine Richtung.
+func TestApplyAdministrationRequestHandlesEveryKindOfTheClosedSet(t *testing.T) {
+	tableID := administrationTableID("public", ruleTable)
+	for _, kind := range model.AdministrationRequestKinds() {
+		deps, _, _ := ruleFixture(t)
+		deps.activation = &fakeTableActivationPort{registered: map[string]model.SourceTable{
+			"public." + ruleTable: {ID: tableID, SourceID: "src-admin", Schema: "public", Table: ruleTable},
+		}}
+		deps.schemaStore = &fakeSchemaStorePort{versions: map[model.SourceTableID]model.SchemaVersion{
+			tableID: {ID: administrationSchemaVersionID(tableID), SourceTableID: tableID, Version: 1},
+		}}
+		deps.excludeColumns = &fakeExcludeColumnUseCase{}
+		deps.includeColumns = &fakeIncludeColumnUseCase{}
+		err := applyAdministrationRequest(context.Background(), deps, model.AdministrationRequest{
+			ID: "req-kind", Source: "src-admin", Schema: "public", Table: ruleTable,
+			Column: "secret", RuleName: "regel", RuleSpec: ruleSpecText("secret", "renamed_secret"), Kind: kind,
+		})
+		if err != nil && strings.Contains(err.Error(), "gehört nicht zu den verarbeiteten Antragsarten") {
+			t.Fatalf("Antragsart %q endet im default-Zweig: %v", kind, err)
 		}
 	}
 }
 
-// TestProcessAdministrationRequestsMarksTransformationRequestsFailed trägt
-// den Zwischenzustand der Transformations-Antragsarten: ein angenommener
-// Antrag der Art `set_transformation` bzw. `remove_transformation` wird als
-// `failed` samt Fehlertext vermerkt, nicht als `applied` und nicht als
-// `pending` belassen (`LH-FA-CFG-007`).
-func TestProcessAdministrationRequestsMarksTransformationRequestsFailed(t *testing.T) {
+// TestProcessAdministrationRequestsSetAndRemoveTransformationTakeEffectLive
+// trägt den Happy Path über die Verdrahtung (`LH-FA-CFG-007`): ein
+// `set_transformation`-Antrag wird `applied`, und die laufende
+// `Assembler`-Bindung trägt die Regel ohne Neustart — der nächste Change führt
+// den Zielnamen statt der Quellspalte; ein `remove_transformation`-Antrag
+// nimmt sie wieder heraus. Rot färbende Mutation: den Nachtrag
+// `deps.assembler.SetTransformation` bzw. `RemoveTransformation` streichen — der
+// Antrag bleibt `applied`, das Bild bleibt roh bzw. die Regel bleibt.
+func TestProcessAdministrationRequestsSetAndRemoveTransformationTakeEffectLive(t *testing.T) {
 	ctx := context.Background()
-	const (
-		setID    = model.AdministrationRequestID("req-set-transformation")
-		removeID = model.AdministrationRequestID("req-remove-transformation")
+	deps, queue, assembler := ruleFixture(t,
+		setRuleRequest("req-set", "geheimname", ruleSpecText("secret", "renamed_secret")),
+		removeRuleRequest("req-remove", "geheimname"),
 	)
-	requests := &fakeAdministrationRequestPort{pending: []model.AdministrationRequest{
-		{
-			ID: setID, Source: "src-admin", Schema: "public", Table: "orders_admin_rules",
-			RuleName: "umbenennung", RuleSpec: `{"kind": "rename_column"}`, Kind: model.AdministrationRequestSetTransformation,
-		},
-		{
-			ID: removeID, Source: "src-admin", Schema: "public", Table: "orders_admin_rules",
-			RuleName: "umbenennung", Kind: model.AdministrationRequestRemoveTransformation,
-		},
-	}}
-	assembler, err := mapper.NewAssembler("src-admin", map[string]mapper.TableBinding{}, nil)
-	if err != nil {
-		t.Fatalf("NewAssembler: %v", err)
+	if image := assemblerRowImage(t, assembler, 1, "public", ruleTable); image != rawImage {
+		t.Fatalf("Row Image vor dem Antrag = %s, wollen %s", image, rawImage)
 	}
-	deps := administrationDeps{
-		requests:      requests,
-		activation:    &fakeTableActivationPort{},
-		enableTables:  &fakeEnableTableUseCase{},
-		disableTables: &fakeDisableTableUseCase{},
-		schemaStore:   &fakeSchemaStorePort{},
-		assembler:     assembler,
-		publication:   "cdc_pub",
-		log:           &recordingLog{},
+
+	// Ein Durchlauf je Antrag: das zweite Lesen der Queue sieht den Stand des
+	// ersten (`applied`), wie der Fallback-Poll der Goroutine.
+	queue.mu.Lock()
+	remove := queue.pending[1]
+	queue.pending = queue.pending[:1]
+	queue.mu.Unlock()
+	processAdministrationRequests(ctx, deps)
+	if !isApplied(queue, "req-set") {
+		message, _ := failureOf(queue, "req-set")
+		t.Fatalf("set_transformation nicht applied, Fehlertext %q", message)
 	}
+	if image := assemblerRowImage(t, assembler, 2, "public", ruleTable); image != `{"id":"1","renamed_secret":"geheim"}` {
+		t.Fatalf("Row Image nach set_transformation = %s, wollen den Schlüssel renamed_secret ohne Neustart", image)
+	}
+
+	queue.mu.Lock()
+	queue.pending = []model.AdministrationRequest{remove}
+	queue.mu.Unlock()
+	processAdministrationRequests(ctx, deps)
+	if !isApplied(queue, "req-remove") {
+		message, _ := failureOf(queue, "req-remove")
+		t.Fatalf("remove_transformation nicht applied, Fehlertext %q", message)
+	}
+	if image := assemblerRowImage(t, assembler, 3, "public", ruleTable); image != rawImage {
+		t.Fatalf("Row Image nach remove_transformation = %s, wollen %s", image, rawImage)
+	}
+}
+
+// TestProcessAdministrationRequestsRuleViolationsFailWithSpecTexts trägt die
+// Konfliktfreiheit durch die Verdrahtung: jeder Verstoß endet als `failed` mit
+// dem Fehlertext der Spec, der Antrag wird nicht `applied`, und die
+// laufende Bindung trägt weiter nur die erste Regel (das Bild bleibt, wie es
+// nach ihr war). Die Antragsfolge trägt `applied` zwischen den Anträgen: K1
+// prüft gegen vermerkte Anträge.
+func TestProcessAdministrationRequestsRuleViolationsFailWithSpecTexts(t *testing.T) {
+	ctx := context.Background()
+	first := setRuleRequest("req-1", "geheimname", ruleSpecText("secret", "renamed_secret"))
+	violations := []struct {
+		request model.AdministrationRequest
+		text    string
+	}{
+		{setRuleRequest("req-k1", "geheimname", ruleSpecText("note", "notiz")), "Regelname bereits vergeben: public." + ruleTable + ".geheimname"},
+		{setRuleRequest("req-k2", "zweite", ruleSpecText("secret", "anders")), "Spalte trägt bereits eine Regel: public." + ruleTable + ".secret"},
+		{setRuleRequest("req-k3a", "dritte", ruleSpecText("note", "renamed_secret")), "Zielname kollidiert mit einer anderen Regel: public." + ruleTable + ".renamed_secret"},
+		{setRuleRequest("req-k3b", "vierte", ruleSpecText("note", "id")), "Zielname kollidiert mit einer Spalte der Tabelle: public." + ruleTable + ".id"},
+		{setRuleRequest("req-k3c", "fuenfte", ruleSpecText("note", "note")), "Zielname kollidiert mit einer Spalte der Tabelle: public." + ruleTable + ".note"},
+		{setRuleRequest("req-k4", "sechste", ruleSpecText("gibt_es_nicht", "x")), "Spalte existiert nicht an der Quelle: public." + ruleTable + ".gibt_es_nicht"},
+		{removeRuleRequest("req-k4r", "gibt_es_nicht"), "Regelname nicht geführt: public." + ruleTable + ".gibt_es_nicht"},
+		{setRuleRequest("req-kind", "siebte", `{"kind": "explode"}`), "unbekannter Regeltyp: explode"},
+		{setRuleRequest("req-key", "achte", `{"kind": "rename_column", "column": "note", "to": "n", "extra": 1}`), "unbekannter Schlüssel in rule_spec: extra"},
+		{setRuleRequest("req-form", "neunte", `{"kind": "rename_column", "column": "note"}`), "rule_spec ist ungültig: public." + ruleTable + ".neunte"},
+		{setRuleRequest("req-name", "Zehnte", ruleSpecText("note", "n")), "Regelname ist ungültig: public." + ruleTable + ".Zehnte"},
+	}
+	all := []model.AdministrationRequest{first}
+	for _, violation := range violations {
+		all = append(all, violation.request)
+	}
+	deps, queue, assembler := ruleFixture(t, all...)
+	queue.mu.Lock()
+	queue.pending = []model.AdministrationRequest{first}
+	queue.mu.Unlock()
+	processAdministrationRequests(ctx, deps)
+	if !isApplied(queue, "req-1") {
+		t.Fatal("die erste Regel ist nicht applied")
+	}
+	wantImage := `{"id":"1","renamed_secret":"geheim"}`
+	xid := uint32(10)
+	for _, violation := range violations {
+		queue.mu.Lock()
+		queue.pending = []model.AdministrationRequest{violation.request}
+		queue.mu.Unlock()
+		processAdministrationRequests(ctx, deps)
+		message, found := failureOf(queue, string(violation.request.ID))
+		if !found || message != violation.text {
+			t.Fatalf("Antrag %q: Fehlertext = %q (vermerkt %v), wollen %q", violation.request.ID, message, found, violation.text)
+		}
+		if isApplied(queue, string(violation.request.ID)) {
+			t.Fatalf("Antrag %q ist applied", violation.request.ID)
+		}
+		xid++
+		if image := assemblerRowImage(t, assembler, xid, "public", ruleTable); image != wantImage {
+			t.Fatalf("Row Image nach dem abgelehnten Antrag %q = %s, wollen unverändert %s", violation.request.ID, image, wantImage)
+		}
+	}
+}
+
+// TestProcessAdministrationRequestsInvalidRuleRowsDoNotStallTheQueue trägt die
+// Stelle der Prüfung (Verarbeiten, nicht Lesen): Zeilen mit leerem
+// Regelnamen, leerer Regelform (SQL-NULL), JSON-`null` und einem Wert ohne
+// Objekt erreichen die Verarbeitung als Anträge und enden `failed` mit dem
+// Fehlertext der Spec, und die gültige Zeile dahinter wird verarbeitet und
+// `applied`. Rot färbende Mutation: die Prüfung `ruleName == ""` in den
+// Konstruktor `model.NewAdministrationRequest` zurücklegen — die Zeile würde
+// beim Lesen abgelehnt; hier bilden das die Fakes nicht nach (der Lese-Pfad
+// steht in `TestReadPendingRequestsCarriesRuleRowsWithEmptyRuleFields`), deshalb
+// prüft dieser Test die Verarbeitung: `CheckRuleName` bzw.
+// `ParseTransformationSpec` im Use Case streichen färbt die Fehlertexte rot.
+func TestProcessAdministrationRequestsInvalidRuleRowsDoNotStallTheQueue(t *testing.T) {
+	ctx := context.Background()
+	requests := []model.AdministrationRequest{
+		setRuleRequest("req-empty-name", "", ruleSpecText("note", "n")),
+		setRuleRequest("req-null-spec", "regel_a", ""),
+		setRuleRequest("req-json-null", "regel_b", "null"),
+		setRuleRequest("req-scalar", "regel_c", "1"),
+		removeRuleRequest("req-remove-empty", ""),
+		setRuleRequest("req-valid", "geheimname", ruleSpecText("secret", "renamed_secret")),
+	}
+	deps, queue, assembler := ruleFixture(t, requests...)
 
 	processAdministrationRequests(ctx, deps)
 
-	if requests.appliedCount() != 0 {
-		t.Fatalf("applied = %d, wollen 0 (die Antragsarten werden nicht verarbeitet)", requests.appliedCount())
-	}
-	requests.mu.Lock()
-	defer requests.mu.Unlock()
-	for id, kind := range map[model.AdministrationRequestID]model.AdministrationRequestKind{
-		setID:    model.AdministrationRequestSetTransformation,
-		removeID: model.AdministrationRequestRemoveTransformation,
+	for id, want := range map[string]string{
+		"req-empty-name":   "Regelname ist ungültig: public." + ruleTable + ".",
+		"req-null-spec":    "rule_spec ist ungültig: public." + ruleTable + ".regel_a",
+		"req-json-null":    "rule_spec ist ungültig: public." + ruleTable + ".regel_b",
+		"req-scalar":       "rule_spec ist ungültig: public." + ruleTable + ".regel_c",
+		"req-remove-empty": "Regelname ist ungültig: public." + ruleTable + ".",
 	} {
-		message, found := requests.failed[id]
-		if !found {
-			t.Fatalf("MarkFailed wurde für den Antrag %q nicht aufgerufen", id)
+		if message, found := failureOf(queue, id); !found || message != want {
+			t.Fatalf("Antrag %q: Fehlertext = %q (vermerkt %v), wollen %q", id, message, found, want)
 		}
-		if !strings.Contains(message, fmt.Sprintf("%q", kind)) || !strings.Contains(message, processedAdministrationKinds) {
-			t.Fatalf("Fehlertext des Antrags %q = %q, wollen Antragsart %q und die Menge %q", id, message, kind, processedAdministrationKinds)
-		}
+	}
+	if !isApplied(queue, "req-valid") {
+		t.Fatal("die gültige Zeile hinter den ungültigen ist nicht applied")
+	}
+	if image := assemblerRowImage(t, assembler, 1, "public", ruleTable); image != `{"id":"1","renamed_secret":"geheim"}` {
+		t.Fatalf("Row Image = %s, wollen die Regel der gültigen Zeile", image)
+	}
+}
+
+// TestProcessAdministrationRequestsSetTransformationIsIdempotent trägt die
+// Wiederholung eines bereits nachgetragenen, noch `pending` stehenden Antrags
+// (`ADR-0065`-Muster): scheitert der Vermerk `applied` nach dem Nachtrag,
+// verarbeitet der nächste Durchlauf denselben Antrag erneut — K1 prüft nur
+// gegen vermerkte Anträge, der Nachtrag ersetzt die Regel nach ihrem Namen —,
+// ohne Fehler und ohne Änderung des Bildes. Rot färbende Mutation: K1 gegen den
+// Regelstand der laufenden Bindung statt gegen die vermerkten Anträge prüfen
+// (die Wiederholung endete `Regelname bereits vergeben`).
+func TestProcessAdministrationRequestsSetTransformationIsIdempotent(t *testing.T) {
+	ctx := context.Background()
+	request := setRuleRequest("req-idem", "geheimname", ruleSpecText("secret", "renamed_secret"))
+	deps, queue, assembler := ruleFixture(t, request)
+	queue.markAppliedErr = stderrors.New("Vermerk nicht schreibbar")
+
+	processAdministrationRequests(ctx, deps)
+	if isApplied(queue, "req-idem") {
+		t.Fatal("der Vermerk war gestört, der Antrag darf nicht applied sein")
+	}
+	want := `{"id":"1","renamed_secret":"geheim"}`
+	if image := assemblerRowImage(t, assembler, 1, "public", ruleTable); image != want {
+		t.Fatalf("Row Image nach dem ersten Durchlauf = %s, wollen %s", image, want)
+	}
+
+	queue.mu.Lock()
+	queue.markAppliedErr = nil
+	queue.pending = []model.AdministrationRequest{request}
+	queue.mu.Unlock()
+	processAdministrationRequests(ctx, deps)
+	if message, found := failureOf(queue, "req-idem"); found {
+		t.Fatalf("die Wiederholung endet failed: %q", message)
+	}
+	if !isApplied(queue, "req-idem") {
+		t.Fatal("die Wiederholung ist nicht applied")
+	}
+	if image := assemblerRowImage(t, assembler, 2, "public", ruleTable); image != want {
+		t.Fatalf("Row Image nach der Wiederholung = %s, wollen unverändert %s", image, want)
+	}
+}
+
+// TestProcessAdministrationRequestsRuleAgainstTableWithoutBindingIsApplied
+// trägt den Antrag gegen eine Tabelle ohne laufende Bindung (`SPEC-019`): er
+// endet `applied`, weil er wirkt, sobald die Tabelle erfasst wird; der
+// Nachtrag in den Assembler ist wirkungslos und legt keine Bindung an.
+func TestProcessAdministrationRequestsRuleAgainstTableWithoutBindingIsApplied(t *testing.T) {
+	ctx := context.Background()
+	deps, queue, assembler := ruleFixture(t, setRuleRequest("req-unbound", "geheimname", ruleSpecText("secret", "renamed_secret")))
+	assembler.RemoveBinding("public." + ruleTable)
+
+	processAdministrationRequests(ctx, deps)
+
+	if !isApplied(queue, "req-unbound") {
+		message, _ := failureOf(queue, "req-unbound")
+		t.Fatalf("Antrag ohne laufende Bindung nicht applied, Fehlertext %q", message)
+	}
+	if assemblerCapturesQualified(t, assembler, 1, "public", ruleTable) {
+		t.Fatal("der Nachtrag hat eine Bindung angelegt")
+	}
+}
+
+// TestActivatedTableBindingsCarriesTransformations trägt den Startpfad des
+// dauerhaften Regelstandes (`ADR-0112` Teilfrage 6): der Bindungs-Neuaufbau
+// liest den Regelstand aus seiner dauerhaften Herkunft und übergibt ihn je
+// Tabelle an die Bindung — ohne diesen Schritt liefert ein neu gestarteter
+// Prozess die Rohform, obwohl der Antrag `applied` trägt. Der Test führt den
+// Neuaufbau bis in die Wirkung: das Row Image der neu gebauten Bindung trägt
+// den Zielnamen, die Nachbartabelle bleibt roh. Rot färbende Mutation:
+// `Transformations: rules[table.QualifiedName()]` in `activatedTableBindings`
+// streichen bzw. den Schlüssel gegen einen festen ersetzen.
+func TestActivatedTableBindingsCarriesTransformations(t *testing.T) {
+	ctx := context.Background()
+	const (
+		source  = model.SourceID("src-restart")
+		tableID = model.SourceTableID("tbl-restart")
+		otherID = model.SourceTableID("tbl-restart-other")
+	)
+	activation := &fakeTableActivationPort{listed: []model.SourceTable{
+		{ID: tableID, SourceID: source, Schema: "public", Table: "orders_restart"},
+		{ID: otherID, SourceID: source, Schema: "public", Table: "orders_restart_other"},
+	}}
+	schemaStore := &fakeSchemaStorePort{versions: map[model.SourceTableID]model.SchemaVersion{
+		tableID: {ID: "sv-restart", SourceTableID: tableID, Version: 1},
+		otherID: {ID: "sv-restart-other", SourceTableID: otherID, Version: 1},
+	}}
+	rules := &fakeTransformationPort{rules: map[string][]model.Transformation{
+		"public.orders_restart": {mustRenameRule(t, "geheimname", "secret", "renamed_secret")},
+	}}
+
+	tables, err := activatedTableBindings(ctx, activation, schemaStore, &fakeColumnExclusionPort{}, rules, source)
+	if err != nil {
+		t.Fatalf("activatedTableBindings = %v, wollen nil", err)
+	}
+	if got := tables["public.orders_restart"].Transformations; len(got) != 1 || got[0].Name() != "geheimname" {
+		t.Fatalf("Transformations = %v, wollen die Regel geheimname", got)
+	}
+	if got := tables["public.orders_restart_other"].Transformations; len(got) != 0 {
+		t.Fatalf("Transformations der Nachbartabelle = %v, wollen keine", got)
+	}
+
+	assembler, err := mapper.NewAssembler(source, tables, nil)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+	if image := assemblerRowImage(t, assembler, 1, "public", "orders_restart"); image != `{"id":"1","renamed_secret":"geheim"}` {
+		t.Fatalf("Row Image der neu gebauten Bindung = %s, wollen den Zielnamen renamed_secret", image)
+	}
+	if image := assemblerRowImage(t, assembler, 2, "public", "orders_restart_other"); image != rawImage {
+		t.Fatalf("Row Image der Nachbartabelle = %s, wollen die Rohform", image)
+	}
+}
+
+// TestProcessAdministrationRequestsDisableEnableCycleRestoresTransformations
+// trägt den zweiten Auslöser des Stand-Verlusts (`ADR-0112` Teilfrage 6): die
+// Deaktivierung entfernt den Bindungs-Eintrag samt Regelstand, der
+// Aktivierungs-Zweig legt ihn über die dauerhafte Herkunft neu an. Rot
+// färbende Mutation: `Transformations: rules[qualified]` im Aktivierungs-Zweig
+// streichen — nach `disable` → `enable` steht eine Bindung ohne Regel.
+func TestProcessAdministrationRequestsDisableEnableCycleRestoresTransformations(t *testing.T) {
+	ctx := context.Background()
+	tableID := administrationTableID("public", ruleTable)
+	deps, queue, assembler := ruleFixture(t)
+	deps.activation = &fakeTableActivationPort{registered: map[string]model.SourceTable{
+		"public." + ruleTable: {ID: tableID, SourceID: "src-admin", Schema: "public", Table: ruleTable},
+	}}
+	deps.schemaStore = &fakeSchemaStorePort{versions: map[model.SourceTableID]model.SchemaVersion{
+		tableID: {ID: administrationSchemaVersionID(tableID), SourceTableID: tableID, Version: 1},
+	}}
+	deps.transformations = &fakeTransformationPort{rules: map[string][]model.Transformation{
+		"public." + ruleTable: {mustRenameRule(t, "geheimname", "secret", "renamed_secret")},
+	}}
+	assembler.SetTransformation("public."+ruleTable, mustRenameRule(t, "geheimname", "secret", "renamed_secret"))
+	if image := assemblerRowImage(t, assembler, 1, "public", ruleTable); image != `{"id":"1","renamed_secret":"geheim"}` {
+		t.Fatalf("Vorbedingung verletzt: Row Image mit Regel = %s", image)
+	}
+
+	queue.mu.Lock()
+	queue.pending = []model.AdministrationRequest{{
+		ID: "req-cycle-disable", Source: "src-admin", Schema: "public", Table: ruleTable, Kind: model.AdministrationRequestDisable,
+	}}
+	queue.mu.Unlock()
+	processAdministrationRequests(ctx, deps)
+	if assemblerCapturesQualified(t, assembler, 2, "public", ruleTable) {
+		t.Fatal("Assembler trägt nach Disable weiterhin eine Bindung")
+	}
+
+	queue.mu.Lock()
+	queue.pending = []model.AdministrationRequest{{
+		ID: "req-cycle-enable", Source: "src-admin", Schema: "public", Table: ruleTable, Kind: model.AdministrationRequestEnable,
+	}}
+	queue.mu.Unlock()
+	processAdministrationRequests(ctx, deps)
+	if image := assemblerRowImage(t, assembler, 3, "public", ruleTable); image != `{"id":"1","renamed_secret":"geheim"}` {
+		t.Fatalf("Row Image nach dem disable/enable-Zyklus = %s, wollen den Zielnamen renamed_secret (Regelstand aus der Herkunft)", image)
+	}
+}
+
+// TestProcessAdministrationRequestsMarksFailedWhenRuleStateReadFails trägt den
+// Fehlerpfad der dauerhaften Herkunft im Aktivierungs-Zweig: ein Lesefehler
+// des Regelstandes endet im `failed`-Vermerk, statt eine Bindung ohne den
+// geführten Stand anzulegen.
+func TestProcessAdministrationRequestsMarksFailedWhenRuleStateReadFails(t *testing.T) {
+	ctx := context.Background()
+	tableID := administrationTableID("public", ruleTable)
+	wantErr := stderrors.New("Antrags-Historie nicht lesbar")
+	deps, queue, assembler := ruleFixture(t)
+	assembler.RemoveBinding("public." + ruleTable)
+	deps.activation = &fakeTableActivationPort{registered: map[string]model.SourceTable{
+		"public." + ruleTable: {ID: tableID, SourceID: "src-admin", Schema: "public", Table: ruleTable},
+	}}
+	deps.schemaStore = &fakeSchemaStorePort{versions: map[model.SourceTableID]model.SchemaVersion{
+		tableID: {ID: administrationSchemaVersionID(tableID), SourceTableID: tableID, Version: 1},
+	}}
+	deps.transformations = &fakeTransformationPort{err: wantErr}
+	queue.mu.Lock()
+	queue.pending = []model.AdministrationRequest{{
+		ID: "req-rules-read-fail", Source: "src-admin", Schema: "public", Table: ruleTable, Kind: model.AdministrationRequestEnable,
+	}}
+	queue.mu.Unlock()
+
+	processAdministrationRequests(ctx, deps)
+
+	if isApplied(queue, "req-rules-read-fail") {
+		t.Fatal("der Antrag ist applied, obwohl der Regelstand nicht lesbar war")
+	}
+	if message, found := failureOf(queue, "req-rules-read-fail"); !found || message != wantErr.Error() {
+		t.Fatalf("Fehlertext = %q (vermerkt %v), wollen %q", message, found, wantErr.Error())
+	}
+	if assemblerCapturesQualified(t, assembler, 1, "public", ruleTable) {
+		t.Fatal("Assembler trägt nach gescheitertem Regelstand-Lesen eine Bindung")
 	}
 }
 
@@ -802,6 +1234,7 @@ func TestRunAdministrationLogsWarnOnListenerErrorAndKeepsPolling(t *testing.T) {
 		disableTables:   &fakeDisableTableUseCase{},
 		schemaStore:     schemaStore,
 		columnExclusion: &fakeColumnExclusionPort{},
+		transformations: &fakeTransformationPort{},
 		assembler:       assembler,
 		publication:     "cdc_pub",
 		pollInterval:    time.Millisecond,
@@ -864,7 +1297,7 @@ func TestActivatedTableBindingsCarriesExcludedColumns(t *testing.T) {
 		"public.orders_restart": {"secret"},
 	}}
 
-	tables, err := activatedTableBindings(ctx, activation, schemaStore, exclusions, source)
+	tables, err := activatedTableBindings(ctx, activation, schemaStore, exclusions, &fakeTransformationPort{}, source)
 	if err != nil {
 		t.Fatalf("activatedTableBindings = %v, wollen nil", err)
 	}
@@ -919,6 +1352,7 @@ func TestProcessAdministrationRequestsDisableEnableCycleRestoresExclusion(t *tes
 		disableTables:   &fakeDisableTableUseCase{},
 		schemaStore:     schemaStore,
 		columnExclusion: &fakeColumnExclusionPort{excluded: map[string][]string{"public." + table: {"secret"}}},
+		transformations: &fakeTransformationPort{},
 		assembler:       assembler,
 		publication:     "cdc_pub",
 		log:             &recordingLog{},
@@ -974,6 +1408,7 @@ func TestProcessAdministrationRequestsMarksFailedWhenExclusionReadFails(t *testi
 		disableTables:   &fakeDisableTableUseCase{},
 		schemaStore:     schemaStore,
 		columnExclusion: &fakeColumnExclusionPort{err: wantErr},
+		transformations: &fakeTransformationPort{},
 		assembler:       assembler,
 		publication:     "cdc_pub",
 		log:             &recordingLog{},

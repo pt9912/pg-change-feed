@@ -59,7 +59,9 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/readchanges"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/register"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/remove"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/removetransformation"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/retention"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/settransformation"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/status"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
@@ -404,12 +406,24 @@ func parseTables(raw string) (map[string]mapper.TableBinding, error) {
 // Adapter-Instanz wie die Aktivierung (im MVP eine Instanz, `ARC-004`);
 // ein Lesefehler endet vor dem Stream-Start in der Startfehlerklasse des
 // bestehenden Pfads (`storage`, `SPEC-008`).
-func activatedTableBindings(ctx context.Context, activation outbound.TableActivationPort, schemaStore outbound.SchemaStorePort, columnExclusion outbound.ColumnExclusionPort, source model.SourceID) (map[string]mapper.TableBinding, error) {
+//
+// Der Regelstand kommt aus seiner dauerhaften Herkunft
+// (`TransformationPort.TransformationRules`, `ADR-0112` Teilfrage 6) und
+// geht wie der Ausschlussstand je Tabelle in die Bindung ein; eine Tabelle
+// ohne Regel trägt eine Bindung ohne Regelstand. Die Lesung baut je Aufruf
+// frische Listen, die die Bindung behält und die niemand mehr schreibt
+// (`mapper.TableBinding`). Eine Regelform, die die Ableitung nicht mehr in
+// eine Regel führt, endet den Start wie ein Lesefehler.
+func activatedTableBindings(ctx context.Context, activation outbound.TableActivationPort, schemaStore outbound.SchemaStorePort, columnExclusion outbound.ColumnExclusionPort, transformations outbound.TransformationPort, source model.SourceID) (map[string]mapper.TableBinding, error) {
 	registered, err := activation.List(ctx, source)
 	if err != nil {
 		return nil, err
 	}
 	excluded, err := columnExclusion.ExcludedColumns(ctx, source)
+	if err != nil {
+		return nil, err
+	}
+	rules, err := transformations.TransformationRules(ctx, source)
 	if err != nil {
 		return nil, err
 	}
@@ -426,6 +440,7 @@ func activatedTableBindings(ctx context.Context, activation outbound.TableActiva
 			TableID:         table.ID,
 			SchemaVersion:   current.ID,
 			ExcludedColumns: excluded[table.QualifiedName()],
+			Transformations: rules[table.QualifiedName()],
 		}
 	}
 	return tables, nil
@@ -578,6 +593,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	disableTables := disable.NewDisableTableService(activation)
 	excludeColumns := excludecolumn.NewExcludeColumnService(activation)
 	includeColumns := includecolumn.NewIncludeColumnService(activation)
+	setTransformations := settransformation.NewSetTransformationService(activation)
+	removeTransformations := removetransformation.NewRemoveTransformationService(activation)
 	for qualified, binding := range cfg.Tables {
 		schema, table, err := splitQualifiedName(qualified)
 		if err != nil {
@@ -602,15 +619,18 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 
 	// Der laufende Bindungsstand des Assemblers trägt sich aus der
 	// Datenbank fort (`TableActivationPort.List`/`SchemaStorePort.CurrentVersion`
-	// samt `ColumnExclusionPort.ExcludedColumns`), nicht ausschließlich aus
+	// samt `ColumnExclusionPort.ExcludedColumns` und
+	// `TransformationPort.TransformationRules`), nicht ausschließlich aus
 	// `cfg.Tables`: `CDC_TABLES` bleibt der Erstaktivierungs-Seed oben
-	// (schreibt eine leere Datenbank fort), die Grundlage des Stream-Starts
-	// ist der committed Stand — ein Prozess-Neustart verliert damit weder
-	// eine zwischenzeitlich per SQL aktivierte Tabelle, deren Kennung
-	// `CDC_TABLES` nicht trägt, noch einen dauerhaft vermerkten
-	// Spaltenausschluss (`ADR-0065`). Die Aktivierungs-Instanz trägt beide
-	// Lese-Fähigkeiten (`ARC-004`).
-	assemblerTables, err := activatedTableBindings(ctx, activation, schemaStore, activation, cfg.Source)
+	// (schreibt eine leere Datenbank fort; seine Bindungen tragen keinen
+	// Regelstand, der Aufruf unten ersetzt sie), die Grundlage des
+	// Stream-Starts ist der committed Stand — ein Prozess-Neustart verliert
+	// damit weder eine zwischenzeitlich per SQL aktivierte Tabelle, deren
+	// Kennung `CDC_TABLES` nicht trägt, noch einen dauerhaft vermerkten
+	// Spaltenausschluss (`ADR-0065`) oder eine Transformationsregel
+	// (`ADR-0112`). Die Aktivierungs-Instanz trägt die Lese-Fähigkeiten
+	// (`ARC-004`).
+	assemblerTables, err := activatedTableBindings(ctx, activation, schemaStore, activation, activation, cfg.Source)
 	if err != nil {
 		return err
 	}
@@ -843,7 +863,11 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			includeColumns:  includeColumns,
 			schemaStore:     schemaStore,
 			columnExclusion: activation,
+			transformations: activation,
 			assembler:       stream.Assembler(),
+
+			setTransformations:    setTransformations,
+			removeTransformations: removeTransformations,
 			backfill:        backfillTables,
 			backfillWake:    backfillWake,
 			source:          cfg.Source,
@@ -1254,7 +1278,17 @@ type administrationDeps struct {
 	// neu angelegte `Assembler`-Bindung — derselbe Mechanismus wie der
 	// Prozessstart (`activatedTableBindings`).
 	columnExclusion outbound.ColumnExclusionPort
+	// transformations trägt die dauerhafte Herkunft des Regelstandes
+	// (`ADR-0112` Teilfrage 6): der Aktivierungs-Zweig liest sie und trägt
+	// sie in die neu angelegte `Assembler`-Bindung — derselbe Mechanismus
+	// wie der Prozessstart (`activatedTableBindings`).
+	transformations outbound.TransformationPort
 	assembler       *mapper.Assembler
+	// setTransformations und removeTransformations prüfen die beiden
+	// Transformations-Antragsarten (`LH-FA-CFG-007`); die Verarbeitung trägt
+	// danach die Regel in die laufende `Assembler`-Bindung nach.
+	setTransformations    inbound.SetTransformationUseCase
+	removeTransformations inbound.RemoveTransformationUseCase
 	// backfill nimmt einen Antrag der Art `backfill` an (`Request`) und
 	// weckt danach den Backfill-Worker über `backfillWake`; die Ausführung
 	// des Runs trägt der Worker, nicht diese Goroutine (`ADR-0111`
@@ -1330,9 +1364,19 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 }
 
 // processedAdministrationKinds nennt die Antragsarten, die
-// `applyAdministrationRequest` verarbeitet; der Fehlertext des
-// `default`-Zweigs trägt sie.
-const processedAdministrationKinds = "enable/disable/exclude_column/include_column/backfill"
+// `applyAdministrationRequest` verarbeitet — die geschlossene Menge der
+// Domäne (`model.AdministrationRequestKinds`); der Fehlertext des
+// `default`-Zweigs trägt sie. Dass jede dieser Arten einen Zweig des
+// `switch` trägt und nicht im `default` endet, bindet
+// `TestApplyAdministrationRequestHandlesEveryKindOfTheClosedSet`.
+func processedAdministrationKinds() string {
+	kinds := model.AdministrationRequestKinds()
+	names := make([]string, 0, len(kinds))
+	for _, kind := range kinds {
+		names = append(names, string(kind))
+	}
+	return strings.Join(names, "/")
+}
 
 // applyAdministrationRequest führt einen einzelnen Antrag über den
 // passenden Inbound Port aus (einziger Schreibpfad auf Bindungs-Zeile und
@@ -1359,10 +1403,11 @@ const processedAdministrationKinds = "enable/disable/exclude_column/include_colu
 // derselbe synchronisierte Schreibpfad wie `AddBinding`/`RemoveBinding`.
 //
 // Der Aktivierungs-Zweig liest den dauerhaften Ausschlussstand der Tabelle
-// (`ADR-0065`) und übergibt ihn an `AddBinding`: `RemoveBinding` hat den
-// Bindungs-Eintrag samt Ausschlussstand entfernt, dieser Zweig legt beide
-// über die Herkunft neu an — der Stand überlebt den `disable`/`enable`-Zyklus
-// ohne Neustart. Der Lese-Fehler endet wie jeder Antrags-Fehler im
+// (`ADR-0065`) und ihren Regelstand (`ADR-0112` Teilfrage 6) und übergibt
+// beide an `AddBinding`: `RemoveBinding` hat den Bindungs-Eintrag samt
+// Ausschluss- und Regelstand entfernt, dieser Zweig legt sie über die
+// Herkunft neu an — die Stände überleben den `disable`/`enable`-Zyklus ohne
+// Neustart. Ein Lese-Fehler endet wie jeder Antrags-Fehler im
 // `failed`-Vermerk (`processAdministrationRequests`).
 //
 // Der `backfill`-Zweig nimmt den Antrag über `BackfillTableUseCase.Request`
@@ -1373,10 +1418,24 @@ const processedAdministrationKinds = "enable/disable/exclude_column/include_colu
 // kein Fehler). Eine verletzte Vorbedingung und ein aktiver Run derselben
 // Tabelle enden als Fehler und damit im `failed`-Vermerk.
 //
-// Die Antragsarten `set_transformation`/`remove_transformation` nimmt die
-// Antrags-Queue an (`LH-FA-CFG-007`), dieser Zweig verarbeitet sie nicht: sie
-// enden im `default`-Zweig als Fehler und damit im `failed`-Vermerk, dessen
-// Text die verarbeiteten Antragsarten nennt.
+// Die Antragsarten `set_transformation`/`remove_transformation`
+// (`LH-FA-CFG-007`) rufen ihren Use Case auf, der Form und Konfliktfreiheit
+// K1 bis K4 (`SPEC-019`) prüft, und tragen danach die geprüfte Regel bzw. das
+// Herausnehmen in den Regelstand der laufenden `Assembler`-Bindung nach — wie
+// die Spalten-Antragsarten unter `tablesMu`, ohne Bindungs- oder
+// Publication-Änderung. Eine Tabelle ohne laufende Bindung lässt den Nachtrag
+// wirkungslos; der Antrag endet `applied`, und der Regelstand entsteht beim
+// Anlegen der Bindung aus der dauerhaften Herkunft (Prozessstart,
+// Aktivierungs-Zweig unten). Die Wiederholung eines bereits nachgetragenen,
+// noch `pending` stehenden Antrags ist folgenlos: der Nachtrag ersetzt die
+// Regel nach ihrem Namen, K1 prüft nur gegen `applied`-Zeilen. Eine Zeile mit
+// leerem Regelnamen oder leerer Regelform erreicht diesen Zweig als Antrag
+// (`model.NewAdministrationRequest`) und endet im Use Case als Fehler mit dem
+// Fehlertext der Spec, ohne die Queue anzuhalten.
+//
+// Der `default`-Zweig endet als Fehler und damit im `failed`-Vermerk, dessen
+// Text die verarbeiteten Antragsarten nennt; er trifft nur eine Antragsart
+// außerhalb der geschlossenen Menge der Domäne.
 func applyAdministrationRequest(ctx context.Context, deps administrationDeps, request model.AdministrationRequest) error {
 	qualified := request.Schema + "." + request.Table
 	switch request.Kind {
@@ -1411,10 +1470,15 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 		if err != nil {
 			return err
 		}
+		rules, err := deps.transformations.TransformationRules(ctx, request.Source)
+		if err != nil {
+			return err
+		}
 		deps.assembler.AddBinding(qualified, mapper.TableBinding{
 			TableID:         registered.ID,
 			SchemaVersion:   current.ID,
 			ExcludedColumns: excluded[qualified],
+			Transformations: rules[qualified],
 		})
 		return nil
 	case model.AdministrationRequestDisable:
@@ -1465,8 +1529,36 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 		}
 		signalBackfillWorker(deps.backfillWake)
 		return nil
+	case model.AdministrationRequestSetTransformation:
+		// K3 hat gegen die Spaltenliste zum Antragszeitpunkt geprüft: eine
+		// spätere Spalten-Erweiterung, die den Zielnamen kollidieren lässt,
+		// erreicht diese Prüfung nicht — der Assembler fängt sie als nicht
+		// anwendbare Regel im Erfassungspfad (`SPEC-030`, Anwendbarkeit).
+		rule, err := deps.setTransformations.Set(ctx, inbound.SetTransformationCommand{
+			Source:   request.Source,
+			Schema:   request.Schema,
+			Table:    request.Table,
+			RuleName: request.RuleName,
+			RuleSpec: request.RuleSpec,
+		})
+		if err != nil {
+			return err
+		}
+		deps.assembler.SetTransformation(qualified, rule)
+		return nil
+	case model.AdministrationRequestRemoveTransformation:
+		if err := deps.removeTransformations.Remove(ctx, inbound.RemoveTransformationCommand{
+			Source:   request.Source,
+			Schema:   request.Schema,
+			Table:    request.Table,
+			RuleName: request.RuleName,
+		}); err != nil {
+			return err
+		}
+		deps.assembler.RemoveTransformation(qualified, request.RuleName)
+		return nil
 	default:
-		return fmt.Errorf("Antragsart %q gehört nicht zu den verarbeiteten Antragsarten %s", request.Kind, processedAdministrationKinds)
+		return fmt.Errorf("Antragsart %q gehört nicht zu den verarbeiteten Antragsarten %s", request.Kind, processedAdministrationKinds())
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	stderrors "errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -1275,5 +1276,193 @@ func TestReadRetentionCandidatesClassifiesDriverFailures(t *testing.T) {
 		if len(recorder.causes) != 1 || recorder.causes[0] != cause {
 			t.Fatalf("%s: Übersetzungspunkt gesehen: %v", name, recorder.causes)
 		}
+	}
+}
+
+// ReadPendingRequests liefert eine Zeile der Transformations-Antragsarten mit
+// leerem Regelnamen und leerer Regelform (SQL-NULL, vom `COALESCE` der Abfrage
+// normalisiert) als Antrag statt als Fehler — der Antrag endet im Use Case als
+// `failed` mit dem Fehlertext der Spec (`SPEC-019`), und die gültige Zeile
+// dahinter bleibt lesbar. Rot färbende Mutation: die Prüfung `ruleName == ""`
+// in den Konstruktor `model.NewAdministrationRequest` zurücklegen — die Zeile
+// endet als `ErrEmptyIdentifier`, jeder Antrag der Queue bleibt ungelesen.
+func TestReadPendingRequestsCarriesRuleRowsWithEmptyRuleFields(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"req-1", "src-1", "public", "feed", "", "", "", string(model.AdministrationRequestSetTransformation)},
+		{"req-2", "src-1", "public", "feed", "", "", "null", string(model.AdministrationRequestSetTransformation)},
+		{"req-3", "src-1", "public", "feed", "", "", "", string(model.AdministrationRequestRemoveTransformation)},
+		{"req-4", "src-1", "public", "feed", "", "gueltig", `{"kind": "rename_column", "column": "name", "to": "x"}`, string(model.AdministrationRequestSetTransformation)},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrAdministrationStorage}
+
+	requests, err := sqlexec.ReadPendingRequests(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT pending",
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadPendingRequests = %v, wollen nil (die Zeilen sind Anträge, keine Lesefehler)", err)
+	}
+	if len(requests) != 4 {
+		t.Fatalf("erwartete 4 Anträge, gesehen %d", len(requests))
+	}
+	if requests[0].RuleName != "" || requests[0].RuleSpec != "" || requests[1].RuleSpec != "null" || requests[2].RuleName != "" {
+		t.Fatalf("Anträge = %+v, wollen leeren Regelnamen und leere Regelform bzw. den Text null unverändert", requests[:3])
+	}
+	if requests[3].RuleName != "gueltig" {
+		t.Fatalf("gültiger Antrag hinter den ungültigen = %+v", requests[3])
+	}
+}
+
+// ReadTransformationRules faltet die Zeilen je Tabelle in der Ordnung der
+// Abfrage: Set trägt ein, Remove nimmt heraus (Zyklus endet mit der letzten
+// Regel), eine Tabelle ohne verbleibende Regel trägt keinen Eintrag, jede
+// Tabelle hat ihre eigene Liste. Rot färbende Mutation: die Ordnung der
+// Zeilen vor der Faltung umdrehen — die Zyklus-Tabelle endet ohne Regel.
+func TestReadTransformationRulesFoldsPerTable(t *testing.T) {
+	const (
+		setKind    = string(model.AdministrationRequestSetTransformation)
+		removeKind = string(model.AdministrationRequestRemoveTransformation)
+	)
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"public", "orders", setKind, "kundenname", `{"kind": "rename_column", "column": "name", "to": "customer_name"}`},
+		{"public", "orders", setKind, "statusname", `{"kind": "rename_column", "column": "status", "to": "state"}`},
+		{"public", "cycle", setKind, "a", `{"kind": "rename_column", "column": "x", "to": "y"}`},
+		{"public", "cycle", removeKind, "a", ""},
+		{"public", "cycle", setKind, "a", `{"kind": "rename_column", "column": "x", "to": "z"}`},
+		{"public", "gone", setKind, "a", `{"kind": "rename_column", "column": "x", "to": "y"}`},
+		{"public", "gone", removeKind, "a", ""},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	state, err := sqlexec.ReadTransformationRules(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT applied transformation requests",
+		Args: []any{"src-1"},
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadTransformationRules: %v", err)
+	}
+	names := func(rules []model.Transformation) []string {
+		out := make([]string, 0, len(rules))
+		for _, rule := range rules {
+			out = append(out, rule.Name()+":"+rule.Column()+">"+rule.To())
+		}
+		return out
+	}
+	if got := names(state["public.orders"]); !reflect.DeepEqual(got, []string{"kundenname:name>customer_name", "statusname:status>state"}) {
+		t.Fatalf("Regelstand public.orders = %v", got)
+	}
+	if got := names(state["public.cycle"]); !reflect.DeepEqual(got, []string{"a:x>z"}) {
+		t.Fatalf("Regelstand public.cycle = %v, wollen die Regel des letzten Set", got)
+	}
+	if got, present := state["public.gone"]; present {
+		t.Fatalf("Regelstand public.gone = %v, wollen keinen Eintrag (Remove hat die letzte Regel genommen)", got)
+	}
+	if len(state) != 2 {
+		t.Fatalf("Regelstand = %v, wollen genau zwei Tabellen", state)
+	}
+	if len(exec.queries) != 1 || len(exec.queries[0].args) != 1 || exec.queries[0].args[0] != "src-1" {
+		t.Fatalf("Abfragen = %v, wollen eine Abfrage mit der Quelle src-1", exec.queries)
+	}
+}
+
+// Eine Quelle ohne Regel-Anträge liefert eine leere Map; eine Zeile, deren
+// Regelform nicht zu einer Regel führt, endet sichtbar mit der Tabelle im
+// Fehler, statt den Stand zu verkürzen.
+func TestReadTransformationRulesEmptyAndUnparsable(t *testing.T) {
+	recorder := &failRecorder{class: outbound.ErrStorage}
+	state, err := sqlexec.ReadTransformationRules(context.Background(), &fakeExecutor{rows: &fakeRows{}}, sqlexec.Statement{
+		SQL: "SELECT applied transformation requests", Fail: recorder.fail,
+	})
+	if err != nil || len(state) != 0 {
+		t.Fatalf("ohne Anträge: Stand = %v, Fehler = %v, wollen leer und nil", state, err)
+	}
+
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"public", "orders", string(model.AdministrationRequestSetTransformation), "regel", `{"kind": "unbekannt"}`},
+	}}}
+	_, err = sqlexec.ReadTransformationRules(context.Background(), exec, sqlexec.Statement{
+		SQL: "SELECT applied transformation requests", Fail: recorder.fail,
+	})
+	if !stderrors.Is(err, domainerrors.ErrUnknownTransformationKind) {
+		t.Fatalf("Fehler = %v, wollen ErrUnknownTransformationKind", err)
+	}
+	if !strings.Contains(err.Error(), "public.orders") {
+		t.Fatalf("Fehler = %v, wollen die Tabelle genannt", err)
+	}
+	if len(recorder.causes) != 0 {
+		t.Fatalf("die nicht führende Regelform ist kein Treiber-Fehler: %v", recorder.causes)
+	}
+}
+
+func TestReadTransformationRulesClassifiesFailures(t *testing.T) {
+	cause := stderrors.New("Verbindung abgelehnt")
+	recorder := &failRecorder{class: outbound.ErrStorage}
+	_, err := sqlexec.ReadTransformationRules(context.Background(), &fakeExecutor{queryErr: cause}, sqlexec.Statement{
+		SQL: "SELECT applied transformation requests", Fail: recorder.fail,
+	})
+	if !stderrors.Is(err, outbound.ErrStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Abfrage-Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+
+	scanCause := stderrors.New("Spaltentyp passt nicht")
+	recorder = &failRecorder{class: outbound.ErrStorage}
+	_, err = sqlexec.ReadTransformationRules(context.Background(), &fakeExecutor{rows: &fakeRows{
+		rows:     [][]any{{"public", "orders", "set_transformation", "regel", "{}"}},
+		scanErrs: map[int]error{0: scanCause},
+	}}, sqlexec.Statement{SQL: "SELECT applied transformation requests", Fail: recorder.fail})
+	if !stderrors.Is(err, outbound.ErrStorage) || !stderrors.Is(err, scanCause) {
+		t.Fatalf("Scan-Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+
+	iterCause := stderrors.New("Ergebnis-Menge abgebrochen")
+	recorder = &failRecorder{class: outbound.ErrStorage}
+	_, err = sqlexec.ReadTransformationRules(context.Background(), &fakeExecutor{rows: &fakeRows{iterErr: iterCause}}, sqlexec.Statement{
+		SQL: "SELECT applied transformation requests", Fail: recorder.fail,
+	})
+	if !stderrors.Is(err, outbound.ErrStorage) || !stderrors.Is(err, iterCause) {
+		t.Fatalf("Iterations-Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+}
+
+// ReadSourceColumns trägt die Spaltennamen in der Ordnung der Abfrage; die
+// Übergabe der Argumente der Abfrage und die Fehlerklassifikation laufen wie
+// bei den übrigen Lesern.
+func TestReadSourceColumnsCarriesNamesInOrder(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{{"id"}, {"Name"}, {"status"}}}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	columns, err := sqlexec.ReadSourceColumns(context.Background(), exec, sqlexec.Statement{
+		SQL: "SELECT columns", Args: []any{"public", "orders"}, Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadSourceColumns: %v", err)
+	}
+	if !reflect.DeepEqual(columns, []string{"id", "Name", "status"}) {
+		t.Fatalf("Spalten = %v", columns)
+	}
+	if len(exec.queries) != 1 || !reflect.DeepEqual(exec.queries[0].args, []any{"public", "orders"}) {
+		t.Fatalf("Abfragen = %v", exec.queries)
+	}
+
+	empty, err := sqlexec.ReadSourceColumns(context.Background(), &fakeExecutor{rows: &fakeRows{}}, sqlexec.Statement{SQL: "SELECT columns", Fail: recorder.fail})
+	if err != nil || empty == nil || len(empty) != 0 {
+		t.Fatalf("Tabelle ohne Spalten: %v, %v, wollen leere Liste und nil", empty, err)
+	}
+}
+
+func TestReadSourceColumnsClassifiesFailures(t *testing.T) {
+	cause := stderrors.New("Verbindung abgelehnt")
+	recorder := &failRecorder{class: outbound.ErrStorage}
+	if _, err := sqlexec.ReadSourceColumns(context.Background(), &fakeExecutor{queryErr: cause}, sqlexec.Statement{SQL: "SELECT columns", Fail: recorder.fail}); !stderrors.Is(err, outbound.ErrStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Abfrage-Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	scanCause := stderrors.New("Spaltentyp passt nicht")
+	if _, err := sqlexec.ReadSourceColumns(context.Background(), &fakeExecutor{rows: &fakeRows{rows: [][]any{{"id"}}, scanErrs: map[int]error{0: scanCause}}}, sqlexec.Statement{SQL: "SELECT columns", Fail: recorder.fail}); !stderrors.Is(err, scanCause) {
+		t.Fatalf("Scan-Fehler trägt nicht die Ursache: %v", err)
+	}
+	iterCause := stderrors.New("Ergebnis-Menge abgebrochen")
+	if _, err := sqlexec.ReadSourceColumns(context.Background(), &fakeExecutor{rows: &fakeRows{iterErr: iterCause}}, sqlexec.Statement{SQL: "SELECT columns", Fail: recorder.fail}); !stderrors.Is(err, iterCause) {
+		t.Fatalf("Iterations-Fehler trägt nicht die Ursache: %v", err)
 	}
 }

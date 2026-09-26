@@ -32,6 +32,21 @@ const (
 	AdministrationRequestRemoveTransformation AdministrationRequestKind = "remove_transformation"
 )
 
+// AdministrationRequestKinds liefert die Antragsarten als geschlossene Menge
+// in der Reihenfolge der Konstanten — die eine Quelle, aus der Aufrufer und
+// Tests die Arten aufzählen. Jeder Aufruf liefert eine neue Liste.
+func AdministrationRequestKinds() []AdministrationRequestKind {
+	return []AdministrationRequestKind{
+		AdministrationRequestEnable,
+		AdministrationRequestDisable,
+		AdministrationRequestExcludeColumn,
+		AdministrationRequestIncludeColumn,
+		AdministrationRequestBackfill,
+		AdministrationRequestSetTransformation,
+		AdministrationRequestRemoveTransformation,
+	}
+}
+
 // AdministrationRequest trägt einen offenen (`pending`) Antrags-Datensatz,
 // wie ihn die Administrations-Goroutine liest und verarbeitet: Quelle,
 // Schema und Tabellenname adressieren dieselbe Tabelle wie
@@ -63,25 +78,21 @@ type AdministrationRequest struct {
 // am Domain-Core-Rand, wie es die Architektur-Sicht für Domänenobjekte und
 // ihre Invarianten vorsieht (`ARC-001`).
 // Die beiden Spalten-Antragsarten tragen eine nichtleere Spalte — ohne sie
-// adressiert der Antrag kein Ziel; die beiden Transformations-Antragsarten
-// tragen einen nichtleeren Regelnamen, `set_transformation` zusätzlich eine
-// nichtleere Regelform.
+// adressiert der Antrag kein Ziel. Die beiden Transformations-Antragsarten
+// tragen Regelname und Regelform, wie die Zeile sie hält, auch leer: ein
+// leerer oder fehlender Regelname und eine fehlende Regelform sind ein
+// `failed`-Ausgang des Antrags mit dem Fehlertext der Spec (`SPEC-019`),
+// den der Use Case bestimmt, keine Ablehnung beim Lesen der Queue — ein
+// abgelehnter Lesevorgang hielte jeden Antrag dahinter an.
 func NewAdministrationRequest(id AdministrationRequestID, source SourceID, schema, table, column, ruleName, ruleSpec string, kind AdministrationRequestKind) (AdministrationRequest, error) {
 	if id == "" || source == "" || schema == "" || table == "" {
 		return AdministrationRequest{}, domainerrors.ErrEmptyIdentifier
 	}
 	switch kind {
-	case AdministrationRequestEnable, AdministrationRequestDisable, AdministrationRequestBackfill:
+	case AdministrationRequestEnable, AdministrationRequestDisable, AdministrationRequestBackfill,
+		AdministrationRequestSetTransformation, AdministrationRequestRemoveTransformation:
 	case AdministrationRequestExcludeColumn, AdministrationRequestIncludeColumn:
 		if column == "" {
-			return AdministrationRequest{}, domainerrors.ErrEmptyIdentifier
-		}
-	case AdministrationRequestSetTransformation:
-		if ruleName == "" || ruleSpec == "" {
-			return AdministrationRequest{}, domainerrors.ErrEmptyIdentifier
-		}
-	case AdministrationRequestRemoveTransformation:
-		if ruleName == "" {
 			return AdministrationRequest{}, domainerrors.ErrEmptyIdentifier
 		}
 	default:

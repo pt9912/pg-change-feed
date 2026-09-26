@@ -2,6 +2,7 @@ package sqlexec
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/mapper"
@@ -238,6 +239,78 @@ func ReadExcludedColumns(ctx context.Context, exec Executor, statement Statement
 	return excluded, nil
 }
 
+// ReadTransformationRules liest den dauerhaften Regelstand je Tabelle einer
+// Quelle (`LH-FA-CFG-007`, `ADR-0112` Teilfrage 6): die `applied`-Zeilen der
+// beiden Transformations-Antragsarten in der Ordnung der Abfrage
+// (Antrags-Zeitpunkt mit der Antrags-ID als Zweitschlüssel), je Tabelle in
+// `model.FoldTransformations` zum Stand gefaltet — dieselbe Ableitung für den
+// Prozessstart, den Aktivierungs-Zweig und die Konfliktprüfung. Eine Tabelle,
+// deren Regeln alle wieder herausgenommen sind, trägt keinen Eintrag; eine
+// Quelle ohne Regel-Anträge liefert eine leere Map. Jede Tabelle erhält eine
+// eigene, frisch gefaltete Liste. Eine Zeile, deren Regelform nicht mehr zu
+// einer Regel führt, endet als Fehler.
+func ReadTransformationRules(ctx context.Context, exec Executor, statement Statement) (map[string][]model.Transformation, error) {
+	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)
+	if err != nil {
+		return nil, statement.fail(err)
+	}
+	defer rows.Close()
+
+	byTable := make(map[string][]model.TransformationRecord)
+	order := make([]string, 0)
+	for rows.Next() {
+		var schema, table, kind, name, spec string
+		if err := rows.Scan(&schema, &table, &kind, &name, &spec); err != nil {
+			return nil, statement.fail(err)
+		}
+		qualified := schema + "." + table
+		if _, seen := byTable[qualified]; !seen {
+			order = append(order, qualified)
+		}
+		byTable[qualified] = append(byTable[qualified], model.TransformationRecord{
+			Kind: model.AdministrationRequestKind(kind), Name: name, Spec: spec,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, statement.fail(err)
+	}
+	state := make(map[string][]model.Transformation, len(order))
+	for _, qualified := range order {
+		rules, err := model.FoldTransformations(byTable[qualified])
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", qualified, err)
+		}
+		if len(rules) > 0 {
+			state[qualified] = rules
+		}
+	}
+	return state, nil
+}
+
+// ReadSourceColumns liest die Spaltennamen einer Tabelle in der Ordnung der
+// Abfrage (Reihenfolge der Tabelle); eine Tabelle ohne Spalten im Katalog
+// liefert die leere Liste.
+func ReadSourceColumns(ctx context.Context, exec Executor, statement Statement) ([]string, error) {
+	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)
+	if err != nil {
+		return nil, statement.fail(err)
+	}
+	defer rows.Close()
+
+	columns := make([]string, 0)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, statement.fail(err)
+		}
+		columns = append(columns, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, statement.fail(err)
+	}
+	return columns, nil
+}
+
 // containsColumn meldet, ob ein Spaltenname in einem Ausschlussstand steht;
 // der Stand einer Tabelle bleibt klein, die lineare Suche damit ohne
 // eigenen Index.
@@ -295,7 +368,11 @@ func ReadTableSchema(ctx context.Context, exec Executor, versionID model.SchemaV
 // ReadPendingRequests liest die offenen Anträge in Anlage-Reihenfolge; jede
 // Zeile läuft durch den Domänen-Konstruktor (`ADR-0029`) — eine Zeile
 // außerhalb der Antrags-Invarianten endet sichtbar, nicht als still
-// gefälschter Antrag.
+// gefälschter Antrag. Regelname und Regelform der beiden
+// Transformations-Antragsarten gehören nicht zu diesen Invarianten: eine
+// Zeile mit leerem Regelnamen oder leerer Regelform ist ein Antrag, den der
+// Use Case mit dem Fehlertext der Spec ablehnt, kein Lesefehler, der die
+// Anträge dahinter anhielte.
 func ReadPendingRequests(ctx context.Context, exec Executor, statement Statement) ([]model.AdministrationRequest, error) {
 	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)
 	if err != nil {

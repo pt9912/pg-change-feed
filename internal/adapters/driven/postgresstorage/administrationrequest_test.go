@@ -16,6 +16,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
+	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -1051,4 +1052,265 @@ func describeSpec(spec *string) string {
 		return "NULL"
 	}
 	return *spec
+}
+
+// TestTableActivationTransformationRulesDeriveAppliedRuleRequests trägt die
+// Ableitung des dauerhaften Regelstandes gegen die reale PostgreSQL
+// (`LH-FA-CFG-007`, `SPEC-019`): die `applied`-Zeilen der beiden
+// Transformations-Antragsarten tragen den Stand, `set_transformation` trägt
+// eine Regel ein, `remove_transformation` nimmt sie unter dem Namen heraus.
+// Der Test setzt die Antrags-Zeilen direkt (`requested_at` und Antrags-ID sind
+// Prüfgegenstand); Bereinigung und Zeilen sind auf die Kennungs-Vorsilbe
+// `rules-derivation-` begrenzt.
+//
+// Die beiden ersten Zeilen tragen denselben `requested_at`: die eingefügte
+// Reihenfolge wäre `b-set` vor `a-remove` (Regel herausgenommen), die
+// `administration_request_id` als Zweitschlüssel dreht das um (Regel geführt).
+// Rot färbende Mutation: `administration_request_id` aus dem `ORDER BY` von
+// `SelectAppliedTransformationRequests` streichen — die Reihenfolge der
+// gleichzeitigen Zeilen folgt der Einfügung, die Regel `tie` fehlt.
+func TestTableActivationTransformationRulesDeriveAppliedRuleRequests(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+
+	adapter, err := postgresstorage.NewTableActivation(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewTableActivation: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(),
+			"DELETE FROM cdc.administration_request WHERE administration_request_id LIKE 'rules-derivation-%'")
+	})
+
+	const (
+		table       = "orders_rules_derivation"
+		otherTable  = "orders_rules_other"
+		insertRule  = `INSERT INTO cdc.administration_request
+    (administration_request_id, source_id, schema_name, table_name, column_name, rule_name, rule_spec, request_kind, requested_at, status)
+VALUES ($1, $2, $3, $4, $5, $6, $7::text::jsonb, $8, $9, $10)`
+		renameSpec = `{"kind": "rename_column", "column": "%s", "to": "%s"}`
+	)
+	tiedAt := time.Date(2026, 9, 26, 12, 0, 0, 0, time.UTC)
+	insert := func(id, targetTable, kind, ruleName string, spec *string, status string, requestedAt time.Time) {
+		t.Helper()
+		var column, name *string
+		if kind == "exclude_column" {
+			secret := "secret"
+			column = &secret
+		}
+		if ruleName != "" {
+			name = &ruleName
+		}
+		if _, err := pool.Exec(ctx, insertRule,
+			id, administrationRequestSource, "public", targetTable, column, name, spec, kind, requestedAt, status,
+		); err != nil {
+			t.Fatalf("Antrags-Zeile %q schreiben: %v", id, err)
+		}
+	}
+	spec := func(column, to string) *string {
+		text := fmt.Sprintf(renameSpec, column, to)
+		return &text
+	}
+
+	// Gleicher Zeitstempel: b-set eingefügt vor a-remove, a-remove ordnet zuerst.
+	insert("rules-derivation-b-set", table, "set_transformation", "tie", spec("name", "customer_name"), "applied", tiedAt)
+	insert("rules-derivation-a-remove", table, "remove_transformation", "tie", nil, "applied", tiedAt)
+	// Zyklus über drei Zeitpunkte: Set, Remove, Set mit anderem Ziel.
+	insert("rules-derivation-c-set", table, "set_transformation", "cycle", spec("status", "state_a"), "applied", tiedAt.Add(time.Second))
+	insert("rules-derivation-d-remove", table, "remove_transformation", "cycle", nil, "applied", tiedAt.Add(2*time.Second))
+	insert("rules-derivation-e-set", table, "set_transformation", "cycle", spec("status", "state_b"), "applied", tiedAt.Add(3*time.Second))
+	// Eine Regel, die wieder herausgenommen ist, lässt keinen Eintrag zurück.
+	insert("rules-derivation-f-set", otherTable, "set_transformation", "gone", spec("name", "x"), "applied", tiedAt)
+	insert("rules-derivation-g-remove", otherTable, "remove_transformation", "gone", nil, "applied", tiedAt.Add(time.Second))
+	// Zeilen ohne Anteil am Stand: anderer Ausgang, andere Antragsart.
+	insert("rules-derivation-h-pending", table, "set_transformation", "pending_rule", spec("note", "n1"), "pending", tiedAt)
+	insert("rules-derivation-i-failed", table, "set_transformation", "failed_rule", spec("note", "n2"), "failed", tiedAt)
+	insert("rules-derivation-j-exclude", table, "exclude_column", "", nil, "applied", tiedAt)
+
+	state, err := adapter.TransformationRules(ctx, administrationRequestSource)
+	if err != nil {
+		t.Fatalf("TransformationRules: %v", err)
+	}
+	describe := func(rules []model.Transformation) string {
+		out := ""
+		for _, rule := range rules {
+			out += fmt.Sprintf("%s:%s>%s;", rule.Name(), rule.Column(), rule.To())
+		}
+		return out
+	}
+	if got, want := describe(state["public."+table]), "tie:name>customer_name;cycle:status>state_b;"; got != want {
+		t.Fatalf("Regelstand public.%s = %q, wollen %q (Zweitschlüssel, Zyklus, ohne pending/failed/fremde Art)", table, got, want)
+	}
+	if got, present := state["public."+otherTable]; present {
+		t.Fatalf("Regelstand public.%s = %v, wollen keinen Eintrag (remove_transformation hat die letzte Regel genommen)", otherTable, got)
+	}
+
+	// Ein Remove nach dem letzten Set lässt die Tabelle ohne Eintrag.
+	insert("rules-derivation-k-remove", table, "remove_transformation", "tie", nil, "applied", tiedAt.Add(4*time.Second))
+	insert("rules-derivation-l-remove", table, "remove_transformation", "cycle", nil, "applied", tiedAt.Add(5*time.Second))
+	state, err = adapter.TransformationRules(ctx, administrationRequestSource)
+	if err != nil {
+		t.Fatalf("TransformationRules nach dem Herausnehmen: %v", err)
+	}
+	if got, present := state["public."+table]; present {
+		t.Fatalf("Regelstand public.%s = %v, wollen keinen Eintrag", table, got)
+	}
+
+	// Eine Quelle ohne Antrag trägt keinen Stand.
+	state, err = adapter.TransformationRules(ctx, model.SourceID("src-administration-ohne-antraege"))
+	if err != nil || len(state) != 0 {
+		t.Fatalf("Regelstand einer Quelle ohne Anträge = %v (%v), wollen leer", state, err)
+	}
+}
+
+// TestTableActivationTransformationRulesFailVisiblyOnUnparsableRow trägt: eine
+// vermerkte Zeile, deren Regelform nicht mehr zu einer Regel führt, endet
+// sichtbar, statt den Stand um sie zu verkürzen.
+func TestTableActivationTransformationRulesFailVisiblyOnUnparsableRow(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+	adapter, err := postgresstorage.NewTableActivation(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewTableActivation: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+	const source = "src-administration-unparsable"
+	if _, err := pool.Exec(ctx, "INSERT INTO cdc.source (source_id, name) VALUES ($1, 'unparsable') ON CONFLICT (source_id) DO NOTHING", source); err != nil {
+		t.Fatalf("Quelle-Zeile: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE source_id = $1", source)
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.source WHERE source_id = $1", source)
+	})
+	if _, err := pool.Exec(ctx, `INSERT INTO cdc.administration_request
+    (administration_request_id, source_id, schema_name, table_name, rule_name, rule_spec, request_kind, status)
+VALUES ('rules-unparsable-1', $1, 'public', 'orders_unparsable', 'regel', '{"kind": "unbekannt"}'::jsonb, 'set_transformation', 'applied')`, source); err != nil {
+		t.Fatalf("Antrags-Zeile: %v", err)
+	}
+	if _, err := adapter.TransformationRules(ctx, source); !stderrors.Is(err, domainerrors.ErrUnknownTransformationKind) {
+		t.Fatalf("TransformationRules = %v, wollen ErrUnknownTransformationKind", err)
+	}
+}
+
+// TestTableActivationSourceColumnsReadsTheCatalog trägt die Katalog-Lesart der
+// Spaltenliste gegen die reale PostgreSQL (`LH-FA-CFG-007`, K3/K4): die
+// Spaltennamen der Tabelle in ihrer Reihenfolge, zeichengenau (auch ein Name
+// mit Großbuchstaben), einschließlich einer später hinzugefügten Spalte; eine
+// nicht vorhandene Tabelle liefert die leere Liste, ein Bezeichner außerhalb
+// des Alphabets endet in der Fehlerklasse `configuration`. Rot färbende
+// Mutation: `ORDER BY ordinal_position` streichen ist unsichtbar (die Liste
+// bleibt eine Menge); `table_name = $2` gegen `table_name = $1` tauschen — die
+// Liste ist leer.
+func TestTableActivationSourceColumnsReadsTheCatalog(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+	adapter, err := postgresstorage.NewTableActivation(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewTableActivation: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+
+	const table = "orders_rule_columns"
+	if _, err := pool.Exec(ctx, `CREATE TABLE public.`+table+` (id integer PRIMARY KEY, "Name" text, status text)`); err != nil {
+		t.Fatalf("Tabelle anlegen: %v", err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), "DROP TABLE IF EXISTS public."+table) })
+
+	columns, err := adapter.SourceColumns(ctx, "public", table)
+	if err != nil {
+		t.Fatalf("SourceColumns: %v", err)
+	}
+	if fmt.Sprint(columns) != "[id Name status]" {
+		t.Fatalf("Spalten = %v, wollen [id Name status] in Tabellen-Reihenfolge, zeichengenau", columns)
+	}
+	if _, err := pool.Exec(ctx, "ALTER TABLE public."+table+" ADD COLUMN extra text"); err != nil {
+		t.Fatalf("Spalte hinzufügen: %v", err)
+	}
+	columns, err = adapter.SourceColumns(ctx, "public", table)
+	if err != nil || fmt.Sprint(columns) != "[id Name status extra]" {
+		t.Fatalf("Spalten nach ADD COLUMN = %v (%v), wollen [id Name status extra]", columns, err)
+	}
+
+	missing, err := adapter.SourceColumns(ctx, "public", "orders_rule_columns_fehlt")
+	if err != nil || missing == nil || len(missing) != 0 {
+		t.Fatalf("Spalten einer fehlenden Tabelle = %v (%v), wollen die leere Liste", missing, err)
+	}
+	if _, err := adapter.SourceColumns(ctx, "public; DROP", table); !stderrors.Is(err, postgresstorage.ErrActivationConfiguration) {
+		t.Fatalf("Schema außerhalb des Alphabets: Fehler = %v, wollen ErrActivationConfiguration", err)
+	}
+	if _, err := adapter.SourceColumns(ctx, "public", "Orders"); !stderrors.Is(err, postgresstorage.ErrActivationConfiguration) {
+		t.Fatalf("Tabelle außerhalb des Alphabets: Fehler = %v, wollen ErrActivationConfiguration", err)
+	}
+}
+
+// TestAdministrationRequestListPendingCarriesRuleRowsWithMissingFields trägt
+// den Lese-Pfad der Transformations-Antragsarten gegen die reale PostgreSQL
+// (`LH-FA-CFG-007`, `SPEC-019`): eine Zeile mit NULL-Regelnamen, mit
+// SQL-NULL-Regelform oder mit JSON-`null` als Regelform entsteht als
+// `pending`-Antrag (die Funktionen prüfen nichts) und wird von `ListPending`
+// als Antrag geliefert, nicht als Fehler — der Text `null` bzw. der leere
+// Text tragen SQL- und JSON-`null` unterscheidbar. Rot färbende Mutation: die
+// Prüfung `ruleName == ""` in `model.NewAdministrationRequest` zurücklegen —
+// `ListPending` endet mit `ErrEmptyIdentifier`, und jeder Antrag der Queue
+// bleibt ungelesen.
+func TestAdministrationRequestListPendingCarriesRuleRowsWithMissingFields(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+	adapter, err := postgresstorage.NewAdministrationRequest(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewAdministrationRequest: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+
+	const table = "orders_rule_pending_rows"
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE table_name = $1", table)
+	})
+	create := func(call string, args ...any) model.AdministrationRequestID {
+		t.Helper()
+		var id string
+		if err := pool.QueryRow(ctx, call, args...).Scan(&id); err != nil {
+			t.Fatalf("%s: %v", call, err)
+		}
+		return model.AdministrationRequestID(id)
+	}
+	nullName := create("SELECT cdc.set_transformation($1, 'public', $2, NULL, '{\"kind\": \"rename_column\"}'::json)", administrationRequestSource, table)
+	nullSpec := create("SELECT cdc.set_transformation($1, 'public', $2, 'regel_a', NULL::json)", administrationRequestSource, table)
+	jsonNull := create("SELECT cdc.set_transformation($1, 'public', $2, 'regel_b', 'null'::json)", administrationRequestSource, table)
+	removeNull := create("SELECT cdc.remove_transformation($1, 'public', $2, NULL)", administrationRequestSource, table)
+	valid := create("SELECT cdc.set_transformation($1, 'public', $2, 'regel_c', '{\"kind\": \"rename_column\", \"column\": \"a\", \"to\": \"b\"}'::json)", administrationRequestSource, table)
+
+	pending, err := adapter.ListPending(ctx)
+	if err != nil {
+		t.Fatalf("ListPending = %v, wollen nil (die Zeilen sind Anträge, keine Lesefehler)", err)
+	}
+	byID := map[model.AdministrationRequestID]model.AdministrationRequest{}
+	for _, request := range pending {
+		byID[request.ID] = request
+	}
+	for id, want := range map[model.AdministrationRequestID][2]string{
+		nullName:   {"", `{"kind": "rename_column"}`},
+		nullSpec:   {"regel_a", ""},
+		jsonNull:   {"regel_b", "null"},
+		removeNull: {"", ""},
+	} {
+		request, found := byID[id]
+		if !found {
+			t.Fatalf("ListPending trägt den Antrag %q nicht: %+v", id, pending)
+		}
+		if request.RuleName != want[0] || request.RuleSpec != want[1] {
+			t.Fatalf("Antrag %q = Regelname %q, Regelform %q, wollen %q und %q", id, request.RuleName, request.RuleSpec, want[0], want[1])
+		}
+	}
+	// Die gültige Zeile hinter den unvollständigen bleibt lesbar; `jsonb` ordnet
+	// die Schlüssel um, der Inhalt bleibt.
+	request, found := byID[valid]
+	if !found || request.RuleName != "regel_c" {
+		t.Fatalf("ListPending trägt die gültige Zeile nicht: %+v", request)
+	}
+	spec, err := model.ParseTransformationSpec(request.RuleSpec)
+	if err != nil || spec.Column() != "a" || spec.Target() != "b" {
+		t.Fatalf("Regelform der gültigen Zeile = %q (%v), wollen column a, to b", request.RuleSpec, err)
+	}
 }

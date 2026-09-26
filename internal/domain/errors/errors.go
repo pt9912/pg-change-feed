@@ -147,4 +147,50 @@ var (
 	// einer Spalte der Änderung — die Regel ist nicht anwendbar, das Bild
 	// trüge zwei gleichnamige Schlüssel (`SPEC-030`, Anwendbarkeit).
 	ErrTransformationTargetCollides = stderrors.New("Zielname kollidiert mit einer Spalte der Änderung")
+
+	// Die folgenden Sentinels tragen die Ablehnungsgründe eines
+	// Regel-Antrags (`SPEC-019`, Fehlertext-Tabelle): ihr Text ist der
+	// Klartext der Zeile; der Use Case hängt die Adresse an. Die fünf ersten
+	// sind die Formzeilen, die vier letzten die Konfliktfreiheit K1 bis K4
+	// (K4 trägt `inbound.ErrSourceColumnMissing` und `ErrRuleNotKept`).
+
+	// ErrInvalidRuleName: der Regelname ist leer oder liegt außerhalb des
+	// Alphabets `a`–`z`, `0`–`9`, `_` mit 1 bis 63 Zeichen (`SPEC-030`,
+	// Bezeichner).
+	ErrInvalidRuleName = stderrors.New("Regelname ist ungültig")
+
+	// ErrInvalidRuleSpec: `rule_spec` ist kein JSON-Objekt mit einem
+	// Zeichenketten-`kind`, oder ein Pflichtschlüssel des Regeltyps fehlt
+	// oder hat den falschen Typ, oder `column`/`to` verletzt die
+	// Bezeichner-Form (`SPEC-030`).
+	ErrInvalidRuleSpec = stderrors.New("rule_spec ist ungültig")
+
+	// ErrUnknownTransformationKind: `kind` nennt keinen Regeltyp aus
+	// `TransformationKinds` (`SPEC-030`).
+	ErrUnknownTransformationKind = stderrors.New("unbekannter Regeltyp")
+
+	// ErrUnknownRuleSpecKey: `rule_spec` trägt einen Schlüssel, den der
+	// Regeltyp nicht kennt (`SPEC-030`).
+	ErrUnknownRuleSpecKey = stderrors.New("unbekannter Schlüssel in rule_spec")
+
+	// ErrRuleNameTaken (K1): der Regelname ist je Tabelle vergeben
+	// (`SPEC-019`).
+	ErrRuleNameTaken = stderrors.New("Regelname bereits vergeben")
+
+	// ErrColumnHasRule (K2): die Quellspalte trägt bereits eine
+	// Spaltenregel (`SPEC-019`).
+	ErrColumnHasRule = stderrors.New("Spalte trägt bereits eine Regel")
+
+	// ErrTargetCollidesWithRule (K3): der Zielname gleicht dem Zielnamen
+	// einer anderen Regel der Tabelle (`SPEC-019`).
+	ErrTargetCollidesWithRule = stderrors.New("Zielname kollidiert mit einer anderen Regel")
+
+	// ErrTargetCollidesWithColumn (K3): der Zielname gleicht einem
+	// Spaltennamen der Quelltabelle, der Quellspalte der Regel
+	// eingeschlossen (`SPEC-019`).
+	ErrTargetCollidesWithColumn = stderrors.New("Zielname kollidiert mit einer Spalte der Tabelle")
+
+	// ErrRuleNotKept (K4): ein `remove_transformation` nennt einen
+	// Regelnamen, den die Tabelle nicht führt (`SPEC-019`).
+	ErrRuleNotKept = stderrors.New("Regelname nicht geführt")
 )

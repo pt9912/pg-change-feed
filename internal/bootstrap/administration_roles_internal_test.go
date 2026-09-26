@@ -19,6 +19,8 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/excludecolumn"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/includecolumn"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/removetransformation"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/settransformation"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -55,10 +57,14 @@ func adminPathLoginDSN(t *testing.T, admin *pgxpool.Pool, baseDSN, login, group 
 // und die Aktivierung über eine `cdc_admin`-Login-Identität, der
 // Schema-Speicher über eine `cdc_capture`-Login-Identität — beide ohne
 // Superuser-Recht und ohne Eigentum an einem `cdc`-Objekt. Der Lauf zieht je
-// einen Antrag jeder der fünf Antragsarten durch `ListPending`, den Use Case,
-// die laufende `Assembler`-Bindung und den Vermerk `applied`; ein
-// fünfter Antrag (`include_column` auf eine fehlende Spalte) endet im Vermerk
-// `failed` samt Fehlertext.
+// einen Antrag jeder der sieben Antragsarten durch `ListPending`, den Use Case,
+// die laufende `Assembler`-Bindung und den Vermerk `applied`; ein Antrag
+// (`include_column` auf eine fehlende Spalte) endet im Vermerk `failed` samt
+// Fehlertext. Die beiden Transformations-Antragsarten (`LH-FA-CFG-007`) laufen
+// mit ihrer Prüfung K1 bis K4 unter demselben `cdc_admin`-Login: der Regelstand
+// wird aus den vermerkten Anträgen abgeleitet, die Spaltenliste aus dem Katalog
+// der Quelltabelle gelesen, und Zeilen mit fehlendem Regelnamen oder fehlender
+// Regelform enden `failed`, ohne die Queue anzuhalten.
 //
 // Die Superuser-Schwester `TestAdministrationRequestColumnEndToEndAgainstPostgreSQL`
 // belegt die Verarbeitungslogik; dieser Test belegt, dass jede Anweisung des
@@ -188,10 +194,14 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 		backfillWake:    backfillWake,
 		schemaStore:     schemaStore,
 		columnExclusion: activation,
+		transformations: activation,
 		assembler:       assembler,
 		source:          sourceID,
 		publication:     publication,
 		log:             log,
+
+		setTransformations:    settransformation.NewSetTransformationService(activation),
+		removeTransformations: removetransformation.NewRemoveTransformationService(activation),
 	}
 
 	// request legt den Antrag über die SQL-Administration an, lässt die
@@ -245,6 +255,109 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	// Ein fehlgeschlagener Antrag endet im Vermerk failed samt Fehlertext.
 	if _, status, message := requestOn(testTable, "include_column", "does_not_exist"); status != "failed" || message == "" {
 		t.Fatalf("include_column auf fehlende Spalte: Status %q, Fehlertext %q, erwartet failed samt Text", status, message)
+	}
+
+	// Die Transformations-Antragsarten (`LH-FA-CFG-007`) laufen unter denselben
+	// Rollen: Regelstand und Spaltenliste liest der `cdc_admin`-Login
+	// (`SELECT` auf der Antrags-Tabelle, Katalog der eigenen Quelltabelle),
+	// die Prüfung K1 bis K4 und der Nachtrag in die laufende Bindung folgen.
+	rowImage := func(xid uint32) string {
+		t.Helper()
+		return assemblerRowImage(t, assembler, xid, "public", testTable)
+	}
+	const (
+		setRule    = "SELECT cdc.set_transformation($1, 'public', $2, $3, $4::json)"
+		removeRule = "SELECT cdc.remove_transformation($1, 'public', $2, $3)"
+	)
+	createRequest := func(call string, args ...any) string {
+		t.Helper()
+		var id string
+		if err := admin.QueryRow(ctx, call, args...).Scan(&id); err != nil {
+			t.Fatalf("%s: %v", call, err)
+		}
+		return id
+	}
+	outcome := func(id string) (status, message string) {
+		t.Helper()
+		if err := admin.QueryRow(ctx,
+			"SELECT status, COALESCE(error_message, '') FROM cdc.administration_request WHERE administration_request_id = $1", id,
+		).Scan(&status, &message); err != nil {
+			t.Fatalf("Status lesen: %v", err)
+		}
+		return status, message
+	}
+	expectRule := func(label, wantStatus, wantMessage, call string, args ...any) {
+		t.Helper()
+		id := createRequest(call, args...)
+		processAdministrationRequests(ctx, deps)
+		if status, message := outcome(id); status != wantStatus || message != wantMessage {
+			t.Fatalf("%s unter cdc_admin-/cdc_capture-Login: Status %q, Fehlertext %q, erwartet %q und %q — Log: %v", label, status, message, wantStatus, wantMessage, log.messages)
+		}
+	}
+	table := "public." + testTable
+	renameSecret := `{"kind": "rename_column", "column": "secret", "to": "renamed_secret"}`
+
+	if got := rowImage(1); got != `{"id":"1","secret":"geheim"}` {
+		t.Fatalf("Row Image vor den Regel-Anträgen = %s", got)
+	}
+	expectRule("set_transformation", "applied", "", setRule, string(sourceID), testTable, "roles_rule", renameSecret)
+	if got := rowImage(2); got != `{"id":"1","renamed_secret":"geheim"}` {
+		t.Fatalf("Row Image nach set_transformation = %s, erwartet den Zielnamen renamed_secret ohne Neustart", got)
+	}
+	expectRule("set_transformation K1", "failed", "Regelname bereits vergeben: "+table+".roles_rule",
+		setRule, string(sourceID), testTable, "roles_rule", `{"kind": "rename_column", "column": "id", "to": "id_renamed"}`)
+	expectRule("set_transformation K2", "failed", "Spalte trägt bereits eine Regel: "+table+".secret",
+		setRule, string(sourceID), testTable, "roles_k2", `{"kind": "rename_column", "column": "secret", "to": "anders"}`)
+	expectRule("set_transformation K3 (Spalte der Tabelle)", "failed", "Zielname kollidiert mit einer Spalte der Tabelle: "+table+".id",
+		setRule, string(sourceID), testTable, "roles_k3", `{"kind": "rename_column", "column": "id", "to": "id"}`)
+	expectRule("set_transformation K3 (andere Regel)", "failed", "Zielname kollidiert mit einer anderen Regel: "+table+".renamed_secret",
+		setRule, string(sourceID), testTable, "roles_k3b", `{"kind": "rename_column", "column": "id", "to": "renamed_secret"}`)
+	expectRule("set_transformation K4", "failed", "Spalte existiert nicht an der Quelle: "+table+".does_not_exist",
+		setRule, string(sourceID), testTable, "roles_k4", `{"kind": "rename_column", "column": "does_not_exist", "to": "x"}`)
+	if got := rowImage(3); got != `{"id":"1","renamed_secret":"geheim"}` {
+		t.Fatalf("Row Image nach den abgelehnten Anträgen = %s, erwartet unverändert", got)
+	}
+	state, err := activation.TransformationRules(ctx, sourceID)
+	if err != nil {
+		t.Fatalf("TransformationRules unter cdc_admin-Login: %v", err)
+	}
+	if rules := state[table]; len(rules) != 1 || rules[0].Name() != "roles_rule" || rules[0].Column() != "secret" || rules[0].To() != "renamed_secret" {
+		t.Fatalf("abgeleiteter Regelstand von %s = %v, erwartet die Regel roles_rule", table, rules)
+	}
+	columns, err := activation.SourceColumns(ctx, "public", testTable)
+	if err != nil || len(columns) != 2 || columns[0] != "id" || columns[1] != "secret" {
+		t.Fatalf("SourceColumns unter cdc_admin-Login = %v (%v), erwartet [id secret]", columns, err)
+	}
+
+	// Ungültige Zeilen halten die Queue nicht an: die Zeilen mit fehlendem
+	// Regelnamen und fehlender Regelform werden gelesen und verarbeitet, die
+	// gültige Zeile dahinter wird `applied`. Die Funktionen prüfen nichts, die
+	// Zeilen entstehen als `pending`.
+	invalidName := createRequest(setRule, string(sourceID), testTable, nil, renameSecret)
+	invalidSpec := createRequest("SELECT cdc.set_transformation($1, 'public', $2, $3, NULL::json)", string(sourceID), testTable, "roles_null")
+	valid := createRequest(setRule, string(sourceID), testTable, "roles_second", `{"kind": "rename_column", "column": "id", "to": "id_renamed"}`)
+	processAdministrationRequests(ctx, deps)
+	for id, want := range map[string][2]string{
+		invalidName: {"failed", "Regelname ist ungültig: " + table + "."},
+		invalidSpec: {"failed", "rule_spec ist ungültig: " + table + ".roles_null"},
+		valid:       {"applied", ""},
+	} {
+		if status, message := outcome(id); status != want[0] || message != want[1] {
+			t.Fatalf("Zeile mit ungültigen Regelfeldern: Status %q, Fehlertext %q, erwartet %q und %q", status, message, want[0], want[1])
+		}
+	}
+	if got := rowImage(4); got != `{"id_renamed":"1","renamed_secret":"geheim"}` {
+		t.Fatalf("Row Image nach der gültigen Zeile neben ungültigen = %s", got)
+	}
+
+	expectRule("remove_transformation", "applied", "", removeRule, string(sourceID), testTable, "roles_rule")
+	expectRule("remove_transformation", "applied", "", removeRule, string(sourceID), testTable, "roles_second")
+	if got := rowImage(5); got != `{"id":"1","secret":"geheim"}` {
+		t.Fatalf("Row Image nach remove_transformation = %s, erwartet die Rohform", got)
+	}
+	expectRule("remove_transformation K4", "failed", "Regelname nicht geführt: "+table+".roles_rule", removeRule, string(sourceID), testTable, "roles_rule")
+	if state, err := activation.TransformationRules(ctx, sourceID); err != nil || len(state[table]) != 0 {
+		t.Fatalf("abgeleiteter Regelstand nach dem Herausnehmen = %v (%v), erwartet leer", state[table], err)
 	}
 
 	// Der Backfill-Antrag (`LH-FA-CAP-009`): die Annahme legt unter dem

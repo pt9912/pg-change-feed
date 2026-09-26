@@ -27,15 +27,16 @@ var ErrActivationConfiguration = fmt.Errorf("Fehlerklasse configuration: Aktivie
 // Adapter-Schicht importiert keine Adapter-Kante (Kopplung).
 var identifierShape = regexp.MustCompile(`^[a-z0-9_]{1,63}$`)
 
-// TableActivationAdapter implementiert den `TableActivationPort` und den
-// `ColumnExclusionPort` (`outbound`, `ARC-004`) gegen dieselbe Instanz: im
-// MVP trägt eine Instanz die Quelle und den CDC-Speicher gleichermaßen
-// (Abschnitt 1 Lastenheft) — die Bindungs-Zeilen der CDC-Referenztabellen
-// (`SPEC-001`), die Publication der Quelle und die Katalog-Prüfungen ihrer
-// Objekte laufen über denselben Verbindungspool (`LH-FA-CFG-001.a`). Die
-// beiden Ports bleiben getrennt: der Spaltenausschluss (`LH-FA-CFG-005`)
-// hängt nur an der Spalten-Prüfung, nicht an Bindungs-Zeilen oder
-// Publication. `log` trägt die strukturierte Protokollierung über den
+// TableActivationAdapter implementiert den `TableActivationPort`, den
+// `ColumnExclusionPort` und den `TransformationPort` (`outbound`, `ARC-004`)
+// gegen dieselbe Instanz: im MVP trägt eine Instanz die Quelle und den
+// CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft) — die Bindungs-Zeilen
+// der CDC-Referenztabellen (`SPEC-001`), die Publication der Quelle und die
+// Katalog-Prüfungen ihrer Objekte laufen über denselben Verbindungspool
+// (`LH-FA-CFG-001.a`). Die Ports bleiben getrennt: der Spaltenausschluss
+// (`LH-FA-CFG-005`) und die Transformationsregeln (`LH-FA-CFG-007`) hängen
+// an der Spalten-Prüfung und den Antrags-Zeilen, nicht an Bindungs-Zeilen
+// oder Publication. `log` trägt die strukturierte Protokollierung über den
 // injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`, `WithLog`) — Default
 // `outbound.NoopLog`. `db` trägt die Ausführung über die schmale Naht
 // (`sqlexec`, `ADR-0071` Punkt 5).
@@ -69,6 +70,8 @@ func (a *TableActivationAdapter) Close() {
 var _ outbound.TableActivationPort = (*TableActivationAdapter)(nil)
 
 var _ outbound.ColumnExclusionPort = (*TableActivationAdapter)(nil)
+
+var _ outbound.TransformationPort = (*TableActivationAdapter)(nil)
 
 // ColumnExists prüft die physische Spalte über den Katalog; der
 // Negative-Pfad von Spaltenausschluss und -einschluss endet über die
@@ -108,6 +111,41 @@ func (a *TableActivationAdapter) ExcludedColumns(ctx context.Context, source mod
 	return sqlexec.ReadExcludedColumns(ctx, a.db, sqlexec.Statement{
 		SQL:  queries.SelectAppliedColumnRequests,
 		Args: []any{string(source)},
+		Fail: func(cause error) error { return storageFailure(ctx, a.log, cause) },
+	})
+}
+
+// TransformationRules liest den dauerhaften Regelstand je Tabelle einer
+// Quelle (`LH-FA-CFG-007`, `ADR-0112` Teilfrage 6): die `applied`-Zeilen der
+// beiden Transformations-Antragsarten in `cdc.administration_request`, in
+// `requested_at`-Ordnung mit der Antrags-ID als deterministischem
+// Zweitschlüssel (Query-Kommentar), je Tabelle zum Stand gefaltet. Dasselbe
+// Recht wie `ExcludedColumns` trägt das Lesen: `SELECT` der Rolle `cdc_admin`
+// auf der Antrags-Tabelle (`SPEC-019` Grants).
+func (a *TableActivationAdapter) TransformationRules(ctx context.Context, source model.SourceID) (map[string][]model.Transformation, error) {
+	return sqlexec.ReadTransformationRules(ctx, a.db, sqlexec.Statement{
+		SQL:  queries.SelectAppliedTransformationRequests,
+		Args: []any{string(source)},
+		Fail: func(cause error) error { return storageFailure(ctx, a.log, cause) },
+	})
+}
+
+// SourceColumns liest die Spaltennamen der Quelltabelle in der Reihenfolge
+// der Tabelle über den Katalog (`LH-FA-CFG-007`, K3/K4 in `SPEC-019`):
+// dieselbe Katalog-Lesart wie `ColumnExists`, deshalb dieselben Sichtbarkeits-
+// Grenzen — `information_schema.columns` nennt die Spalten der Tabellen, an
+// denen die Login-Identität ein Recht trägt. Schema und Tabelle tragen
+// dasselbe Bezeichner-Alphabet wie bei `TableExists`.
+func (a *TableActivationAdapter) SourceColumns(ctx context.Context, schema, table string) ([]string, error) {
+	if err := validateIdentifier(schema); err != nil {
+		return nil, err
+	}
+	if err := validateIdentifier(table); err != nil {
+		return nil, err
+	}
+	return sqlexec.ReadSourceColumns(ctx, a.db, sqlexec.Statement{
+		SQL:  queries.SelectTableColumns,
+		Args: []any{schema, table},
 		Fail: func(cause error) error { return storageFailure(ctx, a.log, cause) },
 	})
 }

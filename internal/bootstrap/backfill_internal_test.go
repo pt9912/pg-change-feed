@@ -660,6 +660,7 @@ func TestBackfillRunDoesNotBlockTheAdministrationGoroutine(t *testing.T) {
 			tableID: {ID: administrationSchemaVersionID(tableID), SourceTableID: tableID, Version: 1},
 		}},
 		columnExclusion: &fakeColumnExclusionPort{},
+		transformations: &fakeTransformationPort{},
 		assembler:       assembler,
 		backfill:        useCase,
 		backfillWake:    newBackfillWake(),

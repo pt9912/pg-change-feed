@@ -69,10 +69,8 @@ func TestNewAdministrationRequestAcceptsTransformationsAntragsarten(t *testing.T
 }
 
 // Die Ablehnungszweige des Konstruktors (`LH-FA-ADM-001`,
-// `LH-FA-CFG-005`, `LH-FA-CFG-007`): leere Kennungen, die Spalten-Antragsart
-// ohne Spalte, die Transformations-Antragsarten ohne Regelname bzw.
-// `set_transformation` ohne Regelform und eine Antragsart außerhalb der
-// geschlossenen Menge.
+// `LH-FA-CFG-005`): leere Kennungen, die Spalten-Antragsart ohne Spalte und eine
+// Antragsart außerhalb der geschlossenen Menge.
 func TestNewAdministrationRequestRejectsInvariantViolations(t *testing.T) {
 	t.Run("leere Kennung", func(t *testing.T) {
 		for _, tc := range []struct {
@@ -102,21 +100,6 @@ func TestNewAdministrationRequestRejectsInvariantViolations(t *testing.T) {
 			}
 		}
 	})
-	t.Run("Transformations-Antragsart ohne Regelname", func(t *testing.T) {
-		for _, kind := range []AdministrationRequestKind{
-			AdministrationRequestSetTransformation,
-			AdministrationRequestRemoveTransformation,
-		} {
-			if _, err := NewAdministrationRequest("req-1", "src-1", "public", "orders", "", "", `{"kind": "rename_column"}`, kind); !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
-				t.Fatalf("Art %q ohne Regelname: Fehler = %v, wollen ErrEmptyIdentifier", kind, err)
-			}
-		}
-	})
-	t.Run("set_transformation ohne Regelform", func(t *testing.T) {
-		if _, err := NewAdministrationRequest("req-1", "src-1", "public", "orders", "", "umbenennung", "", AdministrationRequestSetTransformation); !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
-			t.Fatalf("set_transformation ohne Regelform: Fehler = %v, wollen ErrEmptyIdentifier", err)
-		}
-	})
 	t.Run("Antragsart außerhalb der geschlossenen Menge", func(t *testing.T) {
 		for _, kind := range []AdministrationRequestKind{"", "truncate"} {
 			if _, err := NewAdministrationRequest("req-1", "src-1", "public", "orders", "secret", "umbenennung", `{"kind": "rename_column"}`, kind); !stderrors.Is(err, domainerrors.ErrInvalidAdministrationRequestKind) {
@@ -124,4 +107,60 @@ func TestNewAdministrationRequestRejectsInvariantViolations(t *testing.T) {
 			}
 		}
 	})
+}
+
+// Die Transformations-Antragsarten tragen Regelname und Regelform, wie die
+// Zeile sie hält — auch leer (`LH-FA-CFG-007`, `SPEC-019`): der Konstruktor
+// lehnt sie nicht ab, sonst lehnte das Lesen der Queue die Zeile ab und hielte
+// jeden Antrag dahinter an; den `failed`-Ausgang mit dem Fehlertext der Spec
+// bestimmt der Use Case. Rot färbende Mutation: für `set_transformation` die
+// Prüfung `ruleName == ""` in den Konstruktor zurücklegen — jede Zeile mit
+// leerem Regelnamen endet als `ErrEmptyIdentifier`.
+func TestNewAdministrationRequestCarriesEmptyRuleFields(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		kind     AdministrationRequestKind
+		ruleName string
+		ruleSpec string
+	}{
+		{"set ohne Regelname", AdministrationRequestSetTransformation, "", `{"kind": "rename_column"}`},
+		{"set ohne Regelform", AdministrationRequestSetTransformation, "umbenennung", ""},
+		{"set ohne beides", AdministrationRequestSetTransformation, "", ""},
+		{"remove ohne Regelname", AdministrationRequestRemoveTransformation, "", ""},
+	} {
+		request, err := NewAdministrationRequest("req-1", "src-1", "public", "orders", "", tc.ruleName, tc.ruleSpec, tc.kind)
+		if err != nil {
+			t.Fatalf("%s: Fehler = %v, wollen nil", tc.name, err)
+		}
+		if request.Kind != tc.kind || request.RuleName != tc.ruleName || request.RuleSpec != tc.ruleSpec {
+			t.Fatalf("%s: Antrag = %+v, wollen Regelname %q und Regelform %q unverändert", tc.name, request, tc.ruleName, tc.ruleSpec)
+		}
+	}
+}
+
+// AdministrationRequestKinds zählt die geschlossene Menge auf: der
+// Konstruktor nimmt jede aufgezählte Art an und lehnt eine Art außerhalb ab;
+// die Aufzählung nennt jede Art genau einmal. Rot färbende Mutation: eine
+// Konstante aus der Aufzählung streichen — der Test „sieben Arten" färbt rot;
+// eine Art aus der Aufzählung durch eine fremde ersetzen — der Konstruktor
+// lehnt sie ab.
+func TestAdministrationRequestKindsEnumeratesTheClosedSet(t *testing.T) {
+	kinds := AdministrationRequestKinds()
+	if len(kinds) != 7 {
+		t.Fatalf("Antragsarten = %v, wollen sieben", kinds)
+	}
+	seen := map[AdministrationRequestKind]bool{}
+	for _, kind := range kinds {
+		if seen[kind] {
+			t.Fatalf("Antragsart %q doppelt aufgezählt", kind)
+		}
+		seen[kind] = true
+		if _, err := NewAdministrationRequest("req-1", "src-1", "public", "orders", "secret", "regel", "{}", kind); err != nil {
+			t.Fatalf("aufgezählte Art %q vom Konstruktor abgelehnt: %v", kind, err)
+		}
+	}
+	kinds[0] = "verändert"
+	if AdministrationRequestKinds()[0] == "verändert" {
+		t.Fatal("AdministrationRequestKinds teilt Speicher zwischen den Aufrufen")
+	}
 }
