@@ -115,6 +115,14 @@ suchlauf-nachmessen: ## Misst die suchlauf-Blöcke eines Slice-Plans nach: make 
 test-suchlauf-nachmessen: ## Tabellentest gegen tools/harness/suchlauf-nachmessen.sh (elf Fälle gegen ein Wegwerf-Repo, netzlos)
 	@bash tools/harness/run-suchlauf-nachmessen-tests.sh
 
+.PHONY: kommentar-kennungen
+kommentar-kennungen: ## Listet Go-Kommentarblöcke mit mehr als einer Kennung oder "ff." (Kandidaten): make kommentar-kennungen [PATHS=<Pfade>] [COUNT=1] [TESTS=exclude|only] [DIFF=<Basis>] (Docker-only, netzlos, kein Gate; harness/sensors/kommentar-kennungen.md)
+	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" bash tools/harness/kommentar-kennungen.sh "$(PATHS)" "$(COUNT)" "$(TESTS)" "$(DIFF)"
+
+.PHONY: test-kommentar-kennungen
+test-kommentar-kennungen: ## Tabellentest des Programms tools/harness/kommentar-kennungen (Docker-only, netzlos; läuft auch unter make test)
+	docker run --rm --network none -v "$(CURDIR)":/src:ro -w /src -e GOCACHE=/tmp/gocache $(TOOLCHAIN_IMAGE) go test ./tools/harness/kommentar-kennungen/
+
 .PHONY: test-rollout-restore
 test-rollout-restore: ## Tabellentest gegen tools/schema/rollout-restore.sh (Rücknahme von plan.yaml/down.sql, Aufrufer-Prüfung, netzlos)
 	@bash tools/harness/run-rollout-restore-tests.sh
