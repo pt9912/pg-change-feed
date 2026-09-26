@@ -6,7 +6,7 @@ den Run ausgefüllt) · seit welle-backfill-bestand
 §4.3 und §5 (g)).
 
 Der Start-Trigger von
-[`slice-transformationen-backfill-pfad`](../../../open/slice-transformationen-backfill-pfad.md)
+`slice-transformationen-backfill-pfad`
 nennt `ADR-0117` und das Architect-Verdikt `architect-verdict-backfill-schema-klasse-rollen`.
 Die Abbildung, an der die ADR ansetzt, steht in `classifyError` am Use Case des Runs.
 
