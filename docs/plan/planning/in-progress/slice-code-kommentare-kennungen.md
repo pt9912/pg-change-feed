@@ -205,17 +205,16 @@ Wiederholung der Spec.
       [`harness/README.md`](../../../../harness/README.md) §Sensors (Liefer-Punkte
       1 und 2); das Benutzerhandbuch bleibt unberührt (keine
       Betreiber-Oberfläche).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
-      Verzeichnis (Arbeitsname `BEO-PGC/kommentar-herkunft-als-kette`, Beleg:
-      dieser Slice) oder eine weitere `evidence/`-Datei; kein Anfall ist
-      ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+      Verzeichnis `BEO-PGC/kommentar-herkunft-als-kette` (Beleg: dieser Slice)
+      und weitere Einträge, siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Slice-Closure selbst (der Slice hat keine Welle; das Ereignis kann
       eintreten).
 
@@ -268,7 +267,7 @@ diff 33 -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-
 diff 8 -E '//.* ff\.' -- '*.go'
 diff 4 -E 'auflösbares Feld' -- AGENTS.md .claude .harness/skills harness
 diff 13 -E '§3\.7' -- AGENTS.md .claude .harness/skills harness
-diff 1 -E 'Zeile 266' -- docs/plan/planning
+diff 0 -E 'Zeile 266' -- docs/plan/planning
 ```
 
 | Träger | Befund | Behandlung |
@@ -289,7 +288,7 @@ diff 1 -E 'Zeile 266' -- docs/plan/planning
 | `tools/harness/kommentar-kennungen.sh` Aufruf | `go build` + `exec` statt `go run` | `go run` gibt den Exit des Programms nicht unverändert weiter; Exit 1 und 2 blieben ununterscheidbar. |
 | `.a-check.yml` | geprüft, unverändert | `tools/harness/**` liegt in der Gruppe `tooling`; das Programm importiert nur die Standardbibliothek. |
 | Coverage-Gate | geprüft, unverändert | `tools/` gehört nicht zur gemessenen Fläche (`internal/...`, `cmd/...`, `gen/...`, Dockerfile-Stufe `coverage`); die Schwelle bleibt. |
-| `.harness/skills/reviewer.md` Zeilenverschiebung | Träger in fremder Datei — **Meldung** | der neue Unterpunkt steht im MEDIUM-Abschnitt und verschiebt die LOW-Zeile mit `gofmt -l` von Zeile 266 auf 286; `slice-harness-fmt-check` §3 (`open/`) zitiert „Zeile 266“ (Suchlauf-Zeilen 8 und 16, ein Treffer an beiden Ständen; der Parent für diese Zeile ist `1021f6fe`, der Commit, der jene Plan-Datei anlegt). Frist: die Closure dieses Slice — der Planner zieht nach. |
+| `.harness/skills/reviewer.md` Zeilenverschiebung | Träger in fremder Datei — **Meldung** | der neue Unterpunkt steht im MEDIUM-Abschnitt und verschiebt die LOW-Zeile mit `gofmt -l` von Zeile 266 auf 286; `slice-harness-fmt-check` §3 (`open/`) zitiert „Zeile 266“ (Suchlauf-Zeilen 8 und 16: ein Treffer am Parent `1021f6fe`, dem Commit, der jene Plan-Datei anlegt, und keiner am Arbeitsbaum nach dem Nachzug der Closure). Frist: die Closure dieses Slice — der Planner zieht nach. |
 | `slice-code-kommentare-bereinigung` §1 (fremde Datei) | Träger in fremder Datei — **Meldung** | die Prototyp-Zahlen 396/192 (Nicht-Test/Test) stehen dort als erwartet; gemessen: 403/197 (600 gesamt, Stand `0d333120`), siehe Basis-Messung. Frist: die Closure dieses Slice. |
 | `BEO-PGC/slice-chronik-in-code-kommentar` `state.md` (fremde Datei) | Träger in fremder Datei — **Meldung** | wie im Träger-Feld oben: ein Verweis auf das Werkzeug mit der Abgrenzung; Träger der Planner-Closure. |
 
@@ -418,56 +417,248 @@ Sensor: `make kommentar-kennungen`, ohne Gate).
   Stichprobe der Basis-Messung (30 Kandidaten quer über die Pakete; Auswahl,
   Klasse und Urteil „Verstoß“ oder „legitim“ je Kandidat im Bericht); ein hoher
   Anteil legitimer Fälle ist die Rückführung nach `open/` (§4). **Ausgang:**
-  *(bei Closure)*
+  *eingetreten in der Klasse Grenzfall, Rückführung nicht ausgelöst, weiter
+  offen mit Adresse.* Stichprobe (30 Kandidaten, jede zwanzigste Zeile ab der
+  zehnten; Zahlen übernommen aus dem Vertrag
+  `harness/sensors/kommentar-kennungen.md` §Belege der Definition): 25 Verstoß,
+  5 Grenzfall (17 %, abgeleitet), keiner „zwei Anker sind die Zielform“;
+  Review-Stichprobe derselben Auswahlregel (übernommen aus dem Review-Report,
+  F-7): vier Verstöße und vier Grenzfälle von acht. Die Gesamtquote 597 von 1474
+  Blöcken mit Kennung ist 40,5 % (abgeleitet; 597 und 1474 von Reviewer und
+  Verifier je gemessen), unter der Hälfte: die Rückführung (a) in §4 tritt nicht
+  ein. Ein Grenzfall trägt zwei Anker mit je einer eigenen Aussage der Stelle;
+  die Regel verlangt dort einen Anker und die Stelle. Adresse:
+  `slice-code-kommentare-bereinigung` (DoD Liefer-Punkt 3: ein Kandidat, den der
+  Implementer als konform begründet, geht als Meldung an den Planner; §4
+  Rückführung (a)) und `BEO-PGC/kommentar-herkunft-als-kette` (`state.md`,
+  „Offene Frage“).
 - **Das Werkzeug erweckt den Eindruck, ein grüner Lauf heiße „Kommentare
   konform“** (`BEO-PGC/regel-weiter-als-ihr-sensor`, 3×, Restrisiko: Werkzeug
   grün, Muster trifft nicht). *Erwartet, zu belegen durch:* der Vertrag nennt die
   Grenze im ersten Absatz (Form, nicht Wahrheit; eine Spec-Wiedergabe in eigenen
   Worten erkennt es nicht), und der Reviewer-Unterpunkt nennt den Lauf als
-  Probe, nicht als Beleg. **Ausgang:** *(bei Closure)*
+  Probe, nicht als Beleg. **Ausgang:** *eingetreten in einer Form, in der
+  Fixrunde behoben, Restrisiko benannt.* Der Vertrag nennt die Grenze im ersten
+  Absatz und der Reviewer-Unterpunkt den Lauf als Probe (Review,
+  Negativbefund). Eingetreten ist die Form „Werkzeug grün, ohne gelesen zu
+  haben“: der Diff-Modus meldete unter `diff.mnemonicPrefix=true` 0 statt 39
+  Kandidaten bei Exit 0 (Review F-1, MEDIUM; gemessen vom Reviewer). Die
+  Fixrunde (`f049bf20`) pinnt die Form des Diff-Stroms, das Programm endet bei
+  fremdem Präfix mit Exit 2, der Test des Aufrufers fährt den Strom unter
+  fremder Git-Konfiguration; die Verifikation misst 39 mit und ohne die
+  Konfiguration. Register: `BEO-PGC/werkzeug-liest-nutzerkonfiguration-ohne-pin`
+  (1×). Das Restrisiko bleibt die benannte Grenze: eine Spec-Wiedergabe hinter
+  einer Kennung erkennt nur das Lesen des Diffs (Vertrag, Grenze 4).
 - **Der Slice wiederholt den verworfenen Chronik-Sensor**
   (`BEO-PGC/slice-chronik-in-code-kommentar`, 9×, Verdikt: kein Sensor).
   *Erwartet, zu belegen durch:* der Vertrag nennt die Abgrenzung (Kennungen je
   Block, kein Satz-Subjekt, keine Slice-/Wellen-Nummer), und der Reviewer liest,
-  dass das Werkzeug keine der beiden auswertet. **Ausgang:** *(bei Closure)*
+  dass das Werkzeug keine der beiden auswertet. **Ausgang:** *entfallen.* Der
+  Vertrag nennt die Abgrenzung; der Review-Negativbefund liest, dass das
+  Werkzeug weder Satz-Subjekt noch Slice-/Wellen-Nummer auswertet;
+  `git grep -n -i -E 'slice-|welle-' -- tools/harness/kommentar-kennungen/main.go`
+  liefert bei dieser Closure (Stand `d13ab81e`) keinen Treffer (gemessen).
 - **Die Regel wird enger gelesen als gemeint** — „höchstens eine Kennung“
   verdrängt eine nötige Kopplung oder streicht Zusagen mit. *Erwartet, zu
   belegen durch:* die Konkretisierung nennt die Kopplung als **Stelle** (Datei,
   Funktion) und lässt die fünf Klassen unberührt; der Reviewer liest den
   Erstbeleg gegen den Code (keine Zusage verloren,
   `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`, 5×). **Ausgang:**
-  *(bei Closure)*
+  *entfallen, ein LOW in der Fixrunde behoben.* Der Review liest den Erstbeleg
+  gegen `Broadcaster.Publish` und die Aufrufstelle im `CaptureService`: keine
+  Zusage verloren, keine zugesagt, die der Code nicht trägt (Review,
+  Negativbefund `changestream.go`; Verifikation §6). Ein Nebenfund: der
+  Rang-Zeiger auf die Fehlerklassifikation entfiel mit der Kürzung und ließ den
+  Godoc von `ErrChangeStream` zweideutig (Review F-3, LOW); die Fixrunde nennt
+  die Datei des Rang-Zeigers. Kein Anfall in
+  `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`: die Zusage war
+  wahr, nur der Wortlaut zweideutig.
 - **Das Programm braucht Netz oder einen Modul-Download.** *Erwartet, zu belegen
   durch:* der Lauf mit `--network none` und nur der Standardbibliothek; sonst
-  die Rückführung nach `open/` (§4 (b)). **Ausgang:** *(bei Closure)*
+  die Rückführung nach `open/` (§4 (b)). **Ausgang:** *entfallen.* Das
+  Programm importiert nur die Standardbibliothek (Importblock von `main.go`
+  gelesen), der Aufrufer läuft mit `--network none` im gepinnten
+  Toolchain-Image (Review, Negativbefund); `make test` und `make a-check`
+  endeten bei Review und Verifikation mit Exit 0.
 - **Die Zahlen des Plans bewegen sich mit jedem Commit** (Zustandsgröße,
   [`AGENTS.md`](../../../../AGENTS.md) §3.12). *Erwartet, zu belegen durch:* jede
   Zahl im Bericht trägt Befehl, Stand und Lauf; die Zahlen dieses Plans stehen
-  mit dem Stand `7b70b34a`. **Ausgang:** *(bei Closure)*
+  mit dem Stand `7b70b34a`. **Ausgang:** *eingetreten in klein, behandelt.* Die
+  Zahl vor dem Erstbeleg (600/403/197, Stand `0d333120`) ist mit keinem
+  Repo-Befehl wiederholbar (das Werkzeug lag dort nur im Arbeitsbaum, Review
+  F-9, Verifikation V-2); die Zahl am Diff-Stand ist es: `make
+  kommentar-kennungen COUNT=1` (597), `… TESTS=exclude` (400), `… TESTS=only`
+  (197) — von Reviewer und Verifier je gemessen und bei dieser Closure erneut
+  (Stand `d13ab81e`). Der Träger mit den Prototyp-Zahlen ist nachgezogen
+  (`slice-code-kommentare-bereinigung` §1: Zahlen und Tranchen gemessen).
 - **Der `DIFF`-Strom läuft über Host-`git` und `bash`** (dieselbe Klasse wie
   `make suchlauf-nachmessen`; `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`,
   1×). *Erwartet, zu belegen durch:* der Vertrag nennt die Host-Werkzeuge; ein
   zweites Auftreten der Klasse ist die Architect-Frage zu
-  [`AGENTS.md`](../../../../AGENTS.md) §3.1. **Ausgang:** *(bei Closure)*
+  [`AGENTS.md`](../../../../AGENTS.md) §3.1. **Ausgang:** *eingetreten — zweites
+  Auftreten der Klasse, Architect-Frage benannt.* Der Vertrag
+  `harness/sensors/kommentar-kennungen.md` nennt `bash`, `git` und `docker`
+  (Review, Negativbefund); das Werkzeug installiert nichts. Die Klasse hat mit
+  diesem Slice zwei Belegdateien (`BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`,
+  `state.md`, 2×); ein drittes Plan-Risiko dieser Klasse führt
+  `slice-harness-fmt-check` §6. Adresse der Frage: der nächste Architect-Zug,
+  der [`AGENTS.md`](../../../../AGENTS.md) §3.1 berührt (Ausnahme-Klasse für
+  Host-Werkzeuge ohne Installation oder Docker-Kapselung der `git`-Aufrufe),
+  gemeinsam mit dem Vorschlag in
+  `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`; der Orchestrator
+  beauftragt den Zug.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag:** *(zu tragen bei Closure — erwartet: geschärfte Regel
-  [`AGENTS.md`](../../../../AGENTS.md) §3.7 und neuer Sensor `Makefile:kommentar-kennungen`
-  ohne Gate; das Feld `liegt in` steht nur, wenn sie wirklich verkörpert sind;
-  ohne Eintrag kein `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(zu tragen bei Closure —
-  erwartet: `BEO-PGC/kommentar-herkunft-als-kette` neu angelegt, Beleg
-  `evidence/slice-code-kommentare-kennungen.md`, Ausgang verkörpert, Abgrenzung
-  zu `BEO-PGC/slice-chronik-in-code-kommentar`; dazu der Verweis dort)*
-- **Folge-Slices:** `slice-code-kommentare-bereinigung` (Bereinigung des
-  Bestands, Datei in `open/`).
-- **Risiken aus §6:** *(je ein Ausgang, zu tragen bei Closure)*
-- **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure selbst trägt
-  die drei Paarungen (Anker · Folge-Slice · Register), nach dem `git mv` nach
-  `done/`.
+- **Was hat funktioniert:** (1) Die Leser-Kette fand, was der Implementer-Lauf
+  nicht fand: der Review nennt 0 HIGH, 1 MEDIUM, 4 LOW und 4 INFO, die
+  Verifikation 0 HIGH, 0 MEDIUM, 0 LOW und 2 INFO (übernommen aus den Reports).
+  Der Review fuhr das Werkzeug unter einer fremden Git-Konfiguration und fand F-1
+  (0 statt 39 Kandidaten bei Exit 0), was der Tabellentest mit seinem Literal-Strom
+  nicht deckte; 16 seiner 17 Mutationen am Programm waren rot, die 17.
+  (Ausschluss der Wurzel `.git`) grün — F-8, in der Fixrunde an den Test gebunden.
+  Die Verifikation wiederholte sieben Mutationen am Programm und vier am Aufrufer,
+  alle rot (übernommen aus dem Verifikations-Report, §4). (2) Die Zielform der
+  Regel trägt am Erstbeleg: die Datei trug elf Kommentarzeilen mit Kennung, danach
+  drei, alle mit dem einen Anker `ADR-0060`; der Diff der Datei hat keine Zeile ohne
+  `//` (übernommen aus Review und Verifikation, je selbst gemessen); die Zusagen
+  von `Publish` sind gegen den Adapter gelesen und wahr. (3) Das Suchlauf-Feld trug:
+  `make suchlauf-nachmessen` meldete 16 stimmende Zeilen (Review und Verifikation,
+  je Exit 0), acht Zeilen fuhr jeder von Hand nach. Die Zeile „`Zeile 266`“ belegte
+  die Meldung, nicht die Nachziehung (V-1); nach dem Nachzug dieser Closure steht
+  ihr `diff`-Soll auf 0, das Werkzeug meldet ihn (Lauf bei dieser Closure).
+  (4) Die Zahlen: `make kommentar-kennungen COUNT=1` → **597**, `TESTS=exclude` →
+  **400**, `TESTS=only` → **197** am Stand `d13ab81e` (gemessen bei dieser Closure;
+  gleich den Läufen von Reviewer und Verifier); der Nenner (Kommentarblöcke mit
+  mindestens einer Kennung) ist **1474** (übernommen: Reviewer und Verifier haben
+  ihn je mit dem Programm bei auf „mindestens eine“ gesenkter Schwelle gemessen);
+  597 von 1474 sind **40,5 %** (abgeleitet), unter der Hälfte — die Rückführung (a)
+  in §4 tritt nicht ein. Die Zahlen 600/403/197 am Stand `0d333120` sind mit
+  keinem Repo-Befehl wiederholbar (das Werkzeug lag dort nur im Arbeitsbaum; sie
+  stehen als übernommen). Stichprobe (Ursprung: übernommen aus dem Vertrag,
+  Implementer-Lauf): 30 Kandidaten, **25 Verstoß, 5 Grenzfall**; Review-Stichprobe
+  (übernommen aus dem Review-Report): **vier Verstöße, vier Grenzfälle von acht**.
+- **Was ging anders als geplant:** (1) Der Bestand trägt eine Bereichsform
+  `` `LH-FA-RET-002`…`004` `` außer der Schrägstrich-Kompaktform des Plans; das
+  Programm zählt beide je Nummer (Plan §3, Nachzug). (2) Der Diff-Strom entsteht in
+  einer Temp-Datei statt in der Pipe des Plan-Wortlauts, und der Aufrufer baut
+  und führt das Programm aus, statt `go run` zu rufen (Exit 1 und 2 blieben sonst
+  ununterscheidbar; Plan §3, Nachzug). (3) Über den Plan hinaus entstanden das
+  Ziel `make test-kommentar-kennungen` und der Tabellentest des Aufrufers
+  (`tools/harness/run-kommentar-kennungen-tests.sh`); der Aufrufer trägt die Pinnung
+  der Form des Diff-Stroms (Fixrunde `f049bf20`, F-1 und F-2). (4) Die Prototyp-Zahlen
+  des Plans (396/192) stimmen nicht mit der Messung: 403/197 am Stand `0d333120`
+  (übernommen, nicht wiederholbar), 400/197 am Diff-Stand (gemessen); die Tranchen
+  von `slice-code-kommentare-bereinigung` sind neu gemessen (§1 dort). (5) Die
+  Einfügung von 31 Zeilen in `AGENTS.md` §3.7 und eine Zeile im MEDIUM-Abschnitt
+  des Reviewer-Skills verschoben Träger mit Zeilen-Lokatoren, die das Suchlauf-Feld
+  nicht fing: der Review fand den Lokator im Register-Beleg (F-5), der Implementer
+  meldete den Lokator in `slice-harness-fmt-check` (Zeile 266 → 286). Beide sind
+  bei dieser Closure durch Symbol-/Überschrift-Anker ersetzt, damit sie nicht wieder
+  driften. Der Referent des Register-Belegs ist gemessen am Stand von `038a175e`, der
+  ihn zuletzt korrigierte: der Satz „Der `slice-096`-Suchlauf fand den Symbolnamen …“ im
+  Absatz „Grenze — was der Suchlauf nicht fängt“ von §3.13 — nicht der Anfang des
+  Abschnitts, wie der Review-Report F-5 liest.
+- **Steering-Loop-Eintrag (Lerneintrag):** *(a) Geschärfte Regel.*
+  [`AGENTS.md`](../../../../AGENTS.md) §3.7 §Herkunft im Go-Kommentar (höchstens eine
+  Kennung, keine Kette, keine Kompaktform, kein „ff.“, keine Spec-Wiedergabe in eigenen
+  Worten, eine Kopplung nennt die Stelle); `.claude/commands/implement-slice.md`
+  Schritt 20 ruft den diff-skopierten Lauf; `.harness/skills/reviewer.md` trägt den
+  MEDIUM-Unterpunkt „Herkunft als mehrere Felder, Kette, ‚ff.‘ oder Spec-Wiederholung“
+  (der Lauf ist Probe, kein Beleg) · seit slice-code-kommentare-kennungen. Herkunft:
+  `BEO-PGC/kommentar-herkunft-als-kette`. *(b) Neuer Sensor, kein Gate.*
+  `make kommentar-kennungen` (listet Kommentarblöcke mit mindestens zwei verschiedenen
+  Kennungen oder „ff.“) und `make test-kommentar-kennungen` (Tabellentests des Programms
+  und seines Aufrufers) — liegt in `harness/sensors/kommentar-kennungen.md`,
+  `harness/README.md` §Sensors (Werkzeug-Zeilen) und im `Makefile` · seit
+  slice-code-kommentare-kennungen. Die Grenze „kein Sensor auf Prosa“ von
+  [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) bleibt: das Werkzeug
+  zählt Kennungen je Block, es liest kein Satz-Subjekt. *(c) Benannte Lücken, je mit
+  Adresse.* Erstens: das Werkzeug prüft die Form, nicht die Wahrheit — eine
+  Spec-Wiedergabe in eigenen Worten hinter einer Kennung und eine Zusage, die der Code
+  nicht trägt, erkennt nur das Lesen (Reviewer-Unterpunkt und HIGH-Punkt „Kommentar
+  trägt keine der Kommentar-Klassen“; Vertrag, Grenze 1 und 4). Zweitens: die Grenzfälle
+  „zwei Anker mit je eigener Aussage“ (5 von 30, vier von acht) — die Regel verlangt dort
+  einen Anker und die Stelle; Adresse: `slice-code-kommentare-bereinigung` (DoD
+  Liefer-Punkt 3, §4 Rückführung (a)) und `state.md` von
+  `BEO-PGC/kommentar-herkunft-als-kette`. Drittens: Kommentare außerhalb von Go
+  (Skripte, `Makefile`, `.sql`, `.yml`, Dockerfiles) liest das Werkzeug nicht; Adresse:
+  `slice-code-kommentare-bereinigung` §1 (Nicht-Ziel) und §7 (Folge-Slices — der
+  Folge-Slice wird dort angelegt, nicht hier). Viertens: die Gate-Frage; Trigger im
+  `state.md` von `BEO-PGC/kommentar-herkunft-als-kette` (Bereinigung endet mit 0 **und**
+  ein Kommentar mit Kette erreicht trotz gelaufenem Werkzeug den Review).
+  *(d) Gelernt, bei 1× keine Regel:* ein Werkzeug, das die Ausgabe eines
+  konfigurierbaren Fremdwerkzeugs parst, meldet unter fremder Konfiguration „kein
+  Befund“, ohne gelesen zu haben, wenn sein Test den Strom als Literal bekommt;
+  `BEO-PGC/werkzeug-liest-nutzerkonfiguration-ohne-pin` hält Kandidat und Trigger.
+  *(e) Finding-Klassen des Reviews:* Werkzeug liest Nutzer-Konfiguration ohne Pin (F-1) ·
+  Vertrags-Exit-Zweige des Aufrufers ohne Testbindung (F-2) · Kommentar zweideutig,
+  Rang-Zeiger verloren (F-3) · Einfügung trennt Bezugspaar (F-4) · Zeilen-Lokator in
+  fremdem Träger driftet (F-5) · Zahl gleich, Zusammensetzung anders (F-6) ·
+  Stichproben-Beleg ohne committeten Träger (F-7) · Ausnahme-Eintrag ohne Testbindung
+  (F-8) · Zahl an nicht wiederholbarem Stand (F-9); ihre Zuordnung zu den Register-Zählern
+  steht im nächsten Punkt.
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
+  `evidence/slice-code-kommentare-kennungen.md`, Zähler = Zahl der Dateien (gemessen mit
+  `ls evidence | wc -l` am Stand dieser Closure). *Neue Einträge:*
+  `BEO-PGC/kommentar-herkunft-als-kette` **2×** (`evidence/changestream-publish-godoc.md`
+  und `evidence/slice-code-kommentare-kennungen.md`; verkörpert, Ausgang zugewiesen, weil
+  die Regel mit demselben Slice landet; Trigger der Gate-Frage im `state.md`);
+  `BEO-PGC/werkzeug-liest-nutzerkonfiguration-ohne-pin` **1×** (F-1, MEDIUM, daher
+  Beleg-Datei; offen, unter der Schwelle). *Neuer Beleg:*
+  `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration` **2×** — das zweite
+  Auftreten; der Plan (§6) und der `state.md` nennen es als Auslöser der Architect-Frage
+  zu [`AGENTS.md`](../../../../AGENTS.md) §3.1 (Adresse und Bündelung mit
+  `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` im `state.md` und in §6).
+  *`state.md` nachgezogen ohne neue Datei:* `BEO-PGC/slice-chronik-in-code-kommentar`
+  (Verweis auf das Werkzeug mit der Abgrenzung: Kennungen je Block, kein Satz-Subjekt).
+  *In-place-Korrektur ohne neue Datei:* der Lokator im Register-Beleg
+  `BEO-PGC/zitat-nennt-die-falsche-stelle/evidence/welle-d-check-verkoerperung.md` (Zitat-Korrektur
+  nach [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md): ein
+  Zeilen-Lokator wird ein Überschrift-/Satz-Anker bei unverändertem Referenten, Fund und
+  Aussage des Belegs bleiben; ein Register-Beleg ist kein `Accepted`-Dokument und trägt
+  keine §Geschichte, die Commit-Kennung ist der Beleg; derselbe Weg wie beim
+  Vorgänger-Commit `038a175e`). *Deckel-Fälle ohne Datei, Finding-Kennung hier*
+  (verkörpert ab 10×, vor dem Merge von Reviewer bzw. Verifier gefunden, Schwere ≤ LOW,
+  bekannter Träger-Typ): F-2 (LOW, Aufrufer eines Werkzeugs) und F-8 (INFO) zu
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (Deckel bei 14×); F-4 (LOW,
+  Einfügung in einen stehenden Träger) zu `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`
+  (Deckel bei 10×; der nächste Eintrag, der Befund trägt keinen Widerspruch der
+  Aussagen); F-5 (LOW) und V-1 (INFO, Zeilen-Lokator in fremdem Träger) zu
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (Deckel bei 32×); F-6, F-7 und F-9 (INFO)
+  sowie V-2 (INFO) zu `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (Deckel bei 23×).
+  *Kein Anfall:* `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` (F-3: die Zusage
+  war wahr, der Wortlaut zweideutig), `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`
+  (Review und Verifikation nennen keinen Fund; Mutationen liefen an Kopien),
+  `BEO-PGC/formatierungs-drift-ohne-gate` (`gofmt -l` leer),
+  `BEO-PGC/werkzeug-fuehrt-plan-inhalt-als-argument-aus` (sein Trigger — ein Werkzeug, das
+  Plan- oder Record-Inhalt als Kommando-Argument ausführt — trifft nicht: die Argumente
+  stammen aus Make-Variablen, ihre Zerlegung bindet der Test des Aufrufers an eine
+  Marker-Datei). *Lese-Schritt:* aus diesem Slice erreicht neu kein Eintrag die Schwelle
+  ohne Ausgang.
+- **Folge-Slices:** `slice-code-kommentare-bereinigung` (Bereinigung des Bestands, Datei
+  in `open/`; Zahlen und Tranchen gemessen nachgezogen, Frist der Meldung: diese Closure,
+  gezogen). Start-Bedingungen, gelesen: `slice-transformationen-map-value` verlangt diesen
+  Slice in `done/` (dort §4) — mit dem Move erfüllt; `slice-harness-fmt-check` verlangt
+  kein anderes Slice in `in-progress/` (dort §4, WIP-Limit 1) — mit dem Move erfüllt, in
+  `in-progress/` liegt danach nur die Roadmap. Die Pläne sind nicht geändert, bis auf die
+  Lokatoren im Träger (Nachzug oben).
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Eingetreten:* Definition trifft
+  Grenzfälle (Rückführung nicht ausgelöst, weiter offen mit Adresse) · Werkzeug grün ohne
+  gelesen zu haben (F-1, behoben, Register) · Zahlen bewegen sich (klein, behandelt) ·
+  Host-Werkzeuge (zweites Auftreten, Architect-Frage benannt). *Entfallen:* Wiederholung
+  des Chronik-Sensors · Regel enger gelesen (ein LOW behoben) · Netz oder Modul-Download.
+  *Weiter offen:* die Grenzfälle mit zwei Ankern (Adresse: Bereinigung, Register) und die
+  Architect-Frage zu §3.1 (Adresse: nächster Architect-Zug).
+- **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure selbst trägt die
+  drei Paarungen, nach dem `git mv` nach `done/`. *Anker:* [`AGENTS.md`](../../../../AGENTS.md)
+  §3.7 trägt seit dieser Closure `seit slice-code-kommentare-kennungen`;
+  `.claude/commands/implement-slice.md` Schritt 20, der Reviewer-Unterpunkt und die zwei
+  Zeilen von `harness/README.md` tragen es; `harness/sensors/kommentar-kennungen.md` und
+  die zwei `Makefile`-Ziele existieren (geprüft mit `git grep` und `ls`). *Folge-Slice:*
+  `slice-code-kommentare-bereinigung` existiert als Datei in `open/`. *Register:* jede
+  genannte Kennung `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht leerem `evidence/`
+  (geprüft mit `ls docs/plan/planning/observations/BEO-PGC/<slug>/evidence`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

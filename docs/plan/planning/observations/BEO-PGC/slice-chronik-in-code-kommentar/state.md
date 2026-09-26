@@ -122,3 +122,10 @@ Closure von `slice-backfill-change-origin`) findet weitere Kandidaten: mit
 Form `· seit slice-<NNN>` und Testfall-Provenienz sind nach `AGENTS.md` §3.7
 zulässig, die Klassifikation je Treffer (Zustand des Codes gegen Testfall) ist
 nicht geschehen. Ein Aufräum-Zug über diese Flächen ist nicht angelegt.
+
+**Benachbart, kein Widerspruch zum Verdikt.** `make kommentar-kennungen`
+(`harness/sensors/kommentar-kennungen.md`) zählt verschiedene Kennungen je Go-Kommentarblock und
+liest weder ein Satz-Subjekt noch eine Slice-/Wellen-Nummer; es unterscheidet Testfall-Provenienz
+nicht von Produktionsverhalten-Chronik. Der Chronik-Kandidatenlauf in
+`.claude/commands/implement-slice.md` Schritt 20 bleibt der Weg dieser Klasse. Die
+Kennungsdichte ist ein eigener Eintrag: `BEO-PGC/kommentar-herkunft-als-kette`.

@@ -25,5 +25,6 @@ verkörperten Regel unmittelbar: Sie hätte diesen eigenen Fehler gefangen,
 wäre sie beim Schreiben angewendet worden.
 
 Quelle: Delta-Review dieser Verkörperungs-Fixrunde ·
-`AGENTS.md:451-455` (korrigiert) ·
+`AGENTS.md` §3.13, Absatz „Grenze — was der Suchlauf nicht fängt“, Satz „Der `slice-096`-Suchlauf
+fand den Symbolnamen …“ (korrigiert) ·
 `docs/plan/planning/done/altbestand/slice-096-konfigurationsdatei-nachzug.md` §7.

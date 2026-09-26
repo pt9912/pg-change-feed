@@ -213,7 +213,8 @@ eigenen Worten):
 Es prüft die **Form**, nicht die Wahrheit: eine Spec-Wiedergabe in eigenen
 Worten mit einer Kennung erkennt es nicht, und ein Lauf ohne Kandidat sagt nicht
 „die Kommentare sind konform“. Es ist kein Gate und trägt keine
-Ausnahmeliste; die Lese-Handlung bleibt beim Reviewer.
+Ausnahmeliste; die Lese-Handlung bleibt beim Reviewer · seit
+slice-code-kommentare-kennungen (`BEO-PGC/kommentar-herkunft-als-kette`).
 
 **Begründung:** Die Abwägung gehört in die ADR, die Historie in `git`, die
 Herkunft in **ein** auflösbares Feld (`LH-*`, `ADR-*`, `· seit welle-<NN>`).

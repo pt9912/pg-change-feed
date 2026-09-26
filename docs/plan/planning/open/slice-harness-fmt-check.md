@@ -189,8 +189,8 @@ Zeilen mit Stand `diff`:
 
 | Träger | Befund | Behandlung |
 |---|---|---|
-| `.claude/commands/implement-slice.md` Schritt 18 | drei Zeilen mit `gofmt` (Zeilen 184, 186, 187), ein Satz „Bestandsdateien außerhalb des Diffs bleiben unberührt“ (Zeile 1 und 2 des Feldes) | wird auf `make fmt-check` umgeschrieben (Liefer-Punkt 3); der Bestands-Satz entfällt. |
-| `.harness/skills/reviewer.md` LOW-Zeile | eine Zeile mit `gofmt -l` (Zeile 266) | Probe wird `make fmt-check`. |
+| `.claude/commands/implement-slice.md` Schritt 18 | drei Zeilen mit `gofmt` (Absatz „Format“), ein Satz „Bestandsdateien außerhalb des Diffs bleiben unberührt“ (Zeile 1 und 2 des Feldes) | wird auf `make fmt-check` umgeschrieben (Liefer-Punkt 3); der Bestands-Satz entfällt. |
+| `.harness/skills/reviewer.md` LOW-Zeile | eine Zeile mit `gofmt -l` (im Absatz **LOW**, Satz „eine Go-Datei des Diffs, die `gofmt -l` im gepinnten Toolchain-Image meldet“) | Probe wird `make fmt-check`. |
 | `.claude/hooks/pretooluse-command-guard.sh` | ein Kommentar erwähnt `gofmt` als Beispiel eines Kommando-Segments (nicht Teil des Feldes: Suchraum `.claude/commands`) | unberührt. |
 | Beobachtungs-Register `BEO-PGC/formatierungs-drift-ohne-gate` | Zustand „Werkzeug offen, Adresse `slice-harness-fmt-check`“ | Träger der Planner-Closure: `state.md` auf „Werkzeug geliefert“; fremde Datei, deshalb Meldung. |
 | `harness/README.md` | keine Zeile zu einem Format-Ziel (Zeile 3 des Feldes: 0 Treffer am Parent) | Zeilen kommen mit Liefer-Punkt 1. |

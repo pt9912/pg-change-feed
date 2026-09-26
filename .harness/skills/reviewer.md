@@ -279,8 +279,9 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   nicht Gegenstand (Bereinigung: eigener Slice). Kein Gate fängt das: das
   Werkzeug hat keine Ausnahmeliste und steht nicht in `make gates`
   ([`harness/sensors/kommentar-kennungen.md`](../../harness/sensors/kommentar-kennungen.md)).
-  Herkunft: `BEO-PGC/slice-chronik-in-code-kommentar` (Abgrenzung: Kennungen je
-  Block, kein Satz-Subjekt) · seit slice-code-kommentare-kennungen.
+  Herkunft: `BEO-PGC/kommentar-herkunft-als-kette` (Abgrenzung zu
+  `BEO-PGC/slice-chronik-in-code-kommentar`: Kennungen je Block, kein
+  Satz-Subjekt) · seit slice-code-kommentare-kennungen.
 
 **LOW** — stilistisch unschön ohne semantische Auswirkung, einmalige Tippfehler,
 unbenutzte Imports, eine Go-Datei des Diffs, die `gofmt -l` im gepinnten

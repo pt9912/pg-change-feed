@@ -40,25 +40,28 @@ zuerst, Test-Code als letzte Tranche —, und nur Kommentare ändern sich.
 
 **Voraussetzung:** `slice-code-kommentare-kennungen` liefert Regel
 ([`AGENTS.md`](../../../../AGENTS.md) §3.7), Werkzeug und die Basis-Messung;
-dieser Slice wendet sie an. Die Zahlen unten sind **erwartet, nicht belegt**: sie
-stammen aus dem Wegwerf-Prototyp in `slice-code-kommentare-kennungen` §1
-(Stand `7b70b34a`, mit keinem Repo-Befehl wiederholbar: 396 Kandidaten in
-Nicht-Test-, 192 in Testdateien); die Basis-Messung des Werkzeugs am Start
-ersetzt sie, und jede Tranche misst vor und nach.
+dieser Slice wendet sie an. Die Zahlen unten sind **gemessen** am Stand
+`d13ab81e` (2026-09-26) mit `make kommentar-kennungen COUNT=1 TESTS=exclude
+PATHS=<Suchraum>` (T1 bis T7) bzw. `… TESTS=only PATHS=<Suchraum>` (die Teile von
+T8): 597 Kandidaten gesamt, davon 400 in Nicht-Test- und 197 in Testdateien
+(`make kommentar-kennungen COUNT=1` mit `TESTS=exclude`, `TESTS=only` und ohne;
+die Summen der Tranchen sind 400 und 197, abgeleitet). Sie sind eine
+Zustandsgröße ([`AGENTS.md`](../../../../AGENTS.md) §3.12): die Basis-Messung
+am Start ersetzt sie, und jede Tranche misst vor und nach.
 
 **Tranchen** (je Tranche ein oder mehrere Commits; `PATHS` ist das Argument des
 Werkzeugs):
 
-| Tranche | Suchraum (`PATHS`) | Kandidaten (erwartet) |
+| Tranche | Suchraum (`PATHS`) | Kandidaten (gemessen, Stand `d13ab81e`) |
 |---|---|---|
-| T1 | `internal/application/port` | 78, abzüglich der Blöcke der Datei des Erstbelegs |
+| T1 | `internal/application/port` | 77 |
 | T2 | `internal/domain` | 41 |
-| T3 | `internal/application/usecase` | 35 |
-| T4 | `internal/adapters/driving` | 74 |
-| T5 | `internal/adapters/driven` | 89 |
+| T3 | `internal/application/usecase` | 36 |
+| T4 | `internal/adapters/driving` | 76 |
+| T5 | `internal/adapters/driven` | 91 |
 | T6 | `internal/bootstrap`, `cmd` | 57 |
 | T7 | `tools`, `examples` | 22 |
-| T8 | alle `*_test.go`, in fünf Teil-Commits: `internal/adapters/driven` (67), `internal/bootstrap` und `cmd` (37), `internal/domain`, `internal/application` (36), `internal/adapters/driving` (31), `test/integration` (21) | 192 |
+| T8 | alle `*_test.go`, in fünf Teil-Commits: `internal/adapters/driven` (70), `internal/bootstrap` und `cmd` (37), `internal/domain`, `internal/application` (37), `internal/adapters/driving` (32), `test/integration` (21) | 197 |
 
 **Regeln je Kandidat.** Die Sätze, die eine Zusage, Kopplung, Abgrenzung oder
 Grenze der **Stelle** tragen, bleiben; gekürzt wird die Herkunft auf **einen**
@@ -156,9 +159,10 @@ Provenienz („`TestXyz` trägt … aus …“) ohne Kennungs-Kette bleibt.
       der Slice-Closure selbst (der Slice hat keine Welle; das Ereignis kann
       eintreten).
 
-**Umfang:** L — Schätzung, nicht gemessen: erwartet 588 Kandidaten
-(Prototyp-Größenordnung, §1) in bis zu 243 Go-Dateien (gemessen: Dateien mit
-einer Kennung in einer Kommentarzeile, Stand `7b70b34a`), acht Tranchen.
+**Umfang:** L — Schätzung des Umfangs; die Zahl der Kandidaten ist gemessen:
+597 (Stand `d13ab81e`, `make kommentar-kennungen COUNT=1`, §1) in bis zu 243
+Go-Dateien (gemessen: Dateien mit einer Kennung in einer Kommentarzeile, Stand
+`7b70b34a`), acht Tranchen.
 
 ## 3. Plan (vor Code)
 
@@ -220,8 +224,8 @@ die DoD tragen den Schnitt bereits (Liefer-Punkte 1 und 2).
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
 - `in-progress` → `next` (zu groß, zurück zur Zerlegung): erwartet, nicht
-  ausgeschlossen — ein Review trägt acht Tranchen mit etwa 590 erwarteten
-  Kandidaten unter Umständen nicht. Bedingung: der Reviewer nennt im Report
+  ausgeschlossen — ein Review trägt acht Tranchen mit 597 Kandidaten (gemessen,
+  Stand `d13ab81e`) unter Umständen nicht. Bedingung: der Reviewer nennt im Report
   eines Review-Laufs den Diff nicht tragbar. Schnitt entlang der Liefer-Punkte:
   **B1** = T1 bis T7 (Nicht-Test-Code) und **B2** = T8 (Test-Code) samt
   Restmenge und dem Erzeugnis-Lauf; die bis dahin gelandeten Tranchen bleiben in
@@ -248,7 +252,7 @@ geschrieben; der Planner legt in der Closure den Folge-Slice
   belegen durch:* der Reviewer liest je Tranche eine Stichprobe gegen den Code
   (Zahl der Stichproben im Bericht); eine nicht getragene Zusage wird gemeldet,
   nicht gestrichen. **Ausgang:** *(bei Closure)*
-- **Ein in-place schreibendes Textwerkzeug am Repo bei etwa 590 Kommentaren**
+- **Ein in-place schreibendes Textwerkzeug am Repo bei 597 Kandidaten**
   (`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, 3×, Schwelle
   erreicht). *Erwartet, zu belegen durch:* die Änderung läuft mit dem
   Edit-Werkzeug je Datei, nie mit `sed -i`, `perl -pi` oder einem Skript über
@@ -277,7 +281,7 @@ geschrieben; der Planner legt in der Closure den Folge-Slice
 - **Die Zahlen der Tranchen bewegen sich mit jedem Commit** (Zustandsgröße,
   [`AGENTS.md`](../../../../AGENTS.md) §3.12). *Erwartet, zu belegen durch:* jede
   Zahl im Bericht trägt Befehl, Stand und Lauf; die Zahlen dieses Plans sind
-  erwartet, nicht belegt. **Ausgang:** *(bei Closure)*
+  am Stand `d13ab81e` gemessen (§1). **Ausgang:** *(bei Closure)*
 - **Die Größe trägt einen Review nicht.** *Erwartet, nicht ausgeschlossen:* zwei
   Review-Läufe (nach T7, nach T8); die Rückführung §4 ist der Ausgang, falls der
   Reviewer den Diff nicht tragbar nennt. **Ausgang:** *(bei Closure)*
