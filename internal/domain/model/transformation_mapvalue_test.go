@@ -314,13 +314,14 @@ func TestBuildRowImageMapValue(t *testing.T) {
 	}
 }
 
-// Die kanonische Kodierung trägt Felder jeder Länge: Schlüssel und Werte mit
-// 0, 1, 255, 256, 65535, 65536 und 70000 Byte (jede Stufe, an der ein weiteres
-// Längen-Byte gebraucht wird) kommen aus `Values()` unverändert zurück, und
-// die Suche findet jeden Schlüssel und lässt einen Wert anderer Länge stehen.
+// Die kanonische Kodierung trägt Felder bis 70 000 Byte: Schlüssel und Werte mit
+// 0, 1, 255, 256, 65535, 65536 und 70000 Byte (die Stufen des zweiten und des
+// dritten Längen-Bytes) kommen aus `Values()` unverändert zurück, und die Suche
+// findet jeden Schlüssel und lässt einen Wert anderer Länge stehen. Die Stufe des
+// vierten Längen-Bytes trägt `TestMapValueEncodingCarriesFieldsBeyondSixteenMiB`.
 // Rot färbende Mutationen: das Längen-Präfix in `writeValueField` bzw.
 // `readValueField` auf die niederen Bytes kürzen (Fälle ab 256 Byte).
-func TestMapValueEncodingCarriesFieldsOfAnyLength(t *testing.T) {
+func TestMapValueEncodingCarriesFieldsUpTo70000Bytes(t *testing.T) {
 	lengths := []int{0, 1, 255, 256, 65535, 65536, 70000}
 	values := make(map[string]string, len(lengths))
 	for i, length := range lengths {
@@ -341,6 +342,40 @@ func TestMapValueEncodingCarriesFieldsOfAnyLength(t *testing.T) {
 	if err != nil || string(image) != `{"status":"`+stays+`"}` {
 		t.Fatalf("Wert ohne Zuordnung: Bild der Länge %d, Fehler %v, wollen den Wert unverändert", len(image), err)
 	}
+}
+
+// Die kanonische Kodierung trägt Felder oberhalb von 16 777 216 Byte (die Stufe
+// des vierten Längen-Bytes; die Länge ist ein `uint32`): die Suche findet einen
+// Schlüssel dieser Länge, liefert einen Wert dieser Länge vollständig und findet
+// den Schlüssel dahinter (das nächste Paar beginnt am richtigen Byte). Je Fall
+// eine eigene Zuordnung, damit der Speicher-Spitzenbedarf bei einem Feld bleibt.
+// Rot färbende Mutation: das Längen-Präfix in `writeValueField` und
+// `readValueField` auf drei Byte kürzen.
+func TestMapValueEncodingCarriesFieldsBeyondSixteenMiB(t *testing.T) {
+	const beyond = 1<<24 + 1
+	t.Run("langer Schlüssel", func(t *testing.T) {
+		longKey := strings.Repeat("k", beyond)
+		rule := mustMapValue(t, "r", "status", map[string]string{longKey: "kurz", "kurz": "x"})
+		image, err := BuildRowImage([]string{"status"}, []*string{textValue(longKey)}, nil, []Transformation{rule})
+		if err != nil || string(image) != `{"status":"kurz"}` {
+			t.Fatalf("Bild der Länge %d, Fehler %v, wollen den zugeordneten Wert", len(image), err)
+		}
+		image, err = BuildRowImage([]string{"status"}, []*string{textValue("kurz")}, nil, []Transformation{rule})
+		if err != nil || string(image) != `{"status":"x"}` {
+			t.Fatalf("Schlüssel hinter dem langen: Bild %q, Fehler %v", image, err)
+		}
+	})
+	t.Run("langer Wert", func(t *testing.T) {
+		rule := mustMapValue(t, "r", "status", map[string]string{"kurz": strings.Repeat("v", beyond), "z": "y"})
+		mapped, ok := lookupMappedValue(rule.values, "kurz")
+		if !ok || len(mapped) != beyond {
+			t.Fatalf("Wert der Länge %d, gefunden %v, wollen den zugeordneten Wert der Länge %d", len(mapped), ok, beyond)
+		}
+		image, err := BuildRowImage([]string{"status"}, []*string{textValue("z")}, nil, []Transformation{rule})
+		if err != nil || string(image) != `{"status":"y"}` {
+			t.Fatalf("Schlüssel hinter dem langen Wert: Bild %q, Fehler %v", image, err)
+		}
+	})
 }
 
 func equalMaps(a, b map[string]string) bool {
