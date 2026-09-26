@@ -23,7 +23,7 @@ Gate“).
 
 **Berührte Spec-Stellen:** — (Harness-Werkzeug; keine Spec-Stelle).
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent.
 
 **Autor:** Planner-Agent, Auftrag des Auftraggebers (Architect-Zug zu
 `BEO-PGC/formatierungs-drift-ohne-gate`). **Datum:** 2026-09-26.
