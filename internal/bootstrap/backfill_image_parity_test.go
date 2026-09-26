@@ -131,11 +131,14 @@ func parityValue(v string) *string { return &v }
 // Backslash, Zeilenumbruch und Nicht-ASCII-Zeichen — byte-gleich; die Regel
 // wirkt im Bild (die sichtbare Wirkung — bei `rename_column` der Zielname, bei
 // `map_value` der abgebildete Wert statt des Quellwerts — steht dort, wo die
-// Spalte einen Wert und keinen Ausschluss trägt, und fehlt sonst). Rot
-// färbende Mutationen (je eine): `nil` statt des
+// Spalte einen Wert und keinen Ausschluss trägt); ist die Spalte der Regel
+// ausgeschlossen, trägt das Bild weder ihren Schlüssel noch ihren Quellwert noch
+// die Wirkung der Regel. Rot färbende Mutationen (je eine): `nil` statt des
 // Regelsatzes an `BuildRowImage` im Run (Bild ohne Zielname, Paritätsfehler);
 // `nil` statt `binding.Transformations` an `BuildRowImage` im `Assembler`
-// (dasselbe von der anderen Seite).
+// (dasselbe von der anderen Seite); der Ausschluss gilt in `BuildRowImage` nicht
+// für eine Spalte, an der eine `map_value`-Regel steht: Schlüssel und abgebildeter
+// Wert stehen im Bild.
 func TestBackfillAndWALImagesAreByteEqualWithRules(t *testing.T) {
 	const (
 		source    = model.SourceID("src-parity")
@@ -230,9 +233,28 @@ func TestBackfillAndWALImagesAreByteEqualWithRules(t *testing.T) {
 							t.Fatalf("Zeile %d: WAL-Bild %s ≠ Backfill-Bild %s", i+1, walImage, backfillImage)
 						}
 						ruleValue := row[indexOf(columns, ruleColumn)]
-						if ruleValue == nil || (len(excluded) == 1 && excluded[0] == ruleColumn) {
+						ruleColumnExcluded := len(excluded) == 1 && excluded[0] == ruleColumn
+						if ruleValue == nil || ruleColumnExcluded {
 							if ruled.silent != nil && bytes.Contains(backfillImage, ruled.silent) {
 								t.Fatalf("Zeile %d: Bild %s trägt %s ohne Wert oder trotz Ausschluss", i+1, backfillImage, ruled.silent)
+							}
+							if ruleColumnExcluded {
+								// Der Ausschluss geht der Regel vor: das Bild trägt weder den
+								// Schlüssel der Quellspalte noch ihren Wert noch die Wirkung der Regel.
+								key := []byte(`"` + ruleColumn + `":`)
+								if bytes.Contains(backfillImage, key) {
+									t.Fatalf("Zeile %d: Bild %s trägt den Schlüssel %s der ausgeschlossenen Spalte", i+1, backfillImage, key)
+								}
+								if ruleValue != nil {
+									if visible := ruled.visible(*ruleValue); bytes.Contains(backfillImage, visible) {
+										t.Fatalf("Zeile %d: Bild %s trägt die Wirkung %s der Regel trotz Ausschluss", i+1, backfillImage, visible)
+									}
+									if ruled.hidden != nil {
+										if hidden := ruled.hidden(*ruleValue); bytes.Contains(backfillImage, hidden) {
+											t.Fatalf("Zeile %d: Bild %s trägt den Quellwert %s der ausgeschlossenen Spalte", i+1, backfillImage, hidden)
+										}
+									}
+								}
 							}
 							continue
 						}
