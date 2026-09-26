@@ -167,27 +167,32 @@ Gates und Belege:
       und `pgchangefeed-kotlin-0.2.2-sources.jar`); `make sdk-public-doc-check` Exit 0
       (`keine interne Kennung unter sdks`); `make test-sdk-public-doc-check` und
       `make test-sdk-kotlin-release-tag-info` Exit 0 (`alle Fälle bestanden`).
-- [ ] Post-Push-Beleg ([`AGENTS.md`](../../../../AGENTS.md) §3.10 — der Workflow ändert
-      seine Job-Struktur): der Betreiber setzt den Tag `sdk-kotlin-v0.2.2` (oder die
-      nächste freie Version), **beide** Jobs enden `success`, und ein **anonymer**
-      Abruf der POM-Datei am Download-Pfad des Repositories antwortet HTTP 200
-      (erwartet, nach dem Sammelfenster und der asynchronen Verarbeitung ggf. mit
-      Wiederholung). Der Beleg wird vor der Closure in §6/§7 eingetragen; bis dahin
-      bleibt das Risiko „erster realer Lauf“ offen.
+- [x] Post-Push-Beleg ([`AGENTS.md`](../../../../AGENTS.md) §3.10 — der Workflow ändert
+      seine Job-Struktur): der Betreiber setzt den Tag `sdk-kotlin-v0.2.2`, **beide**
+      Jobs enden `success`, und ein **anonymer** Abruf der POM-Datei am Download-Pfad
+      des Repositories antwortet HTTP 200. Gemessen vom Verifier am 2026-09-26
+      (`docs/reviews/verifikation-slice-sdk-kotlin-cloudsmith.md` §2, Zeilen wie
+      gedruckt, Beleg-Stand in §7 dieses Plans): `git ls-remote --tags origin
+      'sdk-kotlin*'` nennt `sdk-kotlin-v0.2.2` auf `2e9d8db89595f6fc228a83502315d93402daf200`
+      (gleich HEAD zum Zeitpunkt der Verifikation); `gh run view 36201941235 --json
+      conclusion,status,headSha,event,jobs`: `conclusion: success`, beide Jobs `success`;
+      anonymer `curl` gegen die Download-Basis der README plus Maven-Layout: `.pom`
+      **200 3095**, `.jar` **200 144457**, `-sources.jar` **200 39041**, `.module`
+      **200 4711**, `maven-metadata.xml` **200 342** (Größe in Bytes).
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       Report `docs/reviews/review-slice-sdk-kotlin-cloudsmith.md`: 0 HIGH,
       F-2/F-3/F-4 in der Fixrunde behoben (§3 „Plan-Nachzug der Fixrunde“), F-5 als
-      benannte Grenze in §6; **F-1 (MEDIUM) ist nicht behoben, sondern als
-      Erwartung benannt**: die anonyme Lesbarkeit steht in Trägern (§3 Fixrunde, Zeile
-      „F-1“), bis der Post-Push-Beleg (oben, `AGENTS.md` §3.10) sie belegt oder
-      korrigiert — das Kriterium „kein offenes MEDIUM“ ist damit bis zu diesem Beleg
-      mit Adresse (§6, Risiko „Tatsachenbehauptung vor dem Beleg“) getragen, nicht
-      erfüllt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+      benannte Grenze in §6; F-1 (MEDIUM) war als Erwartung benannt und ist durch den
+      Post-Push-Beleg (oben) eingelöst: alle „anonym lesbar“-Stellen bleiben
+      unverändert (Ausgang in §6, Risiko „Tatsachenbehauptung vor dem Beleg“).
+      Verifikation:
+      [`verifikation-slice-sdk-kotlin-cloudsmith`](../../../reviews/verifikation-slice-sdk-kotlin-cloudsmith.md)
+      (Verdikt Bestätigt).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **mit** Wellen von der nächsten Welle-Closure geprüft (auch für Slices ohne Wellen-Zugehörigkeit); Adresse in §4.
 
 ## 3. Plan (vor Code)
@@ -336,6 +341,17 @@ unveränderliche ADR. Ob die Zahlen `36` und `51` am Diff-Stand sinken, ist eine
 Messung des Implementers, kein Ziel: manche Treffer bleiben richtig (GitHub Packages
 bleibt Ziel).
 
+**Stand der Diff-Stand-Zahlen.** Die Zahlen 45, 38 und 0 der Zeilen 1 bis 3 sind der
+Arbeitsbaum vor der Fixrunde (Basis `a8e765dd`, Implementer-Stand). Am HEAD `2e9d8db8`
+(nach der Fixrunde) misst die Verifikation (§6 dort, **übernommen**, `git grep -c` mit
+Summen aus den gedruckten Zählwerten, abgeleitet): **47** (Secret-Regime; `releasing.md`
+16 statt 14 Zeilen), **40** in 10 Dateien (GitHub Packages weit; `releasing.md` 14 statt
+12) und **2** Kotlin-Zeilen mit `0.2.1` (`releasing.md`: die Tag-Namen der Läufe
+`sdk-kotlin-v0.2.0`/`sdk-kotlin-v0.2.1` und die Historie-Zeile 1.11 — Lauf-Beleg und
+Record, keine Träger einer Version). Die Parent-Zahlen (51, 36, 11) stimmen an beiden
+Ständen. Die Closure ändert `releasing.md` und `harness/README.md` erneut; die Zahlen
+stehen für den Stand, den ihre Spalte nennt.
+
 ## 4. Trigger
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
@@ -452,59 +468,83 @@ Closure.
   Workflow ändert seine Struktur (zwei Jobs statt einem, ein neues Ziel); jede lokale
   Prüfung ist statisch (YAML, `make gates`), Laufzeit, Registry-Zugangspfad und
   Runner-Unterschiede zeigen sich erst im Tag-Lauf. Zu belegen durch: §5.
-  **Ausgang:** offen bis zum Tag-Lauf, dann *entfallen* (grün) oder *eingetreten*
-  (rot, Korrektur im Slice oder Folge-Slice mit Kennung).
+  **Ausgang: *entfallen*.** Der Lauf 36201941235 zu `sdk-kotlin-v0.2.2` endete in beiden
+  Jobs mit `success`, ohne Berechtigungsfehler (`packages: write` steht nur im
+  GitHub-Packages-Job); Beleg in §2 (Post-Push-Beleg) und Verifikation §2/§8.
 - **Benutzername der Maven-Anmeldung: Service-Slug oder Service-Name** — eine der drei
   „nicht geprüft“-Aussagen (`ADR-0123` §Kontext; die Service-Seite nennt „Service
   username“ in der Spalte NAME). Gesetzt ist der Slug (Mitteilung des Betreibers).
   *Erwartet:* die Anmeldung gelingt. *Rückfall bei Authentifizierungsfehler
   (HTTP 401/403 im Upload-Schritt):* der Betreiber setzt `CLOUDSMITH_USERNAME` auf den
-  Service-Namen `github-ci` (Betreiber-Handlung, kein Agent-Schritt) und wiederholt
+  Service-Namen `<Service-Name>` (Betreiber-Handlung, kein Agent-Schritt) und wiederholt
   nur den roten Job („Re-run failed jobs“). Die Doku (`releasing.md` Secret-Tabelle)
-  nennt danach den Werttyp, der gewirkt hat, nicht den Wert. Der reale Beleg entsteht
-  erst mit dem Tag-Push. **Ausgang:** offen bis zum Tag-Lauf.
+  nennt den Werttyp, der gewirkt hat, nicht den Wert. **Ausgang: *entfallen*.** Der
+  Upload mit dem Slug endete `success`, kein `401`/`403` im Lauf-Log (Verifikation
+  §2); der Rückfall trat nicht ein. Ob der Service-Name ebenfalls angenommen würde,
+  ist ungeprüft und ohne Folge; `releasing.md` §4 nennt den Slug.
 - **Moduldatei (`.module`) beim nativen Maven-Upload** — Gradle veröffentlicht sie
   standardmäßig mit (`slice-sdk-readme-nutzerdoku` §3: „Publikations-Metadaten verweisen
   darauf“); ob Cloudsmith sie annimmt, ist nicht geprüft (`ADR-0123` §Kontext).
   *Erwartet:* angenommen. *Rückfall (Build-Korrektur ohne neue ADR, `ADR-0123`
   Festlegung 6):* die Moduldatei abschalten; beide Ziele bekommen dieselben Dateien, die
-  Korrektur trifft also auch GitHub Packages. **Ausgang:** offen bis zum Tag-Lauf.
+  Korrektur trifft also auch GitHub Packages. **Ausgang: *entfallen*.** Die `.module`
+  ist anonym abrufbar (HTTP 200, 4711 Bytes, gültiges Gradle-Metadatenmodell,
+  Verifikation §2): Cloudsmith hat sie angenommen, der Rückfall trat nicht ein.
 - **Anonyme Sichtbarkeit des Repositories** — gemessen nicht bestätigt (§4 Start, Punkt 2).
   *Erwartet:* nach der Betreiber-Antwort sichtbar; der Beleg §5 (anonymer POM-Abruf,
-  HTTP 200) entscheidet. **Ausgang:** offen bis zum Tag-Lauf; bleibt der Abruf `404`
-  trotz grünem Upload, ist das *eingetreten* und geht als Betreiber-Frage in den
-  Übergabe-Bericht (kein Code-Fehler des Slice).
+  HTTP 200) entscheidet. **Ausgang: *entfallen*.** Der anonyme Abruf antwortet HTTP 200
+  auf POM, Jar, Sources-Jar, Moduldatei und `maven-metadata.xml` (Verifikation §2). Die
+  Sichtbarkeit stellte sich mit dem ersten Upload ein: ein leeres Repository war anonym
+  nicht abrufbar (§4 Start), und der Abruf antwortete erst nach der asynchronen
+  Verarbeitung (rund zwei Minuten, übernommen; `releasing.md` §4).
 - **Wiederholung und Doppel-Upload derselben Version** — ob ein zweiter Upload am Ziel
   abgelehnt wird, ist für Cloudsmith (nativer Maven-Upload) und GitHub Packages nicht
   geprüft (`ADR-0123` Festlegung 5). Der Ablauf verlässt sich nicht darauf: er
   wiederholt nur den roten Job; ein Teil-Upload wird in der Web-App gelöscht.
-  *Erwartet:* im ersten Lauf tritt keine Wiederholung ein. **Ausgang:** *entfallen*,
-  wenn der erste Lauf grün ist; *eingetreten* sonst, mit dem beobachteten Verhalten in
-  `releasing.md`.
+  *Erwartet:* im ersten Lauf tritt keine Wiederholung ein. **Ausgang: *weiter offen*
+  (benannte Grenze).** Der erste Lauf war grün, es gab keine Wiederholung und keinen
+  zweiten Upload derselben Version; das Verhalten der Ziele dabei ist unbeobachtet
+  (Verifikation §8). Der Ablauf verlässt sich nicht darauf (`releasing.md` §4,
+  „Wiederholung“); Adresse: Register `BEO-PGC/plattform-verhalten-nur-vom-betreiber-pruefbar`
+  (§7).
 - **Kein Wert eines Secrets in einem Log oder Dokument** — die Zusage des Plans: der
   Workflow gibt keinen Secret-Wert aus (kein `echo`, `printenv`, `set -x` auf Werte;
   Werte über `env:` und `docker run -e NAME`; kein Build-Argument; kein `--info`/
   `--debug` beim Gradle-Aufruf); der Service-Slug steht in keinem Dokument dieses
   Repos. Die Maskierung durch GitHub Actions ist hier nicht gelesen und trägt die
   Zusage nicht. Zu belegen durch: die beiden letzten Zeilen des Suchlaufs (§3) und
-  `git grep` nach dem Slug-Anfang am Diff-Stand (erwartet: 0 Zeilen). **Ausgang:**
-  *entfallen*, wenn der Suchlauf am Diff-Stand die erwarteten Zahlen druckt.
+  `git grep` nach dem Slug-Anfang am Diff-Stand (erwartet: 0 Zeilen). **Ausgang:
+  *entfallen*.** Log: der Lauf 36201941235 trägt `CLOUDSMITH_USERNAME`,
+  `CLOUDSMITH_API_KEY` und `GITHUB_TOKEN` maskiert (`***`), die `docker run`-Zeilen nur
+  Namen, weder Klartext-Schlüssel noch `Authorization:`-Header noch Slug (Verifikation §2,
+  „Secret-Hygiene im Lauf-Log“). Dokumente: kein API-Key und kein Token steht in einem
+  Dokument; der Suchbefehl der Zusage druckte am Diff-Stand nicht 0, sondern zwei
+  Dateien (Plan: der Service-Name im Rückfalltext, ersetzt durch einen Platzhalter; Review-Report
+  §Secret-Hygiene: ein Suchmuster mit dem vierstelligen Suffix des Slugs). Der Slug ist der
+  Anmeldename des Service-Kontos, kein Schlüssel, und steht im anonym abrufbaren
+  Paketverzeichnis des Repositories (gemessen 2026-09-26: `curl -s
+  https://api.cloudsmith.io/v1/packages/pt9912/pg-change-feed/` → HTTP 200, das Feld
+  `uploader` trägt den Slug; `grep -c` auf sein Suffix druckt 1). Das Suchmuster im
+  Review-Report bleibt unverändert (§7, Entscheidung V-4).
 - **Die README nennt `0.2.2`, bevor der Tag gesetzt ist** — zwischen Merge und Tag
   verweist die Anwender-Doku auf eine Version, die auf keinem Ziel liegt (dasselbe
   Fenster hatte der Vorgänger-Slice bei `0.2.1`). Zu belegen durch: §5 (die Version ist
-  abrufbar). **Ausgang:** *entfallen* mit dem Tag-Lauf.
+  abrufbar). **Ausgang: *entfallen*.** Tag `sdk-kotlin-v0.2.2` und Version sind abrufbar
+  (§2; `maven-metadata.xml` nennt `latest` und `release` `0.2.2`).
 - **Parallele Änderungen an geteilten Trägern** — `docs/user/benutzerhandbuch.md`
   (`Version:` am Stand `989beef3`: 1.61, nach der Closure von `slice-retention-lauf-speicher-begrenzung`: 1.64, Änderungshistorie), `docs/user/releasing.md`, `harness/README.md` und
   `spec/pflichtenheft.md` sind Träger, die andere Slices berühren; der Start liest den
   Ist-Zustand und zieht `Version:` und Historie am dann geltenden Stand nach.
-  **Ausgang:** *entfallen*, wenn der Diff keine fremde Zeile überschreibt (`git diff
-  <Basis>` je Datei am Ende).
+  **Ausgang: *entfallen*.** `git diff dbb87155..HEAD --stat` nennt 12 Dateien, die zehn
+  Träger der Tabelle §3, diesen Plan und den Review-Report; die Verifikation liest keine
+  überschriebene fremde Zeile (Verifikation §8).
 - **Zwei-Quellen-Drift Handbuch gegen Pflichtenheft** — beide Träger nennen denselben
   Sachverhalt (Vertriebsziele des Kotlin-Packages); die Klasse steht mit 3× offen im
   Register (`BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft`, gemessen
   `ls …/evidence | wc -l` → 3, 2026-09-25). Zu belegen durch: der Suchlauf-Vergleich
-  beider Träger am Diff-Stand. **Ausgang:** *entfallen* bei Deckung, sonst
-  *eingetreten* (im Slice behoben, Evidenz-Datei im Register).
+  beider Träger am Diff-Stand. **Ausgang: *entfallen*.** Beide Träger nennen Cloudsmith
+  zuerst (anonym), GitHub Packages mit Token und `0.2.2` (Verifikation §8, gelesen); keine
+  Datei für `zwei-quellen-drift-handbuch-gegen-pflichtenheft` (bleibt 3×).
 
 - **Kontingent-Angabe** — die Kontoanzeige nennt (Angabe des Auftraggebers, nicht
   selbst eingesehen) für den Core-Plan nach dem Ende der Ultra-Testphase (2026-10-09,
@@ -513,10 +553,12 @@ Closure.
   Open-Source-Repositories (§4 Start, Punkt 2). *Erwartet:* ohne Einfluss — ein
   Paket unter 1 MB je Version (`ADR-0123` §Kontext, `du -sk`, entpackt 548 kB und
   260 kB); verbindlich ist die Kontoanzeige. Beleg beim ersten Lauf: die
-  Usage-Seite des Repositories in der Web-App nach dem Upload. **Ausgang:**
-  offen bis zum Tag-Lauf, dann *entfallen* (Nutzung im Rahmen beider Angaben) oder
-  *eingetreten* (Betreiber-Frage, ADR-Folge nur bei einer Änderung der
-  Festlegungen). Der Ausgang setzt die Closure.
+  Usage-Seite des Repositories in der Web-App nach dem Upload. **Ausgang: *weiter
+  offen*.** Die Usage-Seite ist nicht eingesehen (Verifikation §8); eine Version trägt
+  rund 187 kB (abgeleitet aus den Dateigrößen, `releasing.md` §4), ohne Folge bei
+  beiden Angaben. Adresse: Betreiber-Hinweis in `releasing.md` §4 (Usage-Seite) und
+  Register `BEO-PGC/plattform-verhalten-nur-vom-betreiber-pruefbar` (§7); keine
+  Slice-Pflicht.
 - **Tatsachenbehauptung vor dem Beleg: „anonym lesbar / ohne Konto und Token
   beziehbar“** (Review F-1, [`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B) —
   die Aussage steht in Trägern als Tatsache, obwohl am 2026-09-25 die anonymen URLs
@@ -527,11 +569,10 @@ Closure.
   `docs/user/benutzerhandbuch.md:1078`, `:1180`, `:1257`, `:1412`,
   `spec/pflichtenheft.md:321`, `docs/user/releasing.md:324–325`,
   `.github/workflows/sdk-kotlin-release.yml:6`, `harness/README.md:148`. Die README
-  bleibt bis dahin unverändert (Anwender-Text). **Ausgang:** offen bis zum
-  Tag-Lauf; *entfallen* bei HTTP 200 (alle Stellen bleiben unverändert),
-  *eingetreten* bei 404 trotz grünem Upload (alle Stellen werden mit der
-  Betreiber-Antwort zu Sichtbarkeit und Slug korrigiert, ein Nachzug vor der
-  Closure).
+  bleibt bis dahin unverändert (Anwender-Text). **Ausgang: *entfallen*.** Der anonyme
+  Abruf antwortet HTTP 200 (§2, Verifikation §2/§5): alle genannten Stellen bleiben
+  unverändert und sind belegt. Die Erwartung war korrekt als Erwartung geführt; das
+  Auftreten (Review F-1, MEDIUM) steht im Register (§7).
 - **Probe bindet nicht den Aufrufer** (Review F-5, benannte Grenze) — die Probe
   bindet die Task-Namen am Literal im Dockerfile; die zwei Aufruf-Literale im
   Workflow (`publishMavenPublicationToGitHubPackagesRepository`,
@@ -543,9 +584,11 @@ Closure.
   beide Stellen wortgleich (gelesen). Ebenso: Prüfung (c) ist ein `grep -F` auf
   `url = uri(…)` und würde von einer Kommentarzeile mit dem Literal erfüllt; die
   Probe hängt in Prüfung (a) am Ausgabeformat `:<Name> SKIPPED` von `--dry-run`.
-  **Ausgang:** *weiter offen* → Beobachtungs-Register bei der Closure (Klasse
-  „Probe bindet nicht den Aufrufer“), sofern der Tag-Lauf keinen Namensfehler
-  zeigt; sonst *eingetreten*.
+  **Ausgang: *weiter offen*** → Beobachtungs-Register
+  `BEO-PGC/probe-bindet-aufrufer-literale-nicht` (1×, §7). Der Tag-Lauf zeigte keinen
+  Namensfehler: beide Aufruf-Literale trugen dieselben Namen wie die Probe, im Lauf-Log
+  steht kein `Task … not found` (Verifikation §2, F-5); die Grenze besteht strukturell
+  weiter.
 
 *Kein Risiko dieses Slice, sondern benannte Trigger der ADR:* das langlebige Secret
 (OIDC statt API-Key: `ADR-0123` Re-Evaluierungs-Trigger 3) und eine Änderung der
@@ -554,7 +597,152 @@ Cloudsmith-Bedingungen oder Aussetzung des Repositories nach der nachträglichen
 
 ## 7. Closure-Notiz
 
-*(wird bei der Closure durch den Planner gefüllt)*
+- **Was hat funktioniert:** Der erste reale Lauf einer neuen Job-Struktur endete beim
+  ersten Versuch grün: `sdk-kotlin-v0.2.2` (Lauf 36201941235) zeigt beide Jobs `success`,
+  und die Einzel-Aufgaben der Ziele liefen mit den Zugangsdaten je Job allein
+  (`docker run -e NAME` erbte `GITHUB_ACTOR` aus der Schritt-Umgebung; Gradle bemängelte
+  die Zugangsdaten des jeweils anderen Repositories nicht — Review F-7, von der
+  Verifikation §7 belegt). Die Rollen-Kette lief in getrennten Kontexten: der Reviewer
+  fuhr sechs Mutationen der Eingabeseite und fand F-1/F-2 durch Lesen des Kontexts um die
+  hinzugefügten Zeilen, der Verifier fuhr fünf eigene Mutationen (alle rot, alle
+  zurückgenommen), den realen Post-Push-Lauf nach und las das Lauf-Log auf Secret-Hygiene.
+  Die Gate-Zeilen des Verifiers (Verifikation §1, **übernommen**): `make gates` Exit 0,
+  `coverage-gate: OK — Coverage 83.40% erfüllt Schwelle 80%`, `d-check: 1182 Datei(en)
+  geprüft, 0 Befund(e)`, `commit-traceability: OK — 5 Commit(s)`. Der Slice ändert kein Go;
+  `harness/sensors/*.md` trägt keine Zahl dieses Slice (`git grep -n -i -E
+  'cloudsmith|sdk-kotlin|0\.2\.2|pgchangefeed-kotlin' -- harness/sensors` druckt 0 Zeilen,
+  gemessen 2026-09-26; die Zahl `83,3–83,4 %` in `harness/sensors/coverage-gate.md` steht
+  dort als Messung des `slice-097`-Stands und bleibt), kein Nachzug.
+- **Was ging anders als geplant:** (1) *Die Probe der ersten Fassung war grün ohne
+  Aussage*: `--dry-run` löst abgekürzte Aufgabennamen auf, die Mutation `name =
+  "CloudsmithX"` blieb Exit 0; ersetzt durch den ganzzeiligen Vergleich der aufgelösten
+  Namen (§3 Plan-Nachzug des Implementers, Mutations-Tabelle). (2) *Zwei
+  MEDIUM-Findings des Reviews* (F-1 „anonym lesbar“ als Tatsache vor dem Beleg, F-2
+  Schlussabsatz in `releasing.md` widerspricht dem Nachbarn): F-2 in der Fixrunde
+  behoben, F-1 als Erwartung mit Adresse geführt und durch den Lauf eingelöst. (3) *Der
+  Post-Push-Lauf lag zur Verifikation vor*: der Betreiber setzte den Tag (Betreiber-Handlung)
+  vor der Verifikation, die den Lauf nachmaß; die Closure trägt den Beleg (§2). (4) *Die
+  „unbewiesen/erwartet“-Sätze der Träger waren durch den Lauf überholt* (V-1): in
+  `releasing.md` (§1, Secret-Hinweis, Beleg-Absätze) und `harness/README.md` (Zeile
+  `sdk-kotlin-release.yml`) in dieser Closure auf den Ist-Zustand gezogen,
+  `releasing.md` `Version:` 1.12.
+- **Post-Push-Beleg** ([`AGENTS.md`](../../../../AGENTS.md) §3.10): Tag `sdk-kotlin-v0.2.2`
+  auf `2e9d8db89595f6fc228a83502315d93402daf200` (`git ls-remote --tags origin
+  'sdk-kotlin*'`), Lauf 36201941235 `completed`/`success`, beide Jobs `success` (23:40:47Z
+  bis 23:43:16Z bzw. 23:43:00Z), Aufgaben `publishMavenPublicationToCloudsmithRepository`
+  und `publishMavenPublicationToGitHubPackagesRepository` im Lauf-Log; anonyme Abrufe am
+  Pfad der README: `.pom` 200 (3095 Bytes), `.jar` 200 (144457), `-sources.jar` 200 (39041),
+  `.module` 200 (4711), `maven-metadata.xml` 200 (342, `latest`/`release` `0.2.2`);
+  GitHub Packages listet `0.2.2`, `0.2.1`, `0.2.0` (`gh api`); die Läufe `ci`, `examples`,
+  `e2e` zum Tag-Commit `success`; im Lauf-Log stehen `CLOUDSMITH_USERNAME`,
+  `CLOUDSMITH_API_KEY` und `GITHUB_TOKEN` maskiert (`***`) — alle Zeilen aus der
+  Verifikation §2, **übernommen**, kein eigener Lauf der Closure. Die Größen von Jar und
+  Sources-Jar sind gleich denen des lokalen Baus, die SHA-256-Summen weichen ab (Zeitstempel
+  im Archiv); Byte-Gleichheit gegen GitHub Packages ist nicht geprüft (V-7).
+- **Entscheidung V-3 (ADR-Wortlaut „Name des Services“):** keine neue ADR, kein Eingriff in
+  die `Accepted`-ADR ([`AGENTS.md`](../../../../AGENTS.md) §3.5).
+  [`ADR-0123`](../../adr/0123-kotlin-sdk-zusaetzlich-auf-cloudsmith.md) Festlegung 3 nennt
+  in einer Klammer „Name des Services“ für `CLOUDSMITH_USERNAME`; der Lauf zeigt: der Wert
+  ist der Service-Slug, mit ihm gelang der Upload (Verifikation §2). Begründung: keine
+  Festlegung der ADR hängt an Name gegen Slug — Festlegung 3 legt fest, dass zwei
+  Repository-Secrets existieren, keine Action läuft und der Publish in der Docker-Stufe
+  zur Laufzeit stattfindet; der Werttyp ist ein Betriebsdetail und steht als solches in
+  `docs/user/releasing.md` §4 (Secret-Tabelle, „Der Werttyp von `CLOUDSMITH_USERNAME`“).
+  Trigger für eine neue ADR mit `Supersedes`: eine Entscheidung, die vom Kontotyp oder
+  vom Werttyp des Anmeldenamens abhängt (etwa ein Wechsel auf OIDC, `ADR-0123`
+  Re-Evaluierungs-Trigger 3).
+- **Entscheidung V-4 (Slug in Dokumenten):** Im Plan ersetzt ein Platzhalter den Namen des
+  Service-Kontos im Rückfalltext (§6). Der Review-Report `docs/reviews/review-slice-sdk-kotlin-cloudsmith.md`
+  (Record) trägt in der Zeile „Secret-Hygiene“ ein Suchmuster mit dem vierstelligen Suffix
+  des Slugs; es **bleibt unverändert**. Begründung: (1) der Slug ist der Anmeldename des
+  Service-Kontos, kein Schlüssel — ohne den API-Key ermöglicht er nichts; (2) er steht im
+  anonym abrufbaren Paketverzeichnis des Repositories (Feld `uploader`, gemessen 2026-09-26,
+  §6 „Kein Wert eines Secrets“) und ist damit öffentlich; (3) eine Änderung des
+  Suchmusters ändert den Beleg der Zeile („0 Treffer“ gegen genau dieses Muster) und ist
+  kein Zitat-Korrektur-Fall im Sinn von [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
+  (Verweisgerüst bei unverändertem Referenten); (4) `git` hält den Text in der Historie
+  unabhängig davon. Die Zusage des Plans („der Service-Slug steht in keinem Dokument“) war
+  damit strenger, als der Wert es verlangt; der Risiko-Ausgang in §6 nennt das.
+- **V-5 (Stand der Diff-Zahlen):** vermerkt in §3 („Stand der Diff-Stand-Zahlen“): 45, 38
+  und 0 sind der Stand vor der Fixrunde, `2e9d8db8` misst 47, 40 und 2.
+- **Steering-Loop-Eintrag (Lerneintrag):** (a) *Geschärfte Regel — keine neue, eine
+  bestätigte:* die verkörperte Regel „je Zusage eine Mutation der Eingabeseite“ (Schritt 19
+  von `implement-slice`) hat an einer **Probe im Docker-Bau** gewirkt: die erste Fassung
+  war grün ohne Aussage, weil Gradle abgekürzte Aufgabennamen auflöst; der Implementer fand
+  es durch die Mutation, vor dem Review. Zugleich der erste reale Lauf einer neuen
+  Job-Struktur (zwei Jobs, ein Ziel je Job), der beim ersten Versuch grün lief — die
+  Vorarbeit war die Probe im Bau (beide Jobs fahren `make sdk-pack-kotlin` vor dem Publish)
+  und die statisch gelesene Struktur. Klasse
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, neue Form (Probe im Bau als
+  Träger-Typ), Datei im Register (13×, verkörpert). (b) *Beobachtung ohne Regel:* Cloudsmith
+  verarbeitet den Upload asynchron; der Abruf antwortet erst nach rund zwei Minuten mit 200
+  (übernommen, Verifikation §2), obwohl der Publish-Task nach 13 Sekunden endet. Ein 404
+  direkt nach dem grünen Upload ist kein Fehler, der Beleg braucht Wartezeit (Poll). Kein
+  Sensor und keine Regel: Adresse ist der Hinweis in `docs/user/releasing.md` §4 („Beleg
+  und offene Punkte“). (c) *Bestätigte Regel:* `AGENTS.md` §3.12 Instanz B — Aussagen über
+  den Gegenstand vor dem Beleg werden als **erwartet** geführt, nicht als geprüft. Der
+  Reviewer fand die Aussage „anonym lesbar“ als Tatsache in fünf Trägern (F-1, MEDIUM); die
+  Fixrunde führte sie als Erwartung mit Adresse, der Post-Push-Lauf löste sie ein, und die
+  Träger blieben unverändert. Klasse
+  `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`, Ausprägung im Anwender-/
+  Betreiber-Träger (8×, verkörpert). *Benannte Spec-Lücke:* keine.
+- **Beobachtungs-Register (`../observations/`):** Zähler = Zahl der Dateien unter
+  `evidence/`, gemessen 2026-09-26 mit `ls … | wc -l`. *Bestehende Klassen mit weiterer
+  Datei:* `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (F-2 MEDIUM, F-3 LOW, eine
+  Gelegenheit) **12×**, verkörpert, Datei außerhalb des Deckels wegen MEDIUM;
+  `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (F-1, MEDIUM) **8×**,
+  verkörpert; `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (Probe im Bau) **13×**,
+  verkörpert, neue Form. *Neue Einträge:* `BEO-PGC/probe-bindet-aufrufer-literale-nicht`
+  (F-5, INFO; Risiko „Probe bindet nicht den Aufrufer“) **1×**, offen;
+  `BEO-PGC/plattform-verhalten-nur-vom-betreiber-pruefbar` (Risiko „Kontingent-Angabe“,
+  Risiko „Wiederholung und Doppel-Upload“, Anzeige der Paketseite) **1×**, offen.
+  *Gedeckelt, ohne neue Datei* (Deckel für verkörperte Einträge ab 10×,
+  `../observations/README.md`): `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (32×,
+  verkörpert) — V-1 (LOW, der Verifier fand vor dem Merge die durch den Post-Push-Lauf
+  überholten „unbewiesen/erwartet“-Sätze; in dieser Closure nachgezogen; Träger-Typ
+  bekannt, Doku-Träger); `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (22×,
+  verkörpert) — V-5 (INFO, Diff-Stand-Zahlen ohne Stand-Vermerk; Vermerk in §3; Träger-Typ
+  bekannt: Zahl im Slice-Plan). *Ohne Eintrag:* F-4 (LOW, Verweis auf ein nicht geführtes
+  Risiko — in der Fixrunde behoben, einmalig), F-6 (INFO, fünf wortgleiche Schritte in zwei
+  Jobs, von `ADR-0123` Festlegung 5 in Kauf genommen), V-6 (INFO, Verarbeitungsverzögerung,
+  Hinweis in `releasing.md`), V-7 (INFO, Byte-Gleichheit ungeprüft), V-8 (INFO, Grenzen;
+  Register-Eintrag `plattform-verhalten-nur-vom-betreiber-pruefbar`). *§3.10 Regelfall:*
+  `BEO-PGC/github-actions-unverifizierbar-lokal` (8×, verkörpert) — der Slice ändert die
+  Job-Struktur, der Beleg-Lauf lag vor der Closure, das Risiko trug den Ausgang erst mit
+  ihm; Regelfall ohne Befund, keine Datei. *Einträge bei 3× oder darüber ohne Ausgang mit
+  dieser Datei:* keiner (der bestehende Eintrag
+  `BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft`, 3×, offen, bekommt keine
+  Datei; sein Vermerk „Lese-Schritt der nächsten Welle-Closure (`welle-transformationen`)“
+  steht).
+- **Übergaben an offene Pläne** ([`AGENTS.md`](../../../../AGENTS.md) §3.13): Suchlauf
+  `git grep -n -E '1\.6[0-9]' -- 'docs/plan/planning/open/slice-transformationen-*.md'
+  docs/plan/planning/welle-transformationen.md` (gemessen 2026-09-26): 0 Zeilen — kein Plan
+  der Welle zitiert eine Handbuch-Version 1.6x als Lokator. Suchlauf `git grep -n -i -E
+  'cloudsmith|sdk-kotlin|pgchangefeed-kotlin|Kotlin-README' -- docs/plan/planning/open
+  docs/plan/planning/next docs/plan/planning/welle-transformationen.md` (gemessen
+  2026-09-26): Treffer in `slice-sdk-public-doc-check-gate` (Z. 57, Abgrenzung „Wächter für
+  README-Beispiele“, ohne Bezug zur Version), `slice-transformationen-betriebsdoku` (Z. 73
+  und 137: liest die Kotlin-README auf Row-Image-Aussagen und sagt, die README erscheine mit
+  einer neuen Package-Version — kein Widerspruch, sein Start liest die geltende README) und
+  `welle-transformationen.md` (Z. 397, der Satz zur Kotlin-Version gilt: `0.2.2` ist
+  gehoben). Nicht gefunden: kein offener Plan, der `0.2.1` als Kotlin-Stand oder GitHub
+  Packages als einziges Ziel führt. Kein Nachzug.
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Entfallen (neun):* erster realer
+  Lauf der Job-Struktur · Service-Slug oder Service-Name · Moduldatei · anonyme Sichtbarkeit
+  · Kein Wert eines Secrets in Log oder Dokument (mit V-4) · die README nennt `0.2.2` vor
+  dem Tag · parallele Änderungen an geteilten Trägern · Zwei-Quellen-Drift Handbuch gegen
+  Pflichtenheft · Tatsachenbehauptung vor dem Beleg. *Weiter offen (drei):* Wiederholung und
+  Doppel-Upload · Kontingent-Angabe → Register
+  `BEO-PGC/plattform-verhalten-nur-vom-betreiber-pruefbar`; Probe bindet nicht den Aufrufer
+  → Register `BEO-PGC/probe-bindet-aufrufer-literale-nicht`. Kein Risiko ist *eingetreten*.
+- **Drei Paarungen:** dieser Slice ist wellenlos; die Paarungen (Anker · Folge-Slice ·
+  Register) prüft die Closure von [welle-transformationen](../welle-transformationen.md)
+  (offen; Ereignis-Adresse in §4, die Roadmap führt sie unter *Offene Wellen*). Anker: die
+  Probe in `sdks/kotlin/Dockerfile` (Stufe `pack`) und die Mutations-Tabelle §3;
+  Folge-Slice: keiner; Register: die fünf Einträge oben.
+- **Nicht eingesehen:** die Anzeige der POM-Beschreibung auf der
+  Cloudsmith-Paketseite und die Usage-Seite des Repositories sind nicht eingesehen; beide
+  stehen als Betreiber-Hinweis in `docs/user/releasing.md` §4 und im Register.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

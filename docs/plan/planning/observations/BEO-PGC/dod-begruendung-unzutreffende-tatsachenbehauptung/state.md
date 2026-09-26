@@ -12,11 +12,16 @@ Träger schlägt er den Kopf von `docs/plan/adr/README.md` vor oder `AGENTS.md`
 und steht aus; deshalb ist der Ausgang hier *nicht* vorwegnehmend als
 `verkörpert` gesetzt.
 
-Zähler (abgeleitet): **7×** (evidence/slice-036.md, evidence/slice-082.md,
+Zähler (abgeleitet): **8×** (evidence/slice-036.md, evidence/slice-082.md,
 evidence/slice-081.md, evidence/slice-083.md, evidence/slice-095.md,
 evidence/slice-sdk-kotlin-sse-client-flaeche.md,
-evidence/slice-backfill-snapshot-reader.md) — **Schwelle erreicht**,
-Ausgang beim Lese-Schritt der `welle-20`-Closure. Der siebte Beleg
+evidence/slice-backfill-snapshot-reader.md,
+evidence/slice-sdk-kotlin-cloudsmith.md) — **Schwelle erreicht**,
+Ausgang beim Lese-Schritt der `welle-20`-Closure. Der achte Beleg
+(`slice-sdk-kotlin-cloudsmith`, Review F-1, MEDIUM) ist eine Ausprägung im
+Anwender-/Betreiber-Träger: eine noch nicht belegte Aussage („anonym lesbar“) stand
+als Tatsache in fünf Trägern, der Plan führte sie als Erwartung mit Adresse, der
+Post-Push-Lauf löste sie ein; die Aussage war wahr. Der siebte Beleg
 (`slice-backfill-snapshot-reader`) trifft eine Plan-Begründung und ein DoD-Kriterium
 („der Testcontainer bringt die Extension-Typen nicht mit"), die der
 Nachprüfungs-Review durch Messung widerlegte; verwandt mit

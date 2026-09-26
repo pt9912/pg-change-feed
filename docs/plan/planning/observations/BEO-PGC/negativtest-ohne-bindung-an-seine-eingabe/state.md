@@ -37,17 +37,24 @@ Träger“ — eine Gegenentscheidung des Architects ist ein neues Verdikt):
   einer Abfrage-Eingabe; er ist im Slice gebunden (Test mit Run einer fremden Quelle,
   Mutation danach rot), der Reviewer fand ihn vor dem Merge.
 
-Zähler (abgeleitet): **12×** (evidence/slice-086.md, evidence/slice-087.md,
+Zähler (abgeleitet): **13×** (evidence/slice-086.md, evidence/slice-087.md,
 evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md,
 evidence/slice-092.md, evidence/slice-backfill-snapshot-reader.md,
 evidence/slice-backfill-run-usecase.md,
 evidence/slice-backfill-sql-administration.md,
 evidence/slice-backfill-e2e.md,
 evidence/slice-backfill-bench-richtgroesse.md,
-evidence/slice-sdk-readme-nutzerdoku.md) —
+evidence/slice-sdk-readme-nutzerdoku.md,
+evidence/slice-sdk-kotlin-cloudsmith.md) —
 **Schwelle erreicht**; der Lese-Schritt der Closure von `welle-backfill-bestand`
 liest den Eintrag mit (11×), der Lese-Schritt der nächsten Welle-Closure
-(`welle-transformationen`) den zwölften Beleg. Der zwölfte Beleg
+(`welle-transformationen`) den zwölften und dreizehnten Beleg. Der dreizehnte
+Beleg (`slice-sdk-kotlin-cloudsmith`, Implementer-Mutation, kein Review-Finding)
+trifft eine **Probe im Docker-Bau**: die erste Fassung (`--dry-run` der zwei
+Aufgabennamen, Exit 0) blieb bei der Mutation des Repository-Namens grün, weil
+Gradle abgekürzte Aufgabennamen auflöst; ersetzt durch den ganzzeiligen Vergleich der
+aufgelösten Namen. Neue Form (anderer Träger-Typ: Probe im Bau statt Test), deshalb
+außerhalb des Deckels; die verkörperte Regel hat vor dem Review gewirkt. Der zwölfte Beleg
 (`slice-sdk-readme-nutzerdoku`, Review F-1, HIGH) trifft eine **README-Prüfung**: der
 Wächter band Namen und Tabellen, nicht die Argumente der Beispiel-Aufrufe; die Fixrunde
 bindet jeden Aufruf an die echte Signatur (Ausprägung: die Eingabeseite eines

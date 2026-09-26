@@ -1,7 +1,7 @@
 # Releasing: Release-Prozess für Betreiber und Maintainer
 
-Version: 1.11
-Stand: 2026-09-25
+Version: 1.12
+Stand: 2026-09-26
 
 ## 1. Zweck und Zielgruppe
 
@@ -33,9 +33,10 @@ PyPI) sowie `sdk-kotlin-v0.2.0` (`pgchangefeed-kotlin` auf GitHub
 Packages). Die `0.2.0`-Läufe der drei Workflows (Lauf-Kennungen 36117929191,
 36117929298 und 36117929552, abgefragt mit `gh run list --workflow
 <datei>.yml`, 2026-09-25) endeten je mit `success`. Der Kotlin-Weg
-veröffentlicht zusätzlich nach Cloudsmith (zwei Jobs, ein Ziel je Job);
-diese Struktur ist bis zu ihrem ersten Tag-Lauf nicht bewiesen (§4
-„SDK-Release: GitHub-Packages- und Cloudsmith-Publish“).
+veröffentlicht zusätzlich nach Cloudsmith (zwei Jobs, ein Ziel je Job); der
+Lauf zu `sdk-kotlin-v0.2.2` (Lauf-Kennung 36201941235, abgefragt mit
+`gh run view 36201941235 --json jobs`, 2026-09-26) endete in beiden Jobs mit
+`success` (§4 „SDK-Release: GitHub-Packages- und Cloudsmith-Publish“).
 
 Dieses Dokument ersetzt nicht `docs/user/benutzerhandbuch.md` — jenes
 beschreibt den laufenden Betrieb des Feed-Containers (Umgebungsvariablen,
@@ -132,11 +133,11 @@ Scope-Fehler bleibt dort sichtbar rot.
 
 Alle Secrets dieser Tabelle sind eine externe, kontobezogene Handlung — kein
 technischer Bestandteil dieses Repos legt sie an. Der Werttyp von
-`CLOUDSMITH_USERNAME` ist der Service-Slug des Cloudsmith-Kontos; ob
-Cloudsmith beim Upload stattdessen den Service-Namen verlangt, zeigt erst der
-erste Tag-Lauf (bei einem Authentifizierungsfehler HTTP 401/403 im
-Upload-Schritt setzt der Betreiber das Secret auf den Service-Namen und
-wiederholt nur den roten Job).
+`CLOUDSMITH_USERNAME` ist der Service-Slug des Cloudsmith-Kontos; mit ihm
+endete der Upload im Lauf 36201941235 mit `success`. Ob Cloudsmith beim Upload
+auch den Service-Namen annimmt, ist nicht geprüft. Bei einem
+Authentifizierungsfehler (HTTP 401/403 im Upload-Schritt) prüft der Betreiber
+zuerst den Wert dieses Secrets und wiederholt nur den roten Job.
 
 ### SDK-Release: NuGet.org-Publish für `PgChangeFeed.Client`
 
@@ -336,38 +337,46 @@ roten Job. Bleibt nach einem Fehlschlag ein Teil-Upload zurück (Einzeldateien
 ohne vollständiges Paket), löscht der Betreiber das Paket in der Web-App des
 Ziels und wiederholt den Job.
 
-**Offen bis zum ersten Tag-Lauf.** Die Job-Struktur mit zwei Zielen ist
-lokal nur statisch geprüft (`AGENTS.md` §3.10): der reale Lauf mit dem ersten
-`sdk-kotlin-v*`-Tag, der beide Ziele trägt (`sdk-kotlin-v0.2.2`), muss beide Jobs `success`
-zeigen, und ein anonymer Abruf der POM-Datei am Cloudsmith-Download-Pfad
-(`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/io/github/pt9912/pgchangefeed-kotlin/0.2.2/pgchangefeed-kotlin-0.2.2.pom`)
-muss HTTP 200 antworten (nach dem Sammelfenster, ggf. mit Wiederholung).
-Ebenfalls bis dahin nicht geprüft: ob Cloudsmith die von Gradle
-mitveröffentlichte Moduldatei annimmt, ob der Anmeldename ein Service-Slug
-oder ein Service-Name sein muss und ob die Paketseite die POM-Beschreibung
-anzeigt (optional pflegt der Betreiber dort den Text in der Web-App). Die
-Versionen `0.2.0` und `0.2.1` liegen nur auf GitHub Packages; auf Cloudsmith
-liegen nach dem ersten Tag-Lauf (`sdk-kotlin-v0.2.2`) erwartet die Versionen ab
-`0.2.2`.
+**Beleg und offene Punkte.** Die Job-Struktur mit zwei Zielen ist real
+belegt (`AGENTS.md` §3.10): Der Lauf zu `sdk-kotlin-v0.2.2` (Lauf-Kennung
+36201941235) zeigt beide Jobs `success`. Ein anonymer Abruf am
+Cloudsmith-Download-Pfad antwortet HTTP 200 für die POM-Datei
+(`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/io/github/pt9912/pgchangefeed-kotlin/0.2.2/pgchangefeed-kotlin-0.2.2.pom`),
+das Jar, das Sources-Jar, die Moduldatei und `maven-metadata.xml` (Abrufe der
+Verifikation, 2026-09-26). Cloudsmith hat die von Gradle mitveröffentlichte
+Moduldatei angenommen. Der Abruf antwortet erst nach der asynchronen
+Verarbeitung mit HTTP 200 (im Lauf zu `sdk-kotlin-v0.2.2` nach rund zwei
+Minuten, Angabe der Verifikation, übernommen); HTTP 404 direkt nach dem grünen
+Upload-Schritt ist kein Fehler, der Beleg entsteht durch Wiederholen des
+Abrufs. Die Versionen `0.2.0` und `0.2.1` liegen nur auf GitHub Packages; auf
+Cloudsmith liegen die Versionen ab `0.2.2` (`maven-metadata.xml` nennt
+`latest` und `release` `0.2.2`).
+
+Nicht geprüft: ob die Cloudsmith-Paketseite die POM-Beschreibung anzeigt
+(optional pflegt der Betreiber dort den Text in der Web-App); die
+Usage-Seite des Repositories in der Web-App, auf der der Betreiber das
+Kontingent einsieht (eine Version trägt rund 187 kB, abgeleitet aus den
+Dateigrößen Jar 144457, Sources-Jar 39041 und POM 3095 Bytes); ein
+Doppel-Upload derselben Version.
 
 Kein `:latest`-Äquivalent (weder GitHub Packages noch Cloudsmith kennen
 eines) und kein GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb
 dieser Folgepflicht (`ADR-0109`, `ADR-0123`).
 
-**Belegt ist der Publish nach GitHub Packages, nicht die Zwei-Job-Struktur.**
-Zwei reale `sdk-kotlin-v*`-Tags liefen mit grünem
-`sdk-kotlin-release.yml`-Lauf durch, jeweils mit nur diesem einen Ziel:
-`sdk-kotlin-v0.2.0` (Lauf 36117929552) und `sdk-kotlin-v0.2.1` (Lauf
-36129672852), alle Schritte `success`. Die Paketversion ist über die
-GitHub-API abfragbar (`gh api
+**Belegt ist der Publish mit beiden Zielen.** Drei reale `sdk-kotlin-v*`-Tags
+liefen mit grünem `sdk-kotlin-release.yml`-Lauf durch: `sdk-kotlin-v0.2.0`
+(Lauf 36117929552) und `sdk-kotlin-v0.2.1` (Lauf 36129672852) mit dem einen
+Ziel GitHub Packages, `sdk-kotlin-v0.2.2` (Lauf 36201941235, Tag-Commit
+`2e9d8db8`) mit beiden Zielen, alle Schritte `success`. Der Schritt „Nach
+GitHub Packages veroeffentlichen (Gradle-Aufgabe des Ziels, im Docker-Image)"
+ruft die Einzel-Aufgabe `publishMavenPublicationToGitHubPackagesRepository`,
+der Schritt „Nach Cloudsmith veroeffentlichen (Gradle-Aufgabe des Ziels, im
+Docker-Image)" die des zweiten Ziels; beide Aufgaben stehen im Lauf-Log. Die
+Paketversionen auf GitHub Packages sind über die GitHub-API abfragbar (`gh api
 /users/pt9912/packages/maven/io.github.pt9912.pgchangefeed-kotlin/versions`
-nennt `0.2.0`, 2026-09-25). Der heutige Schritt „Nach GitHub Packages
-veroeffentlichen (Gradle-Aufgabe des Ziels, im Docker-Image)" ruft die
-Einzel-Aufgabe `publishMavenPublicationToGitHubPackagesRepository`, der Schritt
-„Nach Cloudsmith veroeffentlichen (Gradle-Aufgabe des Ziels, im Docker-Image)"
-die des zweiten Ziels; beide Schritte, die Job-Struktur mit zwei Zielen und
-der Cloudsmith-Weg sind bis zu ihrem ersten Tag-Lauf unbewiesen (Absatz „Offen
-bis zum ersten Tag-Lauf“ oben).
+nennt `0.2.2`, `0.2.1` und `0.2.0`, Abruf der Verifikation, 2026-09-26). Die
+Werte der Zugangsdaten stehen im Lauf-Log maskiert (`***`), die
+`docker run`-Zeilen tragen nur die Namen.
 
 **Beschreibung der Kotlin-Paketseite (manuell).** GitHub Packages zeigt bei
 Maven-Paketen weder eine README noch die `<description>` der POM an; die
@@ -421,3 +430,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.9 | 2026-09-25 | §1 auf den realen Server-Release `v0.2.0` gezogen (`ADR-0051`): Lauf 36190768475 `success`, GHCR und Docker Hub tragen `0.2.0` und `latest` (amd64, arm64), Release-Hinweise lassen sich mit `gh release edit` ergänzen |
 | 1.10 | 2026-09-25 | §4 Kotlin-Abschnitt auf zwei Vertriebsziele gezogen (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): ein Job je Ziel (GitHub Packages, Cloudsmith) mit den Einzel-Aufgaben statt der Sammel-Aufgabe, Secret-Tabelle um `CLOUDSMITH_USERNAME` und `CLOUDSMITH_API_KEY` erweitert, Betreiber-Voraussetzungen, Wiederholung je Job und die Offen-Punkte bis zum ersten Tag-Lauf beschrieben; „Alle drei Secrets“ leitet die Zahl nicht mehr aus einem Zählwort ab |
 | 1.11 | 2026-09-25 | §4 Kotlin-Abschnitt an den Beleg-Stand gezogen (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): bewiesen ist der Publish nach GitHub Packages mit den Läufen von `sdk-kotlin-v0.2.0` und `sdk-kotlin-v0.2.1`, die Zwei-Job-Struktur mit Cloudsmith ist bis zu ihrem ersten Tag-Lauf unbewiesen; die Schrittnamen stehen wie im Workflow; `CLOUDSMITH_USERNAME` trägt überall den Service-Slug; die Versionen auf Cloudsmith stehen als nach dem ersten Tag-Lauf erwartet |
+| 1.12 | 2026-09-26 | §1 und §4 Kotlin-Abschnitt an den Lauf zu `sdk-kotlin-v0.2.2` gezogen (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): Lauf 36201941235 mit beiden Jobs `success`, anonymer Abruf der Cloudsmith-Artefakte HTTP 200, Service-Slug und Moduldatei angenommen; offen bleiben Paketseiten-Anzeige, Usage-Seite und Doppel-Upload; Hinweis zur Verarbeitungsverzögerung beim Abruf |

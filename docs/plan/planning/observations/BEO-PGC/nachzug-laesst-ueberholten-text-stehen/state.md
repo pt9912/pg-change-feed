@@ -12,7 +12,9 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 11× (Dateien unter `evidence/`; die zehnte,
+Zähler: 12× (Dateien unter `evidence/`; die zwölfte,
+`evidence/slice-sdk-kotlin-cloudsmith.md`, trägt F-2 (MEDIUM) und F-3 (LOW): der Schlussabsatz
+eines Betreiber-Abschnitts und die Nachbarzeile zum Werttyp eines Secrets im selben Träger; die zehnte,
 `evidence/slice-backfill-speicher-untersuchung.md`, trägt F-3, F-5 und V-2: Nachbar-Aussagen
 im selben Handbuch und im Trigger des Folge-Slice, ein Suchausdruck in fremder Datei, dessen
 Meldung die Closure des meldenden Slice zieht; die elfte,
