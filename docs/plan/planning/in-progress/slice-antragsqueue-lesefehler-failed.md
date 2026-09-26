@@ -101,7 +101,7 @@ Case), keine ADR.
 
 ## 2. Definition of Done
 
-- [ ] **Liefer-Punkt 1 — Lesepfad und Verarbeitung.** Eine vom
+- [x] **Liefer-Punkt 1 — Lesepfad und Verarbeitung.** Eine vom
       Antrags-Konstruktor verworfene Zeile (leeres Schema, leerer Tabellenname,
       `exclude_column`/`include_column` mit leerer Spalte, eine Antragsart
       außerhalb der geschlossenen Menge, jeder künftige Grund) wird mit ihrer
@@ -136,7 +136,7 @@ Case), keine ADR.
       Fehlertext des Vermerks wird durch einen festen Text ersetzt (der Test
       prüft den Text je Grund); ein Fehler der Lesung selbst
       (`TestReadPendingRequestsClassifiesScanFailure`) bleibt ein Fehler.
-- [ ] **Liefer-Punkt 2 — die Spec.** [`SPEC-019`](../../../../spec/pflichtenheft.md)
+- [x] **Liefer-Punkt 2 — die Spec.** [`SPEC-019`](../../../../spec/pflichtenheft.md)
       trägt im **selben Commit** wie der Code: der Ort der Prüfung (Verarbeitung,
       nicht Lesen), der Fehlertext je Grund (Klartext, gefolgt von Doppelpunkt,
       Leerzeichen und der Adresse — die Form der bestehenden Tabelle; die
@@ -150,29 +150,29 @@ Case), keine ADR.
       Änderungshistorie des Pflichtenhefts trägt eine Zeile. *Zu belegen durch:*
       Lesen von `SPEC-019` gegen den Code — der Text je Grund im Test ist
       wörtlich der der Spec — und der Suchlauf in §3; `make docs-check`.
-- [ ] **Liefer-Punkt 3 — Kommentare und Träger des alten Verhaltens.** Die
+- [x] **Liefer-Punkt 3 — Kommentare und Träger des alten Verhaltens.** Die
       Kommentare, die die Ablehnung beim Lesen beschreiben (Konstruktor,
       `ReadPendingRequests`, `processAdministrationRequests`, Test-Godocs), sind
       nachgezogen; ein Träger in einer fremden Datei wird gemeldet, nicht still
       mitgeändert. *Zu belegen durch:* das Suchlauf-Feld in §3 (beide Stände).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=<Plan-Datei>` läuft nach jeder Fixrunde
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: [`SPEC-019`](../../../../spec/pflichtenheft.md)
+- [x] Doku-Update: [`SPEC-019`](../../../../spec/pflichtenheft.md)
       (Liefer-Punkt 2); das Benutzerhandbuch trägt zur Queue keine Aussage über
       eine Ablehnung beim Lesen (Suchlauf in §3, Befund am Start prüfen); die
       Handbuch-Versionshistorie bleibt unberührt, solange das Handbuch nicht
       geändert wird.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang
       von `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue` (`state.md`:
@@ -203,7 +203,15 @@ Store-Test, ein Whitebox-Test, ein Spec-Absatz.
 | `internal/adapters/driven/postgresstorage/sqlexec/translate_test.go` | update | `TestReadPendingRequestsRejectsRowWithEmptySchemaOrTable` auf das neue Verhalten (Negative nach [`LH-FA-ADM-001`](../../../../spec/lastenheft.md)); neue Fälle je Grund und die Zeile dahinter. |
 | `internal/adapters/driven/postgresstorage/administrationrequest_test.go` | update | Store-Test mit realen Zeilen (`make test-store`): je Grund eine verworfene Zeile mit gültiger Zeile dahinter; skopierte Bereinigung; die Mutations-Kommentare an zwei Tests (Zeilen 757, 1262) folgen dem neuen Ausgang. |
 | `internal/bootstrap/administration_internal_test.go` und die übrigen Aufrufer von `ListPending` | update | Fake-Port folgt der Form; Whitebox-Test der Verarbeitung; der Kommentar an Zeile 940 („beim Lesen abgelehnt; hier bilden das die Fakes nicht nach“). |
-| `harness/README.md` | prüfen | Beschreibung von `make test-store`: sie nennt die Queue nicht (Zeile 4 des Feldes: keine Fundstelle in `harness`); keine Änderung erwartet. |
+| `harness/README.md` | prüfen | Beschreibung von `make test-store`: sie nennt die Queue nicht (Zeile 4 des Feldes: keine Fundstelle in `harness`); keine Änderung erwartet. **Geliefert:** nicht berührt, Suchlauf Zeile 8. |
+| `internal/application/port/outbound/administrationrequest.go` — Form der Durchreichung | geliefert | Entscheidung (kleinste tragende Form): `ListPending` liefert `[]PendingAdministrationRequest`; eine Zeile trägt entweder den Antrag (`Request`) oder `Rejected` (`RejectedAdministrationRequest`: `ID` und `Message`). Der Konstruktor bleibt unverändert; den Fehlertext bildet `sqlexec.rejectionMessage` aus dem Konstruktor-Fehler und den Feldern der Zeile (Klartext, Doppelpunkt, Leerzeichen, Antrags-Kennung), weil dort Zeile und Fehler zusammentreffen. Eine Zeile ohne Kennung reist als `Rejected` mit leerer `ID` bis in die Verarbeitung und wird dort mit Warnung übersprungen (Ort der Warnung: das Log-Port liegt in der Verarbeitung, nicht in `sqlexec`). Die Ports-Regel (`ADR-0034`, `ADR-0028`) bleibt: der Port trägt Domänentypen und Text, keinen Treibertyp. |
+| `internal/adapters/driven/postgresstorage/sqlexec/rejection_internal_test.go` | neu | Test der Auffangzeile `Antrag ist ungültig` von `rejectionMessage` (über die Zeilen der Abfrage nicht herstellbar; Grund: der interne Test ruft die Funktion mit einem Fehler außerhalb der Konstruktor-Gründe). |
+| `internal/bootstrap/administration_endtoend_test.go`, `internal/adapters/driven/postgresstorage/administrationrequest_order_test.go` | update | Aufrufer von `ListPending` folgen der Form (Lesehilfe überspringt verworfene Zeilen). |
+| `internal/adapters/driven/postgresstorage/administrationrequest_test.go` | update, Nachzug | zusätzlich zur Zeile oben: `TestAdministrationRequestListPendingPassesRejectedRowsThrough` (reale Zeilen über die SQL-Funktionen: leeres Schema, leerer Tabellenname, `exclude_column`/`include_column` mit leerer Spalte, je eine gültige Zeile davor bzw. dahinter, Vermerke `failed`/`applied`, Bereinigung nach Kennungen des Tests). |
+| `internal/bootstrap/administration_internal_test.go` | update, Nachzug | Fake-Port: Feld `rows` (Zeilen mit Verwurf) und `marked` (Reihenfolge der Vermerke); `TestProcessAdministrationRequestsFailsRejectedRowsInQueueOrder` (verworfene Zeilen vor, zwischen und hinter gültigen; Zeile ohne Kennung), `TestProcessAdministrationRequestsRejectedRowSurvivesMarkFailedError`. |
+| `internal/bootstrap/administration_roles_internal_test.go` | update, Nachzug | `TestAdministrationPathRunsUnderLeastPrivilegeLogins`: vier verworfene Zeilen und eine gültige dahinter unter dem `cdc_admin`-Login bis `failed` bzw. `applied`. |
+| `internal/domain/model/administrationrequest_test.go` | update | Test-Godoc zu den Regelfeldern trug die Umschreibung „lehnte das Lesen der Queue die Zeile ab“, die das Muster in Zeile 4 des Feldes nicht trifft; gefunden im ergänzenden Lauf des Feldes (Zeile 9, Muster auf Antrag und Lesen); nachgezogen. |
+| `docs/user/benutzerhandbuch.md` | geprüft, nicht berührt | keine Aussage zu einer Ablehnung oder einem Anhalten der Queue durch eine fehlerhafte Zeile (Suchlauf Zeile 7 ohne Treffer; die Zeile des Handbuchs mit „Konstruktor“ betrifft ein Konstruktor-Argument des SDK); keine neue Betreiber-Oberfläche (Kandidatenlauf `git diff --name-only 47a646b5 -- internal/bootstrap/ tools/schema/ internal/adapters/driving/` trifft nur Tests und `wiring.go`-Kommentar/Ablauf). Aufschub der Aussage „eine verworfene Zeile endet `failed` mit Text“ im Handbuch: Adresse `slice-transformationen-betriebsdoku`. |
 
 **§3.13-Suchlauf (committetes Feld).** Bewegte Eigenschaft: „was geschieht mit
 einer Zeile, die der Antrags-Konstruktor verwirft“ — Symbolnamen
@@ -219,7 +227,24 @@ die Zeilen mit Stand `diff`:
 7b70b34a 73 -E 'ReadPendingRequests|ListPending' -- '*.go'
 7b70b34a 7 -E 'NewAdministrationRequest' -- '*.go' ':!*_test.go'
 7b70b34a 8 -E 'Ablehnung beim Lesen|abgelehnter Lesevorgang|nicht beim Lesen ab|Tabellennamen beim Lesen ab|endet mit der Konstruktor-Invariante|beim Lesen abgelehnt|ListPending. endet mit' -- '*.go' spec docs/user harness
+diff 11 -E 'ReadPendingRequests|ListPending' -- '*.go' ':!*_test.go'
+diff 91 -E 'ReadPendingRequests|ListPending' -- '*.go'
+diff 7 -E 'NewAdministrationRequest' -- '*.go' ':!*_test.go'
+diff 1 -E 'Ablehnung beim Lesen|abgelehnter Lesevorgang|nicht beim Lesen ab|Tabellennamen beim Lesen ab|endet mit der Konstruktor-Invariante|beim Lesen abgelehnt|ListPending. endet mit' -- '*.go' spec docs/user harness
+7b70b34a 7 -i -E 'Antr[a-z]*.*(beim Lesen|Lesefehler|Lesung.*(ablehn|Fehler))|(beim Lesen|Lesefehler).*Antr' -- '*.go' spec docs/user harness
+diff 6 -i -E 'Antr[a-z]*.*(beim Lesen|Lesefehler|Lesung.*(ablehn|Fehler))|(beim Lesen|Lesefehler).*Antr' -- '*.go' spec docs/user harness
+7b70b34a 0 -i -E 'Lesefehler|Ablehnung beim Lesen|abgelehnt beim Lesen|Queue anhalt' -- docs/user harness
+diff 0 -i -E 'Lesefehler|Ablehnung beim Lesen|abgelehnt beim Lesen|Queue anhalt' -- docs/user harness
+diff 0 -n -E 'administrationrequest.go:[0-9]+|translate.go:[0-9]+|wiring.go:[0-9]+' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/in-progress
 ```
+
+Gemessen am Stand `diff` (Arbeitsbaum nach der Lieferung):
+
+- Zeilen 5 bis 7 (Symbole): 11 Zeilen in Nicht-Test-Dateien (Port 2, Adapter 4, `sqlexec` 3, Verarbeitung 2; am Parent 8 — die Zunahme sind neue Kommentarzeilen an den geänderten Stellen), 91 mit Tests (73 am Parent), 7 Fundstellen des Konstruktors; die Aufrufer, Fakes und Definitionen folgen alle der neuen Form (`make test` und `make test-store` übersetzen sie).
+- Zeile 8 (Beschreibung der Ablehnung beim Lesen): **1** von 8 am Parent; die eine Fundstelle ist die Zeile der Änderungshistorie von `SPEC-019` (ein Record, unverändert). Die sieben übrigen sind nachgezogen: Konstruktor-Kommentar (zwei Zeilen), Absatz „Transformations-Antragsarten“ der Spec, zwei Test-Godocs am Store-Test, ein Test-Godoc in `translate_test.go`, ein Kommentar in `administration_internal_test.go`.
+- Zeilen 9 und 10 (Beschreibung, weiter gefasst): 7 am Parent, 6 am Diff; die sechs verbleibenden Fundstellen tragen zutreffende Aussagen (Fehlerpfad der Lesung selbst, Testmeldungen, der Record der Änderungshistorie). Zeilen 11 und 12: `docs/user` und `harness` tragen weder am Parent noch am Diff eine Aussage dazu. Zeile 13: keine Zeile der Slice-Pläne zitiert eine Zeilennummer der geänderten Dateien.
+
+**Nicht gefunden, weil nicht durchsucht** (Grenze des Musters, §3.13): eine Formulierung ohne die Wörter „Lesen“, „Lesung“, „Lesefehler“ oder „Queue anhalt…“; Lokatoren in einer anderen Form als `datei.go:zahl`.
 
 | Träger | Befund | Behandlung |
 |---|---|---|
