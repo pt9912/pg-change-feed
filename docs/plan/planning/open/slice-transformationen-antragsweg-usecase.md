@@ -166,6 +166,21 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
 | `internal/bootstrap/wiring.go` (+ Tests) | update | Zweige in `applyAdministrationRequest`, Feld in `administrationDeps`, `activatedTableBindings` (Regelstand neben Ausschlussstand), Aktivierungs-Zweig; der Fehlertext der Menge. |
 | `internal/application/usecase/*` und `postgresstorage`-Test-Fixtures | prüfen | Build-Kontext für neue Pfade (`BEO-PGC/dockerignore-default-deny-blockiert-neuen-pfad`, offen, 1×). |
 
+**Übergaben aus `slice-transformationen-kern-rename`** (gemeldet, kein zusätzlicher Umfang):
+
+- **Regelliste ohne geteilten Speicher.** `NewAssembler` und `AddBinding` teilen die übergebene
+  Liste mit dem Aufrufer; der Doc-Kommentar von `TableBinding` sagt „ab dem Schreiben
+  unverändert“ zu. Die Ableitung aus den `applied`-Zeilen baut je Lesung eine frische Liste und
+  schreibt sie nach der Übergabe nicht mehr.
+- **Gültiges UTF-8 als Eintritts-Eigenschaft.** `NewRenameColumn` prüft Spalte und Zielname nicht
+  auf UTF-8; `rule_spec` als `jsonb` liefert gültiges UTF-8 (hergeleitet aus dem Typ, nicht
+  erprobt). Der Parser belegt es an einem Test oder führt die Prüfung selbst.
+- **K3 zwischen Regeln.** Die Domäne trägt einen zweiten, zeilenabhängigen Wächter gegen zwei
+  Regeln mit gleichem Zielnamen (`ErrTransformationTargetCollides` aus `BuildRowImage`); die
+  Prüfung beim Antrag bleibt Sache dieses Slice, ihr Test „zwei Regeln mit gleichem Zielnamen
+  endet `failed`“ zeigt, dass der Betrieb den Wächter nicht erreicht (Register
+  `BEO-PGC/wertabhaengiger-zweiter-waechter-ohne-spec-zeile`).
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die Menge der
 Antragsarten in `applyAdministrationRequest`“, „die Menge der Pfade, die eine
 Bindung anlegen und den Ausschlussstand mitführen“, „die Felder von

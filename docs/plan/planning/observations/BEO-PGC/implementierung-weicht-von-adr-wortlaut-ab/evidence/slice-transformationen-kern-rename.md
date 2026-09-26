@@ -1,0 +1,8 @@
+**Vorgang:** slice-transformationen-kern-rename (Plan §6 letzter Punkt; Verifikation §7 „Ort der Auswertung“)
+
+**Fund:** `ADR-0112` (`Accepted`) legt in Teilfrage 5 und Folgepflicht 2 fest, die Regelauswertung sitze in `rowImage` (`mapper.go`). Das private `rowImage` des Mappers ist mit `slice-backfill-row-image-gemeinsam` durch die eine Domänen-Funktion `model.BuildRowImage` ersetzt (`ADR-0111` Teilfrage 2); die Auswertung sitzt seither dort, in derselben Schleife wie der Ausschluss, und die Funktion trägt einen vierten Parameter für die Regeln. Der Wortlaut nennt also eine Funktion, die es nicht mehr gibt, während die Aussage der Entscheidung (eine Schleife, Ausschluss zuerst, eine Auswertungsstelle für alle Erzeuger, Folgepflicht 7) getragen ist. `ADR-0115` (`Accepted`) führt an zwei Stellen die Signatur mit drei Parametern und den Satz „bleibt unverändert“.
+
+**Form:** dieselbe Klasse in **benannter** Ausprägung: der Plan führte die Abweichung als Risiko und als prüfbare Auslegung, nicht als Entscheidung; der Verifier las sie als konform mit dem Zweck der Entscheidung. Damit fehlt dem Vorgang das Merkmal des Erstbelegs (Darstellung als bewusste Entscheidung mit eigener Lesart einer Hard Rule); es bleibt die Ursache — der Wortlaut einer `Accepted`-ADR bindet einen Namen, den spätere Arbeit ersetzt. Keine Folge-ADR: die Änderung betrifft den Namensbezug, nicht die Aussage (`AGENTS.md` §3.5); der überholte Stand in `ADR-0115` steht in der Closure-Notiz des Slice und im Plan `slice-transformationen-backfill-pfad`.
+
+Quelle: `docs/reviews/verifikation-slice-transformationen-kern-rename.md` (§7 Zeile Folgepflicht 2) <!-- d-check:status-provenance -->
+· Plan `slice-transformationen-kern-rename` §6 und §7.

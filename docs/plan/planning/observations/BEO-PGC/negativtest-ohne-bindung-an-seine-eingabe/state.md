@@ -37,7 +37,8 @@ Träger“ — eine Gegenentscheidung des Architects ist ein neues Verdikt):
   einer Abfrage-Eingabe; er ist im Slice gebunden (Test mit Run einer fremden Quelle,
   Mutation danach rot), der Reviewer fand ihn vor dem Merge.
 
-Zähler (abgeleitet): **14×** (evidence/slice-086.md, evidence/slice-087.md,
+Zähler (abgeleitet): **15×** (evidence/slice-transformationen-kern-rename.md,
+evidence/slice-086.md, evidence/slice-087.md,
 evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md,
 evidence/slice-092.md, evidence/slice-backfill-snapshot-reader.md,
 evidence/slice-backfill-run-usecase.md,
@@ -49,7 +50,11 @@ evidence/slice-sdk-kotlin-cloudsmith.md,
 evidence/slice-harness-suchlauf-nachmessen.md) —
 **Schwelle erreicht**; der Lese-Schritt der Closure von `welle-backfill-bestand`
 liest den Eintrag mit (11×), der Lese-Schritt der nächsten Welle-Closure
-(`welle-transformationen`) den zwölften bis vierzehnten Beleg. Der vierzehnte Beleg
+(`welle-transformationen`) den zwölften bis fünfzehnten Beleg. Der fünfzehnte Beleg
+(`slice-transformationen-kern-rename`, Review F-2, MEDIUM, daher Datei trotz Deckel) trifft eine
+**Schleife über eine Liste**: die Prüfung jeder Regel einer Bindung war nur für die erste Regel
+gebunden (Mutation auf `rules[:1]` blieb grün); Ausprägung: die Eingabeseite einer Schleife ist die
+**Position** des betroffenen Elements, die Fixrunde band sie mit vier Fällen. Der vierzehnte Beleg
 (`slice-harness-suchlauf-nachmessen`, Review F-1 HIGH und F-2 MEDIUM) trifft ein
 **Werkzeug, das Plan-Inhalt als Argument ausführt**: die Zusage „keine Kommando-Ausführung aus
 einer Plan-Zeile“ und sechs Ausgangs-Zweige des Vertrags blieben unter Mutationen grün, weil

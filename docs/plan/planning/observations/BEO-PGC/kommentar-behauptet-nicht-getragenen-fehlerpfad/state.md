@@ -7,4 +7,8 @@ Paket, trägt der Kommentar einen Rang-Zeiger darauf · seit welle-backfill-best
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §4.1, R6b).
 
-Zähler: 3× (Dateien unter `evidence/`).
+Zähler: 4× (Dateien unter `evidence/`; die vierte,
+`evidence/slice-transformationen-kern-rename.md`, trägt F-1 (HIGH) und V-1 (LOW): der Doc-Kommentar einer
+Funktion sagte eine nicht getragene Anwendbarkeits-Zusage zu, und die Fixrunde, die sie im Code trug,
+verschob die Aussage des Nachbar-Kommentars desselben Pfads; beide vor dem Merge von Lesern gefunden,
+Ausgang unverändert **verkörpert**, die Probe „den zugesagten Pfad im Code nachfahren“ hat gegriffen).

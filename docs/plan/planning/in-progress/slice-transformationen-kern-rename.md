@@ -142,7 +142,7 @@ Assembler-Methoden setzbar — kein SQL-Weg.
       Behauptung, die Abhilfe wirke im gescheiterten Prozess
       ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
       führt sie als erwartet;
-      `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`, offen, 2×).
+      `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`, verkörpert, 3× am Planungsstand).
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -156,17 +156,17 @@ Assembler-Methoden setzbar — kein SQL-Weg.
       Nachrichtenschema bleibt, keine Betreiber-Oberfläche); die Spec trägt
       `slice-transformationen-spec-nachzug`, das Handbuch
       `slice-transformationen-betriebsdoku`.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
-      der Closure der Welle
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+      der Closure dieses Slice (§7) und zusätzlich von der Closure der Welle
       [welle-transformationen](../welle-transformationen.md) (die Roadmap führt
       sie unter *Offene Wellen*, das Ereignis kann eintreten).
 
@@ -298,7 +298,13 @@ Closure-Notiz mit Lerneintrag geschrieben.
   dann, wenn keine Regel gesetzt ist (Escaping, Schlüsselreihenfolge, Leerraum)
   — jedes erfasste Bild wäre betroffen. *Erwartet, zu belegen durch:* die
   bestehenden Mapper- und Domänen-Tests mit den Referenz-Bytes der
-  Backfill-Welle ohne geänderte Erwartung. **Ausgang:** *(bei Closure)*
+  Backfill-Welle ohne geänderte Erwartung. **Ausgang: entfallen.** Die Byte-Tabelle `rowImageByteCases` (Referenz-Bytes
+  der Backfill-Welle) läuft mit `nil` und mit einer leeren, nicht-nil
+  Regelliste durch dieselbe Erwartung; `git diff -w 1852b2f9 --
+  internal/domain/model/rowimage_test.go` zeigt keine geänderte
+  Erwartungs-Zeichenkette (vom Implementer, vom Reviewer und vom Verifier je
+  selbst gelesen); `make test` bleibt mit der Kollisionsprüfung der Fixrunde
+  grün.
 - **Schlüsselposition nach der Umbenennung.**
   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 3 legt fest, dass der umbenannte Schlüssel die Position seiner
@@ -307,28 +313,55 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Lesepfad Schlüsselmenge und Werte zu, nicht die Reihenfolge
   ([`SPEC-030`](../../../../spec/pflichtenheft.md)).
   *Erwartet, zu belegen durch:* ein Test mit Regel auf einer mittleren Spalte.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang: entfallen.** `TestBuildRowImageRenameColumn` trägt die Fälle
+  „mittlere Spalte“ und „erste Spalte“; die Mutation „umbenannter Schlüssel ans
+  Ende“ färbt vier Tests rot (Reviewer, Mutation M1), die Mutation „Regel vor
+  Ausschluss“ ebenfalls (Verifier, Mutation M7).
 - **Auswertung sieht eine ausgeschlossene Spalte.** Die Struktur der Auswertung
   (gleiche Schleife, Ausschluss zuerst) ist die tragende Zusage von
   [`LH-QA-SEC-004`](../../../../spec/lastenheft.md); eine Umsortierung der
   Schritte bräche sie still. *Erwartet, zu belegen durch:* der Eigenschaftstest
-  mit Mutation (Ausschluss-Check entfernen → rot). **Ausgang:** *(bei Closure)*
+  mit Mutation (Ausschluss-Check entfernen → rot). **Ausgang: entfallen.** Der Eigenschaftstest
+  `TestExcludedColumnIsUnreachableForEveryRuleKind` zählt die Regeltypen aus
+  `TransformationKinds()` auf; die Mutationen „Ausschluss-Prüfung entfernt“
+  und „Regeln vor dem Ausschluss ausgewertet“ färben ihn und weitere Tests
+  rot (Implementer, Reviewer M3a/M3b, Verifier M7).
 - **Data Race auf der Regelliste** zwischen Capture-Goroutine und
   Administrations-Goroutine. *Erwartet, zu belegen durch:* der
   Nebenläufigkeits-Test unter `-race`, Muster der `ExcludeColumn`-Tests.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang: entfallen.** `TestAssemblerTransformationsAreRaceFree` läuft in
+  `make test` unter dem Race-Detector grün; `SetTransformation` ohne Sperre
+  liefert `WARNING: DATA RACE` und färbt den Test rot (Implementer und
+  Reviewer M8).
 - **Kosten der Anwendbarkeits-Prüfung im heißen Pfad.** Sie läuft je Change und
   vergleicht Regeln gegen `Relation.Columns`; die Größenordnung (Regeln je
   Tabelle klein) ist angenommen, nicht gemessen. *Erwartet, zu belegen durch:*
   ein `go test -bench` gegen den Parent-Stand oder eine begründete
-  Nicht-Messung im Bericht. **Ausgang:** *(bei Closure)*
+  Nicht-Messung im Bericht. **Ausgang: entfallen — gemessen, mit Streuung.** `BenchmarkAssemblerChange`
+  (Parent, Diff ohne Regel) und `BenchmarkAssemblerChangeWithRules` (zwei
+  Regeln): überall 2444 B/op und 86 allocs/op, unverändert auch nach der
+  Kollisionsprüfung der Fixrunde. Laufzeit (Mediane, abgeleitet aus den
+  gedruckten Läufen des Reviewers): Parent 4734, Diff ohne Regel 4979, Diff mit
+  zwei Regeln 5149 ns/op; die des Verifiers (abgeleitet): 5,3 · 5,3 · 5,5 µs.
+  Der Aufschlag von 0,2 bis 0,6 µs je Änderung liegt in der Streuung des
+  Parents (Läufe 4640 bis 7305 ns/op über die drei Messungen) und ist nicht
+  gegen Rauschen abgesichert; die Größenordnung trägt.
 - **Zwischenzustand im Backfill-Pfad.** Ein Aufrufer im Backfill-Pfad übergibt
   bis `backfill-pfad` die leere Regelmenge; ein Regelstand kann erst mit
   `antragsweg-usecase` überhaupt entstehen, `backfill-pfad` folgt diesem
   unmittelbar (Welle §5). *Erwartet, zu belegen durch:* der Kommentar an der
-  Aufrufstelle und die Reihenfolge der Welle. **Ausgang:** *(bei Closure:
-  entfallen mit der Closure von `slice-transformationen-backfill-pfad`, dessen
-  §2 die Stelle nennt)*
+  Aufrufstelle und die Reihenfolge der Welle. **Ausgang: entfallen** — mit
+  Begründung, und der Ausgang ist ein anderer als der geplante („entfallen mit
+  der Closure von `slice-transformationen-backfill-pfad`“ hängt an einem
+  Ereignis außerhalb dieses Slice). In diesem Slice erzeugt kein Produktivcode
+  einen Regelstand (Messung in „Randfälle“ (a)); der Backfill-Aufrufer
+  übergibt `nil` und ist für jede heute mögliche Konfiguration gleich dem Stand
+  davor. Das Fenster, in dem Regeln setzbar sind und ein Backfill die Rohform
+  liefert, öffnet `antragsweg-usecase`; dieses Risiko trägt dessen §6 mit dem
+  Ausgang „entfallen mit der Closure von `backfill-pfad`“. Den Rest tragen der
+  Kommentar an der Aufrufstelle in `service.go` und die Übergaben in §3 von
+  `slice-transformationen-backfill-pfad` (Aufrufsignatur, Vorbedingung
+  `CheckApplicable`, Fehlerverhalten, die beiden zeitgebundenen Kommentare).
 - **Randfälle ohne eigene Bindung oder mit geteiltem Speicher (benannt).**
   (a) `NewAssembler` und `AddBinding` teilen die übergebene Regelliste
   (wie `ExcludedColumns`) mit dem Aufrufer; der Vertrag „ab dem Schreiben
@@ -339,30 +372,165 @@ Closure-Notiz mit Lerneintrag geschrieben.
   (c) Der Konstruktor prüft Zielname und Spalte nicht auf UTF-8-Gültigkeit;
   `rule_spec` als `jsonb` liefert nur gültiges UTF-8, ein ungültiger Wert
   würde in `json.Marshal` zu U+FFFD.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang: entfallen — je Punkt begründet.** (a) Kein Produktivcode
+  übergibt eine Regelliste: `git grep -n 'SetTransformation\|RemoveTransformation\|Transformations:'
+  -- internal ':!*_test.go'` trifft 7 Zeilen, alle in `mapper.go`
+  (zwei Definitionen, fünf Kommentarzeilen), am Stand der Closure
+  gemessen; die Anlagestellen in `wiring.go` und `config_file.go` übergeben
+  keinen Regelstand. Wer die erste Liste übergibt (`antragsweg-usecase`,
+  Ableitung aus den `applied`-Zeilen), trägt die Zusage „ab dem Schreiben
+  unverändert“ aus dem Doc-Kommentar von `TableBinding` — Meldung in dessen
+  §3 (Übergaben). (b) Folgenlos für die Klasse: beide Sentinels
+  (`ErrTransformationColumnMissing`, `ErrTransformationTargetCollides`)
+  enden über `ErrTransformationNotApplicable` in `schema`; die Prüfreihenfolge
+  bestimmt nur den Text des Grundes (Verifikation, INFO). (c) Hergeleitet, nicht
+  erprobt: der einzige Eintritt einer Regel ist künftig `rule_spec` als `jsonb`,
+  und ein `jsonb`-Wert trägt gültiges UTF-8; ein ungültiger Wert würde in
+  `json.Marshal` zu U+FFFD — Prüfung des Parsers in `antragsweg-usecase`
+  (Meldung in dessen §3).
 - **Der Ort der Auswertung weicht vom ADR-Wortlaut ab.**
   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   nennt „in `rowImage`“, das private `rowImage` des Mappers entfällt mit
   `slice-backfill-row-image-gemeinsam`; die Auswertung sitzt in der gemeinsamen
   Domänen-Funktion (`BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab`,
   offen, 1×). Die Auslegung ist in der Kopplung K1 begründet; sie ist im Review
-  prüfbar und wird nicht als Entscheidung dargestellt. **Ausgang:** *(bei
-  Closure)*
+  prüfbar und wird nicht als Entscheidung dargestellt. **Ausgang: entfallen.**
+  Der Wortlaut nennt eine Funktion, die es nicht mehr gibt: das private `rowImage` des
+  Mappers ist mit `slice-backfill-row-image-gemeinsam` durch `model.BuildRowImage`
+  ersetzt. Die Aussage der Entscheidung — eine Schleife, Ausschluss zuerst,
+  eine Auswertungsstelle für alle Erzeuger
+  ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  Teilfrage 5, Folgepflicht 7) — ist getragen; der Verifier liest die Auslegung
+  als konform mit dem Zweck. Keine Folge-ADR: der Namensbezug im Entscheidungstext ist
+  weder eine Zitat-Korrektur nach
+  [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) (§Entscheidung
+  ist unberührbar) noch eine Änderung der Aussage. Der Register-Eintrag
+  `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` führt den Vorgang als
+  zweiten Beleg (offen, 2×, benannte Ausprägung).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** (1) Der Plan setzte die Kopplung K1 der Welle um: die Regelauswertung
+  hängt an der **einen** Row-Image-Funktion, `git grep -n 'json.Marshal'` an Bildern trifft nur
+  `rowimage.go` (Suchlauf-Feld §3, beide Stände gemessen, `make suchlauf-nachmessen` Exit 0, 14
+  Zeilen stimmen — am Stand dieser Closure nachgemessen). (2) Die Eingabeseiten-Mutationen trugen:
+  der Reviewer setzte 23, davon 20 rot; von den drei grünen war eine bei erfüllter Vorbedingung
+  unerreichbar (M14a, kein Befund), zwei wurden Findings (F-2, F-6 INFO); der Verifier setzte sieben
+  (teils Wiederholungen der Reviewer-Mutationen an der Fixrunde), alle rot (übernommen aus den
+  Reports, dort je einzeln gefahren). (3) Die Byte-Tabelle
+  `rowImageByteCases` mit unveränderten Erwartungen trug die Zusage „leere Regelmenge, gleiche
+  Bytes“ gegen alle drei Leser (Implementer, Reviewer, Verifier lasen den `git diff -w`). (4) Der
+  Reviewer fand F-1 durch eine Wegwerf-Probe im Baum (zwei gleichnamige Schlüssel ohne Fehler),
+  nicht durch Lesen des Kommentars; die Probe „den zugesagten Pfad im Code nachfahren“ der
+  verkörperten Klasse `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` hat gegriffen.
+  (5) Die fremden Träger der Signatur fand der Suchlauf vollständig (drei Zeilen in zwei Dateien),
+  der Reviewer fand sie beim eigenen Nachsuchen ebenfalls und keinen weiteren.
+- **Was ging anders als geplant:** (1) **F-1 wurde im Code getragen statt im Text.** Die Fixrunde
+  ergänzte in `BuildRowImage` eine Kollisionsprüfung an der Schreibstelle und den Sentinel
+  `ErrTransformationTargetCollides` samt `imageError` im Mapper; der Plan (§3, Festlegungen)
+  führt die Auslegung, die Funktion prüft die Anwendbarkeit weiter nicht selbst. Damit entstand ein
+  zweiter Ort, an dem `ErrTransformationNotApplicable` gemeldet wird, und der Doc-Kommentar von
+  `Assembler.change` sagte nach dem Vorrücken der Sequenz Falsches zu (V-1, LOW; im Doc-Kommentar
+  nachgezogen). (2) **Kein zweiter Reviewer-Lauf für die Fixrunde (V-3, INFO) — entschieden: keiner.**
+  Die Fläche ist klein (eine Prüfung in `BuildRowImage`, `imageError`, zwei Tests, Kommentare);
+  der Verifier hat den Code gelesen, vier Eingabeseiten-Mutationen darauf gefahren (M1–M4, alle rot)
+  und den Benchmark wiederholt (86 allocs/op unverändert), und sein einziger Fund an ihr (V-1) ist
+  behoben. Ein späterer Fund an dieser Fläche wäre ein weiterer Beleg in
+  `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`. (3) **Der geplante Ausgang des
+  Risikos „Zwischenzustand im Backfill-Pfad“** („entfallen mit der Closure von
+  `backfill-pfad`“) hängt an einem Ereignis außerhalb dieses Slice; der Ausgang dieses Slice steht
+  in §6 (entfallen, gemessen: kein Produktivcode erzeugt einen Regelstand). (4) **Zähler des Plans
+  standen hinter dem Register:** §8 und DoD Punkt 4 nannten
+  `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` „offen, 2×“; das Register führte ihn
+  bereits als verkörpert bei 3× (die Stellen sind am Planungsstand berichtigt). (5) **Die
+  Coverage-Zahl ist ein Lauf-Beleg** (V-2, F-4): `make coverage-gate` am unveränderten Endstand
+  druckte 83.90 % (Implementer und Closure-Lauf `make gates`, gemessen), 83.80 % (Reviewer,
+  zweimal, übernommen aus dem Report) und 83.90 %, 83.80 %, 83.80 % (Verifier, übernommen aus dem
+  Report); die Schwelle 80 % ist in jedem Lauf erfüllt. Der Plan §3 nennt 83.90 % mit dem Lauf,
+  aus dem sie stammt. (6) **`ADR-0115` trägt einen überholten Stand** (siehe „Folge-Slices“).
+- **Steering-Loop-Eintrag (Lerneintrag):** *(a) Benannte Spec-Lücke.* `SPEC-030` sagt zur
+  Anwendbarkeit „nie am Wert einer Zeile“ und führt die Konfliktfreiheit der Zielnamen zwischen
+  Regeln nur als K3 beim Antrag; der zweite Wächter, den die Fixrunde in `BuildRowImage` setzte,
+  löst nur an einer Zeile aus, die beide Quellwerte trägt (V-4, INFO), und die Bild-Invariante „nie
+  zwei gleichnamige Schlüssel“ steht in keiner Spec-Zeile. Zwei Auflösungen (Wächter in die
+  Anwendbarkeits-Prüfung des `Assembler`, oder die Invariante als Spec-Zeile), keine gewählt.
+  Adresse: `BEO-PGC/wertabhaengiger-zweiter-waechter-ohne-spec-zeile` (offen, 1×, Trigger in seiner
+  `state.md`); im Betrieb unerreichbar, sobald `slice-transformationen-antragsweg-usecase` K3 am
+  Antrag trägt (Übergabe in dessen §3). *(b) Geschärfte Anwendung, kein neuer Zielort:* wer einen
+  Kommentar-Fund durch Code statt durch Umformulieren behebt, hat eine Eigenschaft bewegt („an
+  welcher Stelle entsteht der Fehler“), und die **Beschreibungen desselben Pfads** — Doc-Kommentare
+  der Nachbarfunktionen, Plan-Festlegungen — sind nach dem Fix an den Code zurückzulesen. Beleg: V-1
+  (der Doc-Kommentar von `Assembler.change` sagte „ohne dass … die Sequenz vorrückt“, nachdem der
+  neue Fehlerpfad hinter dem Vorrücken der Sequenz lag; vom Verifier gefunden, nicht vom Suchlauf, dessen Muster die bewegte
+  Eigenschaft „Ort der Meldung“ nicht trug). Träger: `AGENTS.md` §3.13 (seit welle-20, verkörpert; die Regel
+  gilt für die Fixrunde wie für den ersten Zug) und der Reviewer-Skill (Kommentar-Zusage, Probe
+  „den zugesagten Pfad nachfahren“, seit welle-backfill-bestand) — beide am Ort existent, kein neuer
+  Text. *(c) Gelernt am Kern, bei 1× keine Regel:* eine Vorbedingung, die der Aufrufer prüfen soll und
+  deren Verletzung ein **stilles, ungültiges Ergebnis** liefert (zwei gleichnamige Schlüssel: `jsonb`
+  behielte den letzten Wert, ein Wert ginge verloren), trägt einen billigen zweiten Wächter am Ort des
+  Fehlers; der Doc-Kommentar allein trägt sie nicht. Hier stand er in wenigen Zeilen an der
+  Schreibstelle und kostet keine Allokation (2444 B/op, 86 allocs/op vor und nach der Prüfung).
+  Adresse: der Register-Eintrag unter (a), der die Wächter-Frage führt; ein zweiter Vorgang mit
+  derselben Form (Vorbedingung des Aufrufers, stilles ungültiges Ergebnis) macht daraus einen
+  eigenen Eintrag.
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
+  `evidence/slice-transformationen-kern-rename.md`, Zähler = Zahl der Dateien (gemessen mit
+  `ls evidence | wc -l` am Stand dieser Closure). *Neue Belege:*
+  `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` **4×** (F-1 HIGH, V-1 LOW; verkörpert,
+  Deckel gilt erst ab 10×), `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` **15×** (F-2
+  MEDIUM, daher Datei trotz Deckel; verkörpert), `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab`
+  **2×** (Plan §6 letzter Punkt, benannte Ausprägung; offen). *Neuer Eintrag, 1×, offen:*
+  `BEO-PGC/wertabhaengiger-zweiter-waechter-ohne-spec-zeile` (F-5, V-4). *Deckel-Fälle ohne Datei,
+  Finding-Kennung hier:* F-3 (`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`, LOW, vom Reviewer
+  vor dem Merge gefunden, Träger-Typ Plan-Tabelle: überholte Zeilen neben ihren Nachzügen; in der
+  Fixrunde konsolidiert), F-4 und V-2 (`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`, LOW und
+  INFO, Reviewer und Verifier vor dem Merge, Träger-Typ Belege-Zeile im Plan: Zahl ohne Lauf-Stand;
+  in der Fixrunde mit Endstand gesetzt, hier mit dem Lauf ausgewiesen), V-1 und F-7
+  (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, LOW und INFO, vor dem Merge, Träger-Typen Doc-Kommentar
+  und Träger in fremder Datei, gemeldet mit Frist: gezogen mit dieser Closure). *Kein eigener
+  Register-Anfall:* F-6 (INFO, Randfälle, Ausgang in §6), V-3 (Entscheidung oben), V-5 (INFO, siehe
+  §6 Zwischenzustand: der Rang-Zeiger mit Adresse in `service.go` ist ein auflösbares Feld nach
+  `AGENTS.md` §3.7, Klasse Rang-Zeiger/Grenze — keine Code-Änderung; er wird mit
+  `slice-transformationen-backfill-pfad` umgeschrieben, dessen §3 ihn nennt). *Lese-Schritt der
+  Closure von `welle-transformationen`:* kein Eintrag erreicht mit diesen Belegen neu 3× ohne
+  Ausgang — die drei mit neuer Datei tragen einen Ausgang (verkörpert) oder stehen bei 2×/1×; es
+  entsteht kein Vermerk in einer weiteren `state.md`, und die Welle-Closure liest keinen Eintrag
+  aus diesem Slice zusätzlich.
+- **Folge-Slices:** keine angelegt. Übergaben mit Adresse (gemeldet, Frist: diese Closure):
+  `slice-transformationen-backfill-pfad` (`open/`) — Aufrufsignatur mit dem vierten Parameter,
+  Vorbedingung `CheckApplicable`, Fehlerverhalten aus dem Bild-Bau, die zwei zeitgebundenen
+  Kommentare (`service.go`, `rowimage.go`), der überholte Stand in `ADR-0115` (in dessen §3
+  nachgezogen); `slice-transformationen-antragsweg-usecase` (`open/`) — Regelliste ohne geteilten
+  Speicher, UTF-8-Eintritt, K3 zwischen Regeln (in dessen §3 nachgezogen).
+  **`ADR-0115` (Zeilen 129 und 196, `Accepted`, unberührbar):** die Stelle ist keine
+  Zitat-Korrektur nach [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) — die
+  Signatur steht in §Konstraints und §Entscheidung und ist Aussage-Text, kein Zitat-Gerüst —, also
+  bleibt sie unverändert; kein Folge-ADR: der Satz „bleibt unverändert“ beschreibt den Stand der
+  Entscheidung, und die Erweiterung der einen Funktion um den Regelsatz trägt
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  (Teilfrage 5, Folgepflicht 7); der überholte Stand ist hier und im Plan des Folge-Slice benannt.
+  **Start-Bedingung `slice-transformationen-antragsweg-schema`** (Kopplung: `kern-rename` in
+  `done/`): mit dem Move dieses Slice erfüllt, der Text des Plans bleibt wahr, keine Änderung.
+  **Nicht nachgezogen, gemeldet:** die Zähler in den §8-Sichtungen der offenen Pläne und in
+  [welle-transformationen](../welle-transformationen.md) §6 (`implementierung-weicht-von-adr-wortlaut-ab`
+  „offen, 1×“, `kommentar-behauptet-nicht-getragenen-fehlerpfad` „offen, 2×“,
+  `negativtest-ohne-bindung-an-seine-eingabe` „6×“) stehen am jeweiligen Planungsstand; jeder
+  Slice-Start liest das Register neu (§8), der Stand des Registers steht oben.
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Entfallen:* Byte-Abweichung ohne Regel ·
+  Schlüsselposition nach der Umbenennung · Auswertung sieht eine ausgeschlossene Spalte · Data Race
+  auf der Regelliste · Kosten der Anwendbarkeits-Prüfung · Zwischenzustand im Backfill-Pfad (für
+  diesen Slice; das Fenster trägt `antragsweg-usecase` §6) · Randfälle (a)–(c) · Ort der
+  Auswertung weicht vom ADR-Wortlaut ab. *Eingetreten:* keines. *Weiter offen:* keines (die Lücke
+  aus dem Lerneintrag ist ein Register-Eintrag, kein Risiko dieses Plans).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-transformationen](../welle-transformationen.md) (offen) — die Prüfung
-  läuft regelkonform bei deren Closure.
+  [welle-transformationen](../welle-transformationen.md) (offen) — die Closure der Welle prüft sie
+  mit; die Slice-Closure trägt sie zusätzlich jetzt: *Anker:* der Lerneintrag verkörpert nichts
+  neu, er schärft die Anwendung zweier bestehender Träger, beide am Ort existent
+  (`AGENTS.md` §3.13 trägt „seit welle-20“, `.harness/skills/reviewer.md` die Klausel Kommentar-Zusage);
+  *Folge-Slice:* keiner genannt; die zwei Übergabe-Adressen `slice-transformationen-backfill-pfad`
+  und `slice-transformationen-antragsweg-usecase` existieren als Dateien in `open/`;
+  *Register:* jede genannte Kennung `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht leerem
+  `evidence/` (sieben Kennungen, geprüft mit `ls docs/plan/planning/observations/BEO-PGC/<slug>/evidence`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
@@ -370,11 +538,12 @@ Closure-Notiz mit Lerneintrag geschrieben.
 `*`/`PGC` (Greenfield); Domäne, Replication-Mapper und Composition Root sind
 keine eigenen Sub-Areas — kein Anlass zur Ausdifferenzierung.
 
-**Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen —
+**Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen (Zähler am
+Planungsstand, der Stand des Registers steht in §7) —
 `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert, 26×, Suchlauf §3),
 `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (verkörpert, 6×, DoD Punkt
-2), `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` (offen, 2×,
-einschlägig — DoD Punkt 4), `BEO-PGC/slice-chronik-in-code-kommentar`
+2), `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` (verkörpert, 3× am
+Planungsstand, einschlägig — DoD Punkt 4), `BEO-PGC/slice-chronik-in-code-kommentar`
 (verkörpert, 9×, die neuen Kommentare tragen keine Slice-/Wellen-Chronik),
 `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` (offen, 1×, einschlägig —
 Risiko §6, letzter Punkt), `BEO-PGC/a-check-null-abdeckung` (verkörpert — die

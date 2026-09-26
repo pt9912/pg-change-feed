@@ -169,8 +169,9 @@ Kopplung K2 der Welle [welle-backfill-bestand](../done/welle-backfill-bestand.md
 Stellen in `internal/application/usecase/backfill/service.go`):
 
 - **Stelle des Bild-Baus.** `blockBuilder.build` baut das Bild je Zeile über
-  `model.BuildRowImage(columns, row, excluded)`; das ist die einzige Stelle des Runs, an der
-  ein Regelsatz eingeht.
+  `model.BuildRowImage(columns, row, excluded, rules)` mit `rules []model.Transformation`
+  (der Aufruf im Run übergibt `nil`); das ist die einzige Stelle des Runs, an der ein Regelsatz
+  eingeht.
 - **Stelle der Fail-closed-Prüfung.** In `copyBlocks` liest `excludedColumns` je Block den
   Ausschlussstand neu und `sameNames` vergleicht ihn mit dem Stand des ersten Blocks; vor dem
   Commit prüfen `stillBound` die Bindung und derselbe Vergleich den Stand; ein nicht lesbarer
@@ -182,6 +183,34 @@ Stellen in `internal/application/usecase/backfill/service.go`):
   n-ten scheitern (`fakeExclusion.errCall`); der Fake des Regelstands folgt diesem Muster.
 - **Klassifikation.** `classifyError` (Abbildung des Sentinels auf `schema`:
   [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) Festlegung 1).
+
+**Übergaben aus `slice-transformationen-kern-rename`** (gemeldet, kein zusätzlicher Umfang):
+
+- **Vorbedingung `CheckApplicable`.** `BuildRowImage` prüft die Anwendbarkeit einer Regel nicht;
+  die Vorbedingung des Aufrufers ist `model.Transformation.CheckApplicable(columns)` je Regel,
+  hier gegen die Spalten des Snapshots — das ist die Prüffunktion der Domäne, die
+  [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) Festlegung 2 meint (einmal je
+  Run, vor der Schreibtransaktion). Eine Regel, deren Spalte nicht in `columns` steht, wirkt in
+  `BuildRowImage` nicht.
+- **Fehlerverhalten aus dem Bild-Bau.** `BuildRowImage` liefert `ErrTransformationTargetCollides`
+  und kein Bild, wenn ein Zielschlüssel schon vergeben ist (eine Spalte aus `columns` oder ein
+  anderer im Bild umbenannter Schlüssel); der Fall hängt an der Zeile (beide Quellwerte tragen
+  einen Wert) und tritt daher erst im Block auf, nach dem Öffnen der Schreibtransaktion. Der
+  Erfassungspfad ordnet den Fehler in `mapper` als `ErrTransformationNotApplicable` ein, der Run
+  kann den Mapper-Sentinel nicht importieren: `classifyError` bildet die Domänen-Sentinels
+  `ErrTransformationColumnMissing` und `ErrTransformationTargetCollides` auf `schema` ab, und der
+  Run endet in beiden Fällen atomar `failed` ([`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)
+  Festlegung 1).
+- **Zeitgebundene Kommentare.** Der Kommentar an `blockBuilder.build` (`service.go`, nennt die
+  Adresse dieses Slice) und ein Satz im Doc-Kommentar von `BuildRowImage` (`rowimage.go`, „der
+  Backfill-Lauf mit leerer Regelmenge“) beschreiben den Stand ohne Regelstand; dieser Slice
+  schreibt beide um.
+- **Überholte Signatur in einer `Accepted`-ADR.** [`ADR-0115`](../../adr/0115-backfill-spaltenwerte-text-ergebnisformat.md)
+  führt die Signatur von `BuildRowImage` mit drei Parametern und den Satz „bleibt
+  unverändert“ (Konstraints, Festlegung 3); der Satz beschreibt den Stand dieser Entscheidung,
+  die Erweiterung um den Regelsatz trägt
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  Folgepflicht 7. Kein Nachzug in der ADR (`AGENTS.md` §3.5), kein Folge-ADR.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „welche
 Erzeugungspfade `model.Change`-Bilder bauen und ob sie den Regelstand tragen“;
