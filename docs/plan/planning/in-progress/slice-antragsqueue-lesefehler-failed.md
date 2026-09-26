@@ -170,18 +170,18 @@ Case), keine ADR.
       eine Ablehnung beim Lesen (Suchlauf in §3, Befund am Start prüfen); die
       Handbuch-Versionshistorie bleibt unberührt, solange das Handbuch nicht
       geändert wird.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang
       von `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue` (`state.md`:
       Rest geschlossen, Träger benannt) und eine weitere `evidence/`-Datei, falls
       ein Auftreten anfällt; kein Anfall ist ebenfalls eine Antwort und wird in
       §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Slice-Closure selbst (der Slice hat keine Welle; das Ereignis kann
       eintreten).
 
@@ -260,9 +260,9 @@ Gemessen am Stand `diff` (Arbeitsbaum nach der Lieferung):
 **Fixrunde zum Review** (`docs/reviews/review-slice-antragsqueue-lesefehler-failed.md`,
 F-1 bis F-11). F-1 (Kommentar im Konjunktiv), F-2 (Beleg-Verweis auf Zeile 7 statt
 11/12), F-3 (Aufschub-Adresse ohne Text), F-4 (Reihenfolge nur an einem Paar) und
-F-7 (Stand „Parent“ ist `47a646b5`, nicht `7b70b34a`; die Zahlen der Zeilen 1 bis 4 und
+F-9 (Stand „Parent“ ist `47a646b5`, nicht `7b70b34a`; die Zahlen der Zeilen 1 bis 4 und
 9 sind an beiden Ständen gleich) sind in den Zeilen oben und im Suchlauf-Feld
-behoben; F-5, F-6, F-8 bis F-11 stehen unten mit ihrer Behandlung.
+behoben; F-5 bis F-8, F-10 und F-11 stehen unten mit ihrer Behandlung.
 
 Mutationen der Fixrunde — Zusage · mutierte Eingabe · gesehenes Rot. Ort der
 Erprobung: der Schalter von `rejectionMessage`
@@ -290,17 +290,20 @@ keinen Store-Test und keinen Code des Adapters, nur Kommentare und Unit-Tests
 im Paket `sqlexec` (netzlos, in `make test`).
 
 Behandlung der Hinweise: **F-5** — die Kopplung von `rejectionMessage` an die
-Prüfreihenfolge des Konstruktors steht im Kommentar; die Reihenfolge ist seit der
+Gründe des Konstruktors steht im Kommentar; die Reihenfolge ist seit der
 Fixrunde über die Paare der Tabelle gebunden, ein neuer Konstruktor-Grund färbt
 keinen Test rot und trägt bis zu einem eigenen Fall den allgemeinen Klartext
 (`Antrag ist ungültig`) — Kenntnis, kein Umbau (§6). **F-6** — die Invariante
 von `PendingAdministrationRequest` (`Request` oder `Rejected`) hält die eine
 Erzeugerstelle in `sqlexec`, der Typ erzwingt sie nicht — Kenntnis (§6).
+**F-7** — die benannten Grenzen der Verarbeitung (eine Warnung je Durchlauf für
+die Zeile ohne Kennung, wiederholte Log-Zeilen bei einem dauerhaft scheiternden
+Vermerk, ungekürzte Kennung in `error_message`) bleiben Kenntnis (§6).
 **F-8** — der Bestandssatz zum `pending` bleibenden Antrag im Block über
 `processAdministrationRequests` ist im Indikativ umgeschrieben (siehe die
 Kommentar-Zeile oben); der übrige Konjunktiv-Bestand außerhalb dieses Diffs
-bleibt Gegenstand von `slice-code-kommentare-bereinigung`. **F-9, F-10,
-F-11** — keine Aktion (Kenntnis: Kennungen ohne Informationsverlust reduziert,
+bleibt Gegenstand von `slice-code-kommentare-bereinigung`. **F-10, F-11** —
+keine Aktion (Kenntnis: Kennungen ohne Informationsverlust reduziert,
 Host-Interpreter ohne Wirkung).
 
 ## 4. Trigger
@@ -349,68 +352,216 @@ Spec-Lücke in `SPEC-019` geschlossen).
 - **Der Umbau des Ports trifft viele Fundstellen** (Fakes und Aufrufer, 73
   Zeilen mit dem Symbol, gemessen am Stand `47a646b5`). *Erwartet, zu belegen
   durch:* das Suchlauf-Feld (Zeilen 1 und 2) an beiden Ständen; die Rückführung
-  §4 ist der Ausgang bei Überlauf. **Ausgang:** *(bei Closure)*
+  §4 ist der Ausgang bei Überlauf. **Ausgang:** eingetreten und behandelt ohne
+  Rückführung. Der Umbau traf am Parent 8 Fundstellen in Nicht-Test-Dateien und
+  73 mit Tests, am Diff 11 und 91 (Suchlauf-Feld, Zeilen 1, 2, 5, 6; von Hand an
+  beiden Ständen nachgemessen in der Verifikation); Aufrufer, Definitionen und
+  Fakes folgen der Form (`make test` und `make test-store` übersetzen sie).
 - **Ein nicht vermerkbarer Fall hält die Queue an oder wird endlos wiederholt** —
   eine Zeile ohne Kennung, ein Fehler von `MarkFailed`. *Erwartet, zu belegen
   durch:* der Whitebox-Test (Fake): ein Fehler von `MarkFailed` wird protokolliert
   und bricht den Durchlauf nicht ab, eine Zeile ohne Kennung wird übersprungen;
   das Verhalten der Zeile hinter dem Fall ist im Test gebunden. **Ausgang:**
-  *(bei Closure)*
+  entfallen. `TestProcessAdministrationRequestsRejectedRowSurvivesMarkFailedError`
+  und `TestProcessAdministrationRequestsFailsRejectedRowsInQueueOrder` binden den
+  Fehler von `MarkFailed` (Mutationen des Reviewers M7, M12, M13; des Verifiers W1,
+  W4) und die Zeile ohne Kennung (M9, M11; W3, W5) — je rot gesehen. Der Rest steht
+  als Kenntnis in der letzten Zeile dieses Abschnitts (Review F-7).
 - **Der Store-Test hinterlässt `pending`-Zeilen, die andere Tests der Tabelle
   stören** (`BEO-PGC/test-isolation-geteilter-zustand`, 2×). *Erwartet, zu
   belegen durch:* die Bereinigung nach den Kennungen des Tests und ein Lauf des
-  ganzen Pakets `postgresstorage` nach dem Slice (grün). **Ausgang:** *(bei
-  Closure)*
+  ganzen Pakets `postgresstorage` nach dem Slice (grün). **Ausgang:** entfallen.
+  Der Store-Test löscht nur die Zeilen seiner Kennungen; `make test-store` endet
+  mit Exit 0, gedruckt „ok … postgresstorage 12.255s“ (Lauf des Reviewers) und „ok
+  … postgresstorage 13.797s“ (Lauf des Verifiers), beide übernommen aus den
+  Reports.
 - **Der Login-Test deckt die verworfene Zeile nicht**
   (`BEO-PGC/rollen-test-abdeckungsluecken`, gestrichen, 4×). *Erwartet, zu belegen durch:*
   `TestAdministrationPathRunsUnderLeastPrivilegeLogins` führt eine verworfene Zeile
   unter `cdc_admin` bis `failed` (Recht `UPDATE` auf der Antrags-Tabelle,
-  hergeleitet aus den Grants, im Test zu erproben). **Ausgang:** *(bei Closure)*
+  hergeleitet aus den Grants, im Test zu erproben). **Ausgang:** entfallen. Der
+  Login-Test führt vier verworfene Zeilen und eine gültige dahinter unter dem
+  `cdc_admin`-Login bis `failed` bzw. `applied` (das Recht `UPDATE` ist erprobt);
+  die Mutation „Konstruktor-Fehler zurückgeben“ färbt ihn rot (Review M1,
+  Verifikation S-A: Status `pending` statt `failed`).
 - **Spec und Kommentare widersprechen sich nach dem Fix**
   (`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`, 13×). *Erwartet, zu belegen
   durch:* das Suchlauf-Feld (Zeile 4) an beiden Ständen und der Reviewer, der den
-  Kontext um jede geänderte Zeile liest (`git diff -U20`). **Ausgang:** *(bei
-  Closure)*
+  Kontext um jede geänderte Zeile liest (`git diff -U20`). **Ausgang:** entfallen.
+  Zeile 4 des Feldes misst 8 Beschreibungen am Parent und 1 am Diff (der Record der
+  Änderungshistorie); Review und Verifikation lasen `SPEC-019`, Kommentare und
+  Tests gegen den Code und fanden keinen Widerspruch. Die zwei Konjunktiv-Kommentare
+  (Review F-1, F-8) beschrieben die verworfene Alternative, keinen Widerspruch zum
+  Code; sie sind im Indikativ umgeschrieben.
 - **Der Fix berührt
   [`ADR-0046`](../../adr/0046-sql-driving-adapter-lese-schreib-trennung.md) oder
   [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md).**
   *Erwartet, nicht belegt:* nein — der Diff ändert weder eine SQL-Funktion noch
   das Schema noch die `LISTEN`-Schleife. *Zu belegen durch:* `git diff --stat`
   ohne `tools/schema/**` und der Reviewer, der beide ADRs gegen den Diff liest.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** entfallen. `git diff --stat fc107f42..HEAD -- tools/schema` ist
+  leer (gemessen bei dieser Closure; Review und Verifikation je gleich); die
+  Abfrage `SelectPendingAdministrationRequests` und die `LISTEN`-Schleife sind
+  unberührt, der Vermerk nutzt die bestehende Fähigkeit `MarkFailed`.
 - **Die Ordnung der Queue kippt**: die verworfene Zeile wird am Ende statt an
   ihrer Stelle vermerkt. *Erwartet, zu belegen durch:* ein Test mit einer
   verworfenen Zeile **vor** und einer **hinter** gültigen Zeilen, der die
-  Verarbeitungsreihenfolge prüft. **Ausgang:** *(bei Closure)*
+  Verarbeitungsreihenfolge prüft. **Ausgang:** entfallen. Der Vermerk an der Stelle
+  der Ordnung ist gebunden: Mutationen „verworfene Zeilen ans Ende“ (Review M6,
+  Verifikation E13), „Vermerk am Ende“ (M10, W6) und „Ordnung der Abfrage ohne
+  `requested_at`“ (S-B) sind rot, der Store-Test prüft je Grund die Zeile davor und
+  dahinter.
 - **Grenzen der Durchreichung, benannt und nicht behoben** (Review F-5, F-6):
-  `sqlexec.rejectionMessage` bildet den Klartext aus den Feldern der Zeile
-  und wiederholt die Prüfreihenfolge des Konstruktors; ein neuer Konstruktor-Grund
+  `sqlexec.rejectionMessage` bildet den Klartext aus den Feldern der Zeile in der
+  Reihenfolge der Tabelle von `SPEC-019` (der Konstruktor prüft Kennung, Quelle,
+  Schema und Tabelle in einem Ausdruck und nennt einen Grund; die Reihenfolge
+  gehört `rejectionMessage`, Verifikation V-2); ein neuer Konstruktor-Grund
   trägt bis zu einem eigenen Fall den Klartext `Antrag ist ungültig`. Die
   Invariante von `PendingAdministrationRequest` (`Request` oder `Rejected`) gilt
   per Konvention der einen Erzeugerstelle. Die Gründe „Quelle ist leer“ und
   „Antragsart ist unbekannt“ entstehen über die SQL-Funktionen nicht
   (Fremdschlüssel, `CHECK`) und sind nur an Fake-Tests belegt
-  (`TestReadPendingRequestsPassesRejectedRowsThrough`). **Ausgang:** *(bei
-  Closure)*
+  (`TestReadPendingRequestsPassesRejectedRowsThrough`). Die Verarbeitung wiederholt
+  bei einer Zeile ohne Kennung eine Warnung je Durchlauf und bei einem dauerhaft
+  scheiternden Vermerk je Durchlauf ihre Log-Zeilen (Review F-7). **Ausgang:**
+  weiter offen als Kenntnis, ohne Trigger. Die Stelle der Kopplung ist der
+  Kommentar an `sqlexec.rejectionMessage`; wer einen Grund im Konstruktor
+  `NewAdministrationRequest` ergänzt, ändert `rejectionMessage` und die Tabelle
+  in [`SPEC-019`](../../../../spec/pflichtenheft.md) im selben Zug, und der
+  Reviewer findet die Stelle mit `git grep -n 'rejectionMessage'`.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag:** *(zu tragen bei Closure — geschärfte Regel · neuer
-  Sensor · benannte Spec-Lücke; erwartet: die benannte Spec-Lücke von
-  [`SPEC-019`](../../../../spec/pflichtenheft.md) (Fehlertext und Ort der Prüfung
-  für leeres Schema, leeren Tabellennamen und leere Spalte) geschlossen, Auslöser
-  `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue`; ohne Eintrag kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(zu tragen bei Closure —
-  `state.md` von `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue`: Fix
-  geliefert)*
-- **Folge-Slices:** keine erwartet.
-- **Risiken aus §6:** *(je ein Ausgang, zu tragen bei Closure)*
-- **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure selbst trägt
-  die drei Paarungen (Anker · Folge-Slice · Register), nach dem `git mv` nach
-  `done/`.
+- **Was hat funktioniert:** (1) Die Leser-Kette fand, was der Implementer-Lauf nicht
+  fand: der Review nennt 2 HIGH, 1 MEDIUM, 1 LOW und 7 INFO, die Verifikation 0 HIGH,
+  0 MEDIUM, 1 LOW und 3 INFO (übernommen aus den Reports). Der Code hielt die 14 Mutationen
+  M1 bis M14 der Eingabeseite stand (14 von 14 rot, Reviewer, übernommen); die Proben S1
+  bis S7 des Reviewers färbten bei S1, S2 und S3/S7 nichts rot (F-4, die Fixrunde band
+  die Paare), S5 ist äquivalent, S6 rot. Der Verifier fuhr 23 Läufe, 21 rot und 2 grün (E9
+  in zwei Varianten, äquivalent: die Stellung des Antragsart-Falls im Schalter ist nicht
+  beobachtbar; übernommen aus der Verifikation §1). Der Implementer fuhr 11 Mutationen im
+  Lauf und 7 in der Fixrunde, davon 6 rot und 1 grün äquivalent (übernommen aus dem
+  Review und §3). (2) Der Summentyp `PendingAdministrationRequest` trägt die Durchreichung
+  ohne Umbau der Ordnung; der Store-Test mit realen Zeilen und der Login-Test unter
+  `cdc_admin` belegen die Kette bis `failed`/`applied` (zweimal grün, Review und Verifikation).
+  (3) Spec und Code stehen im selben Commit; die sechs Klartexte sind Zeichen für Zeichen
+  gleich (Verifikation §2). (4) Die Gate-Läufe sind grün (übernommen aus Review und
+  Verifikation): `make test` 45 Pakete `ok`, `make test-store` Exit 0, DB-Adapter-Coverage
+  82.56 %, `make coverage-gate` 85.20 % (Review) bzw. 85.10 % (Fixrunde, Verifikation);
+  bei dieser Closure gemessen: `make fmt-check` „255 Go-Dateien geprüft, alle formatiert“,
+  `make suchlauf-nachmessen` „13 Zeilen stimmen“ (je Exit 0).
+- **Was ging anders als geplant:** (1) Der Stand „Parent“ des Suchlauf-Feldes war
+  `7b70b34a`, der Parent des Fix-Commits ist `47a646b5` (F-9); die Zahlen der Zeilen 1
+  bis 4 und 9 sind an beiden Ständen gleich, die Stand-Zeilen tragen jetzt `47a646b5`.
+  (2) Der Register-Eintrag nannte „den Fehlertext des Konstruktors“; der Konstruktor
+  liefert Fehlerwerte ohne Klartext, den Text bildet `sqlexec.rejectionMessage` aus Grund
+  und Feldern der Zeile (Form der Durchreichung, §3). (3) Über den Plan hinaus entstanden
+  `rejection_internal_test.go`, vier Fälle mit zwei Gründen je Zeile und drei Fälle des
+  Spaltennamens (F-4, F-5), der Übergabe-Text im Plan von
+  `slice-transformationen-betriebsdoku` (F-3) und die Kommentar-Umschreibungen der
+  Fixrunde (F-1, F-8). (4) Zwei Verweise im Plan nannten die falsche Stelle: „Suchlauf
+  Zeile 7“ statt der Zeilen 11 und 12 (F-2) und im Fixrunden-Absatz die Nummer „F-7“
+  für das Finding F-9 (Stand „Parent“) sowie „F-9, F-10, F-11 — keine Aktion“, obwohl
+  F-9 einen Nachzug trug (V-1); diese Closure setzt die Nummern des Reviews ein und
+  ergänzt F-7 mit seiner Behandlung. (5) Die Coverage-Zahl
+  ist an diesem Stand nicht lauf-stabil: 85.20 % im Lauf des Reviewers, 85.10 % im Lauf
+  der Fixrunde und der Verifikation (übernommen); die Streuung ist 0,10 Prozentpunkte
+  (abgeleitet), die Zahl ist Beleg des jeweiligen Laufs, keine Zustandsgröße.
+- **Steering-Loop-Eintrag (Lerneintrag):** *(a) Geschärfte Regel:* keine geändert. Ein
+  **Kandidat** mit Messung steht im Register: `.claude/commands/implement-slice.md`
+  Schritt 20 nennt den Konjunktiv über eine verworfene Alternative als Frage der Probe,
+  sein Kandidatenlauf sucht aber nur Slice-/Wellen-Nummern; ein zweiter diff-skopierter
+  Lauf auf `wäre|würde|hielte|hätte` trifft am Diff dieses Slice die zwei Defekte (F-1,
+  F-8: 2 Zeilen vor der Fixrunde, 0 danach; gemessen bei dieser Closure, Beleg-Datei des
+  Eintrags), das weitere Muster `statt|sonst` 13 Zeilen mit 2 Defekten. Die Änderung einer
+  Anweisung an alle Implementer-Läufe ist Sache des Architect-Zugs des Lese-Schritts der
+  Closure von [welle-transformationen](../welle-transformationen.md) (Adresse: die Roadmap
+  führt die Welle unter *Offene Wellen*, das Ereignis kann eintreten); bis dahin bleibt
+  der Reviewer-HIGH-Punkt „Kommentar trägt keine der Kommentar-Klassen“ die tragende Linie,
+  die F-1 vor dem Merge gefunden hat. *(b) Neuer Sensor:* keiner; ein Sensor über
+  Kommentar-Rhetorik ist ausgeschlossen (Architect-Verdikt zur Slice-Chronik in
+  Code-Kommentaren). *(c) Benannte Spec-Lücke, geschlossen:*
+  [`SPEC-019`](../../../../spec/pflichtenheft.md) nennt Ort der Prüfung (Verarbeitung,
+  nicht Lesen), Klartext je Grund und die Grenze „Zeile ohne Kennung“ · seit
+  slice-antragsqueue-lesefehler-failed (Beleg-Anker: `git grep -n 'Zeilen, die kein Antrag
+  sind' -- spec/pflichtenheft.md`); Auslöser
+  `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue`. *Verbleibende Kenntnisse, je
+  ohne Slice:* die Kopplung von `sqlexec.rejectionMessage` an die Gründe des Konstruktors
+  (F-5; Adresse: der Kommentar der Funktion und die Tabelle in `SPEC-019`; Ereignis: ein
+  Slice, der einen Konstruktor-Grund ergänzt); die Gründe „Quelle ist leer“ und „Antragsart
+  ist unbekannt“ nur am Fake belegt (F-4, V-3: die Spec nennt Fremdschlüssel und `CHECK`
+  in ihrem Satz über die SQL-Funktionen nicht); die Wiederholung von Log-Zeilen bei einem
+  dauerhaft scheiternden Vermerk (F-7); der `failed`-Vermerk einer verworfenen
+  `backfill`-Zeile einer fremden Quelle, folgenlos (V-4). *Adresse mit Text:* V-2 (der
+  Godoc von `rejectionMessage` nennt „die Reihenfolge der Prüfungen des Konstruktors“,
+  der Konstruktor prüft Kennung, Quelle, Schema und Tabelle in einem Ausdruck) steht als
+  Übergabe in §3 von `slice-code-kommentare-bereinigung`. *(d) Finding-Klassen des Reviews
+  und der Verifikation:* Kommentar beschreibt die verworfene Alternative (F-1, F-8) ·
+  Verweis auf die falsche Stelle im eigenen Plan (F-2, V-1) · Aufschub-Adresse deckt den
+  Gegenstand nicht (F-3) · Reihenfolge-Zusage nur an einem Paar gebunden (F-4) · Kopplung
+  an den Konstruktor nur im Kommentar (F-5) · Summentyp per Konvention statt per Typ (F-6)
+  · Wiederholung im Fehlerfall ohne Drosselung (F-7) · Stand „Parent“ nicht der Parent
+  (F-9) · Kennungen ohne Informationsverlust reduziert (F-10) · Host-Interpreter ohne
+  Wirkung (F-11) · Herkunftsangabe eines Godocs ungenau (V-2); ihre Zuordnung zu den
+  Register-Zählern steht im nächsten Punkt.
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
+  `evidence/slice-antragsqueue-lesefehler-failed.md`, Zähler = Zahl der Dateien. *Neue
+  Belege:* `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar` **5×** (F-1, HIGH;
+  F-8 im selben Vorgang; Produktionscode-Ausprägung; Ausgang unverändert **verkörpert**,
+  Kandidat der Schärfung mit Adresse im `state.md`);
+  `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` **5×** (F-3, MEDIUM; Ausgang
+  **geplant**: der Lese-Schritt der Closure von
+  [welle-transformationen](../welle-transformationen.md), alle fünf Belege vor dem Merge
+  gefunden); `BEO-PGC/zitat-nennt-die-falsche-stelle` **9×** (F-2, HIGH, und V-1, LOW, ein
+  Vorgang; vierte Form: der Verweis liegt im eigenen Plan);
+  `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` **4×** (F-11 und die
+  Mutationsläufe des Verifiers, zwei Rollen). *`state.md` fortgeschrieben ohne neue Datei:*
+  `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue` (**verkörpert**, Fix geliefert,
+  Beleg-Anker im `state.md`; Zähler bleibt 2×, ein weiteres Auftreten fiel nicht an).
+  *Deckel-Fälle ohne Datei, Finding-Kennung hier* (verkörpert ab 10×, vor dem Merge von
+  Reviewer bzw. Verifier gefunden, Schwere ≤ LOW, bekannter Träger-Typ): F-4 (LOW,
+  Reihenfolge-Zusage einer Tabelle nur an einem Paar gebunden) zu
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (Deckel bei 14×); F-9 (INFO, Stand
+  „Parent“ nicht der Parent, Zahlen gleich) zu
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (Deckel bei 23×). *Kein Anfall:*
+  `BEO-PGC/test-isolation-geteilter-zustand` (die Bereinigung des Store-Tests löscht nur
+  seine Kennungen), `BEO-PGC/rollen-test-abdeckungsluecken` (der Login-Test deckt die
+  verworfene Zeile),
+  `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration` (Zähler bleibt 2×).
+  *Lese-Schritt:* aus diesem Slice erreicht neu kein Eintrag die Schwelle ohne Ausgang;
+  `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` (Schwelle seit dem dritten Beleg)
+  trägt jetzt seinen Ausgang **geplant**.
+- **Folge-Slices:** keiner neu. Adressen, gelesen: `slice-code-kommentare-bereinigung`
+  (Übergabe V-2 als Text in §3), `slice-transformationen-betriebsdoku` (der Übergabe-Text
+  „Zeilen, die kein Antrag sind“ steht in §2), `slice-transformationen-start-reihenfolge`
+  (die Start-Bedingung „`slice-antragsqueue-lesefehler-failed` in `done/`“ in §4 ist mit
+  dem Move erfüllt; die Bedingung bleibt unverändert). Nachgezogen bei dieser Closure:
+  [welle-transformationen](../welle-transformationen.md) §5 (die Kante zu
+  `start-reihenfolge` ist erfüllt).
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Eingetreten und behandelt:* der
+  Umbau des Ports trifft viele Fundstellen (ohne Rückführung). *Entfallen:* ein nicht
+  vermerkbarer Fall hält die Queue an · der Store-Test stört andere Tests · der
+  Login-Test deckt die verworfene Zeile nicht · Spec und Kommentare widersprechen sich ·
+  der Fix berührt [`ADR-0046`](../../adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
+  oder [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md) ·
+  die Ordnung der Queue kippt. *Weiter offen als Kenntnis:* die Grenzen der
+  Durchreichung (F-5, F-6, F-7, V-3), Adresse im Punkt Steering-Loop-Eintrag.
+- **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure selbst trägt die
+  drei Paarungen, nach dem `git mv` nach `done/`. *Anker:* der Fix steht in
+  `sqlexec.ReadPendingRequests`, `sqlexec.rejectionMessage`
+  (`git grep -n 'func rejectionMessage' -- internal`), `processAdministrationRequests`
+  (`git grep -n 'func processAdministrationRequests' -- internal`) und
+  [`SPEC-019`](../../../../spec/pflichtenheft.md) Absatz „Zeilen, die kein Antrag sind“
+  (`git grep -n 'Zeilen, die kein Antrag sind' -- spec/pflichtenheft.md`); der
+  Herkunfts-Anker `seit slice-antragsqueue-lesefehler-failed` steht im `state.md` des
+  Eintrags (die Spec trägt keinen Slice-Bezug, `AGENTS.md` §3.4). *Folge-Slice:*
+  `slice-code-kommentare-bereinigung`, `slice-transformationen-betriebsdoku` und
+  `slice-transformationen-start-reihenfolge` existieren als Dateien in `open/`.
+  *Register:* jede genannte Kennung `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht
+  leerem `evidence/` (geprüft mit `ls docs/plan/planning/observations/BEO-PGC/<slug>/evidence`).
+  Die Ereignis-Adresse des Ausgangs von `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an`
+  (der Lese-Schritt der Closure von [welle-transformationen](../welle-transformationen.md))
+  kann eintreten: die Welle steht unter *Offene Wellen* der Roadmap.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

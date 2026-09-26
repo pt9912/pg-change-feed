@@ -7,6 +7,10 @@ Durchsetzung heute: das Review — der PreToolUse-Guard blockt Paketmanager, kei
 Textwerkzeug. Adresse des Guard-Ausbaus: `slice-harness-guard-inplace-textwerkzeug` (Guard blockt
 die Formen der Regel; der Plan liegt in `open/`). Ein Sensor über Dateiinhalte ist ausgeschlossen
 (ein Werkzeugaufruf hinterlässt keine Signatur in der Datei).
-Zähler (abgeleitet): 3× (evidence/slice-backfill-speicher-untersuchung.md,
+Zähler (abgeleitet): 4× (evidence/slice-backfill-speicher-untersuchung.md,
 evidence/slice-transformationen-antragsweg-usecase.md,
-evidence/slice-transformationen-backfill-pfad.md).
+evidence/slice-transformationen-backfill-pfad.md,
+evidence/slice-antragsqueue-lesefehler-failed.md). Der vierte Beleg trifft zwei Rollen: ein
+Host-`python3`-Aufruf des Implementers ohne Wirkung und die Mutationsläufe des Verifiers mit einem
+Host-`python3`-Skript, dessen Ziel der Bericht widersprüchlich nennt (Arbeitskopie und Kopie); die
+Durchsetzung ist unverändert das Review, der Guard-Ausbau liegt in `slice-harness-guard-inplace-textwerkzeug`.

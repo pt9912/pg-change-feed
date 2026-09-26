@@ -178,6 +178,18 @@ Go-Dateien (gemessen: Dateien mit einer Kennung in einer Kommentarzeile, Stand
   `make fmt-check` und `make a-check` (Exit direkt, §3.9).
 - **Messung:** `make kommentar-kennungen COUNT=1 PATHS=<Suchraum>` vor und nach
   jeder Tranche, dazu `TESTS=exclude` bzw. `TESTS=only`.
+- **Übergabe aus `slice-antragsqueue-lesefehler-failed` (Kommentar mit ungenauer
+  Herkunftsangabe, Tranche T5).** Der Godoc von `rejectionMessage`
+  (`internal/adapters/driven/postgresstorage/sqlexec/translate.go`) nennt „die
+  Reihenfolge der Prüfungen des Konstruktors“. Der Konstruktor
+  `NewAdministrationRequest` (`internal/domain/model/administrationrequest.go`) prüft
+  Kennung, Quelle, Schema und Tabelle in einem Ausdruck und nennt einen Grund; die
+  Reihenfolge dieser vier gehört `rejectionMessage`, gebunden durch die Tabelle von
+  [`SPEC-019`](../../../../spec/pflichtenheft.md) und die Paar-Fälle in
+  `translate_test.go`. Die Wiedergabe der Reihenfolge im Godoc wird in T5 auf diese
+  Zuordnung umformuliert; die Zusage der Stelle (Klartext je Grund in der Reihenfolge
+  der Tabelle) bleibt. Der Fund ist die Verifikation V-2 des Slice
+  `slice-antragsqueue-lesefehler-failed`.
 
 **§3.13-Suchlauf (committetes Feld).** Bewegte Eigenschaft: „die Kommentare des
 Go-Baums tragen ihre Herkunft als ein Feld“ und ihre Träger — Zeilen-Lokatoren

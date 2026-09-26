@@ -1,43 +1,34 @@
-Zustand: **entschieden, Fix offen** (**2×**) — Hälfte geschlossen, Rest entschieden (Adresse `slice-antragsqueue-lesefehler-failed`). Geschlossen mit
-`slice-transformationen-antragsweg-usecase`: die Regelfelder (`rule_name`, `rule_spec`) werden
-gelesen und verarbeitet statt beim Lesen abgelehnt; die Zeile endet `failed` mit dem Fehlertext
-der Spec, die gültige Zeile dahinter wird `applied` (Store-Test mit realen Zeilen,
-Whitebox-Test der Queue, Login-Test unter `cdc_admin`/`cdc_capture`); Pfad des Slice:
-`docs/plan/planning/done/slice-transformationen-antragsweg-usecase.md` (§3 „Stelle der
-Prüfung“).
+Zustand: **verkörpert** — Ausgang: **verkörpert** → Fix geliefert: `sqlexec.ReadPendingRequests`
+(`internal/adapters/driven/postgresstorage/sqlexec/translate.go`) lehnt keine Zeile ab und reicht eine
+vom Antrags-Konstruktor verworfene Zeile mit Kennung und Klartext durch; `processAdministrationRequests`
+(`internal/bootstrap/wiring.go`) vermerkt sie `failed` mit dem Text in `error_message` und verarbeitet
+die Zeilen dahinter in der Ordnung der Queue; `SPEC-019`, Absatz „Zeilen, die kein Antrag sind“, trägt
+Ort der Prüfung (Verarbeitung, nicht Lesen), Klartext je Grund und die Grenze „Zeile ohne Kennung“ ·
+seit slice-antragsqueue-lesefehler-failed (Beleg-Anker: `git grep -n 'Zeilen, die kein Antrag sind' --
+spec/pflichtenheft.md` und `git grep -n 'func rejectionMessage' -- internal`). Die Regelfelder
+(`rule_name`, `rule_spec`) schloss zuvor `slice-transformationen-antragsweg-usecase` (Prüfung in der
+Verarbeitung, Fehlertext der Spec); der Fix erfasst jeden Grund, den der Konstruktor kennt und den eine
+Kennung adressiert: leere Quelle, leeres Schema, leerer Tabellenname, unbekannte Antragsart, leere Spalte von
+`exclude_column`/`include_column`; eine Zeile ohne Kennung ist die benannte Grenze (unten).
 
-**Rest (Review F-6, zweites Auftreten):** der Antrags-Konstruktor lehnt beim Lesen weiter ab,
-und ein solcher Antrag hält die gesamte Queue an — `exclude_column`/`include_column` mit leerer
-Spalte und jede Antragsart mit leerem Schema oder leerem Tabellennamen (`ErrEmptyIdentifier`;
-Ist-Verhalten erprobt mit `TestReadPendingRequestsRejectsRowWithEmptySchemaOrTable`; ob die
-SQL-Funktionen einen solchen Antrag schreiben, ist hergeleitet, nicht erprobt). Abhilfe: die
-Zeile per `UPDATE` auf `failed` vermerken (`cdc_admin` trägt `UPDATE` auf der Antrags-Tabelle;
-hergeleitet aus den Grants, nicht erprobt).
+**Entscheidung: Option (a) in der allgemeinen Form.** Die Lesung der Queue lehnt keine einzelne Zeile ab;
+die Prüfung liegt in der Verarbeitung (derselbe Ort wie bei den Regelfeldern). (b) scheidet aus: eine Prüfung
+in den SQL-Funktionen berührt `ADR-0046` (keine Domänenlogik in SQL) und schützt nicht gegen einen
+direkten `INSERT` von `cdc_admin`. (c) scheidet aus: eine Zeile einer vertrauten Rolle hielte den Betrieb
+an, die Ursache stünde nur im Log. Der Fix ist Code, keine ADR.
 
-**Benannte Spec-Lücke:** `SPEC-019` nennt für ein leeres Schema, einen leeren Tabellennamen und
-eine leere Spalte weder einen Fehlertext noch den Ort der Prüfung; die Zeile zur Spalte nennt den
-Konstruktor (das Ist-Verhalten), sagt aber nicht, dass die Lesung dort endet.
+**Belege:** Store-Test mit realen Zeilen `TestAdministrationRequestListPendingPassesRejectedRowsThrough`
+(vier Gründe, je eine gültige Zeile davor und dahinter, Vermerke `failed`/`applied`), Whitebox-Tests der
+Verarbeitung im Paket `internal/bootstrap`, Login-Test `TestAdministrationPathRunsUnderLeastPrivilegeLogins`
+unter `cdc_admin`; Mutationen der Eingabeseite: Review 14 von 14 rot, Verifikation 21 von 23 rot (zwei
+grün, äquivalent).
 
-**Entscheidung (Architect-Zug der Closure von `welle-transformationen`): Option (a), in der
-allgemeinen Form.** Die Lesung der Queue lehnt keine einzelne Zeile ab: eine Zeile, deren
-Antrags-Konstruktor sie verwirft (leeres Schema, leerer Tabellenname, leere Spalte, jeder
-künftige Grund), wird als `failed` mit dem Fehlertext des Konstruktors vermerkt, und die Zeilen
-dahinter werden verarbeitet. Das ist derselbe Mechanismus, der die Regelfelder schon schließt
-(Stelle der Prüfung: Verarbeiten, nicht Lesen), und er entspricht der Spec-Aussage „`failed` mit
-einem Fehlertext“. (b) scheidet aus: eine Prüfung in den SQL-Funktionen berührt `ADR-0046` (keine
-Domänenlogik in SQL) und schützt nicht gegen einen direkten `INSERT` von `cdc_admin`, die Queue
-bliebe für diese Zeile angehalten. (c) scheidet aus: eine Zeile einer vertrauten Rolle hielte den
-Betrieb an, die Ursache stünde nur im Log, und die Abhilfe verlangte SQL-Zugriff auf die
-Antrags-Tabelle. Der Fix braucht Code (Queue-Lesepfad und Use Case), keine neue ADR.
-
-**Folgearbeit (Adresse `slice-antragsqueue-lesefehler-failed`, kleiner Fix-Slice):**
-Lesepfad und Use Case so ändern, dass die verworfene Zeile mit Kennung und Fehlertext
-durchgereicht und `failed` vermerkt wird; Store-Test mit realen Zeilen (leeres Schema, leerer
-Tabellenname, `exclude_column`/`include_column` mit leerer Spalte, gültige Zeile dahinter wird
-`applied`); den Test `TestReadPendingRequestsRejectsRowWithEmptySchemaOrTable` auf das neue
-Verhalten umschreiben; `SPEC-019` im selben Commit nachziehen (Fehlertext je Feld, Ort der
-Prüfung: Verarbeitung) — der heutige Wortlaut beschreibt das Ist-Verhalten und bleibt bis zum
-Code stehen.
+**Benannte Grenzen (Kenntnis):** `sqlexec.rejectionMessage` bildet den Klartext aus den Feldern der Zeile;
+ein neuer Konstruktor-Grund trägt bis zu einem eigenen Fall den allgemeinen Klartext `Antrag ist
+ungültig` (Adresse der Kopplung: der Kommentar an `rejectionMessage`). Die Gründe „Quelle ist leer“ und
+„Antragsart ist unbekannt“ entstehen über die SQL-Funktionen nicht (Fremdschlüssel, `CHECK`) und sind nur
+an Fake-Tests belegt. Eine Zeile ohne Kennung bleibt `pending` und erzeugt eine Warnung je Durchlauf.
 
 Zähler (abgeleitet): 2× (evidence/slice-transformationen-antragsweg-schema.md,
-evidence/slice-transformationen-antragsweg-usecase.md).
+evidence/slice-transformationen-antragsweg-usecase.md); der Slice des Fixes trägt keinen dritten Beleg,
+Review und Verifikation fanden kein weiteres Auftreten der Klasse.

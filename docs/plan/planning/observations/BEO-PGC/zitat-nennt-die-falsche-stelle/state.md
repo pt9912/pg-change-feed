@@ -14,8 +14,11 @@ Ein vierter Beleg (`welle-d-check-verkoerperung`) traf **denselben Commit**,
 der diese Verkörperung schrieb — bestätigt den Wert der Regel unmittelbar
 (siehe evidence-Datei).
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **8×**
-(evidence/slice-backfill-run-store.md — Kopplungs-Kommentar nennt eine Testdatei, die keinen
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **9×**
+(evidence/slice-antragsqueue-lesefehler-failed.md — der Verweis liegt im eigenen Plan: eine Zeile
+des nummerierten Suchlauf-Feldes (Review F-2, HIGH) und die Nummer eines Findings des zugehörigen
+Reviews (Verifikation V-1, LOW); beide vor dem Merge gefunden, Ausgang unverändert **verkörpert**;
+evidence/slice-backfill-run-store.md — Kopplungs-Kommentar nennt eine Testdatei, die keinen
 Schema-Neuaufbau ausführt, Review F-3; evidence/slice-090.md, evidence/slice-102.md,
 evidence/slice-d-check-tracked-modul.md,
 evidence/welle-d-check-verkoerperung.md,

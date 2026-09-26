@@ -305,9 +305,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     Bestandsdateien) geht `e2e-wirkung` voraus — `e2e-wirkung` und `e2e-abhilfe`
     erweitern `test/integration/integration_test.go`, eine der sechs;
     `slice-antragsqueue-lesefehler-failed` (die Lesung der Antrags-Queue lehnt
-    keine Zeile ab) geht `start-reihenfolge` voraus — der Vorlauf vor
-    `stream.Run` und der Abhilfe-Antrag laufen über dieselbe Queue (hergeleitet,
-    nicht erprobt); `slice-code-kommentare-bereinigung` startet nach
+    keine Zeile ab; geschlossen, die Kante zu `start-reihenfolge` ist erfüllt)
+    geht `start-reihenfolge` voraus — der Vorlauf vor `stream.Run` und der
+    Abhilfe-Antrag laufen über dieselbe Queue, die eine vom Antrags-Konstruktor
+    verworfene Zeile nicht mehr anhält (erprobt am Store-Test mit realen Zeilen
+    und am Login-Test); `slice-code-kommentare-bereinigung` startet nach
     `e2e-abhilfe` (seine Test-Tranche kürzt Kommentare in denselben Testdateien
     und schreibt das Erzeugnis `docs/user/e2e-abdeckung.md` neu); die Welle wartet
     nicht auf ihn. **Entscheidung zu `slice-antragsqueue-lesefehler-failed`:
