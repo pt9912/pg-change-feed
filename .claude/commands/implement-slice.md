@@ -240,6 +240,12 @@ ist eine Lifecycle-Rücksprungkante (11).
     unzulässig)? Nur Letzteres wird umformuliert. Kein Sensor/Gate dafür (geprüft und verworfen,
     Architect-Verdikt) — die Unterscheidung ist Satz-Subjekt-Urteil, kein Zeichenkettenmuster;
     dieser Schritt bleibt Disziplin.
+    **Konjunktiv über die verworfene Alternative** (`BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar`):
+    derselbe Lauf auf die hinzugefügten Kommentarzeilen des Diffs —
+    `git diff -U0 <Basis> -- '*.go' | grep -nE '^\+.*//.*(wäre|würde|hielte|hätte|sonst|statt)'`.
+    Jeder Treffer bekommt ein Urteil: die Zusage der Stelle im Indikativ (zulässig) oder die
+    Beschreibung einer verworfenen Alternative (umformulieren); Mutationsbeschreibungen in
+    Test-Godocs und normale Zweige („sonst auf stdout“) sind zulässig.
     **Grenze dieser Selbstprüfung** (4. Beleg, `slice-052`, der Architect-Verdikt-Nachtrag
     zur Slice-Chronik in Code-Kommentaren, 4. Auftreten): Dieser Schritt
     läuft im selben Kontext, der den Kommentar geschrieben hat — genau die Konstellation,
