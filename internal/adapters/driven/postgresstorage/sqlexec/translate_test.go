@@ -1308,7 +1308,7 @@ func TestReadPendingRequestsCarriesRuleRowsWithEmptyRuleFields(t *testing.T) {
 }
 
 // ReadPendingRequests reicht eine vom Antrags-Konstruktor verworfene Zeile mit
-// Kennung und Fehlertext durch (`SPEC-019`), statt die Lesung zu beenden: je
+// Kennung und Fehlertext durch (`SPEC-019`); die Lesung endet nicht: je
 // Grund — leere Quelle, leeres Schema, leerer Tabellenname,
 // `exclude_column`/`include_column` mit leerer Spalte, Antragsart außerhalb der
 // geschlossenen Menge, ein Grund ohne eigenen Klartext — steht die Zeile als
@@ -1316,13 +1316,23 @@ func TestReadPendingRequestsCarriesRuleRowsWithEmptyRuleFields(t *testing.T) {
 // einer dahinter; die Lesung endet ohne Fehler und der Übersetzungspunkt läuft
 // nicht. Der Text je Grund ist der Klartext, Doppelpunkt, Leerzeichen und die
 // Antrags-Kennung; mehrere Gründe an einer Zeile nennen den ersten der
-// Konstruktor-Reihenfolge. Rot färbende Mutationen (Eingabeseite, die Zeilen
-// der Fälle): den Konstruktor-Fehler wieder zurückgeben statt die Zeile
-// durchzureichen — jeder Fall endet mit einem Fehler; die verworfenen Zeilen
-// ans Ende des Ergebnisses stellen — die Zeile zwischen den gültigen ist keine
-// verworfene; in `rejectionMessage` die Fälle `schema` und `table` vertauschen
-// — der Fall mit beiden Gründen nennt den Tabellennamen; den Text durch einen
-// festen ersetzen — der Text je Grund weicht ab.
+// Konstruktor-Reihenfolge Kennung, Quelle, Schema, Tabelle; die Fälle mit zwei
+// Gründen binden die Paare Kennung und Quelle, Quelle und Schema, Schema und
+// Tabelle. Die Antragsart hängt am Grund des Konstruktors, nicht an der
+// Stellung im Schalter (bei leerem Schema oder Tabellenname nennt der
+// Konstruktor `ErrEmptyIdentifier`, bevor er die Antragsart prüft): die Fälle
+// „Schema bzw. Tabellenname und Antragsart“ binden diese Grund-Bedingung.
+// Quelle und Antragsart entstehen über die SQL-Funktionen nicht
+// (Fremdschlüssel, CHECK): ihre Gründe sind nur an dieser Fake-Lesung belegt.
+// Rot färbende Mutationen (Eingabeseite, die Zeilen der Fälle): den
+// Konstruktor-Fehler wieder zurückgeben statt die Zeile durchzureichen — jeder
+// Fall endet mit einem Fehler; die verworfenen Zeilen ans Ende des Ergebnisses
+// stellen — die Zeile zwischen den gültigen ist keine verworfene; in
+// `rejectionMessage` je Paar die beiden Fälle vertauschen — der Fall mit
+// beiden Gründen nennt den späteren; die Bedingung des Antragsart-Falls vor
+// den Schema-Fall stellen und durch `cause != nil` ersetzen — die Fälle mit
+// Schema bzw. Tabellenname und Antragsart nennen die Antragsart; den Text durch
+// einen festen ersetzen — der Text je Grund weicht ab.
 func TestReadPendingRequestsPassesRejectedRowsThrough(t *testing.T) {
 	const (
 		remove  = string(model.AdministrationRequestRemoveTransformation)
@@ -1341,6 +1351,10 @@ func TestReadPendingRequestsPassesRejectedRowsThrough(t *testing.T) {
 		{"leeres Schema", []any{"req-x", "src-1", "", "feed", "", "regel", ruleRow, set}, "req-x", "Schemaname ist leer: req-x"},
 		{"leerer Tabellenname", []any{"req-x", "src-1", "public", "", "", "regel", ruleRow, set}, "req-x", "Tabellenname ist leer: req-x"},
 		{"leeres Schema und leerer Tabellenname", []any{"req-x", "src-1", "", "", "", "", "", remove}, "req-x", "Schemaname ist leer: req-x"},
+		{"leere Kennung und leere Quelle", []any{"", "", "public", "feed", "", "", "", remove}, "", "Kennung ist leer: public.feed"},
+		{"leere Quelle und leeres Schema", []any{"req-x", "", "", "feed", "", "", "", remove}, "req-x", "Quelle ist leer: req-x"},
+		{"leeres Schema und Antragsart außerhalb der Menge", []any{"req-x", "src-1", "", "feed", "", "", "", "unbekannt"}, "req-x", "Schemaname ist leer: req-x"},
+		{"leerer Tabellenname und Antragsart außerhalb der Menge", []any{"req-x", "src-1", "public", "", "", "", "", "unbekannt"}, "req-x", "Tabellenname ist leer: req-x"},
 		{"exclude_column mit leerer Spalte", []any{"req-x", "src-1", "public", "feed", "", "", "", exclude}, "req-x", "Spaltenname ist leer: req-x"},
 		{"include_column mit leerer Spalte", []any{"req-x", "src-1", "public", "feed", "", "", "", include}, "req-x", "Spaltenname ist leer: req-x"},
 		{"Antragsart außerhalb der Menge", []any{"req-x", "src-1", "public", "feed", "", "", "", "unbekannt"}, "req-x", "Antragsart ist unbekannt: req-x"},

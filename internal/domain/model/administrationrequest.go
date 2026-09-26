@@ -84,7 +84,7 @@ type AdministrationRequest struct {
 // `failed`-Ausgang des Antrags mit dem Fehlertext der Spec (`SPEC-019`),
 // den der Use Case bestimmt. Eine Zeile, die dieser Konstruktor verwirft,
 // endet ebenfalls `failed`: die Lesung der Queue reicht Kennung und Grund
-// durch, statt sie abzulehnen (`SPEC-019`).
+// an die Verarbeitung durch (`SPEC-019`).
 func NewAdministrationRequest(id AdministrationRequestID, source SourceID, schema, table, column, ruleName, ruleSpec string, kind AdministrationRequestKind) (AdministrationRequest, error) {
 	if id == "" || source == "" || schema == "" || table == "" {
 		return AdministrationRequest{}, domainerrors.ErrEmptyIdentifier

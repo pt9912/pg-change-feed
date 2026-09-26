@@ -369,12 +369,11 @@ func ReadTableSchema(ctx context.Context, exec Executor, versionID model.SchemaV
 }
 
 // ReadPendingRequests liest die offenen Anträge in Aufruf-Reihenfolge; jede
-// Zeile läuft durch den Domänen-Konstruktor. Die Lesung lehnt
-// keine Zeile ab: eine Zeile außerhalb der Antrags-Invarianten steht mit
-// ihrer Kennung und dem Fehlertext der Spec (`SPEC-019`) an ihrer Stelle der
-// Ordnung, statt die Lesung zu beenden — ein Fehler der Lesung hielte jeden
-// Antrag dahinter an. Nur ein Fehler der Anfrage, des Scans oder der
-// Iteration endet die Lesung. Regelname und Regelform der beiden
+// Zeile läuft durch den Domänen-Konstruktor. Die Lesung lehnt keine Zeile ab:
+// eine Zeile außerhalb der Antrags-Invarianten steht als `Rejected` mit ihrer
+// Kennung und dem Fehlertext der Spec (`SPEC-019`) an ihrer Stelle der
+// Ordnung. Die Lesung endet nur bei einem Fehler der Anfrage, des Scans oder
+// der Iteration. Regelname und Regelform der beiden
 // Transformations-Antragsarten gehören nicht zu den Invarianten des
 // Konstruktors: eine Zeile mit leerem Regelnamen oder leerer Regelform ist
 // ein Antrag, den der Use Case mit dem Fehlertext der Spec ablehnt.

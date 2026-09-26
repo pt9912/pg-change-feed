@@ -1338,9 +1338,8 @@ func runAdministration(ctx context.Context, deps administrationDeps) {
 // processAdministrationRequests liest die offenen Anträge und verarbeitet
 // jeden einzeln in der Ordnung der Queue; ein Lesefehler bleibt best-effort
 // (derselbe nächste Durchlauf versucht erneut). Ein gescheiterter Antrag wird
-// als `failed` vermerkt, statt `pending` zu bleiben — ein `pending`
-// bleibender Antrag würde jeden Durchlauf erneut versuchen, ohne dass sich
-// der Fehlerzustand ändert. Eine vom Antrags-Konstruktor verworfene Zeile
+// als `failed` vermerkt; die Abfrage liest nur `pending`, der Antrag wird
+// nicht erneut versucht. Eine vom Antrags-Konstruktor verworfene Zeile
 // (`ListPending`, `Rejected`) endet ebenso `failed` mit ihrem Fehlertext
 // (`SPEC-019`), ohne die Zeilen dahinter anzuhalten; eine Zeile ohne
 // Kennung lässt sich nicht vermerken und bleibt mit einer Warnung im Log
