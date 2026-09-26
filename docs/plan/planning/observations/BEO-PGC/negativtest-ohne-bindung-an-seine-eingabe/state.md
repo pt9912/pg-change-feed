@@ -1,4 +1,4 @@
-Deckel bei 12× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
+Deckel bei 14× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
 vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen bekannten
 Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
@@ -37,7 +37,7 @@ Träger“ — eine Gegenentscheidung des Architects ist ein neues Verdikt):
   einer Abfrage-Eingabe; er ist im Slice gebunden (Test mit Run einer fremden Quelle,
   Mutation danach rot), der Reviewer fand ihn vor dem Merge.
 
-Zähler (abgeleitet): **13×** (evidence/slice-086.md, evidence/slice-087.md,
+Zähler (abgeleitet): **14×** (evidence/slice-086.md, evidence/slice-087.md,
 evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md,
 evidence/slice-092.md, evidence/slice-backfill-snapshot-reader.md,
 evidence/slice-backfill-run-usecase.md,
@@ -45,10 +45,18 @@ evidence/slice-backfill-sql-administration.md,
 evidence/slice-backfill-e2e.md,
 evidence/slice-backfill-bench-richtgroesse.md,
 evidence/slice-sdk-readme-nutzerdoku.md,
-evidence/slice-sdk-kotlin-cloudsmith.md) —
+evidence/slice-sdk-kotlin-cloudsmith.md,
+evidence/slice-harness-suchlauf-nachmessen.md) —
 **Schwelle erreicht**; der Lese-Schritt der Closure von `welle-backfill-bestand`
 liest den Eintrag mit (11×), der Lese-Schritt der nächsten Welle-Closure
-(`welle-transformationen`) den zwölften und dreizehnten Beleg. Der dreizehnte
+(`welle-transformationen`) den zwölften bis vierzehnten Beleg. Der vierzehnte Beleg
+(`slice-harness-suchlauf-nachmessen`, Review F-1 HIGH und F-2 MEDIUM) trifft ein
+**Werkzeug, das Plan-Inhalt als Argument ausführt**: die Zusage „keine Kommando-Ausführung aus
+einer Plan-Zeile“ und sechs Ausgangs-Zweige des Vertrags blieben unter Mutationen grün, weil
+der Tabellentest nur gültige Eingaben und den Stand `diff` fuhr; Ausprägung: die Eingabeseite
+einer Sicherheits-Zusage ist die **feindliche Eingabe** (Marker-Datei statt Ausgabe-Vergleich).
+Die Fixrunde band beide vor dem Merge; neue Form (anderer Träger-Typ: Skript-Test eines
+Werkzeugs), zusätzlich HIGH, deshalb außerhalb des Deckels. Der dreizehnte
 Beleg (`slice-sdk-kotlin-cloudsmith`, Implementer-Mutation, kein Review-Finding)
 trifft eine **Probe im Docker-Bau**: die erste Fassung (`--dry-run` der zwei
 Aufgabennamen, Exit 0) blieb bei der Mutation des Repository-Namens grün, weil

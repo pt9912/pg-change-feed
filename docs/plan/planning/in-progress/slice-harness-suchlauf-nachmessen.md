@@ -136,20 +136,20 @@ Suchraum ausgeschlossen.
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: entfällt für das Benutzerhandbuch — keine
       Betreiber-Oberfläche; die Doku-Träger stehen im zweiten Liefer-Punkt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
-      der Closure der nächsten Welle (die Roadmap führt
-      [welle-transformationen](../welle-transformationen.md) unter *Offene
-      Wellen*, das Ereignis kann eintreten; ein Slice ohne Welle wird von ihr
-      mitgeprüft).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+      der Closure dieses Slice und zusätzlich der Closure der nächsten Welle
+      (die Roadmap führt [welle-transformationen](../welle-transformationen.md)
+      unter *Offene Wellen*, das Ereignis kann eintreten; ein Slice ohne Welle
+      wird von ihr mitgeprüft).
 
 **Umfang:** M — Schätzung des Architects, nicht gemessen
 ([`architect-verdict-welle-backfill-bestand-lese-schritt`](../../../reviews/architect-verdict-welle-backfill-bestand-lese-schritt.md)
@@ -238,38 +238,170 @@ geschrieben.
   (`cd "$(git rev-parse --show-toplevel)"`, gelesen in `apply-rollout.sh` und
   `run-release-tag-info-tests.sh`); das Werkzeug folgt ihnen. *Erwartet, zu
   belegen durch:* Lesen der Skript-Köpfe am Start; ergibt sich eine Vorgabe, die
-  dagegen spricht, ist es die Rückführung nach `open/`. **Ausgang:** *(bei
-  Closure)*
+  dagegen spricht, ist es die Rückführung nach `open/`. **Ausgang: weiter offen
+  → Register** `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`
+  (1×, Adresse: der Architect bei einer Änderung an `AGENTS.md` §3.1). Der
+  Auslöser der Rückführung ist nicht eingetreten: das Werkzeug ruft `git`,
+  `bash` und `realpath` auf dem Host, ohne etwas zu installieren; die
+  Präzedenz ist gemessen — `git grep -c 'git rev-parse --show-toplevel' -- tools`
+  am Stand `142ca4b5` trifft 42 Dateien (43 Zeilen), darunter
+  `tools/schema/apply-rollout.sh` und `tools/harness/run-release-tag-info-tests.sh`.
+  Offen bleibt die Auslegung: `AGENTS.md` §3.1 sagt „Host braucht nur Docker
+  und GNU `make`“ und führt keine Klasse für Host-Werkzeuge ohne Installation;
+  der Vertrag des Werkzeugs nennt seine drei Host-Werkzeuge
+  (Review F-6, Verifikation V-3).
 - **Die Zahl streut mit dem Stand `diff`**: er bewegt sich mit jedem Commit, ein
   grüner Lauf gilt für den Arbeitsbaum des Laufs. *Erwartet, zu belegen durch:*
-  die Sensor-Doku nennt den Stand im Aufruf-Beleg; kein Gate. **Ausgang:** *(bei
-  Closure)*
+  die Sensor-Doku nennt den Stand im Aufruf-Beleg; kein Gate. **Ausgang:
+  entfallen** — die Erwartung ist belegt: `harness/sensors/suchlauf-nachmessen.md`
+  sagt „Die Zahl für `diff` gilt für den Arbeitsbaum des Laufs“, das Ziel steht in
+  keinem Gate-Bündel. Das Streuen selbst ist gemessen: die Nachmessung dieser
+  Closure am Arbeitsbaum vor dem Inhalts-Commit meldet zwei von acht Zeilen
+  abweichend (Zeile 4: 13 statt 12, Zeile 6: 73 statt 74; die vier Zeilen am
+  Parent `8717c4fb` stimmen), Ursache sind die Register-Nachzüge dieser
+  Closure; ohne Gate färbt sich nichts rot, die Zahlen des Feldes bleiben der
+  Beleg des Implementer-Laufs.
 - **Das Werkzeug erweckt den Eindruck, das Feld sei vollständig** (nur Zahlen
   und Stände sind geprüft). *Erwartet, zu belegen durch:* die benannte Grenze in
   Sensor-Doku und §3.13; der Reviewer prüft Suchraum und Muster weiter von Hand
-  (`BEO-PGC/regel-weiter-als-ihr-sensor`, 3×, verkörpert teilweise). **Ausgang:** *(bei
-  Closure)*
+  (`BEO-PGC/regel-weiter-als-ihr-sensor`, 3×, verkörpert teilweise). **Ausgang:
+  weiter offen → Register** `BEO-PGC/regel-weiter-als-ihr-sensor` (Restrisiko und
+  Trigger in der `state.md`). Die Zusage ist erfüllt: die Grenze „Zahlen und
+  Stände, nicht die Vollständigkeit von Suchraum und Muster“ steht in der
+  Sensor-Doku, in `AGENTS.md` §3.13, in der Zeile von `harness/README.md`, in
+  `implement-slice` Schritt 18 und im Reviewer-Skill (Verifikation §3, Zeile
+  „Träger“). Ob ein Leser trotzdem ein grünes Werkzeug für ein vollständiges
+  Feld hält, zeigt erst ein Fund; das Register hält den Trigger.
 - **Die Rücknahme überschreibt eine gewollte lokale Änderung an `plan.yaml`.**
   *Erwartet, zu belegen durch:* ein Test mit vorab geänderter Datei — sie bleibt
-  im Zustand vor dem Lauf. **Ausgang:** *(bei Closure)*
+  im Zustand vor dem Lauf. **Ausgang: entfallen** — der Tabellentest des
+  Wrappers (`make test-rollout-restore`) bindet den Fall „lokale Änderung
+  bleibt“ und „fehlende Datei bleibt fehlend“; der Reviewer setzte sieben
+  Wrapper-Mutationen, alle färbten den Test rot (Review, Abschnitt
+  „Eingabeseiten-Mutationen am Wrapper“), der Verifier die Mutation
+  „Wiederherstellung entfernt“ (Verifikation §4, MW). Die Grenzen des Wrappers
+  (gleichzeitige Aufrufe, `SIGKILL`) stehen im Skriptkopf und in
+  `harness/targets/schema-rollout.md` §Grenzen der Rücknahme.
 - **Die bestehenden Pläne tragen keine `suchlauf`-Blöcke.** *Erwartet, zu
   belegen durch:* der Implementer eines Slice überträgt sein Feld am Start in die
-  Blöcke; das Werkzeug meldet einen Plan ohne Block mit Exit ≠ 0. **Ausgang:**
-  *(bei Closure)*
+  Blöcke; das Werkzeug meldet einen Plan ohne Block mit Exit ≠ 0. **Ausgang:
+  weiter offen → Register** `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`
+  (Adresse: der Start des jeweiligen Slice und die Closure von
+  [welle-transformationen](../welle-transformationen.md)). Das Werkzeug meldet
+  einen Plan ohne Block mit Exit 2 (Fall „kein Block“ des Tabellentests); die
+  Erwartung „der Implementer überträgt am Start“ hat keinen Träger: `implement-slice`
+  Schritt 18 ruft das Werkzeug nur, wo der Plan einen Block trägt, und kein Plan
+  unter `open/` trägt einen (`git grep -l -E '^ *.{3}suchlauf$' -- docs/plan/planning/open`
+  am Stand `142ca4b5`: 0 Dateien).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
-- **Drei Paarungen:** dieser Slice hat keine Welle; die Prüfung läuft
-  regelkonform bei der Closure der nächsten Welle.
+- **Was hat funktioniert:** Die Rollen-Kette trug: der Review (1 HIGH · 2 MEDIUM · 1 LOW ·
+  4 INFO, übernommen aus dem Report) fand durch eigene Mutationen und eine feindliche
+  Plan-Zeile, was der Implementer-Lauf nicht fand (F-1 bis F-3); die Fixrunde band die
+  Zusagen an ihre Eingabeseite; der Verifier fuhr die Mutationen der Fixrunde selbst (acht
+  rote Läufe, Verifikation §4), die acht Zeilen des Suchlauf-Feldes zusätzlich von Hand
+  am Parent und am Diff (Verifikation §6, alle acht gleich dem Soll) und beide DB-Tier-Läufe real
+  (`make test-store`, `make test-replication`: Exit 0, danach `git status --short
+  tools/schema` leer). Der Schnitt „ein Wrapper für sieben Aufrufer“ trägt: die
+  Aufrufer-Messung des Plans (§3, Zeile 7/8) fand sechs direkte Aufrufer außerhalb von
+  `apply-rollout.sh`, und die Aufrufer-Prüfung von `make test-rollout-restore` hält sie
+  gleich. Das Werkzeug misst sein eigenes Feld: `make suchlauf-nachmessen PLAN=<dieser Plan>`
+  endet am Stand der Verifikation mit acht `OK`.
+- **Was ging anders als geplant:** (1) Die Rücknahme der Rollout-Artefakte liegt im Wrapper
+  `tools/schema/rollout-restore.sh`, nicht in `apply-rollout.sh` (sieben Aufrufer statt
+  zwei; §3, Zeile `rollout-restore.sh`). (2) Der Ausschluss der Plan-Datei läuft über den
+  Dateinamen in jedem Verzeichnis statt über den Pfad (§3, Zeile „Abweichung vom
+  Plan-Wortlaut“). (3) Der Tabellentest umfasst elf Fälle statt fünf; das Werkzeug trägt
+  eine Allow-List für Optionen und Pathspec-Magic, weil eine Plan-Zeile mit `git grep -O`
+  ein Kommando startete (F-1, HIGH; §3, Zeile „Form der Zeile“). (4) Die Fixrunde hat keinen
+  zweiten Reviewer-Lauf (V-2): ihre Wirkung tragen die Mutationen des Verifiers, die
+  Sicherheitsfläche `check_opts`/`check_paths` ist von keinem Reviewer gelesen; die
+  Entscheidung ist, keinen weiteren Lauf zu beauftragen — ein Fund an dieser Fläche wäre
+  ein zweiter Beleg im Register-Eintrag `werkzeug-fuehrt-plan-inhalt-als-argument-aus`.
+  (5) V-1 (INFO): [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md)
+  Entscheidung 3 sagt „je Rollout aufbewahrt“ ohne Unterscheidung von Betrieb und
+  Test-Vorbedingung; die Rücknahme wirkt nur in Läufen gegen Wegwerf-Datenbanken, im Betrieb
+  bleiben `plan.yaml` und `down.sql` das Erzeugnis (Vertrag `harness/targets/schema-rollout.md`);
+  die Lesart ist eine Auslegung, keine Aussage der ADR, und ohne Änderung der Entscheidung —
+  Kenntnisnahme, keine Folge-ADR. V-4 (INFO): das Gegenstück „der Parent-Stand lässt beide
+  Dateien geändert“ ist aus dem Review-Report und dem Register übernommen, nicht vom
+  Verifier gefahren; die Wirkung der Rücknahme selbst ist gemessen.
+- **Steering-Loop-Eintrag (Lerneintrag):** *(a) Neuer Sensor — zwei Werkzeuge, kein Gate.*
+  `make suchlauf-nachmessen` wiederholt die vom Plan deklarierte Messung (Befehl, Stand,
+  Zahl) und prüft Zahlen und Stände, nicht die Vollständigkeit von Suchraum und Muster;
+  `make test-rollout-restore` bindet die Rücknahme der Rollout-Artefakte und die
+  Aufrufer-Prüfung. Liegt in `harness/sensors/suchlauf-nachmessen.md`,
+  `harness/README.md` §Sensors (Werkzeug-Zeilen), `tools/schema/rollout-restore.sh`,
+  `harness/targets/schema-rollout.md` · seit slice-harness-suchlauf-nachmessen. Die Grenze „kein
+  Sensor auf Prosa“ von [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
+  bleibt: das Werkzeug ist eine Messung, keine Formpflicht. *(b) Geschärfte Regel.*
+  `AGENTS.md` §3.13 §Suchform nennt Form (Codeblock mit dem Etikett `suchlauf`, eine Zeile je
+  Messung) und Aufruf; `.claude/commands/implement-slice.md` Schritt 18 ruft das Werkzeug
+  nach jeder Fixrunde; der Reviewer-Probe-Satz „Zahl im Träger …“ nennt es
+  · seit slice-harness-suchlauf-nachmessen. Herkunft:
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`, `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`,
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger`. *(c) Gelernt am Kern des Slice:* ein Werkzeug,
+  das Text aus einem Plan als Argument eines Kommandos ausführt, ist eine Ausführungsgrenze;
+  seine Sicherheitszusage bindet der Test an eine **feindliche Eingabe** (Marker-Datei,
+  die nur bei ausgeführtem Kommando entsteht), nicht an den Vergleich der Ausgabe. Bei 1×
+  keine Regel: der Eintrag `BEO-PGC/werkzeug-fuehrt-plan-inhalt-als-argument-aus` hält Kandidat
+  und Trigger; der Vorgang trägt zusätzlich die Ausprägung im bestehenden Eintrag
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`. *(d) Benannte Lücken, je mit Adresse:*
+  das Werkzeug prüft nicht die Vollständigkeit von Suchraum und Muster
+  (`BEO-PGC/regel-weiter-als-ihr-sensor`, Restrisiko-Absatz); die Suchlauf-Felder der Pläne
+  unter `open/` stehen als Tabellen, das Werkzeug misst nur Blöcke, und kein Träger verlangt
+  die Übertragung (`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`); `AGENTS.md` §3.1 führt
+  keine Klasse für Host-Werkzeuge ohne Installation
+  (`BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`).
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
+  `evidence/slice-harness-suchlauf-nachmessen.md`, Zähler = Zahl der Dateien (gemessen mit
+  `ls evidence | wc -l` am Stand dieser Closure). *Neue Belege:*
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` **14×** (F-1 HIGH, F-2 MEDIUM; verkörpert,
+  außerhalb des Deckels: Schwere ≥ MEDIUM), `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`
+  **13×** (F-3 MEDIUM; verkörpert). *Neue Einträge, 1×, offen:*
+  `BEO-PGC/werkzeug-fuehrt-plan-inhalt-als-argument-aus` (F-1),
+  `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration` (F-6, V-3). *Zustand
+  nachgezogen, ohne neue Datei:* `BEO-PGC/test-schreibt-in-committete-datei` **4×** (geplant →
+  **verkörpert**, Träger `tools/schema/rollout-restore.sh` und `make test-rollout-restore`; ein
+  weiterer Schreiber ist nicht gefunden), `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+  **23×**, `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` **14×** und
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` **32×** (der Suchlauf-Anteil je **verkörpert**
+  durch das Werkzeug; F-8 und die vier Register-`state.md`: der Zustand „geplant“ ist auf den
+  Ist-Zustand gezogen, die Meldung dieses Plans (§3, Zeile Beschreibungen der Suchform) ist mit
+  der Closure gezogen), `BEO-PGC/regel-weiter-als-ihr-sensor` **3×** (Restrisiko-Absatz).
+  *Deckel-Fälle ohne Datei, Finding-Kennung hier:* F-8 (`arbeit-ueberholt-stehenden-traeger`,
+  INFO, vom Reviewer vor dem Merge gefunden, bekannter Träger-Typ: Träger in fremder Datei,
+  gemeldet mit Frist). *Kein eigener Register-Anfall:* F-4 (LOW, Zerleger verliert ein leeres
+  Argument; behoben), F-5 und F-7 (INFO, im Vertrag benannt), V-1, V-2, V-4 (siehe „Was ging
+  anders“). *Lese-Schritt der nächsten Welle-Closure (`welle-transformationen`):* kein Eintrag
+  erreicht mit diesem Beleg neu 3× ohne Ausgang — die zwei Einträge mit neuer Datei tragen
+  den Ausgang *verkörpert*, die zwei neuen stehen bei 1×; es entsteht kein Vermerk in einer
+  weiteren `state.md`.
+- **Folge-Slices:** keine angelegt. Was offen bleibt, trägt eine Adresse (Risiken oben,
+  Register). Übergabe an offene Pläne (§3.13, Suchlauf am Stand `142ca4b5`):
+  `slice-transformationen-kern-rename` nennt den Slice als Start-Bedingung („in `done/`
+  liegen“), die Bedingung ist mit dieser Closure erfüllt, der Text bleibt wahr; die Blöcke der
+  zehn Pläne von `welle-transformationen` stehen nicht — Adresse siehe Risiko 5.
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Entfallen:* Die Zahl streut mit dem
+  Stand `diff` · Die Rücknahme überschreibt eine gewollte lokale Änderung. *Weiter offen:*
+  Docker-only für `git` (Register `host-werkzeug-jenseits-docker-und-make-ohne-deklaration`) ·
+  Das Werkzeug erweckt den Eindruck, das Feld sei vollständig (Register
+  `regel-weiter-als-ihr-sensor`) · Die bestehenden Pläne tragen keine `suchlauf`-Blöcke
+  (Register `beleg-befehl-traegt-seinen-satz-nicht`).
+- **Drei Paarungen:** die Roadmap führt [welle-transformationen](../welle-transformationen.md)
+  unter *Offene Wellen* (gelesen in `in-progress/roadmap.md`, Abschnitt *Offene Wellen*), das
+  Ereignis kann eintreten: die Closure dieser Welle prüft die Paarungen dieses Slice
+  mit; dieser Slice hat selbst keine Welle. Die Slice-Closure trägt sie zusätzlich jetzt:
+  *Anker:* die Zielorte der Lerneinträge existieren und tragen `seit slice-harness-suchlauf-nachmessen`
+  — `AGENTS.md` §3.13, `.claude/commands/implement-slice.md` Schritt 18, `harness/README.md`
+  §Sensors (drei Zeilen: `git grep -c 'seit slice-harness-suchlauf-nachmessen' -- harness/README.md`
+  trifft 3); `harness/sensors/suchlauf-nachmessen.md`, `tools/schema/rollout-restore.sh` und
+  `harness/targets/schema-rollout.md` existieren (als Dateien im Diff). *Folge-Slice:* keiner
+  genannt, kein Versprechen offen; die genannten Slices `slice-transformationen-kern-rename` (`open/`)
+  und `slice-transformationen-spec-nachzug` (`done/`) existieren als Dateien. *Register:* jede
+  genannte Kennung `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht leerem `evidence/`
+  (neun Kennungen, geprüft mit `ls docs/plan/planning/observations/BEO-PGC/<slug>/evidence`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

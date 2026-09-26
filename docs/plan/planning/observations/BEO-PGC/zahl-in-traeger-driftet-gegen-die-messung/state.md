@@ -3,9 +3,11 @@ vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen beka
 Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
 ab 10×). Ausgang unverändert **verkörpert**; der Suchlauf-Anteil (jede der acht
-Belegdateien der Backfill-Welle nennt ein Suchlauf-Feld) ist **geplant** →
-`slice-harness-suchlauf-nachmessen`
-(Nachmess-Werkzeug; kein Sensor auf Prosa, `ADR-0083` bleibt unberührt)
+Belegdateien der Backfill-Welle nennt ein Suchlauf-Feld) ist **verkörpert** →
+`make suchlauf-nachmessen` (`harness/sensors/suchlauf-nachmessen.md`: wiederholt die vom
+Plan deklarierte Messung, prüft Zahlen und Stände, nicht die Vollständigkeit von Suchraum
+und Muster; kein Gate, kein Sensor auf Prosa, `ADR-0083` bleibt unberührt) und
+`AGENTS.md` §3.13 §Suchform · seit slice-harness-suchlauf-nachmessen
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §3.2 und §3.5).
 

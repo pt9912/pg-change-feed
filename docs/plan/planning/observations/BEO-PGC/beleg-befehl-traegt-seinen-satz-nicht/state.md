@@ -3,11 +3,16 @@ vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen beka
 Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
 ab 10×). Ausgang unverändert **verkörpert**; der Suchlauf-Befehl in der Tabellenzelle
-ist mit `AGENTS.md` §3.13 §Suchform (Codeblock) und dem Werkzeug in
-`slice-harness-suchlauf-nachmessen`
-adressiert, der Rest ist eine Lese-Handlung des Reviewers
+ist mit `AGENTS.md` §3.13 §Suchform (Codeblock) und dem Werkzeug
+`make suchlauf-nachmessen` adressiert · seit slice-harness-suchlauf-nachmessen, der Rest
+ist eine Lese-Handlung des Reviewers
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
-§3.4).
+§3.4). Offen: die Suchlauf-Felder der bereits geplanten Pläne unter `open/` stehen
+als Tabelle mit Befehl in der Zelle (gemessen am Stand `142ca4b5`: `git grep -l -E '^ *.{3}suchlauf$' -- docs/plan/planning/open`
+trifft keine Datei); das Werkzeug misst nur Blöcke, und `implement-slice` Schritt 18
+ruft es nur, wo der Plan einen Block trägt. Adresse: der Start des jeweiligen Slice
+(der Implementer überträgt die Zeilen in Blöcke) und die Closure von
+`welle-transformationen` (der Planner misst die Blöcke der zehn Pläne).
 
 Zustand: **verkörpert** — Ausgang: **verkörpert** → `.harness/skills/reviewer.md`,
 neuer HIGH-Punkt **„Beleg trägt seinen Satz nicht“** (wer einen Beleg nennt, **fährt**

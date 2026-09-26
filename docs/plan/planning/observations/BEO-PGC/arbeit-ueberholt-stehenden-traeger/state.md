@@ -4,8 +4,9 @@ Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Findin
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
 ab 10×). Ausgang unverändert **verkörpert**, geschärft: `AGENTS.md` §3.13 §Suchform
 (ganzer Baum, Symbolname · Zählwort · Beschreibung samt Hedge, Befehl im Codeblock);
-der Suchlauf-Anteil bekommt ein Nachmess-Werkzeug in
-`slice-harness-suchlauf-nachmessen`
+der Suchlauf-Anteil hat ein Nachmess-Werkzeug:
+`make suchlauf-nachmessen` (`harness/sensors/suchlauf-nachmessen.md`) · seit
+slice-harness-suchlauf-nachmessen
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §3.3 und §3.5).
 

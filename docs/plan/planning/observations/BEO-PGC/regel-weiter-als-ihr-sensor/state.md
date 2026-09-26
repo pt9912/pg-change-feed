@@ -22,5 +22,12 @@ benannt als Grenzpunkt 4 und 5 in `harness/sensors/coverage-gate.md`
 bleibt im Register stehen — weitere Auftreten in anderen Domänen wären ein
 neues Urteil, kein automatischer Nachtrag zur bestehenden Verkörperung.
 
+Restrisiko am Nachmess-Werkzeug (Adresse für das Risiko „das Werkzeug erweckt den Eindruck, das
+Feld sei vollständig“ aus `slice-harness-suchlauf-nachmessen`): `make suchlauf-nachmessen` prüft
+Zahlen und Stände, die Vollständigkeit von Suchraum und Muster bleibt Lese-Handlung des
+Reviewers (`harness/sensors/suchlauf-nachmessen.md` §Grenze, `AGENTS.md` §3.13). Trigger für
+eine neue Datei: ein Fund, bei dem das Werkzeug grün war und Suchraum oder Muster den Träger
+nicht trafen.
+
 Zähler (abgeleitet): **3×** (evidence/slice-078.md, evidence/slice-079.md,
 evidence/slice-096.md).
