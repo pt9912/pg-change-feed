@@ -68,7 +68,7 @@ func (a *AdministrationRequestAdapter) Close() {
 
 var _ outbound.AdministrationRequestPort = (*AdministrationRequestAdapter)(nil)
 
-// ListPending liest die offenen Anträge in Anlage-Reihenfolge.
+// ListPending liest die offenen Anträge in Aufruf-Reihenfolge.
 func (a *AdministrationRequestAdapter) ListPending(ctx context.Context) ([]model.AdministrationRequest, error) {
 	return sqlexec.ReadPendingRequests(ctx, a.db, sqlexec.Statement{
 		SQL:  queries.SelectPendingAdministrationRequests,

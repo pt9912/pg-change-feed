@@ -365,7 +365,7 @@ func ReadTableSchema(ctx context.Context, exec Executor, versionID model.SchemaV
 	return model.NewTableSchema(versionID, columns)
 }
 
-// ReadPendingRequests liest die offenen Anträge in Anlage-Reihenfolge; jede
+// ReadPendingRequests liest die offenen Anträge in Aufruf-Reihenfolge; jede
 // Zeile läuft durch den Domänen-Konstruktor (`ADR-0029`) — eine Zeile
 // außerhalb der Antrags-Invarianten endet sichtbar, nicht als still
 // gefälschter Antrag. Regelname und Regelform der beiden

@@ -317,14 +317,16 @@ ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_cl
 
 // SelectPendingAdministrationRequests liest die offenen Anträge der
 // Antrags-Queue (`cdc.administration_request`, `LH-FA-ADM-001`) in
-// Anlage-Reihenfolge (`requested_at`, bei gleichem Zeitstempel nach
+// Aufruf-Reihenfolge (`requested_at`, bei gleichem Zeitstempel nach
 // `administration_request_id`) — die Administrations-Goroutine verarbeitet
 // sie in dieser Ordnung, sowohl nach `NOTIFY` als auch periodisch als
 // Fallback-Poll. Es ist dieselbe Ordnung, in der SelectAppliedColumnRequests
-// und SelectAppliedTransformationRequests den dauerhaften Stand ableiten:
-// Zeilen einer Transaktion tragen denselben `requested_at`, und die
-// Verarbeitung führt damit live und beim Prozessstart zum selben Stand. Die
-// sieben Antragsarten teilen sich eine
+// und SelectAppliedTransformationRequests den dauerhaften Stand ableiten,
+// und die Verarbeitung führt damit live und beim Prozessstart zum selben
+// Stand. `requested_at` ist der Aufrufzeitpunkt der schreibenden Funktion
+// (`clock_timestamp()`, `ADR-0127`): Aufrufe derselben Transaktion tragen
+// verschiedene Zeitstempel in der Reihenfolge des Aufrufs, die Kennung
+// ordnet nur bei gleichem Zeitstempel. Die sieben Antragsarten teilen sich eine
 // Tabelle; die Antragsarten `enable`, `disable`, `backfill` und die beiden
 // Transformations-Antragsarten tragen keine Spalte (`column_name` NULL), alle
 // außer den beiden Transformations-Antragsarten keinen Regelnamen
@@ -341,12 +343,11 @@ ORDER BY requested_at, administration_request_id`
 // SelectAppliedColumnRequests liest die `applied`-Zeilen der beiden
 // Spalten-Antragsarten einer Quelle (`LH-FA-CFG-005`, `ADR-0065`): der
 // Adapter wertet sie zur Reihenfolge aus und trägt damit den dauerhaften
-// Ausschlussstand. `requested_at` trägt den Transaktionszeitstempel
-// (`current_timestamp` der schreibenden Funktion) und ist zwischen zwei
-// Anträgen derselben Transaktion nicht unterscheidend — deshalb der
-// deterministische Zweitschlüssel `administration_request_id`: dieselbe
-// Antrags-Menge trägt damit unabhängig von der Ausführungsreihenfolge
-// genau eine Reihenfolge. Die fünf übrigen Antragsarten (`enable`,
+// Ausschlussstand. `requested_at` ist der Aufrufzeitpunkt der schreibenden
+// Funktion (`clock_timestamp()`, `ADR-0127`); der Zweitschlüssel
+// `administration_request_id` ordnet Zeilen mit gleichem Zeitstempel
+// deterministisch, dieselbe Antrags-Menge trägt damit genau eine
+// Reihenfolge. Die fünf übrigen Antragsarten (`enable`,
 // `disable`, `backfill`, `set_transformation`, `remove_transformation`)
 // bleiben außen vor; `COALESCE` normalisiert das NULL-bare `column_name` wie
 // in SelectPendingAdministrationRequests.
@@ -362,9 +363,9 @@ ORDER BY requested_at, administration_request_id`
 // Transformations-Antragsarten einer Quelle (`LH-FA-CFG-007`, `SPEC-019`):
 // der Adapter faltet sie zum Regelstand je Tabelle
 // (`model.FoldTransformations`). Ordnung und Zweitschlüssel wie in
-// SelectAppliedColumnRequests: `requested_at` ist zwischen zwei Anträgen
-// derselben Transaktion nicht unterscheidend, `administration_request_id`
-// macht die Reihenfolge deterministisch. `COALESCE` normalisiert das
+// SelectAppliedColumnRequests: `requested_at` ist der Aufrufzeitpunkt der
+// schreibenden Funktion (`ADR-0127`), `administration_request_id` macht die
+// Reihenfolge bei gleichem Zeitstempel deterministisch. `COALESCE` normalisiert das
 // NULL-bare `rule_spec` (bei `remove_transformation` leer) auf den leeren
 // Text; die Regelform steht als JSON-Text (`jsonb` nach `text`).
 const SelectAppliedTransformationRequests = `

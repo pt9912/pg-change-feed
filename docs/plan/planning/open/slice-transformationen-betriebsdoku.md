@@ -101,7 +101,13 @@ an dieses Slice gemeldet haben.
       zuerst), der Dauerhaftigkeit (überlebt Neustart und
       Deaktivierung/Aktivierung), der Nichtanwendbarkeit samt Abhilfe-Prozedur
       (`cdc.remove_transformation` beantragen, Prozess starten — so, wie
-      `e2e-abhilfe` sie belegt hat) und dem Backfill-Bezug; dazu die Zeile
+      `e2e-abhilfe` sie belegt hat), der Reihenfolge der Aufrufe (Aufrufe einer
+      Transaktion werden in Aufrufreihenfolge verarbeitet; Anträge auf dieselbe
+      Regel oder Spalte nicht aus überlappenden Transaktionen absetzen —
+      [`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md)
+      Folgepflicht 4 und Festlegung 3 Punkt 1; die Aussage gilt für alle sieben
+      Funktionen und gehört in den Transformations-Abschnitt in §4) und dem
+      Backfill-Bezug; dazu die Zeile
       `schema` in §6 Fehlerklassen, die Rollen-Beschreibung in §2, das Glossar
       und die Änderungshistorie. *Zu belegen durch:* Review des Abschnitts
       gegen die Belege von `e2e-wirkung`/`e2e-abhilfe` und `make docs-check`.

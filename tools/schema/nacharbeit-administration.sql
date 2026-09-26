@@ -62,6 +62,11 @@
 -- mit Exit 5 (real gemessen). Ein Literal und ein `::json`-Wert werden
 -- angenommen, ein `::jsonb`-Wert nicht (real gemessen: „function … does not
 -- exist“).
+-- Jede Funktion schreibt `requested_at` je Aufruf mit `clock_timestamp()`
+-- (der Spalten-Default `current_timestamp`, der Transaktionsbeginn, greift nur
+-- für einen INSERT ohne Wert): Aufrufe derselben Transaktion tragen
+-- verschiedene Zeitstempel in der Reihenfolge des Aufrufs, und die Ordnung
+-- der Antrags-Queue ist die Ordnung des Aufrufs (ADR-0127).
 -- Der Kanal-Name `cdc_administration` ist Implementer-Entscheidung, real mit
 -- `LISTEN`/pgx WaitForNotification getestet (administrationrequest_test.go).
 --
@@ -89,8 +94,8 @@ DECLARE
 BEGIN
     v_id := gen_random_uuid()::text;
     INSERT INTO cdc.administration_request
-        (administration_request_id, source_id, schema_name, table_name, request_kind, status)
-    VALUES (v_id, p_source_id, p_schema_name, p_table_name, 'enable', 'pending');
+        (administration_request_id, requested_at, source_id, schema_name, table_name, request_kind, status)
+    VALUES (v_id, clock_timestamp(), p_source_id, p_schema_name, p_table_name, 'enable', 'pending');
     PERFORM pg_notify('cdc_administration', v_id);
     RETURN v_id;
 END;
@@ -108,8 +113,8 @@ DECLARE
 BEGIN
     v_id := gen_random_uuid()::text;
     INSERT INTO cdc.administration_request
-        (administration_request_id, source_id, schema_name, table_name, request_kind, status)
-    VALUES (v_id, p_source_id, p_schema_name, p_table_name, 'disable', 'pending');
+        (administration_request_id, requested_at, source_id, schema_name, table_name, request_kind, status)
+    VALUES (v_id, clock_timestamp(), p_source_id, p_schema_name, p_table_name, 'disable', 'pending');
     PERFORM pg_notify('cdc_administration', v_id);
     RETURN v_id;
 END;
@@ -127,8 +132,8 @@ DECLARE
 BEGIN
     v_id := gen_random_uuid()::text;
     INSERT INTO cdc.administration_request
-        (administration_request_id, source_id, schema_name, table_name, column_name, request_kind, status)
-    VALUES (v_id, p_source_id, p_schema_name, p_table_name, p_column_name, 'exclude_column', 'pending');
+        (administration_request_id, requested_at, source_id, schema_name, table_name, column_name, request_kind, status)
+    VALUES (v_id, clock_timestamp(), p_source_id, p_schema_name, p_table_name, p_column_name, 'exclude_column', 'pending');
     PERFORM pg_notify('cdc_administration', v_id);
     RETURN v_id;
 END;
@@ -146,8 +151,8 @@ DECLARE
 BEGIN
     v_id := gen_random_uuid()::text;
     INSERT INTO cdc.administration_request
-        (administration_request_id, source_id, schema_name, table_name, column_name, request_kind, status)
-    VALUES (v_id, p_source_id, p_schema_name, p_table_name, p_column_name, 'include_column', 'pending');
+        (administration_request_id, requested_at, source_id, schema_name, table_name, column_name, request_kind, status)
+    VALUES (v_id, clock_timestamp(), p_source_id, p_schema_name, p_table_name, p_column_name, 'include_column', 'pending');
     PERFORM pg_notify('cdc_administration', v_id);
     RETURN v_id;
 END;
@@ -165,8 +170,8 @@ DECLARE
 BEGIN
     v_id := gen_random_uuid()::text;
     INSERT INTO cdc.administration_request
-        (administration_request_id, source_id, schema_name, table_name, request_kind, status)
-    VALUES (v_id, p_source_id, p_schema_name, p_table_name, 'backfill', 'pending');
+        (administration_request_id, requested_at, source_id, schema_name, table_name, request_kind, status)
+    VALUES (v_id, clock_timestamp(), p_source_id, p_schema_name, p_table_name, 'backfill', 'pending');
     PERFORM pg_notify('cdc_administration', v_id);
     RETURN v_id;
 END;
@@ -184,8 +189,8 @@ DECLARE
 BEGIN
     v_id := gen_random_uuid()::text;
     INSERT INTO cdc.administration_request
-        (administration_request_id, source_id, schema_name, table_name, rule_name, rule_spec, request_kind, status)
-    VALUES (v_id, p_source_id, p_schema_name, p_table_name, p_rule_name, p_rule_spec::jsonb, 'set_transformation', 'pending');
+        (administration_request_id, requested_at, source_id, schema_name, table_name, rule_name, rule_spec, request_kind, status)
+    VALUES (v_id, clock_timestamp(), p_source_id, p_schema_name, p_table_name, p_rule_name, p_rule_spec::jsonb, 'set_transformation', 'pending');
     PERFORM pg_notify('cdc_administration', v_id);
     RETURN v_id;
 END;
@@ -203,8 +208,8 @@ DECLARE
 BEGIN
     v_id := gen_random_uuid()::text;
     INSERT INTO cdc.administration_request
-        (administration_request_id, source_id, schema_name, table_name, rule_name, request_kind, status)
-    VALUES (v_id, p_source_id, p_schema_name, p_table_name, p_rule_name, 'remove_transformation', 'pending');
+        (administration_request_id, requested_at, source_id, schema_name, table_name, rule_name, request_kind, status)
+    VALUES (v_id, clock_timestamp(), p_source_id, p_schema_name, p_table_name, p_rule_name, 'remove_transformation', 'pending');
     PERFORM pg_notify('cdc_administration', v_id);
     RETURN v_id;
 END;

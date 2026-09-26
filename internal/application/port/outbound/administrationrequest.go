@@ -25,8 +25,9 @@ var ErrAdministrationStorage = stderrors.New("Fehlerklasse storage: Persistenzfe
 // die Gegenrichtung — die Administrations-Goroutine liest offene Anträge
 // und vermerkt ihr Ergebnis.
 type AdministrationRequestPort interface {
-	// ListPending liest die Anträge mit Status `pending` in Anlage-
-	// Reihenfolge (`requested_at`, bei gleichem Zeitstempel nach der
+	// ListPending liest die Anträge mit Status `pending` in Aufruf-
+	// Reihenfolge (`requested_at` ist der Aufrufzeitpunkt der schreibenden
+	// Funktion, bei gleichem Zeitstempel nach der
 	// Antrags-Kennung — dieselbe Ordnung, in der die Ableitung des
 	// dauerhaften Standes die `applied`-Zeilen liest) — sowohl nach
 	// `NOTIFY`-Wecksignal als auch periodisch als
