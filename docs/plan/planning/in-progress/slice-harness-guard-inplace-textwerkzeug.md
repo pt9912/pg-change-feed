@@ -97,7 +97,7 @@ durchgehen muss.
 
 ## 2. Definition of Done
 
-- [ ] **Liefer-Punkt 1 — die in-place Formen.** Der Guard blockt (Ausgabe
+- [x] **Liefer-Punkt 1 — die in-place Formen.** Der Guard blockt (Ausgabe
       `"decision": "block"`, Exit 0, wie im Bestand) ein Kommando-Segment, dessen Kopf —
       nach dem Überspringen der Zuweisungs- und Wrapper-Präfixe des Bestands und nach
       `-exec`/`-execdir`/`-ok` — ist: `sed` mit einem Flag `--in-place`,
@@ -149,8 +149,10 @@ durchgehen muss.
       (`/tmp/x/docs/a.py` färbt rot) · `./` nicht erlaubt (`python3 ./tools/x.py` färbt rot) ·
       Datei-Namen der obersten Ebene nicht gelesen (`Makefile`-Fall färbt rot); Live-Beleg
       analog Liefer-Punkt 1 (`python3 tools/nicht-vorhanden.py` wird geblockt, `python3
-      --version` läuft).
-- [ ] **Liefer-Punkt 3 — die Träger.** (a) `harness/conventions/MR-003-…md` per `cp` aus
+      --version` läuft). **Offen für die nächste Rolle:** der Live-Beleg mit `python3`; der
+      Auftrag an den Implementer verbietet Host-`python3` auch für einen Beleg, Tabellentest und
+      Mutationen tragen die Hook-Schnittstelle (§3 „Abweichungen“), der Verifier fährt ihn.
+- [x] **Liefer-Punkt 3 — die Träger.** (a) `harness/conventions/MR-003-…md` per `cp` aus
       `.harness/baseline/v6.9.0/templates/harness/conventions/MR-NNN-titel.template.md`, in
       place gefüllt (Auslöser: der Register-Eintrag mit seinen drei Beleg-Dateien; Adaption:
       was der Guard liest; **Grenz-Zeile**: was er nicht kann — die Punkte aus §6, Risiko 2;
@@ -167,17 +169,17 @@ durchgehen muss.
       [`harness/README.md`](../../../../harness/README.md) §Sensors („kein Gate“, Host-Werkzeuge
       `bash`, `awk`, `mktemp`). *Zu belegen durch:* Lesen der Stellen, `make docs-check`
       (Links, Anker) und der Suchlauf in §3.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert
       ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=<Plan-Datei>` läuft nach jeder Fixrunde
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
+- [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (Liefer-Punkt 3d); das Benutzerhandbuch bleibt unberührt (keine
       Betreiber-Oberfläche).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
@@ -237,13 +239,66 @@ Stand ist der Parent `89d427e0`; der Implementer ergänzt die Zeilen mit Stand `
 89d427e0 1 -E 'in keinem committeten Text' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
 89d427e0 3 -E 'inplace-textwerkzeug-am-repo-trotz-nutzerregel' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/welle-transformationen.md
 89d427e0 0 -E '\.claude/hooks|pretooluse|harness/conventions' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/welle-transformationen.md
+diff 11 -E 'pretooluse-command-guard' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
+diff 7 -E 'blockt (Host-)?Paketmanager|Stolperdraht|scannt den Command-String' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
+diff 54 -E 'sed -i|perl -pi|awk -i' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
+diff 1 -E 'Durchsetzung heute|noch kein Plan angelegt' -- docs/plan/planning/observations
+diff 1 -E 'in keinem committeten Text' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
+89d427e0 3 -E 'in-place Textwerkzeuge liest er nicht|Bewusst NICHT gepr|blockt Host-Paketmanager und Host-Toolchains' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
+diff 0 -E 'in-place Textwerkzeuge liest er nicht|Bewusst NICHT gepr|blockt Host-Paketmanager und Host-Toolchains' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
+diff 7 -E 'test-command-guard' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
 ```
 
-Die sieben Zeilen sind am Parent gemessen (Bezugs-Befehle im Block, Stand `89d427e0`; Ergebnis:
+Die ersten sieben Zeilen sind am Parent gemessen (Bezugs-Befehle im Block, Stand `89d427e0`; Ergebnis:
 Symbol 3 Fundstellen — der Guard selbst, `.claude/settings.json`, [`AGENTS.md`](../../../../AGENTS.md)
 §3.1; Beschreibung 6; Zählwort 9, darunter ein `sed -i` in `sdks/python/Dockerfile`, das im
 Docker-Bau läuft und den Guard nicht berührt — er scannt nur die Bash-Aufrufe des Laufs, nicht
 die Rezepte hinter `make`).
+
+**Ergebnis am Stand `diff` (Arbeitsbaum des Implementer-Laufs; Gefundenes und Nichtgefundenes):**
+Symbol 11 Fundstellen (Guard, `.claude/settings.json`, [`AGENTS.md`](../../../../AGENTS.md), `Makefile`,
+`harness/README.md`, `harness/conventions.md`, `MR-003`, vier im Tabellentest) — die neuen Träger
+tragen den Namen, keiner der 3 Bestandsträger sagt etwas Falsches. Beschreibung 7 (Bestand 6, dazu
+`MR-003`): `implement-slice.md` („der Guard scannt den Command-String“) und der Kommentar in
+`tools/harness/extract-command.awk` („Stolperdraht, keine Sandbox“) bleiben wahr und sind unberührt.
+Zählwort 54: die Zahl ist gewachsen um die neuen Träger (`MR-003`, Tabellentest, Guard-Kommentar,
+[`AGENTS.md`](../../../../AGENTS.md)); die Bestandstreffer `reviewer.md` (Prüfgegenstand des Reviews),
+`implement-slice.md` und `sdks/python/Dockerfile` bleiben unverändert wahr, die zwei Treffer in
+`slice-code-kommentare-bereinigung` §8 und `welle-transformationen` §6 sind gemeldet (Tabelle unten).
+Der überholte Wortlaut („liest er nicht“, „Bewusst NICHT geprüft: andere Interpreter“, „blockt … Host-Toolchains“:
+3 am Parent, 0 am Stand `diff`) ist aus den zwei Trägern getilgt. **Nicht gefunden:** kein weiterer
+Träger unter `docs/user/`, `spec/`, `.github/`, `harness/sensors/` oder `harness/targets/`, der den Guard
+beschreibt. **Nicht durch Suchlauf fassbar:** ein Zeilen-Lokator auf den Guard — der Suchlauf trifft
+Symbolnamen, keine Zahlen (Grenze in [`AGENTS.md`](../../../../AGENTS.md) §3.13); der Reviewer liest sie
+gegen den Diff.
+
+**Abweichungen vom Plan und Ergänzungen (Plan-Nachzug im Lauf; Anker: der Diff dieses Laufs).**
+
+- **Beleg-Dateien.** Das Register trägt vier (Plan: drei): die vierte
+  (`slice-antragsqueue-lesefehler-failed`) nennt zwei Host-`python3`-Fälle (Implementer ohne Wirkung,
+  Verifier mit unklarem Ziel). `MR-003` zählt vier; der Host-Interpreter ist damit in zwei Vorgängen
+  belegt (Risiko 5 nennt einen), `perl -pi` und `awk -i inplace` bleiben unbelegt.
+- **Name des Eintrags:** `harness/conventions/MR-003-guard-inplace-textwerkzeug.md`.
+- **Erkennung über den Plantext hinaus:** (a) die Optionen hinter einem Wrapper-Präfix werden übersprungen
+  (`xargs -r sed -i`, `xargs -I{} sed -i`; der Plan nennt „hinter `xargs`“, die Alltagsform trägt
+  Optionen); ein Optionswert (`sudo -u x`) bleibt Grenze; (b) ein Token mit Anführungszeichen ist kein
+  Flag (trägt die Rohlesung auch für das Muster `'perl -pi|sed -i'`, in dem das Flag das schließende
+  Anführungszeichen trägt); (c) das find-Ende (`+`, `\`, `;`) begrenzt die Flag-Suche (`-iname` hinter
+  `-exec … +` ist kein sed-Flag); (d) `-okdir` neben `-ok`; (e) der Tabellentest prüft je Block die
+  Begründung der Klasse (`pkg`, `inplace`, `interp`) und die JSON-Form.
+- **Tabellentest:** mehr Fälle als der Plan schätzt (Zahl im Bericht des Laufs, gemessen mit
+  `make test-command-guard`); die Gruppen sind Bestand, in-place je Form und Position, Nicht-Treffer,
+  Host-Interpreter, benannte Falsch-Positiv-Ränder, benannte Grenzen.
+- **Liefer-Punkt 2 geliefert.** Die Falsch-Positiv-Fläche ist gebunden: Nicht-Treffer neben jedem Treffer
+  (`/tmp/x/docs/a.py`, `python3 --version`, Scratchpad-Mutationsweg), benannte Ränder mit erwartetem
+  Block (`cd /tmp/x && python3 tools/x.py`, Text mit Repo-Namen), Mutationen je Zusage rot gesehen (Bericht).
+  Der Live-Beleg des zweiten Liefer-Punkts (ein realer `python3`-Aufruf in der Sitzung) entfällt im
+  Implementer-Lauf: der Auftrag verbietet Host-`python3` auch für einen Beleg; der Tabellentest trägt die
+  Hook-Schnittstelle, der Verifier wiederholt den Live-Beleg in seiner Sitzung (Risiko 4).
+- **Nutzer-Fragen aus §6 entschieden** (Auftrag des Auftraggebers an den Implementer, 2026-09-26):
+  Frage 1 — `tools/harness/blocked/go` nicht in diesem Slice, zuerst die Wirkung von Liefer-Punkt 1
+  abwarten; Frage 2 — keine Scratchpad-Ausnahme, der Guard blockt `sed -i` unbedingt (Mutationsproben
+  laufen über Stdout-Umleitung auf einer Scratchpad-Kopie).
 
 | Träger | Befund | Behandlung |
 |---|---|---|
@@ -252,7 +307,7 @@ die Rezepte hinter `make`).
 | [`AGENTS.md`](../../../../AGENTS.md) §3.1 Satz zur Mutationsprobe (Kopie im Scratchpad) | bleibt wahr; der Zusatz nennt, dass `-i` auch auf der Kopie geblockt wird | Liefer-Punkt 3c. |
 | `.claude/commands/implement-slice.md` (Aufzählung der Regel; Commit via Message-Datei) | nennt die Formen und verweist auf §3.1; „der Guard scannt den Command-String, also nie eine Commit-Message inline, die ein geblocktes Tool-Token enthält“ (Zeile 2 des Feldes) | bleibt wahr und trifft jetzt auch `sed -i` in einer Inline-Message; unberührt. |
 | `.harness/skills/reviewer.md` §HIGH „Docker-only-Verstoß“ | nennt die Formen als Prüfgegenstand des Reviews (Zeile 3 des Feldes) | bleibt wahr: der Guard fängt die Flag-Formen, das Review den Rest; unberührt. |
-| Beobachtungs-Register `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, `state.md` | „Durchsetzung heute: das Review“ und „noch kein Plan angelegt“ (Zeile 4 des Feldes am Parent) | „noch kein Plan angelegt“ ist mit dem Anlegen dieses Plans auf „der Plan liegt in `open/`“ gezogen; „Durchsetzung heute“ bleibt bis zur Closure wahr und ist dann Träger der Planner-Closure (fremde Datei, deshalb Meldung). |
+| Beobachtungs-Register `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, `state.md` | „Durchsetzung heute: das Review“ und „noch kein Plan angelegt“ (Zeile 4 des Feldes am Parent) | „noch kein Plan angelegt“ ist mit dem Anlegen dieses Plans auf „der Plan liegt in `open/`“ gezogen; „Durchsetzung heute“ bleibt bis zur Closure wahr und ist dann Träger der Planner-Closure (fremde Datei, deshalb Meldung). Am Stand `diff` liegt der Plan in `in-progress/` und der Guard blockt die Formen: beide Sätze sind ab dem Commit dieses Laufs überholt; gemeldet, Frist: die Closure. |
 | `docs/plan/planning/welle-transformationen.md` §6 „Fragen für den nächsten Architect-Zug“ (a) | „in keinem committeten Text verboten“ (Zeile 5 des Feldes) — überholt seit dem Architect-Zug `17cb4eb3`, nicht erst durch diesen Slice | gemeldet, nicht mitgeändert (fremde Datei; Frist: die Closure dieses Slice, der Planner zieht nach oder benennt den Träger mit Adresse). |
 | `docs/plan/planning/open/slice-code-kommentare-bereinigung.md` §8 („offen, Schwelle erreicht, 3×“) | die Sichtung nennt den Register-Eintrag „offen“, sein `state.md` sagt seit `17cb4eb3` „verkörpert“ (Zeile 6 des Feldes trifft drei Zeilen: diese, die Risiko-Zeile in §6, die nur die Zahl nennt und wahr bleibt, und die Notiz in `welle-transformationen`) | gemeldet wie oben. |
 
