@@ -121,7 +121,7 @@ beschlossenen Transformations-Stand als Technik-Festlegung und als Sicht,
 
 ## 2. Definition of Done
 
-- [ ] [`LH-FA-CFG-007.a`](../../../../spec/pflichtenheft.md) ist beantwortet:
+- [x] [`LH-FA-CFG-007.a`](../../../../spec/pflichtenheft.md) ist beantwortet:
       die Überschrift trägt kein „offen“ mehr, der Text nennt Mechanismus,
       Ausdrucksform, Auswertungsreihenfolge, Mehrdeutigkeits-Auflösung,
       Verhältnis zum Ausschluss und Wirkort als Zusagen in Zukunfts-Form (was
@@ -132,7 +132,7 @@ beschlossenen Transformations-Stand als Technik-Festlegung und als Sicht,
       [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
       führt sie als „erwartet, nicht am Code belegt“. *Zu belegen durch:* Lesen
       des Abschnitts und `make docs-check`.
-- [ ] Die Datenstrukturen stehen:
+- [x] Die Datenstrukturen stehen:
       [`SPEC-019`](../../../../spec/pflichtenheft.md) (zwei Antragsarten, zwei
       Spalten, Menge, `applied`-Bedeutung, Verhalten ohne laufende Bindung,
       Fehlertexte), die Regelform samt Randfällen,
@@ -143,24 +143,24 @@ beschlossenen Transformations-Stand als Technik-Festlegung und als Sicht,
       die nächste freie (*zu belegen durch* `grep -o 'SPEC-0[0-9][0-9]'
       spec/pflichtenheft.md | sort -u` am Parent-Stand); §7 Historie trägt je
       Änderung eine Zeile ohne ADR-/Slice-Bezug.
-- [ ] `spec/architecture.md` trägt die Antragsarten-Tabelle mit den zwei
+- [x] `spec/architecture.md` trägt die Antragsarten-Tabelle mit den zwei
       weiteren Arten und die Aussage zur Regelform vor der Persistierung, ohne
       ADR-/Slice-/Wellen-Bezug. *Zu belegen durch:* `make docs-check`
       (`matrix`-Modul) und der Suchlauf in §3.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: entfällt als eigener Punkt — der Slice **ist** das
+- [x] Doku-Update: entfällt als eigener Punkt — der Slice **ist** das
       Doku-Update der Spec; das Benutzerhandbuch bleibt unberührt (§1).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
@@ -202,6 +202,14 @@ Implementer trägt Gefundenes und Nichtgefundenes je Zeile ein):**
 | `LH-FA-CFG-007` in Trägern der Abdeckung | `grep -rn 'CFG-007' docs harness .d-check.yml` (Parent: `git grep -n 'CFG-007' 1718546b -- docs harness .d-check.yml`, ohne Planungs-/ADR-/Review-Records) | Parent: 1 Zeile außerhalb der Records, `harness/README.md:134` (Waisen-Aufzählung der `make doc-trace`-Zeile: „3 Waisen — `LH-FA-CAP-009`/`LH-FA-CFG-007`/`LH-FA-CFG-008`“, dort als Messung vom 2026-09-23 datiert). `docs/user/e2e-abdeckung.md`: kein Treffer. Diff: unverändert. Nachmessung `make doc-trace` am Diff-Stand: 80 Anforderungen, 2 Waisen (`LH-FA-CFG-007`, `LH-FA-CFG-008`). | `docs/user/e2e-abdeckung.md` unverändert bis `slice-transformationen-e2e-wirkung` (der Runner schreibt die Zeile). Die datierte Zahl „3 Waisen“ in `harness/README.md:134` ist gegen die heutige Messung („2 Waisen“) überholt, unabhängig von diesem Diff (`LH-FA-CAP-009` trägt inzwischen Belege): gemeldet an den Planner, nicht mitgeändert. |
 | Architektur-Sicht: Aufzählungen in `ARC-002`/`ARC-004`/`ARC-005` | `git grep -n 'ARC-002\|ARC-004\|ARC-005' 1718546b -- spec/architecture.md` und Lesen der drei Zeilen in §1 | Parent: die Zeilen in §1 nennen „Konfiguration“ (`ARC-002`), „Fähigkeitsschnittstellen“ (`ARC-004`), „SQL-Funktionen/Views“ (`ARC-005`) — keine Aufzählung von Antragsarten oder Regeltypen. Diff: unverändert. | kein Nachzug nötig |
 | Überholter Text im selben Dokument (Risiko §6) | Lesen von `spec/pflichtenheft.md` §1 `LH-FA-CFG-007.a`, §2 `SPEC-019` (Einleitung, Tabelle, Fließtext) und `spec/architecture.md` §4 von oben nach unten am Diff-Stand | Einleitungssatz von `SPEC-019` führte die fünf bestehenden SQL-Funktionen auf; Überschrift trug „offen“; die Architektur-Zeile „fünf Arten“; die Sequenz-Zeile „Bindung und Ausschlussstand erneut prüfen“; die `column_name`-Zelle „die drei übrigen Antragsarten“. Diff: alle fünf gezogen. | — |
+
+**Belege des Laufs (Implementer):**
+
+- Kennung: `git grep -h -o 'SPEC-0[0-9][0-9]' 1718546b -- spec/pflichtenheft.md | sort -u | tail -1` druckt `SPEC-029`; am Diff-Stand (`HEAD`) `SPEC-030` — die neu vergebene Kennung ist die nächste freie.
+- Decken-Regel: `git diff 1718546b HEAD -- spec | grep '^+' | grep -c 'ADR-0\|slice-\|welle-'` druckt `0` (gemessen am Diff-Stand nach dem Spec-Commit).
+- Handbuch unberührt: `git diff 1718546b HEAD -- docs/user/benutzerhandbuch.md | wc -l` druckt `0` — keine Versionshistorie-Pflicht.
+- Sensoren: `make docs-check` Exit 0 (1192 Dateien, 0 Befunde); `make gates` Exit 0 am Stand nach dem Plan-Nachzug-Commit (`coverage-gate: OK — Coverage 83.40% erfüllt Schwelle 80%`, `commit-traceability: OK — 5 Commit(s)`, `generated-sync: OK`, `gesamt: 0 Befund(e)`); `make doc-trace`: `80 Anforderung(en), 2 Waise(n)` (`LH-FA-CFG-007`, `LH-FA-CFG-008`).
+- Zusage · mutierte Eingabe · gesehenes Rot (die Spec-Zusage „Spec-Straten tragen keinen ADR-Bezug und keine nackte Kennung“ wird vom `matrix`- und `ids`-Modul gehalten): (1) `spec/pflichtenheft.md` bekommt einen Link auf `ADR-0112` → `make docs-check` Exit 2, `matrix-forbidden` „Referenz spec → adr ist nicht erlaubt“; (2) `spec/architecture.md` bekommt `LH-FA-CFG-007` ohne Link → Exit 2, `id-unlinked`; (3) zusätzlich färbte die erste Fassung des `ARC-001`-Zeilentexts das `structure`-Modul (`section-cell-oversized`, 247 von 220 Zeichen) — das Rot wurde vor dem Kürzen gesehen. Beide Mutationen wurden zurückgenommen (`cmp` gegen die Sicherungskopie: gleich). Die Inhalts-Zusagen der Spec selbst (Fehlertexte, Randfälle, Zusage-Form) hält kein Sensor; ihre Leser sind Reviewer und Verifier (Risiken §6).
 
 ## 4. Trigger
 
