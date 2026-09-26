@@ -87,7 +87,7 @@ func TestRunStreamAfterAdministrationPassAppliesTheRuleRemovalBeforeTheStreamAss
 
 // TestRunStreamAfterAdministrationPassBindsAnEnabledTableBeforeTheStreamStarts
 // trägt dieselbe Ordnung für eine `enable`-Anfrage: die Bindung entsteht vor dem
-// Stream-Start (`ADR-0112`, `LH-FA-CFG-001`) — eine Tabelle, die beim
+// Stream-Start (`ADR-0112`) — eine Tabelle, die beim
 // Prozessstart per SQL beantragt `pending` steht, erfasst die erste Transaktion
 // des Streams. Rot färbende Mutation: der Aufruf `runStream` vor den Vorlauf —
 // der Stream-Fake sieht die Tabelle ungebunden. Eingabeseite: der Antrag trägt
@@ -124,7 +124,7 @@ func TestRunStreamAfterAdministrationPassBindsAnEnabledTableBeforeTheStreamStart
 	}
 
 	if !boundAtStream {
-		t.Fatal("die Tabelle war beim Stream-Start nicht gebunden — der enable-Antrag wurde nach dem Stream-Start verarbeitet")
+		t.Fatal("die Tabelle war beim Stream-Start nicht gebunden — der enable-Antrag ist zu diesem Zeitpunkt nicht in der Assembler-Bindung nachgetragen")
 	}
 	if !isApplied(queue, "req-enable") {
 		t.Fatal("der enable-Antrag ist nicht vermerkt")
@@ -231,19 +231,7 @@ func TestRunStreamAfterAdministrationPassHoldsTheStreamUntilThePassEndsAndContex
 // die Reihenfolge der Argumente noch den Inhalt von `administration`. Rot
 // färbende Mutation: den Aufruf durch `stream.Run(streamCtx)` ersetzen.
 func TestRunCallsTheStreamOnlyThroughTheOrderedSequence(t *testing.T) {
-	file, err := parser.ParseFile(token.NewFileSet(), "wiring.go", nil, 0)
-	if err != nil {
-		t.Fatalf("wiring.go lesen: %v", err)
-	}
-	var run *ast.FuncDecl
-	for _, decl := range file.Decls {
-		if fn, ok := decl.(*ast.FuncDecl); ok && fn.Recv == nil && fn.Name.Name == "Run" {
-			run = fn
-		}
-	}
-	if run == nil {
-		t.Fatal("wiring.go trägt keine Funktion Run")
-	}
+	run := runFunction(t)
 	isStreamRun := func(expr ast.Expr) bool {
 		selector, ok := expr.(*ast.SelectorExpr)
 		if !ok || selector.Sel.Name != "Run" {
@@ -272,5 +260,56 @@ func TestRunCallsTheStreamOnlyThroughTheOrderedSequence(t *testing.T) {
 	}
 	if sequenced != 1 {
 		t.Fatalf("Run übergibt stream.Run %d-mal an runStreamAfterAdministrationPass, wollen 1", sequenced)
+	}
+}
+
+// runFunction liest die Funktion `Run` aus `wiring.go` (Quelltext-Gestalt, kein
+// Lauf).
+func runFunction(t *testing.T) *ast.FuncDecl {
+	t.Helper()
+	file, err := parser.ParseFile(token.NewFileSet(), "wiring.go", nil, 0)
+	if err != nil {
+		t.Fatalf("wiring.go lesen: %v", err)
+	}
+	for _, decl := range file.Decls {
+		if fn, ok := decl.(*ast.FuncDecl); ok && fn.Recv == nil && fn.Name.Name == "Run" {
+			return fn
+		}
+	}
+	t.Fatal("wiring.go trägt keine Funktion Run")
+	return nil
+}
+
+// TestRunReconcilesAndStartsTheBackfillWorkerBeforeTheAdministrationPass bindet
+// die Stellung des Vorlaufs zum Backfill in `Run` (`ADR-0113` Festlegung 2): der
+// Abgleich `running` → `interrupted` und der Start des Workers stehen im Quelltext
+// von `Run` vor dem Aufruf von `runStreamAfterAdministrationPass`, in dem der
+// Vorlauf einen `backfill`-Antrag annimmt — die Annahme sieht keinen `running`-Run
+// einer früheren Prozessinstanz. Grenze: Quelltext-Reihenfolge der Aufrufe, kein
+// Lauf. Rot färbende Mutation: den Aufruf `reconcileBackfillRuns` hinter den Aufruf
+// von `runStreamAfterAdministrationPass` verschieben.
+func TestRunReconcilesAndStartsTheBackfillWorkerBeforeTheAdministrationPass(t *testing.T) {
+	run := runFunction(t)
+	positions := map[string]token.Pos{}
+	ast.Inspect(run.Body, func(node ast.Node) bool {
+		call, ok := node.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		if name, ok := call.Fun.(*ast.Ident); ok {
+			positions[name.Name] = call.Pos()
+		}
+		return true
+	})
+	order := []string{"reconcileBackfillRuns", "runBackfillWorker", "runStreamAfterAdministrationPass"}
+	for _, name := range order {
+		if _, found := positions[name]; !found {
+			t.Fatalf("Run ruft %s nicht auf", name)
+		}
+	}
+	for i := 1; i < len(order); i++ {
+		if positions[order[i-1]] >= positions[order[i]] {
+			t.Fatalf("Run ruft %s nicht vor %s auf", order[i-1], order[i])
+		}
 	}
 }
