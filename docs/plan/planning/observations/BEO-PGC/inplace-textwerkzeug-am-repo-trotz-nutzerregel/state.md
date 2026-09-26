@@ -16,13 +16,22 @@ python3 node dotnet java gradle uv`; das Verzeichnis existiert nicht, die Fragme
 Guard). Trigger der Neubewertung, wörtlich wie in `MR-003` (Auflösungs-Trigger): eine weitere Beleg-Datei
 dieses Eintrags mit einem Host-Interpreter-Aufruf ohne Repo-Pfad im Befehlsstring und Wirkung auf eine
 Repo-Datei, oder die Closure des nächsten Slice, dessen Läufe unter diesem Guard liefen. Das zweite
-Kriterium tritt mit der Closure von `slice-transformationen-map-value` ein; der Planner dieser Closure
-legt die Frage dem Nutzer mit der gemessenen Wirkung des Guards vor. Die Scratchpad-Ausnahme für
+Kriterium ist mit der Closure von `slice-transformationen-map-value` eingetreten, das erste nicht
+(Beleg-Datei `evidence/slice-transformationen-map-value.md`: keine der drei Stellen ist ein
+Host-Interpreter-Aufruf ohne Repo-Pfad mit Wirkung auf eine Repo-Datei). Der Planner dieser Closure hat
+die Frage mit der gemessenen Wirkung des Guards schriftlich vorgelegt: Closure-Notiz
+`done/slice-transformationen-map-value.md` §7, Punkt „Frage an den Nutzer“. Die Entscheidung des Nutzers
+steht aus. Die Scratchpad-Ausnahme für
 `sed -i` ist entschieden: keine, der Guard blockt unbedingt.
-Zähler (abgeleitet): 4× (evidence/slice-backfill-speicher-untersuchung.md,
+Zähler (abgeleitet): 5× (evidence/slice-backfill-speicher-untersuchung.md,
 evidence/slice-transformationen-antragsweg-usecase.md,
 evidence/slice-transformationen-backfill-pfad.md,
-evidence/slice-antragsqueue-lesefehler-failed.md). Der vierte Beleg trifft drei Rollen: ein
+evidence/slice-antragsqueue-lesefehler-failed.md,
+evidence/slice-transformationen-map-value.md). Der fünfte Beleg ist eine **Regelgrenze**, kein neuer
+Fehlgriff: ein Anhängen per `cat >>` (der Guard liest Umleitungen nicht, `AGENTS.md` §3.1 regelt den
+Weg nicht ausdrücklich; Adresse der Regelfrage: ein Architect-Zug, `welle-transformationen` §5, Punkt (c)),
+ein vom Guard geblockter `sed -i` des Verifiers und ein `cd <Repo> && python3 --version` des Planners, das
+den Guard an der in `MR-003` benannten Grenze passierte. Der vierte Beleg trifft drei Rollen: ein
 Host-`python3`-Aufruf des Implementers ohne Wirkung, ein gleichartiger des Planners der
 Closure-Sitzung (Angabe des Auftraggebers) und die Mutationsläufe des Verifiers mit einem
 Host-`python3`-Skript, dessen Ziel der Bericht widersprüchlich nennt (Arbeitskopie und Kopie). Aus

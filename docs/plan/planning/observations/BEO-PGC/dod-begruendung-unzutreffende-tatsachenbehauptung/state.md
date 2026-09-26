@@ -12,13 +12,24 @@ Träger schlägt er den Kopf von `docs/plan/adr/README.md` vor oder `AGENTS.md`
 und steht aus; deshalb ist der Ausgang hier *nicht* vorwegnehmend als
 `verkörpert` gesetzt.
 
-Zähler (abgeleitet): **9×** (evidence/slice-harness-guard-inplace-textwerkzeug.md,
+Deckel bei 10× (seit slice-transformationen-map-value): weitere Auftreten, die vor dem Merge
+vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen bekannten
+Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung
+in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
+ab 10×). Ausgang unverändert **verkörpert**.
+
+Zähler (abgeleitet): **10×** (evidence/slice-transformationen-map-value.md,
+evidence/slice-harness-guard-inplace-textwerkzeug.md,
 evidence/slice-036.md, evidence/slice-082.md,
 evidence/slice-081.md, evidence/slice-083.md, evidence/slice-095.md,
 evidence/slice-sdk-kotlin-sse-client-flaeche.md,
 evidence/slice-backfill-snapshot-reader.md,
 evidence/slice-sdk-kotlin-cloudsmith.md) — **Schwelle erreicht**,
-Ausgang beim Lese-Schritt der `welle-20`-Closure. Der neunte Beleg
+Ausgang beim Lese-Schritt der `welle-20`-Closure. Der zehnte Beleg
+(`slice-transformationen-map-value`, Verifikation V-1, LOW) trifft ein **Zählwort im
+DoD-Wortlaut** („die zwei zwangsläufig geänderten“ gegen gemessene sechs, davon vier
+Fixture-Schalter); vor dem Merge vom Verifier gefunden, Wortlaut in der Closure
+nachgezogen, Ausgang unverändert **verkörpert**. Der neunte Beleg
 (`slice-harness-guard-inplace-textwerkzeug`, Review F-3 und F-5, je MEDIUM) trifft einen
 **Wächter-Plan**: „Bestandsregeln bleiben unverändert“ ohne Messung am Parent und „zulässiger
 Weg nach §3.1“ ohne Anker (die Meldung des Guards lenkte in jeder Sitzung dorthin); beide vor

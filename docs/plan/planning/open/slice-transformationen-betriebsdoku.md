@@ -101,7 +101,8 @@ an dieses Slice gemeldet haben.
       Status `pending`/`applied`/`failed` und den Fehlertexten von K1–K4, der
       Wirkung („ab `applied` für künftige Changes, nicht rückwirkend; die
       Rohform wird nicht gespeichert“, der Informationsverlust bei
-      `map_value`), dem Verhältnis zum Spaltenausschluss (der Ausschluss gilt
+      `map_value`, Übergabe aus `slice-transformationen-map-value` unten), dem
+      Verhältnis zum Spaltenausschluss (der Ausschluss gilt
       zuerst), der Dauerhaftigkeit (überlebt Neustart und
       Deaktivierung/Aktivierung; Grenze aus `antragsweg-usecase`: eine vermerkte Regel, die
       ein älterer Binärstand nicht lesen kann — etwa eine `map_value`-Regel unter einem Stand
@@ -181,6 +182,47 @@ an dieses Slice gemeldet haben.
       der Closure der Welle
       [welle-transformationen](../welle-transformationen.md) (die Roadmap führt
       sie unter *Offene Wellen*, das Ereignis kann eintreten).
+
+**Übergabe aus `slice-transformationen-map-value`** (gemeldet, kein zusätzlicher
+Umfang; Herkunft: Review-Report Finding F-6, Verifikations-Report V-3 und §7,
+gelesen am Stand `8b9b9c5b`; Frist der Meldung: die Closure des meldenden Slice,
+gezogen). Der Handbuch-Abschnitt zu `map_value` trägt vier Aussagen, jede mit
+ihrem Ursprung ([`AGENTS.md`](../../../../AGENTS.md) §3.12):
+
+- **Informationsverlust.** Bilden mehrere Quellwerte auf denselben Zielwert ab,
+  meldet das System nichts — kein Fehler, keine Warnung; die Abbildung eines
+  Werts auf sich selbst ist zulässig, ein leeres `values` wird abgelehnt (Tests
+  der Domäne, gelesen im Review). Die Rohform wird nicht gespeichert, die
+  Abbildung ist nicht umkehrbar
+  ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  §Konsequenzen; im Handbuch als Zusage der Entscheidung, nicht als Messung).
+- **Vergleich.** Der Wert einer Spalte wird als Zeichenkette zeichengenau mit
+  den Schlüsseln von `values` verglichen, ohne Normalisierung: die
+  Groß-/Kleinschreibung zählt, das Präfix eines Schlüssels ist kein Schlüssel,
+  `é` als ein Zeichen und `e` mit U+0301 sind verschiedene Schlüssel (Test
+  `TestBuildRowImageMapValue`, Fälle „Groß-/Kleinschreibung zählt“ und „Präfix
+  eines Schlüssels ist kein Schlüssel“; das Zeichenpaar: Negativbefund des
+  Reviews, **übernommen**).
+- **Größenordnung der Suche.** Die Suche einer Zuordnung ist linear in der Zahl
+  der Paare (hergeleitet aus dem Quelltext von `lookupMappedValue`). Gemessen
+  vom Verifier, **übernommen**, nicht nachgemessen (Wegwerf-Benchmark in einer
+  Kopie, Schlüssel am Ende der Zuordnung als ungünstigster Fall, ohne `-race`,
+  i9-13900H): 80 ns bei 10 Paaren, 6,8 µs bei 1000 Paaren, 0,72 ms bei 100 000
+  Paaren je Wert und Regel; die Kosten fallen je Wert einer Spalte mit Regel an,
+  je Zeile eines Backfill-Blocks und je Change im Erfassungspfad. Das Handbuch
+  nennt die Zahlen als Größenordnung mit diesen Bedingungen oder misst sie am
+  Start nach. **Ob die Zahl der Paare eine Obergrenze braucht, ist eine
+  Spec-Frage** ([`SPEC-030`](../../../../spec/pflichtenheft.md) bindet sie nicht
+  nach oben); Adresse: `welle-transformationen` §5, Fragen für den nächsten
+  Architect-Zug, Punkt (d). Das Handbuch führt keine Obergrenze, solange die Spec
+  keine führt.
+- **Rückfall auf einen älteren Binärstand** (die Grenze steht oben im
+  Handbuch-Punkt zur Dauerhaftigkeit). Erprobt ist der erste Schritt der
+  Herleitung (Verifikations-Report §7, **übernommen**): am Parent-Stand von
+  `slice-transformationen-map-value` liefert `FoldTransformations` für eine
+  `applied`-Zeile mit `map_value` den Fehler `Regelstand: Regel "r": unbekannter
+  Regeltyp: map_value`. Dass dieser Fehler Prozessstart und jeden Regel-Antrag der
+  Quelle anhält, bleibt hergeleitet; der Prozessstart ist nicht gefahren.
 
 ## 3. Plan (vor Code)
 

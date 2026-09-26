@@ -376,13 +376,28 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   in-place schreibendes Text-Werkzeug am Repo (`sed -i`, `perl -pi`, ein
   Host-Interpreter auf einer Repo-Datei) ist in [`AGENTS.md`](../../../AGENTS.md) §3.1
   verboten, und der PreToolUse-Guard blockt die Flag-Formen
-  (`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, 4×, Ausgang verkörpert;
+  (`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, 5×, Ausgang verkörpert;
   Grenz-Zeile: `MR-003`, Tabellentest `make test-command-guard`); die Klasse
   `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration` (2×) steht in
   §3.1 als „Host-Werkzeug ohne Installation“. Die Klasse trifft weiter besonders
   `slice-code-kommentare-bereinigung` (Hunderte Kommentar-Änderungen): Umleitungen und
   flaglose Schreibwege liest der Guard nicht. (b) Die Lesekosten des Backfill-Runs sind bereits ein
-  Closure-Kriterium dieser Welle (§3) und tragen keine weitere Adresse.
+  Closure-Kriterium dieser Welle (§3) und tragen keine weitere Adresse. (c) Das
+  Anhängen von Text per Umleitung (`cat >> Datei`) trat im Lauf des Implementers von
+  `slice-transformationen-map-value` auf (Review F-7, Verifikation V-5): es ist weder ein
+  Treffer des Guards (Umleitungen: Grenz-Zeile in `MR-003`) noch von
+  [`AGENTS.md`](../../../AGENTS.md) §3.1 ausdrücklich geregelt — der Verbotssatz nennt
+  in-place Umschreiben, die Überschrift des Absatzes („Text-Umschreiben im Repo ist Sache
+  der Datei-Werkzeuge des Laufs“) trägt eine strengere Lesung. Adresse: der nächste
+  Architect-Zug, der §3.1 berührt (Wortlaut: verbietet der Absatz den Weg, oder bleibt er
+  Sache des Reviews?); Register: `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`.
+  (d) [`SPEC-030`](../../../spec/pflichtenheft.md) bindet die Zahl der Paare von `values`
+  (`map_value`) nicht nach oben; die Suche einer Zuordnung ist linear in der Zahl der Paare
+  (Größenordnung: 80 ns bei 10, 6,8 µs bei 1000 und 0,72 ms bei 100 000 Paaren je Wert und
+  Regel, **übernommen** aus der Verifikation von `slice-transformationen-map-value`, V-3).
+  Ob die Spec eine Obergrenze führt, ist eine Spec-Frage und nicht entschieden; Adresse: der
+  nächste Architect-Zug zu [`SPEC-030`](../../../spec/pflichtenheft.md), Herkunft der
+  Betreiber-Aussage: `slice-transformationen-betriebsdoku` §2.
 
 **Träger der Folgepflichten** — jede Pflicht aus
 [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
