@@ -261,6 +261,26 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   an den Planner). Kein Gate fängt das: ob zwei Aussagen sich widersprechen, ist
   eine Lese-Handlung. Herkunft: `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`
   (8×) · seit welle-backfill-bestand.
+- **Herkunft als mehrere Felder, Kette, „ff.“ oder Spec-Wiederholung** — ein
+  im Diff **neu geschriebener oder geänderter** Go-Kommentar trägt mehr als
+  **eine** Kennung (zwei verschiedene `ADR-*`/`LH-*`/`SPEC-*`/`ARC-*` in einem
+  Block), eine Kompaktform (`…-003/005`), ein „ff.“ hinter einer Kennung, oder er
+  gibt eine Aussage der Spec oder einer ADR in eigenen Worten wieder, statt zu
+  tragen, was die **Stelle** zusagt, koppelt, abgrenzt oder nicht leistet
+  (`AGENTS.md` §3.7 §Herkunft im Go-Kommentar). Eine Kopplung nennt die
+  mitzuändernde Stelle (Datei, Funktion), nicht eine Kennungsreihe. Probe: `make
+  kommentar-kennungen DIFF=<Basis>` listet die Kandidaten der ersten drei Fälle —
+  der Lauf ist eine **Probe, kein Beleg**: er prüft die Form, nicht die Wahrheit;
+  die Spec-Wiederholung hinter **einer** Kennung findet nur das Lesen des
+  Diffs. Einstufung: MEDIUM für die **Form** (die Kennungsreihe, die Kompaktform,
+  das „ff.“); ist eine wiedergegebene Spec-Aussage falsch oder ein zugesagtes
+  Verhalten nicht getragen, gehört der Fund unter den HIGH-Punkt „Kommentar
+  trägt keine der Kommentar-Klassen“. Bestandskandidaten außerhalb des Diffs sind
+  nicht Gegenstand (Bereinigung: eigener Slice). Kein Gate fängt das: das
+  Werkzeug hat keine Ausnahmeliste und steht nicht in `make gates`
+  ([`harness/sensors/kommentar-kennungen.md`](../../harness/sensors/kommentar-kennungen.md)).
+  Herkunft: `BEO-PGC/slice-chronik-in-code-kommentar` (Abgrenzung: Kennungen je
+  Block, kein Satz-Subjekt) · seit slice-code-kommentare-kennungen.
 
 **LOW** — stilistisch unschön ohne semantische Auswirkung, einmalige Tippfehler,
 unbenutzte Imports, eine Go-Datei des Diffs, die `gofmt -l` im gepinnten

@@ -240,6 +240,22 @@ ist eine Lifecycle-Rücksprungkante (11).
     unzulässig)? Nur Letzteres wird umformuliert. Kein Sensor/Gate dafür (geprüft und verworfen,
     Architect-Verdikt) — die Unterscheidung ist Satz-Subjekt-Urteil, kein Zeichenkettenmuster;
     dieser Schritt bleibt Disziplin.
+    **Herkunft als ein Feld · seit slice-code-kommentare-kennungen**
+    ([`AGENTS.md`](../../AGENTS.md) §3.7): daneben läuft der diff-skopierte
+    Kandidatenlauf des Werkzeugs über die eigenen Änderungen —
+    `make kommentar-kennungen DIFF=<Basis>` (neue Dateien vorher `git add`;
+    `TESTS=exclude` trennt die Nicht-Test-Dateien). Ein Kandidat ist ein
+    Kommentarblock mit mindestens zwei verschiedenen Kennungen oder „ff.“; er
+    wird auf **eine** Kennung als Rang-Zeiger umformuliert, eine Kopplung nennt
+    die mitzuändernde Stelle (Datei, Funktion) statt einer Kennungsreihe. Der
+    Chronik-Kandidatenlauf oben bleibt daneben unverändert: er sucht Slice-/
+    Wellen-Nummern, das Werkzeug zählt Kennungen und liest kein Satz-Subjekt
+    ([`harness/sensors/kommentar-kennungen.md`](../../harness/sensors/kommentar-kennungen.md)).
+    **Grenze:** das Werkzeug prüft die **Form**, nicht die Wahrheit — eine
+    Spec-Aussage in eigenen Worten hinter einer einzigen Kennung fängt es nicht,
+    ein Lauf ohne Kandidat ist keine Konformitätsaussage; derselbe schreibende
+    Kontext, erste, nicht tragende Linie, die tragende ist der Reviewer
+    (`.harness/skills/reviewer.md`).
     **Grenze dieser Selbstprüfung** (4. Beleg, `slice-052`, der Architect-Verdikt-Nachtrag
     zur Slice-Chronik in Code-Kommentaren, 4. Auftreten): Dieser Schritt
     läuft im selben Kontext, der den Kommentar geschrieben hat — genau die Konstellation,

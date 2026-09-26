@@ -179,6 +179,37 @@ werden konnte"> — Indikativ über den Zustand.
 abwesenden Text.
 **Richtig:** die geltende Zusage nennen; die vorige hält `git`.
 
+**Herkunft im Go-Kommentar ist ein Feld, kein Absatz.** Ein Kommentar trägt
+höchstens **eine** Kennung (`LH-*`, `ADR-*`, `SPEC-*`, `ARC-*`), als
+Rang-Zeiger auf die Norm, deren Umsetzung die Stelle ist. Keine Kette (zwei
+verschiedene Kennungen in einem Kommentarblock), keine Kompaktform
+(`…-003/005`, `…-002`…`004`), kein „ff.“. Der Kommentar gibt keine Aussage der
+Spec oder einer ADR in eigenen Worten wieder: er trägt, was die **Stelle**
+zusagt, koppelt, abgrenzt oder nicht leistet, und verweist für die Norm auf den
+einen Anker. Eine Kopplung nennt die mitzuändernde **Stelle** (Datei,
+Funktion), nicht eine Reihe von Kennungen.
+
+**Falsch** (zwei Entscheidungen und eine Anforderungsreihe, dazu die Spec in
+eigenen Worten):
+
+```text
+// Publish verteilt … (`ADR-0060` Teilfrage 3, `ADR-0066`) … Lesezugriffsweg (`LH-FA-REA-001` ff.)
+```
+
+**Richtig** (das Verhalten der Stelle und ein Anker):
+
+```text
+// Publish verteilt … Der Aufruf blockiert nie auf einen Abonnenten … (`ADR-0060`).
+```
+
+`make kommentar-kennungen` listet die Kommentarblöcke, die diese Form verletzen
+(Kandidaten: mindestens zwei verschiedene Kennungen oder „ff.“;
+[`harness/sensors/kommentar-kennungen.md`](harness/sensors/kommentar-kennungen.md)).
+Es prüft die **Form**, nicht die Wahrheit: eine Spec-Wiedergabe in eigenen
+Worten mit einer Kennung erkennt es nicht, und ein Lauf ohne Kandidat sagt nicht
+„die Kommentare sind konform“. Es ist kein Gate und trägt keine
+Ausnahmeliste; die Lese-Handlung bleibt beim Reviewer.
+
 **Zustandsfelder ebenso:** Eine `Stand`-/`Status`-Zelle in Roadmap,
 Beobachtungs-Register oder Meilenstein-Tabelle nennt den Zustand und den Beleg
 als auflösbaren Anker, nicht die Chronik; das Drift-Log der Roadmap trägt nur
