@@ -1329,6 +1329,11 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 	}
 }
 
+// processedAdministrationKinds nennt die Antragsarten, die
+// `applyAdministrationRequest` verarbeitet; der Fehlertext des
+// `default`-Zweigs trägt sie.
+const processedAdministrationKinds = "enable/disable/exclude_column/include_column/backfill"
+
 // applyAdministrationRequest führt einen einzelnen Antrag über den
 // passenden Inbound Port aus (einziger Schreibpfad auf Bindungs-Zeile und
 // Publication bleibt der Port, `ADR-0018`/`ADR-0046` unverändert) und
@@ -1367,6 +1372,11 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 // anschließende `MarkApplied` trifft keine `pending`-Zeile mehr und ist
 // kein Fehler). Eine verletzte Vorbedingung und ein aktiver Run derselben
 // Tabelle enden als Fehler und damit im `failed`-Vermerk.
+//
+// Die Antragsarten `set_transformation`/`remove_transformation` nimmt die
+// Antrags-Queue an (`LH-FA-CFG-007`), dieser Zweig verarbeitet sie nicht: sie
+// enden im `default`-Zweig als Fehler und damit im `failed`-Vermerk, dessen
+// Text die verarbeiteten Antragsarten nennt.
 func applyAdministrationRequest(ctx context.Context, deps administrationDeps, request model.AdministrationRequest) error {
 	qualified := request.Schema + "." + request.Table
 	switch request.Kind {
@@ -1456,7 +1466,7 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 		signalBackfillWorker(deps.backfillWake)
 		return nil
 	default:
-		return fmt.Errorf("Antragsart %q trägt nicht die geschlossene Menge enable/disable/exclude_column/include_column/backfill", request.Kind)
+		return fmt.Errorf("Antragsart %q gehört nicht zu den verarbeiteten Antragsarten %s", request.Kind, processedAdministrationKinds)
 	}
 }
 

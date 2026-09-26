@@ -2,6 +2,7 @@ package postgresstorage_test
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
 	"fmt"
 	"os"
@@ -55,12 +56,12 @@ func newTestAdministrationRequestPool(t *testing.T) (*pgxpool.Pool, string) {
 
 	var functions int
 	if err := pool.QueryRow(ctx,
-		"SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'cdc' AND p.proname IN ('enable_table', 'disable_table', 'exclude_column', 'include_column', 'backfill_table')",
+		"SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'cdc' AND p.proname IN ('enable_table', 'disable_table', 'exclude_column', 'include_column', 'backfill_table', 'set_transformation', 'remove_transformation')",
 	).Scan(&functions); err != nil {
 		t.Fatalf("Funktions-Prüfung: %v", err)
 	}
-	if functions != 5 {
-		t.Fatalf("cdc.enable_table/cdc.disable_table/cdc.exclude_column/cdc.include_column/cdc.backfill_table fehlen — der Schema-Rollout über make schema-rollout trägt sie (ADR-0050, LH-FA-CFG-005, LH-FA-CAP-009, tools/schema/nacharbeit-administration.sql); der test-store-Lauf rollt sie vor dem Testlauf aus")
+	if functions != 7 {
+		t.Fatalf("cdc.enable_table/cdc.disable_table/cdc.exclude_column/cdc.include_column/cdc.backfill_table/cdc.set_transformation/cdc.remove_transformation fehlen — der Schema-Rollout über make schema-rollout trägt sie (ADR-0050, LH-FA-CFG-005, LH-FA-CAP-009, LH-FA-CFG-007, tools/schema/nacharbeit-administration.sql); der test-store-Lauf rollt sie vor dem Testlauf aus")
 	}
 
 	if _, err := pool.Exec(ctx,
@@ -706,14 +707,14 @@ func TestAdministrationRequestBackfillTableRequiresCdcAdminMembership(t *testing
 	}
 }
 
-// TestAdministrationRequestKindCheckCarriesExactlyTheFiveKinds belegt die
+// TestAdministrationRequestKindCheckCarriesExactlyTheSevenKinds belegt die
 // geschlossene `request_kind`-Menge (`chk_administration_request_kind`,
-// `tools/schema/nacharbeit-administration.sql`): jede der fünf Arten wird
-// angenommen, eine sechste endet mit SQLSTATE 23514. Rot färbende Mutationen
-// (je eine): `'backfill'` aus der CHECK-Klausel streichen — die Art `backfill`
-// endet mit 23514; `'truncate'` in die Klausel aufnehmen — die sechste Art
-// wird angenommen.
-func TestAdministrationRequestKindCheckCarriesExactlyTheFiveKinds(t *testing.T) {
+// `tools/schema/nacharbeit-administration.sql`): jede der sieben Arten wird
+// angenommen, eine achte endet mit SQLSTATE 23514. Rot färbende Mutationen
+// (je eine): `'set_transformation'` aus der CHECK-Klausel streichen — die Art
+// `set_transformation` endet mit 23514; `'truncate'` in die Klausel
+// aufnehmen — die achte Art wird angenommen.
+func TestAdministrationRequestKindCheckCarriesExactlyTheSevenKinds(t *testing.T) {
 	pool, _ := newTestAdministrationRequestPool(t)
 	ctx := context.Background()
 	const requestID = "kind-check-request"
@@ -727,7 +728,7 @@ func TestAdministrationRequestKindCheckCarriesExactlyTheFiveKinds(t *testing.T) 
 			 VALUES ($1, $2, 'public', 'kind_check', $3, 'pending')`, requestID, administrationRequestSource, kind)
 		return err
 	}
-	for _, kind := range []string{"enable", "disable", "exclude_column", "include_column", "backfill"} {
+	for _, kind := range []string{"enable", "disable", "exclude_column", "include_column", "backfill", "set_transformation", "remove_transformation"} {
 		if err := insert(kind); err != nil {
 			t.Fatalf("Art %q: erwartet angenommen, %v", kind, err)
 		}
@@ -739,5 +740,197 @@ func TestAdministrationRequestKindCheckCarriesExactlyTheFiveKinds(t *testing.T) 
 	var pgErr *pgconn.PgError
 	if !stderrors.As(err, &pgErr) || pgErr.Code != "23514" {
 		t.Fatalf("Art %q: erwartet SQLSTATE 23514 (check_violation), erhalten %v", "truncate", err)
+	}
+}
+
+// TestAdministrationRequestTransformationRequestsCarryRuleAndNotify trägt den
+// realen Antrags-Weg der Transformations-Antragsarten (`LH-FA-CFG-007`,
+// `ADR-0112` Teilfrage 1): `cdc.set_transformation` schreibt eine `pending`-Zeile
+// mit Regelname und Regelform (Spalte `jsonb`) und ohne Spalte, `cdc.remove_transformation`
+// eine mit Regelname und ohne Regelform; beide senden `pg_notify` mit der
+// Antrags-ID, und der Adapter liest beide Felder über `ListPending` zurück.
+// Rot färbende Mutationen (Eingabeseite): die Art `'set_transformation'` in
+// `cdc.set_transformation` durch `'remove_transformation'` ersetzen — die Zeile
+// trägt die falsche Art; den Ausdruck `COALESCE(rule_spec::text, …)` in
+// `SelectPendingAdministrationRequests` durch die leere Zeichenkette ersetzen —
+// `ListPending` endet mit der Konstruktor-Invariante `ErrEmptyIdentifier`.
+func TestAdministrationRequestTransformationRequestsCarryRuleAndNotify(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+
+	var requestIDs []string
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE administration_request_id = ANY($1)", requestIDs)
+	})
+	adapter, err := postgresstorage.NewAdministrationRequest(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewAdministrationRequest: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+	listener := listenForAdministrationNotify(t, ctx, dsn)
+
+	const ruleSpec = `{"kind": "rename_column", "column": "name", "to": "title"}`
+	var setID, removeID, nullSpecID string
+	if err := pool.QueryRow(ctx,
+		"SELECT cdc.set_transformation($1, $2, $3, $4, $5::json)", administrationRequestSource, "public", "orders_rules", "umbenennung", ruleSpec,
+	).Scan(&setID); err != nil {
+		t.Fatalf("cdc.set_transformation: %v", err)
+	}
+	requestIDs = append(requestIDs, setID)
+	notifyCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	notification, err := listener.WaitForNotification(notifyCtx)
+	if err != nil {
+		t.Fatalf("WaitForNotification: %v", err)
+	}
+	if notification.Channel != "cdc_administration" || notification.Payload != setID {
+		t.Fatalf("Notify = %q/%q, wollen cdc_administration/%q", notification.Channel, notification.Payload, setID)
+	}
+	if err := pool.QueryRow(ctx,
+		"SELECT cdc.remove_transformation($1, $2, $3, $4)", administrationRequestSource, "public", "orders_rules", "umbenennung",
+	).Scan(&removeID); err != nil {
+		t.Fatalf("cdc.remove_transformation: %v", err)
+	}
+	requestIDs = append(requestIDs, removeID)
+	notification, err = listener.WaitForNotification(notifyCtx)
+	if err != nil {
+		t.Fatalf("WaitForNotification: %v", err)
+	}
+	if notification.Payload != removeID {
+		t.Fatalf("Notify-Payload = %q, wollen die Antrags-ID %q", notification.Payload, removeID)
+	}
+	// Ein JSON-`null` ist eine Regelform, kein SQL-NULL: die Spalte trägt den
+	// Text `null`.
+	if err := pool.QueryRow(ctx,
+		"SELECT cdc.set_transformation($1, $2, $3, $4, 'null'::json)", administrationRequestSource, "public", "orders_rules", "json_null",
+	).Scan(&nullSpecID); err != nil {
+		t.Fatalf("cdc.set_transformation(JSON null): %v", err)
+	}
+	requestIDs = append(requestIDs, nullSpecID)
+
+	for _, tc := range []struct {
+		id, kind string
+		wantSpec bool
+	}{{setID, "set_transformation", true}, {removeID, "remove_transformation", false}} {
+		var kind, status, ruleName string
+		var column, spec, message *string
+		if err := pool.QueryRow(ctx,
+			"SELECT request_kind, status, rule_name, column_name, rule_spec::text, error_message FROM cdc.administration_request WHERE administration_request_id = $1", tc.id,
+		).Scan(&kind, &status, &ruleName, &column, &spec, &message); err != nil {
+			t.Fatalf("Antrags-Zeile %s lesen: %v", tc.kind, err)
+		}
+		if kind != tc.kind || status != "pending" || ruleName != "umbenennung" || column != nil || message != nil || (spec != nil) != tc.wantSpec {
+			t.Fatalf("Antrags-Zeile %s: Art %q, Status %q, Regelname %q, Spalte gesetzt %t, Regelform gesetzt %t (erwartet %t), Fehlertext gesetzt %t",
+				tc.kind, kind, status, ruleName, column != nil, spec != nil, tc.wantSpec, message != nil)
+		}
+	}
+
+	pending, err := adapter.ListPending(ctx)
+	if err != nil {
+		t.Fatalf("ListPending: %v", err)
+	}
+	byID := map[model.AdministrationRequestID]model.AdministrationRequest{}
+	for _, request := range pending {
+		byID[request.ID] = request
+	}
+	setRequest, found := byID[model.AdministrationRequestID(setID)]
+	if !found {
+		t.Fatalf("ListPending trägt nicht den set_transformation-Antrag %q: %+v", setID, pending)
+	}
+	if setRequest.Kind != model.AdministrationRequestSetTransformation || setRequest.RuleName != "umbenennung" || setRequest.Column != "" || setRequest.Table != "orders_rules" {
+		t.Fatalf("set_transformation-Antrag: %+v", setRequest)
+	}
+	var decoded map[string]string
+	if err := json.Unmarshal([]byte(setRequest.RuleSpec), &decoded); err != nil {
+		t.Fatalf("Regelform %q ist kein JSON-Objekt: %v", setRequest.RuleSpec, err)
+	}
+	if decoded["kind"] != "rename_column" || decoded["column"] != "name" || decoded["to"] != "title" || len(decoded) != 3 {
+		t.Fatalf("Regelform = %v, wollen kind/column/to wie beantragt", decoded)
+	}
+	removeRequest, found := byID[model.AdministrationRequestID(removeID)]
+	if !found {
+		t.Fatalf("ListPending trägt nicht den remove_transformation-Antrag %q: %+v", removeID, pending)
+	}
+	if removeRequest.Kind != model.AdministrationRequestRemoveTransformation || removeRequest.RuleName != "umbenennung" || removeRequest.RuleSpec != "" {
+		t.Fatalf("remove_transformation-Antrag: %+v", removeRequest)
+	}
+	if nullRequest := byID[model.AdministrationRequestID(nullSpecID)]; nullRequest.RuleSpec != "null" {
+		t.Fatalf("Regelform des JSON-null-Antrags = %q, wollen den Text null", nullRequest.RuleSpec)
+	}
+}
+
+// TestAdministrationRequestTransformationFunctionsRequireCdcAdminMembership
+// belegt das `REVOKE … FROM PUBLIC`/`GRANT … TO cdc_admin`-Paar für
+// `cdc.set_transformation` und `cdc.remove_transformation` (`ADR-0047`,
+// `LH-QA-SEC-001`…`003`): eine Rolle ohne `cdc_admin`-Mitgliedschaft scheitert
+// mit SQLSTATE 42501 („permission denied for function“), und der gescheiterte
+// Aufruf hinterlässt keine Zeile. Rot färbende Mutation: die jeweilige
+// Signatur aus der `REVOKE`-Zeile der Nacharbeit-Datei streichen — `PUBLIC`
+// behält `EXECUTE`, der Aufruf gelingt.
+func TestAdministrationRequestTransformationFunctionsRequireCdcAdminMembership(t *testing.T) {
+	pool, _ := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+	const table = "orders_rules_denied"
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE table_name = $1", table)
+	})
+
+	for _, role := range []string{"cdc_reader", "cdc_capture"} {
+		conn, err := pool.Acquire(ctx)
+		if err != nil {
+			t.Fatalf("Verbindung reservieren: %v", err)
+		}
+		func() {
+			defer func() {
+				_, _ = conn.Exec(ctx, "RESET ROLE")
+				conn.Release()
+			}()
+			if _, err := conn.Exec(ctx, "SET ROLE "+role); err != nil {
+				t.Fatalf("SET ROLE %s: %v", role, err)
+			}
+			var requestID string
+			err := conn.QueryRow(ctx,
+				"SELECT cdc.set_transformation($1, $2, $3, $4, $5::json)", administrationRequestSource, "public", table, "verboten", `{"kind": "rename_column"}`,
+			).Scan(&requestID)
+			if !permissionDenied(err) {
+				t.Fatalf("%s SELECT cdc.set_transformation(...): erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", role, err)
+			}
+			err = conn.QueryRow(ctx,
+				"SELECT cdc.remove_transformation($1, $2, $3, $4)", administrationRequestSource, "public", table, "verboten",
+			).Scan(&requestID)
+			if !permissionDenied(err) {
+				t.Fatalf("%s SELECT cdc.remove_transformation(...): erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", role, err)
+			}
+		}()
+	}
+	var rows int
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM cdc.administration_request WHERE table_name = $1", table).Scan(&rows); err != nil {
+		t.Fatalf("Zeilen zählen: %v", err)
+	}
+	if rows != 0 {
+		t.Fatalf("die abgelehnten Aufrufe hinterließen %d Antragszeile(n)", rows)
+	}
+}
+
+// TestAdministrationRequestRuleColumnsAreNullable trägt die Spaltenform der
+// zwei Regel-Spalten (`SPEC-019`): `rule_name` ist `text`, `rule_spec` ist
+// `jsonb`, beide nullable — die fünf Antragsarten ohne Regel lassen sie NULL.
+// Rot färbende Mutation: `rule_spec` in `tools/schema/schema.yaml` mit
+// `type: text` statt `type: json` deklarieren — der Test meldet
+// `rule_spec:text:YES`.
+func TestAdministrationRequestRuleColumnsAreNullable(t *testing.T) {
+	pool, _ := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+
+	var shape string
+	if err := pool.QueryRow(ctx,
+		`SELECT string_agg(column_name || ':' || data_type || ':' || is_nullable, ',' ORDER BY column_name)
+		 FROM information_schema.columns
+		 WHERE table_schema = 'cdc' AND table_name = 'administration_request' AND column_name IN ('rule_name', 'rule_spec')`,
+	).Scan(&shape); err != nil {
+		t.Fatalf("Spaltenform lesen: %v", err)
+	}
+	if shape != "rule_name:text:YES,rule_spec:jsonb:YES" {
+		t.Fatalf("Spaltenform = %q, wollen rule_name:text:YES,rule_spec:jsonb:YES", shape)
 	}
 }

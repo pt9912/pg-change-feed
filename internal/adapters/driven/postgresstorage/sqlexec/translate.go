@@ -199,8 +199,8 @@ func ReadSourceTables(ctx context.Context, exec Executor, statement Statement) (
 // Spaltennamen ein, `include_column` nimmt ihn wieder heraus — derselbe
 // Schreibpfad wie der Live-Reload (`ADR-0059` Teilfrage 5), nur über die
 // dauerhafte Herkunft statt über den Prozessspeicher. Eine nicht vermerkte
-// (`pending`/`failed`) Zeile und eine Zeile einer der beiden
-// Tabellen-Antragsarten tragen keinen Stand; eine Quelle ohne
+// (`pending`/`failed`) Zeile und eine Zeile jeder übrigen Antragsart
+// tragen keinen Stand; eine Quelle ohne
 // Spalten-Anträge liefert eine leere Map.
 func ReadExcludedColumns(ctx context.Context, exec Executor, statement Statement) (map[string][]string, error) {
 	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)
@@ -305,12 +305,12 @@ func ReadPendingRequests(ctx context.Context, exec Executor, statement Statement
 
 	requests := make([]model.AdministrationRequest, 0)
 	for rows.Next() {
-		var id, source, schema, table, column, kind string
-		if err := rows.Scan(&id, &source, &schema, &table, &column, &kind); err != nil {
+		var id, source, schema, table, column, ruleName, ruleSpec, kind string
+		if err := rows.Scan(&id, &source, &schema, &table, &column, &ruleName, &ruleSpec, &kind); err != nil {
 			return nil, statement.fail(err)
 		}
 		request, err := model.NewAdministrationRequest(
-			model.AdministrationRequestID(id), model.SourceID(source), schema, table, column, model.AdministrationRequestKind(kind),
+			model.AdministrationRequestID(id), model.SourceID(source), schema, table, column, ruleName, ruleSpec, model.AdministrationRequestKind(kind),
 		)
 		if err != nil {
 			return nil, err

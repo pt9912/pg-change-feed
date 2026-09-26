@@ -678,8 +678,10 @@ func TestReadTableSchemaReportsUnknownVersion(t *testing.T) {
 
 func TestReadPendingRequestsTranslatesRequests(t *testing.T) {
 	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
-		{"req-1", "src-1", "public", "feed", "", string(model.AdministrationRequestEnable)},
-		{"req-2", "src-1", "public", "feed", "secret", string(model.AdministrationRequestExcludeColumn)},
+		{"req-1", "src-1", "public", "feed", "", "", "", string(model.AdministrationRequestEnable)},
+		{"req-2", "src-1", "public", "feed", "secret", "", "", string(model.AdministrationRequestExcludeColumn)},
+		{"req-3", "src-1", "public", "feed", "", "umbenennung", `{"kind": "rename_column"}`, string(model.AdministrationRequestSetTransformation)},
+		{"req-4", "src-1", "public", "feed", "", "umbenennung", "", string(model.AdministrationRequestRemoveTransformation)},
 	}}}
 	recorder := &failRecorder{class: outbound.ErrAdministrationStorage}
 
@@ -690,17 +692,23 @@ func TestReadPendingRequestsTranslatesRequests(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadPendingRequests: %v", err)
 	}
-	if len(requests) != 2 {
-		t.Fatalf("erwartete 2 Anträge, gesehen %d", len(requests))
+	if len(requests) != 4 {
+		t.Fatalf("erwartete 4 Anträge, gesehen %d", len(requests))
 	}
 	if requests[1].Kind != model.AdministrationRequestExcludeColumn || requests[1].Column != "secret" {
 		t.Fatalf("Antrag = %+v", requests[1])
+	}
+	if requests[2].Kind != model.AdministrationRequestSetTransformation || requests[2].RuleName != "umbenennung" || requests[2].RuleSpec != `{"kind": "rename_column"}` {
+		t.Fatalf("Antrag = %+v, wollen set_transformation mit Regelname und Regelform", requests[2])
+	}
+	if requests[3].Kind != model.AdministrationRequestRemoveTransformation || requests[3].RuleName != "umbenennung" || requests[3].RuleSpec != "" {
+		t.Fatalf("Antrag = %+v, wollen remove_transformation mit Regelname ohne Regelform", requests[3])
 	}
 }
 
 func TestReadPendingRequestsLeavesDomainFailureUnclassified(t *testing.T) {
 	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
-		{"req-1", "src-1", "public", "feed", "", "unbekannt"},
+		{"req-1", "src-1", "public", "feed", "", "", "", "unbekannt"},
 	}}}
 	recorder := &failRecorder{class: outbound.ErrAdministrationStorage}
 
@@ -1068,7 +1076,7 @@ func TestReadPendingRequestsClassifiesScanFailure(t *testing.T) {
 	cause := stderrors.New("Spaltentyp passt nicht")
 	exec := &fakeExecutor{rows: &fakeRows{
 		rows: [][]any{
-			{"req-1", "src-1", "public", "feed", "", string(model.AdministrationRequestEnable)},
+			{"req-1", "src-1", "public", "feed", "", "", "", string(model.AdministrationRequestEnable)},
 		},
 		scanErrs: map[int]error{0: cause},
 	}}

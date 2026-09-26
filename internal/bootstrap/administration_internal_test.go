@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -630,11 +631,13 @@ func TestProcessAdministrationRequestsMarksFailedWhenUseCaseErrors(t *testing.T)
 	}
 }
 
-// TestApplyAdministrationRequestRejectsUnknownKind trägt den `default`-Zweig
-// (Review-Finding F-2): eine Antragsart außerhalb der geschlossenen Menge
-// `enable`/`disable` endet über einen sichtbaren Fehler, statt still
-// übersprungen zu werden.
-func TestApplyAdministrationRequestRejectsUnknownKind(t *testing.T) {
+// TestApplyAdministrationRequestRejectsUnprocessedKind trägt den
+// `default`-Zweig: eine Antragsart außerhalb der verarbeiteten Menge endet
+// über einen sichtbaren Fehler, statt still übersprungen zu werden — die
+// beiden Transformations-Antragsarten (`LH-FA-CFG-007`), die die Antrags-Queue
+// annimmt, und eine unbekannte Art. Der Fehlertext nennt die Antragsart des
+// Antrags und die fünf verarbeiteten Antragsarten.
+func TestApplyAdministrationRequestRejectsUnprocessedKind(t *testing.T) {
 	ctx := context.Background()
 	assembler, err := mapper.NewAssembler("src-admin", map[string]mapper.TableBinding{}, nil)
 	if err != nil {
@@ -649,13 +652,85 @@ func TestApplyAdministrationRequestRejectsUnknownKind(t *testing.T) {
 		publication:   "cdc_pub",
 		log:           &recordingLog{},
 	}
-	request := model.AdministrationRequest{
-		ID: "req-unknown", Source: "src-admin", Schema: "public", Table: "orders_admin_unknown",
-		Kind: model.AdministrationRequestKind("truncate"),
+
+	for _, kind := range []model.AdministrationRequestKind{
+		model.AdministrationRequestSetTransformation,
+		model.AdministrationRequestRemoveTransformation,
+		model.AdministrationRequestKind("truncate"),
+	} {
+		request := model.AdministrationRequest{
+			ID: "req-unprocessed", Source: "src-admin", Schema: "public", Table: "orders_admin_unprocessed",
+			RuleName: "umbenennung", Kind: kind,
+		}
+		err := applyAdministrationRequest(ctx, deps, request)
+		if err == nil {
+			t.Fatalf("applyAdministrationRequest(%q) = nil, wollen einen Fehler", kind)
+		}
+		if !strings.Contains(err.Error(), fmt.Sprintf("%q", kind)) {
+			t.Fatalf("Fehlertext %q nennt die Antragsart %q nicht", err.Error(), kind)
+		}
+		for _, processed := range []string{"enable", "disable", "exclude_column", "include_column", "backfill"} {
+			if !strings.Contains(err.Error(), processed) {
+				t.Fatalf("Fehlertext %q nennt die verarbeitete Antragsart %q nicht", err.Error(), processed)
+			}
+		}
+	}
+}
+
+// TestProcessAdministrationRequestsMarksTransformationRequestsFailed trägt
+// den Zwischenzustand der Transformations-Antragsarten: ein angenommener
+// Antrag der Art `set_transformation` bzw. `remove_transformation` wird als
+// `failed` samt Fehlertext vermerkt, nicht als `applied` und nicht als
+// `pending` belassen (`LH-FA-CFG-007`).
+func TestProcessAdministrationRequestsMarksTransformationRequestsFailed(t *testing.T) {
+	ctx := context.Background()
+	const (
+		setID    = model.AdministrationRequestID("req-set-transformation")
+		removeID = model.AdministrationRequestID("req-remove-transformation")
+	)
+	requests := &fakeAdministrationRequestPort{pending: []model.AdministrationRequest{
+		{
+			ID: setID, Source: "src-admin", Schema: "public", Table: "orders_admin_rules",
+			RuleName: "umbenennung", RuleSpec: `{"kind": "rename_column"}`, Kind: model.AdministrationRequestSetTransformation,
+		},
+		{
+			ID: removeID, Source: "src-admin", Schema: "public", Table: "orders_admin_rules",
+			RuleName: "umbenennung", Kind: model.AdministrationRequestRemoveTransformation,
+		},
+	}}
+	assembler, err := mapper.NewAssembler("src-admin", map[string]mapper.TableBinding{}, nil)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+	deps := administrationDeps{
+		requests:      requests,
+		activation:    &fakeTableActivationPort{},
+		enableTables:  &fakeEnableTableUseCase{},
+		disableTables: &fakeDisableTableUseCase{},
+		schemaStore:   &fakeSchemaStorePort{},
+		assembler:     assembler,
+		publication:   "cdc_pub",
+		log:           &recordingLog{},
 	}
 
-	if err := applyAdministrationRequest(ctx, deps, request); err == nil {
-		t.Fatal("applyAdministrationRequest(unbekannte Kind) = nil, wollen einen Fehler (geschlossene Menge enable/disable/exclude_column/include_column/backfill)")
+	processAdministrationRequests(ctx, deps)
+
+	if requests.appliedCount() != 0 {
+		t.Fatalf("applied = %d, wollen 0 (die Antragsarten werden nicht verarbeitet)", requests.appliedCount())
+	}
+	requests.mu.Lock()
+	defer requests.mu.Unlock()
+	for id, kind := range map[model.AdministrationRequestID]model.AdministrationRequestKind{
+		setID:    model.AdministrationRequestSetTransformation,
+		removeID: model.AdministrationRequestRemoveTransformation,
+	} {
+		message, found := requests.failed[id]
+		if !found {
+			t.Fatalf("MarkFailed wurde für den Antrag %q nicht aufgerufen", id)
+		}
+		if !strings.Contains(message, fmt.Sprintf("%q", kind)) || !strings.Contains(message, processedAdministrationKinds) {
+			t.Fatalf("Fehlertext des Antrags %q = %q, wollen Antragsart %q und die Menge %q", id, message, kind, processedAdministrationKinds)
+		}
 	}
 }
 

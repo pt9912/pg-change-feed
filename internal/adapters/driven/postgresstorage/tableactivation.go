@@ -101,8 +101,8 @@ func (a *TableActivationAdapter) ColumnExists(ctx context.Context, schema, table
 // Spaltennamen ein, `include_column` nimmt ihn wieder heraus — derselbe
 // Schreibpfad wie der Live-Reload (`ADR-0059` Teilfrage 5), nur über die
 // dauerhafte Herkunft statt über den Prozessspeicher. Eine nicht
-// vermerkte (`pending`/`failed`) Zeile und eine Zeile einer der beiden
-// Tabellen-Antragsarten tragen keinen Stand; eine Quelle ohne
+// vermerkte (`pending`/`failed`) Zeile und eine Zeile jeder übrigen
+// Antragsart tragen keinen Stand; eine Quelle ohne
 // Spalten-Anträge liefert eine leere Map.
 func (a *TableActivationAdapter) ExcludedColumns(ctx context.Context, source model.SourceID) (map[string][]string, error) {
 	return sqlexec.ReadExcludedColumns(ctx, a.db, sqlexec.Statement{

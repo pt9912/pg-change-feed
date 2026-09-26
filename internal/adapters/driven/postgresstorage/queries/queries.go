@@ -319,12 +319,16 @@ ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_cl
 // Antrags-Queue (`cdc.administration_request`, `LH-FA-ADM-001`) in
 // Anlage-Reihenfolge (`requested_at`) — die Administrations-Goroutine
 // verarbeitet sie in dieser Ordnung, sowohl nach `NOTIFY` als auch
-// periodisch als Fallback-Poll. Die fünf Antragsarten teilen sich eine
-// Tabelle; die drei Tabellen-Antragsarten (`enable`, `disable`, `backfill`)
-// tragen keine Spalte (`column_name` NULL) — `COALESCE` normalisiert das auf
-// den leeren Wert.
+// periodisch als Fallback-Poll. Die sieben Antragsarten teilen sich eine
+// Tabelle; die Antragsarten `enable`, `disable`, `backfill` und die beiden
+// Transformations-Antragsarten tragen keine Spalte (`column_name` NULL), alle
+// außer den beiden Transformations-Antragsarten keinen Regelnamen
+// (`rule_name` NULL), alle außer `set_transformation` keine Regelform
+// (`rule_spec` NULL) — `COALESCE` normalisiert jedes NULL auf den leeren
+// Wert; die Regelform steht als JSON-Text (`jsonb` nach `text`, ein
+// SQL-NULL ist dort der leere Wert, ein JSON-`null` der Text `null`).
 const SelectPendingAdministrationRequests = `
-SELECT administration_request_id, source_id, schema_name, table_name, COALESCE(column_name, ''), request_kind
+SELECT administration_request_id, source_id, schema_name, table_name, COALESCE(column_name, ''), COALESCE(rule_name, ''), COALESCE(rule_spec::text, ''), request_kind
 FROM cdc.administration_request
 WHERE status = 'pending'
 ORDER BY requested_at`
@@ -337,9 +341,10 @@ ORDER BY requested_at`
 // Anträgen derselben Transaktion nicht unterscheidend — deshalb der
 // deterministische Zweitschlüssel `administration_request_id`: dieselbe
 // Antrags-Menge trägt damit unabhängig von der Ausführungsreihenfolge
-// genau eine Reihenfolge. Die drei Tabellen-Antragsarten (`enable`,
-// `disable`, `backfill`) bleiben außen vor; `COALESCE` normalisiert das
-// NULL-bare `column_name` wie in SelectPendingAdministrationRequests.
+// genau eine Reihenfolge. Die fünf übrigen Antragsarten (`enable`,
+// `disable`, `backfill`, `set_transformation`, `remove_transformation`)
+// bleiben außen vor; `COALESCE` normalisiert das NULL-bare `column_name` wie
+// in SelectPendingAdministrationRequests.
 const SelectAppliedColumnRequests = `
 SELECT schema_name, table_name, request_kind, COALESCE(column_name, '')
 FROM cdc.administration_request
