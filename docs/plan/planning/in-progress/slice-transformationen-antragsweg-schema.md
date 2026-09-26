@@ -125,7 +125,7 @@ Antrags trägt der Folge-Slice.
       (Whitebox in `internal/bootstrap`, Domänen-Test) und `make test-store`
       (Round-Trip der zwei Spalten, skopierte Bereinigung —
       `BEO-PGC/test-isolation-geteilter-zustand`, offen, 1×).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -261,6 +261,11 @@ gesondert gelesen, [`AGENTS.md`](../../../../AGENTS.md) §3.9; gedruckte Zeilen 
   Negativ-Abbruch: unbekannte Funktion bleibt bestehen, make-Exit 2/2 mit d-migrate-Exit 8)`.
 - `make suchlauf-nachmessen PLAN=<diese Datei>` Exit 0, gedruckt: `suchlauf-nachmessen: 24 Zeilen
   stimmen`.
+- `make gates` (ohne Pipe in eine Log-Datei, Exit gesondert gelesen): der erste Lauf Exit 2 —
+  `docs-check` fand die unverlinkte Kennung im Suchlauf-Feld (`id-unlinked`), im Feld korrigiert; der
+  zweite Lauf Exit 0, gedruckt: `d-check: 1216 Datei(en) geprüft, 0 Befund(e)`, `commit-traceability:
+  OK — 5 Commit(s) in "HEAD~5..HEAD", Betreffs ohne Struktur-ID`, `generated-sync: OK`,
+  `coverage-gate: OK — Coverage 83.90% erfüllt Schwelle 80%`, `gesamt: 0 Befund(e)` (`a-check`).
 - Image-Neutralität der `.dockerignore`-Zeile: siehe §6 (Digest vor und nach der Zeile gleich).
 
 ## 4. Trigger
