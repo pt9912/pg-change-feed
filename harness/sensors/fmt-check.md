@@ -61,7 +61,11 @@ Host-Werkzeuge: `bash`, `git` (Repo-Wurzel) und `realpath` sowie `docker`
 mit Exit 0; ein Exit 0 sagt zu, dass mindestens eine Go-Datei geprüft wurde (die
 Zählung steht in der Ausgabe). Über `make` kommt
 jeder Exit ≠ 0 als der Make-eigene Exit `2` an; die Unterscheidung von 1 und 2
-trägt die Ausgabe (Pfade bzw. Meldung) oder der direkte Aufruf des Skripts.
+trägt die Make-Meldung `Fehler <n>` (der Exit des Skripts: `Fehler 1` bei
+Abweichung, `Fehler 2` bei Eingabe- oder Formatierer-Fehler), die Ausgabe (Pfade
+bzw. Meldung) oder der direkte Aufruf des Skripts. `Fehler 2` ist gemessen mit
+`make fmt-check TOOLCHAIN_IMAGE=`, `Fehler 1` aus der Arbeitsweise von `make`
+hergeleitet.
 
 ## Wer es aufruft
 
@@ -88,6 +92,9 @@ trägt die Ausgabe (Pfade bzw. Meldung) oder der direkte Aufruf des Skripts.
 5. **Ein Verzeichnis mit `:` im Pfad ist kein Eingabewert.** Der Mount
    `-v <Verzeichnis>:/src:ro` trennt an jedem Doppelpunkt; ein Pfad mit `:`
    endet mit Exit 2 (Docker-Fehler), nie mit Exit 0. Die Repo-Wurzel trägt keinen.
+   Die Grenze hängt an der Form `docker -v`; die Alternative
+   `--mount type=bind,source=…,target=/src,readonly` trennt an Kommas statt an
+   Doppelpunkten, ihr Verhalten bei einem Komma im Pfad ist nicht gemessen.
 6. **Ein Symlink mit Endung `.go` zählt wie eine Datei.** Die Zählung nimmt
    jeden Nicht-Verzeichnis-Eintrag, den `gofmt` liest; ein Symlink auf ein
    fehlendes Ziel endet mit Exit 2 (Formatierer-Fehler), nicht mit Exit 0.
@@ -101,8 +108,10 @@ Image-Zugriff des Docker-Daemons aus. Die Argumente des Docker-Aufrufs
 (`--network none`, Mount `:ro`, Image) hält ein Stub-`docker` fest; der Fall
 belegt, was der Aufrufer übergibt, nicht, dass der Daemon es einhält. Je Zusage
 die Mutation ihrer Eingabeseite, die den Fall rot färbt (Menge der Erprobung: die
-zwölf Fälle des Tabellentests, je Mutation an einer Kopie des Aufrufers gelaufen,
-Ausgang in der Spalte „Fall, der rot wird“):
+zwölf nummerierten Fälle des Tabellentests mit ihren Teilprüfungen —
+`grep -c '^# Fall [0-9]' tools/harness/run-fmt-check-tests.sh` zählt sie, Fall 1 bis
+11 und 8b —, je Mutation an einer Kopie des Aufrufers gelaufen; die Spalte „Fall, der
+rot wird“ nennt die Teilprüfung):
 
 | Zusage | Mutation am Werkzeug | Fall, der rot wird |
 |---|---|---|
