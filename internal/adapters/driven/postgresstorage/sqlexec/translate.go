@@ -2,11 +2,13 @@ package sqlexec
 
 import (
 	"context"
+	stderrors "errors"
 	"fmt"
 	"time"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -15,7 +17,8 @@ import (
 // übersetzen sie über den Mapper (`ADR-0039`) in Domänen-Werte. Ein
 // Treiber-Fehler (Abfrage, Scan, Iteration) läuft durch `Statement.fail` —
 // die Klasse des Aufrufers; ein Domänen-Fehler der Übersetzung kommt
-// unverändert zurück (`ADR-0029`). Sie sind damit netzlos prüfbar: der
+// unverändert zurück, außer bei `ReadPendingRequests`, das eine
+// verworfene Zeile in seinem Ergebnis trägt. Sie sind damit netzlos prüfbar: der
 // Träger ist ein `Executor`, kein `*pgxpool.Pool`.
 
 // ReadChanges setzt die Change-Abfrage ab (`SPEC-001`) und trägt die
@@ -366,21 +369,23 @@ func ReadTableSchema(ctx context.Context, exec Executor, versionID model.SchemaV
 }
 
 // ReadPendingRequests liest die offenen Anträge in Aufruf-Reihenfolge; jede
-// Zeile läuft durch den Domänen-Konstruktor (`ADR-0029`) — eine Zeile
-// außerhalb der Antrags-Invarianten endet sichtbar, nicht als still
-// gefälschter Antrag. Regelname und Regelform der beiden
-// Transformations-Antragsarten gehören nicht zu diesen Invarianten: eine
-// Zeile mit leerem Regelnamen oder leerer Regelform ist ein Antrag, den der
-// Use Case mit dem Fehlertext der Spec ablehnt, kein Lesefehler, der die
-// Anträge dahinter anhielte.
-func ReadPendingRequests(ctx context.Context, exec Executor, statement Statement) ([]model.AdministrationRequest, error) {
+// Zeile läuft durch den Domänen-Konstruktor. Die Lesung lehnt
+// keine Zeile ab: eine Zeile außerhalb der Antrags-Invarianten steht mit
+// ihrer Kennung und dem Fehlertext der Spec (`SPEC-019`) an ihrer Stelle der
+// Ordnung, statt die Lesung zu beenden — ein Fehler der Lesung hielte jeden
+// Antrag dahinter an. Nur ein Fehler der Anfrage, des Scans oder der
+// Iteration endet die Lesung. Regelname und Regelform der beiden
+// Transformations-Antragsarten gehören nicht zu den Invarianten des
+// Konstruktors: eine Zeile mit leerem Regelnamen oder leerer Regelform ist
+// ein Antrag, den der Use Case mit dem Fehlertext der Spec ablehnt.
+func ReadPendingRequests(ctx context.Context, exec Executor, statement Statement) ([]outbound.PendingAdministrationRequest, error) {
 	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)
 	if err != nil {
 		return nil, statement.fail(err)
 	}
 	defer rows.Close()
 
-	requests := make([]model.AdministrationRequest, 0)
+	requests := make([]outbound.PendingAdministrationRequest, 0)
 	for rows.Next() {
 		var id, source, schema, table, column, ruleName, ruleSpec, kind string
 		if err := rows.Scan(&id, &source, &schema, &table, &column, &ruleName, &ruleSpec, &kind); err != nil {
@@ -390,14 +395,45 @@ func ReadPendingRequests(ctx context.Context, exec Executor, statement Statement
 			model.AdministrationRequestID(id), model.SourceID(source), schema, table, column, ruleName, ruleSpec, model.AdministrationRequestKind(kind),
 		)
 		if err != nil {
-			return nil, err
+			requests = append(requests, outbound.PendingAdministrationRequest{Rejected: &outbound.RejectedAdministrationRequest{
+				ID:      model.AdministrationRequestID(id),
+				Message: rejectionMessage(err, id, source, schema, table, column),
+			}})
+			continue
 		}
-		requests = append(requests, request)
+		requests = append(requests, outbound.PendingAdministrationRequest{Request: request})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, statement.fail(err)
 	}
 	return requests, nil
+}
+
+// rejectionMessage bildet den Fehlertext einer vom Antrags-Konstruktor
+// verworfenen Zeile: der Klartext des Grundes, gefolgt von Doppelpunkt,
+// Leerzeichen und der Antrags-Kennung (`SPEC-019`, dieselbe Form wie die
+// Fehlertexte der Verarbeitung). Die erste verletzte Prüfung bestimmt den
+// Text, in der Reihenfolge der Prüfungen des Konstruktors: Quelle, Schema,
+// Tabelle, Antragsart, Spalte; ein Grund außerhalb dieser Liste trägt den
+// allgemeinen Klartext. Eine Zeile ohne Kennung trägt statt der Kennung
+// `schema.table` als Adresse — sie bleibt unvermerkt (`ID` leer).
+func rejectionMessage(cause error, id, source, schema, table, column string) string {
+	clear := "Antrag ist ungültig"
+	switch {
+	case id == "":
+		return "Kennung ist leer: " + schema + "." + table
+	case source == "":
+		clear = "Quelle ist leer"
+	case schema == "":
+		clear = "Schemaname ist leer"
+	case table == "":
+		clear = "Tabellenname ist leer"
+	case stderrors.Is(cause, domainerrors.ErrInvalidAdministrationRequestKind):
+		clear = "Antragsart ist unbekannt"
+	case column == "" && stderrors.Is(cause, domainerrors.ErrEmptyIdentifier):
+		clear = "Spaltenname ist leer"
+	}
+	return clear + ": " + id
 }
 
 // RegisterConsumer trägt die Consumer-Zeile ein und meldet den Ausgang:

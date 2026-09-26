@@ -76,14 +76,15 @@ type AdministrationRequest struct {
 // dasselbe Konstruktor-Muster wie die übrigen zehn Domänentypen in diesem
 // Paket (z. B. `NewSchemaVersion`); die Prüfung der geschlossenen Menge liegt
 // am Domain-Core-Rand, wie es die Architektur-Sicht für Domänenobjekte und
-// ihre Invarianten vorsieht (`ARC-001`).
+// ihre Invarianten vorsieht.
 // Die beiden Spalten-Antragsarten tragen eine nichtleere Spalte — ohne sie
 // adressiert der Antrag kein Ziel. Die beiden Transformations-Antragsarten
 // tragen Regelname und Regelform, wie die Zeile sie hält, auch leer: ein
 // leerer oder fehlender Regelname und eine fehlende Regelform sind ein
 // `failed`-Ausgang des Antrags mit dem Fehlertext der Spec (`SPEC-019`),
-// den der Use Case bestimmt, keine Ablehnung beim Lesen der Queue — ein
-// abgelehnter Lesevorgang hielte jeden Antrag dahinter an.
+// den der Use Case bestimmt. Eine Zeile, die dieser Konstruktor verwirft,
+// endet ebenfalls `failed`: die Lesung der Queue reicht Kennung und Grund
+// durch, statt sie abzulehnen (`SPEC-019`).
 func NewAdministrationRequest(id AdministrationRequestID, source SourceID, schema, table, column, ruleName, ruleSpec string, kind AdministrationRequestKind) (AdministrationRequest, error) {
 	if id == "" || source == "" || schema == "" || table == "" {
 		return AdministrationRequest{}, domainerrors.ErrEmptyIdentifier

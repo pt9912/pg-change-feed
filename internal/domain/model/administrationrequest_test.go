@@ -110,9 +110,8 @@ func TestNewAdministrationRequestRejectsInvariantViolations(t *testing.T) {
 }
 
 // Die Transformations-Antragsarten tragen Regelname und Regelform, wie die
-// Zeile sie hält — auch leer (`LH-FA-CFG-007`, `SPEC-019`): der Konstruktor
-// lehnt sie nicht ab, sonst lehnte das Lesen der Queue die Zeile ab und hielte
-// jeden Antrag dahinter an; den `failed`-Ausgang mit dem Fehlertext der Spec
+// Zeile sie hält — auch leer (`SPEC-019`): der Konstruktor
+// verwirft sie nicht; den `failed`-Ausgang mit dem Fehlertext der Spec
 // bestimmt der Use Case. Rot färbende Mutation: für `set_transformation` die
 // Prüfung `ruleName == ""` in den Konstruktor zurücklegen — jede Zeile mit
 // leerem Regelnamen endet als `ErrEmptyIdentifier`.

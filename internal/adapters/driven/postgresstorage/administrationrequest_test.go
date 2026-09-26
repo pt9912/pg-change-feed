@@ -261,8 +261,10 @@ func TestAdministrationRequestColumnRequestsCarryColumnAndExitStatus(t *testing.
 		t.Fatalf("ListPending: %v", err)
 	}
 	byID := map[model.AdministrationRequestID]model.AdministrationRequest{}
-	for _, request := range pending {
-		byID[request.ID] = request
+	for _, row := range pending {
+		if row.Rejected == nil {
+			byID[row.Request.ID] = row.Request
+		}
 	}
 	excludeRequest, found := byID[model.AdministrationRequestID(excludeID)]
 	if !found {
@@ -335,8 +337,10 @@ func TestAdministrationRequestAdapterListPendingMarkAppliedMarkFailed(t *testing
 		t.Fatalf("ListPending: %v", err)
 	}
 	byID := map[model.AdministrationRequestID]model.AdministrationRequest{}
-	for _, request := range pending {
-		byID[request.ID] = request
+	for _, row := range pending {
+		if row.Rejected == nil {
+			byID[row.Request.ID] = row.Request
+		}
 	}
 	enableRequest, found := byID[model.AdministrationRequestID(enableID)]
 	if !found {
@@ -380,9 +384,9 @@ func TestAdministrationRequestAdapterListPendingMarkAppliedMarkFailed(t *testing
 	if err != nil {
 		t.Fatalf("ListPending nach Vermerk: %v", err)
 	}
-	for _, request := range remaining {
-		if request.ID == enableRequest.ID || request.ID == disableRequest.ID {
-			t.Fatalf("ListPending nach Vermerk trägt weiterhin einen vermerkten Antrag: %+v", request)
+	for _, row := range remaining {
+		if row.Request.ID == enableRequest.ID || row.Request.ID == disableRequest.ID {
+			t.Fatalf("ListPending nach Vermerk trägt weiterhin einen vermerkten Antrag: %+v", row.Request)
 		}
 	}
 }
@@ -745,8 +749,8 @@ func TestAdministrationRequestKindCheckCarriesExactlyTheSevenKinds(t *testing.T)
 }
 
 // TestAdministrationRequestTransformationRequestsCarryRuleAndNotify trägt den
-// realen Antrags-Weg der Transformations-Antragsarten (`LH-FA-CFG-007`,
-// `ADR-0112` Teilfrage 1): `cdc.set_transformation` schreibt eine `pending`-Zeile
+// realen Antrags-Weg der Transformations-Antragsarten (`LH-FA-CFG-007`):
+// `cdc.set_transformation` schreibt eine `pending`-Zeile
 // mit Regelname und Regelform (Spalte `jsonb`) und ohne Spalte, `cdc.remove_transformation`
 // eine mit Regelname und ohne Regelform; beide senden `pg_notify` mit der
 // Antrags-ID, und der Adapter liest beide Felder über `ListPending` zurück.
@@ -754,7 +758,7 @@ func TestAdministrationRequestKindCheckCarriesExactlyTheSevenKinds(t *testing.T)
 // `cdc.set_transformation` durch `'remove_transformation'` ersetzen — die Zeile
 // trägt die falsche Art; den Ausdruck `COALESCE(rule_spec::text, …)` in
 // `SelectPendingAdministrationRequests` durch die leere Zeichenkette ersetzen —
-// `ListPending` endet mit der Konstruktor-Invariante `ErrEmptyIdentifier`.
+// die Regelform des gelesenen Antrags ist leer.
 func TestAdministrationRequestTransformationRequestsCarryRuleAndNotify(t *testing.T) {
 	pool, dsn := newTestAdministrationRequestPool(t)
 	ctx := context.Background()
@@ -831,8 +835,10 @@ func TestAdministrationRequestTransformationRequestsCarryRuleAndNotify(t *testin
 		t.Fatalf("ListPending: %v", err)
 	}
 	byID := map[model.AdministrationRequestID]model.AdministrationRequest{}
-	for _, request := range pending {
-		byID[request.ID] = request
+	for _, row := range pending {
+		if row.Rejected == nil {
+			byID[row.Request.ID] = row.Request
+		}
 	}
 	setRequest, found := byID[model.AdministrationRequestID(setID)]
 	if !found {
@@ -1253,14 +1259,14 @@ func TestTableActivationSourceColumnsReadsTheCatalog(t *testing.T) {
 
 // TestAdministrationRequestListPendingCarriesRuleRowsWithMissingFields trägt
 // den Lese-Pfad der Transformations-Antragsarten gegen die reale PostgreSQL
-// (`LH-FA-CFG-007`, `SPEC-019`): eine Zeile mit NULL-Regelnamen, mit
+// (`SPEC-019`): eine Zeile mit NULL-Regelnamen, mit
 // SQL-NULL-Regelform oder mit JSON-`null` als Regelform entsteht als
 // `pending`-Antrag (die Funktionen prüfen nichts) und wird von `ListPending`
 // als Antrag geliefert, nicht als Fehler — der Text `null` bzw. der leere
 // Text tragen SQL- und JSON-`null` unterscheidbar. Rot färbende Mutation: die
 // Prüfung `ruleName == ""` in `model.NewAdministrationRequest` zurücklegen —
-// `ListPending` endet mit `ErrEmptyIdentifier`, und jeder Antrag der Queue
-// bleibt ungelesen.
+// die Zeilen mit leerem Regelnamen stehen als `Rejected` statt als Antrag im
+// Ergebnis.
 func TestAdministrationRequestListPendingCarriesRuleRowsWithMissingFields(t *testing.T) {
 	pool, dsn := newTestAdministrationRequestPool(t)
 	ctx := context.Background()
@@ -1293,8 +1299,10 @@ func TestAdministrationRequestListPendingCarriesRuleRowsWithMissingFields(t *tes
 		t.Fatalf("ListPending = %v, wollen nil (die Zeilen sind Anträge, keine Lesefehler)", err)
 	}
 	byID := map[model.AdministrationRequestID]model.AdministrationRequest{}
-	for _, request := range pending {
-		byID[request.ID] = request
+	for _, row := range pending {
+		if row.Rejected == nil {
+			byID[row.Request.ID] = row.Request
+		}
 	}
 	for id, want := range map[model.AdministrationRequestID][2]string{
 		nullName:   {"", `{"kind": "rename_column"}`},
@@ -1319,5 +1327,142 @@ func TestAdministrationRequestListPendingCarriesRuleRowsWithMissingFields(t *tes
 	spec, err := model.ParseTransformationSpec(request.RuleSpec)
 	if err != nil || spec.Column() != "a" || spec.Target() != "b" {
 		t.Fatalf("Regelform der gültigen Zeile = %q (%v), wollen column a, to b", request.RuleSpec, err)
+	}
+}
+
+// TestAdministrationRequestListPendingPassesRejectedRowsThrough trägt die
+// Lesung der Queue gegen die reale PostgreSQL (`SPEC-019`):
+// die SQL-Funktionen prüfen Schema, Tabelle und Spalte nicht, eine Zeile mit
+// leerem Schema, leerem Tabellennamen oder leerer Spalte der beiden
+// Spalten-Antragsarten entsteht als `pending`. `ListPending` liefert sie ohne
+// Fehler an ihrer Stelle der Ordnung, mit ihrer Kennung und dem Fehlertext
+// (Klartext, Doppelpunkt, Leerzeichen, Antrags-Kennung); die gültige Zeile
+// davor und die dahinter stehen als Antrag im Ergebnis. Die Vermerke `failed`
+// (mit dem Text der Lesung) und `applied` treffen ihre Zeilen, danach trägt
+// `ListPending` keine der Zeilen mehr. Die Bereinigung löscht nur die Zeilen
+// dieses Tests (Kennungen). Rot färbende Mutationen (Eingabeseite): die Zeile
+// mit leerem Schema, leerem Tabellennamen bzw. leerer Spalte als Eingabe — den
+// Konstruktor-Fehler in `sqlexec.ReadPendingRequests` wieder zurückgeben statt
+// die Zeile durchzureichen (`ListPending` liefert den Fehler); den Text des
+// Falls durch einen festen Text ersetzen (der Text je Grund weicht ab).
+func TestAdministrationRequestListPendingPassesRejectedRowsThrough(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+	adapter, err := postgresstorage.NewAdministrationRequest(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewAdministrationRequest: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+
+	var ids []string
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE administration_request_id = ANY($1)", ids)
+	})
+	create := func(call string, args ...any) string {
+		t.Helper()
+		var id string
+		if err := pool.QueryRow(ctx, call, args...).Scan(&id); err != nil {
+			t.Fatalf("%s: %v", call, err)
+		}
+		ids = append(ids, id)
+		return id
+	}
+
+	const table = "orders_rejected_rows"
+	before := create("SELECT cdc.enable_table($1, 'public', $2)", administrationRequestSource, table)
+	type rejectedCase struct {
+		id, message string
+	}
+	var rejected []rejectedCase
+	var after []string
+	for _, tc := range []struct {
+		clear, call string
+		args        []any
+	}{
+		{"Schemaname ist leer", "SELECT cdc.enable_table($1, '', $2)", []any{administrationRequestSource, table}},
+		{"Tabellenname ist leer", "SELECT cdc.enable_table($1, 'public', '')", []any{administrationRequestSource}},
+		{"Spaltenname ist leer", "SELECT cdc.exclude_column($1, 'public', $2, '')", []any{administrationRequestSource, table}},
+		{"Spaltenname ist leer", "SELECT cdc.include_column($1, 'public', $2, '')", []any{administrationRequestSource, table}},
+	} {
+		id := create(tc.call, tc.args...)
+		rejected = append(rejected, rejectedCase{id: id, message: tc.clear + ": " + id})
+		after = append(after, create("SELECT cdc.disable_table($1, 'public', $2)", administrationRequestSource, table))
+	}
+
+	pending, err := adapter.ListPending(ctx)
+	if err != nil {
+		t.Fatalf("ListPending = %v, wollen nil (die Lesung lehnt keine Zeile ab)", err)
+	}
+	position := map[string]int{}
+	for i, row := range pending {
+		if row.Rejected != nil {
+			position[string(row.Rejected.ID)] = i
+		} else {
+			position[string(row.Request.ID)] = i
+		}
+	}
+	for _, id := range ids {
+		if _, found := position[id]; !found {
+			t.Fatalf("ListPending trägt die Zeile %q nicht: %+v", id, pending)
+		}
+	}
+	last := position[before]
+	if pending[last].Rejected != nil {
+		t.Fatalf("die gültige Zeile davor ist verworfen: %+v", pending[last].Rejected)
+	}
+	for i, tc := range rejected {
+		row := pending[position[tc.id]]
+		if row.Rejected == nil || row.Rejected.Message != tc.message {
+			t.Fatalf("Zeile %q: verworfen = %+v, wollen den Text %q", tc.id, row.Rejected, tc.message)
+		}
+		if position[tc.id] <= last {
+			t.Fatalf("die verworfene Zeile %q steht nicht hinter ihrer Vorgängerin (Ordnung der Queue)", tc.id)
+		}
+		next := pending[position[after[i]]]
+		if next.Rejected != nil || next.Request.ID != model.AdministrationRequestID(after[i]) || position[after[i]] <= position[tc.id] {
+			t.Fatalf("die gültige Zeile %q hinter der verworfenen steht nicht als Antrag an ihrer Stelle: %+v", after[i], next)
+		}
+		last = position[after[i]]
+	}
+
+	for _, tc := range rejected {
+		if err := adapter.MarkFailed(ctx, model.AdministrationRequestID(tc.id), tc.message); err != nil {
+			t.Fatalf("MarkFailed(%q): %v", tc.id, err)
+		}
+	}
+	for _, id := range append([]string{before}, after...) {
+		if err := adapter.MarkApplied(ctx, model.AdministrationRequestID(id)); err != nil {
+			t.Fatalf("MarkApplied(%q): %v", id, err)
+		}
+	}
+	for _, tc := range rejected {
+		var status, message string
+		if err := pool.QueryRow(ctx, "SELECT status, error_message FROM cdc.administration_request WHERE administration_request_id = $1", tc.id).Scan(&status, &message); err != nil {
+			t.Fatalf("Status %q lesen: %v", tc.id, err)
+		}
+		if status != "failed" || message != tc.message {
+			t.Fatalf("Zeile %q: Status %q, Fehlertext %q, wollen failed und %q", tc.id, status, message, tc.message)
+		}
+	}
+	for _, id := range append([]string{before}, after...) {
+		var status string
+		if err := pool.QueryRow(ctx, "SELECT status FROM cdc.administration_request WHERE administration_request_id = $1", id).Scan(&status); err != nil || status != "applied" {
+			t.Fatalf("gültige Zeile %q: Status %q (%v), wollen applied", id, status, err)
+		}
+	}
+	remaining, err := adapter.ListPending(ctx)
+	if err != nil {
+		t.Fatalf("ListPending nach den Vermerken: %v", err)
+	}
+	for _, row := range remaining {
+		id := string(row.Request.ID)
+		if row.Rejected != nil {
+			id = string(row.Rejected.ID)
+		}
+		for _, mine := range ids {
+			if id == mine {
+				t.Fatalf("ListPending trägt die vermerkte Zeile %q weiterhin", id)
+			}
+		}
 	}
 }

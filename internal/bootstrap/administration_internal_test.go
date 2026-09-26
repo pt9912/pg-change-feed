@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -38,8 +39,14 @@ import (
 type fakeAdministrationRequestPort struct {
 	mu      sync.Mutex
 	pending []model.AdministrationRequest
+	// rows trägt Zeilen mit verworfenen Einträgen in der Ordnung der Queue;
+	// ist es gesetzt, liefert `ListPending` es zusätzlich hinter `pending`.
+	rows    []outbound.PendingAdministrationRequest
 	applied []model.AdministrationRequestID
 	failed  map[model.AdministrationRequestID]string
+	// marked trägt die Kennungen in der Reihenfolge der erfolgreichen
+	// Vermerke, `applied` und `failed` zusammen.
+	marked []model.AdministrationRequestID
 	// listErr/markAppliedErr/markFailedErr tragen die drei Fehlerzweige
 	// des Ports (`processAdministrationRequests`): der Lesefehler beendet
 	// den Durchlauf, die beiden Vermerk-Fehler bleiben best-effort und
@@ -49,14 +56,19 @@ type fakeAdministrationRequestPort struct {
 	markFailedErr  error
 }
 
-func (f *fakeAdministrationRequestPort) ListPending(ctx context.Context) ([]model.AdministrationRequest, error) {
+func (f *fakeAdministrationRequestPort) ListPending(ctx context.Context) ([]outbound.PendingAdministrationRequest, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.listErr != nil {
 		return nil, f.listErr
 	}
-	pending := f.pending
+	pending := make([]outbound.PendingAdministrationRequest, 0, len(f.pending)+len(f.rows))
+	for _, request := range f.pending {
+		pending = append(pending, outbound.PendingAdministrationRequest{Request: request})
+	}
+	pending = append(pending, f.rows...)
 	f.pending = nil
+	f.rows = nil
 	return pending, nil
 }
 
@@ -67,6 +79,7 @@ func (f *fakeAdministrationRequestPort) MarkApplied(ctx context.Context, id mode
 		return f.markAppliedErr
 	}
 	f.applied = append(f.applied, id)
+	f.marked = append(f.marked, id)
 	return nil
 }
 
@@ -80,6 +93,7 @@ func (f *fakeAdministrationRequestPort) MarkFailed(ctx context.Context, id model
 		f.failed = map[model.AdministrationRequestID]string{}
 	}
 	f.failed[id] = message
+	f.marked = append(f.marked, id)
 	return nil
 }
 
@@ -935,12 +949,10 @@ func TestProcessAdministrationRequestsRuleViolationsFailWithSpecTexts(t *testing
 // Regelnamen, leerer Regelform (SQL-NULL), JSON-`null` und einem Wert ohne
 // Objekt erreichen die Verarbeitung als Anträge und enden `failed` mit dem
 // Fehlertext der Spec, und die gültige Zeile dahinter wird verarbeitet und
-// `applied`. Rot färbende Mutation: die Prüfung `ruleName == ""` in den
-// Konstruktor `model.NewAdministrationRequest` zurücklegen — die Zeile würde
-// beim Lesen abgelehnt; hier bilden das die Fakes nicht nach (der Lese-Pfad
-// steht in `TestReadPendingRequestsCarriesRuleRowsWithEmptyRuleFields`), deshalb
-// prüft dieser Test die Verarbeitung: `CheckRuleName` bzw.
-// `ParseTransformationSpec` im Use Case streichen färbt die Fehlertexte rot.
+// `applied`. Rot färbende Mutation: `CheckRuleName` bzw.
+// `ParseTransformationSpec` im Use Case streichen färbt die Fehlertexte rot;
+// dass die Zeilen die Verarbeitung als Antrag erreichen, trägt
+// `TestReadPendingRequestsCarriesRuleRowsWithEmptyRuleFields`.
 func TestProcessAdministrationRequestsInvalidRuleRowsDoNotStallTheQueue(t *testing.T) {
 	ctx := context.Background()
 	requests := []model.AdministrationRequest{
@@ -971,6 +983,98 @@ func TestProcessAdministrationRequestsInvalidRuleRowsDoNotStallTheQueue(t *testi
 	}
 	if image := assemblerRowImage(t, assembler, 1, "public", ruleTable); image != `{"id":"1","renamed_secret":"geheim"}` {
 		t.Fatalf("Row Image = %s, wollen die Regel der gültigen Zeile", image)
+	}
+}
+
+// rejectedRow ist eine vom Antrags-Konstruktor verworfene Zeile der Queue.
+func rejectedRow(id, message string) outbound.PendingAdministrationRequest {
+	return outbound.PendingAdministrationRequest{Rejected: &outbound.RejectedAdministrationRequest{
+		ID: model.AdministrationRequestID(id), Message: message,
+	}}
+}
+
+func validRow(request model.AdministrationRequest) outbound.PendingAdministrationRequest {
+	return outbound.PendingAdministrationRequest{Request: request}
+}
+
+// TestProcessAdministrationRequestsFailsRejectedRowsInQueueOrder trägt den
+// Umgang mit einer vom Antrags-Konstruktor verworfenen Zeile (`SPEC-019`): sie
+// endet `failed` mit dem Fehlertext der Lesung, und die Zeilen davor und
+// dahinter werden in der Ordnung der Queue verarbeitet — die verworfene Zeile
+// wird an ihrer Stelle vermerkt, nicht am Ende. Eine Zeile ohne Kennung lässt
+// sich nicht vermerken: sie wird mit einer Warnung übersprungen und hält die
+// Zeile dahinter nicht an. Rot färbende Mutationen (Eingabeseite): die
+// Schleife bricht an der verworfenen Zeile ab (`continue` durch `return`
+// ersetzen) — die Zeilen dahinter bleiben ohne Vermerk; der Text des Vermerks
+// wird durch einen festen Text ersetzt — der Fehlertext je Zeile weicht ab;
+// die verworfene Zeile wird erst nach der Schleife vermerkt — die Ordnung der
+// Vermerke weicht ab.
+func TestProcessAdministrationRequestsFailsRejectedRowsInQueueOrder(t *testing.T) {
+	ctx := context.Background()
+	deps, queue, _ := ruleFixture(t)
+	log := deps.log.(*recordingLog)
+	queue.rows = []outbound.PendingAdministrationRequest{
+		validRow(setRuleRequest("req-1", "regel_a", ruleSpecText("secret", "renamed_secret"))),
+		rejectedRow("req-2", "Schemaname ist leer: req-2"),
+		validRow(setRuleRequest("req-3", "regel_b", ruleSpecText("note", "renamed_note"))),
+		rejectedRow("", "Kennung ist leer: public.orders_rules"),
+		rejectedRow("req-5", "Spaltenname ist leer: req-5"),
+		validRow(setRuleRequest("req-6", "regel_c", ruleSpecText("id", "renamed_id"))),
+	}
+
+	processAdministrationRequests(ctx, deps)
+
+	queue.mu.Lock()
+	marked := append([]model.AdministrationRequestID(nil), queue.marked...)
+	queue.mu.Unlock()
+	if want := []model.AdministrationRequestID{"req-1", "req-2", "req-3", "req-5", "req-6"}; !reflect.DeepEqual(marked, want) {
+		t.Fatalf("Vermerke in der Reihenfolge %v, wollen %v (jede Zeile an ihrer Stelle der Queue)", marked, want)
+	}
+	for id, want := range map[string]string{
+		"req-2": "Schemaname ist leer: req-2",
+		"req-5": "Spaltenname ist leer: req-5",
+	} {
+		if message, found := failureOf(queue, id); !found || message != want {
+			t.Fatalf("Antrag %q: Fehlertext = %q (vermerkt %v), wollen %q", id, message, found, want)
+		}
+	}
+	for _, id := range []string{"req-1", "req-3", "req-6"} {
+		if !isApplied(queue, id) {
+			t.Fatalf("die gültige Zeile %q ist nicht applied", id)
+		}
+	}
+	if _, found := failureOf(queue, ""); found {
+		t.Fatal("eine Zeile ohne Kennung darf nicht vermerkt werden")
+	}
+	if !log.contains("WARN", "Zeile ohne Kennung übersprungen") {
+		t.Fatalf("die Zeile ohne Kennung trägt keine Warnung: %v", log.messages)
+	}
+}
+
+// TestProcessAdministrationRequestsRejectedRowSurvivesMarkFailedError trägt den
+// Fehler des Vermerks einer verworfenen Zeile: er wird protokolliert und
+// bricht den Durchlauf nicht ab, die Zeilen dahinter laufen weiter. Rot
+// färbende Mutation (Eingabeseite: die verworfene Zeile vor der gültigen): in
+// `processAdministrationRequests` nach der verworfenen Zeile die Funktion
+// verlassen statt fortzufahren (`continue` durch `return`) — die Zeile dahinter
+// bleibt `pending`.
+func TestProcessAdministrationRequestsRejectedRowSurvivesMarkFailedError(t *testing.T) {
+	ctx := context.Background()
+	deps, queue, _ := ruleFixture(t)
+	log := deps.log.(*recordingLog)
+	queue.markFailedErr = stderrors.New("Vermerk nicht schreibbar")
+	queue.rows = []outbound.PendingAdministrationRequest{
+		rejectedRow("req-1", "Tabellenname ist leer: req-1"),
+		validRow(setRuleRequest("req-2", "regel_a", ruleSpecText("secret", "renamed_secret"))),
+	}
+
+	processAdministrationRequests(ctx, deps)
+
+	if !isApplied(queue, "req-2") {
+		t.Fatal("die Zeile hinter dem nicht vermerkten Verwurf ist nicht applied")
+	}
+	if !log.contains("WARN", "Fehlschlag nicht vermerkt") {
+		t.Fatalf("der Fehler des Vermerks ist nicht protokolliert: %v", log.messages)
 	}
 }
 

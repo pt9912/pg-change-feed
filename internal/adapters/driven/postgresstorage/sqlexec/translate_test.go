@@ -696,30 +696,19 @@ func TestReadPendingRequestsTranslatesRequests(t *testing.T) {
 	if len(requests) != 4 {
 		t.Fatalf("erwartete 4 Anträge, gesehen %d", len(requests))
 	}
-	if requests[1].Kind != model.AdministrationRequestExcludeColumn || requests[1].Column != "secret" {
+	for i, row := range requests {
+		if row.Rejected != nil {
+			t.Fatalf("Zeile %d ist verworfen: %+v", i, row.Rejected)
+		}
+	}
+	if requests[1].Request.Kind != model.AdministrationRequestExcludeColumn || requests[1].Request.Column != "secret" {
 		t.Fatalf("Antrag = %+v", requests[1])
 	}
-	if requests[2].Kind != model.AdministrationRequestSetTransformation || requests[2].RuleName != "umbenennung" || requests[2].RuleSpec != `{"kind": "rename_column"}` {
+	if requests[2].Request.Kind != model.AdministrationRequestSetTransformation || requests[2].Request.RuleName != "umbenennung" || requests[2].Request.RuleSpec != `{"kind": "rename_column"}` {
 		t.Fatalf("Antrag = %+v, wollen set_transformation mit Regelname und Regelform", requests[2])
 	}
-	if requests[3].Kind != model.AdministrationRequestRemoveTransformation || requests[3].RuleName != "umbenennung" || requests[3].RuleSpec != "" {
+	if requests[3].Request.Kind != model.AdministrationRequestRemoveTransformation || requests[3].Request.RuleName != "umbenennung" || requests[3].Request.RuleSpec != "" {
 		t.Fatalf("Antrag = %+v, wollen remove_transformation mit Regelname ohne Regelform", requests[3])
-	}
-}
-
-func TestReadPendingRequestsLeavesDomainFailureUnclassified(t *testing.T) {
-	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
-		{"req-1", "src-1", "public", "feed", "", "", "", "unbekannt"},
-	}}}
-	recorder := &failRecorder{class: outbound.ErrAdministrationStorage}
-
-	_, err := sqlexec.ReadPendingRequests(context.Background(), exec, sqlexec.Statement{
-		SQL:  "SELECT pending",
-		Fail: recorder.fail,
-	})
-
-	if !stderrors.Is(err, domainerrors.ErrInvalidAdministrationRequestKind) {
-		t.Fatalf("erwartete die Domänen-Invariante, gesehen: %v", err)
 	}
 }
 
@@ -1281,11 +1270,11 @@ func TestReadRetentionCandidatesClassifiesDriverFailures(t *testing.T) {
 
 // ReadPendingRequests liefert eine Zeile der Transformations-Antragsarten mit
 // leerem Regelnamen und leerer Regelform (SQL-NULL, vom `COALESCE` der Abfrage
-// normalisiert) als Antrag statt als Fehler — der Antrag endet im Use Case als
-// `failed` mit dem Fehlertext der Spec (`SPEC-019`), und die gültige Zeile
-// dahinter bleibt lesbar. Rot färbende Mutation: die Prüfung `ruleName == ""`
-// in den Konstruktor `model.NewAdministrationRequest` zurücklegen — die Zeile
-// endet als `ErrEmptyIdentifier`, jeder Antrag der Queue bleibt ungelesen.
+// normalisiert) als Antrag statt als verworfene Zeile — der Antrag endet im
+// Use Case als `failed` mit dem Fehlertext der Spec (`SPEC-019`), und die
+// gültige Zeile dahinter bleibt lesbar. Rot färbende Mutation: die Prüfung
+// `ruleName == ""` in den Konstruktor `model.NewAdministrationRequest`
+// zurücklegen — die Zeile steht als `Rejected` statt als Antrag im Ergebnis.
 func TestReadPendingRequestsCarriesRuleRowsWithEmptyRuleFields(t *testing.T) {
 	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
 		{"req-1", "src-1", "public", "feed", "", "", "", string(model.AdministrationRequestSetTransformation)},
@@ -1305,37 +1294,63 @@ func TestReadPendingRequestsCarriesRuleRowsWithEmptyRuleFields(t *testing.T) {
 	if len(requests) != 4 {
 		t.Fatalf("erwartete 4 Anträge, gesehen %d", len(requests))
 	}
-	if requests[0].RuleName != "" || requests[0].RuleSpec != "" || requests[1].RuleSpec != "null" || requests[2].RuleName != "" {
+	for i, row := range requests {
+		if row.Rejected != nil {
+			t.Fatalf("Zeile %d ist verworfen: %+v", i, row.Rejected)
+		}
+	}
+	if requests[0].Request.RuleName != "" || requests[0].Request.RuleSpec != "" || requests[1].Request.RuleSpec != "null" || requests[2].Request.RuleName != "" {
 		t.Fatalf("Anträge = %+v, wollen leeren Regelnamen und leere Regelform bzw. den Text null unverändert", requests[:3])
 	}
-	if requests[3].RuleName != "gueltig" {
+	if requests[3].Request.RuleName != "gueltig" {
 		t.Fatalf("gültiger Antrag hinter den ungültigen = %+v", requests[3])
 	}
 }
 
-// ReadPendingRequests lehnt eine Zeile mit leerem Schema oder leerem
-// Tabellennamen beim Lesen ab (Konstruktor-Invariante `ErrEmptyIdentifier`):
-// jede Antragsart, auch die Transformations-Antragsarten, adressiert eine
-// Tabelle, und die Zeile trägt keine Adresse, an der ein `failed`-Vermerk
-// ansetzen könnte. Die Lesung endet mit dem Fehler, die Zeile dahinter bleibt
-// ungelesen — das ist die benannte Grenze der Prüfung „Verarbeiten statt
-// Lesen“ (nur die Regelfelder und die Spalte der Spalten-Antragsarten sind
-// betroffen, `SPEC-019` nennt für Schema und Tabelle keinen Fehlertext). Rot
-// färbende Mutation: die Prüfung `schema == "" || table == ""` in
-// `model.NewAdministrationRequest` entfernen — die Zeile wird gelesen.
-func TestReadPendingRequestsRejectsRowWithEmptySchemaOrTable(t *testing.T) {
+// ReadPendingRequests reicht eine vom Antrags-Konstruktor verworfene Zeile mit
+// Kennung und Fehlertext durch (`SPEC-019`), statt die Lesung zu beenden: je
+// Grund — leere Quelle, leeres Schema, leerer Tabellenname,
+// `exclude_column`/`include_column` mit leerer Spalte, Antragsart außerhalb der
+// geschlossenen Menge, ein Grund ohne eigenen Klartext — steht die Zeile als
+// `Rejected` an ihrer Stelle der Ordnung, mit einer gültigen Zeile davor und
+// einer dahinter; die Lesung endet ohne Fehler und der Übersetzungspunkt läuft
+// nicht. Der Text je Grund ist der Klartext, Doppelpunkt, Leerzeichen und die
+// Antrags-Kennung; mehrere Gründe an einer Zeile nennen den ersten der
+// Konstruktor-Reihenfolge. Rot färbende Mutationen (Eingabeseite, die Zeilen
+// der Fälle): den Konstruktor-Fehler wieder zurückgeben statt die Zeile
+// durchzureichen — jeder Fall endet mit einem Fehler; die verworfenen Zeilen
+// ans Ende des Ergebnisses stellen — die Zeile zwischen den gültigen ist keine
+// verworfene; in `rejectionMessage` die Fälle `schema` und `table` vertauschen
+// — der Fall mit beiden Gründen nennt den Tabellennamen; den Text durch einen
+// festen ersetzen — der Text je Grund weicht ab.
+func TestReadPendingRequestsPassesRejectedRowsThrough(t *testing.T) {
+	const (
+		remove  = string(model.AdministrationRequestRemoveTransformation)
+		set     = string(model.AdministrationRequestSetTransformation)
+		exclude = string(model.AdministrationRequestExcludeColumn)
+		include = string(model.AdministrationRequestIncludeColumn)
+		ruleRow = `{"kind": "rename_column", "column": "a", "to": "b"}`
+	)
 	for _, tc := range []struct {
-		name   string
-		schema string
-		table  string
+		name    string
+		row     []any
+		wantID  model.AdministrationRequestID
+		wantMsg string
 	}{
-		{"leeres Schema", "", "feed"},
-		{"leere Tabelle", "public", ""},
+		{"leere Quelle", []any{"req-x", "", "public", "feed", "", "regel", ruleRow, set}, "req-x", "Quelle ist leer: req-x"},
+		{"leeres Schema", []any{"req-x", "src-1", "", "feed", "", "regel", ruleRow, set}, "req-x", "Schemaname ist leer: req-x"},
+		{"leerer Tabellenname", []any{"req-x", "src-1", "public", "", "", "regel", ruleRow, set}, "req-x", "Tabellenname ist leer: req-x"},
+		{"leeres Schema und leerer Tabellenname", []any{"req-x", "src-1", "", "", "", "", "", remove}, "req-x", "Schemaname ist leer: req-x"},
+		{"exclude_column mit leerer Spalte", []any{"req-x", "src-1", "public", "feed", "", "", "", exclude}, "req-x", "Spaltenname ist leer: req-x"},
+		{"include_column mit leerer Spalte", []any{"req-x", "src-1", "public", "feed", "", "", "", include}, "req-x", "Spaltenname ist leer: req-x"},
+		{"Antragsart außerhalb der Menge", []any{"req-x", "src-1", "public", "feed", "", "", "", "unbekannt"}, "req-x", "Antragsart ist unbekannt: req-x"},
+		{"Zeile ohne Kennung", []any{"", "src-1", "public", "feed", "", "", "", remove}, "", "Kennung ist leer: public.feed"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
-				{"req-1", "src-1", tc.schema, tc.table, "", "regel", `{"kind": "rename_column", "column": "a", "to": "b"}`, string(model.AdministrationRequestSetTransformation)},
-				{"req-2", "src-1", "public", "feed", "", "", "", string(model.AdministrationRequestRemoveTransformation)},
+				{"req-1", "src-1", "public", "feed", "", "regel_a", ruleRow, set},
+				tc.row,
+				{"req-2", "src-1", "public", "feed", "", "regel_a", "", remove},
 			}}}
 			recorder := &failRecorder{class: outbound.ErrAdministrationStorage}
 
@@ -1343,13 +1358,50 @@ func TestReadPendingRequestsRejectsRowWithEmptySchemaOrTable(t *testing.T) {
 				SQL:  "SELECT pending",
 				Fail: recorder.fail,
 			})
-			if !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
-				t.Fatalf("ReadPendingRequests = %v, wollen ErrEmptyIdentifier", err)
+			if err != nil {
+				t.Fatalf("ReadPendingRequests = %v, wollen nil (die Lesung lehnt keine Zeile ab)", err)
 			}
-			if len(requests) != 0 {
-				t.Fatalf("Anträge = %+v, wollen keinen (die Lesung endet an der Zeile)", requests)
+			if len(recorder.causes) != 0 {
+				t.Fatalf("die verworfene Zeile ist kein Lesefehler: %v", recorder.causes)
+			}
+			if len(requests) != 3 {
+				t.Fatalf("erwartete 3 Zeilen in der Ordnung der Abfrage, gesehen %+v", requests)
+			}
+			if requests[0].Rejected != nil || requests[0].Request.ID != "req-1" || requests[2].Rejected != nil || requests[2].Request.ID != "req-2" {
+				t.Fatalf("die gültigen Zeilen davor und dahinter sind Anträge: %+v", requests)
+			}
+			rejected := requests[1].Rejected
+			if rejected == nil {
+				t.Fatalf("die Zeile ist ein Antrag statt einer verworfenen Zeile: %+v", requests[1])
+			}
+			if rejected.ID != tc.wantID || rejected.Message != tc.wantMsg {
+				t.Fatalf("verworfene Zeile = Kennung %q, Text %q, wollen %q und %q", rejected.ID, rejected.Message, tc.wantID, tc.wantMsg)
 			}
 		})
+	}
+}
+
+// Ein Fehler des Lesens selbst bleibt ein Fehler: Anfrage, Scan und
+// Iteration enden die Lesung mit der Klasse des Aufrufers, auch wenn Zeilen
+// davor verworfen wurden (`TestReadPendingRequestsClassifiesScanFailure`,
+// `TestReadPendingRequestsClassifiesIterationFailure` tragen die beiden
+// anderen Stellen). Rot färbende Mutation: die Rückgabe von `rows.Err()`
+// durch `nil` ersetzen — die Lesung endet ohne Fehler.
+func TestReadPendingRequestsKeepsReadFailureAfterRejectedRow(t *testing.T) {
+	cause := stderrors.New("Verbindung getrennt")
+	exec := &fakeExecutor{rows: &fakeRows{
+		rows:    [][]any{{"req-a", "src-1", "", "feed", "", "", "", string(model.AdministrationRequestEnable)}},
+		iterErr: cause,
+	}}
+	recorder := &failRecorder{class: outbound.ErrAdministrationStorage}
+
+	requests, err := sqlexec.ReadPendingRequests(context.Background(), exec, sqlexec.Statement{SQL: "SELECT pending", Fail: recorder.fail})
+
+	if !stderrors.Is(err, outbound.ErrAdministrationStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler = %v, wollen Klasse und Ursache der Iteration", err)
+	}
+	if len(requests) != 0 {
+		t.Fatalf("Ergebnis = %+v, wollen keines neben dem Fehler", requests)
 	}
 }
 

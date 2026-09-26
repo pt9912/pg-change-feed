@@ -610,8 +610,8 @@ derselben Zeile.
 |---|---|---|---|
 | `administration_request_id` | text (PK) | ja | von der SQL-Funktion vergeben; zugleich der `pg_notify`-Payload |
 | `source_id` | text (FK `cdc.source`) | ja | Quelle des Antrags |
-| `schema_name` / `table_name` | text | ja | adressierte Tabelle |
-| `column_name` | text | nein | Ziel-Spalte der beiden Spalten-Antragsarten; die fünf übrigen Antragsarten (`enable`, `disable`, `backfill`, `set_transformation`, `remove_transformation`) tragen hier NULL |
+| `schema_name` / `table_name` | text | ja | adressierte Tabelle; ein leerer Wert endet den Antrag `failed` (Tabelle „Zeilen, die kein Antrag sind“ unten) |
+| `column_name` | text | nein | Ziel-Spalte der beiden Spalten-Antragsarten, dort nichtleer; die fünf übrigen Antragsarten (`enable`, `disable`, `backfill`, `set_transformation`, `remove_transformation`) tragen hier NULL |
 | `rule_name` | text | nein | Regelname der beiden Transformations-Antragsarten, je Tabelle eindeutig, Alphabet in `SPEC-030` (Bezeichner); die fünf übrigen Antragsarten tragen hier NULL |
 | `rule_spec` | jsonb | nein | Regelform (`SPEC-030`) der Antragsart `set_transformation`; die sechs übrigen Antragsarten tragen hier NULL |
 | `request_kind` | text | ja | geschlossene Menge `enable` \| `disable` \| `exclude_column` \| `include_column` \| `backfill` \| `set_transformation` \| `remove_transformation` |
@@ -637,13 +637,38 @@ vom abgeleiteten Stand ab. Anträge auf dieselbe Regel oder Spalte werden deshal
 Aufrufen kehrt deren Ordnung um.
 
 `column_name` ist für die beiden Spalten-Antragsarten Pflicht (ein Antrag
-ohne Spalte adressiert kein Ziel, Domänen-Invariante des
-Antrags-Konstruktors); ein Spaltenausschluss gegen eine an der Quelle nicht
+ohne Spalte adressiert kein Ziel und endet `failed`, Tabelle „Zeilen, die
+kein Antrag sind“ unten); ein Spaltenausschluss gegen eine an der Quelle nicht
 existierende Spalte endet als `failed` mit dem Fehlertext der
 `ErrSourceColumnMissing`-Ausprägung (Klartext „Spalte existiert nicht an der
 Quelle", gefolgt von der Adresse `schema.table.column`, getrennt durch
 Punkte). Die Antragsarten `enable`/`disable` tragen unverändert
 Bindungs-Zeilen und Publication nach.
+
+**Zeilen, die kein Antrag sind.** Die Lesung der Queue lehnt keine Zeile ab.
+Die SQL-Funktionen prüfen Quelle, Schema, Tabelle und Spalte nicht; eine
+`pending`-Zeile, die der Antrags-Konstruktor verwirft, endet in der Verarbeitung
+`failed`, und die Zeilen dahinter werden in der Ordnung der Queue
+weiterverarbeitet. `error_message` trägt den Klartext der Tabelle, gefolgt von
+einem Doppelpunkt, einem Leerzeichen und der Adresse — hier die
+Antrags-Kennung (`administration_request_id`), weil Schema, Tabelle oder Spalte
+selbst leer sind. Die erste verletzte Prüfung bestimmt den Text, in der
+Reihenfolge der Tabelle von oben nach unten:
+
+| Verletzung | Klartext | Adresse |
+|---|---|---|
+| `source_id` ist leer | `Quelle ist leer` | Antrags-Kennung |
+| `schema_name` ist leer | `Schemaname ist leer` | Antrags-Kennung |
+| `table_name` ist leer | `Tabellenname ist leer` | Antrags-Kennung |
+| `request_kind` liegt außerhalb der geschlossenen Menge | `Antragsart ist unbekannt` | Antrags-Kennung |
+| `column_name` ist bei `exclude_column`/`include_column` leer oder NULL | `Spaltenname ist leer` | Antrags-Kennung |
+| jeder andere Grund, aus dem der Antrags-Konstruktor die Zeile verwirft | `Antrag ist ungültig` | Antrags-Kennung |
+
+Grenze: eine Zeile ohne Kennung (`administration_request_id` leer) lässt sich
+nicht vermerken. Die Verarbeitung überspringt sie mit einer Warnung im Log; sie
+bleibt `pending` und hält die Zeilen dahinter nicht an. Ein Fehler beim Vermerk
+einer verworfenen Zeile wird protokolliert und hält den Durchlauf nicht an; die
+Zeile bleibt `pending` und wird im nächsten Durchlauf erneut vermerkt.
 
 Für die Antragsart `backfill` heißt `applied` **angenommen**: die Run-Zeile
 (`cdc.backfill_run`, `SPEC-029`) entsteht mit dem Status `queued` in
@@ -672,8 +697,8 @@ Bereinigung der Tabelle verlöre den Stand.
 
 **Transformations-Antragsarten.** `rule_name` ist für `set_transformation`
 und `remove_transformation` Pflicht, `rule_spec` nur für
-`set_transformation`. Der Aufruf prüft beides nicht, und die Queue lehnt
-einen Antrag mit fehlendem oder ungültigem Wert nicht beim Lesen ab: die
+`set_transformation`. Der Aufruf prüft beides nicht, und die Lesung reicht
+einen Antrag mit fehlendem oder ungültigem Wert wie jede Zeile durch: die
 Prüfung liegt in der Verarbeitung, der Antrag endet `failed` mit dem
 Fehlertext der Tabelle unten.
 `cdc.set_transformation` nimmt die Regelform als `json`-Parameter an und
@@ -1174,3 +1199,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-26 | `SPEC-019` Absatz „Transformations-Antragsarten": die Annahmemenge von `rule_spec` benannt statt „gültiges JSON" — angenommen `NULL` und jeder Text, den PostgreSQL als `json` liest und nach `jsonb` umwandelt; abgelehnt ohne Antrags-Zeile Syntaxfehler, `\u0000`-Escape, Zahl außerhalb des `numeric`-Bereichs, Schachtelung jenseits der Stapeltiefe |
 | 2026-09-26 | `SPEC-019` Spalte `requested_at` und neuer Absatz „Ordnung der Verarbeitung“: `requested_at` ist der Zeitpunkt des Funktionsaufrufs, Aufrufe einer Transaktion werden in Aufrufreihenfolge verarbeitet, Verarbeitungs- und Ableitungsordnung sind dieselbe (Kennung als deterministischer Zweitschlüssel); Grenzen: Aufruf- statt Festschreibungs-Zeitpunkt, Serveruhr; K1 nennt, dass Entfernen und Neusetzen in einer Transaktion stehen dürfen |
 | 2026-09-26 | `SPEC-019` Absatz „Transformations-Antragsarten“: die Prüfung von Regelname und Regelform liegt in der Verarbeitung, nicht im Antrags-Konstruktor — ein fehlender oder ungültiger Wert endet `failed` mit dem Fehlertext der Tabelle, die Queue lehnt den Antrag nicht beim Lesen ab |
+| 2026-09-26 | `SPEC-019` neuer Absatz „Zeilen, die kein Antrag sind“: die Lesung der Queue lehnt keine Zeile ab, eine vom Antrags-Konstruktor verworfene Zeile (leere Quelle, leeres Schema, leerer Tabellenname, unbekannte Antragsart, leere Spalte der Spalten-Antragsarten) endet in der Verarbeitung `failed` mit Klartext und Antrags-Kennung als Adresse, die Zeilen dahinter laufen weiter; Grenze: eine Zeile ohne Kennung wird mit Warnung übersprungen; Zeilen `schema_name`/`table_name`/`column_name` und Absatz „Transformations-Antragsarten“ nachgezogen |

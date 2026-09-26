@@ -161,9 +161,9 @@ func readPendingAdministrationRequest(t *testing.T, ctx context.Context, request
 	if err != nil {
 		t.Fatalf("ListPending: %v", err)
 	}
-	for _, request := range pending {
-		if request.ID == id {
-			return request
+	for _, row := range pending {
+		if row.Rejected == nil && row.Request.ID == id {
+			return row.Request
 		}
 	}
 	t.Fatalf("ListPending trägt den Antrag %q nicht: %+v", id, pending)

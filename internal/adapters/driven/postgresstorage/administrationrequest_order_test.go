@@ -36,8 +36,9 @@ func pendingOrder(t *testing.T, adapter *postgresstorage.AdministrationRequestAd
 	}
 	var ids []model.AdministrationRequestID
 	var requests []model.AdministrationRequest
-	for _, request := range pending {
-		if len(request.ID) >= len(prefix) && string(request.ID)[:len(prefix)] == prefix {
+	for _, row := range pending {
+		request := row.Request
+		if row.Rejected == nil && len(request.ID) >= len(prefix) && string(request.ID)[:len(prefix)] == prefix {
 			ids = append(ids, request.ID)
 			requests = append(requests, request)
 		}
@@ -284,8 +285,9 @@ VALUES ($1, $2, 'public', $3, 'r', $4::text::jsonb, 'set_transformation', curren
 			}
 			var mine []model.AdministrationRequest
 			var mineIDs []model.AdministrationRequestID
-			for _, request := range pending {
-				if inCall[request.ID] {
+			for _, row := range pending {
+				request := row.Request
+				if row.Rejected == nil && inCall[request.ID] {
 					mine = append(mine, request)
 					mineIDs = append(mineIDs, request.ID)
 				}

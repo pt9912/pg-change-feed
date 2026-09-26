@@ -53,18 +53,20 @@ func adminPathLoginDSN(t *testing.T, admin *pgxpool.Pool, baseDSN, login, group 
 // TestAdministrationPathRunsUnderLeastPrivilegeLogins belegt den ganzen
 // Antragsverarbeitungs-Pfad der Administrations-Goroutine (`ADR-0050`,
 // `processAdministrationRequests`) unter den Rollen, die die Verdrahtung ihm
-// zuweist (`ADR-0047`, `LH-QA-SEC-001`, `LH-QA-SEC-002`): die Antrags-Queue
+// zuweist: die Antrags-Queue
 // und die Aktivierung über eine `cdc_admin`-Login-Identität, der
 // Schema-Speicher über eine `cdc_capture`-Login-Identität — beide ohne
 // Superuser-Recht und ohne Eigentum an einem `cdc`-Objekt. Der Lauf zieht je
 // einen Antrag jeder der sieben Antragsarten durch `ListPending`, den Use Case,
 // die laufende `Assembler`-Bindung und den Vermerk `applied`; ein Antrag
 // (`include_column` auf eine fehlende Spalte) endet im Vermerk `failed` samt
-// Fehlertext. Die beiden Transformations-Antragsarten (`LH-FA-CFG-007`) laufen
+// Fehlertext. Die beiden Transformations-Antragsarten laufen
 // mit ihrer Prüfung K1 bis K4 unter demselben `cdc_admin`-Login: der Regelstand
 // wird aus den vermerkten Anträgen abgeleitet, die Spaltenliste aus dem Katalog
 // der Quelltabelle gelesen, und Zeilen mit fehlendem Regelnamen oder fehlender
-// Regelform enden `failed`, ohne die Queue anzuhalten.
+// Regelform enden `failed`, ohne die Queue anzuhalten; ebenso Zeilen, die der
+// Antrags-Konstruktor verwirft (leeres Schema, leerer Tabellenname, leere
+// Spalte): sie enden `failed` samt Fehlertext, der Antrag dahinter `applied`.
 //
 // Die Superuser-Schwester `TestAdministrationRequestColumnEndToEndAgainstPostgreSQL`
 // belegt die Verarbeitungslogik; dieser Test belegt, dass jede Anweisung des
@@ -78,7 +80,12 @@ func adminPathLoginDSN(t *testing.T, admin *pgxpool.Pool, baseDSN, login, group 
 // färbende Mutation der Quellbindung: den Vergleich
 // `request.Source != deps.source` in `processAdministrationRequests`
 // entfernen — der Antrag der fremden Quelle wird verarbeitet (Status nicht
-// mehr `pending`), der Test meldet ihn.
+// mehr `pending`), der Test meldet ihn. Rot färbende Mutationen der verworfenen
+// Zeilen (Eingabeseite: Zeilen mit leerem Schema, leerem Tabellennamen und
+// leerer Spalte): in `sqlexec.ReadPendingRequests` den Konstruktor-Fehler
+// zurückgeben statt die Zeile durchzureichen — die Zeilen bleiben `pending`;
+// den Klartext `Spaltenname ist leer` durch einen festen Text ersetzen — der
+// Fehlertext weicht ab.
 func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	baseDSN := os.Getenv("CDC_STORE_TEST_DSN")
 	if baseDSN == "" {
@@ -349,6 +356,29 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	}
 	if got := rowImage(4); got != `{"id_renamed":"1","renamed_secret":"geheim"}` {
 		t.Fatalf("Row Image nach der gültigen Zeile neben ungültigen = %s", got)
+	}
+
+	// Zeilen, die der Antrags-Konstruktor verwirft (`SPEC-019`): die
+	// SQL-Funktionen prüfen nichts, die Zeilen entstehen als `pending`. Die
+	// Lesung reicht sie durch, die Verarbeitung vermerkt sie unter dem
+	// `cdc_admin`-Login (`UPDATE` auf der Antrags-Tabelle) `failed` mit dem
+	// Fehlertext, und der gültige Antrag dahinter wird `applied`.
+	emptySchema := createRequest("SELECT cdc.enable_table($1, '', $2)", string(sourceID), testTable)
+	emptyTable := createRequest("SELECT cdc.enable_table($1, 'public', '')", string(sourceID))
+	emptyExcludeColumn := createRequest("SELECT cdc.exclude_column($1, 'public', $2, '')", string(sourceID), testTable)
+	emptyIncludeColumn := createRequest("SELECT cdc.include_column($1, 'public', $2, '')", string(sourceID), testTable)
+	afterRejected := createRequest("SELECT cdc.include_column($1, 'public', $2, 'secret')", string(sourceID), testTable)
+	processAdministrationRequests(ctx, deps)
+	for id, want := range map[string][2]string{
+		emptySchema:        {"failed", "Schemaname ist leer: " + emptySchema},
+		emptyTable:         {"failed", "Tabellenname ist leer: " + emptyTable},
+		emptyExcludeColumn: {"failed", "Spaltenname ist leer: " + emptyExcludeColumn},
+		emptyIncludeColumn: {"failed", "Spaltenname ist leer: " + emptyIncludeColumn},
+		afterRejected:      {"applied", ""},
+	} {
+		if status, message := outcome(id); status != want[0] || message != want[1] {
+			t.Fatalf("verworfene Zeile unter cdc_admin-Login: Status %q, Fehlertext %q, erwartet %q und %q — Log: %v", status, message, want[0], want[1], log.messages)
+		}
 	}
 
 	expectRule("remove_transformation", "applied", "", removeRule, string(sourceID), testTable, "roles_rule")

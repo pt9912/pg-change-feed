@@ -1336,19 +1336,28 @@ func runAdministration(ctx context.Context, deps administrationDeps) {
 }
 
 // processAdministrationRequests liest die offenen Anträge und verarbeitet
-// jeden einzeln; ein Lesefehler bleibt best-effort (derselbe nächste
-// Durchlauf versucht erneut). Ein gescheiterter Antrag wird als `failed`
-// vermerkt, statt `pending` zu bleiben — ein `pending` bleibender Antrag
-// würde jeden Durchlauf erneut versuchen, ohne dass sich der Fehlerzustand
-// ändert. Ein `backfill`-Antrag einer anderen Quelle als `deps.source` bleibt
-// unberührt `pending`.
+// jeden einzeln in der Ordnung der Queue; ein Lesefehler bleibt best-effort
+// (derselbe nächste Durchlauf versucht erneut). Ein gescheiterter Antrag wird
+// als `failed` vermerkt, statt `pending` zu bleiben — ein `pending`
+// bleibender Antrag würde jeden Durchlauf erneut versuchen, ohne dass sich
+// der Fehlerzustand ändert. Eine vom Antrags-Konstruktor verworfene Zeile
+// (`ListPending`, `Rejected`) endet ebenso `failed` mit ihrem Fehlertext
+// (`SPEC-019`), ohne die Zeilen dahinter anzuhalten; eine Zeile ohne
+// Kennung lässt sich nicht vermerken und bleibt mit einer Warnung im Log
+// unberührt `pending`. Ein `backfill`-Antrag einer anderen Quelle als
+// `deps.source` bleibt unberührt `pending`.
 func processAdministrationRequests(ctx context.Context, deps administrationDeps) {
 	pending, err := deps.requests.ListPending(ctx)
 	if err != nil {
 		deps.log.Warn(ctx, "administration: Anträge lesen fehlgeschlagen", "error", err)
 		return
 	}
-	for _, request := range pending {
+	for _, row := range pending {
+		if row.Rejected != nil {
+			failRejectedAdministrationRequest(ctx, deps, *row.Rejected)
+			continue
+		}
+		request := row.Request
 		if request.Kind == model.AdministrationRequestBackfill && request.Source != deps.source {
 			continue
 		}
@@ -1363,6 +1372,22 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 		if err := deps.requests.MarkApplied(ctx, request.ID); err != nil {
 			deps.log.Warn(ctx, "administration: Erfolg nicht vermerkt", "request_id", request.ID, "error", err)
 		}
+	}
+}
+
+// failRejectedAdministrationRequest vermerkt eine vom Antrags-Konstruktor
+// verworfene Zeile `failed`; der Text des Vermerks ist der Fehlertext der
+// Lesung. Ein Fehler des Vermerks wird protokolliert und lässt den Durchlauf
+// weiterlaufen; die Zeile bleibt dann `pending`, und der nächste Durchlauf
+// vermerkt sie erneut.
+func failRejectedAdministrationRequest(ctx context.Context, deps administrationDeps, rejected outbound.RejectedAdministrationRequest) {
+	if rejected.ID == "" {
+		deps.log.Warn(ctx, "administration: Zeile ohne Kennung übersprungen", "error", rejected.Message)
+		return
+	}
+	deps.log.Warn(ctx, "administration: Antrag verworfen", "request_id", rejected.ID, "error", rejected.Message)
+	if markErr := deps.requests.MarkFailed(ctx, rejected.ID, rejected.Message); markErr != nil {
+		deps.log.Warn(ctx, "administration: Fehlschlag nicht vermerkt", "request_id", rejected.ID, "error", markErr)
 	}
 }
 
