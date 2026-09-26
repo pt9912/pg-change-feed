@@ -223,14 +223,16 @@ func TestRunStreamAfterAdministrationPassHoldsTheStreamUntilThePassEndsAndContex
 	}
 }
 
-// TestRunCallsTheStreamOnlyThroughTheOrderedSequence bindet die Aufrufstelle in
-// `Run`, die kein netzloser Lauf erreicht (`Run` braucht die Datenbank): im Rumpf
-// von `Run` ist `stream.Run` ausschließlich das vierte Argument von
-// `runStreamAfterAdministrationPass`, nie selbst aufgerufen. Grenze: der Test
-// liest die Gestalt des Quelltexts, nicht das Verhalten von `Run`; er bindet weder
-// die Reihenfolge der Argumente noch den Inhalt von `administration`. Rot
+// TestRunSourceTextPassesStreamRunOnlyAsArgumentOfTheSequence bindet die
+// Aufrufstelle in `Run`, die kein netzloser Lauf erreicht (`Run` braucht die
+// Datenbank): im Quelltext des Rumpfes von `Run` ist `stream.Run`
+// ausschließlich das vierte Argument von `runStreamAfterAdministrationPass`, nie
+// selbst aufgerufen. Grenze: der Test liest die Gestalt des Quelltexts, nicht das
+// Verhalten von `Run`; er bindet weder die Reihenfolge der Argumente noch den
+// Inhalt von `administration` noch den Rumpf von `startAdministration` (dessen
+// Goroutinen-Start deckt am laufenden Prozess `make test-integration`). Rot
 // färbende Mutation: den Aufruf durch `stream.Run(streamCtx)` ersetzen.
-func TestRunCallsTheStreamOnlyThroughTheOrderedSequence(t *testing.T) {
+func TestRunSourceTextPassesStreamRunOnlyAsArgumentOfTheSequence(t *testing.T) {
 	run := runFunction(t)
 	isStreamRun := func(expr ast.Expr) bool {
 		selector, ok := expr.(*ast.SelectorExpr)
@@ -280,15 +282,18 @@ func runFunction(t *testing.T) *ast.FuncDecl {
 	return nil
 }
 
-// TestRunReconcilesAndStartsTheBackfillWorkerBeforeTheAdministrationPass bindet
-// die Stellung des Vorlaufs zum Backfill in `Run` (`ADR-0113` Festlegung 2): der
-// Abgleich `running` → `interrupted` und der Start des Workers stehen im Quelltext
-// von `Run` vor dem Aufruf von `runStreamAfterAdministrationPass`, in dem der
-// Vorlauf einen `backfill`-Antrag annimmt — die Annahme sieht keinen `running`-Run
-// einer früheren Prozessinstanz. Grenze: Quelltext-Reihenfolge der Aufrufe, kein
-// Lauf. Rot färbende Mutation: den Aufruf `reconcileBackfillRuns` hinter den Aufruf
-// von `runStreamAfterAdministrationPass` verschieben.
-func TestRunReconcilesAndStartsTheBackfillWorkerBeforeTheAdministrationPass(t *testing.T) {
+// TestRunSourceTextOrdersReconcileAndWorkerStartBeforeTheSequenceCall bindet die
+// Stellung des Vorlaufs zum Backfill in `Run` (`ADR-0113` Festlegung 2): der
+// Aufruf des Abgleichs `running` → `interrupted` und der Start des Workers stehen
+// im Quelltext von `Run` vor dem Aufruf von `runStreamAfterAdministrationPass`,
+// in dem der Vorlauf einen `backfill`-Antrag annimmt — die Annahme sieht keinen
+// `running`-Run einer früheren Prozessinstanz. Grenze: die Positionen der
+// Aufrufe im Quelltext (bei `runBackfillWorker` die Stelle des `go func()`-Literals,
+// in dem er steht), kein Lauf; ein Aufruf in einer toten Verzweigung
+// (`if false { … }`) färbt den Test nicht rot. Rot färbende Mutation: den
+// Aufruf `reconcileBackfillRuns` hinter den Aufruf von
+// `runStreamAfterAdministrationPass` verschieben.
+func TestRunSourceTextOrdersReconcileAndWorkerStartBeforeTheSequenceCall(t *testing.T) {
 	run := runFunction(t)
 	positions := map[string]token.Pos{}
 	ast.Inspect(run.Body, func(node ast.Node) bool {

@@ -1315,15 +1315,21 @@ type administrationDeps struct {
 // runStreamAfterAdministrationPass ordnet den Start des Stream-Laufs: erst
 // ein synchroner Durchlauf von `processAdministrationRequests` über die
 // offenen Anträge (Vorlauf), dann `startLoop` (die Administrations-Goroutine),
-// dann `runStream`. Ein beim Prozessstart `pending` stehender Antrag ist
-// damit vermerkt und in der `Assembler`-Bindung nachgetragen, bevor der Stream
-// die erste Transaktion assembliert; die Ordnung gilt für jede Antragsart
-// (`ADR-0112`). Der Vorlauf steht vor `startLoop`: zu keinem Zeitpunkt lesen
-// zwei Durchläufe dieselbe Queue. Er trägt die Semantik der Goroutine: ein
-// Lesefehler wird protokolliert und hält den Start nicht an, ein endender
-// `ctx` beendet den Durchlauf. `runStream` läuft auch bei beendetem `ctx`: der
-// Stream schließt seine Verbindung in seinem eigenen Lauf. Der Rückgabewert
-// ist der von `runStream`.
+// dann `runStream`. Ein beim Prozessstart `pending` stehender Antrag, den der
+// Vorlauf liest und erfolgreich verarbeitet, ist vermerkt und in der
+// `Assembler`-Bindung nachgetragen, bevor der Stream die erste Transaktion
+// assembliert; die Ordnung gilt für jede Antragsart (`ADR-0112`). Sie hängt am
+// Lesen: liest `ListPending` nicht, bleibt jeder Antrag `pending`, der Vorlauf
+// protokolliert und der Stream startet mit dem bisherigen Regelstand. Scheitert
+// der Vermerk `MarkApplied`, steht die Wirkung in der Bindung und der Antrag
+// bleibt `pending`, bis die Goroutine ihn erneut verarbeitet. Der Vorlauf
+// steht vor `startLoop`: zu keinem Zeitpunkt lesen zwei Durchläufe dieselbe
+// Queue. Der Vorlauf trägt keine eigene Frist: ihn beendet `ctx`, das der
+// Aufrufer übergibt (in `Run` der Kontext des Streams, den der Prozess-`ctx`
+// und die WAL-Fehlerschwelle beenden), und ein Antrag, der lange läuft, hält
+// den Stream-Start an. `runStream` läuft auch bei beendetem `ctx`: der Stream
+// schließt seine Verbindung in seinem eigenen Lauf. Der Rückgabewert ist der
+// von `runStream`.
 func runStreamAfterAdministrationPass(ctx context.Context, deps administrationDeps, startLoop func(), runStream func(context.Context) error) error {
 	processAdministrationRequests(ctx, deps)
 	startLoop()
