@@ -672,7 +672,10 @@ Bereinigung der Tabelle verlöre den Stand.
 
 **Transformations-Antragsarten.** `rule_name` ist für `set_transformation`
 und `remove_transformation` Pflicht, `rule_spec` nur für
-`set_transformation` (Domänen-Invarianten des Antrags-Konstruktors).
+`set_transformation`. Der Aufruf prüft beides nicht, und die Queue lehnt
+einen Antrag mit fehlendem oder ungültigem Wert nicht beim Lesen ab: die
+Prüfung liegt in der Verarbeitung, der Antrag endet `failed` mit dem
+Fehlertext der Tabelle unten.
 `cdc.set_transformation` nimmt die Regelform als `json`-Parameter an und
 schreibt sie als `jsonb` in die Spalte `rule_spec`: ein Literal und ein
 `::json`-Wert werden angenommen, ein `jsonb`-typisierter Wert (`::jsonb`, das
@@ -1170,3 +1173,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-26 | `SPEC-019` Absatz „Transformations-Antragsarten": `cdc.set_transformation` nimmt die Regelform als `json`-Parameter an (Spalte `rule_spec` bleibt `jsonb`); Aufrufform: Literal oder `::json`, ein `jsonb`-typisierter Wert braucht den Cast; syntaktisch ungültiges JSON scheitert beim Aufruf, gültiges JSON wird als Antrag angenommen und in Go geprüft |
 | 2026-09-26 | `SPEC-019` Absatz „Transformations-Antragsarten": die Annahmemenge von `rule_spec` benannt statt „gültiges JSON" — angenommen `NULL` und jeder Text, den PostgreSQL als `json` liest und nach `jsonb` umwandelt; abgelehnt ohne Antrags-Zeile Syntaxfehler, `\u0000`-Escape, Zahl außerhalb des `numeric`-Bereichs, Schachtelung jenseits der Stapeltiefe |
 | 2026-09-26 | `SPEC-019` Spalte `requested_at` und neuer Absatz „Ordnung der Verarbeitung“: `requested_at` ist der Zeitpunkt des Funktionsaufrufs, Aufrufe einer Transaktion werden in Aufrufreihenfolge verarbeitet, Verarbeitungs- und Ableitungsordnung sind dieselbe (Kennung als deterministischer Zweitschlüssel); Grenzen: Aufruf- statt Festschreibungs-Zeitpunkt, Serveruhr; K1 nennt, dass Entfernen und Neusetzen in einer Transaktion stehen dürfen |
+| 2026-09-26 | `SPEC-019` Absatz „Transformations-Antragsarten“: die Prüfung von Regelname und Regelform liegt in der Verarbeitung, nicht im Antrags-Konstruktor — ein fehlender oder ungültiger Wert endet `failed` mit dem Fehlertext der Tabelle, die Queue lehnt den Antrag nicht beim Lesen ab |

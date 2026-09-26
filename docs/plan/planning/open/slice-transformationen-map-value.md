@@ -125,6 +125,26 @@ aufzählen.
 | `internal/adapters/driving/replication/mapper/` (Eigenschaftstest) | update | Regeltyp-Menge aus der Domäne — `map_value` wird ohne manuelle Ergänzung erfasst. |
 | Paritätstest des Backfill-Pfads (Ort aus `backfill-pfad`) | prüfen | tabellengetrieben: erfasst `map_value` ohne Strukturänderung. |
 
+**Übergabe aus `slice-transformationen-antragsweg-usecase`** (gemeldet, kein zusätzlicher
+Umfang; Herkunft: Plan des Slice §6 und Review-Report
+`review-slice-transformationen-antragsweg-usecase` Finding F-8, gelesen am Stand `2c22334f`):
+
+- **Zwischenzustand der Regeltyp-Menge endet mit diesem Slice.** Der Use Case prüft gegen die
+  Regeltyp-Menge der Domäne; bis zu diesem Slice besteht sie aus `rename_column`, ein
+  `map_value`-Antrag endet `failed` mit `unbekannter Regeltyp`, während
+  [`SPEC-019`](../../../../spec/pflichtenheft.md) ihn als Regeltyp führt. Das Ende belegt der
+  Use-Case-Test des zweiten DoD-Punkts (ein `map_value`-Antrag ohne Änderung des Use-Case-Codes).
+- **Rückfall auf einen Binärstand vor diesem Slice.** Eine `applied`-Zeile, die die Faltung
+  (`model.FoldTransformations`) nicht mehr in eine Regel führt, endet als Fehler der Klasse
+  `internal` und hält Prozessstart und jeden Regel-Antrag der ganzen Quelle an (bewusst: der
+  Stand wird nie um eine Zeile verkürzt). Erstmals erreichbar mit diesem Slice: eine vermerkte
+  `map_value`-Zeile ist für einen Binärstand ohne den Regeltyp nicht lesbar. Der Slice nennt die
+  Grenze im Bericht und übergibt sie mit dem Wortlaut „Rückfall auf einen älteren Binärstand
+  nach vermerkten `map_value`-Regeln hält die Quelle an“ an
+  `slice-transformationen-betriebsdoku` (dessen §2, Abschnitt zur Dauerhaftigkeit), oder
+  belegt, dass sie an anderer Stelle getragen ist. Beleg des heutigen Verhaltens: Review-Report
+  F-8 (hergeleitet aus dem Quelltext, nicht erprobt).
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Menge der
 Regeltypen“ (ein Typ → zwei); beide Stände gemessen):**
 

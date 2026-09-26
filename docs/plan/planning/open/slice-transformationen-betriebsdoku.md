@@ -99,7 +99,10 @@ an dieses Slice gemeldet haben.
       Rohform wird nicht gespeichert“, der Informationsverlust bei
       `map_value`), dem Verhältnis zum Spaltenausschluss (der Ausschluss gilt
       zuerst), der Dauerhaftigkeit (überlebt Neustart und
-      Deaktivierung/Aktivierung), der Nichtanwendbarkeit samt Abhilfe-Prozedur
+      Deaktivierung/Aktivierung; Grenze aus `antragsweg-usecase`: eine vermerkte Regel, die
+      ein älterer Binärstand nicht lesen kann — etwa eine `map_value`-Regel unter einem Stand
+      vor `map-value` —, hält Prozessstart und jeden Regel-Antrag der Quelle an, hergeleitet
+      aus dem Quelltext, nicht erprobt), der Nichtanwendbarkeit samt Abhilfe-Prozedur
       (`cdc.remove_transformation` beantragen, Prozess starten — so, wie
       `e2e-abhilfe` sie belegt hat), der Reihenfolge der Aufrufe (Aufrufe einer
       Transaktion werden in Aufrufreihenfolge verarbeitet; Anträge auf dieselbe

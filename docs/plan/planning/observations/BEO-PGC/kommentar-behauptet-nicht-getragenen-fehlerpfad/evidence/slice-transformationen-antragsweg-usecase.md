@@ -1,0 +1,8 @@
+**Vorgang:** slice-transformationen-antragsweg-usecase (Review F-2, MEDIUM; Verifikation V-5, INFO)
+
+**Fund:** (1) Der Kommentar in `Run` (`internal/bootstrap/wiring.go`) sagte, die Bindungen des `CDC_TABLES`-Seeds trügen „keinen Regelstand, der Aufruf unten ersetzt sie“. Die Bindungen von `cfg.Tables` gehen ausschließlich in die Aktivierung; der Assembler entsteht aus `activatedTableBindings`, kein Seed-Eintrag liegt je in ihm, und es gibt nichts zu ersetzen (`git grep -n 'cfg.Tables'`: Zuweisung, die eine Schleife und `receive.Config.Tables`). Dieselbe Behauptung stand in der Suchlauf-Zelle des Plans. Die Wirkung war unberührt, der beschriebene **Mechanismus** nicht. Die Fixrunde nennt im Kommentar den wahren Zustand. (2) Der Doc-Kommentar von `activatedTableBindings` sagt, eine nicht lesbare Regelform ende den Start „wie ein Lesefehler“; der Lesefehler des Bestands endet in der Fehlerklasse `storage`, die Faltung als `internal` (V-5, INFO, mit Fixrunde 3 nachgezogen).
+
+**Form (Ausprägung):** dieselbe Klasse (der Kommentar der Klasse Zusage sagt zu, was der Code nicht trägt), mit einer neuen Ausprägung: nicht ein **Fehlerpfad**, sondern ein **Mechanismus** („der Aufruf unten ersetzt sie“), und die Aussage wanderte aus dem Kommentar in einen Plan-Träger (Suchlauf-Zelle). Gefunden haben beide Funde Leser — der Reviewer durch `git grep` nach der zugesagten Ersetzung, der Verifier durch Vergleich der Fehlerklasse —, kein Sensor; beide vor dem Merge.
+
+Quelle: `docs/reviews/review-slice-transformationen-antragsweg-usecase.md` (F-2) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-transformationen-antragsweg-usecase.md` (§8 V-5). <!-- d-check:status-provenance -->

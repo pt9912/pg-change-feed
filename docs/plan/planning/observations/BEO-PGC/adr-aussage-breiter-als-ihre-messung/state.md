@@ -41,19 +41,42 @@ Die Belege und ihre Berichtigungen:
   `slice-transformationen-antragsweg-schema` §3; die Berichtigung trägt die nächste ADR
   zu `rule_spec` als Klausel (Trigger: die Re-Evaluierungs-Bedingungen von `ADR-0126`).
 
-**Schärfung, Vorschlag an den Architect (Verkörperung 3b, Modul 8; Adresse: der
-Lese-Schritt der Closure von `welle-transformationen`).** Zielort `AGENTS.md` §3.12, Absatz
-„Verfasser einer ADR“, ein Satz mehr: „Eine in einer Fitness-Function-Zeile genannte
-Mutation steht erprobt — an derselben Instanz wie die Messung — oder als hergeleitet
-gekennzeichnet; ‚der Implementer fährt sie‘ ist eine Erwartung, keine Erprobung.“ Die
-Lücke im heutigen Wortlaut: der Absatz nennt die Menge und den Test, der eine
-Fitness-Function-Zeile trägt, nicht die Mutation, die den Test rot färben soll; das siebte
-Auftreten entstand in der Rolle, die der Absatz adressiert, und stand formal als Erwartung
-(Klausel „wird so sein“), die der Implementer erst am Bau erprobte. Kosten der Schärfung:
-ein Satz; Kosten ihres Fehlens: eine falsche Angabe in einer `Accepted`-ADR, deren
-Berichtigung nur über eine Folge-ADR geht (§3.5). Eine Gegenentscheidung („akzeptiertes
-Negativ, Schwere LOW, kein Verbraucher“) ist ein Verdikt des Architects.
+- `ADR-0127` Fitness-Function-Zeile 1 (Mutation „`clock_timestamp()` aus **einer** Funktion
+  entfernen“ färbt den Go-Test rot; erprobt war der Text mit `now()` in **allen** sieben
+  Funktionen; gemessen färbt sie bei `remove_transformation` und `backfill_table` keinen Test,
+  weil die Farbe an der Stellung der Funktion in der Aufruffolge hängt): **akzeptiertes
+  Negativ**, kein Supersede. Die Zeile hat keinen Verbraucher, das Produkt hält die Ordnung
+  (Zusatztest der Verifikation), die Fixrunde 3 des Slice bindet alle sieben Funktionen in
+  beiden Richtungen; die Berichtigung steht im Plan von `slice-transformationen-antragsweg-usecase`
+  §3 (Mutationstabelle, Zeilen „Fixrunde 2“ und „Fixrunde 3 (V-2)“) und die nächste ADR zu
+  `requested_at` oder zur Antrags-Queue trägt sie als Klausel (Trigger: die
+  Re-Evaluierungs-Bedingungen von `ADR-0127`).
+
+**Schärfung, Vorschlag an den Architect (Verkörperung 3b, Modul 8: Planner → Architect →
+Planner; der Planner schärft `AGENTS.md` nicht selbst — Regel-Verkörperung ist eine
+Entscheidung, keine Planung). Adresse: der nächste Architect-Zug zu einer ADR mit
+Fitness-Function-Zeile — spätestens der Lese-Schritt der Closure von `welle-transformationen`.**
+Zielort `AGENTS.md` §3.12, Absatz „Verfasser einer ADR“, ein Satz mehr, in der Fassung nach dem
+achten Auftreten: „Eine in einer Fitness-Function-Zeile genannte Mutation nennt die Menge der
+Stellen, an denen sie erprobt ist (eine · alle · welche), und die Instanz der Messung; jede
+Verallgemeinerung darüber hinaus steht als hergeleitet, und ‚der Implementer fährt sie‘ ist eine
+Erwartung, keine Erprobung.“ Die Lücke im heutigen Wortlaut: der Absatz nennt die Menge und den
+Test, der eine Fitness-Function-Zeile trägt, nicht die Mutation, die den Test rot färben soll.
+Das siebte Auftreten (`ADR-0126`) stand formal als Erwartung; das achte (`ADR-0127`) trug die
+Grenze des Erprobten richtig (erprobt an allen sieben Funktionen, Go-Test nicht gefahren) und war
+breiter in der Verallgemeinerung auf „eine Funktion“ — die erste Fassung des Satzes („erprobt
+oder hergeleitet“) hätte die Zeile bestanden, die Ergänzung „Menge der Stellen“ trifft sie. Beide
+Auftreten entstanden im Zug des Architects; der Vorschlag stand zur Zeit des zweiten im Register
+und nicht in `AGENTS.md` §3.12 (gemessen: der Absatz „Verfasser einer ADR“ trägt den Satz nicht;
+ob der Zug das Register las, ist nicht belegt). Ein Satz im Text, den jeder Zug liest, wirkt
+sicherer als eine Adresse im Register — deshalb ist die Adresse der nächste Zug selbst (der
+Orchestrator nennt den Vorschlag im Auftrag) und nicht erst die Closure. Kosten der Schärfung:
+ein Satz; Kosten ihres Fehlens: eine falsche Angabe in einer `Accepted`-ADR je Auftreten, deren
+Berichtigung nur über eine Folge-ADR geht (§3.5), und ein LOW-Finding samt Register-Zeile.
+Gegenentscheidung („akzeptiertes Negativ, Schwere LOW, kein Verbraucher, der Implementer-Lauf fängt
+die Zeile“) ist ein Verdikt des Architects; **ein Sensor ist ausgeschlossen** (Prosa über einen
+Test, `AGENTS.md` §3.12 §Grenze).
 
 Verwandt, nicht doppelt gezählt: `BEO-PGC/architect-verdikt-rollen-scope-luecke`.
 
-Zähler: 7× (Dateien unter `evidence/`).
+Zähler: 8× (Dateien unter `evidence/`).

@@ -212,6 +212,30 @@ Stellen in `internal/application/usecase/backfill/service.go`):
   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Folgepflicht 7. Kein Nachzug in der ADR (`AGENTS.md` §3.5), kein Folge-ADR.
 
+**Übergabe aus `slice-transformationen-antragsweg-usecase`** (gemeldet, kein zusätzlicher
+Umfang; Herkunft: Review-Report `review-slice-transformationen-antragsweg-usecase` Finding F-11
+und Plan des Slice §6, gelesen am Stand `2c22334f`):
+
+- **Die Lesung des Regelstands je Block liest die ganze Quelle.** Der Regelstand-Port
+  (`TransformationPort.TransformationRules(ctx, source)`, `internal/application/port/outbound/transformation.go`)
+  liefert den Stand **aller** Tabellen einer Quelle: das Statement
+  (`SelectAppliedTransformationRequests`, `queries.go`) liest je Aufruf alle `applied`-Zeilen der
+  zwei Transformations-Antragsarten mit `WHERE source_id = $1` — ohne Tabellenfilter — und faltet
+  sie je Tabelle in `model.FoldTransformations`. Ein Aufruf je Block (Ziel dieses Slice: „je Block
+  neu“, §1) ist damit je Block eine Lesung über die Zeilen aller Tabellen der Quelle, nicht nur
+  der des Runs; der Ausschlussstand (`ColumnExclusionPort.ExcludedColumns(ctx, source)`, gelesen
+  je Block in `copyBlocks`) hat dieselbe Form. Der Slice misst die Kosten (Zeilenzahl der Queue
+  einer Quelle mal Blockzahl eines Runs) oder trägt sie als benannte Grenze; ein
+  tabellenbezogener Lesezugriff änderte den Port und gehört dann in seinen Plan (Kosten,
+  Rückführung §4). Dieser Plan trägt die Kosten der Lesung nicht (§1 nennt „je Block neu“, §6
+  führt kein Kostenrisiko).
+- **Fehler der Faltung im Run.** Eine `applied`-Zeile, die die Faltung nicht mehr in eine Regel
+  führt, endet als Fehler der Klasse `internal` (nicht `storage`) und hält jede Lesung der Quelle
+  an (Prozessstart und Regel-Anträge aller Tabellen der Quelle; bewusst, „der Stand wird nie um
+  eine Zeile verkürzt“); ein Run, der den Regelstand je Block liest, endet an derselben Stelle.
+  Der Slice nennt die Klasse, in der `classifyError` diesen Fehler abbildet, und bindet den Fall
+  mit einem Test (Eingabeseite: eine nicht lesbare `applied`-Zeile im Fake des Regelstands).
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „welche
 Erzeugungspfade `model.Change`-Bilder bauen und ob sie den Regelstand tragen“;
 beide Stände gemessen):**
@@ -287,6 +311,14 @@ geschrieben.
   *Erwartet, zu belegen durch:* ein realer Lauf; die Zahl trägt ihren Lauf
   ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A). **Ausgang:** *(bei
   Closure)*
+- **Fenster zwischen Regel-Setzbarkeit und Backfill-Bindung** (Übergabe aus
+  `slice-transformationen-antragsweg-usecase`, dessen Risiko mit seiner Closure hierher
+  wandert). Seit der Closure von `antragsweg-usecase` sind Regeln setzbar; ein Backfill-Run,
+  der vor der Closure dieses Slice läuft, liefert die Rohform, dieselbe Tabelle also zwei
+  Formen ([welle-transformationen](../welle-transformationen.md) §5, Fenster ein Slice
+  lang). *Erwartet, zu belegen durch:* der E2E-Beleg des dritten Liefer-Punkts (Backfill-Bestand
+  einer Tabelle mit `rename_column`-Regel trägt den umbenannten Schlüssel) und die Benennung
+  des Fensters im Bericht. **Ausgang:** *(bei Closure: entfallen mit der Closure dieses Slice)*
 - **Kommentare zum Fehlerpfad des Runs behaupten mehr, als der Code trägt**
   (`BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`, offen, 2×).
   *Erwartet, zu belegen durch:* Review liest die Kommentare der neuen Zweige.
