@@ -247,3 +247,55 @@ func TestSetTransformationReturnsPortErrors(t *testing.T) {
 		t.Fatalf("Spaltenliste nicht lesbar: Fehler = %v, wollen %v", err, wantErr)
 	}
 }
+
+// TestSetTransformationAcceptsAndChecksMapValueThroughTheDomain trägt den
+// zweiten Regeltyp am unveränderten Use Case (`LH-FA-CFG-007`): ein
+// `map_value`-Antrag durchläuft dieselben Prüfungen wie `rename_column` — die
+// Formzeilen aus der Domäne, K1, K2 und K4 mit dem Text und der Adresse der
+// Spec —, und K3 trifft ihn nicht: er trägt keinen Zielname, auch ein
+// abgebildeter Wert, der einer Spalte gleicht, ist kein Konflikt. Rot färbende
+// Mutation je Fall: der Use Case nennt einen Regeltyp beim Namen (etwa ein
+// `if spec.Kind() == model.TransformationRenameColumn` um die Konflikt-Prüfung
+// oder die Katalog-Prüfung) — der `map_value`-Fall endet angenommen bzw. mit
+// einem anderen Text.
+func TestSetTransformationAcceptsAndChecksMapValueThroughTheDomain(t *testing.T) {
+	mapSpec := func(column, values string) string {
+		return `{"kind": "map_value", "column": "` + column + `", "values": ` + values + `}`
+	}
+	port := newPort(t)
+	got, err := set(port, "src-1", "statuswert", mapSpec("status", `{"o": "open", "c": "closed"}`))
+	if err != nil {
+		t.Fatalf("Set = %v, wollen nil", err)
+	}
+	if got.Name() != "statuswert" || got.Kind() != model.TransformationMapValue || got.Column() != "status" || got.To() != "" ||
+		len(got.Values()) != 2 || got.Values()["o"] != "open" || got.Values()["c"] != "closed" {
+		t.Fatalf("Regel = %+v, wollen statuswert map_value status mit zwei Zuordnungen", got)
+	}
+	if len(port.rules["public.orders"]) != 1 {
+		t.Fatalf("Regelstand der Tabelle = %v, wollen unverändert eine Regel", port.rules["public.orders"])
+	}
+	if _, err := set(newPort(t), "src-1", "statuswert", mapSpec("status", `{"o": "id", "c": "name", "x": "status"}`)); err != nil {
+		t.Fatalf("abgebildete Werte gleich Spaltennamen: Set = %v, wollen nil (K3 trifft map_value nicht)", err)
+	}
+
+	for _, tc := range []struct {
+		label    string
+		ruleName string
+		ruleSpec string
+		text     string
+		reason   error
+	}{
+		{"K1 Regelname vergeben", "kundenname", mapSpec("status", `{"o": "open"}`), "Regelname bereits vergeben: public.orders.kundenname", domainerrors.ErrRuleNameTaken},
+		{"K2 Spalte trägt eine Umbenennung", "statuswert", mapSpec("name", `{"a": "b"}`), "Spalte trägt bereits eine Regel: public.orders.name", domainerrors.ErrColumnHasRule},
+		{"K4 Spalte fehlt an der Quelle", "statuswert", mapSpec("gibt_es_nicht", `{"a": "b"}`), "Spalte existiert nicht an der Quelle: public.orders.gibt_es_nicht", inbound.ErrSourceColumnMissing},
+		{"Form: values leer", "statuswert", mapSpec("status", `{}`), "rule_spec ist ungültig: public.orders.statuswert", domainerrors.ErrInvalidRuleSpec},
+		{"Form: Wert keine Zeichenkette", "statuswert", mapSpec("status", `{"o": 1}`), "rule_spec ist ungültig: public.orders.statuswert", domainerrors.ErrInvalidRuleSpec},
+		{"Schlüssel: to gehört nicht zu map_value", "statuswert", `{"kind": "map_value", "column": "status", "to": "x", "values": {"o": "open"}}`, "unbekannter Schlüssel in rule_spec: to", domainerrors.ErrUnknownRuleSpecKey},
+	} {
+		port := newPort(t)
+		_, err := set(port, "src-1", tc.ruleName, tc.ruleSpec)
+		if !stderrors.Is(err, tc.reason) || err.Error() != tc.text {
+			t.Fatalf("%s: Fehler = %v, wollen %q mit dem Grund %v", tc.label, err, tc.text, tc.reason)
+		}
+	}
+}

@@ -886,6 +886,43 @@ func TestProcessAdministrationRequestsSetAndRemoveTransformationTakeEffectLive(t
 	}
 }
 
+// TestProcessAdministrationRequestsMapValueTakesEffectLive trägt den zweiten
+// Regeltyp über dieselbe Verdrahtung (`LH-FA-CFG-007`): ein
+// `map_value`-Antrag wird `applied`, die laufende `Assembler`-Bindung trägt den
+// abgebildeten Wert ohne Neustart und behält den Schlüssel; ein Wert ohne
+// Zuordnung bleibt, und ein zweiter `map_value`-Antrag auf dieselbe Spalte
+// endet `failed` mit dem Text von K2. Rot färbende Mutation: der Zweig
+// `TransformationMapValue` in `TransformationSpec.Build` entfällt — der Antrag
+// endet `failed` statt `applied`.
+func TestProcessAdministrationRequestsMapValueTakesEffectLive(t *testing.T) {
+	ctx := context.Background()
+	deps, queue, assembler := ruleFixture(t,
+		setRuleRequest("req-map", "geheimwert", `{"kind": "map_value", "column": "secret", "values": {"geheim": "GEHEIM", "offen": "OFFEN"}}`),
+	)
+	processAdministrationRequests(ctx, deps)
+	if !isApplied(queue, "req-map") {
+		message, _ := failureOf(queue, "req-map")
+		t.Fatalf("map_value-Antrag nicht applied, Fehlertext %q", message)
+	}
+	if image := assemblerRowImage(t, assembler, 1, "public", ruleTable); image != `{"id":"1","secret":"GEHEIM"}` {
+		t.Fatalf("Row Image nach map_value = %s, wollen den abgebildeten Wert unter dem Schlüssel secret", image)
+	}
+
+	queue.mu.Lock()
+	queue.pending = []model.AdministrationRequest{
+		setRuleRequest("req-again", "zweiter", `{"kind": "map_value", "column": "secret", "values": {"x": "y"}}`),
+	}
+	queue.mu.Unlock()
+	processAdministrationRequests(ctx, deps)
+	message, failed := failureOf(queue, "req-again")
+	if !failed || message != "Spalte trägt bereits eine Regel: public."+ruleTable+".secret" {
+		t.Fatalf("zweiter map_value-Antrag auf dieselbe Spalte: failed = %t, Fehlertext %q, wollen K2", failed, message)
+	}
+	if image := assemblerRowImage(t, assembler, 2, "public", ruleTable); image != `{"id":"1","secret":"GEHEIM"}` {
+		t.Fatalf("Row Image nach dem abgelehnten Antrag = %s, wollen unverändert", image)
+	}
+}
+
 // TestProcessAdministrationRequestsRuleViolationsFailWithSpecTexts trägt die
 // Konfliktfreiheit durch die Verdrahtung: jeder Verstoß endet als `failed` mit
 // dem Fehlertext der Spec, der Antrag wird nicht `applied`, und die

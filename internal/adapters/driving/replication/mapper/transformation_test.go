@@ -30,6 +30,15 @@ func renameRule(t testing.TB, name, column, to string) model.Transformation {
 	return rule
 }
 
+func mapValueRule(t testing.TB, name, column string, values map[string]string) model.Transformation {
+	t.Helper()
+	rule, err := model.NewMapValue(name, column, values)
+	if err != nil {
+		t.Fatalf("NewMapValue(%q, %q, %v): %v", name, column, values, err)
+	}
+	return rule
+}
+
 // ruleTables trägt `public.feed` mit einem Ausschluss und einem Regelstand.
 func ruleTables(excluded []string, rules ...model.Transformation) map[string]mapper.TableBinding {
 	return map[string]mapper.TableBinding{
@@ -468,11 +477,12 @@ func TestSetAndRemoveTransformationOnLiveBinding(t *testing.T) {
 // Die Fitness Function von `ADR-0112` (Eigenschaftstest, `LH-QA-SEC-004`):
 // für jeden Regeltyp der Domänen-Menge und jede Spalte der Relation als
 // ausgeschlossene Spalte trägt das Bild weder den Quellschlüssel noch einen
-// Zielnamen noch den Quellwert — die Regel sitzt dabei genau auf der
-// ausgeschlossenen Spalte, eine zweite Regel auf einer anderen Spalte wirkt
-// weiter. Rot färbende Mutationen: in `BuildRowImage` die Prüfung
-// `containsName(excluded, column)` entfernen bzw. hinter die Auswertung der
-// Regeln setzen.
+// Zielnamen noch den Quellwert noch den abgebildeten Wert — die Regel sitzt
+// dabei genau auf der ausgeschlossenen Spalte, eine zweite Regel auf einer
+// anderen Spalte wirkt weiter. Rot färbende Mutationen: in `BuildRowImage` die
+// Prüfung `containsName(excluded, column)` entfernen bzw. hinter die Auswertung
+// der Regeln setzen; den Fall eines Regeltyps aus `ruleFor` streichen (der Test
+// bricht mit „nicht abgedeckt“ ab).
 func TestExcludedColumnIsUnreachableForEveryRuleKind(t *testing.T) {
 	ctx := context.Background()
 	columnNames := []string{"id", "secret", "name", "status"}
@@ -483,16 +493,25 @@ func TestExcludedColumnIsUnreachableForEveryRuleKind(t *testing.T) {
 	relationEvent := relation("public", "feed", columns...)
 	sentinel := func(column string) string { return "SENTINEL-" + column }
 
+	// ruled trägt eine Regel und den Schlüssel und den Wert, unter denen die
+	// Spalte mit dem Sentinel-Wert im Bild steht.
+	type ruled struct {
+		rule       model.Transformation
+		key, value string
+	}
 	// ruleFor liefert je Regeltyp eine Regel auf der Spalte; ein Regeltyp,
 	// den diese Tabelle nicht kennt, bricht den Test ab — ein neuer Typ
 	// braucht seinen Fall hier.
-	ruleFor := func(kind model.TransformationKind, column string) model.Transformation {
+	ruleFor := func(kind model.TransformationKind, column string) ruled {
 		switch kind {
 		case model.TransformationRenameColumn:
-			return renameRule(t, "regel_"+column, column, "ziel_"+column)
+			return ruled{renameRule(t, "regel_"+column, column, "ziel_"+column), "ziel_" + column, sentinel(column)}
+		case model.TransformationMapValue:
+			mapped := "ABGEBILDET-" + column
+			return ruled{mapValueRule(t, "regel_"+column, column, map[string]string{sentinel(column): mapped}), column, mapped}
 		default:
 			t.Fatalf("Regeltyp %q ist in diesem Test nicht abgedeckt", kind)
-			return model.Transformation{}
+			return ruled{}
 		}
 	}
 
@@ -503,7 +522,8 @@ func TestExcludedColumnIsUnreachableForEveryRuleKind(t *testing.T) {
 			if excludedColumn == "id" {
 				otherColumn = "status"
 			}
-			rules := []model.Transformation{ruleFor(kind, excludedColumn), ruleFor(kind, otherColumn)}
+			excludedRule, otherRule := ruleFor(kind, excludedColumn), ruleFor(kind, otherColumn)
+			rules := []model.Transformation{excludedRule.rule, otherRule.rule}
 			assembler := newAssembler(t, ruleTables([]string{excludedColumn}, rules...))
 			values := make([]*string, len(columnNames))
 			for i, name := range columnNames {
@@ -517,14 +537,15 @@ func TestExcludedColumnIsUnreachableForEveryRuleKind(t *testing.T) {
 				text := string(image)
 				for _, forbidden := range []string{
 					`"` + excludedColumn + `"`,
-					`"ziel_` + excludedColumn + `"`,
+					`"` + excludedRule.key + `"`,
 					sentinel(excludedColumn),
+					excludedRule.value,
 				} {
 					if strings.Contains(text, forbidden) {
 						t.Fatalf("Regeltyp %s, ausgeschlossen %s: %s %s trägt %s", kind, excludedColumn, label, text, forbidden)
 					}
 				}
-				if !strings.Contains(text, `"ziel_`+otherColumn+`":"`+sentinel(otherColumn)+`"`) {
+				if !strings.Contains(text, `"`+otherRule.key+`":"`+otherRule.value+`"`) {
 					t.Fatalf("Regeltyp %s, ausgeschlossen %s: %s %s trägt die Regel auf %s nicht", kind, excludedColumn, label, text, otherColumn)
 				}
 			}

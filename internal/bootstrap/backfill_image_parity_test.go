@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -69,9 +70,23 @@ func (w *parityWriter) AppendBlock(_ context.Context, block *model.ChangeTransac
 func (w *parityWriter) Commit(context.Context, model.BackfillRun) error { return nil }
 func (w *parityWriter) Rollback(context.Context) error                  { return nil }
 
+// parityRuled trägt eine Regel und ihre sichtbare Wirkung auf ein Bild, in dem
+// die Spalte der Regel einen Wert trägt und nicht ausgeschlossen ist:
+// `visible` liefert die Bytes, die dann im Bild stehen, `hidden` die Bytes,
+// die dann fehlen (`nil` ohne solche); `silent` sind die Bytes, die im Bild
+// fehlen, wenn die Spalte keinen Wert trägt oder ausgeschlossen ist (`nil`
+// ohne solche).
+type parityRuled struct {
+	rule    model.Transformation
+	visible func(value string) []byte
+	hidden  func(value string) []byte
+	silent  []byte
+}
+
 // parityRule bildet einen Regeltyp der Domäne auf eine anwendbare Regel für
-// `column` ab; ein Regeltyp ohne Fall bricht den Test ab.
-func parityRule(t *testing.T, kind model.TransformationKind, column string) model.Transformation {
+// `column` ab; `values` sind die Werte der Spalte in den Zeilen des Tests, die
+// `map_value` abbildet. Ein Regeltyp ohne Fall bricht den Test ab.
+func parityRule(t *testing.T, kind model.TransformationKind, column string, values []string) parityRuled {
 	t.Helper()
 	switch kind {
 	case model.TransformationRenameColumn:
@@ -79,10 +94,32 @@ func parityRule(t *testing.T, kind model.TransformationKind, column string) mode
 		if err != nil {
 			t.Fatalf("NewRenameColumn: %v", err)
 		}
-		return rule
+		target := []byte(`"` + rule.To() + `"`)
+		return parityRuled{rule: rule, visible: func(string) []byte { return target }, silent: target}
+	case model.TransformationMapValue:
+		mapping := make(map[string]string, len(values))
+		for _, value := range values {
+			mapping[value] = "ABGEBILDET-" + value
+		}
+		rule, err := model.NewMapValue("parity-"+column, column, mapping)
+		if err != nil {
+			t.Fatalf("NewMapValue: %v", err)
+		}
+		encode := func(value string) []byte {
+			encoded, err := json.Marshal(value)
+			if err != nil {
+				t.Fatalf("json.Marshal: %v", err)
+			}
+			return encoded
+		}
+		return parityRuled{
+			rule:    rule,
+			visible: func(value string) []byte { return encode(mapping[value]) },
+			hidden:  encode,
+		}
 	}
 	t.Fatalf("Regeltyp %q ohne Fall in diesem Test", kind)
-	return model.Transformation{}
+	return parityRuled{}
 }
 
 func parityValue(v string) *string { return &v }
@@ -92,8 +129,10 @@ func parityValue(v string) *string { return &v }
 // Regel und jeden Ausschluss (keiner, jede Spalte) sind die Bilder des Runs
 // und der `Assembler`-Bilder derselben Zeilen — mit NULL-Wert, Anführungszeichen,
 // Backslash, Zeilenumbruch und Nicht-ASCII-Zeichen — byte-gleich; die Regel
-// wirkt im Bild (der Zielname steht dort, wo die Spalte einen Wert und keinen
-// Ausschluss trägt). Rot färbende Mutationen (je eine): `nil` statt des
+// wirkt im Bild (die sichtbare Wirkung — bei `rename_column` der Zielname, bei
+// `map_value` der abgebildete Wert statt des Quellwerts — steht dort, wo die
+// Spalte einen Wert und keinen Ausschluss trägt, und fehlt sonst). Rot
+// färbende Mutationen (je eine): `nil` statt des
 // Regelsatzes an `BuildRowImage` im Run (Bild ohne Zielname, Paritätsfehler);
 // `nil` statt `binding.Transformations` an `BuildRowImage` im `Assembler`
 // (dasselbe von der anderen Seite).
@@ -113,8 +152,14 @@ func TestBackfillAndWALImagesAreByteEqualWithRules(t *testing.T) {
 		for _, ruleColumn := range columns {
 			for _, excluded := range exclusions {
 				t.Run(fmt.Sprintf("%s/Regel an %s/ausgeschlossen %v", kind, ruleColumn, excluded), func(t *testing.T) {
-					rule := parityRule(t, kind, ruleColumn)
-					rules := []model.Transformation{rule}
+					ruleValues := make([]string, 0, len(rows))
+					for _, row := range rows {
+						if value := row[indexOf(columns, ruleColumn)]; value != nil {
+							ruleValues = append(ruleValues, *value)
+						}
+					}
+					ruled := parityRule(t, kind, ruleColumn, ruleValues)
+					rules := []model.Transformation{ruled.rule}
 
 					table, err := model.NewSourceTable("tbl-parity", source, "public", "parity")
 					if err != nil {
@@ -184,10 +229,20 @@ func TestBackfillAndWALImagesAreByteEqualWithRules(t *testing.T) {
 						if !bytes.Equal(walImage, backfillImage) {
 							t.Fatalf("Zeile %d: WAL-Bild %s ≠ Backfill-Bild %s", i+1, walImage, backfillImage)
 						}
-						carriesTarget := bytes.Contains(backfillImage, []byte(`"`+rule.To()+`"`))
-						wantTarget := row[indexOf(columns, ruleColumn)] != nil && !(len(excluded) == 1 && excluded[0] == ruleColumn)
-						if carriesTarget != wantTarget {
-							t.Fatalf("Zeile %d: Bild %s, Zielname %q vorhanden = %t, will %t", i+1, backfillImage, rule.To(), carriesTarget, wantTarget)
+						ruleValue := row[indexOf(columns, ruleColumn)]
+						if ruleValue == nil || (len(excluded) == 1 && excluded[0] == ruleColumn) {
+							if ruled.silent != nil && bytes.Contains(backfillImage, ruled.silent) {
+								t.Fatalf("Zeile %d: Bild %s trägt %s ohne Wert oder trotz Ausschluss", i+1, backfillImage, ruled.silent)
+							}
+							continue
+						}
+						if visible := ruled.visible(*ruleValue); !bytes.Contains(backfillImage, visible) {
+							t.Fatalf("Zeile %d: Bild %s trägt die Wirkung %s der Regel nicht", i+1, backfillImage, visible)
+						}
+						if ruled.hidden != nil {
+							if hidden := ruled.hidden(*ruleValue); bytes.Contains(backfillImage, hidden) {
+								t.Fatalf("Zeile %d: Bild %s trägt %s, das die Regel ersetzt", i+1, backfillImage, hidden)
+							}
 						}
 					}
 				})

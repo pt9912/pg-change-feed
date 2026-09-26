@@ -32,17 +32,48 @@ func ruleStates(states ...map[string][]model.Transformation) func(int) map[strin
 	}
 }
 
+// ruled trägt eine Regel und ihre Wirkung auf die Spalte, auf der sie sitzt:
+// den Schlüssel, unter dem die Spalte im Bild steht, und den Wert dort zu
+// einem Quellwert.
+type ruled struct {
+	rule  model.Transformation
+	key   string
+	value func(source string) string
+}
+
 // ruleFor bildet einen Regeltyp der Domäne auf eine anwendbare Regel für
-// `column` ab. Ein Regeltyp ohne Fall bricht den Test ab: die Tests dieser
-// Datei zählen die Regeltypen aus `model.TransformationKinds` auf.
-func ruleFor(t *testing.T, kind model.TransformationKind, column string) model.Transformation {
+// `column` ab; `mapped` sind die Quellwerte, die `map_value` abbildet (jeder
+// andere Quellwert bleibt). Ein Regeltyp ohne Fall bricht den Test ab: die
+// Tests dieser Datei zählen die Regeltypen aus `model.TransformationKinds` auf.
+func ruleFor(t *testing.T, kind model.TransformationKind, column string, mapped ...string) ruled {
 	t.Helper()
 	switch kind {
 	case model.TransformationRenameColumn:
-		return rename(t, "rule-"+column, column, column+"_renamed")
+		return ruled{rename(t, "rule-"+column, column, column+"_renamed"), column + "_renamed", func(source string) string { return source }}
+	case model.TransformationMapValue:
+		values := make(map[string]string, len(mapped))
+		for _, source := range mapped {
+			values[source] = "ABGEBILDET-" + source
+		}
+		value := func(source string) string {
+			if target, ok := values[source]; ok {
+				return target
+			}
+			return source
+		}
+		return ruled{mapValue(t, "rule-"+column, column, values), column, value}
 	}
 	t.Fatalf("Regeltyp %q ohne Fall in diesem Test", kind)
-	return model.Transformation{}
+	return ruled{}
+}
+
+func mapValue(t *testing.T, name, column string, values map[string]string) model.Transformation {
+	t.Helper()
+	rule, err := model.NewMapValue(name, column, values)
+	if err != nil {
+		t.Fatalf("NewMapValue(%q, %q, %v) = %v", name, column, values, err)
+	}
+	return rule
 }
 
 func completedImages(t *testing.T, r *rig) [][]string {
@@ -62,28 +93,36 @@ func completedImages(t *testing.T, r *rig) [][]string {
 // (`ADR-0112` Folgepflicht 7): jeder Change des Runs trägt das Bild, das
 // `model.BuildRowImage` mit dem Regelstand der Tabelle liefert — für jeden
 // Regeltyp der Domäne, an allen drei Blöcken, byte-genau; der Regelstand einer
-// anderen Tabelle wirkt nicht. Rot färbende Mutationen (je eine): `nil` statt
-// des Regelsatzes an `BuildRowImage` (Bild ohne Regel); den Regelstand unter
-// dem Schlüssel einer anderen Tabelle lesen (Regel wirkt nicht); die Lesung mit
-// einer anderen Quelle rufen (Quellen-Prüfung).
+// anderen Tabelle wirkt nicht; ein nicht abgebildeter Wert von `map_value` (`d`)
+// bleibt. Rot färbende Mutationen (je eine): `nil` statt des Regelsatzes an
+// `BuildRowImage` (Bild ohne Regel); den Regelstand unter dem Schlüssel einer
+// anderen Tabelle lesen (Regel wirkt nicht); die Lesung mit einer anderen
+// Quelle rufen (Quellen-Prüfung).
 func TestExecuteBuildsImagesWithTheRuleSet(t *testing.T) {
 	for _, kind := range model.TransformationKinds() {
 		t.Run(string(kind), func(t *testing.T) {
 			r := newRig()
 			r.exclusion.stateFn = func(int) map[string][]string { return map[string][]string{testQualified: {"secret"}} }
+			onName := ruleFor(t, kind, "name", "a", "c", "e")
 			state := map[string][]model.Transformation{
-				testQualified:  {ruleFor(t, kind, "name")},
-				"public.other": {ruleFor(t, kind, "id")},
+				testQualified:  {onName.rule},
+				"public.other": {ruleFor(t, kind, "id", "1", "2", "3", "4", "5").rule},
 			}
 			r.rules.stateFn = ruleStates(state)
 			run := mustExecute(t, r)
 			if run.Status != model.BackfillRunCompleted {
 				t.Fatalf("Run = %+v, will completed", run)
 			}
+			image := func(id, name string) string {
+				if name == "" {
+					return `{"id":"` + id + `"}`
+				}
+				return `{"id":"` + id + `","` + onName.key + `":"` + onName.value(name) + `"}`
+			}
 			want := [][]string{
-				{`{"id":"1","name_renamed":"a"}`, `{"id":"2"}`},
-				{`{"id":"3","name_renamed":"c"}`, `{"id":"4","name_renamed":"d"}`},
-				{`{"id":"5","name_renamed":"e"}`},
+				{image("1", "a"), image("2", "")},
+				{image("3", "c"), image("4", "d")},
+				{image("5", "e")},
 			}
 			got := completedImages(t, r)
 			if fmt.Sprint(got) != fmt.Sprint(want) {
@@ -103,47 +142,51 @@ func TestExecuteBuildsImagesWithTheRuleSet(t *testing.T) {
 // Backfill-Pfad (`ADR-0112` Teilfrage 5, Fitness Function): für jeden Regeltyp
 // der Domäne, jede Spalte als Ziel der Regel und jede ausgeschlossene Spalte
 // trägt kein Bild des Runs den Schlüssel der ausgeschlossenen Spalte, ihren
-// Zielnamen oder ihren Wert; die übrigen Spalten bleiben im Bild. Rot
-// färbende Mutation: der Ausschluss wird erst nach der Regel geprüft (der
-// Zielname der ausgeschlossenen Spalte erscheint im Bild).
+// Zielnamen, ihren Wert oder ihren abgebildeten Wert; die übrigen Spalten
+// bleiben im Bild, die Spalte der Regel mit dem Wert, den die Regel ihr gibt.
+// Rot färbende Mutation: der Ausschluss wird erst nach der Regel geprüft (der
+// Zielname bzw. der abgebildete Wert der ausgeschlossenen Spalte erscheint im
+// Bild).
 func TestExecuteRulesNeverLeakExcludedColumns(t *testing.T) {
 	columns := []string{"id", "name", "secret"}
+	source := func(column string, block int) string { return fmt.Sprintf("%s-%d", strings.ToUpper(column), block) }
 	for _, kind := range model.TransformationKinds() {
 		for _, ruleColumn := range columns {
 			for _, excluded := range columns {
 				t.Run(fmt.Sprintf("%s/Regel an %s/ausgeschlossen %s", kind, ruleColumn, excluded), func(t *testing.T) {
 					r := newRig()
 					r.snapshot.blocks = [][][]*string{
-						{{str("ID-1"), str("NAME-1"), str("SECRET-1")}},
-						{{str("ID-2"), str("NAME-2"), str("SECRET-2")}},
+						{{str(source("id", 1)), str(source("name", 1)), str(source("secret", 1))}},
+						{{str(source("id", 2)), str(source("name", 2)), str(source("secret", 2))}},
 					}
 					r.exclusion.stateFn = func(int) map[string][]string { return map[string][]string{testQualified: {excluded}} }
-					rule := ruleFor(t, kind, ruleColumn)
-					r.rules.stateFn = ruleStates(rulesOf(testQualified, rule))
+					rule := ruleFor(t, kind, ruleColumn, source(ruleColumn, 1), source(ruleColumn, 2))
+					r.rules.stateFn = ruleStates(rulesOf(testQualified, rule.rule))
 					if run := mustExecute(t, r); run.Status != model.BackfillRunCompleted {
 						t.Fatalf("Run = %+v, will completed", run)
 					}
-					for _, block := range r.writer.blocks {
+					for index, block := range r.writer.blocks {
 						for _, change := range block.changes {
 							image := string(change.NewImage)
-							for _, forbidden := range []string{`"` + excluded + `"`, strings.ToUpper(excluded) + "-"} {
-								if strings.Contains(image, forbidden) {
-									t.Fatalf("Bild %s trägt %s der ausgeschlossenen Spalte %s", image, forbidden, excluded)
-								}
+							forbidden := []string{`"` + excluded + `"`, strings.ToUpper(excluded) + "-"}
+							if ruleColumn == excluded {
+								forbidden = append(forbidden, `"`+rule.key+`"`, rule.value(source(excluded, index+1)))
 							}
-							if ruleColumn == excluded && strings.Contains(image, `"`+rule.To()+`"`) {
-								t.Fatalf("Bild %s trägt den Zielnamen %s der ausgeschlossenen Spalte", image, rule.To())
+							for _, item := range forbidden {
+								if strings.Contains(image, item) {
+									t.Fatalf("Bild %s trägt %s der ausgeschlossenen Spalte %s", image, item, excluded)
+								}
 							}
 							for _, kept := range columns {
 								if kept == excluded {
 									continue
 								}
-								key := kept
+								key, value := kept, source(kept, index+1)
 								if kept == ruleColumn {
-									key = rule.To()
+									key, value = rule.key, rule.value(value)
 								}
-								if !strings.Contains(image, `"`+key+`":"`+strings.ToUpper(kept)+"-") {
-									t.Fatalf("Bild %s trägt die Spalte %s nicht unter %q", image, kept, key)
+								if !strings.Contains(image, `"`+key+`":"`+value+`"`) {
+									t.Fatalf("Bild %s trägt die Spalte %s nicht als %q: %q", image, kept, key, value)
 								}
 							}
 						}
@@ -193,6 +236,12 @@ func TestExecuteInapplicableRuleEndsRunAsSchema(t *testing.T) {
 		}, false, false, nil, nil},
 		{"anwendbare Regel", func(t *testing.T) map[string][]model.Transformation {
 			return rulesOf(testQualified, rename(t, "r-ok", "name", "label"))
+		}, false, false, nil, nil},
+		{"map_value: Spalte fehlt", func(t *testing.T) map[string][]model.Transformation {
+			return rulesOf(testQualified, mapValue(t, "r-fehlt", "gibt_es_nicht", map[string]string{"a": "b"}))
+		}, false, true, domainerrors.ErrTransformationColumnMissing, []string{`"r-fehlt"`, `"gibt_es_nicht"`, testQualified}},
+		{"map_value: abgebildeter Wert gleicht einer Spalte, anwendbar", func(t *testing.T) map[string][]model.Transformation {
+			return rulesOf(testQualified, mapValue(t, "r-ok", "name", map[string]string{"a": "secret", "id": "name"}))
 		}, false, false, nil, nil},
 	}
 	for _, tc := range cases {
@@ -271,7 +320,10 @@ func TestExecuteRuleTargetCollisionInBlockEndsRunAsSchema(t *testing.T) {
 // Abweichung. Rot färbende Mutationen (je eine): der Vergleich je Block
 // entfällt (die Fälle mit Zwischenabweichung enden `completed`); der Vergleich
 // vor dem Commit entfällt (der Fall „erst vor dem Commit“); der Vergleich als
-// Längenvergleich statt als Mengenvergleich (die Fälle „ersetzt“).
+// Längenvergleich statt als Mengenvergleich (die Fälle „ersetzt“); `values`
+// beim Bau der Regel in `newMapValue` nicht setzen (die Fälle „map_value
+// ersetzt“); die Zuordnung in `encodeValueMap` ohne Sortierung kodieren (der
+// Fall „je Lesung neu gebaut“).
 func TestExecuteRuleStateChangeEndsRunAsConfiguration(t *testing.T) {
 	var (
 		none = map[string][]model.Transformation{}
@@ -320,6 +372,34 @@ func TestExecuteRuleStateChangeEndsRunAsConfiguration(t *testing.T) {
 			return []map[string][]model.Transformation{
 				rulesOf(testQualified, a, b), rulesOf(testQualified, b, a), rulesOf(testQualified, a, b, a), rulesOf(testQualified, b, a), rulesOf(testQualified, a, b),
 			}
+		}, false, 1},
+		{"map_value ersetzt (andere Zuordnung, gleiche Zahl)", func(t *testing.T) []map[string][]model.Transformation {
+			mapped := func(target string) map[string][]model.Transformation {
+				return rulesOf(testQualified, mapValue(t, "r-map", "name", map[string]string{"a": target}))
+			}
+			return []map[string][]model.Transformation{mapped("x"), mapped("x"), mapped("y")}
+		}, true, 1},
+		{"map_value ersetzt (Zuordnung um ein Paar erweitert)", func(t *testing.T) []map[string][]model.Transformation {
+			return []map[string][]model.Transformation{
+				rulesOf(testQualified, mapValue(t, "r-map", "name", map[string]string{"a": "x"})),
+				rulesOf(testQualified, mapValue(t, "r-map", "name", map[string]string{"a": "x"})),
+				rulesOf(testQualified, mapValue(t, "r-map", "name", map[string]string{"a": "x", "b": "y"})),
+			}
+		}, true, 1},
+		{"map_value gleichen Inhalts, je Lesung neu gebaut, ist keine Abweichung", func(t *testing.T) []map[string][]model.Transformation {
+			built := func(reverse bool) map[string][]model.Transformation {
+				values := map[string]string{}
+				keys := []string{"a", "b", "c", "d", "e", "f", "g", "h"}
+				for i := range keys {
+					key := keys[i]
+					if reverse {
+						key = keys[len(keys)-1-i]
+					}
+					values[key] = "v-" + key
+				}
+				return rulesOf(testQualified, mapValue(t, "r-map", "name", values))
+			}
+			return []map[string][]model.Transformation{built(false), built(true), built(false), built(true), built(false)}
 		}, false, 1},
 	}
 	for _, tc := range cases {
