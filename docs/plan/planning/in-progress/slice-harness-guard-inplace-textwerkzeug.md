@@ -84,7 +84,8 @@ durchgehen muss.
   einer Guard-Härtung die dreimal beobachtete Umgehung, nicht das Bedrohungsmodell
   (Baseline-Regelwerk `modul-13-quality-gates.md` §Guard-Härtung). Jedes weitere Werkzeug ist ein
   neuer `MR` nach Beobachtung.
-- **Ein Shell-Parser im Guard.** Derselbe Grund wie bei den Umleitungen. Der Guard liest
+- **Ein Shell-Parser im Guard: Lexer-Stufe ja, Grammatik nein; Obergrenze und Falsch-Negativ
+  in `MR-003`.** Derselbe Grund wie bei den Umleitungen. Der Guard liest
   Anführungszeichen und Backslash über einen Zustandsautomaten (`tools/harness/mask-quotes.awk`,
   Fixrunde, §3); Heredocs, Variablen, Umleitungen und Kommando-Substitution als Wert bleiben
   ungelesen, die Falsch-Positiv-Ränder benennt §6 und bindet der Tabellentest.
@@ -115,9 +116,9 @@ durchgehen muss.
       Kopie im Scratchpad wird ebenso geblockt (der Mutationsweg ist `sed … Datei > Kopie`
       oder Edit/Write; offene Frage 2 in §6). Die Blockmeldung dieser Klasse nennt den
       Ersatzweg (Edit/Write; `sed` ohne `-i` nach stdout). Die Bestandsregeln (15
-      Paketmanager-Namen, Sub-Shell-Rekursion, fail-closed bei Parse-Zweifel) bleiben;
-      die Kopf-Erkennung (Wrapper-Optionen, Schlüsselwörter) erweitert sie für alle Klassen
-      (§3 „Fixrunde“). *Zu belegen durch:* `make test-command-guard` (Tabellentest, netzlos,
+      Paketmanager-Namen, Sub-Shell-Rekursion, fail-closed bei Parse-Zweifel) gelten weiter.
+      Die Kopf-Erkennung (Wrapper-Optionen, Schlüsselwörter) gilt für alle Klassen
+      (§3 „Fixrunde“, F-3). *Zu belegen durch:* `make test-command-guard` (Tabellentest, netzlos,
       gegen ein Wegwerf-Repo im Temp-Verzeichnis) mit Treffern je Form und je Position
       (Kopf, nach `&&`, hinter `xargs`, `sudo`, `bash -c`, absoluter Pfad des Werkzeugs,
       `find … -exec`), **Nicht-Treffern** je Nachbarform (`sed -n`, `sed -E`, `sed s/a/b/ f`,
@@ -136,7 +137,7 @@ durchgehen muss.
       `sed -i s/a/b/ /nicht-vorhanden-scratch` (das Ziel existiert nicht, eine Wirkung ist
       ausgeschlossen) wird geblockt — der Wortlaut der Blockmeldung steht im Bericht —, ein
       `sed -n 1p Makefile` läuft.
-- [ ] **Liefer-Punkt 2 — Host-Interpreter auf Repo-Pfaden.** Ein Segment mit Kopf `python`,
+- [x] **Liefer-Punkt 2 — Host-Interpreter auf Repo-Pfaden.** Ein Segment mit Kopf `python`,
       `python3`, `python3.<N>` oder `perl` blockt, wenn der **ganze Befehlsstring** ein
       Repo-Pfad-Muster trägt: den Absolutpfad der Repo-Wurzel `R/` (`R` aus dem Ort des
       Guards, zwei Ebenen über `.claude/hooks/`), oder den Namen eines Eintrags der obersten
@@ -147,16 +148,16 @@ durchgehen muss.
       'w')"`, `perl -e 'unlink q(Makefile)'`, `python3 <R>/docs/a.md`. Nicht-Treffer:
       `python3 --version`, `python3 -c 'print(1)'`, `python3 /tmp/scratch/mutate.py
       /tmp/scratch/copy.go`, `python3 /tmp/x/docs/a.py` (vor `docs/` steht `/`), `perl -ne
-      'print' /tmp/x`. Die Blockmeldung nennt Edit/Write und den Weg über eine absolute
-      Scratchpad-Kopie. *Zu belegen durch:* dieselben Tabellentest-Fälle, je an ihre Eingabe
+      'print' /tmp/x`. Die Blockmeldung nennt Edit/Write, ein Repo-Werkzeug hinter `make`
+      und `sed s/a/b/ Datei > Scratchpad-Kopie`. *Zu belegen durch:* dieselben Tabellentest-Fälle, je an ihre Eingabe
       gebunden durch eine Mutation: Regel entfernt · nur das Segment statt des ganzen
       Befehls gelesen (der Heredoc-Fall färbt rot) · die Pfad-Zeichen-Bedingung entfernt
       (`/tmp/x/docs/a.py` färbt rot) · `./` nicht erlaubt (`python3 ./tools/x.py` färbt rot) ·
-      Datei-Namen der obersten Ebene nicht gelesen (`Makefile`-Fall färbt rot); Live-Beleg
-      analog Liefer-Punkt 1 (`python3 tools/nicht-vorhanden.py` wird geblockt, `python3
-      --version` läuft). **Offen für die nächste Rolle:** der Live-Beleg mit `python3`; der
-      Auftrag an den Implementer verbietet Host-`python3` auch für einen Beleg, Tabellentest und
-      Mutationen tragen die Hook-Schnittstelle (§3 „Abweichungen“), der Verifier fährt ihn.
+      Datei-Namen der obersten Ebene nicht gelesen (`Makefile`-Fall färbt rot). Beleg:
+      Tabellentest und Mutationen an der Hook-Schnittstelle; der Ausgabeweg (`emit_block`) ist für
+      alle drei Klassen derselbe, die Klasse `inplace` ist live belegt (Liefer-Punkt 1), die
+      Klasse `interp` sah der Reviewer zweimal live geblockt (übernommen aus dem Review-Report,
+      nicht nachgemessen). Ein Live-Aufruf mit Host-`python` entfällt (`AGENTS.md` §3.1).
 - [x] **Liefer-Punkt 3 — die Träger.** (a) `harness/conventions/MR-003-…md` per `cp` aus
       `.harness/baseline/v6.9.0/templates/harness/conventions/MR-NNN-titel.template.md`, in
       place gefüllt (Auslöser: der Register-Eintrag mit seinen drei Beleg-Dateien; Adaption:
@@ -187,18 +188,18 @@ durchgehen muss.
 - [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (Liefer-Punkt 3d); das Benutzerhandbuch bleibt unberührt (keine
       Betreiber-Oberfläche).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang von
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang von
       `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (`state.md`: die
       Durchsetzung heute, die Adresse aufgelöst, die zwei Nutzer-Fragen aus §6 mit
       Adresse); keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7
       notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Slice-Closure selbst (der Slice hat keine Welle; das Ereignis kann
       eintreten).
 
@@ -210,7 +211,7 @@ Träger-Änderungen. Der zweite Liefer-Punkt ist der abtrennbare Teil (§4).
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `.claude/hooks/pretooluse-command-guard.sh` | update | Liefer-Punkt 1 und 2: Erkennung der in-place Formen (rohe Flag-Tokens, Kopf nach `-exec`/`-execdir`/`-ok`) und des Repo-Pfad-Musters auf `python`/`python3`/`perl`; eine Blockmeldung je Klasse (gültiges JSON); Kopfkommentar im Indikativ ([`AGENTS.md`](../../../../AGENTS.md) §3.7). Die Bestandsregeln bleiben, der Guard bleibt fail-closed. |
+| `.claude/hooks/pretooluse-command-guard.sh` | update | Liefer-Punkt 1 und 2: Erkennung der in-place Formen (Flag-Tokens hinter der Anführungszeichen-Maskierung, Kopf nach `-exec`/`-execdir`/`-ok`) und des Repo-Pfad-Musters auf `python`/`python3`/`perl`; eine Blockmeldung je Klasse (gültiges JSON); Kopfkommentar im Indikativ ([`AGENTS.md`](../../../../AGENTS.md) §3.7). Die Bestandsregeln gelten weiter, der Guard ist fail-closed. |
 | `tools/harness/run-command-guard-tests.sh` | neu | Tabellentest: baut ein Wegwerf-Repo im Temp-Verzeichnis (`.claude/hooks/` mit einer Kopie des Guards, `tools/harness/extract-command.awk`, oberste Ebene `docs/`, `internal/`, `Makefile`), füttert das Hook-JSON auf stdin und prüft Ausgabe und Exit; der Prüfling ist per `GUARD` übersteuerbar (Mutationsläufe an Kopien); Vorbild `tools/harness/run-fmt-check-tests.sh` und `tools/harness/run-suchlauf-nachmessen-tests.sh`. Schreibt nur ins Temp-Verzeichnis. |
 | `tools/harness/mask-quotes.awk` | neu (Fixrunde) | Segmentierungs-Vorstufe des Guards: maskiert Trenner, Leerraum und Zeilenumbruch in Anführungszeichen und hinter Backslash (Finding F-2); 40 Zeilen, davon 12 Kommentar. |
 | `Makefile` | update | Ziel `test-command-guard` mit `.PHONY` und Hilfe-Zeile (`GUARD`/`MASKER` übersteuerbar); kein Eintrag in den Gate-Zielen. |
@@ -247,12 +248,12 @@ Stand ist der Parent `89d427e0`; der Implementer ergänzt die Zeilen mit Stand `
 89d427e0 0 -E '\.claude/hooks|pretooluse|harness/conventions' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/welle-transformationen.md
 diff 12 -E 'pretooluse-command-guard' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
 diff 8 -E 'blockt (Host-)?Paketmanager|Stolperdraht|scannt den Command-String' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
-diff 146 -E 'sed -i|perl -pi|awk -i' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
-diff 1 -E 'Durchsetzung heute|noch kein Plan angelegt' -- docs/plan/planning/observations
-diff 1 -E 'in keinem committeten Text' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
+diff 148 -E 'sed -i|perl -pi|awk -i' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
+diff 0 -E 'Durchsetzung heute|noch kein Plan angelegt' -- docs/plan/planning/observations
+diff 0 -E 'in keinem committeten Text' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
 89d427e0 3 -E 'in-place Textwerkzeuge liest er nicht|Bewusst NICHT gepr|blockt Host-Paketmanager und Host-Toolchains' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
 diff 0 -E 'in-place Textwerkzeuge liest er nicht|Bewusst NICHT gepr|blockt Host-Paketmanager und Host-Toolchains' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
-diff 8 -E 'test-command-guard' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
+diff 9 -E 'test-command-guard' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
 ```
 
 Die ersten sieben Zeilen sind am Parent gemessen (Bezugs-Befehle im Block, Stand `89d427e0`; Ergebnis:
@@ -261,7 +262,7 @@ Symbol 3 Fundstellen — der Guard selbst, `.claude/settings.json`, [`AGENTS.md`
 Docker-Bau läuft und den Guard nicht berührt — er scannt nur die Bash-Aufrufe des Laufs, nicht
 die Rezepte hinter `make`).
 
-**Ergebnis am Stand `diff` (Arbeitsbaum nach der Fixrunde; Gefundenes und Nichtgefundenes):**
+**Ergebnis am Stand `diff` (Arbeitsbaum bei der Closure, nach den Träger-Nachzügen; Gefundenes und Nichtgefundenes):**
 Symbol 12 Fundstellen (Guard, `.claude/settings.json`, [`AGENTS.md`](../../../../AGENTS.md), `Makefile`,
 `harness/README.md`, `harness/conventions.md`, `MR-003`, `mask-quotes.awk`, vier im Tabellentest) — die
 neuen Träger tragen den Namen, keiner der 3 Bestandsträger sagt etwas Falsches. Beschreibung 8 (Guard 2,
@@ -269,10 +270,13 @@ neuen Träger tragen den Namen, keiner der 3 Bestandsträger sagt etwas Falsches
 Stichwort nicht mehr): dessen Satz „der Guard scannt den Command-String“ ist
 durch die Anführungszeichen-Lesung überholt und nachgezogen (Träger-Tabelle); der Kommentar in
 `tools/harness/extract-command.awk` („Stolperdraht, keine Sandbox“) bleibt wahr und ist unberührt.
-Zählwort 146: die Zahl ist gewachsen um die neuen Träger (`MR-003`, Tabellentest mit seinen Fällen,
+Zählwort 148: die Zahl ist gewachsen um die neuen Träger (`MR-003`, Tabellentest mit seinen Fällen,
 Guard-Kommentar, [`AGENTS.md`](../../../../AGENTS.md)); die Bestandstreffer `reviewer.md` (Prüfgegenstand des Reviews),
-`implement-slice.md` und `sdks/python/Dockerfile` bleiben unverändert wahr, die zwei Treffer in
-`slice-code-kommentare-bereinigung` §8 und `welle-transformationen` §6 sind gemeldet (Tabelle unten).
+`implement-slice.md` und `sdks/python/Dockerfile` sind unverändert wahr, die Treffer in
+`slice-code-kommentare-bereinigung` §6/§8 und `welle-transformationen` §6 sind in der Closure nachgezogen
+(Tabelle unten). Die Zeilen 4 und 5 stehen dadurch bei 0: „Durchsetzung heute“ im Register-`state.md` und
+„in keinem committeten Text“ in `welle-transformationen` §6 sind getilgt; `test-command-guard` trägt
+neun Fundstellen (die Nennung in `welle-transformationen` §6 ist die neunte).
 Der überholte Wortlaut („liest er nicht“, „Bewusst NICHT geprüft: andere Interpreter“, „blockt … Host-Toolchains“:
 3 am Parent, 0 am Stand `diff`) ist aus den zwei Trägern getilgt. **Nicht gefunden:** kein weiterer
 Träger unter `docs/user/`, `spec/`, `.github/`, `harness/sensors/` oder `harness/targets/`, der den Guard
@@ -291,20 +295,19 @@ gegen den Diff.
   (`xargs -r sed -i`, `xargs -I{} sed -i`; der Plan nennt „hinter `xargs`“, die Alltagsform trägt
   Optionen); der Wert einer xargs-Option (`xargs -n 1`) wird übersprungen, ein Optionswert anderer Wrapper
   (`sudo -u x`) bleibt Grenze; (b) ein Trenner in Anführungszeichen startet kein Segment und ein
-  Anführungszeichen-Argument ist ein Token (Fixrunde, §3; der erste Lauf las die Flag-Tokens roh und
-  ließ ein Token mit Anführungszeichen als Nicht-Flag gelten); (c) das find-Ende (`+`, `\`, `;`) begrenzt die Flag-Suche (`-iname` hinter
+  Anführungszeichen-Argument ist ein Token, ein Flag mit Anführungszeichen (`sed -i''`, `sed '-i'`)
+  bleibt ein Flag (Fixrunde, §3); (c) das find-Ende (`+`, `\`, `;`) begrenzt die Flag-Suche (`-iname` hinter
   `-exec … +` ist kein sed-Flag); (d) `-okdir` neben `-ok`; (e) der Tabellentest prüft je Block die
   Begründung der Klasse (`pkg`, `inplace`, `interp`) und die JSON-Form.
-- **Tabellentest:** mehr Fälle als der Plan schätzt (Zahl im Bericht des Laufs, gemessen mit
-  `make test-command-guard`); die Gruppen sind Bestand, Kopf-Erkennung hinter Wrapper-Optionen und
+- **Tabellentest:** 317 Fälle statt der geschätzten rund vierzig (311 Tabellenzeilen und 6 Sonderfälle,
+  gedruckt „alle 317 Fälle bestanden“ von `make test-command-guard`); die Gruppen sind Bestand, Kopf-Erkennung hinter Wrapper-Optionen und
   Schlüsselwörtern, in-place je Form, je Zeichenklassen-Mitglied und Position, Nicht-Treffer,
   Anführungszeichen-Lesung, Host-Interpreter, benannte Falsch-Positiv-Ränder, benannte Grenzen.
 - **Liefer-Punkt 2 geliefert.** Die Falsch-Positiv-Fläche ist gebunden: Nicht-Treffer neben jedem Treffer
   (`/tmp/x/docs/a.py`, `python3 --version`, Scratchpad-Mutationsweg), benannte Ränder mit erwartetem
   Block (`cd /tmp/x && python3 tools/x.py`, Text mit Repo-Namen), Mutationen je Zusage rot gesehen (Bericht).
-  Der Live-Beleg des zweiten Liefer-Punkts (ein realer `python3`-Aufruf in der Sitzung) entfällt im
-  Implementer-Lauf: der Auftrag verbietet Host-`python3` auch für einen Beleg; der Tabellentest trägt die
-  Hook-Schnittstelle, der Verifier wiederholt den Live-Beleg in seiner Sitzung (Risiko 4).
+  Ein Live-Aufruf mit Host-`python3` entfällt: er verstieße gegen `AGENTS.md` §3.1; der Tabellentest trägt
+  die Hook-Schnittstelle (Risiko 4).
 - **Nutzer-Fragen aus §6 entschieden** (Auftrag des Auftraggebers an den Implementer, 2026-09-26):
   Frage 1 — `tools/harness/blocked/go` nicht in diesem Slice, zuerst die Wirkung von Liefer-Punkt 1
   abwarten; Frage 2 — keine Scratchpad-Ausnahme, der Guard blockt `sed -i` unbedingt (Mutationsproben
@@ -313,15 +316,16 @@ gegen den Diff.
 **Fixrunde (Anker: Review-Report `review-slice-harness-guard-inplace-textwerkzeug`, Finding je Zeile;
 Stand `diff`).** Der Tabellentest zählt 317 Fälle (`make test-command-guard`: „alle 317 Fälle bestanden“,
 311 Tabellenzeilen, 6 Sonderfälle; die Verifikation maß den Stand der Fixrunde mit 300 Fällen); gegen den
-Guard am Parent `e98d419c` sind 168 rot, gegen den Guard am Review-Stand `a0472421` 80 (`GUARD=<Datei>`,
-gemessen am Stand mit 317 Fällen; die Zahlen der Fixrunde waren 155 und 76). Die Gruppe „Bestandsregeln“ (18 Tabellenzeilen) ist
+Guard am Parent `e98d419c` sind 168 rot, gegen den Guard am Review-Stand `a0472421` 81 (`GUARD=<Datei>`,
+je ein Lauf bei dieser Closure am Stand mit 317 Fällen, gezählt mit `grep -c '^FEHLER:'` über das Log;
+die Zahlen der Fixrunde waren 155 und 76, der Implementer-Nachzug nannte 80). Die Gruppe „Bestandsregeln“ (18 Tabellenzeilen) ist
 am Parent grün.
 
 | Finding | Entscheidung und Änderung | Beleg-Anker |
 |---|---|---|
-| F-2 | Im Guard gelöst, keine Rückführung nach `open/`: `tools/harness/mask-quotes.awk` ist ein Zustandsautomat über `'`, `"`, Backslash sowie `$(`/Backtick in `"…"` (kein Shell-Parser: Heredocs, Umleitungen, Variablen bleiben ungelesen). Ein Trenner, Leerraum oder Zeilenumbruch in Anführungszeichen wird vor der Segmentierung zu einem Steuerzeichen; ein Anführungszeichen-Argument ist ein Token. Ein unbalanciertes Anführungszeichen gibt den Rohstring zurück (Segmentierung ohne Anführungszeichen-Kenntnis: mehr Segmente, nie weniger; ein Apostroph im Heredoc-Text blockt also nur, wenn eine Kommando-Zeile mit `sed -i` folgt). Die Bestandsregel „quote-blind“ ändert sich damit: `git commit -m "a & sed -i b"` und `grep -E 'a\|sed -i ' f` blocken nicht mehr (zwei benannte Ränder des ersten Laufs sind Nicht-Treffer), `\;` bleibt ein Trenner. Fällt der Maskierer aus, blockt der Guard (fail-closed, Fall „Maskierer nicht lesbar“). Latenz 15 ms je Aufruf gegen 11 ms (20 Aufrufe je Guard, gemessen). | 31 Fälle „Anführungszeichen“ (die Suchlauf-Form mit drei Gliedern, `grep -E "sed -i\|perl -pi" f`, `echo 'a\|sed -i x'`, Backslash, Tab, Trenner ohne Leerraum, `$(…)`/Backtick-Kontext); live: `git grep -c -E 'sed -i\|perl -pi\|awk -i' -- <Datei>` läuft in der Sitzung des Implementers ohne Block, `sed -i s/a/b/ /nicht-vorhanden-scratch` blockt mit der Meldung der Klasse `inplace`. Offen an den Architect: Bestätigung, dass ein Zustandsautomat dieser Größe unter „kein Shell-Parser“ fällt (Plan §4 Rückführung (a)). |
-| F-1 | Je Mitglied der Zeichenklassen ein Treffer-Fall und je Klassengrenze ein Nicht-Treffer: sed `[nEsrzub]` (Ergänzung `b`: `sed -bi`; Nicht-Treffer `-ei`, `-fi`, `-xi`), perl `[0-7lanpsw]` (Ziffernklasse von `0-9` auf `0-7` verengt: die Argumente von `-0` und `-l` sind oktal; Nicht-Treffer `-ei`, `-Minteger`, `-Ii`, `-Mfeature`), Pfadzeichen `[A-Za-z0-9_./~-]` (acht Mitglieder davor und dahinter, dazu die Zeichen `=` `:` `,` `"` `)` als Nicht-Mitglieder). Die Behauptung „jede Zusage gebunden“ in `MR-003` nennt die Menge (Tabellentest, Mutationen je Klassenmitglied). | 38 Fälle „Zeichenklassen“ (die perl-Ziffern 1 bis 7 je einzeln, 8 und 9 als Nicht-Treffer), 24 Fälle „Pfadzeichen“ in der Gruppe Host-Interpreter; Mutationen unten. |
-| F-3 | Das Überspringen der Wrapper-Optionen gilt für **alle** Klassen: die Lücke `env -i pip`, `xargs -n1 pip`, `time -p pip` ist dieselbe wie bei `sed -i` und bliebe für die Bestandsklasse bestehen, wenn das Überspringen nur für `inplace`/`interp` gälte; zwei Kopf-Erkennungen wären eine zweite Wartungsstelle. Das ist eine Erweiterung der Bestandsregel und steht so in `MR-003` (Adaption) und im Tabellentest als eigene Gruppe „Kopf-Erkennung hinter Wrapper-Optionen“; die zwei Fälle, die der erste Lauf „Bestand“ nannte, stehen dort (am Parent rot gemessen). `command -v`/`-V` und `-pv` zeigen an und führen nichts aus: sie blocken nicht; `type`, `which` sind ohnehin nicht Kopf einer Ausführung; `command -p pip` blockt. | Gruppe „Kopf-Erkennung“ (13 Fälle); `command -v`-Fälle am Guard `a0472421` rot (3), am neuen Guard grün. |
+| F-2 | Im Guard gelöst, keine Rückführung nach `open/`: `tools/harness/mask-quotes.awk` ist ein Zustandsautomat über `'`, `"`, Backslash sowie `$(`/Backtick in `"…"` (kein Shell-Parser: Heredocs, Umleitungen, Variablen bleiben ungelesen). Ein Trenner, Leerraum oder Zeilenumbruch in Anführungszeichen wird vor der Segmentierung zu einem Steuerzeichen; ein Anführungszeichen-Argument ist ein Token. Ein unbalanciertes Anführungszeichen gibt den Rohstring zurück (Segmentierung ohne Anführungszeichen-Kenntnis: mehr Segmente, nie weniger; ein Apostroph im Heredoc-Text blockt also nur, wenn eine Kommando-Zeile mit `sed -i` folgt). `git commit -m "a & sed -i b"` und `grep -E 'a\|sed -i ' f` sind Nicht-Treffer, `\;` bleibt ein Trenner. Fällt der Maskierer aus, blockt der Guard (fail-closed, Fall „Maskierer nicht lesbar“). Latenz 15 ms je Aufruf gegen 11 ms (20 Aufrufe je Guard, gemessen). | 37 Fälle „Anführungszeichen“ (die Gruppe zwischen den Kommentarzeilen `# --- Anführungszeichen` und `# --- Liefer-Punkt 2` in `tools/harness/run-command-guard-tests.sh`, gezählt bei dieser Closure mit `grep -E '^(block\|pass) '` über ihre Zeilen; die Suchlauf-Form mit drei Gliedern, `grep -E "sed -i\|perl -pi" f`, `echo 'a\|sed -i x'`, Backslash, Tab, Trenner ohne Leerraum, `$(…)`/Backtick-Kontext, die Heredoc-Kehrseite); live: `git grep -c -E 'sed -i\|perl -pi\|awk -i' -- <Datei>` läuft in der Sitzung des Implementers ohne Block, `sed -i s/a/b/ /nicht-vorhanden-scratch` blockt mit der Meldung der Klasse `inplace`. Die Quote-Lesung ist als Lexer-Stufe ratifiziert, ihre Obergrenze steht in `MR-003` (Architect-Zug zu diesem Slice). |
+| F-1 | Je Mitglied der Zeichenklassen ein Treffer-Fall und je Klassengrenze ein Nicht-Treffer: sed `[nEsrzub]` (Ergänzung `b`: `sed -bi`; Nicht-Treffer `-ei`, `-fi`, `-xi`), perl `[0-7lanpsw]` (Ziffernklasse von `0-9` auf `0-7` verengt: die Argumente von `-0` und `-l` sind oktal; Nicht-Treffer `-ei`, `-Minteger`, `-Ii`, `-Mfeature`), Pfadzeichen `[A-Za-z0-9_./~-]` (acht Mitglieder davor und dahinter, dazu die Zeichen `=` `:` `,` `"` `)` als Nicht-Mitglieder). Die Behauptung „jede Zusage gebunden“ in `MR-003` nennt die Menge (Tabellentest, Mutationen je Klassenmitglied). | 38 Fälle „Zeichenklassen“ (die perl-Ziffern 1 bis 7 je einzeln, 8 und 9 als Nicht-Treffer), 23 Fälle „Pfadzeichen davor/dahinter“ in der Gruppe Host-Interpreter (gezählt bei dieser Closure mit `grep -cE '"(kein )?Pfadzeichen (davor\|dahinter)'` über den Tabellentest); Mutationen unten. |
+| F-3 | Das Überspringen der Wrapper-Optionen gilt für **alle** Klassen: die Lücke `env -i pip`, `xargs -n1 pip`, `time -p pip` ist für die Paketmanager-Klasse dieselbe wie bei `sed -i`, und eine Kopf-Erkennung für alle Klassen ist eine Wartungsstelle. Die Kopf-Erkennung gilt für alle Klassen und steht so in `MR-003` (Adaption) und im Tabellentest als eigene Gruppe „Kopf-Erkennung hinter Wrapper-Optionen“; `ls \| xargs -n1 pip` und `env -i pip install x` stehen dort (am Parent rot gemessen). `command -v`/`-V` und `-pv` zeigen an und führen nichts aus: sie blocken nicht; `type`, `which` sind ohnehin nicht Kopf einer Ausführung; `command -p pip` blockt. | Gruppe „Kopf-Erkennung“ (13 Fälle); `command -v`-Fälle am Guard `a0472421` rot (3), am neuen Guard grün. |
 | F-4 | Schlüsselwörter `do then else elif if while until !`, führendes `{` und `)` (Funktionsdefinition) werden vor der Kopf-Erkennung übersprungen; ein `case` überspringt bis zum ersten Label, Labels gelten nur nach einem `case` im selben Befehl (`echo $(date) sed -i x` bleibt Nicht-Treffer). Die Form `xargs -n 1 sed -i` (Wert einer xargs-Option) ist mit gelöst. Grenz-Zeile in `MR-003`: Optionswerte anderer Wrapper (`sudo -u x`, `env -u X`, `nice -n 10`), Werkzeug aus einer Variablen, `eval "$cmd"`, Aliase. | Fälle „Schlüsselwort“ (`for`, `while`, `if`, `else`, `elif`, `until`, `!`, drei `case`-Formen, Funktion), am Parent rot. |
 | F-5 | Die Meldung der Klasse `interp` nennt Edit/Write, ein Repo-Werkzeug hinter `make` und `sed s/a/b/ file > /path/to/scratch-copy` — die drei Wege aus `AGENTS.md` §3.1, keinen Host-Interpreter; `MR-003` (Begründung) sagt dasselbe und nennt den Interpreter auf einem Pfad ohne Repo-Namen eine Grenze, keinen zulässigen Weg. | Fall „Meldung interp: Weg nach AGENTS.md 3.1“ (prüft Edit/Write, den stdout-Weg und die Abwesenheit von `mutate`). |
 | F-6 | Gelöst: `sed -i''`, `\sed`, `busybox`, `/usr/bin/env`, `/usr/bin/sudo`, `gsed`, die Abkürzung `--in-p`/`--i`, `find … -exec sh -c '…'`/`-exec python3 …` (der Rest hinter `-exec` ist ein eigenes Kommando), `eval "…"`; das Bündel `-input.txt` bei sed bleibt ein Treffer, weil GNU-sed es als `-i` mit Suffix `nput.txt` liest (real gemessen: `sed -n 1p -input.txt f` legt die Sicherungsdatei `fnput.txt` an), bei perl enden die Optionen am Skriptnamen (`perl x.pl -input a` blockt nicht). Rest als Grenze in `MR-003`: `-Wpi`, die awk-Abkürzung `--inc=inplace`, andere Interpreter (`node -e`, `ruby -e`, `uv run python`), Optionswerte anderer Wrapper. `MR-003` nennt die Grenz-Zeile als Kurzform in Kopfkommentar und `AGENTS.md`; „gleichlautend“ ist berichtigt (die `AGENTS.md`-Liste ist eine Teilmenge). | Fälle „Position“ (80) und „Grenzen“ (16). |
@@ -364,9 +368,9 @@ Fixrunde, nicht nachgemessen; kein committetes Skript, keine gedruckte Zeile); d
 | [`AGENTS.md`](../../../../AGENTS.md) §3.1 Satz zur Mutationsprobe (Kopie im Scratchpad) | bleibt wahr; der Zusatz nennt, dass `-i` auch auf der Kopie geblockt wird | Liefer-Punkt 3c. |
 | `.claude/commands/implement-slice.md` (Aufzählung der Regel; Commit via Message-Datei) | nennt die Formen und verweist auf §3.1; „der Guard scannt den Command-String, also nie eine Commit-Message inline, die ein geblocktes Tool-Token enthält“ (Zeile 2 des Feldes) | Fixrunde: der Satz „der Guard scannt den Command-String“ nennt den Stand `diff` nicht mehr (Anführungszeichen-Lesung: ein Tool-Token in den Anführungszeichen einer Inline-Message blockt nicht); der Punkt und die Schritt-20-Zeile zum Konjunktiv-Kandidatenlauf (F-7) sind angepasst. |
 | `.harness/skills/reviewer.md` §HIGH „Docker-only-Verstoß“ | nennt die Formen als Prüfgegenstand des Reviews (Zeile 3 des Feldes) | bleibt wahr: der Guard fängt die Flag-Formen, das Review den Rest; unberührt. |
-| Beobachtungs-Register `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, `state.md` | „Durchsetzung heute: das Review“ und „noch kein Plan angelegt“ (Zeile 4 des Feldes am Parent) | „noch kein Plan angelegt“ ist mit dem Anlegen dieses Plans auf „der Plan liegt in `open/`“ gezogen; „Durchsetzung heute“ bleibt bis zur Closure wahr und ist dann Träger der Planner-Closure (fremde Datei, deshalb Meldung). Am Stand `diff` liegt der Plan in `in-progress/` und der Guard blockt die Formen: beide Sätze sind ab dem Commit dieses Laufs überholt; gemeldet, Frist: die Closure. |
-| `docs/plan/planning/welle-transformationen.md` §6 „Fragen für den nächsten Architect-Zug“ (a) | „in keinem committeten Text verboten“ (Zeile 5 des Feldes) — überholt seit dem Architect-Zug `17cb4eb3`, nicht erst durch diesen Slice | gemeldet, nicht mitgeändert (fremde Datei; Frist: die Closure dieses Slice, der Planner zieht nach oder benennt den Träger mit Adresse). |
-| `docs/plan/planning/open/slice-code-kommentare-bereinigung.md` §8 („offen, Schwelle erreicht, 3×“) | die Sichtung nennt den Register-Eintrag „offen“, sein `state.md` sagt seit `17cb4eb3` „verkörpert“ (Zeile 6 des Feldes trifft drei Zeilen: diese, die Risiko-Zeile in §6, die nur die Zahl nennt und wahr bleibt, und die Notiz in `welle-transformationen`) | gemeldet wie oben. |
+| Beobachtungs-Register `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, `state.md` | „Durchsetzung heute: das Review“ und „noch kein Plan angelegt“ (Zeile 4 des Feldes am Parent) | Fremde Datei, deshalb Meldung des Implementers mit Frist „Closure“; die Closure zog den Text nach: der Ausgang nennt Guard, `MR-003` und Tabellentest, die Grenze des Guards und die Adresse der Nutzer-Frage zu `tools/harness/blocked/go` (Suchlauf-Zeile 4 steht bei 0). |
+| `docs/plan/planning/welle-transformationen.md` §6 „Fragen für den nächsten Architect-Zug“ (a) | „in keinem committeten Text verboten“ (Zeile 5 des Feldes) — überholt seit dem Architect-Zug `17cb4eb3`, nicht erst durch diesen Slice | gemeldet, nicht mitgeändert (fremde Datei); die Closure zog den Absatz nach: Verbot in `AGENTS.md` §3.1, Guard, Zähler und Ausgang des Register-Eintrags (Suchlauf-Zeile 5 steht bei 0). |
+| `docs/plan/planning/open/slice-code-kommentare-bereinigung.md` §8 („offen, Schwelle erreicht, 3×“) | die Sichtung nennt den Register-Eintrag „offen“, sein `state.md` sagt seit `17cb4eb3` „verkörpert“ (Zeile 6 des Feldes trifft drei Zeilen: diese, die Risiko-Zeile in §6, die nur die Zahl nennt und wahr bleibt, und die Notiz in `welle-transformationen`) | gemeldet wie oben; die Closure zog §6 und §8 nach („verkörpert, 4×“; der Guard blockt die Flag-Formen). |
 
 ## 4. Trigger
 
@@ -404,13 +408,15 @@ nennt; der Rest ist ein bekannter Rand, §6 Risiko 1.
   trägt die größte Falsch-Positiv-Fläche; trägt die Tabelle seiner Nicht-Treffer nicht, geht er als
   eigener Slice zurück und der erste Liefer-Punkt (`sed`, `perl`, `awk`) landet allein.
 - `in-progress` → `open` (blockiert): (a) ein Alltags-Aufruf der Rollen, der nach den Regeln
-  geblockt werden müsste, obwohl er zulässig ist (die rohe Lesung der Flag-Tokens trägt ihn
-  nicht), und der Weg dahin verlangt Quote-Bewusstsein im Guard — dann Architect-Frage
-  (Shell-Parser ja oder nein; eingetreten im Review, Finding F-2: ein Muster mit `|` blockte;
-  gelöst im Guard durch einen Zustandsautomaten über Anführungszeichen und Backslash, kein
-  Shell-Parser, Fixrunde §3 — die Frage bleibt an den Architect als Bestätigung offen); (b) der Hook liest die Block-Ausgabe in der Live-Sitzung nicht wie
-  im Bestand (der Beleg in Liefer-Punkt 1 fehlt) — dann Architect-Frage zur Wirkung der
-  Durchsetzungsschicht.
+  geblockt werden müsste, obwohl er zulässig ist (die Lesung der Flag-Tokens ohne
+  Quote-Kenntnis trägt ihn nicht), und der Weg dahin verlangt Quote-Bewusstsein im Guard —
+  dann Architect-Frage (Shell-Parser ja oder nein). Der Fall ist im Review eingetreten
+  (Finding F-2: ein Muster mit `|` blockte); die Rückführung ist nicht eingetreten: der Guard
+  löst ihn mit einem Zustandsautomaten über Anführungszeichen und Backslash (Fixrunde §3),
+  der Architect hat ihn als Lexer-Stufe ratifiziert, `MR-003` trägt die Obergrenze; (b) der
+  Hook liest die Block-Ausgabe in der Live-Sitzung nicht wie im Bestand (der Beleg in
+  Liefer-Punkt 1 fehlt) — dann Architect-Frage zur Wirkung der Durchsetzungsschicht; nicht
+  eingetreten (Risiko 4).
 
 ## 5. Closure-Trigger
 
@@ -432,7 +438,13 @@ neuer Sensor: `make test-command-guard`, ohne Gate).
   schreiben. *Erwartet, zu belegen durch:* die Nicht-Treffer-Fälle des Tabellentests (die
   Alltags-Formen der Rollen: `sed -n`, `sed s/…/…/ f > g`, `awk` lesend, `git grep -E` mit
   Alternation, `git commit -F`) und die benannten Rand-Fälle mit erwartetem Block; die
-  Blockmeldung nennt den Ersatzweg. **Ausgang:** *(bei Closure)*
+  Blockmeldung nennt den Ersatzweg. **Ausgang:** *eingetreten und behandelt* — der Review
+  fand ein `\|`-Muster in einem lesenden `git grep` geblockt (F-2, viermal live); die
+  Rückführung nach `open/` trat nicht ein, der Guard löst es mit dem Anführungszeichen-Lexer
+  (37 Fälle der Gruppe „Anführungszeichen“). Die Ränder stehen als 8 benannte Falsch-Positiv-Fälle
+  und 16 benannte Grenzen im Tabellentest (gezählt bei dieser Closure, Gruppen `benannte
+  Falsch-Positiv-Raender` und `benannte Grenzen`); die Kehrseite der Quote-Lesung (zwei Apostrophe
+  in zwei Heredoc-Zeilen, Falsch-Negativ, V-2) steht in `MR-003` und ist gebunden.
 - **2. Der Guard verspricht mehr, als er kann** (die Harness-Lüge der Baseline). Nicht
   gelesen werden: Umleitungen und flaglose Schreibwege (`> datei`, `tee`, `dd of=`,
   `sed … > tmp && mv`); ein `cd` im selben Kommando (der Pfad-Test nimmt die Repo-Wurzel als
@@ -444,20 +456,38 @@ neuer Sensor: `make test-command-guard`, ohne Gate).
   belegen durch:* die Grenz-Zeile von `MR-003` nennt diese Punkte, der Kopfkommentar des Guards
   und [`AGENTS.md`](../../../../AGENTS.md) §3.1 „Durchsetzung“ sagen „Stolperdraht, keine
   Sandbox“ und verweisen darauf; der Reviewer liest die drei Stellen gegeneinander.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *eingetreten und behandelt; Rest weiter offen als benannte Grenze* — der Review
+  fand Lücken, die die Grenz-Zeile nicht nannte (F-4 Schlüsselwörter, F-6 weitere Formen); sie
+  sind gelöst oder in `MR-003` genannt, Kopfkommentar und `AGENTS.md` §3.1 tragen die Kurzform
+  (die Verifikation las die drei Stellen gegeneinander). Weiter offen als Kenntnis: Umleitungen
+  und flaglose Schreibwege, der Optionswert hinter `sudo -u x`, Host-`python`/`perl` auf einem
+  Pfad ohne Repo-Namen (kein Weg nach `AGENTS.md` §3.1), das Falsch-Negativ der Quote-Lesung
+  (Heredoc), die Kopf-Liste `tools/harness/blocked/go` (Nutzer-Entscheidung, Adresse im
+  `state.md` des Register-Eintrags).
 - **3. Die Änderung schwächt den Bestandsschutz oder macht den Guard fail-open.** Der Guard
   hat heute keinen Test (Suchlauf-Zeile 1: drei Fundstellen, keine Testdatei darunter).
   *Erwartet, zu belegen durch:* die Bestandsregeln stehen als Fälle im
   Tabellentest (Paketmanager am Kopf, Präfixe, `bash -c`-Rekursion, Tiefe über 3, defektes
   JSON, fehlendes `awk`) und eine Mutation an der neuen Erkennung färbt sie nicht rot.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *entfallen* — die Gruppe „Bestandsregeln“ (18 Tabellenzeilen) ist am Guard des
+  Parents grün (Verifikation: 0 `FEHLER:`-Zeilen), die Fälle Tiefe 4, defektes JSON, abgeschnittenes
+  JSON, `\u`-Escape und fehlendes `awk` binden fail-closed (Mutationen rot, Verifikation §4). Der
+  Review fand eine Erweiterung der Bestandsklasse (F-3: die Kopf-Erkennung gilt für alle Klassen);
+  sie verschärft, lockert kein Gate (`AGENTS.md` §3.6) und steht in `MR-003`.
 - **4. Die Wirkung in der Live-Sitzung bleibt unbelegt, weil der Tabellentest nur die
   Hook-Schnittstelle (JSON in, JSON aus) prüft.** Ob Claude Code die Ausgabe wie im Bestand
   liest, ist eine Eigenschaft der Laufzeit, kein Ergebnis des Skripts
   ([`AGENTS.md`](../../../../AGENTS.md) §3.10 nennt dieselbe Klasse für externe Läufe).
-  *Erwartet, zu belegen durch:* der Live-Beleg in Liefer-Punkt 1 und 2 (ein Aufruf mit
-  nicht vorhandenem Ziel wird geblockt, der Wortlaut steht im Bericht); der Verifier wiederholt
-  ihn in seiner Sitzung. **Ausgang:** *(bei Closure)*
+  *Erwartet, zu belegen durch:* der Live-Beleg der Klasse `inplace` in Liefer-Punkt 1 (ein
+  Aufruf mit nicht vorhandenem Ziel wird geblockt, der Wortlaut steht im Bericht); für die Klasse
+  `interp` trägt der Tabellentest die Hook-Schnittstelle, ein Live-Aufruf mit Host-`python` entfällt
+  (`AGENTS.md` §3.1). **Ausgang:** *entfallen* — der Live-Block der Klasse `inplace` ist in den
+  Sitzungen von Implementer und Verifier gesehen, der Wortlaut im Verifikations-Report §1 gedruckt;
+  der Reviewer sah beide Klassen live geblockt (übernommen aus dem Review-Report); der Ausgabeweg
+  `emit_block` ist für alle drei Klassen derselbe. Die Closure-Sitzung des Planners sah die Klasse
+  `interp` ebenfalls live: ein versehentlicher `python3 --version`-Aufruf mit einem Repo-Pfad im
+  Befehlsstring kam als Hook-Fehler „Host python/perl on repo paths is blocked (AGENTS.md Hard Rule
+  3.1)“ zurück und lief nicht (gemessen; ein Falsch-Positiv-Rand der Klasse, `MR-003`).
 - **5. Die Evidenz trägt nicht alle Regeln** (Baseline: „Eine Wächter-Regel ohne
   Sensor-Evidenz ist Aufwand ohne Begründung und fällt beim ersten Fehlalarm“, Modul 13
   §Guard-Härtung). `sed -i` ist in fünf Läufen über drei Vorfälle belegt, `perl -pi` und
@@ -468,18 +498,28 @@ neuer Sensor: `make test-command-guard`, ohne Gate).
   größte Falsch-Positiv-Fläche) und der abtrennbare Teil (§4). *Erwartet, zu belegen durch:* der
   Auslöser steht in `MR-003` mit den gezählten Beleg-Dateien; der Reviewer prüft, dass die Zahlen
   dort mit dem Register übereinstimmen; ein Auftreten **trotz** Guard ist eine neue Beleg-Datei
-  im Register-Eintrag (Kenntnis, in diesem Slice nicht belegbar). **Ausgang:** *(bei Closure)*
+  im Register-Eintrag (Kenntnis, in diesem Slice nicht belegbar). **Ausgang:** *weiter offen als
+  Kenntnis* — `MR-003` nennt den Auslöser mit den vier Beleg-Dateien (Review und Verifikation
+  stellten fest, dass die Zahl mit dem Register übereinstimmt); `perl -i` und `awk -i inplace`
+  bleiben ohne Beleg, die Host-Interpreter-Regel bleibt die schwächste (Neubewertungs-Trigger im
+  Auflösungs-Trigger von `MR-003`); ein Auftreten trotz Guard ist eine weitere Beleg-Datei im
+  Register-Eintrag.
 - **6. Mutationsproben der Reviewer und Verifier werden behindert.** Sie arbeiten nach
   [`AGENTS.md`](../../../../AGENTS.md) §3.1 auf einer Kopie im Scratchpad; ein `sed -i` auf der
   Kopie wird jetzt geblockt. *Erwartet, zu belegen durch:* die Tabelle enthält den zulässigen
   Weg als Nicht-Treffer (`sed s/a/b/ Datei > /tmp/…/Kopie`, `python3 /tmp/…/mutate.py`), der
   Satz zur Mutationsprobe in §3.1 nennt ihn, und der Reviewer des Slice fährt eine Mutation
-  auf diesem Weg. **Ausgang:** *(bei Closure)*
+  auf diesem Weg. **Ausgang:** *entfallen* — der Weg (`sed s/a/b/ Datei > Kopie`) passiert den
+  Guard (Tabellenfall; Review und Verifikation fuhren ihre Mutationen so, der Reviewer mit `sed`
+  ohne `-i`, der Verifier mit `awk` nach stdout); ein Host-`python3 /tmp/…/mutate.py` passiert
+  ihn ebenfalls, ist aber kein Weg nach `AGENTS.md` §3.1 (Satz im Absatz „Durchsetzung“).
 - **7. Host-Werkzeuge außerhalb von Docker und `make`** (`bash`, `awk`, `mktemp` im Test,
   `ls` im Guard; `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`, 2×).
   *Erwartet, zu belegen durch:* alle vier stehen in der Klasse „Host-Werkzeug ohne
   Installation“ ([`AGENTS.md`](../../../../AGENTS.md) §3.1: `bash`, `git`, `awk`, `mktemp` und
-  die coreutils-Basis); die README-Zeile nennt sie. **Ausgang:** *(bei Closure)*
+  die coreutils-Basis); die README-Zeile nennt sie. **Ausgang:** *entfallen* — der Kopf des
+  Tabellentests und die README-Zeile nennen `bash`, `awk`, `mktemp`; `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`
+  bleibt bei 2×, der Trigger ist nicht eingetreten (`state.md` des Eintrags).
 
 **Offene Fragen an den Nutzer (Entscheidung, nicht Umfang) — je mit Adresse:**
 
@@ -490,42 +530,153 @@ neuer Sensor: `make test-command-guard`, ohne Gate).
    ginge durch, weil `docker` der Kopf ist. Empfehlung: nicht in diesem Slice; zuerst die
    Wirkung von Liefer-Punkt 1 abwarten. Adresse: der Nutzer; bei „ja“ ein eigener Plan, den der
    Planner anlegt. Die Frage steht mit dem Closure-Stand im `state.md` des Register-Eintrags.
+   **Stand bei Closure:** in diesem Slice nicht umgesetzt (Entscheidung des Auftraggebers an den
+   Implementer, 2026-09-26); die Neubewertung hat zwei Trigger in `MR-003` (Auflösungs-Trigger),
+   das zweite Kriterium tritt mit der Closure von `slice-transformationen-map-value` ein
+   (Adresse im `state.md` des Register-Eintrags).
 2. **Eine Scratchpad-Ausnahme für `sed -i`** (erlaubt, wenn ein Token auf einen absoluten
    Pfad unter `/tmp/` zeigt und keines auf einen Repo-Pfad). Der Plan blockt unbedingt: die
    drei Vorfälle klassifizieren auch das `sed -i` auf `/dev/null` und auf einer
    Scratch-Datei als Fehlgriff, und der zulässige Mutationsweg braucht kein `-i`
    (Stdout-Umleitung). Eine Ausnahme kostet Pfad-Logik und ein Loch (`xargs sed -i < /tmp/liste`
    ginge durch). Adresse: der Nutzer; bei „ja“ ändert der Implementer den Fall im Tabellentest,
-   und `MR-003` nennt die Ausnahme.
+   und `MR-003` nennt die Ausnahme. **Stand bei Closure:** entschieden, keine Ausnahme (Auftrag des
+   Auftraggebers an den Implementer, 2026-09-26); der Guard blockt `sed -i` unbedingt.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag:** *(zu tragen bei Closure — erwartet: geschärfte Regel
-  [`AGENTS.md`](../../../../AGENTS.md) §3.1 Durchsetzung und `MR-003` (Guard blockt die in-place
-  Formen; Grenz-Zeile), neuer Sensor `make test-command-guard` ohne Gate; Auslöser
-  `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (drei Vorfälle:
-  `slice-backfill-speicher-untersuchung`, `slice-transformationen-antragsweg-usecase`,
-  `slice-transformationen-backfill-pfad`); das Feld `liegt in` steht nur, wenn wirklich
-  verkörpert; ohne Eintrag kein `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(zu tragen bei Closure — `state.md` von
-  `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`: die Durchsetzung heute, die Adresse
-  aufgelöst, die zwei Nutzer-Fragen aus §6 mit Adresse; ein Auftreten trotz Guard wäre eine
-  weitere `evidence/`-Datei)*
-- **Folge-Slices:** keiner erwartet; die zwei Nutzer-Fragen aus §6 sind Entscheidungen mit
-  Adresse „Nutzer“, kein Slice. Träger-Meldungen aus §3 mit Frist „Closure dieses Slice“:
-  `welle-transformationen` §6 (a) und `slice-code-kommentare-bereinigung` §8 — der Planner
-  zieht nach oder benennt den Träger mit Adresse.
-- **Risiken aus §6:** *(je ein Ausgang, zu tragen bei Closure)*
+- **Was hat funktioniert:** (1) Die Leser-Kette fand, was der Implementer-Lauf nicht fand:
+  der Review nennt 1 HIGH, 4 MEDIUM, 2 LOW und 2 INFO, die Verifikation 8 Verifier-Findings
+  (1 MEDIUM, 3 LOW, 4 INFO; übernommen aus den Reports). Der HIGH (F-1, Zeichenklassen ohne
+  Mitglied-Fälle) und der Eintritt der Rückführung §4 (a) (F-2, ein Suchmuster mit `|` blockte
+  viermal live) sind Funde durch Mutation und durch den Live-Lauf, nicht durch Lesen. (2) Die
+  Mutationen der Eingabeseite: der Implementer fuhr 120 (118 rot, 2 äquivalent; übernommen aus
+  dem Implementer-Bericht, ohne Lauf-Anker, V-6), der Reviewer 41 Kopien (übernommen aus dem
+  Review-Report), der Verifier 60 (57 rot, 3 grün; übernommen aus der Verifikation §4); die drei
+  grünen des Verifiers (V-3 Ziffernklasse `0-27` und `0-9`, V-4 Backslash-Escape) band der Nachzug
+  `527d69dd` mit drei Mutationstabellen (6 + 10 + 3 Läufe, abgeleitet; gemessen vom
+  Implementer-Zug). (3) Der Tabellentest trägt: 317 Fälle, 311 Tabellenzeilen und 6 Sonderfälle
+  (gemessen bei dieser Closure: `make test-command-guard` Exit 0, „alle 317 Fälle bestanden“;
+  `grep -cE '^(block|pass) '` 311; die 6 abgeleitet), gegen den Guard am Parent `e98d419c` 168
+  rot und gegen den Guard am Review-Stand `a0472421` 81 rot (je ein Lauf bei dieser Closure,
+  `grep -c '^FEHLER:'`); die Gruppe „Bestandsregeln“ (18 Tabellenzeilen) ist am Parent grün.
+  (4) Die Wirkung ist live gesehen: die Klasse `inplace` in den Sitzungen von Implementer und
+  Verifier (Wortlaut im Verifikations-Report §1), die Klasse `interp` vom Reviewer (übernommen)
+  und in der Closure-Sitzung (ein versehentlicher `python3 --version` mit Repo-Pfad im Befehlsstring
+  wurde geblockt, ohne Wirkung). (5) Der Architect-Zug `d55943b1` beantwortete die Fragen in einer
+  Runde: Quote-Lesung als Lexer-Stufe ratifiziert mit Obergrenze in `MR-003`, die Erweiterung der
+  Bestandsregel (F-3) akzeptiert, ein Satz zu Host-`python` ohne Repo-Pfad in `AGENTS.md` §3.1,
+  der Tabellentest als Beleg für Liefer-Punkt 2. (6) Das Suchlauf-Feld trug: 15 Zeilen; der Verifier
+  fuhr fünf von Hand nach; bei dieser Closure meldet `make suchlauf-nachmessen` mit den nachgezogenen
+  Soll-Werten Exit 0, gedruckt „suchlauf-nachmessen: 15 Zeilen stimmen“ (gemessen).
+- **Was ging anders als geplant:** (1) Der Plan schloss „Quote-Bewusstsein im Guard“ aus und führte
+  die Rückführung §4 (a); die Fixrunde lieferte einen Zustandsautomaten (`mask-quotes.awk`, 40 Zeilen)
+  statt der Rückführung, der Architect ratifizierte ihn nachträglich (V-1: die Umkehr eines
+  Ausschlusses ohne Rückführung; die Bestätigung stand im Plan nur als Wunsch, jetzt steht sie
+  als Ergebnis in §1 und §4). (2) Das Register trug vier Beleg-Dateien statt der geplanten drei;
+  der Host-Interpreter ist in zwei Vorgängen belegt (Risiko 5). (3) Über den Plan hinaus entstanden
+  `mask-quotes.awk`, die Gruppe „Kopf-Erkennung“ (Wrapper-Optionen und Schlüsselwörter für alle
+  Klassen, F-3, F-4), der Konjunktiv-Kandidatenlauf auf Skripten (F-7) und 317 statt der geschätzten
+  rund vierzig Fälle. (4) Zahlen im Plan wichen von der Nachmessung ab: „31 Fälle Anführungszeichen“
+  gegen gemessen 37, „24 Fälle Pfadzeichen“ gegen 23, „80 rot am Review-Stand“ gegen 81; die Closure
+  hat sie mit Anker nachgezogen (Deckel-Fall unten). (5) Die Fixrunde hat kein zweites Review (V-8);
+  der Closure-Trigger „Review-Report ohne offenes HIGH oder MEDIUM“ stützt sich auf den Report am
+  Stand `a0472421`, dessen Findings der Verifier je Zeile am Ist-Zustand nachmaß (Verifikation §5:
+  F-1 bis F-7 aufgelöst, F-1 mit einem Rest, der im Nachzug `527d69dd` gebunden ist) und 60 Mutationen
+  an der Fixrunde; ein Nach-Review ist nicht beauftragt, die Entscheidung liegt hier beim Planner.
+  (6) Die Coverage-Zahl ist an diesem Stand nicht lauf-stabil: 85.10 % im Lauf dieser Closure und im
+  Lauf der Verifikation (übernommen), 85.20 % im Auftrag zu dieser Closure genannt (übernommen); die
+  Streuung ist 0,10 Prozentpunkte (abgeleitet), die Zahl ist Beleg des jeweiligen Laufs, keine
+  Zustandsgröße; der Diff berührt keinen Go-Code. (7) Der Live-Beleg mit Host-`python3` (DoD-Zeile 2)
+  entfällt: er verstieße gegen `AGENTS.md` §3.1; der Architect-Zug hat den Tabellentest als Beleg
+  angenommen.
+- **Steering-Loop-Eintrag (Lerneintrag):** *(a) Geschärfte Regel.* [`AGENTS.md`](../../../../AGENTS.md)
+  §3.1 Absatz „Durchsetzung“ nennt, was der Guard blockt (`sed -i`/`--in-place`, `perl -i`,
+  `awk -i inplace` unabhängig vom Ziel, Host-`python`/`perl` mit Repo-Pfad im Befehlsstring), was er nicht
+  liest, und dass ein Host-Interpreter auch ohne Repo-Pfad kein zulässiger Weg ist; `MR-003` trägt Vertrag,
+  Obergrenze der Quote-Lesung und Grenz-Zeile · seit slice-harness-guard-inplace-textwerkzeug. Herkunft:
+  `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (vier Beleg-Dateien),
+  `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`. Die Kopf-Erkennung (Wrapper-Optionen,
+  Schlüsselwörter) gilt für alle Klassen, auch die Paketmanager (F-3). *(b) Neuer Sensor, kein Gate.*
+  `make test-command-guard` (Tabellentest gegen den Guard, 317 Fälle; `harness/README.md` §Sensors,
+  `Makefile`); ein Gate braucht eine ADR ([`AGENTS.md`](../../../../AGENTS.md) §3.6), und ein Wächter
+  gehört nicht in die Gate-Tabelle (Baseline `modul-13-quality-gates.md` §Guard-Härtung). *(c) Benannte
+  Lücken, je mit Adresse* (alle in der Grenz-Zeile von `MR-003`): erstens das Falsch-Negativ der
+  Quote-Lesung (zwei Apostrophe in zwei Heredoc-Zeilen maskieren die Zeilen dazwischen, V-2; Adresse:
+  die Obergrenze in `MR-003`, ein Fall, der mehr verlangt, ist eine Beleg-Datei im Register-Eintrag, keine
+  Erweiterung des Maskierers); zweitens der Optionswert hinter `sudo -u x` und `env -u X` (Adresse:
+  `MR-003`, Ereignis: ein Beleg); drittens Host-`python`/`perl` auf einem Pfad ohne Repo-Namen (Adresse:
+  die Kopf-Liste `tools/harness/blocked/go`, Nutzer-Entscheidung, Trigger in `MR-003` und im `state.md`
+  des Register-Eintrags); viertens Umleitungen und flaglose Schreibwege, Skripte, andere Interpreter
+  (Adresse: das Review, Ausschluss eines Sensors über Dateiinhalte, §1). Die Nutzer-Frage zu
+  `tools/harness/blocked/go` hat ihre Adresse: das zweite Trigger-Kriterium („die Closure des nächsten Slice,
+  dessen Läufe unter diesem Guard liefen“) tritt mit der Closure von `slice-transformationen-map-value` ein;
+  der Guard wirkt ab dem Commit in jeder Sitzung, die Läufe aller Folge-Slices laufen unter ihm (der Plan
+  der Folge-Slices muss das nicht tragen). *(d) Finding-Klassen des Reviews und der Verifikation:*
+  Zusage ohne Bindung an ihre Eingabeseite (F-1, V-3, V-4) · Falsch-Positiv-Rand ungebunden und nicht
+  benannt (F-2) · Bestandsregel verändert, als unverändert ausgewiesen (F-3) · Grenz-Zeile nennt eine
+  Lücke der Zusage nicht (F-4, F-6, V-2) · Meldung und Regel nennen verschiedene zulässige Wege (F-5) ·
+  Selbstprüfung enger als der Prüfpunkt (F-7) · Wächter-Regel ohne Evidenz und Interpreter-Denylist (F-8) ·
+  äquivalente Mutation durch Doppelschutz (F-9) · Ausschluss des Plans ohne Rückführung umgekehrt (V-1) ·
+  Vorher-Nachher-Sprache in Doku-Prosa (V-7) · Mutationszahl ohne Lauf-Anker (V-6); ihre Zuordnung zu den
+  Register-Zählern steht im nächsten Punkt.
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
+  `evidence/slice-harness-guard-inplace-textwerkzeug.md`, Zähler = Zahl der Dateien. *Neue Belege:*
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` **17×** (F-1, HIGH; V-3 und V-4 im selben Vorgang;
+  Ausprägung: die Zeichenklasse eines Musters, ihre Eingabeseite ist jedes Mitglied und jede Klassengrenze;
+  Ausgang unverändert **verkörpert**, kein Kandidat der Schärfung: Reviewer und Verifier fanden ihn mit der
+  bestehenden Regel); `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` **9×** (F-3 und F-5, je
+  MEDIUM; „unverändert“ ohne Messung am Parent, „zulässiger Weg“ ohne Anker); `BEO-PGC/regel-weiter-als-ihr-sensor`
+  **4×** (F-4, F-6, V-2; neue Domäne, Variante „benannte Grenze unvollständig“; Urteil: kein zusätzlicher Sensor,
+  wie bei den drei früheren Belegen); `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar` **6×** (V-7 und
+  die Plan-Prosa dieser Closure, F-7; die Schärfung des Kandidatenlaufs in `implement-slice` Schritt 20 ist
+  **verkörpert** und im `state.md` nachgezogen, der frühere Kandidat „Adresse Lese-Schritt“ war überholt).
+  *`state.md` fortgeschrieben:* `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (**verkörpert** durch
+  Regel, Guard, `MR-003` und Tabellentest; die Nutzer-Fragen: Scratchpad-Ausnahme entschieden — keine,
+  `blocked/go` mit Trigger und Adresse; die Beleg-Datei des vierten Vorgangs trägt als dritte Rolle den
+  Planner der Closure-Sitzung von `slice-antragsqueue-lesefehler-failed`, Angabe des Auftraggebers,
+  Zähler bleibt 4×; aus diesem Slice fällt kein Beleg an; ein versehentlicher `python3`-Aufruf der
+  Closure-Sitzung wurde vom Guard geblockt),
+  `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration` (Trigger geprüft, nicht eingetreten,
+  Zähler bleibt 2×). *Deckel-Fälle ohne Datei, Kennung hier* (verkörpert ab 10×, vor dem Merge gefunden,
+  Schwere ≤ LOW, bekannter Träger-Typ): V-6 (INFO, „120 Mutationen“ ohne Lauf-Anker) und die drei
+  Zahl-Abweichungen im Plan (31/37, 24/23, 80/81; Leser: der Planner der Closure, INFO) zu
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (Deckel bei 23×). *Kein Anfall:*
+  `BEO-PGC/werkzeug-liest-nutzerkonfiguration-ohne-pin` (der Tabellentest liest kein Fremdwerkzeug außer
+  `ls -A` im Guard und keine Nutzerkonfiguration), `BEO-PGC/test-schreibt-in-committete-datei` (der Test
+  schreibt nur ins Temp-Verzeichnis). *Lese-Schritt:* aus diesem Slice erreicht neu kein Eintrag die Schwelle
+  ohne Ausgang (`BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` liegt bei 9×, Ausgang
+  **verkörpert**).
+- **Folge-Slices:** keiner. Die Nutzer-Frage zu `tools/harness/blocked/go` ist eine Entscheidung mit
+  Adresse (die Closure von `slice-transformationen-map-value`, der Planner legt sie dem Nutzer mit der
+  gemessenen Wirkung vor), kein Slice. Träger-Meldungen aus §3 mit Frist „Closure dieses Slice“ sind
+  erfüllt: `welle-transformationen` §6 (a), `slice-code-kommentare-bereinigung` §6 und §8 und der
+  `state.md` des Register-Eintrags sind nachgezogen; der Link auf den `in-progress/`-Pfad dieses Slice
+  steht in keinem anderen Dokument (`git grep` bei dieser Closure).
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Eingetreten und behandelt:* Risiko 1 (F-2,
+  Rückführung nicht eingetreten; der Architect ratifizierte den Lexer), Risiko 2 (Lücken der Grenz-Zeile,
+  F-4, F-6, V-2, nachgezogen). *Entfallen:* Risiko 3 (Bestandsschutz gebunden), 4 (Live-Beleg der Klassen
+  `inplace` und `interp`), 6 (Mutationsweg passiert den Guard), 7 (Host-Werkzeuge in der Klasse). *Weiter
+  offen als Kenntnis:* Risiko 5 (`perl -i` und `awk -i inplace` ohne Beleg; Host-Interpreter-Regel die
+  schwächste). Die Rückführung §4 (a) ist nicht eingetreten (ratifiziert, `MR-003` trägt die Obergrenze),
+  die Rückführung §4 (b) ebenfalls nicht.
 - **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure selbst trägt die drei
   Paarungen (Anker · Folge-Slice · Register), nach dem `git mv` nach `done/`. Die
   Ereignis-Adresse kann eintreten (die Closure dieses Slice), und keine der Paarungen hängt an
-  einem Ereignis außerhalb: *Anker* — [`AGENTS.md`](../../../../AGENTS.md) §3.1 Durchsetzung und
-  `MR-003` tragen `seit slice-harness-guard-inplace-textwerkzeug`, der Kopfkommentar des Guards
-  und das Ziel `test-command-guard` im `Makefile` existieren; *Folge-Slice* — keiner genannt; *Register* —
-  `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (und jede weitere genannte Kennung)
-  existiert als Verzeichnis mit nicht leerem `evidence/`.
+  einem Ereignis außerhalb: *Anker* — [`AGENTS.md`](../../../../AGENTS.md) §3.1 Durchsetzung trägt
+  `· seit slice-harness-guard-inplace-textwerkzeug` (`git grep -n 'slice-harness-guard-inplace-textwerkzeug'
+  -- AGENTS.md harness/README.md harness/conventions`), `MR-003` steht im Index von `harness/conventions.md`
+  (Anker `mr-003`) und nennt den Slice als Herkunft der Obergrenze, das Ziel `test-command-guard` steht im
+  `Makefile` und in `harness/README.md` (Zeile mit `· seit`), der Kopfkommentar des Guards verweist auf
+  `MR-003`; *Folge-Slice* — keiner genannt; die Ereignis-Adresse der Nutzer-Frage (die Closure von
+  `slice-transformationen-map-value`, Datei in `open/`) kann eintreten; *Register* —
+  `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` und jede weitere genannte Kennung
+  (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`,
+  `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`, `BEO-PGC/regel-weiter-als-ihr-sensor`,
+  `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar`,
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`,
+  `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`) existiert als Verzeichnis mit nicht
+  leerem `evidence/` (geprüft mit `ls docs/plan/planning/observations/BEO-PGC/<slug>/evidence`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

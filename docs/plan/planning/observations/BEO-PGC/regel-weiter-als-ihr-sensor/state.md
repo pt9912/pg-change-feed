@@ -29,5 +29,12 @@ Reviewers (`harness/sensors/suchlauf-nachmessen.md` §Grenze, `AGENTS.md` §3.13
 eine neue Datei: ein Fund, bei dem das Werkzeug grün war und Suchraum oder Muster den Träger
 nicht trafen.
 
-Zähler (abgeleitet): **3×** (evidence/slice-078.md, evidence/slice-079.md,
-evidence/slice-096.md).
+Der vierte Beleg (`slice-harness-guard-inplace-textwerkzeug`, Review F-4 MEDIUM, F-6 LOW,
+Verifikation V-2) trifft eine **neue Domäne**: die Regel in `AGENTS.md` §3.1 reicht weiter als der
+PreToolUse-Guard, und die Grenz-Zeile in `MR-003` war in der ersten Fassung **unvollständig** (die
+Lücke war nicht das Problem, ihre Benennung fehlte); beim Review vor dem Merge gefunden und
+nachgezogen. Urteil: kein zusätzlicher Sensor, Ausgang unverändert (benannte Grenze
+plus Reviewer als Leser), wie bei `slice-078` und `slice-079`.
+
+Zähler (abgeleitet): **4×** (evidence/slice-078.md, evidence/slice-079.md,
+evidence/slice-096.md, evidence/slice-harness-guard-inplace-textwerkzeug.md).

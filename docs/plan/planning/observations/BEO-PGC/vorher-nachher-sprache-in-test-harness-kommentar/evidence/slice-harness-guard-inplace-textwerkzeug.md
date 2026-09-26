@@ -1,0 +1,11 @@
+**Vorgang:** slice-harness-guard-inplace-textwerkzeug (Verifikation V-7, INFO; Review F-7, LOW; Leser-Fund der Planner-Closure)
+
+**Fund:** Zwei Ausprägungen, keine im Code oder in einem Skript-Kommentar des Diffs.
+
+- **Doku-Prosa.** Der Verifier fand in `harness/conventions/MR-003-guard-inplace-textwerkzeug.md` (Adaption) einen Satz über den Vorzustand („der Bestand las nach einem Wrapper-Präfix keine Optionen und kannte keine Schlüsselwörter“) und im Plan den Satz „der erste Lauf las die Flag-Tokens roh“ (V-7, INFO). Die Planner-Closure fand im Plan dieselbe Form in weiteren Sätzen der Fixrunde-Tabelle („Die Bestandsregel ‚quote-blind‘ ändert sich damit …“, „ist eine Erweiterung der Bestandsregel“), in der Definition of Done („erweitert sie für alle Klassen“) und in einem Konjunktiv über die verworfene Alternative („bliebe … bestehen, wenn das Überspringen nur für … gälte“). Die Closure setzte sie in den Ist-Ton (die Kopf-Erkennung gilt für alle Klassen); der Satz in `MR-003` steht nicht mehr im Baum (`git grep -n 'Bestand las' -- harness .claude tools AGENTS.md` ohne Treffer, gemessen bei dieser Closure).
+- **Kandidatenlauf zu eng.** Der Konjunktiv-Kandidatenlauf in `implement-slice` Schritt 20 (`c625b572`) las nur Go-Kommentare mit `//` und die Umlaut-Schreibweise; der Skopus des Reviewer-Punkts umfasst Skripte, Tests und Runner, deren Kommentare in diesem Repo transliteriert sind (Review F-7, LOW, „waere sonst“ im Bestand des Guards). Die Fixrunde erweiterte den Lauf auf `'*.go' '*.sh' '*.awk'` mit `(//|#)` und den transliterierten Formen; der Lauf auf dem Diff seit `e98d419c` liefert 0 Treffer (Verifikation §1).
+
+**Form (Ausprägung):** dieselbe Klasse (Vorher-Nachher-Andeutung oder verworfene Alternative statt Indikativ über den Zustand), in einem **Plan** und einem **Adaptions-Eintrag** statt in einem Kommentar — die Doku-Prosa-Variante, in der die Abgrenzung zum Bestand der Gegenstand einer `MR`-Adaption ist (dort ist der Herkunfts-Anker ein Feld, kein Satz über das Frühere). Schwere INFO/LOW, vor dem Merge von Verifier und Reviewer gefunden; Ausgang unverändert **verkörpert**.
+
+Quelle: `docs/reviews/verifikation-slice-harness-guard-inplace-textwerkzeug.md` (§7 V-7, §5 F-7) <!-- d-check:status-provenance -->
+· `docs/reviews/review-slice-harness-guard-inplace-textwerkzeug.md` (F-7). <!-- d-check:status-provenance -->

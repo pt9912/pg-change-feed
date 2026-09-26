@@ -37,7 +37,8 @@ Träger“ — eine Gegenentscheidung des Architects ist ein neues Verdikt):
   einer Abfrage-Eingabe; er ist im Slice gebunden (Test mit Run einer fremden Quelle,
   Mutation danach rot), der Reviewer fand ihn vor dem Merge.
 
-Zähler (abgeleitet): **16×** (evidence/slice-transformationen-antragsweg-schema.md,
+Zähler (abgeleitet): **17×** (evidence/slice-harness-guard-inplace-textwerkzeug.md,
+evidence/slice-transformationen-antragsweg-schema.md,
 evidence/slice-transformationen-kern-rename.md,
 evidence/slice-086.md, evidence/slice-087.md,
 evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md,
@@ -51,7 +52,15 @@ evidence/slice-sdk-kotlin-cloudsmith.md,
 evidence/slice-harness-suchlauf-nachmessen.md) —
 **Schwelle erreicht**; der Lese-Schritt der Closure von `welle-backfill-bestand`
 liest den Eintrag mit (11×), der Lese-Schritt der nächsten Welle-Closure
-(`welle-transformationen`) den zwölften bis sechzehnten Beleg. Der sechzehnte Beleg
+(`welle-transformationen`) den zwölften bis siebzehnten Beleg. Der siebzehnte Beleg
+(`slice-harness-guard-inplace-textwerkzeug`, Review F-1, HIGH, daher Datei trotz Deckel) trifft
+die **Zeichenklasse eines Musters** in einem Wächter-Skript: die Klassen der sed-, perl- und
+Pfadzeichen-Regeln des Guards waren nur an einzelne Mitglieder gebunden (14 Mutationen des
+Reviewers blieben grün); Ausprägung: die Eingabeseite einer Zeichenklasse ist **jedes Mitglied
+und jede Klassengrenze**. Die Verifikation fand an der Fixrunde zwei Reste (V-3: die Ziffernklasse
+`0-7` an vier von acht Ziffern gebunden; V-4: die Backslash-Maskierung des Lexers ungebunden), beide
+LOW und im selben Vorgang, gebunden im Nachzug; die Regel hat mit Reviewer und Verifier vor dem
+Merge gewirkt, kein Kandidat der Schärfung. Der sechzehnte Beleg
 (`slice-transformationen-antragsweg-schema`, Review F-6, LOW) trifft eine **Katalog-Eigenschaft**
 einer Datenbankfunktion: `SECURITY DEFINER` und gepinnter `search_path` waren nur zur Hälfte
 gebunden (das Entfernen des `SET search_path` färbte keinen Test), und die erste Fassung des

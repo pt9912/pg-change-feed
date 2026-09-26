@@ -374,13 +374,14 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   `e2e-abhilfe` → `slice-code-kommentare-bereinigung`.
 - **Fragen für den nächsten Architect-Zug (Notiz, nicht beauftragt).** (a) Ein
   in-place schreibendes Text-Werkzeug am Repo (`sed -i`, `perl -pi`, ein
-  Host-Interpreter auf einer Repo-Datei) ist in keinem committeten Text
-  verboten (`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, 3×, Schwelle
-  erreicht): der Zug zu [`AGENTS.md`](../../../AGENTS.md) §3.1 (Ausnahme-Klasse
-  „Host-Werkzeuge“, gemeinsam mit
-  `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`, 1×); die
-  Klasse trifft besonders `slice-code-kommentare-bereinigung` (Hunderte
-  Kommentar-Änderungen). (b) Die Lesekosten des Backfill-Runs sind bereits ein
+  Host-Interpreter auf einer Repo-Datei) ist in [`AGENTS.md`](../../../AGENTS.md) §3.1
+  verboten, und der PreToolUse-Guard blockt die Flag-Formen
+  (`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, 4×, Ausgang verkörpert;
+  Grenz-Zeile: `MR-003`, Tabellentest `make test-command-guard`); die Klasse
+  `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration` (2×) steht in
+  §3.1 als „Host-Werkzeug ohne Installation“. Die Klasse trifft weiter besonders
+  `slice-code-kommentare-bereinigung` (Hunderte Kommentar-Änderungen): Umleitungen und
+  flaglose Schreibwege liest der Guard nicht. (b) Die Lesekosten des Backfill-Runs sind bereits ein
   Closure-Kriterium dieser Welle (§3) und tragen keine weitere Adresse.
 
 **Träger der Folgepflichten** — jede Pflicht aus

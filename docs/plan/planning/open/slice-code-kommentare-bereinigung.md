@@ -265,11 +265,13 @@ geschrieben; der Planner legt in der Closure den Folge-Slice
   (Zahl der Stichproben im Bericht); eine nicht getragene Zusage wird gemeldet,
   nicht gestrichen. **Ausgang:** *(bei Closure)*
 - **Ein in-place schreibendes Textwerkzeug am Repo bei 597 Kandidaten**
-  (`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, 3×, Schwelle
-  erreicht). *Erwartet, zu belegen durch:* die Änderung läuft mit dem
-  Edit-Werkzeug je Datei, nie mit `sed -i`, `perl -pi` oder einem Skript über
-  den Baum; der Diff-Nachweis („nur Kommentarzeilen“) und `make test` sind die
-  Probe. **Ausgang:** *(bei Closure)*
+  (`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, 4×, verkörpert:
+  der PreToolUse-Guard blockt `sed -i`, `perl -i`, `awk -i inplace` und einen
+  Host-Interpreter auf Repo-Pfaden, die Grenze steht in `MR-003`; Umleitungen
+  und ein Skript über den Baum liest er nicht). *Erwartet, zu belegen durch:*
+  die Änderung läuft mit dem Edit-Werkzeug je Datei, nie mit `sed -i`,
+  `perl -pi` oder einem Skript über den Baum; der Diff-Nachweis („nur
+  Kommentarzeilen“) und `make test` sind die Probe. **Ausgang:** *(bei Closure)*
 - **Der Diff ändert Code statt nur Kommentare.** *Erwartet, zu belegen durch:*
   der Diff-Nachweis je Tranche (Liefer-Punkt 1 und 2), `make test` und `make
   a-check`. **Ausgang:** *(bei Closure)*
@@ -333,9 +335,10 @@ gemessen am 2026-09-26 mit `ls evidence | wc -l` je Eintrag):
   `BEO-PGC/slice-chronik-in-code-kommentar` (verkörpert, 9×),
   `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar` (verkörpert, 3×):
   Risiken in §6 (Zusagen, Chronik).
-- `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (offen, Schwelle
-  erreicht, 3×): Risiko in §6; der Slice ändert Hunderte Kommentare und ist der
-  Ort, an dem die Klasse eintreten kann.
+- `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (verkörpert, 4×):
+  Risiko in §6; der Guard blockt die Flag-Formen, und der Slice ändert Hunderte
+  Kommentare und ist der Ort, an dem ein Umleitungs- oder Skript-Weg (vom
+  Guard ungelesen) eintreten kann.
 - `BEO-PGC/test-schreibt-in-committete-datei` (verkörpert, 4×): der
   `make test-integration`-Lauf in T8 schreibt `docs/user/e2e-abdeckung.md`
   absichtlich (Erzeugnis); der Wrapper deckt die Rollout-Artefakte, nicht diese
