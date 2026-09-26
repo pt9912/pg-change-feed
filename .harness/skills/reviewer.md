@@ -230,8 +230,11 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   dieser Klasse: Review F-3 (2026-09-09, Zurückstellung bindender
   Anforderungen im Sammelabschnitt).
 - **Docker-only-Verstoß** — ein Build-/Test-/Betriebs-Skript installiert ein
-  lokales Toolchain (venv, SDK, Paketmanager) statt über `make` zu laufen
-  (`AGENTS.md` §3.1).
+  lokales Toolchain (venv, SDK, Paketmanager) statt über `make` zu laufen, ein
+  Skript ruft ein Host-Werkzeug außerhalb der Klasse „ohne Installation“ auf,
+  oder ein Host-Werkzeug schreibt eine Repo-Datei in place um (`sed -i`,
+  `perl -pi`, Host-Interpreter) — Spur ist oft nur eine Formatabweichung im
+  Diff (`AGENTS.md` §3.1).
 - **Zwei-Quellen-Drift** — derselbe Zustand wird in zwei Dateien geführt,
   ohne dass der Gewinner deklariert ist (z. B. Anforderungstext doppelt in
   Lastenheft und Pflichtenheft; Zustand in Verzeichnis *und* Status-Feld).

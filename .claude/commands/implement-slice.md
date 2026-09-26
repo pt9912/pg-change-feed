@@ -26,9 +26,8 @@ Adaptions-Block („MR-Block") in `harness/conventions.md`; die workflow-relevan
 emittierten Durchsetzungsschicht):
 
 - **Docker-only, kein Host-Toolchain.** Jeder Gate und jedes Tool läuft in einem gepinnten
-  Docker-Image; der emittierte PreToolUse-Guard (`.claude/hooks/pretooluse-command-guard.sh`) blockt
-  die Host-Toolchain deiner Sprache (und prüft Sub-Shell-Strings). Rufe nie einen Host-Toolchain auf
-  — nur die `make`-Targets.
+  Docker-Image; erlaubte Host-Werkzeuge und das Verbot des in-place Text-Umschreibens
+  (`sed -i`, `perl -pi`, Host-Interpreter) stehen in `AGENTS.md` §3.1. Rufe nur `make`-Targets auf.
 - **Gate-Nachweis + Stop-Hook.** `make gates` endet mit `record-gates`, das einen Content-Hash des
   Working Tree stempelt; der Stop-Hook verweigert den Abschluss, solange der aktuelle Tree nicht
   passt. **Jede Inhaltsänderung nach einem Gate-Lauf — inklusive jedes Commits und jedes `git mv`

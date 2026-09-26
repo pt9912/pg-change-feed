@@ -72,13 +72,47 @@ In dieser Reihenfolge:
 
 ### 3.1 Docker-only
 
-Kein lokales <venv/SDK/Toolchain-Install>. Alles läuft über `make`
-(das Docker nutzt). Host braucht nur Docker und GNU `make`.
+Kein lokaler Install einer Toolchain (Go, Python, Node, .NET, JVM, `uv`),
+keine Host-Paketmanager, kein Host-Linter und -Formatierer. Alles, was Code
+baut, testet, formatiert oder generiert, läuft über `make` in einem gepinnten
+Docker-Image.
 
-**Falsch:** <z.B. `pip install ...`>
-**Richtig:** <z.B. `<make-target>`>
+**Host-Werkzeug ohne Installation — die eine Klasse neben Docker und `make`.**
+Der Host braucht Docker, GNU `make` und die Werkzeuge, die jede Arbeit an
+diesem Repo ohnehin voraussetzt: `bash`, `git` und die POSIX-/coreutils-Basis
+(`awk`, `grep`, `sed` ohne `-i`, `realpath`, `mktemp`, `tar`, `sha256sum`).
+Ein Repo-Skript hinter `make` darf sie aufrufen; es installiert nichts und
+schreibt nichts außerhalb des Repos und seiner Temp-Verzeichnisse. Ein Sensor-
+oder Target-Vertrag (`harness/sensors/*.md`, `harness/targets/*.md`) nennt die
+Host-Werkzeuge seines Skripts, soweit sie über `bash` und `git` hinausgehen.
+Was nicht in dieser Klasse steht (`go`, `gofmt`, `python`, `node`, `curl`,
+`jq`, …), läuft im Container, wie `tools/harness/lib-github-api.sh` es für
+`curl` vormacht.
 
-**Begründung:** Toolchain-Reproduzierbarkeit + Supply-Chain-Defense.
+**Text-Umschreiben im Repo ist Sache der Datei-Werkzeuge des Laufs.** Ein
+Host-Werkzeug, das eine Repo-Datei an Ort und Stelle überschreibt — `sed -i`,
+`perl -pi`, `awk -i inplace`, ein Host-Interpreter (`python`, `perl`) auf der
+Datei —, ist verboten, auch für „nur einen Schnelltest“. Die Änderung läuft
+über Edit/Write des Laufs oder über ein Repo-Werkzeug hinter `make`. Eine
+Mutationsprobe (Reviewer, Verifier) arbeitet auf einer Kopie im Scratchpad;
+die Rücknahme ist `cp` oder `git checkout`. `sed -n` (nur lesen) ist erlaubt.
+
+**Falsch:** `pip install ...`, `go test ./...` auf dem Host,
+`sed -i 's/a/b/' internal/x.go`.
+**Richtig:** `make test`, `make gates`; eine Textänderung per Edit/Write.
+
+**Begründung:** Toolchain-Reproduzierbarkeit + Supply-Chain-Defense. Die Klasse
+beschreibt den Bestand (über 40 Skripte unter `tools/` rufen `git` auf) und
+lockert kein Gate: kein Skript installiert etwas, und die Grenze der Klasse
+ist die Toolchain-Grenze. Das in-place-Verbot schützt eine Wirkung, die kein
+Sensor liest — ein Werkzeugaufruf hinterlässt in der Datei keine Signatur.
+
+**Durchsetzung.** Der PreToolUse-Guard (`.claude/hooks/pretooluse-command-guard.sh`)
+blockt Paketmanager (`apt`, `pip`, `npm`, `cargo`, …); Sprach-Toolchains und
+in-place Textwerkzeuge liest er nicht (Stolperdraht, keine Sandbox). Dort
+wacht das Review (`.harness/skills/reviewer.md` §HIGH „Docker-only-Verstoß“).
+Herkunft: `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`,
+`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`.
 
 ### 3.2 Suppression-Verbot
 

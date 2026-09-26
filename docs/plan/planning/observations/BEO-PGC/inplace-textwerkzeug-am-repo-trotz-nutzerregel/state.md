@@ -1,16 +1,12 @@
-Zustand: offen — **Schwelle erreicht** (3×; der Lese-Schritt der Closure von
-`welle-transformationen` liest den Eintrag und weist den Ausgang zu). Ausgang-Vorschlag: die
-Regel bekommt einen committeten Träger — `AGENTS.md` §3.1 nennt neben „kein lokaler Install“
-das in-place schreibende Host-Textwerkzeug (`sed -i`, `perl -pi`, ein Host-Interpreter auf der
-Repo-Datei) als Verstoß, und die Agenten-Prompts unter `.claude/agents/` verweisen darauf;
-Mutationsläufe von Reviewer und Verifier gehören auf eine Kopie im Scratchpad, die Rücknahme
-ist `cp` bzw. `git checkout`. Adresse: der nächste Architect-Zug, der `AGENTS.md` §3.1
-berührt, gemeinsam mit der Ausnahme-Klasse aus
-`BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`. Ein Sensor ist
-ausgeschlossen: ein Werkzeugaufruf hinterlässt in einer Datei keine Signatur, die `docs-check`
-oder ein anderes Gate liest.
-
+Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` §3.1, Absatz „Text-Umschreiben im
+Repo ist Sache der Datei-Werkzeuge des Laufs“ (`sed -i`, `perl -pi`, `awk -i inplace`, Host-Interpreter
+auf einer Repo-Datei sind verboten; Mutationsproben laufen auf einer Kopie im Scratchpad),
+`.harness/skills/reviewer.md` (Unterpunkt „Docker-only-Verstoß“) und `.claude/commands/implement-slice.md`
+(Verweis) · seit `AGENTS.md` §3.1 (Beleg-Anker: `git grep -n 'awk -i inplace' -- AGENTS.md`).
+Durchsetzung heute: das Review — der PreToolUse-Guard blockt Paketmanager, kein in-place
+Textwerkzeug. Adresse des Guard-Ausbaus: `slice-harness-guard-inplace-textwerkzeug` (Guard blockt
+die Formen der Regel; noch kein Plan angelegt). Ein Sensor über Dateiinhalte ist ausgeschlossen
+(ein Werkzeugaufruf hinterlässt keine Signatur in der Datei).
 Zähler (abgeleitet): 3× (evidence/slice-backfill-speicher-untersuchung.md,
 evidence/slice-transformationen-antragsweg-usecase.md,
-evidence/slice-transformationen-backfill-pfad.md). Der dritte Beleg trägt alle drei Rollen
-in einem Vorgang, jeweils ohne Wirkung auf das Repo.
+evidence/slice-transformationen-backfill-pfad.md).
