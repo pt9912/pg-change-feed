@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # fmt-check — Aufrufer von `make fmt-check`: meldet jede Go-Datei unter dem
 # Verzeichnis, die `gofmt -l` im gepinnten Toolchain-Image nicht als formatiert
-# führt (netzlos, das Verzeichnis lesend gemountet, es wird nichts geschrieben).
+# führt (der Container läuft ohne Netz, das Verzeichnis lesend gemountet, es wird
+# nichts geschrieben).
 # `gofmt -l` endet auch bei Abweichung mit Exit 0; das Werkzeug wertet deshalb
 # die Ausgabe aus, nicht den Exit-Code des Formatierers. Vertrag und Exit-Codes:
 # harness/sensors/fmt-check.md.
@@ -33,12 +34,14 @@ if [ ! -d "$dir" ]; then
 fi
 dir=$(realpath -- "$dir") || exit 2
 
-# Das Skript im Container zählt zuerst die Go-Dateien (leer ist nicht bestanden:
-# ein falsch gemounteter Pfad meldete sonst grün), dann formatiert `gofmt -l`
-# den ganzen Baum. Die Zählung nimmt dieselben Dateien wie `gofmt`: reguläre
-# Dateien mit Endung `.go`, deren Name nicht mit einem Punkt beginnt.
+# Das Skript im Container zählt zuerst die Go-Dateien: ein Verzeichnis ohne
+# Go-Datei endet mit Exit 2, nicht mit Exit 0, und ein Exit 0 sagt zu, dass
+# mindestens eine Go-Datei geprüft wurde. Danach formatiert `gofmt -l` den
+# ganzen Baum. Die Zählung nimmt dieselben Dateien wie `gofmt`: jeden Eintrag,
+# der kein Verzeichnis ist (auch einen Symlink), mit Endung `.go` und einem
+# Namen ohne Punkt am Anfang.
 inner='
-n=$(find . -type f -name "*.go" ! -name ".*" | wc -l)
+n=$(find . ! -type d -name "*.go" ! -name ".*" | wc -l)
 if [ "$n" -eq 0 ]; then
   echo "fmt-check: keine Go-Datei im Verzeichnis (leer ist nicht bestanden)" >&2
   exit 2

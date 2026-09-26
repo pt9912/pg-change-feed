@@ -129,7 +129,7 @@ fmt-check: ## Meldet jede Go-Datei, die gofmt -l nicht als formatiert führt (Ex
 	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" bash tools/harness/fmt-check.sh
 
 .PHONY: test-fmt-check
-test-fmt-check: ## Tabellentest gegen tools/harness/fmt-check.sh (echte Docker-Läufe gegen Wegwerf-Verzeichnisse; Docker-only, netzlos)
+test-fmt-check: ## Tabellentest gegen tools/harness/fmt-check.sh (echte Docker-Läufe gegen Wegwerf-Verzeichnisse, Container ohne Netz; Docker-only)
 	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" bash tools/harness/run-fmt-check-tests.sh
 
 .PHONY: test-rollout-restore

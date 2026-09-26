@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # run-fmt-check-tests.sh — Tabellentest gegen den Aufrufer fmt-check.sh
 # (harness/sensors/fmt-check.md), echter Docker-Lauf gegen Wegwerf-Verzeichnisse
-# im Temp-Verzeichnis (netzlos, `--network none`). Fälle: formatierte Datei ·
-# unformatierte Datei (genannt, Exit 1) · nur die unformatierte von zwei Dateien
-# genannt · Datei in einem Unterverzeichnis · Datei mit Syntaxfehler (Exit 2) ·
-# Verzeichnis ohne Go-Datei (Exit 2) · Eingabe bleibt byte-gleich (lesender Mount)
-# · Pfad mit Leerzeichen · Eingabefehler des Aufrufers (Argumentzahl, fehlendes
+# im Temp-Verzeichnis (der Container des Werkzeugs läuft mit `--network none`; der
+# Fall Docker-Fehler löst einen Image-Zugriff des Docker-Daemons aus). Fälle:
+# formatierte Datei · unformatierte Datei (genannt, Exit 1) · nur die
+# unformatierte von zwei Dateien genannt · Datei in einem Unterverzeichnis ·
+# Datei mit Syntaxfehler (Exit 2) · Verzeichnis ohne Go-Datei (Exit 2) · Eingabe
+# bleibt byte-gleich (lesender Mount) · Pfad mit Leerzeichen · `.go`-Symlink
+# (gezählt und genannt) · Eingabefehler des Aufrufers (Argumentzahl, fehlendes
 # Verzeichnis, fehlende TOOLCHAIN_IMAGE) · nicht auflösbares Image (Docker-Fehler,
-# Exit 2). Der Prüfling ist per TOOL übersteuerbar (Mutationsläufe gegen eine
-# Kopie); TOOLCHAIN_IMAGE setzt das Makefile.
+# Exit 2) · Argumente des Docker-Aufrufs (`--network none`, Mount `:ro`, Image;
+# ein Stub-`docker` hält sie fest). Der Prüfling ist per TOOL übersteuerbar
+# (Mutationsläufe gegen eine Kopie); TOOLCHAIN_IMAGE setzt das Makefile.
 set -uo pipefail
 repo=$(git rev-parse --show-toplevel)
 tool=${TOOL:-$repo/tools/harness/fmt-check.sh}
@@ -119,6 +122,15 @@ printf "$unformatted" >"$d/u.go"
 run "$d"
 expect "Pfad mit Leerzeichen" 1 '^u\.go$'
 
+# Fall 8b — ein `.go`-Symlink: die Zählung nimmt ihn wie `gofmt`, der Lauf nennt
+# ihn (das Ziel des Links trägt keine `.go`-Endung, der Link ist die einzige Go-Datei).
+d="$tmp/symlink"
+mkdir -p "$d"
+printf "$unformatted" >"$d/ziel.txt"
+ln -s ziel.txt "$d/l.go"
+run "$d"
+expect "Symlink mit Endung .go" 1 '^l\.go$'
+
 # Fall 9 — Eingabefehler des Aufrufers: zu viele Argumente, kein Verzeichnis,
 # fehlende TOOLCHAIN_IMAGE; jeder endet mit Exit 2.
 run "$tmp/ok" "$tmp/ok"
@@ -133,6 +145,40 @@ expect "TOOLCHAIN_IMAGE fehlt" 2 'TOOLCHAIN_IMAGE fehlt'
 out=$(env TOOLCHAIN_IMAGE=fmt-check-test.invalid/gibt-es-nicht:0 bash "$tool" "$tmp/ok" 2>&1)
 rc=$?
 expect "Docker-Fehler" 2 'Exit'
+
+# Fall 11 — Argumente des Docker-Aufrufs: ein Stub-`docker` hält sie fest (eine je
+# Zeile) und endet mit Exit 0. Der Container läuft ohne Netz (`--network none`),
+# das Verzeichnis liegt lesend unter /src (`<absoluter Pfad>:/src:ro`), das Image
+# ist der Wert von TOOLCHAIN_IMAGE. Die Zusagen betreffen die Argumente, mit denen
+# der Aufrufer Docker ruft; dass der Daemon sie einhält, belegt dieser Fall nicht.
+mkdir -p "$tmp/bin" "$tmp/stub"
+cat >"$tmp/bin/docker" <<'STUB'
+#!/usr/bin/env bash
+printf '%s\n' "$@" >"$STUB_DIR/args"
+exit 0
+STUB
+chmod +x "$tmp/bin/docker"
+d="$tmp/mit leerzeichen"
+abs=$(realpath -- "$d")
+out=$(env PATH="$tmp/bin:$PATH" STUB_DIR="$tmp/stub" TOOLCHAIN_IMAGE=stub-image:1 bash "$tool" "$d" 2>&1)
+rc=$?
+expect "Stub-docker: Lauf" 0 -
+args_have() { grep -Fxq -- "$1" "$tmp/stub/args"; }
+args_check() { # <Fallname> <Muster als ganze Zeile>
+  if ! args_have "$2"; then
+    echo "FEHLER: $1 — die Argumente des Docker-Aufrufs tragen '$2' nicht:" >&2
+    cat "$tmp/stub/args" >&2
+    fail=1
+  fi
+}
+args_check "Docker-Argument: --network" '--network'
+if ! grep -A1 -Fx -- '--network' "$tmp/stub/args" | grep -Fxq -- 'none'; then
+  echo "FEHLER: Docker-Argument: --network trägt nicht den Wert none:" >&2
+  cat "$tmp/stub/args" >&2
+  fail=1
+fi
+args_check "Docker-Argument: lesender Mount" "$abs:/src:ro"
+args_check "Docker-Argument: Image" 'stub-image:1'
 
 if [ "$fail" -eq 0 ]; then
   echo "run-fmt-check-tests: alle Fälle bestanden"

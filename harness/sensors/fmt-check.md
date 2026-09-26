@@ -38,8 +38,9 @@ tools/harness/fmt-check.sh [Verzeichnis]     # Verzeichnis-Argument für den Tes
 
 Das Skript ruft `docker run --rm --network none -v <Verzeichnis>:/src:ro -w /src
 <TOOLCHAIN_IMAGE> sh -c …` auf. Im Container zählt es zuerst die Go-Dateien
-(reguläre Dateien mit Endung `.go`, deren Name nicht mit einem Punkt beginnt —
-dieselben, die `gofmt` liest), dann läuft `gofmt -l .` über den ganzen Baum. Auf
+(jeder Eintrag, der kein Verzeichnis ist, auch ein Symlink, mit Endung `.go` und
+einem Namen ohne Punkt am Anfang — dieselben, die `gofmt` liest), dann läuft
+`gofmt -l .` über den ganzen Baum. Auf
 stdout stehen die abweichenden Pfade; die Zählung steht als eine Zeile
 `fmt-check: <n> Go-Dateien geprüft, …` (bei Abweichung auf stderr, sonst auf
 stdout).
@@ -57,7 +58,8 @@ Host-Werkzeuge: `bash`, `git` (Repo-Wurzel) und `realpath` sowie `docker`
 | 2 | Eingabe- oder Formatierer-Fehler: mehr als ein Argument, kein Verzeichnis, `TOOLCHAIN_IMAGE` fehlt, Syntaxfehler in einer Go-Datei, Docker-Fehler, oder **keine Go-Datei** unter dem Verzeichnis |
 
 **Leer ist nicht bestanden:** ein Verzeichnis ohne Go-Datei endet mit Exit 2, nicht
-mit Exit 0 — ein falsch gemounteter Pfad meldete sonst grün. Über `make` kommt
+mit Exit 0; ein Exit 0 sagt zu, dass mindestens eine Go-Datei geprüft wurde (die
+Zählung steht in der Ausgabe). Über `make` kommt
 jeder Exit ≠ 0 als der Make-eigene Exit `2` an; die Unterscheidung von 1 und 2
 trägt die Ausgabe (Pfade bzw. Meldung) oder der direkte Aufruf des Skripts.
 
@@ -76,19 +78,31 @@ trägt die Ausgabe (Pfade bzw. Meldung) oder der direkte Aufruf des Skripts.
    §3.2: das Repo führt keinen Linter).
 2. **`gofmt` formt Doc-Kommentare um.** Ein Paar `''` oder ein Backtick-Paar in
    einem Doc-Kommentar wird zu einem typografischen Anführungszeichen; wer den
-   Kommentar so meint, schreibt ihn anders, der Inhalt ändert sich sonst mit
-   der Formatierung.
+   Kommentar so meint, schreibt ihn anders: der Inhalt eines solchen Kommentars
+   folgt der Formatierung.
 3. **Nur Go.** Markdown, YAML, Shell, C#, Kotlin und Python haben in diesem Repo
    keinen Formatierer im Werkzeugsatz; erzeugter Code (`gen/`, `sdks/`) liegt im
    Suchraum, sofern er Go ist, und muss `gofmt`-fest sein.
 4. **Grün ist kein Beleg für den Diff.** Der Lauf misst den Baum, nicht den
    eigenen Diff: eine Datei außerhalb des Diffs, die abweicht, färbt ihn rot.
+5. **Ein Verzeichnis mit `:` im Pfad ist kein Eingabewert.** Der Mount
+   `-v <Verzeichnis>:/src:ro` trennt an jedem Doppelpunkt; ein Pfad mit `:`
+   endet mit Exit 2 (Docker-Fehler), nie mit Exit 0. Die Repo-Wurzel trägt keinen.
+6. **Ein Symlink mit Endung `.go` zählt wie eine Datei.** Die Zählung nimmt
+   jeden Nicht-Verzeichnis-Eintrag, den `gofmt` liest; ein Symlink auf ein
+   fehlendes Ziel endet mit Exit 2 (Formatierer-Fehler), nicht mit Exit 0.
 
 ## Test
 
-`make test-fmt-check` (`tools/harness/run-fmt-check-tests.sh`, netzlos) fährt
-echte Docker-Läufe gegen Wegwerf-Verzeichnisse im Temp-Verzeichnis. Je Zusage die
-Mutation ihrer Eingabeseite, die den Fall rot färbt:
+`make test-fmt-check` (`tools/harness/run-fmt-check-tests.sh`) fährt echte
+Docker-Läufe gegen Wegwerf-Verzeichnisse im Temp-Verzeichnis; der Container des
+Werkzeugs läuft mit `--network none`, der Fall Docker-Fehler löst einen
+Image-Zugriff des Docker-Daemons aus. Die Argumente des Docker-Aufrufs
+(`--network none`, Mount `:ro`, Image) hält ein Stub-`docker` fest; der Fall
+belegt, was der Aufrufer übergibt, nicht, dass der Daemon es einhält. Je Zusage
+die Mutation ihrer Eingabeseite, die den Fall rot färbt (Menge der Erprobung: die
+zwölf Fälle des Tabellentests, je Mutation an einer Kopie des Aufrufers gelaufen,
+Ausgang in der Spalte „Fall, der rot wird“):
 
 | Zusage | Mutation am Werkzeug | Fall, der rot wird |
 |---|---|---|
@@ -104,3 +118,7 @@ Mutation ihrer Eingabeseite, die den Fall rot färbt:
 | mehr als ein Argument ist ein Eingabefehler | die Argumentzahl-Prüfung entfernt | zu viele Argumente |
 | ein fehlendes Verzeichnis ist ein Eingabefehler | die Verzeichnis-Prüfung entfernt | kein Verzeichnis |
 | eine fehlende `TOOLCHAIN_IMAGE` ist ein Eingabefehler | die Prüfung der Variable entfernt | `TOOLCHAIN_IMAGE` fehlt |
+| der Container läuft ohne Netz | `--network none` aus dem Docker-Aufruf entfernt; oder `--network host` | Docker-Argument `--network` (Wert `none` fehlt) |
+| das Verzeichnis liegt lesend unter `/src` | `:ro` aus dem Mount entfernt | Docker-Argument lesender Mount |
+| das Image ist der Wert von `TOOLCHAIN_IMAGE` | ein fest eingetragenes Image statt der Variable | Docker-Argument Image · Docker-Fehler |
+| ein `.go`-Symlink zählt und wird genannt | die Zählung nimmt nur reguläre Dateien (`-type f`) | Symlink mit Endung `.go` |
