@@ -202,10 +202,11 @@ Umsetzung, keine Messergebnisse.
 - **Markierung.** Jeder Backfill-Change trägt `origin = backfill`
   (`SPEC-002`), `operation = INSERT`, kein `old_data` und ein **vollständiges**
   `new_data` (auch Spalten, die ein `UPDATE`-Image als Abwesenheit tragen kann,
-  [`LH-FA-CAP-008`](lastenheft.md)). Das Row Image ist byte-gleich dem
-  WAL-Image derselben Zeile: dieselbe Bild-Konstruktion, ausgeschlossene
-  Spalten ([`LH-FA-CFG-005`](lastenheft.md)) und generierte Spalten fehlen,
-  die Transformationsregeln der Tabelle ([`LH-FA-CFG-007`](lastenheft.md),
+  [`LH-FA-CAP-008`](lastenheft.md)). Das Row Image ist inhaltsgleich
+  (Schlüsselmenge und Werte) dem WAL-Image derselben Zeile: dieselbe
+  Bild-Konstruktion, ausgeschlossene Spalten
+  ([`LH-FA-CFG-005`](lastenheft.md)) und generierte Spalten fehlen, die
+  Transformationsregeln der Tabelle ([`LH-FA-CFG-007`](lastenheft.md),
   `SPEC-030`) wirken, `NULL` entfällt, Werte im Text-Stand der Quelle. Die
   Schema-Version einer Backfill-Change ist die zum Run-Start aktuelle Version
   der Tabelle; sie unterscheidet, sie beschreibt die Bild-Spalten nicht.
@@ -1028,7 +1029,8 @@ Erfassungspfads und die Abhilfe führt `LH-FA-CFG-007.a` (Nicht anwendbare
 Regel, Abhilfe). Im Run steht nur der Run — `cdc.backfill_status` und die
 CLI-Diagnose zeigen ihn `failed` mit der Klasse im Fehlertext, der
 Erfassungspfad läuft weiter. Die Abhilfe ist die Regelstand-Änderung der
-Abhilfe-Zusage. Nach der Abhilfe im Run beginnt ein **neuer** Antrag
+Abhilfe-Zusage; ein Prozessneustart für den neuen Run ist nicht Teil der
+Zusage. Nach der Abhilfe im Run beginnt ein **neuer** Antrag
 `cdc.backfill_table` einen neuen Run, ein `failed`-Run wird nicht fortgesetzt.
 
 Keine Credentials in Logs.
@@ -1134,3 +1136,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-26 | `SPEC-030` ergänzt: Regelform (`rule_spec`) und Wirkung auf Row Images — Regeltypen, Abwesenheit, Vergleich, Position, Randfälle (leeres `values`, Zielname gleich Quellname, Abbildung auf sich selbst), Anwendbarkeit |
 | 2026-09-26 | `SPEC-030` um den Bezeichner-Vergleich (`column`, `to`, Regelname), die Schlüsselreihenfolge als nicht zugesagt statt „Position", Beispiele je Regeltyp und die führende Stelle der Anwendbarkeit erweitert; `SPEC-019` Fehlertext-Tabelle um Regelname, fehlende `rule_spec` und die Prüfreihenfolge der Formzeilen erweitert; `SPEC-008` Zeile `schema` ordnet die Abhilfe der nicht anwendbaren Regel zu |
 | 2026-09-26 | `SPEC-002` um die Aussage ergänzt, dass die Schlüsselmenge der Row Images dem Regelstand zum Erfassungszeitpunkt folgt; `SPEC-008` Zeile `schema` und der Absatz darunter um die Nichtanwendbarkeit einer Transformationsregel im Erfassungspfad und im Run samt Abhilfe erweitert; `LH-FA-CAP-009.a` um die Regelwirkung im Bild, den Regelstand in der Fail-closed-Prüfung und den Run-Fehler der Klasse `schema` ergänzt |
+| 2026-09-26 | `LH-FA-CAP-009.a` Absatz „Markierung": das Backfill-Row-Image ist inhaltsgleich (Schlüsselmenge und Werte) dem WAL-Image derselben Zeile; `SPEC-008` Absatz „Nicht anwendbare Regel": ein Prozessneustart für den neuen Run ist nicht Teil der Zusage |
