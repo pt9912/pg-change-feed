@@ -9,7 +9,9 @@
 # Backtick lebendig (sie fuehren aus). `\;` bleibt ein Trenner (find-Ende).
 # Ein unbalanciertes Anfuehrungszeichen ist Parse-Zweifel: die Eingabe geht
 # unveraendert zurueck, der Guard segmentiert dann ohne Anfuehrungszeichen-
-# Kenntnis (mehr Segmente, nie weniger).
+# Kenntnis (mehr Segmente, nie weniger). Ein balanciertes Paar maskiert alles
+# dazwischen, auch Heredoc-Zeilen: zwei Apostrophe in zwei Heredoc-Zeilen
+# verbergen ein `sed -i` dazwischen (Grenz-Zeile in MR-003).
 function mk(c) { return (c in M) ? M[c] : c }
 BEGIN {
   M["|"] = sprintf("%c", 1); M["&"] = sprintf("%c", 2); M[";"] = sprintf("%c", 3)

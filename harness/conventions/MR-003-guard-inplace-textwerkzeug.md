@@ -13,9 +13,9 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   benannt](../../.harness/baseline/v6.9.0/regelwerk/grundlagen-durchsetzungsschicht.md#grenzen--ehrlich-benannt)
   — der Satz, ein Befehls-Guard prüfe nur Befehlspositionen, Interpreter-Umwege
   blieben möglich. Der Guard dieses Repos liest darüber hinaus die Flag-Tokens
-  dreier Werkzeuge und ein Pfad-Muster im Befehlsstring; die Grenze rückt, sie
-  fällt nicht: der Satz gilt weiter für alles, was der Guard nicht liest
-  (Grenz-Zeile unten).
+  dreier Werkzeuge und ein Pfad-Muster im Befehlsstring; die Grenze liegt hinter
+  diesen Lesungen, sie fällt nicht: der Satz gilt für alles, was der Guard nicht
+  liest (Grenz-Zeile unten).
 - **Auslöser:** Der Register-Eintrag
   `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` mit vier
   Beleg-Dateien (Zähler aus seinem `state.md`, übernommen): `sed -i` in fünf
@@ -23,7 +23,7 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   Repo-Dateien einmal, sonst ohne), ein Host-Python-Heredoc auf einer Repo-Datei
   und zwei Host-`python3`-Aufrufe im vierten Vorgang (ein Implementer ohne
   Wirkung, ein Verifier mit unklarem Ziel). Die Regel steht in
-  [`AGENTS.md`](../../AGENTS.md) §3.1; ihre Durchsetzung war das Review. `perl -pi` und
+  [`AGENTS.md`](../../AGENTS.md) §3.1; ihre Durchsetzung außerhalb des Guards ist das Review. `perl -pi` und
   `awk -i inplace` sind in keinem Beleg genannt: sie sind dieselbe Klasse und
   kosten je eine Erkennung.
 - **Adaption:** Der Guard segmentiert den Befehlsstring **quote-bewusst**
@@ -79,10 +79,10 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   Anführungszeichen-Argument mit Leerraum ist ein Token und kein Flag
   (`grep -E 'sed -i|perl -pi'` blockt nicht). Diese Übersprünge gelten für alle
   Klassen, auch für die Paketmanager: `env -i pip`, `xargs -n1 pip`, `time -p pip`
-  und `for … do pip …` blocken. Die Paketmanager-Klasse wird dadurch strenger, kein
-  Gate und keine Schwelle wird lockerer; `AGENTS.md` §3.6 verlangt nur für eine
-  Lockerung eine ADR, hier genügt dieser Eintrag. Der Tabellentest führt die Formen
-  als eigene Gruppe.
+  und `for … do pip …` blocken. Die Paketmanager-Klasse trägt diese Übersprünge mit;
+  kein Gate und keine Schwelle ist dadurch gelockert, und `AGENTS.md` §3.6
+  verlangt nur für eine Lockerung eine ADR, hier genügt dieser Eintrag. Der
+  Tabellentest führt die Formen als eigene Gruppe.
 
   Der Block gilt unabhängig vom Ziel, auch auf einer Scratchpad-Kopie. Der Weg
   nach [`AGENTS.md`](../../AGENTS.md) §3.1 ist Edit/Write, `sed … Datei >
@@ -91,9 +91,10 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   `bash -c`-Rekursion mit Tiefe 3, fail-closed bei Parse-Zweifel und ohne `awk`)
   bleiben. Der Tabellentest `make test-command-guard` bindet die Zusagen an ihre
   Eingabe (Treffer, Nicht-Treffer neben jedem Treffer, ein Fall je Mitglied der
-  Zeichenklassen, benannte Falsch-Positiv-Ränder, benannte Grenzen); er ist ein
+  Zeichenklassen, benannte Falsch-Positiv-Ränder, benannte Grenzen; Menge der
+  Erprobung: 317 Fälle, gemessen mit `make test-command-guard`); er ist ein
   Werkzeug, kein Gate. Der Tabellentest ist der Beleg für den Host-Interpreter-Teil:
-  ein Live-Aufruf mit Host-`python` wäre selbst ein Verstoß gegen `AGENTS.md` §3.1.
+  ein Live-Aufruf mit Host-`python` verstößt selbst gegen `AGENTS.md` §3.1.
 - **Grenz-Zeile — was der Guard nicht kann.** Ein Stolperdraht, keine Sandbox:
   - Umleitungen und flaglose Schreibwege (`> datei`, `>>`, `tee`, `dd of=`,
     `sed … > tmp && mv tmp datei`, `cp`/`mv` über eine Datei);

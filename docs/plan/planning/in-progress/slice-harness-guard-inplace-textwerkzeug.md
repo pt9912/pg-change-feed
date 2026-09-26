@@ -246,13 +246,13 @@ Stand ist der Parent `89d427e0`; der Implementer ergänzt die Zeilen mit Stand `
 89d427e0 3 -E 'inplace-textwerkzeug-am-repo-trotz-nutzerregel' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/welle-transformationen.md
 89d427e0 0 -E '\.claude/hooks|pretooluse|harness/conventions' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/welle-transformationen.md
 diff 12 -E 'pretooluse-command-guard' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
-diff 6 -E 'blockt (Host-)?Paketmanager|Stolperdraht|scannt den Command-String' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
-diff 135 -E 'sed -i|perl -pi|awk -i' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
+diff 8 -E 'blockt (Host-)?Paketmanager|Stolperdraht|scannt den Command-String' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
+diff 146 -E 'sed -i|perl -pi|awk -i' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
 diff 1 -E 'Durchsetzung heute|noch kein Plan angelegt' -- docs/plan/planning/observations
 diff 1 -E 'in keinem committeten Text' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
 89d427e0 3 -E 'in-place Textwerkzeuge liest er nicht|Bewusst NICHT gepr|blockt Host-Paketmanager und Host-Toolchains' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
 diff 0 -E 'in-place Textwerkzeuge liest er nicht|Bewusst NICHT gepr|blockt Host-Paketmanager und Host-Toolchains' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
-diff 7 -E 'test-command-guard' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
+diff 8 -E 'test-command-guard' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/observations'
 ```
 
 Die ersten sieben Zeilen sind am Parent gemessen (Bezugs-Befehle im Block, Stand `89d427e0`; Ergebnis:
@@ -264,11 +264,12 @@ die Rezepte hinter `make`).
 **Ergebnis am Stand `diff` (Arbeitsbaum nach der Fixrunde; Gefundenes und Nichtgefundenes):**
 Symbol 12 Fundstellen (Guard, `.claude/settings.json`, [`AGENTS.md`](../../../../AGENTS.md), `Makefile`,
 `harness/README.md`, `harness/conventions.md`, `MR-003`, `mask-quotes.awk`, vier im Tabellentest) — die
-neuen Träger tragen den Namen, keiner der 3 Bestandsträger sagt etwas Falsches. Beschreibung 6 (Bestand 6,
-dazu `MR-003`, abzüglich `implement-slice.md`): dessen Satz „der Guard scannt den Command-String“ ist
+neuen Träger tragen den Namen, keiner der 3 Bestandsträger sagt etwas Falsches. Beschreibung 8 (Guard 2,
+[`AGENTS.md`](../../../../AGENTS.md) 3, `tools/harness/extract-command.awk` 1, `MR-003` 2; `implement-slice.md` trägt das
+Stichwort nicht mehr): dessen Satz „der Guard scannt den Command-String“ ist
 durch die Anführungszeichen-Lesung überholt und nachgezogen (Träger-Tabelle); der Kommentar in
 `tools/harness/extract-command.awk` („Stolperdraht, keine Sandbox“) bleibt wahr und ist unberührt.
-Zählwort 135: die Zahl ist gewachsen um die neuen Träger (`MR-003`, Tabellentest mit seinen Fällen,
+Zählwort 146: die Zahl ist gewachsen um die neuen Träger (`MR-003`, Tabellentest mit seinen Fällen,
 Guard-Kommentar, [`AGENTS.md`](../../../../AGENTS.md)); die Bestandstreffer `reviewer.md` (Prüfgegenstand des Reviews),
 `implement-slice.md` und `sdks/python/Dockerfile` bleiben unverändert wahr, die zwei Treffer in
 `slice-code-kommentare-bereinigung` §8 und `welle-transformationen` §6 sind gemeldet (Tabelle unten).
@@ -310,25 +311,30 @@ gegen den Diff.
   laufen über Stdout-Umleitung auf einer Scratchpad-Kopie).
 
 **Fixrunde (Anker: Review-Report `review-slice-harness-guard-inplace-textwerkzeug`, Finding je Zeile;
-Stand `diff`).** Der Tabellentest zählt 300 Fälle (`make test-command-guard`: „alle 300 Fälle bestanden“,
-294 Tabellenzeilen, 6 Sonderfälle); gegen den Guard am Parent `e98d419c` sind 155 rot, gegen den Guard am
-Review-Stand `a0472421` 76 (`GUARD=<Datei>`, gemessen). Die Gruppe „Bestandsregeln“ (18 Tabellenzeilen) ist
+Stand `diff`).** Der Tabellentest zählt 317 Fälle (`make test-command-guard`: „alle 317 Fälle bestanden“,
+311 Tabellenzeilen, 6 Sonderfälle; die Verifikation maß den Stand der Fixrunde mit 300 Fällen); gegen den
+Guard am Parent `e98d419c` sind 168 rot, gegen den Guard am Review-Stand `a0472421` 80 (`GUARD=<Datei>`,
+gemessen am Stand mit 317 Fällen; die Zahlen der Fixrunde waren 155 und 76). Die Gruppe „Bestandsregeln“ (18 Tabellenzeilen) ist
 am Parent grün.
 
 | Finding | Entscheidung und Änderung | Beleg-Anker |
 |---|---|---|
 | F-2 | Im Guard gelöst, keine Rückführung nach `open/`: `tools/harness/mask-quotes.awk` ist ein Zustandsautomat über `'`, `"`, Backslash sowie `$(`/Backtick in `"…"` (kein Shell-Parser: Heredocs, Umleitungen, Variablen bleiben ungelesen). Ein Trenner, Leerraum oder Zeilenumbruch in Anführungszeichen wird vor der Segmentierung zu einem Steuerzeichen; ein Anführungszeichen-Argument ist ein Token. Ein unbalanciertes Anführungszeichen gibt den Rohstring zurück (Segmentierung ohne Anführungszeichen-Kenntnis: mehr Segmente, nie weniger; ein Apostroph im Heredoc-Text blockt also nur, wenn eine Kommando-Zeile mit `sed -i` folgt). Die Bestandsregel „quote-blind“ ändert sich damit: `git commit -m "a & sed -i b"` und `grep -E 'a\|sed -i ' f` blocken nicht mehr (zwei benannte Ränder des ersten Laufs sind Nicht-Treffer), `\;` bleibt ein Trenner. Fällt der Maskierer aus, blockt der Guard (fail-closed, Fall „Maskierer nicht lesbar“). Latenz 15 ms je Aufruf gegen 11 ms (20 Aufrufe je Guard, gemessen). | 31 Fälle „Anführungszeichen“ (die Suchlauf-Form mit drei Gliedern, `grep -E "sed -i\|perl -pi" f`, `echo 'a\|sed -i x'`, Backslash, Tab, Trenner ohne Leerraum, `$(…)`/Backtick-Kontext); live: `git grep -c -E 'sed -i\|perl -pi\|awk -i' -- <Datei>` läuft in der Sitzung des Implementers ohne Block, `sed -i s/a/b/ /nicht-vorhanden-scratch` blockt mit der Meldung der Klasse `inplace`. Offen an den Architect: Bestätigung, dass ein Zustandsautomat dieser Größe unter „kein Shell-Parser“ fällt (Plan §4 Rückführung (a)). |
-| F-1 | Je Mitglied der Zeichenklassen ein Treffer-Fall und je Klassengrenze ein Nicht-Treffer: sed `[nEsrzub]` (Ergänzung `b`: `sed -bi`; Nicht-Treffer `-ei`, `-fi`, `-xi`), perl `[0-7lanpsw]` (Ziffernklasse von `0-9` auf `0-7` verengt: die Argumente von `-0` und `-l` sind oktal; Nicht-Treffer `-ei`, `-Minteger`, `-Ii`, `-Mfeature`), Pfadzeichen `[A-Za-z0-9_./~-]` (acht Mitglieder davor und dahinter, dazu die Zeichen `=` `:` `,` `"` `)` als Nicht-Mitglieder). Die Behauptung „jede Zusage gebunden“ in `MR-003` nennt die Menge (Tabellentest, Mutationen je Klassenmitglied). | 29 Fälle „Zeichenklassen“, 24 Fälle „Pfadzeichen“ in der Gruppe Host-Interpreter; Mutationen unten. |
+| F-1 | Je Mitglied der Zeichenklassen ein Treffer-Fall und je Klassengrenze ein Nicht-Treffer: sed `[nEsrzub]` (Ergänzung `b`: `sed -bi`; Nicht-Treffer `-ei`, `-fi`, `-xi`), perl `[0-7lanpsw]` (Ziffernklasse von `0-9` auf `0-7` verengt: die Argumente von `-0` und `-l` sind oktal; Nicht-Treffer `-ei`, `-Minteger`, `-Ii`, `-Mfeature`), Pfadzeichen `[A-Za-z0-9_./~-]` (acht Mitglieder davor und dahinter, dazu die Zeichen `=` `:` `,` `"` `)` als Nicht-Mitglieder). Die Behauptung „jede Zusage gebunden“ in `MR-003` nennt die Menge (Tabellentest, Mutationen je Klassenmitglied). | 38 Fälle „Zeichenklassen“ (die perl-Ziffern 1 bis 7 je einzeln, 8 und 9 als Nicht-Treffer), 24 Fälle „Pfadzeichen“ in der Gruppe Host-Interpreter; Mutationen unten. |
 | F-3 | Das Überspringen der Wrapper-Optionen gilt für **alle** Klassen: die Lücke `env -i pip`, `xargs -n1 pip`, `time -p pip` ist dieselbe wie bei `sed -i` und bliebe für die Bestandsklasse bestehen, wenn das Überspringen nur für `inplace`/`interp` gälte; zwei Kopf-Erkennungen wären eine zweite Wartungsstelle. Das ist eine Erweiterung der Bestandsregel und steht so in `MR-003` (Adaption) und im Tabellentest als eigene Gruppe „Kopf-Erkennung hinter Wrapper-Optionen“; die zwei Fälle, die der erste Lauf „Bestand“ nannte, stehen dort (am Parent rot gemessen). `command -v`/`-V` und `-pv` zeigen an und führen nichts aus: sie blocken nicht; `type`, `which` sind ohnehin nicht Kopf einer Ausführung; `command -p pip` blockt. | Gruppe „Kopf-Erkennung“ (13 Fälle); `command -v`-Fälle am Guard `a0472421` rot (3), am neuen Guard grün. |
 | F-4 | Schlüsselwörter `do then else elif if while until !`, führendes `{` und `)` (Funktionsdefinition) werden vor der Kopf-Erkennung übersprungen; ein `case` überspringt bis zum ersten Label, Labels gelten nur nach einem `case` im selben Befehl (`echo $(date) sed -i x` bleibt Nicht-Treffer). Die Form `xargs -n 1 sed -i` (Wert einer xargs-Option) ist mit gelöst. Grenz-Zeile in `MR-003`: Optionswerte anderer Wrapper (`sudo -u x`, `env -u X`, `nice -n 10`), Werkzeug aus einer Variablen, `eval "$cmd"`, Aliase. | Fälle „Schlüsselwort“ (`for`, `while`, `if`, `else`, `elif`, `until`, `!`, drei `case`-Formen, Funktion), am Parent rot. |
 | F-5 | Die Meldung der Klasse `interp` nennt Edit/Write, ein Repo-Werkzeug hinter `make` und `sed s/a/b/ file > /path/to/scratch-copy` — die drei Wege aus `AGENTS.md` §3.1, keinen Host-Interpreter; `MR-003` (Begründung) sagt dasselbe und nennt den Interpreter auf einem Pfad ohne Repo-Namen eine Grenze, keinen zulässigen Weg. | Fall „Meldung interp: Weg nach AGENTS.md 3.1“ (prüft Edit/Write, den stdout-Weg und die Abwesenheit von `mutate`). |
-| F-6 | Gelöst: `sed -i''`, `\sed`, `busybox`, `/usr/bin/env`, `/usr/bin/sudo`, `gsed`, die Abkürzung `--in-p`/`--i`, `find … -exec sh -c '…'`/`-exec python3 …` (der Rest hinter `-exec` ist ein eigenes Kommando), `eval "…"`; das Bündel `-input.txt` bei sed bleibt ein Treffer, weil GNU-sed es als `-i` mit Suffix `nput.txt` liest (real gemessen: `sed -n 1p -input.txt f` legt die Sicherungsdatei `fnput.txt` an), bei perl enden die Optionen am Skriptnamen (`perl x.pl -input a` blockt nicht). Rest als Grenze in `MR-003`: `-Wpi`, die awk-Abkürzung `--inc=inplace`, andere Interpreter (`node -e`, `ruby -e`, `uv run python`), Optionswerte anderer Wrapper. `MR-003` nennt die Grenz-Zeile als Kurzform in Kopfkommentar und `AGENTS.md`; „gleichlautend“ ist berichtigt (die `AGENTS.md`-Liste ist eine Teilmenge). | Fälle „Position“ (80) und „Grenzen“ (15). |
+| F-6 | Gelöst: `sed -i''`, `\sed`, `busybox`, `/usr/bin/env`, `/usr/bin/sudo`, `gsed`, die Abkürzung `--in-p`/`--i`, `find … -exec sh -c '…'`/`-exec python3 …` (der Rest hinter `-exec` ist ein eigenes Kommando), `eval "…"`; das Bündel `-input.txt` bei sed bleibt ein Treffer, weil GNU-sed es als `-i` mit Suffix `nput.txt` liest (real gemessen: `sed -n 1p -input.txt f` legt die Sicherungsdatei `fnput.txt` an), bei perl enden die Optionen am Skriptnamen (`perl x.pl -input a` blockt nicht). Rest als Grenze in `MR-003`: `-Wpi`, die awk-Abkürzung `--inc=inplace`, andere Interpreter (`node -e`, `ruby -e`, `uv run python`), Optionswerte anderer Wrapper. `MR-003` nennt die Grenz-Zeile als Kurzform in Kopfkommentar und `AGENTS.md`; „gleichlautend“ ist berichtigt (die `AGENTS.md`-Liste ist eine Teilmenge). | Fälle „Position“ (80) und „Grenzen“ (16). |
 | F-7 | Der Konjunktiv-Kandidatenlauf in `implement-slice.md` Schritt 20 liest `'*.go' '*.sh' '*.awk'` mit `(//\|#)` und den transliterierten Formen (`waere`, `wuerde`, `haette`); die Urteilsregel nennt `else`-Zweige in Shell-Kommentaren und `${#var}` als zulässige Treffer. Der Lauf auf dem eigenen Diff (`git diff -U0 HEAD`, 80 hinzugefügte Kommentarzeilen) liefert 0 Treffer, auf dem Diff seit `e98d419c` 0 Treffer; die Bestandszeile „`waere` sonst“ im Guard ist entfernt, dazu das „wuerde“ im Kopfkommentar. | Befehl in `implement-slice.md`, Lauf oben. |
 | F-8 | Kenntnis: `perl -i` und `awk -i inplace` haben keinen Beleg im Register (Risiko 5, `MR-003` Begründung); Liefer-Punkt 2 ist der Interpreter-Denylist näher als einer Zerlegung (`MR-003` Begründung: beide Regeln blocken nur auf einem Repo-Pfad); das Feld „Ersetzt-Baseline-Regel“ nennt den Satz, der für alles Ungelesene weiter gilt (im Feld ausgeführt). Keine Änderung der Baseline-Zuordnung. | `MR-003`. |
 | F-9 | Keine Aktion (äquivalente Mutation durch Doppelschutz; Fixrunde: die Doppelmutation beider Zeilen ist rot). | Mutationen unten. |
 
 **Mutationen der Fixrunde (Zusage · mutierte Eingabe · gesehenes Rot; je `GUARD=<Kopie> MASKER=<Kopie>` an einer
-Kopie von Guard bzw. Maskierer, Menge der Erprobung: die 300 Fälle).** 120 Mutationen, 118 rot, 2 äquivalent:
+Kopie von Guard bzw. Maskierer).** Die Zeilen bis „Bestand und fail-closed“ und die Zeile „äquivalent“ (120
+Mutationen, 118 rot, 2 äquivalent; Menge der Erprobung: die damals 300 Fälle) sind **übernommen** (Implementer-Lauf der
+Fixrunde, nicht nachgemessen; kein committetes Skript, keine gedruckte Zeile); die drei Zeilen „Nachzug“ sind
+**gemessen** (Implementer-Zug nach der Verifikation, Menge der Erprobung: die 317 Fälle, je ein Lauf von
+`tools/harness/run-command-guard-tests.sh` mit `GUARD=<Kopie> MASKER=<Kopie>`, Exit 1, gedruckt „FEHLER“-Zeilen):
 
 | Zusage | Mutierte Eingabe | Rot |
 |---|---|---|
@@ -346,6 +352,9 @@ Kopie von Guard bzw. Maskierer, Menge der Erprobung: die 300 Fälle).** 120 Muta
 | Maskierer | einfache/doppelte Anführungszeichen nicht maskiert oder öffnend, `$(`/Backtick in `"…"` maskiert, Backslash, `\;`, Zeilenfortsetzung, unbalanciert, Leerraum, Tab, Zeilenumbruch, `\|`, `&`, `;`, `(`, Backtick je einzeln, `$(`- und Backtick-Kontext endet nicht | ja (20) |
 | Host-Interpreter | Regel entfernt / `perl` / `python3.N` / nur `python3` / Repo-Wurzel / `./` / Datei-Namen / Nachbedingung / Grund `pkg` / Meldung mit `mutate.py` | ja |
 | Bestand und fail-closed | Tiefe 4 erlaubt / defektes JSON / Maskierer-Fehler nicht fail-closed / fehlendes awk (Präsenzprüfung und Exit-Code zusammen) | ja |
+| Nachzug: Backslash-Escape des Maskierers | (a) `mk(d)` am Escape entfällt (1 rot: `echo a\|sed -i x`); (b) das Zeichen hinter `\` wird nicht verbraucht (7 rot); (c) Backslash außerhalb von `"…"` nicht gelesen (3 rot); (d) Backslash in `"…"` nicht gelesen (1 rot); (e) Backslash in `'…'` gelesen (1 rot); (f) das Paar `\\` nicht gepaart (2 rot: `echo a\\|sed -i x`, `echo "a\\"; …`) | ja, sechs von sechs |
+| Nachzug: perl-Ziffernklasse `0-7` | `[0-9…]` (2 rot: `-8i`, `-9i`), je ein fehlendes Mitglied 0 bis 7 (acht Läufe, je 1 bis 4 rot: der Einzelfall `-3pi` bis `-6pi` und das Bündel `-l0127pi`), `[0-27…]` (4 rot: Ziffern 3 bis 6) | ja, zehn von zehn |
+| Nachzug: Kehrseite der Quote-Lesung (Heredoc) | Maskierer maskiert nichts (31 rot, darunter der Grenzfall „zwei Apostrophe in zwei Heredoc-Zeilen“); Zeilenumbruch auch außerhalb von Anführungszeichen maskiert (4 rot, darunter „zwei Apostrophe in einer Heredoc-Zeile“); Rohstring-Rückfall entfernt (3 rot: die Fälle „unbalanciertes Anführungszeichen“) | ja, drei von drei |
 | äquivalent | fehlendes awk (nur die Präsenzprüfung: der Exit-Code der `awk`-Extraktion blockt dieselbe Eingabe); Sprung hinter das erste `case`-Label (das Label-Überspringen leistet dasselbe) | grün, Doppelschutz |
 
 | Träger | Befund | Behandlung |

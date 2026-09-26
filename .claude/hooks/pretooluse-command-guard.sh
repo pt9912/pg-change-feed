@@ -14,8 +14,11 @@
 # Anfuehrungszeichen-Argument ist ein Token (`grep -E 'sed -i|perl -pi'` und
 # `git commit -m "a & sed -i b"` blocken nicht). `$(` und Backtick in doppelten
 # Anfuehrungszeichen fuehren aus und trennen weiter. Ein unbalanciertes
-# Anfuehrungszeichen (auch ein Apostroph im Text eines Heredocs) segmentiert
-# ohne Anfuehrungszeichen-Kenntnis: mehr Segmente, nie weniger.
+# Anfuehrungszeichen (auch ein einzelnes Apostroph im Text eines Heredocs)
+# segmentiert ohne Anfuehrungszeichen-Kenntnis: mehr Segmente, nie weniger. Ein
+# balanciertes Paar maskiert alles dazwischen, auch die Zeilen eines Heredocs:
+# zwei Apostrophe in zwei Heredoc-Zeilen verbergen ein `sed -i` dazwischen
+# (Falsch-Negativ, Grenz-Zeile in MR-003).
 # Geprueft wird die Befehlsposition jedes Segments — `git commit -m "... pip ..."`
 # bleibt erlaubt, `/usr/bin/pip`, `\sed` und `sudo pip` werden erkannt.
 # Zuweisungs- und Wrapper-Praefixe (VAR=…, sudo/env/command/busybox/…, danach

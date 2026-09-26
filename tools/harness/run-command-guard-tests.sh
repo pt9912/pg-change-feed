@@ -10,7 +10,7 @@
 # Wrapper-Optionen und Shell-Schluesselwoertern · in-place Formen von sed, perl,
 # awk/gawk je Form, je Mitglied der Zeichenklassen und je Position (Kopf, nach
 # Trenner, Praefix, absoluter Pfad, bash -c, eval, find -exec) · Nicht-Treffer je
-# Nachbarform · Anfuehrungszeichen-Lesung (ein Trenner im Argument) ·
+# Nachbarform · Anfuehrungszeichen- und Backslash-Lesung (ein Trenner im Argument, Escape) ·
 # Host-Interpreter auf Repo-Pfaden samt Pfadzeichen-Klasse · benannte
 # Falsch-Positiv-Raender (erwarteter Block) · benannte Grenzen (erwarteter Pass,
 # was der Guard nicht liest).
@@ -146,7 +146,7 @@ mv "$tmp/mask-quotes.awk.weg" "$root/tools/harness/mask-quotes.awk"
 judge_block pkg "Segmentierung: Maskierer nicht lesbar (fail-closed)"
 
 # --- Kopf-Erkennung hinter Wrapper-Optionen und Schluesselwoertern ---------
-# (der Guard vor der Erweiterung blockte diese Formen nicht)
+# (Kopf hinter Optionen und Schluesselwoertern: MR-003, Adaption)
 block pkg "Wrapper-Option: xargs -n1" 'ls | xargs -n1 pip'
 block pkg "Wrapper-Option: env -i" 'env -i pip install x'
 block pkg "Wrapper-Option: time -p" 'time -p pip install x'
@@ -204,6 +204,15 @@ block inplace "perl-Klasse: p" 'perl -pi -e s/a/b/ f'
 block inplace "perl-Klasse: s" 'perl -si -pe s/a/b/ f'
 block inplace "perl-Klasse: w" 'perl -wpi -e s/a/b/ f'
 block inplace "perl-Klasse: mehrere Mitglieder" 'perl -0lanpswi -e s/a/b/ f'
+block inplace "perl-Klasse: Ziffer 1" 'perl -1pi -e s/a/b/ f'
+block inplace "perl-Klasse: Ziffer 2" 'perl -2pi -e s/a/b/ f'
+block inplace "perl-Klasse: Ziffer 3" 'perl -3pi -e s/a/b/ f'
+block inplace "perl-Klasse: Ziffer 4" 'perl -4pi -e s/a/b/ f'
+block inplace "perl-Klasse: Ziffer 5" 'perl -5pi -e s/a/b/ f'
+block inplace "perl-Klasse: Ziffer 6" 'perl -6pi -e s/a/b/ f'
+block inplace "perl-Klasse: Ziffer 7" 'perl -7pi -e s/a/b/ f'
+pass "perl außerhalb der Klasse: Ziffer 8" 'perl -8i f'
+pass "perl außerhalb der Klasse: Ziffer 9" 'perl -9i f'
 block inplace "perl: -i hinter dem -e-Argument" "perl -pe 's/a/b/' -i f"
 block inplace "perl: -I mit Wert vor -pi" 'perl -I lib -pi -e s/a/b/ f'
 pass "perl außerhalb der Klasse: -e trägt den Code i" 'perl -ei f'
@@ -345,6 +354,12 @@ pass "Trenner ( in Anführungszeichen" "echo 'a (sed -i x'"
 pass "Zeilenumbruch in Anführungszeichen" $'echo "a\nsed -i x"'
 pass "Backslash vor |" 'grep a\|sed\ -i\|b f'
 pass "Backslash vor Leerzeichen" 'cp a\ b\ sed\ -i c'
+pass "Backslash vor | trennt nicht, Leerraum davor und dahinter" 'echo a\|sed -i x'
+block inplace "Backslash-Paar: \\\\ maskiert nur sich selbst, das folgende | trennt" 'echo a\\|sed -i x'
+block inplace "escaptes Anführungszeichen \\\" außerhalb öffnet keinen String" 'echo \"; sed -i s/a/b/ f; echo \"'
+block inplace "escaptes Anführungszeichen \\' außerhalb öffnet keinen String" "echo \\'; sed -i s/a/b/ f; echo \\'"
+block inplace "Backslash in einfachen Anführungszeichen ist ein Zeichen: 'a\\' ist geschlossen" "echo 'a\\'; sed -i s/a/b/ f; echo 'b\\'"
+block inplace "Backslash-Paar in doppelten Anführungszeichen: \"a\\\\\" ist geschlossen" 'echo "a\\"; sed -i s/a/b/ f; echo "b\\"'
 pass "git log --grep mit Alternation" "git log --grep='sed -i|perl -pi'"
 pass "Tab in Anführungszeichen" $'sed \'a\t-i\tb\' f'
 pass "Trenner | ohne Leerraum in doppelten Anführungszeichen" 'echo "x|sed" -i f'
@@ -430,6 +445,7 @@ fi
 # --- benannte Falsch-Positiv-Raender (der Guard blockt trotz Anführungszeichen-Lesung) --
 block inplace "Rand: Heredoc-Zeile mit sed -i am Kopf" $'cat <<EOF\nsed -i s/a/b/ f\nEOF'
 block inplace "Rand: sed -i am Zeilenanfang hinter einem Heredoc-Apostroph (unbalanciert)" $'cat <<EOF\nit\'s\nsed -i s/a/b/ f\nEOF'
+block inplace "Rand: zwei Apostrophe in einer Heredoc-Zeile, sed -i in der nächsten" $'cat <<EOF\ndon\'t won\'t\nsed -i s/a/b/ f\nEOF'
 block inplace "Rand: unbalanciertes Anführungszeichen, Trenner im Muster" "grep -E 'a|sed -i f"
 block inplace "Rand: sed -i nach & in Text mit unbalanciertem Anführungszeichen" 'echo "a & sed -i b'
 block inplace "Rand: sed -i hinter \\; (find-Ende, kein Trenner der Shell)" 'echo a\;sed -i s/a/b/ f'
@@ -437,6 +453,7 @@ block interp "Rand: python3 nennt einen Repo-Namen, schreibt nichts" "python3 -c
 block interp "Rand: cd im selben Kommando" 'cd /tmp/x && python3 tools/x.py'
 
 # --- benannte Grenzen (der Guard liest es nicht: erwarteter Pass) ----------
+pass "Grenze: zwei Apostrophe in zwei Heredoc-Zeilen umschließen ein sed -i (MR-003 Grenz-Zeile)" $'cat <<EOF\ndon\'t\nEOF\nsed -i s/a/b/ f\ncat <<EOF\nwon\'t\nEOF'
 pass "Grenze: Umleitung und mv" 'sed s/a/b/ f > /tmp/scratch/tmp && mv /tmp/scratch/tmp f'
 pass "Grenze: tee" 'echo x | tee f'
 pass "Grenze: dd of=" 'dd if=/dev/null of=f'
