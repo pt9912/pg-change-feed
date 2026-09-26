@@ -307,6 +307,12 @@ gesondert gelesen, [`AGENTS.md`](../../../../AGENTS.md) §3.9; gedruckte Zeilen 
   ./internal/bootstrap/`, je Exit 1; ohne Mutation Exit 0.
 - `make suchlauf-nachmessen PLAN=<diese Datei>` Exit 0, gedruckt: `suchlauf-nachmessen: 28 Zeilen
   stimmen`.
+- `make gates` (in eine Log-Datei, Exit gesondert gelesen) Exit 0, gedruckt: `d-check: 1219 Datei(en)
+  geprüft, 0 Befund(e)`, `commit-traceability: OK — 5 Commit(s) in "HEAD~5..HEAD", Betreffs ohne
+  Struktur-ID`, `generated-sync: OK`, `coverage-gate: OK — Coverage 83.80% erfüllt Schwelle 80%`
+  (der einzelne `make coverage-gate`-Lauf oben druckte 83.90 %; die Zahl schwankt zwischen
+  Läufen), `gesamt: 0 Befund(e)` (`a-check`); `make commit-traceability RANGE=origin/main..HEAD` Exit 0,
+  gedruckt: `OK — 14 Commit(s) in "origin/main..HEAD", Betreffs ohne Struktur-ID`.
 - `run-schema-rollout-guard-test.sh`: nicht gelaufen — die Fixrunde ändert weder SQL noch Guard noch
   Skript (die Mutationen an `nacharbeit-administration.sql` sind zurückgenommen, `git status` zeigt die
   Datei unverändert).
