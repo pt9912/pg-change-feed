@@ -36,7 +36,12 @@ hart markiert (Accepted-ADR-Immutabilität, Zitat-Korrektur-Grenze, Konflikt-Pfa
 dort bleibt Sorgfalt vor Tempo. Aber wo eine Abkürzung real trägt, nimm sie, und sag in einem Satz,
 warum sie trägt, statt eine weitere Prüfrunde zu eröffnen. Vor `Accepted` wird jede
 Aussage über eine Menge und jede Fitness-Function-Zeile erprobt oder als hergeleitet
-gekennzeichnet ([`AGENTS.md`](../../AGENTS.md) §3.12 „Verfasser einer ADR“).
+gekennzeichnet ([`AGENTS.md`](../../AGENTS.md) §3.12 „Verfasser einer ADR“). Eine in einer
+Fitness-Function-Zeile genannte **Mutation** nennt die **Stellen**, an denen sie erprobt ist
+(eine · alle · welche), und die **Instanz**, an der sie gefahren wurde (SQL-Text, Go-Test),
+samt der gesehenen Farbe; jede Verallgemeinerung darüber hinaus — von „alle“ auf „eine“, vom
+Text auf den Test — steht als *hergeleitet*, und „der Implementer fährt sie“ ist eine
+Erwartung, keine Erprobung.
 
 **Der Konflikt-Pfad ist eine Sequenz, keine Seniorität** (Modul 8). Drei Verdikte sind legitim:
 die Entscheidung gilt und der Plan hat falsch behauptet · die Entscheidung wird per Folge-Entscheidung

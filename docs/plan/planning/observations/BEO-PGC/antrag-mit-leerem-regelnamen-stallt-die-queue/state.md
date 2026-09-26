@@ -1,4 +1,4 @@
-Zustand: **offen** (**2×**) — Hälfte geschlossen, Rest offen. Geschlossen mit
+Zustand: **entschieden, Fix offen** (**2×**) — Hälfte geschlossen, Rest entschieden (Adresse `slice-antragsqueue-lesefehler-failed`). Geschlossen mit
 `slice-transformationen-antragsweg-usecase`: die Regelfelder (`rule_name`, `rule_spec`) werden
 gelesen und verarbeitet statt beim Lesen abgelehnt; die Zeile endet `failed` mit dem Fehlertext
 der Spec, die gültige Zeile dahinter wird `applied` (Store-Test mit realen Zeilen,
@@ -18,15 +18,26 @@ hergeleitet aus den Grants, nicht erprobt).
 eine leere Spalte weder einen Fehlertext noch den Ort der Prüfung; die Zeile zur Spalte nennt den
 Konstruktor (das Ist-Verhalten), sagt aber nicht, dass die Lesung dort endet.
 
-**Adresse:** der Architect-Zug der Closure von `welle-transformationen` (Schritt 3b,
-Planner → Architect → Planner) als Vorschlag des Planners, **unabhängig vom Zähler** (bei 2×
-liest der Lese-Schritt den Eintrag nicht; eine angehaltene Queue trifft aber den Betrieb, und der
-Architect ist dort ohnehin beauftragt): der Architect entscheidet zwischen (a) Verarbeiten mit
-`failed`-Vermerk und Fehlertext je Feld samt Spec-Zeile (ein Folge-Slice), (b) einer Prüfung in
-den SQL-Funktionen (Berührung von `ADR-0046`, keine Domänenlogik in SQL) und (c) einem
-akzeptierten Negativ mit der Abhilfe im Handbuch (Träger dann ein
-Übergabe-Text im Plan von `slice-transformationen-betriebsdoku`, den der Planner in diesem Fall
-anlegt; heute trägt der Plan die Aussage nicht). Bis zur Entscheidung steht kein Ausgang.
+**Entscheidung (Architect-Zug der Closure von `welle-transformationen`): Option (a), in der
+allgemeinen Form.** Die Lesung der Queue lehnt keine einzelne Zeile ab: eine Zeile, deren
+Antrags-Konstruktor sie verwirft (leeres Schema, leerer Tabellenname, leere Spalte, jeder
+künftige Grund), wird als `failed` mit dem Fehlertext des Konstruktors vermerkt, und die Zeilen
+dahinter werden verarbeitet. Das ist derselbe Mechanismus, der die Regelfelder schon schließt
+(Stelle der Prüfung: Verarbeiten, nicht Lesen), und er entspricht der Spec-Aussage „`failed` mit
+einem Fehlertext“. (b) scheidet aus: eine Prüfung in den SQL-Funktionen berührt `ADR-0046` (keine
+Domänenlogik in SQL) und schützt nicht gegen einen direkten `INSERT` von `cdc_admin`, die Queue
+bliebe für diese Zeile angehalten. (c) scheidet aus: eine Zeile einer vertrauten Rolle hielte den
+Betrieb an, die Ursache stünde nur im Log, und die Abhilfe verlangte SQL-Zugriff auf die
+Antrags-Tabelle. Der Fix braucht Code (Queue-Lesepfad und Use Case), keine neue ADR.
+
+**Folgearbeit (Adresse `slice-antragsqueue-lesefehler-failed`, kleiner Fix-Slice):**
+Lesepfad und Use Case so ändern, dass die verworfene Zeile mit Kennung und Fehlertext
+durchgereicht und `failed` vermerkt wird; Store-Test mit realen Zeilen (leeres Schema, leerer
+Tabellenname, `exclude_column`/`include_column` mit leerer Spalte, gültige Zeile dahinter wird
+`applied`); den Test `TestReadPendingRequestsRejectsRowWithEmptySchemaOrTable` auf das neue
+Verhalten umschreiben; `SPEC-019` im selben Commit nachziehen (Fehlertext je Feld, Ort der
+Prüfung: Verarbeitung) — der heutige Wortlaut beschreibt das Ist-Verhalten und bleibt bis zum
+Code stehen.
 
 Zähler (abgeleitet): 2× (evidence/slice-transformationen-antragsweg-schema.md,
 evidence/slice-transformationen-antragsweg-usecase.md).

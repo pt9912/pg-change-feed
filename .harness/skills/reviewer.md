@@ -148,6 +148,10 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   das: ein Beleg-Befehl läuft netzlos und liefert ein Ergebnis, eine
   zitierte Stelle lässt sich aufschlagen — ob das Ergebnis oder die Stelle
   **den Satz stützt**, ist eine Lese-Handlung, kein mechanischer Vergleich.
+  Für eine ADR im Diff gilt das für jede Mutationsangabe einer
+  Fitness-Function-Zeile: sie nennt die Stellen und die Instanz, an denen sie
+  erprobt ist (`AGENTS.md` §3.12 „Verfasser einer ADR“); die Probe setzt die
+  Mutation an einer Stelle, die die Zeile behauptet und nicht erprobt hat.
   Herkunft: `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (5×,
   `slice-084`/`-085`/`-091`/`-093`/`-094`; die Fundstellen sind ein `git diff`
   ohne Pathspec, ein `go list` ohne das zweite Test-Datei-Feld, ein
@@ -259,7 +263,9 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   (8×) · seit welle-backfill-bestand.
 
 **LOW** — stilistisch unschön ohne semantische Auswirkung, einmalige Tippfehler,
-unbenutzte Imports.
+unbenutzte Imports, eine Go-Datei des Diffs, die `gofmt -l` im gepinnten
+Toolchain-Image meldet (`BEO-PGC/formatierungs-drift-ohne-gate`; der Implementer
+meldet den Lauf im Bericht, der Reviewer liest ihn nach).
 
 **INFO** — Hinweis ohne erwartete Aktion (z. B. „diese Stelle hat ein passendes
 ArchUnit-Pendant, das du nicht kennst“; „Metrik deckt die Anforderung nur

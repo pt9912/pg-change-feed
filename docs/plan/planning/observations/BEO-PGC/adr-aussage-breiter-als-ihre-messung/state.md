@@ -1,10 +1,12 @@
 Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` §3.12, Absatz
 „Verfasser einer ADR“ (der Architect nennt zu jeder Aussage über alle Werte einer
 Menge die Menge, an der sie geprüft ist, und zu jeder Fitness-Function-Zeile den
-Test, der sie trägt — erprobt oder als *hergeleitet* gekennzeichnet) und
-`.claude/agents/architect.md` (Zeiger) · seit welle-backfill-bestand
-(Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
-§4.1, R5).
+Test, der sie trägt — erprobt oder als *hergeleitet* gekennzeichnet; eine in der Zeile
+genannte Mutation nennt die Stellen, an denen sie erprobt ist, und die Instanz der
+Messung), `.claude/agents/architect.md` (derselbe Satz an der Stelle, die der Zug beim
+Schreiben liest) und `.harness/skills/reviewer.md` (Lese-Probe im Unterpunkt „Beleg trägt
+seinen Satz nicht“) · seit welle-backfill-bestand, Satz zur Mutation seit
+welle-transformationen.
 
 Die Belege und ihre Berichtigungen:
 
@@ -52,30 +54,20 @@ Die Belege und ihre Berichtigungen:
   `requested_at` oder zur Antrags-Queue trägt sie als Klausel (Trigger: die
   Re-Evaluierungs-Bedingungen von `ADR-0127`).
 
-**Schärfung, Vorschlag an den Architect (Verkörperung 3b, Modul 8: Planner → Architect →
-Planner; der Planner schärft `AGENTS.md` nicht selbst — Regel-Verkörperung ist eine
-Entscheidung, keine Planung). Adresse: der nächste Architect-Zug zu einer ADR mit
-Fitness-Function-Zeile — spätestens der Lese-Schritt der Closure von `welle-transformationen`.**
-Zielort `AGENTS.md` §3.12, Absatz „Verfasser einer ADR“, ein Satz mehr, in der Fassung nach dem
-achten Auftreten: „Eine in einer Fitness-Function-Zeile genannte Mutation nennt die Menge der
-Stellen, an denen sie erprobt ist (eine · alle · welche), und die Instanz der Messung; jede
-Verallgemeinerung darüber hinaus steht als hergeleitet, und ‚der Implementer fährt sie‘ ist eine
-Erwartung, keine Erprobung.“ Die Lücke im heutigen Wortlaut: der Absatz nennt die Menge und den
-Test, der eine Fitness-Function-Zeile trägt, nicht die Mutation, die den Test rot färben soll.
-Das siebte Auftreten (`ADR-0126`) stand formal als Erwartung; das achte (`ADR-0127`) trug die
-Grenze des Erprobten richtig (erprobt an allen sieben Funktionen, Go-Test nicht gefahren) und war
-breiter in der Verallgemeinerung auf „eine Funktion“ — die erste Fassung des Satzes („erprobt
-oder hergeleitet“) hätte die Zeile bestanden, die Ergänzung „Menge der Stellen“ trifft sie. Beide
-Auftreten entstanden im Zug des Architects; der Vorschlag stand zur Zeit des zweiten im Register
-und nicht in `AGENTS.md` §3.12 (gemessen: der Absatz „Verfasser einer ADR“ trägt den Satz nicht;
-ob der Zug das Register las, ist nicht belegt). Ein Satz im Text, den jeder Zug liest, wirkt
-sicherer als eine Adresse im Register — deshalb ist die Adresse der nächste Zug selbst (der
-Orchestrator nennt den Vorschlag im Auftrag) und nicht erst die Closure. Kosten der Schärfung:
-ein Satz; Kosten ihres Fehlens: eine falsche Angabe in einer `Accepted`-ADR je Auftreten, deren
-Berichtigung nur über eine Folge-ADR geht (§3.5), und ein LOW-Finding samt Register-Zeile.
-Gegenentscheidung („akzeptiertes Negativ, Schwere LOW, kein Verbraucher, der Implementer-Lauf fängt
-die Zeile“) ist ein Verdikt des Architects; **ein Sensor ist ausgeschlossen** (Prosa über einen
-Test, `AGENTS.md` §3.12 §Grenze).
+**Schärfung zur Mutation (achtes Auftreten): verkörpert, ohne neue ADR.** Der Wortlaut des
+Planners („erprobt oder hergeleitet“ plus Stellen und Instanz) trägt beide Fälle: `ADR-0126`
+nannte eine Mutation, die weder erprobt noch als hergeleitet stand (der Satz verlangt Stellen
+und Instanz, die es dort nicht gab); `ADR-0127` erprobte „in allen sieben Funktionen“ am
+SQL-Text und schrieb „aus einer Funktion“ am Go-Test (der Satz verlangt die Menge „alle“ und
+die Instanz „SQL-Text“, die Verallgemeinerung steht dann als hergeleitet). Gekürzt gegenüber
+dem Vorschlag: „gesehene Farbe“ statt eines eigenen Satzes zur Erprobung, die zwei
+Verallgemeinerungsrichtungen (alle → eine, Text → Test) als Beispiel im Satz. Keine neue ADR:
+der Absatz „Verfasser einer ADR“ ist selbst ohne ADR in `AGENTS.md` §3.12 gewachsen;
+`ADR-0083` (zwei Instanzen, Leser statt Sensor, Falsifikation ist die Messung) bleibt
+unberührt, der Satz konkretisiert nur, was der Verfasser einer Mutationsangabe nennt. Ein
+Sensor bleibt ausgeschlossen (Prosa über einen Test, `AGENTS.md` §3.12 §Grenze). Beleg-Anker:
+`git grep -n "Stellen\*\*, an denen sie erprobt ist" -- AGENTS.md .claude/agents/architect.md`
+liefert zwei Treffer.
 
 Verwandt, nicht doppelt gezählt: `BEO-PGC/architect-verdikt-rollen-scope-luecke`.
 

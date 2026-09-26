@@ -402,13 +402,21 @@ und eine **Fitness-Function-Zeile** nennt den Test, der sie trägt — **erprobt
 an der Quelle **oder** als *hergeleitet* gekennzeichnet. Was aus einem Plan als
 „wird so sein“ kommt, steht als Erwartung. Der Reviewer prüft eine ADR im Diff
 gegen diesen Satz; die Berichtigung einer `Accepted`-ADR bleibt eine Folge-ADR
-(§3.5). Herkunft: `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (5×:
+(§3.5). Eine in einer Fitness-Function-Zeile genannte **Mutation** nennt die
+**Stellen**, an denen sie erprobt ist (eine · alle · welche), und die
+**Instanz**, an der sie gefahren wurde (SQL-Text, Go-Test), samt der gesehenen
+Farbe; jede Verallgemeinerung darüber hinaus — von „alle“ auf „eine“, vom Text
+auf den Test — steht als *hergeleitet*, und „der Implementer fährt sie“ ist eine
+Erwartung, keine Erprobung. Herkunft:
+`BEO-PGC/adr-aussage-breiter-als-ihre-messung` (8×; die ersten fünf:
 [`ADR-0111`](docs/plan/adr/0111-backfill-bestand-snapshot-bulk-copy.md),
 [`ADR-0113`](docs/plan/adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md),
 [`ADR-0114`](docs/plan/adr/0114-schema-rollout-vorlauf-view-signatur.md),
 [`ADR-0118`](docs/plan/adr/0118-backfill-umschreiben-im-snapshot-fenster.md),
-[`ADR-0120`](docs/plan/adr/0120-capture-slot-leerlauf-bestaetigung.md)) · seit
-welle-backfill-bestand.
+[`ADR-0120`](docs/plan/adr/0120-capture-slot-leerlauf-bestaetigung.md); der Satz
+zur Mutation: [`ADR-0126`](docs/plan/adr/0126-transformationen-annahmemenge-rule-spec.md),
+[`ADR-0127`](docs/plan/adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md)) ·
+seit welle-backfill-bestand, geschärft seit welle-transformationen.
 
 **Was diese Regel nicht hat — die benannte Grenze.** Ein Sensor ist **nicht**
 Teil der Entscheidung: verlangte er, dass jede Zahl ihren Ursprung trägt, wäre
