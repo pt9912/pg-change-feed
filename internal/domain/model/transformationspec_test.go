@@ -31,9 +31,9 @@ func TestCheckRuleNameBindsTheAlphabet(t *testing.T) {
 // fünf): jeder Fall bindet Auslöser, Grund und — wo die Adresse ihn nennt —
 // den Wert. Rot färbende Mutation je Zeile: die zugehörige Prüfung entfernen
 // (`ValidString`, die `kind`-Prüfung, `allowedRuleKeys`, die
-// Schlüssel-Schleife, die Typprüfung von `column`/`to`, die Form über
-// `NewRenameColumn`) — der Fall endet dann mit einem anderen Grund oder
-// angenommen.
+// Schlüssel-Schleife, die Form über `NewRenameColumn`; ein Nicht-String in
+// `column`/`to` liest sich als leerer Name und endet an derselben Form) — der
+// Fall endet dann mit einem anderen Grund oder angenommen.
 func TestParseTransformationSpecRejectsInSpecOrder(t *testing.T) {
 	invalid := domainerrors.ErrInvalidRuleSpec
 	for _, tc := range []struct {

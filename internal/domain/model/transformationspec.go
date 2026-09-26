@@ -112,14 +112,13 @@ func ParseTransformationSpec(text string) (TransformationSpec, error) {
 	}
 	switch TransformationKind(kind) {
 	case TransformationRenameColumn:
-		column, columnOK := jsonString(fields["column"])
-		to, toOK := jsonString(fields["to"])
-		if !columnOK || !toOK {
-			return TransformationSpec{}, fmt.Errorf("%w: column und to sind Zeichenketten", domainerrors.ErrInvalidRuleSpec)
-		}
-		// Die Bezeichner-Form hat eine Quelle, den Konstruktor der Regel;
-		// der Platzhalter-Name ist gültig, ein gleicher Zielname ist hier
-		// keine Formverletzung (K3).
+		// Ein fehlender Schlüssel und ein Wert, der keine Zeichenkette ist,
+		// lesen sich als leerer Name; den lehnt die Bezeichner-Form ab. Die
+		// Form hat eine Quelle, den Konstruktor der Regel; der Platzhalter-
+		// Name ist gültig, ein gleicher Zielname ist hier keine
+		// Formverletzung (K3).
+		column, _ := jsonString(fields["column"])
+		to, _ := jsonString(fields["to"])
 		if _, err := NewRenameColumn("r", column, to); err != nil && !errors.Is(err, domainerrors.ErrTransformationTargetIsColumn) {
 			return TransformationSpec{}, fmt.Errorf("%w: %w", domainerrors.ErrInvalidRuleSpec, err)
 		}
