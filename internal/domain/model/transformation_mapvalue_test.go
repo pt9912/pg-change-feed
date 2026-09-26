@@ -314,6 +314,47 @@ func TestBuildRowImageMapValue(t *testing.T) {
 	}
 }
 
+// Die kanonische Kodierung trägt Felder jeder Länge: Schlüssel und Werte mit
+// 0, 1, 255, 256, 65535, 65536 und 70000 Byte (jede Stufe, an der ein weiteres
+// Längen-Byte gebraucht wird) kommen aus `Values()` unverändert zurück, und
+// die Suche findet jeden Schlüssel und lässt einen Wert anderer Länge stehen.
+// Rot färbende Mutationen: das Längen-Präfix in `writeValueField` bzw.
+// `readValueField` auf die niederen Bytes kürzen (Fälle ab 256 Byte).
+func TestMapValueEncodingCarriesFieldsOfAnyLength(t *testing.T) {
+	lengths := []int{0, 1, 255, 256, 65535, 65536, 70000}
+	values := make(map[string]string, len(lengths))
+	for i, length := range lengths {
+		values[strings.Repeat("k", length)+fmt.Sprint(i)] = strings.Repeat("v", lengths[len(lengths)-1-i]) + fmt.Sprint(i)
+	}
+	rule := mustMapValue(t, "r", "status", values)
+	if got := rule.Values(); !equalMaps(got, values) {
+		t.Fatalf("Zuordnung kommt nicht unverändert zurück: %d Paare, wollen %d", len(got), len(values))
+	}
+	for key, want := range values {
+		image, err := BuildRowImage([]string{"status"}, []*string{textValue(key)}, nil, []Transformation{rule})
+		if err != nil || string(image) != `{"status":"`+want+`"}` {
+			t.Fatalf("Schlüssel der Länge %d: Bild der Länge %d, Fehler %v, wollen den zugeordneten Wert der Länge %d", len(key), len(image), err, len(want))
+		}
+	}
+	stays := strings.Repeat("k", 256) + "x"
+	image, err := BuildRowImage([]string{"status"}, []*string{textValue(stays)}, nil, []Transformation{rule})
+	if err != nil || string(image) != `{"status":"`+stays+`"}` {
+		t.Fatalf("Wert ohne Zuordnung: Bild der Länge %d, Fehler %v, wollen den Wert unverändert", len(image), err)
+	}
+}
+
+func equalMaps(a, b map[string]string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for key, value := range a {
+		if other, ok := b[key]; !ok || other != value {
+			return false
+		}
+	}
+	return true
+}
+
 // Gleiche Regelmenge und gleiche Relation ergeben dasselbe Bild, auch aus
 // gleichzeitigen Aufrufen (`-race`); die Regelliste bleibt unverändert und
 // das Ergebnis teilt keinen Speicher mit ihr.
