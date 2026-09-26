@@ -33,7 +33,7 @@ durch `slice-backfill-spec-nachzug`) — gelesen; die Zeile `schema` von
 [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)), nicht dieses
 Plans.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
 [welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
