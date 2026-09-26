@@ -45,6 +45,10 @@ Beispiele: „war ganz okay, läuft jetzt", „Fertig.", „wie geplant umgesetz
 **MEDIUM** — genau *einer* der drei Pflicht-Inhalte fehlt oder ist unkonkret:
 - Lernsignal ohne das „weil X" (Behauptung statt Ursache)
 - Folge-Slice benannt, aber ohne zugehörigen `open/`-Eintrag
+- Ungenauigkeit oder Grenze als „gemeldet“ geführt, ohne eine Adresse, die
+  eintreten kann (Zeile eines Folge-Slice, Register-Eintrag oder Zeile der
+  Results-Notiz; die Frist einer Meldung nennt `AGENTS.md` §3.13). Herkunft:
+  `BEO-PGC/gemeldete-ungenauigkeit-ohne-traeger` (3×) · seit welle-transformationen
 - Architektur-Beobachtung als Etikett statt als beobachtbare Aussage
 
 **LOW** — alle drei Inhalte vorhanden, aber schwer nachvollziehbar formuliert

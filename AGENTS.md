@@ -92,8 +92,13 @@ Was nicht in dieser Klasse steht (`go`, `gofmt`, `python`, `node`, `curl`,
 **Text-Umschreiben im Repo ist Sache der Datei-Werkzeuge des Laufs.** Ein
 Host-Werkzeug, das eine Repo-Datei an Ort und Stelle überschreibt — `sed -i`,
 `perl -pi`, `awk -i inplace`, ein Host-Interpreter (`python`, `perl`) auf der
-Datei —, ist verboten, auch für „nur einen Schnelltest“. Die Änderung läuft
-über Edit/Write des Laufs oder über ein Repo-Werkzeug hinter `make`. Eine
+Datei —, ist verboten, auch für „nur einen Schnelltest“. **Dasselbe gilt für
+das Schreiben und Anhängen von Text an eine Repo-Datei durch eine Umleitung**
+(`> Datei`, `>> Datei`, `cat <<EOF > Datei`, `tee`, `dd of=`): der Text einer
+Repo-Datei entsteht über Edit/Write des Laufs oder über ein Repo-Werkzeug hinter
+`make`. Ganze Dateien verschieben oder kopieren (`git mv`, `cp` einer Vorlage,
+`git checkout`) schreibt keinen Text und bleibt erlaubt, ebenso eine Umleitung in
+eine Datei im Scratchpad oder Temp-Verzeichnis. Eine
 Mutationsprobe (Reviewer, Verifier) arbeitet auf einer Kopie im Scratchpad;
 die Rücknahme ist `cp` oder `git checkout`. Die Mutation auf der Kopie läuft
 über Edit/Write oder als `sed … Datei > Kopie` (Ausgabe nach stdout); `-i` wird
@@ -101,14 +106,15 @@ auch auf der Kopie geblockt (siehe „Durchsetzung“). `sed -n` (nur lesen) ist
 erlaubt.
 
 **Falsch:** `pip install ...`, `go test ./...` auf dem Host,
-`sed -i 's/a/b/' internal/x.go`.
+`sed -i 's/a/b/' internal/x.go`, `cat >> docs/x.md`.
 **Richtig:** `make test`, `make gates`; eine Textänderung per Edit/Write.
 
 **Begründung:** Toolchain-Reproduzierbarkeit + Supply-Chain-Defense. Die Klasse
 beschreibt den Bestand (über 40 Skripte unter `tools/` rufen `git` auf) und
 lockert kein Gate: kein Skript installiert etwas, und die Grenze der Klasse
-ist die Toolchain-Grenze. Das in-place-Verbot schützt eine Wirkung, die kein
-Sensor liest — ein Werkzeugaufruf hinterlässt in der Datei keine Signatur.
+ist die Toolchain-Grenze. Das in-place-Verbot und das Umleitungs-Verbot schützen
+eine Wirkung, die kein Sensor liest — ein Werkzeugaufruf hinterlässt in der Datei
+keine Signatur.
 
 **Durchsetzung.** Der PreToolUse-Guard (`.claude/hooks/pretooluse-command-guard.sh`)
 blockt Paketmanager (`apt`, `pip`, `npm`, `cargo`, …), in-place Textwerkzeuge
@@ -122,12 +128,13 @@ Stolperdraht, keine Sandbox; Grenz-Zeile und Wortlaut:
 [`MR-003`](harness/conventions/MR-003-guard-inplace-textwerkzeug.md), Tabellentest
 `make test-command-guard`. Ein Host-`python`/`perl` auf einem Pfad ohne Repo-Namen
 (Scratchpad) passiert den Guard und ist trotzdem kein zulässiger Weg: die Regel
-oben gilt unabhängig davon, was der Stolperdraht liest. Was der Guard nicht liest,
+oben gilt unabhängig davon, was der Stolperdraht liest; dasselbe gilt für die
+Umleitung auf eine Repo-Datei. Was der Guard nicht liest,
 bleibt Sache des Reviews
 (`.harness/skills/reviewer.md` §HIGH „Docker-only-Verstoß“).
 Herkunft: `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`,
 `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` · seit
-slice-harness-guard-inplace-textwerkzeug.
+slice-harness-guard-inplace-textwerkzeug, Umleitung geschärft seit welle-transformationen.
 
 ### 3.2 Suppression-Verbot
 

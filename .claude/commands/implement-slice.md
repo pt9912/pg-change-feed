@@ -26,8 +26,10 @@ Adaptions-Block („MR-Block") in `harness/conventions.md`; die workflow-relevan
 emittierten Durchsetzungsschicht):
 
 - **Docker-only, kein Host-Toolchain.** Jeder Gate und jedes Tool läuft in einem gepinnten
-  Docker-Image; erlaubte Host-Werkzeuge und das Verbot des in-place Text-Umschreibens
-  (`sed -i`, `perl -pi`, Host-Interpreter) stehen in `AGENTS.md` §3.1. Rufe nur `make`-Targets auf.
+  Docker-Image; erlaubte Host-Werkzeuge, das Verbot des in-place Text-Umschreibens
+  (`sed -i`, `perl -pi`, Host-Interpreter) und das Verbot, den Text einer Repo-Datei per
+  Umleitung zu schreiben (`>`, `>>`, `tee`, Heredoc) stehen in `AGENTS.md` §3.1. Rufe nur
+  `make`-Targets auf.
 - **Gate-Nachweis + Stop-Hook.** `make gates` endet mit `record-gates`, das einen Content-Hash des
   Working Tree stempelt; der Stop-Hook verweigert den Abschluss, solange der aktuelle Tree nicht
   passt. **Jede Inhaltsänderung nach einem Gate-Lauf — inklusive jedes Commits und jedes `git mv`
@@ -245,11 +247,17 @@ ist eine Lifecycle-Rücksprungkante (11).
     **Konjunktiv über die verworfene Alternative** (`BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar`):
     derselbe Lauf auf die hinzugefügten Kommentarzeilen des Diffs, in Go (`//`) und in Skripten
     (`#`; die Kommentare dort sind transliteriert, „waere“, „wuerde“) —
-    `git diff -U0 <Basis> -- '*.go' '*.sh' '*.awk' | grep -nE '^\+.*(//|#).*(wäre|waere|würde|wuerde|hielte|hätte|haette|sonst|statt)'`.
-    Jeder Treffer bekommt ein Urteil: die Zusage der Stelle im Indikativ (zulässig) oder die
-    Beschreibung einer verworfenen Alternative (umformulieren); Mutationsbeschreibungen in
-    Test-Godocs und normale Zweige („sonst auf stdout“, `else`-Zweige in Shell-Kommentaren)
-    sind zulässig; Treffer ohne Kommentar (`${#var}`, `$#`) sind keine.
+    `git diff -U0 <Basis> -- '*.go' '*.sh' '*.awk' | grep -nE '^\+.*(//|#).*(wäre|waere|würde|wuerde|hielte|hätte|haette|sonst|statt|\b(trüge|truege|bliebe|ließe|liesse|könnte|koennte|müsste|muesste|bräuchte|braeuchte|läge|laege|stünde|stuende|käme|kaeme|wären|waeren|gäbe|gaebe|ginge|fände|faende|dürfte|duerfte|hieße|brächte|braechte)\b)'`.
+    Die Konjunktiv-II-Formen hinter `sonst|statt` tragen eine Wortgrenze (`\b`); die Liste
+    ist gemessen (Architect-Verdikt
+    [`architect-verdict-welle-transformationen-offene-fragen`](../../docs/reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+    §7): am Diff des Fundes F-1 von `slice-transformationen-e2e-wirkung` (`c246ba4f..66f60c8b`)
+    druckte die frühere Liste 0, diese 1 Zeile (die Zeile mit „trüge“); am Bestand steigt der
+    Lauf von 322 auf 359 Zeilen. Jeder Treffer bekommt ein Urteil: die Zusage der Stelle im
+    Indikativ (zulässig) oder die Beschreibung einer verworfenen Alternative (umformulieren);
+    Mutationsbeschreibungen in Test-Godocs („sonst bliebe der Test grün“) und normale Zweige
+    („sonst auf stdout“, `else`-Zweige in Shell-Kommentaren) sind zulässig; Treffer ohne
+    Kommentar (`${#var}`, `$#`) sind keine.
     **Grenze dieser Selbstprüfung** (4. Beleg, `slice-052`, der Architect-Verdikt-Nachtrag
     zur Slice-Chronik in Code-Kommentaren, 4. Auftreten): Dieser Schritt
     läuft im selben Kontext, der den Kommentar geschrieben hat — genau die Konstellation,
