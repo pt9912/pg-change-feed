@@ -42,7 +42,10 @@
 # Leerlauf-Bestätigung (ADR-0120: WAL über der Fehlerschwelle, der
 # Feed-Container läuft weiter) laufen vor dem Upgrade-Sicherheits-Rundlauf;
 # die Haltepunkte der Backfill-Phasen beschreibt der Kopf des Abschnitts
-# `Backfill-Rundläufe`.
+# `Backfill-Rundläufe`. Die Transformations-Rundläufe (LH-FA-CFG-007: die
+# Form der Regeln auf allen fünf Zustellwegen, Neustart, Ausschluss mit
+# Regel) laufen nach der Leerlauf-Bestätigung, ebenfalls vor dem
+# Upgrade-Sicherheits-Rundlauf.
 #
 # Test-Daten bleiben im Container (kein Volume in den Arbeitsbaum);
 # Compose-Container und -Netz werden in jedem Ausgang abgeräumt, das
@@ -421,7 +424,7 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   -e CDC_INTEGRATION_DSN="$DSN" \
   "$TOOLCHAIN_IMAGE" go test -v \
-  -run '^(TestE2ECaptureFlow|TestE2EUpdateOldImageWithFullReplicaIdentity|TestE2EChangesViewMatchesReadChanges|TestE2ERetentionBlockersViewShowsFurthestBehindConsumer|TestE2EMetricsCarriesStorageBytes|TestE2EActivationState|TestE2EActiveTablesViewMatchesActivationState|TestE2EDisableRetainedState|TestE2ESchemaChangeAddColumn|TestE2EChangeTableMetadataExtensibility|TestE2EHeartbeatHealthy)$' \
+  -run '^(TestE2ECaptureFlow|TestE2EUpdateOldImageWithFullReplicaIdentity|TestE2EChangesViewMatchesReadChanges|TestE2ERetentionBlockersViewShowsFurthestBehindConsumer|TestE2EMetricsCarriesStorageBytes|TestE2EActivationState|TestE2EActiveTablesViewMatchesActivationState|TestE2EDisableRetainedState|TestE2ESchemaChangeAddColumn|TestE2EChangeTableMetadataExtensibility|TestE2EHeartbeatHealthy|TestE2ETransformationRulesShapeBothImages|TestE2ETransformationConflictsFailWithSpecText)$' \
   ./test/integration/...
 
 # Go-Hälfte der E2E-Abdeckungstabelle: derselbe Testlauf führt den Erzeuger
@@ -3457,6 +3460,289 @@ bf_await_healthy "$BF_PHASE"
 rm -rf "$WAL_TMP"
 
 echo "run-integration-tests: Leerlauf-Bestätigung (LH-FA-CAP-009, LH-QA-REL-001) belegt — bei den Schwellen Warn $WAL_WARN_BYTES B / Fehler $WAL_ERROR_BYTES B (Konfigurationsdatei) endete der Backfill-Run $wal_run_id über $WAL_ROWS Zeilen completed und erzeugte $wal_run_bytes B WAL, ein Schreiber auf die nicht aktivierte Tabelle $WAL_FOREIGN erzeugte $wal_foreign_bytes B WAL; der Feed-Container lief über beide Lasten weiter (je ${WAL_WAIT_SECONDS} s beobachtet, kein Neustart), der Bestand ist über cdc.changes lesbar, der höchste der im Log des Feed-Containers gemessenen Rückstände (Proben im 5-s-Takt, keine Spitze) liegt bei $wal_peak B"
+
+# --- Transformations-Rundläufe (LH-FA-CFG-007) --------------------------------
+# Zwei Phasen am laufenden Feed-Container, ausschließlich über externe Wege:
+# SQL-Funktionen und Views, HTTP, die drei Stream-Clients und `docker restart`.
+# Jede Phase legt ihre eigene Tabelle an und nimmt ihre Regeln am Ende zurück.
+# Die Bilder aller Operationen und die Konfliktfreiheit tragen die beiden
+# Testfunktionen in test/integration/transformation_e2e_test.go, die der
+# erste `go test`-Aufruf dieser Datei fährt.
+
+# tf_set <Tabelle> <Regelname> <Regelform> <Phase>: setzt eine Regel und wartet
+# auf den Vermerk.
+tf_set() {
+  local request_id
+  request_id=$(bf_sql "SELECT cdc.set_transformation('src-e2e', 'public', '$1', '$2', '$3')")
+  [ -n "$request_id" ] || bf_fail "$4 — cdc.set_transformation($1, $2) lieferte keine Antrags-ID"
+  bf_await_applied "$request_id" "$4"
+}
+
+# tf_remove <Tabelle> <Regelname> <Phase>
+tf_remove() {
+  local request_id
+  request_id=$(bf_sql "SELECT cdc.remove_transformation('src-e2e', 'public', '$1', '$2')")
+  [ -n "$request_id" ] || bf_fail "$3 — cdc.remove_transformation($1, $2) lieferte keine Antrags-ID"
+  bf_await_applied "$request_id" "$3"
+}
+
+# tf_exclude <Tabelle> <Spalte> <Phase>
+tf_exclude() {
+  local request_id
+  request_id=$(bf_sql "SELECT cdc.exclude_column('src-e2e', 'public', '$1', '$2')")
+  [ -n "$request_id" ] || bf_fail "$3 — cdc.exclude_column($1, $2) lieferte keine Antrags-ID"
+  bf_await_applied "$request_id" "$3"
+}
+
+# tf_row <Tabelle> <id> <name> <Status> <Phase>: fügt eine Zeile ein und wartet,
+# bis ihre Change über cdc.changes lesbar ist.
+tf_row() {
+  bf_sql "INSERT INTO public.$1 (id, name, status) VALUES ($2, '$3', '$4')" >/dev/null
+  bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$1' AND new_data->>'id' = '$2'" 1 30 "$5 — Change der Zeile $2"
+}
+
+# tf_form <Tabelle> <id> <erwartetes Bild ohne id> <Beschreibung>: das
+# persistierte Bild der Zeile trägt ohne den Schlüssel id genau diese Form.
+tf_form() {
+  bf_expect "$(bf_sql "SELECT (new_data - 'id') = '$3'::jsonb FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$1' AND new_data->>'id' = '$2'")" t "$4"
+}
+
+# tf_no_value <Tabelle> <id> <Wert> <Beschreibung>: der Wert steht weder im
+# Neu- noch im Alt-Bild der Change.
+tf_no_value() {
+  bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$1' AND new_data->>'id' = '$2' AND (new_data::text LIKE '%$3%' OR coalesce(old_data::text, '') LIKE '%$3%')")" 0 "$4"
+}
+
+# tf_image_of <Zeile>: das Row Image einer RECEIVED- oder READ-Zeile der
+# Wegwerf-Clients.
+tf_image_of() {
+  printf '%s\n' "$1" | sed -E 's/^.* new_image=//; s/ origin=(wal|backfill)$//'
+}
+
+# tf_change_id_of <Zeile>: die change_id einer RECEIVED- oder READ-Zeile.
+tf_change_id_of() {
+  grep -oE 'change_id=[^ ]+' <<<"$1" | cut -d= -f2
+}
+
+# tf_expect_form <Bild> <change_id> <erwartete Form ohne id> <Beschreibung>:
+# das über einen Zustellweg gelesene Bild trägt die Form und ist gleich dem
+# persistierten Bild derselben Change.
+tf_expect_form() {
+  local image=$1 change_id=$2 want=$3 what=$4
+  [ -n "$image" ] || bf_fail "$what — die Zeile trägt kein Row Image"
+  bf_expect "$(bf_sql "SELECT ('$image'::jsonb - 'id') = '$want'::jsonb")" t "$what — Form des Bildes ($image)"
+  bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$change_id' AND new_data = '$image'::jsonb")" 1 "$what — Bild gleich dem persistierten Bild der Change $change_id"
+}
+
+# tf_client_start <Container> <go run-Argumente>: startet einen Wegwerf-Client
+# im Toolchain-Container.
+tf_client_start() {
+  local name=$1
+  shift
+  docker rm -fv "$name" >/dev/null 2>&1 || true
+  docker run -d --name "$name" --network "$NETWORK" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -w /src \
+    -e GOCACHE=/tmp/gocache \
+    "$TOOLCHAIN_IMAGE" go run "$@" >/dev/null
+}
+
+# tf_client_has <Container> <Marker>: die Ausgabe des Clients trägt den Marker.
+tf_client_has() {
+  local logs
+  logs=$(docker logs "$1" 2>&1 || true)
+  [[ "$logs" == *"$2"* ]]
+}
+
+# tf_client_await <Container> <Marker> <Sekunden> <Phase>: wartet auf eine
+# Zeile des Clients; endet der Client vorher ohne sie, endet die Phase.
+tf_client_await() {
+  local name=$1 marker=$2 seconds=$3 phase=$4 i
+  for ((i = 0; i < seconds * 2; i++)); do
+    if tf_client_has "$name" "$marker"; then
+      return 0
+    fi
+    if [ "$(docker inspect --format '{{.State.Running}}' "$name" 2>/dev/null || echo false)" != "true" ]; then
+      break
+    fi
+    sleep 0.5
+  done
+  if tf_client_has "$name" "$marker"; then
+    return 0
+  fi
+  bf_fail "$phase — Client $name meldete '$marker' nicht: $(docker logs "$name" 2>&1 || true)"
+}
+
+# tf_client_line <Container>: die erste RECEIVED-Zeile des Clients.
+tf_client_line() {
+  local logs
+  logs=$(docker logs "$1" 2>&1 || true)
+  grep -m1 '^RECEIVED ' <<<"$logs" || true
+}
+
+abdeckung_declare "Transformationen-Happy-Path (fünf Zustellwege)" "LH-FA-CFG-007,LH-FA-SST-002,LH-FA-SST-006,LH-FA-SST-008" "eine per cdc.set_transformation beantragte rename_column- und map_value-Regel prägt jede danach erfasste Change auf allen fünf Wegen in derselben Form: über cdc.changes, GET /changes, den gRPC-Stream, den SSE-Stream und den NATS-Vollinhalts-Stream trägt das Bild den Zielnamen und den abgebildeten Wert und nicht den Quellschlüssel; die zuvor erfasste Change bleibt in Rohform lesbar, ein nicht abgebildeter Wert bleibt unverändert, ein fehlender Wert bleibt abwesend, und nach dem Entfernen der Regeln trägt die nächste Change wieder die Rohform" "Transformationen-Happy-Path (LH-FA-CFG-007) belegt"
+
+TF_PHASE="Transformationen-Happy-Path"
+TF_TABLE=feed_e2e_transform
+TF_RULE_RENAME='{"kind":"rename_column","column":"name","to":"customer_name"}'
+TF_RULE_MAP='{"kind":"map_value","column":"status","values":{"o":"open","c":"closed"}}'
+TF_FORM_STREAM='{"customer_name":"TfNeu","status":"open"}'
+TF_GRPC_CONTAINER=cdc-e2e-tf-grpc
+TF_SSE_CONTAINER=cdc-e2e-tf-sse
+TF_NATS_CONTAINER=cdc-e2e-tf-nats
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$TF_TABLE (id int PRIMARY KEY, name text, status text);
+SQL
+bf_enable "$TF_TABLE" "$TF_PHASE"
+
+# Die Zeile vor den Regeln behält ihre Rohform.
+tf_row "$TF_TABLE" 1 TfAlt o "$TF_PHASE"
+tf_set "$TF_TABLE" kundenname "$TF_RULE_RENAME" "$TF_PHASE"
+tf_set "$TF_TABLE" status_lesbar "$TF_RULE_MAP" "$TF_PHASE"
+
+# Die drei Stream-Clients laufen gleichzeitig und melden ihre Bereitschaft,
+# bevor die erste Zeile mit Regeln entsteht.
+tf_client_start "$TF_GRPC_CONTAINER" ./tools/harness/grpcclient "pg-change-feed:9090" "$HTTP_TOKEN_READER"
+tf_client_start "$TF_SSE_CONTAINER" ./tools/harness/sseclient "$HTTP_BASE_URL" "$HTTP_TOKEN_READER"
+tf_client_start "$TF_NATS_CONTAINER" ./tools/harness/natsstreamsub "nats://nats:4222" "cdc.stream.src-e2e.public.$TF_TABLE" "$NATS_STREAM_TOKEN"
+tf_client_await "$TF_GRPC_CONTAINER" READY 90 "$TF_PHASE"
+tf_client_await "$TF_SSE_CONTAINER" READY 90 "$TF_PHASE"
+tf_client_await "$TF_NATS_CONTAINER" READY 90 "$TF_PHASE"
+
+# Die Zustellung über die Streams trägt kein Replay: zwischen „Client ist
+# bereit“ und „Empfänger ist am Broadcaster registriert“ liegt ein kurzes
+# Fenster. Der Lauf fügt deshalb eine begrenzte Folge gleichförmiger Zeilen
+# ein, bis jeder der drei Clients eine davon empfangen hat.
+tf_stream_rows=0
+tf_all_received=0
+for tf_attempt in $(seq 1 6); do
+  tf_stream_rows=$tf_attempt
+  bf_sql "INSERT INTO public.$TF_TABLE (id, name, status) VALUES ($((10 + tf_attempt)), 'TfNeu', 'o')" >/dev/null
+  for _ in $(seq 1 20); do
+    if tf_client_has "$TF_GRPC_CONTAINER" "RECEIVED" && tf_client_has "$TF_SSE_CONTAINER" "RECEIVED" && tf_client_has "$TF_NATS_CONTAINER" "RECEIVED"; then
+      tf_all_received=1
+      break
+    fi
+    sleep 0.5
+  done
+  if [ "$tf_all_received" -eq 1 ]; then
+    break
+  fi
+done
+[ "$tf_all_received" -eq 1 ] || bf_fail "$TF_PHASE — nicht jeder Stream-Client empfing eine der $tf_stream_rows Zeilen (gRPC: $(tf_client_line "$TF_GRPC_CONTAINER") SSE: $(tf_client_line "$TF_SSE_CONTAINER") NATS: $(tf_client_line "$TF_NATS_CONTAINER"))"
+
+tf_grpc_line=$(tf_client_line "$TF_GRPC_CONTAINER")
+tf_sse_line=$(tf_client_line "$TF_SSE_CONTAINER")
+tf_nats_line=$(tf_client_line "$TF_NATS_CONTAINER")
+docker rm -fv "$TF_GRPC_CONTAINER" "$TF_SSE_CONTAINER" "$TF_NATS_CONTAINER" >/dev/null 2>&1 || true
+for tf_way in gRPC-Stream:"$tf_grpc_line" SSE-Stream:"$tf_sse_line" NATS-Vollinhalts-Stream:"$tf_nats_line"; do
+  tf_way_name=${tf_way%%:*}
+  tf_way_line=${tf_way#*:}
+  [[ "$tf_way_line" == *" table=$TF_TABLE "* ]] || bf_fail "$TF_PHASE — $tf_way_name: die RECEIVED-Zeile nennt nicht die Tabelle $TF_TABLE: $tf_way_line"
+  [[ "$tf_way_line" == *" operation=INSERT "* ]] || bf_fail "$TF_PHASE — $tf_way_name: die RECEIVED-Zeile nennt nicht die Operation INSERT: $tf_way_line"
+  tf_expect_form "$(tf_image_of "$tf_way_line")" "$(tf_change_id_of "$tf_way_line")" "$TF_FORM_STREAM" "$TF_PHASE — $tf_way_name"
+done
+
+# Ein nicht abgebildeter Wert und ein fehlender Wert: die Regeln ändern nur,
+# was sie nennen.
+tf_row "$TF_TABLE" 20 TfX x "$TF_PHASE"
+bf_sql "INSERT INTO public.$TF_TABLE (id, name, status) VALUES (21, NULL, 'c')" >/dev/null
+tf_total=$((1 + tf_stream_rows + 2))
+bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$TF_TABLE'" "$tf_total" 30 "$TF_PHASE — Changes der Tabelle"
+
+# Weg 1, cdc.changes: Rohform vor den Regeln, die Form nach ihnen.
+tf_form "$TF_TABLE" 1 '{"name":"TfAlt","status":"o"}' "$TF_PHASE — cdc.changes, Change vor den Regeln"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$TF_TABLE' AND (new_data - 'id') = '$TF_FORM_STREAM'::jsonb")" "$tf_stream_rows" "$TF_PHASE — cdc.changes, Changes mit der Form der Stream-Zeilen"
+tf_form "$TF_TABLE" 20 '{"customer_name":"TfX","status":"x"}' "$TF_PHASE — cdc.changes, nicht abgebildeter Wert"
+tf_form "$TF_TABLE" 21 '{"status":"closed"}' "$TF_PHASE — cdc.changes, fehlender Wert bleibt abwesend"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$TF_TABLE' AND jsonb_exists(new_data, 'name')")" 1 "$TF_PHASE — cdc.changes, Changes mit dem Quellschlüssel name (nur die vor den Regeln)"
+
+# Weg 2, GET /changes: jede gelesene Change trägt dasselbe Bild wie
+# cdc.changes, und die Menge der Kennungen ist dieselbe.
+tf_range=$(bf_sql "SELECT min(commit_position) || ' ' || (max(commit_position) + 1) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$TF_TABLE'")
+read -r tf_from tf_to <<<"$tf_range"
+tf_http=$(bf_http changes "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" src-e2e public "$TF_TABLE" "$tf_from" "$tf_to")
+bf_expect "$(printf '%s\n' "$tf_http" | grep -c '^READ ')" "$tf_total" "$TF_PHASE — READ-Zeilen über GET /changes"
+bf_expect "$(bf_read_ids "$tf_http")" "$(bf_sql "SELECT string_agg(change_id, ',' ORDER BY change_id COLLATE \"C\") FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$TF_TABLE'")" "$TF_PHASE — change_id über GET /changes gegen cdc.changes"
+while IFS= read -r tf_line; do
+  tf_http_image=$(tf_image_of "$tf_line")
+  tf_http_id=$(tf_change_id_of "$tf_line")
+  bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$tf_http_id' AND new_data = '$tf_http_image'::jsonb")" 1 "$TF_PHASE — GET /changes, Bild gleich cdc.changes ($tf_http_id)"
+done < <(printf '%s\n' "$tf_http" | grep '^READ ')
+
+# Rücknahme: nach dem Entfernen beider Regeln trägt die nächste Change wieder
+# die Rohform, die früheren bleiben unverändert.
+tf_remove "$TF_TABLE" kundenname "$TF_PHASE"
+tf_remove "$TF_TABLE" status_lesbar "$TF_PHASE"
+tf_row "$TF_TABLE" 30 TfRoh o "$TF_PHASE"
+tf_form "$TF_TABLE" 30 '{"name":"TfRoh","status":"o"}' "$TF_PHASE — Rohform nach dem Entfernen der Regeln"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$TF_TABLE' AND (new_data - 'id') = '$TF_FORM_STREAM'::jsonb")" "$tf_stream_rows" "$TF_PHASE — frühere Changes nach dem Entfernen der Regeln"
+bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" true "$TF_PHASE — Feed-Container läuft weiter"
+
+echo "run-integration-tests: Transformationen-Happy-Path (LH-FA-CFG-007) belegt — auf $TF_TABLE prägten rename_column (name zu customer_name) und map_value (status) $tf_stream_rows Stream-Zeile(n) und zwei weitere Zeilen auf allen fünf Wegen in derselben Form; gRPC: $tf_grpc_line; SSE: $tf_sse_line; NATS: $tf_nats_line; die Zeile vor den Regeln blieb in Rohform, nach dem Entfernen der Regeln trug die nächste Change wieder die Rohform"
+
+abdeckung_declare "Transformationen-Neustart und Ausschluss" "LH-FA-CFG-007,LH-FA-CFG-005,LH-QA-SEC-004" "nach einem realen Container-Neustart leitet der Prozessstart den Regelstand aus den applied-Zeilen ab und die danach erfasste Change trägt die Form; cdc.remove_transformation stellt die Rohform für künftige Changes wieder her; nach cdc.exclude_column auf der Spalte mit Regel trägt die Change weder Quellnamen noch Zielnamen noch Wert im Bild, vor und nach dem Neustart, und die nicht ausgeschlossene Spalte bleibt darin" "Transformationen-Neustart und Ausschluss (LH-FA-CFG-007) belegt"
+
+TF_PHASE="Transformationen-Neustart und Ausschluss"
+TF_RESTART_TABLE=feed_e2e_transform_restart
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$TF_RESTART_TABLE (id int PRIMARY KEY, name text, status text);
+SQL
+bf_enable "$TF_RESTART_TABLE" "$TF_PHASE"
+tf_set "$TF_RESTART_TABLE" kundenname "$TF_RULE_RENAME" "$TF_PHASE"
+tf_set "$TF_RESTART_TABLE" status_lesbar "$TF_RULE_MAP" "$TF_PHASE"
+
+tf_row "$TF_RESTART_TABLE" 1 TfR1 o "$TF_PHASE"
+tf_form "$TF_RESTART_TABLE" 1 '{"customer_name":"TfR1","status":"open"}' "$TF_PHASE — Form vor dem Neustart"
+
+# Der Neustart ist ein echter Prozess-Neustart desselben Containers; ohne die
+# Ableitung des Regelstands beim Prozessstart trüge die nächste Change die
+# Rohform. Der Beleg des Neustarts ist die Startzeit des Containers.
+tf_started_before=$(docker inspect --format '{{.State.StartedAt}}' "$FEED_CONTAINER")
+docker restart "$FEED_CONTAINER" >/dev/null
+bf_await_healthy "$TF_PHASE"
+tf_started_after=$(docker inspect --format '{{.State.StartedAt}}' "$FEED_CONTAINER")
+[ "$tf_started_before" != "$tf_started_after" ] || bf_fail "$TF_PHASE — die Startzeit des Feed-Containers blieb nach docker restart gleich ($tf_started_after)"
+tf_row "$TF_RESTART_TABLE" 2 TfR2 o "$TF_PHASE"
+tf_form "$TF_RESTART_TABLE" 2 '{"customer_name":"TfR2","status":"open"}' "$TF_PHASE — Form nach dem Neustart"
+
+# Rücknahme: die nächste Change trägt die Rohform, die frühere bleibt.
+tf_remove "$TF_RESTART_TABLE" kundenname "$TF_PHASE"
+tf_remove "$TF_RESTART_TABLE" status_lesbar "$TF_PHASE"
+tf_row "$TF_RESTART_TABLE" 3 TfR3 o "$TF_PHASE"
+tf_form "$TF_RESTART_TABLE" 3 '{"name":"TfR3","status":"o"}' "$TF_PHASE — Rohform nach dem Entfernen der Regeln"
+tf_form "$TF_RESTART_TABLE" 2 '{"customer_name":"TfR2","status":"open"}' "$TF_PHASE — frühere Change nach dem Entfernen der Regeln"
+
+# Ausschluss der Spalte mit Regel: dasselbe Regelpaar wird neu gesetzt, dann
+# fällt die Spalte name aus dem Bild — unter dem Quellnamen wie unter dem
+# Zielnamen —, die Spalte status trägt ihre Regel weiter.
+tf_set "$TF_RESTART_TABLE" kundenname "$TF_RULE_RENAME" "$TF_PHASE"
+tf_set "$TF_RESTART_TABLE" status_lesbar "$TF_RULE_MAP" "$TF_PHASE"
+tf_row "$TF_RESTART_TABLE" 4 TfR4 o "$TF_PHASE"
+tf_form "$TF_RESTART_TABLE" 4 '{"customer_name":"TfR4","status":"open"}' "$TF_PHASE — Form nach dem erneuten Setzen"
+tf_exclude "$TF_RESTART_TABLE" name "$TF_PHASE"
+tf_row "$TF_RESTART_TABLE" 5 TfSecretVorNeustart o "$TF_PHASE"
+tf_form "$TF_RESTART_TABLE" 5 '{"status":"open"}' "$TF_PHASE — Bild mit Ausschluss und Regeln vor dem Neustart"
+tf_no_value "$TF_RESTART_TABLE" 5 TfSecretVorNeustart "$TF_PHASE — Wert der ausgeschlossenen Spalte vor dem Neustart"
+
+docker restart "$FEED_CONTAINER" >/dev/null
+bf_await_healthy "$TF_PHASE"
+tf_row "$TF_RESTART_TABLE" 6 TfSecretNachNeustart o "$TF_PHASE"
+tf_form "$TF_RESTART_TABLE" 6 '{"status":"open"}' "$TF_PHASE — Bild mit Ausschluss und Regeln nach dem Neustart"
+tf_no_value "$TF_RESTART_TABLE" 6 TfSecretNachNeustart "$TF_PHASE — Wert der ausgeschlossenen Spalte nach dem Neustart"
+
+# Aufräumen: ohne Regeln bleibt der Ausschluss, die Spalte status trägt die
+# Rohform.
+tf_remove "$TF_RESTART_TABLE" kundenname "$TF_PHASE"
+tf_remove "$TF_RESTART_TABLE" status_lesbar "$TF_PHASE"
+tf_row "$TF_RESTART_TABLE" 7 TfSecretOhneRegeln o "$TF_PHASE"
+tf_form "$TF_RESTART_TABLE" 7 '{"status":"o"}' "$TF_PHASE — Bild mit Ausschluss ohne Regeln"
+tf_no_value "$TF_RESTART_TABLE" 7 TfSecretOhneRegeln "$TF_PHASE — Wert der ausgeschlossenen Spalte ohne Regeln"
+
+echo "run-integration-tests: Transformationen-Neustart und Ausschluss (LH-FA-CFG-007) belegt — auf $TF_RESTART_TABLE trug die Change nach einem realen docker restart (Startzeit $tf_started_before, danach $tf_started_after) die Form beider Regeln; nach dem Entfernen trug die nächste Change die Rohform; nach exclude_column auf name trug das Bild vor und nach dem zweiten Neustart weder name noch customer_name noch den Wert, die Spalte status blieb (mit Regel offen, ohne Regel roh)"
 
 abdeckung_declare "Upgrade-Sicherheits-Rundlauf" "LH-QA-OPS-005,LH-FA-RET-001" "ein realer Container-Tausch ersetzt den Feed-Container durch eine neue Instanz desselben Images, während Datenbank und NATS unberührt bleiben — der Datenstand davor bleibt lesbar (\`count(*)\`-Beleg gegen cdc.changes nach dem Tausch, \`LH-FA-RET-001\`), danach Eingefügtes wird weiter erfasst" "Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064) belegt"
 
