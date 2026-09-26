@@ -437,13 +437,13 @@ func (a *Assembler) lookupBinding(qualified string) (TableBinding, bool) {
 }
 
 // AddBinding trägt eine `TableBinding` synchronisiert nach — die
-// Administrations-Goroutine (`ADR-0050`) ruft sie auf, wenn eine über SQL
-// beantragte Aktivierung real ausgeführt wurde, für eine bislang nicht
-// aktivierte Tabelle aus einer zweiten Goroutine. Trägt die Tabelle
-// bereits eine Bindung, bleiben deren `ExcludedColumns` und
+// Administrations-Verarbeitung ruft sie auf, wenn eine über SQL beantragte
+// Aktivierung real ausgeführt wurde, für eine bislang nicht aktivierte
+// Tabelle: im Dauerbetrieb die Administrations-Goroutine aus einer zweiten
+// Goroutine, beim Prozessstart der Vorlauf vor dem Stream-Lauf. Trägt die
+// Tabelle bereits eine Bindung, bleiben deren `ExcludedColumns` und
 // `Transformations` stehen: der Aufruf setzt `TableID`/`SchemaVersion` neu
-// und übernimmt alle übrigen Felder der getragenen Bindung (`ADR-0059`
-// Teilfrage 3, `ADR-0112` Teilfrage 6).
+// und übernimmt alle übrigen Felder der getragenen Bindung (`ADR-0112`).
 func (a *Assembler) AddBinding(qualified string, binding TableBinding) {
 	a.tablesMu.Lock()
 	defer a.tablesMu.Unlock()
@@ -473,9 +473,9 @@ func (a *Assembler) setSchemaVersion(qualified string, version model.SchemaVersi
 }
 
 // ExcludeColumn trägt einen Spaltennamen synchronisiert in den
-// Ausschlussstand einer getragenen Bindung nach (`LH-FA-CFG-005`,
-// `ADR-0059` Teilfrage 3): die Administrations-Goroutine ruft sie auf,
-// nachdem `ExcludeColumnUseCase` den Antrag real verarbeitet hat. Eine
+// Ausschlussstand einer getragenen Bindung nach (`LH-FA-CFG-005`): die
+// Administrations-Verarbeitung (Goroutine und Vorlauf vor dem Stream-Lauf)
+// ruft sie auf, nachdem `ExcludeColumnUseCase` den Antrag real verarbeitet hat. Eine
 // nicht getragene Bindung bleibt ohne Wirkung — derselbe idempotente
 // Vertrag wie `RemoveBinding`; ohne Erfassungspfad gibt es keinen
 // Filterzustand zu ändern. Ein bereits geführter Name bleibt einmal
@@ -640,8 +640,9 @@ func containsColumn(columns []string, name string) bool {
 }
 
 // RemoveBinding entfernt eine `TableBinding` synchronisiert — die
-// Administrations-Goroutine ruft sie auf, nachdem eine über SQL beantragte
-// Deaktivierung real ausgeführt wurde (`ADR-0050`). Eine nicht (mehr)
+// Administrations-Verarbeitung (Goroutine und Vorlauf vor dem Stream-Lauf) ruft
+// sie auf, nachdem eine über SQL beantragte Deaktivierung real ausgeführt wurde
+// (`ADR-0050`). Eine nicht (mehr)
 // vorhandene Bindung bleibt ohne Wirkung (Idempotenz, wie
 // `DisableTableUseCase`).
 func (a *Assembler) RemoveBinding(qualified string) {
