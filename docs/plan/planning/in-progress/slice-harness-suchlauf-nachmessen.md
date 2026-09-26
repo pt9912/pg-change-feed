@@ -119,7 +119,7 @@ Suchraum ausgeschlossen.
       entfernt“ färbt die Prüfung rot (der Lauf lässt beide Dateien geändert,
       der Parent-Stand tut es: `BEO-PGC/test-schreibt-in-committete-datei`, 4
       Belege).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
