@@ -63,7 +63,7 @@ aufzählen.
 
 ## 2. Definition of Done
 
-- [ ] `map_value` wirkt auf beide Images: Zuordnung, nicht zugeordneter Wert
+- [x] `map_value` wirkt auf beide Images: Zuordnung, nicht zugeordneter Wert
       unverändert, Schlüsselposition der Quellspalte am Ausgang des `Assembler`
       (Festlegung von
       [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
@@ -78,34 +78,34 @@ aufzählen.
       Abbildung auf sich selbst); der Parser lehnt unbekannte Schlüssel ab. *Zu
       belegen durch:* `make test` (Race-Detector), bestehende Tests ohne
       geänderte Erwartung.
-- [ ] Ohne Änderung an Antragsweg und Wirkort: `git diff --stat` gegen den
+- [x] Ohne Änderung an Antragsweg und Wirkort: `git diff --stat` gegen den
       Parent-Stand nennt weder `internal/application/usecase/`,
       `internal/bootstrap/`, `tools/schema/`, `internal/adapters/**` (außer
       Testdateien, die die Regeltypen aufzählen) noch die Spec; der Use Case
       akzeptiert einen `map_value`-Antrag über den Parser der Domäne. *Zu
       belegen durch:* der Diff-Stat im Bericht und ein Use-Case-Test, der einen
       `map_value`-Antrag ohne Änderung des Use-Case-Codes annimmt.
-- [ ] Die Fitness Function bleibt vollständig: der Eigenschaftstest (Regeltyp ×
+- [x] Die Fitness Function bleibt vollständig: der Eigenschaftstest (Regeltyp ×
       ausgeschlossene Spalte) erfasst `map_value` über die Domänen-Menge ohne
       manuelle Ergänzung — das Image trägt weder Quellschlüssel noch Zielname
       noch Quellwert noch abgebildeten Wert; der Paritätstest des
       Backfill-Pfads erfasst `map_value` ohne Strukturänderung. *Zu belegen
       durch:* `make test` und die Mutation, die `map_value` aus der
       Domänen-Menge entfernt (die Tests färben sich rot); `make a-check` grün.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: entfällt — keine Betreiber-Oberfläche; der Regeltyp steht im
+- [x] Doku-Update: entfällt — keine Betreiber-Oberfläche; der Regeltyp steht im
       Handbuch-Abschnitt von `slice-transformationen-betriebsdoku`.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
@@ -121,9 +121,33 @@ aufzählen.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/domain/model/transformation.go` (aus `kern-rename`; + Test) | update | zweiter Regeltyp: Konstruktor-Invarianten, Auswertung, Parser-Zweig. |
-| `internal/adapters/driving/replication/mapper/` (Eigenschaftstest) | update | Regeltyp-Menge aus der Domäne — `map_value` wird ohne manuelle Ergänzung erfasst. |
-| Paritätstest des Backfill-Pfads (Ort aus `backfill-pfad`) | prüfen | tabellengetrieben: erfasst `map_value` ohne Strukturänderung. |
+| `internal/domain/model/transformation.go` (aus `kern-rename`; + Test) | update | zweiter Regeltyp: Konstruktor-Invarianten, Auswertung, Parser-Zweig. Gelieferte Form: die Konstante `TransformationMapValue`, `NewMapValue`, das Feld `values` (die Zuordnung in kanonischer Kodierung: Paare in aufsteigender Ordnung des Schlüssels, je Feld ein Vier-Byte-Längenpräfix), `Values()`, die Auswertung in `applyTransformations` und die Anwendbarkeit ohne Zielname-Prüfung für `map_value` in `CheckApplicable`. |
+| `internal/domain/model/transformationspec.go` (Parser-Zweig) | update | (Nachzug, aus der Zeile oben herausgelöst) `ParseTransformationSpec` liest `values` strikt (nicht leeres Objekt, Zeichenketten als Werte), `allowedRuleKeys` nennt `kind`/`column`/`values`, `Build` baut die Regel. |
+| `internal/domain/errors/errors.go` (Doc-Kommentare) | update | (Nachzug) die Kommentare von `ErrInvalidTransformation` und `ErrInvalidRuleSpec` nennen `values`; der Block von `ErrInvalidTransformation` trug zwei Kennungen und trägt eine (`AGENTS.md` §3.7). |
+| `internal/domain/model/transformation_mapvalue_test.go` (neu), `transformation_test.go`, `transformationspec_test.go` | update | (Nachzug) Tests der Domäne für `map_value`. Zwei bestehende Erwartungen ändern sich zwangsläufig: `TestTransformationKindsIsAClosedSet` (die Menge trägt zwei Typen) und `TestTransformationSpecBuild` (der Platzhalter für einen unbekannten Regeltyp war `map_value`, jetzt `nope`). |
+| `internal/adapters/driving/replication/mapper/` (Eigenschaftstest) | update | Regeltyp-Menge aus der Domäne — `map_value` wird ohne manuelle Ergänzung erfasst. Gelieferte Form: `transformation_test.go` (Fixture-Schalter `ruleFor` trägt den Fall `map_value`, die Erwartung je Regeltyp steht als Schlüssel-Wert-Paar am Fall) und die neue Datei `transformation_mapvalue_test.go` (beide Images, Abwesenheit, Metadaten, Anwendbarkeit, Determinismus, Live-Reload, `-race`). |
+| Paritätstest des Backfill-Pfads (Ort aus `backfill-pfad`) | prüfen → update | tabellengetrieben: die Schleife über `model.TransformationKinds()` erfasst `map_value` ohne Strukturänderung; der Fixture-Schalter `parityRule` in `internal/bootstrap/backfill_image_parity_test.go` bekommt den Fall `map_value` (Übergabe aus `backfill-pfad`, siehe unten), die Prüfung der sichtbaren Wirkung je Regeltyp steht am Fall. |
+| `internal/application/usecase/backfill/transformation_test.go` | update | (Nachzug, Übergabe aus `backfill-pfad`) Fixture-Schalter `ruleFor` bekommt den Fall `map_value`; die Erwartungen der Bild-Tests folgen dem Regeltyp; neue Fälle: Zustandswechsel des Regelstands mit `map_value` und Nichtanwendbarkeit im Run. |
+| `internal/application/usecase/settransformation/service_test.go`, `internal/bootstrap/administration_internal_test.go` | update | (Nachzug, DoD Punkt 2) der Use-Case-Test eines `map_value`-Antrags am unveränderten Use-Case-Code und sein Pendant über die Verdrahtung `applyAdministrationRequest`. |
+
+**Auflösung der Übergabe aus `backfill-pfad` (Entscheidung dieses Slice, vor dem Code):**
+`Transformation` bleibt über `==` vergleichbar; die Zuordnung von `map_value` steht als kanonische
+Zeichenkette im Feld `values` (erster der beiden benannten Wege). `sameSet[T comparable]` in
+`internal/application/usecase/backfill/service.go` bleibt unverändert, der Diff nennt keine
+Produktivdatei unter `internal/application/usecase/`. Die Kosten: die Suche einer Zuordnung ist linear in
+der Zahl der Paare und dekodiert nicht (`lookupMappedValue`). **Auslegung von DoD Punkt 2:** die
+Ausnahme „Testdateien, die die Regeltypen aufzählen“ gilt für jedes Verzeichnis der Aufzählung, nicht nur
+für `internal/adapters/**` — `internal/application/usecase/backfill/transformation_test.go`,
+`internal/bootstrap/backfill_image_parity_test.go` (Fixture-Schalter) sowie
+`internal/application/usecase/settransformation/service_test.go` und
+`internal/bootstrap/administration_internal_test.go` (der geforderte Use-Case-Test) sind Testdateien mit
+Diff; kein Produktivcode dort. Der Beleg ist der Diff-Stat im Bericht mit dem Ausschluss `':!*_test.go'`.
+
+**Nicht realisiert (Grund):** der Doc-Kommentar von `BuildRowImage` (`internal/domain/model/rowimage.go`)
+trägt keinen Satz zur Wertabbildung: sein Block trägt bereits mehrere Kennungen, ein Zusatz machte den
+Block zum Kandidaten von `make kommentar-kennungen`, und die Bereinigung liegt bei
+`slice-code-kommentare-bereinigung`; der Kommentar bleibt wahr (er beschreibt die Position umbenannter
+Schlüssel, `applyTransformations` trägt die Beschreibung der Wertabbildung).
 
 **Übergabe aus `slice-transformationen-antragsweg-usecase`** (gemeldet, kein zusätzlicher
 Umfang; Herkunft: Plan des Slice §6 und Review-Report
@@ -183,11 +207,41 @@ mit `git grep -n sameSet -- internal` (sechs Trefferzeilen in
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Menge der
 Regeltypen“ (ein Typ → zwei); beide Stände gemessen):**
 
-| Träger | Suchbefehl | Befund | Behandlung |
+Die Befehle stehen im Block unten (eine Zeile je Messung, `<Stand> <Soll> <git grep>`); Parent ist
+`e5a11979` (Stand vor dem ersten Code-Commit dieses Slice), `diff` der Arbeitsbaum. Der Suchraum ist der
+ganze Baum ohne `docs/reviews/**`, die Records unter `done/` und `.harness/baseline/**`; jede
+Einschränkung steht im Muster.
+
+| Träger | Messung (Zeilen im Block) | Befund | Behandlung |
 |---|---|---|---|
-| Aufzählungen der Regeltypen im Code | `grep -rn 'rename_column' internal tools --include=*.go --include=*.sql --include=*.yaml` | *(Implementer trägt ein)* | jede Stelle, die die Regeltypen einzeln aufzählt, ist eine zweite Liste: sie zieht auf die Domänen-Menge oder trägt den neuen Typ |
-| Aufzählungen der Regeltypen in Docs | `grep -rn 'rename_column' docs spec harness` | *(Implementer trägt ein)* | Spec trägt beide Typen bereits; Handbuch-Träger an `betriebsdoku` melden |
-| Tests, die eine feste Typ-Liste führen | `grep -rn 'Regeltyp\|kind' internal --include=*_test.go` | *(Implementer trägt ein)* | auf die Domänen-Menge umstellen oder den Typ ergänzen |
+| Aufzählungen der Regeltypen im Code | 1–6, 13–14 und 21–22 | **Gefunden.** `rename_column` im Code ohne Tests: Parent 10, Diff 11 (Domäne, dazu zwei Test-Runner-Skripte unter `tools/harness/` als Testdaten; plus eine Nennung im Doc-Kommentar von `CheckApplicable`); `TransformationKinds` im Code ohne Tests: 5 und 5 (Definition und Doc-Kommentare der Domäne, kein Aufrufer); `TransformationRenameColumn` im Code ohne Tests: Parent 9, Diff 10; `TransformationMapValue` im Code: Parent 0, Diff 9. **Nichtgefunden:** kein Produktivcode außerhalb der Domäne (`internal/application`, `internal/bootstrap`, `internal/adapters`, `tools/schema`) nennt einen Regeltyp beim Namen — Parent 0, Diff 0 (Zeilen 13–14; Risiko „Antragsweg nicht generisch“). | jeder der vier Schalter der Domäne über den Regeltyp (`applyTransformations`, `ParseTransformationSpec`, `allowedRuleKeys`, `TransformationSpec.Build`) trägt beide Zweige; kein Träger außerhalb der Domäne zieht nach |
+| Aufzählungen der Regeltypen in Docs | 9–12 (Zählwort, Hedge, Rückfall-Grenze) und 15–16 (Handbuch) | **Gefunden.** Sätze mit „beide/zwei Regeltypen“, „ein Regeltyp“ oder „nur `rename_column`“ im Suchraum ohne diesen Plan: 9 und 9 (Spec, ADR, Welle und Pläne anderer Slices); jeder nennt beide Typen, eine künftige Folge oder einen hypothetischen dritten Typ. `docs/user`: eine Nennung von `rename_column` (Zeile der Abdeckungstabelle, Testdatum eines Backfill-Belegs, ein Erzeugnis des Runners), Parent 1, Diff 1. **Nichtgefunden:** kein Satz, der die Menge als einen Typ beschreibt; das Benutzerhandbuch nennt keinen Regeltyp (0). | Spec trägt beide Typen bereits; Handbuch-Träger an `betriebsdoku` gemeldet (Handbuch-Abschnitt, Beispiele `rename_column`/`map_value`); die Rückfall-Grenze (Übergabe aus `antragsweg-usecase`) steht bereits in `slice-transformationen-betriebsdoku` §2 (Zeilen 11–12: eine Fundstelle, beide Stände) und wird dort nicht doppelt geführt |
+| Tests, die eine feste Typ-Liste führen | 7–8 und 17–20 | **Gefunden.** `TransformationKinds` in Tests: Parent 9, Diff 9; die drei Fixture-Schalter „Regeltyp %q …“ (mapper, backfill, bootstrap-Parität): 3 und 3, je mit neuem Fall `map_value`; ein Test, der `map_value` als Platzhalter für einen unbekannten Regeltyp führte (`transformationspec_test.go`): Parent 1, Diff 0. **Nichtgefunden:** kein weiterer Test führt eine feste Regeltyp-Liste. | die drei Schalter tragen den Fall; die Erwartung von `TestTransformationKindsIsAClosedSet` und der Platzhalter von `TestTransformationSpecBuild` sind angepasst (§3-Tabelle) |
+
+```suchlauf
+e5a11979 10 -n rename_column -- internal tools ':!*_test.go'
+diff 11 -n rename_column -- internal tools ':!*_test.go'
+e5a11979 5 -n TransformationKinds -- internal ':!*_test.go'
+diff 5 -n TransformationKinds -- internal ':!*_test.go'
+e5a11979 9 -n TransformationRenameColumn -- internal ':!*_test.go'
+diff 10 -n TransformationRenameColumn -- internal ':!*_test.go'
+e5a11979 9 -n TransformationKinds -- 'internal/*_test.go'
+diff 9 -n TransformationKinds -- 'internal/*_test.go'
+e5a11979 9 -n -i -E 'beide Regeltypen|zwei Regeltypen|ein Regeltyp|einziger Regeltyp|nur .rename_column' -- docs spec harness README.md AGENTS.md ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 9 -n -i -E 'beide Regeltypen|zwei Regeltypen|ein Regeltyp|einziger Regeltyp|nur .rename_column' -- docs spec harness README.md AGENTS.md ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+e5a11979 1 -n -F 'vor `map-value`' -- docs/plan/planning
+diff 1 -n -F 'vor `map-value`' -- docs/plan/planning
+e5a11979 0 -n -E 'TransformationRenameColumn|TransformationMapValue|rename_column|map_value' -- internal/application internal/bootstrap internal/adapters tools/schema ':!*_test.go'
+diff 0 -n -E 'TransformationRenameColumn|TransformationMapValue|rename_column|map_value' -- internal/application internal/bootstrap internal/adapters tools/schema ':!*_test.go'
+e5a11979 1 -n -i -E 'regeltyp|map_value|rename_column' -- docs/user
+diff 1 -n -i -E 'regeltyp|map_value|rename_column' -- docs/user
+e5a11979 3 -n 'Regeltyp %q' -- internal
+diff 3 -n 'Regeltyp %q' -- internal
+e5a11979 1 -n -F 'kind: "map_value"' -- internal
+diff 0 -n -F 'kind: "map_value"' -- internal
+e5a11979 0 -n TransformationMapValue -- internal ':!*_test.go'
+diff 9 -n TransformationMapValue -- internal ':!*_test.go'
+```
 
 ## 4. Trigger
 
