@@ -68,7 +68,7 @@ aus, nicht den Exit-Code des Formatierers.
 
 ## 2. Definition of Done
 
-- [ ] **Liefer-Punkt 1 — das Werkzeug.** `make fmt-check` (Aufruf über
+- [x] **Liefer-Punkt 1 — das Werkzeug.** `make fmt-check` (Aufruf über
       `tools/harness/fmt-check.sh` mit optionalem Verzeichnis-Argument, damit der
       Test ein Wegwerf-Verzeichnis nimmt) führt `gofmt -l` über alle Go-Dateien
       unter der Wurzel im gepinnten `TOOLCHAIN_IMAGE` aus
@@ -93,7 +93,7 @@ aus, nicht den Exit-Code des Formatierers.
       kein Lint; kein Gate, Trigger der Gate-Aufnahme als Kenntnis) und eine
       Zeile in [`harness/README.md`](../../../../harness/README.md) §Sensors,
       Werkzeuge.
-- [ ] **Liefer-Punkt 2 — die Bestandsdateien.** Die sechs Dateien aus §3 sind
+- [x] **Liefer-Punkt 2 — die Bestandsdateien.** Die sechs Dateien aus §3 sind
       formatiert, `make fmt-check` endet am Baum mit Exit 0. Der Format-Commit
       ist ein eigener Commit ohne Verhaltensänderung: vier Hunks sind
       Layout-Änderungen (Ausrichtung, Zeilenumbruch), **zwei ändern Zeichen in
@@ -107,7 +107,7 @@ aus, nicht den Exit-Code des Formatierers.
       `make test` grün, und der Diff des Commits gegen die Ausgabe von `gofmt -d`
       am Start (die Hunks am Start neu gemessen: 6 Dateien, 6 Hunks — die
       Zahlen aus §1 gelten für Stand `7b70b34a`).
-- [ ] **Liefer-Punkt 3 — die Träger.** [`.claude/commands/implement-slice.md`](../../../../.claude/commands/implement-slice.md)
+- [x] **Liefer-Punkt 3 — die Träger.** [`.claude/commands/implement-slice.md`](../../../../.claude/commands/implement-slice.md)
       Schritt 18, Absatz „Format“: der Aufruf ist `make fmt-check` statt des
       Docker-Befehls; der Satz „Bestandsdateien außerhalb des Diffs bleiben
       unberührt“ entfällt (der Bestand ist formatiert), die Regel „nach der
@@ -115,22 +115,22 @@ aus, nicht den Exit-Code des Formatierers.
       `.harness/skills/reviewer.md` LOW-Zeile: die Probe ist der Lauf von
       `make fmt-check`. *Zu belegen durch:* Lesen der beiden Stellen und der
       Suchlauf in §3.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=<Plan-Datei>` läuft nach jeder Fixrunde
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
+- [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (Liefer-Punkt 1); das Benutzerhandbuch bleibt unberührt (keine
       Betreiber-Oberfläche).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang
       von `BEO-PGC/formatierungs-drift-ohne-gate` (`state.md`: Werkzeug
@@ -157,7 +157,18 @@ Tabellentest, ein Vertragsdokument, sechs Hunks in sechs Dateien.
 | `harness/README.md` | update | Zeilen unter Werkzeuge für `make fmt-check` und `make test-fmt-check`. |
 | `.claude/commands/implement-slice.md` Schritt 18 | update | Absatz „Format“ auf `make fmt-check`. |
 | `.harness/skills/reviewer.md` | update | LOW-Zeile: die Probe ist der Lauf von `make fmt-check`. |
-| `internal/adapters/driven/postgresstorage/queries/queries.go` | update | ein Doc-Kommentar: `''` (leerer Text) wird von `gofmt` zu einem typografischen Anführungszeichen — der Kommentar wird umformuliert. |
+| `harness/sensors/fmt-check.md` | Nachzug | trägt zusätzlich den Aufruf von `gofmt -d` (lesend, im Toolchain-Image): Schritt 18 verweist für die Korrekturvorlage auf den Vertrag statt den Docker-Befehl zu wiederholen; der Vertrag nennt je Zusage die Mutation der Eingabeseite (Tabelle §Test), auch für die drei Eingabefehler des Aufrufers. |
+| Schritt-18-Absatz „Format“ | Nachzug | der Verweis auf den Vertrag `harness/sensors/fmt-check.md` steht im Absatz (Rang-Zeiger statt Wiederholung). |
+
+**Ist-Zustand am Start (gemessen, Stand `17cb4eb3`):** `git ls-files '*.go'` nennt
+**254** Dateien (der Plan nannte 252 am Stand `7b70b34a`; die Differenz sind die zwei
+Go-Dateien von `slice-code-kommentare-kennungen`, `tools/harness/kommentar-kennungen/`).
+`gofmt -l` über die Dateiliste und `gofmt -l .` melden dieselben sechs Dateien;
+`gofmt -d` druckt sechs Hunks in 86 Zeilen — die Zahlen aus §1 gelten unverändert.
+Der Hunk in `integration_test.go` ist `@@ -1236,7 +1236,7 @@`, die Zeilen-Lokatoren
+von `docs/user/e2e-abdeckung.md` verschieben sich nicht (der Diff des Format-Commits
+ändert dort eine Zeile, `@@ -1239 +1239 @@`).
+| `internal/adapters/driven/postgresstorage/queries/queries.go` | update | ein Doc-Kommentar: `''` (leerer Text) wird von `gofmt` zu einem typografischen Anführungszeichen — der Kommentar wird umformuliert. **Nachzug:** der Block trägt zwei Kennungen (`ADR-0124`, `ADR-0014`), `make kommentar-kennungen DIFF=<Basis>` meldet ihn als Kandidat; `ADR-0014` wird durch die Stelle ersetzt (`RetentionPolicy` in `internal/domain/model/retention.go`, [`AGENTS.md`](../../../../AGENTS.md) §3.7 Kopplung statt Kennungsreihe). |
 | `internal/adapters/driving/replication/mapper/transformation_test.go` | update | Ausrichtung eines Feldes in einem Literal. |
 | `internal/adapters/driving/replication/receive/seam_test.go` | update | Ausrichtung eines Map-Eintrags. |
 | `internal/application/port/outbound/log_test.go` | update | vier einzeilige Methoden werden auf je drei Zeilen umgebrochen (+8 Zeilen). |
@@ -185,12 +196,26 @@ Zeilen mit Stand `diff`:
 7b70b34a 4 -E 'gofmt' -- .claude/commands .harness/skills
 7b70b34a 1 -E 'Bestandsdateien außerhalb des Diffs' -- .claude .harness/skills harness AGENTS.md
 7b70b34a 0 -E 'fmt-check' -- .claude .harness/skills harness AGENTS.md README.md Makefile tools
+17cb4eb3 2 -E 'sechs Bestandsdateien|Bestandsdateien, die' -- docs/plan/planning/open docs/plan/planning/next
+diff 3 -E 'gofmt' -- .claude/commands .harness/skills
+diff 0 -E 'Bestandsdateien außerhalb des Diffs' -- .claude .harness/skills harness AGENTS.md
+diff 37 -E 'fmt-check' -- .claude .harness/skills harness AGENTS.md README.md Makefile tools
+diff 2 -E 'sechs Bestandsdateien|Bestandsdateien, die' -- docs/plan/planning/open docs/plan/planning/next
 ```
+
+Die drei Zeilen mit Stand `7b70b34a` sind am Start des Slice nachgemessen und
+stimmen (Exit 0); die Zeile mit Stand `17cb4eb3` (Parent des Slice) und die mit
+Stand `diff` (Arbeitsbaum) messen die fremden Träger, die von den „sechs
+Bestandsdateien“ sprechen: je ein Satz in `slice-transformationen-e2e-wirkung`
+und `slice-antragsqueue-lesefehler-failed`, an beiden Ständen gleich. Sie sind
+gemeldet, nicht mitgeändert (fremde Dateien); der Satz in
+`slice-transformationen-e2e-wirkung` begründet eine Kante, die mit `done/` dieses
+Slice erfüllt ist — Träger der Planner-Closure.
 
 | Träger | Befund | Behandlung |
 |---|---|---|
-| `.claude/commands/implement-slice.md` Schritt 18 | drei Zeilen mit `gofmt` (Absatz „Format“), ein Satz „Bestandsdateien außerhalb des Diffs bleiben unberührt“ (Zeile 1 und 2 des Feldes) | wird auf `make fmt-check` umgeschrieben (Liefer-Punkt 3); der Bestands-Satz entfällt. |
-| `.harness/skills/reviewer.md` LOW-Zeile | eine Zeile mit `gofmt -l` (im Absatz **LOW**, Satz „eine Go-Datei des Diffs, die `gofmt -l` im gepinnten Toolchain-Image meldet“) | Probe wird `make fmt-check`. |
+| `.claude/commands/implement-slice.md` Schritt 18 | drei Zeilen mit `gofmt` (Absatz „Format“), ein Satz „Bestandsdateien außerhalb des Diffs bleiben unberührt“ (Zeile 1 und 2 des Feldes) | wird auf `make fmt-check` umgeschrieben (Liefer-Punkt 3); der Bestands-Satz entfällt. Am Ende: drei Zeilen mit `gofmt` (`make fmt-check` erklärt, `gofmt -d` als Korrekturvorlage), null Zeilen mit dem Bestands-Satz. |
+| `.harness/skills/reviewer.md` LOW-Zeile | eine Zeile mit `gofmt -l` (im Absatz **LOW**, Satz „eine Go-Datei des Diffs, die `gofmt -l` im gepinnten Toolchain-Image meldet“) | Probe wird `make fmt-check` (Ende: null Zeilen mit `gofmt` in `.harness/skills`, ein Link auf den Vertrag). |
 | `.claude/hooks/pretooluse-command-guard.sh` | ein Kommentar erwähnt `gofmt` als Beispiel eines Kommando-Segments (nicht Teil des Feldes: Suchraum `.claude/commands`) | unberührt. |
 | Beobachtungs-Register `BEO-PGC/formatierungs-drift-ohne-gate` | Zustand „Werkzeug offen, Adresse `slice-harness-fmt-check`“ | Träger der Planner-Closure: `state.md` auf „Werkzeug geliefert“; fremde Datei, deshalb Meldung. |
 | `harness/README.md` | keine Zeile zu einem Format-Ziel (Zeile 3 des Feldes: 0 Treffer am Parent) | Zeilen kommen mit Liefer-Punkt 1. |
