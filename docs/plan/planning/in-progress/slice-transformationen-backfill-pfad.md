@@ -127,7 +127,7 @@ Kopplung K2 der Welle [welle-backfill-bestand](../done/welle-backfill-bestand.md
       ein realer, grüner `make test-integration`-Lauf am laufenden
       Feed-Container (Zeile im Runner-Erzeugnis
       [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md)).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
