@@ -119,8 +119,11 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   Formpflicht auf Prosa erzeugte Pflichterfüllung (`AGENTS.md` §3.12, siehe
   [`ADR-0083`](../../docs/plan/adr/0083-herkunft-von-aussagen-in-traegern.md)
   §Die benannte Grenze). Die Probe ist das **Nachmessen**, nicht das Lesen der
-  Form. Träger **außerhalb** des Diffs haben nur einen Leser — die Messung —
-  und bleiben INFO. Herkunft:
+  Form; wo der Plan ein `suchlauf`-Feld trägt, läuft das Nachmessen mit
+  `make suchlauf-nachmessen PLAN=<Plan-Datei>` (`harness/sensors/suchlauf-nachmessen.md`
+  — prüft Zahlen und Stände, nicht die Vollständigkeit von Suchraum und Muster;
+  beides bleibt Lese-Handlung). Träger **außerhalb** des Diffs haben nur einen
+  Leser — die Messung — und bleiben INFO. Herkunft:
   `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (4×,
   `slice-081`/`-084`/`-085`/`-088` — alle vier vom Reviewer durch eigenes
   Nachmessen gefunden) · seit slice-089.

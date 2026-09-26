@@ -73,7 +73,7 @@ bench::schema_rollout() {
   local net pg dsn
   net=$(bench::network_name); pg=$(bench::pg_container)
   dsn="postgres://postgres:postgres@$pg:5432/cdc?sslmode=disable"
-  make -C "$(bench::repo_root)" schema-rollout \
+  bash "$(bench::repo_root)/tools/schema/rollout-restore.sh" make -C "$(bench::repo_root)" schema-rollout \
     SCHEMA_TARGET="db:$dsn" SCHEMA_ROLLOUT_NETWORK="$net" >/dev/null
 }
 

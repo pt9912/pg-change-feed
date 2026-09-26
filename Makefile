@@ -106,6 +106,19 @@ image-cve: ## Advisory: Trivy CRITICAL/HIGH gegen das publizierte GHCR-:latest-I
 test-release-tag-info: ## Tabellentest gegen tools/harness/release-tag-info.sh (SemVer-2.0-Validierung, ADR-0051, netzlos)
 	@bash tools/harness/run-release-tag-info-tests.sh
 
+.PHONY: suchlauf-nachmessen
+suchlauf-nachmessen: ## Misst die suchlauf-Blöcke eines Slice-Plans nach: make suchlauf-nachmessen PLAN=<Datei> (netzlos, kein Gate; harness/sensors/suchlauf-nachmessen.md)
+	$(if $(PLAN),,$(error PLAN fehlt, z.B. make suchlauf-nachmessen PLAN=docs/plan/planning/in-progress/slice-x.md))
+	@bash tools/harness/suchlauf-nachmessen.sh "$(PLAN)"
+
+.PHONY: test-suchlauf-nachmessen
+test-suchlauf-nachmessen: ## Tabellentest gegen tools/harness/suchlauf-nachmessen.sh (fünf Fälle gegen ein Wegwerf-Repo, netzlos)
+	@bash tools/harness/run-suchlauf-nachmessen-tests.sh
+
+.PHONY: test-rollout-restore
+test-rollout-restore: ## Tabellentest gegen tools/schema/rollout-restore.sh (Rücknahme von plan.yaml/down.sql, Aufrufer-Prüfung, netzlos)
+	@bash tools/harness/run-rollout-restore-tests.sh
+
 .PHONY: test-sdk-csharp-release-tag-info
 test-sdk-csharp-release-tag-info: ## Tabellentest gegen tools/harness/sdk-csharp-release-tag-info.sh (SemVer-2.0-Validierung, ADR-0106, netzlos)
 	@bash tools/harness/run-sdk-csharp-release-tag-info-tests.sh

@@ -80,7 +80,7 @@ if [ "$already_migrated" = "t" ]; then
   echo "bootstrap: Schema bereits ausgerollt — überspringe make schema-rollout (Existenz-Check, siehe Kommentar)"
 else
   echo "bootstrap: Schema-Rollout über d-migrate …"
-  make schema-rollout SCHEMA_TARGET="db:${CDC_ADMIN_DSN}" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
+  bash tools/schema/rollout-restore.sh make schema-rollout SCHEMA_TARGET="db:${CDC_ADMIN_DSN}" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
 fi
 
 echo "bootstrap: Beispiel-Quelle registrieren, Beispiel-Tabelle leer anlegen …"

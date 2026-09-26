@@ -171,6 +171,14 @@ ist eine Lifecycle-Rücksprungkante (11).
     der Planner-Closure zur Nacharbeit überlassen. Nur Punkte, die die Rollen-Sequenz
     zu diesem Zeitpunkt noch nicht durchlaufen haben (Review, Verifikation,
     Register-/Risiko-Ausgänge — Planner-Closure-Arbeit), bleiben regulär `[ ]`.
+    **Suchlauf nachmessen · seit slice-harness-suchlauf-nachmessen:** Trägt der
+    Plan ein Suchlauf-Feld (Codeblöcke mit dem Etikett `suchlauf`,
+    [`AGENTS.md`](../../AGENTS.md) §3.13 §Suchform), läuft
+    `make suchlauf-nachmessen PLAN=<Plan-Datei>` vor der „fertig"-Meldung und nach
+    jeder Fixrunde; ein Exit ≠ 0 ist ein Befund (die Zahl im Plan nachziehen oder
+    die Abweichung erklären), der Lauf steht im Bericht. **Grenze:** das Werkzeug
+    prüft Zahlen und Stände, nicht die Vollständigkeit von Suchraum und Muster
+    ([`harness/sensors/suchlauf-nachmessen.md`](../../harness/sensors/suchlauf-nachmessen.md)).
 19. **Zu jedem neuen oder geänderten Wächter die rot färbende Mutation benennen**
     (`AGENTS.md` §3.6). Ein grüner Gate-Lauf belegt nur, dass nichts *bricht* — nicht, dass
     der Wächter greift. Pro Zusage also: *welche Änderung am geprüften Code müsste diesen

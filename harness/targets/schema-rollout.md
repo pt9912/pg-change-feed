@@ -143,6 +143,21 @@ noch Erweiterung.
    Blocker; jede andere Änderung, die d-migrate nicht in-place ausliefern kann,
    endet mit Exit 8.
 
+## Erzeugnisse in Test-, Bench- und Beispiel-Läufen
+
+Ein direkter `make schema-rollout`-Aufruf überschreibt die committeten Dateien
+`tools/schema/plan.yaml` und `tools/schema/down.sql`; im Betrieb sind sie der
+Beleg des Rollouts. Läufe, die den Rollout nur als Vorbedingung brauchen —
+`make test-store`, `make test-replication` (über `tools/schema/apply-rollout.sh`),
+`make test-integration`, `make test-sdk-*-integration`, `make bench` und
+`make example-demo-up` —, rufen ihn über `tools/schema/rollout-restore.sh`: das
+Skript stellt beide Dateien nach dem Kommando auf den Zustand vor dem Lauf
+zurück, auch bei einem Fehlschlag (eine vorab lokal geänderte Datei bleibt so
+geändert). `make test-rollout-restore` belegt die Rücknahme und prüft, dass jedes
+Skript unter `tools/` und `examples/`, das `make schema-rollout` aufruft, durch
+`rollout-restore.sh` geht; der Guard-Test unten sichert und stellt beide Dateien
+selbst wieder her.
+
 ## Belege
 
 - `bash tools/harness/run-schema-rollout-guard-test.sh` — sechs Läufe gegen eine

@@ -100,7 +100,7 @@ if [ "$ready" -ne 1 ]; then
   exit 1
 fi
 
-make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
+bash tools/schema/rollout-restore.sh make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
 
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
 CREATE TABLE public.feed_e2e_flow (id int PRIMARY KEY, name text);

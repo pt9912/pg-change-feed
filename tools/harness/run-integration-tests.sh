@@ -236,9 +236,10 @@ if [ "$ready" -ne 1 ]; then
 fi
 
 # Schema-Rollout über d-migrate vor jedem E2E-Lauf (ADR-0043): der
-# Pflicht-Report landet in tools/schema/plan.yaml, das Rollback-Artefakt in
-# tools/schema/down.sql.
-make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
+# Pflicht-Report (tools/schema/plan.yaml) und Rollback-Artefakt
+# (tools/schema/down.sql) stellt tools/schema/rollout-restore.sh nach dem
+# Rollout wieder her.
+bash tools/schema/rollout-restore.sh make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
 
 abdeckung_declare "Rollen-DSN-Verifikation" "LH-QA-SEC-001,LH-QA-SEC-002,LH-QA-SEC-003" "die drei Gruppenrollen real gegeneinander geprüft: ein Reader-Login scheitert am schreibenden Aufruf, eine Replication-Verbindung ohne REPLICATION-Attribut scheitert, dieselbe Verbindung mit der Capture-Rolle gelingt" "Rollen-DSN-Verifikation belegt — cdc_reader-Login-Identität schreibender Zugriff abgelehnt"
 

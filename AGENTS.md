@@ -490,6 +490,17 @@ die Meldung nennt die **Frist**: die Closure des meldenden Slice — der Planner
 zieht nach oder benennt den Träger mit Adresse · seit welle-backfill-bestand
 (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`).
 
+**Nachmessen.** Die Befehle stehen in Codeblöcken mit dem Etikett `suchlauf`,
+eine Zeile je Messung: `<Stand> <Soll> <Argumente von git grep>` (Stand: Commit-Kennung
+oder `diff`, der Arbeitsbaum). `make suchlauf-nachmessen PLAN=<Plan-Datei>` führt
+jede Zeile aus, druckt Soll und Ist, schließt die Plan-Datei aus dem Suchraum aus
+und endet bei jeder Abweichung, bei `HEAD` als Stand und bei einem Plan ohne Block
+mit Exit ≠ 0. Es prüft **Zahlen und Stände**, nicht die Vollständigkeit von
+Suchraum und Muster — die bleibt Lese-Handlung des Reviewers — und ist kein Gate
+(`diff` bewegt sich mit jedem Commit); Vertrag:
+[`harness/sensors/suchlauf-nachmessen.md`](harness/sensors/suchlauf-nachmessen.md)
+· seit slice-harness-suchlauf-nachmessen.
+
 **Benachbarte Regel — und die Abgrenzung zu ihr.** §3.12 bleibt die Regel für
 die **Aussage**, die ihren Ursprung trägt: dort fehlt der Ursprung, oder ein
 Wert driftet gegen die Messung. Hier trug die Aussage ihren Ursprung
