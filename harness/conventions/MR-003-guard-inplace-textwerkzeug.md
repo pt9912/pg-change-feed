@@ -36,6 +36,17 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   Anführungszeichen-Kenntnis (mehr Segmente, nie weniger); kann der Maskierer
   nicht laufen, blockt der Guard (fail-closed).
 
+  **Obergrenze der Quote-Lesung.** Der Maskierer ist eine Lexer-Stufe, keine
+  Grammatik: er kennt Anführungszeichen, Backslash und die Verschachtelung von
+  `$(`/Backtick in doppelten Anführungszeichen, nichts sonst. Heredocs,
+  Umleitungen, Variablen und Kommando-Werte bleiben ungelesen. Jede weitere
+  Quote- oder Heredoc-Semantik gehört zu einer Sandbox-Ausführung, nicht zu
+  diesem Guard: ein Fall, der sie verlangte, ist eine Beleg-Datei im
+  Register-Eintrag, keine Erweiterung des Maskierers. Eine ADR braucht die
+  Quote-Lesung nicht, weil der Guard ein Stolperdraht ohne Gate-Bindung ist und
+  sie kein Gate lockert (`AGENTS.md` §3.6). Herkunft: Architect-Zug zu
+  `slice-harness-guard-inplace-textwerkzeug`.
+
   Er blockt (Ausgabe `"decision": "block"`, Exit 0, wie im Bestand) ein
   Kommando-Segment, dessen Kopf ist:
   - `sed`/`gsed` mit `--in-place[=…]` (auch jede eindeutige Abkürzung ab `--i`)
@@ -68,9 +79,10 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   Anführungszeichen-Argument mit Leerraum ist ein Token und kein Flag
   (`grep -E 'sed -i|perl -pi'` blockt nicht). Diese Übersprünge gelten für alle
   Klassen, auch für die Paketmanager: `env -i pip`, `xargs -n1 pip`, `time -p pip`
-  und `for … do pip …` blocken. Das erweitert die Bestandsregel (der Bestand las
-  nach einem Wrapper-Präfix keine Optionen und kannte keine Schlüsselwörter); der
-  Tabellentest führt die Formen als eigene Gruppe.
+  und `for … do pip …` blocken. Die Paketmanager-Klasse wird dadurch strenger, kein
+  Gate und keine Schwelle wird lockerer; `AGENTS.md` §3.6 verlangt nur für eine
+  Lockerung eine ADR, hier genügt dieser Eintrag. Der Tabellentest führt die Formen
+  als eigene Gruppe.
 
   Der Block gilt unabhängig vom Ziel, auch auf einer Scratchpad-Kopie. Der Weg
   nach [`AGENTS.md`](../../AGENTS.md) §3.1 ist Edit/Write, `sed … Datei >
@@ -80,7 +92,8 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   bleiben. Der Tabellentest `make test-command-guard` bindet die Zusagen an ihre
   Eingabe (Treffer, Nicht-Treffer neben jedem Treffer, ein Fall je Mitglied der
   Zeichenklassen, benannte Falsch-Positiv-Ränder, benannte Grenzen); er ist ein
-  Werkzeug, kein Gate.
+  Werkzeug, kein Gate. Der Tabellentest ist der Beleg für den Host-Interpreter-Teil:
+  ein Live-Aufruf mit Host-`python` wäre selbst ein Verstoß gegen `AGENTS.md` §3.1.
 - **Grenz-Zeile — was der Guard nicht kann.** Ein Stolperdraht, keine Sandbox:
   - Umleitungen und flaglose Schreibwege (`> datei`, `>>`, `tee`, `dd of=`,
     `sed … > tmp && mv tmp datei`, `cp`/`mv` über eine Datei);
@@ -102,6 +115,14 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
     `env -u X`, `nice -n 10`);
   - die Rezepte hinter `make` und die Docker-Bauten (der Guard scannt die
     Bash-Aufrufe des Laufs);
+  - Falsch-Negativ der Quote-Lesung: zwei Apostrophe in zwei verschiedenen
+    Heredoc-Zeilen sind ein balanciertes Paar und maskieren die Zeilen dazwischen
+    (`cat <<EOF`, eine Zeile mit `don't`, `EOF`, `sed -i s/a/b/ f`, `cat <<EOF`, eine
+    Zeile mit `won't`, `EOF`: der Guard lässt es passieren, gemessen im
+    Verifikations-Report zu `slice-harness-guard-inplace-textwerkzeug`, V-2); ein
+    einzelnes Apostroph und zwei Apostrophe in einer Zeile blocken. Der Rand ist
+    benannt und bleibt offen: ihn zu schließen hieße Heredocs zu lesen
+    (Obergrenze oben);
   - Falsch-Positive: die Zeilen eines Heredocs gelten als Kommando-Zeilen (`sed -i`
     am Zeilenanfang blockt); ein unbalanciertes Anführungszeichen, auch ein
     Apostroph im Heredoc-Text, segmentiert ohne Anführungszeichen-Kenntnis und
@@ -126,9 +147,14 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   abtrennbare Teil). Ein Muster mit `|` in einem `git grep`/`grep` ist der
   Alltag der Rollen (das Suchmuster des Suchlaufs nach `AGENTS.md` §3.13): die
   Quote-Bewusstsein-Stufe (ein Zustandsautomat über Anführungszeichen und
-  Backslash, kein Shell-Parser) hält diesen Aufruf frei. Ohne Beleg im Register
-  sind `perl -i` und `awk -i inplace` (dieselbe Klasse, je eine Erkennung, am
-  Tabellentest gebunden).
+  Backslash, Obergrenze in der Adaption) hält diesen Aufruf frei. Ohne Beleg im
+  Register sind `perl -i` und `awk -i inplace` (dieselbe Klasse, je eine
+  Erkennung, am Tabellentest gebunden).
 - **Auflösungs-Trigger:** permanent, bis ein Folge-`MR` den Guard schärft oder
   eine Sandbox-Ausführung ihn ersetzt; ein Auftreten trotz Guard ist eine weitere
   Beleg-Datei im Register-Eintrag, keine Änderung dieses Eintrags.
+  Re-Evaluierung der Host-Toolchain-Sperre (`tools/harness/blocked/go`, eine
+  Nutzerentscheidung): sobald der Register-Eintrag eine weitere Beleg-Datei mit
+  einem Host-Interpreter-Aufruf ohne Repo-Pfad im Befehlsstring und Wirkung auf
+  eine Repo-Datei trägt, oder mit der Closure des nächsten Slice, dessen Läufe
+  unter diesem Guard liefen (dann ist die Wirkung des Guards gemessen).

@@ -120,7 +120,10 @@ ein Skript, das ein Interpreter liest, andere in-place-fähige Werkzeuge, ein
 `cd` im selben Kommando und Sprach-Toolchains (`go`, `gofmt`, …) — ein
 Stolperdraht, keine Sandbox; Grenz-Zeile und Wortlaut:
 [`MR-003`](harness/conventions/MR-003-guard-inplace-textwerkzeug.md), Tabellentest
-`make test-command-guard`. Was der Guard nicht liest, bleibt Sache des Reviews
+`make test-command-guard`. Ein Host-`python`/`perl` auf einem Pfad ohne Repo-Namen
+(Scratchpad) passiert den Guard und ist trotzdem kein zulässiger Weg: die Regel
+oben gilt unabhängig davon, was der Stolperdraht liest. Was der Guard nicht liest,
+bleibt Sache des Reviews
 (`.harness/skills/reviewer.md` §HIGH „Docker-only-Verstoß“).
 Herkunft: `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`,
 `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` · seit
