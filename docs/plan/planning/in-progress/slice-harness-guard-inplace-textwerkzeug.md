@@ -584,9 +584,9 @@ neuer Sensor: `make test-command-guard`, ohne Gate).
   Stand `a0472421`, dessen Findings der Verifier je Zeile am Ist-Zustand nachmaß (Verifikation §5:
   F-1 bis F-7 aufgelöst, F-1 mit einem Rest, der im Nachzug `527d69dd` gebunden ist) und 60 Mutationen
   an der Fixrunde; ein Nach-Review ist nicht beauftragt, die Entscheidung liegt hier beim Planner.
-  (6) Die Coverage-Zahl ist an diesem Stand nicht lauf-stabil: 85.10 % im Lauf dieser Closure und im
-  Lauf der Verifikation (übernommen), 85.20 % im Auftrag zu dieser Closure genannt (übernommen); die
-  Streuung ist 0,10 Prozentpunkte (abgeleitet), die Zahl ist Beleg des jeweiligen Laufs, keine
+  (6) Die Coverage-Zahl ist an diesem Stand nicht lauf-stabil: 85.10 % im ersten und 85.20 % im zweiten
+  `make gates`-Lauf dieser Closure (gemessen, gedruckt „coverage-gate: OK — Coverage …“), 85.10 % im Lauf
+  der Verifikation (übernommen); die Streuung ist 0,10 Prozentpunkte (abgeleitet), die Zahl ist Beleg des jeweiligen Laufs, keine
   Zustandsgröße; der Diff berührt keinen Go-Code. (7) Der Live-Beleg mit Host-`python3` (DoD-Zeile 2)
   entfällt: er verstieße gegen `AGENTS.md` §3.1; der Architect-Zug hat den Tabellentest als Beleg
   angenommen.
