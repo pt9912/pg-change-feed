@@ -36,7 +36,7 @@ Teil des Driving Adapters Replication Stream),
 Composition Root) — gelesen, nicht geändert (die Spec trägt
 `slice-transformationen-spec-nachzug`).
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-26.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
 [welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
