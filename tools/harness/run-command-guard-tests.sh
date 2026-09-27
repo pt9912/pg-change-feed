@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # run-command-guard-tests.sh — Tabellentest gegen den PreToolUse-Guard
 # .claude/hooks/pretooluse-command-guard.sh (Vertrag: Kopfkommentar des Guards,
-# Grenz-Zeile: harness/conventions/MR-003-guard-inplace-textwerkzeug.md).
+# Grenz-Zeile: harness/conventions/MR-003-guard-inplace-textwerkzeug.md,
+# harness/conventions/MR-004-guard-host-python-am-kopf.md).
 # Je Fall ein Kommandostring, der als Hook-JSON auf die stdin des Guards geht;
 # erwartet ist ein Block (Ausgabe `"decision": "block"`, Exit 0, gueltiges JSON,
 # Begruendungstext der Klasse pkg | inplace | interp) oder der Pass-Fall (keine
@@ -11,28 +12,35 @@
 # awk/gawk je Form, je Mitglied der Zeichenklassen und je Position (Kopf, nach
 # Trenner, Praefix, absoluter Pfad, bash -c, eval, find -exec) · Nicht-Treffer je
 # Nachbarform · Anfuehrungszeichen- und Backslash-Lesung (ein Trenner im Argument, Escape) ·
-# Host-Interpreter auf Repo-Pfaden samt Pfadzeichen-Klasse · benannte
-# Falsch-Positiv-Raender (erwarteter Block) · benannte Grenzen (erwarteter Pass,
-# was der Guard nicht liest).
+# Host-Interpreter auf Repo-Pfaden fuer python3.N/perl samt Pfadzeichen-Klasse ·
+# Host-python/python3 am Kopf: unbedingter Block je Position (Fragment
+# tools/harness/blocked/python), Pass-Faelle daneben, benannte
+# Falsch-Positiv-Raender, benannte Grenzen (nicht gelistete Namen).
 # Der Guard laeuft in einem Wegwerf-Repo im Temp-Verzeichnis (oberste Ebene
 # docs/, internal/, Makefile, .claude/); der Test schreibt nur dorthin. Der
-# Pruefling ist per GUARD, der Anfuehrungszeichen-Maskierer per MASKER
-# uebersteuerbar (Mutationslaeufe gegen Kopien).
+# Pruefling ist per GUARD, der Anfuehrungszeichen-Maskierer per MASKER, die
+# Fragmente unter tools/harness/blocked/* per BLOCKED_DIR uebersteuerbar
+# (Mutationslaeufe gegen Kopien).
 # Host-Werkzeuge: bash, awk, mktemp, grep, cp, mkdir, ln.
 set -uo pipefail
 repo=$(git rev-parse --show-toplevel)
 guard_src=${GUARD:-$repo/.claude/hooks/pretooluse-command-guard.sh}
 masker_src=${MASKER:-$repo/tools/harness/mask-quotes.awk}
+blocked_src=${BLOCKED_DIR:-$repo/tools/harness/blocked}
 [ -f "$guard_src" ] || { echo "run-command-guard-tests: GUARD $guard_src nicht lesbar" >&2; exit 2; }
 [ -f "$masker_src" ] || { echo "run-command-guard-tests: MASKER $masker_src nicht lesbar" >&2; exit 2; }
+[ -d "$blocked_src" ] || { echo "run-command-guard-tests: BLOCKED_DIR $blocked_src nicht lesbar" >&2; exit 2; }
 
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/command-guard-test.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT
 root="$tmp/repo"
-mkdir -p "$root/.claude/hooks" "$root/tools/harness" "$root/docs" "$root/internal" "$tmp/noawk"
+mkdir -p "$root/.claude/hooks" "$root/tools/harness/blocked" "$root/docs" "$root/internal" "$tmp/noawk"
 cp "$guard_src" "$root/.claude/hooks/pretooluse-command-guard.sh"
 cp "$repo/tools/harness/extract-command.awk" "$root/tools/harness/extract-command.awk"
 cp "$masker_src" "$root/tools/harness/mask-quotes.awk"
+if [ -n "$(ls -A "$blocked_src" 2>/dev/null)" ]; then
+  cp "$blocked_src"/* "$root/tools/harness/blocked/"
+fi
 printf 'all:\n' >"$root/Makefile"
 guard="$root/.claude/hooks/pretooluse-command-guard.sh"
 # PATH ohne awk: nur die Werkzeuge, die der Guard vor der awk-Pruefung braucht.
@@ -375,72 +383,131 @@ pass "make mit Variable in Anführungszeichen" "make suchlauf-nachmessen PLAN='a
 pass "Muster mit | zweigliedrig" "git grep -E 'sed -i|perl -pi'"
 pass "git log --grep" "git log --grep='sed -i'"
 
-# --- Liefer-Punkt 2: Host-Interpreter auf Repo-Pfaden ----------------------
-block interp "python3 tools/x.py" 'python3 tools/x.py'
-block interp "python tools/x.py" 'python tools/x.py'
+# --- Host-Interpreter auf Repo-Pfaden: python3.N und perl (MR-003) ---------
+block interp "python2 tools/x.py" 'python2 tools/x.py'
 block interp "python3.12 tools/x.py" 'python3.12 tools/x.py'
-block interp "python3 ./tools/x.py" 'python3 ./tools/x.py'
-block interp "python3 mit Punkt-Verzeichnis" 'python3 .claude/hooks/x.py'
-block interp "python3 Heredoc mit docs/ im Text" $'python3 - <<\'EOF\'\nopen(\'docs/a.md\', \'w\')\nEOF'
-block interp "python3 -c mit Makefile" "python3 -c \"open('Makefile', 'w')\""
+block interp "python3.12 ./tools/x.py" 'python3.12 ./tools/x.py'
+block interp "python3.12 mit Punkt-Verzeichnis" 'python3.12 .claude/hooks/x.py'
+block interp "python3.12 Heredoc mit docs/ im Text" $'python3.12 - <<\'EOF\'\nopen(\'docs/a.md\', \'w\')\nEOF'
+block interp "python3.12 -c mit Makefile" "python3.12 -c \"open('Makefile', 'w')\""
 block interp "perl -e mit Makefile" "perl -e 'unlink q(Makefile)'"
-block interp "python3 mit Absolutpfad der Repo-Wurzel" "python3 $root/docs/a.md"
-block interp "python3 in bash -c" 'bash -c "python3 tools/x.py"'
+block interp "python3.12 mit Absolutpfad der Repo-Wurzel" "python3.12 $root/docs/a.md"
+block interp "python3.12 in bash -c" 'bash -c "python3.12 tools/x.py"'
 block interp "perl -ne auf Datei der obersten Ebene" 'perl -ne print Makefile'
-pass "python3 --version" 'python3 --version'
-pass "python3 -c ohne Repo-Pfad" "python3 -c 'print(1)'"
-pass "python3 auf Scratchpad-Kopie" 'python3 /tmp/scratch/mutate.py /tmp/scratch/copy.go'
-pass "python3: docs/ hinter einem Pfadzeichen" 'python3 /tmp/x/docs/a.py'
-pass "python3: internal/ in Scratchpad-Kopie" 'python3 /tmp/scratch/mutate.py /tmp/scratch/internal/copy.go'
-pass "python3: Datei-Name hinter Pfadzeichen" 'python3 /tmp/x/Makefile'
-pass "python3: Verzeichnis-Name ohne Schrägstrich" "python3 -c 'print(\"docs\")'"
-pass "python3: Datei-Name als Wortanfang" "python3 -c 'x = Makefile2'"
-pass "python3: Datei-Name mit Endung" "python3 -c 'x = Makefile.bak'"
+pass "python3.12 auf Scratchpad-Kopie" 'python3.12 /tmp/scratch/mutate.py /tmp/scratch/copy.go'
+pass "python3.12: docs/ hinter einem Pfadzeichen" 'python3.12 /tmp/x/docs/a.py'
+pass "python3.12: internal/ in Scratchpad-Kopie" 'python3.12 /tmp/scratch/mutate.py /tmp/scratch/internal/copy.go'
+pass "python3.12: Datei-Name hinter Pfadzeichen" 'python3.12 /tmp/x/Makefile'
+pass "python3.12: Verzeichnis-Name ohne Schrägstrich" "python3.12 -c 'print(\"docs\")'"
+pass "python3.12: Datei-Name als Wortanfang" "python3.12 -c 'x = Makefile2'"
+pass "python3.12: Datei-Name mit Endung" "python3.12 -c 'x = Makefile.bak'"
 pass "perl -ne auf Scratchpad-Datei ohne Repo-Namen" "perl -ne 'print' /tmp/x"
 pass "Kopf ist nicht python: echo" 'echo python3 tools/x.py'
 pass "Kopf ist nicht python: grep" 'grep python3 tools/x.sh'
 pass "Repo-Pfad ohne Interpreter" 'git grep -n docs/ Makefile'
-block interp "Wrapper mit absolutem Pfad: /usr/bin/env python3" '/usr/bin/env python3 tools/x.py'
-block interp "python3 hinter env mit Option" 'env -i python3 tools/x.py'
-block interp "Kopf mit Backslash" '\python3 tools/x.py'
-block interp "python3 in find -exec" 'find . -exec python3 tools/x.py {} \;'
-block interp "python3 in eval" 'eval "python3 tools/x.py"'
+block interp "Wrapper mit absolutem Pfad: /usr/bin/env python3.12" '/usr/bin/env python3.12 tools/x.py'
+block interp "python3.12 hinter env mit Option" 'env -i python3.12 tools/x.py'
+block interp "Kopf mit Backslash (python3.12)" '\python3.12 tools/x.py'
+block interp "python3.12 in find -exec" 'find . -exec python3.12 tools/x.py {} \;'
+block interp "python3.12 in eval" 'eval "python3.12 tools/x.py"'
 pass "python3 in einem Muster mit | auf einem Scratchpad-Pfad" "grep -E 'a|python3 tools/x' /tmp/scratch/f"
 
-# Pfadzeichen-Klasse vor dem Namen: [A-Za-z0-9_./~-] ist keine Repo-Ebene
-pass "Pfadzeichen davor: Kleinbuchstabe" 'python3 -c x/adocs/y'
-pass "Pfadzeichen davor: Großbuchstabe" 'python3 -c xAdocs/y'
-pass "Pfadzeichen davor: Ziffer" 'python3 -c x9docs/y'
-pass "Pfadzeichen davor: Unterstrich" 'python3 -c x_docs/y'
-pass "Pfadzeichen davor: Bindestrich" 'python3 -c x-docs/y'
-pass "Pfadzeichen davor: Tilde" 'python3 -c x~docs/y'
-pass "Pfadzeichen davor: Punkt" 'python3 -c x.docs/y'
-pass "Pfadzeichen davor: Schrägstrich" 'python3 -c x/docs/y'
-block interp "kein Pfadzeichen davor: Gleichheitszeichen" 'python3 -c x=docs/y'
-block interp "kein Pfadzeichen davor: Doppelpunkt" 'python3 -c x:docs/y'
-block interp "kein Pfadzeichen davor: Komma" 'python3 -c x,docs/y'
-block interp "kein Pfadzeichen davor: Anführungszeichen" "python3 -c \"open(\\\"docs/y\\\")\""
-pass "Pfadzeichen dahinter: Kleinbuchstabe" 'python3 -c Makefilex'
-pass "Pfadzeichen dahinter: Großbuchstabe" 'python3 -c MakefileX'
-pass "Pfadzeichen dahinter: Ziffer" 'python3 -c Makefile9'
-pass "Pfadzeichen dahinter: Unterstrich" 'python3 -c Makefile_x'
-pass "Pfadzeichen dahinter: Bindestrich" 'python3 -c Makefile-x'
-pass "Pfadzeichen dahinter: Tilde" 'python3 -c Makefile~'
-pass "Pfadzeichen dahinter: Punkt" 'python3 -c Makefile.x'
-pass "Pfadzeichen dahinter: Schrägstrich" 'python3 -c Makefile/x'
-block interp "kein Pfadzeichen dahinter: Komma" 'python3 -c Makefile,x'
-block interp "kein Pfadzeichen dahinter: Klammer" 'python3 -c Makefile)'
-block interp "kein Pfadzeichen dahinter: Gleichheitszeichen" 'python3 -c Makefile=x'
-block interp "Datei-Name am Ende des Befehls" 'python3 -c Makefile'
+# Pfadzeichen-Klasse vor dem Namen: [A-Za-z0-9_./~-] ist keine Repo-Ebene (python3.12, weiter unter MR-003)
+pass "Pfadzeichen davor: Kleinbuchstabe" 'python3.12 -c x/adocs/y'
+pass "Pfadzeichen davor: Großbuchstabe" 'python3.12 -c xAdocs/y'
+pass "Pfadzeichen davor: Ziffer" 'python3.12 -c x9docs/y'
+pass "Pfadzeichen davor: Unterstrich" 'python3.12 -c x_docs/y'
+pass "Pfadzeichen davor: Bindestrich" 'python3.12 -c x-docs/y'
+pass "Pfadzeichen davor: Tilde" 'python3.12 -c x~docs/y'
+pass "Pfadzeichen davor: Punkt" 'python3.12 -c x.docs/y'
+pass "Pfadzeichen davor: Schrägstrich" 'python3.12 -c x/docs/y'
+block interp "kein Pfadzeichen davor: Gleichheitszeichen" 'python3.12 -c x=docs/y'
+block interp "kein Pfadzeichen davor: Doppelpunkt" 'python3.12 -c x:docs/y'
+block interp "kein Pfadzeichen davor: Komma" 'python3.12 -c x,docs/y'
+block interp "kein Pfadzeichen davor: Anführungszeichen" "python3.12 -c \"open(\\\"docs/y\\\")\""
+pass "Pfadzeichen dahinter: Kleinbuchstabe" 'python3.12 -c Makefilex'
+pass "Pfadzeichen dahinter: Großbuchstabe" 'python3.12 -c MakefileX'
+pass "Pfadzeichen dahinter: Ziffer" 'python3.12 -c Makefile9'
+pass "Pfadzeichen dahinter: Unterstrich" 'python3.12 -c Makefile_x'
+pass "Pfadzeichen dahinter: Bindestrich" 'python3.12 -c Makefile-x'
+pass "Pfadzeichen dahinter: Tilde" 'python3.12 -c Makefile~'
+pass "Pfadzeichen dahinter: Punkt" 'python3.12 -c Makefile.x'
+pass "Pfadzeichen dahinter: Schrägstrich" 'python3.12 -c Makefile/x'
+block interp "kein Pfadzeichen dahinter: Komma" 'python3.12 -c Makefile,x'
+block interp "kein Pfadzeichen dahinter: Klammer" 'python3.12 -c Makefile)'
+block interp "kein Pfadzeichen dahinter: Gleichheitszeichen" 'python3.12 -c Makefile=x'
+block interp "Datei-Name am Ende des Befehls" 'python3.12 -c Makefile'
 
-# Die Meldung der Klasse interp nennt die Wege aus AGENTS.md 3.1
+# Die Meldung der Klasse interp nennt die Wege aus AGENTS.md 3.1 (python3.12 bleibt interp)
 n=$((n + 1))
-run_guard 'python3 tools/x.py'
+run_guard 'python3.12 tools/x.py'
 judge_block interp "Meldung interp: Edit/Write"
 if ! printf '%s' "$out" | grep -qF 'Edit/Write' || ! printf '%s' "$out" | grep -qF 'sed s/a/b/ file > ' \
   || printf '%s' "$out" | grep -qF 'mutate'; then
   report "Meldung interp: Weg nach AGENTS.md 3.1" "nennt nicht Edit/Write und sed nach stdout, oder empfiehlt ein Host-Skript"
 fi
+
+# --- Host-python/python3 am Kopf: unbedingter Block, je Position (Fragment tools/harness/blocked/python) --
+block pkg "Kopf: python3" 'python3 tools/x.py'
+block pkg "Kopf: python" 'python tools/x.py'
+block pkg "nach &&" 'cd docs && python3 x.py'
+block pkg "hinter cd <Repo> &&, mit Repo-Pfad-Text" "cd $root && python3 tools/x.py"
+block pkg "hinter cd /tmp/x &&, mit Repo-Pfad-Text" 'cd /tmp/x && python3 tools/x.py'
+block pkg "hinter cd, ohne Repo-Pfad im Text (schließt die vormalige MR-003-Grenze)" 'cd /nirgends && python3 x.py'
+block pkg "nach ;" 'ls; python3 x.py'
+block pkg "nach ||" 'false || python3 x.py'
+block pkg "nach Pipe" 'cat f | python3 x.py'
+block pkg "nach Zeilenumbruch" $'ls\npython3 x.py'
+block pkg "in \$(…)" 'echo $(python3 x.py)'
+block pkg "in Backticks" 'echo `python3 x.py`'
+block pkg "in ( … )" '(python3 x.py)'
+block pkg "Zuweisungs-Präfix" 'FOO=1 python3 x.py'
+block pkg "sudo" 'sudo python3 x.py'
+block pkg "env" 'env python3 x.py'
+block pkg "env -i" 'env -i python3 x.py'
+block pkg "time -p" 'time -p python3 x.py'
+block pkg "xargs" 'ls | xargs -r python3 x.py'
+block pkg "absoluter Pfad /usr/bin/python3" '/usr/bin/python3 x.py'
+block pkg "Kopf mit Backslash" '\python3 x.py'
+block pkg "bash -c" 'bash -c "python3 x.py"'
+block pkg "eval" 'eval "python3 x.py"'
+block pkg "find -exec" 'find . -exec python3 x.py {} \;'
+block pkg "for … do" 'for f in a b; do python3 "$f"; done'
+block pkg "if … then" 'if true; then python3 x.py; fi'
+block pkg "Heredoc mit python3 -" $'python3 - <<\'EOF\'\nprint(1)\nEOF'
+
+# --- Host-python/python3: Pass-Fälle neben jedem Block-Fall -----------------
+pass "Kopf make bleibt frei" 'make test'
+pass "docker run mit python3 im Rezept" 'docker run --rm python:3.12 python3 -c 1'
+pass "command -v python3 zeigt an" 'command -v python3'
+pass "command -V python zeigt an" 'command -V python'
+pass "type python3" 'type python3'
+pass "which python3" 'which python3'
+pass "echo python3" 'echo python3'
+pass "git grep -n python3" 'git grep -n python3'
+pass "grep -E mit python3 als Musterteil" "grep -E 'a|python3' f"
+pass "git commit -m mit python3 im Text" 'git commit -m "fix python3 handling"'
+pass "ls /usr/bin/python3 (python3 als Argument)" 'ls /usr/bin/python3'
+pass "Pfad mit python als Verzeichnisname" 'cat sdks/python/pyproject.toml'
+pass "python3-config (nicht gelisteter Kopf)" 'python3-config --includes'
+pass "ipython (nicht gelisteter Kopf)" 'ipython'
+
+# --- Host-python/python3: benannte Falsch-Positiv-Ränder (Block gewollt) ---
+block pkg "Rand: python3 --version blockt jetzt (gewollt)" 'python3 --version'
+block pkg "Rand: python3 -c 'print(1)' ohne Repo-Pfad" "python3 -c 'print(1)'"
+block pkg "Rand: Heredoc-Zeile beginnt mit python3 (Heredoc mit python3 -c)" $'cat <<EOF\npython3 -c 1\nEOF'
+
+# --- Host-python/python3: benannte Grenzen (nicht gelistete Namen, Pass) ----
+pass "Grenze: go bleibt ungelesen" 'go version'
+pass "Grenze: gofmt bleibt ungelesen" 'gofmt -l .'
+pass "Grenze: node bleibt ungelesen" 'node --version'
+pass "Grenze: dotnet bleibt ungelesen" 'dotnet --version'
+pass "Grenze: java bleibt ungelesen" 'java --version'
+pass "Grenze: gradle bleibt ungelesen" 'gradle --version'
+pass "Grenze: uv bleibt ungelesen" 'uv --version'
+pass "Grenze: python3.12 ohne Repo-Pfad" "python3.12 -c 'print(1)'"
+pass "Grenze: python2 ohne Repo-Pfad" "python2 -c 'print(1)'"
+pass "Grenze: perl -e 1 ohne Repo-Pfad" 'perl -e 1'
 
 # --- benannte Falsch-Positiv-Raender (der Guard blockt trotz Anführungszeichen-Lesung) --
 block inplace "Rand: Heredoc-Zeile mit sed -i am Kopf" $'cat <<EOF\nsed -i s/a/b/ f\nEOF'
@@ -449,17 +516,16 @@ block inplace "Rand: zwei Apostrophe in einer Heredoc-Zeile, sed -i in der näch
 block inplace "Rand: unbalanciertes Anführungszeichen, Trenner im Muster" "grep -E 'a|sed -i f"
 block inplace "Rand: sed -i nach & in Text mit unbalanciertem Anführungszeichen" 'echo "a & sed -i b'
 block inplace "Rand: sed -i hinter \\; (find-Ende, kein Trenner der Shell)" 'echo a\;sed -i s/a/b/ f'
-block interp "Rand: python3 nennt einen Repo-Namen, schreibt nichts" "python3 -c \"print('tools/x')\""
-block interp "Rand: cd im selben Kommando" 'cd /tmp/x && python3 tools/x.py'
+block interp "Rand: python3.12 nennt einen Repo-Namen, schreibt nichts" "python3.12 -c \"print('tools/x')\""
 
 # --- benannte Grenzen (der Guard liest es nicht: erwarteter Pass) ----------
 pass "Grenze: zwei Apostrophe in zwei Heredoc-Zeilen umschließen ein sed -i (MR-003 Grenz-Zeile)" $'cat <<EOF\ndon\'t\nEOF\nsed -i s/a/b/ f\ncat <<EOF\nwon\'t\nEOF'
 pass "Grenze: Umleitung und mv" 'sed s/a/b/ f > /tmp/scratch/tmp && mv /tmp/scratch/tmp f'
 pass "Grenze: tee" 'echo x | tee f'
 pass "Grenze: dd of=" 'dd if=/dev/null of=f'
-pass "Grenze: Skript, das ein Interpreter liest" 'python3 /tmp/scratch/x.py'
+pass "Grenze: Skript, das ein nicht gelisteter Interpreter liest" 'ruby /tmp/scratch/x.py'
 pass "Grenze: bash skript.sh" 'bash /tmp/scratch/skript.sh'
-pass "Grenze: cd, dann relativer Name ohne Repo-Namen" 'cd /nirgends && python3 x.py'
+pass "Grenze: cd, dann relativer Name ohne Repo-Namen (python3.12, MR-003 Grenz-Zeile)" 'cd /nirgends && python3.12 x.py'
 pass "Grenze: anderes in-place-fähiges Werkzeug (patch)" 'patch f < /tmp/scratch/x.diff'
 pass "Grenze: anderes in-place-fähiges Werkzeug (ruby -i)" 'ruby -i -pe 1 f'
 pass "Grenze: Optionswert hinter einem Wrapper (sudo)" 'sudo -u x sed -i s/a/b/ f'
