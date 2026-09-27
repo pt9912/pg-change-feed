@@ -400,6 +400,19 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     Zahl „zehn Slices“ ohne Änderung eines Kriteriums. Die Kante steht als Start-Trigger in
     `slice-start-vorlauf-grenze` (§4 dort); die Trigger von `e2e-abhilfe` bleiben, er wartet
     auf `slice-start-vorlauf-grenze`.
+  - **Bedingte Kante: Stabilisierung der Phase „Leerlauf-Bestätigung“ (Stand 2026-09-27,
+    kein Slice angelegt).** Die Phase in `make test-integration` war im ersten
+    `e2e.yml`-Lauf nach dem Push von `slice-capture-leerlauf-quellbelege` einmal rot
+    (Lauf 36287009221, Leg PostgreSQL 18, erster Versuch; die Wiederholung war grün, 1 von
+    40 Läufen seit dem Commit der Phase). Ob die Ursache im Produkt oder im Testaufbau liegt,
+    ist eine offene Frage beim Architect (Adresse:
+    `BEO-PGC/test-integration-retention-timing-flake`, `state.md`). Beauftragt der Architect
+    einen Slice zur Stabilisierung, geht er `slice-wal-fehlerschwelle-ausgangsklasse` und
+    `slice-start-vorlauf-grenze` **voraus**: beide erweitern den Runner **hinter** dieser
+    Phase, und ein Rot dort lässt ihre Belege ungelaufen statt widerlegt; die Kanten
+    lauten dann `slice-capture-leerlauf-quellbelege` → Stabilisierung →
+    `slice-wal-fehlerschwelle-ausgangsklasse` → `slice-start-vorlauf-grenze` → `e2e-abhilfe`.
+    Ohne Beauftragung bleibt die Reihenfolge oben.
   - **Spec-Kollision.** `spec-nachzug` startet nach
     `slice-backfill-spec-nachzug`: beide ändern
     [`SPEC-019`](../../../spec/pflichtenheft.md), die Kennungsvergabe im

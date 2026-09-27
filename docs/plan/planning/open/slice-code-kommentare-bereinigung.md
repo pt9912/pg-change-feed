@@ -190,6 +190,26 @@ Go-Dateien (gemessen: Dateien mit einer Kennung in einer Kommentarzeile, Stand
   Zuordnung umformuliert; die Zusage der Stelle (Klartext je Grund in der Reihenfolge
   der Tabelle) bleibt. Der Fund ist die Verifikation V-2 des Slice
   `slice-antragsqueue-lesefehler-failed`.
+- **Übergabe aus `slice-capture-leerlauf-quellbelege` (zwei Kommentare mit einem
+  überholten Begründungssatz, Tranchen T4 und T8).** Das Godoc von `confirmIdle`
+  (`internal/adapters/driving/replication/receive/receive.go`, der Satz steht in den
+  Zeilen 467 bis 469; T4) und das Godoc von `TestRunNoConfirmationInsideOpenTransaction`
+  (`internal/adapters/driving/replication/receive/seam_test.go`, Block 693 bis 699; Teil
+  `internal/adapters/driving` von T8) begründen die Bedingung „keine offene Transaktion“
+  mit „das WAL-Ende liegt dann hinter Nachrichten, die noch nicht gespeichert sind“ —
+  dem Satz, den [`ADR-0121`](../../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md)
+  Festlegung 1 durch die Invariante auf der Seite des Adapters ersetzt hat und den der
+  Test der Quellseite an PostgreSQL 17.11 und 18.6 nicht trägt
+  ([`ADR-0129`](../../adr/0129-capture-quellseite-keepalive-test-an-beiden-pins.md)
+  Folgepflicht 3). Beide Kommentare nennen danach die Regel und **einen** Anker
+  (`ADR-0120`), ohne die Begründung in eigenen Worten. Das Godoc des Tests ist ein
+  Kandidat des Werkzeugs (zwei Kennungen, `make kommentar-kennungen
+  PATHS=internal/adapters/driving/replication/receive`, gemessen 2026-09-27), das Godoc
+  von `confirmIdle` **nicht** (eine Kennung): die Übergabe hält es fest, weil kein
+  Werkzeug es findet. Der Implementer sucht am Start
+  `git grep -n 'noch nicht gespeichert sind' -- internal` (zwei Treffer, gemessen am
+  Stand `4e654153`); Frist der Meldung: die Closure von
+  `slice-capture-leerlauf-quellbelege`, hier eingelöst.
 
 **§3.13-Suchlauf (committetes Feld).** Bewegte Eigenschaft: „die Kommentare des
 Go-Baums tragen ihre Herkunft als ein Feld“ und ihre Träger — Zeilen-Lokatoren

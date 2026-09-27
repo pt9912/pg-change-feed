@@ -173,7 +173,7 @@ test-integration` (Risiko §6).
 | `internal/bootstrap/wiring.go` (`mergeStreamAndWALFaultOutcome`, Kommentar; `walRetentionFault`-Kommentar liest der Implementer) | update | die Regel des Verdikts §2; der Kommentar trägt die Regel im Indikativ |
 | `internal/bootstrap/walretention_internal_test.go` (`TestMergeStreamAndWALFaultOutcomePrioritizesStreamError`, `…FallsBackToFaultOnRegularStreamEnd`) | update | Tabellentest über die vier Zeilen, gewrappter Fall, `storage`-ohne-Abbruch-Fall (`LH-QA-REL-003`, `ADR-0049`); Kommentar des ersten Tests nachgezogen |
 | `internal/bootstrap/walretention_slotgrowth_internal_test.go` (Kommentar, Zeile 27) | update | die Kette „Fehler bei Stream-Ende“ trägt das Prozessende — Kommentar nachgezogen |
-| `tools/harness/run-integration-tests.sh` (Phase „Fehlerschwelle beendet den Container“: `abdeckung_declare`-Text, Prüfung von `wal_stop_class`, Kommentar davor) | update | die Klasse `replication` als Zusage der Phase (Eingabeseiten-Mutation: Regel zurücknehmen) |
+| `tools/harness/run-integration-tests.sh` (Phase „Fehlerschwelle beendet den Container“: `abdeckung_declare`-Text, Prüfung von `wal_stop_class`, Kommentar davor) | update | die Klasse `replication` als Zusage der Phase (Eingabeseiten-Mutation: Regel zurücknehmen); der Kommentar davor trägt drei Übergaben aus `slice-capture-leerlauf-quellbelege` (Review F-4, Verifikation V-5): die Allaussage „der Rückstand erreicht die Fehlerschwelle nur, wenn der Slot nichts bestätigt“ ohne Anker (die Phase belegt einen Fall), die Grenze der Klasse ohne Rang-Zeiger (`ADR-0049`, dieser Slice) und die Kopplung an die Phase „Leerlauf-Bestätigung“ davor (`WAL_*`, `bf_wal_hold`, `wal_feed_started`), im Kommentar nur für die Konfigurationsdatei genannt |
 | `docs/user/e2e-abdeckung.md` | Erzeugnis | kommt aus dem Runner; die Ort-Zeilen verschieben sich |
 | `harness/README.md` §Sensors (Zeile `make test-integration`) | update | die benannte Grenze entfällt; ändern nur der genau benannte Satzteil (die Zeilen sind sehr lang) |
 
@@ -227,7 +227,7 @@ nennt):
 | Beschreibung der Phase im Runner (`abdeckung_declare`, Kommentar, Ausgabezeile) und `docs/user/e2e-abdeckung.md` Zeile 68 | die Ausgabezeile nennt die Klasse (`$wal_stop_class`), die Zusage nicht; die Abdeckungs-Zeile nennt sie nicht | Runner-Phase und Erzeugnis ziehen mit (DoD 2) |
 | `docs/user/benutzerhandbuch.md` (Zeilen 466, 866, 871, 1526, 1614, 1833) | vom Planner gelesen: vier Stellen (466, 866–868, 1526, 1614–1615) sagen `replication` für die Fehlerschwelle bzw. die Unterart Transport-/Verbindungsstörung zu; 871 und 1833 beschreiben die Reichweite der Schwellen und die Versionshistorie. **Alle bleiben mit der Korrektur wahr; kein Träger nennt `storage` für diese Kette** (Muster `Klasse .storage.` im Handbuch: zwei Treffer, Zeilen 578/581, betreffen den Backfill-Run im Snapshot-Fenster, einen anderen Gegenstand) | keine Änderung; der Implementer misst neu |
 | `spec/pflichtenheft.md` (Klassen-Tabelle, Zeile `replication`) und `ADR-0049` | die Norm, gelesen (Verdikt L1 bis L3); ihr Wortlaut ist der Gegenstand der Korrektur, kein nachzuziehender Träger | unberührt |
-| **Fremde Träger:** [`slice-capture-leerlauf-quellbelege`](../in-progress/slice-capture-leerlauf-quellbelege.md) §2 und §3 (DoD 2, Meldung der Träger); das Register `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` und `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke` (`state.md`) | der Plan dort nennt dieses Slice als Adresse (Nachzug des Planners); die Registereinträge tragen den Fall (Verdikt §6) | Register: **gemeldet, nicht mitgeändert**; Frist: die Closure dieses Slice, der Planner der Closure setzt die Ausgänge |
+| **Fremde Träger:** `slice-capture-leerlauf-quellbelege` §2 und §3 (DoD 2, Meldung der Träger); das Register `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` und `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke` (`state.md`) | der Plan dort nennt dieses Slice als Adresse (Nachzug des Planners); die Registereinträge tragen den Fall (Verdikt §6) | Register: **gemeldet, nicht mitgeändert**; Frist: die Closure dieses Slice, der Planner der Closure setzt die Ausgänge |
 | Beschreibung in `docs/plan/planning/` (Plan von `slice-capture-leerlauf-quellbelege`, Welle-Plan, Roadmap) | die Aussage zur Klasse `storage` bei gehaltener Persistierung steht im Plan des Quellbeleg-Slice (§3 „Befund der Erprobung“) und beschreibt die Messung jenes Slice | bleibt dort stehen; die Träger-Meldung und DoD 2 dort nennen diesen Slice als Adresse |
 
 ## 4. Trigger
@@ -243,6 +243,16 @@ sein, **bevor** [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md) st
 zuerst verstellt die Prüfspur des größeren nicht (Verdikt §3). Der Übergangs-Commit
 `next` → `in-progress` nennt
 [`ADR-0049`](../../adr/0049-replication-fehlerklassen-schwellen.md).
+
+**Bedingte Kante (Stand der Closure von `slice-capture-leerlauf-quellbelege`):** die
+Phase „Leerlauf-Bestätigung“ vor der Runner-Phase dieses Slice war im ersten
+`e2e.yml`-Lauf nach dem Push einmal rot (Lauf 36287009221, Leg PostgreSQL 18; Ursache
+offen, Frage beim Architect im `state.md` von
+`BEO-PGC/test-integration-retention-timing-flake`). Beauftragt der Architect einen
+Slice zur Stabilisierung dieser Phase, geht er diesem Slice **voraus**: ein Rot dort
+lässt die Phasen dahinter ungelaufen, auch die Mutation dieses Slice an der Phase
+„Fehlerschwelle beendet den Container“. Ohne Beauftragung ändert sich am Start-Trigger
+nichts.
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
