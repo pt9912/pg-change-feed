@@ -11,7 +11,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 
 **Welle:** ohne Welle — der Slice trägt keine Closure-Bedingung, die von
 seiner DoD verschieden wäre. Er startet nach `slice-capture-leerlauf-quellbelege`
-und [`slice-leerlauf-phase-last-in-stuecken`](slice-leerlauf-phase-last-in-stuecken.md)
+und `slice-leerlauf-phase-last-in-stuecken`
 und geht `slice-start-vorlauf-grenze` voraus (Start-Trigger dort, §4;
 [welle-transformationen](../welle-transformationen.md) §5, Kante zu
 `slice-transformationen-e2e-abhilfe` über `slice-start-vorlauf-grenze`).
@@ -238,7 +238,7 @@ Umsetzung (`BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`, offen, 2×):
 `slice-capture-leerlauf-quellbelege` liegt in `done/` (beide Slices ändern die
 Runner-Phase „Fehlerschwelle beendet den Container“ in
 `tools/harness/run-integration-tests.sh`; die Phase ist die Falsifikation dieses Slice;
-WIP-Limit 1), [`slice-leerlauf-phase-last-in-stuecken`](slice-leerlauf-phase-last-in-stuecken.md)
+WIP-Limit 1), `slice-leerlauf-phase-last-in-stuecken`
 liegt in `done/` (beide Slices ändern denselben Runner an verschiedenen Stellen — jener die Last
 der Phase „Leerlauf-Bestätigung“, dieser die Phase „Fehlerschwelle beendet den Container“ —, und ein
 Rot in der Leerlauf-Phase lässt diese Phase ungelaufen;

@@ -411,7 +411,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     Rückstands) und den Slice beauftragt
     ([`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)
     §2 und §3; Register `BEO-PGC/test-integration-retention-timing-flake`). Der Slice
-    ([`slice-leerlauf-phase-last-in-stuecken`](open/slice-leerlauf-phase-last-in-stuecken.md))
+    (`slice-leerlauf-phase-last-in-stuecken`)
     schreibt die Last der Phase in Stücken unter der Warnschwelle und geht
     `slice-wal-fehlerschwelle-ausgangsklasse` und `slice-start-vorlauf-grenze` **voraus**: beide
     erweitern den Runner **hinter** dieser Phase, und ein Rot dort lässt ihre Belege

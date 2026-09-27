@@ -281,7 +281,7 @@ hat den Status `Accepted` (erfüllt, Zeile im ADR-Index
 liegt in `done/` (beide Slices erweitern `tools/harness/run-integration-tests.sh`
 und den Tier `make test-replication`; die Container-Ende-Grenze und der
 Belegaufbau entstehen dort einmal),
-[`slice-leerlauf-phase-last-in-stuecken`](slice-leerlauf-phase-last-in-stuecken.md)
+`slice-leerlauf-phase-last-in-stuecken`
 liegt in `done/` (die Phase „Leerlauf-Bestätigung“ läuft im Runner vor den Phasen dieses
 Slice; ein Rot dort lässt sie ungelaufen,
 [`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)
