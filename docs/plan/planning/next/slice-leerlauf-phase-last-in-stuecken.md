@@ -31,7 +31,7 @@ gilt unverändert), [`ADR-0049`](../../adr/0049-replication-fehlerklassen-schwel
 **Berührte Spec-Stellen:** [`SPEC-013`](../../../../spec/pflichtenheft.md)
 (Schwellen des WAL-Rückstands) — gelesen, nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-27.
 
 **Autor:** Planner-Agent, Planner-Zug nach dem Architect-Verdikt
 [`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md).
