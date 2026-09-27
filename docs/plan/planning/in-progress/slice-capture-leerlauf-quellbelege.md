@@ -148,8 +148,12 @@ Festlegung 2 durch den Architect.
       [`docs/plan/adr/README.md`](../../adr/README.md) (beide liegen vor) und die
       Lese-Prüfung der ADR gegen den Verfasser-Satz durch den Reviewer (frischer
       Kontext, Diff `e4b77a05..4e654153`) — sie steht aus (Risiko §6, letzte Zeile).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
-      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9): Lauf des
+      Planners am Stand `3f107381` (Inhalts-Commit der Closure-Notiz), Exit 0,
+      „coverage-gate: OK — Coverage 85.30% erfüllt Schwelle 80%“, „d-check: 1326
+      Datei(en) geprüft, 0 Befund(e)“, „gesamt: 0 Befund(e)“ (a-check); der Lauf des
+      Verifiers am Stand `65a63968` steht in dessen Report §1.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
