@@ -1191,6 +1191,48 @@ func TestProcessAdministrationRequestsClassifiesADomainErrorAfterTheDeadlineAsAF
 	}
 }
 
+// TestProcessAdministrationRequestsStopsAtTheLoopHeadWhenTheContextIsAlreadyDone
+// trägt Review-Finding F-2 zu `slice-start-vorlauf-grenze`: den Kontrollpunkt
+// `if ctx.Err() != nil { return }` am Schleifenkopf. Ein bereits abgelaufener
+// Kontext lässt weder die `Rejected`-Zeile noch den regulären Antrag dahinter
+// verarbeiten — die Schleife bricht vor der ersten Zeile ab, ohne
+// `failRejectedAdministrationRequest` und ohne `applyAdministrationRequest`
+// aufzurufen; der Godoc-Satz „jeder Antrag dahinter bleibt … pending"
+// schließt ausdrücklich auch eine `Rejected`-Zeile ein.
+//
+// Rot färbende Mutation: den Kontrollpunkt am Schleifenkopf streichen — die
+// `Rejected`-Zeile wird `failed` vermerkt und der reguläre Antrag `applied`.
+func TestProcessAdministrationRequestsStopsAtTheLoopHeadWhenTheContextIsAlreadyDone(t *testing.T) {
+	deps, queue, _ := ruleFixture(t)
+	queue.rows = []outbound.PendingAdministrationRequest{
+		rejectedRow("req-rejected", "Schemaname ist leer: req-rejected"),
+		validRow(model.AdministrationRequest{
+			ID: "req-behind", Source: "src-admin", Schema: "public", Table: "orders_behind",
+			Kind: model.AdministrationRequestEnable,
+		}),
+	}
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Hour))
+	defer cancel()
+
+	processAdministrationRequests(ctx, deps)
+
+	if _, failed := failureOf(queue, "req-rejected"); failed {
+		t.Fatal("die Rejected-Zeile ist failed vermerkt, wollen unverändert pending — der Kontrollpunkt am Schleifenkopf griff nicht")
+	}
+	if isApplied(queue, "req-behind") {
+		t.Fatal("der reguläre Antrag hinter der Rejected-Zeile ist applied, wollen pending")
+	}
+	if _, failed := failureOf(queue, "req-behind"); failed {
+		t.Fatal("der reguläre Antrag hinter der Rejected-Zeile ist failed, wollen pending")
+	}
+	queue.mu.Lock()
+	marked := len(queue.marked)
+	queue.mu.Unlock()
+	if marked != 0 {
+		t.Fatalf("Vermerke = %d, wollen 0 — der Kontrollpunkt hält die Schleife vor der ersten Zeile an", marked)
+	}
+}
+
 // TestProcessAdministrationRequestsSetTransformationIsIdempotent trägt die
 // Wiederholung eines bereits nachgetragenen, noch `pending` stehenden Antrags
 // (`ADR-0065`-Muster): scheitert der Vermerk `applied` nach dem Nachtrag,
