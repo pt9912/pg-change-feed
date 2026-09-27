@@ -40,7 +40,7 @@ im Verdikt des Reviews (Abschnitt „Einordnung der Fragen des Auftrags“, Punk
 
 **Berührte Spec-Stellen:** — (Harness-Werkzeug und Arbeitsregel; keine Spec-Stelle).
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent (Sitzung 2026-09-27).
 
 **Autor:** Planner-Agent, Auftrag des Auftraggebers (zwei Nutzer-Entscheidungen).
 **Datum:** 2026-09-27.
