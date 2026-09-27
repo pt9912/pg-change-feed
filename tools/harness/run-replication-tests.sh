@@ -7,7 +7,10 @@
 # zweite Instanz mit dem Standardwert und ohne gleichzeitigen fremden Schreiber
 # (CDC_REPLICATION_TEST_STANDARD_DSN) trägt die Rückstand-Messungen der
 # Leerlauf-Bestätigung (ADR-0120) und, nach dem Tier-Lauf, den Beleg der
-# WAL-Rückstand-Schwellen (CDC_WALRETENTION_TEST_DSN).
+# WAL-Rückstand-Schwellen (CDC_WALRETENTION_TEST_DSN) und den Keepalive-Beleg
+# der Quellseite (CDC_SOURCE_KEEPALIVE_TEST_DSN).
+# Der Pin der Datenbank ist über `PG_TEST_IMAGE` übersteuerbar; der Lauf an
+# PostgreSQL 17 nimmt den Digest aus `.github/workflows/e2e.yml`.
 # Beide Images sind per Digest gepinnt (Modul 14); der Pin der Datenbank
 # stammt aus `docker manifest inspect postgres:18-alpine` (amd64). Die
 # Instanz startet mit wal_level=logical — der Logical-Replication-Slot
@@ -128,11 +131,12 @@ if [[ "$MODE" == "measure" || "$MODE" == "both" ]]; then
   bash tools/harness/db-coverage.sh
 fi
 
-# Phase `tier` — drei Läufe nacheinander: der Tier-weite `go test ./...` gegen
+# Phase `tier` — vier Läufe nacheinander: der Tier-weite `go test ./...` gegen
 # den gemeinsamen Container, der Slot-Reserve-Lauf des Snapshot-Adapters
-# gegen einen eigenen Container und der Schwellen-Beleg auf der
-# Standard-Instanz (unten); jeder Exit ist ein Verdikt dieser Phase, und die
-# beiden letzten Läufe brauchen zusätzlich das `--- PASS` ihres Tests.
+# gegen einen eigenen Container, der Schwellen-Beleg und der Keepalive-Beleg
+# der Quellseite auf der Standard-Instanz (unten); jeder Exit ist ein Verdikt
+# dieser Phase, und die drei letzten Läufe brauchen zusätzlich das `--- PASS`
+# ihres Tests.
 # Der Schema-Stand dieses Laufs kommt aus derselben
 # Schema-Anwendung wie der Betrieb (tools/schema/apply-rollout.sh,
 # `make test-store`): die `internal/bootstrap`-Fixtures starten
@@ -195,6 +199,28 @@ if [[ "$MODE" == "tier" || "$MODE" == "both" ]]; then
   printf '%s\n' "$threshold_out"
   if ! grep -q -- '--- PASS: TestWALRetentionThresholdsFollowGrowthAtInactiveSlot' <<<"$threshold_out"; then
     echo "run-replication-tests: TestWALRetentionThresholdsFollowGrowthAtInactiveSlot ist nicht als PASS gelaufen" >&2
+    exit 1
+  fi
+
+  # Quellseite der Leerlauf-Bestätigung (ADR-0121):
+  # `TestSourceKeepaliveInsideTransactionDeliversWholeTransaction` liest das
+  # Protokoll mit einem rohen Client, lässt den Walsender seinen Keepalive
+  # zwischen BEGIN und COMMIT einer großen Transaktion senden und wartet dafür
+  # die Hälfte des Standardwerts von `wal_sender_timeout` ab; sie läuft deshalb
+  # allein auf der Standard-Instanz. Die gedruckte Zeile des Tests nennt die
+  # PostgreSQL-Version, die Position und die Zahl der gelieferten Änderungen.
+  # Ein Lauf ohne PASS des Tests ist rot.
+  keepalive_out=$(docker run --rm --network "$NETWORK" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -w /src \
+    -e GOCACHE=/tmp/gocache \
+    -e CDC_SOURCE_KEEPALIVE_TEST_DSN="$STANDARD_DSN" \
+    "$TOOLCHAIN_IMAGE" go test -count=1 -v -run '^TestSourceKeepaliveInsideTransactionDeliversWholeTransaction$' \
+      ./internal/adapters/driving/replication/receive 2>&1) || { printf '%s\n' "$keepalive_out"; exit 1; }
+  printf '%s\n' "$keepalive_out"
+  if ! grep -q -- '--- PASS: TestSourceKeepaliveInsideTransactionDeliversWholeTransaction' <<<"$keepalive_out"; then
+    echo "run-replication-tests: TestSourceKeepaliveInsideTransactionDeliversWholeTransaction ist nicht als PASS gelaufen" >&2
     exit 1
   fi
 fi
