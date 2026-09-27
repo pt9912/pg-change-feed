@@ -80,9 +80,9 @@ mit `%w: %w`) und nicht gelesen; der Slice belegt es zweifach (§2, Punkt 1 und 
   Schema-Store). Akzeptiertes Negativ des Verdikts: sie fällt unter die Regel, sobald
   ihre Kette `context.Canceled` trägt, und wird nicht gesondert erprobt.
 - **Die Klassen- und Wiederholungsfrage bei `transient`.**
-  [`slice-capture-transient-wiederholung`](slice-capture-transient-wiederholung.md);
+  `slice-capture-transient-wiederholung`;
   die Schwellen-Kette ist eine andere Ursache.
-- **Der Start-Pfad.** [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md)
+- **Der Start-Pfad.** `slice-start-vorlauf-grenze`
   ändert `Stream.Run`/`START_REPLICATION` und den Vorlauf; dieser Slice ändert die
   Rückgabe-Priorität nach der Rückkehr von `stream.Run`. Beide berühren `wiring.go` und
   den Runner an entgegengesetzten Enden (Verdikt §3, Reihenfolge).
@@ -117,16 +117,28 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       gewrappte Kette `fmt.Errorf("%w: %w", outbound.ErrStorage, fmt.Errorf(...:
       %w, context.Canceled))`); ob sie an der realen Treiber-Kette
       (`postgresstorage`/`sqlexec`) ebenso trägt, belegt DoD 2 am komponierten Prozess.
-- [ ] **Die Runner-Phase trägt die Klasse als Zusage.** Die Phase „Fehlerschwelle beendet
+- [x] **Die Runner-Phase trägt die Klasse als Zusage.** Die Phase „Fehlerschwelle beendet
       den Container“ in `make test-integration` prüft `cdc.process_heartbeat.error_class`
       auf `replication` (statt sie nur auszugeben); die Abdeckungs-Zeile in
       [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md) (Erzeugnis des
-      Runners) nennt die Klasse; die Ausgabezeile der Phase bleibt. *Zu belegen durch:*
-      ein realer, grüner `make test-integration`-Lauf mit der Ausgabezeile (Klasse
-      `replication`) und der Abdeckungs-Zeile; die Mutation „die Regel im Code
-      zurücknehmen“ (Image neu gebaut) färbt die Phase rot — *erwartet, zu erproben*:
-      eine Stelle, ein Lauf. Der Aufbau ist der der Phase (gehaltene Persistierung), also
-      der Fall, der zuvor `storage` war.
+      Runners) nennt die Klasse; die Ausgabezeile der Phase bleibt. *Belegt durch:* ein
+      realer, grüner `make test-integration`-Lauf (`bash tools/harness/run-integration-tests.sh`,
+      `set -euo pipefail` an der Spitze — die letzte Zeile `Lauf abgeschlossen — …`
+      erreicht, kein `bf_fail` griff) mit der Ausgabezeile „…, cdc.process_heartbeat trug
+      die Klasse replication; …“ und der Abdeckungs-Zeile in
+      `docs/user/e2e-abdeckung.md` Zeile 68 („… meldet einen Fehlerzustand der Klasse
+      replication über cdc.process_heartbeat …“, `Ort` `tools/harness/run-integration-tests.sh:3580`).
+      Mutation **erprobt** (Eingabeseite: das Image, nicht der Runner) — `make image-mutation
+      SRC=<git-archive-Kopie von HEAD, Commit fe9d0afa> TAG=wal-old-priority` (die alte,
+      unbehobene Priorität ist exakt der vorige Commit), Bindung über eine
+      Compose-Override-Datei im Scratchpad (`COMPOSE="docker compose -f compose.yaml -f
+      <Override>"`, `image: pg-change-feed-mutation:wal-old-priority`) und derselbe (neue)
+      Runner-Lauf: die Phase färbte sich rot exakt an der neuen Assertion —
+      „`Fehlerschwelle beendet den Container — Fehlerklasse in cdc.process_heartbeat —
+      erwartet 'replication', gelesen 'storage'`“ (`bf_fail`, Exit 1, `cleanup`-Trap fuhr die
+      Umgebung herunter) — derselbe Aufbau (gehaltene Persistierung), der vor diesem Slice
+      `storage` maß. Mutations-Image und Compose-Override danach entfernt
+      (`make image-mutation-rm TAG=wal-old-priority`, `docker compose … down -v`).
 - [x] **Kommentare und die benannte Grenze sind nachgezogen.** Der Kommentar an
       `mergeStreamAndWALFaultOutcome` (`wiring.go`: „jede Klasse“, „nur zum Zug, wenn der
       Stream-Lauf regulär endete“), der Kommentar von
@@ -159,20 +171,31 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       Treffer auf „statt“ sind Mutationsbeschreibungen in Test-Godocs, zulässig; ein
       Treffer auf „slice-026“ ist eine Testfall-Provenienz-Zitierform in unverändertem
       Bestandscode, zulässig). Review folgt separat.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
-      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9): ein erster Lauf
+      färbte `docs-check` rot (sechs `target-missing`-Befunde — der `next → in-progress`-Move
+      dieses Slice hinterließ Links mit fest verdrahtetem `open/`-Pfad in `roadmap.md`
+      (Zeilen 220, 310), im eigenen Plan (Zeilen 83, 85, 313) und in
+      `slice-start-vorlauf-grenze.md` Zeile 289 — `BEO-PGC/slice-pfad-als-link-in-berichten`);
+      alle sechs auf Kennungs-Zitat ohne Link umgestellt. Zweiter Lauf: `docs-check` 1352
+      Dateien, 0 Befunde; `generated-sync` OK; `a-check` 0 Befunde; `coverage-gate` 85,30 %
+      ≥ 80 %; `commit-traceability` OK (5 Commits, keine Struktur-ID im Betreff);
+      `record-gates` schrieb den Arbeitsbaum-Hash — gegen `bash
+      tools/harness/working-tree-hash.sh` danach gegengeprüft (byte-gleich), kein Commit/Move
+      dazwischen (`git status --short` unverändert seit dem Lauf).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13); `make suchlauf-nachmessen
       PLAN=docs/plan/planning/in-progress/slice-wal-fehlerschwelle-ausgangsklasse.md`
-      läuft mit den `diff`-Zeilen des Implementers durch.
-- [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors (Zeile
+      läuft mit den `diff`-Zeilen des Implementers durch (9 Zeilen stimmen, Exit 0).
+- [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors (Zeile
       `make test-integration`: die Grenze entfällt, die Phase nennt die Klasse als
-      Zusage); das Benutzerhandbuch bleibt unberührt (§1).
+      Zusage); das Benutzerhandbuch bleibt unberührt (§1, real gegengeprüft: `git diff`
+      trägt keine Änderung an `docs/user/benutzerhandbuch.md`).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
@@ -205,6 +228,7 @@ test-integration` (Risiko §6).
 | `docs/user/e2e-abdeckung.md` | Erzeugnis | kommt aus dem Runner; die Ort-Zeilen verschieben sich |
 | `harness/README.md` §Sensors (Zeile `make test-integration`) | update | die benannte Grenze entfällt; ändern nur der genau benannte Satzteil (die Zeilen sind sehr lang) |
 | `internal/bootstrap/walretention_slotgrowth_internal_test.go` (Kommentar an `TestWALRetentionThresholdsFollowGrowthAtInactiveSlot`, Zeilen 18–35) | update (Plan-Nachzug) | über den Plan hinaus: mein Edit an Zeile 27 überlappte einen Bestandsblock mit vier Kennungen (`ADR-0049`, `SPEC-013`, `LH-QA-REL-003`, `ADR-0120`); `make kommentar-kennungen DIFF=fe9d0afa` meldete ihn — auf `ADR-0049` als einzigen Anker reduziert (§3.7) |
+| `docs/plan/planning/in-progress/roadmap.md` (Zeilen 220, 310), `docs/plan/planning/open/slice-start-vorlauf-grenze.md` (Zeile 289), diese Plan-Datei selbst (Zeilen 83, 85, 313) | update (Plan-Nachzug) | über den Plan hinaus: der `next → in-progress`-Move dieses Slice ließ sechs Markdown-Links mit fest verdrahtetem `open/`-Pfad zurück (`BEO-PGC/slice-pfad-als-link-in-berichten`); der erste `make gates`-Lauf färbte `docs-check` mit sechs `target-missing`-Befunden rot — alle sechs auf Kennungs-Zitat ohne Link umgestellt |
 
 **Ansatz (Liste):**
 
@@ -297,7 +321,7 @@ der Phase „Leerlauf-Bestätigung“, dieser die Phase „Fehlerschwelle beende
 Rot in der Leerlauf-Phase lässt diese Phase ungelaufen;
 [`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)
 §3), und kein weiterer Slice liegt in `in-progress/`. Der Slice muss `done`
-sein, **bevor** [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md) startet
+sein, **bevor** `slice-start-vorlauf-grenze` startet
 (Start-Trigger dort): beide ändern `wiring.go` und den Runner; der kleinere Slice
 zuerst verstellt die Prüfspur des größeren nicht (Verdikt §3). Der Übergangs-Commit
 `next` → `in-progress` nennt

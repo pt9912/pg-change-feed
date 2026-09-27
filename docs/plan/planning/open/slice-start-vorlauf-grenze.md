@@ -286,7 +286,7 @@ liegt in `done/` (die Phase „Leerlauf-Bestätigung“ läuft im Runner vor den
 Slice; ein Rot dort lässt sie ungelaufen,
 [`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)
 §3),
-[`slice-wal-fehlerschwelle-ausgangsklasse`](slice-wal-fehlerschwelle-ausgangsklasse.md)
+`slice-wal-fehlerschwelle-ausgangsklasse`
 liegt in `done/` (beide Slices berühren `internal/bootstrap/wiring.go` und den Runner an
 entgegengesetzten Enden — dieser Slice `Stream.Run`, `START_REPLICATION` und den
 Start-Pfad, jener `mergeStreamAndWALFaultOutcome` nach der Rückkehr von `stream.Run`;
