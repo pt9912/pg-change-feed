@@ -29,7 +29,8 @@ emittierten Durchsetzungsschicht):
   Docker-Image; erlaubte Host-Werkzeuge, das Verbot des in-place Text-Umschreibens
   (`sed -i`, `perl -pi`, Host-Interpreter) und das Verbot, den Text einer Repo-Datei per
   Umleitung zu schreiben (`>`, `>>`, `tee`, Heredoc) stehen in `AGENTS.md` §3.1. Rufe nur
-  `make`-Targets auf.
+  `make`-Targets auf. Verweigert die Berechtigungsschicht einen Aufruf, gilt `AGENTS.md`
+  §3.15: melden, nicht auf anderem Weg wiederholen.
 - **Gate-Nachweis + Stop-Hook.** `make gates` endet mit `record-gates`, das einen Content-Hash des
   Working Tree stempelt; der Stop-Hook verweigert den Abschluss, solange der aktuelle Tree nicht
   passt. **Jede Inhaltsänderung nach einem Gate-Lauf — inklusive jedes Commits und jedes `git mv`

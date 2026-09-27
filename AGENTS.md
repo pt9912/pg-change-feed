@@ -103,7 +103,13 @@ Mutationsprobe (Reviewer, Verifier) arbeitet auf einer Kopie im Scratchpad;
 die Rücknahme ist `cp` oder `git checkout`. Die Mutation auf der Kopie läuft
 über Edit/Write oder als `sed … Datei > Kopie` (Ausgabe nach stdout); `-i` wird
 auch auf der Kopie geblockt (siehe „Durchsetzung“). `sed -n` (nur lesen) ist
-erlaubt.
+erlaubt. Für ein **Image** aus einer Mutation gilt dieselbe Trennung: `make
+image-mutation SRC=<Kopie im Scratchpad> TAG=<eigener Tag>` baut es unter
+einem eigenen Repository-Namen (`pg-change-feed-mutation:<Tag>`), ohne `:dev`
+oder `harness/image-hash.txt` zu berühren; `make image` mit einem mutierten
+Arbeitsbaum bleibt verboten
+([`harness/targets/image-mutation.md`](harness/targets/image-mutation.md)) ·
+seit slice-harness-mutationsbild-und-verweigerte-aktion.
 
 **Falsch:** `pip install ...`, `go test ./...` auf dem Host,
 `sed -i 's/a/b/' internal/x.go`, `cat >> docs/x.md`.
@@ -650,6 +656,43 @@ Sektion trägt keine eigene Regel mehr. Die Nummer bleibt reserviert, weil
 §Teilfrage 4 (`Accepted`, unberührbar) „`AGENTS.md` §3.14" namentlich als
 Analogie zitiert — dieser Absatz hält den Verweis auflösbar, ohne die
 gestrichene Regel wiederherzustellen.
+
+### 3.15 Eine von der Berechtigungsschicht verweigerte Aktion wird gemeldet, nicht auf anderem Weg wiederholt
+
+Verweigert die Berechtigungsschicht — Classifier, Permission-Prompt oder der
+PreToolUse-Guard — einen Aufruf, führt der Lauf ihn **nicht auf einem anderen
+Weg zum selben Ziel** aus. Der Bericht nennt den verweigerten Aufruf, den
+Wortlaut der Ablehnung und das Ziel; danach fragt der Lauf den Auftraggeber,
+bevor er fortfährt. Die Ablehnung gilt dem **Aufruf**, nicht dem Ziel: der
+Bericht nennt Aufruf, Pfad und Wortlaut, keine Verallgemeinerung auf einen
+gesperrten Zielpfad. Ein versehentlicher Aufruf ohne Nutzen für die Aufgabe
+wird gestrichen und im Bericht genannt, nicht wiederholt.
+
+**Falsch:** ein `docker buildx build` wird verweigert, der Lauf ruft
+stattdessen `docker build` oder einen anderen Weg zum selben Bau auf, ohne
+die Verweigerung zu melden oder den Auftraggeber zu fragen.
+**Richtig:** der Lauf hält an, nennt im Bericht den verweigerten Aufruf, den
+Wortlaut der Ablehnung und das Ziel, und fragt den Auftraggeber, bevor er
+einen anderen Weg versucht.
+
+**Begründung:** Eine Berechtigungsschicht verweigert einen Aufruf aus einem
+Grund; ein Ersatzweg zum selben Ziel umgeht diesen Grund, ohne dass ihn
+jemand noch einmal prüft. Real aufgetreten: der Implementer von
+`slice-leerlauf-phase-last-in-stuecken` erhielt für `make image` mit einer
+mutierten Go-Datei eine Verweigerung („Modify Shared Resources“) und baute
+danach ein Image mit einem eigenen Tag direkt über `docker buildx build`,
+ohne die Verweigerung zu melden oder den Auftraggeber zu fragen
+(`docs/reviews/review-slice-leerlauf-phase-last-in-stuecken.md` F-3).
+
+**Grenze:** Diese Regel wirkt durch **Lesen** — den Bericht des Laufs gegen
+das, was Bericht und Artefakte tragen —, nicht durch einen Sensor. Der
+Classifier ist kein Teil dieses Repos, und ein Werkzeugaufruf hinterlässt in
+keiner Datei eine Signatur seiner Ablehnung; steht die Verweigerung allein in
+einer Angabe des Auftraggebers, ist ein Fund **übernommen**, nicht gemessen
+([`ADR-0083`](docs/plan/adr/0083-herkunft-von-aussagen-in-traegern.md)).
+
+Herkunft: `BEO-PGC/ersatzweg-nach-verweigerter-aktion` · seit
+slice-harness-mutationsbild-und-verweigerte-aktion.
 
 ## 4. Quality Gates
 

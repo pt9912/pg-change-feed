@@ -132,6 +132,21 @@ fmt-check: ## Meldet jede Go-Datei, die gofmt -l nicht als formatiert führt (Ex
 test-fmt-check: ## Tabellentest gegen tools/harness/fmt-check.sh (echte Docker-Läufe gegen Wegwerf-Verzeichnisse, Container ohne Netz; Docker-only)
 	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" bash tools/harness/run-fmt-check-tests.sh
 
+.PHONY: image-mutation
+image-mutation: ## Baut ein Mutations-Image mit eigenem Tag aus einer Kopie: make image-mutation SRC=<Verzeichnis> TAG=<Tag> (kein Gate, kein Push, rührt :dev/harness/image-hash.txt nicht an; harness/targets/image-mutation.md)
+	$(if $(SRC),,$(error SRC fehlt, z.B. make image-mutation SRC=/tmp/kopie TAG=mein-tag))
+	$(if $(TAG),,$(error TAG fehlt, z.B. make image-mutation SRC=/tmp/kopie TAG=mein-tag))
+	@bash tools/harness/image-mutation.sh build "$(SRC)" "$(TAG)"
+
+.PHONY: image-mutation-rm
+image-mutation-rm: ## Entfernt ein Mutations-Image: make image-mutation-rm TAG=<Tag> (kein Gate, kein prune; harness/targets/image-mutation.md)
+	$(if $(TAG),,$(error TAG fehlt, z.B. make image-mutation-rm TAG=mein-tag))
+	@bash tools/harness/image-mutation.sh rm "$(TAG)"
+
+.PHONY: test-image-mutation
+test-image-mutation: ## Tabellentest gegen tools/harness/image-mutation.sh (Stub-docker in einem Wegwerf-Repo, netzlos)
+	@bash tools/harness/run-image-mutation-tests.sh
+
 .PHONY: test-command-guard
 test-command-guard: ## Tabellentest gegen den PreToolUse-Guard .claude/hooks/pretooluse-command-guard.sh (Wegwerf-Repo im Temp-Verzeichnis, netzlos, kein Gate; Prüfling per GUARD=<Datei>, Maskierer per MASKER=<Datei>, Fragmente per BLOCKED_DIR=<Verzeichnis> übersteuerbar; harness/conventions/MR-003-guard-inplace-textwerkzeug.md, harness/conventions/MR-004-guard-host-python-am-kopf.md)
 	@bash tools/harness/run-command-guard-tests.sh

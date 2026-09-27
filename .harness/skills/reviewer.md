@@ -287,6 +287,25 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   Herkunft: `BEO-PGC/kommentar-herkunft-als-kette` (Abgrenzung zu
   `BEO-PGC/slice-chronik-in-code-kommentar`: Kennungen je Block, kein
   Satz-Subjekt) · seit slice-code-kommentare-kennungen.
+- **Ersatzweg nach Verweigerung ohne Meldung** — die Berechtigungsschicht
+  (Classifier, Permission-Prompt, PreToolUse-Guard) verweigert einen Aufruf,
+  und der Bericht des Laufs nennt weder den verweigerten Aufruf noch den
+  Wortlaut der Ablehnung noch eine Rückfrage an den Auftraggeber, bevor ein
+  anderer Weg zum selben Ziel läuft (`AGENTS.md` §3.15). Einstufung: **MEDIUM**
+  als Ausgangspunkt; **HIGH**, wenn die verweigerte Aktion selbst in einer
+  HIGH-Klasse liegt oder geteilten Zustand berührt (ein Host-Werkzeug am Repo,
+  ein Push, `:dev` oder `harness/image-hash.txt`, ein Geheimnis) — dann tritt
+  dieser Fund als zweites Feld neben den Fund der HIGH-Klasse „Docker-only-
+  Verstoß" bzw. der HIGH-Liste des Ziels der Aktion. Ein Ersatzweg mit Meldung
+  im Bericht, aber ohne vorherige Rückfrage, ist **LOW**, sofern die
+  verweigerte Aktion keine HIGH-Klasse trägt. Der Reviewer liest, was Bericht
+  und Artefakte tragen: das Fehlen der Meldung ist aus einem reinen Diff nicht
+  ablesbar — steht die Verweigerung allein in einer Angabe des Auftraggebers,
+  ist der Fund `verifizierbar: nein` (**übernommen**, wie F-3 des Reviews
+  unten). Herkunft: `BEO-PGC/ersatzweg-nach-verweigerter-aktion`, real
+  aufgetreten in
+  [`review-slice-leerlauf-phase-last-in-stuecken.md`](../../docs/reviews/review-slice-leerlauf-phase-last-in-stuecken.md)
+  F-3 · seit slice-harness-mutationsbild-und-verweigerte-aktion.
 
 **LOW** — stilistisch unschön ohne semantische Auswirkung, einmalige Tippfehler,
 unbenutzte Imports, eine Go-Datei, die `make fmt-check` meldet

@@ -148,7 +148,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
 **Erwartung**, bis der Implementer sie gefahren hat (Stelle, Instanz, gesehene Farbe;
 [`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B).
 
-- [ ] **Liefer-Punkt 1 — das Ziel.** `tools/harness/image-mutation.sh` kennt zwei Verben.
+- [x] **Liefer-Punkt 1 — das Ziel.** `tools/harness/image-mutation.sh` kennt zwei Verben.
       `build <SRC> <TAG>` baut aus dem Verzeichnis `SRC` das Image `pg-change-feed-mutation:<TAG>` mit
       genau `docker buildx build --load -t pg-change-feed-mutation:<TAG> <SRC>` (`SRC` als aufgelöster
       absoluter Pfad, letztes Argument; kein `--metadata-file`, kein `--push`, kein `--platform`, kein
@@ -183,7 +183,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       Lauf gleich, `make image-mutation-rm TAG=<Tag>` entfernt es, danach nennt `docker image ls` den Tag nicht
       mehr; die Zahl der dangling Volumes vor und nach dem Lauf (Erwartung: gleich) und kein `prune`. Verweigert
       die Berechtigungsschicht den realen Lauf, gilt Liefer-Punkt 3: Bericht und Rückfrage, kein Ersatzweg.
-- [ ] **Liefer-Punkt 2 — die Träger des Ziels.** (a) Vertrag `harness/targets/image-mutation.md` (Vorbild der
+- [x] **Liefer-Punkt 2 — die Träger des Ziels.** (a) Vertrag `harness/targets/image-mutation.md` (Vorbild der
       Form: `harness/sensors/fmt-check.md`, `harness/targets/schema-rollout.md`): Zweck, Aufruf mit beiden Verben,
       Exit-Codes, Host-Werkzeuge (`bash`, `git`, `realpath`, `docker`; `git archive`/`tar` für die Kopie),
       **Anwendungsbeispiel** (Kopie ziehen, mutieren, bauen, per Override-Datei einer Scratchpad-Kopie des
@@ -196,7 +196,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       der für ein Mutations-Image `make image-mutation` nennt (Kopie im Scratchpad, eigener Tag, `make image` mit
       mutiertem Baum bleibt verboten), mit Herkunft `· seit slice-harness-mutationsbild-und-verweigerte-aktion`.
       *Zu belegen durch:* Lesen der drei Stellen gegeneinander, `make docs-check` und der Suchlauf in §3.
-- [ ] **Liefer-Punkt 3 — die Regel „Verweigerte Aktion“.** (a) [`AGENTS.md`](../../../../AGENTS.md): ein neuer
+- [x] **Liefer-Punkt 3 — die Regel „Verweigerte Aktion“.** (a) [`AGENTS.md`](../../../../AGENTS.md): ein neuer
       Abschnitt `### 3.15` (Begründung der Nummer in §3 „Ansatz“), Fassung kurz im Ist-Ton, mit „Falsch/Richtig“
       wie die Nachbar-Regeln (Vorbild: §3.9), Kernaussage wie in §1 (Entwurf), ohne Chronik; er nennt die
       Grenze („wirkt durch Lesen; der Classifier ist kein Teil des Repos; kein Sensor“) und die Herkunft
@@ -213,24 +213,24 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       *Zu belegen durch:* Lesen der drei Stellen gegeneinander (Regel, Prüfzeile, Verweis: dieselbe Klassenmenge,
       dieselbe Ausnahme), `make docs-check` (Anker, Links), `make doc-immutable RANGE=<Parent>..HEAD` Exit 0
       und der Suchlauf in §3; `git grep -n '3\.14' -- AGENTS.md` nennt den Rang-Zeiger unverändert.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/open/slice-harness-mutationsbild-und-verweigerte-aktion.md`
       läuft nach jeder Fixrunde mit den `diff`-Zeilen des Implementers durch
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors, `harness/targets/image-mutation.md`
+- [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors, `harness/targets/image-mutation.md`
       und `AGENTS.md` (Liefer-Punkte 2 und 3); das Benutzerhandbuch bleibt unberührt (keine Betreiber-Oberfläche).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang von
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang von
       `BEO-PGC/ersatzweg-nach-verweigerter-aktion` (Liefer-Punkt 3d); je ein Anfall im Lauf dieses Slice
       ist eine weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine Antwort und wird in §7 notiert
       (§8 nennt die Einträge, die dieser Slice trägt).
@@ -321,7 +321,39 @@ dem Hedge (Mutations-Image, Ersatzweg, Verweigerung).
 84f60e6f 2 -n -i -E 'verweiger|Ersatzweg|Berechtigungsschicht|Classifier|Klassifizierer' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!internal'
 84f60e6f 11 -n -E 'Docker-only' -- AGENTS.md .claude .harness/skills
 84f60e6f 0 -n -E 'kein make-Ziel|make-Ziel für ein Mutations' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 9 -n -i -E 'Mutations-?Image|Wegwerf-?Image|mutiertes Image|pg-change-feed-mutd' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 62 -n -E 'image-mutation|image-mutant|mutation-image|mutationsbild' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 6 -n -E '3\.15' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 9 -n -i -E 'Mutationsprobe|arbeitet auf einer Kopie' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 56 -n -i -E 'verweiger|Ersatzweg|Berechtigungsschicht|Classifier|Klassifizierer' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!internal'
+diff 12 -n -E 'Docker-only' -- AGENTS.md .claude .harness/skills
+diff 0 -n -E 'kein make-Ziel|make-Ziel für ein Mutations' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 ```
+
+**Nachmessung durch den Implementer** (Parent `5f97700a`, nach dem `next → in-progress`-Move und vor
+jeder Inhaltsänderung dieses Laufs — identisch zu den `84f60e6f`-Werten außer den bereits vom Planner
+committeten Register-Dateien `docs/plan/planning/observations/BEO-PGC/ersatzweg-nach-verweigerter-aktion/{state.md,observation.md,evidence/*.md}`,
+die zwischen `84f60e6f` und `5f97700a` als eigener Commit `1d42ed1f` hinzukamen und die künftige
+Slice-Kennung sowie „§3.15“ bereits nennen — keine neue Eigenschaft, sondern die Selbstreferenz der
+Register-Anlage): Zeile 1 (Mutations-Image-Namen) 2, Zeile 2 (Ziel-/Tag-Namen) 3, Zeile 3 (`3.15`) 1,
+Zeilen 4/6/7 unverändert (8/11/0), Zeile 5 (Verweigerungs-Wortfeld) 26 (Register-Einträge mehrerer
+Slices zwischen `84f60e6f` und `5f97700a` nennen „verweigert“/„Berechtigungsschicht“ unabhängig von
+diesem Slice). Die `diff`-Zeilen oben zählen den **endgültigen** Stand nach `git add -A` dieses Laufs:
+`git grep` ohne Revision durchsucht standardmäßig nur **getrackte** Dateien des Arbeitsbaums — eine
+neu angelegte, noch nicht `git add`ete Datei (`tools/harness/image-mutation.sh`,
+`tools/harness/run-image-mutation-tests.sh`, `harness/targets/image-mutation.md`) bleibt bis zum
+`add` unsichtbar; eine erste Zwischenmessung vor dem `add` zählte deshalb zu niedrig (6/21/5/8/54) und
+ist durch die Werte oben ersetzt. **Gefunden** — `Makefile` (drei Ziele, `.PHONY`, Hilfe-Zeilen, zwölf
+Treffer für Zeile 2), `tools/harness/image-mutation.sh` (Kopf-Kommentar und Code, fünfzehn Treffer),
+`tools/harness/run-image-mutation-tests.sh` (Kopf-Kommentar und Fallnamen, zwölf Treffer),
+`harness/targets/image-mutation.md` (der ganze Vertrag, vierzehn Treffer für Zeile 2), `harness/README.md`
+(zwei neue Zeilen), `AGENTS.md` (der Satz in §3.1 und der neue Abschnitt `### 3.15`, vier Treffer für
+Zeile 2), `.harness/skills/reviewer.md` (die neue MEDIUM-Zeile), `.claude/commands/implement-slice.md`
+(der Verweis-Satz), `docs/plan/planning/observations/BEO-PGC/ersatzweg-nach-verweigerter-aktion/state.md`
+(Ausgang *verkörpert*); **nicht gefunden/nicht angefasst** — `.claude/commands/plan-welle.md` und
+`close-welle.md` (§1 Abgrenzung, bewusst nicht berührt), `harness/conventions/MR-003-…md` (immutable,
+unverändert), `AGENTS.md` §3.14 (unverändert, geprüft mit `git grep -n '3\.14' -- AGENTS.md`: ein
+Treffer, derselbe Rang-Zeiger-Absatz wie vor diesem Lauf).
 
 | Träger | Befund (Stand `84f60e6f`, vom Planner gelesen) | Behandlung |
 |---|---|---|
@@ -333,7 +365,7 @@ dem Hedge (Mutations-Image, Ersatzweg, Verweigerung).
 | `.claude/commands/plan-welle.md` Zeile 33, `.claude/commands/close-welle.md` Zeile 23 | Docker-only-Zeilen ohne Verweis auf die Verweigerung | **nicht angefasst** (§1, Abgrenzung); der Reviewer kann einen Satz verlangen |
 | `harness/conventions/MR-003-guard-inplace-textwerkzeug.md` Zeile 90 | „nennen diesen Ersatzweg“ — die Meldung des Guards nennt Edit/Write als Weg | bleibt wahr (`Accepted`, immutable); die Ausnahme „Ablehnung führt den Weg selbst an“ in `AGENTS.md` §3.15 trägt genau diesen Satz |
 | `AGENTS.md` §3.14 und `ADR-0100` §Teilfrage 4 | der Rang-Zeiger und das Zitat der Nummer | unverändert (Liefer-Punkt 3a, Prüfung `git grep -n '3\.14' -- AGENTS.md`) |
-| **Fremde Datei:** `docs/plan/planning/open/slice-harness-guard-blocked-python.md` §3 | trägt die Träger-Tabelle zu `AGENTS.md` §3.1 „Durchsetzung“ und zu `harness/README.md` Zeile `make test-command-guard` | gemeldet, nicht mitgeändert; keine Adresse nötig: keine gemeinsame Stelle (Absatz zur Mutationsprobe und Abschnitt 3.15 liegen außerhalb) |
+| **Fremde Datei** (Stand `84f60e6f`: `open/`; zwischenzeitlich `git mv` nach `done/` — `slice-harness-guard-blocked-python` schloss vor dem Start dieses Slice ab, kein gleichzeitiger Arbeitsbaum): `slice-harness-guard-blocked-python` §3 | trug die Träger-Tabelle zu `AGENTS.md` §3.1 „Durchsetzung“ und zu `harness/README.md` Zeile `make test-command-guard` | gemeldet, nicht mitgeändert; keine Adresse nötig: keine gemeinsame Stelle (Absatz zur Mutationsprobe und Abschnitt 3.15 liegen außerhalb) — mit dem Abschluss des anderen Slice ohnehin erledigt |
 | Beobachtungs-Register `BEO-PGC/subagent-write-ablehnung-als-zielpfad-sperre-gemeldet` | die Genauigkeit der Meldung einer Werkzeug-Ablehnung (1×) | bleibt getrennt; der Regel-Satz „Aufruf, Pfad, Wortlaut“ und die Abgrenzung im neuen Eintrag nennen ihn |
 | `docs/plan/planning/welle-transformationen.md` §5, Plan `slice-wal-fehlerschwelle-ausgangsklasse`, `slice-start-vorlauf-grenze`, `slice-transformationen-e2e-abhilfe` | die Pläne nennen Mutationen (`grep -c -i -E 'Image mit\|mutiert\|Mutation'` je Plan: 7, 7 und 1, gemessen); ob die Läufe ein Image aus einem mutierten Baum brauchen, ist nicht gelesen — **Erwartung** aus dem Auftrag des Auftraggebers | keine Änderung; Reihenfolge in §4 |
 | Beschreibung in `done/` und `docs/reviews/**` | Records und Reports der Läufe, darunter der Review dieser Sache | bleiben stehen (Record-Einfrierung) |
@@ -351,7 +383,7 @@ liegen vor (Herkunft oben).
 **Reihenfolge (Empfehlung an den Orchestrator, mit Begründung):** nach `slice-leerlauf-phase-last-in-stuecken`
 (liegt in `in-progress/`; das WIP-Limit ordnet das), nach
 `slice-harness-guard-blocked-python` und **vor**
-[`slice-wal-fehlerschwelle-ausgangsklasse`](slice-wal-fehlerschwelle-ausgangsklasse.md), also
+`slice-wal-fehlerschwelle-ausgangsklasse`, also
 `slice-leerlauf-phase-last-in-stuecken` → `slice-harness-guard-blocked-python` →
 `slice-harness-mutationsbild-und-verweigerte-aktion` → `slice-wal-fehlerschwelle-ausgangsklasse`. Eine technische Kante gibt
 es nicht: der Slice berührt weder den Runner noch `internal/bootstrap/wiring.go` (die Dateien der Runner-Slices), und
