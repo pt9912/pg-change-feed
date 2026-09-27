@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.65
+Version: 1.66
 Software-Version: siehe `docs/user/version.md`
-Stand: 2026-09-25
+Stand: 2026-09-27
 
 ## 1. Einleitung
 
@@ -454,8 +454,11 @@ Start. Für den Lauf selbst gelten vier Betriebs-Vorbedingungen an der Quelle:
   veröffentlichten Tabelle; der Feed bestätigt es im Leerlauf seines Streams
   (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)), es hält den
   Rückstand des Capture-Slots also nicht, und der Run beendet den Feed-Container
-  nicht über die Fehlerschwelle — dasselbe gilt für jeden Schreiber auf eine
-  nicht aktivierte Tabelle. Was bleibt, ist die offene
+  nicht über die Fehlerschwelle — dasselbe gilt für einen Schreiber auf eine
+  nicht aktivierte Tabelle, dessen WAL der Feed zwischen den Schreibvorgängen
+  bestätigt. Ein einzelner Stoß, der die Fehlerschwelle in einem Zug
+  überschreitet, steht bis zur nächsten Bestätigung im Rückstand (Grenze unter
+  [WAL-Rückstand prüfen](#wal-rückstand-prüfen)). Was bleibt, ist die offene
   Schreibtransaktion des Runs: sie hält das WAL für den Slot auf der Platte der
   Quelle, und der Walsender der Quelle dekodiert sie in seinen Arbeitsspeicher
   und lagert sie ab einer Größe auf die Platte aus. Beides wächst mit der Größe
@@ -848,7 +851,12 @@ strukturiert:
 aber noch nicht bestätigt hat (aktuelles WAL-Ende der Instanz minus
 `confirmed_flush_lsn` des Slots). WAL ohne Inhalt für die Publication — ein
 Schreiber auf eine nicht aktivierte Tabelle, ein Backfill-Run — bestätigt der
-Feed im Leerlauf seines Streams selbst und lässt den Wert damit nicht wachsen. `bytes` wächst, solange der Feed nicht
+Feed im Leerlauf seines Streams selbst, sobald die Quelle es geliefert hat; der
+Wert steigt dabei um das WAL, das die Quelle seit der letzten Bestätigung
+geschrieben hat, und fällt mit der nächsten zurück. Der Integrationstest
+(`make test-integration`) belegt das mit einer Last in Stücken, die einzeln
+unter der Warnschwelle liegen und zusammen die Fehlerschwelle übersteigen, mit
+Bestätigung des Slots zwischen den Stücken. `bytes` wächst, solange der Feed nicht
 bestätigt: der Capture-Slot ist inaktiv und die Quelle schreibt weiter (z. B.
 während eines Verbindungsabbruchs), oder der Feed antwortet nicht — ein
 dauerhaft wachsender Wert ist ein Warnsignal für WAL-Erschöpfung auf der
@@ -872,6 +880,16 @@ Diese Schwellen betreffen ausschließlich Transport-/Verbindungsstörungen
 (`receive.ErrReplication`/`outbound.ErrReplication`); eine
 Stream-Ordnungs-Verletzung bricht unabhängig vom WAL-Rückstand weiterhin
 sofort ab (siehe [Fehlerklassen](#fehlerklassen)).
+
+**Grenze der Bestätigung im Leerlauf.** Die Bestätigung folgt der Quelle: WAL,
+das die Quelle in einem Zug schreibt und dem Feed noch nicht geliefert hat,
+steht bis zur nächsten Bestätigung im Rückstand. Schreibt Ihre Quelle in einer
+Bestätigungs-Runde mehr WAL, als `wal_retention_error_bytes` zulässt, kann der
+Container an diesem Stoß enden (Klasse `replication`), obwohl der Feed gesund
+ist. Heben Sie die Fehlerschwelle deutlich über das WAL, das Ihre Quelle in
+wenigen Sekunden schreibt
+([Optionale YAML-Konfigurationsdatei](#optionale-yaml-konfigurationsdatei-cdc_config_file));
+bei einer gesenkten Fehlerschwelle liegt diese Grenze entsprechend niedriger.
 
 ### Schema aktualisieren
 
@@ -1892,3 +1910,4 @@ MIT — siehe `LICENSE`.
 | 1.63 | 2026-09-25 | Aussagen zum Speicher des Feed-Containers an die Messung angeglichen (`LH-FA-RET-004`, `LH-FA-CAP-009`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung Fixrunde): der Speicher hängt an der Seitengröße und nicht mit nennenswertem Betrag an der Zahl der Changes (gemessen 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes, über 3.000.000 Changes nichts gemessen); der Anstieg zwischen den Stufen ist als Differenz zweier Endpunkte (keine gemessene Steigung) mit dem Ausgangszustand des Containers benannt, ein dritter Lauf mit Seiten-Cache-Anteil ergänzt; die Beschreibung der Vorversionen nennt ihren Ist-Zustand |
 | 1.64 | 2026-09-25 | Betriebs-Hinweis (Consumer-Bindung) unter „Aufbewahrung (Retention)“ um zwei Folgen ergänzt (`LH-FA-RET-004`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung Closure): Changes, die ein Durchlauf nach dem Lesen der Positionen löscht, sind für einen erstmals bestätigenden Consumer verloren, sein Schutz beginnt mit dem nächsten Durchlauf; ein Durchlauf kann eine Transaktion in mehreren Schritten löschen, ein Consumer ohne Bestätigung kann sie währenddessen unvollständig lesen |
 | 1.65 | 2026-09-25 | Bezug des Kotlin-SDK ohne Token beschrieben (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): die vier Kotlin-Hinweise unter §4 „Zugriff über die HTTP-/JSON-API“, „…den gRPC-Change-Stream“, „…Server-Sent-Events“ und „…den NATS-Vollinhalts-Stream“ nennen Cloudsmith als anonym lesbaren Bezugsweg (`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`, Konto und Token nicht nötig) neben GitHub Packages, das für das Lesen weiter einen Token verlangt; das Package `pgchangefeed-kotlin` ist dafür auf `0.2.2` gehoben |
+| 1.66 | 2026-09-27 | Zusage der Bestätigung im Leerlauf an die Grenze des Mechanismus angeglichen (`LH-QA-REL-001`, `ADR-0120`, slice-leerlauf-phase-last-in-stuecken): §4 „Bestand als Backfill überführen“ (Absatz „WAL-Rückstand des Capture-Slots“) und „WAL-Rückstand prüfen“ (Ergebnis) nennen als Zusage WAL ohne Inhalt für die Publication, das der Feed zwischen den Schreibvorgängen bestätigt, nicht mehr „jeden Schreiber“; ein neuer Absatz „Grenze der Bestätigung im Leerlauf“ beschreibt, dass ein Stoß über `wal_retention_error_bytes` bis zur nächsten Bestätigung im Rückstand steht, und nennt das Heben der Fehlerschwelle als Weg |
