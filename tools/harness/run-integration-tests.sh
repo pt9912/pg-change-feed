@@ -40,7 +40,9 @@
 # Boundary, Regelstand mit rename_column, Ausschluss und nicht anwendbarer
 # Regel, Replay-Invariante, DDL-Fenster, Negative) und die
 # Leerlauf-Bestätigung (ADR-0120: WAL über der Fehlerschwelle, der
-# Feed-Container läuft weiter) laufen vor dem Upgrade-Sicherheits-Rundlauf;
+# Feed-Container läuft weiter) mit ihrer Gegenseite (ADR-0049: bei gehaltener
+# Persistierung beendet die Fehlerschwelle den Feed-Container) laufen vor dem
+# Upgrade-Sicherheits-Rundlauf;
 # die Haltepunkte der Backfill-Phasen beschreibt der Kopf des Abschnitts
 # `Backfill-Rundläufe`. Die Transformations-Rundläufe (LH-FA-CFG-007: die
 # Form der Regeln auf allen fünf Zustellwegen, Neustart, Ausschluss mit
@@ -3460,6 +3462,99 @@ bf_await_healthy "$BF_PHASE"
 rm -rf "$WAL_TMP"
 
 echo "run-integration-tests: Leerlauf-Bestätigung (LH-FA-CAP-009, LH-QA-REL-001) belegt — bei den Schwellen Warn $WAL_WARN_BYTES B / Fehler $WAL_ERROR_BYTES B (Konfigurationsdatei) endete der Backfill-Run $wal_run_id über $WAL_ROWS Zeilen completed und erzeugte $wal_run_bytes B WAL, ein Schreiber auf die nicht aktivierte Tabelle $WAL_FOREIGN erzeugte $wal_foreign_bytes B WAL; der Feed-Container lief über beide Lasten weiter (je ${WAL_WAIT_SECONDS} s beobachtet, kein Neustart), der Bestand ist über cdc.changes lesbar, der höchste der im Log des Feed-Containers gemessenen Rückstände (Proben im 5-s-Takt, keine Spitze) liegt bei $wal_peak B"
+
+abdeckung_declare "Fehlerschwelle des WAL-Rückstands beendet den Container" "LH-QA-REL-001,LH-QA-REL-003" "bei gehaltener Persistierung (exklusive Sperre auf cdc.change) und WAL ohne Inhalt für die Publication über der Fehlerschwelle beendet der Feed-Container den Lauf mit Ausgang 1 und der Abbruch-Zeile im Log und meldet einen Fehlerzustand über cdc.process_heartbeat; die gehaltene Persistierung allein beendet ihn nicht, und die wartende Transaktion ist nach dem Neustart über cdc.changes lesbar" "Fehlerschwelle beendet den Container (LH-QA-REL-001, LH-QA-REL-003) belegt"
+
+# Die Gegenseite der Phase oben: der Rückstand erreicht die Fehlerschwelle nur,
+# wenn der Slot nichts bestätigt; solange der Stream im Leerlauf bestätigt,
+# entlastet ihn die Leerlauf-Bestätigung. Eine Sitzung des Runners sperrt
+# `cdc.change` exklusiv, die
+# Persistierung der nächsten Transaktion einer aktivierten Tabelle wartet auf
+# die Sperre (der Runner liest die wartende Anweisung in `pg_stat_activity`),
+# und ein Schreiber auf eine nicht aktivierte Tabelle bringt den Rückstand über
+# die Fehlerschwelle (`ADR-0049`). Der Container läuft wie oben mit der
+# Konfigurationsdatei der gesenkten Schwellen und wird am Phasen-Ende ohne
+# sie wiederhergestellt.
+BF_PHASE="Fehlerschwelle beendet den Container"
+WAL_STOP_TABLE=feed_e2e_wal_stop
+WAL_STOP_FOREIGN=feed_e2e_wal_stop_foreign
+WAL_STOP_HOLD=pgc-e2e-persist-hold
+WAL_STOP_WAIT_SECONDS=90
+
+WAL_TMP=$(mktemp -d)
+chmod 0755 "$WAL_TMP"
+printf 'wal_retention_warn_bytes: %s\nwal_retention_error_bytes: %s\n' "$WAL_WARN_BYTES" "$WAL_ERROR_BYTES" > "$WAL_TMP/config.yaml"
+cat > "$WAL_TMP/override.yaml" <<YAML
+services:
+  pg-change-feed:
+    environment:
+      CDC_CONFIG_FILE: /etc/cdc/e2e-wal-config.yaml
+    volumes:
+      - $WAL_TMP/config.yaml:/etc/cdc/e2e-wal-config.yaml:ro
+YAML
+chmod 0644 "$WAL_TMP/config.yaml" "$WAL_TMP/override.yaml"
+
+$COMPOSE -f "$WAL_TMP/override.yaml" up -d --force-recreate --no-deps pg-change-feed >/dev/null
+bf_await_healthy "$BF_PHASE"
+bf_expect "$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$FEED_CONTAINER" | grep -c '^CDC_CONFIG_FILE=/etc/cdc/e2e-wal-config.yaml$')" 1 "$BF_PHASE — Konfigurationsdatei im Feed-Container"
+wal_feed_started=$(docker inspect --format '{{.State.StartedAt}}' "$FEED_CONTAINER")
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$WAL_STOP_TABLE (id int PRIMARY KEY, name text);
+CREATE TABLE public.$WAL_STOP_FOREIGN (id bigint PRIMARY KEY, payload text);
+SQL
+bf_enable "$WAL_STOP_TABLE" "$BF_PHASE"
+
+# Die Persistierung hält an: die Sperre steht, bevor die Transaktion eintrifft.
+bf_hold_start "$WAL_STOP_HOLD" "BEGIN; LOCK TABLE cdc.change IN ACCESS EXCLUSIVE MODE; SELECT pg_sleep(180);"
+bf_await_sql "SELECT count(*) FROM pg_locks l JOIN pg_stat_activity a ON a.pid = l.pid WHERE a.application_name = '$WAL_STOP_HOLD' AND l.mode = 'AccessExclusiveLock' AND l.granted" 1 15 "$BF_PHASE — Sperre auf cdc.change"
+bf_sql "INSERT INTO public.$WAL_STOP_TABLE (id, name) VALUES (1, 'WalStopHeld')" >/dev/null
+bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND application_name <> '$WAL_STOP_HOLD' AND query LIKE '%INSERT INTO cdc.change%'" 1 30 "$BF_PHASE — wartende Persistierung des Feed-Containers"
+
+# Nullprobe: die gehaltene Persistierung allein erzeugt keinen Rückstand über
+# der Fehlerschwelle, der Container läuft über mindestens zwei Prüf-Takte.
+bf_wal_hold "$WAL_WAIT_SECONDS" "gehaltene Persistierung ohne Last"
+
+wal_stop_before=$(bf_sql "SELECT pg_current_wal_lsn()")
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$WAL_STOP_FOREIGN SELECT g, repeat('x', 130) FROM generate_series(1, 60000) g;
+SQL
+wal_stop_bytes=$(bf_sql "SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), '$wal_stop_before')::bigint")
+[ "$wal_stop_bytes" -gt "$WAL_ERROR_BYTES" ] || bf_fail "$BF_PHASE — der Schreiber erzeugte $wal_stop_bytes B WAL, nicht mehr als die Fehlerschwelle $WAL_ERROR_BYTES B: die Last trägt den Beleg nicht"
+
+wal_stop_loaded=$(date +%s)
+wal_stop_ended=0
+for ((i = 0; i < WAL_STOP_WAIT_SECONDS; i++)); do
+  if [ "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" = false ]; then
+    wal_stop_ended=1
+    break
+  fi
+  sleep 1
+done
+[ "$wal_stop_ended" -eq 1 ] || bf_fail "$BF_PHASE — der Feed-Container lief ${WAL_STOP_WAIT_SECONDS} s nach einer Last von $wal_stop_bytes B WAL über der Fehlerschwelle $WAL_ERROR_BYTES B weiter"
+wal_stop_seconds=$(( $(date +%s) - wal_stop_loaded ))
+bf_expect "$(docker inspect --format '{{.State.ExitCode}}' "$FEED_CONTAINER")" 1 "$BF_PHASE — Ausgang des Feed-Containers"
+
+wal_stop_log=$(docker logs "$FEED_CONTAINER" 2>&1)
+bf_expect "$(printf '%s\n' "$wal_stop_log" | grep -c 'WAL-Rückstand über Fehlerschwelle — kontrollierter Abbruch')" 1 "$BF_PHASE — Abbruch-Zeilen im Log des Feed-Containers"
+wal_stop_logged=$(printf '%s\n' "$wal_stop_log" | grep 'WAL-Rückstand über Fehlerschwelle — kontrollierter Abbruch' | grep -o '"bytes":[0-9]*' | cut -d: -f2)
+[ -n "$wal_stop_logged" ] && [ "$wal_stop_logged" -gt "$WAL_ERROR_BYTES" ] || bf_fail "$BF_PHASE — der gemessene Rückstand der Abbruch-Zeile (${wal_stop_logged:-leer} B) liegt nicht über der Fehlerschwelle $WAL_ERROR_BYTES B"
+bf_expect "$(printf '%s\n' "$wal_stop_log" | grep -c 'Lauf beendet mit Fehler')" 1 "$BF_PHASE — Ende-Zeilen im Log des Feed-Containers"
+
+# Der Fehlerzustand ist über die Heartbeat-Projektion sichtbar; seine Klasse
+# steht in der Ausgabe des Runners und ist nicht Teil der Zusage dieser Phase.
+wal_stop_class=$(bf_sql "SELECT coalesce(error_class, '') FROM cdc.process_heartbeat WHERE source_id = 'src-e2e'")
+[ -n "$wal_stop_class" ] || bf_fail "$BF_PHASE — cdc.process_heartbeat trägt nach dem Ende des Feed-Containers keine Fehlerklasse"
+
+# Die Persistierung wird frei, der Container läuft wieder mit der
+# Konfiguration von compose.yaml, und die wartende Transaktion ist gelesen.
+bf_hold_end "$WAL_STOP_HOLD"
+$COMPOSE up -d --force-recreate --no-deps pg-change-feed >/dev/null
+bf_await_healthy "$BF_PHASE"
+rm -rf "$WAL_TMP"
+bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$WAL_STOP_TABLE' AND new_data->>'id' = '1'" 1 60 "$BF_PHASE — Change der wartenden Transaktion nach dem Neustart"
+
+echo "run-integration-tests: Fehlerschwelle beendet den Container (LH-QA-REL-001, LH-QA-REL-003) belegt — bei gehaltener Persistierung (cdc.change exklusiv gesperrt, wartende Persistierung in pg_stat_activity) lief der Feed-Container über eine Nullprobe von ${WAL_WAIT_SECONDS} s weiter; ein Schreiber auf die nicht aktivierte Tabelle $WAL_STOP_FOREIGN erzeugte $wal_stop_bytes B WAL, der Container endete $wal_stop_seconds s danach (höchstens ${WAL_STOP_WAIT_SECONDS} s gewartet) mit Ausgang 1, die Abbruch-Zeile nannte einen Rückstand von $wal_stop_logged B (Fehlerschwelle $WAL_ERROR_BYTES B), cdc.process_heartbeat trug die Klasse $wal_stop_class; nach dem Neustart ohne Konfigurationsdatei war die wartende Transaktion über cdc.changes lesbar"
 
 # --- Transformations-Rundläufe (LH-FA-CFG-007) --------------------------------
 # Zwei Phasen am laufenden Feed-Container, ausschließlich über externe Wege:
