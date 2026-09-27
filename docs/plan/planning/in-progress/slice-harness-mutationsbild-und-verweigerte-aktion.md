@@ -325,13 +325,27 @@ dem Hedge (Mutations-Image, Ersatzweg, Verweigerung).
 84f60e6f 11 -n -E 'Docker-only' -- AGENTS.md .claude .harness/skills
 84f60e6f 0 -n -E 'kein make-Ziel|make-Ziel für ein Mutations' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 9 -n -i -E 'Mutations-?Image|Wegwerf-?Image|mutiertes Image|pg-change-feed-mutd' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 62 -n -E 'image-mutation|image-mutant|mutation-image|mutationsbild' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 65 -n -E 'image-mutation|image-mutant|mutation-image|mutationsbild' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 6 -n -E '3\.15' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 9 -n -i -E 'Mutationsprobe|arbeitet auf einer Kopie' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 56 -n -i -E 'verweiger|Ersatzweg|Berechtigungsschicht|Classifier|Klassifizierer' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!internal'
+diff 58 -n -i -E 'verweiger|Ersatzweg|Berechtigungsschicht|Classifier|Klassifizierer' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!internal'
 diff 12 -n -E 'Docker-only' -- AGENTS.md .claude .harness/skills
 diff 0 -n -E 'kein make-Ziel|make-Ziel für ein Mutations' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 ```
+
+**Nachmessung durch den Planner bei Closure** (Parent `04ae69a2`, nach der Fixrunde der
+Verifikations-Findings V-1/V-2 und vor dem `git mv` nach `done/`): die Closure-Edits an
+`harness/targets/image-mutation.md` (zwei neue Test-Tabellenzeilen) und
+`tools/harness/run-image-mutation-tests.sh` (vier neue `rm`-TAG-Fälle) heben Zeile 2 von
+62 auf 65 (drei zusätzliche Nennungen von „image-mutation“ in den beiden Dateien); der
+neue Registerbeleg `docs/plan/planning/observations/BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe/evidence/slice-harness-mutationsbild-und-verweigerte-aktion.md`
+trägt denselben Dateinamen wie diese Plan-Datei und wird deshalb von
+`make suchlauf-nachmessen` wie die Plan-Datei selbst aus dem Suchraum ausgeschlossen
+(sein Inhalt zählt in den obigen `diff`-Zeilen nicht mit); die Änderung an Zeile 5
+(56 → 58) stammt aus der `state.md`-Fortschreibung desselben Registereintrags
+(zwei Nennungen des vollen Slice-Namens, der „verweigert“ als Teilwort trägt). Beide
+Werte mit `make suchlauf-nachmessen` gegen den aktuellen Arbeitsbaum nachgemessen
+(gemessen, nicht übernommen).
 
 **Nachmessung durch den Implementer** (Parent `5f97700a`, nach dem `next → in-progress`-Move und vor
 jeder Inhaltsänderung dieses Laufs — identisch zu den `84f60e6f`-Werten außer den bereits vom Planner
