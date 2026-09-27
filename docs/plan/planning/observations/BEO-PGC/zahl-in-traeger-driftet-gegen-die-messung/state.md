@@ -37,7 +37,14 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **24×** (evidence/slice-harness-guard-blocked-python.md — vier
+Zähler (abgeleitet): **25×** (evidence/slice-wal-fehlerschwelle-ausgangsklasse.md — die
+`diff`-Trefferzahl des §3.13-Suchlaufs (bewegte Stelle
+`mergeStreamAndWALFaultOutcome|stopStream`) stand als „56", real 59, weil eine Fixrunde
+einen neuen Testfall auf die bewegte Stelle selbst ergänzt hatte, ohne das Suchlauf-Feld
+danach erneut zu fahren (Verifikation V-2, MEDIUM); dieselbe Ursachen-Klasse trat im
+selben Slice ein zweites Mal ein, diesmal korrekt behandelt (die Folge-Fixrunde maß vor
+der eigenen Meldung neu und korrigierte auf 61, von der zweiten Verifikation bestätigt);
+evidence/slice-harness-guard-blocked-python.md — vier
 `diff`-Zeilen des §3.13-Suchlaufs standen als „gemessen“, obwohl sie bereits beim Commit,
 der sie schreibt, von der reproduzierbaren Messung abwichen (23/53/3/14 statt 26/54/4/16),
 Review F-1 (HIGH, daher Datei trotz Deckel), Verifikation §5;
@@ -69,6 +76,16 @@ evidence/slice-backfill-change-origin.md,
 evidence/slice-backfill-snapshot-reader.md) —
 **Schwelle erreicht** (bereits verkörpert, kein neuer Schwellen-Übertritt; der
 Lese-Schritt der Closure von `welle-backfill-bestand` liest den Eintrag mit, 22×).
+Der fünfundzwanzigste Beleg (slice-wal-fehlerschwelle-ausgangsklasse) trifft wieder ein
+**Suchlauf-Feld**, diesmal mit einer eingebauten Gegenprobe: die erste Fixrunde bewegte
+die bewegte Stelle (ein neuer Testfall auf `mergeStreamAndWALFaultOutcome`), ohne das
+committete `diff`-Feld nachzuziehen — von der Verifikation gefunden (V-2, MEDIUM, `soll=56
+ist=59`). Dieselbe Ursache trat im selben Slice ein zweites Mal ein (eine weitere Fixrunde,
+ein weiterer neuer Testfall auf dieselbe Stelle), diesmal aber korrekt: die Fixrunde maß
+vor der eigenen Meldung neu und trug `61` ein, von der zweiten Verifikation unabhängig
+über das Werkzeug und über eine eigene `git grep`-Zählung bestätigt. Kein Schwellen-Übertritt
+(bereits verkörpert); der Fall zeigt am eigenen Slice, dass die Lehre aus dem ersten
+Auftreten beim zweiten bereits griff.
 Der vierundzwanzigste Beleg (slice-harness-guard-blocked-python) trifft die Klasse an ihrem
 eigenen Sensor: der §3.13-Suchlauf, der genau diese Art Drift verhindern soll, trug selbst
 vier falsche Zahlen — nicht erst durch spätere Arbeit gedriftet, sondern schon beim Commit

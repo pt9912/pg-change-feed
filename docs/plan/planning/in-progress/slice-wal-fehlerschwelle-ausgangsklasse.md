@@ -137,6 +137,29 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       grün, wie erwartet; die beiden `case`-Zeilen vertauscht — alle drei Subtests
       färbten sich rot. Beide Mutationen treffen genau den vom Reviewer benannten
       Fall.
+      **Fixrunde (Verifikation V-1, MEDIUM):** Der Verifier band mit einer eigenen
+      Mutation (früher Guard `if walErr == nil { return streamErr }` vollständig
+      entfernt, Mutation M5) eine reale Testlücke: ein regulärer Prozess-Abbruch
+      (SIGTERM) während `PersistTransaction`, dessen Kette `context.Canceled` trägt,
+      **ohne** dass die WAL-Schwelle je erreicht wurde (`walErr == nil`), lief am
+      kompletten `TestMergeStreamAndWALFaultOutcome*`-Lauf grün durch — kein Testfall
+      unterschied „`context.Canceled`-Kette bei gesetztem WAL-Fault" von „dieselbe
+      Kette bei leerem WAL-Fault". Der amtierende Code behandelt den Fall korrekt
+      (der Guard gibt `streamErr` unverändert zurück, bevor der `switch` läuft); nur
+      die Testbindung fehlte. Neuer Testfall
+      `TestMergeStreamAndWALFaultOutcomeLeavesStreamErrorUnchangedWithoutWALFault`
+      (`walretention_internal_test.go:396-414`) konstruiert dieselbe gewrappte Kette
+      (`ErrStorage` + eingebetteter `context.Canceled`) mit **leerem** `walErr` und
+      erwartet `streamErr` unverändert. *Belegt durch:* `make test` (Race-Detector)
+      grün, Exit 0. Mutation **erprobt** an einer `git archive`-Kopie: der Guard
+      entfernt (drei Zeilen) — genau ein Test färbte sich rot
+      (`…LeavesStreamErrorUnchangedWithoutWALFault`, „= `<nil>`, wollen den
+      Stream-Fehler unverändert"), alle übrigen blieben `PASS`; die zweite Verifikation
+      hat dieselbe Mutation unabhängig reproduziert und exakt dieselbe Farbe gesehen
+      (`verifikation-slice-wal-fehlerschwelle-ausgangsklasse-2` §2, „V-1 ist real
+      geschlossen") und den Guard zusätzlich mit drei weiteren eigenen Mutationen
+      (Bedingung invertiert, Rückgabewert geändert, Vergleichsvariable vertauscht;
+      ebd. §4b N1–N4) gebunden — alle vier färbten sich wie erwartet rot.
 - [x] **Die Runner-Phase trägt die Klasse als Zusage.** Die Phase „Fehlerschwelle beendet
       den Container“ in `make test-integration` prüft `cdc.process_heartbeat.error_class`
       auf `replication` (statt sie nur auszugeben); die Abdeckungs-Zeile in
@@ -220,26 +243,34 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       nicht erneut gefahren hatte
       ([`verifikation-slice-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/verifikation-slice-wal-fehlerschwelle-ausgangsklasse.md)
       V-2). Diese Fixrunde hat den Wert erneut am jetzigen Stand (inklusive des neuen
-      V-1-Testfalls) gemessen und auf `61` korrigiert (§3, Fixrunden-Nachmessung). `make
-      suchlauf-nachmessen
-      PLAN=docs/plan/planning/in-progress/slice-wal-fehlerschwelle-ausgangsklasse.md`
-      läuft mit den korrigierten `diff`-Zeilen durch (9 Zeilen stimmen, Exit 0) — eigen
-      nachgemessen, nicht der alten Zahl geglaubt.
+      V-1-Testfalls) gemessen und auf `61` korrigiert (§3, Fixrunden-Nachmessung), von der
+      zweiten Verifikation eigen bestätigt (Exit 0, „9 Zeilen stimmen", zusätzlich per
+      unabhängiger `git grep`-Zählung). **Planner-Closure-Nachmessung:** Der Zug dieser
+      Closure hat selbst zwei weitere Treffer auf `mergeStreamAndWALFaultOutcome` erzeugt
+      (`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/state.md`, das die bewegte Stelle
+      als Text der Beobachtung nennt) — die Lehre der eigenen Closure-Notiz (§7,
+      Steering-Loop-Eintrag) unmittelbar am eigenen Zug angewandt: `make
+      suchlauf-nachmessen` vor dem Commit erneut gefahren, Abweichung `soll=61 ist=63`
+      gesehen, den Wert auf `63` korrigiert (§3), danach erneut mit Exit 0 bestätigt.
 - [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors (Zeile
       `make test-integration`: die Grenze entfällt, die Phase nennt die Klasse als
       Zusage); das Benutzerhandbuch bleibt unberührt (§1, real gegengeprüft: `git diff`
       trägt keine Änderung an `docs/user/benutzerhandbuch.md`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
-      Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+      Sensor · benannte Spec-Lücke) — §7.
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
-      Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
-      eine Antwort und wird in §7 notiert (§8 nennt die Einträge, die dieser Slice trägt).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
-      offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
-      der Closure der nächsten Welle (die Roadmap führt
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben —
+      `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` erhält eine neue
+      `evidence/`-Datei (25., §7); `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke`
+      bleibt beim Ausgang „geplant → `slice-start-vorlauf-grenze`" (durch diesen Slice
+      nicht zusätzlich setzbar, von der zweiten Verifikation bestätigt, §8); kein
+      weiterer Anfall (§7 trägt beide).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+      offen) — §6 trägt sie, §7 fasst sie zusammen.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+      der Closure dieses Slice (§7) und zusätzlich der Closure der nächsten Welle
+      (die Roadmap führt
       [welle-transformationen](../welle-transformationen.md) unter *Offene
       Wellen*, das Ereignis kann eintreten: ihre Closure liegt nach
       `slice-transformationen-betriebsdoku`, der nach diesem Slice startet; ein Slice
@@ -299,7 +330,7 @@ Symbolnamen der bewegten Stelle:
 ```suchlauf
 7305b578 58 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 fe9d0afa 51 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':(exclude,glob)**/slice-wal-fehlerschwelle-ausgangsklasse.md'
-diff 61 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':(exclude,glob)**/slice-wal-fehlerschwelle-ausgangsklasse.md'
+diff 63 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':(exclude,glob)**/slice-wal-fehlerschwelle-ausgangsklasse.md'
 ```
 
 **Fixrunden-Nachmessung des `diff`-Werts (Verifikation V-2, dann eigener V-1-Testfall):**
@@ -311,12 +342,23 @@ erneut zu fahren
 ([`verifikation-slice-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/verifikation-slice-wal-fehlerschwelle-ausgangsklasse.md)
 V-2). Diese Fixrunde ergänzt zusätzlich
 `TestMergeStreamAndWALFaultOutcomeLeavesStreamErrorUnchangedWithoutWALFault` (V-1 desselben
-Reports) — zwei weitere Treffer (Aufruf, `t.Fatalf`-Meldung) heben den Wert auf `61`. Beide
-Bewegungen sind Nichtgefundenes im Sinne von
+Reports) — zwei weitere Treffer (Aufruf, `t.Fatalf`-Meldung) heben den Wert auf `61`, von der
+zweiten Verifikation bestätigt. Beide Bewegungen sind Nichtgefundenes im Sinne von
 [`AGENTS.md`](../../../../AGENTS.md) §3.13: kein neuer Träger außerhalb der Tabellentestdatei
 selbst ist entstanden, die Zahl wächst ausschließlich mit dem Testfall-Bestand derselben
-Datei, die die Regel bindet. `make suchlauf-nachmessen PLAN=…` läuft am jetzigen Stand mit
-`ist=61` durch (Exit 0, alle neun Zeilen stimmen).
+Datei, die die Regel bindet.
+
+**Planner-Closure-Nachmessung (dritte Bewegung, dieselbe Ursachen-Klasse, diesmal außerhalb
+von Code):** Diese Closure legt die Beleg-Datei
+`docs/plan/planning/observations/BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/evidence/slice-wal-fehlerschwelle-ausgangsklasse.md`
+an und schreibt die zugehörige `state.md` fort — beide nennen die bewegte Stelle
+(`mergeStreamAndWALFaultOutcome`) als Text der Beobachtung selbst, zwei zusätzliche
+Treffer in `state.md`. Vor dem Commit erneut mit `make suchlauf-nachmessen PLAN=…`
+gemessen: Abweichung `soll=61 ist=63`, auf `63` korrigiert (oben), danach erneut mit
+Exit 0 bestätigt (9 Zeilen stimmen). Das ist dieselbe Ursachen-Klasse wie die beiden
+vorigen Bewegungen — ein neuer Text, der die bewegte Stelle beim Namen nennt —, hier
+aber im Register statt im Code, und noch **innerhalb** der Closure gefunden statt von
+einer nachfolgenden Rolle.
 
 Beschreibung und Zählwort der Klassen-Aussage samt Hedge (die Klasse des Ausgangs, die
 Priorität, das reguläre Stream-Ende):
@@ -418,48 +460,148 @@ Lerneintrag geschrieben.
   (Verdikt §2: `Classify` wrappt mit `%w: %w`, die Meldung endet auf „context canceled“;
   nicht gelesen). *Erwartet, zu belegen durch:* der Tabellentest mit gewrappter Kette
   **und** die Runner-Phase mit der Klasse `replication`; der zulässige Ersatz ist
-  `streamCtx.Err() != nil` bei lebendem Prozess-Kontext. **Ausgang:** *(bei Closure)*
+  `streamCtx.Err() != nil` bei lebendem Prozess-Kontext. **Ausgang: nicht eingetreten** —
+  der reale, grüne `make test-integration`-Lauf des Reviewers zeigt die Klasse
+  `replication` am komponierten Prozess (nicht nur im Unit-Test); die Kette trägt
+  `context.Canceled` an der echten `postgresstorage`/`sqlexec`-Stelle — vom Verdikt-Status
+  „hergeleitet" auf „erprobt" gehoben (Review-Report §„Eigene Messungen"; zweite
+  Verifikation §7 Zeile 1).
 - **Die Regel verdeckt einen echten Persistenzfehler.** Ein Fehler der Klasse `storage`
   ohne Abbruch-Folge neben einem gesetzten WAL-Fehler würde nach der Regel weiter den
   Stream-Fehler zurückgeben; ein Fehler, dessen Kette `context.Canceled` trägt **und**
   der eine echte Ursache hat, wird zum WAL-Fehler — die Ursache steht im Log neben der
   Abbruch-Zeile (Verdikt §2). *Erwartet, zu belegen durch:* der Fall „`storage` ohne
   Abbruch-Folge bleibt `storage`“ im Tabellentest; ohne gesetzten WAL-Fehler ändert sich
-  nichts. **Ausgang:** *(bei Closure)*
+  nichts. **Ausgang: nicht eingetreten** — der Fall ist durch den Tabellentest und die
+  Reviewer-Mutation M7 (`default: return nil` statt `return streamErr`, korrekt rot)
+  gebunden; keine Verdeckung eines echten Persistenzfehlers beobachtet.
 - **Die Mutation färbt nichts rot** (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`,
   verkörpert): der Test der Regel und die Runner-Phase binden sich an die Eingabeseite
   (der Stream-Fehler der Klasse `storage` neben dem gesetzten WAL-Fehler, die Klasse aus
   `cdc.process_heartbeat`), nicht nur an die Ausgabe. *Erwartet, zu belegen durch:* je eine
   Mutation, deren Farbe der Implementer **gesehen** und im Bericht genannt hat (Stelle,
-  Instanz, Farbe). **Ausgang:** *(bei Closure)*
+  Instanz, Farbe). **Ausgang: überwiegend nicht eingetreten, mit einer real gefundenen und
+  geschlossenen Lücke** — Implementer und Reviewer zusammen 6 Mutationen (alle wie
+  erwartet rot); die erste Verifikation fand mit einer eigenen, im Auftrag nicht genannten
+  Mutation (M5, früher Guard `if walErr == nil { return streamErr }` entfernt) eine reale
+  Lücke (V-1, MEDIUM: der komplette Testlauf blieb grün), die Fixrunde band sie mit einem
+  neuen Testfall, die zweite Verifikation reproduzierte die Mutation unabhängig (genau ein
+  Test rot) und ergänzte vier weitere eigene Mutationen (N1–N4, alle rot) — insgesamt 14
+  unabhängige Mutationen über beide Verifikationsrunden, keine färbt mehr unerwartet grün.
 - **Der Beleg ist zeitabhängig und verlängert `make test-integration` nicht**: die
   Phase besteht bereits; ihre Laufzeit ist unverändert bis auf die Klassen-Prüfung
   (`BEO-PGC/test-integration-retention-timing-flake`, verkörpert). *Erwartet, zu belegen
   durch:* die gedruckte Laufzeit des Laufs ([`AGENTS.md`](../../../../AGENTS.md) §3.12
-  Instanz A). **Ausgang:** *(bei Closure)*
+  Instanz A). **Ausgang: plausibel, unbelegt** — weder Implementer noch Reviewer noch
+  Verifier nennen eine Vorher-/Nachher-Laufzeit der Phase explizit (beide Verifikationen
+  bestätigen das ausdrücklich, zweite Runde §1 „nicht erneut gefahren"); die Änderung ist
+  eine reine Assertion auf einen bereits gelesenen Wert (`$wal_stop_class`), kein neuer
+  Wartezyklus — plausibel ohne Laufzeitwirkung, aber keine gedruckte Zeile belegt es
+  (`AGENTS.md` §3.12 Instanz A: als Erwartung, nicht als Messung geführt).
 - **Die neue Assertion fällt still aus dem Runner** (`BEO-PGC/test-runner-stiller-ausschluss`,
   offen, 2×). *Erwartet, zu belegen durch:* die Zeile in `docs/user/e2e-abdeckung.md`
   nennt die Klasse, und die Phase färbt sich rot, wenn die Regel zurückgenommen ist.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang: nicht eingetreten** — `docs/user/e2e-abdeckung.md` Zeile 68 nennt die Klasse;
+  die Eingabeseiten-Mutation des Implementers (`make image-mutation` mit der alten,
+  unbehobenen Priorität, Commit `fe9d0afa`) färbt die Phase real rot, exakt an der neuen
+  Assertion.
 - **Ein Kommentar sagt die Regel breiter oder schmaler, als der Code sie trägt**
   (`BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`, verkörpert, 6×). *Erwartet,
   zu belegen durch:* der Reviewer fährt die zugesagten Pfade der drei Kommentare im Code
-  nach ([`AGENTS.md`](../../../../AGENTS.md) §3.7). **Ausgang:** *(bei Closure)*
+  nach ([`AGENTS.md`](../../../../AGENTS.md) §3.7). **Ausgang: nicht eingetreten** — Review
+  und beide Verifikationen lesen alle vier Stellen (`wiring.go`, zwei Testkommentare,
+  `harness/README.md` §Sensors) eigen gegen den Code — konform, kein Informationsverlust,
+  keine Übertreibung (Review „Negativbefunde"; zweite Verifikation §7 Zeile 6).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
-- **Drei Paarungen:** dieser Slice hat keine Welle; die Prüfung läuft
-  regelkonform bei der Closure der nächsten Welle
-  ([welle-transformationen](../welle-transformationen.md), offen).
+- **Was hat funktioniert:** Die Vertragstabelle des Verdikts (§2) war klein und
+  eindeutig genug, um sie als vier `switch`-Fälle mit einem frühen Guard direkt
+  umzusetzen — keine Architect-Rückfrage nötig. Der reale, grüne
+  `make test-integration`-Lauf hob die Kernaussage vom Verdikt-Status
+  „hergeleitet" auf „erprobt": `errors.Is(err, context.Canceled)` trägt real an der
+  `postgresstorage`/`sqlexec`-Kette, die Klasse ist am komponierten Prozess real
+  `replication`, nicht `storage`. Zwei unabhängige Review-/Verifikationsrunden mit
+  insgesamt 14 eigenen Mutationen (Review 6, erste Verifikation 9, zweite
+  Verifikation 5 weitere/reproduzierte) fanden zusammen zwei reale, aber enge
+  Testlücken (F-1: strukturell unerreichbare Sentinel/`context.Canceled`-Interaktion;
+  V-1: der ungebundene frühe Guard bei real erreichbarem Fall) und schlossen beide
+  — kein HIGH über den ganzen Vorgang.
+- **Was ging anders als geplant:** Die Implementierung bündelte Produktionscode,
+  Tests, Runner-Skript und zwei Doku-Erzeugnisse/-Träger in einem Commit
+  (`e7210994`) statt der im Plan §3 nahegelegten Datei-Granularität — ein
+  vorzeitiger `git add -A` (Review F-2, LOW, kein Traceability-Schaden). Der erste
+  `make gates`-Lauf färbte `docs-check` rot: der `next → in-progress`-Move dieses
+  Slice hatte sechs Markdown-Links mit fest verdrahtetem `open/`-Pfad
+  zurückgelassen (`BEO-PGC/slice-pfad-als-link-in-berichten`) — als Plan-Nachzug
+  behoben, bevor der zweite Lauf grün war. Das committete §3.13-Suchlauf-Feld
+  driftete **zweimal** durch dieselbe Ursache — eine Fixrunde, die einen neuen
+  Testfall auf die bewegte Stelle selbst schrieb, ohne den `diff`-Suchlauf im
+  selben Zug erneut zu fahren: einmal unbehandelt (von der ersten Verifikation als
+  V-2, MEDIUM, gefunden: `soll=56 ist=59`), einmal — bei der Folge-Fixrunde für
+  V-1 — korrekt behandelt (der Implementer maß vor der eigenen Meldung neu und
+  trug `61` ein, von der zweiten Verifikation unabhängig bestätigt). Die zweite
+  Verifikation fand zusätzlich einen rein redaktionellen Fund (V-4, LOW): die
+  DoD-Zeile 1 dokumentierte die V-1-Fixrunde nicht an ihrer eigenen Stelle,
+  sondern nur beiläufig im Suchlauf-Absatz — bei dieser Closure nachgezogen (§2,
+  DoD-Zeile 1).
+- **Steering-Loop-Eintrag (Lerneintrag):** **Geschärfte Regel:** Eine Fixrunde,
+  die einen neuen Testfall auf eine §3.13-bewegte Stelle schreibt, fährt
+  `make suchlauf-nachmessen` und trägt eine ggf. geänderte `diff`-Zahl **im
+  selben Commit** nach — nicht erst, wenn eine spätere Rolle sie beim Nachmessen
+  findet. Dieser Slice zeigt beide Seiten am eigenen Leib: die erste Fixrunde
+  (`a7d27ddc`, Testfall gegen F-1) tat es nicht und produzierte einen realen
+  MEDIUM-Fund (V-2); die zweite Fixrunde (`2e0623bf`, Testfall gegen V-1) tat es
+  — die Lehre aus dem ersten Auftreten griff beim zweiten bereits innerhalb
+  desselben Slice. **Neuer Sensor:** keiner — `make suchlauf-nachmessen`
+  existiert bereits und deckt die Zahlen; was fehlte, war die Disziplin, es nach
+  jeder eigenen Änderung an der bewegten Stelle erneut zu fahren, nicht ein
+  fehlendes Werkzeug (`AGENTS.md` §3.13 benennt diese Grenze bereits: das
+  Werkzeug prüft Zahlen und Stände, nicht ob der Implementer es vor dem Commit
+  ein letztes Mal laufen ließ — dieselbe Klasse wie der vierundzwanzigste Beleg
+  in `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`). **Benannte
+  Spec-Lücke:** keine — `ADR-0049` ist vollständig eingelöst, kein Konflikt mit
+  `SPEC-008`/`SPEC-013` gefunden (Review/beide Verifikationen: kein Diff an
+  Schwellen, `classifyRunError`, Sentinel-Trennung oder Klassen-Tabelle).
+- **Beobachtungs-Register (`../observations/`):**
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` erhält den 25. Beleg
+  (`evidence/slice-wal-fehlerschwelle-ausgangsklasse.md`) — die zweifache
+  Fixrunden-Erfahrung mit dem §3.13-`diff`-Wert (einmal unbehandelt, V-2 MEDIUM;
+  einmal korrekt behandelt), Zähler 24× → 25×, Ausgang unverändert *verkörpert*.
+  `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke` bleibt unverändert beim
+  Ausgang „geplant → `slice-start-vorlauf-grenze`" — der Trigger der
+  Neubewertung ist nicht eingetreten (von der zweiten Verifikation bestätigt,
+  §8); nichts für diese Closure zu setzen. Kein weiterer Anfall.
+- **Folge-Slices:** keiner neu angelegt. Die Kette bleibt:
+  `slice-start-vorlauf-grenze` (nächster Slice, `open/`, trägt die Kopplung als
+  Start-Trigger, §4 dort) → `slice-transformationen-e2e-abhilfe` →
+  `slice-transformationen-betriebsdoku`.
+- **Risiken aus §6:** sechs Ausgänge gesetzt — vier „nicht eingetreten"
+  (Risiko 1: die Kette trägt real an der echten Stelle, vom Verdikt-Status
+  „hergeleitet" auf „erprobt" gehoben; Risiko 2: `storage`-ohne-Abbruch-Fall
+  gebunden; Risiko 5: Assertion nicht still ausgeschlossen; Risiko 6: Kommentare
+  konform), ein „überwiegend nicht eingetreten, mit einer real gefundenen und
+  geschlossenen Lücke" (Risiko 3: V-1 fand die eine Lücke, die Fixrunde und 14
+  Mutationen über beide Verifikationsrunden schlossen sie), ein „plausibel,
+  unbelegt" (Risiko 4: keine gedruckte Vorher-/Nachher-Laufzeit der Phase,
+  aber keine strukturelle Wirkung der Änderung — eine Assertion auf einen
+  bereits gelesenen Wert, kein neuer Wartezyklus). Kein Risiko blieb „weiter
+  offen".
+- **Drei Paarungen:** dieser Slice hat keine Welle; die Roadmap führt
+  [welle-transformationen](../welle-transformationen.md) unter *Offene
+  Wellen*, das Ereignis kann eintreten: die Closure dieser Welle prüft die
+  Paarungen mit. Die Slice-Closure trägt sie zusätzlich jetzt: *Anker:* die
+  Regel existiert als committeter Text (`mergeStreamAndWALFaultOutcome` in
+  `internal/bootstrap/wiring.go`, die Runner-Phase und ihre Assertion in
+  `tools/harness/run-integration-tests.sh`), `harness/README.md` §Sensors
+  nennt den Beleg mit der Zeile „Ausgangs-Klasse seit
+  slice-wal-fehlerschwelle-ausgangsklasse" (`git grep -o
+  'slice-wal-fehlerschwelle-ausgangsklasse' -- harness/README.md` trifft 1).
+  *Folge-Slice:* `slice-start-vorlauf-grenze` existiert als Datei in `open/`
+  und trägt die Kopplung als Start-Trigger (§4 dort, Zeile 289/294). *Register:*
+  jede in dieser Notiz genannte Kennung `BEO-PGC/<slug>` existiert als
+  Verzeichnis mit nicht leerem `evidence/` (`zahl-in-traeger-driftet-gegen-die-messung`
+  25 Dateien, `adapter-unittest-verdeckt-bootstrap-luecke` 5 Dateien).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
