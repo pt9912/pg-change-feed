@@ -392,3 +392,23 @@ func TestMergeStreamAndWALFaultOutcomeSentinelOutranksContextCanceled(t *testing
 		})
 	}
 }
+
+// TestMergeStreamAndWALFaultOutcomeLeavesStreamErrorUnchangedWithoutWALFault
+// belegt den frühen Guard vor dem `switch`: ohne gesetzten WAL-Schwellen-
+// Fehler bleibt der Stream-Ausgang unverändert, auch wenn seine Fehlerkette
+// `context.Canceled` trägt — ein regulärer Prozess-Abbruch (z. B. SIGTERM)
+// während `PersistTransaction` liefert `streamErr` mit einer solchen Kette,
+// ohne dass die WAL-Rückstands-Schwelle je erreicht wurde, und die neue
+// `context.Canceled`-Priorität des `switch` (`ADR-0049`) darf diesen Fall
+// nicht in einen WAL-Fehler verwandeln, den es nie gab. Rot färbende
+// Mutation: den frühen Guard `if walErr == nil { return streamErr }`
+// entfernen — dann liefert dieser Test `nil` statt des Stream-Fehlers
+// unverändert.
+func TestMergeStreamAndWALFaultOutcomeLeavesStreamErrorUnchangedWithoutWALFault(t *testing.T) {
+	streamErr := fmt.Errorf("%w: %w", outbound.ErrStorage, fmt.Errorf("Verbindung beendet: %w", context.Canceled))
+
+	got := mergeStreamAndWALFaultOutcome(streamErr, &walRetentionFault{})
+	if got != streamErr {
+		t.Fatalf("mergeStreamAndWALFaultOutcome(%v, leerer WAL-Fault) = %v, wollen den Stream-Fehler unverändert", streamErr, got)
+	}
+}
