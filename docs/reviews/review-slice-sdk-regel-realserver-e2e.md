@@ -4,8 +4,8 @@
 + Konventionen (`AGENTS.md`, `harness/conventions.md`).
 
 **Gegenstand:** `git diff 300637cf..47efceee` — Feature-Commit `ad3af754`
-(„Row-Image-Umbenennung real an allen drei SDK-Tiers belegt“, LH-FA-CFG-007,
-ADR-0112) + DoD-Nachtrag-Commit `47efceee` (§3-Suchlauf-Feld).
+(„Row-Image-Umbenennung real an allen drei SDK-Tiers belegt“, [LH-FA-CFG-007](../../spec/lastenheft.md),
+[ADR-0112](../plan/adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)) + DoD-Nachtrag-Commit `47efceee` (§3-Suchlauf-Feld).
 
 **Skill:** `.harness/skills/reviewer.md` @ Accepted (Stand 2026-09-09,
 zuletzt inhaltlich erweitert für `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`)
