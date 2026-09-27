@@ -157,6 +157,7 @@ flowchart LR
     LPS[wellenlos: slice-leerlauf-phase-last-in-stuecken]
     WFA[wellenlos: slice-wal-fehlerschwelle-ausgangsklasse]
     SVG[wellenlos: slice-start-vorlauf-grenze]
+    GBP[wellenlos: slice-harness-guard-blocked-python]
     TEA[slice-transformationen-e2e-abhilfe]
 
     A58 --> W17
