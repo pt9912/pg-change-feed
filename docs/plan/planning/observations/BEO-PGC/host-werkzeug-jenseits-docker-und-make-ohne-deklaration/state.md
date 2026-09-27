@@ -11,9 +11,10 @@ Absatz beantwortet sie (die Host-Werkzeuge des Tabellentests — `bash`, `awk`, 
 `mkdir`, `ln` — und `ls` im Guard stehen in der Klasse; der Kopf des Tabellentests und die Zeile zu
 `make test-command-guard` in `harness/README.md` nennen sie): der Trigger ist nicht eingetreten,
 kein neuer Beleg.
-Durchsetzung für ein Werkzeug jenseits der Klasse am Kopf eines Bash-Aufrufs: für `python`/`python3` geplant,
-Träger `slice-harness-guard-blocked-python` (Nutzer-Entscheidung „Weg 3“; Register
-`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, `state.md`); die übrigen Toolchain-Namen bleiben
-ungesperrt. Der Eintrag betrifft die Deklaration der Klasse, nicht ihre Durchsetzung: der Zeiger ist kein Auftreten.
+Durchsetzung für ein Werkzeug jenseits der Klasse am Kopf eines Bash-Aufrufs: für `python`/`python3`
+verkörpert, Träger `slice-harness-guard-blocked-python` (Fragment `tools/harness/blocked/python`, `MR-004`;
+Nutzer-Entscheidung „Weg 3“; Register `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, `state.md`);
+die übrigen Toolchain-Namen bleiben ungesperrt. Der Eintrag betrifft die Deklaration der Klasse, nicht ihre
+Durchsetzung: der Zeiger ist kein Auftreten.
 Zähler (abgeleitet): 2× (evidence/slice-harness-suchlauf-nachmessen.md,
 evidence/slice-code-kommentare-kennungen.md).

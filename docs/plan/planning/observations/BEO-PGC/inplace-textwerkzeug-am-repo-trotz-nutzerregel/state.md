@@ -18,28 +18,32 @@ verworfen (er blockte `make gates > /tmp/log` und ließe `tee` und Variablen off
 Kopf-Liste `tools/harness/blocked/go`: **entschieden** — der Nutzer hat „Weg 3“ gewählt (Sitzung
 2026-09-27; Frage und Wege: `done/slice-transformationen-map-value.md` §7, Punkt „Frage an den Nutzer“):
 nicht die volle Liste (`go gofmt python python3 node dotnet java gradle uv`), sondern nur `python python3`;
-die übrigen Namen bleiben ungesperrt, weil für sie kein Beleg vorliegt. Ausgang dieses Teils: **geplant** →
+die übrigen Namen bleiben ungesperrt, weil für sie kein Beleg vorliegt. Ausgang dieses Teils: **verkörpert** →
 `slice-harness-guard-blocked-python` (Fragment `tools/harness/blocked/python` — der Name folgt der Konvention
-`blocked/<sprache>` des Guards —, `MR-004`, Tabellentest; Anker:
-`git ls-files 'docs/plan/planning/*/slice-harness-guard-blocked-python.md'`); bis dahin existiert das
-Verzeichnis `tools/harness/blocked/` nicht, und der Guard liest `python`/`python3` nur auf einem Repo-Pfad.
+`blocked/<sprache>` des Guards —, `MR-004`, Tabellentest `make test-command-guard` mit 367 Fällen). Der Guard
+blockt `python`/`python3` am Kopf jetzt unbedingt; `python3.<N>`/`perl` bleiben unter der Repo-Pfad-Regel.
 Ausgelöst hat die Neubewertung das zweite Trigger-Kriterium von `MR-003` (Auflösungs-Trigger: die Closure
 des nächsten Slice, dessen Läufe unter diesem Guard liefen; eingetreten mit der Closure von
 `slice-transformationen-map-value`); das erste (eine Beleg-Datei mit einem Host-Interpreter-Aufruf ohne
 Repo-Pfad **mit Wirkung** auf eine Repo-Datei) ist nicht eingetreten. Die Neubewertung der nicht gelisteten
 Namen trägt der Auflösungs-Trigger von `MR-004`. Die Scratchpad-Ausnahme für
 `sed -i` ist entschieden: keine, der Guard blockt unbedingt.
-Zähler (abgeleitet): 7× (evidence/slice-backfill-speicher-untersuchung.md,
+Zähler (abgeleitet): 8× (evidence/slice-backfill-speicher-untersuchung.md,
 evidence/slice-transformationen-antragsweg-usecase.md,
 evidence/slice-transformationen-backfill-pfad.md,
 evidence/slice-antragsqueue-lesefehler-failed.md,
 evidence/slice-transformationen-map-value.md,
 evidence/adr-0129-capture-quellseite-keepalive-test-an-beiden-pins.md,
-evidence/slice-leerlauf-phase-last-in-stuecken.md). Der siebte Beleg
+evidence/slice-leerlauf-phase-last-in-stuecken.md,
+evidence/slice-harness-guard-blocked-python.md). Der siebte Beleg
 (`slice-leerlauf-phase-last-in-stuecken`) trägt einen Host-Aufruf `python3 -c 1` des Implementers
 ohne im Bericht genannten Guard-Ausgang und ohne Wirkung auf eine Repo-Datei im Diff —
 **unvollständig belegt**: weder ein Beleg noch ein Gegenbeleg für das erste
-Neubewertungs-Kriterium der Kopf-Liste. Der fünfte Beleg ist eine **Regelgrenze**, kein neuer
+Neubewertungs-Kriterium der Kopf-Liste. Der achte Beleg
+(`slice-harness-guard-blocked-python`, derselbe Vorgang wie die Kopf-Liste selbst) trägt eine
+Umleitung (`>`), die eine neue Repo-Datei anlegte, statt Edit/Write zu nutzen — vom Implementer
+selbst im selben Werkzeugaufruf-Batch bemerkt und zurückgenommen, bevor sie einen Commit erreichte.
+Der fünfte Beleg ist eine **Regelgrenze**, kein neuer
 Fehlgriff: ein Anhängen per `cat >>` (der Guard liest Umleitungen nicht; die Regelfrage ist mit dem
 Architect-Verdikt entschieden: `AGENTS.md` §3.1 verbietet den Weg),
 ein vom Guard geblockter `sed -i` des Verifiers und ein `cd <Repo> && python3 --version` des Planners, das
