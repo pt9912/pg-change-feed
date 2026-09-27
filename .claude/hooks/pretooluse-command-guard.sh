@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # pretooluse-command-guard — blockt Host-Paketmanager (apt/pip/npm/cargo/...),
-# in-place Textwerkzeuge (sed -i, perl -i, awk -i inplace) und Host-python/-perl
+# in-place Textwerkzeuge (sed -i, perl -i, awk -i inplace), Host-python/python3
+# am Kopf unbedingt (Fragment tools/harness/blocked/python) und Host-python3.N/-perl
 # auf Repo-Pfaden; dieses Repo baut make/Docker-only (AGENTS.md Hard Rule 3.1,
 # Absatz Durchsetzung). Reines bash + awk, KEIN node/jq/OCI.
 #
@@ -36,7 +37,10 @@
 # `sed '-i'` blocken; ein Anfuehrungszeichen-Argument mit Leerraum ist ein
 # Token und kein Flag). Ein Kopf hinter -exec/-execdir/-ok/-okdir wird als
 # eigenes Kommando gelesen (find … -exec sed -i, -exec sh -c '…').
-# Host-Interpreter: ein Segment mit Kopf python/python3/python3.N/perl blockt,
+# Host-python/python3: ein Segment mit Kopf python oder python3 blockt IMMER
+# (Fragment tools/harness/blocked/python, ueber BLOCKED gebunden), unabhaengig
+# vom Befehlsstring, auch ohne Repo-Pfad und hinter cd (MR-004).
+# Host-Interpreter (Rest): ein Segment mit Kopf python3.N oder perl blockt,
 # wenn der GANZE Befehlsstring ein Repo-Pfad-Muster traegt (Absolutpfad der
 # Repo-Wurzel oder ein Name der obersten Repo-Ebene ohne davorstehendes
 # Pfadzeichen, `./` erlaubt).
@@ -45,16 +49,20 @@
 # fail-closed).
 # Grenze: der Guard ist ein Stolperdraht, KEINE Sandbox; Vollstaendigkeit ist
 # nicht das Ziel. Nicht gelesen werden Umleitungen und flaglose Schreibwege
-# (> datei, tee, dd of=, sed … > tmp && mv), ein cd im selben Kommando, Variablen
-# (auch `$x -i` und `eval "$cmd"`), Globs, Aliase und ~ als Pfad, ein Skript, das
-# ein Interpreter liest (`python3 x.py` mit Text ohne Repo-Namen), `bash skript.sh`,
-# jedes andere in-place-faehige Werkzeug (ed, patch, ruby -i, …) und jeder andere
-# Interpreter (node, ruby), ein perl-Buendel mit Buchstaben ausserhalb der Klasse
-# (`-Wpi`), Optionen mit Wert hinter einem anderen Wrapper als xargs (`sudo -u x`),
-# die Rezepte hinter make und die Docker-Baeuten. Die Zeilen eines Heredocs gelten
-# als Kommando-Zeilen (`cat <<EOF` mit `sed -i` am Zeilenanfang blockt).
+# (> datei, tee, dd of=, sed … > tmp && mv), ein cd im selben Kommando vor
+# python3.N/perl, Variablen (auch `$x -i` und `eval "$cmd"`), Globs, Aliase und
+# ~ als Pfad, ein Skript, das ein nicht gelisteter Interpreter liest (`ruby
+# x.py`, `node x.py`), `bash skript.sh`, jedes andere in-place-faehige Werkzeug
+# (ed, patch, ruby -i, …) und jeder nicht gelistete Toolchain-Name (go, gofmt,
+# node, dotnet, java, gradle, uv, python3.N, python2 bleiben unter der
+# Repo-Pfad-Regel oder ganz ungelesen), ein perl-Buendel mit Buchstaben
+# ausserhalb der Klasse (`-Wpi`), Optionen mit Wert hinter einem anderen
+# Wrapper als xargs (`sudo -u x`), die Rezepte hinter make und die
+# Docker-Baeuten. Die Zeilen eines Heredocs gelten als Kommando-Zeilen
+# (`cat <<EOF` mit `sed -i` oder `python3` am Zeilenanfang blockt).
 # Grenz-Zeile und Tabellentest:
 # harness/conventions/MR-003-guard-inplace-textwerkzeug.md,
+# harness/conventions/MR-004-guard-host-python-am-kopf.md,
 # `make test-command-guard`.
 #
 # Im Pass-Fall: KEINE Ausgabe — "approve" ueberspringt das Permission-System;
@@ -67,7 +75,7 @@ masker="$here/../../tools/harness/mask-quotes.awk"
 
 # Die Begruendungstexte tragen weder `"` noch `\`, damit die Ausgabe gueltiges
 # JSON bleibt.
-REASON_PKG="This repository is make/Docker-only (AGENTS.md Hard Rule 3.1). Use make targets; do not install or run host package managers or host toolchains (apt/brew/pip/npm/cargo/go/...). On parse doubt the guard fails closed."
+REASON_PKG="This repository is make/Docker-only (AGENTS.md Hard Rule 3.1). Use make targets; do not install or run host package managers or host toolchains (apt/brew/pip/npm/cargo/go/...). Change a repo file with the Edit/Write tools or a repo tool behind make; to try a change on a copy, write to stdout: sed s/a/b/ file > /path/to/scratch-copy. On parse doubt the guard fails closed."
 REASON_INPLACE="In-place text tools (sed -i, perl -i, awk -i inplace) rewrite repo files without a trace and are blocked, also on a scratch copy (AGENTS.md Hard Rule 3.1). Change a file with the Edit/Write tools; to try a change on a copy, write to stdout: sed s/a/b/ file > /path/to/scratch-copy."
 REASON_INTERP="Host python/perl on repo paths is blocked (AGENTS.md Hard Rule 3.1). Change a repo file with the Edit/Write tools or a repo tool behind make; to try a change on a copy, edit the copy with Edit/Write or write to stdout: sed s/a/b/ file > /path/to/scratch-copy."
 REASON=""
