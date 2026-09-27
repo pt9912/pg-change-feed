@@ -1216,6 +1216,85 @@ func TestE2ESchemaChangeIncompatibleTypeChange(t *testing.T) {
 	}
 }
 
+// TestE2ETransformationRuleNotApplicableEndsCaptureWithSchemaClass trägt
+// `LH-FA-CFG-007` Negative an der eigens dafür angelegten Tabelle
+// `feed_e2e_transform_abhilfe`: eine aktive `rename_column`-Regel bildet
+// `name` auf `label` ab; eine kompatible Spalten-Erweiterung, deren Name
+// den Zielnamen der Regel trifft, macht sie beim nächsten Change der
+// Tabelle nicht anwendbar (`mapper.ErrTransformationNotApplicable`) — der
+// Erfassungspfad endet sichtbar mit derselben Fehlerklasse `schema` wie
+// `TestE2ESchemaChangeIncompatibleTypeChange`, mit einem anderen Auslöser.
+// Die Gegenprobe (eine Erweiterung mit einem anderen Namen) bindet den
+// Beleg an die Kollision: eine Spalten-Erweiterung allein löst ihn nicht
+// aus. Die Regel selbst setzt der Runner vor diesem Aufruf per
+// `cdc.set_transformation`
+// (`tools/harness/run-integration-tests.sh`); die Abhilfe
+// (`cdc.remove_transformation`, Neustart, Wiederherstellung über
+// `cdc.changes`) läuft ausschließlich dort, weil dieser Prozess keinen
+// Docker-Zugriff hat.
+func TestE2ETransformationRuleNotApplicableEndsCaptureWithSchemaClass(t *testing.T) {
+	env := newE2EEnv(t, "feed_e2e_transform_abhilfe")
+	ctx := context.Background()
+
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name) VALUES (1, 'Vorher')"); err != nil {
+		t.Fatalf("INSERT vor der Kollision: %v", err)
+	}
+	beforeRows := awaitChangesViewRows(t, env, "1", 1)
+	beforeImage := imageJSON(t, beforeRows[0].newData)
+	if beforeImage["label"] != "Vorher" {
+		t.Fatalf("Row Image vor der Kollision: %s (Erwartung: label=Vorher)", beforeRows[0].newData)
+	}
+	if _, present := beforeImage["name"]; present {
+		t.Fatalf("Row Image vor der Kollision trägt den Quellschlüssel: %s", beforeRows[0].newData)
+	}
+
+	// Gegenprobe: eine Spalten-Erweiterung ohne Namenskollision ändert an der
+	// Anwendbarkeit der Regel nichts (BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe).
+	if _, err := env.pool.Exec(ctx, "ALTER TABLE "+env.feed+" ADD COLUMN other text"); err != nil {
+		t.Fatalf("ALTER TABLE ADD COLUMN (other, Gegenprobe): %v", err)
+	}
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name, other) VALUES (2, 'NochOk', 'x')"); err != nil {
+		t.Fatalf("INSERT nach der Gegenprobe: %v", err)
+	}
+	gegenprobeRows := awaitChangesViewRows(t, env, "2", 1)
+	gegenprobeImage := imageJSON(t, gegenprobeRows[0].newData)
+	if gegenprobeImage["label"] != "NochOk" || gegenprobeImage["other"] != "x" {
+		t.Fatalf("Row Image der Gegenprobe: %s (Erwartung: label=NochOk, other=x)", gegenprobeRows[0].newData)
+	}
+
+	// Die reale Kollision: die neue Spalte trägt den Zielnamen der Regel.
+	if _, err := env.pool.Exec(ctx, "ALTER TABLE "+env.feed+" ADD COLUMN label text"); err != nil {
+		t.Fatalf("ALTER TABLE ADD COLUMN (label): %v", err)
+	}
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name) VALUES (3, 'Betroffen')"); err != nil {
+		t.Fatalf("INSERT nach der Kollision: %v", err)
+	}
+
+	if got := awaitHeartbeatErrorClass(t, env, "schema"); got != "schema" {
+		t.Fatalf("cdc.heartbeat.error_class nach der Kollision: %q, wollen \"schema\"", got)
+	}
+	rows, err := queryChangesView(ctx, env, "3")
+	if err != nil {
+		t.Fatalf("cdc.changes-Lesung für id=3: %v", err)
+	}
+	if len(rows) != 0 {
+		t.Fatalf("cdc.changes trägt id=3 nach dem gemeldeten schema-Fehler: %+v (Erwartung: der Erfassungspfad endete vor dem Commit dieser Transaktion)", rows)
+	}
+
+	// Boundary: die beiden zuvor erfassten Changes bleiben unverändert lesbar.
+	rereadBefore := awaitChangesViewRows(t, env, "1", 1)
+	if string(rereadBefore[0].newData) != string(beforeRows[0].newData) {
+		t.Fatalf("Change id=1 nach der Kollision: %s (davor: %s)", rereadBefore[0].newData, beforeRows[0].newData)
+	}
+	rereadGegenprobe := awaitChangesViewRows(t, env, "2", 1)
+	if string(rereadGegenprobe[0].newData) != string(gegenprobeRows[0].newData) {
+		t.Fatalf("Change id=2 nach der Kollision: %s (davor: %s)", rereadGegenprobe[0].newData, gegenprobeRows[0].newData)
+	}
+}
+
 // abdeckungZeilenPraefix kennzeichnet die Zeilen, die der Runner aus dem
 // Testausgang liest (`tools/harness/run-integration-tests.sh`): dahinter
 // steht ein über `|` getrennter Satz aus Quelldatei, Quellzeile, Nachweis,

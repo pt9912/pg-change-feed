@@ -89,7 +89,7 @@ belegt ist.
 
 ## 2. Definition of Done
 
-- [ ] Nichtanwendbarkeit sichtbar (Kriterium (a)): nach einer aktiven
+- [x] Nichtanwendbarkeit sichtbar (Kriterium (a)): nach einer aktiven
       `rename_column`-Regel `name` → `label` löst ein `ALTER TABLE … ADD COLUMN
       label` (kompatible Erweiterung, Zielname kollidiert) beim nächsten Change
       der Tabelle den Fehler aus: der Prozess endet, `diagnose` und der
@@ -100,7 +100,7 @@ belegt ist.
       spalten-entfernende Fall bleibt beim bestehenden Beleg (`relationOther`).
       *Zu belegen durch:* ein realer, grüner `make test-integration`-Lauf, Log-
       und `diagnose`-Ausgabe im Bericht.
-- [ ] Das Abhilfe-Akzeptanzkriterium aus
+- [x] Das Abhilfe-Akzeptanzkriterium aus
       [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
       Folgepflicht 5, **wörtlich**: „(a) eine Regel wird nichtanwendbar, der
       Prozess endet sichtbar mit Fehlerklasse `schema` (`diagnose`, Heartbeat);
@@ -120,7 +120,7 @@ belegt ist.
       als eigener Aufruf nach der Container-Ende-Grenze des Runners (Muster von
       `TestE2ESchemaChangeDropColumn`: Neustart und Health-Poll davor und
       danach; am Start gelesen).
-- [ ] Die Abdeckung und die Klassen bleiben getragen: die Phase trägt die
+- [x] Die Abdeckung und die Klassen bleiben getragen: die Phase trägt die
       Kennung [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) im
       Deklarations-Anker und wird von einem `-run`-Muster erfasst; keine achte
       Fehlerklasse entsteht
@@ -129,22 +129,22 @@ belegt ist.
       [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md) trägt die
       Zeile. *Zu belegen durch:* `make docs-check` und der `-run`-Abgleich im
       Bericht.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `harness/README.md` §Sensors — die Zeile `make
+- [x] Doku-Update: `harness/README.md` §Sensors — die Zeile `make
       test-integration` nennt den Beleg; das Handbuch trägt die
       Abhilfe-Prozedur erst mit `slice-transformationen-betriebsdoku` (dessen
       §2 nennt sie als Gegenstand).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
@@ -180,10 +180,51 @@ Reihenfolge in anderen Worten als das Muster):
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Beschreibung der Belege von `make test-integration` | `grep -rn 'TestE2ESchemaChangeDropColumn' harness docs` | *(Implementer trägt ein)* | Aufzählung in `harness/README.md` §Sensors trägt den Beleg |
-| Aufzählungen der Fälle mit Klasse `schema` | `grep -rn 'ErrIncompatibleSchemaChange\|ErrTransformationNotApplicable' docs harness spec internal` | *(Implementer trägt ein)* | Aufzählungen nennen beide Wege; Handbuch-Stellen an `betriebsdoku` melden |
-| Zeilenzahlen der Abdeckungstabelle | `git diff --stat` auf `tools/harness/run-integration-tests.sh` | *(Implementer trägt ein)* | Erzeugnis neu erzeugen |
-| `restart`-Verhalten des Feed-Containers | `grep -n 'restart' compose.yaml` | *(Implementer trägt ein)* | der Neustart ist eine Betreiber-Handlung (`docker start`), kein automatischer Restart; der Beleg beschreibt ihn so |
+| Beschreibung der Belege von `make test-integration` | `grep -rn 'TestE2ESchemaChangeDropColumn' harness docs` | **Gefunden**: `harness/README.md` §Sensors nennt `TestE2ESchemaChangeDropColumn` als Anker eines bestehenden Belegs (Zeile 141, die sehr lange `make test-integration`-Zeile). | Dieselbe Zeile um den neuen Beleg ergänzt (`TestE2ETransformationRuleNotApplicableEndsCaptureWithSchemaClass`, Runner-Phase „Transformationen-Nichtanwendbarkeit und Abhilfe“). |
+| Aufzählungen der Fälle mit Klasse `schema` | `grep -rn 'ErrIncompatibleSchemaChange\|ErrTransformationNotApplicable' docs harness spec internal` | **Gefunden**: beide Kennungen stehen bereits nebeneinander in `internal/bootstrap/wiring.go` (`classifyRunError`) und in `internal/adapters/driving/replication/mapper/mapper.go`; keine weitere Aufzählungsstelle in `docs`/`harness`/`spec` nennt beide Wege in einer Liste, die durch diesen Slice falsch würde. | Kein Nachzug nötig — dieser Slice fügt keinen dritten schema-Auslöser hinzu, er belegt nur den bereits existierenden `ErrTransformationNotApplicable`-Pfad am System. |
+| Zeilenzahlen der Abdeckungstabelle | `git diff --stat` auf `tools/harness/run-integration-tests.sh` | 88 Zeilen berührt (84 Einfügungen, 4 Löschungen — die 4 Löschungen sind die korrigierte „letzter go-test-Aufruf“-Formulierung). | `docs/user/e2e-abdeckung.md` entsteht als Erzeugnis des Runner-Laufs neu (Anker-Zeilennummern verschieben sich automatisch). |
+| `restart`-Verhalten des Feed-Containers | `grep -n 'restart' compose.yaml` | **Gefunden**: `restart: "no"` (Zeile 145) — unverändert seit dem Parent. | Die neue Phase beschreibt den Neustart korrekt als `docker start`-Betreiber-Handlung, kein automatischer Compose-Restart (siehe Kommentar in `tools/harness/run-integration-tests.sh`). |
+
+Zusätzliche, auf die volle Suchform von [`AGENTS.md`](../../../../AGENTS.md)
+§3.13 gezogene Blöcke (Parent `e6c5d087`, der Stand vor jeder Inhaltsänderung
+dieses Slice; Suchraum: der ganze Baum ohne die drei Standard-Ausnahmen):
+
+Symbolnamen der go-test-Aufrufe/Phasen, die den Erfassungspfad von
+`make test-integration` mit Fehlerklasse `schema` dauerhaft beenden:
+
+```suchlauf
+e6c5d087 58 -n -E 'TestE2ESchemaChangeDropColumn|TestE2ESchemaChangeIncompatibleTypeChange|TestE2ETransformationRuleNotApplicableEndsCaptureWithSchemaClass' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 69 -n -E 'TestE2ESchemaChangeDropColumn|TestE2ESchemaChangeIncompatibleTypeChange|TestE2ETransformationRuleNotApplicableEndsCaptureWithSchemaClass' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+```
+
+Symbolnamen der beiden `schema`-Auslöser (Gefunden: beide bereits am Parent
+nebeneinander in `wiring.go`/`mapper.go`; kein dritter Auslöser entsteht):
+
+```suchlauf
+e6c5d087 69 -n -E 'ErrIncompatibleSchemaChange|ErrTransformationNotApplicable' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 71 -n -E 'ErrIncompatibleSchemaChange|ErrTransformationNotApplicable' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+```
+
+Beschreibung „Container-Ende-Grenze“ (Zählwort/Beschreibung kombiniert — kein
+separates Zählwort existiert für diese Eigenschaft, da keine Stelle im Baum
+die Zahl der Container-Ende-Grenzen beziffert; geprüft und nicht gefunden):
+
+```suchlauf
+e6c5d087 17 -n -F 'Container-Ende-Grenze' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 18 -n -F 'Container-Ende-Grenze' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+```
+
+Hedge „(als eigener,) letzter (Rundlauf|go-test-Aufruf)“ — die Stelle, die
+diese Phase als letzten Rundlauf des Runners auszeichnet: am Parent stand die
+Aussage fälschlich an `TestE2ESchemaChangeIncompatibleTypeChange` (korrigiert,
+§3 oben), am Diff steht sie korrekt an der neuen Phase und im neuen
+`harness/README.md`-Satz — kein Netto-Zuwachs an falschen Stellen, nur eine
+Verschiebung an die jetzt zutreffende Stelle:
+
+```suchlauf
+e6c5d087 1 -n -i -E 'letzter (Rundlauf|go-test-Aufruf)|läuft.{0,4}letzter' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 2 -n -i -E 'letzter (Rundlauf|go-test-Aufruf)|läuft.{0,4}letzter' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+```
 
 ## 4. Trigger
 

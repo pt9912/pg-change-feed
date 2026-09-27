@@ -47,7 +47,13 @@
 # `Backfill-Rundläufe`. Die Transformations-Rundläufe (LH-FA-CFG-007: die
 # Form der Regeln auf allen fünf Zustellwegen, Neustart, Ausschluss mit
 # Regel) laufen nach der Leerlauf-Bestätigung, ebenfalls vor dem
-# Upgrade-Sicherheits-Rundlauf.
+# Upgrade-Sicherheits-Rundlauf. Nichtanwendbarkeit einer Regel und ihre
+# Abhilfe (ADR-0112 Teilfrage 4 und Folgepflicht 5) laufen als eigener,
+# letzter Rundlauf nach TestE2ESchemaChangeIncompatibleTypeChange:
+# eine kompatible Spalten-Erweiterung, deren Name den Zielnamen einer aktiven
+# rename_column-Regel trifft, beendet den Erfassungspfad sichtbar; nach
+# `cdc.remove_transformation` und einem Neustart erscheint die zuvor nicht
+# bestätigte Transaktion über `cdc.changes`.
 #
 # Test-Daten bleiben im Container (kein Volume in den Arbeitsbaum);
 # Compose-Container und -Netz werden in jedem Ausgang abgeräumt, das
@@ -345,6 +351,7 @@ CREATE TABLE public.feed_e2e_schema (id int PRIMARY KEY, name text, amount text)
 CREATE TABLE public.feed_e2e_sql_admin (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_e2e_walsender_timing (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_e2e_startgrenze (id int PRIMARY KEY, name text);
+CREATE TABLE public.feed_e2e_transform_abhilfe (id int PRIMARY KEY, name text);
 INSERT INTO cdc.source (source_id, name) VALUES ('src-e2e', 'E2E-Quelle');
 SQL
 
@@ -4127,8 +4134,8 @@ fi
 echo "run-integration-tests: TestE2ESchemaChangeDropColumn (LH-FA-SCH-003, ADR-0063) belegt — reale Spaltenentfernung beendete den Erfassungspfad real (error_class=schema); Replication-Slot neu angelegt (kein Replay der beiden bereits verarbeiteten Transaktionen) und Schema-Version $next_schema_version_id nachgetragen (real aktuelle Spaltenform ohne removable), Feed-Container real neu gestartet und wieder healthy vor TestE2ESchemaChangeIncompatibleTypeChange"
 
 # TestE2ESchemaChangeIncompatibleTypeChange (LH-FA-SCH-004
-# Negative-Fall) läuft als eigener, letzter go-test-Aufruf: sie meldet
-# eine nicht sicher als Obermenge erkennbare Typänderung sichtbar über die
+# Negative-Fall) läuft als eigener go-test-Aufruf: sie meldet eine nicht
+# sicher als Obermenge erkennbare Typänderung sichtbar über die
 # Fehlerklasse `schema` und beendet damit den Erfassungspfad des
 # Feed-Containers dauerhaft (`restart: "no"`, kein Neustart-Vertrag,
 # siehe Funktionskommentar). Alles, was den laufenden Container noch
@@ -4136,7 +4143,9 @@ echo "run-integration-tests: TestE2ESchemaChangeDropColumn (LH-FA-SCH-003, ADR-0
 # TestE2ESchemaChangeDropColumn direkt davor beendete den Container
 # ebenfalls bereits dauerhaft (ADR-0063) — der Neustart oben stellt einen
 # sauberen, healthy Zustand wieder her, bevor diese Funktion ihren eigenen
-# Mechanismus real prüft.
+# Mechanismus real prüft. Die Phase „Transformationen-Nichtanwendbarkeit
+# und Abhilfe“ unten stellt den Container nach dieser Funktion noch einmal
+# wieder her — sie ist der letzte Rundlauf des Runners.
 docker run --rm --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
@@ -4144,6 +4153,76 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   -e CDC_INTEGRATION_DSN="$DSN" \
   "$TOOLCHAIN_IMAGE" go test -v -run '^TestE2ESchemaChangeIncompatibleTypeChange$' ./test/integration/...
+
+abdeckung_declare "Transformationen-Nichtanwendbarkeit und Abhilfe" "LH-FA-CFG-007,LH-FA-ADM-003,LH-FA-SCH-004" "eine kompatible Spalten-Erweiterung, deren Name den Zielnamen einer aktiven rename_column-Regel trifft, beendet den Erfassungspfad sichtbar mit der Fehlerklasse schema (Gegenprobe: eine Erweiterung mit anderem Namen tut es nicht); cdc.remove_transformation wird beantragt, während der Prozess steht, nach dem Neustart ist der Antrag applied und die zuvor nicht bestätigte Transaktion erscheint über cdc.changes in Rohform, ohne zweiten schema-Fehler" "Transformationen-Nichtanwendbarkeit und Abhilfe (ADR-0112 Folgepflicht 5) belegt"
+
+# Transformationen-Nichtanwendbarkeit und Abhilfe (ADR-0112 Teilfrage 4 und
+# Folgepflicht 5): läuft nach der zweiten Container-Ende-Grenze
+# (TestE2ESchemaChangeIncompatibleTypeChange oben), auf einer eigenen
+# Tabelle (feed_e2e_transform_abhilfe), unberührt von den beiden
+# vorangegangenen Schema-Testfunktionen. Zwei Neustarts, mit
+# unterschiedlicher Behandlung des Replication-Slots:
+#
+# 1. Erster Neustart (unten): stellt einen sauberen, healthy Zustand nach
+#    TestE2ESchemaChangeIncompatibleTypeChange wieder her — derselbe
+#    Neustart-und-Health-Poll-Rahmen wie zwischen TestE2ESchemaChangeDropColumn
+#    und TestE2ESchemaChangeIncompatibleTypeChange, mit Slot-Neuanlage: die
+#    von jener Funktion hinterlassene, am Slot unbestätigte Transaktion ist
+#    echt inkompatibel — ein Replay ohne Slot-Neuanlage triggert denselben
+#    schema-Fehler erneut.
+# 2. Zweiter Neustart (nach der Kollision dieser Phase): lässt den Slot
+#    unangetastet — die dabei am Slot unbestätigte Transaktion (id=3) ist
+#    genau die, die nach der Abhilfe über cdc.changes erscheinen soll
+#    (Kriterium (d)); eine Slot-Neuanlage verwirft sie unwiederbringlich.
+TA_PHASE="Transformationen-Nichtanwendbarkeit und Abhilfe"
+TA_TABLE=feed_e2e_transform_abhilfe
+TA_RULE='{"kind":"rename_column","column":"name","to":"label"}'
+
+docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
+  "SELECT pg_drop_replication_slot('$SLOT') WHERE EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = '$SLOT');" >/dev/null
+
+docker start "$FEED_CONTAINER" >/dev/null
+bf_await_healthy "$TA_PHASE — Neustart nach TestE2ESchemaChangeIncompatibleTypeChange"
+
+bf_enable "$TA_TABLE" "$TA_PHASE"
+tf_set "$TA_TABLE" umbenennung "$TA_RULE" "$TA_PHASE"
+
+docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  -e CDC_INTEGRATION_DSN="$DSN" \
+  "$TOOLCHAIN_IMAGE" go test -v -run '^TestE2ETransformationRuleNotApplicableEndsCaptureWithSchemaClass$' ./test/integration/...
+
+# Kriterium (a): der Prozess endet sichtbar — Container-Lauf und Log-Sentinel.
+ta_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+[ "$ta_running" = "false" ] || bf_fail "$TA_PHASE — Feed-Container lief nach der Kollision entgegen der Erwartung noch (der Prozess soll sichtbar mit Fehlerklasse schema enden)"
+
+ta_log=$(docker logs "$FEED_CONTAINER" 2>&1 || true)
+[[ "$ta_log" == *"Transformationsregel auf die Änderung nicht anwendbar"* ]] || bf_fail "$TA_PHASE — Container-Log trägt den Sentinel-Text der Fehlerklasse schema nicht: $ta_log"
+
+# Kriterium (b): der Antrag wird beantragt, während der Prozess steht, und
+# bleibt zunächst pending (SPEC-019-Status; „requested“ im ADR-Wortlaut) —
+# reine SQL-Aufrufe, kein laufender Feed-Container nötig.
+ta_remove_request=$(bf_sql "SELECT cdc.remove_transformation('src-e2e', 'public', '$TA_TABLE', 'umbenennung')")
+[ -n "$ta_remove_request" ] || bf_fail "$TA_PHASE — cdc.remove_transformation($TA_TABLE) lieferte keine Antrags-ID"
+bf_expect "$(bf_sql "SELECT status FROM cdc.administration_request WHERE administration_request_id = '$ta_remove_request'")" pending "$TA_PHASE — Antrag $ta_remove_request während des Prozess-Stillstands"
+
+# Kriterium (c)/(d): Neustart ohne Slot-Eingriff diesmal — die am Slot
+# unbestätigte Transaktion (id=3) wird erneut vorgelegt, diesmal ohne die
+# entfernte Regel.
+docker start "$FEED_CONTAINER" >/dev/null
+bf_await_healthy "$TA_PHASE — Neustart nach der Abhilfe"
+bf_await_applied "$ta_remove_request" "$TA_PHASE"
+
+ta_second_fault=$(bf_sql "SELECT coalesce(error_class, '') FROM cdc.heartbeat WHERE source_id = 'src-e2e'")
+[ "$ta_second_fault" != "schema" ] || bf_fail "$TA_PHASE — ein zweiter schema-Fehler nach der Abhilfe (error_class=$ta_second_fault)"
+
+bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$TA_TABLE' AND new_data->>'id' = '3'" 1 30 "$TA_PHASE — zuvor nicht bestätigte Transaktion (id=3)"
+tf_form "$TA_TABLE" 3 '{"name":"Betroffen"}' "$TA_PHASE — Rohform nach der Abhilfe (Regel entfernt)"
+
+echo "run-integration-tests: Transformationen-Nichtanwendbarkeit und Abhilfe (ADR-0112 Folgepflicht 5) belegt — Kollision auf $TA_TABLE beendete den Erfassungspfad real (error_class=schema, Sentinel im Log), cdc.remove_transformation ($ta_remove_request) während des Stillstands beantragt (pending), nach dem Neustart applied vor der ersten Transaktion der Tabelle, die zuvor nicht bestätigte Zeile (id=3) erscheint über cdc.changes in Rohform ohne zweiten schema-Fehler"
 
 # Zusammensetzung der E2E-Abdeckungstabelle: erst Go-Zeilen nach Quelldatei
 # und Quellzeile, dann die Bash-Zeilen der deklarierten Phasen nach
