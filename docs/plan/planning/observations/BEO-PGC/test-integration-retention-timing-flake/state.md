@@ -31,7 +31,7 @@ ist grün — steht bei **2×** (`slice-057`, `slice-capture-leerlauf-quellbeleg
 ohne Ursache und ohne Ausgang**; der Leerlauf-Fall hat Ursache und Ausgang (unten).
 
 **Ausgang des Leerlauf-Falls — Testaufbau, Slice `slice-leerlauf-phase-last-in-stuecken`
-(beauftragt im Architect-Verdikt `docs/reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md`; der Planner legt den Plan an).** <!-- d-check:status-provenance -->
+(Plan: [`slice-leerlauf-phase-last-in-stuecken`](../../../open/slice-leerlauf-phase-last-in-stuecken.md); beauftragt im Architect-Verdikt `docs/reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md`).** <!-- d-check:status-provenance -->
 Die Anweisung des Runners — ein einzelnes `INSERT` mit
 16,0 MB WAL, dem 1,9-fachen der Fehlerschwelle der Phase — ist ein Stoß: der Rückstand steht
 danach kurz bei der ganzen Last, bevor die Bestätigung folgt (am echten Stream lokal 42 bis

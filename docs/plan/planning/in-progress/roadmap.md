@@ -154,6 +154,7 @@ flowchart LR
     TBP[slice-transformationen-backfill-pfad]
     TSR[slice-transformationen-start-reihenfolge]
     SCQ[wellenlos: slice-capture-leerlauf-quellbelege]
+    LPS[wellenlos: slice-leerlauf-phase-last-in-stuecken]
     WFA[wellenlos: slice-wal-fehlerschwelle-ausgangsklasse]
     SVG[wellenlos: slice-start-vorlauf-grenze]
     TEA[slice-transformationen-e2e-abhilfe]
@@ -188,7 +189,8 @@ flowchart LR
     BE2E -.->|Backfill-Runner| TBP
     BSA -.->|Run-Start| TSR
     WTR --- TEA
-    SCQ -.->|Runner| WFA
+    SCQ -.->|Runner| LPS
+    LPS -.->|Runner| WFA
     WFA -.->|wiring.go, Runner| SVG
     SVG -.->|K4 Startpfad| TEA
 ```
@@ -217,11 +219,15 @@ Frist des Vorlaufs, `START_REPLICATION` im Stream-Lauf); der Slice startet nach
 (Klasse des Ausgangs bei Erreichen der Fehlerschwelle des WAL-Rückstands,
 [`ADR-0049`](../../adr/0049-replication-fehlerklassen-schwellen.md); beide berühren
 `internal/bootstrap/wiring.go` und den Runner an entgegengesetzten Enden), der selbst nach
-`slice-capture-leerlauf-quellbelege` startet (beide ändern die Runner-Phase „Fehlerschwelle
-beendet den Container“ von `make test-integration`), und geht
-`slice-transformationen-e2e-abhilfe` voraus; die Reihenfolge der letzten Slices der
+`slice-capture-leerlauf-quellbelege` (beide ändern die Runner-Phase „Fehlerschwelle
+beendet den Container“ von `make test-integration`) und nach dem wellenlosen
+[`slice-leerlauf-phase-last-in-stuecken`](../open/slice-leerlauf-phase-last-in-stuecken.md)
+startet (die Last der Phase „Leerlauf-Bestätigung“ läuft in Stücken; ein Rot dieser Phase lässt
+jede Phase dahinter ungelaufen,
+[`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)),
+und geht `slice-transformationen-e2e-abhilfe` voraus; die Reihenfolge der letzten Slices der
 Transformations-Welle vor ihrer Closure ist `slice-capture-leerlauf-quellbelege` →
-`slice-wal-fehlerschwelle-ausgangsklasse` → `slice-start-vorlauf-grenze` →
+`slice-leerlauf-phase-last-in-stuecken` → `slice-wal-fehlerschwelle-ausgangsklasse` → `slice-start-vorlauf-grenze` →
 `slice-transformationen-e2e-abhilfe` → `slice-transformationen-betriebsdoku`. Ausführung und Begründung der
 Reihenfolge (Backfill zuerst) stehen in
 [welle-backfill-bestand](../done/welle-backfill-bestand.md) §5 und
@@ -300,3 +306,4 @@ zweites Closure-Log, und zwei Logs driften.
 | 2026-09-26 | [welle-transformationen](../welle-transformationen.md): eine Kante zu einem weiteren wellenlosen Slice — `slice-sdk-regel-realserver-e2e` startet nach `slice-transformationen-e2e-wirkung` und geht `slice-transformationen-betriebsdoku` voraus; der Slice bleibt wellenlos und steht nicht in der Slice-Liste der Welle. | Der Auftraggeber entschied, die Aussage „Row-Image-Schlüssel sind in den drei SDK-Modellen opak“ am realen Server zu erproben statt sie nur an den Quellen zu lesen: die drei SDK-Realserver-Tiers empfangen eine Change mit aktiver `rename_column`-Regel. Der Beleg berührt die SDK-Fläche quer zur Welle und ist Voraussetzung des SDK-Belegs von `slice-transformationen-betriebsdoku`. |
 | 2026-09-27 | [welle-transformationen](../welle-transformationen.md): eine Kante zu einem weiteren wellenlosen Slice — [`slice-start-vorlauf-grenze`](../open/slice-start-vorlauf-grenze.md) startet nach `slice-capture-leerlauf-quellbelege` und geht `slice-transformationen-e2e-abhilfe` voraus; der Start-Trigger von `slice-transformationen-e2e-abhilfe` nennt ihn; der Slice bleibt wellenlos und steht nicht in der Slice-Liste der Welle. Reihenfolge vor der Closure der Welle: `slice-capture-leerlauf-quellbelege` → `slice-start-vorlauf-grenze` → `slice-transformationen-e2e-abhilfe` → `slice-transformationen-betriebsdoku`. | Das Architect-Verdikt [architect-verdict-welle-transformationen-offene-fragen](../../../reviews/architect-verdict-welle-transformationen-offene-fragen.md) und [`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md) beauftragen die Umsetzung der Zeitgrenze des Vorlaufs: `START_REPLICATION` liegt vor dem Vorlauf, ein Vorlauf über `wal_sender_timeout` beendet den Prozess mit der Klasse `replication`. Der Abhilfe-Beleg fährt den Startpfad, den der Slice ändert. |
 | 2026-09-27 | [welle-transformationen](../welle-transformationen.md): eine Kante zu einem weiteren wellenlosen Slice — [`slice-wal-fehlerschwelle-ausgangsklasse`](../open/slice-wal-fehlerschwelle-ausgangsklasse.md) startet nach `slice-capture-leerlauf-quellbelege` und geht `slice-start-vorlauf-grenze` voraus; der Start-Trigger von `slice-start-vorlauf-grenze` nennt ihn (vorher: nur `slice-capture-leerlauf-quellbelege`); die Trigger von `slice-transformationen-e2e-abhilfe` bleiben; der Slice bleibt wellenlos. Reihenfolge vor der Closure der Welle: `slice-capture-leerlauf-quellbelege` → `slice-wal-fehlerschwelle-ausgangsklasse` → `slice-start-vorlauf-grenze` → `slice-transformationen-e2e-abhilfe` → `slice-transformationen-betriebsdoku`. | Das Architect-Verdikt [architect-verdict-wal-fehlerschwelle-ausgangsklasse](../../../reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md) entscheidet einen Codefehler ([`ADR-0049`](../../adr/0049-replication-fehlerklassen-schwellen.md) gilt, der Stand weicht ab): bei Erreichen der Fehlerschwelle endet der Container mit der Klasse `storage` statt `replication`. Die Korrektur berührt dieselbe Runner-Phase wie `slice-capture-leerlauf-quellbelege` und `wiring.go` wie `slice-start-vorlauf-grenze` an entgegengesetzten Enden; der kleinere Slice startet zuerst. |
+| 2026-09-27 | [welle-transformationen](../welle-transformationen.md): eine Kante zu einem weiteren wellenlosen Slice — [`slice-leerlauf-phase-last-in-stuecken`](../open/slice-leerlauf-phase-last-in-stuecken.md) startet nach `slice-capture-leerlauf-quellbelege` und geht `slice-wal-fehlerschwelle-ausgangsklasse` voraus; die Start-Trigger von `slice-wal-fehlerschwelle-ausgangsklasse` und `slice-start-vorlauf-grenze` nennen ihn (vorher: nur `slice-capture-leerlauf-quellbelege`); der Slice bleibt wellenlos. Reihenfolge vor der Closure der Welle: `slice-capture-leerlauf-quellbelege` → `slice-leerlauf-phase-last-in-stuecken` → `slice-wal-fehlerschwelle-ausgangsklasse` → `slice-start-vorlauf-grenze` → `slice-transformationen-e2e-abhilfe` → `slice-transformationen-betriebsdoku`. | Das Architect-Verdikt [architect-verdict-leerlauf-bestaetigung-intermittenz](../../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md) bestimmt die Ursache des einen roten ersten Ergebnisses der Phase „Leerlauf-Bestätigung“ im Testaufbau (ein Stoß gegen den Prüf-Takt), nicht im Produkt, und beauftragt den Slice. Ein Rot in dieser Phase lässt jede Phase dahinter ungelaufen, auch die des Folge-Slices `slice-wal-fehlerschwelle-ausgangsklasse`; der kleine Slice startet zuerst. |
