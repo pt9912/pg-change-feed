@@ -360,13 +360,34 @@ HTTP_IDENT=$(run_surface_phase \
 # marker-gegrenzt. Writer-Form-Grenze (Muster csharp-/kotlin-Runner): dieser
 # Runner hält Kopf und fremde Abschnitte (C# und Kotlin) auf BEIDEN Seiten
 # stabil und ersetzt nur seinen eigenen marker-gegrenzten Abschnitt; fehlt
-# die Träger-Datei ganz, regeneriert er Kopf und Tabellenkopf (kein
-# nackter Abschnitt).
+# die Träger-Datei ganz, regeneriert er den Kopf (kein nackter Abschnitt).
+# Jeder Sprachabschnitt trägt seine eigene Kopf-/Trennzeile (eine
+# eigenständige Markdown-Tabelle je Sprache): eine HTML-Kommentarzeile ohne
+# Pipe-Zeichen zwischen einer gemeinsamen Kopfzeile und den Datenzeilen
+# hätte die Tabelle für jeden Markdown-Renderer nach der Kopfzeile beendet.
 ABDECKUNG_ZIEL_DATEI=docs/user/sdk-e2e-abdeckung.md
+
+# trim_blank_edges <mehrzeiliger String> — entfernt führende und
+# nachgestellte Leerzeilen, interne Leerzeilen bleiben erhalten; reines awk,
+# kein externes Werkzeug (Muster run-sdk-csharp-integration-tests.sh).
+trim_blank_edges() {
+  awk '
+    { lines[NR] = $0 }
+    END {
+      start = 1
+      while (start <= NR && lines[start] == "") start++
+      e = NR
+      while (e >= start && lines[e] == "") e--
+      for (i = start; i <= e; i++) print lines[i]
+    }
+  ' <<<"$1"
+}
 
 abdeckung_python_abschnitt() {
   printf '%s\n' \
     '<!-- pgchangefeed-sdk-e2e:python-begin -->' \
+    '| Spec-Kennung | Kurzbeschreibung | Nachweis | Ort |' \
+    '| --- | --- | --- | --- |' \
     "| [\`LH-FA-SST-006\`](../../spec/lastenheft.md), [\`LH-FA-CON-001\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedHttpClient\`) registriert real einen Consumer (admin-Token) und listet Tabellen (reader-Token); die Registrierung ist unabhängig über \`cdc.consumer\` lesbar; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`test_http_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedGrpcClient\`) öffnet real den gRPC-Server-Stream gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Öffnungsversuch ohne gültiges Token endet mit gRPC-Status \`Unauthenticated\` | \`test_grpc_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedSseClient\`) öffnet real \`GET /changes/stream\` und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`test_sse_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
@@ -386,31 +407,28 @@ abdeckung_schreiben() {
       vor=$(cat "$ABDECKUNG_ZIEL_DATEI")
     fi
   fi
+  vor=$(trim_blank_edges "$vor")
+  nach=$(trim_blank_edges "$nach")
+  if [ -z "$vor" ]; then
+    vor=$(printf '%s\n' \
+      '# SDK-E2E-Abdeckung je Spec-Kennung' \
+      '' \
+      'Erzeugt von `make test-sdk-csharp-integration` über' \
+      '`tools/harness/run-sdk-csharp-integration-tests.sh`; die Sprach-Runner' \
+      'der Folge-Slices (Kotlin, Python-HTTP) erweitern dieselbe Datei um ihre' \
+      'marker-gegrenzten Abschnitte. Je Sprach-Abschnitt deklariert der' \
+      'zuständige Runner seine Realserver-Phasen an Ort und Stelle. Diese' \
+      'Datei ist eine **stabile Abdeckungs-Deklaration**, kein Lauf-Beleg: der' \
+      'Runner schreibt sie nur bei inhaltlicher Abweichung. Sie trägt nur' \
+      'Zeilen real existierender Runner-Phasen — ein Beleg steht hier nie,' \
+      'bevor sein Lauf grün lief.')
+  fi
   temp=$(mktemp)
   {
-    if [ -z "$vor" ]; then
-      printf '%s\n' \
-        '# SDK-E2E-Abdeckung je Spec-Kennung' \
-        '' \
-        'Erzeugt von `make test-sdk-csharp-integration` über' \
-        '`tools/harness/run-sdk-csharp-integration-tests.sh`; die Sprach-Runner' \
-        'der Folge-Slices (Kotlin, Python-HTTP) erweitern dieselbe Datei um ihre' \
-        'marker-gegrenzten Abschnitte. Je Sprach-Abschnitt deklariert der' \
-        'zuständige Runner seine Realserver-Phasen an Ort und Stelle. Diese' \
-        'Datei ist eine **stabile Abdeckungs-Deklaration**, kein Lauf-Beleg: der' \
-        'Runner schreibt sie nur bei inhaltlicher Abweichung. Sie trägt nur' \
-        'Zeilen real existierender Runner-Phasen — ein Beleg steht hier nie,' \
-        'bevor sein Lauf grün lief.' \
-        '' \
-        '| Spec-Kennung | Kurzbeschreibung | Nachweis | Ort |' \
-        '| --- | --- | --- | --- |'
-    fi
-    if [ -n "$vor" ]; then
-      printf '%s\n' "$vor"
-    fi
-    printf '%s\n' "$abschnitt"
+    printf '%s\n' "$vor"
+    printf '\n%s\n' "$abschnitt"
     if [ -n "$nach" ]; then
-      printf '%s\n' "$nach"
+      printf '\n%s\n' "$nach"
     fi
   } > "$temp"
   if [ -f "$ABDECKUNG_ZIEL_DATEI" ] && cmp -s "$temp" "$ABDECKUNG_ZIEL_DATEI"; then
