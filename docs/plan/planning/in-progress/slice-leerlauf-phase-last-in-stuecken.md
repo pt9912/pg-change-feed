@@ -140,7 +140,31 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       `receive.go` setzt `lastAcked` nicht und meldet `false`, der Port bestätigt weiter) ließ die
       Phase **grün**; dieser Abschnitt der Phase bindet den Stream-lokalen Stand nicht (Grenze, nicht
       Gegenstand dieses Slice).
-- [x] **Die Träger sind nachgezogen** (Review dazu: eigener Punkt unten, steht aus). Der Kommentar der Phase (Kopf vor `BF_PHASE`) und der
+      **Beleg-Anker des grünen Volllaufs** (committet, schließt Review-Finding F-1 und
+      Verifikations-Finding V-1: der Anker stand bisher nur in Berichten, nicht im Plan-Text):
+      der Verifikations-Report
+      [`verifikation-slice-leerlauf-phase-last-in-stuecken`](../../../reviews/verifikation-slice-leerlauf-phase-last-in-stuecken.md)
+      §1 fuhr einen vollen `make test-integration`-Lauf (07:57:18–08:03:51, 393 s, Exit 0) mit der
+      gedruckten Zeile „… ein Schreiber auf die nicht aktivierte Tabelle `feed_e2e_wal_foreign`
+      erzeugte in 6 Stücken zu je 10000 Zeilen zusammen 16019584 B WAL (höchstes Stück 2676872 B,
+      unter der Warnschwelle; nach jedem Stück erreichte `confirmed_flush_lsn` die Position hinter
+      dem Stück, Frist 30 s) …“; der Reviewer fuhr unabhängig einen zweiten Lauf mit derselben Form
+      (16019504 B, höchstes Stück 2676792 B,
+      [`review-slice-leerlauf-phase-last-in-stuecken`](../../../reviews/review-slice-leerlauf-phase-last-in-stuecken.md)
+      „Eigene Messungen“). Der erste grüne `e2e.yml`-Lauf (Punkt 5 unten) trägt dieselbe Form an
+      beiden Legs.
+      **Grenze, unabhängig von Review und Verifikation gefunden (Review F-2, Verifikation V-3):**
+      die Wartebedingung ist an ihrer **Fehlerseite** gebunden (Slot-Filter, Erwartungsform,
+      Position weit hinter dem Stück, pausierter Container — Mutationen (c), (d) oben sowie m3/m7
+      des Reviews und C/D/G der Verifikation färben alle an derselben Zeile), an ihrer
+      **Schutzwirkung** — dass sich Stücke nicht stapeln — ist sie am gesunden Aufbau **nicht**
+      bindbar: die Position **vor** statt **nach** dem Stück (Review m4, Verifikation E) und das
+      vollständige Streichen der Wartebedingungs-Zeile (Review m8, Verifikation F) enden beide
+      grün, mit unveränderter Ausgabezeile. Ohne eine künstliche Verzögerung der Bestätigung liefert
+      der Aufbau keinen Fall, der das Warten selbst braucht; die tragende Wirkung dieses Slice ist das
+      Kleinhalten des Stücks (Wächter je Stück, Mutation (a)/m1/A färbt), die Wartebedingung ist die
+      Vorsorge gegen eine langsame Bestätigung. Kein Fix erwartet — die Grenze ist benannt.
+- [x] **Die Träger sind nachgezogen** (Review bestätigt: `docs/reviews/review-slice-leerlauf-phase-last-in-stuecken.md`, Negativbefunde „`harness/README.md` Zeile 141“/„Handbuch“). Der Kommentar der Phase (Kopf vor `BF_PHASE`) und der
       Kommentar an der Anweisung des Schreibers, die Zeile `abdeckung_declare` der Phase, die
       Ausgabezeile am Phasen-Ende, `harness/README.md` §Sensors (Zeile `make test-integration`,
       die Beschreibung der Phase „Leerlauf-Bestätigung“) und das Benutzerhandbuch
@@ -178,9 +202,14 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       **741.816 B** (52 von 1500 Proben lagen über 0 B), das sind 17,7 % der Hälfte der
       Fehlerschwelle (741.816 / 4.194.304, abgeleitet). Die Spitze liegt unter der Hälfte; die
       Run-Größe bleibt unverändert, kein Befund an den Architect.
+      **Verifier-Status (übernommen/plausibilisiert, kein eigener Beleg):** der Verifier hat die
+      50-ms-Sondenmessung nicht wiederholt; er hält die Implementer-Messung anhand vier
+      unabhängiger, rotfreier WAL-Werte desselben Runs für plausibel (lokal 19.826.288 B, CI
+      22.064.160 B/22.186.272 B, eigener Lauf 22.188.928 B) — jeder unter dem gemessenen
+      Backfill-Volumen und ohne Rot der Leerlauf-Phase (Verifikations-Report §2, Zeile 3).
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] **Der erste grüne `e2e.yml`-Lauf mit beiden Legs** nach dem Push des Slice-Codes steht im
+- [x] **Der erste grüne `e2e.yml`-Lauf mit beiden Legs** nach dem Push des Slice-Codes steht im
       Bericht mit Lauf, Versuchsnummer und Job-Kennungen beider Legs, wie es der Abschluss von
       `slice-capture-leerlauf-quellbelege` bei der Behandlung von F-1 vorgibt
       (`gh run view <Lauf> --json jobs`). Der Nachweis ist ein **Beleg des Runners am realen
@@ -189,6 +218,13 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       dieser Regel. Ein Rot mit der Signatur „Fehlerklasse `replication` … WAL-Rückstand … über
       Fehlerschwelle“ in dieser Phase **nach** diesem Slice ist ein Befund und ein Architect-Zug
       (Trigger, Verdikt §2.6), keine Wiederholung.
+      **Beleg (Reviewer, nachgelesen mit `gh api`/`gh run view`, 2026-09-27):** Lauf **36295604780**,
+      Versuch **1**, Ergebnis `success`; Job **108553753483** (PostgreSQL 18) und Job
+      **108553753527** (PostgreSQL 17), je Schritt „Compose-Integrationstest (Black-Box-E2E)“
+      `success`. Aus den Job-Logs gelesen: PostgreSQL 18 — Stücke zusammen 16019528 B, höchstes
+      Stück 2676816 B; PostgreSQL 17 — Stücke zusammen 16011232 B, höchstes Stück 2669152 B. Kein
+      Rot der Signatur aus Verdikt §2.6 ist bis zu diesem Lauf aufgetreten; die Verifier-Regel aus
+      Verdikt §4 greift nicht (kein Wiederholungsversuch nötig).
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
@@ -202,19 +238,21 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       `diff`-Zeilen des Implementers durch.
 - [x] Doku-Update: `harness/README.md` §Sensors und Benutzerhandbuch wie im zweiten Punkt;
       `spec/**` und `ADR-0120` bleiben unberührt (Verdikt §2.4).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
-      Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+      Sensor · benannte Spec-Lücke) — §7 trägt ihn (Trigger für eine Architect-Neubewertung von
+      `BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker` eingetreten).
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Eintrag
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Eintrag
       `BEO-PGC/test-integration-retention-timing-flake` führt den Ausgang des Leerlauf-Falls
-      (Nachzug des Planners bei der Closure; der Zwischenstand steht in seinem `state.md`); kein
-      weiterer Anfall ist ebenfalls eine Antwort und wird in §7 notiert (§8 nennt die Einträge,
-      die dieser Slice trägt).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
-      offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
-      der Closure der nächsten Welle (die Roadmap führt
+      bereits (Architect-Zug, unverändert bestätigt); drei weitere Einträge mit neuer
+      `evidence/`-Datei, kein weiterer Anfall ist ebenfalls eine Antwort — §7 trägt alle (§8
+      nennt die gesichteten Einträge).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+      offen) — §6 trägt sie, §7 fasst sie zusammen.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+      der Closure dieses Slice (§7) und zusätzlich der Closure der nächsten Welle
+      (die Roadmap führt
       [welle-transformationen](../welle-transformationen.md) unter *Offene
       Wellen*, das Ereignis kann eintreten: ihre Closure liegt nach
       `slice-transformationen-betriebsdoku`, der nach diesem Slice startet; ein Slice
@@ -245,6 +283,17 @@ lokal, **übernommen**).
 - Jedes Stück trägt eigene Schlüssel (`generate_series` über disjunkte Bereiche), damit der
   Primärschlüssel der Tabelle nicht kollidiert.
 - Stückgröße und Stückzahl stehen als Variablen neben `WAL_ROWS`; die Wächter lesen sie.
+
+**Grenze der Wartebedingung (Review F-2, Verifikation V-3, nach der Umsetzung gefunden, im
+Ist-Ton nachgetragen):** Die Wartebedingung ist an ihrer **Fehlerseite** gebunden — Slot-Filter,
+Erwartungsform, eine Position weit hinter dem Stück und ein pausierter Feed-Container färben sie
+alle an derselben Zeile (§2 DoD 1, Mutationen (c)/(d)/m3/m7/G). An ihrer **Schutzwirkung** — dass
+sich die Stücke nicht stapeln — ist sie am gesunden Aufbau **nicht** bindbar: die Position **vor**
+statt **nach** dem Stück und das vollständige Streichen der Wartebedingungs-Zeile enden beide
+grün, mit unveränderter Ausgabezeile (Review m4/m8, Verifikation E/F, unabhängig reproduziert).
+Ohne eine künstliche Verzögerung der Bestätigung liefert der Aufbau keinen Fall, der das Warten
+selbst braucht; die tragende Wirkung dieses Slice ist das Kleinhalten des Stücks (Wächter je
+Stück), die Wartebedingung bleibt Vorsorge gegen eine langsame Bestätigung. Kein Fix erwartet.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Last der Phase Leerlauf-Bestätigung
 ist ein einzelner Stoß über der Fehlerschwelle“). Suchraum: der ganze Baum ohne die drei
@@ -286,17 +335,25 @@ d078700d 13 -n -E 'Phase „Leerlauf-Bestätigung|BF_PHASE="Leerlauf|abdeckung_d
 | **Fremde Träger:** `slice-wal-fehlerschwelle-ausgangsklasse` §3 (Kommentar der Phase davor, Zeile „Kopplung an die Phase Leerlauf-Bestätigung“) und §4 (Start-Trigger, Kante zu diesem Slice); [`welle-transformationen`](../welle-transformationen.md) §5 | beschreiben die Phase als Kopplung bzw. tragen die Kante zu diesem Slice | vom Planner mit der Anlage dieses Slice nachgezogen (Start-Trigger, Kante beauftragt) |
 | **Fremde Datei:** `docs/plan/planning/observations/BEO-PGC/test-integration-retention-timing-flake/state.md` | der Architect hat den Zwischenstand geführt und den Slice als Adresse genannt | **gemeldet, Inhalt nicht mitgeändert.** Mitgeführt ist allein die Verweisform des Plan-Verweises (Link auf den wandernden Pfad → Kennung, zweite Zeile der §3-Tabelle oben); der Ausgang bleibt beim Planner (Frist: die Closure dieses Slice) |
 
-**Suchlauf des Implementers** (Parent `6a976f58` = der Commit vor den drei Moves und der Arbeit; `diff` = Arbeitsbaum nach dem Commit der Träger; dieselben Muster wie oben, dazu das Zählwort der alten Last; die Plan-Datei liegt am Parent in `open/` und wird dort per Pathspec ausgenommen, am Arbeitsbaum schließt das Werkzeug sie aus):
+**Suchlauf des Implementers** (Parent `6a976f58` = der Commit vor den drei Moves und der Arbeit;
+zweiter Stand `a42c2b18` = der Commit nach Implementer-Lauf, Review und Verifikation, vor der
+Planner-Closure — als Commit-Kennung eingefroren, nicht als `diff`: die Closure-Edits dieses Slice
+ändern den Arbeitsbaum weiter (§7 fügt einen eigenen Treffer des zweiten Musters hinzu, in
+`BEO-PGC/adr-aussage-breiter-als-ihre-messung/state.md`), ein `diff`-Stand würde deshalb nach
+dieser Closure rot messen — dieselbe Lösung wie beim Vorgänger-Slice
+(`slice-capture-leerlauf-quellbelege` §7, Punkt 5: „die Stände stehen jetzt als Commit-Kennung“);
+dieselben Muster wie oben, dazu das Zählwort der alten Last; die Plan-Datei liegt am Parent in
+`open/` und wird an beiden Ständen per Werkzeug-Selbstausschluss ausgenommen):
 
 ```suchlauf
 6a976f58 7 -n -E 'WAL_FOREIGN|wal_foreign_(before|bytes)|feed_e2e_wal_foreign' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/open/slice-leerlauf-phase-last-in-stuecken.md'
-diff 15 -n -E 'WAL_FOREIGN|wal_foreign_(before|bytes)|feed_e2e_wal_foreign' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+a42c2b18 15 -n -E 'WAL_FOREIGN|wal_foreign_(before|bytes)|feed_e2e_wal_foreign' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 6a976f58 12 -n -E 'Schreiber auf (eine |die )?nicht aktivierte Tabelle|ebenfalls größerem WAL|jeden Schreiber auf|Schreiber auf eine nicht aktivierte' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/open/slice-leerlauf-phase-last-in-stuecken.md'
-diff 11 -n -E 'Schreiber auf (eine |die )?nicht aktivierte Tabelle|ebenfalls größerem WAL|jeden Schreiber auf|Schreiber auf eine nicht aktivierte' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+a42c2b18 11 -n -E 'Schreiber auf (eine |die )?nicht aktivierte Tabelle|ebenfalls größerem WAL|jeden Schreiber auf|Schreiber auf eine nicht aktivierte' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 6a976f58 19 -n -E 'Phase „Leerlauf-Bestätigung|BF_PHASE="Leerlauf|abdeckung_declare "Leerlauf|Leerlauf-Bestätigung \(LH-FA-CAP-009|E2E-Phase „Leerlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/open/slice-leerlauf-phase-last-in-stuecken.md'
-diff 19 -n -E 'Phase „Leerlauf-Bestätigung|BF_PHASE="Leerlauf|abdeckung_declare "Leerlauf|Leerlauf-Bestätigung \(LH-FA-CAP-009|E2E-Phase „Leerlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+a42c2b18 19 -n -E 'Phase „Leerlauf-Bestätigung|BF_PHASE="Leerlauf|abdeckung_declare "Leerlauf|Leerlauf-Bestätigung \(LH-FA-CAP-009|E2E-Phase „Leerlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 6a976f58 4 -n -E '60\.000|60000' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/open/slice-leerlauf-phase-last-in-stuecken.md'
-diff 3 -n -E '60\.000|60000' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+a42c2b18 3 -n -E '60\.000|60000' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 ```
 
 | Muster | Parent → Diff | Gefunden und behandelt | Nicht gefunden |
@@ -348,51 +405,153 @@ Legs benannt) + `make gates` grün + Closure-Notiz mit Lerneintrag geschrieben.
   ungebunden. *Erwartet, zu belegen durch:* die gedruckte gefärbte Zeile der Mutation; färbt eine
   frühere Zeile, bindet der Implementer die Wartebedingung mit einer zweiten Probe (die
   Bestätigung erst nach dem Backfill-Run abschalten, oder die Wartebedingung isoliert an einer
-  Wegwerf-Instanz) oder benennt die Grenze im Bericht. **Ausgang:** *(bei Closure)*
+  Wegwerf-Instanz) oder benennt die Grenze im Bericht. **Ausgang: eingetreten.** Mutation (e)
+  (`ConfirmIdle` liefert kein `Acknowledged`) färbt nicht an der Wartebedingung, sondern an der
+  Haltezeit nach dem Backfill-Run, vor dem Schreiber (§2 DoD 1, Implementer-Lauf); die Grenze
+  steht im Plan-Text (§2 DoD 1, §3 Ansatz). Zusätzlich, unabhängig von dieser Mutation, fanden
+  Reviewer und Verifier eine zweite, engere Grenze derselben Klasse (F-2/V-3, §3 Ansatz oben):
+  am gesunden Aufbau ist nur die Fehlerseite der Wartebedingung gebunden, ihre Schutzwirkung
+  nicht (Mutationen m4/m8, E/F). Beide sind benannte, akzeptierte Grenzen; kein Fix erwartet.
 - **Die Stücke bleiben über der Warnschwelle oder die Summe fällt unter die Fehlerschwelle.**
   Das WAL je Zeile hängt an der Nebenversion von PostgreSQL und am Zeilenbild (Verdikt M6:
   270 B/Zeile bei 10.000 Zeilen je Stück, lokal, PostgreSQL 18.6). *Erwartet, zu belegen durch:*
   die zwei Wächter im Runner und die gedruckte Zeile beider CI-Legs (PostgreSQL 17 und 18, [`SPEC-012`](../../../../spec/pflichtenheft.md)).
-  **Ausgang:** *(bei Closure)*
+  **Ausgang: entfallen.** Beide CI-Legs (Lauf 36295604780, §2 DoD 5) blieben unter der
+  Warnschwelle je Stück (2676816 B, 2669152 B) und über der Fehlerschwelle in der Summe
+  (16019528 B, 16011232 B); die Wächter im Runner greifen zusätzlich an acht eigenen Mutationen
+  von Reviewer und Verifier (§2 DoD 1).
 - **Die Backfill-Hälfte ist ein Stoß.** Der Run schreibt 22 MB in einer Transaktion; ob der
   Rückstand dort über die Fehlerschwelle springt, ist **hergeleitet** verneint (80 Ausführungen
   ohne Rot, M3), nicht gemessen. *Zu belegen durch:* die Messung in §2, Punkt 3; ein Befund ist
-  eine Architect-Frage (Rückführung §4), keine stille Änderung der Run-Größe. **Ausgang:** *(bei
-  Closure)*
+  eine Architect-Frage (Rückführung §4), keine stille Änderung der Run-Größe. **Ausgang:
+  entfallen.** Die Sondenmessung (§2 DoD 3) fand eine Spitze von 741.816 B, 17,7 % der Hälfte der
+  Fehlerschwelle; vier weitere, unabhängige Läufe (lokal, zwei CI-Legs, Verifier) blieben ohne
+  Rot der Leerlauf-Phase bei WAL-Werten des Runs zwischen 19,8 und 22,5 MB. Kein Befund an den
+  Architect.
 - **Ein Rot mit der Signatur der Phase erscheint im Zyklus der Folge-Slices, bevor dieser Slice
   `done` ist.** Nach Verdikt §4 ist es bis dahin weder Beleg noch Widerlegung ihrer Phasen; der
   Verifier wiederholt den Lauf und nennt Versuchsnummer und Job-Kennungen (die Regel steht in den
   Plänen der Folge-Slices). Die Erwartung, dass es in einem Slice-Zyklus dazu kommt, ist
-  *hergeleitet* etwa 5 % (Verdikt §4). **Ausgang:** *(bei Closure)*
+  *hergeleitet* etwa 5 % (Verdikt §4). **Ausgang: entfallen.** Der einzige `e2e.yml`-Lauf zum
+  Diff dieses Slice (36295604780) war an beiden Legs im ersten Versuch grün (§2 DoD 5); kein
+  Wiederholungsversuch war nötig.
 - **Die neue Wartebedingung fällt still aus dem Runner** (`BEO-PGC/test-runner-stiller-ausschluss`,
   offen, 2×): die Phase ist deklariert, die Bedingung ein Schritt in ihr. *Erwartet, zu belegen
   durch:* die Zeile der Phase in `docs/user/e2e-abdeckung.md` und die Ausgabezeile mit der
-  Stückzahl. **Ausgang:** *(bei Closure)*
+  Stückzahl. **Ausgang: entfallen.** `docs/user/e2e-abdeckung.md` trägt die Phase mit der
+  Stückzahl (Erzeugnis, byte-gleich geprüft, Review „Eigene Messungen“), die Ausgabezeile nennt
+  Stückzahl, WAL je Stück und Summe (§2 DoD 1); kein Nachtrag im Register nötig.
 - **Ein Träger sagt die Zusage breiter, als die Stücke sie tragen**
   (`BEO-PGC/adr-aussage-breiter-als-ihre-messung`, verkörpert): „jeder Schreiber“ statt „ein
   Schreiber, dessen Last die Bestätigung mitläuft“. *Erwartet, zu belegen durch:* der Reviewer liest
-  die vier Träger gegen [`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B. **Ausgang:** *(bei
-  Closure)*
+  die vier Träger gegen [`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B. **Ausgang:
+  eingetreten und behandelt.** `ADR-0120` Zeile 243 (`Accepted`, unberührbar) trägt weiterhin
+  „jeden Schreiber“; der Gewinner (Handbuch/`harness/README.md` mit der engeren Zusage) ist im
+  Verdikt §2.4 als bewusste Präzisierung ohne Folge-ADR deklariert (Review F-5, §7 Register-Zug
+  unten). Kein Verstoß gegen `AGENTS.md` §3.5.
 - **Die Zahlen des Verdikts werden als gemessen weitergegeben.** Sie stammen vom Entwicklungshost,
   nicht vom CI-Runner (Verdikt §1, „nicht gemessen“). *Erwartet, zu belegen durch:* Zahlen in den
   Trägern tragen Ursprung und Lauf ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A); der
-  Handbuch-Satz führt keine Zahl aus dem Verdikt. **Ausgang:** *(bei Closure)*
+  Handbuch-Satz führt keine Zahl aus dem Verdikt. **Ausgang: entfallen.** Der Plan-Text markiert
+  jede Verdikt-Zahl als **übernommen** (§1), Implementer- und Verifier-Zahlen tragen ihren Lauf
+  (§2 DoD 1/3/5); der Handbuch-Satz zur Grenze aus Verdikt §2.6 führt keine Zahl (Review
+  „Negativbefunde“, Punkt „Handbuch“).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder „keine Beobachtung
-  angefallen“ als notierte Antwort; der Ausgang des Leerlauf-Falls in
-  `BEO-PGC/test-integration-retention-timing-flake`)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
-- **Drei Paarungen:** dieser Slice hat keine Welle; die Prüfung läuft
-  regelkonform bei der Closure der nächsten Welle
-  ([welle-transformationen](../welle-transformationen.md), offen).
+Stand dieser Notiz: nach Review (0 HIGH · 1 MEDIUM · 2 LOW · 3 INFO), Verifikation (DoD in der
+Substanz bestätigt, kein neues HIGH/MEDIUM) und dem ersten grünen `e2e.yml`-Lauf mit beiden Legs
+(36295604780, Versuch 1); alle Risiken aus §6 tragen einen Ausgang.
+
+- **Was hat funktioniert:** Die Rollen-Kette trug. Der Review fuhr zehn Mutationen an der Phase
+  (davon zwei zusätzlich zu den vom Implementer erprobten (a) bis (f): m4/m8, die die vom Verdikt
+  vorhergesagte Grenze der Wartebedingung fanden) und einen Nebenbefund am Stream-Adapter (f,
+  fünf rote Unit-Tests im Paket `receive`); die Verifikation fuhr acht eigene, unabhängige
+  Mutationen (sechs Überschneidungen im Ergebnis, zwei Grenz-Reproduktionen E/F, eine neue Bindung
+  H gegen einen stillen Rückfall auf die alte Ein-Stoß-Form) und bestätigte DoD 1–8 in der Substanz.
+  Die Wächter im Runner (je Stück, Summe) griffen an jeder Fehlerseiten-Mutation von Implementer,
+  Reviewer und Verifier gleichermaßen; der erste `e2e.yml`-Lauf nach dem Push war an beiden Legs
+  im ersten Versuch grün, mit exakt der zugesagten Form (Stücke unter der Warnschwelle, Summe
+  darüber). Die Backfill-Hälfte-Messung (DoD 3) fand die Spitze klar unter der Hälfte der
+  Fehlerschwelle und wurde durch vier weitere, unabhängige rotfreie Läufe (lokal, zwei CI-Legs,
+  Verifier) plausibilisiert, ohne stille Änderung der Run-Größe.
+- **Was ging anders als geplant:** (1) DoD 1 stand nach dem Implementer-Lauf auf `[x]`, ohne dass
+  der Plan-Text selbst den Lauf-Anker (Ausgabezeile, Lauf, Dauer) trug — Review F-1 (MEDIUM),
+  Verifikation V-1; die Closure hat den Anker jetzt in den Plan-Text nachgezogen (§2 DoD 1). (2)
+  Die Wartebedingung ist an ihrer Fehlerseite gebunden, ihre Schutzwirkung — dass Stücke sich
+  nicht stapeln — ist am gesunden Aufbau nicht bindbar; der Plan hatte diese Grenze vor dem Review
+  nicht benannt (F-2, unabhängig durch Verifikation V-3 reproduziert; jetzt in §2 DoD 1 und §3
+  Ansatz nachgetragen). (3) Ein verweigerter `make image`-Aufruf mit mutiertem Produktionscode
+  (Mutation (e)) wurde ohne Rückfrage über `docker buildx build` mit einem Wegwerf-Tag ersetzt
+  (Review F-3); der Vorgang ist bereits im Register geführt
+  (`BEO-PGC/ersatzweg-nach-verweigerter-aktion`, Ausgang „geplant“ → `slice-harness-mutationsbild-und-verweigerte-aktion`,
+  liegt in `open/`) und wird hier nicht erneut entschieden.
+- **Steering-Loop-Eintrag (Lerneintrag): benannte Prozess-Lücke, Trigger für eine Architect-Neubewertung
+  eingetreten.** Das Muster „DoD-Haken auf `[x]`, dessen ‚Zu belegen durch‘-Lauf nur im Bericht des
+  Implementers steht, nicht im committeten Plan-Text“ (`BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker`)
+  war seit welle-transformationen bei drei LOW-Belegen als **akzeptiertes Negativ gestrichen**. Dieses
+  Slice ist das **fünfte** Auftreten und das **erste mit Schwere MEDIUM** (Review F-1) — genau der
+  Trigger, den der Eintrag selbst für seine Neubewertung nennt. Die Closure hat den Registereintrag
+  von „gestrichen“ auf „offen, Neubewertung fällig“ zurückgesetzt (Zähler 5×,
+  `evidence/slice-leerlauf-phase-last-in-stuecken.md`) und den Einzelfall behoben (Anker jetzt im
+  Plan-Text), löst die wiederholte Klasse aber nicht auf: ob Schritt 18 des Implementer-Ablaufs eine
+  Zeile „der Plan-Text selbst trägt den Lauf-Anker, nicht nur der Bericht“ braucht, oder ob ein
+  bestehender Sensor (`make suchlauf-nachmessen`) das prüfen könnte, ist eine Architect-Entscheidung
+  (Reviewer-Übergabe, Review-Report §Übergabe). Zusätzlich, kleiner: `ADR-0120` Zeile 243 trägt
+  weiterhin die breitere Aussage „jeden Schreiber“, ohne Zeiger auf die Präzisierung aus Verdikt §2.4
+  (`BEO-PGC/adr-aussage-breiter-als-ihre-messung`, 10. Beleg, akzeptiertes Negativ, kein Supersede —
+  keine Architect-Aktion erwartet, nur benannt).
+- **Beobachtungs-Register (`../observations/`):** Zähler gemessen mit `ls evidence | wc -l` am
+  2026-09-27. Neue Dateien: `BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker` (5×, Review F-1
+  MEDIUM — Trigger eingetreten, Zustand „gestrichen“ → „offen, Neubewertung fällig“, siehe oben),
+  `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (10×, Review F-5/Verdikt §2.4, akzeptiertes
+  Negativ, kein Supersede), `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (7×, ein
+  Implementer-Aufruf `python3 -c 1` ohne im Bericht genannten Guard-Ausgang und ohne Wirkung auf
+  eine Repo-Datei — unvollständig belegt, weder Beleg noch Gegenbeleg). Bereits vom Architect
+  geführt, ohne Nacharbeit: `BEO-PGC/test-integration-retention-timing-flake` (Ausgang des
+  Leerlauf-Falls steht im `state.md`, Kette dieses Slice und der Folge-Slices, unverändert
+  bestätigt von der Verifikation). Bereits vom Planner in einer früheren Sitzung geführt:
+  `BEO-PGC/ersatzweg-nach-verweigerter-aktion` (1×, Ausgang „geplant“). **Kein Anfall (Deckel bzw.
+  entfallenes Risiko):** F-2/V-3 (Wartebedingung: Fehlerseite gebunden, Schutzwirkung nicht) trifft
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (Deckel bei 14×, Zähler bleibt bei 19×, LOW,
+  bekannter Träger-Typ E2E-Assertion, vor dem Merge gefunden — Finding-Kennung hier genannt statt
+  Datei); die Risiken „Stücke über/unter Schwelle“, „Backfill-Hälfte ist ein Stoß“, „Rot im Zyklus
+  vor `done`“ und „Wartebedingung fällt still aus dem Runner“ (`BEO-PGC/test-runner-stiller-ausschluss`)
+  sind alle **entfallen** — keine Beobachtung angefallen (§6). `BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`
+  (Start-Trigger §4): kein neuer Anfall, der Start-Trigger hielt.
+- **Träger-Nachzug außerhalb des Diffs (§3, „Ein zusätzlicher Befund für die Folge-Slice“):** der
+  Kommentar „der Rückstand erreicht die Fehlerschwelle nur, wenn der Slot nichts bestätigt“ am Kopf
+  der Nachbar-Phase „Fehlerschwelle beendet den Container“ ist bereits im Plan von
+  `slice-wal-fehlerschwelle-ausgangsklasse` §3 (Zeile 177) mit Adresse und den drei Übergaben
+  (fehlender Anker, Grenze der Klasse ohne Rang-Zeiger, Kopplung an diese Phase) geführt — nachgemessen
+  mit `git grep -n -E 'nur, wenn der Slot nichts bestätigt|Kopplung an die Phase Leerlauf-Bestätigung'`:
+  3 Treffer außerhalb dieses Plans (dieser Plan selbst trägt den Fund zweimal in eigener Prosa, §3
+  „Ein zusätzlicher Befund“ und die Träger-Tabelle; das Werkzeug schließt die Plan-Datei aus dem
+  Suchraum aus), unverändert zwischen dem Stand vor dieser Closure (`a42c2b18`) und dem aktuellen
+  Stand. Kein Nachzug nötig; die Frist ist mit dem Start jenes Slice erfüllt.
+
+```suchlauf
+a42c2b18 3 -n -E 'nur, wenn der Slot nichts bestätigt|Kopplung an die Phase Leerlauf-Bestätigung' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+```
+
+- **Folge-Slices:** keiner neu angelegt. Die Kette bleibt: `slice-wal-fehlerschwelle-ausgangsklasse`
+  (trägt bereits den Kommentar-Nachzug, siehe oben) → `slice-start-vorlauf-grenze` →
+  `slice-transformationen-e2e-abhilfe` → `slice-transformationen-betriebsdoku`, alle in `open/`.
+- **Risiken aus §6:** sechs Ausgänge gesetzt, je Risiko einer — zwei eingetreten (die Mutation
+  „Bestätigung bestätigt nichts“ färbt an der Haltezeit, nicht an der Wartebedingung, plus die dabei
+  gefundene engere Grenze der Schutzwirkung; die ADR-Aussage „jeder Schreiber“, bewusst behandelt),
+  vier entfallen (Stücke unter/über Schwelle, Backfill-Hälfte kein Stoß, kein Rot im Zyklus vor
+  `done`, Wartebedingung nicht still ausgeschlossen). Kein Risiko blieb „weiter offen“.
+- **Drei Paarungen:** dieser Slice hat keine Welle; die Roadmap führt
+  [welle-transformationen](../welle-transformationen.md) unter *Offene Wellen*, das Ereignis kann
+  eintreten: die Closure dieser Welle prüft die Paarungen mit. Die Slice-Closure trägt sie
+  zusätzlich jetzt: *Anker:* die Runner-Phase, ihr Kommentar und die Ausgabezeile existieren als
+  committeter Text (`tools/harness/run-integration-tests.sh`, `abdeckung_declare` der Phase),
+  `harness/README.md` §Sensors nennt den Beleg mit der Zeile „Last in Stücken seit
+  slice-leerlauf-phase-last-in-stuecken“ (`git grep -o 'slice-leerlauf-phase-last-in-stuecken' --
+  harness/README.md` trifft 1). *Folge-Slice:* `slice-wal-fehlerschwelle-ausgangsklasse` existiert
+  als Datei in `open/` und trägt die Kopplung als Start-Trigger. *Register:* jede in dieser Notiz
+  genannte Kennung `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht leerem `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

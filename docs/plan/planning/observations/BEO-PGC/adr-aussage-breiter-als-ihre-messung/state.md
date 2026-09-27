@@ -81,6 +81,19 @@ liefert zwei Treffer.
   trägt die nächste Berührung von `ADR-0129` (neue ADR mit `Supersedes` oder Zitat-Korrektur
   nach `ADR-0073`, Entscheidung beim Architect).
 
+- `ADR-0120` §Konsequenzen (Zeile 243, „dasselbe gilt für jeden Schreiber auf Tabellen ohne
+  Publication-Bezug“; gemessen, Architect-Verdikt `architect-verdict-leerlauf-bestaetigung-intermittenz`
+  M2/M5: bei einem Stoß über der Fehlerschwelle enthält die Metrik kurz auch WAL, das die Quelle
+  noch nicht geliefert hat): **akzeptiertes Negativ**, kein Supersede. Die Präzisierung lebt an
+  den Trägern (`harness/README.md`, Handbuch), nicht in der ADR; ein Leser der ADR sieht weiterhin
+  den breiteren Satz ohne Zeiger dorthin (Träger-Slice `slice-leerlauf-phase-last-in-stuecken`).
+
 Verwandt, nicht doppelt gezählt: `BEO-PGC/architect-verdikt-rollen-scope-luecke`.
 
-Zähler: 9× (Dateien unter `evidence/`).
+**Deckel bei 10× (seit welle-backfill-bestand):** weitere Auftreten, die vor dem Merge vom
+Reviewer, Verifier oder Architect gefunden werden, Schwere ≤ LOW haben und einen bekannten
+Träger-Typ (ADR-Fitness-Function-Zeile, ADR-Prosa-Aussage) treffen, bekommen keine
+`evidence/`-Datei, sondern stehen mit Finding-Kennung in der Closure-Notiz des Slice
+(`../../README.md`). Ausgang unverändert **verkörpert**.
+
+Zähler: 10× (Dateien unter `evidence/`, gemessen mit `ls evidence | wc -l`).

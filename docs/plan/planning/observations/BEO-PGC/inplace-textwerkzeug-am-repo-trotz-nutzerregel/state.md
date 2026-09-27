@@ -29,12 +29,17 @@ des nächsten Slice, dessen Läufe unter diesem Guard liefen; eingetreten mit de
 Repo-Pfad **mit Wirkung** auf eine Repo-Datei) ist nicht eingetreten. Die Neubewertung der nicht gelisteten
 Namen trägt der Auflösungs-Trigger von `MR-004`. Die Scratchpad-Ausnahme für
 `sed -i` ist entschieden: keine, der Guard blockt unbedingt.
-Zähler (abgeleitet): 6× (evidence/slice-backfill-speicher-untersuchung.md,
+Zähler (abgeleitet): 7× (evidence/slice-backfill-speicher-untersuchung.md,
 evidence/slice-transformationen-antragsweg-usecase.md,
 evidence/slice-transformationen-backfill-pfad.md,
 evidence/slice-antragsqueue-lesefehler-failed.md,
 evidence/slice-transformationen-map-value.md,
-evidence/adr-0129-capture-quellseite-keepalive-test-an-beiden-pins.md). Der fünfte Beleg ist eine **Regelgrenze**, kein neuer
+evidence/adr-0129-capture-quellseite-keepalive-test-an-beiden-pins.md,
+evidence/slice-leerlauf-phase-last-in-stuecken.md). Der siebte Beleg
+(`slice-leerlauf-phase-last-in-stuecken`) trägt einen Host-Aufruf `python3 -c 1` des Implementers
+ohne im Bericht genannten Guard-Ausgang und ohne Wirkung auf eine Repo-Datei im Diff —
+**unvollständig belegt**: weder ein Beleg noch ein Gegenbeleg für das erste
+Neubewertungs-Kriterium der Kopf-Liste. Der fünfte Beleg ist eine **Regelgrenze**, kein neuer
 Fehlgriff: ein Anhängen per `cat >>` (der Guard liest Umleitungen nicht; die Regelfrage ist mit dem
 Architect-Verdikt entschieden: `AGENTS.md` §3.1 verbietet den Weg),
 ein vom Guard geblockter `sed -i` des Verifiers und ein `cd <Repo> && python3 --version` des Planners, das
@@ -54,6 +59,4 @@ Vorgang wurde geblockt. Ursprung beider: aus Agenten-Berichten übernommen (Anga
 Guard gemessen; gemessen ist allein, dass die Hook-Eingabe `python3 --version` am Guard des Standes
 `cea198fb` mit Exit 0 ohne Ausgabe endet. **Nicht gezählt** (kein abgeschlossener Vorgang mit Beleg-Datei-Namen;
 Ursprung wie oben, keine Wirkung auf eine Repo-Datei): ein Planner-Aufruf `python3` mit leerem Heredoc bei
-einer Slice-Anlage (geblockt; der Vorgang ist im Auftrag nicht benannt) und ein Implementer-Aufruf
-`python3 -c 1` in `slice-leerlauf-phase-last-in-stuecken` (der Bericht nennt den Guard-Ausgang nicht; die
-Beleg-Datei legt der Planner der Closure dieses Slice an).
+einer Slice-Anlage (geblockt; der Vorgang ist im Auftrag nicht benannt).
