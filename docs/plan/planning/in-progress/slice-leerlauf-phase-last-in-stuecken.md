@@ -12,7 +12,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 **Welle:** ohne Welle — der Slice trägt keine Closure-Bedingung, die von
 seiner DoD verschieden wäre. Er ist der erste der Kette hinter
 `slice-capture-leerlauf-quellbelege` und geht
-[`slice-wal-fehlerschwelle-ausgangsklasse`](slice-wal-fehlerschwelle-ausgangsklasse.md)
+`slice-wal-fehlerschwelle-ausgangsklasse`
 voraus (Start-Trigger dort, §4;
 [welle-transformationen](../welle-transformationen.md) §5, Kante „Stabilisierung
 der Phase Leerlauf-Bestätigung“).
@@ -85,7 +85,7 @@ Lauf (§2, Punkt 1) und misst die Backfill-Hälfte selbst (§2, Punkt 3).
 - **Die Phase „Fehlerschwelle beendet den Container“** und ihr Stoß über der Schwelle
   (`WAL_STOP_FOREIGN`, `generate_series(1, 60000)` an der zweiten Fundstelle). Sie soll
   einen Stoß nicht überleben; das Fenster ist dort kein Fehler (Verdikt §3, Abgrenzung). Ihre
-  Klasse trägt [`slice-wal-fehlerschwelle-ausgangsklasse`](slice-wal-fehlerschwelle-ausgangsklasse.md).
+  Klasse trägt `slice-wal-fehlerschwelle-ausgangsklasse`.
 - **Der Workflow `e2e.yml`.** Er bleibt strukturell unverändert, geändert wird der Runner, den
   er aufruft; ein Beleg am realen Lauf ist trotzdem gefordert (§2 Closure-Pflichten, Verdikt §3
   Punkt 4).
@@ -102,7 +102,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
 **Erwartung**, bis der Implementer sie gefahren hat (Stelle, Instanz, gesehene Farbe;
 [`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B).
 
-- [ ] **Die Last läuft in Stücken.** Der Schreiber auf `$WAL_FOREIGN` läuft in Stücken
+- [x] **Die Last läuft in Stücken.** Der Schreiber auf `$WAL_FOREIGN` läuft in Stücken
       (Vorschlag: 6 × 10.000 Zeilen, je etwa 2,68 MB WAL laut M6, dort erprobt an einem
       echten Stream, lokal, 3 von 3 Läufen). Nach jedem Stück wartet der Runner mit Frist
       (Vorschlag 30 s) darauf, dass `confirmed_flush_lsn` des Slots die WAL-Position hinter
@@ -121,7 +121,26 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       eine frühere Zeile als die Wartebedingung (etwa die Haltezeit nach dem Backfill-Run), bindet
       diese Mutation die Wartebedingung nicht, und der Bericht nennt es (§6). Die Mutation „das
       Stück auf 30.000 Zeilen“ färbt den Wächter je Stück rot — *erwartet, zu erproben*.
-- [ ] **Die Träger sind nachgezogen.** Der Kommentar der Phase (Kopf vor `BF_PHASE`) und der
+      **Erprobt (Implementer, 2026-09-27, lokal; je Lauf eine Scratchpad-Kopie des Runners, die nach
+      der Phase endet, gegen eine Wegwerf-Umgebung; Farbe = Exit 1 mit der genannten Zeile):**
+      (a) 30.000 Zeilen je Stück → rot am Wächter je Stück, Zeile „Stück 1 von 6 erzeugte 8013552 B
+      WAL, nicht weniger als die Warnschwelle 4194304 B“; (b) 2 statt 6 Stücke → rot an der Summe,
+      Zeile „die 2 Stücke erzeugten zusammen 5345256 B WAL, nicht mehr als die Fehlerschwelle
+      8388608 B“; (c) die Position der Wartebedingung um 1 GiB hinter das Stück verschoben → rot an
+      der Wartebedingung nach 30 s, Zeile „confirmed_flush_lsn des Slots erreichte die Position
+      hinter Stück 1 von 6 nicht innerhalb von 30 s“; (d) der Feed-Container mit `docker pause`
+      angehalten, bevor das erste Stück läuft → rot an derselben Zeile wie (c); (e) die
+      Leerlauf-Bestätigung bestätigt nichts (`CaptureService.ConfirmIdle` gibt ohne Aufruf des
+      `ReplicationAckPort` ein leeres Ergebnis zurück, eigenes Image unter einem Wegwerf-Tag, danach
+      entfernt) → rot, aber **nicht an der Wartebedingung**: die Zeile „nach dem Run: der Feed-Container
+      endete (Ausgang 1)“ mit „WAL-Rückstand 28243296 Bytes über Fehlerschwelle 8388608 Bytes“ färbt an
+      der Haltezeit nach dem Backfill-Run, vor dem Schreiber. Die Wartebedingung bindet also (c) und
+      (d), nicht (e) — der Eigenbefund aus §6, Risiko 1, ist eingetreten und in (c) und (d) gebunden.
+      Ein weiterer Lauf (f): nur der Aufruf im Stream-Adapter (`confirmIdle` in
+      `receive.go` setzt `lastAcked` nicht und meldet `false`, der Port bestätigt weiter) ließ die
+      Phase **grün**; dieser Abschnitt der Phase bindet den Stream-lokalen Stand nicht (Grenze, nicht
+      Gegenstand dieses Slice).
+- [x] **Die Träger sind nachgezogen** (Review dazu: eigener Punkt unten, steht aus). Der Kommentar der Phase (Kopf vor `BF_PHASE`) und der
       Kommentar an der Anweisung des Schreibers, die Zeile `abdeckung_declare` der Phase, die
       Ausgabezeile am Phasen-Ende, `harness/README.md` §Sensors (Zeile `make test-integration`,
       die Beschreibung der Phase „Leerlauf-Bestätigung“) und das Benutzerhandbuch
@@ -139,7 +158,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       Runners. *Zu belegen durch:* der Suchlauf in §3 (beide Stände gemessen, `make
       suchlauf-nachmessen`), `make docs-check`, `make kommentar-kennungen DIFF=<Basis>` ohne
       Kandidat in den geänderten Blöcken (Form, nicht Wahrheit) und Review.
-- [ ] **Die Backfill-Hälfte der Phase ist gemessen.** Der Backfill-Run (rund 22 MB WAL in einer
+- [x] **Die Backfill-Hälfte der Phase ist gemessen.** Der Backfill-Run (rund 22 MB WAL in einer
       Transaktion des Workers, M2) trug in den 80 Ausführungen kein Rot; dass er kein Stoß ist,
       ist **hergeleitet** (der Runner druckt die Kopierdauer des Runs nicht, Verdikt §3 Punkt 3).
       Der Implementer misst die Spitze des Rückstands im Run **einmal** mit Proben von höchstens
@@ -147,6 +166,18 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       berichtet Stelle, Instanz und Zahl. Liegt sie über der Hälfte der Fehlerschwelle der Phase
       (4.194.304 B, abgeleitet aus 8.388.608 B), meldet er es an den Architect, statt die
       Run-Größe still zu ändern. *Zu belegen durch:* die gedruckte Messzeile im Bericht.
+      **Messung des Implementers (2026-09-27, lokal, ein Lauf):** Stelle — die Compose-Umgebung
+      des Runners (PostgreSQL 18, Pin `PG_TEST_IMAGE` aus `compose.yaml`, `wal_sender_timeout` 2 s,
+      Feed-Container mit den Schwellen 4 MiB/8 MiB) unmittelbar vor dem Antrag des Backfill-Runs
+      in der Phase „Leerlauf-Bestätigung“, an einer Scratchpad-Kopie des Runners (nicht committet),
+      keine weitere Last; Sonde — eine PL/pgSQL-Schleife in einer Sitzung des PostgreSQL-Containers
+      liest `pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)` des Capture-Slots mit
+      `pg_sleep(0.02)` dazwischen: 1500 Proben, größter Abstand zweier Proben 23 ms (gemessen aus den
+      Zeitstempeln der Proben), kein Abstand über 50 ms. Zahl — der Run über 30.000 Zeilen erzeugte
+      22.490.392 B WAL und endete `completed`; die **höchste Probe** des Rückstands war
+      **741.816 B** (52 von 1500 Proben lagen über 0 B), das sind 17,7 % der Hälfte der
+      Fehlerschwelle (741.816 / 4.194.304, abgeleitet). Die Spitze liegt unter der Hälfte; die
+      Run-Größe bleibt unverändert, kein Befund an den Architect.
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] **Der erste grüne `e2e.yml`-Lauf mit beiden Legs** nach dem Push des Slice-Codes steht im
@@ -162,12 +193,12 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13); `make suchlauf-nachmessen
-      PLAN=docs/plan/planning/open/slice-leerlauf-phase-last-in-stuecken.md` läuft mit den
+      PLAN=docs/plan/planning/in-progress/slice-leerlauf-phase-last-in-stuecken.md` läuft mit den
       `diff`-Zeilen des Implementers durch.
-- [ ] Doku-Update: `harness/README.md` §Sensors und Benutzerhandbuch wie im zweiten Punkt;
+- [x] Doku-Update: `harness/README.md` §Sensors und Benutzerhandbuch wie im zweiten Punkt;
       `spec/**` und `ADR-0120` bleiben unberührt (Verdikt §2.4).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
@@ -200,6 +231,7 @@ lokal, **übernommen**).
 | `docs/user/e2e-abdeckung.md` | Erzeugnis | kommt aus dem Runner |
 | `harness/README.md` §Sensors (Zeile `make test-integration`) | update | ändern nur der genau benannte Satzteil zur Phase (die Zeilen sind sehr lang) |
 | `docs/user/benutzerhandbuch.md` (Absatz „WAL-Rückstand des Capture-Slots“, Ergebnis-Absatz unter „WAL-Rückstand prüfen“, `Version:`, `### Änderungshistorie`) | update | die Zusage und die Grenze aus Verdikt §2.6; Versionshistorie-Regel des Reviewers ([`.harness/skills/reviewer.md`](../../../../.harness/skills/reviewer.md), HIGH „Handbuch-Versionshistorie nicht fortgeschrieben“) |
+| Verweise auf die Plan-Datei dieses Slice in `docs/plan/planning/in-progress/roadmap.md` (2), `docs/plan/planning/welle-transformationen.md` (1), `docs/plan/planning/observations/BEO-PGC/test-integration-retention-timing-flake/state.md` (1), `docs/plan/planning/open/slice-wal-fehlerschwelle-ausgangsklasse.md` (2) und `docs/plan/planning/open/slice-start-vorlauf-grenze.md` (1), dazu die vier Verweise dieses Plans auf `slice-wal-fehlerschwelle-ausgangsklasse` | update (Plan-Nachzug, nicht im Plan der Anlage) | die Moves `open` → `next` → `in-progress` machten die Linkziele zu `target-missing` (`make docs-check`); die Verweise nennen die Kennung statt des wandernden Pfads ([`AGENTS.md`](../../../../AGENTS.md) §3.13, Verweisform auf wandernde Slice-Pläne); nur die Verweisform ändert sich, keine Aussage. Die Datei `state.md` und die Pläne der Folge-Slices sind fremde Träger und in dieser einen Zeile mitgeführt, weil der Gate-Lauf sonst rot bleibt |
 
 **Ansatz (Liste):**
 
@@ -219,7 +251,7 @@ Ausnahmen von [`AGENTS.md`](../../../../AGENTS.md) §3.13 (`docs/reviews/**`, Re
 Werkzeug aus. Stand ist `d078700d` (der Commit vor der Anlage dieses Slice, vom Planner am
 2026-09-27 gemessen; ein Stand ist eine Commit-Kennung, nie `HEAD`); der Implementer misst am
 Parent seiner Arbeit neu und trägt die `diff`-Zeilen ein (`make suchlauf-nachmessen
-PLAN=docs/plan/planning/open/slice-leerlauf-phase-last-in-stuecken.md`). Die Zahlen des Standes
+PLAN=docs/plan/planning/in-progress/slice-leerlauf-phase-last-in-stuecken.md`). Die Zahlen des Standes
 `d078700d` sind mit `git grep -n` gemessen, nicht übernommen.**
 
 Symbolnamen der bewegten Stelle (Schreiber auf die nicht aktivierte Tabelle im Runner):
@@ -249,8 +281,30 @@ d078700d 13 -n -E 'Phase „Leerlauf-Bestätigung|BF_PHASE="Leerlauf|abdeckung_d
 | `docs/user/benutzerhandbuch.md` Zeilen 457 bis 458 und 850 bis 852 | „dasselbe gilt für jeden Schreiber auf eine nicht aktivierte Tabelle“ und „… bestätigt der Feed im Leerlauf seines Streams selbst und lässt den Wert damit nicht wachsen“ | Implementer zieht nach, ergänzt den Satz zur Grenze, führt die Versionshistorie (Stand: Version 1.65) |
 | `internal/bootstrap/walretention_slotgrowth_internal_test.go` Zeile 28 | nennt die Phase als Gegenseite („WAL ohne Inhalt für die Publication erreicht die Fehlerschwelle nicht“) | bleibt wahr; den Kommentar ändert `slice-wal-fehlerschwelle-ausgangsklasse` (DoD 3 dort); dieser Slice fasst die Datei nicht an |
 | `ADR-0120` (Zeile 243: „dasselbe gilt für jeden Schreiber auf eine nicht aktivierte Tabelle“) und `ADR-0129` (Zeilen 145 und 218: die Phase als Beleg) | `Accepted`, unberührbar | bleiben stehen; die Präzisierung steht in Verdikt §2.4 ([`AGENTS.md`](../../../../AGENTS.md) §3.5) |
-| **Fremde Träger:** [`slice-wal-fehlerschwelle-ausgangsklasse`](slice-wal-fehlerschwelle-ausgangsklasse.md) §3 (Kommentar der Phase davor, Zeile „Kopplung an die Phase Leerlauf-Bestätigung“) und §4 (Start-Trigger, Kante zu diesem Slice); [`welle-transformationen`](../welle-transformationen.md) §5 | beschreiben die Phase als Kopplung bzw. tragen die Kante zu diesem Slice | vom Planner mit der Anlage dieses Slice nachgezogen (Start-Trigger, Kante beauftragt) |
-| **Fremde Datei:** `docs/plan/planning/observations/BEO-PGC/test-integration-retention-timing-flake/state.md` | der Architect hat den Zwischenstand geführt und den Slice als Adresse genannt | **gemeldet, nicht mitgeändert.** Der Planner setzt den Ausgang bei der Closure dieses Slice (Frist: die Closure) |
+| **Fremde Träger:** `slice-wal-fehlerschwelle-ausgangsklasse` §3 (Kommentar der Phase davor, Zeile „Kopplung an die Phase Leerlauf-Bestätigung“) und §4 (Start-Trigger, Kante zu diesem Slice); [`welle-transformationen`](../welle-transformationen.md) §5 | beschreiben die Phase als Kopplung bzw. tragen die Kante zu diesem Slice | vom Planner mit der Anlage dieses Slice nachgezogen (Start-Trigger, Kante beauftragt) |
+| **Fremde Datei:** `docs/plan/planning/observations/BEO-PGC/test-integration-retention-timing-flake/state.md` | der Architect hat den Zwischenstand geführt und den Slice als Adresse genannt | **gemeldet, Inhalt nicht mitgeändert.** Mitgeführt ist allein die Verweisform des Plan-Verweises (Link auf den wandernden Pfad → Kennung, zweite Zeile der §3-Tabelle oben); der Ausgang bleibt beim Planner (Frist: die Closure dieses Slice) |
+
+**Suchlauf des Implementers** (Parent `6a976f58` = der Commit vor den drei Moves und der Arbeit; `diff` = Arbeitsbaum nach dem Commit der Träger; dieselben Muster wie oben, dazu das Zählwort der alten Last; die Plan-Datei liegt am Parent in `open/` und wird dort per Pathspec ausgenommen, am Arbeitsbaum schließt das Werkzeug sie aus):
+
+```suchlauf
+6a976f58 7 -n -E 'WAL_FOREIGN|wal_foreign_(before|bytes)|feed_e2e_wal_foreign' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/open/slice-leerlauf-phase-last-in-stuecken.md'
+diff 15 -n -E 'WAL_FOREIGN|wal_foreign_(before|bytes)|feed_e2e_wal_foreign' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+6a976f58 12 -n -E 'Schreiber auf (eine |die )?nicht aktivierte Tabelle|ebenfalls größerem WAL|jeden Schreiber auf|Schreiber auf eine nicht aktivierte' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/open/slice-leerlauf-phase-last-in-stuecken.md'
+diff 11 -n -E 'Schreiber auf (eine |die )?nicht aktivierte Tabelle|ebenfalls größerem WAL|jeden Schreiber auf|Schreiber auf eine nicht aktivierte' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+6a976f58 19 -n -E 'Phase „Leerlauf-Bestätigung|BF_PHASE="Leerlauf|abdeckung_declare "Leerlauf|Leerlauf-Bestätigung \(LH-FA-CAP-009|E2E-Phase „Leerlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/open/slice-leerlauf-phase-last-in-stuecken.md'
+diff 19 -n -E 'Phase „Leerlauf-Bestätigung|BF_PHASE="Leerlauf|abdeckung_declare "Leerlauf|Leerlauf-Bestätigung \(LH-FA-CAP-009|E2E-Phase „Leerlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+6a976f58 4 -n -E '60\.000|60000' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':!docs/plan/planning/open/slice-leerlauf-phase-last-in-stuecken.md'
+diff 3 -n -E '60\.000|60000' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+```
+
+| Muster | Parent → Diff | Gefunden und behandelt | Nicht gefunden |
+|---|---|---|---|
+| Symbolnamen (7 → 15) | der Anstieg sind die neuen Variablen und Zeilen der Schleife im Runner (`wal_foreign_chunk_max`, die Summe, die Wächter-Zeilen) | Runner (Schreiber, Wächter, Ausgabezeile) | kein Treffer außerhalb von `tools/harness/run-integration-tests.sh` (Spalte des Planner-Befunds: gleicher Ort) |
+| Beschreibung der Last samt Hedge (12 → 11) | Runner (Kommentar der Phase, Anweisung, Ausgabezeile), `harness/README.md` Zeile 141, Handbuch (zwei Stellen), `docs/user/e2e-abdeckung.md` (Erzeugnis, kommt aus dem Runner-Lauf) nachgezogen; der eine Treffer weniger ist die Handbuch-Stelle im Absatz „WAL-Rückstand des Capture-Slots“, die den Wortlaut „jeden Schreiber auf“ nicht mehr trägt | `ADR-0120` Zeile 243 und der Evidence-Eintrag `slice-capture-leerlauf-quellbelege` (`Accepted`/Record, unberührbar); die Zeilen 3494 und 3577 des Runners (Phase „Fehlerschwelle beendet den Container“, ausdrücklich unberührt, siehe Befund unten) | keine weitere Beschreibung der Last als „ein Schreiber mit größerem WAL“ im Baum (Handbuch, `harness/README.md`, `spec/**`, `docs/user/**` außer den genannten) |
+| Phase als Gegenstand (19 → 19) | die Trefferzahl bleibt, weil dieser Slice keinen Treffer entfernt oder hinzufügt; die Zeilennummern im Runner und in `docs/user/e2e-abdeckung.md` verschieben sich | Träger der Kopplung (Pläne der Folge-Slices, Roadmap, `welle-transformationen`, Register) beschreiben die Phase als Kopplung und bleiben wahr; `ADR-0129` (`Accepted`) nennt die Phase als Beleg und bleibt | `internal/bootstrap/walretention_slotgrowth_internal_test.go` Zeile 28 (Gegenseite, fasst dieser Slice nicht an, Änderung liegt bei `slice-wal-fehlerschwelle-ausgangsklasse`) |
+| Zählwort der alten Last, `60000` (4 → 3) | die Anweisung der Phase „Leerlauf-Bestätigung“ trägt kein `60000` mehr | verbleibend: Runner Zeile 3540 (`WAL_STOP_FOREIGN`, Phase „Fehlerschwelle beendet den Container“, soll ein Stoß bleiben), der Evidence-Eintrag (Record) und ein fremder Treffer in `internal/adapters/driving/http/retention_test.go` (Nanosekunden-Wert, anderer Gegenstand) | — |
+
+**Ein zusätzlicher Befund für die Folge-Slice (nicht geändert, gemeldet):** der Kommentar am Kopf der Phase „Fehlerschwelle beendet den Container“ im Runner (Zeilen 3488 bis 3497) sagt „der Rückstand erreicht die Fehlerschwelle nur, wenn der Slot nichts bestätigt“. Diese Allaussage nennt ihre Menge nicht; der Stoß ist die Gegenprobe (Verdikt §2.1). Der Satz gehört zur Phase, die `slice-wal-fehlerschwelle-ausgangsklasse` ändert (Frist: der Start dieses Slice).
 
 ## 4. Trigger
 
@@ -260,7 +314,7 @@ liegt in `done/` (erfüllt am Stand der Anlage; beide Slices ändern
 `tools/harness/run-integration-tests.sh`, der frühere hat den Belegaufbau und die Phase
 geliefert), und kein weiterer Slice liegt in `in-progress/` (WIP-Limit 1). Der Slice muss `done`
 sein, **bevor**
-[`slice-wal-fehlerschwelle-ausgangsklasse`](slice-wal-fehlerschwelle-ausgangsklasse.md) startet
+`slice-wal-fehlerschwelle-ausgangsklasse` startet
 (Start-Trigger dort, §4): beide ändern denselben Runner an verschiedenen Stellen (dieser die Last
 der Phase „Leerlauf-Bestätigung“, jener die Phase „Fehlerschwelle beendet den Container“), und ein
 Rot in der Leerlauf-Phase lässt jede Phase dahinter ungelaufen (Verdikt §3, §4). Der
