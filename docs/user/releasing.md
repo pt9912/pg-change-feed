@@ -328,19 +328,12 @@ roten Job. Bleibt nach einem Fehlschlag ein Teil-Upload zurück (Einzeldateien
 ohne vollständiges Paket), löscht der Betreiber das Paket in der Web-App des
 Ziels und wiederholt den Job.
 
-**Beleg und offene Punkte.** Die Job-Struktur mit zwei Zielen ist real
-belegt (`AGENTS.md` §3.10): Der Lauf zu `sdk-kotlin-v0.2.2` (Lauf-Kennung
-36201941235) zeigt beide Jobs `success`. Ein anonymer Abruf am
-Cloudsmith-Download-Pfad antwortet HTTP 200 für die POM-Datei
-(`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/io/github/pt9912/pgchangefeed-kotlin/0.2.2/pgchangefeed-kotlin-0.2.2.pom`),
-das Jar, das Sources-Jar, die Moduldatei und `maven-metadata.xml` (Abrufe der
-Verifikation, 2026-09-26). Cloudsmith hat die von Gradle mitveröffentlichte
-Moduldatei angenommen. Der Abruf antwortet erst nach der asynchronen
+**Verarbeitungsverzögerung.** Der Abruf eines gerade veröffentlichten
+Artefakts am Cloudsmith-Download-Pfad antwortet erst nach der asynchronen
 Verarbeitung mit HTTP 200 (typisch nach ein bis zwei Minuten); HTTP 404
 direkt nach dem grünen Upload-Schritt ist kein Fehler, der Beleg entsteht
 durch Wiederholen des Abrufs. Die Versionen `0.2.0` und `0.2.1` liegen nur
-auf GitHub Packages; auf Cloudsmith liegen die Versionen ab `0.2.2`
-(`maven-metadata.xml` nennt `latest` und `release` `0.2.2`).
+auf GitHub Packages, ab `0.2.2` liegen sie auf beiden Zielen.
 
 Kein `:latest`-Äquivalent (weder GitHub Packages noch Cloudsmith kennen
 eines) und kein GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb
