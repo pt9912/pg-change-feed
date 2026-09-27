@@ -72,21 +72,33 @@ Festlegung 2 durch den Architect.
 ## 2. Definition of Done
 
 - [x] Der Keepalive-Beleg steht als committeter Test im Tier
-      `make test-replication` (Phase `tier`): eine offene Transaktion hält die
-      Stream-Sitzung, währenddessen committet eine zweite Transaktion eine
-      große Änderungsmenge auf die veröffentlichte Tabelle, ein Keepalive tritt
-      inmitten der ersten Transaktion auf, und die bestätigte Position liefert
-      nach dem Neustart des Streams die Transaktion vollständig. Der Test läuft
-      gegen eine Instanz mit dem Standardwert von `wal_sender_timeout` (die
-      vorhandene Standard-Instanz `CDC_REPLICATION_TEST_STANDARD_DSN` aus
-      `tools/harness/run-replication-tests.sh` oder eine eigene Instanz nach
-      dem Vorbild des Slot-Reserve-Tests; die Wahl trifft der Slice am Start).
-      *Zu belegen durch:* ein realer `make test-replication`-Lauf an
-      PostgreSQL 18 **und** ein Lauf mit `PG_TEST_IMAGE` auf dem gepinnten
-      PostgreSQL-17-Digest aus `e2e.yml`, je die gedruckte Zeile mit Position und
-      Änderungszahl; die Mutation „Bestätigung an der falschen Position“
-      (Position `+ 1 GiB`) färbt den Test rot.
-- [ ] Der Beleg „Fehlerschwelle erreicht → Container endet“ steht als Runner-Phase
+      `make test-replication` (Phase `tier`): ein **roher Protokoll-Client**
+      (kein Stream-Adapter, `proto_version 1`) liest ab `START_REPLICATION` 38 s
+      nichts und antwortet nichts, während **eine** Transaktion über 400.000
+      Änderungen auf die veröffentlichte Tabelle committet; der Keepalive tritt
+      zwischen BEGIN und COMMIT dieser Transaktion auf, der Client bestätigt
+      dessen `ServerWALEnd` (gleich der Commit-LSN), beendet die Verbindung und
+      startet den Stream ab `confirmed_flush_lsn` neu, und der Neustart liefert
+      die Transaktion vollständig. Der Test läuft auf der vorhandenen
+      Standard-Instanz `CDC_REPLICATION_TEST_STANDARD_DSN` aus
+      `tools/harness/run-replication-tests.sh` (Standardwert von
+      `wal_sender_timeout`, kein fremder Schreiber). *Zu belegen durch:* der
+      Verifikations-Report
+      [`verifikation-slice-capture-leerlauf-quellbelege`](../../../reviews/verifikation-slice-capture-leerlauf-quellbelege.md)
+      §1 und §4 K1 — im Lauf des Verifiers **gemessen**: PostgreSQL 18.6
+      „Keepalive inmitten der Transaktion nach 11080 von 400000 Änderungen,
+      ServerWALEnd 0/12786CB0 gleich Commit-LSN 0/12786CB0“, Neustart lieferte
+      400000 Änderungen (40,32 s); PostgreSQL 17.11 (Digest aus `e2e.yml`, über
+      `PG_TEST_IMAGE`) nach 11077 Änderungen, 0/124C79A8 (40,37 s); die Mutation
+      „bestätigte Position `+ (1 << 30)`“ färbt den Test an beiden rot (je
+      78,18 s). In CI je Leg (Lauf 36287009221, Job-Logs mit
+      `gh api repos/pt9912/pg-change-feed/actions/jobs/<Job>/logs` am 2026-09-27
+      vom Planner **gemessen**): Job 108529548457 (Leg 17.11) nach 11538
+      Änderungen, 0/BED26C8 gleich Commit-LSN, `PASS` in 40,72 s; Job
+      108531740887 (Leg 18.6, zweiter Versuch) nach 11541 Änderungen, 0/C184090,
+      `PASS` in 43,20 s. Die Zahl „etwa 11.000 Änderungen bis zum Keepalive“ ist
+      Messung, kein Vertrag.
+- [x] Der Beleg „Fehlerschwelle erreicht → Container endet“ steht als Runner-Phase
       „Fehlerschwelle beendet den Container“ in `make test-integration`: die
       Fehlerschwelle wird über den im Runner vorhandenen Compose-Override
       (`wal_retention_error_bytes` klein, Phase „Leerlauf-Bestätigung“ in
@@ -97,11 +109,11 @@ Festlegung 2 durch den Architect.
       1, das Log trägt die Abbruch-Zeile mit einem Rückstand über der
       Fehlerschwelle, und `cdc.process_heartbeat` trägt einen Fehlerzustand. Die
       **Klasse** des Ausgangs ist nicht Teil der Zusage der Phase: sie ist
-      `storage` gemessen (fünf Läufe, Ausgabezeile der Phase; **übernommen** aus
-      dem Bericht des Implementers, vom Planner nicht nachgemessen), `ADR-0049`
-      legt `replication` fest — Codefehler, Träger
-      [`slice-wal-fehlerschwelle-ausgangsklasse`](../open/slice-wal-fehlerschwelle-ausgangsklasse.md)
-      (Architect-Verdikt
+      `storage` (Ausgabezeile der Phase; **gemessen** im Lauf des Reviewers, im Lauf
+      des Verifiers und in den zwei CI-Läufen des Ankers unten — je Ende 2 bis 3 s
+      nach der Last; fünf Läufe des Implementers **übernommen** aus dessen
+      Bericht), `ADR-0049` legt `replication` fest — Codefehler, Träger
+      `slice-wal-fehlerschwelle-ausgangsklasse` (Architect-Verdikt
       [`architect-verdict-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md)
       §2 und §4). **Der Ausgang „Grenze bleibt“ ist zulässig** und hier
       eingetreten: die Klasse steht als benannte Grenze mit dem Messergebnis im
@@ -109,21 +121,33 @@ Festlegung 2 durch den Architect.
       test-integration`. *Zu belegen durch:* ein realer, grüner `make
       test-integration`-Lauf mit der Abdeckungs-Zeile in
       [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md) (Erzeugnis
-      des Runners) und die benannte Grenze in `harness/README.md` §Sensors; die
+      des Runners; Lauf des Verifiers: Exit 0, 373 s, „E2E-Abdeckungstabelle
+      unverändert“) und die benannte Grenze in `harness/README.md` §Sensors; die
       Mutation „Aufruf von `stopStream` in der Schwellen-Prüfung entfernt“ färbt
-      die Phase rot — **erprobt** nach dem Bericht des Implementers (Image neu
-      gebaut, Phase im Runner rot: der Container lief 90 s weiter; **übernommen**,
-      vom Planner nicht nachgefahren).
+      die Phase rot — **erprobt** vom Verifier
+      ([Verifikations-Report](../../../reviews/verifikation-slice-capture-leerlauf-quellbelege.md)
+      §4 P2): Stelle `runWALRetentionCheck` in `internal/bootstrap/wiring.go`, die
+      Zeile `stopStream()` zu `_ = stopStream`; Instanz Kopie des Repos, `make image`
+      aus der Kopie, voller `make test-integration` dort; Farbe rot: „der
+      Feed-Container lief 90 s nach einer Last von 16031584 B WAL über der
+      Fehlerschwelle 8388608 B weiter“. In CI je Leg (Lauf 36287009221, Job-Logs
+      vom Planner **gemessen**): Job 108529548457 (Leg 17.11) und Job 108531740887
+      (Leg 18.6, zweiter Versuch) tragen die Ausgabezeile der Phase, Ende 3 s nach
+      der Last, Klasse `storage`.
 - [ ] Die Ergänzung von
       [`ADR-0121`](../../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md)
-      Festlegung 2 liegt vor: eine neue ADR des Architects mit teilweisem
-      `Supersedes`, die das Tier des Keepalive-Tests nennt und die Grenze „für
-      PostgreSQL 17 liegt die Messung nicht vor“ mit dem gemessenen Ergebnis
-      ersetzt; jede ihrer Aussagen über eine Menge (beide PostgreSQL-Versionen)
-      trägt den Beleg-Anker dieses Slice
-      ([`AGENTS.md`](../../../../AGENTS.md) §3.12 „Verfasser einer ADR“). *Zu
+      Festlegung 2 liegt vor:
+      [`ADR-0129`](../../adr/0129-capture-quellseite-keepalive-test-an-beiden-pins.md)
+      (Commit `4e654153`) ist eine neue ADR des Architects mit teilweisem
+      `Supersedes` von `ADR-0121` (Festlegung 2 und Konsequenz-Punkt „Negativ
+      (Grenze, benannt)“), nennt das Tier des Keepalive-Tests und ersetzt die Grenze
+      „für PostgreSQL 17 liegt die Messung nicht vor“ mit dem gemessenen Ergebnis
+      der zwei Pins; jede ihrer Aussagen über eine Menge trägt den Beleg-Anker dieses
+      Slice ([`AGENTS.md`](../../../../AGENTS.md) §3.12 „Verfasser einer ADR“). *Zu
       belegen durch:* die ADR und ihre Index-Zeile in
-      [`docs/plan/adr/README.md`](../../adr/README.md).
+      [`docs/plan/adr/README.md`](../../adr/README.md) (beide liegen vor) und die
+      Lese-Prüfung der ADR gegen den Verfasser-Satz durch den Reviewer (frischer
+      Kontext, Diff `e4b77a05..4e654153`) — sie steht aus (Risiko §6, letzte Zeile).
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -139,11 +163,12 @@ Festlegung 2 durch den Architect.
       test-replication` und `make test-integration` nennen die neuen Belege bzw.
       die benannte Grenze); das Benutzerhandbuch bleibt unberührt (keine
       Betreiber-Oberfläche).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
-      Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+      Sensor · benannte Spec-Lücke) — §7 trägt ihn; der Ausgang des letzten
+      Risikos aus §6 und die Lese-Prüfung von `ADR-0129` stehen aus.
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
@@ -165,13 +190,14 @@ Keepalive-Tests ist *hergeleitet* (der Wegwerf-Test des Reviewers wartete 55 s,
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `internal/adapters/driving/replication/receive/sourcekeepalive_test.go` (Ort am Start gelesen: das Paket der Stream-Tests, dessen Helfer `newTestEnvOn`/`readConfirmedFlush`/`awaitSlotInactive` der Test nutzt) | neu (Plan-Nachzug: ein **roher Protokoll-Client** statt des Stream-Adapters) | Der Adapter bestätigt inmitten einer Transaktion nicht (`TestRunNoConfirmationInsideOpenTransaction`, Produktionscode bleibt unberührt); der Beleg der Quellseite liest deshalb das Protokoll selbst: der Client wartet die Hälfte von `wal_sender_timeout` ab, liest den Keepalive zwischen BEGIN und COMMIT einer Transaktion über 400.000 Änderungen, bestätigt dessen `ServerWALEnd`, beendet die Verbindung und startet den Stream ab `confirmed_flush_lsn` neu. |
-| `tools/harness/run-replication-tests.sh` | update | Der Test läuft auf der vorhandenen Standard-Instanz (Wahl am Start: sie trägt den Standardwert von `wal_sender_timeout` und im Tier-Lauf keinen fremden Schreiber), als eigener Lauf hinter dem Schwellen-Beleg mit `-run`-Muster und PASS-Wächter (eigene Umgebungsvariable `CDC_SOURCE_KEEPALIVE_TEST_DSN`, nur im Tier-Lauf gesetzt: die Phase `measure` und `go test ./...` überspringen ihn und zahlen die 38 s Wartezeit nicht). |
+| `tools/harness/run-replication-tests.sh` | update | Der Test läuft auf der vorhandenen Standard-Instanz (Wahl am Start: sie trägt den Standardwert von `wal_sender_timeout` und im Tier-Lauf keinen fremden Schreiber), als eigener Lauf hinter dem Schwellen-Beleg mit `-run`-Muster und PASS-Wächter (eigene Umgebungsvariable `CDC_SOURCE_KEEPALIVE_TEST_DSN`, nur im Tier-Lauf gesetzt: die Phase `measure` und `go test ./...` überspringen ihn und zahlen die 38 s Wartezeit nicht). Das Tier läuft in CI: der Schritt „Replication-Tier (go test ./... und Slot-Reserve)“ in `.github/workflows/e2e.yml` führt `bash tools/harness/run-replication-tests.sh tier` je Matrix-Leg (PostgreSQL 17 und 18) hinter dem Compose-Integrationstest aus; die gedruckte Zeile des Tests steht im Job-Log beider Legs (DoD 1). |
 | `tools/harness/run-integration-tests.sh` | update (Plan-Nachzug: eine **Bash-Phase** statt einer `func TestE2E*`) | Phase „Fehlerschwelle beendet den Container“ hinter der Phase „Leerlauf-Bestätigung“ (deren Compose-Override sie wiederholt), mit `abdeckung_declare`. Die Belegmittel (`docker inspect`, `docker logs`, Compose-Override, `pg_stat_activity`) sind die des Runners, die Gegenseite ist ebenfalls eine Runner-Phase; eine neue `func TestE2E*` entsteht nicht, kein `-run`-Muster ändert sich. |
 | `test/integration/integration_test.go` | **entfällt** (Reduktion, Begründung in der Zeile darüber) | Kein Go-Test in diesem Paket. |
 | `docs/user/e2e-abdeckung.md` | update (Erzeugnis des Runners) | Eine neue Zeile; die Ort-Zeilen der Runner-Phasen hinter der neuen Phase verschieben sich. |
 | `harness/README.md` | update | Beschreibungen der beiden Läufe samt benannter Grenze des zweiten Belegs. |
 | `docs/plan/planning/in-progress/slice-capture-leerlauf-quellbelege.md` | update | Dieser Nachzug, DoD-Haken, Suchlauf-Feld. |
-| ADR-Ergänzung (Architect) und `docs/plan/adr/README.md` | neu / update — **nicht Teil des Implementer-Laufs** | Architect-Zug nach der Verifikation; was er braucht, steht im Bericht des Implementers. |
+| ADR-Ergänzung (Architect) und `docs/plan/adr/README.md` | neu / update — **nicht Teil des Implementer-Laufs** | Architect-Zug nach der Verifikation: [`ADR-0129`](../../adr/0129-capture-quellseite-keepalive-test-an-beiden-pins.md) (Commit `4e654153`) und ihre Index-Zeile. |
+| Beobachtungs-Register (`observations/BEO-PGC/…`), `open/slice-code-kommentare-bereinigung.md`, `open/slice-wal-fehlerschwelle-ausgangsklasse.md`, `welle-transformationen.md` | update — Planner-Closure | Evidence-Dateien und `state.md` der acht berührten Einträge; Übergabe der zwei Godoc-Kommentare zum durch `ADR-0121` ersetzten Begründungssatz; Kommentar-Übergaben der Runner-Phase und bedingte Kante der Stabilisierung; Links auf Kennungen (§7). |
 
 **Befund der Erprobung (für den Architect, keine Änderung am Produktionscode):**
 der zweite Beleg läuft grün, seine Aussage über die **Klasse** des Ausgangs
@@ -181,11 +207,13 @@ ab. Bei gehaltener Persistierung wartet die Persistierung des Streams in
 und ruft `stopStream`, der abgebrochene Kontext lässt `Capture` mit einem Fehler
 der Klasse `storage` („Persistenzfehler im ChangeStore: context canceled“)
 zurückkehren, und `mergeStreamAndWALFaultOutcome` gibt einen Stream-Fehler jeder
-Klasse vor dem WAL-Fehler zurück. Gemessen (fünf Läufe: ein Diagnose-Lauf der
-Vorfassung der Phase, drei Läufe der Phase in einem Wegwerf-Aufbau des Runners
-und ein vollständiger `make test-integration`; die Ausgabezeile der Phase nennt
-die Klasse): der Container endet mit Ausgang 1 zwei Sekunden nach der Last (der
-Diagnose-Lauf: vier), das Log trägt die Abbruch-Zeile („WAL-Rückstand über
+Klasse vor dem WAL-Fehler zurück. Gemessen vom Implementer (fünf Läufe,
+**übernommen** aus dessen Bericht: ein Diagnose-Lauf, drei Läufe der Phase in
+einem Wegwerf-Aufbau des Runners und ein vollständiger `make test-integration`;
+die Ausgabezeile der Phase nennt die Klasse; bestätigt in den Läufen des
+Reviewers, des Verifiers und in beiden CI-Läufen, DoD 2): der Container endet
+mit Ausgang 1 zwei Sekunden nach der Last (der Diagnose-Lauf: vier; in CI drei),
+das Log trägt die Abbruch-Zeile („WAL-Rückstand über
 Fehlerschwelle — kontrollierter Abbruch“) und danach „Fehlerklasse storage“,
 `cdc.process_heartbeat` trägt in allen fünf Läufen `storage`. Die
 Klasse `replication` erreicht `Run` nur, wenn der Stream-Lauf regulär endet
@@ -200,41 +228,40 @@ Abweichung ist ein Codefehler, kein Fehler des Textes (Architect-Verdikt
 [`architect-verdict-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md)
 §2): die Träger geben `ADR-0049` richtig wieder, der Stream-Fehler nach
 `stopStream` verdeckt den WAL-Fehler. Die Korrektur trägt
-[`slice-wal-fehlerschwelle-ausgangsklasse`](../open/slice-wal-fehlerschwelle-ausgangsklasse.md);
-mit ihm trägt die Phase die Klasse als Zusage.
+`slice-wal-fehlerschwelle-ausgangsklasse`; mit ihm trägt die Phase die Klasse als
+Zusage.
 
-**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „welche Tier
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „welches Tier
 belegt die Position eines Keepalive inmitten einer Transaktion“ und „welcher
-Test trägt die Kette Fehlerschwelle → Prozessende“). Suchraum: der ganze Baum
-(der Plan nannte eine Pfadliste ohne `docs/plan/planning`, `.github` und `test`;
-[`AGENTS.md`](../../../../AGENTS.md) §3.13 §Suchform verlangt den ganzen Baum),
-ausgenommen `docs/reviews/**`, die Records unter `done/` und
-`.harness/baseline/**`; die Plan-Datei schließt das Werkzeug aus. Parent ist
-`dbc4dbe4` (der Commit vor der ersten Änderung dieses Laufs), der zweite Stand
-ist der Arbeitsbaum der Übergabe; die drei `diff`-Zeilen zu den Symbolen, zur
-Beschreibung und zur Klassen-Zusage sind am Arbeitsbaum nach dem Planner-Nachzug
-vom 2026-09-27 neu gemessen (Bewegung seit der Übergabe: die neuen Verweise auf
-`slice-wal-fehlerschwelle-ausgangsklasse` und das Verdikt in den Plänen, der Roadmap
-und dem Register-Beleg). Die Zeilen stehen im Format des Werkzeugs
-(`make suchlauf-nachmessen PLAN=<diese Datei>`, Exit 0 an diesem Arbeitsbaum):**
+Test trägt die Kette Fehlerschwelle → Prozessende“).** Suchraum: der ganze Baum
+([`AGENTS.md`](../../../../AGENTS.md) §3.13 §Suchform), ausgenommen
+`docs/reviews/**`, die Records unter `done/` und `.harness/baseline/**`; die
+Plan-Datei schließt das Werkzeug aus. Die zwei Stände sind Commit-Kennungen: der
+Parent `dbc4dbe4` (der Commit vor der ersten Änderung des Implementer-Laufs) und
+`8611185b` (der letzte Commit vor der Closure, der einen Träger der Muster
+ändert; danach ändert nur diese Plan-Datei den Baum). Muster 5 sucht die
+Kommentar-Wendungen der Schwellen-Kette im Go-Code und steht deshalb auf
+`-- internal`; die Doku-Träger der Klassen-Zusage trägt Muster 4 über den ganzen
+Baum. Die Zeilen stehen im Format des Werkzeugs (`make suchlauf-nachmessen
+PLAN=<diese Datei>`, Exit 0):
 
 ```suchlauf
 dbc4dbe4 16 -n -E 'inmitten (der|einer) (Quell)?[Tt]ransaktion|Quellseite|einmalige Messung|SourceKeepalive|SOURCE_KEEPALIVE' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 33 -n -E 'inmitten (der|einer) (Quell)?[Tt]ransaktion|Quellseite|einmalige Messung|SourceKeepalive|SOURCE_KEEPALIVE' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+8611185b 60 -n -E 'inmitten (der|einer) (Quell)?[Tt]ransaktion|Quellseite|einmalige Messung|SourceKeepalive|SOURCE_KEEPALIVE' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 dbc4dbe4 47 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 56 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+8611185b 58 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 dbc4dbe4 8 -n -E 'kontrollierter Abbruch|beendet sich der Feed-Container|Fehlerschwelle (beendet|erreicht)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 24 -n -E 'kontrollierter Abbruch|beendet sich der Feed-Container|Fehlerschwelle (beendet|erreicht)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+8611185b 26 -n -E 'kontrollierter Abbruch|beendet sich der Feed-Container|Fehlerschwelle (beendet|erreicht)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 dbc4dbe4 7 -n -E 'mit der Klasse .replication.' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 11 -n -E 'mit der Klasse .replication.' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+8611185b 11 -n -E 'mit der Klasse .replication.' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 dbc4dbe4 2 -n -E 'nur zum Zug|Fehler bei Stream-Ende|regulär endete' -- internal
-diff 2 -n -E 'nur zum Zug|Fehler bei Stream-Ende|regulär endete' -- internal
+8611185b 2 -n -E 'nur zum Zug|Fehler bei Stream-Ende|regulär endete' -- internal
 ```
 
-| Träger | Befund (Parent → Diff, `-n`-Trefferzeilen) | Behandlung |
+| Träger | Befund (Parent → Stand `8611185b`, `-n`-Trefferzeilen) | Behandlung |
 |---|---|---|
-| Sätze, die die Keepalive-Messung „einmalig“ oder „PostgreSQL 17 nicht gemessen“ nennen | Muster 1: 16 → 33; die 17 neuen Treffer sind dieser Lauf (Test-Datei 8, `run-replication-tests.sh` 8, `harness/README.md` 1), keiner trägt eine Aussage über die Messung. **Gefunden:** die Aussage steht in `ADR-0121` (9 Treffer: §Kontext, Festlegung 2, Konsequenz „Grenze, benannt“, Trigger), `ADR-0120` (1, die Store-Zeile der Fitness Function), in den drei Dateien des Registers `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` (observation, state, evidence), in einer Evidence-Datei von `BEO-PGC/adr-aussage-breiter-als-ihre-messung` und in einer Zeile der Änderungshistorie von `spec/pflichtenheft.md` (Aussage der Regel „nie inmitten einer Quelltransaktion“, nicht der Messung); `seam_test.go` (1) trägt ein anderes Wort („Updates inmitten der Transaktion“). **Nicht gefunden:** kein Satz in `docs/user`, `harness`, `internal` (ohne die neue Test-Datei), `test` oder `tools`, der die Messung „einmalig“ nennt oder PostgreSQL 17 als nicht gemessen führt. | `ADR-0121` und `ADR-0120` bleiben unberührt (`Accepted`); die Ergänzung ist die neue ADR des Architects nach der Verifikation (Bericht des Implementers nennt, was sie braucht). Das Register `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` führt den Ausgang „dieser Slice“ in seinem `state.md`; der Planner zieht es bei der Closure nach (Frist: Closure dieses Slice). Keine Mitänderung durch den Implementer. |
-| Beschreibungen der Schwellen-Kette in Kommentaren und Doku | Muster 2 (Symbole): 47 → 47, unverändert. Muster 3 (Beschreibung): 8 → 15; die 7 neuen Treffer sind dieser Lauf (Runner-Phase und ihre Zeilen in `harness/README.md` und `docs/user/e2e-abdeckung.md`). Muster 4 (Klassen-Zusage „mit der Klasse `replication`“): 7 → 7 (die Zahlen dieser Zeile stehen am Stand der Übergabe; die `diff`-Zahlen der Muster 2 bis 4 nach dem Planner-Nachzug nennt der Block oben: 56, 24 und 11). **Gefunden mit Klassen-Zusage der Kette:** `docs/user/benutzerhandbuch.md` (Abschnitt „Bestand als Backfill überführen“, Punkt „WAL-Rückstand des Capture-Slots“: „beendet sich der Feed-Container mit der Klasse `replication` (Ausgang 1)“) und `internal/bootstrap/wiring.go` (Kommentar an `mergeStreamAndWALFaultOutcome`: „nur zum Zug, wenn der Stream-Lauf regulär endete“; Muster 5: 2 → 2, die zweite Stelle ist der Kommentar von `walretention_slotgrowth_internal_test.go`). Beide gelten nach dem Befund oben nicht für die gehaltene Persistierung. Die übrigen fünf Treffer von Muster 4 (`ADR-0128`, Welle-Plan, `slice-start-vorlauf-grenze`, zwei Register-Dateien) beschreiben den Vorlauf vor `stream.Run`, einen anderen Gegenstand. **Nicht gefunden:** mit den Mustern 4 und 5 kein weiterer Träger der Kette in `internal`, `spec`, `harness` und `test`; die Norm (`ADR-0049` Folgepflicht, `SPEC-008`) ist der Gegenstand der Frage an den Architect, kein nachzuziehender Träger. | Gemeldet, nicht mitgeändert: das Handbuch liegt laut Plan außerhalb dieses Slice, `wiring.go` ist Produktionscode der Schwellen-Prüfung (§1). Entschieden ist „Code“ (Architect-Verdikt, siehe oben): das Handbuch bleibt wahr und unberührt; die zwei Kommentare (`wiring.go` an `mergeStreamAndWALFaultOutcome`, `walretention_slotgrowth_internal_test.go`) trägt [`slice-wal-fehlerschwelle-ausgangsklasse`](../open/slice-wal-fehlerschwelle-ausgangsklasse.md) als Adresse (DoD 3 dort, `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`); Frist: die Closure jenes Slice, der Planner der Closure zieht nach. Bis dahin trägt `harness/README.md` die Grenze benannt. |
+| Sätze, die die Keepalive-Messung „einmalig“ oder „PostgreSQL 17 nicht gemessen“ nennen | Muster 1: 16 → 60; die 44 neuen Treffer sind: `ADR-0129` (24) mit ihrer Index-Zeile in `docs/plan/adr/README.md` (1), dieser Lauf (Test-Datei 8, `run-replication-tests.sh` 8, `harness/README.md` 1) und der Nachzug des Planners (`state.md` von `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` +1, Übergabe in `slice-code-kommentare-bereinigung` 1). **Gefunden:** die alte Grenze steht in `ADR-0121` (9 Treffer: §Kontext, Festlegung 2, Konsequenz „Grenze, benannt“, Trigger; die Konsequenz und die Festlegung 2 ersetzt `ADR-0129`), `ADR-0120` (1, die Store-Zeile der Fitness Function), in den Dateien des Registers `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` (observation, evidence; die `state.md` trägt den Stand mit dem Test), in einer Evidence-Datei von `BEO-PGC/adr-aussage-breiter-als-ihre-messung` und in einer Zeile der Änderungshistorie von `spec/pflichtenheft.md` (Aussage der Regel „nie inmitten einer Quelltransaktion“, nicht der Messung); `seam_test.go` (1) trägt ein anderes Wort („Updates inmitten der Transaktion“). **Nicht gefunden:** kein Satz in `docs/user`, `harness`, `internal` (ohne die neue Test-Datei), `test` oder `tools`, der die Messung „einmalig“ nennt oder PostgreSQL 17 als nicht gemessen führt; die Wendung „PostgreSQL 17 ist nicht gemessen“ steht außerhalb der Records nur in `ADR-0119` und `ADR-0125` (anderer Gegenstand: Wirkung der Lesesperre bzw. d-migrate). | `ADR-0121` und `ADR-0120` bleiben unberührt (`Accepted`); die Ergänzung ist `ADR-0129`. Das Register `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` trägt den Ausgang „verkörpert“ in seinem `state.md` (Planner-Closure). Die zwei Godoc-Kommentare mit dem durch `ADR-0121` ersetzten Begründungssatz („das WAL-Ende liegt dann hinter Nachrichten, die noch nicht gespeichert sind“: `receive.go` `confirmIdle`, `seam_test.go`) sind an `slice-code-kommentare-bereinigung` übergeben (Tranchen T4 und T8; das Godoc von `confirmIdle` ist kein Kandidat des Werkzeugs `make kommentar-kennungen`). |
+| Beschreibungen der Schwellen-Kette in Kommentaren und Doku | Muster 2 (Symbole): 47 → 58; die 11 neuen Treffer sind der Plan `slice-wal-fehlerschwelle-ausgangsklasse` (7), `slice-start-vorlauf-grenze` (1) und drei Register-Dateien (1 je). Muster 3 (Beschreibung): 8 → 26; die 18 neuen Treffer sind dieser Lauf (Runner-Phase 5, `harness/README.md` 1, `docs/user/e2e-abdeckung.md` 1), der Plan `slice-wal-fehlerschwelle-ausgangsklasse` (7), `welle-transformationen` (+1) und drei Register-Dateien. Muster 4 (Klassen-Zusage „mit der Klasse `replication`“): 7 → 11; die 4 neuen Treffer sind der Plan `slice-wal-fehlerschwelle-ausgangsklasse` (3, der Träger-Slice nennt die Klasse als sein Ziel) und eine Register-Evidence-Datei. **Gefunden mit Klassen-Zusage der Kette:** `docs/user/benutzerhandbuch.md` (Abschnitt „Bestand als Backfill überführen“, Punkt „WAL-Rückstand des Capture-Slots“: „beendet sich der Feed-Container mit der Klasse `replication` (Ausgang 1)“) und `internal/bootstrap/wiring.go` (Kommentar an `mergeStreamAndWALFaultOutcome`: „nur zum Zug, wenn der Stream-Lauf regulär endete“; Muster 5: 2 → 2, die zweite Stelle ist der Kommentar von `walretention_slotgrowth_internal_test.go`). Beide gelten nach dem Befund oben nicht für die gehaltene Persistierung. Die Treffer von Muster 4 in `ADR-0128`, `roadmap.md`, `welle-transformationen.md`, `slice-start-vorlauf-grenze` und zwei Register-Dateien beschreiben den Vorlauf vor `stream.Run` (gelesen: je ein Satz zur Kante von `slice-start-vorlauf-grenze` oder zu `ADR-0128`), einen anderen Gegenstand. **Nicht gefunden:** mit den Mustern 4 und 5 kein weiterer Träger der Kette in `internal`, `spec`, `harness` und `test`; die Norm (`ADR-0049` Folgepflicht, `SPEC-008`) ist der Gegenstand der Frage an den Architect, kein nachzuziehender Träger. | Gemeldet, nicht mitgeändert: das Handbuch liegt laut Plan außerhalb dieses Slice, `wiring.go` ist Produktionscode der Schwellen-Prüfung (§1). Entschieden ist „Code“ (Architect-Verdikt, siehe oben): das Handbuch bleibt wahr und unberührt; die zwei Kommentare (`wiring.go` an `mergeStreamAndWALFaultOutcome`, `walretention_slotgrowth_internal_test.go`) trägt `slice-wal-fehlerschwelle-ausgangsklasse` als Adresse (Änderungs-Tabelle dort, `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`); Frist: die Closure jenes Slice, der Planner der Closure zieht nach. Bis dahin trägt `harness/README.md` die Grenze benannt. |
 
 ## 4. Trigger
 
@@ -267,40 +294,186 @@ liegt vor + Closure-Notiz mit Lerneintrag geschrieben.
 - **Der Keepalive-Test ist zeitabhängig** (Standard-`wal_sender_timeout` 60 s;
   ein Keepalive tritt nur innerhalb der Wartezeit auf). *Erwartet, zu belegen
   durch:* mehrere Läufe je Version ohne Ausfall; ein Ausfall ohne Ursache im
-  Code ist Grund für die Rückführung nach `open/`. **Ausgang:** *(bei Closure)*
+  Code ist Grund für die Rückführung nach `open/`. **Ausgang: entfallen.** Der
+  Test lief in allen sechs Läufen mit gedruckter Dauer bis zum Ende grün:
+  Reviewer 40,52 s (18.6) und 40,42 s (17.11), Verifier 40,32 s (18.6) und
+  40,37 s (17.11) (je aus dem Report **übernommen**), CI 40,72 s (17.11, Job
+  108529548457) und 43,20 s (18.6, Job 108531740887) (vom Planner **gemessen**);
+  dazu zwei Mutationsläufe des Verifiers, die den Test grün ließen (§4 K6, K7).
+  Ein Ausfall ohne Ursache im Code ist nicht aufgetreten. Ein Runner, auf dem
+  400.000 Einfügungen länger als 38 s brauchen, endet laut mit „COMMIT … ohne
+  Keepalive“ (Mutationen M3 und M7 des Reviewers, **übernommen**), nicht mit einer
+  falschen Aussage. Der rote Versuch in CI (Lauf 36287009221, Leg 18) liegt in der
+  Phase „Leerlauf-Bestätigung“; der Schritt dieses Tests lief dort nicht
+  (`skipped`) und im Wiederholungsversuch grün (Register, Risiko unten).
 - **PostgreSQL 17 liefert eine andere Position als 18.** *Erwartet, zu belegen
   durch:* der Lauf an beiden Versionen; eine Abweichung ist ein Befund für den
-  Architect (Rückführung nach `open/`, §4). **Ausgang:** *(bei Closure)*
+  Architect (Rückführung nach `open/`, §4). **Ausgang: entfallen.** An 17.11
+  ist die Keepalive-Position gleich der Commit-LSN und der Neustart liefert
+  400.000 Änderungen (Verifikations-Report §1, **übernommen**; CI Job 108529548457,
+  vom Planner **gemessen**: `ServerWALEnd 0/BED26C8 gleich Commit-LSN 0/BED26C8`).
 - **Der Aufbau „Persistierung halten“ ist instabil** (der erste Ansatz eines
   Tier-Tests scheiterte am `wal_sender_timeout` der Testinstanz,
   [`architect-verdict-welle-backfill-bestand-lese-schritt`](../../../reviews/architect-verdict-welle-backfill-bestand-lese-schritt.md)
   §5 (b)). *Erwartet, zu belegen durch:* wiederholte Läufe; der Ausgang „Grenze
-  bleibt“ ist zulässig und steht mit dem Messergebnis im Bericht. **Ausgang:**
-  *(bei Closure)*
+  bleibt“ ist zulässig und steht mit dem Messergebnis im Bericht. **Ausgang:
+  entfallen.** Die Phase endete in jedem Lauf, in dem sie lief, 2 bis 3 s nach der
+  Last mit Ausgang 1: fünf Läufe des Implementers (**übernommen**), Reviewer und
+  Verifier (je aus dem Report **übernommen**), zwei CI-Läufe (vom Planner
+  **gemessen**, je 3 s). Ein Fehlschlag der Vorbedingungen endet als benannter
+  Abbruch: die Mutation „Sperre nicht gesetzt“ endete an der Vorbedingung
+  (Verifikations-Report §4 P1, rot nach 5 min 12 s); „Sperre weg **und**
+  Vorbedingung weg“ bleibt *hergeleitet*, nicht erprobt. Im roten Versuch in CI
+  lief die Phase nicht (Schritte des Legs `skipped`): das ist der Ausfall der Phase
+  davor, kein Befund zum Aufbau.
 - **Die Laufzeit von `make test-integration` und `make test-replication` wächst**
   (`BEO-PGC/test-integration-retention-timing-flake`, 3×, verkörpert). *Erwartet,
   zu belegen durch:* die gedruckte Laufzeit je Lauf; die Zahl trägt ihren Lauf
-  ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A). **Ausgang:** *(bei
-  Closure)*
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A). **Ausgang: weiter offen**
+  — im Register `BEO-PGC/test-integration-retention-timing-flake` (4×; `state.md`
+  trägt die Frage an den Architect). Gemessen, Läufe je einmal: lokal
+  `make test-integration` 373 s (Verifier, Exit 0, aus dem Report **übernommen**)
+  und der Keepalive-Test 40,3 s je Tier-Lauf; in CI, aus den Schritt-Zeitstempeln
+  der Jobs **abgeleitet**, Lauf 36279515849 (Stand `7367c483`, ohne diesen Slice)
+  gegen Lauf 36287009221: Schritt „Replication-Tier“ 91 s → 167 s (Leg 18, zweiter
+  Versuch) und 104 s → 159 s (Leg 17); Schritt „Compose-Integrationstest“ 535 s →
+  606 s (Leg 18, zweiter Versuch) und 568 s → 578 s (Leg 17). Das Wachstum ist
+  eingetreten; als „eingetreten“ führt der Plan es nicht, weil es weder einen
+  Carveout noch einen Folge-Slice trägt (kein Gate wird rot, kein Zeitlimit steht im
+  Runner oder im Workflow), und seine mögliche Folge — eine intermittierende Phase auf
+  dem gehosteten Runner — ist die offene Frage des Registers (die Phase
+  „Leerlauf-Bestätigung“, 1 von 40 Läufen).
 - **Die Ergänzung von `ADR-0121` behauptet mehr als der Beleg trägt**
   (`BEO-PGC/adr-aussage-breiter-als-ihre-messung`, 5×, verkörpert). *Erwartet,
   zu belegen durch:* der Reviewer liest die ADR im Diff gegen
   [`AGENTS.md`](../../../../AGENTS.md) §3.12 „Verfasser einer ADR“. **Ausgang:**
-  *(bei Closure)*
+  steht aus — [`ADR-0129`](../../adr/0129-capture-quellseite-keepalive-test-an-beiden-pins.md)
+  liegt seit `4e654153` vor, ihre Lese-Prüfung durch den Reviewer (frischer Kontext,
+  Diff `e4b77a05..4e654153`, Prüfpunkte: jede Aussage über eine Menge nennt die Menge,
+  jede Mutation der Fitness-Function-Zeilen nennt Stellen und Instanz) ist nicht
+  gelaufen. Der Ausgang wird nach ihr gesetzt; der Slice bleibt bis dahin in
+  `in-progress/`.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
-- **Drei Paarungen:** dieser Slice hat keine Welle; die Prüfung läuft
-  regelkonform bei der Closure der nächsten Welle.
+Stand dieser Notiz: nach Review, Verifikation, Architect-Zug (`ADR-0129`) und den
+Post-Push-Läufen zu `e4b77a05`; die Lese-Prüfung von `ADR-0129` und der Ausgang des
+letzten Risikos aus §6 stehen aus.
+
+- **Was hat funktioniert:** Die Rollen-Kette trug. Der Review (0 HIGH · 1 MEDIUM ·
+  3 LOW · 3 INFO, aus dem Report **übernommen**) fuhr sieben Mutationen am
+  Keepalive-Test, drei davon an der Eingabeseite der Bestätigung; der Verifier
+  fuhr elf verschiedene in 13 Läufen (neun rot, zwei grün mit Bedeutung: die
+  Startposition des Neustarts und die Wartezeit auf die Inaktivität des Slots
+  bindet der Test nicht), darunter zwei Mutationen, die zuvor nicht erprobt
+  standen: „`stopStream` entfernt“, im Plan als „übernommen“ geführt (rot, der
+  Container lief 90 s weiter), und den `--- PASS`-Wächter des Runners (rot), den
+  der Review nur hergeleitet hatte. Der
+  Aufbau „Persistierung halten“ trug in jedem Lauf, in dem die Phase lief (§6).
+  Der Architect entschied den Befund der Klasse als Codefehler und beauftragte den
+  Träger-Slice, ohne diesen Slice zu blockieren: die Grenze stand benannt im
+  Plan und in `harness/README.md`. Die Quellseite ist an beiden Pins ein committeter
+  Wächter, der seit dem Push in beiden Legs von `e2e.yml` läuft (DoD 1).
+- **Was ging anders als geplant:** (1) Der Keepalive-Test ist ein roher
+  Protokoll-Client über **eine** Transaktion statt Stream-Adapter mit erster und
+  zweiter Transaktion (§3); der Wortlaut von DoD 1 zog erst die Closure nach
+  (Review F-1, Verifikation V-1). (2) Der zweite Beleg ist eine Bash-Phase statt
+  einer `func TestE2E*` (§3, Reduktion). (3) Die Klasse des Ausgangs ist `storage`
+  statt `replication`: „Grenze bleibt“, Träger
+  `slice-wal-fehlerschwelle-ausgangsklasse`. (4) Der erste `e2e.yml`-Lauf nach dem
+  Push war im Leg PostgreSQL 18 im ersten Versuch rot, in der **bestehenden**
+  Phase „Leerlauf-Bestätigung“ (Lauf 36287009221, Job 108529548391); die Schritte
+  dahinter liefen dort nicht, der Wiederholungsversuch war grün. Ursache offen:
+  Register, Frage an den Architect. [`AGENTS.md`](../../../../AGENTS.md) §3.10
+  greift nicht (kein Workflow im Diff), der Lauf war Beobachtung, keine
+  Closure-Bedingung. (5) Das Suchlauf-Feld mit `diff` als zweitem Stand wurde mit
+  `ADR-0129` rot (`make suchlauf-nachmessen`, gemessen am 2026-09-27 vor dem
+  Nachzug: Zeile 2 soll 33, ist 58, Exit 2); die Stände stehen jetzt als
+  Commit-Kennung. (6) Der Satz des Reviews „das Tier läuft nicht in
+  `ci.yml`/`e2e.yml`“ war falsch (Verifikation V-4); der Workflow und der erste
+  CI-Lauf haben ihn berichtigt.
+- **Steering-Loop-Eintrag (Lerneintrag):** *(a) Neuer Sensor — zwei Belege, kein
+  Gate.* Der Test `TestSourceKeepaliveInsideTransactionDeliversWholeTransaction`
+  (Tier `make test-replication`, Phase `tier`, `--- PASS`-Wächter in
+  `tools/harness/run-replication-tests.sh`) bindet die Quellseite der
+  Leerlauf-Bestätigung an PostgreSQL 17.11 und 18.6, und die Runner-Phase
+  „Fehlerschwelle beendet den Container“ in `make test-integration` bindet Ende,
+  Ausgang, Abbruch-Zeile und Fehlerzustand der Schwellen-Kette am realen Prozess ·
+  seit slice-capture-leerlauf-quellbelege; beide stehen in `harness/README.md`
+  §Sensors, kein Gate (Laufzeit, Docker und Datenbank). *(b) Geschärfte Regel —
+  keine, mit Grund.* Die Befunde dieses Slice sind Klassen mit Träger im Register
+  (Nachzug lässt den Nachbarn stehen, Haken ohne Anker, Kommentar-Allaussage,
+  Tatsachenbehauptung im Report); ein neuer Wortlaut in `AGENTS.md` oder im Skill
+  fügt keiner davon eine Linie hinzu. *(c) Benannte Lücken, keine Spec-Lücke.*
+  (i) Ungebunden im Keepalive-Test: die Startposition des Neustarts, die Wartezeit
+  auf die Inaktivität des Slots, mehr als ein Keepalive je Transaktion,
+  `proto_version 2` mit Streaming, eine zweite gleichzeitige Quelltransaktion
+  (`ADR-0129` Festlegung 2). (ii) Die Klasse `storage` der Fehlerschwellen-Kette ist ein
+  Codefehler mit Träger. (iii) Es gibt keine Regel dafür, ob der erste CI-Lauf eines
+  Tests, der in einer **bestehenden** Workflow-Phase mitläuft, Closure-Bedingung ist:
+  [`AGENTS.md`](../../../../AGENTS.md) §3.10 gilt für einen neuen oder strukturell
+  geänderten Workflow. Die Praxis dieses Slice ist Beobachtung mit Anker (`ADR-0129`
+  Festlegung 1 und Folgepflicht 5, Verifikation V-4); ein Lauf ist kein Muster, der
+  Trigger für eine Regel ist ein zweiter Slice, dessen CI-Beleg an einer
+  intermittierenden Vor-Phase hängt. (iv) Ein Beleg hinter einer intermittierenden
+  Phase ist im roten Versuch „nicht gelaufen“, nicht „grün“: in Lauf 36287009221
+  Versuch 1 standen die Coverage-Schritte und „Replication-Tier“ des Legs 18 auf
+  `skipped`. Die Aussage über die Quellseite ist kein Spec-Satz: `SPEC-012` und
+  `SPEC-013` sind gelesen, nicht geändert.
+- **Beobachtungs-Register (`../observations/`):** je Anfall geschrieben. Neue
+  `evidence/slice-capture-leerlauf-quellbelege.md` (Zähler gemessen mit `ls
+  evidence | wc -l` am 2026-09-27): `BEO-PGC/test-integration-retention-timing-flake`
+  (4×; die Resthälfte „`make test-integration`-Lauf rot bei unverändertem Stand,
+  Wiederholung grün“ steht bei 2× ohne Ausgang, Frage an den Architect im
+  `state.md`), `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` (7×; Review
+  F-4, F-5, Verifikation V-5, V-6), `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`
+  (14×; F-1, V-1, MEDIUM), `BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker`
+  (4×; F-2, V-2), `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (11×;
+  V-4), `BEO-PGC/slice-pfad-als-link-in-berichten` (5×; F-7). `state.md` fortgeschrieben:
+  `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` (Ausgang „verkörpert“, 1×),
+  `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke` (Falsifikation der Phase,
+  unverändert 5×). **Ohne Datei (Deckel, `../observations/README.md`):** F-3 und V-3
+  (Suchlauf-Feld bindet `diff`, LOW) an `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+  (Deckel bei 23×), F-5 und V-6 (Godoc von `confirmIdle`, INFO; Übergabe an
+  `slice-code-kommentare-bereinigung`) an `BEO-PGC/arbeit-ueberholt-stehenden-traeger`
+  (Deckel); alle vor dem Merge von Lesern gefunden. **Ohne Klasse:** F-6 (Bindung und
+  Grenze des Tests, steht in `ADR-0129` Festlegung 2), V-7 (dieselbe Bindung), V-8
+  (übernommen und nicht gefahren, im Report benannt).
+- **Folge-Slices:** keiner neu angelegt. Adressen: `slice-wal-fehlerschwelle-ausgangsklasse`
+  (Klasse der Fehlerschwelle, Kommentare der Runner-Phase), `slice-start-vorlauf-grenze`,
+  `slice-code-kommentare-bereinigung` (Übergabe der zwei Godoc-Kommentare zum durch
+  `ADR-0121` ersetzten Begründungssatz, Tranchen T4 und T8) — alle in `open/`. Ein
+  Slice zur Stabilisierung der Phase „Leerlauf-Bestätigung“ ist nicht angelegt: die
+  Register-Regel verlangt ihn erst ab 3× ohne Ausgang (die Resthälfte steht bei 2×), und
+  ob er nötig ist, entscheidet die Frage an den Architect
+  (`BEO-PGC/test-integration-retention-timing-flake`, `state.md`). Wird er beauftragt,
+  geht er `slice-wal-fehlerschwelle-ausgangsklasse` und `slice-start-vorlauf-grenze`
+  voraus (bedingte Kante in [welle-transformationen](../welle-transformationen.md) §5 und
+  im Start-Trigger von `slice-wal-fehlerschwelle-ausgangsklasse`).
+- **Folgepflichten aus `ADR-0129` (mit Adresse):** (1) Register
+  `beleg-nur-als-einmalige-reviewer-messung`: nachgezogen. (2) Träger der alten
+  Grenze: die Records bleiben, `ADR-0121` bleibt `Accepted`, dieser Plan trägt die
+  neue Fassung (§3 Suchlauf-Feld). (3) Code-Kommentare: an
+  `slice-code-kommentare-bereinigung` übergeben. (4) Slice-Plan: DoD 1 und DoD 3,
+  Stände des Suchlauf-Feldes nachgezogen. (5) CI-Beleg und Befund: DoD 1 und DoD 2
+  tragen die Läufe, das Register die Zuordnung der roten Phase.
+- **Risiken aus §6:** vier Ausgänge gesetzt — drei entfallen mit Messung (der Test ist
+  nicht zeitabhängig ausgefallen, 17.11 liefert dieselbe Position, der Aufbau der Phase
+  trug in jedem Lauf), einer weiter offen im Register (Laufzeit); der fünfte, die
+  Lese-Prüfung von `ADR-0129`, steht aus.
+- **Drei Paarungen:** dieser Slice hat keine Welle; die Roadmap führt
+  [welle-transformationen](../welle-transformationen.md) unter *Offene Wellen*, das
+  Ereignis kann eintreten: die Closure dieser Welle prüft die Paarungen mit. Die
+  Slice-Closure trägt sie zusätzlich jetzt: *Anker:* der Test, die Runner-Phase und
+  die ADR existieren als Dateien
+  (`internal/adapters/driving/replication/receive/sourcekeepalive_test.go`,
+  `tools/harness/run-integration-tests.sh` mit `abdeckung_declare` der Phase,
+  `docs/plan/adr/0129-capture-quellseite-keepalive-test-an-beiden-pins.md` samt
+  Index-Zeile), `harness/README.md` §Sensors nennt beide Belege
+  (`git grep -o 'TestSourceKeepaliveInsideTransactionDeliversWholeTransaction' --
+  harness/README.md` trifft 1). *Folge-Slice:* die drei Adressen oben existieren als
+  Dateien in `open/`; kein Versprechen ohne Adresse. *Register:* jede genannte
+  Kennung `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht leerem `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
