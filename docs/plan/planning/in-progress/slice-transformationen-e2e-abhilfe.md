@@ -144,16 +144,16 @@ belegt ist.
       test-integration` nennt den Beleg; das Handbuch trägt die
       Abhilfe-Prozedur erst mit `slice-transformationen-betriebsdoku` (dessen
       §2 nennt sie als Gegenstand).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure der Welle
       [welle-transformationen](../welle-transformationen.md) (die Roadmap führt
       sie unter *Offene Wellen*, das Ereignis kann eintreten).
@@ -283,26 +283,60 @@ Lerneintrag geschrieben.
   an `relationOther` mit derselben Klasse; ein Test, der sie auslöst, belegt
   die neue Prüfung nicht. *Erwartet, zu belegen durch:* der Auslöser
   `ADD COLUMN` mit dem Zielnamen der Regel und die Gegenprobe
-  (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert, 6×).
-  **Ausgang:** *(bei Closure)*
+  (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert, 20×
+  Dateien unter `evidence/`, real gezählt bei dieser Closure).
+  **Ausgang: entfallen.** Der Go-Test (`test/integration/integration_test.go:1235–1298`)
+  fährt die Gegenprobe (`ALTER TABLE … ADD COLUMN other text`) aktiv geprüft
+  (Row Image von id=2 muss `label`/`other` tragen), bevor er die reale Kollision
+  auslöst — Review und Verifikation lasen das wörtlich nach, beide unabhängig.
+  Der Beleg ist an die Namenskollision gebunden, nicht an eine beliebige
+  Spalten-Erweiterung; kein neuer Beleg für dieses Register nötig.
 - **Kriterium (c) hält nicht** trotz `start-reihenfolge` (zweite
   Neustart-Schleife). *Erwartet, zu belegen durch:* der reale Lauf; tritt es
   ein, gilt die Rückführung §4 und
   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
-  §Re-Evaluierungs-Trigger 4. **Ausgang:** *(bei Closure)*
+  §Re-Evaluierungs-Trigger 4. **Ausgang: entfallen.** Der reale
+  `make test-integration`-Lauf (Implementer und Reviewer je eigenständig
+  gefahren) zeigt genau eine Neustart-Schleife: `cdc.remove_transformation` wird
+  `applied`, kein zweiter `schema`-Fehler tritt auf, die zuvor nicht bestätigte
+  Zeile erscheint über `cdc.changes`. Die Reihenfolge (a)/(b) ist real als
+  Skript-Reihenfolge verankert (Verifikations-Report §4: `docker inspect`
+  steht vor dem `remove_transformation`-SQL-Aufruf, sequenzielles Bash-Skript,
+  keine Möglichkeit einer anderen Ausführungsreihenfolge). Der
+  Re-Evaluierungs-Trigger von `ADR-0112` feuert nicht.
 - **Die Klassen-Unterscheidung ist im Heartbeat nicht sichtbar** — beide Wege
   enden mit `schema`; der Unterschied steht im Container-Log. *Erwartet, zu
-  belegen durch:* die Log-Zeile im Beleg. **Ausgang:** *(bei Closure)*
+  belegen durch:* die Log-Zeile im Beleg. **Ausgang: entfallen (adressiert wie
+  geplant).** Der reale Lauf zitiert den neuen Sentinel-Text im Container-Log,
+  getrennt vom bestehenden `relationOther`-Sentinel der Spalten-Entfernung
+  (Review-Report §„Eigene Messungen", Runner-Ausgabe „Kollision auf
+  feed_e2e_transform_abhilfe beendete den Erfassungspfad real"); `diagnose` und
+  der Heartbeat tragen beide weiterhin nur die Klasse `schema`, wie geplant —
+  die Unterscheidung liegt im Log, nicht in einer neuen Klasse.
 - **Die Ordnung „vor der ersten Transaktion“ wird als gemessen ausgegeben**,
   obwohl der Lauf nur ihre Folge sieht (§3.12 Instanz B). *Erwartet, zu belegen
-  durch:* die benannte Grenze in §1 und im Bericht. **Ausgang:** *(bei
-  Closure)*
+  durch:* die benannte Grenze in §1 und im Bericht. **Ausgang: entfallen
+  (vermieden).** §1 und §2 dieses Plans benannten die Grenze bereits beim
+  Schreiben korrekt als Folge-Messung, nicht als Zeitordnungs-Messung — kein
+  nachträglicher Fund nötig. Die Verifikation
+  (`docs/reviews/verifikation-slice-transformationen-e2e-abhilfe.md` §9 Punkt 2)
+  bestätigt dies unabhängig: „Plan §1 und §2 kennzeichnen die Grenze bereits
+  korrekt beim Schreiben (kein nachträglicher Fund nötig)".
 - **Laufzeit und Timing** von Neustart und Health-Poll
-  (`BEO-PGC/test-integration-retention-timing-flake`, verkörpert, 3×): Poll auf
-  Zustand mit Frist. **Ausgang:** *(bei Closure)*
+  (`BEO-PGC/test-integration-retention-timing-flake`, verkörpert, 5× Dateien
+  unter `evidence/`, real gezählt bei dieser Closure): Poll auf
+  Zustand mit Frist. **Ausgang: entfallen.** Beide realen `make
+  test-integration`-Läufe dieses Slices (Implementer, Reviewer) liefen ohne
+  Timing-Flake grün — die Phase pollt auf `docker inspect`-Zustand und
+  `bf_await_applied` mit Frist, kein neuer Beleg für dieses Register.
 - **Eine neue Testfunktion fällt still aus dem Runner**
   (`BEO-PGC/test-runner-stiller-ausschluss`, offen, 2×). *Erwartet, zu belegen
-  durch:* der `-run`-Abgleich. **Ausgang:** *(bei Closure)*
+  durch:* der `-run`-Abgleich. **Ausgang: entfallen.** Die neue Runner-Phase
+  ruft `go test -run
+  '^TestE2ETransformationRuleNotApplicableEndsCaptureWithSchemaClass$'` explizit
+  auf, der reale Lauf zitiert `--- PASS:
+  TestE2ETransformationRuleNotApplicableEndsCaptureWithSchemaClass` — kein
+  stiller Ausschluss, `BEO-PGC/test-runner-stiller-ausschluss` bleibt bei 2×.
 - **Die Frist des Vorlaufs ändert den Startpfad, den dieser Slice belegt.**
   Entschieden ist die Zeitgrenze
   ([`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md),
@@ -320,22 +354,135 @@ Lerneintrag geschrieben.
   §Konsequenzen; hergeleitet, kein Lauf). Der Bericht nennt diese Grenze und
   den Stand von `slice-start-vorlauf-grenze` (Register:
   `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`, Ausgang *geplant*).
-  **Ausgang:** *(bei Closure)*
+  **Ausgang: weiter offen.** Der Beleg dieses Slice deckt einen Antrag
+  innerhalb der Vorlauf-Frist; das Verhalten bei einem Antrag, der die Frist
+  überschreitet (Stream startet mit dem bisherigen Regelstand, ein zweiter
+  `schema`-Fehler ist dann Folge der ADR, nicht widerlegt und nicht gemessen),
+  bleibt ungeprüft am System — wie im Plan von Anfang an benannt. Register
+  `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad` bleibt bei 2× (kein neuer
+  Beleg, keine neue Datei), Ausgang unverändert *geplant*: die Frage ist mit
+  [`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)
+  und `slice-start-vorlauf-grenze` bereits entschieden, die Grenze bleibt eine
+  benannte, akzeptierte Restlücke ohne eigenen Trigger für einen weiteren
+  Slice.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** (1) Der neue Go-Test bindet die Nichtanwendbarkeit
+  aktiv an die Zielnamen-Kollision (Gegenprobe `ADD COLUMN other` gegen die
+  reale Kollision `ADD COLUMN label` gehalten), statt an irgendeine
+  Spalten-Erweiterung — Review und Verifikation lasen den Testkörper unabhängig
+  wörtlich nach und kamen zum selben Ergebnis. (2) Die neue Runner-Phase bindet
+  Kriterium (a)/(b) des Abhilfe-Akzeptanzkriteriums real als Skript-Reihenfolge
+  (`docker inspect` vor dem SQL-Aufruf), nicht nur als Behauptung — der
+  Verifier hat dies durch reine, eindeutige Textlektüre bestätigt, ohne einen
+  eigenen Fehlerpfad-Mutationslauf an der Bash-Phase zu brauchen (Verifikation
+  §4, §9 Punkt 3: „ein eigener Fehlerpfad-Mutationslauf … wäre eine schwere
+  Compose-Last ohne neue Erkenntnis gegenüber der bereits eindeutigen
+  Textlektüre"). (3) Kriterium (c) ist von Anfang an korrekt als Folge-Messung
+  gekennzeichnet (`AGENTS.md` §3.12 Instanz B) — kein nachträglicher Fund
+  nötig, die Verifikation bestätigt dies eigenständig (§9 Punkt 2). (4) Drei
+  Rollen (Implementer, Reviewer, Verifier) fuhren je einen eigenen, realen
+  `make test-integration`-Lauf bzw. übernahmen ihn begründet (die Verifikation
+  verzichtete auf einen dritten Lauf, weil `git diff --name-only
+  58e684fc..HEAD` seit dem Review-Commit leer ist) — alle drei Rollen kamen zum
+  selben Ergebnis. (5) Der Escape-Mechanismus (`trap cleanup EXIT`) räumt
+  unbedingt ab, auch bei einem Abbruch mitten in der letzten Runner-Phase —
+  kein Zustand überlebt einen Fehlschlag.
+- **Was ging anders als geplant:** (1) **Der Reviewer behauptete fälschlich,
+  `make doc-immutable` existiere im Repo nicht** (INFO, kein Slice-Befund) —
+  sein Suchraum (`grep -rn immutable Makefile harness/mk/*.mk
+  harness/README.md`) deckte `d-check.mk` am Repo-Wurzelverzeichnis nicht ab,
+  wohin das Target tatsächlich gehört (eingebunden über `harness/mk/doc-gate.mk`s
+  `include d-check.mk`); die Verifikation fuhr das Target real
+  (`make doc-immutable RANGE=e6c5d087..HEAD`, Exit 0) und widerlegte die
+  Behauptung. Dies ist das **17. Vorkommen** von
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (Form **Befehl**, LOW,
+  bekannter Trägertyp, Deckel bereits bei 14× erreicht) — nach `state.md` dieses
+  Eintrags braucht ein solches Vorkommen keine eigene `evidence/`-Datei,
+  sondern steht mit Finding-Kennung hier: **V-1**
+  (`docs/reviews/verifikation-slice-transformationen-e2e-abhilfe.md` §2).
+  (2) **Eine kleinere Mutations-Zuschreibungs-Ungenauigkeit im Review** (V-3,
+  LOW): der Reviewer zitierte einen Mutations-Kommentar zugunsten zweier
+  Domänen-Unit-Tests, das Zitat gehört tatsächlich zu einer dritten
+  Testfunktion (`TestConsumeRuleColumnMissingInRelationIsNotApplicable`); die
+  Verifikation fuhr drei eigene Mutationen und bestätigte, dass das
+  Gesamtverhalten (Fehlerklasse `schema`) trotzdem real und mehrfach abgesichert
+  ist — kein Blocker für diesen Slice, kein eigener Registereintrag (zu
+  geringfügig), aber verwandt mit derselben Klasse wie V-1. (3) Ein
+  Zahlendreher des Reviewers bei einer Commit-Range-Angabe (V-2, INFO: „4
+  Commits" statt der real gemessenen 5 bei `RANGE=c674d637~1..HEAD`) —
+  inhaltlich folgenlos. (4) Alle sieben §6-Risiken lösen sich als *entfallen*
+  auf, bis auf eines (die Frist des Vorlaufs jenseits der Belegreichweite),
+  das *weiter offen* bleibt — siehe unten.
+- **Steering-Loop-Eintrag (Lerneintrag):** *(a) Neuer Sensor:* keiner gebaut —
+  ein Sensor, der prüft, ob ein genannter Beleg-Befehl tatsächlich existiert
+  bzw. ob ein Suchraum vollständig ist, bräuchte eine Semantik-Entscheidung
+  darüber, welche Dateien „zum Thema" gehören (dieselbe strukturelle Grenze wie
+  bei den bisherigen 16 Vorkommen dieses Registers). *(b) Geschärfte Regel:*
+  keine neue Regel — das 17. Vorkommen von
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` bestätigt die bereits
+  bestehende HIGH-Klasse des Reviewer-Skills („Beleg trägt seinen Satz nicht":
+  wer einen Beleg nennt, fährt ihn) an einem neuen Träger (`include`-Kette
+  zwischen `harness/mk/doc-gate.mk` und `d-check.mk` am Repo-Wurzelverzeichnis)
+  — der Skill selbst ändert sich nicht, die Instanz zeigt nur, dass ein
+  `grep`-Suchraum über mehrere Verzeichnisebenen (hier: eine `include`-Kette
+  über zwei Ebenen) leicht unvollständig bleibt, auch wenn der gesuchte
+  Dateiname korrekt ist. *(c) Benannte Spec-Lücke:* keine neue — die bereits
+  bekannte Lücke `BEO-PGC/kein-admin-weg-schema-fehler-recovery` (ein
+  allgemeiner Recovery-Weg für Schema-Fehler jenseits der
+  Transformations-Nichtanwendbarkeit) bleibt bewusst offen, wie in §1 benannt.
+- **Beobachtungs-Register (`../observations/`):** kein neues Verzeichnis, keine
+  neue `evidence/`-Datei. *Kein Anfall, mit Begründung:* die sechs im Plan
+  benannten Register (`negativtest-ohne-bindung-an-seine-eingabe`,
+  `test-integration-retention-timing-flake`, `test-runner-stiller-ausschluss`,
+  `dod-begruendung-unzutreffende-tatsachenbehauptung`,
+  `wartegrenze-ohne-zeitgrenze-im-startpfad`) tragen an diesem Slice keinen
+  neuen Beleg — jedes zugehörige §6-Risiko löst sich auf, ohne dass die
+  Beobachtung real eintrat (siehe „Risiken aus §6" unten). *Deckel-Fall ohne
+  Datei, Finding-Kennung hier* (vor dem Merge vom Verifier gefunden, Schwere
+  LOW, bekannter Trägertyp): **V-1**
+  (`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`, 17. Vorkommen, Deckel bei
+  14× erreicht, Ausgang unverändert **verkörpert**, Zähler unter `evidence/`
+  bleibt bei 16, real gezählt bei dieser Closure). *Zur Kenntnis, kein
+  Registerfall:* V-2 (INFO, Zahlendreher ohne Fehlschlussfolge), V-3 (LOW,
+  Mutations-Zuschreibung — verwandt mit V-1s Klasse, aber zu geringfügig für
+  einen eigenen Kandidaten).
+- **Folge-Slices:** keine angelegt. Nächster startbarer Slice der Kette: die
+  Welle-Tabelle (§4 dort) nennt als letzten Slice
+  `slice-transformationen-betriebsdoku`, dessen Start-Trigger
+  `slice-transformationen-e2e-abhilfe` **und** `slice-sdk-regel-realserver-e2e`
+  in `done/` verlangt. `slice-sdk-regel-realserver-e2e` liegt unter `open/`,
+  sein eigener Start-Trigger (`slice-transformationen-e2e-wirkung` in `done/`)
+  ist bereits erfüllt und unabhängig von diesem Slice — er ist der nächste
+  startbare Slice der Welle, sobald kein anderer Slice in `in-progress/` liegt
+  (mit dem Move dieses Slice nach `done/` erfüllt, gelesen mit `ls` in dieser
+  Closure). Übergaben mit Adresse: keine — dieser Slice ändert weder
+  `wiring.go` noch den Startpfad über den bereits von `slice-start-vorlauf-grenze`
+  gelieferten Stand hinaus.
+- **Risiken aus §6:** je ein Ausgang, mit Begründung an der jeweiligen Zeile in
+  §6. *Entfallen (sechs von sieben):* der Beleg bindet an die Namenskollision,
+  nicht an eine falsche Ursache; Kriterium (c) hält, keine zweite
+  Neustart-Schleife, kein Re-Evaluierungs-Trigger; die Klassen-Unterscheidung
+  steht real im Log; die Ordnung wurde nie fälschlich als gemessen ausgegeben
+  (von Anfang an als Grenze benannt); kein Timing-Flake in beiden realen
+  Läufen; kein stiller Testausschluss (`-run`-Pattern real getroffen). *Weiter
+  offen (eines von sieben):* die Frist des Vorlaufs — der Beleg deckt einen
+  Antrag innerhalb der Frist, das Verhalten bei einem Antrag davor, der die
+  Frist überschreitet, bleibt ungeprüft am System (Register
+  `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`, unverändert bei 2×,
+  Ausgang *geplant* — die Frage selbst ist mit `ADR-0128` und
+  `slice-start-vorlauf-grenze` bereits entschieden, kein neuer Trigger).
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-transformationen](../welle-transformationen.md) (offen) — die Prüfung
-  läuft regelkonform bei deren Closure.
+  läuft regelkonform bei deren Closure. Vorab gelesen: *Anker* — dieser Slice
+  trägt kein Feld „liegt in"; *Folge-Slice* — `slice-sdk-regel-realserver-e2e`
+  und `slice-transformationen-betriebsdoku` liegen als Dateien in `open/`
+  (gelesen mit `ls` in dieser Closure); *Register* — die fünf oben genannten
+  Kennungen `BEO-PGC/…` (ohne `beleg-befehl-traegt-seinen-satz-nicht`, das
+  keinen neuen Beleg dieses Slice trägt) sind Verzeichnisse mit nicht leerem
+  `evidence/` (gemessen mit `ls evidence | wc -l` in dieser Closure: 20, 5, 2,
+  11 und 2).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
