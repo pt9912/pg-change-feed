@@ -213,9 +213,18 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       Fixrunde).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
-      ([`AGENTS.md`](../../../../AGENTS.md) §3.13); `make suchlauf-nachmessen
+      ([`AGENTS.md`](../../../../AGENTS.md) §3.13). **Fixrunden-Korrektur
+      (Verifikation V-2, MEDIUM):** der ursprünglich eingetragene `diff`-Wert (56) traf nach
+      der vorigen Fixrunde nicht mehr zu — der Verifier maß `ist=59`, weil
+      `TestMergeStreamAndWALFaultOutcomeSentinelOutranksContextCanceled` den `diff`-Suchlauf
+      nicht erneut gefahren hatte
+      ([`verifikation-slice-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/verifikation-slice-wal-fehlerschwelle-ausgangsklasse.md)
+      V-2). Diese Fixrunde hat den Wert erneut am jetzigen Stand (inklusive des neuen
+      V-1-Testfalls) gemessen und auf `61` korrigiert (§3, Fixrunden-Nachmessung). `make
+      suchlauf-nachmessen
       PLAN=docs/plan/planning/in-progress/slice-wal-fehlerschwelle-ausgangsklasse.md`
-      läuft mit den `diff`-Zeilen des Implementers durch (9 Zeilen stimmen, Exit 0).
+      läuft mit den korrigierten `diff`-Zeilen durch (9 Zeilen stimmen, Exit 0) — eigen
+      nachgemessen, nicht der alten Zahl geglaubt.
 - [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors (Zeile
       `make test-integration`: die Grenze entfällt, die Phase nennt die Klasse als
       Zusage); das Benutzerhandbuch bleibt unberührt (§1, real gegengeprüft: `git diff`
@@ -290,8 +299,24 @@ Symbolnamen der bewegten Stelle:
 ```suchlauf
 7305b578 58 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 fe9d0afa 51 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':(exclude,glob)**/slice-wal-fehlerschwelle-ausgangsklasse.md'
-diff 56 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':(exclude,glob)**/slice-wal-fehlerschwelle-ausgangsklasse.md'
+diff 61 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':(exclude,glob)**/slice-wal-fehlerschwelle-ausgangsklasse.md'
 ```
+
+**Fixrunden-Nachmessung des `diff`-Werts (Verifikation V-2, dann eigener V-1-Testfall):**
+der Verifier maß am Stand `8823f818` `ist=59` statt der zu diesem Zeitpunkt im Plan
+eingetragenen `56` — Ursache: die vorige Fixrunde (`a7d27ddc`) hatte
+`TestMergeStreamAndWALFaultOutcomeSentinelOutranksContextCanceled` ergänzt (drei zusätzliche
+lauffähige Treffer auf `mergeStreamAndWALFaultOutcome`), ohne den `diff`-Suchlauf danach
+erneut zu fahren
+([`verifikation-slice-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/verifikation-slice-wal-fehlerschwelle-ausgangsklasse.md)
+V-2). Diese Fixrunde ergänzt zusätzlich
+`TestMergeStreamAndWALFaultOutcomeLeavesStreamErrorUnchangedWithoutWALFault` (V-1 desselben
+Reports) — zwei weitere Treffer (Aufruf, `t.Fatalf`-Meldung) heben den Wert auf `61`. Beide
+Bewegungen sind Nichtgefundenes im Sinne von
+[`AGENTS.md`](../../../../AGENTS.md) §3.13: kein neuer Träger außerhalb der Tabellentestdatei
+selbst ist entstanden, die Zahl wächst ausschließlich mit dem Testfall-Bestand derselben
+Datei, die die Regel bindet. `make suchlauf-nachmessen PLAN=…` läuft am jetzigen Stand mit
+`ist=61` durch (Exit 0, alle neun Zeilen stimmen).
 
 Beschreibung und Zählwort der Klassen-Aussage samt Hedge (die Klasse des Ausgangs, die
 Priorität, das reguläre Stream-Ende):
