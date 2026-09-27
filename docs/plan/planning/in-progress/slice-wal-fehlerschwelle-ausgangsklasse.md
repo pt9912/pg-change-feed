@@ -117,6 +117,26 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       gewrappte Kette `fmt.Errorf("%w: %w", outbound.ErrStorage, fmt.Errorf(...:
       %w, context.Canceled))`); ob sie an der realen Treiber-Kette
       (`postgresstorage`/`sqlexec`) ebenso trägt, belegt DoD 2 am komponierten Prozess.
+      **Fixrunde (Review F-1, MEDIUM):** Der Reviewer band mit zwei eigenen Mutationen
+      (Sentinel-Zweig auf einen von drei Sentinel-Werten verkürzt; die beiden
+      `case`-Zeilen Sentinel ↔ `context.Canceled` vertauscht) eine reale Testlücke:
+      keiner der bisherigen Fälle unterscheidet, ob eine Fehlerkette *sowohl* einen
+      Ordnungs-Sentinel *als auch* `context.Canceled` trägt — beide Mutationen
+      blieben grün. Heute strukturell unerreichbar (die drei Mapper-Sentinels sind
+      unverkettete `errors.New`-Werte, `mapper.go:178,188,203`), aber eine Priorität,
+      die `ADR-0049`(a) verlangt und kein Test band. Neuer Testfall
+      `TestMergeStreamAndWALFaultOutcomeSentinelOutranksContextCanceled`
+      (`walretention_internal_test.go`) konstruiert die Kette künstlich
+      (`fmt.Errorf("%w: %w", <Sentinel>, context.Canceled)`, je einmal für alle drei
+      Sentinels) und bindet die Priorität „Sentinel vor `context.Canceled`“ an einen
+      Test. *Belegt durch:* `make test` (Race-Detector) grün, Exit 0. Mutation
+      **erprobt** an beiden vom Reviewer genannten Stellen, je auf einer eigenen
+      `tar`-Kopie des Arbeitsbaums gegen den gepinnten `golang:1.27`-Container:
+      Sentinel-Zweig auf `ErrChangeWithoutBegin` verkürzt — zwei der drei Subtests
+      (`…CommitWithoutBegin`, `…BeginWithoutCommit`) färbten sich rot, der dritte blieb
+      grün, wie erwartet; die beiden `case`-Zeilen vertauscht — alle drei Subtests
+      färbten sich rot. Beide Mutationen treffen genau den vom Reviewer benannten
+      Fall.
 - [x] **Die Runner-Phase trägt die Klasse als Zusage.** Die Phase „Fehlerschwelle beendet
       den Container“ in `make test-integration` prüft `cdc.process_heartbeat.error_class`
       auf `replication` (statt sie nur auszugeben); die Abdeckungs-Zeile in
