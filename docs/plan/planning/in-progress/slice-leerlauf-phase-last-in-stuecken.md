@@ -189,10 +189,12 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       dieser Regel. Ein Rot mit der Signatur „Fehlerklasse `replication` … WAL-Rückstand … über
       Fehlerschwelle“ in dieser Phase **nach** diesem Slice ist ein Befund und ein Architect-Zug
       (Trigger, Verdikt §2.6), keine Wiederholung.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
+      Self-Review (Modul 8). Report:
+      `docs/reviews/review-slice-leerlauf-phase-last-in-stuecken.md` (0 HIGH, 1 MEDIUM,
+      2 LOW, 3 INFO; keine Fixrunde).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13); `make suchlauf-nachmessen
