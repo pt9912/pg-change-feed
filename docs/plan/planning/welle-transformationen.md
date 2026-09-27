@@ -379,7 +379,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     um (Frist des Vorlaufs, `START_REPLICATION` im Stream-Lauf) und geht `e2e-abhilfe`
     voraus: der Abhilfe-Beleg fährt den Startpfad, den er ändert. Er startet nach
     `slice-wal-fehlerschwelle-ausgangsklasse` (Kante unten), der selbst nach
-    `slice-capture-leerlauf-quellbelege` startet (beide erweitern den Runner von `make
+    `slice-capture-leerlauf-quellbelege` und `slice-leerlauf-phase-last-in-stuecken`
+    startet (beide erweitern den Runner von `make
     test-integration` und den Tier `make test-replication`; WIP-Limit 1). Er ist wellenlos
     und steht nicht in der Slice-Liste (§4): keine Closure-Bedingung, die von seiner DoD
     verschieden wäre — das Kriterium zur Zeitgrenze in §3 ist mit dem Auftrag erfüllt —, und eine Aufnahme änderte die
@@ -391,7 +392,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     ([`ADR-0049`](../adr/0049-replication-fehlerklassen-schwellen.md); Architect-Verdikt
     [`architect-verdict-wal-fehlerschwelle-ausgangsklasse`](../../reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md)
     §3). Er startet nach `slice-capture-leerlauf-quellbelege` (beide ändern die Runner-Phase
-    „Fehlerschwelle beendet den Container“; WIP-Limit 1) und geht
+    „Fehlerschwelle beendet den Container“; WIP-Limit 1) und nach
+    `slice-leerlauf-phase-last-in-stuecken` (Kante unten) und geht
     `slice-start-vorlauf-grenze` voraus: beide berühren `wiring.go` und den Runner an
     entgegengesetzten Enden (`Stream.Run` und der Start-Pfad dort, die Rückgabe-Priorität
     nach `stream.Run` hier), und der kleinere Slice zuerst verstellt die Prüfspur des
@@ -400,19 +402,27 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     Zahl „zehn Slices“ ohne Änderung eines Kriteriums. Die Kante steht als Start-Trigger in
     `slice-start-vorlauf-grenze` (§4 dort); die Trigger von `e2e-abhilfe` bleiben, er wartet
     auf `slice-start-vorlauf-grenze`.
-  - **Bedingte Kante: Stabilisierung der Phase „Leerlauf-Bestätigung“ (Stand 2026-09-27,
-    kein Slice angelegt).** Die Phase in `make test-integration` war im ersten
-    `e2e.yml`-Lauf nach dem Push von `slice-capture-leerlauf-quellbelege` einmal rot
-    (Lauf 36287009221, Leg PostgreSQL 18, erster Versuch; die Wiederholung war grün, 1 von
-    40 Läufen seit dem Commit der Phase). Ob die Ursache im Produkt oder im Testaufbau liegt,
-    ist eine offene Frage beim Architect (Adresse:
-    `BEO-PGC/test-integration-retention-timing-flake`, `state.md`). Beauftragt der Architect
-    einen Slice zur Stabilisierung, geht er `slice-wal-fehlerschwelle-ausgangsklasse` und
-    `slice-start-vorlauf-grenze` **voraus**: beide erweitern den Runner **hinter** dieser
-    Phase, und ein Rot dort lässt ihre Belege ungelaufen statt widerlegt; die Kanten
-    lauten dann `slice-capture-leerlauf-quellbelege` → Stabilisierung →
-    `slice-wal-fehlerschwelle-ausgangsklasse` → `slice-start-vorlauf-grenze` → `e2e-abhilfe`.
-    Ohne Beauftragung bleibt die Reihenfolge oben.
+  - **Kante zu `slice-leerlauf-phase-last-in-stuecken` (beauftragt, Stand 2026-09-27).** Die
+    Phase „Leerlauf-Bestätigung“ in `make test-integration` war im ersten `e2e.yml`-Lauf nach
+    dem Push von `slice-capture-leerlauf-quellbelege` einmal rot (Lauf 36287009221, Leg
+    PostgreSQL 18, erster Versuch; die Wiederholung war grün; 1 rotes erstes Ergebnis unter 80
+    Ausführungen der Phase, **übernommen** aus dem Verdikt). Der Architect hat die Ursache im
+    Testaufbau bestimmt (der Stoß einer einzelnen Anweisung gegen den Prüf-Takt des
+    Rückstands) und den Slice beauftragt
+    ([`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)
+    §2 und §3; Register `BEO-PGC/test-integration-retention-timing-flake`). Der Slice
+    ([`slice-leerlauf-phase-last-in-stuecken`](open/slice-leerlauf-phase-last-in-stuecken.md))
+    schreibt die Last der Phase in Stücken unter der Warnschwelle und geht
+    `slice-wal-fehlerschwelle-ausgangsklasse` und `slice-start-vorlauf-grenze` **voraus**: beide
+    erweitern den Runner **hinter** dieser Phase, und ein Rot dort lässt ihre Belege
+    ungelaufen statt widerlegt. Er startet nach `slice-capture-leerlauf-quellbelege`
+    (Start-Trigger: dieser Slice in `done/`; erfüllt). Er ist wellenlos und steht nicht in der
+    Slice-Liste (§4): keine Closure-Bedingung, die von seiner DoD verschieden wäre, und eine
+    Aufnahme änderte die Zahl „zehn Slices“ ohne Änderung eines Kriteriums. Die Kante steht als
+    Start-Trigger in `slice-wal-fehlerschwelle-ausgangsklasse` (§4 dort); die Trigger von
+    `slice-start-vorlauf-grenze` und `e2e-abhilfe` bleiben, beide warten über die Kette auf ihn.
+    Der Verifier-Hinweis des Verdikts §4 (ein Rot dieser Signatur bis zum Slice weder Beleg noch
+    Widerlegung, danach ein Befund) steht in den Plänen der drei Folge-Slices.
   - **Spec-Kollision.** `spec-nachzug` startet nach
     `slice-backfill-spec-nachzug`: beide ändern
     [`SPEC-019`](../../../spec/pflichtenheft.md), die Kennungsvergabe im
@@ -449,10 +459,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   Stufe braucht das lauffähige System der Vorstufe (die Regeltypen, der
   Antragsweg, der Backfill-Pfad, beide Typen, die Wirkung, die Ordnung, die
   Abhilfe); dazu die Kante `slice-capture-leerlauf-quellbelege` →
+  `slice-leerlauf-phase-last-in-stuecken` →
   `slice-wal-fehlerschwelle-ausgangsklasse` → `slice-start-vorlauf-grenze` →
-  `e2e-abhilfe` (Belegaufbau der Container-Ende-Grenze im Runner, dann die Klasse des
-  Ausgangs derselben Phase, dann Frist und Strom-Beginn des Startpfads, den der
-  Abhilfe-Beleg fährt) und die Kanten
+  `e2e-abhilfe` (Belegaufbau der Container-Ende-Grenze im Runner, dann die Last der
+  Leerlauf-Phase in Stücken, dann die Klasse des Ausgangs der Phase dahinter, dann Frist und
+  Strom-Beginn des Startpfads, den der Abhilfe-Beleg fährt) und die Kanten
   `slice-code-kommentare-kennungen` → `map-value`, `slice-harness-fmt-check` →
   `e2e-wirkung`, `slice-antragsqueue-lesefehler-failed` → `start-reihenfolge`,
   `e2e-wirkung` → `slice-sdk-regel-realserver-e2e` → `betriebsdoku` und

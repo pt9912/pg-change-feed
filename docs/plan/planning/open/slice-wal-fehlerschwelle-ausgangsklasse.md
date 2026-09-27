@@ -11,6 +11,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 
 **Welle:** ohne Welle — der Slice trägt keine Closure-Bedingung, die von
 seiner DoD verschieden wäre. Er startet nach `slice-capture-leerlauf-quellbelege`
+und [`slice-leerlauf-phase-last-in-stuecken`](slice-leerlauf-phase-last-in-stuecken.md)
 und geht `slice-start-vorlauf-grenze` voraus (Start-Trigger dort, §4;
 [welle-transformationen](../welle-transformationen.md) §5, Kante zu
 `slice-transformationen-e2e-abhilfe` über `slice-start-vorlauf-grenze`).
@@ -237,22 +238,35 @@ Umsetzung (`BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`, offen, 2×):
 `slice-capture-leerlauf-quellbelege` liegt in `done/` (beide Slices ändern die
 Runner-Phase „Fehlerschwelle beendet den Container“ in
 `tools/harness/run-integration-tests.sh`; die Phase ist die Falsifikation dieses Slice;
-WIP-Limit 1), und kein weiterer Slice liegt in `in-progress/`. Der Slice muss `done`
+WIP-Limit 1), [`slice-leerlauf-phase-last-in-stuecken`](slice-leerlauf-phase-last-in-stuecken.md)
+liegt in `done/` (beide Slices ändern denselben Runner an verschiedenen Stellen — jener die Last
+der Phase „Leerlauf-Bestätigung“, dieser die Phase „Fehlerschwelle beendet den Container“ —, und ein
+Rot in der Leerlauf-Phase lässt diese Phase ungelaufen;
+[`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)
+§3), und kein weiterer Slice liegt in `in-progress/`. Der Slice muss `done`
 sein, **bevor** [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md) startet
 (Start-Trigger dort): beide ändern `wiring.go` und den Runner; der kleinere Slice
 zuerst verstellt die Prüfspur des größeren nicht (Verdikt §3). Der Übergangs-Commit
 `next` → `in-progress` nennt
 [`ADR-0049`](../../adr/0049-replication-fehlerklassen-schwellen.md).
 
-**Bedingte Kante (Stand der Closure von `slice-capture-leerlauf-quellbelege`):** die
-Phase „Leerlauf-Bestätigung“ vor der Runner-Phase dieses Slice war im ersten
-`e2e.yml`-Lauf nach dem Push einmal rot (Lauf 36287009221, Leg PostgreSQL 18; Ursache
-offen, Frage beim Architect im `state.md` von
-`BEO-PGC/test-integration-retention-timing-flake`). Beauftragt der Architect einen
-Slice zur Stabilisierung dieser Phase, geht er diesem Slice **voraus**: ein Rot dort
-lässt die Phasen dahinter ungelaufen, auch die Mutation dieses Slice an der Phase
-„Fehlerschwelle beendet den Container“. Ohne Beauftragung ändert sich am Start-Trigger
-nichts.
+**Kante zu `slice-leerlauf-phase-last-in-stuecken` (beauftragt).** Die Phase
+„Leerlauf-Bestätigung“ vor der Runner-Phase dieses Slice war im ersten
+`e2e.yml`-Lauf nach dem Push von `slice-capture-leerlauf-quellbelege` einmal rot (Lauf
+36287009221, Leg PostgreSQL 18); der Architect hat die Ursache im Testaufbau bestimmt (der
+Stoß einer einzelnen Anweisung gegen den Prüf-Takt) und den Slice beauftragt
+([`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)
+§3; Register `BEO-PGC/test-integration-retention-timing-flake`). Er geht diesem Slice
+**voraus**: ein Rot dort lässt die Phasen dahinter ungelaufen, auch die Mutation dieses Slice
+an der Phase „Fehlerschwelle beendet den Container“.
+
+**Verifier-Hinweis** (Verdikt §4): ein Rot mit der Signatur „Fehlerklasse `replication` …
+WAL-Rückstand … über Fehlerschwelle“ in der Phase „Leerlauf-Bestätigung“ ist, solange
+`slice-leerlauf-phase-last-in-stuecken` nicht in `done/` liegt, weder Beleg noch
+Widerlegung dieses Slice — der Verifier wiederholt den Lauf (`gh run rerun <Lauf> --failed`)
+und nennt Lauf, Versuchsnummer und Job-Kennungen beider Versuche; nach diesem Slice ist
+dasselbe Rot ein Befund und ein Architect-Zug. Ein Rot anderer Signatur oder in einer anderen
+Phase gilt nicht als dieser Fall.
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 

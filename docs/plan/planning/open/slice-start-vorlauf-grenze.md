@@ -281,6 +281,11 @@ hat den Status `Accepted` (erfüllt, Zeile im ADR-Index
 liegt in `done/` (beide Slices erweitern `tools/harness/run-integration-tests.sh`
 und den Tier `make test-replication`; die Container-Ende-Grenze und der
 Belegaufbau entstehen dort einmal),
+[`slice-leerlauf-phase-last-in-stuecken`](slice-leerlauf-phase-last-in-stuecken.md)
+liegt in `done/` (die Phase „Leerlauf-Bestätigung“ läuft im Runner vor den Phasen dieses
+Slice; ein Rot dort lässt sie ungelaufen,
+[`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)
+§3),
 [`slice-wal-fehlerschwelle-ausgangsklasse`](slice-wal-fehlerschwelle-ausgangsklasse.md)
 liegt in `done/` (beide Slices berühren `internal/bootstrap/wiring.go` und den Runner an
 entgegengesetzten Enden — dieser Slice `Stream.Run`, `START_REPLICATION` und den
@@ -292,6 +297,15 @@ der kleinere Slice zuerst verstellt die Prüfspur des größeren nicht,
 startet (Start-Trigger dort): der Abhilfe-Beleg fährt den Startpfad, den dieser
 Slice ändert. Der Übergangs-Commit `next` → `in-progress` nennt
 [`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md).
+
+**Verifier-Hinweis** (Verdikt
+[`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)
+§4): ein Rot mit der Signatur „Fehlerklasse `replication` … WAL-Rückstand … über
+Fehlerschwelle“ in der Phase „Leerlauf-Bestätigung“ ist, solange
+`slice-leerlauf-phase-last-in-stuecken` nicht in `done/` liegt, weder Beleg noch Widerlegung
+dieses Slice — der Verifier wiederholt den Lauf (`gh run rerun <Lauf> --failed`) und nennt Lauf,
+Versuchsnummer und Job-Kennungen beider Versuche; nach jenem Slice ist dasselbe Rot ein Befund
+und ein Architect-Zug.
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 

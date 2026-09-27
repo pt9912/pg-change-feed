@@ -203,6 +203,17 @@ Start-Trigger ist eine
 **Vorab**-Bedingung: die Ordnung steht, bevor ihre Wirkung gemessen wird
 (`BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`, offen, 2×).
 
+**Verifier-Hinweis** (Verdikt
+[`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)
+§4): ein Rot mit der Signatur „Fehlerklasse `replication` … WAL-Rückstand … über
+Fehlerschwelle“ in der Phase „Leerlauf-Bestätigung“ ist, solange
+`slice-leerlauf-phase-last-in-stuecken` nicht in `done/` liegt, weder Beleg noch Widerlegung
+dieses Slice — der Verifier wiederholt den Lauf (`gh run rerun <Lauf> --failed`) und nennt Lauf,
+Versuchsnummer und Job-Kennungen beider Versuche; nach jenem Slice (die Kette in
+[welle-transformationen](../welle-transformationen.md) §5 legt ihn vor diesen Slice) ist dasselbe
+Rot ein Befund und ein Architect-Zug. Die Phasen dieses Slice laufen hinter der Leerlauf-Phase;
+ein Rot dort lässt sie ungelaufen.
+
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
 - `in-progress` → `next` (zu groß, zurück zur Zerlegung): falls
