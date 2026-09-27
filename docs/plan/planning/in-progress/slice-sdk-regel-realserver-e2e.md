@@ -158,7 +158,17 @@ die Aussage als erprobt.
       `readChanges`; die Hilfsdatei aus Liefer-Punkt 1 ist eingebunden. *Zu
       belegen durch:* ein realer, grüner `make test-sdk-kotlin-integration`-Lauf
       nach `make image`; die vier bestehenden Phasen unverändert grün; dieselben
-      drei Mutationen der Eingabeseite, rot gesehen.
+      drei Mutationen der Eingabeseite, rot gesehen — **alle drei real gefahren**
+      (Fixrunde nach review-slice-sdk-regel-realserver-e2e.md F-1): (a) der
+      `set_transformation`-Aufruf entfällt (Feature-Commit `ad3af754`), (b)
+      `SDK_RULE_SOURCE_KEY=id` statt `name` in
+      `tools/harness/lib-sdk-rule-fixture.sh` — `make test-sdk-kotlin-integration`
+      scheiterte an der gRPC-Regel-Fläche mit
+      `org.opentest4j.AssertionFailedError` (`GrpcRuleRealserverTest.kt:23`), (c)
+      `sql_kind` der gRPC-Regel-Fläche von `changes_renamed` auf `changes`
+      geändert — Scheitern mit „die Identität (839-1) ist nicht real über den
+      SQL-Lesezugriffsweg lesbar (count=0)“; jede Mutation per `git checkout`
+      zurückgenommen, Arbeitsbaum danach `git diff` leer.
 - [x] **Liefer-Punkt 3 — Python-Tier.** Dieselbe Form im Runner
       `tools/harness/run-sdk-python-integration-tests.sh`: vier Phasen mit
       Testdateien unter `sdks/python/pgchangefeed/integration` (je Phase die
@@ -168,7 +178,16 @@ die Aussage als erprobt.
       eingebunden. *Zu belegen durch:* ein realer, grüner `make
       test-sdk-python-integration`-Lauf nach `make image`; die vier bestehenden
       Phasen unverändert grün; dieselben drei Mutationen der Eingabeseite, rot
-      gesehen.
+      gesehen — **alle drei real gefahren** (Fixrunde nach
+      review-slice-sdk-regel-realserver-e2e.md F-1): (a) der
+      `set_transformation`-Aufruf entfällt (Feature-Commit `ad3af754`), (b)
+      `SDK_RULE_SOURCE_KEY=id` statt `name` — `make test-sdk-python-integration`
+      scheiterte an der gRPC-Regel-Fläche mit `AssertionError: assert '501' ==
+      'PythonGrpcRuleSdkE2ESentinel'` (`test_grpc_rule_realserver.py:55`), (c)
+      `sql_kind` der gRPC-Regel-Fläche von `changes_renamed` auf `changes`
+      geändert — Scheitern mit „die Identität (827-1) ist nicht real über den
+      SQL-Lesezugriffsweg lesbar (count=0)“; jede Mutation per `git checkout`
+      zurückgenommen, Arbeitsbaum danach `git diff` leer.
 - [x] **Nur Test-Code und Runner.** Kein Produktivcode eines SDK ändert sich und
       keine Version: `git diff --name-only <Parent> -- sdks` nennt ausschließlich
       Pfade unter den drei Test-Verzeichnissen
@@ -333,6 +352,42 @@ durch „acht Phasen“ ersetzt (zwei Ziele, wie am Parent). Zeile 22 zählt die
 nachgezogenen Sensor-Zeilen in `harness/README.md` §Sensors (je eine der drei
 `make test-sdk-*-integration`-Zeilen nennt jetzt die Regel-Phasen und diesen
 Slice-Namen).
+
+**Fixrunde-Nachtrag (nach `docs/reviews/review-slice-sdk-regel-realserver-e2e.md`
+F-1, Ursprung: gemessen).** Am Feature-Commit `ad3af754` war für Kotlin
+(Liefer-Punkt 2) und Python (Liefer-Punkt 3) nur Mutation (a) real gefahren;
+(b) und (c) waren strukturell begründet, nicht erprobt — Checkboxen trotzdem
+`[x]`. Diese Fixrunde schließt die Lücke real: Mutation (b)
+(`SDK_RULE_SOURCE_KEY=id` statt `name` in
+`tools/harness/lib-sdk-rule-fixture.sh`, wirkt auf alle vier Regel-Phasen eines
+Laufs zugleich) lief einmal gegen `make test-sdk-kotlin-integration` (rot:
+`AssertionFailedError` an `GrpcRuleRealserverTest.kt:23`, Lauf 21:46:49–21:47:59,
+70 s) und einmal gegen `make test-sdk-python-integration` (rot:
+`AssertionError: assert '501' == 'PythonGrpcRuleSdkE2ESentinel'`, Lauf
+21:48:35–21:49:10, 35 s). Mutation (c) (`sql_kind` der jeweiligen
+gRPC-Regel-Fläche von `changes_renamed` auf `changes`, je ein Ein-Zeilen-Edit im
+Runner) lief gegen `make test-sdk-kotlin-integration` (erster Versuch
+21:49:41–21:50:39, 58 s, scheiterte an einem unabhängigen Timing-Flake der
+HTTP-Fläche ohne Regel — `BEO-PGC/test-integration-retention-timing-flake`,
+kein Befund dieses Slice; zweiter Versuch 21:51:19–21:52:27, 68 s, rot wie
+erwartet: „die Identität (839-1) ist nicht real über den SQL-Lesezugriffsweg
+lesbar (count=0)“) und gegen `make test-sdk-python-integration`
+(21:52:52–21:53:26, 34 s, rot: „die Identität (827-1) ist nicht real über den
+SQL-Lesezugriffsweg lesbar (count=0)“). Jede Mutation wurde nach ihrem Lauf per
+`git checkout -- <Datei>` zurückgenommen; `git status --short` bzw. `git diff`
+war nach jeder Rücknahme leer, bevor die nächste Mutation gesetzt wurde. Damit
+tragen Liefer-Punkt 2 und 3 jetzt denselben Beleg-Umfang wie Liefer-Punkt 1
+(C#): alle drei Mutationen der Eingabeseite real rot gesehen, an allen drei
+Tiers.
+
+**Kostenklasse dieser Fixrunde (§4, Ursprung: gemessen).** `free -m` vor dem
+ersten Lauf: 14581 MiB benutzt, 1591 MiB frei (von 31817 MiB gesamt); nach dem
+letzten Lauf: 14292 MiB benutzt, 2059 MiB frei — kein Anstieg. Dangling Docker
+Volumes (`docker volume ls -qf dangling=true | wc -l`): 39 vor dem ersten und
+39 nach dem letzten Lauf — unverändert, jeder Runner räumt seinen
+Compose-Stack per `compose down -v --remove-orphans` ab. Kein zweiter schwerer
+Lauf lief parallel (fünf `make test-sdk-{kotlin,python}-integration`-Aufrufe
+nacheinander, siehe Zeitfenster oben).
 
 | Träger | Befund | Behandlung |
 |---|---|---|
