@@ -358,3 +358,37 @@ func TestMergeStreamAndWALFaultOutcomeAbortDerivedStreamErrorYieldsFault(t *test
 		})
 	}
 }
+
+// TestMergeStreamAndWALFaultOutcomeSentinelOutranksContextCanceled belegt die
+// Reihenfolge der beiden `switch`-Zweige selbst: trägt eine Fehlerkette
+// sowohl einen Stream-Ordnungs-Sentinel als auch `context.Canceled`, gewinnt
+// der Sentinel (`ADR-0049`(a), „unabhängig vom WAL-Rückstand“). Die drei
+// Mapper-Sentinels tragen `context.Canceled` in keiner realen Kette — sie
+// sind unverkettete `errors.New`-Werte (`mapper.go`) —, die Konstruktion hier
+// bindet die Priorität trotzdem an einen Test statt sie unbelegt zu lassen.
+// Rot färbende Mutation: einen der drei Sentinel-Fälle aus dem `case`
+// entfernen, oder die beiden `case`-Zeilen (Sentinel ↔ `context.Canceled`)
+// vertauschen — beide Mutationen liefern dann den WAL-Fehler statt des
+// Sentinels.
+func TestMergeStreamAndWALFaultOutcomeSentinelOutranksContextCanceled(t *testing.T) {
+	streamOrderSentinels := []error{
+		mapper.ErrChangeWithoutBegin,
+		mapper.ErrCommitWithoutBegin,
+		mapper.ErrBeginWithoutCommit,
+	}
+	for _, sentinel := range streamOrderSentinels {
+		t.Run(sentinel.Error(), func(t *testing.T) {
+			var fault walRetentionFault
+			fault.set(fmt.Errorf("%w: WAL-Rückstand über Fehlerschwelle", outbound.ErrReplication))
+			chained := fmt.Errorf("%w: %w", sentinel, context.Canceled)
+
+			got := mergeStreamAndWALFaultOutcome(chained, &fault)
+			if !errors.Is(got, sentinel) {
+				t.Fatalf("mergeStreamAndWALFaultOutcome(%v, gesetzter WAL-Fault) = %v, wollen den Sentinel unverändert", chained, got)
+			}
+			if errors.Is(got, outbound.ErrReplication) {
+				t.Fatalf("mergeStreamAndWALFaultOutcome(%v, …) trägt den WAL-Fehler — der Sentinel hätte gewinnen müssen, obwohl die Kette zusätzlich context.Canceled trägt", chained)
+			}
+		})
+	}
+}
