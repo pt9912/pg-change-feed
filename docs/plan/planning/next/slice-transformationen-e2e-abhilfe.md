@@ -25,7 +25,7 @@ Teilfrage 4 und Folgepflicht 5 (Akzeptanzkriterium der Abhilfe),
 (Fehlerklasse `schema`), [`SPEC-019`](../../../../spec/pflichtenheft.md) —
 gelesen, nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-27.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
 [welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
