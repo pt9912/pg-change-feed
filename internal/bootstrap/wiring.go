@@ -166,6 +166,14 @@ const heartbeatStaleAfter = 3 * heartbeatInterval
 // einzuführen (Implementer-Entscheidung).
 const administrationPollInterval = heartbeatInterval
 
+// administrationPassTimeout trägt die Frist des Vorlaufs vor dem
+// Stream-Start (`runStreamAfterAdministrationPass`, `ADR-0128`): die Hälfte
+// der Fehlergrenze des Capture-Abstands, keine eigene Konfigurationsachse.
+// Ein Antrag, den der Vorlauf bis dahin nicht erreicht oder nicht vermerkt,
+// bleibt `pending`; die Administrations-Goroutine verarbeitet ihn danach
+// ohne Frist.
+const administrationPassTimeout = 30 * time.Second
+
 // retentionInterval trägt den periodischen Lösch-Takt der
 // Retention-Goroutine (`runRetentionCleanup`, `LH-FA-RET-002`…`004`,
 // `ADR-0014`): ein MVP-Default ohne eigene Konfigurationsschicht, analog
@@ -1331,20 +1339,32 @@ type administrationDeps struct {
 // dann `runStream`. Ein beim Prozessstart `pending` stehender Antrag, den der
 // Vorlauf liest und erfolgreich verarbeitet, ist vermerkt und in der
 // `Assembler`-Bindung nachgetragen, bevor der Stream die erste Transaktion
-// assembliert; die Ordnung gilt für jede Antragsart (`ADR-0112`). Sie hängt am
-// Lesen: liest `ListPending` nicht, bleibt jeder Antrag `pending`, der Vorlauf
+// assembliert; die Ordnung gilt für jede Antragsart. Sie hängt am Lesen:
+// liest `ListPending` nicht, bleibt jeder Antrag `pending`, der Vorlauf
 // protokolliert und der Stream startet mit dem bisherigen Regelstand. Scheitert
 // der Vermerk `MarkApplied`, steht die Wirkung in der Bindung und der Antrag
 // bleibt `pending`, bis die Goroutine ihn erneut verarbeitet. Der Vorlauf
 // steht vor `startLoop`: zu keinem Zeitpunkt lesen zwei Durchläufe dieselbe
-// Queue. Der Vorlauf trägt keine eigene Frist: ihn beendet `ctx`, das der
-// Aufrufer übergibt (in `Run` der Kontext des Streams, den der Prozess-`ctx`
-// und die WAL-Fehlerschwelle beenden), und ein Antrag, der lange läuft, hält
-// den Stream-Start an. `runStream` läuft auch bei beendetem `ctx`: der Stream
-// schließt seine Verbindung in seinem eigenen Lauf. Der Rückgabewert ist der
-// von `runStream`.
+// Queue. Der Vorlauf trägt `administrationPassTimeout` als eigene Frist
+// (`ADR-0128`): läuft sie ab, bleibt der unterbrochene Antrag und
+// jeder dahinter `pending`, `startLoop` und `runStream` laufen trotzdem mit
+// dem Kontext ohne Frist an. `startLoop` und `runStream` tragen `ctx`
+// unverändert (in `Run` der Kontext des Streams, den der Prozess-`ctx` und die
+// WAL-Fehlerschwelle beenden); `runStream` läuft auch bei beendetem `ctx`: der
+// Stream schließt seine Verbindung in seinem eigenen Lauf. Der Rückgabewert
+// ist der von `runStream`.
 func runStreamAfterAdministrationPass(ctx context.Context, deps administrationDeps, startLoop func(), runStream func(context.Context) error) error {
-	processAdministrationRequests(ctx, deps)
+	return runStreamAfterAdministrationPassWithTimeout(ctx, deps, administrationPassTimeout, startLoop, runStream)
+}
+
+// runStreamAfterAdministrationPassWithTimeout trägt dieselbe Ordnung wie
+// `runStreamAfterAdministrationPass`, mit der Frist des Vorlaufs als
+// Parameter — der Testeinstieg für eine verkürzte Frist; die
+// Produktions-Aufrufstelle trägt ausschließlich `administrationPassTimeout`.
+func runStreamAfterAdministrationPassWithTimeout(ctx context.Context, deps administrationDeps, timeout time.Duration, startLoop func(), runStream func(context.Context) error) error {
+	passCtx, cancel := context.WithTimeout(ctx, timeout)
+	processAdministrationRequests(passCtx, deps)
+	cancel()
 	startLoop()
 	return runStream(ctx)
 }
@@ -1382,11 +1402,19 @@ func runAdministration(ctx context.Context, deps administrationDeps) {
 // (derselbe nächste Durchlauf versucht erneut). Ein gescheiterter Antrag wird
 // als `failed` vermerkt; die Abfrage liest nur `pending`, der Antrag wird
 // nicht erneut versucht. Eine vom Antrags-Konstruktor verworfene Zeile
-// (`ListPending`, `Rejected`) endet ebenso `failed` mit ihrem Fehlertext
-// (`SPEC-019`), ohne die Zeilen dahinter anzuhalten; eine Zeile ohne
+// (`ListPending`, `Rejected`) endet ebenso `failed` mit ihrem Fehlertext,
+// ohne die Zeilen dahinter anzuhalten; eine Zeile ohne
 // Kennung lässt sich nicht vermerken und bleibt mit einer Warnung im Log
 // unberührt `pending`. Ein `backfill`-Antrag einer anderen Quelle als
 // `deps.source` bleibt unberührt `pending`.
+//
+// Endet `ctx` mit `context.DeadlineExceeded` — die Frist des Vorlaufs
+// (`ADR-0128` Festlegung 3), nicht der reguläre Prozess-Abbruch der
+// Administrations-Goroutine —, während ein Antrag verarbeitet wird, bleibt
+// dieser Antrag `pending`: kein `MarkFailed`, ein Warn-Eintrag nennt ihn
+// statt dessen. Jeder Antrag dahinter bleibt ebenso unberührt `pending`, ohne
+// eigenen Log-Eintrag — die Schleife bricht am Kontrollpunkt vor der
+// nächsten Zeile ab.
 func processAdministrationRequests(ctx context.Context, deps administrationDeps) {
 	pending, err := deps.requests.ListPending(ctx)
 	if err != nil {
@@ -1394,6 +1422,9 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 		return
 	}
 	for _, row := range pending {
+		if ctx.Err() != nil {
+			return
+		}
 		if row.Rejected != nil {
 			failRejectedAdministrationRequest(ctx, deps, *row.Rejected)
 			continue
@@ -1403,6 +1434,11 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 			continue
 		}
 		if err := applyAdministrationRequest(ctx, deps, request); err != nil {
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				deps.log.Warn(ctx, "administration: Vorlauf-Frist abgelaufen — Antrag bleibt pending",
+					"request_id", request.ID, "kind", request.Kind)
+				return
+			}
 			deps.log.Warn(ctx, "administration: Antrag fehlgeschlagen",
 				"request_id", request.ID, "kind", request.Kind, "error", err)
 			if markErr := deps.requests.MarkFailed(ctx, request.ID, err.Error()); markErr != nil {

@@ -223,6 +223,76 @@ func TestRunStreamAfterAdministrationPassHoldsTheStreamUntilThePassEndsAndContex
 	}
 }
 
+// TestRunStreamAfterAdministrationPassWithTimeoutLeavesRequestsPendingAfterTheDeadline
+// trägt Festlegung 2 und 3 von `ADR-0128`: eine Sperre des Betreibers hält
+// den ersten Antrag über die (hier verkürzte) Frist des Vorlaufs hinaus fest
+// — Stream- und Goroutinen-Start laufen trotzdem je einmal an, mit dem
+// Kontext ohne Frist; der unterbrochene Antrag und der Antrag dahinter
+// bleiben `pending` (kein `MarkFailed`), und genau ein Warn-Eintrag nennt
+// den Frist-Ablauf.
+//
+// Rot färbende Mutationen (Eingabeseite: die Frist der Testzeile,
+// je gesehen): die Frist in `runStreamAfterAdministrationPassWithTimeout`
+// durch `ctx, func() {}` ersetzen (kein `context.WithTimeout`) — der Vorlauf
+// blockiert, bis der Testkontext selbst endet, der Test läuft in seine
+// eigene Zeitgrenze statt zu terminieren; den `errors.Is(ctx.Err(),
+// context.DeadlineExceeded)`-Zweig in `processAdministrationRequests`
+// streichen — der unterbrochene Antrag wird `failed` vermerkt statt
+// `pending` zu bleiben.
+func TestRunStreamAfterAdministrationPassWithTimeoutLeavesRequestsPendingAfterTheDeadline(t *testing.T) {
+	deps, queue, _ := ruleFixture(t)
+	deps.enableTables = blockingEnableTableUseCase{}
+	log := &recordingLog{}
+	deps.log = log
+	queue.mu.Lock()
+	queue.pending = []model.AdministrationRequest{
+		{ID: "req-timeout", Source: "src-admin", Schema: "public", Table: "orders_timeout", Kind: model.AdministrationRequestEnable},
+		{ID: "req-behind", Source: "src-admin", Schema: "public", Table: "orders_behind", Kind: model.AdministrationRequestEnable},
+	}
+	queue.mu.Unlock()
+
+	var loops, streams int
+	var streamCtxErr error
+	err := runStreamAfterAdministrationPassWithTimeout(context.Background(), deps, 20*time.Millisecond,
+		func() { loops++ },
+		func(streamCtx context.Context) error {
+			streams++
+			streamCtxErr = streamCtx.Err()
+			return nil
+		},
+	)
+	if err != nil {
+		t.Fatalf("runStreamAfterAdministrationPassWithTimeout: %v", err)
+	}
+	if loops != 1 || streams != 1 {
+		t.Fatalf("Goroutinen-Start %d, Stream-Start %d, wollen je 1 — die Frist hält den Start nicht an", loops, streams)
+	}
+	if streamCtxErr != nil {
+		t.Fatalf("Stream-Kontext trägt %v, wollen den Kontext ohne Frist", streamCtxErr)
+	}
+	if isApplied(queue, "req-timeout") {
+		t.Fatal("der Antrag an der Frist ist applied, wollen pending")
+	}
+	if _, failed := failureOf(queue, "req-timeout"); failed {
+		t.Fatal("der Antrag an der Frist ist failed, wollen pending (kein MarkFailed)")
+	}
+	if isApplied(queue, "req-behind") {
+		t.Fatal("der Antrag hinter der Frist ist applied, wollen pending")
+	}
+	if _, failed := failureOf(queue, "req-behind"); failed {
+		t.Fatal("der Antrag hinter der Frist ist failed, wollen pending")
+	}
+	log.mu.Lock()
+	warns := log.warns
+	log.mu.Unlock()
+	if warns != 1 {
+		t.Fatalf("Warnungen = %d, wollen 1 (der Frist-Ablauf wird genau einmal protokolliert)", warns)
+	}
+	if !log.contains("WARN", "Vorlauf-Frist") {
+		t.Fatal("kein Warn-Eintrag zur abgelaufenen Frist")
+	}
+}
+
 // TestRunSourceTextPassesStreamRunOnlyAsArgumentOfTheSequence bindet die
 // Aufrufstelle in `Run`, die kein netzloser Lauf erreicht (`Run` braucht die
 // Datenbank): im Quelltext des Rumpfes von `Run` ist `stream.Run`

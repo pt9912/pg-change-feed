@@ -142,6 +142,19 @@ func (f *fakeEnableTableUseCase) Enable(ctx context.Context, command inbound.Ena
 
 var _ inbound.EnableTableUseCase = (*fakeEnableTableUseCase)(nil)
 
+// blockingEnableTableUseCase blockiert, bis der Kontext endet, und liefert
+// dann dessen Fehler — das Bild eines Antrags, der beim Prozessstart an
+// einer Sperre des Betreibers länger als die Frist des Vorlaufs wartet
+// (`ADR-0128`), dasselbe Whitebox-Test-Muster wie `fakeAdministrationListener`.
+type blockingEnableTableUseCase struct{}
+
+func (blockingEnableTableUseCase) Enable(ctx context.Context, _ inbound.EnableTableCommand) (inbound.EnableTableResult, error) {
+	<-ctx.Done()
+	return inbound.EnableTableResult{}, ctx.Err()
+}
+
+var _ inbound.EnableTableUseCase = (blockingEnableTableUseCase{})
+
 // fakeDisableTableUseCase spiegelt `fakeEnableTableUseCase` für den
 // Deaktivierungs-Pfad.
 type fakeDisableTableUseCase struct {
