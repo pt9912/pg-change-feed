@@ -308,34 +308,67 @@ cea198fb 2 -n -E 'Offene Nutzer-Entscheidung|Entscheidung des Nutzers steht|Neub
 cea198fb 5 -n -E 'Skript, das (ein|der) Interpreter liest|jeder andere Interpreter|andere Interpreter' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 cea198fb 6 -n -E 'python3? --version' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 cea198fb 2 -n -i -E '\.claude/hooks|pretooluse|harness/conventions' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/in-progress docs/plan/planning/welle-transformationen.md
-diff 18 -n -E 'blocked/go|blocked/python|Kopf-Liste|Host-Toolchain-Sperre' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 52 -n -E 'Host-.?python|Host python|Host-Interpreter|Sprach-Toolchains' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 23 -n -E 'blocked/go|blocked/python|Kopf-Liste|Host-Toolchain-Sperre' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 53 -n -E 'Host-.?python|Host python|Host-Interpreter|Sprach-Toolchains' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 1 -n -E 'gofmt python python3|go gofmt|node dotnet java gradle uv' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 1 -n -E 'Offene Nutzer-Entscheidung|Entscheidung des Nutzers steht|Neubewertung der Kopf|Re-Evaluierung der Host' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 3 -n -E 'Skript, das (ein|der) Interpreter liest|jeder andere Interpreter|andere Interpreter' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 14 -n -E 'python3? --version' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 4 -n -E 'Skript, das (ein|der) Interpreter liest|jeder andere Interpreter|andere Interpreter' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 16 -n -E 'python3? --version' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 4 -n -i -E '\.claude/hooks|pretooluse|harness/conventions' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/in-progress docs/plan/planning/welle-transformationen.md
 ```
 
 **Nachmessung des Implementers (Stand `diff` = Arbeitsbaum nach der Umsetzung,
 Parent `ca97b802` = `next -> in-progress`, gemessen mit `make
-suchlauf-nachmessen`):** Zeile 1 (Fragment/Kopf-Liste) 5→18: neue Nennungen in
-`MR-004`, den Guard-Kommentaren, `AGENTS.md`, `harness/README.md`, der
-Makefile-Hilfezeile und den zwei `state.md`-Dateien. Zeile 2
-(Host-python/Host-Interpreter) 37→52: dieselben Träger, plus den
-umgebauten Tabellentest. Zeile 3 (volle Namensliste) 2→1: die zwei
+suchlauf-nachmessen`; die Zahlen der Zeilen 1, 2, 5 und 6 sind gegenüber der
+ersten Fassung dieses Feldes berichtigt — Review-Finding F-1 von
+`review-slice-harness-guard-blocked-python.md` hatte sie gegen den realen
+`git grep`-Lauf abweichend vorgefunden, an genau diesen vier Zeilen; die
+Zahlen unten sind erneut mit `git grep -c` nachgezählt, nicht übernommen):**
+Zeile 1 (Fragment/Kopf-Liste) 5→23: die eigenen Träger — zwei
+Guard-Kommentarzeilen, `AGENTS.md`, `harness/README.md`, die
+`MR-004`-Indexzeile in `harness/conventions.md`, eine Nennung in `MR-003`,
+vier Zeilen in `MR-004`, zwei Kommentarzeilen des Tabellentests (zwölf
+Zeilen) — und die zwei nachgezogenen `state.md`-Dateien
+(`host-werkzeug-jenseits-docker-und-make-ohne-deklaration` eine Zeile,
+`inplace-textwerkzeug-am-repo-trotz-nutzerregel` fünf Zeilen, macht
+achtzehn); die restlichen fünf Treffer liegen in vier von diesem Slice nicht
+geänderten Beleg-Dateien anderer Vorgänge (`evidence/adr-0129-…` eine Zeile,
+`evidence/slice-leerlauf-phase-last-in-stuecken.md` zwei Zeilen,
+`evidence/slice-transformationen-map-value.md` eine Zeile,
+`evidence/slice-sdk-kotlin-publish-workflow.md` eine Zeile zu einem anderen
+Thema — „Host-Toolchain-Sperre“ meint dort die CI-Pin-Bindung an lokale
+Entwicklung, kein Bezug zu diesem Slice) — in der ersten Zählung übersehen.
+Zeile 2 (Host-python/Host-Interpreter) 37→53: dieselben eigenen Träger wie
+Zeile 1, dazu `.claude/commands/implement-slice.md`, `.harness/skills/reviewer.md`
+und der umgebaute Tabellentest mit acht statt zwei Fundstellen, sowie eine
+größere Zahl bereits vorhandener, von diesem Slice nicht geänderter Nennungen
+in Nachbar-Trägern (den Python-SDK-ADRs `ADR-0107`/`ADR-0108`, mehreren
+Beleg-Dateien des Registers `inplace-textwerkzeug-am-repo-trotz-nutzerregel`
+und `dod-begruendung-unzutreffende-tatsachenbehauptung`, sowie
+`slice-code-kommentare-bereinigung.md` §6) — in der ersten Zählung nur
+teilweise erfasst. Zeile 3 (volle Namensliste) 2→1: die zwei
 Halbzeilen von `state.md` (Stand `cea198fb`) sind in der Neufassung eine
 Zeile — die Aussage ist unverändert wahr, nur nicht mehr über einen
 Zeilenumbruch verteilt. Zeile 4 (offene Nutzer-Entscheidung) 2→1: die
 `state.md`-Zeile mit „Offene Nutzer-Entscheidung“ ist mit dem Ausgang
 „verkörpert“ ersetzt; `MR-003` (immutable) trägt weiter seine eine
-Nennung. Zeile 5 (Skript, das ein Interpreter liest) 5→3: zwei Treffer
+Nennung. Zeile 5 (Skript, das ein Interpreter liest) 5→4: zwei Treffer
 sind bewusst umformuliert (`AGENTS.md` §3.1 „ein Skript, das ein **nicht
 gelisteter** Interpreter liest“; der Tabellentest-Fall trägt jetzt `ruby`
 statt `python3`) — beide Stellen behaupteten sonst fälschlich, dass
-`python3 x.py` ungelesen bliebe. Zeile 6 (`python3? --version`) 6→14: der
-Tabellentest trägt jetzt mehrere `--version`-Fälle (Rand-Block, Meldungstest),
-dazu die Trägertexte. Zeile 7 (Guard/Konventionen in offenen Slice-Plänen)
+`python3 x.py` ungelesen bliebe; `MR-004` §Grenz-Zeile trägt denselben Satz
+wie `MR-003` neu (`Skript, das der Interpreter liest`), macht die
+Nettobilanz `5 − 2 + 1 = 4`. Zeile 6 (`python3? --version`) 6→16: der
+Tabellentest trägt einen `--version`-Block-Fall (Zeile 496) und `MR-004`
+zwei Nennungen (Zeilen 27, 73) — drei eigene Treffer; `AGENTS.md` trägt eine
+weitere (Zeile 125); die restlichen zwölf liegen in vier von diesem Slice
+nicht geänderten Dateien des Registers
+`inplace-textwerkzeug-am-repo-trotz-nutzerregel` (`evidence/adr-0129-…` vier
+Zeilen, `evidence/slice-transformationen-map-value.md` drei Zeilen,
+`state.md` vier Zeilen) und in
+`slice-harness-mutationsbild-und-verweigerte-aktion.md` (offener Plan, eine
+Zeile) — Belege der in §1 „Aufrufe seit der Frage“ genannten realen
+`--version`-Vorfälle, in der ersten Zählung nur teilweise erfasst. Zeile 7 (Guard/Konventionen in offenen Slice-Plänen)
 2→4: `slice-code-kommentare-bereinigung.md` (fremde Datei, unverändert,
 gemeldet — siehe Träger-Tabelle) und `welle-transformationen.md` §5 (a)
 bleiben unverändert wahr, plus zwei Treffer in diesem eigenen Plan (durch
