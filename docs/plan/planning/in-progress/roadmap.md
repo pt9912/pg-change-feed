@@ -38,11 +38,9 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [welle-transformationen](../welle-transformationen.md) — Transformationen:
-  erfasste Changes tragen vor der Persistierung die durch deklarative Regeln
-  bestimmte Form, konfiguriert über die SQL-Antrags-Queue, zehn Slices
-  ([`LH-FA-CFG-007`](../../../../spec/lastenheft.md),
-  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)).
+Keine Welle offen — [welle-transformationen](../done/welle-transformationen.md)
+ist geschlossen (siehe *Abgeschlossene Wellen*), keine Folge-Welle ist bereits
+eröffnet.
 
 Nichts in Arbeit — kein Slice liegt in `in-progress/` (WIP-Limit 1 gilt je
 Slice, nicht je offener Welle-Datei; mehrere gleichzeitig eröffnete Wellen sind
@@ -275,6 +273,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-sdk-python-vollabdeckung — Python/PyPI-SDK auf volle Vier-Wege-Parität erweitern (gRPC, SSE, NATS-Vollinhalt, `ADR-0110`) | 2026-09-23 | [welle-sdk-python-vollabdeckung-results.md](../done/welle-sdk-python-vollabdeckung-results.md) |
 | welle-sdk-reale2e — SDK-Realserver-E2E: die zwölf Zustellweg-Flächen der drei SDK-Packages (3 Sprachen × 4 Wege) tragen reale Server-Belege, Abdeckungs-Träger `docs/user/sdk-e2e-abdeckung.md` + `trace.coverage`-Eintrag (Label `SDK-E2E`) (`ADR-0110`) | 2026-09-23 | [welle-sdk-reale2e-results.md](../done/welle-sdk-reale2e-results.md) |
 | welle-backfill-bestand — Backfill des Bestands: der Tabellenbestand einer aktivierten Tabelle wird als Backfill erkennbar (`origin`) über den bestehenden Lesezugriffsweg lesbar, elf Slices (`LH-FA-CAP-009`, `ADR-0111`) | 2026-09-25 | [welle-backfill-bestand-results.md](../done/welle-backfill-bestand-results.md) |
+| welle-transformationen — Transformationen: erfasste Changes tragen vor der Persistierung die durch deklarative Regeln bestimmte Form, konfiguriert über die SQL-Antrags-Queue, zehn Slices plus neun wellenlose Kanten-Slices (`LH-FA-CFG-007`, `ADR-0112`) | 2026-09-27 | [welle-transformationen-results.md](../done/welle-transformationen-results.md) |
 
 ## Historische Trigger-Verschiebungen
 
