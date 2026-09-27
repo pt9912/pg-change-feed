@@ -155,6 +155,23 @@ func (blockingEnableTableUseCase) Enable(ctx context.Context, _ inbound.EnableTa
 
 var _ inbound.EnableTableUseCase = (blockingEnableTableUseCase{})
 
+// successAfterDeadlineEnableTableUseCase blockiert wie
+// `blockingEnableTableUseCase`, bis der Kontext endet, liefert danach aber
+// **Erfolg** statt `ctx.Err()` — das Bild eines Antrags, dessen erster
+// Schritt exakt im Moment des Fristablaufs durchkommt (Review-Finding F-1 zu
+// `slice-start-vorlauf-grenze`): der nächste Schritt von
+// `applyAdministrationRequest` (`Registered`, ohne Bindungs-Zeile) liefert
+// dann einen eigenständigen Domänenfehler, der nichts mit der Frist zu tun
+// hat.
+type successAfterDeadlineEnableTableUseCase struct{}
+
+func (successAfterDeadlineEnableTableUseCase) Enable(ctx context.Context, command inbound.EnableTableCommand) (inbound.EnableTableResult, error) {
+	<-ctx.Done()
+	return inbound.EnableTableResult{Table: model.SourceTable{ID: command.TableID}}, nil
+}
+
+var _ inbound.EnableTableUseCase = (successAfterDeadlineEnableTableUseCase{})
+
 // fakeDisableTableUseCase spiegelt `fakeEnableTableUseCase` für den
 // Deaktivierungs-Pfad.
 type fakeDisableTableUseCase struct {
@@ -1125,6 +1142,52 @@ func TestProcessAdministrationRequestsRejectedRowSurvivesMarkFailedError(t *test
 	}
 	if !log.contains("WARN", "Fehlschlag nicht vermerkt") {
 		t.Fatalf("der Fehler des Vermerks ist nicht protokolliert: %v", log.messages)
+	}
+}
+
+// TestProcessAdministrationRequestsClassifiesADomainErrorAfterTheDeadlineAsAFailureNotAsATimeout
+// trägt Review-Finding F-1 zu `slice-start-vorlauf-grenze`: die
+// Klassifikation „Vorlauf-Frist abgelaufen" prüft den von
+// `applyAdministrationRequest` zurückgegebenen Fehler selbst, nicht den
+// Ambient-Zustand von `ctx`. Der Fake `successAfterDeadlineEnableTableUseCase`
+// kehrt erst nach Ablauf des Kontexts zurück, aber mit **Erfolg** — der
+// nächste Schritt (`Registered`, ohne Bindungs-Zeile) liefert einen
+// eigenständigen Domänenfehler, der nichts mit der Frist zu tun hat; der
+// Antrag endet `failed` (`MarkFailed`), nicht mit dem Frist-Warn-Eintrag.
+//
+// Rot färbende Mutation: `errors.Is(err, context.DeadlineExceeded)` durch
+// `errors.Is(ctx.Err(), context.DeadlineExceeded)` (Ambient-Zustand statt des
+// zurückgegebenen Fehlers) ersetzen — der Antrag bleibt `pending` und
+// protokolliert fälschlich „Vorlauf-Frist abgelaufen" statt `MarkFailed`.
+func TestProcessAdministrationRequestsClassifiesADomainErrorAfterTheDeadlineAsAFailureNotAsATimeout(t *testing.T) {
+	deps, queue, _ := ruleFixture(t)
+	deps.enableTables = successAfterDeadlineEnableTableUseCase{}
+	log := deps.log.(*recordingLog)
+	queue.mu.Lock()
+	queue.pending = []model.AdministrationRequest{
+		{ID: "req-domain-error", Source: "src-admin", Schema: "public", Table: "orders_domain_error", Kind: model.AdministrationRequestEnable},
+	}
+	queue.mu.Unlock()
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+
+	processAdministrationRequests(ctx, deps)
+
+	if isApplied(queue, "req-domain-error") {
+		t.Fatal("der Antrag ist applied, wollen failed — der Domänenfehler nach Fristablauf ist kein Erfolg")
+	}
+	message, failed := failureOf(queue, "req-domain-error")
+	if !failed {
+		t.Fatal("der Antrag ist nicht failed vermerkt, wollen MarkFailed — der Fehler trägt die Frist nicht")
+	}
+	if !strings.Contains(message, "Aktivierung ohne Bindungs-Zeile") {
+		t.Fatalf("Fehlertext = %q, wollen den Domänenfehler von Registered", message)
+	}
+	if !log.contains("WARN", "Antrag fehlgeschlagen") {
+		t.Fatalf("kein Warn-Eintrag 'Antrag fehlgeschlagen': %v", log.messages)
+	}
+	if log.contains("WARN", "Vorlauf-Frist abgelaufen") {
+		t.Fatalf("der Log trägt fälschlich 'Vorlauf-Frist abgelaufen' — der Fehler hat nichts mit der Frist zu tun: %v", log.messages)
 	}
 }
 

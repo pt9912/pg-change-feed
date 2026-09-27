@@ -1408,13 +1408,17 @@ func runAdministration(ctx context.Context, deps administrationDeps) {
 // unberührt `pending`. Ein `backfill`-Antrag einer anderen Quelle als
 // `deps.source` bleibt unberührt `pending`.
 //
-// Endet `ctx` mit `context.DeadlineExceeded` — die Frist des Vorlaufs
-// (`ADR-0128` Festlegung 3), nicht der reguläre Prozess-Abbruch der
-// Administrations-Goroutine —, während ein Antrag verarbeitet wird, bleibt
-// dieser Antrag `pending`: kein `MarkFailed`, ein Warn-Eintrag nennt ihn
-// statt dessen. Jeder Antrag dahinter bleibt ebenso unberührt `pending`, ohne
-// eigenen Log-Eintrag — die Schleife bricht am Kontrollpunkt vor der
-// nächsten Zeile ab.
+// Trägt der von `applyAdministrationRequest` zurückgegebene Fehler selbst
+// `context.DeadlineExceeded` — die Frist des Vorlaufs (`ADR-0128`
+// Festlegung 3), nicht der reguläre Prozess-Abbruch der
+// Administrations-Goroutine —, bleibt dieser Antrag `pending`: kein
+// `MarkFailed`, ein Warn-Eintrag nennt ihn statt dessen. Die Klassifikation
+// prüft den zurückgegebenen Fehler, nicht den Ambient-Zustand von `ctx`:
+// ein Antrag, dessen letzter Schritt zufällig im Moment des Fristablaufs mit
+// einem eigenständigen Domänenfehler scheitert, bleibt ein gewöhnlicher
+// Fehlschlag mit `MarkFailed`. Jeder Antrag dahinter bleibt ebenso unberührt
+// `pending`, ohne eigenen Log-Eintrag — die Schleife bricht am Kontrollpunkt
+// vor der nächsten Zeile ab, sobald `ctx` selbst beendet ist.
 func processAdministrationRequests(ctx context.Context, deps administrationDeps) {
 	pending, err := deps.requests.ListPending(ctx)
 	if err != nil {
@@ -1434,7 +1438,7 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 			continue
 		}
 		if err := applyAdministrationRequest(ctx, deps, request); err != nil {
-			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			if errors.Is(err, context.DeadlineExceeded) {
 				deps.log.Warn(ctx, "administration: Vorlauf-Frist abgelaufen — Antrag bleibt pending",
 					"request_id", request.ID, "kind", request.Kind)
 				return
