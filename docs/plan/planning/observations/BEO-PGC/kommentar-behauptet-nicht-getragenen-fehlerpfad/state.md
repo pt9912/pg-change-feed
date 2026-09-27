@@ -7,7 +7,13 @@ Paket, trägt der Kommentar einen Rang-Zeiger darauf · seit welle-backfill-best
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §4.1, R6b).
 
-Zähler: 6× (Dateien unter `evidence/`; die sechste,
+Zähler: 7× (Dateien unter `evidence/`; die siebte,
+`evidence/slice-capture-leerlauf-quellbelege.md`, trägt F-4 (LOW) und F-5 (INFO): eine Allaussage
+(„nur, wenn der Slot nichts bestätigt“) in einem Kommentar der neuen Runner-Phase, die einen Fall
+belegt, und ein Godoc, dessen Begründungssatz eine später gemessene Aussage überholt hat
+(Ausprägung **Allaussage über einen Fall** und **überholte Begründung**); beide vor dem Merge von
+Lesern gefunden, Träger übergeben (`slice-wal-fehlerschwelle-ausgangsklasse`,
+`slice-code-kommentare-bereinigung`), Ausgang unverändert **verkörpert**; die sechste,
 `evidence/slice-transformationen-start-reihenfolge.md`, trägt F-2 (MEDIUM) und V-3 (INFO): der Godoc
 einer Start-Sequenz sagte eine Ordnung ohne die Bedingung zu, von der sie am Lesen der Queue
 abhängt (Ausprägung **Bedingung**), und „für jede Antragsart“ gilt für die Art `backfill` nur im

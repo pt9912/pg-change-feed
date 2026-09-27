@@ -20,4 +20,9 @@ und in keinem Slice steht.
 Der fünfte Beleg trägt den Träger bestätigend: die Runner-Phase „Fehlerschwelle beendet den
 Container“ fand die Abweichung der Ausgangs-Klasse, die die Unit-Tests der Kette mit Fakes nicht
 zeigten, und ein Slice trägt die Korrektur (`slice-wal-fehlerschwelle-ausgangsklasse`). Der
-Trigger der Neubewertung ist damit nicht eingetreten.
+Trigger der Neubewertung ist damit nicht eingetreten. Die Phase ist am realen Prozess
+falsifiziert: die Mutation „Aufruf von `stopStream` in der Schwellen-Prüfung entfernt“ färbt
+sie rot (der Container lief 90 s nach einer Last über der Fehlerschwelle weiter; Kopie des Repos,
+Image aus der Kopie, voller `make test-integration`, vom Verifier gefahren,
+`verifikation-slice-capture-leerlauf-quellbelege` §4 P2). Kein weiterer Beleg der Klasse aus
+diesem Vorgang: Zähler unverändert 5×.

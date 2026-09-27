@@ -1,0 +1,8 @@
+**Vorgang:** slice-capture-leerlauf-quellbelege (Verifikation V-4, INFO)
+
+**Fund:** Der Review-Report stellte in F-6 fest: „Das Tier `make test-replication` läuft nicht in `ci.yml`/`e2e.yml`; der Beleg lebt vom manuellen Lauf.“ Der Satz nannte keinen Anker. Der Verifier las `.github/workflows/e2e.yml` und fand das Gegenteil: der Schritt „Replication-Tier (go test ./... und Slot-Reserve)“ führt `bash tools/harness/run-replication-tests.sh tier` je Matrix-Leg aus (PostgreSQL 17 und 18, `PG_TEST_IMAGE` auf Job-Ebene). Der erste `e2e.yml`-Lauf nach dem Push bestätigt es: in beiden Legs steht die gedruckte Zeile des neuen Tests im Job-Log (Job 108529548457 Leg PostgreSQL 17.11, Job 108531740887 Leg PostgreSQL 18.6, Lauf 36287009221).
+
+**Form (Ausprägung):** dieselbe Klasse (eine ungeprüfte Tatsachenbehauptung steht ohne Anker als Beleg im Träger), hier ein **Review-Report** als Träger statt einer DoD-Begründung; das Muster ist das der Ausprägung im Anwender-/Betreiber-Träger (`slice-sdk-kotlin-cloudsmith`): der Mechanismus ist derselbe, der Träger ein anderer. Gefunden hat es der Verifier („Prüfe die **Belege**, nicht die Behauptung“, `AGENTS.md` §3.12 Instanz B), vor dem Merge; der Report ist ein Record und bleibt, die Berichtigung steht im Verifikations-Report (§5 Zeile F-6, V-4). Folge für den Plan: das Risiko „Laufzeit wächst“ hat einen CI-Anteil. Schwere INFO, Ausgang unverändert **verkörpert**.
+
+Quelle: `docs/reviews/verifikation-slice-capture-leerlauf-quellbelege.md` (§5 Zeile F-6, V-4) <!-- d-check:status-provenance -->
+· `docs/reviews/review-slice-capture-leerlauf-quellbelege.md` (F-6). <!-- d-check:status-provenance -->

@@ -12,7 +12,10 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 13× (Dateien unter `evidence/`; die dreizehnte,
+Zähler: 14× (Dateien unter `evidence/`; die vierzehnte,
+`evidence/slice-capture-leerlauf-quellbelege.md`, trägt F-1 (MEDIUM) und V-1 (MEDIUM): der Nachzug
+des Umbaus stand in §3, der Wortlaut von DoD 1 in §2 desselben Plans beschrieb den früheren
+Aufbau; vor dem Merge gefunden, Ausgang unverändert **verkörpert**; die dreizehnte,
 `evidence/slice-harness-suchlauf-nachmessen.md`, trägt F-3 (MEDIUM): der Plan hielt seinen alten
 Wortlaut zum Ort der Rücknahme neben der Abweichungs-Zeile stehen; die zwölfte,
 `evidence/slice-sdk-kotlin-cloudsmith.md`, trägt F-2 (MEDIUM) und F-3 (LOW): der Schlussabsatz

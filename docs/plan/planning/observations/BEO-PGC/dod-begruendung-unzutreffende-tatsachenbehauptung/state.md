@@ -18,14 +18,19 @@ Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Findin
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
 ab 10×). Ausgang unverändert **verkörpert**.
 
-Zähler (abgeleitet): **10×** (evidence/slice-transformationen-map-value.md,
+Zähler (abgeleitet): **11×** (evidence/slice-capture-leerlauf-quellbelege.md,
+evidence/slice-transformationen-map-value.md,
 evidence/slice-harness-guard-inplace-textwerkzeug.md,
 evidence/slice-036.md, evidence/slice-082.md,
 evidence/slice-081.md, evidence/slice-083.md, evidence/slice-095.md,
 evidence/slice-sdk-kotlin-sse-client-flaeche.md,
 evidence/slice-backfill-snapshot-reader.md,
 evidence/slice-sdk-kotlin-cloudsmith.md) — **Schwelle erreicht**,
-Ausgang beim Lese-Schritt der `welle-20`-Closure. Der zehnte Beleg
+Ausgang beim Lese-Schritt der `welle-20`-Closure. Der elfte Beleg
+(`slice-capture-leerlauf-quellbelege`, Verifikation V-4, INFO) trifft einen **Review-Report** als
+Träger: der Satz „das Tier läuft nicht in `ci.yml`/`e2e.yml`“ stand ohne Anker, der Verifier
+las den Workflow und fand das Gegenteil; vor dem Merge gefunden, Ausgang unverändert
+**verkörpert**. Der zehnte Beleg
 (`slice-transformationen-map-value`, Verifikation V-1, LOW) trifft ein **Zählwort im
 DoD-Wortlaut** („die zwei zwangsläufig geänderten“ gegen gemessene sechs, davon vier
 Fixture-Schalter); vor dem Merge vom Verifier gefunden, Wortlaut in der Closure

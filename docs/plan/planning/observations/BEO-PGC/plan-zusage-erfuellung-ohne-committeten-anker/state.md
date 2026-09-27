@@ -1,7 +1,10 @@
 Zustand: **gestrichen** — Ausgang: **gestrichen** (akzeptiertes Negativ) · seit welle-transformationen
 (Architect-Verdikt `architect-verdict-welle-transformationen-offene-fragen` §8). Zähler
-(abgeleitet): **3×** (evidence/slice-backfill-e2e.md, evidence/slice-transformationen-e2e-wirkung.md,
-evidence/slice-transformationen-start-reihenfolge.md).
+(abgeleitet): **4×** (evidence/slice-backfill-e2e.md, evidence/slice-transformationen-e2e-wirkung.md,
+evidence/slice-transformationen-start-reihenfolge.md, evidence/slice-capture-leerlauf-quellbelege.md).
+Das vierte Auftreten (`slice-capture-leerlauf-quellbelege`, Review F-2, LOW) hat dieselbe Form
+(ein Haken, dessen Läufe und Mutation nur im Bericht des Implementers standen); der Anker steht
+vor `done/` im Plan (der Verifikations-Report), der Neubewertungs-Trigger ist nicht eingetreten.
 
 Begründung: alle drei Belege sind LOW und hat der Reviewer vor dem Merge gefunden; die Behebung ist
 jedes Mal derselbe Zug (der Plan nennt den Report des Verifiers oder die Closure-Notiz als Anker samt
