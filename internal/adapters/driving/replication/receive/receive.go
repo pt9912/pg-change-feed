@@ -114,19 +114,25 @@ type Stream struct {
 	// stammt aus dem Ergebnis eines Capture-Aufrufs oder einer
 	// Leerlauf-Bestätigung (`ADR-0120`) und geht nie zurück.
 	lastAcked pglogrepl.LSN
+	// slot, startLSN und publication tragen die Angaben, die `Run` für
+	// `START_REPLICATION` braucht (`ADR-0128`): `NewStream` löst sie auf
+	// und lässt die Verbindung im Kommando-Zustand.
+	slot        string
+	startLSN    pglogrepl.LSN
+	publication string
 	// log trägt die strukturierte Protokollierung über den injizierten
 	// `LogPort` (`LH-QA-OPS-004`, `ADR-0024`) — nie `nil` (`NewStream`
 	// trägt den `outbound.NoopLog`-Default nach).
 	log outbound.LogPort
 }
 
-// NewStream baut die Replication-Verbindung auf (`LH-QA-REL-001.a`,
-// Schritt Receive): die Verbindung streamt im Text-Format mit dem
-// `pgoutput`-Plugin, der Logical Replication Slot wird bei Bedarf
-// angelegt und die Publication wird verlangt — ein Start ohne
-// Publication ist kein Stand zur Fortsetzung. Die Verbindungs-Konfiguration
-// setzt den Replication-Modus am Treiber; Treiber-Fehler gehen in die
-// Klasse `replication` (`SPEC-008`).
+// NewStream baut die Replication-Verbindung auf: die Verbindung streamt
+// im Text-Format mit dem `pgoutput`-Plugin, der Logical Replication Slot
+// wird bei Bedarf angelegt und die Publication wird verlangt — ein Start
+// ohne Publication ist kein Stand zur Fortsetzung. Die Verbindung bleibt
+// danach im Kommando-Zustand; `Stream.Run` sendet `START_REPLICATION` als
+// erste Handlung (`ADR-0128`). Treiber-Fehler gehen in die Klasse
+// `replication`.
 func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 	if err := validateConfig(cfg); err != nil {
 		return nil, err
@@ -154,20 +160,11 @@ func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 		conn.Close(ctx)
 		return nil, fmt.Errorf("%w: %v", ErrConfiguration, err)
 	}
-	if err := session.StartReplication(ctx, cfg.Slot, startLSN, pglogrepl.StartReplicationOptions{
-		Mode: pglogrepl.LogicalReplication,
-		PluginArgs: []string{
-			"proto_version '1'",
-			"publication_names '" + cfg.Publication + "'",
-		},
-	}); err != nil {
-		conn.Close(ctx)
-		return nil, fmt.Errorf("%w: START_REPLICATION: %v", ErrReplication, err)
-	}
-	log.Info(ctx, "replication: Stream gestartet",
-		"source", cfg.Source, "publication", cfg.Publication, "slot", cfg.Slot)
 	stream := newStreamOnSession(session, conn, assembler, cfg.Source, cfg.Capture, log)
 	stream.idle = cfg.IdleConfirmation
+	stream.slot = cfg.Slot
+	stream.startLSN = startLSN
+	stream.publication = cfg.Publication
 	return stream, nil
 }
 
@@ -366,13 +363,13 @@ func (s *Stream) Conn() *pgconn.PgConn {
 	return s.conn
 }
 
-// Run streamt, bis der Kontext endet oder ein Fehler auftritt, und
+// Run sendet `START_REPLICATION` als erste Handlung (`ADR-0128`) und
+// streamt danach, bis der Kontext endet oder ein Fehler auftritt; er
 // schließt die Verbindung bei seiner Rückkehr. Jede `pgoutput`-Änderung
 // läuft über Dekodierung und Mapper in den `CaptureInboundPort`; die
 // Rückkehr ohne Fehler meldet das reguläre Stream-Ende. Ein Fehler
 // bricht den Stream ab — Persist-before-ACK und das Verbot des stillen
-// Überspringens enden an keiner stillen Fortsetzung (`LH-QA-REL-001.a`,
-// `SPEC-008`).
+// Überspringens enden an keiner stillen Fortsetzung.
 func (s *Stream) Run(ctx context.Context) (err error) {
 	if s.capture == nil {
 		return fmt.Errorf("%w: CaptureInboundPort fehlt", ErrConfiguration)
@@ -392,6 +389,17 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 		}
 		s.log.Info(ctx, "replication: Stream regulär beendet")
 	}()
+	if err := s.session.StartReplication(ctx, s.slot, s.startLSN, pglogrepl.StartReplicationOptions{
+		Mode: pglogrepl.LogicalReplication,
+		PluginArgs: []string{
+			"proto_version '1'",
+			"publication_names '" + s.publication + "'",
+		},
+	}); err != nil {
+		return fmt.Errorf("%w: START_REPLICATION: %v", ErrReplication, err)
+	}
+	s.log.Info(ctx, "replication: Stream gestartet",
+		"source", s.source, "publication", s.publication, "slot", s.slot)
 	for {
 		rawMessage, err := s.session.ReceiveMessage(ctx)
 		if err != nil {

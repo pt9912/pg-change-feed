@@ -915,3 +915,33 @@ func TestRunEndsWithoutErrorWhenContextEnded(t *testing.T) {
 		t.Fatalf("Kontext-Ende: %v", err)
 	}
 }
+
+// TestRunSendsStartReplicationAsFirstActionAndReportsFailure trägt
+// Festlegung 1 von `ADR-0128`: `Run` sendet `START_REPLICATION`, bevor eine
+// Nachricht empfangen wird — mit dem Slot und der Startposition, die
+// `NewStream` aufgelöst hat; ein Fehler des Aufrufs bleibt die Klasse
+// `replication`, und der Adapter schließt die Verbindung wie jeder andere
+// Fehlerpfad der Schleife. Rot färbende Mutation (Eingabeseite: der Fake
+// scheitert an `StartReplication`): `StartReplication` zurück in
+// `NewStream` stellen — der Fehler bliebe dort hängen, `Run` erreichte die
+// Fehlerklasse nie und `session.ReceiveMessage` liefe unverändert.
+func TestRunSendsStartReplicationAsFirstActionAndReportsFailure(t *testing.T) {
+	session := &fakeSession{startErr: stderrors.New("kommando abgelehnt")}
+	stream := newTestStream(session, noopCapture{})
+	stream.slot = "slot_pgc_test"
+	stream.startLSN = pglogrepl.LSN(0x16B3748)
+	stream.publication = "pub_pgc_test"
+	err := stream.Run(context.Background())
+	if !stderrors.Is(err, ErrReplication) {
+		t.Fatalf("START_REPLICATION-Fehler: %v", err)
+	}
+	if !strings.Contains(err.Error(), "START_REPLICATION") {
+		t.Fatalf("Fehlerort nicht lesbar: %v", err)
+	}
+	if session.startCalls != 1 || session.startSlot != "slot_pgc_test" || session.startLSN != pglogrepl.LSN(0x16B3748) {
+		t.Fatalf("StartReplication-Aufruf: %d Aufrufe, Slot %q, LSN %X", session.startCalls, session.startSlot, uint64(session.startLSN))
+	}
+	if session.closeCalls != 1 {
+		t.Fatalf("Close-Aufrufe: %d, erwartet 1", session.closeCalls)
+	}
+}

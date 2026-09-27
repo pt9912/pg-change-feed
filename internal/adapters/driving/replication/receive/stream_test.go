@@ -846,6 +846,56 @@ func TestStreamRestartsOnExistingSlot(t *testing.T) {
 	}
 }
 
+// TestStreamStartsReplicationInRunAfterWaitingLongerThanWalSenderTimeout
+// trägt Festlegung 1 von `ADR-0128` am realen Treiber: `NewStream` lässt die
+// Verbindung im Kommando-Zustand — ein Warten länger als
+// `wal_sender_timeout` (2000 ms an dieser Instanz, `run-replication-tests.sh`)
+// zwischen `NewStream` und `Run` beendet die Verbindung nicht, und eine nach
+// dem Warten committete Änderung wird geliefert, sobald `Run` läuft. Rot
+// färbende Mutation (hergeleitet, nicht gefahren): `START_REPLICATION`
+// zurück in `NewStream` stellen — der Server beendet den Strom nach
+// `wal_sender_timeout`, und `Run` empfängt die Änderung nie.
+func TestStreamStartsReplicationInRunAfterWaitingLongerThanWalSenderTimeout(t *testing.T) {
+	pool, ctx := newPool(t)
+	env := newTestEnv(t, "startdelay")
+	commands := make(chan *inbound.CaptureCommand, 4)
+	stream, err := newStream(env.ctx, env, &fakeCapture{commands: commands})
+	if err != nil {
+		t.Fatalf("NewStream: %v", err)
+	}
+
+	time.Sleep(3 * time.Second)
+
+	runCtx, cancel := context.WithCancel(env.ctx)
+	t.Cleanup(cancel)
+	runDone := make(chan error, 1)
+	go func() { runDone <- stream.Run(runCtx) }()
+
+	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (1, 'Nach dem Warten')"); err != nil {
+		t.Fatalf("INSERT: %v", err)
+	}
+	command := awaitCommand(t, commands, 15*time.Second)
+	if _, committed := command.Transaction.CommitPosition(); !committed {
+		t.Fatalf("Transaktion ohne Commit-Position")
+	}
+	changes, err := command.Transaction.Changes()
+	if err != nil {
+		t.Fatalf("Changes: %v", err)
+	}
+	if len(changes) != 1 || string(changes[0].NewImage) != `{"id":"1","name":"Nach dem Warten"}` {
+		t.Fatalf("unerwartete Transaktion: %+v", changes)
+	}
+	cancel()
+	select {
+	case err := <-runDone:
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+	case <-time.After(15 * time.Second):
+		t.Fatalf("Run endet nach dem Abbruch nicht")
+	}
+}
+
 // testForeign trägt die Tabelle außerhalb der Publication: ihr WAL trägt
 // keinen Inhalt für den Stream (`ADR-0120`).
 const testForeign = "public.foreign_stream_test"
