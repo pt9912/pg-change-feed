@@ -3,7 +3,7 @@
 **Datum:** 2026-09-27 · **Stand:** `3f688677` (Baum sauber, Implementer-Commits lokal,
 nicht gepusht) · **Rolle:** Architect (frischer Kontext) · **Anlass:** Befund des
 Implementers in
-[`slice-capture-leerlauf-quellbelege`](../plan/planning/in-progress/slice-capture-leerlauf-quellbelege.md)
+[`slice-capture-leerlauf-quellbelege`](../plan/planning/done/slice-capture-leerlauf-quellbelege.md)
 §3 „Befund der Erprobung“ — die Runner-Phase „Fehlerschwelle beendet den Container“
 läuft grün, der Fehlerzustand trägt aber die Klasse `storage` statt `replication`.
 **Vollmacht:** Empfehlung statt Optionsliste, keine Rückfragen an den Auftraggeber.
