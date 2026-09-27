@@ -122,7 +122,7 @@ sdk-pack-python: sdk-public-doc-check ## Python-SDK bauen+testen+paketieren (sdk
 # ADR-0044). Der Runner schreibt den Kotlin-Abschnitt des Abdeckungs-
 # Traegers docs/user/sdk-e2e-abdeckung.md aus derselben Messung.
 .PHONY: test-sdk-kotlin-integration
-test-sdk-kotlin-integration: ## Kotlin-SDK-Realserver-Integrationstest (compose + integration-Stufe, vier Phasen; Werkzeug, kein Gate; slice-sdk-kotlin-reale2e)
+test-sdk-kotlin-integration: ## Kotlin-SDK-Realserver-Integrationstest (compose + integration-Stufe, acht Phasen — vier ohne Regel, vier mit rename_column-Regel; Werkzeug, kein Gate; slice-sdk-kotlin-reale2e)
 	@bash tools/harness/run-sdk-kotlin-integration-tests.sh
 
 # `test-sdk-csharp-integration` ist der Realserver-Integrationstest der
@@ -140,7 +140,7 @@ test-sdk-kotlin-integration: ## Kotlin-SDK-Realserver-Integrationstest (compose 
 # build:-Block, ADR-0044). Der Runner schreibt den C#-Abschnitt des
 # Abdeckungs-Traegers docs/user/sdk-e2e-abdeckung.md aus derselben Messung.
 .PHONY: test-sdk-csharp-integration
-test-sdk-csharp-integration: ## C#-SDK-Realserver-Integrationstest (compose + integration-Stufe, vier Phasen; Werkzeug, kein Gate; slice-sdk-csharp-reale2e)
+test-sdk-csharp-integration: ## C#-SDK-Realserver-Integrationstest (compose + integration-Stufe, acht Phasen — vier ohne Regel, vier mit rename_column-Regel; Werkzeug, kein Gate; slice-sdk-csharp-reale2e)
 	@bash tools/harness/run-sdk-csharp-integration-tests.sh
 
 # `test-sdk-python-integration` ist der Realserver-Integrationstest der

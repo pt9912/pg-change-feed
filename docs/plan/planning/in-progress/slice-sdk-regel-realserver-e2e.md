@@ -120,7 +120,7 @@ die Aussage als erprobt.
 
 ## 2. Definition of Done
 
-- [ ] **Liefer-Punkt 1 — gemeinsame Vorbereitung und C#-Tier.** Eine
+- [x] **Liefer-Punkt 1 — gemeinsame Vorbereitung und C#-Tier.** Eine
       gemeinsame Hilfsdatei unter `tools/harness/`, die alle drei Runner
       einbinden (eine Kopie der Aufrufform, nicht drei), legt die Tabelle
       `public.feed_e2e_sdkrule` (`id int PRIMARY KEY, name text`) an, aktiviert
@@ -150,7 +150,7 @@ die Aussage als erprobt.
       Mutation der Eingabeseite, rot gesehen — der `set_transformation`-Aufruf
       entfällt (der Zielschlüssel fehlt), die Regel benennt eine andere Spalte
       (`name` bleibt im Bild), das Gegenlesen prüft den Zielschlüssel nicht.
-- [ ] **Liefer-Punkt 2 — Kotlin-Tier.** Dieselbe Form im Runner
+- [x] **Liefer-Punkt 2 — Kotlin-Tier.** Dieselbe Form im Runner
       `tools/harness/run-sdk-kotlin-integration-tests.sh`: vier Phasen mit den
       Testklassen unter `sdks/kotlin/pgchangefeed-kotlin/src/integrationTest`
       (Gradle-Aufgabe `integrationTest`, je Klasse `--tests`), Bild-Prüfung über
@@ -159,7 +159,7 @@ die Aussage als erprobt.
       belegen durch:* ein realer, grüner `make test-sdk-kotlin-integration`-Lauf
       nach `make image`; die vier bestehenden Phasen unverändert grün; dieselben
       drei Mutationen der Eingabeseite, rot gesehen.
-- [ ] **Liefer-Punkt 3 — Python-Tier.** Dieselbe Form im Runner
+- [x] **Liefer-Punkt 3 — Python-Tier.** Dieselbe Form im Runner
       `tools/harness/run-sdk-python-integration-tests.sh`: vier Phasen mit
       Testdateien unter `sdks/python/pgchangefeed/integration` (je Phase die
       Datei als `PGCHANGEFEED_TEST_FILE`), Bild-Prüfung über den opaken Wert
@@ -169,7 +169,7 @@ die Aussage als erprobt.
       test-sdk-python-integration`-Lauf nach `make image`; die vier bestehenden
       Phasen unverändert grün; dieselben drei Mutationen der Eingabeseite, rot
       gesehen.
-- [ ] **Nur Test-Code und Runner.** Kein Produktivcode eines SDK ändert sich und
+- [x] **Nur Test-Code und Runner.** Kein Produktivcode eines SDK ändert sich und
       keine Version: `git diff --name-only <Parent> -- sdks` nennt ausschließlich
       Pfade unter den drei Test-Verzeichnissen
       (`PgChangeFeed.Client.Integration/`, `src/integrationTest/`,
@@ -179,7 +179,7 @@ die Aussage als erprobt.
       der Suchlauf in §3 am Start einen festen Bild-Schlüssel im Produktivcode,
       gilt die Rückführung §4. *Zu belegen durch:* der Diff-Befehl und der
       Suchlauf in §3, beide Stände.
-- [ ] **Die Abdeckung ist getragen.** Jeder der drei Runner schreibt in seinen
+- [x] **Die Abdeckung ist getragen.** Jeder der drei Runner schreibt in seinen
       marker-gegrenzten Abschnitt von
       [`docs/user/sdk-e2e-abdeckung.md`](../../../user/sdk-e2e-abdeckung.md) eine
       Regel-Zeile je SDK (Kennungen
@@ -193,7 +193,7 @@ die Aussage als erprobt.
       Bericht, Zahl mit Ursprung, [`AGENTS.md`](../../../../AGENTS.md) §3.12
       Instanz A) führt [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) mit der
       Dimension `SDK-E2E`; `make docs-check`.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -203,14 +203,14 @@ die Aussage als erprobt.
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=<Plan-Datei>` läuft nach jeder Fixrunde
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `harness/README.md` §Sensors (die drei Zeilen `make
+- [x] Doku-Update: `harness/README.md` §Sensors (die drei Zeilen `make
       test-sdk-*-integration` nennen die Regel-Phasen), die Hilfetexte in
       `harness/mk/sdk.mk` („vier Phasen“ an zwei Zielen) und die Kopf-Kommentare
       der drei Runner tragen den Ist-Umfang; das Benutzerhandbuch bleibt
       unberührt (`slice-transformationen-betriebsdoku`).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — weitere
       `evidence/`-Datei oder neues Verzeichnis; kein Anfall ist ebenfalls eine
@@ -283,6 +283,12 @@ Parent `71024045`; der Implementer ergänzt die Zeilen mit Stand `diff`:
 diff 0 -E 'Server ohne Regeln' -- docs/plan/planning/open
 diff 7 -i -E 'opak|undurchsichtig' -- docs/plan/planning ':!docs/plan/planning/done' ':!docs/plan/planning/observations'
 diff 9 -F 'slice-sdk-regel-realserver-e2e' -- docs/plan/planning ':!docs/plan/planning/done' ':!docs/plan/planning/observations'
+diff 15 -E '^\| \[' -- docs/user/sdk-e2e-abdeckung.md
+diff 0 -F 'set_transformation' -- 'tools/harness/run-sdk-*'
+diff 4 -F 'set_transformation' -- tools/harness/lib-sdk-rule-fixture.sh
+diff 0 -E 'vier Phasen' -- harness/mk/sdk.mk
+diff 2 -E 'acht Phasen' -- harness/mk/sdk.mk
+diff 3 -F 'slice-sdk-regel-realserver-e2e' -- harness/README.md
 ```
 
 Gemessen am Stand `71024045` (Zeilen 1 bis 13) und am Arbeitsbaum nach dem
@@ -311,6 +317,22 @@ den Gegenstand als Text (`BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an`).
 durchsucht** (Grenze des Musters, §3.13): eine Formulierung der Aussage ohne die
 Wörter „opak“ und „undurchsichtig“; ein Bild-Zugriff in Python, der über eine
 Variable statt über `.new_image[` läuft.
+
+**Implementer-Nachtrag (Zeilen 17 bis 22, Stand `diff` am fertigen Arbeitsbaum,
+Ursprung: gemessen).** Die vier bewegten Eigenschaften aus Zeilen 4, 8 und 10
+sind nachgezogen: Zeile 17 zählt jetzt 15 Zeilen der Abdeckungstabelle (12 + 3
+neue Regel-Zeilen, eine je Sprache) statt der 12 am Parent — das Muster deckt
+absichtlich jede Tabellenzeile (nicht nur `LH-FA-SST`-Zeilen), weil die neuen
+Zeilen mit `LH-FA-CFG-007` beginnen. Zeilen 18/19 belegen die Hilfsdatei-
+Bündelung aus dem Risiko „Die drei Kopien der Vorbereitung driften“ (§6): die
+Aufrufform von `cdc.set_transformation` steht ausschließlich in
+`tools/harness/lib-sdk-rule-fixture.sh` (4 Fundstellen: Kopf-Kommentar plus
+Aufruf), keiner der drei Runner trägt sie selbst (0 Fundstellen). Zeilen 20/21
+tragen den Hilfetext-Nachzug in `harness/mk/sdk.mk` nach — „vier Phasen“ ist
+durch „acht Phasen“ ersetzt (zwei Ziele, wie am Parent). Zeile 22 zählt die drei
+nachgezogenen Sensor-Zeilen in `harness/README.md` §Sensors (je eine der drei
+`make test-sdk-*-integration`-Zeilen nennt jetzt die Regel-Phasen und diesen
+Slice-Namen).
 
 | Träger | Befund | Behandlung |
 |---|---|---|

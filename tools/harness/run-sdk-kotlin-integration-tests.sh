@@ -2,13 +2,15 @@
 # run-sdk-kotlin-integration-tests.sh — Realserver-Integrationstest der
 # Kotlin-SDK-Zustellweg-Flächen (slice-sdk-kotlin-reale2e; Mechanik-Klasse
 # ADR-0110 §Entscheidung Festlegung 2, gespiegelt vom Python-Vorbild und dem
-# C#-Spiegel tools/harness/run-sdk-csharp-integration-tests.sh): die vier
-# Flächen des Packages pgchangefeed-kotlin (HTTP SPEC-018, gRPC SPEC-020,
-# SSE SPEC-021, NATS-Vollinhalt SPEC-024) prüfen ihre Protokoll-Annahmen je
-# gegen eine reale, laufende Server-Instanz — der Prüfling ist die
-# kompilierte Client-Assembly, der Integrationstest importiert
-# io.github.pt9912.pgchangefeed direkt (kein Wegwerf-Duplikat-Client
-# daneben).
+# C#-Spiegel tools/harness/run-sdk-csharp-integration-tests.sh): acht
+# Phasen — die vier Flächen des Packages pgchangefeed-kotlin (HTTP SPEC-018,
+# gRPC SPEC-020, SSE SPEC-021, NATS-Vollinhalt SPEC-024) prüfen ihre
+# Protokoll-Annahmen je gegen eine reale, laufende Server-Instanz ohne
+# Regel, und dieselben vier Flächen ein zweites Mal gegen eine Tabelle mit
+# aktiver `rename_column`-Regel (slice-sdk-regel-realserver-e2e, ADR-0112) —
+# der Prüfling ist die kompilierte Client-Assembly, der Integrationstest
+# importiert io.github.pt9912.pgchangefeed direkt (kein
+# Wegwerf-Duplikat-Client daneben).
 #
 # Kette je Lauf: compose.yaml-Umgebung hochfahren (PostgreSQL/NATS/
 # Feed-Container, Schema-Rollout über d-migrate, Vorbedingungen der
@@ -19,7 +21,11 @@
 # reicht die Standard-Streams live durch — showStandardStreams). Die
 # `change_id` der empfangenen Change wird zusätzlich gegen den
 # Lesezugriffsweg `cdc.changes` gehalten (gRPC/SSE/NATS), die
-# Consumer-Registrierung gegen `cdc.consumer` (HTTP).
+# Consumer-Registrierung gegen `cdc.consumer` (HTTP). Die vier Regel-Phasen
+# (eigene Tabelle `feed_e2e_sdkrule`, Vorbereitung über
+# tools/harness/lib-sdk-rule-fixture.sh) tragen keinen REJECTED-Beleg — das
+# Negativ steht bei den vier Server-ohne-Regel-Phasen — und halten die
+# `change_id` gegen `cdc.changes` mit dem umbenannten Zielschlüssel.
 #
 # Der Runner schreibt den Abdeckungs-Träger docs/user/sdk-e2e-abdeckung.md
 # (Kotlin-Abschnitt, marker-gegrenzt) aus derselben Messung, die ihn belegt
@@ -45,6 +51,9 @@
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
+
+# shellcheck source=tools/harness/lib-sdk-rule-fixture.sh
+source tools/harness/lib-sdk-rule-fixture.sh
 
 COMPOSE=${COMPOSE:-docker compose -f compose.yaml}
 NETWORK=${NETWORK:-cdc-feed-test}
@@ -151,14 +160,17 @@ docker build --build-context proto=proto -f sdks/kotlin/Dockerfile \
   --target integration -t "$SDK_INTEGRATION_IMAGE" sdks/kotlin
 
 # run_phase <Name> <Testklasse> <Sentinel> <ID-Basis> <Reject-Marker>
-# <Received-Grep> <SQL-Variante: changes|consumer> <Extra-Env> — ein
-# Realserver-Rundlauf für genau eine SDK-Fläche (dieselbe Form wie der
-# C#-Runner). Die SQL-Variante "changes" hält die change_id gegen
-# cdc.changes (Streams), "consumer" die Consumer-Registrierung gegen
-# cdc.consumer (HTTP).
+# <Received-Grep> <SQL-Variante: changes|consumer|changes_renamed> <Tabelle>
+# <Extra-Env> — ein Realserver-Rundlauf für genau eine SDK-Fläche (dieselbe
+# Form wie der C#-Runner). Ein leerer Reject-Marker überspringt den
+# Ablehnungs-Beleg (die vier Regel-Phasen tragen ihn nicht). Die SQL-Variante
+# "changes" hält die change_id gegen cdc.changes (Streams), "consumer" die
+# Consumer-Registrierung gegen cdc.consumer (HTTP), "changes_renamed" wie
+# "changes", aber am umbenannten Zielschlüssel ohne den Quellschlüssel
+# (tools/harness/lib-sdk-rule-fixture.sh).
 run_phase() {
   local phase_name=$1 test_name=$2 sentinel=$3 id_base=$4 reject_marker=$5 \
-        received_grep=$6 sql_kind=$7 extra_env=$8
+        received_grep=$6 sql_kind=$7 table=$8 extra_env=$9
   local attempt insert_id captured ident pair
 
   local env_args=()
@@ -170,7 +182,7 @@ run_phase() {
   docker run -d --name "$SDK_TEST_CONTAINER" --network "$NETWORK" \
     "${env_args[@]}" \
     -e PGCHANGEFEED_TEST_NAME="$test_name" \
-    -e PGCHANGEFEED_E2E_TABLE="$TEST_TABLE" \
+    -e PGCHANGEFEED_E2E_TABLE="$table" \
     -e PGCHANGEFEED_E2E_SENTINEL="$sentinel" \
     "$SDK_INTEGRATION_IMAGE" >/dev/null
 
@@ -196,7 +208,7 @@ run_phase() {
     # >/dev/null: die psql-INSERT-Echo-Zeile gehört nicht in den
     # Funktions-stdout (der Aufrufer hält hier nur den Rückgabewert).
     docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 >/dev/null <<SQL
-INSERT INTO public.$TEST_TABLE (id, name) VALUES ($insert_id, '$sentinel');
+INSERT INTO public.$table (id, name) VALUES ($insert_id, '$sentinel');
 SQL
     for _ in $(seq 1 20); do
       if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
@@ -213,17 +225,20 @@ SQL
     fi
   done
 
-  local rejected=0
-  for _ in $(seq 1 40); do
-    if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "$reject_marker"; then
-      rejected=1
-      break
-    fi
-    if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
-      break
-    fi
-    sleep 0.5
-  done
+  local rejected=1
+  if [ -n "$reject_marker" ]; then
+    rejected=0
+    for _ in $(seq 1 40); do
+      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "$reject_marker"; then
+        rejected=1
+        break
+      fi
+      if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+        break
+      fi
+      sleep 0.5
+    done
+  fi
 
   local test_stopped=0
   for _ in $(seq 1 20); do
@@ -239,14 +254,14 @@ SQL
   test_output=$(docker logs "$SDK_TEST_CONTAINER" 2>&1 || true)
 
   if [ "$received" -ne 1 ]; then
-    echo "run-sdk-kotlin-integration-tests: $phase_name — der Test empfing keine der committeten Änderungen ($TEST_TABLE, $sentinel): $test_output" >&2
+    echo "run-sdk-kotlin-integration-tests: $phase_name — der Test empfing keine der committeten Änderungen ($table, $sentinel): $test_output" >&2
     exit 1
   fi
   if ! printf '%s' "$test_output" | grep -qE "$received_grep"; then
     echo "run-sdk-kotlin-integration-tests: $phase_name — die RECEIVED-Zeile trägt nicht die erwartete Form: $test_output" >&2
     exit 1
   fi
-  if [ "$rejected" -ne 1 ]; then
+  if [ -n "$reject_marker" ] && [ "$rejected" -ne 1 ]; then
     echo "run-sdk-kotlin-integration-tests: $phase_name — der Ablehnungs-Beleg blieb aus ($reject_marker fehlt): $test_output" >&2
     exit 1
   fi
@@ -262,7 +277,10 @@ SQL
   fi
   if [ "$sql_kind" = "changes" ]; then
     captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-      "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$ident' AND table_name = '$TEST_TABLE' AND new_data->>'name' = '$sentinel'")
+      "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$ident' AND table_name = '$table' AND new_data->>'name' = '$sentinel'")
+  elif [ "$sql_kind" = "changes_renamed" ]; then
+    captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+      "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$ident' AND table_name = '$table' AND new_data->>'$SDK_RULE_TARGET_KEY' = '$sentinel' AND NOT jsonb_exists(new_data, '$SDK_RULE_SOURCE_KEY')")
   else
     captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
       "SELECT count(*) FROM cdc.consumer WHERE consumer_id = '$ident'")
@@ -285,25 +303,70 @@ GRPC_IDENT=$(run_phase \
   "gRPC-Fläche (SPEC-020)" "$GRPC_TEST_NAME" \
   "$GRPC_SENTINEL" 440 "REJECTED code=Unauthenticated" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$GRPC_SENTINEL" \
-  changes "PGCHANGEFEED_GRPC_ADDR=pg-change-feed:9090 PGCHANGEFEED_API_TOKEN=$API_TOKEN")
+  changes "$TEST_TABLE" "PGCHANGEFEED_GRPC_ADDR=pg-change-feed:9090 PGCHANGEFEED_API_TOKEN=$API_TOKEN")
 
 SSE_IDENT=$(run_phase \
   "SSE-Fläche (SPEC-021)" "$SSE_TEST_NAME" \
   "$SSE_SENTINEL" 450 "REJECTED status=401" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$SSE_SENTINEL" \
-  changes "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN=$API_TOKEN")
+  changes "$TEST_TABLE" "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN=$API_TOKEN")
 
 NATS_IDENT=$(run_phase \
   "NATS-Vollinhalts-Fläche (SPEC-024)" "$NATS_TEST_NAME" \
   "$NATS_SENTINEL" 460 "REJECTED token-rejected" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$NATS_SENTINEL" \
-  changes "PGCHANGEFEED_NATS_URL=nats://nats:4222 PGCHANGEFEED_NATS_STREAM_TOKEN=$NATS_STREAM_TOKEN PGCHANGEFEED_SOURCE_ID=$SOURCE_ID")
+  changes "$TEST_TABLE" "PGCHANGEFEED_NATS_URL=nats://nats:4222 PGCHANGEFEED_NATS_STREAM_TOKEN=$NATS_STREAM_TOKEN PGCHANGEFEED_SOURCE_ID=$SOURCE_ID")
 
 HTTP_IDENT=$(run_phase \
   "HTTP-Fläche (SPEC-018)" "$HTTP_TEST_NAME" \
   "$HTTP_SENTINEL" 470 "REJECTED status=401" \
   "RECEIVED consumer_id=[^ ]+" \
-  consumer "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN_ADMIN=$API_TOKEN_ADMIN PGCHANGEFEED_API_TOKEN_READER=$API_TOKEN_READER PGCHANGEFEED_SOURCE_ID=$SOURCE_ID PGCHANGEFEED_HTTP_PUBLICATION=$HTTP_PUBLICATION")
+  consumer "$TEST_TABLE" "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN_ADMIN=$API_TOKEN_ADMIN PGCHANGEFEED_API_TOKEN_READER=$API_TOKEN_READER PGCHANGEFEED_SOURCE_ID=$SOURCE_ID PGCHANGEFEED_HTTP_PUBLICATION=$HTTP_PUBLICATION")
+
+# --- Regel-Phasen (slice-sdk-regel-realserver-e2e, ADR-0112) --------------
+# Dieselben vier Flächen, ein zweites Mal gegen die eigene Tabelle
+# $SDK_RULE_TABLE mit aktiver rename_column-Regel
+# (tools/harness/lib-sdk-rule-fixture.sh): kein REJECTED-Beleg, sql_kind
+# changes_renamed hält die change_id gegen den umbenannten Zielschlüssel
+# ohne den Quellschlüssel.
+sdk_rule_fixture_setup "run-sdk-kotlin-integration-tests"
+
+GRPC_RULE_TEST_NAME=GrpcRuleRealserverTest
+SSE_RULE_TEST_NAME=SseRuleRealserverTest
+NATS_RULE_TEST_NAME=NatsRuleRealserverTest
+HTTP_RULE_TEST_NAME=HttpRuleRealserverTest
+GRPC_RULE_SENTINEL=KotlinGrpcRuleSdkE2ESentinel
+SSE_RULE_SENTINEL=KotlinSseRuleSdkE2ESentinel
+NATS_RULE_SENTINEL=KotlinNatsRuleSdkE2ESentinel
+HTTP_RULE_SENTINEL=KotlinHttpRuleSdkE2ESentinel
+
+GRPC_RULE_IDENT=$(run_phase \
+  "gRPC-Regel-Fläche (SPEC-020, ADR-0112)" "$GRPC_RULE_TEST_NAME" \
+  "$GRPC_RULE_SENTINEL" 500 "" \
+  "RECEIVED change_id=[^ ]+ table=$SDK_RULE_TABLE .*operation=INSERT .*new_image=.*$GRPC_RULE_SENTINEL" \
+  changes_renamed "$SDK_RULE_TABLE" \
+  "PGCHANGEFEED_GRPC_ADDR=pg-change-feed:9090 PGCHANGEFEED_API_TOKEN=$API_TOKEN PGCHANGEFEED_RULE_SOURCE_KEY=$SDK_RULE_SOURCE_KEY PGCHANGEFEED_RULE_TARGET_KEY=$SDK_RULE_TARGET_KEY")
+
+SSE_RULE_IDENT=$(run_phase \
+  "SSE-Regel-Fläche (SPEC-021, ADR-0112)" "$SSE_RULE_TEST_NAME" \
+  "$SSE_RULE_SENTINEL" 510 "" \
+  "RECEIVED change_id=[^ ]+ table=$SDK_RULE_TABLE .*operation=INSERT .*new_image=.*$SSE_RULE_SENTINEL" \
+  changes_renamed "$SDK_RULE_TABLE" \
+  "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN=$API_TOKEN PGCHANGEFEED_RULE_SOURCE_KEY=$SDK_RULE_SOURCE_KEY PGCHANGEFEED_RULE_TARGET_KEY=$SDK_RULE_TARGET_KEY")
+
+NATS_RULE_IDENT=$(run_phase \
+  "NATS-Vollinhalts-Regel-Fläche (SPEC-024, ADR-0112)" "$NATS_RULE_TEST_NAME" \
+  "$NATS_RULE_SENTINEL" 520 "" \
+  "RECEIVED change_id=[^ ]+ table=$SDK_RULE_TABLE .*operation=INSERT .*new_image=.*$NATS_RULE_SENTINEL" \
+  changes_renamed "$SDK_RULE_TABLE" \
+  "PGCHANGEFEED_NATS_URL=nats://nats:4222 PGCHANGEFEED_NATS_STREAM_TOKEN=$NATS_STREAM_TOKEN PGCHANGEFEED_SOURCE_ID=$SOURCE_ID PGCHANGEFEED_RULE_SOURCE_KEY=$SDK_RULE_SOURCE_KEY PGCHANGEFEED_RULE_TARGET_KEY=$SDK_RULE_TARGET_KEY")
+
+HTTP_RULE_IDENT=$(run_phase \
+  "HTTP-Regel-Fläche (SPEC-018, ADR-0112)" "$HTTP_RULE_TEST_NAME" \
+  "$HTTP_RULE_SENTINEL" 530 "" \
+  "RECEIVED change_id=[^ ]+ table=$SDK_RULE_TABLE .*operation=INSERT .*new_image=.*$HTTP_RULE_SENTINEL" \
+  changes_renamed "$SDK_RULE_TABLE" \
+  "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN=$API_TOKEN PGCHANGEFEED_SOURCE_ID=$SOURCE_ID PGCHANGEFEED_RULE_SOURCE_KEY=$SDK_RULE_SOURCE_KEY PGCHANGEFEED_RULE_TARGET_KEY=$SDK_RULE_TARGET_KEY")
 
 # --- Abdeckungs-Träger (docs/user/sdk-e2e-abdeckung.md) -------------------
 # Der Kotlin-Abschnitt entsteht aus derselben Messung, die ihn belegt;
@@ -337,6 +400,7 @@ abdeckung_kotlin_abschnitt() {
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Kotlin-SDK-Client (\`PgChangeFeedSseClient\`) öffnet real \`GET /changes/stream\` und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`SseRealserverTest\` | \`tools/harness/run-sdk-kotlin-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Kotlin-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`NatsRealserverTest\` | \`tools/harness/run-sdk-kotlin-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-006\`](../../spec/lastenheft.md), [\`LH-FA-CON-001\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Kotlin-SDK-Client (\`PgChangeFeedHttpClient\`) registriert real einen Consumer (admin-Token) und listet Tabellen (reader-Token); die Registrierung ist unabhängig über \`cdc.consumer\` lesbar; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`HttpRealserverTest\` | \`tools/harness/run-sdk-kotlin-integration-tests.sh\` |" \
+    "| [\`LH-FA-CFG-007\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | eine aktive \`rename_column\`-Regel auf einer eigenen Tabelle: alle vier Kotlin-SDK-Clients empfangen die danach erfasste Änderung mit dem umbenannten Schlüssel im opaken Bild-Modell (Gson \`JsonElement\`, gRPC die Bytes als JSON) — Zielschlüssel trägt den Sentinel, Quellschlüssel fehlt; \`change_id\` je unabhängig über \`cdc.changes\` lesbar | \`GrpcRuleRealserverTest\`, \`SseRuleRealserverTest\`, \`NatsRuleRealserverTest\`, \`HttpRuleRealserverTest\` | \`tools/harness/run-sdk-kotlin-integration-tests.sh\` |" \
     '<!-- pgchangefeed-sdk-e2e:kotlin-end -->'
 }
 
@@ -397,3 +461,4 @@ abdeckung_schreiben() {
 abdeckung_schreiben
 
 echo "run-sdk-kotlin-integration-tests: Kotlin-SDK-Realserver-Belege (slice-sdk-kotlin-reale2e, Mechanik-Klasse ADR-0110 Festlegung 2) grün — gRPC-Fläche (PgChangeFeedGrpcClient, pg-change-feed:9090, change_id=$GRPC_IDENT), SSE-Fläche (PgChangeFeedSseClient, pg-change-feed:8090, change_id=$SSE_IDENT) und NATS-Vollinhalts-Fläche (PgChangeFeedNatsStreamClient, nats://nats:4222, change_id=$NATS_IDENT) empfingen je eine danach committete Änderung (change_id je unabhängig über cdc.changes lesbar), die HTTP-Fläche (PgChangeFeedHttpClient) registrierte real einen Consumer (consumer_id=$HTTP_IDENT, unabhängig über cdc.consumer lesbar) und listete Tabellen; ein Aufruf ohne gültiges Token endete je mit gRPC-Status Unauthenticated, HTTP-Status 401 bzw. der laut ablehnenden NATS-Verbindungsablehnung"
+echo "run-sdk-kotlin-integration-tests: Regel-Belege (slice-sdk-regel-realserver-e2e, ADR-0112) grün — eine aktive rename_column-Regel auf $SDK_RULE_TABLE, alle vier Flächen empfingen die danach erfasste Änderung mit dem umbenannten Schlüssel $SDK_RULE_TARGET_KEY (Quellschlüssel $SDK_RULE_SOURCE_KEY fehlt): gRPC change_id=$GRPC_RULE_IDENT, SSE change_id=$SSE_RULE_IDENT, NATS change_id=$NATS_RULE_IDENT, HTTP change_id=$HTTP_RULE_IDENT (je unabhängig über cdc.changes lesbar)"

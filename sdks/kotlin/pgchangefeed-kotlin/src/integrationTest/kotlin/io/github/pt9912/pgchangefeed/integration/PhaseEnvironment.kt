@@ -26,4 +26,6 @@ object PhaseEnvironment {
     val natsStreamToken: String get() = required("PGCHANGEFEED_NATS_STREAM_TOKEN")
     val sourceId: String get() = required("PGCHANGEFEED_SOURCE_ID")
     val httpPublication: String get() = required("PGCHANGEFEED_HTTP_PUBLICATION")
+    val ruleSourceKey: String get() = required("PGCHANGEFEED_RULE_SOURCE_KEY")
+    val ruleTargetKey: String get() = required("PGCHANGEFEED_RULE_TARGET_KEY")
 }

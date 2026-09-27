@@ -33,7 +33,12 @@
 # `PGCHANGEFEED_TEST_FILE` (kein stiller
 # Ausschluss des Rests, Muster der -run-Muster im Server-E2E-Runner) und
 # trägt eigenen Sentinel- und ID-Wertebereich, damit sich die Phasen
-# nicht in die Quere kommen.
+# nicht in die Quere kommen. Dieselben vier Flächen fahren danach ein
+# zweites Mal gegen eine Tabelle mit aktiver `rename_column`-Regel
+# (slice-sdk-regel-realserver-e2e, ADR-0112, Vorbereitung über
+# tools/harness/lib-sdk-rule-fixture.sh) — ohne REJECTED-Beleg (das Negativ
+# steht bei den vier Phasen ohne Regel), mit der change_id gegen den
+# umbenannten Zielschlüssel gehalten.
 #
 # Voraussetzungen: Docker, ein geladenes :dev-Image (`make image` vorher —
 # compose.yaml trägt keinen build:-Block, ADR-0044) und Netz (pip-Paketbezug
@@ -46,6 +51,9 @@
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
+
+# shellcheck source=tools/harness/lib-sdk-rule-fixture.sh
+source tools/harness/lib-sdk-rule-fixture.sh
 
 COMPOSE=${COMPOSE:-docker compose -f compose.yaml}
 NETWORK=${NETWORK:-cdc-feed-test}
@@ -172,21 +180,26 @@ docker build --build-context proto=proto -f sdks/python/Dockerfile \
   --target integration -t "$SDK_INTEGRATION_IMAGE" sdks/python
 
 # run_surface_phase <Name> <Testdatei> <Sentinel> <ID-Basis> <Reject-Marker>
-# <Extra-Env> <Received-Grep> <SQL-Variante: changes|consumer> <Insert-Rows:
-# yes|no> — ein Realserver-Rundlauf für genau eine SDK-Fläche: Container
-# starten (die Adress-/Auth-Variablen je Fläche kommen als
-# Leerzeichen-getrennte Extra-Env-Liste herein), auf READY warten, bei
+# <Extra-Env> <Received-Grep> <SQL-Variante: changes|consumer|changes_renamed>
+# <Insert-Rows: yes|no> <Tabelle> — ein Realserver-Rundlauf für genau eine
+# SDK-Fläche: Container starten (die Adress-/Auth-Variablen je Fläche kommen
+# als Leerzeichen-getrennte Extra-Env-Liste herein), auf READY warten, bei
 # Stream-Phasen eine begrenzte Folge eindeutiger Zeilen committen
 # (Fire-and-Forget-Fenster, SPEC-020/SPEC-021/SPEC-024 — die HTTP-Fläche
 # committet ihre Änderung selbst: RegisterConsumer, kein CDC-Empfang, kein
-# Insert-Anteil), auf den Reject-Marker und das Prozessende warten, die
-# RECEIVED-Zeile prüfen und die Identität unabhängig gegen den
-# SQL-Lesezugriffsweg halten. Die SQL-Variante "changes" hält die change_id
-# gegen cdc.changes (Streams), "consumer" die Consumer-Registrierung gegen
-# cdc.consumer (HTTP — Muster run-sdk-csharp-integration-tests.sh).
+# Insert-Anteil), bei nicht-leerem Reject-Marker auf ihn warten, auf das
+# Prozessende warten, die RECEIVED-Zeile prüfen und die Identität unabhängig
+# gegen den SQL-Lesezugriffsweg halten. Ein leerer Reject-Marker überspringt
+# den Ablehnungs-Beleg (die vier Regel-Phasen tragen ihn nicht). Die
+# SQL-Variante "changes" hält die change_id gegen cdc.changes (Streams),
+# "consumer" die Consumer-Registrierung gegen cdc.consumer (HTTP — Muster
+# run-sdk-csharp-integration-tests.sh), "changes_renamed" wie "changes",
+# aber am umbenannten Zielschlüssel ohne den Quellschlüssel
+# (tools/harness/lib-sdk-rule-fixture.sh).
 run_surface_phase() {
   local phase_name=$1 test_file=$2 sentinel=$3 id_base=$4 reject_marker=$5 extra_env=$6 \
         received_grep=$7 sql_kind=$8 insert_rows=$9
+  local table=${10}
   local attempt insert_id captured ident pair
 
   local env_args=()
@@ -198,7 +211,7 @@ run_surface_phase() {
   docker run -d --name "$SDK_TEST_CONTAINER" --network "$NETWORK" \
     "${env_args[@]}" \
     -e PGCHANGEFEED_API_TOKEN="$API_TOKEN" \
-    -e PGCHANGEFEED_E2E_TABLE="$TEST_TABLE" \
+    -e PGCHANGEFEED_E2E_TABLE="$table" \
     -e PGCHANGEFEED_E2E_SENTINEL="$sentinel" \
     -e PGCHANGEFEED_TEST_FILE="$test_file" \
     "$SDK_INTEGRATION_IMAGE" >/dev/null
@@ -232,7 +245,7 @@ run_surface_phase() {
       # den Funktions-stdout — der Aufrufer hält hier nur den Rückgabewert
       # (die change_id).
       docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 >/dev/null <<SQL
-INSERT INTO public.$TEST_TABLE (id, name) VALUES ($insert_id, '$sentinel');
+INSERT INTO public.$table (id, name) VALUES ($insert_id, '$sentinel');
 SQL
     fi
     for _ in $(seq 1 20); do
@@ -250,17 +263,20 @@ SQL
     fi
   done
 
-  local rejected=0
-  for _ in $(seq 1 40); do
-    if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "$reject_marker"; then
-      rejected=1
-      break
-    fi
-    if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
-      break
-    fi
-    sleep 0.5
-  done
+  local rejected=1
+  if [ -n "$reject_marker" ]; then
+    rejected=0
+    for _ in $(seq 1 40); do
+      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "$reject_marker"; then
+        rejected=1
+        break
+      fi
+      if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+        break
+      fi
+      sleep 0.5
+    done
+  fi
 
   local test_stopped=0
   for _ in $(seq 1 20); do
@@ -276,14 +292,14 @@ SQL
   test_output=$(docker logs "$SDK_TEST_CONTAINER" 2>&1 || true)
 
   if [ "$received" -ne 1 ]; then
-    echo "run-sdk-python-integration-tests: $phase_name — der Test lieferte den Happy-Path-Marker nicht ($TEST_TABLE, $sentinel): $test_output" >&2
+    echo "run-sdk-python-integration-tests: $phase_name — der Test lieferte den Happy-Path-Marker nicht ($table, $sentinel): $test_output" >&2
     exit 1
   fi
   if ! printf '%s' "$test_output" | grep -qE "$received_grep"; then
     echo "run-sdk-python-integration-tests: $phase_name — die RECEIVED-Zeile trägt nicht die erwartete Form: $test_output" >&2
     exit 1
   fi
-  if [ "$rejected" -ne 1 ]; then
+  if [ -n "$reject_marker" ] && [ "$rejected" -ne 1 ]; then
     echo "run-sdk-python-integration-tests: $phase_name — der Ablehnungs-Beleg blieb aus ($reject_marker fehlt): $test_output" >&2
     exit 1
   fi
@@ -299,7 +315,10 @@ SQL
   fi
   if [ "$sql_kind" = "changes" ]; then
     captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-      "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$ident' AND table_name = '$TEST_TABLE' AND new_data->>'name' = '$sentinel'")
+      "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$ident' AND table_name = '$table' AND new_data->>'name' = '$sentinel'")
+  elif [ "$sql_kind" = "changes_renamed" ]; then
+    captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+      "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$ident' AND table_name = '$table' AND new_data->>'$SDK_RULE_TARGET_KEY' = '$sentinel' AND NOT jsonb_exists(new_data, '$SDK_RULE_SOURCE_KEY')")
   else
     captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
       "SELECT count(*) FROM cdc.consumer WHERE consumer_id = '$ident'")
@@ -325,7 +344,7 @@ GRPC_CHANGE_ID=$(run_surface_phase \
   "REJECTED code=Unauthenticated" \
   "PGCHANGEFEED_GRPC_ADDR=pg-change-feed:9090" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$GRPC_SENTINEL" \
-  changes yes)
+  changes yes "$TEST_TABLE")
 
 SSE_CHANGE_ID=$(run_surface_phase \
   "SSE-Fläche (SPEC-021)" \
@@ -334,7 +353,7 @@ SSE_CHANGE_ID=$(run_surface_phase \
   "REJECTED status=401" \
   "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$SSE_SENTINEL" \
-  changes yes)
+  changes yes "$TEST_TABLE")
 
 NATS_CHANGE_ID=$(run_surface_phase \
   "NATS-Vollinhalts-Fläche (SPEC-024)" \
@@ -343,7 +362,7 @@ NATS_CHANGE_ID=$(run_surface_phase \
   "REJECTED token-rejected" \
   "PGCHANGEFEED_NATS_URL=nats://nats:4222 PGCHANGEFEED_NATS_STREAM_TOKEN=$NATS_STREAM_TOKEN PGCHANGEFEED_SOURCE_ID=src-e2e" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$NATS_SENTINEL" \
-  changes yes)
+  changes yes "$TEST_TABLE")
 
 HTTP_IDENT=$(run_surface_phase \
   "HTTP-Fläche (SPEC-018)" \
@@ -352,7 +371,61 @@ HTTP_IDENT=$(run_surface_phase \
   "REJECTED status=401" \
   "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN_ADMIN=$API_TOKEN_ADMIN PGCHANGEFEED_API_TOKEN_READER=$API_TOKEN_READER PGCHANGEFEED_SOURCE_ID=src-e2e PGCHANGEFEED_HTTP_PUBLICATION=$HTTP_PUBLICATION" \
   "RECEIVED consumer_id=[^ ]+" \
-  consumer no)
+  consumer no "$TEST_TABLE")
+
+# --- Regel-Phasen (slice-sdk-regel-realserver-e2e, ADR-0112) --------------
+# Dieselben vier Flächen, ein zweites Mal gegen die eigene Tabelle
+# $SDK_RULE_TABLE mit aktiver rename_column-Regel
+# (tools/harness/lib-sdk-rule-fixture.sh): kein REJECTED-Beleg, sql_kind
+# changes_renamed hält die change_id gegen den umbenannten Zielschlüssel
+# ohne den Quellschlüssel. Die HTTP-Regel-Phase liest über read_changes
+# (from_ bleibt ungenutzt) statt RegisterConsumer, deshalb insert_rows=yes.
+sdk_rule_fixture_setup "run-sdk-python-integration-tests"
+
+GRPC_RULE_TEST_FILE=integration/test_grpc_rule_realserver.py
+SSE_RULE_TEST_FILE=integration/test_sse_rule_realserver.py
+HTTP_RULE_TEST_FILE=integration/test_http_rule_realserver.py
+NATS_RULE_TEST_FILE=integration/test_nats_rule_realserver.py
+GRPC_RULE_SENTINEL=PythonGrpcRuleSdkE2ESentinel
+SSE_RULE_SENTINEL=PythonSseRuleSdkE2ESentinel
+HTTP_RULE_SENTINEL=PythonHttpRuleSdkE2ESentinel
+NATS_RULE_SENTINEL=PythonNatsRuleSdkE2ESentinel
+
+GRPC_RULE_CHANGE_ID=$(run_surface_phase \
+  "gRPC-Regel-Fläche (SPEC-020, ADR-0112)" \
+  "$GRPC_RULE_TEST_FILE" \
+  "$GRPC_RULE_SENTINEL" 500 \
+  "" \
+  "PGCHANGEFEED_GRPC_ADDR=pg-change-feed:9090 PGCHANGEFEED_RULE_SOURCE_KEY=$SDK_RULE_SOURCE_KEY PGCHANGEFEED_RULE_TARGET_KEY=$SDK_RULE_TARGET_KEY" \
+  "RECEIVED change_id=[^ ]+ table=$SDK_RULE_TABLE .*operation=INSERT .*new_image=.*$GRPC_RULE_SENTINEL" \
+  changes_renamed yes "$SDK_RULE_TABLE")
+
+SSE_RULE_CHANGE_ID=$(run_surface_phase \
+  "SSE-Regel-Fläche (SPEC-021, ADR-0112)" \
+  "$SSE_RULE_TEST_FILE" \
+  "$SSE_RULE_SENTINEL" 510 \
+  "" \
+  "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_RULE_SOURCE_KEY=$SDK_RULE_SOURCE_KEY PGCHANGEFEED_RULE_TARGET_KEY=$SDK_RULE_TARGET_KEY" \
+  "RECEIVED change_id=[^ ]+ table=$SDK_RULE_TABLE .*operation=INSERT .*new_image=.*$SSE_RULE_SENTINEL" \
+  changes_renamed yes "$SDK_RULE_TABLE")
+
+NATS_RULE_CHANGE_ID=$(run_surface_phase \
+  "NATS-Vollinhalts-Regel-Fläche (SPEC-024, ADR-0112)" \
+  "$NATS_RULE_TEST_FILE" \
+  "$NATS_RULE_SENTINEL" 520 \
+  "" \
+  "PGCHANGEFEED_NATS_URL=nats://nats:4222 PGCHANGEFEED_NATS_STREAM_TOKEN=$NATS_STREAM_TOKEN PGCHANGEFEED_SOURCE_ID=src-e2e PGCHANGEFEED_RULE_SOURCE_KEY=$SDK_RULE_SOURCE_KEY PGCHANGEFEED_RULE_TARGET_KEY=$SDK_RULE_TARGET_KEY" \
+  "RECEIVED change_id=[^ ]+ table=$SDK_RULE_TABLE .*operation=INSERT .*new_image=.*$NATS_RULE_SENTINEL" \
+  changes_renamed yes "$SDK_RULE_TABLE")
+
+HTTP_RULE_CHANGE_ID=$(run_surface_phase \
+  "HTTP-Regel-Fläche (SPEC-018, ADR-0112)" \
+  "$HTTP_RULE_TEST_FILE" \
+  "$HTTP_RULE_SENTINEL" 530 \
+  "" \
+  "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_SOURCE_ID=src-e2e PGCHANGEFEED_RULE_SOURCE_KEY=$SDK_RULE_SOURCE_KEY PGCHANGEFEED_RULE_TARGET_KEY=$SDK_RULE_TARGET_KEY" \
+  "RECEIVED change_id=[^ ]+ table=$SDK_RULE_TABLE .*operation=INSERT .*new_image=.*$HTTP_RULE_SENTINEL" \
+  changes_renamed yes "$SDK_RULE_TABLE")
 
 # --- Abdeckungs-Träger (docs/user/sdk-e2e-abdeckung.md) -------------------
 # Der Python-Abschnitt entsteht aus derselben Messung, die ihn belegt;
@@ -392,6 +465,7 @@ abdeckung_python_abschnitt() {
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedGrpcClient\`) öffnet real den gRPC-Server-Stream gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Öffnungsversuch ohne gültiges Token endet mit gRPC-Status \`Unauthenticated\` | \`test_grpc_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedSseClient\`) öffnet real \`GET /changes/stream\` und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`test_sse_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`test_nats_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
+    "| [\`LH-FA-CFG-007\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | eine aktive \`rename_column\`-Regel auf einer eigenen Tabelle: alle vier Python-SDK-Clients empfangen die danach erfasste Änderung mit dem umbenannten Schlüssel im opaken Wert (\`Any\`, gRPC die Bytes per \`json.loads\`) — Zielschlüssel trägt den Sentinel, Quellschlüssel fehlt; \`change_id\` je unabhängig über \`cdc.changes\` lesbar | \`test_grpc_rule_realserver.py\`, \`test_sse_rule_realserver.py\`, \`test_nats_rule_realserver.py\`, \`test_http_rule_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
     '<!-- pgchangefeed-sdk-e2e:python-end -->'
 }
 
@@ -444,3 +518,4 @@ abdeckung_schreiben() {
 abdeckung_schreiben
 
 echo "run-sdk-python-integration-tests: SDK-Realserver-Belege (ADR-0110 Festlegung 2/Folgepflicht 1) grün — gRPC-Fläche (pgchangefeed.grpc_client, pg-change-feed:9090, change_id=$GRPC_CHANGE_ID), SSE-Fläche (pgchangefeed.sse_client, pg-change-feed:8090, change_id=$SSE_CHANGE_ID) und NATS-Vollinhalts-Fläche (pgchangefeed.nats_stream_client, nats://nats:4222, change_id=$NATS_CHANGE_ID) öffneten real ihre Server-Streams gegen den laufenden Feed-Container und empfingen je eine danach committete Änderung (Tabelle, Operation und Sentinel real am Wire; change_id je unabhängig über cdc.changes lesbar), die HTTP-Fläche (pgchangefeed.http_client) registrierte real einen Consumer (consumer_id=$HTTP_IDENT, unabhängig über cdc.consumer lesbar) und listete Tabellen; ein Aufruf ohne gültiges Token endete je mit gRPC-Status Unauthenticated, HTTP-Status 401 bzw. der laut ablehnenden NATS-Verbindungsablehnung"
+echo "run-sdk-python-integration-tests: Regel-Belege (slice-sdk-regel-realserver-e2e, ADR-0112) grün — eine aktive rename_column-Regel auf $SDK_RULE_TABLE, alle vier Flächen empfingen die danach erfasste Änderung mit dem umbenannten Schlüssel $SDK_RULE_TARGET_KEY (Quellschlüssel $SDK_RULE_SOURCE_KEY fehlt): gRPC change_id=$GRPC_RULE_CHANGE_ID, SSE change_id=$SSE_RULE_CHANGE_ID, NATS change_id=$NATS_RULE_CHANGE_ID, HTTP change_id=$HTTP_RULE_CHANGE_ID (je unabhängig über cdc.changes lesbar)"
