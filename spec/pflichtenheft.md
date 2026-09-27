@@ -337,11 +337,12 @@ Sätze sind Zusagen an die Umsetzung, keine Messergebnisse.
   Prozess: `cdc.remove_transformation` beantragen — oder die Regel durch eine
   passende ersetzen, erst entfernen, dann neu setzen (`SPEC-019` K1); die
   Anträge bleiben `pending`, solange der Prozess steht —, den Prozess neu
-  starten, offene Anträge werden beim Start verarbeitet, **bevor** die erste
-  Transaktion der Tabelle assembliert wird, und die zuvor nicht bestätigte
-  Transaktion erscheint danach über `cdc.changes`, ohne dass der Prozess
-  erneut an derselben Regel endet. Diese Abfolge muss die Umsetzung liefern;
-  sie ist erst mit dem Beleg am laufenden System eine Tatsache.
+  starten, offene Anträge werden beim Start innerhalb der Frist des Vorlaufs
+  verarbeitet, **bevor** die erste Transaktion der Tabelle assembliert wird,
+  und die zuvor nicht bestätigte Transaktion erscheint danach über
+  `cdc.changes`, ohne dass der Prozess erneut an derselben Regel endet. Diese
+  Abfolge muss die Umsetzung liefern; sie ist erst mit dem Beleg am laufenden
+  System eine Tatsache.
 - **Abgrenzung.** Die Regeln bestimmen die Form einer Change, nicht ihr
   Zustellziel; das Routing bleibt bei `LH-FA-CFG-008.a`.
 
