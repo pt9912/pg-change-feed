@@ -277,7 +277,7 @@ der Umsetzung
 [`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)
 hat den Status `Accepted` (erfüllt, Zeile im ADR-Index
 [`docs/plan/adr/README.md`](../../adr/README.md)),
-[`slice-capture-leerlauf-quellbelege`](slice-capture-leerlauf-quellbelege.md)
+`slice-capture-leerlauf-quellbelege`
 liegt in `done/` (beide Slices erweitern `tools/harness/run-integration-tests.sh`
 und den Tier `make test-replication`; die Container-Ende-Grenze und der
 Belegaufbau entstehen dort einmal), und kein weiterer Slice liegt in

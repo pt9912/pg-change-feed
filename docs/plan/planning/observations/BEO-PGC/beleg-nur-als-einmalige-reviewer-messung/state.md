@@ -1,5 +1,5 @@
 Zustand: **geplant** — Ausgang: **geplant** →
-[`slice-capture-leerlauf-quellbelege`](../../../open/slice-capture-leerlauf-quellbelege.md):
+`slice-capture-leerlauf-quellbelege`:
 Liefer-Punkt 1 macht die einmalige Messung eines Keepalive inmitten einer
 Transaktion zu einem committeten Test im Tier `make test-replication` (PostgreSQL 17
 und 18), Liefer-Punkt 2 belegt die Kette „Fehlerschwelle erreicht → Container endet“

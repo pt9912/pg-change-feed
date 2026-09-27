@@ -71,7 +71,7 @@ Festlegung 2 durch den Architect.
 
 ## 2. Definition of Done
 
-- [ ] Der Keepalive-Beleg steht als committeter Test im Tier
+- [x] Der Keepalive-Beleg steht als committeter Test im Tier
       `make test-replication` (Phase `tier`): eine offene Transaktion hält die
       Stream-Sitzung, währenddessen committet eine zweite Transaktion eine
       große Änderungsmenge auf die veröffentlichte Tabelle, ein Keepalive tritt
@@ -86,7 +86,10 @@ Festlegung 2 durch den Architect.
       PostgreSQL-17-Digest aus `e2e.yml`, je die gedruckte Zeile mit Position und
       Änderungszahl; die Mutation „Bestätigung an der falschen Position“
       (Position `+ 1 GiB`) färbt den Test rot.
-- [ ] Der Beleg „Fehlerschwelle erreicht → Container endet“ steht in `make
+- [ ] *(Stand der Übergabe: die Phase läuft grün, ihre Aussage über die Klasse
+      des Ausgangs weicht von `ADR-0049` ab — Befund in §3, offen bis zur
+      Antwort des Architects; das Kriterium bleibt deshalb ungehakt.)* Der Beleg
+      „Fehlerschwelle erreicht → Container endet“ steht in `make
       test-integration`: die Fehlerschwelle wird über den im Runner vorhandenen
       Compose-Override (`wal_retention_error_bytes` klein, Phase
       „Leerlauf-Bestätigung“ in `tools/harness/run-integration-tests.sh`)
@@ -121,10 +124,10 @@ Festlegung 2 durch den Architect.
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `harness/README.md` §Sensors (die Beschreibungen von `make
+- [x] Doku-Update: `harness/README.md` §Sensors (die Beschreibungen von `make
       test-replication` und `make test-integration` nennen die neuen Belege bzw.
       die benannte Grenze); das Benutzerhandbuch bleibt unberührt (keine
       Betreiber-Oberfläche).
@@ -153,26 +156,69 @@ Keepalive-Tests ist *hergeleitet* (der Wegwerf-Test des Reviewers wartete 55 s,
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| Test im Paket `internal/adapters/driving/replication/receive` (Ort am Start gelesen; Vorbild `TestStreamRestartsOnExistingSlot`) | neu | Keepalive inmitten der Transaktion, Position, vollständige Lieferung nach dem Neustart des Streams. |
-| `tools/harness/run-replication-tests.sh` | update | Instanz mit Standard-`wal_sender_timeout` für den Test, falls die vorhandene Standard-Instanz nicht trägt; der Test steht in der Paketliste der Phase `tier`. |
-| `test/integration/integration_test.go`, `tools/harness/run-integration-tests.sh` | update | Beleg „Fehlerschwelle erreicht → Container endet“ mit `-run`-Muster und Abdeckungs-Deklaration (`BEO-PGC/test-runner-stiller-ausschluss`, 2×, offen), eigene Container-Ende-Grenze im Runner. |
-| `harness/README.md` | update | Beschreibungen der beiden Läufe. |
-| ADR-Ergänzung (Architect) und `docs/plan/adr/README.md` | neu / update | Ergänzung von `ADR-0121` Festlegung 2. |
+| `internal/adapters/driving/replication/receive/sourcekeepalive_test.go` (Ort am Start gelesen: das Paket der Stream-Tests, dessen Helfer `newTestEnvOn`/`readConfirmedFlush`/`awaitSlotInactive` der Test nutzt) | neu (Plan-Nachzug: ein **roher Protokoll-Client** statt des Stream-Adapters) | Der Adapter bestätigt inmitten einer Transaktion nicht (`TestRunNoConfirmationInsideOpenTransaction`, Produktionscode bleibt unberührt); der Beleg der Quellseite liest deshalb das Protokoll selbst: der Client wartet die Hälfte von `wal_sender_timeout` ab, liest den Keepalive zwischen BEGIN und COMMIT einer Transaktion über 400.000 Änderungen, bestätigt dessen `ServerWALEnd`, beendet die Verbindung und startet den Stream ab `confirmed_flush_lsn` neu. |
+| `tools/harness/run-replication-tests.sh` | update | Der Test läuft auf der vorhandenen Standard-Instanz (Wahl am Start: sie trägt den Standardwert von `wal_sender_timeout` und im Tier-Lauf keinen fremden Schreiber), als eigener Lauf hinter dem Schwellen-Beleg mit `-run`-Muster und PASS-Wächter (eigene Umgebungsvariable `CDC_SOURCE_KEEPALIVE_TEST_DSN`, nur im Tier-Lauf gesetzt: die Phase `measure` und `go test ./...` überspringen ihn und zahlen die 38 s Wartezeit nicht). |
+| `tools/harness/run-integration-tests.sh` | update (Plan-Nachzug: eine **Bash-Phase** statt einer `func TestE2E*`) | Phase „Fehlerschwelle beendet den Container“ hinter der Phase „Leerlauf-Bestätigung“ (deren Compose-Override sie wiederholt), mit `abdeckung_declare`. Die Belegmittel (`docker inspect`, `docker logs`, Compose-Override, `pg_stat_activity`) sind die des Runners, die Gegenseite ist ebenfalls eine Runner-Phase; eine neue `func TestE2E*` entsteht nicht, kein `-run`-Muster ändert sich. |
+| `test/integration/integration_test.go` | **entfällt** (Reduktion, Begründung in der Zeile darüber) | Kein Go-Test in diesem Paket. |
+| `docs/user/e2e-abdeckung.md` | update (Erzeugnis des Runners) | Eine neue Zeile; die Ort-Zeilen der Runner-Phasen hinter der neuen Phase verschieben sich. |
+| `harness/README.md` | update | Beschreibungen der beiden Läufe samt benannter Grenze des zweiten Belegs. |
+| `docs/plan/planning/in-progress/slice-capture-leerlauf-quellbelege.md` | update | Dieser Nachzug, DoD-Haken, Suchlauf-Feld. |
+| ADR-Ergänzung (Architect) und `docs/plan/adr/README.md` | neu / update — **nicht Teil des Implementer-Laufs** | Architect-Zug nach der Verifikation; was er braucht, steht im Bericht des Implementers. |
+
+**Befund der Erprobung (für den Architect, keine Änderung am Produktionscode):**
+der zweite Beleg läuft grün, seine Aussage über die **Klasse** des Ausgangs
+weicht von [`ADR-0049`](../../adr/0049-replication-fehlerklassen-schwellen.md)
+ab. Bei gehaltener Persistierung wartet die Persistierung des Streams in
+`Capture`; die Schwellen-Prüfung setzt den WAL-Fehler der Klasse `replication`
+und ruft `stopStream`, der abgebrochene Kontext lässt `Capture` mit einem Fehler
+der Klasse `storage` („Persistenzfehler im ChangeStore: context canceled“)
+zurückkehren, und `mergeStreamAndWALFaultOutcome` gibt einen Stream-Fehler jeder
+Klasse vor dem WAL-Fehler zurück. Gemessen (fünf Läufe: ein Diagnose-Lauf der
+Vorfassung der Phase, drei Läufe der Phase in einem Wegwerf-Aufbau des Runners
+und ein vollständiger `make test-integration`; die Ausgabezeile der Phase nennt
+die Klasse): der Container endet mit Ausgang 1 zwei Sekunden nach der Last (der
+Diagnose-Lauf: vier), das Log trägt die Abbruch-Zeile („WAL-Rückstand über
+Fehlerschwelle — kontrollierter Abbruch“) und danach „Fehlerklasse storage“,
+`cdc.process_heartbeat` trägt in allen fünf Läufen `storage`. Die
+Klasse `replication` erreicht `Run` nur, wenn der Stream-Lauf regulär endet
+(Kontext-Abbruch in `ReceiveMessage`). Die Phase belegt deshalb Ende, Ausgang,
+Abbruch-Zeile und sichtbaren Fehlerzustand, nicht die Klasse; das Handbuch
+([`benutzerhandbuch.md`](../../../user/benutzerhandbuch.md), Abschnitt
+„Bestand als Backfill überführen“, Punkt „WAL-Rückstand des Capture-Slots“:
+„beendet sich der Feed-Container mit der Klasse `replication`“) und die
+Kommentare an `mergeStreamAndWALFaultOutcome` und in
+`walretention_slotgrowth_internal_test.go` nennen die Klasse als Zusage. Frage
+an den Architect: Code (der Stream-Fehler nach `stopStream` verdeckt den
+WAL-Fehler nicht) oder Text; danach trägt die Phase die Klasse als Zusage.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „welche Tier
 belegt die Position eines Keepalive inmitten einer Transaktion“ und „welcher
-Test trägt die Kette Fehlerschwelle → Prozessende“; beide Stände gemessen; die
-Befehle stehen im Codeblock, der Implementer trägt Stand und Trefferzahl ein):**
+Test trägt die Kette Fehlerschwelle → Prozessende“). Suchraum: der ganze Baum
+(der Plan nannte eine Pfadliste ohne `docs/plan/planning`, `.github` und `test`;
+[`AGENTS.md`](../../../../AGENTS.md) §3.13 §Suchform verlangt den ganzen Baum),
+ausgenommen `docs/reviews/**`, die Records unter `done/` und
+`.harness/baseline/**`; die Plan-Datei schließt das Werkzeug aus. Parent ist
+`dbc4dbe4` (der Commit vor der ersten Änderung dieses Laufs), der zweite Stand
+ist der Arbeitsbaum der Übergabe. Die Zeilen stehen im Format des Werkzeugs
+(`make suchlauf-nachmessen PLAN=<diese Datei>`, Exit 0 in diesem Lauf):**
 
-```text
-git grep -n -i -E 'Keepalive|Bestätigung inmitten|55 s|PostgreSQL 17' -- docs/plan/adr harness spec docs/user internal tools
-git grep -n -E 'mergeStreamAndWALFaultOutcome|stopStream|Fehlerschwelle' -- internal tools test harness docs/user
+```suchlauf
+dbc4dbe4 16 -n -E 'inmitten (der|einer) (Quell)?[Tt]ransaktion|Quellseite|einmalige Messung|SourceKeepalive|SOURCE_KEEPALIVE' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 33 -n -E 'inmitten (der|einer) (Quell)?[Tt]ransaktion|Quellseite|einmalige Messung|SourceKeepalive|SOURCE_KEEPALIVE' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+dbc4dbe4 47 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 47 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+dbc4dbe4 8 -n -E 'kontrollierter Abbruch|beendet sich der Feed-Container|Fehlerschwelle (beendet|erreicht)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 15 -n -E 'kontrollierter Abbruch|beendet sich der Feed-Container|Fehlerschwelle (beendet|erreicht)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+dbc4dbe4 7 -n -E 'mit der Klasse .replication.' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 7 -n -E 'mit der Klasse .replication.' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+dbc4dbe4 2 -n -E 'nur zum Zug|Fehler bei Stream-Ende|regulär endete' -- internal
+diff 2 -n -E 'nur zum Zug|Fehler bei Stream-Ende|regulär endete' -- internal
 ```
 
-| Träger | Befund | Behandlung |
+| Träger | Befund (Parent → Diff, `-n`-Trefferzeilen) | Behandlung |
 |---|---|---|
-| Sätze, die die Keepalive-Messung „einmalig“ oder „PostgreSQL 17 nicht gemessen“ nennen | *(Implementer trägt ein)* | mit dem Ergebnis nachziehen; `ADR-0121` bleibt unberührt, die Ergänzung ist eine neue ADR |
-| Beschreibungen der Schwellen-Kette in Kommentaren und Doku | *(Implementer trägt ein)* | jede Zusage trägt einen Test oder eine benannte Grenze (`BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`) |
+| Sätze, die die Keepalive-Messung „einmalig“ oder „PostgreSQL 17 nicht gemessen“ nennen | Muster 1: 16 → 33; die 17 neuen Treffer sind dieser Lauf (Test-Datei 8, `run-replication-tests.sh` 8, `harness/README.md` 1), keiner trägt eine Aussage über die Messung. **Gefunden:** die Aussage steht in `ADR-0121` (9 Treffer: §Kontext, Festlegung 2, Konsequenz „Grenze, benannt“, Trigger), `ADR-0120` (1, die Store-Zeile der Fitness Function), in den drei Dateien des Registers `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` (observation, state, evidence), in einer Evidence-Datei von `BEO-PGC/adr-aussage-breiter-als-ihre-messung` und in einer Zeile der Änderungshistorie von `spec/pflichtenheft.md` (Aussage der Regel „nie inmitten einer Quelltransaktion“, nicht der Messung); `seam_test.go` (1) trägt ein anderes Wort („Updates inmitten der Transaktion“). **Nicht gefunden:** kein Satz in `docs/user`, `harness`, `internal` (ohne die neue Test-Datei), `test` oder `tools`, der die Messung „einmalig“ nennt oder PostgreSQL 17 als nicht gemessen führt. | `ADR-0121` und `ADR-0120` bleiben unberührt (`Accepted`); die Ergänzung ist die neue ADR des Architects nach der Verifikation (Bericht des Implementers nennt, was sie braucht). Das Register `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` führt den Ausgang „dieser Slice“ in seinem `state.md`; der Planner zieht es bei der Closure nach (Frist: Closure dieses Slice). Keine Mitänderung durch den Implementer. |
+| Beschreibungen der Schwellen-Kette in Kommentaren und Doku | Muster 2 (Symbole): 47 → 47, unverändert. Muster 3 (Beschreibung): 8 → 15; die 7 neuen Treffer sind dieser Lauf (Runner-Phase und ihre Zeilen in `harness/README.md` und `docs/user/e2e-abdeckung.md`). Muster 4 (Klassen-Zusage „mit der Klasse `replication`“): 7 → 7. **Gefunden mit Klassen-Zusage der Kette:** `docs/user/benutzerhandbuch.md` (Abschnitt „Bestand als Backfill überführen“, Punkt „WAL-Rückstand des Capture-Slots“: „beendet sich der Feed-Container mit der Klasse `replication` (Ausgang 1)“) und `internal/bootstrap/wiring.go` (Kommentar an `mergeStreamAndWALFaultOutcome`: „nur zum Zug, wenn der Stream-Lauf regulär endete“; Muster 5: 2 → 2, die zweite Stelle ist der Kommentar von `walretention_slotgrowth_internal_test.go`). Beide gelten nach dem Befund oben nicht für die gehaltene Persistierung. Die übrigen fünf Treffer von Muster 4 (`ADR-0128`, Welle-Plan, `slice-start-vorlauf-grenze`, zwei Register-Dateien) beschreiben den Vorlauf vor `stream.Run`, einen anderen Gegenstand. **Nicht gefunden:** mit den Mustern 4 und 5 kein weiterer Träger der Kette in `internal`, `spec`, `harness` und `test`; die Norm (`ADR-0049` Folgepflicht, `SPEC-008`) ist der Gegenstand der Frage an den Architect, kein nachzuziehender Träger. | Gemeldet, nicht mitgeändert: das Handbuch liegt laut Plan außerhalb dieses Slice, `wiring.go` ist Produktionscode der Schwellen-Prüfung (§1). Die Entscheidung „Code oder Text“ trifft der Architect; die Frist ist sein Zug nach der Verifikation (Closure dieses Slice), danach zieht der Planner die Träger nach oder benennt sie mit Adresse (`BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`). Bis dahin trägt `harness/README.md` die Grenze benannt. |
 
 ## 4. Trigger
 
