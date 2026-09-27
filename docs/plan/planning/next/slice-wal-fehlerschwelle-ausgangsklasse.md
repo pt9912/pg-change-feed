@@ -35,7 +35,7 @@ Kontext der Fehlerschwellen-Kette), Architect-Verdikt
 [`SPEC-013`](../../../../spec/pflichtenheft.md) (Schwellen des WAL-Rückstands) —
 gelesen, nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent.
 
 **Autor:** Planner-Agent, Planner-Zug nach dem Architect-Verdikt
 [`architect-verdict-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md).
