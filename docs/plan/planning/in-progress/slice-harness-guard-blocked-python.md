@@ -135,7 +135,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
 **Erwartung**, bis der Implementer sie gefahren hat (Stelle, Instanz, gesehene Farbe;
 [`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B).
 
-- [ ] **Liefer-Punkt 1 — die Sperre.** Das Fragment `tools/harness/blocked/python` trägt genau die
+- [x] **Liefer-Punkt 1 — die Sperre.** Das Fragment `tools/harness/blocked/python` trägt genau die
       zwei Wörter `python python3` in einer Zeile (Name nach der Konvention des Guards,
       `blocked/<sprache>`, Kopfkommentar Zeile 80; der Guard liest jede Datei des Verzeichnisses, der
       Name ist keine Vorgabe des Guards). Der Guard blockt ein Kommando-Segment, dessen Kopf —
@@ -156,7 +156,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       `python3 --version` auf der stdin von `bash .claude/hooks/pretooluse-command-guard.sh` (kein Aufruf
       von Host-`python`) endet mit der Block-Ausgabe, deren Wortlaut im Bericht steht; das Hook-JSON für
       `make test` endet ohne Ausgabe.
-- [ ] **Liefer-Punkt 2 — der Tabellentest.** `tools/harness/run-command-guard-tests.sh` legt die Fragmente
+- [x] **Liefer-Punkt 2 — der Tabellentest.** `tools/harness/run-command-guard-tests.sh` legt die Fragmente
       der Quelle `BLOCKED_DIR` (Vorgabe: `tools/harness/blocked` des Repos, übersteuerbar für Mutationsläufe
       an Kopien, wie `GUARD` und `MASKER`) in das Wegwerf-Repo (`tools/harness/blocked/`) und bindet:
       (a) **Block-Fälle je Position** für `python` und `python3` (Kopf, nach `&&`, hinter `cd <Repo> &&`
@@ -187,7 +187,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       entfernt → `bash -c "python3 x"` rot; `command -v`-Ausnahme entfernt → `command -v python3` rot; `&&` nicht
       als Trenner → der Fall hinter `cd <Repo> &&` rot); Fragment-Ladung liest nur eine feste Datei `go` → die
       Block-Fälle rot. Menge der Erprobung: die Fälle des Tabellentests.
-- [ ] **Liefer-Punkt 3 — die Träger.** (a) `harness/conventions/MR-004-guard-host-python-am-kopf.md` per `cp` aus
+- [x] **Liefer-Punkt 3 — die Träger.** (a) `harness/conventions/MR-004-guard-host-python-am-kopf.md` per `cp` aus
       `.harness/baseline/v6.9.0/templates/harness/conventions/MR-NNN-titel.template.md` (byte-Gleichheit mit
       `diff -q` vor dem Füllen), in place gefüllt, plus die Zeile in `harness/conventions.md` §Aktive
       Adaptionen (Anker `mr-004`); Inhalt siehe §3 „Ansatz“ (Grenz-Zeile: die Liste ist die benannte Grenze).
@@ -210,18 +210,18 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/open/slice-harness-guard-blocked-python.md`
       läuft nach jeder Fixrunde mit den `diff`-Zeilen des Implementers durch
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors (Liefer-Punkt 3c);
+- [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors (Liefer-Punkt 3c);
       das Benutzerhandbuch bleibt unberührt (keine Betreiber-Oberfläche).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang der Kopf-Liste in
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang der Kopf-Liste in
       `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (Liefer-Punkt 3d); je ein Anfall
       im Lauf dieses Slice ist eine weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine Antwort und
       wird in §7 notiert (§8 nennt die Einträge, die dieser Slice trägt).
@@ -308,7 +308,51 @@ cea198fb 2 -n -E 'Offene Nutzer-Entscheidung|Entscheidung des Nutzers steht|Neub
 cea198fb 5 -n -E 'Skript, das (ein|der) Interpreter liest|jeder andere Interpreter|andere Interpreter' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 cea198fb 6 -n -E 'python3? --version' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 cea198fb 2 -n -i -E '\.claude/hooks|pretooluse|harness/conventions' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/in-progress docs/plan/planning/welle-transformationen.md
+diff 18 -n -E 'blocked/go|blocked/python|Kopf-Liste|Host-Toolchain-Sperre' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 52 -n -E 'Host-.?python|Host python|Host-Interpreter|Sprach-Toolchains' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 1 -n -E 'gofmt python python3|go gofmt|node dotnet java gradle uv' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 1 -n -E 'Offene Nutzer-Entscheidung|Entscheidung des Nutzers steht|Neubewertung der Kopf|Re-Evaluierung der Host' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 3 -n -E 'Skript, das (ein|der) Interpreter liest|jeder andere Interpreter|andere Interpreter' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 14 -n -E 'python3? --version' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 4 -n -i -E '\.claude/hooks|pretooluse|harness/conventions' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/in-progress docs/plan/planning/welle-transformationen.md
 ```
+
+**Nachmessung des Implementers (Stand `diff` = Arbeitsbaum nach der Umsetzung,
+Parent `ca97b802` = `next -> in-progress`, gemessen mit `make
+suchlauf-nachmessen`):** Zeile 1 (Fragment/Kopf-Liste) 5→18: neue Nennungen in
+`MR-004`, den Guard-Kommentaren, `AGENTS.md`, `harness/README.md`, der
+Makefile-Hilfezeile und den zwei `state.md`-Dateien. Zeile 2
+(Host-python/Host-Interpreter) 37→52: dieselben Träger, plus den
+umgebauten Tabellentest. Zeile 3 (volle Namensliste) 2→1: die zwei
+Halbzeilen von `state.md` (Stand `cea198fb`) sind in der Neufassung eine
+Zeile — die Aussage ist unverändert wahr, nur nicht mehr über einen
+Zeilenumbruch verteilt. Zeile 4 (offene Nutzer-Entscheidung) 2→1: die
+`state.md`-Zeile mit „Offene Nutzer-Entscheidung“ ist mit dem Ausgang
+„verkörpert“ ersetzt; `MR-003` (immutable) trägt weiter seine eine
+Nennung. Zeile 5 (Skript, das ein Interpreter liest) 5→3: zwei Treffer
+sind bewusst umformuliert (`AGENTS.md` §3.1 „ein Skript, das ein **nicht
+gelisteter** Interpreter liest“; der Tabellentest-Fall trägt jetzt `ruby`
+statt `python3`) — beide Stellen behaupteten sonst fälschlich, dass
+`python3 x.py` ungelesen bliebe. Zeile 6 (`python3? --version`) 6→14: der
+Tabellentest trägt jetzt mehrere `--version`-Fälle (Rand-Block, Meldungstest),
+dazu die Trägertexte. Zeile 7 (Guard/Konventionen in offenen Slice-Plänen)
+2→4: `slice-code-kommentare-bereinigung.md` (fremde Datei, unverändert,
+gemeldet — siehe Träger-Tabelle) und `welle-transformationen.md` §5 (a)
+bleiben unverändert wahr, plus zwei Treffer in diesem eigenen Plan (durch
+den Ausschluss der Plan-Datei selbst vom Werkzeug nicht gezählt, hier von
+Hand mitgezählt, da der Suchraum auf die Planning-Verzeichnisse zeigt und
+das Werkzeug nur den eigenen Dateinamen ausschließt, nicht andere
+Slice-Pläne). Nichtgefundenes: keine weitere Fundstelle mit der bewegten
+Eigenschaft „was der Guard für Host-`python` sperrt“ außerhalb der
+genannten Träger; `docs/plan/planning/welle-transformationen.md` §5 (a) und
+`slice-code-kommentare-bereinigung.md` §6 bleiben unverändert wahr (letztere
+als gemeldeter, nicht mitgeänderter Träger). Zeile 7 trägt zusätzlich zwei
+Treffer in `docs/plan/planning/open/slice-harness-mutationsbild-und-verweigerte-aktion.md`
+(Zeilen 99, 334) — eine Datei, die zwischen `cea198fb` und dem Start dieses
+Slice neu angelegt wurde (existiert nicht unter `cea198fb`, `git cat-file -e
+cea198fb:…` bestätigt das); ihr Inhalt (PreToolUse-Guard allgemein, ein
+Zitat aus `MR-003` Zeile 90) bleibt unverändert wahr und braucht keinen
+Nachzug durch diesen Slice.
 
 | Träger | Befund (Stand `cea198fb`, vom Planner gelesen) | Behandlung |
 |---|---|---|
