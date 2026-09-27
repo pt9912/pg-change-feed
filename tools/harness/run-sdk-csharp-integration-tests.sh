@@ -1,39 +1,39 @@
 #!/usr/bin/env bash
 # run-sdk-csharp-integration-tests.sh — Realserver-Integrationstest der
-# C#-SDK-Zustellweg-Flaechen (slice-sdk-csharp-reale2e; Mechanik-Klasse
+# C#-SDK-Zustellweg-Flächen (slice-sdk-csharp-reale2e; Mechanik-Klasse
 # ADR-0110 §Entscheidung Festlegung 2, gespiegelt vom Python-Vorbild
-# tools/harness/run-sdk-python-integration-tests.sh): die vier FlaecheN des
+# tools/harness/run-sdk-python-integration-tests.sh): die vier Flächen des
 # Packages PgChangeFeed.Client (HTTP SPEC-018, gRPC SPEC-020, SSE SPEC-021,
-# NATS-Vollinhalt SPEC-024) pruefen ihre Protokoll-Annahmen je gegen eine
-# reale, laufende Server-Instanz — der Pruefling ist die kompilierte
+# NATS-Vollinhalt SPEC-024) prüfen ihre Protokoll-Annahmen je gegen eine
+# reale, laufende Server-Instanz — der Prüfling ist die kompilierte
 # Client-Assembly, der Integrationstest importiert PgChangeFeed.Client
 # direkt (kein Wegwerf-Duplikat-Client daneben).
 #
 # Kette je Lauf: compose.yaml-Umgebung hochfahren (PostgreSQL/NATS/
-# Feed-Container, Schema-Rollout ueber d-migrate, Vorbedingungen der
+# Feed-Container, Schema-Rollout über d-migrate, Vorbedingungen der
 # Aktivierung), Bau der `integration`-Docker-Stufe des C#-SDK
 # (sdks/csharp/Dockerfile), Start je Phase im selben Docker-Netz wie der
 # Feed-Container; die stdout-Marker (READY/RECEIVED/REJECTED) liest dieser
-# Runner ueber `docker logs`, waehrend der Test noch laeuft. Die `change_id`
-# der empfangenen Change wird zusaetzlich gegen den Lesezugriffsweg
+# Runner über `docker logs`, während der Test noch läuft. Die `change_id`
+# der empfangenen Change wird zusätzlich gegen den Lesezugriffsweg
 # `cdc.changes` gehalten (gRPC/SSE/NATS), die Consumer-Registrierung gegen
 # `cdc.consumer` (HTTP).
 #
-# Der Runner schreibt den Abdeckungs-Traeger docs/user/sdk-e2e-abdeckung.md
+# Der Runner schreibt den Abdeckungs-Träger docs/user/sdk-e2e-abdeckung.md
 # (C#-Abschnitt, marker-gegrenzt) aus derselben Messung, die ihn belegt —
 # idempotent, nur bei inhaltlicher Abweichung (Muster
 # run-integration-tests.shs Abdeckungstabelle). Grenze der Writer-Form:
 # dieser Runner erzeugt Kopf und alles bis zu seinem end-Marker neu und
-# erhaelt den Rest; ein Folge-Runner (Kotlin/Python-HTTP) spiegelt dieselbe
-# Form NICHT wortgleich — sein Re-Run wuerde die Abschnitte oberhalb seines
-# begin-Markers wegwerfen. Er haelt den Kopf stabil und ersetzt nur seinen
+# erhält den Rest; ein Folge-Runner (Kotlin/Python-HTTP) spiegelt dieselbe
+# Form NICHT wortgleich — sein Re-Run würde die Abschnitte oberhalb seines
+# begin-Markers wegwerfen. Er hält den Kopf stabil und ersetzt nur seinen
 # eigenen Abschnitt (Rest-Erhalt hinter dem end-Marker, wie hier).
 #
 # Voraussetzungen: Docker, ein geladenes :dev-Image (`make image` vorher —
-# compose.yaml traegt keinen build:-Block, ADR-0044) und Netz (NuGet-Restore
+# compose.yaml trägt keinen build:-Block, ADR-0044) und Netz (NuGet-Restore
 # im SDK-Bau, d-migrate-Image). Kein Gate (dieselbe Klasse wie
 # `make test-integration`). Cleanup je Ausgang: Test-Container wegwerfen,
-# compose-Stack inkl. Volume abrueumen.
+# compose-Stack inkl. Volume abräumen.
 #
 # Aufruf: `make test-sdk-csharp-integration`. Override:
 # SDK_CSHARP_INTEGRATION_IMAGE.
@@ -80,7 +80,7 @@ cleanup() {
 trap cleanup EXIT
 
 docker image inspect ghcr.io/pt9912/pg-change-feed:dev >/dev/null 2>&1 || {
-  echo "run-sdk-csharp-integration-tests: kein geladenes :dev-Image — make image vorher (compose.yaml traegt keinen build:-Block, ADR-0044)" >&2
+  echo "run-sdk-csharp-integration-tests: kein geladenes :dev-Image — make image vorher (compose.yaml trägt keinen build:-Block, ADR-0044)" >&2
   exit 1
 }
 
@@ -124,7 +124,7 @@ for _ in $(seq 1 60); do
   sleep 1
 done
 if [ "$wired" -ne 1 ]; then
-  feed_exit=$(docker inspect --format '{{.State.ExitCode}}' "$FEED_CONTAINER" 2>/dev/null || echo laeuft)
+  feed_exit=$(docker inspect --format '{{.State.ExitCode}}' "$FEED_CONTAINER" 2>/dev/null || echo läuft)
   echo "run-sdk-csharp-integration-tests: Feed-Container trägt die Verdrahtung nicht — Slot $SLOT: ${slot_ok:-0}, Feed-Lauf: $feed_running (Feed-Ausgang: $feed_exit)" >&2
   exit 1
 fi
@@ -148,11 +148,11 @@ docker build --build-context proto=proto -f sdks/csharp/Dockerfile \
 
 # run_phase <Name> <Testklasse> <Sentinel> <ID-Basis> <Reject-Marker>
 # <Received-Grep> <SQL-Variante: changes|consumer> <Extra-Env> — ein
-# Realserver-Rundlauf fuer genau eine SDK-Flaeche: Container starten, auf
+# Realserver-Rundlauf für genau eine SDK-Fläche: Container starten, auf
 # READY warten, begrenzte Folge eindeutiger Zeilen committen
 # (Fire-and-Forget-Fenster), auf den Reject-Marker und das Prozessende
-# warten, die RECEIVED-Zeile pruefen und die Identitaet unabhaengig gegen
-# den SQL-Lesezugriffsweg halten. Die SQL-Variante "changes" haelt die
+# warten, die RECEIVED-Zeile prüfen und die Identität unabhängig gegen
+# den SQL-Lesezugriffsweg halten. Die SQL-Variante "changes" hält die
 # change_id gegen cdc.changes (Streams), "consumer" die Consumer-Registrierung
 # gegen cdc.consumer (HTTP).
 run_phase() {
@@ -192,8 +192,8 @@ run_phase() {
   local received=0
   for attempt in 1 2 3 4 5; do
     insert_id=$((id_base + attempt))
-    # >/dev/null: die psql-INSERT-Echo-Zeile gehoert nicht in den
-    # Funktions-stdout (der Aufrufer haelt hier nur den Rueckgabewert).
+    # >/dev/null: die psql-INSERT-Echo-Zeile gehört nicht in den
+    # Funktions-stdout (der Aufrufer hält hier nur den Rückgabewert).
     docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 >/dev/null <<SQL
 INSERT INTO public.$TEST_TABLE (id, name) VALUES ($insert_id, '$sentinel');
 SQL
@@ -238,11 +238,11 @@ SQL
   test_output=$(docker logs "$SDK_TEST_CONTAINER" 2>&1 || true)
 
   if [ "$received" -ne 1 ]; then
-    echo "run-sdk-csharp-integration-tests: $phase_name — der Test empfing keine der committeten Aenderungen ($TEST_TABLE, $sentinel): $test_output" >&2
+    echo "run-sdk-csharp-integration-tests: $phase_name — der Test empfing keine der committeten Änderungen ($TEST_TABLE, $sentinel): $test_output" >&2
     exit 1
   fi
   if ! printf '%s' "$test_output" | grep -qE "$received_grep"; then
-    echo "run-sdk-csharp-integration-tests: $phase_name — die RECEIVED-Zeile traegt nicht die erwartete Form: $test_output" >&2
+    echo "run-sdk-csharp-integration-tests: $phase_name — die RECEIVED-Zeile trägt nicht die erwartete Form: $test_output" >&2
     exit 1
   fi
   if [ "$rejected" -ne 1 ]; then
@@ -256,7 +256,7 @@ SQL
 
   ident=$(printf '%s' "$test_output" | grep -oE 'RECEIVED [a-z_]+=[^ ]+' | head -n1 | cut -d= -f2 || true)
   if [ -z "$ident" ]; then
-    echo "run-sdk-csharp-integration-tests: $phase_name — die RECEIVED-Zeile traegt keine Identitaet: $test_output" >&2
+    echo "run-sdk-csharp-integration-tests: $phase_name — die RECEIVED-Zeile trägt keine Identität: $test_output" >&2
     exit 1
   fi
   if [ "$sql_kind" = "changes" ]; then
@@ -267,7 +267,7 @@ SQL
       "SELECT count(*) FROM cdc.consumer WHERE consumer_id = '$ident'")
   fi
   if [ -z "$captured" ] || [ "$captured" -lt 1 ]; then
-    echo "run-sdk-csharp-integration-tests: $phase_name — die Identitaet ($ident) ist nicht real ueber den SQL-Lesezugriffsweg lesbar (count=${captured:-leer})" >&2
+    echo "run-sdk-csharp-integration-tests: $phase_name — die Identität ($ident) ist nicht real über den SQL-Lesezugriffsweg lesbar (count=${captured:-leer})" >&2
     exit 1
   fi
 
@@ -281,43 +281,43 @@ SQL
 }
 
 GRPC_IDENT=$(run_phase \
-  "gRPC-Flaeche (SPEC-020)" "$GRPC_TEST_NAME" \
+  "gRPC-Fläche (SPEC-020)" "$GRPC_TEST_NAME" \
   "$GRPC_SENTINEL" 400 "REJECTED code=Unauthenticated" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$GRPC_SENTINEL" \
   changes "PGCHANGEFEED_GRPC_ADDR=pg-change-feed:9090 PGCHANGEFEED_API_TOKEN=$API_TOKEN")
 
 SSE_IDENT=$(run_phase \
-  "SSE-Flaeche (SPEC-021)" "$SSE_TEST_NAME" \
+  "SSE-Fläche (SPEC-021)" "$SSE_TEST_NAME" \
   "$SSE_SENTINEL" 410 "REJECTED status=401" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$SSE_SENTINEL" \
   changes "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN=$API_TOKEN")
 
 NATS_IDENT=$(run_phase \
-  "NATS-Vollinhalts-Flaeche (SPEC-024)" "$NATS_TEST_NAME" \
+  "NATS-Vollinhalts-Fläche (SPEC-024)" "$NATS_TEST_NAME" \
   "$NATS_SENTINEL" 420 "REJECTED token-rejected" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$NATS_SENTINEL" \
   changes "PGCHANGEFEED_NATS_URL=nats://nats:4222 PGCHANGEFEED_NATS_STREAM_TOKEN=$NATS_STREAM_TOKEN PGCHANGEFEED_SOURCE_ID=$SOURCE_ID")
 
 HTTP_IDENT=$(run_phase \
-  "HTTP-Flaeche (SPEC-018)" "$HTTP_TEST_NAME" \
+  "HTTP-Fläche (SPEC-018)" "$HTTP_TEST_NAME" \
   "$HTTP_SENTINEL" 430 "REJECTED status=401" \
   "RECEIVED consumer_id=[^ ]+" \
   consumer "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN_ADMIN=$API_TOKEN_ADMIN PGCHANGEFEED_API_TOKEN_READER=$API_TOKEN_READER PGCHANGEFEED_SOURCE_ID=$SOURCE_ID PGCHANGEFEED_HTTP_PUBLICATION=$HTTP_PUBLICATION")
 
-# --- Abdeckungs-Traeger (docs/user/sdk-e2e-abdeckung.md) -------------------
+# --- Abdeckungs-Träger (docs/user/sdk-e2e-abdeckung.md) -------------------
 # Der C#-Abschnitt entsteht aus derselben Messung, die ihn belegt: je Phase
 # ihre Kennungen und der ident-Behalt des Laufs; geschrieben wird nur bei
 # inhaltlicher Abweichung (Temp-Datei + cmp), marker-gegrenzt, damit die
 # Folge-Slices (Kotlin, Python-HTTP) eigene Abschnitte daneben tragen.
-# Die Kennungsspalte traegt je Kennung den Link auf ihr Definitionsdokument
+# Die Kennungsspalte trägt je Kennung den Link auf ihr Definitionsdokument
 # (ids des Doku-Gates).
 abdeckung_csharp_abschnitt() {
   printf '%s\n' \
     '<!-- pgchangefeed-sdk-e2e:csharp-begin -->' \
-    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedGrpcClient\`) oeffnet real den gRPC-Server-Stream gegen den laufenden Feed-Container und empfaengt eine danach committete Aenderung; ein Oeffnungsversuch ohne gueltiges Token endet mit gRPC-Status \`Unauthenticated\` | \`GrpcRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
-    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedSseClient\`) oeffnet real \`GET /changes/stream\` und empfaengt eine danach committete Aenderung; ein Aufruf ohne gueltiges Token endet mit HTTP-Status 401 | \`SseRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
-    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfaengt eine danach committete Aenderung als vollstaendiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`NatsRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
-    "| [\`LH-FA-SST-006\`](../../spec/lastenheft.md), [\`LH-FA-CON-001\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedHttpClient\`) registriert real einen Consumer (admin-Token) und listet Tabellen (reader-Token); die Registrierung ist unabhaengig ueber \`cdc.consumer\` lesbar; ein Aufruf ohne gueltiges Token endet mit HTTP-Status 401 | \`HttpRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedGrpcClient\`) öffnet real den gRPC-Server-Stream gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Öffnungsversuch ohne gültiges Token endet mit gRPC-Status \`Unauthenticated\` | \`GrpcRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedSseClient\`) öffnet real \`GET /changes/stream\` und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`SseRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`NatsRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-006\`](../../spec/lastenheft.md), [\`LH-FA-CON-001\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedHttpClient\`) registriert real einen Consumer (admin-Token) und listet Tabellen (reader-Token); die Registrierung ist unabhängig über \`cdc.consumer\` lesbar; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`HttpRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     '<!-- pgchangefeed-sdk-e2e:csharp-end -->'
 }
 
@@ -356,14 +356,14 @@ abdeckung_schreiben() {
   } > "$temp"
   if [ -f "$ABDECKUNG_ZIEL_DATEI" ] && cmp -s "$temp" "$ABDECKUNG_ZIEL_DATEI"; then
     rm -f "$temp"
-    echo "run-sdk-csharp-integration-tests: Abdeckungs-Traeger unveraendert — $ABDECKUNG_ZIEL_DATEI entspricht dem Quelltext-Stand"
+    echo "run-sdk-csharp-integration-tests: Abdeckungs-Träger unverändert — $ABDECKUNG_ZIEL_DATEI entspricht dem Quelltext-Stand"
   else
     chmod 0644 "$temp"
     mv "$temp" "$ABDECKUNG_ZIEL_DATEI"
-    echo "run-sdk-csharp-integration-tests: Abdeckungs-Traeger geschrieben — $ABDECKUNG_ZIEL_DATEI"
+    echo "run-sdk-csharp-integration-tests: Abdeckungs-Träger geschrieben — $ABDECKUNG_ZIEL_DATEI"
   fi
 }
 
 abdeckung_schreiben
 
-echo "run-sdk-csharp-integration-tests: C#-SDK-Realserver-Belege (slice-sdk-csharp-reale2e, Mechanik-Klasse ADR-0110 Festlegung 2) gruen — gRPC-Flaeche (PgChangeFeedGrpcClient, pg-change-feed:9090, change_id=$GRPC_IDENT), SSE-Flaeche (PgChangeFeedSseClient, pg-change-feed:8090, change_id=$SSE_IDENT) und NATS-Vollinhalts-Flaeche (PgChangeFeedNatsStreamClient, nats://nats:4222, change_id=$NATS_IDENT) empfingen je eine danach committete Aenderung (change_id je unabhaengig ueber cdc.changes lesbar), die HTTP-Flaeche (PgChangeFeedHttpClient) registrierte real einen Consumer (consumer_id=$HTTP_IDENT, unabhaengig ueber cdc.consumer lesbar) und listete Tabellen; ein Aufruf ohne gueltiges Token endete je mit gRPC-Status Unauthenticated, HTTP-Status 401 bzw. der laut ablehnenden NATS-Verbindungsablehnung"
+echo "run-sdk-csharp-integration-tests: C#-SDK-Realserver-Belege (slice-sdk-csharp-reale2e, Mechanik-Klasse ADR-0110 Festlegung 2) grün — gRPC-Fläche (PgChangeFeedGrpcClient, pg-change-feed:9090, change_id=$GRPC_IDENT), SSE-Fläche (PgChangeFeedSseClient, pg-change-feed:8090, change_id=$SSE_IDENT) und NATS-Vollinhalts-Fläche (PgChangeFeedNatsStreamClient, nats://nats:4222, change_id=$NATS_IDENT) empfingen je eine danach committete Änderung (change_id je unabhängig über cdc.changes lesbar), die HTTP-Fläche (PgChangeFeedHttpClient) registrierte real einen Consumer (consumer_id=$HTTP_IDENT, unabhängig über cdc.consumer lesbar) und listete Tabellen; ein Aufruf ohne gültiges Token endete je mit gRPC-Status Unauthenticated, HTTP-Status 401 bzw. der laut ablehnenden NATS-Verbindungsablehnung"
