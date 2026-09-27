@@ -204,7 +204,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       (Zeiger auf die Durchsetzung für `python`/`python3`). *Zu belegen durch:* Lesen der Stellen,
       `make docs-check` (Links, Anker), `make doc-immutable RANGE=<Parent>..HEAD` Exit 0 (`MR-003` unverändert)
       und der Suchlauf in §3.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -219,7 +219,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       das Benutzerhandbuch bleibt unberührt (keine Betreiber-Oberfläche).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang der Kopf-Liste in
       `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (Liefer-Punkt 3d); je ein Anfall
