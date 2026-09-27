@@ -1,9 +1,10 @@
 Zustand: **geplant** — Ausgang: **geplant** → `slice-start-vorlauf-grenze` (Phase in `make
 test-integration`, die den Prozessstart mit einem wartenden Antrag fährt; Architect-Verdikt
 `architect-verdict-welle-transformationen-offene-fragen` §8, `ADR-0128`). Zähler (abgeleitet):
-**4×** (evidence/slice-061.md, evidence/slice-072.md,
+**5×** (evidence/slice-061.md, evidence/slice-072.md,
 evidence/slice-transformationen-start-reihenfolge.md,
-evidence/architect-verdict-welle-transformationen-offene-fragen.md).
+evidence/architect-verdict-welle-transformationen-offene-fragen.md,
+evidence/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md).
 
 Der vierte Beleg ist die Messung des Architect-Zugs: die Start-Sequenz aus `Run` trägt Unit-Tests
 mit Fakes und zwei Quelltext-Tests; die Eigenschaft, die sie nicht zeigen (der Replikationsstrom
@@ -15,3 +16,8 @@ selbst (hergeleitet, nicht erprobt). Der Träger der Klasse ist die Phase in `ma
 in dem Slice, der die Eigenschaft einführt (Testpyramide, `ADR-0030`); kein eigener Smoke-Test.
 Trigger der Neubewertung: ein Auftreten, das eine Phase von `make test-integration` gefunden hätte
 und in keinem Slice steht.
+
+Der fünfte Beleg trägt den Träger bestätigend: die Runner-Phase „Fehlerschwelle beendet den
+Container“ fand die Abweichung der Ausgangs-Klasse, die die Unit-Tests der Kette mit Fakes nicht
+zeigten, und ein Slice trägt die Korrektur (`slice-wal-fehlerschwelle-ausgangsklasse`). Der
+Trigger der Neubewertung ist damit nicht eingetreten.

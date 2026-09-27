@@ -1,0 +1,7 @@
+**Vorgang:** architect-verdict-wal-fehlerschwelle-ausgangsklasse (Architect-Zug zum Befund von `slice-capture-leerlauf-quellbelege`)
+
+**Fund:** Die Kette „WAL-Rückstand über der Fehlerschwelle → Prozessende mit der Klasse `replication`“ ist in Teilen mit Fakes belegt (`mergeStreamAndWALFaultOutcome(nil, fault)` liefert `replication`, die Sentinel-Priorität, `classifyRunError`). Am komponierten Prozess endet der Container bei gehaltener Persistierung mit der Klasse `storage`: der Kontext-Abbruch der Schwellen-Prüfung lässt `Capture` mit einem Fehler der Klasse `storage` zurückkehren, und die Priorität „Stream-Fehler jeder Klasse zuerst“ gibt ihn vor dem WAL-Fehler zurück. Kein Unit-Test führt einen Stream-Fehler der Klasse `storage` neben einem gesetzten WAL-Fehler. Gefunden von der Runner-Phase „Fehlerschwelle beendet den Container“ (fünf Läufe, übernommene Messung des Implementers), vor dem Merge.
+
+**Form (Ausprägung):** dieselbe Klasse wie beim vierten Beleg — eine **Eigenschaft des komponierten Prozesses** (hier: der Standort des Streams im Moment des Abbruchs bestimmt die Klasse), die kein Fake abbildet. Schwere MEDIUM (Klassen-Vertrag der Fehlerschwelle, `ADR-0049`; der Handbuch-Vertrag sagt `replication` zu). Ausgang des Zugs: Codefehler, Träger `slice-wal-fehlerschwelle-ausgangsklasse`; der Eintrag behält seinen Ausgang.
+
+Quelle: `docs/reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md` (§2, §5, §6). <!-- d-check:status-provenance -->
