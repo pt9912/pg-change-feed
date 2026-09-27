@@ -158,6 +158,7 @@ flowchart LR
     WFA[wellenlos: slice-wal-fehlerschwelle-ausgangsklasse]
     SVG[wellenlos: slice-start-vorlauf-grenze]
     GBP[wellenlos: slice-harness-guard-blocked-python]
+    MBV[wellenlos: slice-harness-mutationsbild-und-verweigerte-aktion]
     TEA[slice-transformationen-e2e-abhilfe]
 
     A58 --> W17
