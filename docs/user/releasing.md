@@ -312,14 +312,9 @@ sammelt die Einzeldateien einer Version in einem Sammelfenster (60 Sekunden)
 und verarbeitet sie danach asynchron; der Job meldet Erfolg mit dem Upload,
 nicht mit der Verfügbarkeit.
 
-**Was Anwender sehen.** Der Bezug über Cloudsmith
-(`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`) braucht kein
-Konto und keinen Token; GitHub Packages verlangt dagegen weiter eine
-Authentifizierung zum **Lesen**, auch für ein öffentliches Package (real
-dokumentiert, `ADR-0109` §Entscheidung Festlegung 2): ein GitHub-Konto und
-einen klassischen Personal-Access-Token mit `read:packages`-Scope. Die
-Kotlin-README nennt Cloudsmith deshalb als ersten Bezugsweg und trägt die von
-Cloudsmith für Open-Source-Repositories verlangte Namensnennung.
+**Was Anwender sehen.** Cloudsmith ist der primäre Bezugsweg, weil er anonyme
+Lese-Zugriffe erlaubt; GitHub Packages verlangt auch für ein öffentliches
+Package eine Authentifizierung zum Lesen (`ADR-0109`).
 
 **Wiederholung.** Ob ein zweiter Upload derselben Version am Ziel abgelehnt
 wird, ist für Cloudsmith (nativer Maven-Upload) und GitHub Packages nicht
