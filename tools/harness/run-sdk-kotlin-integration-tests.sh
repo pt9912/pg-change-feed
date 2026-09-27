@@ -28,7 +28,11 @@
 # und Tabelle stabil, ersetzt nur seinen eigenen marker-gegrenzten
 # Abschnitt und erhält den Rest auf BEIDEN Seiten — ein wortgleich
 # gespiegelter C#-Writer würde den C#-Abschnitt oberhalb des
-# Kotlin-begin-Markers wegwerfen.
+# Kotlin-begin-Markers wegwerfen. Jeder Sprachabschnitt trägt seine eigene
+# Kopf-/Trennzeile (eine eigenständige Markdown-Tabelle je Sprache): eine
+# HTML-Kommentarzeile ohne Pipe-Zeichen zwischen einer gemeinsamen Kopfzeile
+# und den Datenzeilen hätte die Tabelle für jeden Markdown-Renderer nach der
+# Kopfzeile beendet.
 #
 # Voraussetzungen: Docker, ein geladenes :dev-Image (`make image` vorher —
 # compose.yaml trägt keinen build:-Block, ADR-0044) und Netz (Gradle-
@@ -307,9 +311,28 @@ HTTP_IDENT=$(run_phase \
 # marker-gegrenzt. Der Kotlin-Runner hält Kopf UND fremde Abschnitte
 # (C# vor ihm, Python-HTTP nach ihm) stabil und ersetzt nur seinen eigenen
 # Abschnitt (Writer-Form-Grenze, Muster csharp-Runner).
+
+# trim_blank_edges <mehrzeiliger String> — entfernt führende und
+# nachgestellte Leerzeilen, interne Leerzeilen bleiben erhalten; reines awk,
+# kein externes Werkzeug (Muster run-sdk-csharp-integration-tests.sh).
+trim_blank_edges() {
+  awk '
+    { lines[NR] = $0 }
+    END {
+      start = 1
+      while (start <= NR && lines[start] == "") start++
+      e = NR
+      while (e >= start && lines[e] == "") e--
+      for (i = start; i <= e; i++) print lines[i]
+    }
+  ' <<<"$1"
+}
+
 abdeckung_kotlin_abschnitt() {
   printf '%s\n' \
     '<!-- pgchangefeed-sdk-e2e:kotlin-begin -->' \
+    '| Spec-Kennung | Kurzbeschreibung | Nachweis | Ort |' \
+    '| --- | --- | --- | --- |' \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Kotlin-SDK-Client (\`PgChangeFeedGrpcClient\`) öffnet real den gRPC-Server-Stream gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Öffnungsversuch ohne gültiges Token endet mit gRPC-Status \`Unauthenticated\` | \`GrpcRealserverTest\` | \`tools/harness/run-sdk-kotlin-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Kotlin-SDK-Client (\`PgChangeFeedSseClient\`) öffnet real \`GET /changes/stream\` und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`SseRealserverTest\` | \`tools/harness/run-sdk-kotlin-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Kotlin-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`NatsRealserverTest\` | \`tools/harness/run-sdk-kotlin-integration-tests.sh\` |" \
@@ -333,34 +356,32 @@ abdeckung_schreiben() {
       vor=$(cat "$ABDECKUNG_ZIEL_DATEI")
     fi
   fi
+  vor=$(trim_blank_edges "$vor")
+  nach=$(trim_blank_edges "$nach")
+  if [ -z "$vor" ]; then
+    # Degenerater Pfad (fehlt die Träger-Datei ganz — kein stiller
+    # nackter Abschnitt, Muster csharp-Runner): den Kopf regenerieren, wie
+    # der C#-Writer ihn trägt (der Tabellenkopf steht seit der
+    # Drei-Tabellen-Form im Abschnitt selbst, nicht mehr hier).
+    vor=$(printf '%s\n' \
+      '# SDK-E2E-Abdeckung je Spec-Kennung' \
+      '' \
+      'Erzeugt von `make test-sdk-csharp-integration` über' \
+      '`tools/harness/run-sdk-csharp-integration-tests.sh`; die Sprach-Runner' \
+      'der Folge-Slices (Kotlin, Python-HTTP) erweitern dieselbe Datei um ihre' \
+      'marker-gegrenzten Abschnitte. Je Sprach-Abschnitt deklariert der' \
+      'zuständige Runner seine Realserver-Phasen an Ort und Stelle. Diese' \
+      'Datei ist eine **stabile Abdeckungs-Deklaration**, kein Lauf-Beleg: der' \
+      'Runner schreibt sie nur bei inhaltlicher Abweichung. Sie trägt nur' \
+      'Zeilen real existierender Runner-Phasen — ein Beleg steht hier nie,' \
+      'bevor sein Lauf grün lief.')
+  fi
   temp=$(mktemp)
   {
-    if [ -z "$vor" ]; then
-      # Degenerater Pfad (fehlt die Träger-Datei ganz — kein stiller
-      # nackter Abschnitt, Muster csharp-Runner): Kopf und Tabellenkopf
-      # regenerieren, wie der C#-Writer ihn trägt.
-      printf '%s\n' \
-        '# SDK-E2E-Abdeckung je Spec-Kennung' \
-        '' \
-        'Erzeugt von `make test-sdk-csharp-integration` über' \
-        '`tools/harness/run-sdk-csharp-integration-tests.sh`; die Sprach-Runner' \
-        'der Folge-Slices (Kotlin, Python-HTTP) erweitern dieselbe Datei um ihre' \
-        'marker-gegrenzten Abschnitte. Je Sprach-Abschnitt deklariert der' \
-        'zuständige Runner seine Realserver-Phasen an Ort und Stelle. Diese' \
-        'Datei ist eine **stabile Abdeckungs-Deklaration**, kein Lauf-Beleg: der' \
-        'Runner schreibt sie nur bei inhaltlicher Abweichung. Sie trägt nur' \
-        'Zeilen real existierender Runner-Phasen — ein Beleg steht hier nie,' \
-        'bevor sein Lauf grün lief.' \
-        '' \
-        '| Spec-Kennung | Kurzbeschreibung | Nachweis | Ort |' \
-        '| --- | --- | --- | --- |'
-    fi
-    if [ -n "$vor" ]; then
-      printf '%s\n' "$vor"
-    fi
-    printf '%s\n' "$abschnitt"
+    printf '%s\n' "$vor"
+    printf '\n%s\n' "$abschnitt"
     if [ -n "$nach" ]; then
-      printf '%s\n' "$nach"
+      printf '\n%s\n' "$nach"
     fi
   } > "$temp"
   if [ -f "$ABDECKUNG_ZIEL_DATEI" ] && cmp -s "$temp" "$ABDECKUNG_ZIEL_DATEI"; then
