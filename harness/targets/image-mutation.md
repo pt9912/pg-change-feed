@@ -131,8 +131,10 @@ die Mutation ihrer Eingabeseite, gesehenes Rot:
 | `SRC` muss ein `Dockerfile` tragen | die Dockerfile-Prüfung entfernt | `SRC ohne Dockerfile` |
 | ein Docker-Fehler endet mit Exit 1 und nennt den Exit-Code | die Auswertung des Docker-Exit-Codes entfernt | `Docker-Fehler (build)` |
 | `rm` ruft `docker rmi` ohne `-f` | `-f` an `docker rmi` angehängt | `rm` (Docker-Argument Zeile 2, Argumentzahl) |
+| `SRC` wird vor dem Wurzel-Vergleich zu einem absoluten Pfad aufgelöst (`realpath`) | die `realpath`-Auflösung von `SRC` entfernt (`src_abs="$src"` statt `$(realpath -- "$src")`) | `SRC relativ '.' ist die Repo-Wurzel` · `SRC relativ 'sub' liegt unter der Wurzel` · `SRC ist Symlink auf die Repo-Wurzel` |
+| `TAG` wird bei `rm` gegen dieselbe Zeichenklasse und dieselben reservierten Namen geprüft wie bei `build` | der `check_tag`-Aufruf im `rm`-Zweig entfernt | `rm: TAG 'dev'` · `rm: TAG 'latest'` · `rm: TAG 'Foo'` · `rm: TAG 'a b'` |
 
-Menge der Erprobung: die acht oben genannten Mutationen, je einmal gegen
+Menge der Erprobung: die zehn oben genannten Mutationen, je einmal gegen
 eine Kopie des Werkzeugs gelaufen (`TOOL=<Kopie> bash
 tools/harness/run-image-mutation-tests.sh`); jede zeigte den genannten Fall
 rot.

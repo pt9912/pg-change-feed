@@ -227,17 +227,19 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors, `harness/targets/image-mutation.md`
       und `AGENTS.md` (Liefer-Punkte 2 und 3); das Benutzerhandbuch bleibt unberührt (keine Betreiber-Oberfläche).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang von
       `BEO-PGC/ersatzweg-nach-verweigerter-aktion` (Liefer-Punkt 3d); je ein Anfall im Lauf dieses Slice
       ist eine weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine Antwort und wird in §7 notiert
-      (§8 nennt die Einträge, die dieser Slice trägt).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+      (§8 nennt die Einträge, die dieser Slice trägt). Zusätzlich ein neuer Beleg (20.) bei
+      `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (H-1) und ein narrativer Anfall ohne eigene
+      Datei nach der Deckel-Regel (V-2, LOW) — §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Slice-Closure selbst (der Slice hat keine Welle; das Ereignis kann
       eintreten).
 
@@ -436,54 +438,136 @@ Regel „Verweigerte Aktion“ hat bewusst keinen Sensor, §1).
   ein Symlink auf die Wurzel oder ein relativer Pfad könnte ihn umgehen, wenn er nicht aufgelöst wird. *Erwartet, zu belegen
   durch:* die Fälle Wurzel und Verzeichnis unter der Wurzel im Tabellentest, dazu ein Fall mit einem Symlink auf die Wurzel,
   soweit der Aufbau ihn zulässt (`realpath` löst ihn auf, *hergeleitet*, im Lauf zu bestätigen), und die Mutation „Vergleich
-  entfernt“ (DoD 1). **Ausgang:** *(bei Closure)*
+  entfernt“ (DoD 1). **Ausgang:** eingetreten, in der Fixrunde behoben — Review-Fund H-1 demonstrierte den
+  Exploit real (`SRC=.` aus der Repo-Wurzel baute mit entfernter `realpath`-Zeile tatsächlich ein Image);
+  drei neue Testfälle (relativer Pfad `.`, relativer Pfad `sub`, Symlink auf die Wurzel) binden die
+  `realpath`-Auflösung jetzt an ihre Eingabeseite, vom Verifier mit einem eigenen Exploit-Nachlauf gegen
+  den erweiterten Tabellentest bestätigt (Exit 1, exakt die drei neuen Fälle rot, 27 übrige grün).
 - **2. Tag-Kollision mit parallel laufenden Rollen.** Zwei Läufe mit demselben `TAG` überschreiben einander (Docker ersetzt das Image
   unter dem Tag); der Vertrag nennt es als Grenze, das Ziel erzwingt keinen Namen je Rolle. *Erwartet, zu belegen durch:* die Grenze im
-  Vertrag und ein Namensvorschlag im Anwendungsbeispiel (Kürzel des Vorgangs im Tag). **Ausgang:** *(bei Closure)*
+  Vertrag und ein Namensvorschlag im Anwendungsbeispiel (Kürzel des Vorgangs im Tag). **Ausgang:** nicht
+  eingetreten — die Grenze steht im Vertrag (`harness/targets/image-mutation.md` §Grenze Punkt 2) mit dem
+  Namensvorschlag, das Ziel selbst erzwingt keinen Namen je Rolle; kein Mechanismus nötig laut Plan-Design.
 - **3. Die Berechtigungsschicht verweigert auch das neue Ziel.** `Bash(make:*)` steht auf der Allow-Liste (gelesen), was der Classifier
   für `make image-mutation` mit einer mutierten Kopie entscheidet, ist nicht gemessen. *Erwartet, zu belegen durch:* der reale Lauf von DoD 1;
   bei einer Verweigerung gilt Liefer-Punkt 3 (Bericht, Rückfrage, kein Ersatzweg) — der Slice wendet die Regel, die er liefert, auf
-  sich selbst an. **Ausgang:** *(bei Closure)*
+  sich selbst an. **Ausgang:** nicht eingetreten — Register `BEO-PGC/ersatzweg-nach-verweigerter-aktion/state.md`
+  nennt keine Ablehnung während der Implementierung (übernommen, nicht gemessen — kein Log-Träger im Repo —,
+  aber plausibel und ohne Widerspruch in keinem Artefakt, so auch Review I-2 und Verifikation §5).
 - **4. `:dev` oder `harness/image-hash.txt` wird überschrieben.** Ausgeschlossen durch die Form (anderer Repository-Name, kein
   `--metadata-file`), gebunden durch den Fühler im Wegwerf-Repo des Tabellentests und den realen Lauf (Image-ID von `:dev` und `sha256sum`
   der Hash-Datei vorher/nachher). *Erwartet, zu belegen durch:* die zwei Mutationen aus DoD 1 („`-t` auf `:dev`“, „schreibt die Hash-Datei“).
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** nicht eingetreten, real bestätigt — die Image-ID von `:dev` und `sha256sum harness/image-hash.txt`
+  waren vor und nach dem realen Lauf gleich (Vertrag §Test „Realer Lauf“); der Verifier bestätigte zusätzlich,
+  dass `:dev` seit vor dem Slice-Beginn unverändert ist (kein anderer Prozess hat es neu gebaut).
 - **5. Der Stub-`docker` bindet die Argumente, nicht das Verhalten des Daemons** (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`).
   Die Fälle belegen, was der Aufrufer übergibt; dass Docker unter dem Namen ein Image anlegt und `rmi` genau dieses entfernt, belegt der
   eine reale Lauf. *Erwartet, zu belegen durch:* die Mutationsliste (DoD 1, je Zeile Stelle, Instanz, gesehene Farbe) und der reale Lauf.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** erfüllt/entfallen — der reale Lauf (Vertrag §Test) und die zehn Mutationen (acht ursprüngliche
+  plus die zwei durch Fixrunde und Closure ergänzten, §7) schließen die Lücke; der Reviewer fand mit einer
+  eigenen, nicht vertraglich benannten Mutation eine reale Testlücke (H-1, in der Fixrunde gebunden), der
+  Verifier mit einer weiteren (V-2, in dieser Closure gebunden) — der Stub bindet damit die Eingabeseite
+  vollständig, das Verhalten des Daemons trägt weiterhin nur der eine reale Lauf.
 - **6. Eine neue Datei in der Kopie erreicht den Bau nicht** (`.dockerignore` mit Default-Deny,
   `BEO-PGC/dockerignore-default-deny-blockiert-neuen-pfad`): eine Mutation, die eine neue Go-Datei anlegt, bliebe im Image aus,
   und der Lauf zöge einen falschen Schluss. *Erwartet, zu belegen durch:* die Grenze im Vertrag und der reale Lauf, der eine bestehende
-  Datei mutiert. **Ausgang:** *(bei Closure)*
+  Datei mutiert. **Ausgang:** weiter offen — der reale Lauf mutierte eine bestehende Go-Zeile, keine neue
+  Datei; die Grenze steht dokumentiert im Vertrag (§Grenze Punkt 3), aber unbelegt real getestet (so auch der
+  Verifier, §9 Punkt „Risiko 6“). Kein Blocker: dokumentierte Grenze statt „entfallen“.
 - **7. Die Regel „Verweigerte Aktion“ verspricht mehr, als sie kann** (`BEO-PGC/regel-weiter-als-ihr-sensor`, verkörpert). Sie wirkt
   durch das Lesen des Berichts; der Reviewer sieht die Verweigerung nur, wenn Bericht oder Artefakt sie tragen, der Classifier ist kein Teil
   des Repos. *Erwartet, zu belegen durch:* die Grenz-Zeile in `AGENTS.md` §3.15 und der Satz „übernommen, nicht gemessen“ in der Prüfzeile
-  des Skills; der Reviewer liest die drei Stellen gegeneinander. **Ausgang:** *(bei Closure)*
+  des Skills; der Reviewer liest die drei Stellen gegeneinander. **Ausgang:** wie geplant, dokumentierte
+  Grenze — `AGENTS.md` §3.15 trägt den Grenz-Absatz („wirkt durch Lesen; kein Sensor; der Classifier ist kein
+  Teil des Repos“), die Skill-Prüfzeile nennt „übernommen, nicht gemessen“ für den Fall, dass die Verweigerung
+  allein in einer Angabe des Auftraggebers steht (real angewendet: Review I-2/Verifikation §5 zum eigenen
+  Registereintrag).
 - **8. Die Ausnahme „die Ablehnung führt den Weg selbst an“ ist Auslegung des Planners, nicht Wortlaut der Nutzer-Entscheidung.** Sie
   verhindert eine Frageflut (die Meldung des Guards nennt Edit/Write, `make`), sie könnte aber zu weit greifen: ein Lauf könnte jede
   Ablehnung als „Weg genannt“ lesen. *Erwartet, zu belegen durch:* der Reviewer liest die Fassung von §3.15 gegen den Wortlaut des Nutzers
   („im Bericht genannt und vor einem Ersatzweg zurückgefragt“); ist die Ausnahme zu weit, geht der Fund an den Auftraggeber, nicht in eine
-  stille Streichung. **Ausgang:** *(bei Closure)*
+  stille Streichung. **Ausgang:** entfallen — die Ausnahme wurde nicht ausgeliefert (§3.15 enthält keine
+  Ausnahme für den Fall, dass die Ablehnung selbst einen Weg nennt; Review-Fund M-1, in der Fixrunde behoben
+  und vom Verifier bestätigt), die Frage „ist sie zu weit gefasst?“ ist damit gegenstandslos.
 - **9. Die neuen Fälle laufen nicht** (`BEO-PGC/test-runner-stiller-ausschluss`, offen, 2×). *Erwartet, zu belegen durch:* die gedruckte
-  Zahl von `make test-image-mutation` (Instanz A, `AGENTS.md` §3.12) und die Farbe der Mutationen. **Ausgang:** *(bei Closure)*
+  Zahl von `make test-image-mutation` (Instanz A, `AGENTS.md` §3.12) und die Farbe der Mutationen. **Ausgang:** entfallen,
+  bestätigt real gelaufen — `make test-image-mutation` druckt „alle Fälle bestanden“ (Exit 0, gemessen in dieser
+  Closure); die drei `realpath`-Fälle (H-1) laufen aktiv (eigene Nachzählung des Verifiers: exakt 3 Fälle rot bei
+  Entfernung der `realpath`-Zeile, §5 der Verifikation) und die vier neuen `rm`-TAG-Fälle (V-2, in dieser Closure
+  ergänzt) laufen ebenfalls aktiv (eigener Mutationslauf: Entfernung des `check_tag`-Aufrufs im `rm`-Zweig färbt
+  genau diese vier Fälle rot, Exit 1, 8 `FEHLER:`-Zeilen).
 - **10. Ein Träger bleibt stehen** (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, Deckel): `plan-welle.md` und `close-welle.md` tragen die
   Docker-only-Zeile ohne Verweis auf §3.15 (§3, bewusst nicht angefasst). *Erwartet, zu belegen durch:* das Suchlauf-Feld und der Review; ein
-  Fund verlangt einen Satz dort, nicht eine stille Mitänderung. **Ausgang:** *(bei Closure)*
+  Fund verlangt einen Satz dort, nicht eine stille Mitänderung. **Ausgang:** entfallen, wie geplant nicht
+  angefasst — kein Fund im Review oder in der Verifikation, der einen Nachtrag an `plan-welle.md`/`close-welle.md`
+  verlangt.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** Das eigene `make`-Ziel mit eigenem Repository-Namen
+  (`pg-change-feed-mutation`, getrennt von `:dev`) trennt den Lauf-Beleg-Pfad sauber vom
+  Mutationsbild; der Tabellentest mit Stub-`docker` (Argumentzahl **und** -inhalt gebunden)
+  fing alle acht vertraglich benannten und zwei vom Reviewer selbst gefahrene Mutationen
+  korrekt rot, `make gates`/`make suchlauf-nachmessen`/`make doc-immutable` blieben über
+  die ganze Fixrunde grün. Die Regel `AGENTS.md` §3.15 entstand ohne Ausnahme, wie von der
+  Nutzer-Entscheidung „ja“ verlangt, und wurde vom Review selbst sofort angewendet (der
+  Reviewer strich einen versehentlichen `python3`-Aufruf statt ihn zu wiederholen, §Bericht
+  des Reviews) — ein Selbstbeleg noch vor der Closure.
+- **Was ging anders als geplant:** Zwei reale Testlücken derselben Klasse
+  (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`) blieben trotz acht vertraglich
+  vorbedachter Mutationen bestehen: H-1 (HIGH, Reviewer) — die `realpath`-Auflösung von
+  `SRC` war an keinem Testfall gebunden, ein realer Exploit (`SRC=.`) baute tatsächlich aus
+  dem Arbeitsverzeichnis; in der Fixrunde durch drei neue Fälle gebunden. V-2 (LOW,
+  Verifier) — derselbe Mechanismus am `rm`-Zweig: `check_tag` prüft `TAG` im Code, aber
+  kein Testfall rief `rm` mit einem ungültigen `TAG`; in dieser Closure durch vier neue
+  Fälle gebunden (Mutation „`check_tag`-Aufruf im `rm`-Zweig entfernt“ eigens nachgefahren:
+  Exit 1, exakt die vier neuen Fälle rot). Zusätzlich blieb der Vertrag
+  (`harness/targets/image-mutation.md`) nach der ersten Fixrunde unvollständig
+  nachgezogen (V-1, LOW) — die Test-Tabelle nannte weiterhin nur „acht“ Mutationen, ohne
+  die neue `realpath`-Bindung; in dieser Closure ergänzt (zehn Zeilen, „Menge der
+  Erprobung: zehn“).
+- **Steering-Loop-Eintrag (Lerneintrag):**
+  - **Geschärfte Regel:** Eine Eingabeprüfung, die **beide** Verben eines Skripts teilen
+    (`check_tag` in `build` **und** `rm`), braucht Testfälle in **beiden** Verben — ein
+    Tabellentest, der eine geteilte Prüfung nur über den zuerst geschriebenen Zweig testet,
+    lässt eine Mutation am zweiten Zweig unbemerkt grün (V-2, dieselbe Ausprägung wie H-1
+    einen Zweig weiter). Ergänzt den bereits verkörperten Eintrag
+    `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` um den 20. Beleg (HIGH, eigene
+    Datei trotz Deckel) und benennt den 21. Fall (LOW, V-2) narrativ statt mit eigener
+    Datei — die Regel selbst (Reviewer-Skill HIGH „Zusage ohne Bindung an ihre
+    Eingabeseite“) bleibt unverändert, sie hat in diesem Slice zweimal gewirkt.
+  - **Neuer Sensor:** keiner — `make test-image-mutation` bindet ein Werkzeug ohne Gate,
+    wie im Plan (§5) vorgesehen; die zehn Mutationen plus die vier neuen `rm`-TAG-Fälle
+    laufen darüber.
+  - **Benannte Spec-Lücke:** keine — dies ist ein Harness-Werkzeug, keine Spec-Stelle
+    (§1 „Berührte Spec-Stellen“).
+- **Beobachtungs-Register (`../observations/`):**
+  - `BEO-PGC/ersatzweg-nach-verweigerter-aktion`: Ausgang **verkörpert**, bereits mit
+    Liefer-Punkt 3d fortgeschrieben (Anker auf `AGENTS.md` §3.15, die Skill-Prüfzeile und
+    den Verweis im Implementer-Command); kein Anfall im Lauf dieses Slice
+    (`state.md`-Absatz „Anfall im Lauf dieses Slice: keiner“).
+  - `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`: **zwei Anfälle** — H-1 (HIGH)
+    bekam eine eigene Beleg-Datei (`evidence/slice-harness-mutationsbild-und-verweigerte-aktion.md`,
+    20. Beleg, Zähler jetzt 20×), V-2 (LOW, gebunden in dieser Closure) bleibt nach der
+    Deckel-Regel ohne eigene Datei und ist oben (Steering-Loop-Eintrag) sowie im
+    Register-`state.md` narrativ genannt.
+  - Alle übrigen im Plan (§8) gesichteten Einträge: kein Anfall in diesem Slice.
+- **Folge-Slices:** keine — die im Plan §1 ausdrücklich ausgeschlossenen Punkte (Änderung
+  an `make image`/`Dockerfile`/`.dockerignore`, Neubewertung von §3.1, Sensor für die
+  Regel „Verweigerte Aktion“, die drei anderen Commands) bleiben eigenständige,
+  unbeauftragte Entscheidungen; Risiko 6 (`.dockerignore`-Grenze mit neuer Datei) bleibt
+  eine dokumentierte Grenze ohne eigenen Folge-Slice, kein Fund dieser Closure verlangt
+  einen.
+- **Risiken aus §6:** je ein Ausgang eingetragen (Risiko 1 eingetreten/behoben, 2–5
+  nicht eingetreten/erfüllt, 6 weiter offen als dokumentierte Grenze, 7 wie geplant, 8
+  entfallen, 9 entfallen/bestätigt, 10 entfallen/wie geplant nicht angefasst — siehe §6).
 - **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure trägt sie
-  selbst, nach dem `git mv` nach `done/`.
+  selbst, nach dem `git mv` nach `done/` — **Anker:** `AGENTS.md` §3.15,
+  `harness/targets/image-mutation.md`, `.harness/skills/reviewer.md` MEDIUM-Liste,
+  `.claude/commands/implement-slice.md` lösen auf (`make docs-check` grün). **Folge-Slice:**
+  keiner (siehe oben). **Register:** `BEO-PGC/ersatzweg-nach-verweigerter-aktion`
+  (verkörpert) und `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (20×, ein neuer
+  Beleg) beide fortgeschrieben.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

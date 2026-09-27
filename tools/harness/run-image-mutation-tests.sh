@@ -8,9 +8,11 @@
 # `go.mod`/Repo-Wurzel/Verzeichnis unter der Wurzel/relativer Pfad auf die
 # Wurzel oder ein Unterverzeichnis/Symlink auf die Wurzel (binden die
 # `realpath`-Auflösung von SRC an ihre Eingabeseite) · Exit-Weitergabe eines
-# Docker-Fehlers · `rm` mit genau einem `rmi`-Argument · Make-Ebene ohne SRC
-# bzw. TAG (kein Docker-Aufruf, `$(error …)` bricht vor dem Rezept ab). Der
-# Prüfling ist per TOOL übersteuerbar (Mutationsläufe gegen eine Kopie).
+# Docker-Fehlers · `rm` mit genau einem `rmi`-Argument · TAG-Eingabefehler bei
+# `rm` (bindet den `check_tag`-Aufruf im `rm`-Zweig unabhängig vom `build`-
+# Zweig) · Make-Ebene ohne SRC bzw. TAG (kein Docker-Aufruf, `$(error …)`
+# bricht vor dem Rezept ab). Der Prüfling ist per TOOL übersteuerbar
+# (Mutationsläufe gegen eine Kopie).
 set -uo pipefail
 repo=$(git rev-parse --show-toplevel)
 tool=${TOOL:-$repo/tools/harness/image-mutation.sh}
@@ -212,6 +214,15 @@ no_docker_call "rm: TAG fehlt (leer)"
 run rm
 expect "rm: TAG fehlt (Argumentzahl)" 2 -
 no_docker_call "rm: TAG fehlt (Argumentzahl)"
+
+# Fall 6b — TAG-Eingabefehler bei rm: bindet den check_tag-Aufruf im rm-Zweig
+# an seine Eingabeseite, unabhängig vom build-Zweig (Verifikation V-2, siehe
+# harness/targets/image-mutation.md §Test).
+for bad_tag in dev latest Foo "a b"; do
+  run rm "$bad_tag"
+  expect "rm: TAG '$bad_tag'" 2 -
+  no_docker_call "rm: TAG '$bad_tag'"
+done
 
 # Fall 7 — unbekanntes Verb: Exit 2, kein Docker-Aufruf.
 run wat "$srcdir" "$tag"
