@@ -308,8 +308,8 @@ cea198fb 2 -n -E 'Offene Nutzer-Entscheidung|Entscheidung des Nutzers steht|Neub
 cea198fb 5 -n -E 'Skript, das (ein|der) Interpreter liest|jeder andere Interpreter|andere Interpreter' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 cea198fb 6 -n -E 'python3? --version' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 cea198fb 2 -n -i -E '\.claude/hooks|pretooluse|harness/conventions' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/in-progress docs/plan/planning/welle-transformationen.md
-diff 23 -n -E 'blocked/go|blocked/python|Kopf-Liste|Host-Toolchain-Sperre' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 53 -n -E 'Host-.?python|Host python|Host-Interpreter|Sprach-Toolchains' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 26 -n -E 'blocked/go|blocked/python|Kopf-Liste|Host-Toolchain-Sperre' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 54 -n -E 'Host-.?python|Host python|Host-Interpreter|Sprach-Toolchains' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 1 -n -E 'gofmt python python3|go gofmt|node dotnet java gradle uv' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 1 -n -E 'Offene Nutzer-Entscheidung|Entscheidung des Nutzers steht|Neubewertung der Kopf|Re-Evaluierung der Host' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 4 -n -E 'Skript, das (ein|der) Interpreter liest|jeder andere Interpreter|andere Interpreter' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
@@ -324,7 +324,7 @@ ersten Fassung dieses Feldes berichtigt — Review-Finding F-1 von
 `review-slice-harness-guard-blocked-python.md` hatte sie gegen den realen
 `git grep`-Lauf abweichend vorgefunden, an genau diesen vier Zeilen; die
 Zahlen unten sind erneut mit `git grep -c` nachgezählt, nicht übernommen):**
-Zeile 1 (Fragment/Kopf-Liste) 5→23: die eigenen Träger — zwei
+Zeile 1 (Fragment/Kopf-Liste) 5→26: die eigenen Träger — zwei
 Guard-Kommentarzeilen, `AGENTS.md`, `harness/README.md`, die
 `MR-004`-Indexzeile in `harness/conventions.md`, eine Nennung in `MR-003`,
 vier Zeilen in `MR-004`, zwei Kommentarzeilen des Tabellentests (zwölf
@@ -337,16 +337,21 @@ geänderten Beleg-Dateien anderer Vorgänge (`evidence/adr-0129-…` eine Zeile,
 `evidence/slice-transformationen-map-value.md` eine Zeile,
 `evidence/slice-sdk-kotlin-publish-workflow.md` eine Zeile zu einem anderen
 Thema — „Host-Toolchain-Sperre“ meint dort die CI-Pin-Bindung an lokale
-Entwicklung, kein Bezug zu diesem Slice) — in der ersten Zählung übersehen.
-Zeile 2 (Host-python/Host-Interpreter) 37→53: dieselben eigenen Träger wie
-Zeile 1, dazu `.claude/commands/implement-slice.md`, `.harness/skills/reviewer.md`
+Entwicklung, kein Bezug zu diesem Slice) — in der ersten Zählung übersehen;
+die restlichen drei der 26 stammen aus der Fixrunde zu Review-Finding F-2
+(drei Nennungen von `tools/harness/blocked/python` im neuen CRLF-Testfall
+des Tabellentests, Zeilen 502/503/505). Zeile 2 (Host-python/Host-Interpreter)
+37→54: dieselben eigenen Träger wie Zeile 1, dazu
+`.claude/commands/implement-slice.md`, `.harness/skills/reviewer.md`
 und der umgebaute Tabellentest mit acht statt zwei Fundstellen, sowie eine
 größere Zahl bereits vorhandener, von diesem Slice nicht geänderter Nennungen
 in Nachbar-Trägern (den Python-SDK-ADRs `ADR-0107`/`ADR-0108`, mehreren
 Beleg-Dateien des Registers `inplace-textwerkzeug-am-repo-trotz-nutzerregel`
 und `dod-begruendung-unzutreffende-tatsachenbehauptung`, sowie
 `slice-code-kommentare-bereinigung.md` §6) — in der ersten Zählung nur
-teilweise erfasst. Zeile 3 (volle Namensliste) 2→1: die zwei
+teilweise erfasst; die letzte der 54 ist die neue Gruppenüberschrift
+„Host-python/python3: Fragment mit CRLF-Zeilenende“ (Zeile 501) aus derselben
+Fixrunde. Zeile 3 (volle Namensliste) 2→1: die zwei
 Halbzeilen von `state.md` (Stand `cea198fb`) sind in der Neufassung eine
 Zeile — die Aussage ist unverändert wahr, nur nicht mehr über einen
 Zeilenumbruch verteilt. Zeile 4 (offene Nutzer-Entscheidung) 2→1: die

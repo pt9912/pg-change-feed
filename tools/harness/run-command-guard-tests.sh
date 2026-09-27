@@ -15,7 +15,8 @@
 # Host-Interpreter auf Repo-Pfaden fuer python3.N/perl samt Pfadzeichen-Klasse ·
 # Host-python/python3 am Kopf: unbedingter Block je Position (Fragment
 # tools/harness/blocked/python), Pass-Faelle daneben, benannte
-# Falsch-Positiv-Raender, benannte Grenzen (nicht gelistete Namen).
+# Falsch-Positiv-Raender, ein CRLF-terminiertes Fragment, benannte Grenzen
+# (nicht gelistete Namen).
 # Der Guard laeuft in einem Wegwerf-Repo im Temp-Verzeichnis (oberste Ebene
 # docs/, internal/, Makefile, .claude/); der Test schreibt nur dorthin. Der
 # Pruefling ist per GUARD, der Anfuehrungszeichen-Maskierer per MASKER, die
@@ -496,6 +497,12 @@ pass "ipython (nicht gelisteter Kopf)" 'ipython'
 block pkg "Rand: python3 --version blockt jetzt (gewollt)" 'python3 --version'
 block pkg "Rand: python3 -c 'print(1)' ohne Repo-Pfad" "python3 -c 'print(1)'"
 block pkg "Rand: Heredoc-Zeile beginnt mit python3 (Heredoc mit python3 -c)" $'cat <<EOF\npython3 -c 1\nEOF'
+
+# --- Host-python/python3: Fragment mit CRLF-Zeilenende (F-2, review-slice-harness-guard-blocked-python.md) --
+cp "$root/tools/harness/blocked/python" "$tmp/blocked-python.orig"
+printf 'python python3\r\n' >"$root/tools/harness/blocked/python"
+block pkg "CRLF-Fragment: python3 blockt trotzdem" 'python3 -c 1'
+cp "$tmp/blocked-python.orig" "$root/tools/harness/blocked/python"
 
 # --- Host-python/python3: benannte Grenzen (nicht gelistete Namen, Pass) ----
 pass "Grenze: go bleibt ungelesen" 'go version'
