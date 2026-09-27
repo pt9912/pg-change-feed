@@ -98,10 +98,11 @@ ab.
 **Kernaussage der Regel (Entwurf, den der Implementer im Ton der Nachbar-Regeln schreibt):** eine Aktion,
 die die Berechtigungsschicht — Classifier, Permission-Prompt, PreToolUse-Guard — verweigert, führt der
 Lauf **nicht auf einem anderen Weg zum selben Ziel** aus. Der Bericht nennt den verweigerten Aufruf, den
-Wortlaut der Ablehnung und das Ziel; danach fragt der Lauf den Auftraggeber. Führt die Ablehnung selbst
-einen Weg an (die Meldung des Guards nennt Edit/Write, `make`), gilt dieser Weg; jeder andere braucht die
-Freigabe. Ein versehentlicher Aufruf ohne Nutzen für die Aufgabe (ein `python3 --version` neben einem
-Repo-Pfad) wird gestrichen und im Bericht genannt. Die Ablehnung gilt dem Aufruf, nicht dem Ziel
+Wortlaut der Ablehnung und das Ziel; danach fragt der Lauf den Auftraggeber, bevor er fortfährt — ohne
+Ausnahme für den Fall, dass die Ablehnung selbst einen Weg nennt (ausgeliefert in `AGENTS.md` §3.15, deckungsgleich
+mit der Nutzer-Entscheidung „ja“ ohne im Wortlaut genannte Ausnahme). Ein versehentlicher Aufruf ohne Nutzen
+für die Aufgabe (ein `python3 --version` neben einem Repo-Pfad) wird gestrichen und im Bericht genannt, nicht
+wiederholt. Die Ablehnung gilt dem Aufruf, nicht dem Ziel
 (Nachbar: `BEO-PGC/subagent-write-ablehnung-als-zielpfad-sperre-gemeldet`): der Bericht nennt Aufruf, Pfad und
 Wortlaut, nicht eine Verallgemeinerung.
 
@@ -363,7 +364,7 @@ Treffer, derselbe Rang-Zeiger-Absatz wie vor diesem Lauf).
 | `.harness/skills/reviewer.md` Zeile 232 (HIGH „Docker-only-Verstoß“), Zeile 306 | nennen Docker-only als Klasse; keine Klasse zu einer Verweigerung | Liefer-Punkt 3b (MEDIUM-Liste), HIGH-Punkt bleibt |
 | `.claude/commands/implement-slice.md` Zeile 28 | die Docker-only-Zeile verweist auf `AGENTS.md` §3.1 (Host-Werkzeuge, in-place, Umleitung); kein Wort zu einer Verweigerung | Liefer-Punkt 3c |
 | `.claude/commands/plan-welle.md` Zeile 33, `.claude/commands/close-welle.md` Zeile 23 | Docker-only-Zeilen ohne Verweis auf die Verweigerung | **nicht angefasst** (§1, Abgrenzung); der Reviewer kann einen Satz verlangen |
-| `harness/conventions/MR-003-guard-inplace-textwerkzeug.md` Zeile 90 | „nennen diesen Ersatzweg“ — die Meldung des Guards nennt Edit/Write als Weg | bleibt wahr (`Accepted`, immutable); die Ausnahme „Ablehnung führt den Weg selbst an“ in `AGENTS.md` §3.15 trägt genau diesen Satz |
+| `harness/conventions/MR-003-guard-inplace-textwerkzeug.md` Zeile 90 | „nennen diesen Ersatzweg“ — die Meldung des Guards nennt Edit/Write als Weg | bleibt wahr (`Accepted`, immutable); `AGENTS.md` §3.15 trägt dazu **keine** Ausnahme — der Satz beschreibt die Guard-Meldung selbst, nicht eine Ausnahme von der Melde-/Rückfrage-Pflicht |
 | `AGENTS.md` §3.14 und `ADR-0100` §Teilfrage 4 | der Rang-Zeiger und das Zitat der Nummer | unverändert (Liefer-Punkt 3a, Prüfung `git grep -n '3\.14' -- AGENTS.md`) |
 | **Fremde Datei** (Stand `84f60e6f`: `open/`; zwischenzeitlich `git mv` nach `done/` — `slice-harness-guard-blocked-python` schloss vor dem Start dieses Slice ab, kein gleichzeitiger Arbeitsbaum): `slice-harness-guard-blocked-python` §3 | trug die Träger-Tabelle zu `AGENTS.md` §3.1 „Durchsetzung“ und zu `harness/README.md` Zeile `make test-command-guard` | gemeldet, nicht mitgeändert; keine Adresse nötig: keine gemeinsame Stelle (Absatz zur Mutationsprobe und Abschnitt 3.15 liegen außerhalb) — mit dem Abschluss des anderen Slice ohnehin erledigt |
 | Beobachtungs-Register `BEO-PGC/subagent-write-ablehnung-als-zielpfad-sperre-gemeldet` | die Genauigkeit der Meldung einer Werkzeug-Ablehnung (1×) | bleibt getrennt; der Regel-Satz „Aufruf, Pfad, Wortlaut“ und die Abgrenzung im neuen Eintrag nennen ihn |
