@@ -5,7 +5,9 @@
 # gültige Argumente inkl. SRC mit Leerzeichen · `harness/image-hash.txt`/`.raw`
 # im Wegwerf-Repo bleiben unverändert · TAG-Zeichenklasse und die reservierten
 # Namen `dev`/`latest` · SRC fehlt/kein Verzeichnis/ohne `Dockerfile`/ohne
-# `go.mod`/Repo-Wurzel/Verzeichnis unter der Wurzel · Exit-Weitergabe eines
+# `go.mod`/Repo-Wurzel/Verzeichnis unter der Wurzel/relativer Pfad auf die
+# Wurzel oder ein Unterverzeichnis/Symlink auf die Wurzel (binden die
+# `realpath`-Auflösung von SRC an ihre Eingabeseite) · Exit-Weitergabe eines
 # Docker-Fehlers · `rm` mit genau einem `rmi`-Argument · Make-Ebene ohne SRC
 # bzw. TAG (kein Docker-Aufruf, `$(error …)` bricht vor dem Rezept ab). Der
 # Prüfling ist per TOOL übersteuerbar (Mutationsläufe gegen eine Kopie).
@@ -166,6 +168,25 @@ no_docker_call "SRC ist Repo-Wurzel"
 run build "$wrepo/sub" "$tag"
 expect "SRC unter der Wurzel" 2 'Repo-Wurzel'
 no_docker_call "SRC unter der Wurzel"
+
+# Fall 4b — relativer SRC, aus der Wegwerf-Wurzel heraus aufgerufen (`run`
+# setzt das Arbeitsverzeichnis auf $wrepo): bindet die `realpath`-Auflösung
+# von SRC an ihre Eingabeseite — ein Skript, das SRC ungelöst vergleicht,
+# lässt beide Fälle durch (Review H-1).
+run build "." "$tag"
+expect "SRC relativ '.' ist die Repo-Wurzel" 2 'Repo-Wurzel'
+no_docker_call "SRC relativ '.' ist die Repo-Wurzel"
+
+run build "sub" "$tag"
+expect "SRC relativ 'sub' liegt unter der Wurzel" 2 'Repo-Wurzel'
+no_docker_call "SRC relativ 'sub' liegt unter der Wurzel"
+
+# Fall 4c — Symlink auf die Repo-Wurzel: `realpath` löst ihn vor dem
+# Wurzel-Vergleich auf einen bereits abgelehnten Pfad auf.
+ln -s "$wrepo" "$tmp/symlink-to-root"
+run build "$tmp/symlink-to-root" "$tag"
+expect "SRC ist Symlink auf die Repo-Wurzel" 2 'Repo-Wurzel'
+no_docker_call "SRC ist Symlink auf die Repo-Wurzel"
 
 # Fall 5 — Exit-Weitergabe eines Docker-Fehlers: Exit 1, die Zeile nennt den
 # Exit-Code des Aufrufs.
