@@ -178,7 +178,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       **741.816 B** (52 von 1500 Proben lagen über 0 B), das sind 17,7 % der Hälfte der
       Fehlerschwelle (741.816 / 4.194.304, abgeleitet). Die Spitze liegt unter der Hälfte; die
       Run-Größe bleibt unverändert, kein Befund an den Architect.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] **Der erste grüne `e2e.yml`-Lauf mit beiden Legs** nach dem Push des Slice-Codes steht im
       Bericht mit Lauf, Versuchsnummer und Job-Kennungen beider Legs, wie es der Abschluss von
