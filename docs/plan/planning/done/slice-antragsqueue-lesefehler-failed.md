@@ -12,7 +12,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 **Welle:** ohne Welle — der Slice trägt keine Closure-Bedingung, die von
 seiner DoD verschieden wäre. Er geht `slice-transformationen-start-reihenfolge`
 voraus (Start-Trigger dort, §4;
-[welle-transformationen](../welle-transformationen.md) §5): die Antragsweg-Fläche
+[welle-transformationen](welle-transformationen.md) §5): die Antragsweg-Fläche
 der Welle liest dieselbe Queue.
 
 **Bezug:** [`LH-FA-ADM-001`](../../../../spec/lastenheft.md) (schreibende
@@ -311,7 +311,7 @@ Host-Interpreter ohne Wirkung).
 **Start** (`next` → `in-progress`): kein anderer Slice liegt in `in-progress/`
 (WIP-Limit 1). **Reihenfolge (Empfehlung an den Orchestrator):** 1.
 `slice-code-kommentare-kennungen`, 2. `slice-harness-fmt-check`, 3. dieser Slice,
-danach die Welle [welle-transformationen](../welle-transformationen.md). Dieser
+danach die Welle [welle-transformationen](welle-transformationen.md). Dieser
 Slice muss `done` sein, **bevor** `slice-transformationen-start-reihenfolge`
 startet (Kante, dort §4): beide Slices ändern die Verarbeitung der Queue in
 `internal/bootstrap/wiring.go`, und der Vorlauf vor `stream.Run` liest dieselbe
@@ -475,7 +475,7 @@ Spec-Lücke in `SPEC-019` geschlossen).
   F-8: 2 Zeilen vor der Fixrunde, 0 danach; gemessen bei dieser Closure, Beleg-Datei des
   Eintrags), das weitere Muster `statt|sonst` 13 Zeilen mit 2 Defekten. Die Änderung einer
   Anweisung an alle Implementer-Läufe ist Sache des Architect-Zugs des Lese-Schritts der
-  Closure von [welle-transformationen](../welle-transformationen.md) (Adresse: die Roadmap
+  Closure von [welle-transformationen](welle-transformationen.md) (Adresse: die Roadmap
   führt die Welle unter *Offene Wellen*, das Ereignis kann eintreten); bis dahin bleibt
   der Reviewer-HIGH-Punkt „Kommentar trägt keine der Kommentar-Klassen“ die tragende Linie,
   die F-1 vor dem Merge gefunden hat. *(b) Neuer Sensor:* keiner; ein Sensor über
@@ -511,7 +511,7 @@ Spec-Lücke in `SPEC-019` geschlossen).
   Kandidat der Schärfung mit Adresse im `state.md`);
   `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` **5×** (F-3, MEDIUM; Ausgang
   **geplant**: der Lese-Schritt der Closure von
-  [welle-transformationen](../welle-transformationen.md), alle fünf Belege vor dem Merge
+  [welle-transformationen](welle-transformationen.md), alle fünf Belege vor dem Merge
   gefunden); `BEO-PGC/zitat-nennt-die-falsche-stelle` **9×** (F-2, HIGH, und V-1, LOW, ein
   Vorgang; vierte Form: der Verweis liegt im eigenen Plan);
   `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` **4×** (F-11 und die
@@ -536,7 +536,7 @@ Spec-Lücke in `SPEC-019` geschlossen).
   „Zeilen, die kein Antrag sind“ steht in §2), `slice-transformationen-start-reihenfolge`
   (die Start-Bedingung „`slice-antragsqueue-lesefehler-failed` in `done/`“ in §4 ist mit
   dem Move erfüllt; die Bedingung bleibt unverändert). Nachgezogen bei dieser Closure:
-  [welle-transformationen](../welle-transformationen.md) §5 (die Kante zu
+  [welle-transformationen](welle-transformationen.md) §5 (die Kante zu
   `start-reihenfolge` ist erfüllt).
 - **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Eingetreten und behandelt:* der
   Umbau des Ports trifft viele Fundstellen (ohne Rückführung). *Entfallen:* ein nicht
@@ -560,7 +560,7 @@ Spec-Lücke in `SPEC-019` geschlossen).
   *Register:* jede genannte Kennung `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht
   leerem `evidence/` (geprüft mit `ls docs/plan/planning/observations/BEO-PGC/<slug>/evidence`).
   Die Ereignis-Adresse des Ausgangs von `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an`
-  (der Lese-Schritt der Closure von [welle-transformationen](../welle-transformationen.md))
+  (der Lese-Schritt der Closure von [welle-transformationen](welle-transformationen.md))
   kann eintreten: die Welle steht unter *Offene Wellen* der Roadmap.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

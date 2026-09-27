@@ -252,7 +252,7 @@ vorbehalten.
 1. **Bereit für Closure**, sofern der Planner die verbleibenden `[ ]`-Zeilen abarbeitet:
    Closure-Notiz mit Steering-Loop-Lerneintrag, Beobachtungs-Register-Fortschreibung, §6-
    Risiken-Ausgänge, drei Paarungen (bleiben regelkonform an der Closure von
-   [welle-transformationen](../plan/planning/welle-transformationen.md) hängen).
+   [welle-transformationen](../plan/planning/done/welle-transformationen.md) hängen).
 2. **§6-Risiko „Die Ordnung … wird als gemessen ausgegeben, obwohl der Lauf nur ihre Folge
    sieht"**: **entfallen/nicht eingetreten** — Plan §1 und §2 kennzeichnen die Grenze bereits
    korrekt beim Schreiben (kein nachträglicher Fund nötig); Ausgang für die Closure-Notiz:

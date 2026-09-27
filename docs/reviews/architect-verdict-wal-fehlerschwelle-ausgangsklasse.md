@@ -138,7 +138,7 @@ des Slice.
 Slice `mergeStreamAndWALFaultOutcome` nach der Rückkehr von `stream.Run` — und der
 kleinere zuerst die Prüfspur des größeren nicht verstellt. Die Kante trägt der Planner als
 Start-Trigger in `slice-start-vorlauf-grenze` §4 und in
-[`welle-transformationen`](../plan/planning/welle-transformationen.md) §5 nach; die
+[`welle-transformationen`](../plan/planning/done/welle-transformationen.md) §5 nach; die
 Trigger von `e2e-abhilfe` bleiben (er wartet auf `slice-start-vorlauf-grenze`).
 
 **DoD-Kern:**

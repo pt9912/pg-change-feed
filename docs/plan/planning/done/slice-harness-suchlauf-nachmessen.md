@@ -12,7 +12,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 **Welle:** ohne Welle — der Slice trägt keine Closure-Bedingung, die von
 seiner DoD verschieden wäre. Er geht `slice-transformationen-kern-rename`
 voraus (Start-Trigger dort, §4;
-[welle-transformationen](../welle-transformationen.md) §5).
+[welle-transformationen](welle-transformationen.md) §5).
 
 **Bezug:** [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
 (Herkunft von Aussagen in Trägern; die Grenze „kein Sensor auf Prosa“ bleibt),
@@ -147,7 +147,7 @@ Suchraum ausgeschlossen.
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure dieses Slice und zusätzlich der Closure der nächsten Welle
-      (die Roadmap führt [welle-transformationen](../welle-transformationen.md)
+      (die Roadmap führt [welle-transformationen](welle-transformationen.md)
       unter *Offene Wellen*, das Ereignis kann eintreten; ein Slice ohne Welle
       wird von ihr mitgeprüft).
 
@@ -210,7 +210,7 @@ und Baseline. Stände: Parent `8717c4fb`, Diff der Arbeitsbaum des Laufs.
 (WIP-Limit 1). Der Slice muss `done` sein, **bevor**
 `slice-transformationen-kern-rename` startet (Start-Trigger dort): das
 Suchlauf-Feld der zehn Pläne der Welle
-[welle-transformationen](../welle-transformationen.md) wird mit dem Werkzeug
+[welle-transformationen](welle-transformationen.md) wird mit dem Werkzeug
 nachgemessen.
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
@@ -287,7 +287,7 @@ geschrieben.
   Blöcke; das Werkzeug meldet einen Plan ohne Block mit Exit ≠ 0. **Ausgang:
   weiter offen → Register** `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`
   (Adresse: der Start des jeweiligen Slice und die Closure von
-  [welle-transformationen](../welle-transformationen.md)). Das Werkzeug meldet
+  [welle-transformationen](welle-transformationen.md)). Das Werkzeug meldet
   einen Plan ohne Block mit Exit 2 (Fall „kein Block“ des Tabellentests); die
   Erwartung „der Implementer überträgt am Start“ hat keinen Träger: `implement-slice`
   Schritt 18 ruft das Werkzeug nur, wo der Plan einen Block trägt, und kein Plan
@@ -389,7 +389,7 @@ geschrieben.
   Das Werkzeug erweckt den Eindruck, das Feld sei vollständig (Register
   `regel-weiter-als-ihr-sensor`) · Die bestehenden Pläne tragen keine `suchlauf`-Blöcke
   (Register `beleg-befehl-traegt-seinen-satz-nicht`).
-- **Drei Paarungen:** die Roadmap führt [welle-transformationen](../welle-transformationen.md)
+- **Drei Paarungen:** die Roadmap führt [welle-transformationen](welle-transformationen.md)
   unter *Offene Wellen* (gelesen in `in-progress/roadmap.md`, Abschnitt *Offene Wellen*), das
   Ereignis kann eintreten: die Closure dieser Welle prüft die Paarungen dieses Slice
   mit; dieser Slice hat selbst keine Welle. Die Slice-Closure trägt sie zusätzlich jetzt:

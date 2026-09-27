@@ -211,7 +211,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   `slice-backfill-bench-richtgroesse`), kein Wellen-Start-Trigger: die Eröffnung
   hängt nicht daran.
 - **Blockiert:** Slices der Welle
-  [welle-transformationen](../welle-transformationen.md) — die Umsetzung der
+  [welle-transformationen](welle-transformationen.md) — die Umsetzung der
   Transformationen
   ([`LH-FA-CFG-007`](../../../../spec/lastenheft.md),
   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md))
@@ -266,7 +266,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     nach dem `done/` von `bench-richtgroesse`, Verdikt 3);
   - `change-origin` → `sdk-origin` (sonst unabhängig von den übrigen Slices).
 - **Keine neue Kante zur Welle
-  [welle-transformationen](../welle-transformationen.md).**
+  [welle-transformationen](welle-transformationen.md).**
   `slice-backfill-slot-leerlauf-bestaetigung` ändert weder die
   `request_kind`-Menge noch [`SPEC-019`](../../../../spec/pflichtenheft.md) noch
   den Run-Zweig der Administration;
@@ -275,7 +275,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   eine lesende Methode, `internal/bootstrap/wiring.go` eine Verdrahtungszeile);
   die Reihenfolge „Backfill zuerst“ bleibt, jeder Slice der Transformationen
   wartet weiter auf seine Kante, nicht auf die Closure dieser Welle
-  ([welle-transformationen](../welle-transformationen.md) §5).
+  ([welle-transformationen](welle-transformationen.md) §5).
 
 **§3.13-Suchlauf (committetes Feld) — bewegte Eigenschaft: „die Signatur
 einer im neutralen Modell deklarierten View oder eine bestehende
@@ -393,7 +393,7 @@ der Closure-Trigger unerreichbar wird.
   ([`LH-FA-CFG-007`](../../../../spec/lastenheft.md), [`LH-FA-CFG-008`](../../../../spec/lastenheft.md),
   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)) —
   die Transformationen sind Gegenstand von
-  [welle-transformationen](../welle-transformationen.md), das Routing hat weder
+  [welle-transformationen](welle-transformationen.md), das Routing hat weder
   Welle noch Umsetzung; die Kopplung steht in §5.
 - **Kein neuer GitHub-Actions-Workflow und keine strukturelle Workflow-
   Änderung** — [`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht. Die

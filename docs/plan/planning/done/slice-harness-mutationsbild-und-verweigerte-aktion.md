@@ -13,7 +13,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 Closure-Bedingung, die von seiner DoD verschieden wäre. Er berührt das Makefile,
 ein neues Skript samt Tabellentest, `AGENTS.md`, den Reviewer-Skill und den
 Implementer-Command, nicht den Runner und nicht `internal/`; eine technische Kante
-zu einem Slice der [welle-transformationen](../welle-transformationen.md) hat er
+zu einem Slice der [welle-transformationen](welle-transformationen.md) hat er
 nicht. Die empfohlene Position steht in §4.
 
 **Bezug:** [`AGENTS.md`](../../../../AGENTS.md) §3.1 (Docker-only, Absatz zur

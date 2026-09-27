@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-transformationen](../welle-transformationen.md).
+**Welle:** [welle-transformationen](welle-transformationen.md).
 
 **Bezug:** [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) (Happy Path,
 Negative), [`LH-FA-CFG-005`](../../../../spec/lastenheft.md) (Ausschluss gilt
@@ -39,7 +39,7 @@ Composition Root) — gelesen, nicht geändert (die Spec trägt
 **Verantwortlich:** Implementer-Agent, 2026-09-26.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
-[welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
+[welle-transformationen](welle-transformationen.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -167,7 +167,7 @@ Assembler-Methoden setzbar — kein SQL-Weg.
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure dieses Slice (§7) und zusätzlich von der Closure der Welle
-      [welle-transformationen](../welle-transformationen.md) (die Roadmap führt
+      [welle-transformationen](welle-transformationen.md) (die Roadmap führt
       sie unter *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -512,7 +512,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   **Start-Bedingung `slice-transformationen-antragsweg-schema`** (Kopplung: `kern-rename` in
   `done/`): mit dem Move dieses Slice erfüllt, der Text des Plans bleibt wahr, keine Änderung.
   **Nicht nachgezogen, gemeldet:** die Zähler in den §8-Sichtungen der offenen Pläne und in
-  [welle-transformationen](../welle-transformationen.md) §6 (`implementierung-weicht-von-adr-wortlaut-ab`
+  [welle-transformationen](welle-transformationen.md) §6 (`implementierung-weicht-von-adr-wortlaut-ab`
   „offen, 1×“, `kommentar-behauptet-nicht-getragenen-fehlerpfad` „offen, 2×“,
   `negativtest-ohne-bindung-an-seine-eingabe` „6×“) stehen am jeweiligen Planungsstand; jeder
   Slice-Start liest das Register neu (§8), der Stand des Registers steht oben.
@@ -523,7 +523,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Auswertung weicht vom ADR-Wortlaut ab. *Eingetreten:* keines. *Weiter offen:* keines (die Lücke
   aus dem Lerneintrag ist ein Register-Eintrag, kein Risiko dieses Plans).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-transformationen](../welle-transformationen.md) (offen) — die Closure der Welle prüft sie
+  [welle-transformationen](welle-transformationen.md) (offen) — die Closure der Welle prüft sie
   mit; die Slice-Closure trägt sie zusätzlich jetzt: *Anker:* der Lerneintrag verkörpert nichts
   neu, er schärft die Anwendung zweier bestehender Träger, beide am Ort existent
   (`AGENTS.md` §3.13 trägt „seit welle-20“, `.harness/skills/reviewer.md` die Klausel Kommentar-Zusage);

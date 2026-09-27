@@ -12,7 +12,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 **Welle:** ohne Welle — der Slice trägt keine Closure-Bedingung, die von seiner
 DoD verschieden wäre (Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine
 Welle braucht). Er hat keine Kante zu einer Welle; die Paarungen prüft die
-Closure von [welle-transformationen](../welle-transformationen.md) (§5
+Closure von [welle-transformationen](welle-transformationen.md) (§5
 „Ereignis-Adresse“).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (offizielle
@@ -423,7 +423,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   scheitert. Die Begründung steht im Move-Commit.
 
 **Ereignis-Adresse der drei Paarungen** (Anker · Folge-Slice · Register): die Closure
-der Welle [welle-transformationen](../welle-transformationen.md). Die Adresse kann
+der Welle [welle-transformationen](welle-transformationen.md). Die Adresse kann
 eintreten: die Roadmap führt die Welle unter *Offene Wellen*
 (`docs/plan/planning/in-progress/roadmap.md` Z. 41, gelesen 2026-09-25), und die
 Welle-Datei hat einen Closure-Trigger (§3 „Closure-Trigger (Welle schließt)“; Regel
@@ -736,7 +736,7 @@ Cloudsmith-Bedingungen oder Aussetzung des Repositories nach der nachträglichen
   `BEO-PGC/plattform-verhalten-nur-vom-betreiber-pruefbar`; Probe bindet nicht den Aufrufer
   → Register `BEO-PGC/probe-bindet-aufrufer-literale-nicht`. Kein Risiko ist *eingetreten*.
 - **Drei Paarungen:** dieser Slice ist wellenlos; die Paarungen (Anker · Folge-Slice ·
-  Register) prüft die Closure von [welle-transformationen](../welle-transformationen.md)
+  Register) prüft die Closure von [welle-transformationen](welle-transformationen.md)
   (offen; Ereignis-Adresse in §4, die Roadmap führt sie unter *Offene Wellen*). Anker: die
   Probe in `sdks/kotlin/Dockerfile` (Stufe `pack`) und die Mutations-Tabelle §3;
   Folge-Slice: keiner; Register: die fünf Einträge oben.

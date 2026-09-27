@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-transformationen](../welle-transformationen.md).
+**Welle:** [welle-transformationen](welle-transformationen.md).
 
 **Bezug:** [`LH-FA-CFG-007`](../../../../spec/lastenheft.md),
 [`LH-FA-ADM-001`](../../../../spec/lastenheft.md),
@@ -30,7 +30,7 @@ nicht geändert.
 **Verantwortlich:** — (noch nicht priorisiert).
 
 **Autor:** Planner-Agent, Welle-Eröffnung
-[welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
+[welle-transformationen](welle-transformationen.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -184,7 +184,7 @@ an dieses Slice gemeldet haben.
       offen) — §6, §7.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
       Welle-Closure-Prüfung nach
-      [welle-transformationen](../welle-transformationen.md) §3 ist der
+      [welle-transformationen](welle-transformationen.md) §3 ist der
       unmittelbar folgende, eigenständige Zug nach diesem `git mv` nach
       `done/` (§7); dieser Slice selbst führt sie nicht durch.
 
@@ -462,13 +462,13 @@ geschrieben.
   weiterer Beleg der Fehlklasse — Ausgang bleibt beim Lese-Schritt der
   anstehenden Welle-Closure).
 - **Folge-Slices:** keine — letzter Slice der Welle
-  [welle-transformationen](../welle-transformationen.md); die geschärfte
+  [welle-transformationen](welle-transformationen.md); die geschärfte
   Regel oben ist ein Vorschlag für den Lese-Schritt der Welle-Closure, kein
   eigener Folge-Slice.
 - **Risiken aus §6:** ein Ausgang je Zeile — 1× eingetreten (F-1, behoben),
   4× entfallen (Nichtbefund/Negativbefund im Review); Details in §6.
 - **Drei Paarungen:** dieser Slice ist der zehnte und letzte von
-  [welle-transformationen](../welle-transformationen.md) (§4-Tabelle dort).
+  [welle-transformationen](welle-transformationen.md) (§4-Tabelle dort).
   Mit dem `git mv` dieses Slice nach `done/` liegen alle zehn Slices in
   `done/` — die Prüfung der drei Paarungen (Anker · Folge-Slice · Register)
   läuft nicht in diesem Zug, sondern als unmittelbar folgender, eigenständiger

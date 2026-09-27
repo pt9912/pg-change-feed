@@ -11,7 +11,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 
 **Welle:** ohne Welle — der Slice trägt keine Closure-Bedingung, die von
 seiner DoD verschieden wäre. Er hat keine Kante zu einer offenen Welle und ist
-von den Slices der Welle [welle-transformationen](../welle-transformationen.md)
+von den Slices der Welle [welle-transformationen](welle-transformationen.md)
 unabhängig.
 
 **Bezug:** [`LH-FA-RET-002`](../../../../spec/lastenheft.md),
@@ -268,7 +268,7 @@ der Live-Erfassung ohne Backfill; der Bedarf dort ist im Verdikt hergeleitet (Ve
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Slice-Closure selbst (§7): die Roadmap führt mit
-      [welle-transformationen](../welle-transformationen.md) eine offene Welle, deren
+      [welle-transformationen](welle-transformationen.md) eine offene Welle, deren
       Closure hängt aber an zehn Slices in `open/` (gemessen am 2026-09-25 mit `ls
       docs/plan/planning/open`), die Ausführung dieses Slice hängt nicht an ihr, und ein
       Ereignis ohne gesichertes Eintreten ist keine Adresse.
@@ -748,7 +748,7 @@ geschrieben.
   genannte Kennung `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht leerem `evidence/`
   (geprüft mit `ls docs/plan/planning/observations/BEO-PGC/<slug>/evidence`). Die Prüfung läuft
   zusätzlich bei der Closure der nächsten Welle
-  ([welle-transformationen](../welle-transformationen.md), die Roadmap führt sie unter *Offene
+  ([welle-transformationen](welle-transformationen.md), die Roadmap führt sie unter *Offene
   Wellen*).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-transformationen](../welle-transformationen.md).
+**Welle:** [welle-transformationen](welle-transformationen.md).
 
 **Bezug:** [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) (Negative),
 [`LH-FA-ADM-003`](../../../../spec/lastenheft.md) (sichtbarer Fehlerzustand),
@@ -28,7 +28,7 @@ gelesen, nicht geändert.
 **Verantwortlich:** Implementer-Agent, 2026-09-27.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
-[welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
+[welle-transformationen](welle-transformationen.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -155,7 +155,7 @@ belegt ist.
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure der Welle
-      [welle-transformationen](../welle-transformationen.md) (die Roadmap führt
+      [welle-transformationen](welle-transformationen.md) (die Roadmap führt
       sie unter *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -253,7 +253,7 @@ Fehlerschwelle“ in der Phase „Leerlauf-Bestätigung“ ist, solange
 `slice-leerlauf-phase-last-in-stuecken` nicht in `done/` liegt, weder Beleg noch Widerlegung
 dieses Slice — der Verifier wiederholt den Lauf (`gh run rerun <Lauf> --failed`) und nennt Lauf,
 Versuchsnummer und Job-Kennungen beider Versuche; nach jenem Slice (die Kette in
-[welle-transformationen](../welle-transformationen.md) §5 legt ihn vor diesen Slice) ist dasselbe
+[welle-transformationen](welle-transformationen.md) §5 legt ihn vor diesen Slice) ist dasselbe
 Rot ein Befund und ein Architect-Zug. Die Phasen dieses Slice laufen hinter der Leerlauf-Phase;
 ein Rot dort lässt sie ungelaufen.
 
@@ -474,7 +474,7 @@ Lerneintrag geschrieben.
   Ausgang *geplant* — die Frage selbst ist mit `ADR-0128` und
   `slice-start-vorlauf-grenze` bereits entschieden, kein neuer Trigger).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-transformationen](../welle-transformationen.md) (offen) — die Prüfung
+  [welle-transformationen](welle-transformationen.md) (offen) — die Prüfung
   läuft regelkonform bei deren Closure. Vorab gelesen: *Anker* — dieser Slice
   trägt kein Feld „liegt in"; *Folge-Slice* — `slice-sdk-regel-realserver-e2e`
   und `slice-transformationen-betriebsdoku` liegen als Dateien in `open/`

@@ -186,7 +186,7 @@ zusätzlich setzbar** durch diesen Lauf; er wartet weiterhin auf `slice-start-vo
 
 Unverändert: dieser Slice trägt keine Welle; die Prüfung der drei Paarungen (Anker · Folge-Slice ·
 Register) läuft regelkonform bei der Closure von
-[welle-transformationen](../plan/planning/welle-transformationen.md) (Plan §7, korrekt so
+[welle-transformationen](../plan/planning/done/welle-transformationen.md) (Plan §7, korrekt so
 belassen).
 
 ## 10. Verdikt

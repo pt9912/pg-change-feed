@@ -11,7 +11,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 
 **Welle:** ohne Welle — der Slice trägt keine Closure-Bedingung, die von
 seiner DoD verschieden wäre. Er hat keine Kante zu einer offenen Welle und ist
-von den Slices der Welle [welle-transformationen](../welle-transformationen.md)
+von den Slices der Welle [welle-transformationen](welle-transformationen.md)
 unabhängig.
 
 **Bezug:** [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Backfill des
@@ -123,7 +123,7 @@ ersten Betreiber.
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure der nächsten Welle (die Roadmap führt
-      [welle-transformationen](../welle-transformationen.md) unter *Offene
+      [welle-transformationen](welle-transformationen.md) unter *Offene
       Wellen*, das Ereignis kann eintreten; ein Slice ohne Welle wird von ihr
       mitgeprüft).
 
@@ -460,7 +460,7 @@ oder Handbuch-Grenze) + Closure-Notiz mit Lerneintrag geschrieben.
 - **Drei Paarungen:** dieser Slice hat keine Welle. Anker, Folge-Slice und Register trägt
   diese Closure selbst: Folge-Slice `slice-retention-lauf-speicher-begrenzung` in `open/`,
   Register fortgeschrieben (siehe oben). Die Prüfung läuft zusätzlich bei der Closure der
-  nächsten Welle ([welle-transformationen](../welle-transformationen.md); die Roadmap führt
+  nächsten Welle ([welle-transformationen](welle-transformationen.md); die Roadmap führt
   sie unter *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-transformationen](../welle-transformationen.md).
+**Welle:** [welle-transformationen](welle-transformationen.md).
 
 **Bezug:** [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) (wertbasierte
 Ableitung über die reine Spaltenauswahl hinaus),
@@ -26,7 +26,7 @@ Regeltypen) — gelesen, nicht geändert.
 **Verantwortlich:** Implementer-Agent, 2026-09-26.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
-[welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
+[welle-transformationen](welle-transformationen.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -132,7 +132,7 @@ aufzählen.
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure dieses Slice (§7) und zusätzlich von der Closure der Welle
-      [welle-transformationen](../welle-transformationen.md) (die Roadmap führt
+      [welle-transformationen](welle-transformationen.md) (die Roadmap führt
       sie unter *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -518,7 +518,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Register-Eintrag). Der Stand steht auch im `state.md` des Register-Eintrags
   `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-transformationen](../welle-transformationen.md) (offen) — die Closure der Welle prüft sie mit;
+  [welle-transformationen](welle-transformationen.md) (offen) — die Closure der Welle prüft sie mit;
   die Slice-Closure trägt sie zusätzlich jetzt: *Anker:* die Steering-Loop-Einträge tragen kein
   `liegt in`-Feld eines verkörperten Ziels (nichts wird mit diesem Slice verkörpert); die Zielorte der
   Adressen (`welle-transformationen` §5 Punkte (c) und (d), `slice-transformationen-betriebsdoku` §2)

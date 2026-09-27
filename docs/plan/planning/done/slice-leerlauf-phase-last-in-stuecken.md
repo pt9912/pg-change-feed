@@ -14,7 +14,7 @@ seiner DoD verschieden wäre. Er ist der erste der Kette hinter
 `slice-capture-leerlauf-quellbelege` und geht
 `slice-wal-fehlerschwelle-ausgangsklasse`
 voraus (Start-Trigger dort, §4;
-[welle-transformationen](../welle-transformationen.md) §5, Kante „Stabilisierung
+[welle-transformationen](welle-transformationen.md) §5, Kante „Stabilisierung
 der Phase Leerlauf-Bestätigung“).
 
 **Bezug:** [`LH-QA-REL-001`](../../../../spec/lastenheft.md) (kein Datenverlust;
@@ -253,7 +253,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure dieses Slice (§7) und zusätzlich der Closure der nächsten Welle
       (die Roadmap führt
-      [welle-transformationen](../welle-transformationen.md) unter *Offene
+      [welle-transformationen](welle-transformationen.md) unter *Offene
       Wellen*, das Ereignis kann eintreten: ihre Closure liegt nach
       `slice-transformationen-betriebsdoku`, der nach diesem Slice startet; ein Slice
       ohne Welle wird von ihr mitgeprüft).
@@ -332,7 +332,7 @@ d078700d 13 -n -E 'Phase „Leerlauf-Bestätigung|BF_PHASE="Leerlauf|abdeckung_d
 | `docs/user/benutzerhandbuch.md` Zeilen 457 bis 458 und 850 bis 852 | „dasselbe gilt für jeden Schreiber auf eine nicht aktivierte Tabelle“ und „… bestätigt der Feed im Leerlauf seines Streams selbst und lässt den Wert damit nicht wachsen“ | Implementer zieht nach, ergänzt den Satz zur Grenze, führt die Versionshistorie (Stand: Version 1.65) |
 | `internal/bootstrap/walretention_slotgrowth_internal_test.go` Zeile 28 | nennt die Phase als Gegenseite („WAL ohne Inhalt für die Publication erreicht die Fehlerschwelle nicht“) | bleibt wahr; den Kommentar ändert `slice-wal-fehlerschwelle-ausgangsklasse` (DoD 3 dort); dieser Slice fasst die Datei nicht an |
 | `ADR-0120` (Zeile 243: „dasselbe gilt für jeden Schreiber auf eine nicht aktivierte Tabelle“) und `ADR-0129` (Zeilen 145 und 218: die Phase als Beleg) | `Accepted`, unberührbar | bleiben stehen; die Präzisierung steht in Verdikt §2.4 ([`AGENTS.md`](../../../../AGENTS.md) §3.5) |
-| **Fremde Träger:** `slice-wal-fehlerschwelle-ausgangsklasse` §3 (Kommentar der Phase davor, Zeile „Kopplung an die Phase Leerlauf-Bestätigung“) und §4 (Start-Trigger, Kante zu diesem Slice); [`welle-transformationen`](../welle-transformationen.md) §5 | beschreiben die Phase als Kopplung bzw. tragen die Kante zu diesem Slice | vom Planner mit der Anlage dieses Slice nachgezogen (Start-Trigger, Kante beauftragt) |
+| **Fremde Träger:** `slice-wal-fehlerschwelle-ausgangsklasse` §3 (Kommentar der Phase davor, Zeile „Kopplung an die Phase Leerlauf-Bestätigung“) und §4 (Start-Trigger, Kante zu diesem Slice); [`welle-transformationen`](welle-transformationen.md) §5 | beschreiben die Phase als Kopplung bzw. tragen die Kante zu diesem Slice | vom Planner mit der Anlage dieses Slice nachgezogen (Start-Trigger, Kante beauftragt) |
 | **Fremde Datei:** `docs/plan/planning/observations/BEO-PGC/test-integration-retention-timing-flake/state.md` | der Architect hat den Zwischenstand geführt und den Slice als Adresse genannt | **gemeldet, Inhalt nicht mitgeändert.** Mitgeführt ist allein die Verweisform des Plan-Verweises (Link auf den wandernden Pfad → Kennung, zweite Zeile der §3-Tabelle oben); der Ausgang bleibt beim Planner (Frist: die Closure dieses Slice) |
 
 **Suchlauf des Implementers** (Parent `6a976f58` = der Commit vor den drei Moves und der Arbeit;
@@ -543,7 +543,7 @@ a42c2b18 3 -n -E 'nur, wenn der Slot nichts bestätigt|Kopplung an die Phase Lee
   vier entfallen (Stücke unter/über Schwelle, Backfill-Hälfte kein Stoß, kein Rot im Zyklus vor
   `done`, Wartebedingung nicht still ausgeschlossen). Kein Risiko blieb „weiter offen“.
 - **Drei Paarungen:** dieser Slice hat keine Welle; die Roadmap führt
-  [welle-transformationen](../welle-transformationen.md) unter *Offene Wellen*, das Ereignis kann
+  [welle-transformationen](welle-transformationen.md) unter *Offene Wellen*, das Ereignis kann
   eintreten: die Closure dieser Welle prüft die Paarungen mit. Die Slice-Closure trägt sie
   zusätzlich jetzt: *Anker:* die Runner-Phase, ihr Kommentar und die Ausgabezeile existieren als
   committeter Text (`tools/harness/run-integration-tests.sh`, `abdeckung_declare` der Phase),

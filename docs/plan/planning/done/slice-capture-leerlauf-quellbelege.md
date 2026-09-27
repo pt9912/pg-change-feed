@@ -12,7 +12,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 **Welle:** ohne Welle — der Slice trägt keine Closure-Bedingung, die von
 seiner DoD verschieden wäre. Er geht `slice-transformationen-e2e-abhilfe`
 voraus (Start-Trigger dort, §4;
-[welle-transformationen](../welle-transformationen.md) §5).
+[welle-transformationen](welle-transformationen.md) §5).
 
 **Bezug:** [`LH-QA-REL-001`](../../../../spec/lastenheft.md) (kein
 Datenverlust, Persist-before-ACK),
@@ -184,7 +184,7 @@ Festlegung 2 durch den Architect.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure dieses Slice (§7) und zusätzlich der Closure der nächsten Welle
       (die Roadmap führt
-      [welle-transformationen](../welle-transformationen.md) unter *Offene
+      [welle-transformationen](welle-transformationen.md) unter *Offene
       Wellen*, das Ereignis kann eintreten; ein Slice ohne Welle wird von ihr
       mitgeprüft).
 
@@ -507,7 +507,7 @@ alle Risiken aus §6 tragen einen Ausgang.
   ob er nötig ist, entscheidet die Frage an den Architect
   (`BEO-PGC/test-integration-retention-timing-flake`, `state.md`). Wird er beauftragt,
   geht er `slice-wal-fehlerschwelle-ausgangsklasse` und `slice-start-vorlauf-grenze`
-  voraus (bedingte Kante in [welle-transformationen](../welle-transformationen.md) §5 und
+  voraus (bedingte Kante in [welle-transformationen](welle-transformationen.md) §5 und
   im Start-Trigger von `slice-wal-fehlerschwelle-ausgangsklasse`).
 - **Folgepflichten aus `ADR-0129` (mit Adresse):** (1) Register
   `beleg-nur-als-einmalige-reviewer-messung`: nachgezogen. (2) Träger der alten
@@ -522,7 +522,7 @@ alle Risiken aus §6 tragen einen Ausgang.
   tragenden Aussagen stand, mit den Rändern der Lesehilfe oben), einer weiter offen im
   Register (Laufzeit, `BEO-PGC/test-integration-retention-timing-flake`).
 - **Drei Paarungen:** dieser Slice hat keine Welle; die Roadmap führt
-  [welle-transformationen](../welle-transformationen.md) unter *Offene Wellen*, das
+  [welle-transformationen](welle-transformationen.md) unter *Offene Wellen*, das
   Ereignis kann eintreten: die Closure dieser Welle prüft die Paarungen mit. Die
   Slice-Closure trägt sie zusätzlich jetzt: *Anker:* der Test, die Runner-Phase und
   die ADR existieren als Dateien

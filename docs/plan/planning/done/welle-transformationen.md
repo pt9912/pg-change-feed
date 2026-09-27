@@ -11,7 +11,7 @@ zwei Positionen, nicht drei.
 
 **Verantwortlich:** — (Rolleninhaber der Implementer-Rolle je Slice, gesetzt
 beim Übergang `open` → `next`; geschnitten aus
-[`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+[`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
 §Folgepflichten durch den Planner). **Datum:** 2026-09-23.
 
 ---
@@ -26,9 +26,9 @@ trägt die transformierte Form — nicht die Rohform — an jedem Weg, der sie
 liefert: SQL-Lesezugriff `cdc.changes`, `GET /changes`, gRPC-Stream, SSE-Stream
 und NATS-Vollinhalts-Stream; eine auf eine Change nicht anwendbare Regel endet
 sichtbar statt still. Das ist die Aussage der drei Akzeptanzkriterien von
-[`LH-FA-CFG-007`](../../../spec/lastenheft.md) (Happy Path, Boundary,
+[`LH-FA-CFG-007`](../../../../spec/lastenheft.md) (Happy Path, Boundary,
 Negative). Der Mechanismus ist mit
-[`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+[`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
 entschieden: ein geschlossener Satz deklarativer Regeltypen (`rename_column`,
 `map_value`), konfiguriert über zwei neue Antragsarten der Antrags-Queue
 (`cdc.set_transformation`, `cdc.remove_transformation`), dauerhaft aus den
@@ -44,12 +44,12 @@ liegt im Use Case und wird erst am komponierten System als `failed` mit Text
 sichtbar; die Negative braucht die Prüfung im `Assembler`, die
 Klassen-Abbildung, `diagnose`, die Startreihenfolge und die Abhilfe — das
 **Abhilfe-Akzeptanzkriterium** (a)–(d) aus
-[`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+[`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
 Folgepflicht 5 ist ein Zustand des ganzen Bündels. Dazu kommt der
 Träger-Zustand, den kein Einzel-DoD beobachtet: die Regelauswertung liegt an
 genau **einer** Stelle (die gemeinsame Row-Image-Funktion, aufgerufen vom
 WAL-Pfad **und** vom Backfill-Pfad), und
-[`LH-FA-CFG-007`](../../../spec/lastenheft.md) ist im RTM-Lauf (`make
+[`LH-FA-CFG-007`](../../../../spec/lastenheft.md) ist im RTM-Lauf (`make
 doc-trace`) nicht mehr Waise.
 
 ## 2. Trigger (Welle startet)
@@ -60,18 +60,18 @@ Mensch ohne Rückfrage sagen kann, ob er eingetreten ist; ein Datum darf erwähn
 werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
-- [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+- [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   trägt den Status `Accepted` — **bereits erfüllt**, geprüft an der Zeile
-  `ADR-0112` im ADR-Index ([`docs/plan/adr/README.md`](../adr/README.md),
+  `ADR-0112` im ADR-Index ([`docs/plan/adr/README.md`](../../adr/README.md),
   Status-Spalte `Accepted`, Datum 2026-09-23).
-- Das Lastenheft trägt [`LH-FA-CFG-007`](../../../spec/lastenheft.md) auf
+- Das Lastenheft trägt [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) auf
   Transformationen begrenzt und das Routing als eigene Anforderung
-  [`LH-FA-CFG-008`](../../../spec/lastenheft.md) — **bereits erfüllt**, geprüft
+  [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) — **bereits erfüllt**, geprüft
   an `spec/lastenheft.md` (Kopf: Version 0.13.0; Out-of-Scope-Satz von
   `LH-FA-CFG-007` nennt `LH-FA-CFG-008`).
 - Kein weiterer Trigger nötig — die Welle kann sofort eröffnet werden. Die
   Kopplungen K1–K3 zur Welle
-  [welle-backfill-bestand](done/welle-backfill-bestand.md) sind **Start-Trigger
+  [welle-backfill-bestand](welle-backfill-bestand.md) sind **Start-Trigger
   einzelner Slices** (§4, §5), kein Trigger der Welle: sie ist als Ganzes
   planbar, ihre Slices starten gestaffelt.
 
@@ -83,16 +83,16 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
 
 - Alle zehn Slices in `done/`.
 - `make gates` grün — der Exit-Code des Laufs wird ungefiltert gesichert und
-  gesondert ausgewertet ([`AGENTS.md`](../../../AGENTS.md) §3.9).
+  gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - **Ein realer, grüner `make test-integration`-Lauf** mit den Belegen am
   laufenden Feed-Container — Happy Path (die per SQL beantragte Regel prägt die
   danach erfasste Change über `cdc.changes`, `GET /changes`, gRPC, SSE und
   NATS-Vollinhalt in derselben Form), Boundary (eine K1–K4-Verletzung endet
   `failed` mit Text, der Regelstand bleibt), Neustart-Festigkeit (`docker
-  restart`), Ausschluss+Regel ([`LH-QA-SEC-004`](../../../spec/lastenheft.md):
+  restart`), Ausschluss+Regel ([`LH-QA-SEC-004`](../../../../spec/lastenheft.md):
   weder Quell- noch Zielname noch Wert im Image), ein Backfill-Bestand mit
   transformierter Form und das **Abhilfe-Akzeptanzkriterium (a)–(d)** aus
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Folgepflicht 5 (die Regel wird nichtanwendbar, der Prozess endet mit Klasse
   `schema`; `cdc.remove_transformation` wird beantragt, während er steht; nach
   dem Neustart ist der Antrag `applied`, bevor die erste Transaktion der
@@ -104,46 +104,46 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   Stream; die DB-Adapter-Coverage prüft `make test-replication` gegen ihre
   Schwelle) und `make schema-rollout` zweimal hintereinander gegen dieselbe
   Ziel-Datenbank (Idempotenz) — die Fitness-Function-Zeilen von
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md),
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md),
   die nur das gebündelte System zeigt. Dazu der **Alt-Tag-Lauf** von
   `tools/harness/run-schema-rollout-guard-test.sh`
-  ([`ADR-0114`](../adr/0114-schema-rollout-vorlauf-view-signatur.md)
+  ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)
   Entscheidung 7): das Schema des jüngsten `v*`-Tags ausrollen, danach den
   Arbeitsbaum — Exit 0 zweimal, der Datenstand über `cdc.changes` lesbar; er
   zeigt die zwei nullable Spalten und die zwei Funktionen dieser Welle über einen
   Alt-Bestand (die Welle ändert keine bestehende View, siehe den
   §3.13-Suchlauf in §5 von
-  [welle-backfill-bestand](done/welle-backfill-bestand.md)).
+  [welle-backfill-bestand](welle-backfill-bestand.md)).
 - **Die Fitness-Function-Tests aus
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   sind grün und tragen ihre Eingabe:** der Eigenschaftstest im `mapper`-Paket
   (Regeltyp × ausgeschlossene Spalte, beide Regeltypen aus der Domänen-Menge),
   der Determinismus-/Nebenläufigkeits-Test unter `-race`, `make a-check` (die
   Regeltypen in `internal/domain/**`).
-- `make doc-trace` führt [`LH-FA-CFG-007`](../../../spec/lastenheft.md) nicht
+- `make doc-trace` führt [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) nicht
   mehr unter den Waisen; der Träger ist die Zeile in
-  [`docs/user/e2e-abdeckung.md`](../../user/e2e-abdeckung.md), die der Runner
+  [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md), die der Runner
   von `make test-integration` schreibt (die Datei ist ein Erzeugnis, kein
   Lauf-Beleg). Die Deckung besteht seit der Phase „Backfill-Regelstand“ von
   `slice-transformationen-backfill-pfad`; `slice-transformationen-e2e-wirkung`
   fügt vier Träger hinzu (gemessen mit `make doc-trace` am Parent-Stand
   `38c7b3bc` und am Arbeitsbaum der Closure: je 80 Anforderungen, 1 Waise).
-  [`LH-FA-CFG-008`](../../../spec/lastenheft.md) bleibt als Waise
+  [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) bleibt als Waise
   sichtbar — das Routing hat keine Umsetzung (§6).
 - **Die Restfläche der Zustellwege ist entschieden** (Adresse der Grenze aus
   `slice-transformationen-e2e-wirkung` §3): `make test-integration` belegt die
   Form „alle Wege dieselbe“ für das Neu-Bild einer eingefügten Zeile auf den
   fünf Wegen; UPDATE, DELETE und das Alt-Bild sind über `cdc.changes` belegt und
   auf den vier weiteren Wegen aus der Architektur hergeleitet (alle Wege lesen
-  dieselbe Change, [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  dieselbe Change, [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 6 Option D), nicht erprobt. Kein offener Slice trägt die Restfläche
   (`slice-sdk-regel-realserver-e2e` führt `old_image` einer UPDATE-/DELETE-Change
   ausdrücklich als nicht Gegenstand). Ein Architect-Verdikt liegt vor, das
   entweder einen Folge-Slice mit Kennung beauftragt oder die Aussage im
   Closure-Bericht mit der gemessenen Menge (INSERT, Neu-Bild, fünf Wege) und der
   Kennzeichnung „hergeleitet“ für den Rest führt
-  ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B). **Erfüllt:**
-  [`architect-verdict-welle-transformationen-offene-fragen`](../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B). **Erfüllt:**
+  [`architect-verdict-welle-transformationen-offene-fragen`](../../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
   §4 — kein Folge-Slice; die Aussage steht mit der gemessenen Menge und „hergeleitet“
   für den Rest (die drei Adapter kopieren `OldImage`/`NewImage` unverändert, gelesen), der
   Trigger für einen realen Lauf steht dort; das Handbuch (`slice-transformationen-betriebsdoku`
@@ -155,7 +155,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
 - Das Benutzerhandbuch trägt den Abschnitt zur Regel-Konfiguration samt
   Rohform-Konsequenz (eine Regeländerung wirkt nicht rückwirkend),
   Abhilfe-Prozedur und Fehlerklassen-Zeile — jede Zahl und Wirkungs-Aussage mit
-  ihrem Ursprung ([`AGENTS.md`](../../../AGENTS.md) §3.12); der SDK-Beleg
+  ihrem Ursprung ([`AGENTS.md`](../../../../AGENTS.md) §3.12); der SDK-Beleg
   (Row-Image-Schlüssel sind in den drei SDK-Modellen opak) steht im Bericht von
   `slice-transformationen-betriebsdoku`, gestützt auf die Realserver-Läufe von
   `slice-sdk-regel-realserver-e2e`.
@@ -168,8 +168,8 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   oder die Lesekosten als akzeptiertes Negativ mit benanntem Trigger führt; im
   zweiten Fall trägt es die Aussage „die Kosten je Lesung sind klein“ mit einer
   Messung an einer Queue realer Größe, nicht als Erwartung
-  ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B). **Erfüllt:**
-  [`architect-verdict-welle-transformationen-offene-fragen`](../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B). **Erfüllt:**
+  [`architect-verdict-welle-transformationen-offene-fragen`](../../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
   §3 — akzeptiertes Negativ mit Messung (bis rund 10 000 Zeilen der Queue etwa 8 % einer Blockdauer,
   bei 100 000 Zeilen etwa 70 %) und Trigger (mehr als 10 000 Zeilen in der Queue einer Quelle);
   eine Queue realer Größe gibt es nicht (kein Server-Tag trägt die Antragsarten), die Messung ist
@@ -180,16 +180,16 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   beauftragt (Frist oder Anzeige im Startpfad) oder das Warten als akzeptiertes
   Negativ mit benanntem Trigger führt; im zweiten Fall trägt es die Aussage
   „gesund während des Wartens“ mit einer Messung am laufenden Prozess statt als
-  Herleitung ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B). **Erfüllt:**
-  [`ADR-0128`](../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md) und
-  [`architect-verdict-welle-transformationen-offene-fragen`](../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+  Herleitung ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B). **Erfüllt:**
+  [`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md) und
+  [`architect-verdict-welle-transformationen-offene-fragen`](../../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
   §2 — Umsetzungs-Slice `slice-start-vorlauf-grenze` beauftragt (wellenlos, geht `e2e-abhilfe`
   voraus, §5); „gesund während des Wartens“ ist am laufenden Prozess gemessen, dazu die Messung,
   dass der Prozess an einem Vorlauf über `wal_sender_timeout` mit der Klasse `replication` endet.
 - Der **Lese-Schritt** des Beobachtungs-Registers ist gelaufen (Einträge bei 3×
   oder darüber, Modul 6). Vier dem Lese-Schritt zugeordnete Einträge liest das
   Verdikt
-  [`architect-verdict-welle-transformationen-offene-fragen`](../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+  [`architect-verdict-welle-transformationen-offene-fragen`](../../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
   §8; die übrigen Einträge bei 3× oder darüber liest die Closure.
 - Closure-Notiz in `welle-transformationen-results.md`.
 
@@ -201,21 +201,21 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-transformationen-spec-nachzug | Pflichtenheft (`LH-FA-CFG-007.a` beantwortet, `SPEC-019`, Regelform, `SPEC-002`, §4-Zeile `schema`) und Architektur-Sicht auf den beschlossenen Stand ziehen — ohne ADR-/Slice-Bezug | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`LH-FA-CFG-007.a`](../../../spec/pflichtenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 1 |
-| slice-transformationen-kern-rename | Regeltyp `rename_column` in der Domäne; Regelstand, Set/Remove und Nichtanwendbarkeits-Prüfung im `Assembler`; Fitness-Tests (Eigenschaft, Determinismus, `-race`, a-check) | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 2 |
-| slice-transformationen-antragsweg-schema | Antragsarten `set_transformation`/`remove_transformation`, Spalten `rule_name`/`rule_spec`, zwei SQL-Funktionen, Grants, Idempotenz-Guard, Rollen-Test, Domäne und Store-Lesen | [`LH-FA-ADM-001`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 3 |
-| slice-transformationen-antragsweg-usecase | Use Cases `SetTransformation`/`RemoveTransformation` mit K1–K4, Regelstand-Port, Store-Adapter, Verdrahtung in `applyAdministrationRequest`, `activatedTableBindings` und Aktivierungs-Zweig | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 3, [`ADR-0065`](../adr/0065-spaltenausschluss-dauerhafter-traeger.md) |
-| slice-transformationen-backfill-pfad | Regelauswertung im Backfill-Run, Fail-closed um den Regelstand, Nichtanwendbarkeit im Run, E2E-Beleg | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 7 |
-| slice-transformationen-map-value | Regeltyp `map_value` in der Domäne — ohne Änderung an Antragsweg und Wirkort | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 4 |
-| slice-transformationen-e2e-wirkung | `make test-integration`: Regel per SQL, alle Zustellwege, Boundary, Neustart, Ausschluss+Regel; vier weitere E2E-Träger für [`LH-FA-CFG-007`](../../../spec/lastenheft.md) im RTM-Träger | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 5 |
-| slice-transformationen-start-reihenfolge | offene Anträge werden vor `stream.Run` verarbeitet — Ordnung deterministisch und ohne Datenbank prüfbar | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 5, Bedingung (c) |
-| slice-transformationen-e2e-abhilfe | Nichtanwendbarkeit und das Abhilfe-Akzeptanzkriterium (a)–(d) am laufenden System | [`LH-FA-CFG-007`](../../../spec/lastenheft.md) Negative, [`LH-FA-ADM-003`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 5 |
-| slice-transformationen-betriebsdoku | Benutzerhandbuch: Regel-Konfiguration, Rohform-Konsequenz, Abhilfe, Fehlerklasse; SDK-Beleg (Bild-Schlüssel opak) | [`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 6 |
+| slice-transformationen-spec-nachzug | Pflichtenheft (`LH-FA-CFG-007.a` beantwortet, `SPEC-019`, Regelform, `SPEC-002`, §4-Zeile `schema`) und Architektur-Sicht auf den beschlossenen Stand ziehen — ohne ADR-/Slice-Bezug | [`LH-FA-CFG-007`](../../../../spec/lastenheft.md), [`LH-FA-CFG-007.a`](../../../../spec/pflichtenheft.md), [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 1 |
+| slice-transformationen-kern-rename | Regeltyp `rename_column` in der Domäne; Regelstand, Set/Remove und Nichtanwendbarkeits-Prüfung im `Assembler`; Fitness-Tests (Eigenschaft, Determinismus, `-race`, a-check) | [`LH-FA-CFG-007`](../../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../../spec/lastenheft.md), [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 2 |
+| slice-transformationen-antragsweg-schema | Antragsarten `set_transformation`/`remove_transformation`, Spalten `rule_name`/`rule_spec`, zwei SQL-Funktionen, Grants, Idempotenz-Guard, Rollen-Test, Domäne und Store-Lesen | [`LH-FA-ADM-001`](../../../../spec/lastenheft.md), [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 3 |
+| slice-transformationen-antragsweg-usecase | Use Cases `SetTransformation`/`RemoveTransformation` mit K1–K4, Regelstand-Port, Store-Adapter, Verdrahtung in `applyAdministrationRequest`, `activatedTableBindings` und Aktivierungs-Zweig | [`LH-FA-CFG-007`](../../../../spec/lastenheft.md), [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 3, [`ADR-0065`](../../adr/0065-spaltenausschluss-dauerhafter-traeger.md) |
+| slice-transformationen-backfill-pfad | Regelauswertung im Backfill-Run, Fail-closed um den Regelstand, Nichtanwendbarkeit im Run, E2E-Beleg | [`LH-FA-CFG-007`](../../../../spec/lastenheft.md), [`LH-FA-CAP-009`](../../../../spec/lastenheft.md), [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 7 |
+| slice-transformationen-map-value | Regeltyp `map_value` in der Domäne — ohne Änderung an Antragsweg und Wirkort | [`LH-FA-CFG-007`](../../../../spec/lastenheft.md), [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 4 |
+| slice-transformationen-e2e-wirkung | `make test-integration`: Regel per SQL, alle Zustellwege, Boundary, Neustart, Ausschluss+Regel; vier weitere E2E-Träger für [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) im RTM-Träger | [`LH-FA-CFG-007`](../../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../../spec/lastenheft.md), [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 5 |
+| slice-transformationen-start-reihenfolge | offene Anträge werden vor `stream.Run` verarbeitet — Ordnung deterministisch und ohne Datenbank prüfbar | [`LH-FA-CFG-007`](../../../../spec/lastenheft.md), [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 5, Bedingung (c) |
+| slice-transformationen-e2e-abhilfe | Nichtanwendbarkeit und das Abhilfe-Akzeptanzkriterium (a)–(d) am laufenden System | [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) Negative, [`LH-FA-ADM-003`](../../../../spec/lastenheft.md), [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 5 |
+| slice-transformationen-betriebsdoku | Benutzerhandbuch: Regel-Konfiguration, Rohform-Konsequenz, Abhilfe, Fehlerklasse; SDK-Beleg (Bild-Schlüssel opak) | [`LH-FA-CFG-007`](../../../../spec/lastenheft.md), [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 6 |
 
 **Reihenfolge:** sequentiell in der Tabellen-Reihenfolge (WIP-Limit 1 je
 Rolleninhaber, Baseline-Regelwerk `modul-05-planning-harness.md`); die Slices
 dieser Welle und die der Welle
-[welle-backfill-bestand](done/welle-backfill-bestand.md) teilen sich das WIP-Limit,
+[welle-backfill-bestand](welle-backfill-bestand.md) teilen sich das WIP-Limit,
 und jeder Slice startet, sobald sein Start-Trigger gilt — die technischen
 Kanten stehen in §5. Die Reihenfolge der Tabelle folgt einer Regel: **erst die
 Wirkung, dann der Beleg, dann die Doku** — und der Backfill-Pfad **unmittelbar
@@ -223,7 +223,7 @@ nach** dem Antragsweg, damit das Fenster, in dem Regeln setzbar sind, ein
 Backfill aber noch die Rohform liefert, ein Slice lang ist (§5).
 
 **Abweichungen vom Schnitt-Vorschlag** in
-[`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+[`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
 §Folgepflichten (dort ausdrücklich „der Planner formt daraus Welle und Slices“)
 — fünf, je mit Grund:
 
@@ -244,7 +244,7 @@ Backfill aber noch die Rohform liefert, ein Slice lang ist (§5).
    endet den Prozess und hat eine eigene Container-Ende-Grenze im Runner. (ii)
    „Offene Anträge vor `stream.Run` verarbeiten“ ist ein **eigener Slice**
    (`start-reihenfolge`), nicht Teil des E2E-Slice:
-   [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
    legt ihn in den E2E-Slice, **wenn** die heutige Startreihenfolge Kriterium
    (c) nicht trägt. Die Bedingung ist am Code entscheidbar und wird hier
    entschieden — `runAdministration` startet in `Run` per `go func()` vor
@@ -268,7 +268,7 @@ Backfill aber noch die Rohform liefert, ein Slice lang ist (§5).
    Adresse auf (`BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an`, offen, 2×),
    und `betriebsdoku` nennt den aufgeschobenen Gegenstand vollständig in seinem
    §2. Das weicht von der Regel der Welle
-   [welle-backfill-bestand](done/welle-backfill-bestand.md) ab, wo der Handbuch-Zug
+   [welle-backfill-bestand](welle-backfill-bestand.md) ab, wo der Handbuch-Zug
    im oberflächen-liefernden Slice liegt; Grund: bei den Transformationen liegt
    die Wirkung fünf Slices hinter der Oberfläche.
 
@@ -282,17 +282,17 @@ Backfill aber noch die Rohform liefert, ein Slice lang ist (§5).
 
 5. **Folgepflicht 7 (Backfill-Pfad) als eigener Slice, Start strenger als die
    Kopplung K2.** K2 der Welle
-   [welle-backfill-bestand](done/welle-backfill-bestand.md) verlangt
+   [welle-backfill-bestand](welle-backfill-bestand.md) verlangt
    `slice-backfill-run-usecase`; dieser Slice startet zusätzlich erst nach
    `slice-backfill-e2e` (er trägt einen E2E-Beleg im Backfill-Runner) und
    trägt ein **Architect-Kurzverdikt** zur Nichtanwendbarkeit im Run: die
    Run-Fehlerklassen von
-   [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5
+   [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5
    nennen `schema` nicht,
-   [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
    Teilfrage 4 beschreibt die Nichtanwendbarkeit nur für den Erfassungspfad —
    eine Entscheidung, keine Auslegung; das Verdikt liegt mit
-   [`ADR-0117`](../adr/0117-backfill-run-fehlerklasse-schema.md) vor (Start-Trigger
+   [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) vor (Start-Trigger
    im Plan).
 
 ## 5. Abhängigkeiten
@@ -301,11 +301,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Roadmap-Struktur: fünf Abschnitte.
 
 - **Wird blockiert von:** keiner Welle;
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   ist `Accepted`, der Trigger (§2) ist erfüllt. Eine **benannte Kopplung**
-  verbindet die Welle mit [welle-backfill-bestand](done/welle-backfill-bestand.md) —
+  verbindet die Welle mit [welle-backfill-bestand](welle-backfill-bestand.md) —
   die Kanten K1–K3 der Welle
-  [welle-backfill-bestand](done/welle-backfill-bestand.md) §5 sind hier
+  [welle-backfill-bestand](welle-backfill-bestand.md) §5 sind hier
   Start-Trigger einzelner Slices:
   - **K1 — Row-Image-Funktion.** `kern-rename` startet erst, wenn
     `slice-backfill-row-image-gemeinsam` in `done/` liegt: die Regelauswertung
@@ -313,12 +313,12 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   - **K2 — Backfill-Pfad.** `backfill-pfad` startet nach
     `slice-backfill-run-usecase` und — strenger — nach `slice-backfill-e2e`,
     nach `antragsweg-usecase`; das Architect-Kurzverdikt (§4, Abweichung 5)
-    liegt vor ([`ADR-0117`](../adr/0117-backfill-run-fehlerklasse-schema.md)).
+    liegt vor ([`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)).
   - **K3 — gemeinsame Zeilen.** `antragsweg-schema` startet nach
     `slice-backfill-sql-administration`: beide Umsetzungen berühren die
     geschlossene `request_kind`-Menge in
     `tools/schema/nacharbeit-administration.sql`,
-    [`SPEC-019`](../../../spec/pflichtenheft.md), `applyAdministrationRequest`
+    [`SPEC-019`](../../../../spec/pflichtenheft.md), `applyAdministrationRequest`
     und den Idempotenz-Guard; die Transformationen erweitern die dort stehende
     Menge additiv. Stand am 2026-09-25 (gemessen): `request_kind` trägt fünf
     Werte (`tools/schema/nacharbeit-administration.sql`, Zeile 62), die
@@ -342,7 +342,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     DoD verschieden wäre; die Kanten stehen als Start-Trigger in den Plänen
     dieser Welle und in den vier Plänen selbst):
     `slice-code-kommentare-kennungen` (Regel in
-    [`AGENTS.md`](../../../AGENTS.md) §3.7 und Werkzeug `make
+    [`AGENTS.md`](../../../../AGENTS.md) §3.7 und Werkzeug `make
     kommentar-kennungen`) geht `map-value` voraus — der Implementer jedes
     folgenden Slices der Welle läuft Schritt 20 mit dem Werkzeug;
     `slice-harness-fmt-check` (`make fmt-check`, Formatierung der sechs
@@ -375,7 +375,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     Slices“, ohne dass sich ein Closure-Kriterium änderte. Die Kante steht als
     Start-Trigger in seinem Plan und in `betriebsdoku` (§4 dort).
   - **Kante zu `slice-start-vorlauf-grenze` (Stand 2026-09-27).** Der
-    Slice setzt [`ADR-0128`](../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)
+    Slice setzt [`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)
     um (Frist des Vorlaufs, `START_REPLICATION` im Stream-Lauf) und geht `e2e-abhilfe`
     voraus: der Abhilfe-Beleg fährt den Startpfad, den er ändert. Er startet nach
     `slice-wal-fehlerschwelle-ausgangsklasse` (Kante unten), der selbst nach
@@ -389,8 +389,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   - **Kante zu `slice-wal-fehlerschwelle-ausgangsklasse` (Stand 2026-09-27).** Der
     Slice bringt die Klasse des Ausgangs bei Erreichen der Fehlerschwelle des
     WAL-Rückstands auf `replication`
-    ([`ADR-0049`](../adr/0049-replication-fehlerklassen-schwellen.md); Architect-Verdikt
-    [`architect-verdict-wal-fehlerschwelle-ausgangsklasse`](../../reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md)
+    ([`ADR-0049`](../../adr/0049-replication-fehlerklassen-schwellen.md); Architect-Verdikt
+    [`architect-verdict-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md)
     §3). Er startet nach `slice-capture-leerlauf-quellbelege` (beide ändern die Runner-Phase
     „Fehlerschwelle beendet den Container“; WIP-Limit 1) und nach
     `slice-leerlauf-phase-last-in-stuecken` (Kante unten) und geht
@@ -409,7 +409,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     Ausführungen der Phase, **übernommen** aus dem Verdikt). Der Architect hat die Ursache im
     Testaufbau bestimmt (der Stoß einer einzelnen Anweisung gegen den Prüf-Takt des
     Rückstands) und den Slice beauftragt
-    ([`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)
+    ([`architect-verdict-leerlauf-bestaetigung-intermittenz`](../../../reviews/architect-verdict-leerlauf-bestaetigung-intermittenz.md)
     §2 und §3; Register `BEO-PGC/test-integration-retention-timing-flake`). Der Slice
     (`slice-leerlauf-phase-last-in-stuecken`)
     schreibt die Last der Phase in Stücken unter der Warnschwelle und geht
@@ -425,7 +425,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     Widerlegung, danach ein Befund) steht in den Plänen der drei Folge-Slices.
   - **Spec-Kollision.** `spec-nachzug` startet nach
     `slice-backfill-spec-nachzug`: beide ändern
-    [`SPEC-019`](../../../spec/pflichtenheft.md), die Kennungsvergabe im
+    [`SPEC-019`](../../../../spec/pflichtenheft.md), die Kennungsvergabe im
     Pflichtenheft zählt fortlaufend je Datei.
   - **Start-Reihenfolge und Backfill.** `start-reihenfolge` startet nach
     `slice-backfill-sql-administration`: beide Slices ändern `Run` im Bereich
@@ -433,19 +433,19 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     stehen dann fest).
   - **Begründete Reihenfolge — Backfill zuerst.** Die Kanten zeigen alle in
     dieselbe Richtung: die Transformationen erweitern Stellen, die der Backfill
-    anlegt (Welle [welle-backfill-bestand](done/welle-backfill-bestand.md) §5).
+    anlegt (Welle [welle-backfill-bestand](welle-backfill-bestand.md) §5).
     Beide Wellen sind ohne einander eröffnet; jeder Slice dieser Welle wartet
     auf seine Kante, nicht auf die Closure der Backfill-Welle.
 - **Blockiert:** keine Welle. Das Routing
-  ([`LH-FA-CFG-008`](../../../spec/lastenheft.md)) hat keine Welle-Datei und
+  ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md)) hat keine Welle-Datei und
   keine Entscheidung; es hängt nicht an dieser Welle, weil
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 7 es ausdrücklich entkoppelt (§6).
 - **Ereignis-Adresse.** „Die Closure dieser Welle“ ist eine Adresse, die
   eintreten kann: die Roadmap führt diese Welle unter *Offene Wellen*, und die
   Welle hat einen Closure-Trigger (§3). Die Paarungen der Slice-Closures (Anker
   · Folge-Slice · Register) laufen bei ihr, nicht bei der Closure der Welle
-  [welle-backfill-bestand](done/welle-backfill-bestand.md).
+  [welle-backfill-bestand](welle-backfill-bestand.md).
 - **Benanntes Zwischenzustands-Fenster.** Ab `antragsweg-usecase` sind Regeln
   setzbar; ein Backfill-Run vor `backfill-pfad` lieferte die Rohform, dieselbe
   Tabelle also zwei Formen. Das Fenster ist ein Slice lang (`backfill-pfad`
@@ -470,23 +470,23 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   `e2e-abhilfe` → `slice-code-kommentare-bereinigung`.
 - **Entschiedene Fragen der früheren Notiz „Fragen für den nächsten Architect-Zug“**
   (Verdikt
-  [`architect-verdict-welle-transformationen-offene-fragen`](../../reviews/architect-verdict-welle-transformationen-offene-fragen.md),
-  2026-09-27). (a) **Host-Werkzeug und Umleitung:** [`AGENTS.md`](../../../AGENTS.md) §3.1
+  [`architect-verdict-welle-transformationen-offene-fragen`](../../../reviews/architect-verdict-welle-transformationen-offene-fragen.md),
+  2026-09-27). (a) **Host-Werkzeug und Umleitung:** [`AGENTS.md`](../../../../AGENTS.md) §3.1
   nennt das Schreiben und Anhängen von Text an eine Repo-Datei per Umleitung als verboten
   (§5 dort; Register `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, Guard-Grenze
-  in [`MR-003`](../../../harness/conventions/MR-003-guard-inplace-textwerkzeug.md)
+  in [`MR-003`](../../../../harness/conventions/MR-003-guard-inplace-textwerkzeug.md)
   unverändert). (b) **Lesekosten des Backfill-Runs:** akzeptiertes Negativ mit Messung und
   Trigger (§3 dort; Closure-Kriterium in §3). (c) **`cat >> Datei`:** wie (a).
   (d) **Obergrenze der Paare von `map_value`
-  ([`SPEC-030`](../../../spec/pflichtenheft.md)):** benannter Verzicht, Zahlen nachgemessen,
+  ([`SPEC-030`](../../../../spec/pflichtenheft.md)):** benannter Verzicht, Zahlen nachgemessen,
   Trigger und Vorschlag einer Obergrenze von 10 000 Paaren für den Fall des Triggers (§6 dort);
   das Handbuch nennt die Zahlen (`betriebsdoku` §2). (e) **Zeitgrenze des Vorlaufs:**
-  [`ADR-0128`](../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md),
+  [`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md),
   Umsetzung `slice-start-vorlauf-grenze` (Kante oben; Verdikt §2 und §9); Register
   `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`, Ausgang *geplant*.
 
 **Träger der Folgepflichten** — jede Pflicht aus
-[`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+[`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
 §Folgepflichten hat einen Träger oder eine benannte Adresse
 (`BEO-PGC/adr-folgepflicht-ohne-traeger-slice` — eine adresslose Pflicht bleibt
 liegen, bis sie ein Leser zufällig findet):
@@ -497,10 +497,10 @@ liegen, bis sie ein Leser zufällig findet):
 | 2 Kern: Domäne und `Assembler`, `rename_column` | `slice-transformationen-kern-rename` |
 | 3 Antragsweg und Dauerhaftigkeit | `slice-transformationen-antragsweg-schema` und `slice-transformationen-antragsweg-usecase` (§4, Abweichung 1) |
 | 4 Regeltyp `map_value` | `slice-transformationen-map-value`; die Spec-Zeile trägt `spec-nachzug` (§4, Abweichung 4) |
-| 5 E2E-Belege, Abhilfe-Akzeptanzkriterium, Startreihenfolge | `slice-transformationen-e2e-wirkung`, `slice-transformationen-start-reihenfolge`, `slice-transformationen-e2e-abhilfe` (§4, Abweichung 2); Frist des Vorlaufs und Beginn des Replikationsstroms: `slice-start-vorlauf-grenze` (wellenlos, [`ADR-0128`](../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)) |
+| 5 E2E-Belege, Abhilfe-Akzeptanzkriterium, Startreihenfolge | `slice-transformationen-e2e-wirkung`, `slice-transformationen-start-reihenfolge`, `slice-transformationen-e2e-abhilfe` (§4, Abweichung 2); Frist des Vorlaufs und Beginn des Replikationsstroms: `slice-start-vorlauf-grenze` (wellenlos, [`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)) |
 | 6 SDK-/Doku-Beleg | `slice-transformationen-betriebsdoku` |
-| 7 Bindung künftiger Erzeugungspfade | `slice-transformationen-backfill-pfad` für den Backfill-Pfad; Adresse für jeden weiteren Change-Erzeuger: [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 7 selbst — die ADR, die ihn einführt, nennt die Regelauswertung |
-| 8 Routing-ADR | kein Slice dieser Welle; Adresse: §6 dieser Welle und die offene Kennung [`LH-FA-CFG-008.a`](../../../spec/pflichtenheft.md) im Pflichtenheft (sichtbar als Waise in `make doc-trace`) |
+| 7 Bindung künftiger Erzeugungspfade | `slice-transformationen-backfill-pfad` für den Backfill-Pfad; Adresse für jeden weiteren Change-Erzeuger: [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 7 selbst — die ADR, die ihn einführt, nennt die Regelauswertung |
+| 8 Routing-ADR | kein Slice dieser Welle; Adresse: §6 dieser Welle und die offene Kennung [`LH-FA-CFG-008.a`](../../../../spec/pflichtenheft.md) im Pflichtenheft (sichtbar als Waise in `make doc-trace`) |
 
 ## 6. Out-of-Scope für diese Welle
 
@@ -509,9 +509,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 Zielsetzung: Was nicht ausdrücklich ausgeschlossen ist, dehnt die Welle, bis
 der Closure-Trigger unerreichbar wird.
 
-- **Routing** ([`LH-FA-CFG-008`](../../../spec/lastenheft.md)) — eigene
+- **Routing** ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md)) — eigene
   Anforderung mit eigener Routing-ADR
-  ([`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 7 und Folgepflicht 8); die Leitplanken (höchstens ein Ziel je
   Change, erster Treffer, keine Route auf das bestehende Ziel) stehen nur in
   der ADR. Die Welle legt weder ein Zielmodell noch eine Filter-Fähigkeit an
@@ -522,20 +522,20 @@ der Closure-Trigger unerreichbar wird.
 - **Rohform-Speicherung, Rekonstruktion und Rückwirkung** — die Rohform ist
   nicht mehr vorhanden, eine Regeländerung wirkt nur auf künftige Changes, eine
   Rekonstruktion je Change ist nicht zugesagt
-  ([`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 6 und §Konsequenzen); ein Bedarf ist ein Re-Evaluierungs-Trigger
   mit `Supersedes` für Teilfrage 6.
 - **Eine Regel-Sicht (View) und eine Anzeige des Regelstands in `diagnose`** —
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 6: der Regelstand ist über `cdc.administration_request` lesbar,
   eine eigene Sicht ist nicht Teil.
 - **Regeln je Consumer oder je Zustellweg, Konfiguration über YAML oder
   Umgebungsvariable** —
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 1 (Optionen B, C) und Teilfrage 6 (Option B) sind verworfen.
 - **Consumer-Reset** — das Positionsmodell bleibt unverändert; ein Reset ist
   „explizit administrativ“
-  ([`ADR-0013`](../adr/0013-consumer-domainkonzept.md)) und eine eigene
+  ([`ADR-0013`](../../adr/0013-consumer-domainkonzept.md)) und eine eigene
   Fähigkeit mit eigener Entscheidung.
 - **Ein allgemeiner Recovery-Weg für Schema-Fehler** —
   `BEO-PGC/kein-admin-weg-schema-fehler-recovery` (offen, 1×): die Welle
@@ -543,15 +543,15 @@ der Closure-Trigger unerreichbar wird.
   nicht die Wiederinbetriebnahme nach einer inkompatiblen Typänderung oder
   einer entfernten Spalte.
 - **Änderung des Nachrichtenschemas und der Proto-Artefakte** —
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 8: Live-Nachrichten
-  ([`SPEC-020`](../../../spec/pflichtenheft.md)/[`SPEC-021`](../../../spec/pflichtenheft.md)/[`SPEC-024`](../../../spec/pflichtenheft.md))
+  ([`SPEC-020`](../../../../spec/pflichtenheft.md)/[`SPEC-021`](../../../../spec/pflichtenheft.md)/[`SPEC-024`](../../../../spec/pflichtenheft.md))
   tragen zehn Felder, die HTTP-Antwort von
-  [`SPEC-022`](../../../spec/pflichtenheft.md) dreizehn, `origin` inbegriffen —
+  [`SPEC-022`](../../../../spec/pflichtenheft.md) dreizehn, `origin` inbegriffen —
   die Transformationen ändern keines; die Row Images bleiben JSON-Objekte mit
   String-Werten; `make generated-sync` ist nicht betroffen.
 - **Kein neuer GitHub-Actions-Workflow und keine strukturelle
-  Workflow-Änderung** — [`AGENTS.md`](../../../AGENTS.md) §3.10 greift nicht.
+  Workflow-Änderung** — [`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht.
   Die Pipeline `e2e.yml` fährt `make test-integration` unverändert weiter; die
   Laufzeit des erweiterten Testpakets ist ein Risiko der E2E-Slices (§6 dort),
   keine Workflow-Änderung.
@@ -563,7 +563,7 @@ der Closure-Trigger unerreichbar wird.
   eine Zeile.
 - **Keine Schwellen-Senkung und keine neue Gate-Klasse** — die neuen
   Use-Case-Pakete liegen in der netzlos gemessenen Fläche des Coverage-Gates;
-  eine Senkung bliebe per [`AGENTS.md`](../../../AGENTS.md) §3.6 ADR-pflichtig.
+  eine Senkung bliebe per [`AGENTS.md`](../../../../AGENTS.md) §3.6 ADR-pflichtig.
 - **Lastenheft unverändert** — die Welle schärft Techniken im Pflichtenheft,
   nicht Anforderungen.
 
@@ -601,14 +601,14 @@ in §8):
   „die Closure dieser Welle“ ist eine Adresse, die eintreten kann (§5).
 - `BEO-PGC/adr-folgepflicht-ohne-traeger-slice` (offen, 1×) — die
   Träger-Tabelle in §5 gibt jeder Folgepflicht von
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   einen Träger oder eine benannte Adresse.
 - `BEO-PGC/start-trigger-ohne-uebergabe-artefakt` (offen, 1×) und
   `BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft` (offen, 2×) —
   `backfill-pfad` (Architect-Kurzverdikt als Vorab-Bedingung im Start-Trigger)
   und `e2e-abhilfe` (Ordnung steht, bevor ihre Wirkung gemessen wird).
 - `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert,
-  [`AGENTS.md`](../../../AGENTS.md) §3.13, 26×) — betrifft jeden Slice; der
+  [`AGENTS.md`](../../../../AGENTS.md) §3.13, 26×) — betrifft jeden Slice; der
   Suchlauf steht als committetes Feld je Slice-Plan §3.
   `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (offen, 2×) — `spec-nachzug`
   und `betriebsdoku`.

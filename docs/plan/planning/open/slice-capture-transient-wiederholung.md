@@ -123,7 +123,7 @@ Handbuch-Abschnitt „Neustart nach einem Fehler“, `restart: "no"` in
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure der nächsten Welle (die Roadmap führt
-      [welle-transformationen](../welle-transformationen.md) unter *Offene
+      [welle-transformationen](../done/welle-transformationen.md) unter *Offene
       Wellen*, das Ereignis kann eintreten; ein Slice ohne Welle wird von ihr
       mitgeprüft).
 

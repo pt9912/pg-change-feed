@@ -13,7 +13,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 seiner DoD verschieden wäre. Er startet nach `slice-capture-leerlauf-quellbelege`
 und `slice-leerlauf-phase-last-in-stuecken`
 und geht `slice-start-vorlauf-grenze` voraus (Start-Trigger dort, §4;
-[welle-transformationen](../welle-transformationen.md) §5, Kante zu
+[welle-transformationen](welle-transformationen.md) §5, Kante zu
 `slice-transformationen-e2e-abhilfe` über `slice-start-vorlauf-grenze`).
 
 **Bezug:** [`LH-QA-REL-001`](../../../../spec/lastenheft.md) (kein
@@ -271,7 +271,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure dieses Slice (§7) und zusätzlich der Closure der nächsten Welle
       (die Roadmap führt
-      [welle-transformationen](../welle-transformationen.md) unter *Offene
+      [welle-transformationen](welle-transformationen.md) unter *Offene
       Wellen*, das Ereignis kann eintreten: ihre Closure liegt nach
       `slice-transformationen-betriebsdoku`, der nach diesem Slice startet; ein Slice
       ohne Welle wird von ihr mitgeprüft).
@@ -588,7 +588,7 @@ Lerneintrag geschrieben.
   bereits gelesenen Wert, kein neuer Wartezyklus). Kein Risiko blieb „weiter
   offen".
 - **Drei Paarungen:** dieser Slice hat keine Welle; die Roadmap führt
-  [welle-transformationen](../welle-transformationen.md) unter *Offene
+  [welle-transformationen](welle-transformationen.md) unter *Offene
   Wellen*, das Ereignis kann eintreten: die Closure dieser Welle prüft die
   Paarungen mit. Die Slice-Closure trägt sie zusätzlich jetzt: *Anker:* die
   Regel existiert als committeter Text (`mergeStreamAndWALFaultOutcome` in

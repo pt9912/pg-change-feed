@@ -492,7 +492,7 @@ bestätigt die DoD, Closure-Notiz mit Steering-Loop-Eintrag geschrieben.
   alle „already“/„no longer“ in Sachaussagen, kein deutsches Fragment).
   *Einträge bei 3× oder darüber ohne Ausgang mit dieser Datei:* `zwei-quellen-drift-handbuch-gegen-pflichtenheft`
   (3×) — Adresse: Lese-Schritt der Closure von
-  [welle-transformationen](../welle-transformationen.md).
+  [welle-transformationen](welle-transformationen.md).
 - **Folge-Slices:** `slice-sdk-public-doc-check-gate` (Datei in `open/`, Entscheidung V-4).
   **Übergaben an offene Pläne** ([`AGENTS.md`](../../../../AGENTS.md) §3.13): Suchlauf
   `git grep -n -E '0\.2\.[01]|sdk-pack|SPEC-02[678]|Package-Version|Paketbeschreibung' --
@@ -522,7 +522,7 @@ bestätigt die DoD, Closure-Notiz mit Steering-Loop-Eintrag geschrieben.
   *Weiter offen:* Kennungs-Wächter ohne Gate → `slice-sdk-public-doc-check-gate` · Python-Untergrenze
   → Register `BEO-PGC/sdk-python-untergrenze-ohne-anwender-begruendung`.
 - **Drei Paarungen:** dieser Slice ist wellenlos; die Paarungen (Anker · Folge-Slice · Register)
-  prüft die Closure von [welle-transformationen](../welle-transformationen.md) (offen; die
+  prüft die Closure von [welle-transformationen](welle-transformationen.md) (offen; die
   Ereignis-Adresse steht dort §5 „Ereignis-Adresse“, die Roadmap führt sie unter *Offene
   Wellen*). Anker: die Wächter (`test_public_text.py`, `make sdk-public-doc-check`); Folge-Slice:
   `slice-sdk-public-doc-check-gate`; Register: die sechs Einträge oben.

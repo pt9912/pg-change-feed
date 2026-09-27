@@ -12,7 +12,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 **Welle:** ohne Welle — Harness-Querschnitt: der Slice trägt keine
 Closure-Bedingung, die von seiner DoD verschieden wäre. Er berührt Guard und
 Tabellentest, nicht den Runner und nicht `internal/`; eine technische Kante zu
-einem Slice der [welle-transformationen](../welle-transformationen.md) hat er nicht.
+einem Slice der [welle-transformationen](welle-transformationen.md) hat er nicht.
 Die empfohlene Position steht in §4.
 
 **Bezug:** [`AGENTS.md`](../../../../AGENTS.md) §3.1 (Docker-only, Verbot des

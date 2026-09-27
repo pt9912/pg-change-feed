@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-transformationen](../welle-transformationen.md).
+**Welle:** [welle-transformationen](welle-transformationen.md).
 
 **Bezug:** [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) (Negative:
 Abhilfe), [`LH-FA-ADM-001`](../../../../spec/lastenheft.md),
@@ -31,7 +31,7 @@ nicht berührt).
 **Verantwortlich:** Implementer-Agent, 2026-09-26.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
-[welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
+[welle-transformationen](welle-transformationen.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -139,7 +139,7 @@ Code belegt“.
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure der Welle
-      [welle-transformationen](../welle-transformationen.md) (die Roadmap führt
+      [welle-transformationen](welle-transformationen.md) (die Roadmap führt
       sie unter *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -247,7 +247,7 @@ geschrieben.
   Warten zeigen, ist eine Entscheidung, die dieser Plan nicht trifft.
   **Ausgang: weiter offen.** Träger: der Register-Eintrag
   `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad` (neu in der Closure, 1×)
-  und die Frage (e) in [welle-transformationen](../welle-transformationen.md) §5
+  und die Frage (e) in [welle-transformationen](welle-transformationen.md) §5
   samt Closure-Kriterium in §3; Adresse: ein Architect-Verdikt vor der Closure
   der Welle (das Ereignis kann eintreten: die Welle trägt den Closure-Trigger
   in §3), im Umfang von `slice-transformationen-e2e-abhilfe` (der Beleg fährt
@@ -314,7 +314,7 @@ geschrieben.
   §Folgepflichten); die Verifikation liest die Lieferung als konform. Der
   Vorgang zählt im Register nicht als drittes Auftreten (Begründung in der
   `state.md` des Eintrags); die Zuschnitts-Frage bleibt in
-  [welle-transformationen](../welle-transformationen.md) §4 (Abweichung 2)
+  [welle-transformationen](welle-transformationen.md) §4 (Abweichung 2)
   geführt und trägt keine Verantwortung dieses Slice mehr.
 
 ## 7. Closure-Notiz
@@ -397,7 +397,7 @@ geschrieben.
   erkennbaren Fehlerzustand, kein erkennbares Warten (`git grep -n -i -E
   'Vorlauf|Zeitgrenze|eigene Frist|Wartegrenze' -- spec` trifft keine Zeile,
   gemessen in der Closure). Adresse: Frage (e) in
-  [welle-transformationen](../welle-transformationen.md) §5, Closure-Kriterium in
+  [welle-transformationen](welle-transformationen.md) §5, Closure-Kriterium in
   §3 und der Register-Eintrag `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`.
 - **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
   `evidence/slice-transformationen-start-reihenfolge.md`; Zähler = Zahl der Dateien
@@ -458,7 +458,7 @@ geschrieben.
   Evidence-Datei) · Abweichung vom ADR-Wortlaut (für das Ergebnis; die
   Zuschnitts-Frage bleibt bei der Welle, §4 Abweichung 2).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-transformationen](../welle-transformationen.md) (offen) — die Prüfung
+  [welle-transformationen](welle-transformationen.md) (offen) — die Prüfung
   läuft regelkonform bei deren Closure. Vorab gelesen: *Anker* — dieser Slice trägt
   kein Feld „liegt in“; *Folge-Slice* — `slice-capture-leerlauf-quellbelege`,
   `slice-transformationen-e2e-abhilfe` und `slice-transformationen-betriebsdoku` liegen

@@ -13,7 +13,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 Closure-Bedingung, die von seiner DoD verschieden wäre. Er startet nach
 `slice-transformationen-e2e-wirkung` und geht
 `slice-transformationen-betriebsdoku` voraus (Start-Trigger §4;
-[welle-transformationen](../welle-transformationen.md) §5). Die Slice-Liste der
+[welle-transformationen](welle-transformationen.md) §5). Die Slice-Liste der
 Welle bleibt bei zehn Slices: ihre Closure-Kriterien (§3) belegen die Wirkung der
 Regeln am laufenden Server, nicht am SDK-Client; eine Aufnahme änderte die Zahl
 „zehn Slices“ in §1, §3, §4 und der Roadmap, ohne dass sich ein Closure-Kriterium
@@ -414,7 +414,7 @@ kein anderer Slice in `in-progress/` liegt (WIP-Limit 1). **Reihenfolge
 (Empfehlung an den Orchestrator):** unmittelbar vor
 `slice-transformationen-betriebsdoku` — die Welle folgt der Regel „erst die
 Wirkung, dann der Beleg, dann die Doku“
-([welle-transformationen](../welle-transformationen.md) §4). Die harten Kanten sind
+([welle-transformationen](welle-transformationen.md) §4). Die harten Kanten sind
 `e2e-wirkung` → dieser Slice → `betriebsdoku` (in dessen §4 als Start-Bedingung
 eingetragen); zu `start-reihenfolge` und `e2e-abhilfe` gibt es keine Kante: die
 Tiers fahren den Feed-Container ohne Neustart und ohne Nichtanwendbarkeit.

@@ -12,7 +12,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 **Welle:** ohne Welle — Harness-Querschnitt: der Slice trägt keine
 Closure-Bedingung, die von seiner DoD verschieden wäre. Er geht
 `slice-transformationen-map-value` voraus (Start-Trigger dort, §4;
-[welle-transformationen](../welle-transformationen.md) §5).
+[welle-transformationen](welle-transformationen.md) §5).
 
 **Bezug:** [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
 (Herkunft von Aussagen in Trägern; die Grenze „kein Sensor auf Prosa“ bleibt),
@@ -381,7 +381,7 @@ steht in der Kandidatenzahl (600 → 597).
 **Start** (`next` → `in-progress`): kein anderer Slice liegt in `in-progress/`
 (WIP-Limit 1). **Reihenfolge (Empfehlung an den Orchestrator):** 1. dieser
 Slice, 2. `slice-harness-fmt-check`, 3. `slice-antragsqueue-lesefehler-failed`,
-danach die Welle [welle-transformationen](../welle-transformationen.md) in ihrer
+danach die Welle [welle-transformationen](welle-transformationen.md) in ihrer
 Tabellen-Reihenfolge, `slice-code-kommentare-bereinigung` nach
 `slice-transformationen-e2e-abhilfe`. Dieser Slice muss `done` sein, **bevor**
 `slice-transformationen-map-value` startet (Kante, dort §4): der Implementer

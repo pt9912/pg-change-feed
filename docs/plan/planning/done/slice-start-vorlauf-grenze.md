@@ -12,7 +12,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 **Welle:** ohne Welle — der Slice trägt keine Closure-Bedingung, die von
 seiner DoD verschieden wäre. Er geht `slice-transformationen-e2e-abhilfe`
 voraus (Start-Trigger dort, §4;
-[welle-transformationen](../welle-transformationen.md) §5, Kante zu
+[welle-transformationen](welle-transformationen.md) §5, Kante zu
 `slice-start-vorlauf-grenze`).
 
 **Bezug:** [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) (Transformationen,
@@ -275,7 +275,7 @@ ihre Mutationen hergeleitet).
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure der nächsten Welle (die Roadmap führt
-      [welle-transformationen](../welle-transformationen.md) unter *Offene
+      [welle-transformationen](welle-transformationen.md) unter *Offene
       Wellen*, das Ereignis kann eintreten: ihre Closure liegt nach
       `slice-transformationen-betriebsdoku`, der nach diesem Slice startet; ein
       Slice ohne Welle wird von ihr mitgeprüft).
@@ -696,7 +696,7 @@ beiden PostgreSQL-Versionen + ein realer, grüner `make test-integration`-Lauf
   Rest).
 - **Drei Paarungen:** dieser Slice hat keine Welle; die Prüfung läuft
   regelkonform bei der Closure der nächsten Welle
-  ([welle-transformationen](../welle-transformationen.md), offen).
+  ([welle-transformationen](welle-transformationen.md), offen).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

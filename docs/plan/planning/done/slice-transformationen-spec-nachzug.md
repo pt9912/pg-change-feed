@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-transformationen](../welle-transformationen.md).
+**Welle:** [welle-transformationen](welle-transformationen.md).
 
 **Bezug:** [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) (Transformationen
 — Haupt-Bezug), [`LH-FA-CFG-007.a`](../../../../spec/pflichtenheft.md) (die
@@ -41,7 +41,7 @@ inbegriffen — die Transformationen ändern keines),
 **Verantwortlich:** Implementer-Agent, 2026-09-26.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
-[welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
+[welle-transformationen](welle-transformationen.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -173,7 +173,7 @@ beschlossenen Transformations-Stand als Technik-Festlegung und als Sicht,
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure der Welle
-      [welle-transformationen](../welle-transformationen.md) (die Roadmap führt
+      [welle-transformationen](welle-transformationen.md) (die Roadmap führt
       sie unter *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -311,7 +311,7 @@ git grep -n -i -E 'WAL-Image|byte-gleich' 527db536 -- docs/user spec
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): wenn die Welle
-[welle-transformationen](../welle-transformationen.md) eröffnet ist,
+[welle-transformationen](welle-transformationen.md) eröffnet ist,
 `slice-backfill-spec-nachzug` in `done/` liegt und kein anderer Slice in
 `in-progress/` liegt (WIP-Limit 1). Grund der zweiten Bedingung: beide Slices
 ändern [`SPEC-019`](../../../../spec/pflichtenheft.md) (Antragsarten-Menge,
@@ -497,7 +497,7 @@ geschrieben.
   getrennte Rolle im frischen Kontext; der Skill prüft Slices in `done/` und
   greift nach dem `git mv` — hier nicht ausgeführt.
 - **Folge-Slices:** keine neuen — die Folge-Slices der Welle
-  [welle-transformationen](../welle-transformationen.md) liegen als Dateien in
+  [welle-transformationen](welle-transformationen.md) liegen als Dateien in
   `open/`; die Handbuch-Meldungen (Zeile `schema` in §6 des Handbuchs, das
   SQL-Beispiel des Ausschlusses) gehen an `slice-transformationen-betriebsdoku`,
   `harness/targets/schema-rollout.md:74` an
@@ -511,7 +511,7 @@ geschrieben.
   `antragsweg-usecase`; Risiko 6 (Randfälle) **eingetreten**, im Slice behoben,
   Klasse im Register.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-transformationen](../welle-transformationen.md) (offen) — die Prüfung
+  [welle-transformationen](welle-transformationen.md) (offen) — die Prüfung
   läuft regelkonform bei deren Closure. (a) Anker: der Lerneintrag verkörpert
   nichts neu, er benennt eine Spec-Lücke und legt einen Register-Eintrag an;
   (b) Folge-Slice: keiner neu, die Übergaben stehen in den fünf offenen Plänen;

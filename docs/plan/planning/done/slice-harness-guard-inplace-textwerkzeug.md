@@ -11,7 +11,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 
 **Welle:** ohne Welle — Harness-Querschnitt: der Slice trägt keine
 Closure-Bedingung, die von seiner DoD verschieden wäre. Er hat keine technische
-Kante zu einem Slice der [welle-transformationen](../welle-transformationen.md);
+Kante zu einem Slice der [welle-transformationen](welle-transformationen.md);
 die empfohlene Position steht in §4.
 
 **Bezug:** [`AGENTS.md`](../../../../AGENTS.md) §3.1 (Docker-only, Verbot des
@@ -382,7 +382,7 @@ zweiter Implementer-Lauf in derselben Zeit liefe unter einem Guard, der sich unt
 
 **Reihenfolge (Empfehlung an den Orchestrator):** nach `slice-antragsqueue-lesefehler-failed`
 (dort §4: 1. `slice-code-kommentare-kennungen`, 2. `slice-harness-fmt-check`, 3. der
-Queue-Fix, danach die Welle [welle-transformationen](../welle-transformationen.md)) und
+Queue-Fix, danach die Welle [welle-transformationen](welle-transformationen.md)) und
 **vor dem ersten Slice der Welle** (`slice-transformationen-map-value`); in jedem Fall vor
 `slice-code-kommentare-bereinigung`, dessen §8 ihn den Ort nennt, an dem die Klasse eintreten
 kann (Hunderte Kommentar-Änderungen). Grund für die Lage vor der Welle: zwei der drei
@@ -392,7 +392,7 @@ jeder Folge-Slice läuft danach unter dem Guard. **Eine technische Kante gibt es
 kein anderer offener Plan nennt `.claude/hooks/`, `pretooluse` oder `harness/conventions`
 (`git grep -n -E '\.claude/hooks|pretooluse|harness/conventions'` über `docs/plan/planning/open`
 und `welle-transformationen.md` trifft nur diesen Plan, gemessen am Parent `89d427e0`);
-deshalb braucht [welle-transformationen](../welle-transformationen.md) §5 (Kanten zu
+deshalb braucht [welle-transformationen](welle-transformationen.md) §5 (Kanten zu
 wellenlosen Slices) keinen Nachtrag, und die Reihenfolge-Sätze der anderen Pläne bleiben
 wahr (sie zählen die Slices auf, die bei ihrer Anlage vorlagen).
 

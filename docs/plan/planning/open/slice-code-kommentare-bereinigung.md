@@ -13,7 +13,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 Closure-Bedingung, die von seiner DoD verschieden wäre. Er startet nach
 `slice-code-kommentare-kennungen`, `slice-harness-fmt-check` und
 `slice-transformationen-e2e-abhilfe` (Start-Trigger §4;
-[welle-transformationen](../welle-transformationen.md) §5).
+[welle-transformationen](../done/welle-transformationen.md) §5).
 
 **Bezug:** [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
 (Herkunft von Aussagen in Trägern), [`AGENTS.md`](../../../../AGENTS.md) §3.7
@@ -246,7 +246,7 @@ ihr `make test-integration`-Lauf schreibt das Erzeugnis
 gekürzten Kommentaren aufbauen und den Lauf doppelt fahren. **Reihenfolge
 (Empfehlung an den Orchestrator):** 1. `slice-code-kommentare-kennungen`, 2.
 `slice-harness-fmt-check`, 3. `slice-antragsqueue-lesefehler-failed`, dann die
-Welle [welle-transformationen](../welle-transformationen.md), 4. dieser Slice
+Welle [welle-transformationen](../done/welle-transformationen.md), 4. dieser Slice
 nach `slice-transformationen-e2e-abhilfe`; zu
 `slice-transformationen-betriebsdoku` gibt es keine Kante (nur Doku). Will der
 Auftraggeber die Nicht-Test-Tranchen früher, schneidet der Planner den Plan

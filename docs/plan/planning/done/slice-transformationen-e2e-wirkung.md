@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-transformationen](../welle-transformationen.md).
+**Welle:** [welle-transformationen](welle-transformationen.md).
 
 **Bezug:** [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) (Happy Path,
 Boundary), [`LH-QA-SEC-004`](../../../../spec/lastenheft.md) (Wert nirgends im
@@ -37,7 +37,7 @@ inbegriffen; gemessen an `readChangeResponse`,
 **Verantwortlich:** Implementer-Agent, 2026-09-26.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
-[welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
+[welle-transformationen](welle-transformationen.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -139,7 +139,7 @@ RTM-Lauf (`make doc-trace`) schon vor diesem Slice gedeckt: die Phase
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure der Welle
-      [welle-transformationen](../welle-transformationen.md) (die Roadmap führt
+      [welle-transformationen](welle-transformationen.md) (die Roadmap führt
       sie unter *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -149,7 +149,7 @@ RTM-Lauf (`make doc-trace`) schon vor diesem Slice gedeckt: die Phase
 | `test/integration/integration_test.go` | unverändert (die Änderungs-Art „update“ des Plans ist nicht realisiert) | die `TestE2E…`-Funktionen stehen in einer neuen Datei (nächste Zeile) nach dem Muster von `backfill_e2e_test.go`; diese Datei trägt Hilfen und den Abdeckungs-Erzeuger, der Erzeuger liest jede Go-Datei des Verzeichnisses (`abdeckungsZeilen`), die Zeilen der neuen Funktionen erscheinen in der Tabelle. |
 | `test/integration/transformation_e2e_test.go` | neu | Go-Hälfte der Abdeckung, zwei Funktionen mit [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) im Doc-Kommentar: `TestE2ETransformationRulesShapeBothImages` (Happy Path — `rename_column` und `map_value` prägen Alt- und Neu-Bild von INSERT, UPDATE und DELETE an einer Tabelle mit voller Replica-Identität; Rohform vor den Regeln; nicht abgebildeter Wert, `NULL`; zwei Lesungen gleich) und `TestE2ETransformationConflictsFailWithSpecText` (Boundary — die sechs Zeilen K1, K2, K3 (zwei) und K4 (zwei) von [`SPEC-019`](../../../../spec/pflichtenheft.md) (Zeilen 753 bis 758), je `failed` mit dem Klartext und der Adresse der Spec; Regelstand danach unverändert; Gegenprobe `applied`). Der Neustart braucht `docker restart` und steht im Runner. Die Boundary steht in Go statt im Runner, weil sie nur SQL-Funktionen, `cdc.administration_request` und `cdc.changes` über pgx nutzt und keinen Container-Zugriff braucht, den Klartext von [`SPEC-019`](../../../../spec/pflichtenheft.md) wörtlich vergleicht und im ersten `go test`-Aufruf des Runners läuft; die Datei importiert keine interne Anwendungslogik (E2E-Tier, [`ADR-0030`](../../adr/0030-testpyramide.md)). Die Hilfen (`newBackfillEnv`, `enableTable`, `awaitRequestApplied`) stammen aus `backfill_e2e_test.go`. |
 | `tools/harness/run-integration-tests.sh` | update | zwei Phasen nach der Leerlauf-Bestätigung und vor dem Upgrade-Tausch: Happy Path über alle fünf Zustellwege (mit `rename_column` und `map_value`, Rohform davor und danach) und Neustart mit Ausschluss (zwei Neustarts, jeder mit Startzeit-Vergleich über `tf_restart_feed`; Rücknahme der Regeln; die zweite Phase liest die Regelformen `TF_RULE_*` aus dem Block der ersten, im Kommentar benannt); die Regeln der Phasen werden am Ende zurückgenommen; die zwei neuen Testfunktionen stehen im `-run`-Muster des ersten `go test`-Aufrufs; die K1–K4-Boundary steht in der Go-Datei, nicht im Runner; Kopfkommentar nennt die Phasen; je Phase ein `abdeckung_declare`-Anker mit [`LH-FA-CFG-007`](../../../../spec/lastenheft.md). |
-| `tools/harness/httpclient`, `grpcclient`, `sseclient`, `natsstreamsub` | geprüft, unverändert | alle vier geben das vollständige Row Image aus (`new_image=<JSON>`; gemessen `git grep -n 'new_image' -- tools/harness/httpclient tools/harness/grpcclient tools/harness/sseclient tools/harness/natsstreamsub`, Zeile im Block unten): kein fester Feldzugriff, kein Plan-Nachzug. Grenze der Aussage „alle Wege dieselbe Form“: die Clients der drei Stream-Wege und der HTTP-Client drucken das Neu-Bild; die Phase belegt die Form auf den fünf Wegen daher für eine eingefügte Zeile (INSERT). Die Bilder von UPDATE und DELETE, das Alt-Bild eingeschlossen, belegt allein `TestE2ETransformationRulesShapeBothImages` über `cdc.changes`; der Deklarations-Anker der Phase im Runner nennt beide Hälften. **Restfläche mit Adresse:** UPDATE, DELETE und das Alt-Bild auf den vier weiteren Wegen sind aus der Architektur hergeleitet (alle Wege lesen dieselbe Change, [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Teilfrage 6 Option D), nicht erprobt. Kein offener Slice trägt sie: `slice-sdk-regel-realserver-e2e` führt `old_image` einer UPDATE-/DELETE-Change ausdrücklich als nicht Gegenstand (§6 dort; gelesen bei der Closure), und die Pläne von `e2e-abhilfe` und `betriebsdoku` nennen sie nicht (Suche bei der Closure). Adresse: das Closure-Kriterium „Restfläche der Zustellwege“ in [welle-transformationen](../welle-transformationen.md) §3, ein Ereignis, das eintreten kann (die Roadmap führt die Welle unter *Offene Wellen*). |
+| `tools/harness/httpclient`, `grpcclient`, `sseclient`, `natsstreamsub` | geprüft, unverändert | alle vier geben das vollständige Row Image aus (`new_image=<JSON>`; gemessen `git grep -n 'new_image' -- tools/harness/httpclient tools/harness/grpcclient tools/harness/sseclient tools/harness/natsstreamsub`, Zeile im Block unten): kein fester Feldzugriff, kein Plan-Nachzug. Grenze der Aussage „alle Wege dieselbe Form“: die Clients der drei Stream-Wege und der HTTP-Client drucken das Neu-Bild; die Phase belegt die Form auf den fünf Wegen daher für eine eingefügte Zeile (INSERT). Die Bilder von UPDATE und DELETE, das Alt-Bild eingeschlossen, belegt allein `TestE2ETransformationRulesShapeBothImages` über `cdc.changes`; der Deklarations-Anker der Phase im Runner nennt beide Hälften. **Restfläche mit Adresse:** UPDATE, DELETE und das Alt-Bild auf den vier weiteren Wegen sind aus der Architektur hergeleitet (alle Wege lesen dieselbe Change, [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Teilfrage 6 Option D), nicht erprobt. Kein offener Slice trägt sie: `slice-sdk-regel-realserver-e2e` führt `old_image` einer UPDATE-/DELETE-Change ausdrücklich als nicht Gegenstand (§6 dort; gelesen bei der Closure), und die Pläne von `e2e-abhilfe` und `betriebsdoku` nennen sie nicht (Suche bei der Closure). Adresse: das Closure-Kriterium „Restfläche der Zustellwege“ in [welle-transformationen](welle-transformationen.md) §3, ein Ereignis, das eintreten kann (die Roadmap führt die Welle unter *Offene Wellen*). |
 | `docs/user/e2e-abdeckung.md` | Erzeugnis | kommt aus dem Runner, wird nicht von Hand geschrieben. Die `Ort`-Angaben sind Zeilennummern des Quelltexts am Stand des schreibenden Laufs: jede Änderung von Go- oder Runner-Zeilen oberhalb einer Deklaration verschiebt sie, und nur ein Lauf des Runners schreibt sie neu. Die Zwischenstände vor dem letzten Lauf tragen abweichende Nummern; am Endstand ist die Datei die Ausgabe des Runners (`abdeckung_schreiben` schreibt sie nach dem letzten Phasen-Anker; ein weiterer Lauf ohne Quelländerung meldet `E2E-Abdeckungstabelle unverändert`, gedruckt in der Verifikation und in beiden Legs des Laufs von `e2e.yml` nach dem Push, §7). |
 | `harness/README.md` §Sensors (`make test-integration`, `make doc-trace`) | update | Aufzählung der Belege (vier neue Belege in der Zeile `make test-integration`); Waisen-Messung nachgemessen (Zeile `make doc-trace`). |
 | `compose.yaml` | geprüft, unverändert | die Tabellen werden über `cdc.enable_table` aktiviert, `CDC_TABLES` bleibt unberührt. |
@@ -239,7 +239,7 @@ test-integration`-Lauf + Closure-Notiz mit Lerneintrag geschrieben.
   Job-Log beider Legs). **Restfläche (benannte Grenze, kein Risiko-Ausgang):**
   UPDATE, DELETE und das Alt-Bild auf den Stream-Wegen sind hergeleitet, nicht
   erprobt; Adresse in §3 (Zeile der Wegwerf-Clients): das Closure-Kriterium in
-  [welle-transformationen](../welle-transformationen.md) §3.
+  [welle-transformationen](welle-transformationen.md) §3.
 - **Laufzeit von `make test-integration`** wächst
   (`BEO-PGC/test-integration-retention-timing-flake`, verkörpert, 3×); die
   Pipeline `e2e.yml` fährt das Testpaket unverändert (keine Workflow-Änderung,
@@ -375,7 +375,7 @@ test-integration`-Lauf + Closure-Notiz mit Lerneintrag geschrieben.
   Closure), und eine endliche Liste von Konjunktiv-Formen bleibt unvollständig
   (hergeleitet, nicht erprobt; Schritt 20 selbst führt die Unterscheidung als
   Satz-Subjekt-Urteil). Adresse der Lücke: der Lese-Schritt der Closure von
-  [welle-transformationen](../welle-transformationen.md) (der Eintrag
+  [welle-transformationen](welle-transformationen.md) (der Eintrag
   `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar` steht bei 7×).
   *(b) Geschärfte Regel:* keine neue Regel; zwei **Anwendungen** der
   verkörperten Regeln, die vor dem Merge gewirkt haben: die Zusage über den
@@ -394,7 +394,7 @@ test-integration`-Lauf + Closure-Notiz mit Lerneintrag geschrieben.
   neben `cdc.changes` **hergeleitet** (alle Wege lesen dieselbe Change,
   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 6); Adresse: das Closure-Kriterium „Restfläche der Zustellwege“ in
-  [welle-transformationen](../welle-transformationen.md) §3 (Folge-Slice mit
+  [welle-transformationen](welle-transformationen.md) §3 (Folge-Slice mit
   Kennung oder als hergeleitet geführte Aussage mit der gemessenen Menge).
 - **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
   `evidence/slice-transformationen-e2e-wirkung.md`, Zähler = Zahl der Dateien
@@ -447,7 +447,7 @@ test-integration`-Lauf + Closure-Notiz mit Lerneintrag geschrieben.
   entsteht erst danach, Folge-Slice mit Kennung
   `slice-transformationen-betriebsdoku`. *Weiter offen:* keines.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-transformationen](../welle-transformationen.md) (offen) — die Prüfung
+  [welle-transformationen](welle-transformationen.md) (offen) — die Prüfung
   läuft regelkonform bei deren Closure. Vorab gelesen: *Anker* — dieser Slice
   trägt kein Feld „liegt in“; *Folge-Slice* — `slice-transformationen-start-reihenfolge`,
   `slice-transformationen-e2e-abhilfe`, `slice-transformationen-betriebsdoku`,

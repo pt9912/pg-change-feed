@@ -94,7 +94,7 @@ Ergebnis: das Risiko „Kein Wert eines Secrets in einem Log oder Dokument“ is
 | C | Closure-Notiz mit Lerneintrag | **korrekt offen** | §7 des Plans trägt „*(wird bei der Closure durch den Planner gefüllt)*“ |
 | B | Beobachtungs-Register | **korrekt offen** | Closure-Pflicht |
 | Ri | Jedes Risiko aus §6 trägt einen Ausgang | **korrekt offen** | §6 trägt 12 Einträge mit „offen“/Erwartung; die Ausgänge setzt die Closure — Vorschlag in §8 |
-| Pa | Die drei Paarungen | **korrekt offen** | hängen an der nächsten Welle-Closure ([welle-transformationen](../plan/planning/welle-transformationen.md), Adresse in Plan §4) |
+| Pa | Die drei Paarungen | **korrekt offen** | hängen an der nächsten Welle-Closure ([welle-transformationen](../plan/planning/done/welle-transformationen.md), Adresse in Plan §4) |
 
 `[x]` sind vier Zeilen (drei Liefer-Punkte, Gates und Belege) und die Review-Zeile, `[ ]` fünf (Post-Push-Beleg,
 Closure-Notiz, Beobachtungs-Register, Risiko-Ausgänge, Paarungen), zusammen 10 — gezählt am Plan (Zeilen 128 bis

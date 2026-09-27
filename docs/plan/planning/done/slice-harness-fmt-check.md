@@ -12,7 +12,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 **Welle:** ohne Welle — Harness-Querschnitt: der Slice trägt keine
 Closure-Bedingung, die von seiner DoD verschieden wäre. Er geht
 `slice-transformationen-e2e-wirkung` voraus (Start-Trigger dort, §4;
-[welle-transformationen](../welle-transformationen.md) §5).
+[welle-transformationen](welle-transformationen.md) §5).
 
 **Bezug:** [`AGENTS.md`](../../../../AGENTS.md) §3.1 (Docker-only), §3.2 (kein
 Linter, kein `//nolint`), §3.6 (ein Gate braucht eine ADR) und §3.9;
@@ -268,7 +268,7 @@ Herkunft `seit slice-harness-fmt-check` in Schritt 18 des Implementer-Ablaufs ei
 (WIP-Limit 1). **Reihenfolge (Empfehlung an den Orchestrator):** 1.
 `slice-code-kommentare-kennungen`, 2. dieser Slice, 3.
 `slice-antragsqueue-lesefehler-failed`, danach die Welle
-[welle-transformationen](../welle-transformationen.md); eine technische Kante zu
+[welle-transformationen](welle-transformationen.md); eine technische Kante zu
 `slice-code-kommentare-kennungen` gibt es nicht. Dieser Slice muss `done` sein,
 **bevor** `slice-transformationen-e2e-wirkung` startet (Kante, dort §4):
 `slice-transformationen-e2e-wirkung` und `slice-transformationen-e2e-abhilfe`
