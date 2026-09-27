@@ -344,6 +344,7 @@ CREATE TABLE public.feed_e2e_idle (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_e2e_schema (id int PRIMARY KEY, name text, amount text);
 CREATE TABLE public.feed_e2e_sql_admin (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_e2e_walsender_timing (id int PRIMARY KEY, name text);
+CREATE TABLE public.feed_e2e_startgrenze (id int PRIMARY KEY, name text);
 INSERT INTO cdc.source (source_id, name) VALUES ('src-e2e', 'E2E-Quelle');
 SQL
 
@@ -3874,6 +3875,61 @@ tf_form "$TF_RESTART_TABLE" 7 '{"status":"o"}' "$TF_PHASE — Bild mit Ausschlus
 tf_no_value "$TF_RESTART_TABLE" 7 TfSecretOhneRegeln "$TF_PHASE — Wert der ausgeschlossenen Spalte ohne Regeln"
 
 echo "run-integration-tests: Transformationen-Neustart und Ausschluss (LH-FA-CFG-007) belegt — auf $TF_RESTART_TABLE trug die Change nach einem realen docker restart (Startzeit $tf_first_restart_before, danach $tf_first_restart_after) die Form beider Regeln; nach dem Entfernen trug die nächste Change die Rohform; nach exclude_column auf name trug das Bild vor und nach dem zweiten docker restart (Startzeit $tf_started_before, danach $tf_started_after) weder name noch customer_name noch den Wert, die Spalte status blieb (mit Regel offen, ohne Regel roh)"
+
+abdeckung_declare "Prozessstart-Vorlauf-Frist" "LH-FA-CFG-007,LH-QA-REL-001" "eine Sperre auf einer eigenen, bislang nicht aktivierten Tabelle hält den enable-Antrag über die Frist des Vorlaufs (30s, ADR-0128) hinaus fest; ein realer Neustart des Feed-Containers startet Stream und Administrations-Goroutine trotzdem — der Healthcheck bleibt während der Wartezeit gesund, eine auf einer bereits aktivierten Tabelle committete Änderung wird binnen Frist plus Toleranz über cdc.changes sichtbar, der Prozess endet nicht mit einer Fehlerklasse, und der Antrag wird erst nach Freigabe der Sperre applied" "Prozessstart-Vorlauf-Frist (ADR-0128) belegt"
+
+# Prozessstart-Vorlauf-Frist (ADR-0128): eine zweite Sitzung sperrt die
+# eigens dafür angelegte, bislang nicht aktivierte Tabelle
+# $STARTGRENZE_TABLE mit `LOCK TABLE ...
+# IN ACCESS EXCLUSIVE MODE` (bf_hold_start/bf_hold_end halten und lösen
+# sie gezielt, länger als die Frist von 30s); `cdc.enable_table` legt
+# währenddessen den Antrag an — `ALTER PUBLICATION ... ADD TABLE` braucht
+# einen mit ACCESS EXCLUSIVE unvereinbaren Lock auf die Zieltabelle und
+# hängt deshalb an der Sperre, unabhängig vom folgenden Neustart. Ein
+# `docker restart` liest denselben, weiterhin `pending` stehenden Antrag im
+# Vorlauf des neuen Prozesses: `Stream.Run` (`START_REPLICATION`) und die
+# Administrations-Goroutine starten nach Ablauf der Frist trotzdem
+# (`ADR-0128` Festlegung 1 und 3) — belegt über den eigenen
+# `--healthcheck`-Ausgang des Containers (unabhängig vom Docker-eigenen
+# Health-Status-Takt) und eine auf der dauerhaft aktivierten Tabelle
+# feed_e2e_full committete Änderung. Nach Freigabe der Sperre verarbeitet
+# die Administrations-Goroutine den Antrag ohne Frist zu Ende (applied).
+STARTGRENZE_TABLE=feed_e2e_startgrenze
+STARTGRENZE_HOLD=pgc-e2e-startgrenze-hold
+
+bf_hold_start "$STARTGRENZE_HOLD" "BEGIN; LOCK TABLE public.$STARTGRENZE_TABLE IN ACCESS EXCLUSIVE MODE; SELECT pg_sleep(180);"
+bf_await_sql "SELECT count(*) FROM pg_locks l JOIN pg_stat_activity a ON a.pid = l.pid WHERE a.application_name = '$STARTGRENZE_HOLD' AND l.mode = 'AccessExclusiveLock' AND l.granted" 1 15 "Prozessstart-Vorlauf-Frist — Sperre auf $STARTGRENZE_TABLE"
+
+startgrenze_request_id=$(bf_sql "SELECT cdc.enable_table('src-e2e', 'public', '$STARTGRENZE_TABLE')")
+[ -n "$startgrenze_request_id" ] || bf_fail "Prozessstart-Vorlauf-Frist — cdc.enable_table($STARTGRENZE_TABLE) lieferte keine Antrags-ID"
+
+startgrenze_restart_at=$(date +%s)
+docker restart "$FEED_CONTAINER" >/dev/null
+sleep 1
+bf_sql "INSERT INTO public.feed_e2e_full (id, name) VALUES (9001, 'NachDemVorlauf')" >/dev/null
+
+# Während der Frist (bis zu 30s, ADR-0128 Festlegung 2) bleibt der
+# Healthcheck gesund — mehrere Abfragen über das Fenster verteilt, direkt
+# über den Container-eigenen `--healthcheck`-Ausgang (compose.yaml), nicht
+# über Dockers eigenen, langsameren Health-Status-Takt. Die Änderung oben
+# ist während dieser Schleife nicht sichtbar: der Stream liest erst nach
+# Ablauf der Frist.
+for startgrenze_probe in $(seq 1 9); do
+  docker exec "$FEED_CONTAINER" /pg-change-feed --healthcheck \
+    || bf_fail "Prozessstart-Vorlauf-Frist — Healthcheck meldet ungesund während der Wartezeit (Versuch $startgrenze_probe)"
+  sleep 3
+done
+
+bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = 'feed_e2e_full' AND new_data->>'id' = '9001'" 1 20 "Prozessstart-Vorlauf-Frist — Änderung auf feed_e2e_full"
+startgrenze_elapsed=$(( $(date +%s) - startgrenze_restart_at ))
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+[ "$feed_running" = "true" ] || bf_fail "Prozessstart-Vorlauf-Frist — Feed-Container lief nach dem Neustart nicht mehr (der Prozess sollte trotz Frist-Ablauf nicht mit einer Fehlerklasse enden)"
+
+bf_hold_end "$STARTGRENZE_HOLD"
+bf_await_applied "$startgrenze_request_id" "Prozessstart-Vorlauf-Frist"
+
+echo "run-integration-tests: Prozessstart-Vorlauf-Frist (ADR-0128) belegt — Neustart bei gesperrtem $STARTGRENZE_TABLE, Healthcheck blieb über $startgrenze_probe Abfragen gesund, Änderung auf feed_e2e_full nach ${startgrenze_elapsed}s seit dem Neustart erfasst, Antrag $startgrenze_request_id nach Freigabe der Sperre applied"
 
 abdeckung_declare "Upgrade-Sicherheits-Rundlauf" "LH-QA-OPS-005,LH-FA-RET-001" "ein realer Container-Tausch ersetzt den Feed-Container durch eine neue Instanz desselben Images, während Datenbank und NATS unberührt bleiben — der Datenstand davor bleibt lesbar (\`count(*)\`-Beleg gegen cdc.changes nach dem Tausch, \`LH-FA-RET-001\`), danach Eingefügtes wird weiter erfasst" "Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064) belegt"
 
