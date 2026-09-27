@@ -204,8 +204,13 @@ ihre Mutationen hergeleitet).
       Folgepflicht 2); der Satz trägt nicht mehr, als die ADR trägt (keine
       Aussage über eine Antragsart außer `enable`, die kein Lauf gefahren hat).
       *Zu belegen durch:* Review des Diffs gegen die ADR und `make docs-check`.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
-      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9). Alle
+      sechs Gates grün: `baseline-verify` (v6.9.0, 54 Dateien),
+      `docs-check` (1356 Dateien, 0 Befund), `commit-traceability`
+      (`HEAD~5..HEAD`, ohne Struktur-ID im Betreff), `coverage-gate`
+      (85,30 % ≥ 80 %), `generated-sync` (byte-gleich), `a-check`
+      (0 Befund).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
