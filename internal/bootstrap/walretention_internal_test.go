@@ -266,14 +266,13 @@ func TestRunWALRetentionCheckStopsStreamAboveErrorThreshold(t *testing.T) {
 }
 
 // TestMergeStreamAndWALFaultOutcomePrioritizesStreamError belegt die
-// Sentinel-Trennung aus `ADR-0049`(a) auf Ebene der Rückgabewert-Priorität
-// (`slice-026` §6, Regressionsrisiko): eine Stream-Ordnungs-Verletzung
-// erreicht `Run`s Rückgabewert unverändert, selbst wenn zufällig auch ein
-// WAL-Schwellen-Fehler aufgelaufen ist — der neue Fortsetzungspfad
-// überschreibt oder verdeckt sie nie. Rot färbende Mutation: die Priorität
-// in `mergeStreamAndWALFaultOutcome` umdrehen (`fault.get()` zuerst prüfen)
-// — dann liefert dieser Test den WAL-Schwellen-Fehler statt der
-// Stream-Ordnungs-Verletzung.
+// Sentinel-Trennung aus `ADR-0049`(a) auf Ebene der Rückgabewert-Priorität:
+// eine Stream-Ordnungs-Verletzung erreicht `Run`s Rückgabewert unverändert,
+// selbst wenn zusätzlich ein WAL-Schwellen-Fehler aufgelaufen ist — der
+// Fortsetzungspfad überschreibt oder verdeckt sie nie. Rot färbende
+// Mutation: den Sentinel-Zweig in `mergeStreamAndWALFaultOutcome` entfernen
+// (nur noch `streamErr == nil` prüfen) — dann liefert dieser Test den
+// WAL-Schwellen-Fehler statt der Stream-Ordnungs-Verletzung.
 func TestMergeStreamAndWALFaultOutcomePrioritizesStreamError(t *testing.T) {
 	var fault walRetentionFault
 	fault.set(fmt.Errorf("%w: WAL-Rückstand über Fehlerschwelle", outbound.ErrReplication))
@@ -295,10 +294,10 @@ func TestMergeStreamAndWALFaultOutcomePrioritizesStreamError(t *testing.T) {
 }
 
 // TestMergeStreamAndWALFaultOutcomeFallsBackToFaultOnRegularStreamEnd
-// belegt die Gegenseite: erst ein regulärer Stream-Abschluss (`nil`, über
-// `stopStream` ausgelöst) lässt den aufgelaufenen WAL-Schwellen-Fehler
-// durch — genau der Fall, den `Run` nach einem Fehlerschwellen-Abbruch
-// erreicht.
+// belegt einen der beiden Fälle, die den WAL-Schwellen-Fehler durchlassen:
+// ein regulärer Stream-Abschluss (`nil`, über `stopStream` ausgelöst) —
+// die Gegenseite mit einem Stream-Fehler, dessen Kette den Abbruch selbst
+// trägt, belegt `TestMergeStreamAndWALFaultOutcomeAbortDerivedStreamErrorYieldsFault`.
 func TestMergeStreamAndWALFaultOutcomeFallsBackToFaultOnRegularStreamEnd(t *testing.T) {
 	var fault walRetentionFault
 	walErr := fmt.Errorf("%w: WAL-Rückstand über Fehlerschwelle", outbound.ErrReplication)
@@ -311,5 +310,51 @@ func TestMergeStreamAndWALFaultOutcomeFallsBackToFaultOnRegularStreamEnd(t *test
 
 	if got := mergeStreamAndWALFaultOutcome(nil, &walRetentionFault{}); got != nil {
 		t.Fatalf("mergeStreamAndWALFaultOutcome(nil, leerer WAL-Fault) = %v, wollen nil", got)
+	}
+}
+
+// TestMergeStreamAndWALFaultOutcomeAbortDerivedStreamErrorYieldsFault belegt
+// die neue Zeile der Vertragstabelle (Architect-Verdikt
+// `architect-verdict-wal-fehlerschwelle-ausgangsklasse` §2): trägt die
+// Fehlerkette des Stream-Endes `context.Canceled` — die Folge des Abbruchs,
+// den die Schwellen-Prüfung selbst über `stopStream` auslöst —, liefert der
+// Ausgang den WAL-Fehler statt des gewrappten Stream-Fehlers; ein
+// Stream-Fehler ohne diese Abbruch-Folge (ein echter Persistenzfehler)
+// bleibt unverändert erhalten. Rot färbende Mutation: die alte Priorität
+// (`streamErr != nil` liefert den Stream-Fehler ohne die
+// `context.Canceled`-Prüfung) wiederherstellen — der erste Fall liefert
+// dann den gewrappten Storage-Fehler statt des WAL-Fehlers.
+func TestMergeStreamAndWALFaultOutcomeAbortDerivedStreamErrorYieldsFault(t *testing.T) {
+	walErr := fmt.Errorf("%w: WAL-Rückstand über Fehlerschwelle", outbound.ErrReplication)
+
+	cases := []struct {
+		name      string
+		streamErr error
+		wantFault bool
+	}{
+		{
+			name:      "Fehlerkette trägt context.Canceled (Abbruch-Folge einer gehaltenen Persistierung)",
+			streamErr: fmt.Errorf("%w: %w", outbound.ErrStorage, fmt.Errorf("Verbindung beendet: %w", context.Canceled)),
+			wantFault: true,
+		},
+		{
+			name:      "echter Persistenzfehler ohne Abbruch-Folge",
+			streamErr: fmt.Errorf("%w: deadlock detected", outbound.ErrStorage),
+			wantFault: false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var fault walRetentionFault
+			fault.set(walErr)
+			got := mergeStreamAndWALFaultOutcome(c.streamErr, &fault)
+			if c.wantFault {
+				if !errors.Is(got, outbound.ErrReplication) {
+					t.Fatalf("mergeStreamAndWALFaultOutcome(%v, gesetzter WAL-Fault) = %v, wollen den WAL-Fehler", c.streamErr, got)
+				}
+			} else if got != c.streamErr {
+				t.Fatalf("mergeStreamAndWALFaultOutcome(%v, gesetzter WAL-Fault) = %v, wollen den Stream-Fehler unverändert", c.streamErr, got)
+			}
+		})
 	}
 }

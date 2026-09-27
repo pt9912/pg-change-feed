@@ -16,21 +16,23 @@ import (
 )
 
 // TestWALRetentionThresholdsFollowGrowthAtInactiveSlot belegt gegen reale
-// PostgreSQL (`ADR-0049`, `SPEC-013`): der Rückstand eines Slots, den kein
-// Stream bestätigt, wächst durch beide Seiten der Schwelle
-// (`LH-QA-REL-003`), gemessen vom echten `WALRetentionChecker` und bewertet
-// von `runWALRetentionCheck` — oberhalb der Warnschwelle eine Warnung ohne
-// Abbruch, oberhalb der Fehlerschwelle der Abbruch-Zug und ein Fehler der
-// Klasse `replication`. Der Test fährt weder einen Stream noch `Run`: die
-// Abbruchfunktion ist ein bloßer Kontext-Abbruch. Das Prozessende trägt die
-// Kette aus `TestMergeStreamAndWALFaultOutcomeFallsBackToFaultOnRegularStreamEnd`
-// (Fehler bei Stream-Ende) und `TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes`
+// PostgreSQL (`ADR-0049`): der Rückstand eines Slots, den kein Stream
+// bestätigt, wächst durch beide Seiten der Schwelle, gemessen vom echten
+// `WALRetentionChecker` und bewertet von `runWALRetentionCheck` —
+// oberhalb der Warnschwelle eine Warnung ohne Abbruch, oberhalb der
+// Fehlerschwelle der Abbruch-Zug und ein Fehler der Klasse `replication`.
+// Der Test fährt weder einen Stream noch `Run`: die Abbruchfunktion ist
+// ein bloßer Kontext-Abbruch. Das Prozessende trägt die Kette aus
+// `TestMergeStreamAndWALFaultOutcomeFallsBackToFaultOnRegularStreamEnd`
+// und `TestMergeStreamAndWALFaultOutcomeAbortDerivedStreamErrorYieldsFault`
+// (beide Enden liefern den WAL-Fehler) und
+// `TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes`
 // (Fehler → Klasse); die E2E-Phase „Leerlauf-Bestätigung“ von
 // `make test-integration` belegt im laufenden Container die Gegenseite (WAL
-// ohne Inhalt für die Publication erreicht die Fehlerschwelle nicht,
-// `ADR-0120`). Die Schwellen sind ein Test-Override
-// (`Config.WALRetentionWarnBytes`/`WALRetentionErrorBytes`), klein gegen
-// `SPEC-013`s 100 MiB/1 GiB und groß gegen das Grundrauschen der Instanz.
+// ohne Inhalt für die Publication erreicht die Fehlerschwelle nicht). Die
+// Schwellen sind ein Test-Override
+// (`Config.WALRetentionWarnBytes`/`WALRetentionErrorBytes`), klein gegen die
+// Produktions-Startwerte und groß gegen das Grundrauschen der Instanz.
 //
 // Die Instanz gehört dem Test allein (`CDC_WALRETENTION_TEST_DSN`,
 // `run-replication-tests.sh` startet den Lauf gesondert nach dem Tier-Lauf):

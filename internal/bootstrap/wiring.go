@@ -1166,20 +1166,33 @@ func (f *walRetentionFault) get() error {
 }
 
 // mergeStreamAndWALFaultOutcome trägt die Priorität zwischen dem
-// Stream-Ausgang und einem aufgelaufenen WAL-Schwellen-Fehler: Ein
-// Stream-Fehler — jede Klasse, ausdrücklich einschließlich einer
-// Stream-Ordnungs-Verletzung (`mapper.ErrChangeWithoutBegin` u. ä.) —
-// erreicht `Run`s Rückgabewert unverändert; ein WAL-Schwellen-Fehler kommt
-// nur zum Zug, wenn der Stream-Lauf regulär endete (`nil`, ausgelöst über
-// `stopStream` durch dieselbe Schwellen-Prüfung). Diese Reihenfolge trägt
-// die Sentinel-Trennung aus `ADR-0049`(a) auf Ebene der Rückgabewert-
-// Priorität: Der Schwellen-Fortsetzungspfad kann eine Stream-Ordnungs-
-// Verletzung nie überschreiben oder verdecken.
+// Stream-Ausgang und einem aufgelaufenen WAL-Schwellen-Fehler (`ADR-0049`):
+// ohne gesetzten WAL-Fehler bleibt der Stream-Ausgang unverändert. Mit
+// gesetztem WAL-Fehler liefern `nil` (regulärer Stream-Abschluss, über
+// `stopStream` durch dieselbe Schwellen-Prüfung ausgelöst) und ein
+// Stream-Fehler, dessen Kette `context.Canceled` trägt — die Folge
+// desselben Abbruchs —, den WAL-Fehler; eine Stream-Ordnungs-Verletzung
+// (`mapper.ErrChangeWithoutBegin` u. ä.) erreicht `Run`s Rückgabewert
+// unverändert, unabhängig vom WAL-Fehler; jeder andere Stream-Fehler (ein
+// echter Persistenzfehler ohne diese Abbruch-Folge, ein ACK-Fehler) bleibt
+// ebenfalls unverändert erhalten.
 func mergeStreamAndWALFaultOutcome(streamErr error, fault *walRetentionFault) error {
-	if streamErr != nil {
+	walErr := fault.get()
+	if walErr == nil {
 		return streamErr
 	}
-	return fault.get()
+	switch {
+	case streamErr == nil:
+		return walErr
+	case errors.Is(streamErr, mapper.ErrChangeWithoutBegin),
+		errors.Is(streamErr, mapper.ErrCommitWithoutBegin),
+		errors.Is(streamErr, mapper.ErrBeginWithoutCommit):
+		return streamErr
+	case errors.Is(streamErr, context.Canceled):
+		return walErr
+	default:
+		return streamErr
+	}
 }
 
 // runWALRetentionCheck misst den WAL-Rückstand des Capture-Slots periodisch

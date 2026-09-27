@@ -3483,18 +3483,18 @@ rm -rf "$WAL_TMP"
 
 echo "run-integration-tests: Leerlauf-Bestätigung (LH-FA-CAP-009, LH-QA-REL-001) belegt — bei den Schwellen Warn $WAL_WARN_BYTES B / Fehler $WAL_ERROR_BYTES B (Konfigurationsdatei) endete der Backfill-Run $wal_run_id über $WAL_ROWS Zeilen completed und erzeugte $wal_run_bytes B WAL, ein Schreiber auf die nicht aktivierte Tabelle $WAL_FOREIGN erzeugte in $WAL_FOREIGN_CHUNKS Stücken zu je $WAL_FOREIGN_CHUNK_ROWS Zeilen zusammen $wal_foreign_bytes B WAL (höchstes Stück $wal_foreign_chunk_max B, unter der Warnschwelle; nach jedem Stück erreichte confirmed_flush_lsn die Position hinter dem Stück, Frist ${WAL_FOREIGN_CONFIRM_SECONDS} s); der Feed-Container lief über beide Lasten weiter (je ${WAL_WAIT_SECONDS} s beobachtet, kein Neustart), der Bestand ist über cdc.changes lesbar, der höchste der im Log des Feed-Containers gemessenen Rückstände (Proben im 5-s-Takt, keine Spitze) liegt bei $wal_peak B"
 
-abdeckung_declare "Fehlerschwelle des WAL-Rückstands beendet den Container" "LH-QA-REL-001,LH-QA-REL-003" "bei gehaltener Persistierung (exklusive Sperre auf cdc.change) und WAL ohne Inhalt für die Publication über der Fehlerschwelle beendet der Feed-Container den Lauf mit Ausgang 1 und der Abbruch-Zeile im Log und meldet einen Fehlerzustand über cdc.process_heartbeat; die gehaltene Persistierung allein beendet ihn nicht, und die wartende Transaktion ist nach dem Neustart über cdc.changes lesbar" "Fehlerschwelle beendet den Container (LH-QA-REL-001, LH-QA-REL-003) belegt"
+abdeckung_declare "Fehlerschwelle des WAL-Rückstands beendet den Container" "LH-QA-REL-001,LH-QA-REL-003" "bei gehaltener Persistierung (exklusive Sperre auf cdc.change) und WAL ohne Inhalt für die Publication über der Fehlerschwelle beendet der Feed-Container den Lauf mit Ausgang 1 und der Abbruch-Zeile im Log und meldet einen Fehlerzustand der Klasse replication über cdc.process_heartbeat; die gehaltene Persistierung allein beendet ihn nicht, und die wartende Transaktion ist nach dem Neustart über cdc.changes lesbar" "Fehlerschwelle beendet den Container (LH-QA-REL-001, LH-QA-REL-003) belegt"
 
-# Die Gegenseite der Phase oben: der Rückstand erreicht die Fehlerschwelle nur,
-# wenn der Slot nichts bestätigt; solange der Stream im Leerlauf bestätigt,
-# entlastet ihn die Leerlauf-Bestätigung. Eine Sitzung des Runners sperrt
-# `cdc.change` exklusiv, die
-# Persistierung der nächsten Transaktion einer aktivierten Tabelle wartet auf
-# die Sperre (der Runner liest die wartende Anweisung in `pg_stat_activity`),
-# und ein Schreiber auf eine nicht aktivierte Tabelle bringt den Rückstand über
-# die Fehlerschwelle (`ADR-0049`). Der Container läuft wie oben mit der
-# Konfigurationsdatei der gesenkten Schwellen und wird am Phasen-Ende ohne
-# sie wiederhergestellt.
+# Die Gegenseite der vorigen Phase: dort bestätigt der Stream im Leerlauf und
+# entlastet den Rückstand; hier hält eine Sitzung des Runners `cdc.change`
+# exklusiv, die Persistierung der nächsten Transaktion einer aktivierten
+# Tabelle wartet auf die Sperre (der Runner liest die wartende Anweisung in
+# `pg_stat_activity`), und ein Schreiber auf eine nicht aktivierte Tabelle
+# bringt den Rückstand über die Fehlerschwelle — der Fehlerzustand trägt
+# danach die Klasse `replication` (`ADR-0049`). Der Container läuft wie in
+# der vorigen Phase mit der Konfigurationsdatei der gesenkten Schwellen
+# (`WAL_WARN_BYTES`/`WAL_ERROR_BYTES`, `bf_wal_hold`, `wal_feed_started`) und
+# wird am Phasen-Ende ohne sie wiederhergestellt.
 BF_PHASE="Fehlerschwelle beendet den Container"
 WAL_STOP_TABLE=feed_e2e_wal_stop
 WAL_STOP_FOREIGN=feed_e2e_wal_stop_foreign
@@ -3561,10 +3561,13 @@ wal_stop_logged=$(printf '%s\n' "$wal_stop_log" | grep 'WAL-Rückstand über Feh
 [ -n "$wal_stop_logged" ] && [ "$wal_stop_logged" -gt "$WAL_ERROR_BYTES" ] || bf_fail "$BF_PHASE — der gemessene Rückstand der Abbruch-Zeile (${wal_stop_logged:-leer} B) liegt nicht über der Fehlerschwelle $WAL_ERROR_BYTES B"
 bf_expect "$(printf '%s\n' "$wal_stop_log" | grep -c 'Lauf beendet mit Fehler')" 1 "$BF_PHASE — Ende-Zeilen im Log des Feed-Containers"
 
-# Der Fehlerzustand ist über die Heartbeat-Projektion sichtbar; seine Klasse
-# steht in der Ausgabe des Runners und ist nicht Teil der Zusage dieser Phase.
+# Der Fehlerzustand ist über die Heartbeat-Projektion sichtbar und trägt die
+# Klasse `replication` (`ADR-0049`): die Ausgangs-Klasse-Regel in
+# `mergeStreamAndWALFaultOutcome` lässt den WAL-Schwellen-Fehler durch, auch
+# wenn der Stream mit einem Fehler endet, dessen Kette denselben Abbruch
+# trägt (die gehaltene Persistierung oben).
 wal_stop_class=$(bf_sql "SELECT coalesce(error_class, '') FROM cdc.process_heartbeat WHERE source_id = 'src-e2e'")
-[ -n "$wal_stop_class" ] || bf_fail "$BF_PHASE — cdc.process_heartbeat trägt nach dem Ende des Feed-Containers keine Fehlerklasse"
+bf_expect "$wal_stop_class" "replication" "$BF_PHASE — Fehlerklasse in cdc.process_heartbeat"
 
 # Die Persistierung wird frei, der Container läuft wieder mit der
 # Konfiguration von compose.yaml, und die wartende Transaktion ist gelesen.

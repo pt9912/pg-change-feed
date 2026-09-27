@@ -93,7 +93,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
 **Erwartung**, bis der Implementer sie gefahren hat (Stelle, Instanz, gesehene Farbe;
 [`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B).
 
-- [ ] **Die Regel steht im Code.** `mergeStreamAndWALFaultOutcome` folgt der
+- [x] **Die Regel steht im Code.** `mergeStreamAndWALFaultOutcome` folgt der
       Vertragstabelle des Verdikts (§2): ist ein WAL-Schwellen-Fehler gesetzt, ist der
       Ausgang von `Run` bei Stream-Ausgang `nil` der WAL-Fehler; bei einem
       Ordnungs-Sentinel (`mapper.ErrChangeWithoutBegin`, `…CommitWithoutBegin`,
@@ -104,13 +104,19 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       vier Zeilen, dazu ein Fall mit **echt gewrappter** Kette
       (`fmt.Errorf("%w: %w", outbound.ErrStorage, <Fehler mit context.Canceled>)`) und ein
       Fall „`storage` ohne Abbruch-Folge neben gesetztem WAL-Fehler bleibt `storage`“.
-      *Zu belegen durch:* `make test` (Race-Detector) grün; die Mutation „die alte
-      Priorität (`streamErr != nil` zuerst) zurück“ färbt den Fall „Abbruch-Folge →
-      WAL-Fehler“ rot (*erwartet, zu erproben*; Stelle, Instanz und Farbe trägt der
-      Implementer nach). Trägt die Prüfung `errors.Is(err, context.Canceled)` die Kette
-      an der echten Stelle nicht, ist `streamCtx.Err() != nil` bei lebendem
-      Prozess-Kontext der zulässige Ersatz derselben Regel (Verdikt §2, kein weiterer
-      Architect-Zug).
+      *Belegt durch:* `make test` (Race-Detector) grün — `go test -race ./...` im
+      gepinnten `TOOLCHAIN_RACE_IMAGE`, Exit 0, alle Pakete `ok`, `internal/bootstrap`
+      1,252 s. Mutation **erprobt**: die alte Priorität (`streamErr != nil` liefert den
+      Stream-Fehler ohne die `context.Canceled`-Prüfung) auf einer `git archive`-Kopie
+      wiederhergestellt — der Fall
+      `TestMergeStreamAndWALFaultOutcomeAbortDerivedStreamErrorYieldsFault/Fehlerkette_trägt_context.Canceled_(…)`
+      färbte sich rot (`mergeStreamAndWALFaultOutcome(… context canceled) = …, wollen den
+      WAL-Fehler`), der zweite Fall (echter Persistenzfehler ohne Abbruch-Folge) blieb
+      grün — die Mutation trifft genau den beabsichtigten Fall. Die Prüfung
+      `errors.Is(err, context.Canceled)` trägt die Kette in der Test-Instanz (echt
+      gewrappte Kette `fmt.Errorf("%w: %w", outbound.ErrStorage, fmt.Errorf(...:
+      %w, context.Canceled))`); ob sie an der realen Treiber-Kette
+      (`postgresstorage`/`sqlexec`) ebenso trägt, belegt DoD 2 am komponierten Prozess.
 - [ ] **Die Runner-Phase trägt die Klasse als Zusage.** Die Phase „Fehlerschwelle beendet
       den Container“ in `make test-integration` prüft `cdc.process_heartbeat.error_class`
       auf `replication` (statt sie nur auszugeben); die Abdeckungs-Zeile in
@@ -121,7 +127,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       zurücknehmen“ (Image neu gebaut) färbt die Phase rot — *erwartet, zu erproben*:
       eine Stelle, ein Lauf. Der Aufbau ist der der Phase (gehaltene Persistierung), also
       der Fall, der zuvor `storage` war.
-- [ ] **Kommentare und die benannte Grenze sind nachgezogen.** Der Kommentar an
+- [x] **Kommentare und die benannte Grenze sind nachgezogen.** Der Kommentar an
       `mergeStreamAndWALFaultOutcome` (`wiring.go`: „jede Klasse“, „nur zum Zug, wenn der
       Stream-Lauf regulär endete“), der Kommentar von
       `TestMergeStreamAndWALFaultOutcomePrioritizesStreamError` und der Kommentar in
@@ -130,8 +136,29 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       Konjunktiv über die frühere Fassung ([`AGENTS.md`](../../../../AGENTS.md) §3.7); die
       benannte Grenze zur Klasse in [`harness/README.md`](../../../../harness/README.md)
       §Sensors bei `make test-integration` entfällt, ihr Träger dort war dieser Slice.
-      *Zu belegen durch:* `make kommentar-kennungen DIFF=<Basis>` ohne Kandidat in den
-      geänderten Blöcken (Form, nicht Wahrheit) und Review; der Suchlauf in §3.
+      **Plan-Nachzug (über die drei genannten Stellen hinaus):** der Kommentar an
+      `TestWALRetentionThresholdsFollowGrowthAtInactiveSlot`
+      (`walretention_slotgrowth_internal_test.go` Zeilen 18–35) trug vier Kennungen
+      (`ADR-0049`, `SPEC-013`, `LH-QA-REL-003`, `ADR-0120`) — mein Edit an Zeile 27
+      überlappte diesen Block, `make kommentar-kennungen DIFF=fe9d0afa` meldete ihn als
+      Kandidat; auf `ADR-0049` als einzigen Anker reduziert, die drei übrigen Kennungen
+      durch beschreibende Prosa ohne Kennung ersetzt. Der Kommentar vor der Runner-Phase
+      (`tools/harness/run-integration-tests.sh`, Zeilen 3488–3497) trug drei
+      Träger-Übergaben aus `slice-capture-leerlauf-quellbelege` (Review F-4, Verifikation
+      V-5, gemeldet in dessen §3): die Allaussage „der Rückstand erreicht die
+      Fehlerschwelle nur, wenn der Slot nichts bestätigt“ ohne Anker (jetzt auf die
+      Gegenseite der vorigen Phase bezogen statt als Allaussage), die Klasse ohne
+      Rang-Zeiger (jetzt `` `ADR-0049` `` an der Stelle, wo der Fehlerzustand die Klasse
+      trägt) und die Kopplung an die vorige Phase ohne benannte Symbole (jetzt
+      `WAL_WARN_BYTES`/`WAL_ERROR_BYTES`, `bf_wal_hold`, `wal_feed_started` genannt) —
+      alle drei in diesem Lauf behoben.
+      *Belegt durch:* `make kommentar-kennungen DIFF=fe9d0afa` — Exit 0, kein Kandidat
+      (nach dem Nachzug oben; ein Zwischenlauf vor dem Nachzug meldete den einen
+      Kandidaten oben). `make fmt-check` — 260 Go-Dateien geprüft, alle formatiert; kein
+      Chronik- oder Konjunktiv-Kandidat im diff-skopierten Lauf (Schritt 20; die drei
+      Treffer auf „statt“ sind Mutationsbeschreibungen in Test-Godocs, zulässig; ein
+      Treffer auf „slice-026“ ist eine Testfall-Provenienz-Zitierform in unverändertem
+      Bestandscode, zulässig). Review folgt separat.
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -141,8 +168,8 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
 - [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13); `make suchlauf-nachmessen
-      PLAN=docs/plan/planning/open/slice-wal-fehlerschwelle-ausgangsklasse.md` läuft mit
-      den `diff`-Zeilen des Implementers durch.
+      PLAN=docs/plan/planning/in-progress/slice-wal-fehlerschwelle-ausgangsklasse.md`
+      läuft mit den `diff`-Zeilen des Implementers durch.
 - [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors (Zeile
       `make test-integration`: die Grenze entfällt, die Phase nennt die Klasse als
       Zusage); das Benutzerhandbuch bleibt unberührt (§1).
@@ -177,6 +204,7 @@ test-integration` (Risiko §6).
 | `tools/harness/run-integration-tests.sh` (Phase „Fehlerschwelle beendet den Container“: `abdeckung_declare`-Text, Prüfung von `wal_stop_class`, Kommentar davor) | update | die Klasse `replication` als Zusage der Phase (Eingabeseiten-Mutation: Regel zurücknehmen); der Kommentar davor trägt drei Übergaben aus `slice-capture-leerlauf-quellbelege` (Review F-4, Verifikation V-5): die Allaussage „der Rückstand erreicht die Fehlerschwelle nur, wenn der Slot nichts bestätigt“ ohne Anker (die Phase belegt einen Fall), die Grenze der Klasse ohne Rang-Zeiger (`ADR-0049`, dieser Slice) und die Kopplung an die Phase „Leerlauf-Bestätigung“ davor (`WAL_*`, `bf_wal_hold`, `wal_feed_started`), im Kommentar nur für die Konfigurationsdatei genannt |
 | `docs/user/e2e-abdeckung.md` | Erzeugnis | kommt aus dem Runner; die Ort-Zeilen verschieben sich |
 | `harness/README.md` §Sensors (Zeile `make test-integration`) | update | die benannte Grenze entfällt; ändern nur der genau benannte Satzteil (die Zeilen sind sehr lang) |
+| `internal/bootstrap/walretention_slotgrowth_internal_test.go` (Kommentar an `TestWALRetentionThresholdsFollowGrowthAtInactiveSlot`, Zeilen 18–35) | update (Plan-Nachzug) | über den Plan hinaus: mein Edit an Zeile 27 überlappte einen Bestandsblock mit vier Kennungen (`ADR-0049`, `SPEC-013`, `LH-QA-REL-003`, `ADR-0120`); `make kommentar-kennungen DIFF=fe9d0afa` meldete ihn — auf `ADR-0049` als einzigen Anker reduziert (§3.7) |
 
 **Ansatz (Liste):**
 
@@ -196,13 +224,25 @@ Erreichen der Fehlerschwelle“). Suchraum: der ganze Baum ohne die drei Ausnahm
 aus. Stand ist `7305b578` (der Commit vor der Anlage dieses Slice, vom Planner am
 2026-09-27 gemessen; ein Stand ist eine Commit-Kennung, nie `HEAD`); der Implementer misst
 am Parent seiner Arbeit neu und trägt die `diff`-Zeilen ein (`make suchlauf-nachmessen
-PLAN=docs/plan/planning/open/slice-wal-fehlerschwelle-ausgangsklasse.md`). Die Zahlen des
-Standes `7305b578` sind mit `git grep -n` gemessen, nicht übernommen.**
+PLAN=docs/plan/planning/in-progress/slice-wal-fehlerschwelle-ausgangsklasse.md`). Die Zahlen
+des Standes `7305b578` sind mit `git grep -n` gemessen, nicht übernommen. **Implementer-
+Nachmessung am eigenen Parent `fe9d0afa`** (Commit unmittelbar vor der ersten
+Produktionsänderung dieses Laufs, nach dem `next → in-progress`-Move): zwischen `7305b578`
+und `fe9d0afa` liegen acht fremde Slice-Läufe (`slice-harness-guard-blocked-python`,
+`slice-leerlauf-phase-last-in-stuecken`, `slice-harness-mutationsbild-und-verweigerte-aktion`,
+u. a.); `slice-capture-leerlauf-quellbelege` wanderte dabei nach `done/` (Ausschluss aus dem
+Suchraum) und `harness/README.md`/`welle-transformationen.md`/Roadmap erhielten Träger-
+Nachzüge — die Zahlen bewegen sich dadurch, ohne dass dieser Slice etwas geändert hätte
+(Gefundenes: die Bewegung ist real und dokumentiert, nicht mein Zutun). Die Werte bei
+`7305b578` bleiben unverändert wahr (Commit-Stand ist unveränderlich); `fe9d0afa` ist die für
+diesen Lauf richtige Vergleichsbasis.**
 
 Symbolnamen der bewegten Stelle:
 
 ```suchlauf
 7305b578 58 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+fe9d0afa 51 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':(exclude,glob)**/slice-wal-fehlerschwelle-ausgangsklasse.md'
+diff 56 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':(exclude,glob)**/slice-wal-fehlerschwelle-ausgangsklasse.md'
 ```
 
 Beschreibung und Zählwort der Klassen-Aussage samt Hedge (die Klasse des Ausgangs, die
@@ -210,14 +250,27 @@ Priorität, das reguläre Stream-Ende):
 
 ```suchlauf
 7305b578 24 -n -E 'Ausgangs-Klasse|Klasse des Ausgangs|mit der Klasse .replication.|beendet sich der Feed-Container|nur zum Zug|Fehler bei Stream-Ende|regulär endete|jede Klasse|Stream-Fehler jeder Klasse' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+fe9d0afa 20 -n -E 'Ausgangs-Klasse|Klasse des Ausgangs|mit der Klasse .replication.|beendet sich der Feed-Container|nur zum Zug|Fehler bei Stream-Ende|regulär endete|jede Klasse|Stream-Fehler jeder Klasse' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':(exclude,glob)**/slice-wal-fehlerschwelle-ausgangsklasse.md'
+diff 18 -n -E 'Ausgangs-Klasse|Klasse des Ausgangs|mit der Klasse .replication.|beendet sich der Feed-Container|nur zum Zug|Fehler bei Stream-Ende|regulär endete|jede Klasse|Stream-Fehler jeder Klasse' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline' ':(exclude,glob)**/slice-wal-fehlerschwelle-ausgangsklasse.md'
 ```
+
+Die Differenz `fe9d0afa` (20) → `diff` (18): die zwei fremden Kommentar-Klauseln „jede Klasse“
+und „nur zum Zug“ (`wiring.go`) sowie die Phrase „Fehler bei Stream-Ende“
+(`walretention_slotgrowth_internal_test.go`) sind mit der Regel nachgezogen und tragen die
+alten Formulierungen nicht mehr (DoD 3, Nichtgefundenes: kein neuer Träger dieser drei
+Phrasen ist entstanden — die Differenz ist ausschließlich Abbau).
 
 Die Klassen-Zusagen des Benutzerhandbuchs (der Träger, der die Klasse den Betreibern
 nennt):
 
 ```suchlauf
 7305b578 6 -n -E 'Feed-Container mit der Klasse .replication.|klassifiziert den Lauf als .replication.|Transport-/Verbindungsstörung' -- docs/user/benutzerhandbuch.md
+fe9d0afa 6 -n -E 'Feed-Container mit der Klasse .replication.|klassifiziert den Lauf als .replication.|Transport-/Verbindungsstörung' -- docs/user/benutzerhandbuch.md
+diff 6 -n -E 'Feed-Container mit der Klasse .replication.|klassifiziert den Lauf als .replication.|Transport-/Verbindungsstörung' -- docs/user/benutzerhandbuch.md
 ```
+
+Unverändert bei 6 (Nichtgefundenes: das Benutzerhandbuch ist in diesem Lauf unberührt
+geblieben, wie §1 zusagt — alle vier Stellen bleiben mit der Code-Korrektur wahr).
 
 | Träger | Befund (Stand `7305b578`, vom Planner gelesen) | Behandlung |
 |---|---|---|
