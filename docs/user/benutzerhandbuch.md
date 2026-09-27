@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.66
+Version: 1.67
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-27
 
@@ -73,7 +73,7 @@ Gruppenrolle zuweisen:
 | Rolle | Zweck | Umgebungsvariable |
 |---|---|---|
 | `cdc_capture` | Erfassungspfad des Feed-Containers (Store-Adapter, Replication-Stream) und Ausführung eines Backfills (Run-Zustand fortschreiben, Bestand im Snapshot lesen und schreiben, siehe [Bestand als Backfill überführen](#bestand-als-backfill-überführen)) | `CDC_CAPTURE_DSN` |
-| `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`, Retention-Löschausführung, Verarbeitung der Antrags-Queue `cdc.administration_request` — offene Anträge lesen und ihren Ausgang vermerken, ohne Anträge selbst anzulegen oder zu löschen —, Annahme eines Backfill-Antrags, die die Run-Zeile in `cdc.backfill_run` anlegt; `cdc.backfill_table` und die übrigen Antragsfunktionen ruft nur diese Rolle auf) | `CDC_ADMIN_DSN` |
+| `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`, Retention-Löschausführung, Verarbeitung der Antrags-Queue `cdc.administration_request` — offene Anträge lesen und ihren Ausgang vermerken, ohne Anträge selbst anzulegen oder zu löschen —, Annahme eines Backfill-Antrags, die die Run-Zeile in `cdc.backfill_run` anlegt; `cdc.backfill_table`, `cdc.set_transformation`/`cdc.remove_transformation` (siehe [Transformationsregel konfigurieren](#transformationsregel-konfigurieren)) und die übrigen Antragsfunktionen ruft nur diese Rolle auf) | `CDC_ADMIN_DSN` |
 | `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`, `cdc.retention_blockers`, `cdc.backfill_status`) — trägt auch `--healthcheck` und `diagnose` (siehe [Diagnose ausführen](#diagnose-ausführen)) | `CDC_READER_DSN` |
 
 ```sql
@@ -308,6 +308,244 @@ Tabelle **ohne laufende Erfassung** endet trotzdem `applied`, nicht `failed`
 Tabellen-Antragsarten (`enable`/`disable`), die Bindungs- und
 Publication-Zeilen tragen, wirkt diese Antrags-Art allein auf den
 Filterzustand der laufenden Erfassung.
+
+### Transformationsregel konfigurieren
+
+Eine Transformationsregel wirkt auf das Row Image (`old_data`/`new_data`
+bzw. `old_image`/`new_image`) einer Change, bevor sie gespeichert wird —
+nach dem Spaltenausschluss, vor jeder Serialisierung
+([`ADR-0112`](../plan/adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)).
+Zwei Regeltypen stehen zur Wahl: `rename_column` benennt eine Spalte im
+Bild um, `map_value` bildet ihren Wert nach einer festen Zuordnung ab.
+
+**Voraussetzung:** eine Login-Identität mit `cdc_admin`-Mitgliedschaft,
+verbunden über `CDC_ADMIN_DSN` (siehe [Zugriff und Rollen](#zugriff-und-rollen));
+die physische Tabelle existiert an der Quelle.
+
+**Vorgehen:** Derselbe Antrags-Weg wie bei der Live-Aktivierung und dem
+Spaltenausschluss — zwei SQL-Funktionen legen je einen Antrag an:
+
+```sql
+SELECT cdc.set_transformation('<source_id>', '<schema>', '<tabelle>', '<regelname>', '<rule_spec>');
+SELECT cdc.remove_transformation('<source_id>', '<schema>', '<tabelle>', '<regelname>');
+```
+
+`rule_spec` ist ein `json`-Parameter, kein `jsonb`-Parameter: ein Literal
+(`'{"kind": "rename_column", "column": "name", "to": "customer_name"}'`)
+oder ein `::json`-Wert wird angenommen; ein `::jsonb`-Wert oder das
+Ergebnis von `jsonb_build_object(...)` wird mit
+`function cdc.set_transformation(text, text, text, text, jsonb) does not exist`
+abgelehnt und braucht den Cast `::json` (gemessen im
+[Review-Report](../reviews/review-slice-transformationen-antragsweg-schema.md),
+[`ADR-0125`](../plan/adr/0125-transformationen-parametertyp-regelform-json.md)
+Festlegung 1). Angenommen — als Antrags-Zeile, nicht als verarbeiteter
+Antrag — sind auch SQL-`NULL`, JSON-`null`, ein Wert ohne Objekt (Zahl,
+Zeichenkette, Array, `true`) und ein doppelter Schlüssel (die Spalte hält
+den letzten Wert): die Prüfung der Regelform liegt vollständig im
+Feed-Container, nicht in SQL. Ohne Antrags-Zeile scheitert der Aufruf, wenn
+der Wert für PostgreSQL kein gültiges JSON ist (Syntaxfehler, leerer Text),
+wenn er das Zeichen `\u0000` in einem Schlüssel oder Wert trägt, wenn eine
+Zahl außerhalb des Zahlbereichs von `numeric` liegt oder wenn die
+Schachtelung die Stapeltiefe des Servers übersteigt — an PostgreSQL 17 und
+18 gemessen
+([`ADR-0126`](../plan/adr/0126-transformationen-annahmemenge-rule-spec.md)
+Festlegung 1).
+
+**Regeltypen** (Tabelle `public.orders` mit den Spalten `id`, `name`,
+`status`; die Schlüsselreihenfolge der Images ist nicht zugesagt,
+Beispiele **übernommen** aus `SPEC-030`):
+
+| `kind` | Pflichtschlüssel | Wirkung |
+|---|---|---|
+| `rename_column` | `column`, `to` | der Schlüssel `column` heißt im Image `to`, der Wert bleibt unverändert. Beispiel: `{"kind": "rename_column", "column": "name", "to": "customer_name"}` bildet `{"id": "7", "name": "Ada", "status": "o"}` auf `{"id": "7", "customer_name": "Ada", "status": "o"}` ab. |
+| `map_value` | `column`, `values` (nicht leeres Objekt, Werte sind Zeichenketten) | ist der Wert von `column` als Zeichenkette ein Schlüssel von `values`, steht der zugeordnete Wert im Image; jeder andere Wert bleibt unverändert. Beispiel: `{"kind": "map_value", "column": "status", "values": {"o": "open", "c": "closed"}}` bildet `o` auf `open` ab, `x` bleibt `x`. |
+
+Ein Wert, der im Image fehlt (`NULL`, unverändertes TOAST, ausgeschlossene
+oder generierte Spalte), bleibt für beide Regeltypen abwesend — kein
+Platzhalter, kein Zielschlüssel ohne Wert.
+
+**Ergebnis:** Der Aufruf ist asynchron: Er schreibt einen Antrag nach
+`cdc.administration_request` (Status `pending`) und gibt dessen Kennung
+zurück — die Regel wirkt damit noch nicht. Die Administrations-Goroutine
+des laufenden Feed-Containers verarbeitet offene Anträge
+(`LISTEN`/`NOTIFY`-Weckung mit periodischem Fallback-Poll) und trägt bei
+Erfolg den Regelstand nach. Den Fortschritt prüfen Sie über den
+Antrags-Status:
+
+```sql
+SELECT status, error_message
+FROM cdc.administration_request
+WHERE administration_request_id = '<zurückgegebene-id>';
+```
+
+`status` wechselt von `pending` zu `applied` (Erfolg) oder `failed`
+(Fehlertext in `error_message`, Regelstand unverändert).
+
+**Konfliktfreiheit (K1–K4).** Ein Antrag, der eine der vier Invarianten
+verletzt, endet `failed`; der Fehlertext ist der Klartext, gefolgt von
+einem Doppelpunkt, einem Leerzeichen und der Adresse (`SPEC-019`):
+
+| Verletzung | Klartext | Adresse |
+|---|---|---|
+| K1 — `rule_name` bereits vergeben (je Tabelle eindeutig) | `Regelname bereits vergeben` | Regelname |
+| K2 — die Spalte trägt bereits eine Regel (`rename_column` oder `map_value`, nicht kombinierbar) | `Spalte trägt bereits eine Regel` | Spalte |
+| K3 — der Zielname (`to`) kollidiert mit dem `to` einer anderen Regel | `Zielname kollidiert mit einer anderen Regel` | Zielname |
+| K3 — der Zielname kollidiert mit einer Spalte der Quelltabelle (ausgeschlossene Spalten eingeschlossen) | `Zielname kollidiert mit einer Spalte der Tabelle` | Zielname |
+| K4 — die Spalte der Regel existiert nicht an der Quelle | `Spalte existiert nicht an der Quelle` | Spalte |
+| K4 — `remove_transformation` gegen einen nicht geführten Regelnamen | `Regelname nicht geführt` | Regelname |
+
+Ein `set_transformation` gegen einen bereits vergebenen Regelnamen (K1)
+endet ebenfalls `failed` — erst entfernen, dann neu setzen; beide Aufrufe
+dürfen in derselben Transaktion stehen (siehe „Reihenfolge der Aufrufe"
+unten). Unter K1–K4 wirken die Regeln einer Tabelle unabhängig voneinander:
+es gibt keinen Fall, in dem zwei zutreffende Regeln denselben Schlüssel
+oder denselben Wert beanspruchen (`ADR-0112` Teilfrage 3).
+
+**Zeilen, die kein Antrag sind.** Wie bei jeder der sieben SQL-Funktionen
+prüft der Aufruf Quelle, Schema, Tabelle und Spalte nicht selbst — er
+schreibt die Zeile. Eine `pending`-Zeile, die der Antrags-Konstruktor
+verwirft (leeres Schema, leerer Tabellenname), endet `failed` mit dem
+Klartext der Verletzung und der Antrags-Kennung als Adresse (`SPEC-019`);
+die Zeilen dahinter werden ungehindert weiterverarbeitet. Eine Zeile ohne
+Kennung bleibt `pending` mit einer Warnung im Log.
+
+**Wirkung:** Ab `applied` trägt jede danach erfasste Änderung dieser
+Tabelle die transformierte Form; die Rohform wird nicht gespeichert. Die
+Regel wirkt **nicht rückwirkend** — eine vor `applied` bereits
+gespeicherte Change behält ihre bisherige Form.
+
+**Informationsverlust bei `map_value`.** Bilden mehrere Quellwerte auf
+denselben Zielwert ab, meldet das System nichts — kein Fehler, keine
+Warnung; die Abbildung eines Werts auf sich selbst ist zulässig, ein leeres
+`values` wird abgelehnt. Die Rohform wird nicht gespeichert, die Abbildung
+ist dann **nicht umkehrbar**
+([`ADR-0112`](../plan/adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+§Konsequenzen — Zusage der Entscheidung, keine Messung). Der Vergleich ist
+zeichengenau, ohne Normalisierung: Groß-/Kleinschreibung zählt, das Präfix
+eines Schlüssels ist kein Schlüssel, `é` als ein Zeichen und `e` mit
+kombinierendem Akut (U+0301) sind verschiedene Schlüssel (Test
+`TestBuildRowImageMapValue`, **gemessen**). Die Suche einer Zuordnung ist
+linear in der Zahl der Paare (**hergeleitet** aus dem Quelltext); die
+Kosten sind **gemessen** (Wegwerf-Benchmark, i9-13900H, Schlüssel fehlt als
+ungünstigster Fall): 54 bis 123 ns bei 10 Paaren, 6,5 bis 6,7 µs bei 1.000
+Paaren, 65 bis 80 µs bei 10.000 Paaren, 0,66 bis 0,70 ms bei 100.000
+Paaren, je Wert einer Spalte mit Regel — sie fallen je Zeile eines
+Backfill-Blocks und je Change im Erfassungspfad an. Die Zahl der Paare
+einer Regel trägt keine Obergrenze (benannter Verzicht,
+[Architect-Verdikt](../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+§6); bei einer Last von 1.000 Changes/s und zwei Suchen je Change kostet
+eine Regel mit 10.000 Paaren **abgeleitet** 13 bis 16 % eines Kerns, eine
+mit 100.000 Paaren über 100 % — beobachten Sie `cdc_capture_lag`
+(siehe [Metriken lesen](#metriken-lesen)), wenn Sie eine `map_value`-Regel
+mit vielen Paaren einsetzen.
+
+**Verhältnis zum Spaltenausschluss:** Der Ausschluss gilt zuerst und ist
+durch die Auswertung nicht unterlaufbar — eine ausgeschlossene Spalte wird
+nie gelesen, weder von `rename_column` noch von `map_value`; ihr Schlüssel
+erscheint weder unter dem Quell- noch unter einem Zielnamen. Ein
+`exclude_column` gegen eine Spalte mit Regel und ein `include_column`
+bleiben zulässig.
+
+**Reihenfolge der Aufrufe:** Aufrufe **einer** Transaktion werden in
+Aufrufreihenfolge verarbeitet — `cdc.remove_transformation` vor
+`cdc.set_transformation` derselben Regel in derselben Transaktion wird in
+dieser Folge verarbeitet und abgeleitet; dieselbe Regel gilt für alle
+sieben Antragsfunktionen (`exclude_column`/`include_column` derselben
+Spalte, `disable_table`/`enable_table`). Setzen Sie Anträge auf dieselbe
+Regel oder Spalte **nicht** aus zeitlich überlappenden Transaktionen
+mehrerer Sitzungen ab — sonst kann der laufende Stand bis zum nächsten
+Prozessstart vom abgeleiteten Stand abweichen
+([`ADR-0127`](../plan/adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md)
+Folgepflicht 4).
+
+**Dauerhaftigkeit:** Der Regelstand ist **dauerhaft** und hängt nicht an
+der Prozesslebensdauer — dieselbe Trägerform wie der Ausschlussstand: die
+`applied`-Zeilen der beiden Transformations-Antragsarten sind seine
+einzige Herkunft. Ein Neustart des Feed-Containers verliert ihn deshalb
+**nicht**, und eine Deaktivierung mit anschließender Aktivierung stellt ihn
+ebenso wieder her. **Grenze:** Eine vermerkte Regel, die ein älterer
+Binärstand nicht als Regeltyp kennt — etwa eine `map_value`-Regel unter
+einem Stand vor der Einführung von `map_value` —, hält den Prozessstart und
+jeden weiteren Regel-Antrag der Quelle an (**hergeleitet** aus dem
+Quelltext, nicht am laufenden Prozess erprobt); erprobt ist, dass die
+Regelauswertung selbst für eine solche Zeile den Fehler
+`Regelstand: Regel "r": unbekannter Regeltyp: map_value` liefert
+(**übernommen**, Stand vor der Einführung von `map_value`). Rollen Sie in
+diesem Fall den Feed-Container
+auf einen Stand zurück, der den Regeltyp kennt.
+
+**Nichtanwendbarkeit und Abhilfe.** Eine Regel ist auf eine Change nicht
+anwendbar, wenn ihre `column` in der Relation der Change fehlt oder ihr
+Zielname (K3) mit einer Spalte der Relation kollidiert (etwa nach einer
+kompatiblen Spalten-Erweiterung, deren Name den Zielnamen einer Regel
+trifft). Der Erfassungspfad der **gesamten Quelle** endet dann sichtbar mit
+der Fehlerklasse `schema` (siehe [Fehlerklassen](#fehlerklassen)) — keine
+Transaktion wird persistiert oder bestätigt, kein Datenverlust. Die Abhilfe
+ist `cdc.remove_transformation` zu beantragen (oder die Regel durch eine
+passende zu ersetzen) und den Prozess neu zu starten; die zuvor nicht
+bestätigte Transaktion erscheint danach über `cdc.changes` in Rohform, ohne
+einen zweiten `schema`-Fehler (real erprobt:
+`TestE2ETransformationRuleNotApplicableEndsCaptureWithSchemaClass`,
+`docs/user/e2e-abdeckung.md`).
+
+Im Backfill-Run gilt dieselbe Prüfung gegen die Spalten des Snapshots: Ist
+eine Regel des Regelstands der Tabelle auf sie nicht anwendbar, endet der
+Run `failed` mit der Klasse `schema` **vor der ersten Kopie** — ohne
+Change, run-lokal (er stoppt weder den Heartbeat-Fehlerzustand noch den
+Erfassungspfad,
+[`ADR-0117`](../plan/adr/0117-backfill-run-fehlerklasse-schema.md)).
+Die Abhilfe ist dieselbe (Regel entfernen oder ersetzen), gefolgt von
+einem **neuen** `cdc.backfill_table`-Antrag — **kein** Prozessneustart; der
+`failed`-Run wird nicht fortgesetzt und sperrt den neuen Antrag nicht.
+Wechselt der Regelstand zwischen zwei Lesungen desselben Runs, endet er
+stattdessen mit der Klasse `configuration` (real erprobt: Phase
+„Backfill-Regelstand", `docs/user/e2e-abdeckung.md`).
+
+**Backfill-Bezug:** Regeln gelten auch für einen Backfill-Run — der Bestand
+trägt die transformierte Form, mit derselben Schlüsselmenge wie eine danach
+über den WAL-Pfad erfasste Zeile derselben Tabelle (real erprobt: Phase
+„Backfill-Regelstand"). Der Regelstand gilt ab dem Öffnen des Snapshots des
+Runs — eine Zusage des Ist-Verhaltens, kein Spec-Satz zum Zeitpunkt.
+
+**Wartezeit des Stream-Starts.** Ein Antrag, der beim Prozessstart in der
+Verarbeitung hängt (etwa eine Tabellensperre eines Betreibers), hält den
+Beginn der Erfassung höchstens 30 s an — die Hälfte der Fehlergrenze von
+`cdc_capture_lag` (**hergeleitet**,
+[`ADR-0128`](../plan/adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)
+Festlegung 2). Läuft die Frist ab, startet der Stream mit dem bisherigen
+Regelstand, und der hängende Antrag bleibt `pending` — er wird beim
+nächsten Vermerk verarbeitet, ohne Prozessneustart. Der Healthcheck bleibt
+über die ganze Wartezeit gesund (Exit 0, Heartbeat-Alter höchstens 7,1 s in
+drei **gemessenen** Läufen); ein realer Rundlauf
+(`slice-start-vorlauf-grenze`) maß die Erfassung einer während der Sperre
+committeten Änderung nach 31 s seit dem Neustart — nahe an der Frist von
+30 s (**gemessen**, Lauf-Zeile `Prozessstart-Vorlauf-Frist (ADR-0128)
+belegt`). Ist die wartende Regel selbst die Abhilfe einer
+Nichtanwendbarkeit, kann der Prozess erneut mit der Klasse `schema` enden,
+falls die Frist zuvor abläuft.
+
+**Kosten der Lesung im Backfill.** Ein Backfill-Run liest den Regel- und
+den Ausschlussstand aus den `applied`-Zeilen aller Tabellen der Quelle, je
+Block und vor dem Commit. **Gemessen** (PostgreSQL 18 im Container ohne
+Netz, synthetische Queue ohne Index außer dem Primärschlüssel,
+[Architect-Verdikt](../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+§3): die SQL-Lesung kostet 0,26 bis 0,31 ms bei 100 Zeilen der Queue und
+186 bis 201 ms bei 1.000.000 Zeilen. **Abgeleitet:** etwa 8 % einer
+Blockdauer bei 10.000 Zeilen der Queue einer Quelle, etwa 70 % bei 100.000
+Zeilen — ab rund 10.000 Antrags-Zeilen einer Quelle kostet die Lesung je
+Block messbar; eine Queue realer Größe liegt bislang nicht vor.
+
+**Auf allen Zustellwegen dieselbe Form.** Gemessen ist: eine per
+`cdc.set_transformation` beantragte `rename_column`- und `map_value`-Regel
+prägt eine danach eingefügte Zeile (INSERT, Neu-Bild) auf den fünf Wegen
+(`cdc.changes`, `GET /changes`, gRPC-Stream, SSE-Stream,
+NATS-Vollinhalts-Stream, Phase „Transformationen-Happy-Path (fünf
+Zustellwege)", `docs/user/e2e-abdeckung.md`); UPDATE, DELETE und das
+Alt-Bild sind über `cdc.changes` erprobt
+(`TestE2ETransformationRulesShapeBothImages`). Für UPDATE, DELETE und das
+Alt-Bild auf den vier weiteren Wegen gilt dieselbe Form als **hergeleitet**
+(die Regel wirkt im Assembler auf beide Bilder, die Adapter bilden sie
+unverändert ab), nicht als eigens erprobt.
 
 ### Aktivierte Tabellen auflisten
 
@@ -1539,7 +1777,7 @@ Klassen (`ADR-0023`, `SPEC-008`):
 | `transient` | vorübergehend nicht verfügbare Quelle/Speicher | Erneuter Versuch mit begrenztem Backoff; im Erfassungspfad deklariert, aktuell von keinem Adapter konstruiert — ein Backfill-Run trägt sie als Klasse seines Fehlertexts |
 | `configuration` | ungültige oder fehlende Umgebungsvariable | Kein Start, sichtbarer Fehler |
 | `permission` | fehlende Berechtigung | Sichtbarer Fehler, kein stiller Retry; im Erfassungspfad deklariert, aktuell von keinem Adapter konstruiert — ein Backfill-Run trägt sie als Klasse seines Fehlertexts (z. B. fehlendes `SELECT` auf die Quelltabelle) |
-| `schema` | eine Replikationsnachricht ist nicht sicher interpretierbar (z. B. TRUNCATE, unbekannter Nachrichtentyp) | Sichtbarer Fehler, kein stilles Überspringen |
+| `schema` | eine Replikationsnachricht ist nicht sicher interpretierbar (z. B. TRUNCATE, unbekannter Nachrichtentyp) oder eine Transformationsregel ist auf die Relation einer Change nicht anwendbar (siehe [Transformationsregel konfigurieren](#transformationsregel-konfigurieren)) | Sichtbarer Fehler, kein stilles Überspringen; ein Backfill-Run trägt dieselbe Ursache als Klasse seines Fehlertexts, run-lokal |
 | `storage` | Persistenzfehler | Kein Source-ACK, damit keine Änderung verloren geht |
 | `replication` | zwei Unterarten (`ADR-0049`): **Stream-Ordnungs-Verletzung** (z. B. Commit ohne offene Transaktion) oder **Transport-/Verbindungsstörung** (Verbindungsaufbau, Slot, Keepalive, Quell-Bestätigung) | Stream-Ordnungs-Verletzung: sofortiger, sichtbarer Abbruch, unabhängig vom WAL-Rückstand. Transport-/Verbindungsstörung: Schwellen-Überwachung über den WAL-Rückstand (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)) — kontrollierte Fortsetzung unterhalb 1 GiB, sichtbarer Abbruch darüber |
 | `internal` | unerwarteter interner Fehler, der keiner anderen Klasse zuzuordnen ist | Sichtbarer Fehler; realer Fallback für jeden nicht erkannten Fehler |
@@ -1619,6 +1857,7 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
 | Run (Backfill) | Ein Backfill-Durchlauf für eine Tabelle; sein Zustand steht in `cdc.backfill_run`, gelesen über `cdc.backfill_status` |
 | Angenommen (`applied` bei `backfill`) | Der Antrag ist angenommen und die Run-Zeile `queued` angelegt; sagt nichts über die Ausführung des Runs |
 | Geschätzte Zeilenzahl | Eine Schätzung des Katalogs der Quelle für die Zeilenzahl der Tabelle (`estimated_rows`); keine Zählung und keine Grenze, NULL heißt unbekannt |
+| Transformationsregel | Eine deklarative Regel (`rename_column` oder `map_value`), die im Row Image eine Spalte umbenennt oder ihren Wert abbildet, ausgewertet vor der Persistierung; konfiguriert über `cdc.set_transformation`/`cdc.remove_transformation` |
 
 ## 9. Anhang
 
@@ -1911,3 +2150,4 @@ MIT — siehe `LICENSE`.
 | 1.64 | 2026-09-25 | Betriebs-Hinweis (Consumer-Bindung) unter „Aufbewahrung (Retention)“ um zwei Folgen ergänzt (`LH-FA-RET-004`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung Closure): Changes, die ein Durchlauf nach dem Lesen der Positionen löscht, sind für einen erstmals bestätigenden Consumer verloren, sein Schutz beginnt mit dem nächsten Durchlauf; ein Durchlauf kann eine Transaktion in mehreren Schritten löschen, ein Consumer ohne Bestätigung kann sie währenddessen unvollständig lesen |
 | 1.65 | 2026-09-25 | Bezug des Kotlin-SDK ohne Token beschrieben (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): die vier Kotlin-Hinweise unter §4 „Zugriff über die HTTP-/JSON-API“, „…den gRPC-Change-Stream“, „…Server-Sent-Events“ und „…den NATS-Vollinhalts-Stream“ nennen Cloudsmith als anonym lesbaren Bezugsweg (`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`, Konto und Token nicht nötig) neben GitHub Packages, das für das Lesen weiter einen Token verlangt; das Package `pgchangefeed-kotlin` ist dafür auf `0.2.2` gehoben |
 | 1.66 | 2026-09-27 | Zusage der Bestätigung im Leerlauf an die Grenze des Mechanismus angeglichen (`LH-QA-REL-001`, `ADR-0120`, slice-leerlauf-phase-last-in-stuecken): §4 „Bestand als Backfill überführen“ (Absatz „WAL-Rückstand des Capture-Slots“) und „WAL-Rückstand prüfen“ (Ergebnis) nennen als Zusage WAL ohne Inhalt für die Publication, das der Feed zwischen den Schreibvorgängen bestätigt, nicht mehr „jeden Schreiber“; ein neuer Absatz „Grenze der Bestätigung im Leerlauf“ beschreibt, dass ein Stoß über `wal_retention_error_bytes` bis zur nächsten Bestätigung im Rückstand steht, und nennt das Heben der Fehlerschwelle als Weg |
+| 1.67 | 2026-09-27 | Transformationsregeln dokumentiert (`LH-FA-CFG-007`, `ADR-0112`, `ADR-0125`, `ADR-0126`, `ADR-0117`, `ADR-0127`, `ADR-0128`, slice-transformationen-betriebsdoku): §4 neuer Abschnitt „Transformationsregel konfigurieren“ (`cdc.set_transformation`/`cdc.remove_transformation`, Aufrufform des `json`-Parameters, Regeltypen, Konfliktfreiheit K1–K4, Wirkung, Informationsverlust bei `map_value`, Verhältnis zum Spaltenausschluss, Reihenfolge der Aufrufe, Dauerhaftigkeit samt Grenze bei einem älteren Binärstand, Nichtanwendbarkeit samt Abhilfe im Erfassungspfad und im Backfill-Run, Backfill-Bezug, Wartezeit des Stream-Starts, Kosten der Lesung im Backfill, Form auf allen Zustellwegen); §2 Rollen nennt die beiden Funktionen, §6 Fehlerklassen die Nichtanwendbarkeit in der Zeile `schema`, §8 Glossar den Begriff „Transformationsregel“ |

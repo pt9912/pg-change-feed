@@ -70,7 +70,7 @@ an dieses Slice gemeldet haben.
 
 ## 2. Definition of Done
 
-- [ ] SDK-Beleg: die Modelle der Row Images in den drei Packages behandeln
+- [x] SDK-Beleg: die Modelle der Row Images in den drei Packages behandeln
       `old_image`/`new_image` undurchsichtig (Anker am Start gelesen:
       `sdks/csharp/PgChangeFeed.Client/…/Change.cs`,
       `sdks/kotlin/pgchangefeed-kotlin/…/Change.kt`,
@@ -82,7 +82,7 @@ an dieses Slice gemeldet haben.
       Tiers fahren je vier Phasen gegen eine aktive Regel; der Slice liegt am
       Start in `done/`); dieser Slice ändert keinen SDK-Code und führt kein
       `make sdk-*` aus, die Nicht-Ausführung wird im Bericht begründet.
-- [ ] Betriebsdokumentation im Benutzerhandbuch
+- [x] Betriebsdokumentation im Benutzerhandbuch
       ([`docs/user/benutzerhandbuch.md`](../../../user/benutzerhandbuch.md)):
       ein neuer Abschnitt in §4 (Aufgaben) „Transformationsregel konfigurieren“
       mit dem Aufruf von `cdc.set_transformation`/`cdc.remove_transformation`
@@ -149,7 +149,7 @@ an dieses Slice gemeldet haben.
       `schema` in §6 Fehlerklassen, die Rollen-Beschreibung in §2, das Glossar
       und die Änderungshistorie. *Zu belegen durch:* Review des Abschnitts
       gegen die Belege von `e2e-wirkung`/`e2e-abhilfe` und `make docs-check`.
-- [ ] Jede Zahl und jede Wirkungs-Aussage trägt ihren Ursprung
+- [x] Jede Zahl und jede Wirkungs-Aussage trägt ihren Ursprung
       ([`AGENTS.md`](../../../../AGENTS.md) §3.12): gemessen (Lauf), übernommen
       (Beleg-Anker) oder abgeleitet; eine Aussage, die nur die ADR trägt, steht
       als Zusage bzw. „erwartet“. Die Änderungshistorie trägt eine Zeile
@@ -157,21 +157,21 @@ an dieses Slice gemeldet haben.
       belegen durch:* Review; die Suchläufe in §3 belegen, dass keine
       Handbuch-Stelle mit einer Aufzählung der Antragsarten oder der Klasse
       `schema` übersehen ist.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: der Slice **ist** das Doku-Update (Handbuch,
+- [x] Doku-Update: der Slice **ist** das Doku-Update (Handbuch,
       Änderungshistorie); `harness/README.md` ist unberührt — die Sensor-Zeilen
       tragen `e2e-wirkung` und `e2e-abhilfe`.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
@@ -306,11 +306,22 @@ Antragsarten“, „die Sätze über Row-Image-Schlüssel und Fehlerklasse `sche
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Zugriffe auf feste Bild-Schlüssel im Produktivcode der SDKs | `grep -rn 'old_data\|new_data\|oldData\|newData\|old_image\|new_image' sdks --include=*.py --include=*.cs --include=*.kt`, dann Fundstellen in `src/main`/`src/pgchangefeed`/`PgChangeFeed.Client/` (ohne Tests) lesen | *(Implementer trägt ein)* | Nur Durchreichen (opake Typen `JsonElement?`, `Any | None`) ist zulässig; ein Zugriff auf einen benannten Schlüssel ist ein Befund |
-| Aufzählungen der Antragsarten im Handbuch | `grep -rn 'exclude_column\|enable_table' docs/user` | *(Implementer trägt ein)* | jede Aufzählung trägt die zwei weiteren Arten oder begründet, warum nicht |
-| Sätze über die Fehlerklasse `schema` | `grep -rn 'schema' docs/user/benutzerhandbuch.md` | *(Implementer trägt ein)* | Fehlerklassen-Tabelle (§6), „Container startet nicht“ und „Neustart nach einem Fehler“ nennen die Nichtanwendbarkeit und ihre Abhilfe, ohne die Recovery zu verallgemeinern |
-| Beschreibung des SQL-Lesezugriffs `cdc.changes` und `GET /changes` im Handbuch | `grep -rn 'Row Image\|row_image\|new_data' docs/user` | *(Implementer trägt ein)* | Sätze über die Bildform nennen den Regelstand („die Schlüsselmenge folgt dem Regelstand zum Erfassungszeitpunkt“) |
-| Übernahme aus Nachbar-Dokumenten | Lesen des `harness/README.md`-Zeile `make test-integration` | *(Implementer trägt ein)* | Wirkungs-Aussagen des Handbuchs stimmen mit den dort genannten Belegen überein |
+| Zugriffe auf feste Bild-Schlüssel im Produktivcode der SDKs | `grep -rn 'old_data\|new_data\|oldData\|newData\|old_image\|new_image' sdks --include=*.py --include=*.cs --include=*.kt`, dann Fundstellen in `src/main`/`src/pgchangefeed`/`PgChangeFeed.Client/` (ohne Tests) lesen | **Nichtbefund.** 137 Treffer an beiden Ständen (Parent `b80f45cf`, Diff — `sdks/` in diesem Slice unberührt); jede Fundstelle in Produktivcode ist eine Feld-Deklaration/-Zuweisung des obersten Nachrichtenfelds (`old_image`/`new_image` als `JsonElement?` in C#/Kotlin, `Any \| None` in Python, `bytes` im gRPC-Client) — kein Zugriff auf einen benannten Schlüssel **innerhalb** eines Row Image. Geprüft: `sdks/csharp/PgChangeFeed.Client/{Http,Sse,Nats}/Models/*.cs`, `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/.../{http,sse,nats}/model/*.kt` + `grpc/PgChangeFeedGrpcClient.kt`, `sdks/python/pgchangefeed/src/pgchangefeed/models.py`. Alle übrigen Treffer liegen in Tests/Integrationstests (Fixture-Daten) oder Docstrings, die die zehn Nachrichtenfelder aufzählen. | keine — Erwartung aus `ADR-0112` Teilfrage 8 bestätigt, keine SDK-Code-Änderung |
+| Aufzählungen der Antragsarten im Handbuch | `grep -rn 'exclude_column\|enable_table' docs/user` | Parent `b80f45cf`: 6 Treffer (Spaltenausschluss-Abschnitt allein). Diff: 9 Treffer — die drei neuen Treffer liegen im neuen Abschnitt „Transformationsregel konfigurieren“ (Reihenfolge-der-Aufrufe-Absatz nennt `exclude_column`/`include_column`/`disable_table`/`enable_table` als Beispiel derselben Regel für alle sieben Funktionen; „Zeilen, die kein Antrag sind“ nennt keine Aufzählung der Antragsarten selbst). Keine Aufzählung der sieben Antragsarten wurde durch diesen Slice unvollständig gemacht — der neue Abschnitt fügt eine achte/neunte Art (`set_transformation`/`remove_transformation`) hinzu, ohne eine bestehende Aufzählungsstelle zu berühren. | keine |
+| Sätze über die Fehlerklasse `schema` | `grep -rn 'schema' docs/user/benutzerhandbuch.md` | Parent `b80f45cf`: 40 Treffer (überwiegend `schema_name`/`schema_version`/`CDC_SCHEMA`, ein Treffer die Fehlerklassen-Zeile). Diff: 49 Treffer — die neun neuen Treffer liegen im neuen Abschnitt (Regeltypen-Tabelle, Nichtanwendbarkeits-Absatz, Backfill-Form) und in der erweiterten Fehlerklassen-Zeile selbst; „Container startet nicht“ und „Neustart nach einem Fehler“ bleiben unverändert und nennen die Nichtanwendbarkeit bewusst nicht (die Abhilfe steht im neuen Abschnitt, die Recovery wird nicht verallgemeinert, siehe §1 Abgrenzung). | keine |
+| Beschreibung des SQL-Lesezugriffs `cdc.changes` und `GET /changes` im Handbuch | `grep -rn 'Row Image\|row_image\|new_data' docs/user` | Parent `b80f45cf`: 22 Treffer. Diff: 24 Treffer — die zwei neuen Treffer liegen im neuen Abschnitt (Einleitungssatz „wirkt auf das Row Image“, Backfill-Form). Die bestehenden Sätze über die Bildform (§4 „Änderungen lesen“, „Bestand als Backfill überführen“) sind von diesem Slice unverändert; sie nannten den Regelstand vor diesem Slice nicht, weil es keinen Regelstand gab — kein Nachzugsbedarf an ihnen, die neue Aussage „die Schlüsselmenge folgt dem Regelstand zum Erfassungszeitpunkt“ steht im neuen Abschnitt selbst (Zeile „Ergebnis“/„Wirkung“). | keine |
+| Übernahme aus Nachbar-Dokumenten | Lesen der `harness/README.md`-Zeile `make test-integration` | Gelesen (kein Zählmaß): die Zeile nennt die vier Transformations-E2E-Rundläufe (Happy Path, Bilder aller Operationen, Boundary, Neustart mit Ausschluss) und den Backfill-Regelstand-Rundlauf — dieselben Belege, auf die der neue Abschnitt verweist (`TestE2ETransformationRulesShapeBothImages`, `TestE2ETransformationRuleNotApplicableEndsCaptureWithSchemaClass`, Phase „Backfill-Regelstand“, Phase „Transformationen-Happy-Path (fünf Zustellwege)“); keine Abweichung gefunden. | keine |
+
+```suchlauf
+b80f45cf 137 -E 'old_data|new_data|oldData|newData|old_image|new_image' -- ':(glob)sdks/**/*.py' ':(glob)sdks/**/*.cs' ':(glob)sdks/**/*.kt'
+diff 137 -E 'old_data|new_data|oldData|newData|old_image|new_image' -- ':(glob)sdks/**/*.py' ':(glob)sdks/**/*.cs' ':(glob)sdks/**/*.kt'
+b80f45cf 6 -E 'exclude_column|enable_table' -- docs/user
+diff 9 -E 'exclude_column|enable_table' -- docs/user
+b80f45cf 40 'schema' -- docs/user/benutzerhandbuch.md
+diff 49 'schema' -- docs/user/benutzerhandbuch.md
+b80f45cf 22 -E 'Row Image|row_image|new_data' -- docs/user
+diff 24 -E 'Row Image|row_image|new_data' -- docs/user
+```
 
 ## 4. Trigger
 
