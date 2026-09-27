@@ -3366,7 +3366,7 @@ bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND t
 
 echo "run-integration-tests: Backfill-Negative (docker kill, queued-Aufnahme) belegt — docker kill im zweiten Block von Run $bf_kill_run (rows_copied 1000, running): keine Sitzung und kein Slot blieben zurück, keine Change des Runs war sichtbar; nach dem Neustart steht der Run interrupted, der queued wartende Run $bf_queued_run wurde ohne neuen Antrag aufgenommen und endete completed (4 Zeilen); der erneute Antrag $bf_retry_run übernahm $BF_KILL_ROWS Zeilen einmal (3 Blöcke), die Erfassung setzte nach dem Neustart fort"
 
-abdeckung_declare "Leerlauf-Bestätigung (WAL ohne Inhalt für die Publication, Fehlerschwelle)" "LH-FA-CAP-009,LH-QA-REL-001" "ein Backfill-Run, dessen WAL die Fehlerschwelle des WAL-Rückstands (Override der Konfigurationsdatei) überschreitet, und ein Schreiber auf eine nicht aktivierte Tabelle beenden den Feed-Container nicht: der Run endet completed, der Bestand ist über cdc.changes lesbar, der Container läuft weiter" "Leerlauf-Bestätigung (LH-FA-CAP-009, LH-QA-REL-001) belegt"
+abdeckung_declare "Leerlauf-Bestätigung (WAL ohne Inhalt für die Publication, Fehlerschwelle)" "LH-FA-CAP-009,LH-QA-REL-001" "ein Backfill-Run, dessen WAL die Fehlerschwelle des WAL-Rückstands (Override der Konfigurationsdatei) überschreitet, und ein Schreiber auf eine nicht aktivierte Tabelle, der in Stücken unter der Warnschwelle schreibt (Summe über der Fehlerschwelle, nach jedem Stück bestätigt der Slot), beenden den Feed-Container nicht: der Run endet completed, der Bestand ist über cdc.changes lesbar, der Container läuft weiter" "Leerlauf-Bestätigung (LH-FA-CAP-009, LH-QA-REL-001) belegt"
 
 # Der Feed-Container läuft in dieser Phase mit einer Konfigurationsdatei, die
 # die Schwellen des WAL-Rückstands senkt (`wal_retention_*_bytes` haben kein
@@ -3375,11 +3375,19 @@ abdeckung_declare "Leerlauf-Bestätigung (WAL ohne Inhalt für die Publication, 
 # `compose.yaml` bleibt unverändert, und der Container wird am Phasen-Ende
 # ohne Override wiederhergestellt. Die Größe der Last folgt aus der Messung:
 # die Phase liest das WAL, das der Run erzeugt hat, und bricht ab, wenn es die
-# Fehlerschwelle nicht übersteigt.
+# Fehlerschwelle nicht übersteigt. Der Schreiber auf die nicht aktivierte
+# Tabelle schreibt in Stücken: bis die Bestätigung eines Stücks folgt, steht das
+# Stück im Rückstand des Slots; das WAL je Stück liegt unter der Warnschwelle,
+# die Summe der Stücke über der Fehlerschwelle. Der Runner wartet nach jedem
+# Stück, bis `confirmed_flush_lsn` die WAL-Position hinter dem Stück erreicht
+# hat (`ADR-0120`).
 BF_PHASE="Leerlauf-Bestätigung"
 WAL_TABLE=feed_e2e_wal_backfill
 WAL_FOREIGN=feed_e2e_wal_foreign
 WAL_ROWS=30000
+WAL_FOREIGN_CHUNKS=6
+WAL_FOREIGN_CHUNK_ROWS=10000
+WAL_FOREIGN_CONFIRM_SECONDS=30
 WAL_WARN_BYTES=4194304
 WAL_ERROR_BYTES=8388608
 WAL_WAIT_SECONDS=12
@@ -3433,14 +3441,26 @@ bf_wal_hold "$WAL_WAIT_SECONDS" "nach dem Run"
 bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$wal_run_id'")" "$WAL_ROWS" "$BF_PHASE — rows_copied"
 bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$WAL_TABLE' AND origin = 'backfill'")" "$WAL_ROWS" "$BF_PHASE — Bestand über cdc.changes"
 
-# Schreiber auf eine nicht aktivierte Tabelle: mehr WAL als die Fehlerschwelle,
-# ohne Inhalt für die Publication.
-wal_foreign_before=$(bf_sql "SELECT pg_current_wal_lsn()")
-docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
-INSERT INTO public.$WAL_FOREIGN SELECT g, repeat('x', 130) FROM generate_series(1, 60000) g;
+# Schreiber auf eine nicht aktivierte Tabelle: in Stücken, ohne Inhalt für die
+# Publication. Jedes Stück trägt eigene Schlüssel; die Summe des WAL liegt über
+# der Fehlerschwelle, jedes Stück unter der Warnschwelle.
+wal_foreign_bytes=0
+wal_foreign_chunk_max=0
+for ((wal_chunk = 1; wal_chunk <= WAL_FOREIGN_CHUNKS; wal_chunk++)); do
+  wal_chunk_first=$(((wal_chunk - 1) * WAL_FOREIGN_CHUNK_ROWS + 1))
+  wal_chunk_last=$((wal_chunk * WAL_FOREIGN_CHUNK_ROWS))
+  wal_chunk_before=$(bf_sql "SELECT pg_current_wal_lsn()")
+  docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$WAL_FOREIGN SELECT g, repeat('x', 130) FROM generate_series($wal_chunk_first, $wal_chunk_last) g;
 SQL
-wal_foreign_bytes=$(bf_sql "SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), '$wal_foreign_before')::bigint")
-[ "$wal_foreign_bytes" -gt "$WAL_ERROR_BYTES" ] || bf_fail "$BF_PHASE — der Schreiber erzeugte $wal_foreign_bytes B WAL, nicht mehr als die Fehlerschwelle $WAL_ERROR_BYTES B: die Last trägt den Beleg nicht"
+  wal_chunk_after=$(bf_sql "SELECT pg_current_wal_lsn()")
+  wal_chunk_bytes=$(bf_sql "SELECT pg_wal_lsn_diff('$wal_chunk_after', '$wal_chunk_before')::bigint")
+  [ "$wal_chunk_bytes" -lt "$WAL_WARN_BYTES" ] || bf_fail "$BF_PHASE — Stück $wal_chunk von $WAL_FOREIGN_CHUNKS erzeugte $wal_chunk_bytes B WAL, nicht weniger als die Warnschwelle $WAL_WARN_BYTES B: das Stück ist ein Stoß, keine Bestätigungs-Runde"
+  [ "$wal_chunk_bytes" -le "$wal_foreign_chunk_max" ] || wal_foreign_chunk_max=$wal_chunk_bytes
+  wal_foreign_bytes=$((wal_foreign_bytes + wal_chunk_bytes))
+  bf_await_sql "SELECT pg_wal_lsn_diff(confirmed_flush_lsn, '$wal_chunk_after') >= 0 FROM pg_replication_slots WHERE slot_name = '$SLOT'" t "$WAL_FOREIGN_CONFIRM_SECONDS" "$BF_PHASE — confirmed_flush_lsn des Slots erreichte die Position hinter Stück $wal_chunk von $WAL_FOREIGN_CHUNKS nicht innerhalb von ${WAL_FOREIGN_CONFIRM_SECONDS} s" 0.05
+done
+[ "$wal_foreign_bytes" -gt "$WAL_ERROR_BYTES" ] || bf_fail "$BF_PHASE — die $WAL_FOREIGN_CHUNKS Stücke erzeugten zusammen $wal_foreign_bytes B WAL, nicht mehr als die Fehlerschwelle $WAL_ERROR_BYTES B: die Last trägt den Beleg nicht"
 bf_wal_hold "$WAL_WAIT_SECONDS" "nach dem Schreiber auf die nicht aktivierte Tabelle"
 
 # Der Erfassungspfad nimmt danach weiter Changes an.
@@ -3461,7 +3481,7 @@ $COMPOSE up -d --force-recreate --no-deps pg-change-feed >/dev/null
 bf_await_healthy "$BF_PHASE"
 rm -rf "$WAL_TMP"
 
-echo "run-integration-tests: Leerlauf-Bestätigung (LH-FA-CAP-009, LH-QA-REL-001) belegt — bei den Schwellen Warn $WAL_WARN_BYTES B / Fehler $WAL_ERROR_BYTES B (Konfigurationsdatei) endete der Backfill-Run $wal_run_id über $WAL_ROWS Zeilen completed und erzeugte $wal_run_bytes B WAL, ein Schreiber auf die nicht aktivierte Tabelle $WAL_FOREIGN erzeugte $wal_foreign_bytes B WAL; der Feed-Container lief über beide Lasten weiter (je ${WAL_WAIT_SECONDS} s beobachtet, kein Neustart), der Bestand ist über cdc.changes lesbar, der höchste der im Log des Feed-Containers gemessenen Rückstände (Proben im 5-s-Takt, keine Spitze) liegt bei $wal_peak B"
+echo "run-integration-tests: Leerlauf-Bestätigung (LH-FA-CAP-009, LH-QA-REL-001) belegt — bei den Schwellen Warn $WAL_WARN_BYTES B / Fehler $WAL_ERROR_BYTES B (Konfigurationsdatei) endete der Backfill-Run $wal_run_id über $WAL_ROWS Zeilen completed und erzeugte $wal_run_bytes B WAL, ein Schreiber auf die nicht aktivierte Tabelle $WAL_FOREIGN erzeugte in $WAL_FOREIGN_CHUNKS Stücken zu je $WAL_FOREIGN_CHUNK_ROWS Zeilen zusammen $wal_foreign_bytes B WAL (höchstes Stück $wal_foreign_chunk_max B, unter der Warnschwelle; nach jedem Stück erreichte confirmed_flush_lsn die Position hinter dem Stück, Frist ${WAL_FOREIGN_CONFIRM_SECONDS} s); der Feed-Container lief über beide Lasten weiter (je ${WAL_WAIT_SECONDS} s beobachtet, kein Neustart), der Bestand ist über cdc.changes lesbar, der höchste der im Log des Feed-Containers gemessenen Rückstände (Proben im 5-s-Takt, keine Spitze) liegt bei $wal_peak B"
 
 abdeckung_declare "Fehlerschwelle des WAL-Rückstands beendet den Container" "LH-QA-REL-001,LH-QA-REL-003" "bei gehaltener Persistierung (exklusive Sperre auf cdc.change) und WAL ohne Inhalt für die Publication über der Fehlerschwelle beendet der Feed-Container den Lauf mit Ausgang 1 und der Abbruch-Zeile im Log und meldet einen Fehlerzustand über cdc.process_heartbeat; die gehaltene Persistierung allein beendet ihn nicht, und die wartende Transaktion ist nach dem Neustart über cdc.changes lesbar" "Fehlerschwelle beendet den Container (LH-QA-REL-001, LH-QA-REL-003) belegt"
 
