@@ -1,45 +1,45 @@
 #!/usr/bin/env bash
 # run-sdk-python-integration-tests.sh — Realserver-Integrationstest der
-# Python-SDK-Zustellweg-Flaechen (ADR-0110 §Entscheidung Festlegung
+# Python-SDK-Zustellweg-Flächen (ADR-0110 §Entscheidung Festlegung
 # 2/Folgepflicht 1, slice-sdk-python-grpc-client-flaeche): jede neue
-# Zustellweg-Flaechen dieses Packages prueft ihre Protokoll-Annahmen
-# zusaetzlich zu den netzlosen Unit-Tests gegen eine reale, laufende
+# Zustellweg-Flächen dieses Packages prüft ihre Protokoll-Annahmen
+# zusätzlich zu den netzlosen Unit-Tests gegen eine reale, laufende
 # Server-Instanz.
 #
 # Kette je Lauf — Bring-up-Phase im Muster tools/harness/run-integration-tests.sh,
-# aber eigenstaendig und bewusst schmaler: dieses Skript traegt keinen
+# aber eigenständig und bewusst schmaler: dieses Skript trägt keinen
 # Server-E2E-Beleg (LH-QA-POR-003 bleibt Eigentum des bestehenden Runners,
-# der unveraendert bleibt); es baut die compose.yaml-Umgebung hoch
-# (PostgreSQL/NATS/Feed-Container, Schema-Rollout ueber d-migrate,
+# der unverändert bleibt); es baut die compose.yaml-Umgebung hoch
+# (PostgreSQL/NATS/Feed-Container, Schema-Rollout über d-migrate,
 # Vorbedingungen der Aktivierung), baut die `integration`-Docker-Stufe des
 # Python-SDK (sdks/python/Dockerfile, zwingend mit dem benannten Bau-Kontext
 # `proto` — ohne ihn bricht der Bau an der COPY --from=proto-Zeile ab) und
-# startet sie im selben Docker-Netz wie den Feed-Container. Der Pruefling
-# ist das SDK selbst: der Integrationstest importiert die Client-Flaechen
+# startet sie im selben Docker-Netz wie den Feed-Container. Der Prüfling
+# ist das SDK selbst: der Integrationstest importiert die Client-Flächen
 # des Packages direkt (kein Wegwerf-Duplikat-Client daneben). Die
-# stdout-Marker der Testlaeufe (READY/RECEIVED/REJECTED) liest dieser
-# Runner ueber `docker logs`, waehrend der Test noch laeuft — deshalb
+# stdout-Marker der Testläufe (READY/RECEIVED/REJECTED) liest dieser
+# Runner über `docker logs`, während der Test noch läuft — deshalb
 # ungepuffert (`python -u`, Stufe-CMD). Die `change_id` der
-# empfangenen Change wird zusaetzlich gegen den Lesezugriffsweg
-# `cdc.changes` gehalten (dieselbe Disziplin wie die Rundlaeufe im
+# empfangenen Change wird zusätzlich gegen den Lesezugriffsweg
+# `cdc.changes` gehalten (dieselbe Disziplin wie die Rundläufe im
 # Server-E2E-Runner).
 #
-# Eine Phase je Flaeche (slice-sdk-python-grpc-client-flaeche: gRPC,
+# Eine Phase je Fläche (slice-sdk-python-grpc-client-flaeche: gRPC,
 # SPEC-020; slice-sdk-python-sse-client-flaeche: SSE, SPEC-021;
 # slice-sdk-python-nats-stream-client-flaeche: NATS-Vollinhalt, SPEC-024;
 # slice-sdk-python-http-reale2e: HTTP-API, SPEC-018 — der Rundlauf
-# RegisterConsumer/ListTables mit SQL-Gegenpruefung gegen cdc.consumer):
-# jede Phase traegt ihre Testdatei explizit als Umgebungsvariable
+# RegisterConsumer/ListTables mit SQL-Gegenprüfung gegen cdc.consumer):
+# jede Phase trägt ihre Testdatei explizit als Umgebungsvariable
 # `PGCHANGEFEED_TEST_FILE` (kein stiller
 # Ausschluss des Rests, Muster der -run-Muster im Server-E2E-Runner) und
-# traegt eigenen Sentinel- und ID-Wertebereich, damit sich die Phasen
+# trägt eigenen Sentinel- und ID-Wertebereich, damit sich die Phasen
 # nicht in die Quere kommen.
 #
 # Voraussetzungen: Docker, ein geladenes :dev-Image (`make image` vorher —
-# compose.yaml traegt keinen build:-Block, ADR-0044) und Netz (pip-Paketbezug
+# compose.yaml trägt keinen build:-Block, ADR-0044) und Netz (pip-Paketbezug
 # im SDK-Bau, d-migrate-Image). Kein Gate (dieselbe Klasse wie
 # `make test-integration`). Cleanup je Ausgang: Test-Container wegwerfen,
-# compose-Stack inkl. Volume abrueumen.
+# compose-Stack inkl. Volume abräumen.
 #
 # Aufruf: `make test-sdk-python-integration`. Override:
 # SDK_PYTHON_INTEGRATION_IMAGE.
@@ -68,8 +68,8 @@ SDK_INTEGRATION_IMAGE=${SDK_PYTHON_INTEGRATION_IMAGE:-pg-change-feed:sdk-python-
 SDK_TEST_CONTAINER=cdc-sdk-python-client-test
 
 # Dasselbe aktivierte Tisch-Set wie der Container-Vertrag (CDC_TABLES):
-# die Aktivierung traegt die Verdrahtung des Feed-Containers (ADR-0028),
-# die Tabellen muessen dafuer physisch existieren. Gegriffen wird fuer die
+# die Aktivierung trägt die Verdrahtung des Feed-Containers (ADR-0028),
+# die Tabellen müssen dafür physisch existieren. Gegriffen wird für die
 # Belege auf feed_e2e_full (REPLICA IDENTITY FULL).
 TEST_TABLE=feed_e2e_full
 GRPC_TEST_FILE=integration/test_grpc_realserver.py
@@ -90,7 +90,7 @@ cleanup() {
 trap cleanup EXIT
 
 docker image inspect ghcr.io/pt9912/pg-change-feed:dev >/dev/null 2>&1 || {
-  echo "run-sdk-python-integration-tests: kein geladenes :dev-Image — make image vorher (compose.yaml traegt keinen build:-Block, ADR-0044)" >&2
+  echo "run-sdk-python-integration-tests: kein geladenes :dev-Image — make image vorher (compose.yaml trägt keinen build:-Block, ADR-0044)" >&2
   exit 1
 }
 
@@ -115,11 +115,11 @@ fi
 bash tools/schema/rollout-restore.sh make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
 
 # Vorbedingungen der Aktivierung: die drei CDC_TABLES-Tabellen existieren
-# physisch, die Quelle-Zeile traegt die Fremdschluessel-Registrierung
+# physisch, die Quelle-Zeile trägt die Fremdschlüssel-Registrierung
 # (SPEC-001); die Aktivierung selbst (Publication, Bindungs- und
-# Schema-Version-Zeilen) traegt die Verdrahtung des Feed-Containers
+# Schema-Version-Zeilen) trägt die Verdrahtung des Feed-Containers
 # (ADR-0028, LH-FA-CFG-001.a). Die REPLICA IDENTITY FULL bleibt vom
-# Aktivieren unberuehrt (LH-FA-CFG-001.a).
+# Aktivieren unberührt (LH-FA-CFG-001.a).
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<'SQL'
 CREATE TABLE public.feed_e2e_flow (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_e2e_full (id int PRIMARY KEY, name text);
@@ -132,8 +132,8 @@ $COMPOSE up -d pg-change-feed >/dev/null
 
 # Stream-Vertrag am laufenden Container (Muster run-integration-tests.sh):
 # die Verdrahtung steht, wenn der Stream seinen Slot angelegt hat und der
-# Container laeuft; der Compose-Healthcheck belegt den Prozesszustand
-# darueber hinaus.
+# Container läuft; der Compose-Healthcheck belegt den Prozesszustand
+# darüber hinaus.
 wired=0
 for _ in $(seq 1 60); do
   slot_ok=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
@@ -146,7 +146,7 @@ for _ in $(seq 1 60); do
   sleep 1
 done
 if [ "$wired" -ne 1 ]; then
-  feed_exit=$(docker inspect --format '{{.State.ExitCode}}' "$FEED_CONTAINER" 2>/dev/null || echo laeuft)
+  feed_exit=$(docker inspect --format '{{.State.ExitCode}}' "$FEED_CONTAINER" 2>/dev/null || echo läuft)
   echo "run-sdk-python-integration-tests: Feed-Container trägt die Verdrahtung nicht — Slot $SLOT: ${slot_ok:-0}, Feed-Lauf: $feed_running (Feed-Ausgang: $feed_exit)" >&2
   exit 1
 fi
@@ -173,15 +173,15 @@ docker build --build-context proto=proto -f sdks/python/Dockerfile \
 
 # run_surface_phase <Name> <Testdatei> <Sentinel> <ID-Basis> <Reject-Marker>
 # <Extra-Env> <Received-Grep> <SQL-Variante: changes|consumer> <Insert-Rows:
-# yes|no> — ein Realserver-Rundlauf fuer genau eine SDK-Flaeche: Container
-# starten (die Adress-/Auth-Variablen je Flaeche kommen als
+# yes|no> — ein Realserver-Rundlauf für genau eine SDK-Fläche: Container
+# starten (die Adress-/Auth-Variablen je Fläche kommen als
 # Leerzeichen-getrennte Extra-Env-Liste herein), auf READY warten, bei
 # Stream-Phasen eine begrenzte Folge eindeutiger Zeilen committen
-# (Fire-and-Forget-Fenster, SPEC-020/SPEC-021/SPEC-024 — die HTTP-Flaeche
-# committet ihre Aenderung selbst: RegisterConsumer, kein CDC-Empfang, kein
+# (Fire-and-Forget-Fenster, SPEC-020/SPEC-021/SPEC-024 — die HTTP-Fläche
+# committet ihre Änderung selbst: RegisterConsumer, kein CDC-Empfang, kein
 # Insert-Anteil), auf den Reject-Marker und das Prozessende warten, die
-# RECEIVED-Zeile pruefen und die Identitaet unabhaengig gegen den
-# SQL-Lesezugriffsweg halten. Die SQL-Variante "changes" haelt die change_id
+# RECEIVED-Zeile prüfen und die Identität unabhängig gegen den
+# SQL-Lesezugriffsweg halten. Die SQL-Variante "changes" hält die change_id
 # gegen cdc.changes (Streams), "consumer" die Consumer-Registrierung gegen
 # cdc.consumer (HTTP — Muster run-sdk-csharp-integration-tests.sh).
 run_surface_phase() {
@@ -221,15 +221,15 @@ run_surface_phase() {
 
   local received=0
   for attempt in 1 2 3 4 5; do
-    # Die Fire-and-Forget-Insert-Form traegt nur die Stream-Phasen (der
-    # HTTP-Rundlauf committet seine "Aenderung" selbst — RegisterConsumer,
+    # Die Fire-and-Forget-Insert-Form trägt nur die Stream-Phasen (der
+    # HTTP-Rundlauf committet seine "Änderung" selbst — RegisterConsumer,
     # kein CDC-Empfang; der tote Insert-Anteil der HTTP-Phase ist in der
     # Welle-Closure von welle-sdk-reale2e als Form-Residuum deklariert und
     # wird hier vom insert_rows-Parameter ausgeschlossen).
     if [ "$insert_rows" = "yes" ]; then
       insert_id=$((id_base + attempt))
-      # >/dev/null: die psql-INSERT-Echo-Zeile („INSERT 0 1") gehoert nicht in
-      # den Funktions-stdout — der Aufrufer haelt hier nur den Rueckgabewert
+      # >/dev/null: die psql-INSERT-Echo-Zeile („INSERT 0 1") gehört nicht in
+      # den Funktions-stdout — der Aufrufer hält hier nur den Rückgabewert
       # (die change_id).
       docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 >/dev/null <<SQL
 INSERT INTO public.$TEST_TABLE (id, name) VALUES ($insert_id, '$sentinel');
@@ -280,7 +280,7 @@ SQL
     exit 1
   fi
   if ! printf '%s' "$test_output" | grep -qE "$received_grep"; then
-    echo "run-sdk-python-integration-tests: $phase_name — die RECEIVED-Zeile traegt nicht die erwartete Form: $test_output" >&2
+    echo "run-sdk-python-integration-tests: $phase_name — die RECEIVED-Zeile trägt nicht die erwartete Form: $test_output" >&2
     exit 1
   fi
   if [ "$rejected" -ne 1 ]; then
@@ -294,7 +294,7 @@ SQL
 
   ident=$(printf '%s' "$test_output" | grep -oE 'RECEIVED [a-z_]+=[^ ]+' | head -n1 | cut -d= -f2 || true)
   if [ -z "$ident" ]; then
-    echo "run-sdk-python-integration-tests: $phase_name — die RECEIVED-Zeile traegt keine Identitaet: $test_output" >&2
+    echo "run-sdk-python-integration-tests: $phase_name — die RECEIVED-Zeile trägt keine Identität: $test_output" >&2
     exit 1
   fi
   if [ "$sql_kind" = "changes" ]; then
@@ -305,7 +305,7 @@ SQL
       "SELECT count(*) FROM cdc.consumer WHERE consumer_id = '$ident'")
   fi
   if [ -z "$captured" ] || [ "$captured" -lt 1 ]; then
-    echo "run-sdk-python-integration-tests: $phase_name — die Identitaet ($ident) ist nicht real ueber den SQL-Lesezugriffsweg lesbar (count=${captured:-leer})" >&2
+    echo "run-sdk-python-integration-tests: $phase_name — die Identität ($ident) ist nicht real über den SQL-Lesezugriffsweg lesbar (count=${captured:-leer})" >&2
     exit 1
   fi
 
@@ -319,7 +319,7 @@ SQL
 }
 
 GRPC_CHANGE_ID=$(run_surface_phase \
-  "gRPC-Flaeche (SPEC-020)" \
+  "gRPC-Fläche (SPEC-020)" \
   "$GRPC_TEST_FILE" \
   "$GRPC_SENTINEL" 300 \
   "REJECTED code=Unauthenticated" \
@@ -328,7 +328,7 @@ GRPC_CHANGE_ID=$(run_surface_phase \
   changes yes)
 
 SSE_CHANGE_ID=$(run_surface_phase \
-  "SSE-Flaeche (SPEC-021)" \
+  "SSE-Fläche (SPEC-021)" \
   "$SSE_TEST_FILE" \
   "$SSE_SENTINEL" 310 \
   "REJECTED status=401" \
@@ -337,7 +337,7 @@ SSE_CHANGE_ID=$(run_surface_phase \
   changes yes)
 
 NATS_CHANGE_ID=$(run_surface_phase \
-  "NATS-Vollinhalts-Flaeche (SPEC-024)" \
+  "NATS-Vollinhalts-Fläche (SPEC-024)" \
   "$NATS_TEST_FILE" \
   "$NATS_SENTINEL" 320 \
   "REJECTED token-rejected" \
@@ -346,7 +346,7 @@ NATS_CHANGE_ID=$(run_surface_phase \
   changes yes)
 
 HTTP_IDENT=$(run_surface_phase \
-  "HTTP-Flaeche (SPEC-018)" \
+  "HTTP-Fläche (SPEC-018)" \
   "$HTTP_TEST_FILE" \
   "$HTTP_SENTINEL" 330 \
   "REJECTED status=401" \
@@ -354,23 +354,23 @@ HTTP_IDENT=$(run_surface_phase \
   "RECEIVED consumer_id=[^ ]+" \
   consumer no)
 
-# --- Abdeckungs-Traeger (docs/user/sdk-e2e-abdeckung.md) -------------------
+# --- Abdeckungs-Träger (docs/user/sdk-e2e-abdeckung.md) -------------------
 # Der Python-Abschnitt entsteht aus derselben Messung, die ihn belegt;
 # geschrieben wird nur bei inhaltlicher Abweichung (Temp-Datei + cmp),
 # marker-gegrenzt. Writer-Form-Grenze (Muster csharp-/kotlin-Runner): dieser
-# Runner haelt Kopf und fremde Abschnitte (C# und Kotlin) auf BEIDEN Seiten
+# Runner hält Kopf und fremde Abschnitte (C# und Kotlin) auf BEIDEN Seiten
 # stabil und ersetzt nur seinen eigenen marker-gegrenzten Abschnitt; fehlt
-# die Traeger-Datei ganz, regeneriert er Kopf und Tabellenkopf (kein
+# die Träger-Datei ganz, regeneriert er Kopf und Tabellenkopf (kein
 # nackter Abschnitt).
 ABDECKUNG_ZIEL_DATEI=docs/user/sdk-e2e-abdeckung.md
 
 abdeckung_python_abschnitt() {
   printf '%s\n' \
     '<!-- pgchangefeed-sdk-e2e:python-begin -->' \
-    "| [\`LH-FA-SST-006\`](../../spec/lastenheft.md), [\`LH-FA-CON-001\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedHttpClient\`) registriert real einen Consumer (admin-Token) und listet Tabellen (reader-Token); die Registrierung ist unabhaengig ueber \`cdc.consumer\` lesbar; ein Aufruf ohne gueltiges Token endet mit HTTP-Status 401 | \`test_http_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
-    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedGrpcClient\`) oeffnet real den gRPC-Server-Stream gegen den laufenden Feed-Container und empfaengt eine danach committete Aenderung; ein Oeffnungsversuch ohne gueltiges Token endet mit gRPC-Status \`Unauthenticated\` | \`test_grpc_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
-    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedSseClient\`) oeffnet real \`GET /changes/stream\` und empfaengt eine danach committete Aenderung; ein Aufruf ohne gueltiges Token endet mit HTTP-Status 401 | \`test_sse_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
-    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfaengt eine danach committete Aenderung als vollstaendiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`test_nats_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-006\`](../../spec/lastenheft.md), [\`LH-FA-CON-001\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedHttpClient\`) registriert real einen Consumer (admin-Token) und listet Tabellen (reader-Token); die Registrierung ist unabhängig über \`cdc.consumer\` lesbar; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`test_http_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedGrpcClient\`) öffnet real den gRPC-Server-Stream gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Öffnungsversuch ohne gültiges Token endet mit gRPC-Status \`Unauthenticated\` | \`test_grpc_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedSseClient\`) öffnet real \`GET /changes/stream\` und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`test_sse_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`test_nats_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
     '<!-- pgchangefeed-sdk-e2e:python-end -->'
 }
 
@@ -396,7 +396,7 @@ abdeckung_schreiben() {
         '`tools/harness/run-sdk-csharp-integration-tests.sh`; die Sprach-Runner' \
         'der Folge-Slices (Kotlin, Python-HTTP) erweitern dieselbe Datei um ihre' \
         'marker-gegrenzten Abschnitte. Je Sprach-Abschnitt deklariert der' \
-        'zustaendige Runner seine Realserver-Phasen an Ort und Stelle. Diese' \
+        'zuständige Runner seine Realserver-Phasen an Ort und Stelle. Diese' \
         'Datei ist eine **stabile Abdeckungs-Deklaration**, kein Lauf-Beleg: der' \
         'Runner schreibt sie nur bei inhaltlicher Abweichung. Sie trägt nur' \
         'Zeilen real existierender Runner-Phasen — ein Beleg steht hier nie,' \
@@ -415,14 +415,14 @@ abdeckung_schreiben() {
   } > "$temp"
   if [ -f "$ABDECKUNG_ZIEL_DATEI" ] && cmp -s "$temp" "$ABDECKUNG_ZIEL_DATEI"; then
     rm -f "$temp"
-    echo "run-sdk-python-integration-tests: Abdeckungs-Traeger unveraendert — $ABDECKUNG_ZIEL_DATEI entspricht dem Quelltext-Stand"
+    echo "run-sdk-python-integration-tests: Abdeckungs-Träger unverändert — $ABDECKUNG_ZIEL_DATEI entspricht dem Quelltext-Stand"
   else
     chmod 0644 "$temp"
     mv "$temp" "$ABDECKUNG_ZIEL_DATEI"
-    echo "run-sdk-python-integration-tests: Abdeckungs-Traeger geschrieben — $ABDECKUNG_ZIEL_DATEI"
+    echo "run-sdk-python-integration-tests: Abdeckungs-Träger geschrieben — $ABDECKUNG_ZIEL_DATEI"
   fi
 }
 
 abdeckung_schreiben
 
-echo "run-sdk-python-integration-tests: SDK-Realserver-Belege (ADR-0110 Festlegung 2/Folgepflicht 1) gruen — gRPC-Flaeche (pgchangefeed.grpc_client, pg-change-feed:9090, change_id=$GRPC_CHANGE_ID), SSE-Flaeche (pgchangefeed.sse_client, pg-change-feed:8090, change_id=$SSE_CHANGE_ID) und NATS-Vollinhalts-Flaeche (pgchangefeed.nats_stream_client, nats://nats:4222, change_id=$NATS_CHANGE_ID) oeffneten real ihre Server-Streams gegen den laufenden Feed-Container und empfingen je eine danach committete Aenderung (Tabelle, Operation und Sentinel real am Wire; change_id je unabhaengig ueber cdc.changes lesbar), die HTTP-Flaeche (pgchangefeed.http_client) registrierte real einen Consumer (consumer_id=$HTTP_IDENT, unabhaengig ueber cdc.consumer lesbar) und listete Tabellen; ein Aufruf ohne gueltiges Token endete je mit gRPC-Status Unauthenticated, HTTP-Status 401 bzw. der laut ablehnenden NATS-Verbindungsablehnung"
+echo "run-sdk-python-integration-tests: SDK-Realserver-Belege (ADR-0110 Festlegung 2/Folgepflicht 1) grün — gRPC-Fläche (pgchangefeed.grpc_client, pg-change-feed:9090, change_id=$GRPC_CHANGE_ID), SSE-Fläche (pgchangefeed.sse_client, pg-change-feed:8090, change_id=$SSE_CHANGE_ID) und NATS-Vollinhalts-Fläche (pgchangefeed.nats_stream_client, nats://nats:4222, change_id=$NATS_CHANGE_ID) öffneten real ihre Server-Streams gegen den laufenden Feed-Container und empfingen je eine danach committete Änderung (Tabelle, Operation und Sentinel real am Wire; change_id je unabhängig über cdc.changes lesbar), die HTTP-Fläche (pgchangefeed.http_client) registrierte real einen Consumer (consumer_id=$HTTP_IDENT, unabhängig über cdc.consumer lesbar) und listete Tabellen; ein Aufruf ohne gültiges Token endete je mit gRPC-Status Unauthenticated, HTTP-Status 401 bzw. der laut ablehnenden NATS-Verbindungsablehnung"
