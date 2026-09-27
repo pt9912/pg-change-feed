@@ -183,10 +183,14 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       `record-gates` schrieb den Arbeitsbaum-Hash — gegen `bash
       tools/harness/working-tree-hash.sh` danach gegengeprüft (byte-gleich), kein Commit/Move
       dazwischen (`git status --short` unverändert seit dem Lauf).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
+      Self-Review (Modul 8). Report:
+      [`review-slice-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/review-slice-wal-fehlerschwelle-ausgangsklasse.md)
+      — Verdikt 0 HIGH/1 MEDIUM/1 LOW/1 INFO, nicht merge-blockierend, keine zwingende
+      Fixrunde (Checkbox-Nachzug durch den Reviewer selbst, Skill §DoD-Checkbox-Nachzug ohne
+      Fixrunde).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13); `make suchlauf-nachmessen
