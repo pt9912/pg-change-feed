@@ -35,7 +35,7 @@ mit Grenz-Zeile).
 
 **Berührte Spec-Stellen:** — (Harness-Wächter; keine Spec-Stelle).
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent (Auftrag des Auftraggebers, 2026-09-27).
 
 **Autor:** Planner-Agent, Auftrag des Auftraggebers (Nutzer-Entscheidung „Weg 3“).
 **Datum:** 2026-09-27.
