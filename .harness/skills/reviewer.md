@@ -104,6 +104,25 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   welche Variablen „Betreiber-Oberfläche" sind (geprüft und verworfen).
   Herkunft: `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
   (3×, `slice-059`/`-066`/`-069`) · seit slice-077.
+  **Probe bei einem benannten Aufschub — deckt die Adresse den Gegenstand? ·
+  seit welle-transformationen**
+  (`BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an`, 5×): Ein benannter
+  Aufschub allein genügt nicht — der Reviewer prüft zusätzlich, ob die
+  genannte Adresse die Sendung **annimmt**: `git grep` der Kernbegriffe des
+  aufgeschobenen Gegenstands (Funktionsnamen, Parameter, Aufrufform,
+  betroffene Fälle) im Plan der genannten Adresse. Kein Treffer heißt: die
+  falsche Folge-Slice-ID, ein zu enger DoD-Ausschnitt, oder der Gegenstand
+  steht nur im Bericht des Absenders statt als committeter Text im Plan der
+  Adresse — in jedem der drei Fälle ist der Aufschub formal benannt und
+  praktisch verwaist. Fünffach real aufgetreten (`slice-071`, `slice-072`,
+  `slice-transformationen-antragsweg-schema`,
+  `slice-transformationen-backfill-pfad`,
+  `slice-antragsqueue-lesefehler-failed`) und jedes Mal vor dem Merge
+  gefunden — von Reviewer oder Verifier, nie automatisiert (kein Sensor: ob
+  eine Adresse einen Gegenstand „deckt", ist eine Lese-Handlung, keine
+  mechanisch prüfbare Eigenschaft). Träger-Seite derselben Regel:
+  `.claude/commands/implement-slice.md` Schritt 17,
+  `.claude/commands/plan-welle.md` Schritt 6.
 - **Zustandsfeld trägt Chronik** — eine `Stand`-/`Status`-Zelle (Roadmap,
   Beobachtungs-Register, Meilenstein) erzählt, wie der Zustand entstand, statt
   Zustand und Beleg als Anker zu nennen; oder ein Drift-Log protokolliert

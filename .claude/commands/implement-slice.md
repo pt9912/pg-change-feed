@@ -149,6 +149,27 @@ ist eine Lifecycle-Rücksprungkante (11).
     Adresse**: eine Folge-Slice-ID, die die Doku nachholt. Ein Aufschub ohne
     Adresse ist keiner; die Versionshistorie folgt der Regel direkt darüber.
     Kandidatenlauf: `git diff --name-only <Basis> -- internal/bootstrap/ tools/schema/ internal/adapters/driving/` — trifft er eine neue Oberfläche, ohne dass `docs/user/benutzerhandbuch.md` im selben Diff liegt, ist sie unversorgt. **Grenze:** wie oben; die tragende Linie ist der unabhängige Reviewer (`.harness/skills/reviewer.md`, eigener benannter HIGH-Punkt).
+
+    **Aufschub-Adresse deckt den Gegenstand · seit welle-transformationen**
+    (`BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an`, 5×; Architect-Zug des
+    Lese-Schritts, Modul 6): Ein benannter Aufschub trägt nur, wenn die Adresse
+    die Sendung **annimmt** — zwei Pflichten zusätzlich zur bloßen Nennung der
+    Folge-Slice-ID. (1) Vor dem Eintragen der Adresse: `git grep` der
+    Kernbegriffe des aufgeschobenen Gegenstands (Funktionsnamen, Parameter,
+    Aufrufform, betroffene Fälle) im Plan der Adresse — 0 Treffer heißt, die
+    Adresse ist falsch gewählt oder ihr DoD-Ausschnitt zu eng gefasst; vor
+    Handoff klären, nicht nur behaupten. (2) Der Gegenstand steht danach als
+    **committeter Text** im Plan der Adresse (ein Übergabe-Block, z. B. in
+    dessen §2), nicht nur als Meldung im eigenen Bericht — ein Bericht erreicht
+    den, der die Adresse später abarbeitet, nicht, wenn dieser nur den Plan
+    liest. Fünffach real aufgetreten (`slice-071`, `slice-072`,
+    `slice-transformationen-antragsweg-schema`,
+    `slice-transformationen-backfill-pfad`,
+    `slice-antragsqueue-lesefehler-failed`), jedes Mal von Reviewer oder
+    Verifier vor dem Merge gefunden, nie automatisiert. **Grenze:** wie oben;
+    die tragende Linie ist der unabhängige Reviewer
+    (`.harness/skills/reviewer.md`, eigener benannter HIGH-Punkt, Probe:
+    `git grep` der Kernbegriffe im Plan der Adresse).
 18. Die Pre-completion-Checkliste laufen: die DoD Punkt für Punkt **behaupten** und die
     **Sensor-Belege** anhängen — `make gates` **und die Nicht-Gate-Sensoren, die den Slice
     betreffen** (die dein Repo führt — z. B. ein Mutations-Sensor, wenn Wächter neu/geändert sind;
