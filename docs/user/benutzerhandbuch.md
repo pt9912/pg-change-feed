@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.67
+Version: 1.68
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-27
 
@@ -334,7 +334,7 @@ SELECT cdc.remove_transformation('<source_id>', '<schema>', '<tabelle>', '<regel
 (`'{"kind": "rename_column", "column": "name", "to": "customer_name"}'`)
 oder ein `::json`-Wert wird angenommen; ein `::jsonb`-Wert oder das
 Ergebnis von `jsonb_build_object(...)` wird mit
-`function cdc.set_transformation(text, text, text, text, jsonb) does not exist`
+`function cdc.set_transformation(unknown, unknown, unknown, unknown, jsonb) does not exist`
 abgelehnt und braucht den Cast `::json` (gemessen im
 [Review-Report](../reviews/review-slice-transformationen-antragsweg-schema.md),
 [`ADR-0125`](../plan/adr/0125-transformationen-parametertyp-regelform-json.md)
@@ -404,7 +404,8 @@ oder denselben Wert beanspruchen (`ADR-0112` Teilfrage 3).
 **Zeilen, die kein Antrag sind.** Wie bei jeder der sieben SQL-Funktionen
 prüft der Aufruf Quelle, Schema, Tabelle und Spalte nicht selbst — er
 schreibt die Zeile. Eine `pending`-Zeile, die der Antrags-Konstruktor
-verwirft (leeres Schema, leerer Tabellenname), endet `failed` mit dem
+verwirft (leeres Schema, leerer Tabellenname, leere Spalte bei
+`exclude_column`/`include_column`), endet `failed` mit dem
 Klartext der Verletzung und der Antrags-Kennung als Adresse (`SPEC-019`);
 die Zeilen dahinter werden ungehindert weiterverarbeitet. Eine Zeile ohne
 Kennung bleibt `pending` mit einer Warnung im Log.
@@ -2151,3 +2152,4 @@ MIT — siehe `LICENSE`.
 | 1.65 | 2026-09-25 | Bezug des Kotlin-SDK ohne Token beschrieben (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): die vier Kotlin-Hinweise unter §4 „Zugriff über die HTTP-/JSON-API“, „…den gRPC-Change-Stream“, „…Server-Sent-Events“ und „…den NATS-Vollinhalts-Stream“ nennen Cloudsmith als anonym lesbaren Bezugsweg (`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`, Konto und Token nicht nötig) neben GitHub Packages, das für das Lesen weiter einen Token verlangt; das Package `pgchangefeed-kotlin` ist dafür auf `0.2.2` gehoben |
 | 1.66 | 2026-09-27 | Zusage der Bestätigung im Leerlauf an die Grenze des Mechanismus angeglichen (`LH-QA-REL-001`, `ADR-0120`, slice-leerlauf-phase-last-in-stuecken): §4 „Bestand als Backfill überführen“ (Absatz „WAL-Rückstand des Capture-Slots“) und „WAL-Rückstand prüfen“ (Ergebnis) nennen als Zusage WAL ohne Inhalt für die Publication, das der Feed zwischen den Schreibvorgängen bestätigt, nicht mehr „jeden Schreiber“; ein neuer Absatz „Grenze der Bestätigung im Leerlauf“ beschreibt, dass ein Stoß über `wal_retention_error_bytes` bis zur nächsten Bestätigung im Rückstand steht, und nennt das Heben der Fehlerschwelle als Weg |
 | 1.67 | 2026-09-27 | Transformationsregeln dokumentiert (`LH-FA-CFG-007`, `ADR-0112`, `ADR-0125`, `ADR-0126`, `ADR-0117`, `ADR-0127`, `ADR-0128`, slice-transformationen-betriebsdoku): §4 neuer Abschnitt „Transformationsregel konfigurieren“ (`cdc.set_transformation`/`cdc.remove_transformation`, Aufrufform des `json`-Parameters, Regeltypen, Konfliktfreiheit K1–K4, Wirkung, Informationsverlust bei `map_value`, Verhältnis zum Spaltenausschluss, Reihenfolge der Aufrufe, Dauerhaftigkeit samt Grenze bei einem älteren Binärstand, Nichtanwendbarkeit samt Abhilfe im Erfassungspfad und im Backfill-Run, Backfill-Bezug, Wartezeit des Stream-Starts, Kosten der Lesung im Backfill, Form auf allen Zustellwegen); §2 Rollen nennt die beiden Funktionen, §6 Fehlerklassen die Nichtanwendbarkeit in der Zeile `schema`, §8 Glossar den Begriff „Transformationsregel“ |
+| 1.68 | 2026-09-27 | Fixrunde nach Review (`LH-FA-CFG-007`, `ADR-0112`, `ADR-0125`, slice-transformationen-betriebsdoku Fixrunde): der Fehlertext eines `::jsonb`-Aufrufs von `cdc.set_transformation` in „Transformationsregel konfigurieren“ auf den tatsächlich gemessenen Wortlaut korrigiert (`unknown` statt `text` als Parametertyp der vier Textliterale — PostgreSQL typisiert nicht gecastete String-Literale beim Signatur-Fehler als `unknown`); der Absatz „Zeilen, die kein Antrag sind“ um das dritte, im Plan verlangte Beispiel ergänzt (leere Spalte bei `exclude_column`/`include_column`, belegt durch `TestAdministrationRequestListPendingPassesRejectedRowsThrough`) |

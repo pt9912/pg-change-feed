@@ -159,10 +159,14 @@ an dieses Slice gemeldet haben.
       `schema` übersehen ist.
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
+      Self-Review (Modul 8). Report:
+      [`review-slice-transformationen-betriebsdoku.md`](../../../reviews/review-slice-transformationen-betriebsdoku.md)
+      (1 HIGH, 1 MEDIUM); Fixrunde behebt F-1 (Fehlertext-Zitat korrigiert)
+      und F-2 (drittes Beispiel „Zeilen, die kein Antrag sind“ ergänzt) —
+      kein offenes HIGH.
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
@@ -307,7 +311,7 @@ Antragsarten“, „die Sätze über Row-Image-Schlüssel und Fehlerklasse `sche
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
 | Zugriffe auf feste Bild-Schlüssel im Produktivcode der SDKs | `grep -rn 'old_data\|new_data\|oldData\|newData\|old_image\|new_image' sdks --include=*.py --include=*.cs --include=*.kt`, dann Fundstellen in `src/main`/`src/pgchangefeed`/`PgChangeFeed.Client/` (ohne Tests) lesen | **Nichtbefund.** 137 Treffer an beiden Ständen (Parent `b80f45cf`, Diff — `sdks/` in diesem Slice unberührt); jede Fundstelle in Produktivcode ist eine Feld-Deklaration/-Zuweisung des obersten Nachrichtenfelds (`old_image`/`new_image` als `JsonElement?` in C#/Kotlin, `Any \| None` in Python, `bytes` im gRPC-Client) — kein Zugriff auf einen benannten Schlüssel **innerhalb** eines Row Image. Geprüft: `sdks/csharp/PgChangeFeed.Client/{Http,Sse,Nats}/Models/*.cs`, `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/.../{http,sse,nats}/model/*.kt` + `grpc/PgChangeFeedGrpcClient.kt`, `sdks/python/pgchangefeed/src/pgchangefeed/models.py`. Alle übrigen Treffer liegen in Tests/Integrationstests (Fixture-Daten) oder Docstrings, die die zehn Nachrichtenfelder aufzählen. | keine — Erwartung aus `ADR-0112` Teilfrage 8 bestätigt, keine SDK-Code-Änderung |
-| Aufzählungen der Antragsarten im Handbuch | `grep -rn 'exclude_column\|enable_table' docs/user` | Parent `b80f45cf`: 6 Treffer (Spaltenausschluss-Abschnitt allein). Diff: 9 Treffer — die drei neuen Treffer liegen im neuen Abschnitt „Transformationsregel konfigurieren“ (Reihenfolge-der-Aufrufe-Absatz nennt `exclude_column`/`include_column`/`disable_table`/`enable_table` als Beispiel derselben Regel für alle sieben Funktionen; „Zeilen, die kein Antrag sind“ nennt keine Aufzählung der Antragsarten selbst). Keine Aufzählung der sieben Antragsarten wurde durch diesen Slice unvollständig gemacht — der neue Abschnitt fügt eine achte/neunte Art (`set_transformation`/`remove_transformation`) hinzu, ohne eine bestehende Aufzählungsstelle zu berühren. | keine |
+| Aufzählungen der Antragsarten im Handbuch | `grep -rn 'exclude_column\|enable_table' docs/user` | Parent `b80f45cf`: 6 Treffer (Spaltenausschluss-Abschnitt allein). Diff (Feature-Commit `97de226c`): 9 Treffer — die drei neuen Treffer liegen im neuen Abschnitt „Transformationsregel konfigurieren“ (Reihenfolge-der-Aufrufe-Absatz nennt `exclude_column`/`include_column`/`disable_table`/`enable_table` als Beispiel derselben Regel für alle sieben Funktionen; „Zeilen, die kein Antrag sind“ nennt keine Aufzählung der Antragsarten selbst). Keine Aufzählung der sieben Antragsarten wurde durch diesen Slice unvollständig gemacht — der neue Abschnitt fügt eine achte/neunte Art (`set_transformation`/`remove_transformation`) hinzu, ohne eine bestehende Aufzählungsstelle zu berühren. **Fixrunde** (Review F-2, drittes Beispiel „Zeilen, die kein Antrag sind“ ergänzt): 11 Treffer — die zwei neuen Treffer sind der ergänzte Absatz selbst (`exclude_column`/`include_column` mit leerer Spalte) und die Änderungshistorie-Zeile 1.68, die dieselben zwei Funktionsnamen als Beleg nennt; keine bestehende Aufzählungsstelle berührt. | keine |
 | Sätze über die Fehlerklasse `schema` | `grep -rn 'schema' docs/user/benutzerhandbuch.md` | Parent `b80f45cf`: 40 Treffer (überwiegend `schema_name`/`schema_version`/`CDC_SCHEMA`, ein Treffer die Fehlerklassen-Zeile). Diff: 49 Treffer — die neun neuen Treffer liegen im neuen Abschnitt (Regeltypen-Tabelle, Nichtanwendbarkeits-Absatz, Backfill-Form) und in der erweiterten Fehlerklassen-Zeile selbst; „Container startet nicht“ und „Neustart nach einem Fehler“ bleiben unverändert und nennen die Nichtanwendbarkeit bewusst nicht (die Abhilfe steht im neuen Abschnitt, die Recovery wird nicht verallgemeinert, siehe §1 Abgrenzung). | keine |
 | Beschreibung des SQL-Lesezugriffs `cdc.changes` und `GET /changes` im Handbuch | `grep -rn 'Row Image\|row_image\|new_data' docs/user` | Parent `b80f45cf`: 22 Treffer. Diff: 24 Treffer — die zwei neuen Treffer liegen im neuen Abschnitt (Einleitungssatz „wirkt auf das Row Image“, Backfill-Form). Die bestehenden Sätze über die Bildform (§4 „Änderungen lesen“, „Bestand als Backfill überführen“) sind von diesem Slice unverändert; sie nannten den Regelstand vor diesem Slice nicht, weil es keinen Regelstand gab — kein Nachzugsbedarf an ihnen, die neue Aussage „die Schlüsselmenge folgt dem Regelstand zum Erfassungszeitpunkt“ steht im neuen Abschnitt selbst (Zeile „Ergebnis“/„Wirkung“). | keine |
 | Übernahme aus Nachbar-Dokumenten | Lesen der `harness/README.md`-Zeile `make test-integration` | Gelesen (kein Zählmaß): die Zeile nennt die vier Transformations-E2E-Rundläufe (Happy Path, Bilder aller Operationen, Boundary, Neustart mit Ausschluss) und den Backfill-Regelstand-Rundlauf — dieselben Belege, auf die der neue Abschnitt verweist (`TestE2ETransformationRulesShapeBothImages`, `TestE2ETransformationRuleNotApplicableEndsCaptureWithSchemaClass`, Phase „Backfill-Regelstand“, Phase „Transformationen-Happy-Path (fünf Zustellwege)“); keine Abweichung gefunden. | keine |
@@ -316,7 +320,7 @@ Antragsarten“, „die Sätze über Row-Image-Schlüssel und Fehlerklasse `sche
 b80f45cf 137 -E 'old_data|new_data|oldData|newData|old_image|new_image' -- ':(glob)sdks/**/*.py' ':(glob)sdks/**/*.cs' ':(glob)sdks/**/*.kt'
 diff 137 -E 'old_data|new_data|oldData|newData|old_image|new_image' -- ':(glob)sdks/**/*.py' ':(glob)sdks/**/*.cs' ':(glob)sdks/**/*.kt'
 b80f45cf 6 -E 'exclude_column|enable_table' -- docs/user
-diff 9 -E 'exclude_column|enable_table' -- docs/user
+diff 11 -E 'exclude_column|enable_table' -- docs/user
 b80f45cf 40 'schema' -- docs/user/benutzerhandbuch.md
 diff 49 'schema' -- docs/user/benutzerhandbuch.md
 b80f45cf 22 -E 'Row Image|row_image|new_data' -- docs/user
