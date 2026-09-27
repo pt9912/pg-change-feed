@@ -126,10 +126,12 @@ Festlegung 2 durch den Architect.
       [`docs/plan/adr/README.md`](../../adr/README.md).
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
+      Self-Review (Modul 8):
+      [`review-slice-capture-leerlauf-quellbelege`](../../../reviews/review-slice-capture-leerlauf-quellbelege.md)
+      (0 HIGH, 1 MEDIUM, keine Fixrunde am Implementer).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
