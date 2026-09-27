@@ -119,22 +119,28 @@ keine Signatur.
 **Durchsetzung.** Der PreToolUse-Guard (`.claude/hooks/pretooluse-command-guard.sh`)
 blockt Paketmanager (`apt`, `pip`, `npm`, `cargo`, …), in-place Textwerkzeuge
 (`sed -i`/`--in-place`, `perl -i`, `awk -i inplace`; unabhängig vom Ziel, auch auf
-einer Scratchpad-Kopie und hinter `find -exec`) und einen Host-`python`-/
-`perl`-Aufruf, dessen Befehlsstring einen Repo-Pfad nennt. Er liest nicht:
-Umleitungen und flaglose Schreibwege (`> datei`, `tee`, `sed … > tmp && mv`),
-ein Skript, das ein Interpreter liest, andere in-place-fähige Werkzeuge, ein
-`cd` im selben Kommando und Sprach-Toolchains (`go`, `gofmt`, …) — ein
-Stolperdraht, keine Sandbox; Grenz-Zeile und Wortlaut:
-[`MR-003`](harness/conventions/MR-003-guard-inplace-textwerkzeug.md), Tabellentest
-`make test-command-guard`. Ein Host-`python`/`perl` auf einem Pfad ohne Repo-Namen
-(Scratchpad) passiert den Guard und ist trotzdem kein zulässiger Weg: die Regel
-oben gilt unabhängig davon, was der Stolperdraht liest; dasselbe gilt für die
-Umleitung auf eine Repo-Datei. Was der Guard nicht liest,
+einer Scratchpad-Kopie und hinter `find -exec`), Host-`python`/`python3` am Kopf
+eines Kommando-Segments **unbedingt** (Fragment `tools/harness/blocked/python`:
+auch hinter `cd <Repo> &&`, auch auf einem Pfad ohne Repo-Namen, auch bei
+`python3 --version`) und einen Host-`python3.<N>`-/`perl`-Aufruf, dessen
+Befehlsstring einen Repo-Pfad nennt. Er liest nicht: Umleitungen und flaglose
+Schreibwege (`> datei`, `tee`, `sed … > tmp && mv`), ein Skript, das ein nicht
+gelisteter Interpreter liest, andere in-place-fähige Werkzeuge, ein `cd` im
+selben Kommando vor `python3.<N>`/`perl` und die übrigen Sprach-Toolchains
+(`go`, `gofmt`, `node`, `dotnet`, `java`, `gradle`, `uv`, …) — ein Stolperdraht,
+keine Sandbox; Grenz-Zeile und Wortlaut:
+[`MR-003`](harness/conventions/MR-003-guard-inplace-textwerkzeug.md),
+[`MR-004`](harness/conventions/MR-004-guard-host-python-am-kopf.md), Tabellentest
+`make test-command-guard`. Ein Host-`python3.<N>`/`perl` auf einem Pfad ohne
+Repo-Namen (Scratchpad) passiert den Guard und ist trotzdem kein zulässiger Weg:
+die Regel oben gilt unabhängig davon, was der Stolperdraht liest; dasselbe gilt
+für die Umleitung auf eine Repo-Datei. Was der Guard nicht liest,
 bleibt Sache des Reviews
 (`.harness/skills/reviewer.md` §HIGH „Docker-only-Verstoß“).
 Herkunft: `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`,
 `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` · seit
-slice-harness-guard-inplace-textwerkzeug, Umleitung geschärft seit welle-transformationen.
+slice-harness-guard-inplace-textwerkzeug, Umleitung geschärft seit welle-transformationen,
+Host-`python`/`python3` am Kopf unbedingt gesperrt seit slice-harness-guard-blocked-python.
 
 ### 3.2 Suppression-Verbot
 
