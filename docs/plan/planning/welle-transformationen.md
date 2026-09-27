@@ -378,12 +378,28 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     Slice setzt [`ADR-0128`](../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)
     um (Frist des Vorlaufs, `START_REPLICATION` im Stream-Lauf) und geht `e2e-abhilfe`
     voraus: der Abhilfe-Beleg fährt den Startpfad, den er ändert. Er startet nach
-    `slice-capture-leerlauf-quellbelege` (beide erweitern den Runner von `make
+    `slice-wal-fehlerschwelle-ausgangsklasse` (Kante unten), der selbst nach
+    `slice-capture-leerlauf-quellbelege` startet (beide erweitern den Runner von `make
     test-integration` und den Tier `make test-replication`; WIP-Limit 1). Er ist wellenlos
     und steht nicht in der Slice-Liste (§4): keine Closure-Bedingung, die von seiner DoD
     verschieden wäre — das Kriterium zur Zeitgrenze in §3 ist mit dem Auftrag erfüllt —, und eine Aufnahme änderte die
     Zahl „zehn Slices“ ohne Änderung eines Kriteriums. Die Kante steht als Start-Trigger in
     `e2e-abhilfe` (Nachzug des Planners, Adresse: Verdikt §9.3).
+  - **Kante zu `slice-wal-fehlerschwelle-ausgangsklasse` (Stand 2026-09-27).** Der
+    Slice bringt die Klasse des Ausgangs bei Erreichen der Fehlerschwelle des
+    WAL-Rückstands auf `replication`
+    ([`ADR-0049`](../adr/0049-replication-fehlerklassen-schwellen.md); Architect-Verdikt
+    [`architect-verdict-wal-fehlerschwelle-ausgangsklasse`](../../reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md)
+    §3). Er startet nach `slice-capture-leerlauf-quellbelege` (beide ändern die Runner-Phase
+    „Fehlerschwelle beendet den Container“; WIP-Limit 1) und geht
+    `slice-start-vorlauf-grenze` voraus: beide berühren `wiring.go` und den Runner an
+    entgegengesetzten Enden (`Stream.Run` und der Start-Pfad dort, die Rückgabe-Priorität
+    nach `stream.Run` hier), und der kleinere Slice zuerst verstellt die Prüfspur des
+    größeren nicht. Er ist wellenlos und steht nicht in der Slice-Liste (§4): keine
+    Closure-Bedingung, die von seiner DoD verschieden wäre, und eine Aufnahme änderte die
+    Zahl „zehn Slices“ ohne Änderung eines Kriteriums. Die Kante steht als Start-Trigger in
+    `slice-start-vorlauf-grenze` (§4 dort); die Trigger von `e2e-abhilfe` bleiben, er wartet
+    auf `slice-start-vorlauf-grenze`.
   - **Spec-Kollision.** `spec-nachzug` startet nach
     `slice-backfill-spec-nachzug`: beide ändern
     [`SPEC-019`](../../../spec/pflichtenheft.md), die Kennungsvergabe im
@@ -420,9 +436,10 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   Stufe braucht das lauffähige System der Vorstufe (die Regeltypen, der
   Antragsweg, der Backfill-Pfad, beide Typen, die Wirkung, die Ordnung, die
   Abhilfe); dazu die Kante `slice-capture-leerlauf-quellbelege` →
-  `slice-start-vorlauf-grenze` → `e2e-abhilfe` (Belegaufbau der
-  Container-Ende-Grenze im Runner, dann Frist und Strom-Beginn des Startpfads,
-  den der Abhilfe-Beleg fährt) und die Kanten
+  `slice-wal-fehlerschwelle-ausgangsklasse` → `slice-start-vorlauf-grenze` →
+  `e2e-abhilfe` (Belegaufbau der Container-Ende-Grenze im Runner, dann die Klasse des
+  Ausgangs derselben Phase, dann Frist und Strom-Beginn des Startpfads, den der
+  Abhilfe-Beleg fährt) und die Kanten
   `slice-code-kommentare-kennungen` → `map-value`, `slice-harness-fmt-check` →
   `e2e-wirkung`, `slice-antragsqueue-lesefehler-failed` → `start-reihenfolge`,
   `e2e-wirkung` → `slice-sdk-regel-realserver-e2e` → `betriebsdoku` und

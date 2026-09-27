@@ -280,8 +280,14 @@ hat den Status `Accepted` (erfüllt, Zeile im ADR-Index
 `slice-capture-leerlauf-quellbelege`
 liegt in `done/` (beide Slices erweitern `tools/harness/run-integration-tests.sh`
 und den Tier `make test-replication`; die Container-Ende-Grenze und der
-Belegaufbau entstehen dort einmal), und kein weiterer Slice liegt in
-`in-progress/` (WIP-Limit 1). Der Slice muss `done` sein, **bevor**
+Belegaufbau entstehen dort einmal),
+[`slice-wal-fehlerschwelle-ausgangsklasse`](slice-wal-fehlerschwelle-ausgangsklasse.md)
+liegt in `done/` (beide Slices berühren `internal/bootstrap/wiring.go` und den Runner an
+entgegengesetzten Enden — dieser Slice `Stream.Run`, `START_REPLICATION` und den
+Start-Pfad, jener `mergeStreamAndWALFaultOutcome` nach der Rückkehr von `stream.Run`;
+der kleinere Slice zuerst verstellt die Prüfspur des größeren nicht,
+[`architect-verdict-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md)
+§3), und kein weiterer Slice liegt in `in-progress/` (WIP-Limit 1). Der Slice muss `done` sein, **bevor**
 [`slice-transformationen-e2e-abhilfe`](slice-transformationen-e2e-abhilfe.md)
 startet (Start-Trigger dort): der Abhilfe-Beleg fährt den Startpfad, den dieser
 Slice ändert. Der Übergangs-Commit `next` → `in-progress` nennt
