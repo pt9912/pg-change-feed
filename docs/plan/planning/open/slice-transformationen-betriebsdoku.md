@@ -245,7 +245,7 @@ Verdikts, dieser Plan erweitert ihn nicht:
   Festlegung 2). Der Wert 30 s ist **hergeleitet** (die Hälfte der
   Fehlergrenze von 60 s des Capture-Abstands), nicht gemessen; die Aussage
   „höchstens 30 s“ steht im Handbuch mit der **Messung des Rundlaufs**, den
-  [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md) liefert (gedruckte
+  `slice-start-vorlauf-grenze` liefert (gedruckte
   Zeile des Laufs), nicht als Herleitung — liegt dieser Beleg am Start nicht
   vor, steht die Aussage als Zusage der ADR. Der Healthcheck bleibt über die
   Wartezeit gesund (Exit 0, Heartbeat-Alter höchstens 7,1 s): **gemessen** im

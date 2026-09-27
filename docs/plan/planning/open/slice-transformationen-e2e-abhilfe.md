@@ -45,7 +45,7 @@ belegt ist.
 - **Die deterministische Startreihenfolge** — `start-reihenfolge` liefert sie;
   dieser Slice belegt ihre Wirkung am System und ändert `Run` nicht.
 - **Die Frist des Vorlaufs und der Beginn des Replikationsstroms** —
-  [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md) liefert sie
+  `slice-start-vorlauf-grenze` liefert sie
   ([`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)
   Festlegung 1 bis 3: `START_REPLICATION` in `Stream.Run`, Vorlauf 30 s je
   Prozessstart, bei Ablauf startet der Stream und der Antrag bleibt `pending`);
@@ -82,7 +82,7 @@ belegt ist.
   (`git grep -n "'pending'" -- tools/harness/run-integration-tests.sh
   test/integration` traf keine Zeile, gemessen in jener Closure). Die erste
   Runner-Phase mit einem solchen Antrag (Antragsart `enable`, an einer Sperre
-  wartend) liefert [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md)
+  wartend) liefert `slice-start-vorlauf-grenze`
   vor diesem Slice; der Lauf dieses Slice legt als erster einen
   `remove_transformation`-Antrag der Abhilfe über einen Prozessstart (der
   Schritt (b) unten).
@@ -190,7 +190,7 @@ Reihenfolge in anderen Worten als das Muster):
 **Start** (`next` → `in-progress`): wenn
 `slice-transformationen-start-reihenfolge`,
 `slice-transformationen-e2e-wirkung`, `slice-capture-leerlauf-quellbelege` und
-[`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md) in `done/` liegen
+`slice-start-vorlauf-grenze` in `done/` liegen
 (`slice-capture-leerlauf-quellbelege` trägt den Belegaufbau „Fehlerschwelle
 erreicht, Container endet“ im selben Runner und geht der zweiten
 Container-Ende-Grenze dieses Slice voraus; `slice-start-vorlauf-grenze` ändert
@@ -263,7 +263,7 @@ Lerneintrag geschrieben.
 - **Die Frist des Vorlaufs ändert den Startpfad, den dieser Slice belegt.**
   Entschieden ist die Zeitgrenze
   ([`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md),
-  Umsetzung in [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md),
+  Umsetzung in `slice-start-vorlauf-grenze`,
   das vor diesem Slice in `done/` liegt): der Vorlauf trägt 30 s je
   Prozessstart (Wert **hergeleitet**, nicht gemessen), bei Ablauf startet der
   Stream, und der unterbrochene Antrag und jeder dahinter bleiben `pending`;

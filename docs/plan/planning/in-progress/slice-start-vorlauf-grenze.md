@@ -83,17 +83,17 @@ die Korrektur trägt dieser Folge-Slice.
   (Betreiber-Bericht), kein Umfang.
 - **Der Abhilfe-Beleg der Nichtanwendbarkeit (Kriterien (a) bis (d) von
   `ADR-0112` Folgepflicht 5).** Trägt
-  [`slice-transformationen-e2e-abhilfe`](slice-transformationen-e2e-abhilfe.md),
+  `slice-transformationen-e2e-abhilfe`,
   der nach diesem Slice startet: er belegt die Abhilfe am Startpfad, den dieser
   Slice ändert.
 - **Die Wiederholung eines fehlgeschlagenen `START_REPLICATION` (SQLSTATE
   55006, Slot noch aktiv) und die Klasse `transient`.** Trägt
-  [`slice-capture-transient-wiederholung`](slice-capture-transient-wiederholung.md);
+  `slice-capture-transient-wiederholung`;
   dieser Slice verschiebt den Aufruf und behält die Fehlerklasse
   (`replication`), er führt keine Wiederholung ein.
 - **Das Handbuch.** Die Betreiber-Aussage „ein hängender Antrag hält den
   Stream-Start höchstens 30 s an“ führt
-  [`slice-transformationen-betriebsdoku`](slice-transformationen-betriebsdoku.md)
+  `slice-transformationen-betriebsdoku`
   §2 mit der Messung des Rundlaufs, den dieser Slice liefert
   ([`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)
   Folgepflicht 3).
@@ -185,10 +185,11 @@ ihre Mutationen hergeleitet).
       Begründung wie bei den bereits bestehenden SQL-Administration-/
       Transformationen-Neustart-Phasen) in `tools/harness/run-integration-tests.sh`;
       ein realer `make test-integration`-Lauf endete grün (Exit 0), gedruckte
-      Zeile: „Prozessstart-Vorlauf-Frist (ADR-0128) belegt — Neustart bei
-      gesperrtem feed_e2e_startgrenze, Healthcheck blieb über 9 Abfragen
-      gesund, Änderung auf feed_e2e_full nach 31s seit dem Neustart erfasst,
-      Antrag … nach Freigabe der Sperre applied“ — 31 s liegt nahe an der
+      Zeile:
+      `Prozessstart-Vorlauf-Frist (ADR-0128) belegt — Neustart bei gesperrtem
+      feed_e2e_startgrenze, Healthcheck blieb über 9 Abfragen gesund, Änderung
+      auf feed_e2e_full nach 31s seit dem Neustart erfasst, Antrag … nach
+      Freigabe der Sperre applied` — 31 s liegt nahe an der
       erwarteten Frist von 30 s (real gemessen, ersetzt die hergeleitete
       Schätzung von ~45 s). Die Mutation „`StartReplication` zurück in
       `NewStream`“ wurde für diese Phase **nicht** gefahren (ein vollständiger
@@ -311,7 +312,7 @@ Runner-Phase samt ihrem Kommentarblock und der neuen `abdeckung_declare`-Zeile,
 | Kommentar im Runner `tools/harness/run-integration-tests.sh` (Zeile 351: „wenn der Stream seinen Slot angelegt hat (NewStream)“) | bleibt wahr: der Slot entsteht weiter in `NewStream` | keine Änderung erwartet | bestätigt unverändert wahr — keine Änderung |
 | `ADR-0111` (Befund „danach startet `NewStream` sofort `START_REPLICATION`“) | `Accepted`, unberührbar | bleibt stehen; `ADR-0128` Folgepflicht 5 benennt ihn | unverändert, wie geplant |
 | `spec/pflichtenheft.md` `LH-QA-REL-001.a` Schritt 1 (Receive) | „baut die Replication-Verbindung auf und empfängt die Nachrichten“ — bleibt wahr | keine Änderung erwartet, Implementer liest | gelesen, unverändert wahr |
-| **Fremde Datei:** [`slice-capture-transient-wiederholung`](slice-capture-transient-wiederholung.md) (Ausgangslage-Beispiel „SQLSTATE 55006, den `START_REPLICATION` nicht wiederholt“ und Test-Bezug in §3) | nennt den Adapter `receive` als Ort der Wiederholung; der Ort des Aufrufs wandert mit diesem Slice von `NewStream` nach `Stream.Run` | **gemeldet, nicht mitgeändert.** Adresse: §6 des Zielplans (Risiko-Zeile vom Planner mit der Anlage dieses Slice ergänzt); Frist: die Closure dieses Slice, der Planner der Closure zieht nach oder benennt den Träger mit Adresse | erneut geprüft: die Datei trägt bereits eine eigene, vom Planner mit ihrer Anlage ergänzte Risiko-Zeile („Der Ort des Aufrufs `START_REPLICATION` wandert vor diesem Slice“, §6 dort), die den jetzt eingetretenen Stand korrekt vorwegnimmt; sie bleibt unverändert (Ausgang „bei Closure“ jener Datei) — kein weiterer Nachzug durch diesen Implementer nötig, die Datei liegt weiter in `open/` |
+| **Fremde Datei:** `slice-capture-transient-wiederholung` (Ausgangslage-Beispiel „SQLSTATE 55006, den `START_REPLICATION` nicht wiederholt“ und Test-Bezug in §3) | nennt den Adapter `receive` als Ort der Wiederholung; der Ort des Aufrufs wandert mit diesem Slice von `NewStream` nach `Stream.Run` | **gemeldet, nicht mitgeändert.** Adresse: §6 des Zielplans (Risiko-Zeile vom Planner mit der Anlage dieses Slice ergänzt); Frist: die Closure dieses Slice, der Planner der Closure zieht nach oder benennt den Träger mit Adresse | erneut geprüft: die Datei trägt bereits eine eigene, vom Planner mit ihrer Anlage ergänzte Risiko-Zeile („Der Ort des Aufrufs `START_REPLICATION` wandert vor diesem Slice“, §6 dort), die den jetzt eingetretenen Stand korrekt vorwegnimmt; sie bleibt unverändert (Ausgang „bei Closure“ jener Datei) — kein weiterer Nachzug durch diesen Implementer nötig, die Datei liegt weiter in `open/` |
 | Beschreibung der Belege in `harness/README.md` §Sensors | am Parent nicht gelesen (die Zeilen sind sehr lang) | Implementer trägt Befund und Nichtbefund ein (`make test-replication`, `make test-integration`) | Befund: beide Zeilen waren am Parent bereits sehr lang, ohne Erwähnung der neuen Tests/Phase; Nichtbefund: keine der beiden Zeilen widersprach dem neuen Verhalten. Behandlung: beide Zeilen um die neuen Belege ergänzt (Tier-Test bei `make test-replication`, neue Phase bei `make test-integration`) |
 | **Plan-Nachzug (neu, nicht am Parent geprüft):** `internal/bootstrap/administration_internal_test.go` | am Parent ohne `blockingEnableTableUseCase` | — | neuer Fake-Baustein neben `fakeEnableTableUseCase`/`fakeAdministrationListener`; kein Träger, der ihn vorher beschrieb |
 
@@ -352,7 +353,7 @@ Start-Pfad, jener `mergeStreamAndWALFaultOutcome` nach der Rückkehr von `stream
 der kleinere Slice zuerst verstellt die Prüfspur des größeren nicht,
 [`architect-verdict-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md)
 §3), und kein weiterer Slice liegt in `in-progress/` (WIP-Limit 1). Der Slice muss `done` sein, **bevor**
-[`slice-transformationen-e2e-abhilfe`](slice-transformationen-e2e-abhilfe.md)
+`slice-transformationen-e2e-abhilfe`
 startet (Start-Trigger dort): der Abhilfe-Beleg fährt den Startpfad, den dieser
 Slice ändert. Der Übergangs-Commit `next` → `in-progress` nennt
 [`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md).
