@@ -214,10 +214,16 @@ die Aussage als erprobt.
       Dimension `SDK-E2E`; `make docs-check`.
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
+      Self-Review (Modul 8). *Nachgetragen bei Closure* (V-1, LOW,
+      `verifikation-slice-sdk-regel-realserver-e2e.md` §5): der
+      Fixrunde-Commit `98c7f8e4` löste den einzigen offenen HIGH-Punkt (F-1)
+      real auf, setzte diese Checkbox aber entgegen
+      `.claude/commands/implement-slice.md` Schritt 21 nicht mit — die
+      Substanz (Report liegt vor, 0 offenes HIGH/MEDIUM) ist vom Verifier
+      unabhängig bestätigt.
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=<Plan-Datei>` läuft nach jeder Fixrunde
@@ -227,16 +233,16 @@ die Aussage als erprobt.
       `harness/mk/sdk.mk` („vier Phasen“ an zwei Zielen) und die Kopf-Kommentare
       der drei Runner tragen den Ist-Umfang; das Benutzerhandbuch bleibt
       unberührt (`slice-transformationen-betriebsdoku`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — weitere
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — weitere
       `evidence/`-Datei oder neues Verzeichnis; kein Anfall ist ebenfalls eine
       Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Slice-Closure selbst (der Slice hat keine Welle; das Ereignis kann
       eintreten).
 
@@ -464,48 +470,74 @@ Closure-Notiz mit Lerneintrag geschrieben.
   *Erwartet, nicht erprobt:* nein — am Parent 0 Member-Zugriffe und 0
   `GetProperty`-Aufrufe (Feld in §3, Zeilen 2 und 3; Python nicht gesucht). *Zu
   belegen durch:* der Suchlauf an beiden Ständen und die zwölf grünen Regel-Phasen;
-  ein Fund ist die Rückführung §4 (a). **Ausgang:** *(bei Closure)*
+  ein Fund ist die Rückführung §4 (a). **Ausgang: entfallen** — der Suchlauf
+  (Feld §3, Zeilen 2/3, vom Verifier nachgemessen) findet 0 Member-Zugriffe und 0
+  `GetProperty`-Aufrufe; `git diff --name-only 71024045 98c7f8e4 -- sdks` nennt
+  ausschließlich die drei Test-Verzeichnisse (Verifikations-Report §1).
 - **Die festen Test-Schlüssel der Tiers stören die neue Phase oder umgekehrt**
   (`name` als Sentinel, drei feste Gegenlese-Abfragen auf `name`). *Erwartet, zu
   belegen durch:* die Regel-Phasen nutzen eine eigene Tabelle und den Zielschlüssel
   `display_name`; die Regel gilt je Tabelle, die vier bestehenden Phasen laufen mit
   unveränderter Erwartung grün (Zeile 5 des Feldes: drei Abfragen am Parent, drei
-  am Diff). **Ausgang:** *(bei Closure)*
+  am Diff). **Ausgang: entfallen** — alle drei realen Läufe (`make
+  test-sdk-{csharp,kotlin,python}-integration`) meldeten die vier bestehenden
+  Phasen unverändert grün, wie in der Feature-Commit-Message (`ad3af754`)
+  festgehalten; keine Kollision der festen Sentinel beobachtet.
 - **Die Bytes des gRPC-Wegs und das JSON von SSE und NATS tragen nicht dieselbe
   Form.** *Erwartet:* dasselbe JSON ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 6 Option D: alle Wege sehen dieselbe Change); erst der Lauf belegt es.
   *Zu belegen durch:* die zwölf Phasen; eine Abweichung ist die Rückführung §4 (b).
-  **Ausgang:** *(bei Closure)*
+  **Ausgang: entfallen** — alle zwölf Regel-Phasen (drei SDKs × vier Wege) liefen
+  grün mit derselben transformierten Form (Zielschlüssel trägt den Sentinel,
+  Quellschlüssel fehlt); `make doc-trace` führt `LH-FA-CFG-007` seither mit der
+  Dimension `SDK-E2E` (Verifikations-Report §1).
 - **Das `:dev`-Image trägt die Transformationen nicht.** *Erwartet, zu belegen
   durch:* `make image` unmittelbar vor den drei Läufen, der Image-Digest im Bericht
   ([`ADR-0044`](../../adr/0044-image-beleg-semantik.md)); ein Antrag `failed` mit
-  Text beendet den Runner sichtbar. **Ausgang:** *(bei Closure)*
+  Text beendet den Runner sichtbar. **Ausgang: entfallen** — `make image` lief
+  unmittelbar vor den drei Tier-Läufen; alle drei Regel-Anträge erreichten
+  `applied`, kein Lauf endete mit einem `failed`-Fehlertext.
 - **Die drei Kopien der Vorbereitung driften**
   (`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`, offen, 2×). *Erwartet, zu
   belegen durch:* die Aufrufform von `cdc.set_transformation` steht nur in der
   Hilfsdatei — `git grep -l 'set_transformation' -- 'tools/harness/run-sdk-*'` ohne
-  Treffer (Befehl und Ausgabe im Bericht). **Ausgang:** *(bei Closure)*
+  Treffer (Befehl und Ausgabe im Bericht). **Ausgang: entfallen** — die
+  Aufrufform steht ausschließlich in `tools/harness/lib-sdk-rule-fixture.sh`
+  (Suchlauf-Feld §3, Zeilen 18/19: 4 Fundstellen dort, 0 in den drei Runnern);
+  eine dritte unabhängige Kopie der Vorbereitung entstand nie, weil Liefer-Punkt
+  1 die Hilfsdatei vor Kotlin und Python anlegte — `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`
+  bleibt unverändert bei 2× (kein neuer Anfall dieser Klasse, siehe §7).
 - **Der Abdeckungs-Träger verliert Abschnitte oder schreibt bei jedem Lauf.**
   Jeder Runner ersetzt seinen marker-gegrenzten Abschnitt und erhält die übrigen.
   *Erwartet, zu belegen durch:* `git diff` der Datei nach den drei Läufen zeigt
   genau drei neue Zeilen, ein zweiter Lauf je Tier meldet „unveraendert“.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang: entfallen** — der Verifier maß `git diff 71024045 98c7f8e4 --
+  docs/user/sdk-e2e-abdeckung.md`: genau drei neue Zeilen, marker-gegrenzte
+  Abschnitte sonst unverändert; ein wiederholter Lauf meldete real
+  „unveraendert“ (zweifach am C#-Tier bestätigt, Feature-Commit-Message).
 - **Test-Text unter `sdks/` trägt eine interne Kennung**
   (`BEO-PGC/intern-kennungen-in-ausgelieferten-texten`, offen, 1×): `make
   sdk-public-doc-check` färbt sonst jedes `make sdk-pack-*`. *Erwartet, zu belegen
   durch:* die Kennungen (`LH-FA-CFG-007`, `SPEC-…`) stehen nur in den Runnern unter
-  `tools/`; `make sdk-public-doc-check` endet mit Exit 0. **Ausgang:** *(bei
-  Closure)*
+  `tools/`; `make sdk-public-doc-check` endet mit Exit 0. **Ausgang: entfallen**
+  — `make sdk-public-doc-check` lief real (Implementer und Verifier
+  unabhängig) mit EXIT=0: keine interne Kennung unter `sdks/`.
 - **Eine neue Testklasse fällt still aus dem Runner**
   (`BEO-PGC/test-runner-stiller-ausschluss`, offen, 2×). *Erwartet, zu belegen
   durch:* jede der zwölf Klassen bzw. Dateien trägt einen eigenen Phasen-Aufruf
   mit `READY`-/`RECEIVED`-Marker; ein Filter, der keinen Test trifft, liefert
   keinen Marker und lässt den Runner mit Fehler enden — der Abgleich Klassen gegen
-  Phasen steht im Bericht. **Ausgang:** *(bei Closure)*
+  Phasen steht im Bericht. **Ausgang: entfallen** — alle zwölf Testklassen bzw.
+  -dateien trugen einen eigenen Phasen-Aufruf mit `RECEIVED`-Marker, alle drei
+  Runner endeten grün (Feature-Commit-Message: „acht Phasen gruen, gedruckte
+  RECEIVED-Zeilen“); kein Filter ohne Treffer beobachtet.
 - **Der Poll auf `applied` misst Timing statt Zustand**
   (`BEO-PGC/test-integration-retention-timing-flake`, verkörpert, 3×). *Erwartet,
   zu belegen durch:* Poll auf `status` mit Frist, `failed` beendet den Lauf mit dem
-  Fehlertext; keine feste Wartezeit. **Ausgang:** *(bei Closure)*
+  Fehlertext; keine feste Wartezeit. **Ausgang: entfallen** —
+  `lib-sdk-rule-fixture.sh` pollt auf `status = 'applied'` mit Frist statt
+  fester Wartezeit (gelesen, Reviewer-Negativbefund); kein Timing-Flake dieser
+  Klasse in den drei Tier-Läufen der Fixrunde beobachtet.
 - **Die Aussage „opak“ wird breiter belegt als gemessen.** Der Beleg trägt eine
   Regel `rename_column` auf einer Tabelle; `map_value`, mehrere Regeln und
   `old_image` einer UPDATE-/DELETE-Change sind nicht Gegenstand. *Erwartet, zu
@@ -513,36 +545,117 @@ Closure-Notiz mit Lerneintrag geschrieben.
   `rename_column`-Regel, INSERT, vier Wege, drei SDKs“), die Ausdehnung auf alle
   Regeln ist als abgeleitet gekennzeichnet ([`AGENTS.md`](../../../../AGENTS.md)
   §3.12 Instanz B; `BEO-PGC/adr-aussage-breiter-als-ihre-messung`, verkörpert, 8×).
-  **Ausgang:** *(bei Closure)*
+  **Ausgang: entfallen** — diese Closure-Notiz (§7) benennt die gemessene Menge
+  explizit („eine `rename_column`-Regel, INSERT, vier Wege, drei SDKs“) und
+  kennzeichnet die Ausdehnung auf `map_value`, mehrere Regeln und
+  UPDATE/DELETE-Bilder als nicht Gegenstand dieses Slice, nicht als
+  hergeleitet mitbehauptet.
 - **Die Aufschub-Adressen tragen den Gegenstand nicht**
   (`BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an`, geplant, 5×): `betriebsdoku`
   und `e2e-wirkung` schieben den SDK-Beleg an diesen Slice. *Erwartet, zu belegen
   durch:* der Gegenstand steht als committeter Text in beiden Plänen und vollständig
   hier (Feld in §3, Zeile 16: neun Zeilen in vier Trägern); der Reviewer sucht die
   Kernbegriffe („Regel“, „rename_column“, „vier Wege“) im Plan der Adresse.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang: entfallen** — der Gegenstand steht vollständig in diesem Plan
+  (§3 Feld, Zeile 16: neun Zeilen in vier Trägern — `betriebsdoku`,
+  `e2e-wirkung`, die Welle, das Drift-Log der Roadmap); Reviewer und Verifier
+  fanden die Kernbegriffe an allen genannten Stellen.
 - **Die Läufe sind schwer** (Kostenklasse in §4). *Erwartet, zu belegen durch:*
   Laufzeit je Tier, `free -m` und dangling Volumes vor und nach den Läufen im
-  Bericht, je mit Befehl und Lauf. **Ausgang:** *(bei Closure)*
+  Bericht, je mit Befehl und Lauf. **Ausgang: eingetreten, dokumentiert** —
+  die Läufe waren real schwer (fünf `make test-sdk-{kotlin,python}-integration`-
+  Läufe nacheinander in der Fixrunde, 34–77 s je Lauf); `free -m` (14581→14292
+  MiB benutzt) und dangling Volumes (39→39) blieben über die Fixrunde
+  unverändert — kein Ressourcen-Leck, die Kostenklasse-Werte stehen im
+  Fixrunde-Nachtrag von §3.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag:** *(zu tragen bei Closure — geschärfte Regel · neuer
-  Sensor · benannte Spec-Lücke; erwartet: die Aussage „Row-Image-Schlüssel sind in
-  den drei SDK-Modellen opak“ ist mit der gemessenen Menge (eine
-  `rename_column`-Regel, INSERT, vier Wege, drei SDKs) als erprobt geführt; ohne
-  Eintrag kein `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(zu tragen bei Closure — je
-  Anfall eine `evidence/`-Datei, sonst „keine Beobachtung angefallen“ als notierte
-  Antwort)*
-- **Folge-Slices:** `slice-transformationen-betriebsdoku` (nimmt den Beleg im
-  Bericht und im Handbuch auf) — eine Datei in `open/`; keine neue erwartet.
-- **Risiken aus §6:** *(je ein Ausgang, zu tragen bei Closure)*
-- **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure selbst trägt
-  die drei Paarungen (Anker · Folge-Slice · Register), nach dem `git mv` nach
-  `done/`.
+- **Was hat funktioniert:** Die gemeinsame Hilfsdatei
+  (`tools/harness/lib-sdk-rule-fixture.sh`, Liefer-Punkt 1) hielt die
+  Aufrufform von `cdc.set_transformation` an einer einzigen Stelle statt in
+  drei Kopien — der Suchlauf findet sie nur dort (Feld §3, Zeilen 18/19: 4
+  Fundstellen in der Hilfsdatei, 0 in den drei Runnern), und die Divergenz-
+  Klasse `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall` fand für die
+  Vorbereitung dieses Slice keinen neuen Anfall. Die Rollen-Sequenz
+  (Implementer → Reviewer → Fixrunde → Verifier) schloss den einzigen HIGH-
+  Punkt (F-1: zwei der drei Mutationen an Kotlin/Python zunächst nur
+  strukturell begründet) real, nicht nur textlich — die Fixrunde fuhr alle
+  fehlenden Kombinationen tatsächlich rot, und der Verifier fuhr zusätzlich
+  eine vierte, bislang ungetestete Kombination (Kotlin-SSE-Regel-Fläche)
+  unabhängig nach, ebenfalls rot wie erwartet.
+- **Was ging anders als geplant:** Der Feature-Commit (`ad3af754`) setzte die
+  DoD-Checkboxen für Liefer-Punkt 2 (Kotlin) und 3 (Python) auf `[x]`, obwohl
+  nur eine der drei geforderten Eingabeseiten-Mutationen an diesen beiden
+  Tiers unabhängig gefahren war — die Lücke stand nur in der Commit-Message,
+  nicht im Plan (Review F-1, HIGH). Die Fixrunde (`98c7f8e4`) schloss die
+  Lücke real, setzte dabei aber selbst nicht die Checkbox „Review
+  durchgeführt“ mit, obwohl `.claude/commands/implement-slice.md` Schritt 21
+  das für genau diesen Fall verlangt (Verifikation V-1, LOW) — beim
+  Closure-Nachzug jetzt korrigiert (§2).
+- **Steering-Loop-Eintrag (geschärfte Regel):** Die Aussage „Row-Image-
+  Schlüssel sind in den drei SDK-Modellen opak“ ist jetzt am realen Server
+  erprobt, mit der gemessenen Menge **eine `rename_column`-Regel, INSERT,
+  vier Zustellwege (HTTP, gRPC, SSE, NATS-Vollinhalt), drei SDKs (C#, Kotlin,
+  Python)** — nicht `map_value`, nicht mehrere Regeln gleichzeitig, nicht
+  `old_image` einer UPDATE-/DELETE-Change (§1 „Ausdrücklich NICHT in diesem
+  Slice“). `slice-transformationen-betriebsdoku` darf diese Aussage mit genau
+  dieser Menge als erprobt führen, nicht als pauschal „opak“. Zusätzlich
+  geschärft: eine DoD-Checkbox, die im selben Commit gesetzt wird, der den
+  zugehörigen Beleg erst *teilweise* erbringt, behauptet mehr, als der Diff
+  hergibt (F-1) — die bestehende Regel `AGENTS.md` §3.12 Instanz B deckt den
+  Fall bereits wörtlich; dieser Slice ist ein weiterer realer Beleg dafür
+  (`BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`, siehe unten),
+  keine neue Regel nötig.
+- **Beobachtungs-Register (`../observations/`):** Kein neuer Anfall, der eine
+  neue `evidence/`-Datei rechtfertigt — die Rollen-Sequenz traf ausschließlich
+  bereits bekannte Klassen erneut (unten mit Zitat statt neuer Datei, wie das
+  Register es vorsieht):
+  - `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (bereits
+    verkörpert): F-1 ist ein weiteres Auftreten — Checkbox behauptete einen
+    vollständig erbrachten Beleg, den die eigene „Zu belegen durch“-Formulierung
+    nicht hergab; der Zähler bleibt beim Reviewer/Verifier-Report zitiert,
+    keine neue Datei (Deckel-Regel, Register-README).
+  - `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall` (offen, 2×): **kein
+    Anfall** in diesem Slice — die gemeinsame Hilfsdatei verhinderte die
+    Klasse strukturell für die Test-Vorbereitung, statt sie zu wiederholen;
+    `state.md` trägt dazu eine Notiz (siehe unten), der Zähler bleibt bei 2×
+    unverändert, weil kein Divergenz-Fund vorliegt.
+  - `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (bereits verkörpert,
+    16×): die zwölf Mutationsbelege dieses Slice sind weitere Instanzen der
+    bereits verkörperten Regel „ein Negativtest bindet an seine Eingabe,
+    nicht an eine Zufallsannahme“ — kein neuer Zähler nötig.
+  - `state.md`-Update: `docs/plan/planning/observations/BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall/state.md`
+    trägt jetzt einen Absatz, dass die SDK-Realserver-Test-Vorbereitung dieses
+    Slice die Klasse strukturell vermeidet (eine Hilfsdatei statt drei
+    Kopien) — das löst die Beobachtung nicht auf (Produktivcode der drei SDKs
+    entscheidet Randwerte weiterhin unabhängig je Bibliothek), sondern
+    dokumentiert eine wirksame Gegenmaßnahme für den Testvorbereitungs-Fall.
+- **Folge-Slices:** `slice-transformationen-betriebsdoku` — mit dieser
+  Closure ist sein Start-Trigger vollständig erfüllt: `slice-transformationen-e2e-abhilfe`
+  liegt bereits in `done/`, und dieser Slice liegt jetzt ebenfalls in `done/`.
+  Die Datei steht weiterhin unter `open/` (der Übergang nach `in-progress/`
+  ist eine eigene Planner-Handlung, nicht Teil dieser Slice-Closure); er ist
+  laut seinem eigenen §4 „Letzter Slice der Welle“ — mit ihm schließt
+  `welle-transformationen` ihren zehnten und letzten Slice. Keine neue
+  Folge-Slice-Datei entstand.
+- **Risiken aus §6:** alle zwölf Risiken tragen jetzt einen Ausgang (elf
+  „entfallen“, eines „eingetreten, dokumentiert“ — die schweren Läufe waren
+  real schwer, aber ohne Ressourcen-Leck, siehe §6 je Zeile).
+- **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure selbst
+  trägt die drei Paarungen:
+  - **Anker** — der Steering-Loop-Eintrag oben nennt keinen `liegt in
+    <Zielort>`-Anker außerhalb dieses Plans (die geschärfte Aussage liegt in
+    dieser Closure-Notiz selbst und wird von `slice-transformationen-betriebsdoku`
+    zitiert, nicht kopiert) — n/a.
+  - **Folge-Slice** — `slice-transformationen-betriebsdoku` existiert als
+    Datei unter `docs/plan/planning/open/slice-transformationen-betriebsdoku.md`
+    (geprüft).
+  - **Register** — `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`,
+    `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall` und
+    `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` existieren je als
+    Verzeichnis unter `docs/plan/planning/observations/BEO-PGC/` mit
+    nicht-leerem `evidence/` (geprüft).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

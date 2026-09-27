@@ -15,3 +15,15 @@ liefert dort `JsonNull` statt `null` (Review F-2, behoben, Kotlin-README nennt
 (die Kopie trägt einen Fehler des Vorbilds weiter) und
 `BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft` (zwei Quellen nennen dieselbe
 Aussage verschieden).
+
+**Gegenmaßnahme beobachtet, kein neuer Anfall (slice-sdk-regel-realserver-e2e, §6/§7):**
+die drei SDK-Realserver-Tiers brauchten für ihre Regel-Testphasen dieselbe
+Vorbereitung (Tabelle anlegen, `cdc.enable_table`, `cdc.set_transformation`,
+Poll); statt sie unabhängig je Sprache zu implementieren, trägt eine
+gemeinsame Hilfsdatei (`tools/harness/lib-sdk-rule-fixture.sh`) die
+Aufrufform genau einmal — der Suchlauf des Slice fand sie ausschließlich dort
+(0 Kopien in den drei Runnern). Das ist keine Auflösung der Beobachtung: die
+**Produktivcode**-Entscheidung je Sprachbibliothek (wie diese eine Regel
+JSON-Randwerte liest) bleibt unabhängig und divergenzfähig — hier war der
+Gegenstand eine **Testvorbereitung**, kein Lesemodell. Zähler bleibt bei 2×;
+kein neuer `evidence/`-Eintrag, weil kein Divergenz-Fund vorliegt.
