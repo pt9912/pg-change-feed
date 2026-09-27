@@ -1,6 +1,12 @@
-Zustand: **geplant** — Ausgang: **geplant** → `slice-start-vorlauf-grenze` (Phase in `make
-test-integration`, die den Prozessstart mit einem wartenden Antrag fährt; Architect-Verdikt
-`architect-verdict-welle-transformationen-offene-fragen` §8, `ADR-0128`). Zähler (abgeleitet):
+Zustand: **verkörpert** — Ausgang: **verkörpert** → Phase
+„Prozessstart-Vorlauf-Frist“ in `tools/harness/run-integration-tests.sh` ·
+seit slice-start-vorlauf-grenze. Der reale Rundlauf (Sperre, `pending`-Antrag,
+Neustart, Healthcheck-Poll, `cdc.changes`-Poll) liefert genau den Beleg, den
+die Whitebox-Tests von `internal/bootstrap` mit Fakes allein nicht zeigen
+konnten — der Prozess bleibt über den Healthcheck gesund, während der
+Replikationsstrom bereits läuft und der Vorlauf noch wartet; diese
+Eigenschaft erscheint erst am komponierten, realen Prozess (dieselbe Klasse
+wie beim vierten Beleg unten). Zähler (abgeleitet):
 **5×** (evidence/slice-061.md, evidence/slice-072.md,
 evidence/slice-transformationen-start-reihenfolge.md,
 evidence/architect-verdict-welle-transformationen-offene-fragen.md,

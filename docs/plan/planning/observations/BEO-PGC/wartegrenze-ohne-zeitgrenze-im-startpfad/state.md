@@ -1,7 +1,6 @@
-Zustand: **geplant** — Ausgang: **geplant** → `slice-start-vorlauf-grenze` (wellenlos, `open/`,
-Plan `docs/plan/planning/open/slice-start-vorlauf-grenze.md`; Umsetzung von `ADR-0128`: `START_REPLICATION` im Stream-Lauf,
-Frist von 30 s im Vorlauf, bei Ablauf startet der Stream und der Antrag bleibt `pending`;
-Architect-Verdikt `architect-verdict-welle-transformationen-offene-fragen` §2). Zähler
+Zustand: **verkörpert** — Ausgang: **verkörpert** →
+`internal/bootstrap/wiring.go` (`runStreamAfterAdministrationPassWithTimeout`,
+`ADR-0128` Festlegungen 1 bis 3) · seit slice-start-vorlauf-grenze. Zähler
 (abgeleitet): 2× (evidence/slice-transformationen-start-reihenfolge.md,
 evidence/architect-verdict-welle-transformationen-offene-fragen.md).
 

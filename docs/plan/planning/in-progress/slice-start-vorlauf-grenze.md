@@ -261,19 +261,19 @@ ihre Mutationen hergeleitet).
 - [x] Doku-Update: `harness/README.md` §Sensors — die Zeilen `make
       test-replication` und `make test-integration` nennen die neuen Belege;
       das Benutzerhandbuch bleibt unberührt (Adresse: `betriebsdoku` §2).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert. Die Ausgänge der beiden Einträge, die
       dieser Slice trägt (`BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`,
       `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke`), werden bei der
       Closure von *geplant* auf den erreichten Stand gesetzt.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure der nächsten Welle (die Roadmap führt
       [welle-transformationen](../welle-transformationen.md) unter *Offene
       Wellen*, das Ereignis kann eintreten: ihre Closure liegt nach
@@ -318,7 +318,7 @@ Symbolnamen der bewegten Stelle:
 ```suchlauf
 53fab37b 100 -n -E 'START_REPLICATION|StartReplication|NewStream|runStreamAfterAdministrationPass' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 569e5db2 111 -n -E 'START_REPLICATION|StartReplication|NewStream|runStreamAfterAdministrationPass' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 138 -n -E 'START_REPLICATION|StartReplication|NewStream|runStreamAfterAdministrationPass' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 139 -n -E 'START_REPLICATION|StartReplication|NewStream|runStreamAfterAdministrationPass' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 ```
 
 Beschreibung der Frist und Zählwort/Hedge der Wartestelle:
@@ -326,7 +326,7 @@ Beschreibung der Frist und Zählwort/Hedge der Wartestelle:
 ```suchlauf
 53fab37b 69 -n -i -E 'keine eigene Frist|ohne (eigene )?Frist|Slot besteht an dieser Stelle|sofort .?START_REPLICATION|Replikationsstrom|Zeitgrenze|hält den Stream-Start|Wartestelle' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 569e5db2 77 -n -i -E 'keine eigene Frist|ohne (eigene )?Frist|Slot besteht an dieser Stelle|sofort .?START_REPLICATION|Replikationsstrom|Zeitgrenze|hält den Stream-Start|Wartestelle' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 84 -n -i -E 'keine eigene Frist|ohne (eigene )?Frist|Slot besteht an dieser Stelle|sofort .?START_REPLICATION|Replikationsstrom|Zeitgrenze|hält den Stream-Start|Wartestelle' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 85 -n -i -E 'keine eigene Frist|ohne (eigene )?Frist|Slot besteht an dieser Stelle|sofort .?START_REPLICATION|Replikationsstrom|Zeitgrenze|hält den Stream-Start|Wartestelle' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 ```
 
 Das Wort „Vorlauf“ am Baum (alle Treffer, inklusive des Homonyms):
@@ -334,10 +334,10 @@ Das Wort „Vorlauf“ am Baum (alle Treffer, inklusive des Homonyms):
 ```suchlauf
 53fab37b 162 -n -E 'Vorlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 569e5db2 170 -n -E 'Vorlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 197 -n -E 'Vorlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 199 -n -E 'Vorlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 ```
 
-Die Differenz `569e5db2` (170) → `diff` (197): 27 neue Treffer, ganz überwiegend die
+Die Differenz `569e5db2` (170) → `diff` (199): 29 neue Treffer, ganz überwiegend die
 neu geschriebenen Kommentare/Godocs dieses Slice selbst (`administrationPassTimeout`,
 `runStreamAfterAdministrationPassWithTimeout`, die beiden neuen Tests, die neue
 Runner-Phase samt ihrem Kommentarblock und der neuen `abdeckung_declare`-Zeile,
@@ -348,7 +348,18 @@ die geschärfte Godoc-Zeile von `processAdministrationRequests` ersetzt eine Fun
 (`TestProcessAdministrationRequestsClassifiesADomainErrorAfterTheDeadlineAsAFailureNotAsATimeout`,
 `TestProcessAdministrationRequestsStopsAtTheLoopHeadWhenTheContextIsAlreadyDone`) tragen die
 vier zusätzlichen Treffer — keine Fundstelle verschwindet, die Bewegung ist ausschließlich
-Zuwachs.
+Zuwachs. Zwei weitere Treffer kommen aus der Planner-Closure selbst: die drei Ausgänge des
+Beobachtungs-Registers (`BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`,
+`BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke`, `BEO-PGC/ein-instanz-annahme-ohne-erzwingung`
+— dessen neue `evidence/slice-start-vorlauf-grenze.md`) nennen den Herkunfts-Anker und die
+Beobachtung in eigenen Worten (Modul 6 §Form); die drei Register-Dateien tragen einen zusätzlichen
+Treffer je Suchmuster-Gruppe: Symbolnamen 138→139 (`runStreamAfterAdministrationPassWithTimeout`
+in `wartegrenze-ohne-zeitgrenze-im-startpfad/state.md`, an der Stelle, an der die alte Fassung
+„START_REPLICATION im Stream-Lauf“ trug — kein Netto-Zuwachs dort, ein Symbolname ersetzt einen
+anderen), Frist-Beschreibung 84→85 und das Wort „Vorlauf“ 197→199 (je in
+`adapter-unittest-verdeckt-bootstrap-luecke/state.md` und
+`ein-instanz-annahme-ohne-erzwingung/state.md`) — auch das Register bleibt ein Träger, den dieser
+Slice bewegt, kein Symbolname der Produktionslogik.
 
 | Träger | Befund (Stand `53fab37b`, vom Planner gelesen) | Behandlung | Ausgang (Implementer, Stand `diff`) |
 |---|---|---|---|
@@ -453,7 +464,8 @@ beiden PostgreSQL-Versionen + ein realer, grüner `make test-integration`-Lauf
   erst nach dem ersten gelesenen `pgoutput`-Event läuft; ein Schreiben vor dem
   ersten Lesen ist am Code nicht möglich. Am Tier-Lauf beider
   PostgreSQL-Versionen bestätigt (`make test-replication`, beide Digests
-  grün). **Ausgang:** *(bei Closure)*
+  grün). **Ausgang:** entfallen — real bestätigt, keine Fake- oder
+  Adapter-Anpassung nötig.
 - **Der Fehler von `START_REPLICATION` entsteht später als bisher.** Ein Fehler
   wie SQLSTATE 55006 (Slot noch aktiv, belegt im Register
   `BEO-PGC/adapter-fehler-ausgang` für den Adapter `receive`) entstand vor dem
@@ -479,8 +491,10 @@ beiden PostgreSQL-Versionen + ein realer, grüner `make test-integration`-Lauf
   55006 abbrechen, bevor die neue Instanz ihn erneut aufnahm — derselbe
   Mechanismus (zwei überlappende Vorläufe), nicht dieselbe Fehlerursache. Kein
   Ein-Instanz-Wächter existiert; die Frage bleibt beim Architect (Register
-  `BEO-PGC/ein-instanz-annahme-ohne-erzwingung`, jetzt 3×). **Ausgang:** *(bei
-  Closure)*
+  `BEO-PGC/ein-instanz-annahme-ohne-erzwingung`, jetzt 3×). **Ausgang:**
+  eingetreten, wie hergeleitet — Register-Adresse
+  `BEO-PGC/ein-instanz-annahme-ohne-erzwingung` (3×, Lese-Schritt-Kandidat für
+  die Closure von `welle-transformationen`, siehe §7).
 - **Ein durch die Frist abgebrochener Antrag ist nicht wiederholbar.** Der
   Kontext des Vorlaufs endet mitten in `applyAdministrationRequest`
   (Datenbank-Aufruf, Wirkung in der `Assembler`-Bindung, `MarkApplied`); der
@@ -516,7 +530,14 @@ beiden PostgreSQL-Versionen + ein realer, grüner `make test-integration`-Lauf
   Kommentar beschreibt die Annahme als atomar in „ihrer Transaktion“; die
   Transaktionsgrenze selbst (SQL/`postgresstorage`) ist in diesem Lauf nicht
   gelesen — **Nichtbefund**, offen für einen Architect-/Reviewer-Blick.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** weiter offen — Nichtbefund unaufgelöst. Adresse:
+  `slice-capture-transient-wiederholung` liest den Aufrufpfad
+  `applyAdministrationRequest`/`backfill`-Zweig ohnehin für die
+  Wiederholungsform (dessen §1 nennt „Der Backfill-Run“ als eigene
+  Abgrenzung, nicht als gelöst); der Blick auf die Transaktionsgrenze eines
+  durch die Frist abgebrochenen `backfill`-Antrags gehört dorthin oder — falls
+  jener Slice ihn nicht trägt — in einen eigenen Register-Eintrag bei seiner
+  Closure.
 - **Die Frist ändert den Startpfad, den `slice-transformationen-e2e-abhilfe`
   belegt.** Der Abhilfe-Beleg (Kriterien (b) und (c) von `ADR-0112`
   Folgepflicht 5) gilt für jeden Antrag, den der Vorlauf innerhalb der Frist
@@ -530,8 +551,10 @@ beiden PostgreSQL-Versionen + ein realer, grüner `make test-integration`-Lauf
   eine andere Antragsart (`remove_transformation`/`set_transformation`) und einen
   anderen zeitlichen Fall (ein Antrag, der die Frist unterschreitet) — beide
   Phasen stehen nicht in Konflikt, aber `e2e-abhilfe`s Start-Trigger sollte diesen
-  Slice als `done` voraussetzen (bereits so geplant, §4). **Ausgang:** *(bei
-  Closure)*
+  Slice als `done` voraussetzen (bereits so geplant, §4). **Ausgang:**
+  entfallen — Grenze benannt, kein Konflikt zwischen den beiden Phasen; der
+  Start-Trigger von `slice-transformationen-e2e-abhilfe` setzt diesen Slice als
+  `done` voraus (§4 dort).
 - **Die Phase verlängert `make test-integration` um rund 45 s je Leg der
   CI-Matrix** (`e2e.yml`, beide PostgreSQL-Legs, `LH-QA-POR-001`) und ist
   zeitabhängig (`BEO-PGC/test-integration-retention-timing-flake`, verkörpert,
@@ -546,8 +569,9 @@ beiden PostgreSQL-Versionen + ein realer, grüner `make test-integration`-Lauf
   ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A); der Poll läuft mit
   Frist (`bf_await_sql`, kein fester `sleep`), die Healthcheck-Schleife trägt
   9 feste 3-s-Takte plus 1 s Vorlauf (27 s, kein Poll-auf-Zustand nötig, weil
-  gesund bleiben die Zusage ist, nicht ein Zustandswechsel). **Ausgang:** *(bei
-  Closure)*
+  gesund bleiben die Zusage ist, nicht ein Zustandswechsel). **Ausgang:**
+  entfallen — real gemessen (31 s), Poll auf Zustand statt fester Wartezeit,
+  kein Workflow-Zug nötig.
 - **Die neue Phase oder der neue Test fällt still aus dem Runner**
   (`BEO-PGC/test-runner-stiller-ausschluss`, offen, 2×). *Erwartet, zu belegen
   durch:* der `-run`-Abgleich und die Zeile in `docs/user/e2e-abdeckung.md`.
@@ -558,8 +582,8 @@ beiden PostgreSQL-Versionen + ein realer, grüner `make test-integration`-Lauf
   Die Zeile in `docs/user/e2e-abdeckung.md` ist real geschrieben (`Ort:
   tools/harness/run-integration-tests.sh:3932`) und der reale
   `make test-integration`-Lauf endete mit ihrer gedruckten Erfolgszeile — die
-  Phase lief nachweislich, nicht still ausgeschlossen. **Ausgang:** *(bei
-  Closure)*
+  Phase lief nachweislich, nicht still ausgeschlossen. **Ausgang:** entfallen
+  — kein `-run`-Muster anwendbar, Erfolgszeile real gedruckt.
 - **Ein Negativtest trägt seine Eingabe nicht** (Frist-Ablauf: der Antrag bleibt
   `pending`) (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert).
   *Erwartet, zu belegen durch:* je Grenze (Frist, Ablauf, Kontext ohne Frist für
@@ -569,7 +593,9 @@ beiden PostgreSQL-Versionen + ein realer, grüner `make test-integration`-Lauf
   (`context.WithTimeout` gestrichen; `errors.Is(ctx.Err(), …)`-Zweig gestrichen)
   real auf einer Arbeitskopie gefahren, beide rot gesehen (DoD 2 „Belegt“
   oben nennt Meldung/Verhalten je Mutation), Quelle danach unverändert
-  wiederhergestellt. **Ausgang:** *(bei Closure)*
+  wiederhergestellt. **Ausgang:** entfallen — beide Mutationen real gefahren
+  und rot gesehen, zusätzlich in der Fixrunde (F-1/F-2) und der Verifikation
+  (10 eigene Mutationsläufe) unabhängig bestätigt.
 - **Die Pflichtenheft-Zeile behauptet mehr als der Beleg trägt**
   (`BEO-PGC/adr-aussage-breiter-als-ihre-messung`, verkörpert, 8×). Das
   Verdikt maß nur die Antragsart `enable`; die Aussage über andere Antragsarten
@@ -581,22 +607,93 @@ beiden PostgreSQL-Versionen + ein realer, grüner `make test-integration`-Lauf
   ADR-Festlegung selbst trägt; die einzige real gefahrene Antragsart bleibt
   `enable` (Rundlauf-Beleg oben), die Pflichtenheft-Zeile behauptet das nicht
   für andere Antragsarten. Reviewer prüft den Satz gegen den Diff.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** entfallen — Reviewer bestätigte den Satz ohne Fund
+  („Innerhalb der Frist des Vorlaufs“ nennt keine Antragsart/Menge — trägt
+  nicht mehr, als `ADR-0128` und der reale Rundlauf belegen).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort; die Ausgänge von
+- **Was hat funktioniert:** Die Verschiebung von `START_REPLICATION` nach
+  `Stream.Run` war im Diff klein (Verdikt §2.3 bestätigt) und real an zwei
+  PostgreSQL-Versionen ohne Fake-Anpassung lauffähig — keine bestehende Fake-
+  oder ACK-Adapter-Annahme setzte den Aufruf in `NewStream` voraus. Der reale
+  Rundlauf in `make test-integration` maß die Frist mit **31 s** gegen die
+  hergeleitete Schätzung von ~45 s (`AGENTS.md` §3.12 Instanz A) — die
+  gedruckte Zeile ersetzte die Schätzung, statt sie nur zu bestätigen. Der
+  Review fand zwei reale MEDIUM-Lücken (F-1, F-2) über eigene Mutationen an
+  genau der neuen Klassifikations- und Kontrollpunkt-Logik, die die Fixrunde
+  vor Closure schloss; die Verifikation reproduzierte beide Mutationen
+  unabhängig und fuhr acht weitere, im Auftrag nicht genannte Mutationen,
+  ohne eine neue Lücke zu finden — der Dreischritt Implementer → Reviewer →
+  Verifier band die neue Produktionslogik damit sichtbar enger, als es der
+  Implementer allein getan hätte.
+- **Was ging anders als geplant:** Die Fixrunde (F-1/F-2) war im DoD als
+  *„Zu belegen durch“* formuliert, nicht als eingeplanter Schritt — zwei
+  MEDIUM-Findings am neuen Ausnahmepfad (Klassifikation bei Fristablauf,
+  Kontrollpunkt für `Rejected`-Zeilen hinter einem hängenden Antrag) waren
+  keine Überraschung der Kernaussage (die bleibt unverändert: der Prozess
+  stirbt nicht mehr an einem langen Vorlauf), aber ein zweiter
+  Produktionscode-Zug nach dem ursprünglichen Implementer-Commit. Die
+  Pflichtenheft-Zeile und der reale Rundlauf blieben davon unberührt (kein
+  Diff an `receive.go`, `Stream.Run` oder am Runner-Skript seit dem
+  Review-Commit, von der Verifikation eigenständig am Diff bestätigt).
+- **Steering-Loop-Eintrag (Lerneintrag):** *Geschärfte Regel* — die
+  Klassifikation „Frist vs. echter Fehler“ an
+  `processAdministrationRequests` prüft jetzt den von
+  `applyAdministrationRequest` **zurückgegebenen Fehler** selbst
+  (`errors.Is(err, context.DeadlineExceeded)`), nicht den Ambient-Zustand
+  `ctx.Err()` — F-1 zeigte, dass Letzteres einen eigenständigen
+  Domänenfehler fälschlich als Fristproblem tarnen und `MarkFailed`
+  unterdrücken kann. Ein kurzer `git grep -n "ctx.Err()" -- internal`
+  (gemessen an diesem Stand, ohne Testdateien) fand einen **Kandidaten
+  derselben Klasse, nicht behoben**: `internal/application/usecase/backfill/
+  service.go` (`conclude`, Zeilen 339–348) unterscheidet `failed` von
+  `interrupted` ebenfalls über `ctx.Err() != nil` (Ambient-Zustand) statt
+  darüber, ob `cause` selbst `context.Canceled`/`context.DeadlineExceeded`
+  trägt — der Kommentar dort sagt es sogar wörtlich („ein Fehler bei
+  beendetem Kontext ist dessen Folge“), dieselbe Annahme, die F-1 in
+  `wiring.go` widerlegte. Die übrigen Fundstellen (`runAdministration`,
+  `postgresstorage/administrationrequest.go`, `receive.go:406`,
+  `bootstrap/backfill.go`, `snapshotlogic/logic.go`,
+  `grpcstream/broadcaster.go`) prüfen `ctx.Err()` ausschließlich als
+  Schleifen-/Abbruch-Bedingung („ist der eigene Kontext selbst beendet“),
+  nicht zur Klassifikation eines fremden Fehlers — nicht derselbe Fund.
+  Diese Stelle ist **nicht geändert** (außerhalb des Umfangs dieses Slice,
+  kein Auftrag dazu) — benannt als Fund für einen künftigen Blick; Adresse:
+  ein Reviewer/Architect-Blick bei nächster Berührung von
+  `backfill/service.go`, oder ein neuer Register-Eintrag, falls keine
+  Berührung folgt, bevor die Klasse ein drittes Mal auftritt. *Neuer
+  Sensor:* keiner — die Unterscheidung „klassifiziert diese Stelle über den
+  Fehler selbst oder über den Ambient-Kontext“ ist eine Lesefrage, kein
+  grep-fähiges Muster (beide Formen nutzen `ctx.Err()`). *Benannte
+  Spec-Lücke:* keine — `ADR-0128` ist mit diesem Slice vollständig
+  eingelöst (Festlegungen 1 bis 3, Folgepflicht 5 Träger gezogen).
+- **Beobachtungs-Register (`../observations/`):** fortgeschrieben.
   `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad` und
-  `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke` von *geplant* auf den
-  erreichten Stand)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+  `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke` von *geplant* auf
+  *verkörpert* gesetzt (Herkunfts-Anker `seit slice-start-vorlauf-grenze`,
+  siehe `state.md` beider Einträge). Neue Evidence-Datei für
+  `BEO-PGC/ein-instanz-annahme-ohne-erzwingung` (jetzt 3×,
+  `evidence/slice-start-vorlauf-grenze.md`) — Zähler-Schwelle erreicht;
+  der Eintrag ist als Lese-Schritt-Kandidat für die Closure von
+  `welle-transformationen` benannt (`state.md`), kein eigener
+  Architect-/ADR-Zug in diesem Slice. Kein weiterer Anfall.
+- **Folge-Slices:** keine neuen — die Abgrenzung des Slice-Plans (§1) trägt
+  bereits alle vier bereits geplanten Folgen
+  (`slice-transformationen-e2e-abhilfe`,
+  `slice-capture-transient-wiederholung`,
+  `slice-transformationen-betriebsdoku`, ein möglicher künftiger
+  Ein-Instanz-Wächter über das Register). `slice-capture-transient-
+  wiederholung` (`open/`) trägt bereits eine eigene, vom Planner bei ihrer
+  Anlage ergänzte Risiko-Zeile, die den jetzt eingetretenen Stand des
+  gewanderten `START_REPLICATION`-Aufrufs korrekt vorwegnimmt (§3-Tabelle
+  dieses Slice-Plans, letzte Zeile) — geprüft bei dieser Closure, weiterhin
+  korrekt und aktuell, kein Nachzug nötig.
+- **Risiken aus §6:** alle acht Risiko-Zeilen tragen einen Ausgang (drei
+  eingetreten/entfallen mit Substanz, zwei weiter offen — Zwei-Instanzen-
+  SQLSTATE-55006-Fall via Register, `backfill`-Transaktionsgrenze via
+  Adresse an `slice-capture-transient-wiederholung` —, drei entfallen ohne
+  Rest).
 - **Drei Paarungen:** dieser Slice hat keine Welle; die Prüfung läuft
   regelkonform bei der Closure der nächsten Welle
   ([welle-transformationen](../welle-transformationen.md), offen).
