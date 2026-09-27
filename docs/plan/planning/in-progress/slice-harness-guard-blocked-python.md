@@ -206,10 +206,13 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       und der Suchlauf in §3.
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
+      Self-Review (Modul 8). `docs/reviews/review-slice-harness-guard-blocked-python.md`
+      (F-1 HIGH, F-2 MEDIUM) ist in dieser Fixrunde aufgelöst (Suchlauf-Zahlen
+      berichtigt, CRLF-Härtung der Fragment-Ladung samt Tabellentest-Fall);
+      kein offenes HIGH/MEDIUM.
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/open/slice-harness-guard-blocked-python.md`
