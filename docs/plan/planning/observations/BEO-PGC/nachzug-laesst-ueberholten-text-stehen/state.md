@@ -12,7 +12,12 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 14× (Dateien unter `evidence/`; die vierzehnte,
+Zähler: 15× (Dateien unter `evidence/`; die fünfzehnte,
+`evidence/slice-transformationen-betriebsdoku.md`, trägt F-2 (MEDIUM) und eine **neue Form**:
+keine widersprechende Nachbar-Aussage, sondern eine gegen eine im Plan explizit gezählte Liste
+(drei benannte Beispiele einer Übergabe) unvollständige Übernahme in den Zielträger (Handbuch);
+vor dem Merge gefunden, in der Fixrunde behoben, Ausgang unverändert **verkörpert**; die
+vierzehnte,
 `evidence/slice-capture-leerlauf-quellbelege.md`, trägt F-1 (MEDIUM) und V-1 (MEDIUM): der Nachzug
 des Umbaus stand in §3, der Wortlaut von DoD 1 in §2 desselben Plans beschrieb den früheren
 Aufbau; vor dem Merge gefunden, Ausgang unverändert **verkörpert**; die dreizehnte,

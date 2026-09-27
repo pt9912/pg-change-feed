@@ -173,19 +173,20 @@ an dieses Slice gemeldet haben.
 - [x] Doku-Update: der Slice **ist** das Doku-Update (Handbuch,
       Änderungshistorie); `harness/README.md` ist unberührt — die Sensor-Zeilen
       tragen `e2e-wirkung` und `e2e-abhilfe`.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
-      Sensor · benannte Spec-Lücke).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+      Sensor · benannte Spec-Lücke) — §7.
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
-      Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
-      eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
-      offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
-      der Closure der Welle
-      [welle-transformationen](../welle-transformationen.md) (die Roadmap führt
-      sie unter *Offene Wellen*, das Ereignis kann eintreten).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — zwei
+      `evidence/`-Dateien (F-1 unter `beleg-befehl-traegt-seinen-satz-nicht`,
+      F-2 unter `nachzug-laesst-ueberholten-text-stehen`) — §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+      offen) — §6, §7.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
+      Welle-Closure-Prüfung nach
+      [welle-transformationen](../welle-transformationen.md) §3 ist der
+      unmittelbar folgende, eigenständige Zug nach diesem `git mv` nach
+      `done/` (§7); dieser Slice selbst führt sie nicht durch.
 
 **Übergabe aus `slice-transformationen-map-value`** (gemeldet, kein zusätzlicher
 Umfang; Herkunft: Review-Report Finding F-6, Verifikations-Report V-3 und §7,
@@ -361,37 +362,121 @@ geschrieben.
   ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B), etwa „die Abhilfe
   wirkt“ vor dem realen Beleg. *Erwartet, zu belegen durch:* Review liest jede
   Wirkungs-Aussage gegen den Beleg-Anker; der Start-Trigger stellt den Beleg
-  voran. **Ausgang:** *(bei Closure)*
+  voran. **Ausgang: eingetreten** — Review-Finding F-1 (HIGH, Klasse „Beleg
+  trägt seinen Satz nicht“): der zitierte PostgreSQL-Fehlertext (`text`-Parameter)
+  wich vom real gemessenen Wortlaut (`unknown`-Parameter) im genannten
+  Review-Report ab; in der Fixrunde behoben, vom Verifier Zeichen-für-Zeichen
+  nachgemessen (kein offenes HIGH). Beleg:
+  `docs/plan/planning/observations/BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht/evidence/slice-transformationen-betriebsdoku.md`.
 - **Das Handbuch übersieht eine Stelle**, die die Antragsarten oder die Klasse
   `schema` aufzählt (`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`, offen,
   2×; `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`,
   verkörpert, 3×). *Erwartet, zu belegen durch:* die Suchläufe in §3.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang: entfallen** — die Suchläufe in §3 fanden keine unvollständig
+  gemachte Aufzählungsstelle der Antragsarten oder der Klasse `schema`;
+  Review-Finding F-2 (MEDIUM, unvollständige Übernahme eines dritten
+  Beispiels in „Zeilen, die kein Antrag sind“) ist ein anderer, im §3-Suchlauf
+  nicht erfasster Fund — kein Treffer dieses benannten Risikos, sondern eine
+  neue Form der verwandten Beobachtung
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (Beleg:
+  `docs/plan/planning/observations/BEO-PGC/nachzug-laesst-ueberholten-text-stehen/evidence/slice-transformationen-betriebsdoku.md`),
+  in der Fixrunde behoben.
 - **Der SDK-Suchlauf findet einen Schlüssel-Zugriff**, den die Erwartung
   („keine Code-Änderung“) ausschließt. *Erwartet, zu belegen durch:* der
-  Suchlauf mit Befund und Nichtbefund im Bericht. **Ausgang:** *(bei Closure)*
+  Suchlauf mit Befund und Nichtbefund im Bericht. **Ausgang: entfallen** —
+  Nichtbefund: 137/137 Treffer an beiden Ständen liegen in Feld-Deklarationen
+  des obersten Nachrichtenfelds oder in Tests/Docstrings, kein Zugriff auf
+  einen benannten Schlüssel innerhalb eines Row Image (§3, vom Reviewer
+  Fundstelle-für-Fundstelle nachgelesen).
 - **Die Abhilfe-Prozedur wird zu einer allgemeinen Recovery** verallgemeinert
   (`BEO-PGC/kein-admin-weg-schema-fehler-recovery`, offen, 1×). *Erwartet, zu
-  belegen durch:* Review des Abschnitts auf die benannte Ursache. **Ausgang:**
-  *(bei Closure)*
+  belegen durch:* Review des Abschnitts auf die benannte Ursache. **Ausgang:
+  entfallen** — Review-Negativbefund: der Nichtanwendbarkeits-/Abhilfe-Absatz
+  bleibt eng auf die Transformationsregel bezogen, „Container startet nicht“
+  und „Neustart nach einem Fehler“ bleiben unverändert und verweisen nicht auf
+  die neue Abhilfe; die Beobachtung bleibt bei 1× (kein neuer Beleg).
 - **Zahlen und Fristen im Handbuch ohne Ursprung** (etwa eine Wartezeit nach
   dem Neustart) — jede Zahl trägt Lauf und Ursprung oder entfällt. *Erwartet,
-  zu belegen durch:* Review. **Ausgang:** *(bei Closure)*
+  zu belegen durch:* Review. **Ausgang: entfallen** — Review-Negativbefund:
+  jede geprüfte Zahl (ns/µs/ms-Bereiche, Prozentangaben, Backfill-Lesekosten,
+  30-s-Frist, 31-s-Messung, 7,1-s-Heartbeat-Alter) trägt eine korrekte
+  gemessen/übernommen/abgeleitet-Kennzeichnung, gegen die genannten Quellen
+  abgeglichen.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
-- **Drei Paarungen:** dieser Slice gehört zu
-  [welle-transformationen](../welle-transformationen.md) (offen) — die Prüfung
-  läuft regelkonform bei deren Closure.
+- **Was hat funktioniert:** Der §3.13-Suchlauf (Nichtbefund über 137 Treffer
+  in `sdks/**`, Aufzählungsstellen der Antragsarten, Sätze zur Klasse
+  `schema`) trug korrekt Gefundenes **und** Nichtgefundenes an beiden Ständen
+  und wurde vom Reviewer und vom Verifier unabhängig nachgefahren
+  (`make suchlauf-nachmessen`, 8/8 stimmen). Die beiden Übergabe-Blöcke in §2
+  (`map-value`, Architect-Verdikt) trugen jede Zahl mit ihrem Ursprung
+  (gemessen/übernommen/abgeleitet, [`AGENTS.md`](../../../../AGENTS.md)
+  §3.12) und ließen sich im Review vollständig gegen ihre Quellen
+  nachprüfen. Die Rollen-Sequenz (Implementer → Review → Fixrunde →
+  Verifikation) fing beide Findings vor dem Merge; die Fixrunde zog auch das
+  eigene §3.13-Suchlauf-Feld korrekt nach (9→11 Treffer, von ihr selbst
+  erkannt und vom Verifier bestätigt).
+- **Was ging anders als geplant:** Zwei Findings, die der Plan nicht
+  wortgleich vorhersah: F-1 (HIGH) — ein zitierter PostgreSQL-Fehlertext
+  (`text`-Parameter) wich vom real im genannten Review-Report gemessenen
+  Wortlaut (`unknown`-Parameter) ab; F-2 (MEDIUM) — die im Plan explizit mit
+  drei benannten Beispielen geführte Übergabe „Zeilen, die kein Antrag sind“
+  wurde im Handbuch nur mit zwei Beispielen übernommen. Beide sind in der
+  Fixrunde behoben und vom Verifier eigenständig gegen ihre Quellen
+  nachgemessen (Zeichen-für-Zeichen-Identität bzw. Deckungsgleichheit mit dem
+  Testcode).
+- **Steering-Loop-Eintrag (Lerneintrag):** Zwei Belege für bereits
+  **verkörperte** Klassen, einer davon in einer **neuen Form**. F-1 ist der
+  17. Beleg von `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (Form
+  Zitat/Befehl, wie zuvor) — kein neuer Sensor nötig, die
+  Reviewer-Skill-Probe hat den Fund getragen. F-2 ist der 15. Beleg von
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`, aber in einer bislang
+  nicht belegten Form: keine widersprechende Nachbar-Aussage im selben
+  Dokument, sondern eine gegen eine im Plan explizit gezählte Liste
+  (drei benannte Beispiele) unvollständige Übernahme in den Zielträger.
+  **Geschärfte Regel (Vorschlag, kein verkörperter Ausgang — Architect-Zug
+  offen):** eine „Übergabe aus X“ mit einer im Plan explizit gezählten Anzahl
+  benannter Beispiele wird bei der Übernahme durch einen Zählabgleich
+  geprüft („n von n Beispielen übernommen“), nicht nur durch einen
+  Sinn-Abgleich — Kandidat für `.claude/commands/implement-slice.md`, damit
+  der Implementer diesen Abgleich vor dem Review selbst fährt.
+- **Beobachtungs-Register (`../observations/`):** zwei `evidence/`-Dateien
+  angelegt —
+  `beleg-befehl-traegt-seinen-satz-nicht/evidence/slice-transformationen-betriebsdoku.md`
+  (F-1, 17. Beleg, Zähler 16×→17×) und
+  `nachzug-laesst-ueberholten-text-stehen/evidence/slice-transformationen-betriebsdoku.md`
+  (F-2, 15. Beleg, Zähler 14×→15×), beide Zustands-Dateien fortgeschrieben.
+  Gesichtet, ohne neuen Anfall:
+  `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche` und
+  `BEO-PGC/handbuch-versionshistorie-uebersprungen` (beide bereits
+  verkörpert — dieser Slice liefert einen weiteren **positiven** Beleg, dass
+  die Regel griff: der neue Abschnitt zog §2/§6/Glossar/Änderungshistorie
+  nach, keine übersehene Stelle, keine neue Datei nötig);
+  `BEO-PGC/kein-admin-weg-schema-fehler-recovery` (Review-Negativbefund,
+  bleibt bei 1×, kein neuer Beleg); `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an`
+  (bei 5× bereits Schwelle erreicht vor diesem Slice — der fünfte Beleg dort
+  dokumentiert bereits, dass der Übergabe-Text seit der Fixrunde von
+  `backfill-pfad` als committeter Text in §2 dieses Slice-Plans steht; dieser
+  Slice selbst ist die **Adresse**, die die Sendung korrekt annimmt, kein
+  weiterer Beleg der Fehlklasse — Ausgang bleibt beim Lese-Schritt der
+  anstehenden Welle-Closure).
+- **Folge-Slices:** keine — letzter Slice der Welle
+  [welle-transformationen](../welle-transformationen.md); die geschärfte
+  Regel oben ist ein Vorschlag für den Lese-Schritt der Welle-Closure, kein
+  eigener Folge-Slice.
+- **Risiken aus §6:** ein Ausgang je Zeile — 1× eingetreten (F-1, behoben),
+  4× entfallen (Nichtbefund/Negativbefund im Review); Details in §6.
+- **Drei Paarungen:** dieser Slice ist der zehnte und letzte von
+  [welle-transformationen](../welle-transformationen.md) (§4-Tabelle dort).
+  Mit dem `git mv` dieses Slice nach `done/` liegen alle zehn Slices in
+  `done/` — die Prüfung der drei Paarungen (Anker · Folge-Slice · Register)
+  läuft nicht in diesem Zug, sondern als unmittelbar folgender, eigenständiger
+  Welle-Closure-Zug nach `welle-transformationen.md` §3 (eigene, breitere
+  Sensoren: `make test-integration`, `make test-store`/`test-replication`,
+  Alt-Tag-Lauf, Fitness-Function-Tests, `make doc-trace`, Lese-Schritt des
+  Beobachtungs-Registers) — kein Selbst-Kurzschluss dieses Slice-Closures auf
+  die Welle-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

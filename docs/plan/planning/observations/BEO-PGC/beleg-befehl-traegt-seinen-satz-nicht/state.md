@@ -22,8 +22,14 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **16×**
-(evidence/slice-capture-leerlauf-quellbelege.md — Form **Adresse**, F-1 (MEDIUM, daher
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **17×**
+(evidence/slice-transformationen-betriebsdoku.md — Form **Zitat/Befehl**, F-1 (HIGH, daher
+Datei trotz Deckel): der neue Handbuch-Abschnitt zitierte einen PostgreSQL-Fehlertext mit
+`text` als Parametertyp und nannte den Review-Report von `antragsweg-schema` als Messung;
+der Report misst dort tatsächlich `unknown` als Parametertyp — die Herkunfts-Kennzeichnung
+war korrekt, der übernommene Wortlaut falsch; vor dem Merge vom Reviewer gefunden, in der
+Fixrunde behoben, vom Verifier Zeichen-für-Zeichen nachgemessen;
+evidence/slice-capture-leerlauf-quellbelege.md — Form **Adresse**, F-1 (MEDIUM, daher
 Datei trotz Deckel): der CI-Anker von `ADR-0129` nennt einen Lauf ohne Versuchsnummer, die
 Adresse löst heute zu Versuch 2 (beide Legs grün) auf, der beschriebene Stand („PostgreSQL 18
 rot, Replication-Tier `skipped`“) ist nur mit `--attempt 1` auflösbar; die Aussage war
