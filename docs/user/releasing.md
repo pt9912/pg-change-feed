@@ -12,31 +12,27 @@ Prüfungen laufen. Es richtet sich an Maintainer, die einen Release-Tag
 setzen, und an Betreiber, die verstehen wollen, woher ein bestimmtes
 Image auf GHCR oder Docker Hub stammt.
 
-**Vier reale Server-Release-Tags sind bereits gesetzt** — `v0.1.0`,
-`v0.1.1`, `v0.1.2` und `v0.2.0` liefen jeweils mit grünem
-`.github/workflows/release.yml`-Lauf durch (GHCR- und Docker-Hub-Push,
-GitHub-Release mit Image-Digest). Der Lauf von `v0.2.0` (Lauf-Kennung
-36190768475, 2026-09-25) endete mit `success` in beiden Jobs (Release und
-`hub-description`); `ghcr.io/pt9912/pg-change-feed` trägt die Tags `0.2.0` und
-`latest`, Docker Hub trägt `0.2.0` und `latest` mit `linux/amd64` und
-`linux/arm64`, und das GitHub-Release nennt den Digest
+**Der Server-Release-Mechanismus ist End-zu-Ende mit echten
+Repository-Secrets bewiesen**, nicht nur implementiert: der Lauf zu
+`v0.2.0` (Lauf-Kennung 36190768475, 2026-09-25) endete mit `success` in
+beiden Jobs (Release und `hub-description`, GHCR- und Docker-Hub-Push,
+GitHub-Release mit Image-Digest); `ghcr.io/pt9912/pg-change-feed` trägt die
+Tags `0.2.0` und `latest`, Docker Hub trägt `0.2.0` und `latest` mit
+`linux/amd64` und `linux/arm64`, und das GitHub-Release nennt den Digest
 `sha256:fab4a53d96ac414578739319307dc80b7aeacbb6ba88659b88fbf48bb8c5b58e`. Die
 Release-Beschreibung eines Tags lässt sich nach dem Lauf mit
 `gh release edit <Tag> --notes-file <Datei>` um Release-Hinweise ergänzen; der
-Workflow schreibt nur den Digest und die Image-Namen. Der hier beschriebene
-Server-Release-Mechanismus ist damit End-zu-Ende mit echten
-Repository-Secrets bewiesen, nicht nur implementiert. Alle drei separaten SDK-Release-Wege (§4
-„SDK-Release") sind ebenfalls real mit einem grünen Tag-Push bewiesen:
-`sdk-csharp-v0.1.0` und `sdk-csharp-v0.2.0` (`PgChangeFeed.Client` auf
-NuGet.org), `sdk-python-v0.1.0` und `sdk-python-v0.2.0` (`pgchangefeed` auf
-PyPI) sowie `sdk-kotlin-v0.2.0` (`pgchangefeed-kotlin` auf GitHub
-Packages). Die `0.2.0`-Läufe der drei Workflows (Lauf-Kennungen 36117929191,
-36117929298 und 36117929552, abgefragt mit `gh run list --workflow
-<datei>.yml`, 2026-09-25) endeten je mit `success`. Der Kotlin-Weg
-veröffentlicht zusätzlich nach Cloudsmith (zwei Jobs, ein Ziel je Job); der
-Lauf zu `sdk-kotlin-v0.2.2` (Lauf-Kennung 36201941235, abgefragt mit
-`gh run view 36201941235 --json jobs`, 2026-09-26) endete in beiden Jobs mit
-`success` (§4 „SDK-Release: GitHub-Packages- und Cloudsmith-Publish“).
+Workflow schreibt nur den Digest und die Image-Namen. Alle drei separaten
+SDK-Release-Wege (§4 „SDK-Release") sind ebenfalls real mit einem grünen
+Tag-Push bewiesen: der C#-Weg (`PgChangeFeed.Client` auf NuGet.org) mit dem
+Lauf zu `sdk-csharp-v0.2.0` (Lauf-Kennung 36117929191, `success`), der
+Python-Weg (`pgchangefeed` auf PyPI) mit dem Lauf zu `sdk-python-v0.2.0`
+(Lauf-Kennung 36117929298, `success`) und der Kotlin-Weg
+(`pgchangefeed-kotlin`) mit dem Lauf zu `sdk-kotlin-v0.2.2`
+(Lauf-Kennung 36201941235, 2026-09-26), der zusätzlich nach Cloudsmith
+veröffentlicht und in beiden Jobs (GitHub Packages und Cloudsmith) mit
+`success` endete (§4 „SDK-Release: GitHub-Packages- und
+Cloudsmith-Publish“).
 
 Dieses Dokument ersetzt nicht `docs/user/benutzerhandbuch.md` — jenes
 beschreibt den laufenden Betrieb des Feed-Containers (Umgebungsvariablen,
@@ -173,13 +169,10 @@ Kein `:latest`-Äquivalent (NuGet kennt keins) und kein
 GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb dieser
 Folgepflicht (`ADR-0106`).
 
-**Zwei reale `sdk-csharp-v*`-Tags sind gesetzt** — `sdk-csharp-v0.1.0`
-lief mit grünem `sdk-csharp-release.yml`-Lauf durch und veröffentlichte
-`PgChangeFeed.Client` 0.1.0 real auf NuGet.org (`dotnet nuget push`
-bestätigte `201 Created`/„Your package was pushed"); `sdk-csharp-v0.2.0`
-lief ebenfalls grün (Lauf 36117929191). Der C#-SDK-Release-Weg ist damit
-End-zu-Ende mit echtem `NUGET_API_KEY`-Secret bewiesen, nicht nur
-implementiert.
+**Der C#-SDK-Release-Weg ist End-zu-Ende mit echtem `NUGET_API_KEY`-Secret
+bewiesen**, nicht nur implementiert: der Lauf zu `sdk-csharp-v0.2.0` lief
+mit grünem `sdk-csharp-release.yml`-Lauf durch (Lauf 36117929191) und
+veröffentlichte `PgChangeFeed.Client` 0.2.0 real auf NuGet.org.
 
 ### SDK-Release: PyPI-Publish für `pgchangefeed`
 
@@ -228,14 +221,12 @@ Kein `:latest`-Äquivalent (PyPI kennt keins) und kein
 GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb dieser
 Folgepflicht (`ADR-0107`).
 
-**Zwei reale `sdk-python-v*`-Tags sind gesetzt** —
-`sdk-python-v0.1.0` lief mit grünem `sdk-python-release.yml`-Lauf durch
-und veröffentlichte `pgchangefeed` 0.1.0 real auf PyPI (die PyPI-API
-`https://pypi.org/pypi/pgchangefeed/json` bestätigt Version `0.1.0`
-sofort sichtbar, ohne Indexierungsverzögerung wie bei NuGet);
-`sdk-python-v0.2.0` lief ebenfalls grün (Lauf 36117929298). Der
-Python-SDK-Release-Weg ist damit End-zu-Ende mit echtem
-`PYPI_API_TOKEN`-Secret bewiesen, nicht nur implementiert.
+**Der Python-SDK-Release-Weg ist End-zu-Ende mit echtem
+`PYPI_API_TOKEN`-Secret bewiesen**, nicht nur implementiert: der Lauf zu
+`sdk-python-v0.2.0` lief mit grünem `sdk-python-release.yml`-Lauf durch
+(Lauf 36117929298) und veröffentlichte `pgchangefeed` 0.2.0 real auf PyPI
+(die PyPI-API `https://pypi.org/pypi/pgchangefeed/json` bestätigt die
+Version sofort sichtbar, ohne Indexierungsverzögerung wie bei NuGet).
 
 ### SDK-Release: GitHub-Packages- und Cloudsmith-Publish für `pgchangefeed-kotlin`
 
@@ -363,11 +354,10 @@ Kein `:latest`-Äquivalent (weder GitHub Packages noch Cloudsmith kennen
 eines) und kein GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb
 dieser Folgepflicht (`ADR-0109`, `ADR-0123`).
 
-**Belegt ist der Publish mit beiden Zielen.** Drei reale `sdk-kotlin-v*`-Tags
-liefen mit grünem `sdk-kotlin-release.yml`-Lauf durch: `sdk-kotlin-v0.2.0`
-(Lauf 36117929552) und `sdk-kotlin-v0.2.1` (Lauf 36129672852) mit dem einen
-Ziel GitHub Packages, `sdk-kotlin-v0.2.2` (Lauf 36201941235, Tag-Commit
-`2e9d8db8`) mit beiden Zielen, alle Schritte `success`. Der Schritt „Nach
+**Belegt ist der Publish mit beiden Zielen.** Der Lauf zu
+`sdk-kotlin-v0.2.2` (Lauf-Kennung 36201941235, Tag-Commit `2e9d8db8`) lief
+mit grünem `sdk-kotlin-release.yml`-Lauf und beiden Zielen durch, alle
+Schritte `success`. Der Schritt „Nach
 GitHub Packages veroeffentlichen (Gradle-Aufgabe des Ziels, im Docker-Image)"
 ruft die Einzel-Aufgabe `publishMavenPublicationToGitHubPackagesRepository`,
 der Schritt „Nach Cloudsmith veroeffentlichen (Gradle-Aufgabe des Ziels, im
