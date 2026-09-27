@@ -86,28 +86,34 @@ Festlegung 2 durch den Architect.
       PostgreSQL-17-Digest aus `e2e.yml`, je die gedruckte Zeile mit Position und
       Änderungszahl; die Mutation „Bestätigung an der falschen Position“
       (Position `+ 1 GiB`) färbt den Test rot.
-- [ ] *(Stand der Übergabe: die Phase läuft grün, ihre Aussage über die Klasse
-      des Ausgangs weicht von `ADR-0049` ab — Befund in §3, offen bis zur
-      Antwort des Architects; das Kriterium bleibt deshalb ungehakt.)* Der Beleg
-      „Fehlerschwelle erreicht → Container endet“ steht in `make
-      test-integration`: die Fehlerschwelle wird über den im Runner vorhandenen
-      Compose-Override (`wal_retention_error_bytes` klein, Phase
-      „Leerlauf-Bestätigung“ in `tools/harness/run-integration-tests.sh`)
-      gesenkt, die Persistierung wird angehalten — *hergeleitet, im Slice zu
-      erproben:* eine offene Transaktion mit `ACCESS EXCLUSIVE` auf `cdc.change`
-      hält die Bestätigung an, der Rückstand wächst über die Schwelle —, und der
-      Feed-Container endet mit dem Ausgang der Klasse, die
-      [`ADR-0049`](../../adr/0049-replication-fehlerklassen-schwellen.md)
-      festlegt (am Start gelesen). **Der Ausgang „Grenze bleibt“ ist zulässig:**
-      zeigt die Erprobung, dass der Aufbau nicht stabil ist (ein erster Ansatz
-      eines Tier-Tests scheiterte am `wal_sender_timeout` der Testinstanz), steht
-      die Grenze mit dem Messergebnis im Bericht und als benannter Text in
-      `harness/README.md` §Sensors bei `make test-integration`. *Zu belegen
-      durch:* ein realer, grüner `make test-integration`-Lauf mit der
-      Abdeckungs-Zeile in
+- [ ] Der Beleg „Fehlerschwelle erreicht → Container endet“ steht als Runner-Phase
+      „Fehlerschwelle beendet den Container“ in `make test-integration`: die
+      Fehlerschwelle wird über den im Runner vorhandenen Compose-Override
+      (`wal_retention_error_bytes` klein, Phase „Leerlauf-Bestätigung“ in
+      `tools/harness/run-integration-tests.sh`) gesenkt, die Persistierung wird
+      gehalten (eine Sitzung des Runners sperrt `cdc.change` exklusiv, die
+      Persistierung des Streams wartet an der Sperre), und bei WAL ohne Inhalt für
+      die Publication über der Fehlerschwelle endet der Feed-Container mit Ausgang
+      1, das Log trägt die Abbruch-Zeile mit einem Rückstand über der
+      Fehlerschwelle, und `cdc.process_heartbeat` trägt einen Fehlerzustand. Die
+      **Klasse** des Ausgangs ist nicht Teil der Zusage der Phase: sie ist
+      `storage` gemessen (fünf Läufe, Ausgabezeile der Phase; **übernommen** aus
+      dem Bericht des Implementers, vom Planner nicht nachgemessen), `ADR-0049`
+      legt `replication` fest — Codefehler, Träger
+      [`slice-wal-fehlerschwelle-ausgangsklasse`](../open/slice-wal-fehlerschwelle-ausgangsklasse.md)
+      (Architect-Verdikt
+      [`architect-verdict-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md)
+      §2 und §4). **Der Ausgang „Grenze bleibt“ ist zulässig** und hier
+      eingetreten: die Klasse steht als benannte Grenze mit dem Messergebnis im
+      Bericht und als benannter Text in `harness/README.md` §Sensors bei `make
+      test-integration`. *Zu belegen durch:* ein realer, grüner `make
+      test-integration`-Lauf mit der Abdeckungs-Zeile in
       [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md) (Erzeugnis
-      des Runners) — oder die benannte Grenze; die Mutation „Aufruf von
-      `stopStream` in der Schwellen-Prüfung entfernt“ färbt den Beleg rot.
+      des Runners) und die benannte Grenze in `harness/README.md` §Sensors; die
+      Mutation „Aufruf von `stopStream` in der Schwellen-Prüfung entfernt“ färbt
+      die Phase rot — **erprobt** nach dem Bericht des Implementers (Image neu
+      gebaut, Phase im Runner rot: der Container lief 90 s weiter; **übernommen**,
+      vom Planner nicht nachgefahren).
 - [ ] Die Ergänzung von
       [`ADR-0121`](../../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md)
       Festlegung 2 liegt vor: eine neue ADR des Architects mit teilweisem
@@ -187,9 +193,13 @@ Abbruch-Zeile und sichtbaren Fehlerzustand, nicht die Klasse; das Handbuch
 „Bestand als Backfill überführen“, Punkt „WAL-Rückstand des Capture-Slots“:
 „beendet sich der Feed-Container mit der Klasse `replication`“) und die
 Kommentare an `mergeStreamAndWALFaultOutcome` und in
-`walretention_slotgrowth_internal_test.go` nennen die Klasse als Zusage. Frage
-an den Architect: Code (der Stream-Fehler nach `stopStream` verdeckt den
-WAL-Fehler nicht) oder Text; danach trägt die Phase die Klasse als Zusage.
+`walretention_slotgrowth_internal_test.go` nennen die Klasse als Zusage. Die
+Abweichung ist ein Codefehler, kein Fehler des Textes (Architect-Verdikt
+[`architect-verdict-wal-fehlerschwelle-ausgangsklasse`](../../../reviews/architect-verdict-wal-fehlerschwelle-ausgangsklasse.md)
+§2): die Träger geben `ADR-0049` richtig wieder, der Stream-Fehler nach
+`stopStream` verdeckt den WAL-Fehler. Die Korrektur trägt
+[`slice-wal-fehlerschwelle-ausgangsklasse`](../open/slice-wal-fehlerschwelle-ausgangsklasse.md);
+mit ihm trägt die Phase die Klasse als Zusage.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „welche Tier
 belegt die Position eines Keepalive inmitten einer Transaktion“ und „welcher
@@ -199,18 +209,22 @@ Test trägt die Kette Fehlerschwelle → Prozessende“). Suchraum: der ganze Ba
 ausgenommen `docs/reviews/**`, die Records unter `done/` und
 `.harness/baseline/**`; die Plan-Datei schließt das Werkzeug aus. Parent ist
 `dbc4dbe4` (der Commit vor der ersten Änderung dieses Laufs), der zweite Stand
-ist der Arbeitsbaum der Übergabe. Die Zeilen stehen im Format des Werkzeugs
-(`make suchlauf-nachmessen PLAN=<diese Datei>`, Exit 0 in diesem Lauf):**
+ist der Arbeitsbaum der Übergabe; die drei `diff`-Zeilen zu den Symbolen, zur
+Beschreibung und zur Klassen-Zusage sind am Arbeitsbaum nach dem Planner-Nachzug
+vom 2026-09-27 neu gemessen (Bewegung seit der Übergabe: die neuen Verweise auf
+`slice-wal-fehlerschwelle-ausgangsklasse` und das Verdikt in den Plänen, der Roadmap
+und dem Register-Beleg). Die Zeilen stehen im Format des Werkzeugs
+(`make suchlauf-nachmessen PLAN=<diese Datei>`, Exit 0 an diesem Arbeitsbaum):**
 
 ```suchlauf
 dbc4dbe4 16 -n -E 'inmitten (der|einer) (Quell)?[Tt]ransaktion|Quellseite|einmalige Messung|SourceKeepalive|SOURCE_KEEPALIVE' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 33 -n -E 'inmitten (der|einer) (Quell)?[Tt]ransaktion|Quellseite|einmalige Messung|SourceKeepalive|SOURCE_KEEPALIVE' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 dbc4dbe4 47 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 47 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 56 -n -E 'mergeStreamAndWALFaultOutcome|stopStream' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 dbc4dbe4 8 -n -E 'kontrollierter Abbruch|beendet sich der Feed-Container|Fehlerschwelle (beendet|erreicht)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 15 -n -E 'kontrollierter Abbruch|beendet sich der Feed-Container|Fehlerschwelle (beendet|erreicht)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 24 -n -E 'kontrollierter Abbruch|beendet sich der Feed-Container|Fehlerschwelle (beendet|erreicht)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 dbc4dbe4 7 -n -E 'mit der Klasse .replication.' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 7 -n -E 'mit der Klasse .replication.' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 11 -n -E 'mit der Klasse .replication.' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 dbc4dbe4 2 -n -E 'nur zum Zug|Fehler bei Stream-Ende|regulär endete' -- internal
 diff 2 -n -E 'nur zum Zug|Fehler bei Stream-Ende|regulär endete' -- internal
 ```
@@ -218,7 +232,7 @@ diff 2 -n -E 'nur zum Zug|Fehler bei Stream-Ende|regulär endete' -- internal
 | Träger | Befund (Parent → Diff, `-n`-Trefferzeilen) | Behandlung |
 |---|---|---|
 | Sätze, die die Keepalive-Messung „einmalig“ oder „PostgreSQL 17 nicht gemessen“ nennen | Muster 1: 16 → 33; die 17 neuen Treffer sind dieser Lauf (Test-Datei 8, `run-replication-tests.sh` 8, `harness/README.md` 1), keiner trägt eine Aussage über die Messung. **Gefunden:** die Aussage steht in `ADR-0121` (9 Treffer: §Kontext, Festlegung 2, Konsequenz „Grenze, benannt“, Trigger), `ADR-0120` (1, die Store-Zeile der Fitness Function), in den drei Dateien des Registers `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` (observation, state, evidence), in einer Evidence-Datei von `BEO-PGC/adr-aussage-breiter-als-ihre-messung` und in einer Zeile der Änderungshistorie von `spec/pflichtenheft.md` (Aussage der Regel „nie inmitten einer Quelltransaktion“, nicht der Messung); `seam_test.go` (1) trägt ein anderes Wort („Updates inmitten der Transaktion“). **Nicht gefunden:** kein Satz in `docs/user`, `harness`, `internal` (ohne die neue Test-Datei), `test` oder `tools`, der die Messung „einmalig“ nennt oder PostgreSQL 17 als nicht gemessen führt. | `ADR-0121` und `ADR-0120` bleiben unberührt (`Accepted`); die Ergänzung ist die neue ADR des Architects nach der Verifikation (Bericht des Implementers nennt, was sie braucht). Das Register `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` führt den Ausgang „dieser Slice“ in seinem `state.md`; der Planner zieht es bei der Closure nach (Frist: Closure dieses Slice). Keine Mitänderung durch den Implementer. |
-| Beschreibungen der Schwellen-Kette in Kommentaren und Doku | Muster 2 (Symbole): 47 → 47, unverändert. Muster 3 (Beschreibung): 8 → 15; die 7 neuen Treffer sind dieser Lauf (Runner-Phase und ihre Zeilen in `harness/README.md` und `docs/user/e2e-abdeckung.md`). Muster 4 (Klassen-Zusage „mit der Klasse `replication`“): 7 → 7. **Gefunden mit Klassen-Zusage der Kette:** `docs/user/benutzerhandbuch.md` (Abschnitt „Bestand als Backfill überführen“, Punkt „WAL-Rückstand des Capture-Slots“: „beendet sich der Feed-Container mit der Klasse `replication` (Ausgang 1)“) und `internal/bootstrap/wiring.go` (Kommentar an `mergeStreamAndWALFaultOutcome`: „nur zum Zug, wenn der Stream-Lauf regulär endete“; Muster 5: 2 → 2, die zweite Stelle ist der Kommentar von `walretention_slotgrowth_internal_test.go`). Beide gelten nach dem Befund oben nicht für die gehaltene Persistierung. Die übrigen fünf Treffer von Muster 4 (`ADR-0128`, Welle-Plan, `slice-start-vorlauf-grenze`, zwei Register-Dateien) beschreiben den Vorlauf vor `stream.Run`, einen anderen Gegenstand. **Nicht gefunden:** mit den Mustern 4 und 5 kein weiterer Träger der Kette in `internal`, `spec`, `harness` und `test`; die Norm (`ADR-0049` Folgepflicht, `SPEC-008`) ist der Gegenstand der Frage an den Architect, kein nachzuziehender Träger. | Gemeldet, nicht mitgeändert: das Handbuch liegt laut Plan außerhalb dieses Slice, `wiring.go` ist Produktionscode der Schwellen-Prüfung (§1). Die Entscheidung „Code oder Text“ trifft der Architect; die Frist ist sein Zug nach der Verifikation (Closure dieses Slice), danach zieht der Planner die Träger nach oder benennt sie mit Adresse (`BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`). Bis dahin trägt `harness/README.md` die Grenze benannt. |
+| Beschreibungen der Schwellen-Kette in Kommentaren und Doku | Muster 2 (Symbole): 47 → 47, unverändert. Muster 3 (Beschreibung): 8 → 15; die 7 neuen Treffer sind dieser Lauf (Runner-Phase und ihre Zeilen in `harness/README.md` und `docs/user/e2e-abdeckung.md`). Muster 4 (Klassen-Zusage „mit der Klasse `replication`“): 7 → 7 (die Zahlen dieser Zeile stehen am Stand der Übergabe; die `diff`-Zahlen der Muster 2 bis 4 nach dem Planner-Nachzug nennt der Block oben: 56, 24 und 11). **Gefunden mit Klassen-Zusage der Kette:** `docs/user/benutzerhandbuch.md` (Abschnitt „Bestand als Backfill überführen“, Punkt „WAL-Rückstand des Capture-Slots“: „beendet sich der Feed-Container mit der Klasse `replication` (Ausgang 1)“) und `internal/bootstrap/wiring.go` (Kommentar an `mergeStreamAndWALFaultOutcome`: „nur zum Zug, wenn der Stream-Lauf regulär endete“; Muster 5: 2 → 2, die zweite Stelle ist der Kommentar von `walretention_slotgrowth_internal_test.go`). Beide gelten nach dem Befund oben nicht für die gehaltene Persistierung. Die übrigen fünf Treffer von Muster 4 (`ADR-0128`, Welle-Plan, `slice-start-vorlauf-grenze`, zwei Register-Dateien) beschreiben den Vorlauf vor `stream.Run`, einen anderen Gegenstand. **Nicht gefunden:** mit den Mustern 4 und 5 kein weiterer Träger der Kette in `internal`, `spec`, `harness` und `test`; die Norm (`ADR-0049` Folgepflicht, `SPEC-008`) ist der Gegenstand der Frage an den Architect, kein nachzuziehender Träger. | Gemeldet, nicht mitgeändert: das Handbuch liegt laut Plan außerhalb dieses Slice, `wiring.go` ist Produktionscode der Schwellen-Prüfung (§1). Entschieden ist „Code“ (Architect-Verdikt, siehe oben): das Handbuch bleibt wahr und unberührt; die zwei Kommentare (`wiring.go` an `mergeStreamAndWALFaultOutcome`, `walretention_slotgrowth_internal_test.go`) trägt [`slice-wal-fehlerschwelle-ausgangsklasse`](../open/slice-wal-fehlerschwelle-ausgangsklasse.md) als Adresse (DoD 3 dort, `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`); Frist: die Closure jenes Slice, der Planner der Closure zieht nach. Bis dahin trägt `harness/README.md` die Grenze benannt. |
 
 ## 4. Trigger
 
