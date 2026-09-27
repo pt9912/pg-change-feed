@@ -125,6 +125,7 @@ sie gilt für jeden Lauf.
 | MR-001 <a id="mr-001"></a> | [Technik-Dokument heißt Pflichtenheft](conventions/MR-001-technik-dokument-heisst-pflichtenheft.md) | `spec/pflichtenheft.md` (vormals `spezifikation.md`), `harness/README.md`, `AGENTS.md`, `spec/lastenheft.md` | `grundlagen-source-precedence.md` §Spec-Straten (Rang-2-Datei-Name) |
 | MR-002 <a id="mr-002"></a> | [Slice-/Welle-Kennungen sind Namen, nicht Nummern (ab slice-105 exklusive)](conventions/MR-002-slice-welle-kennungen-sind-namen.md) | `harness/conventions.md` §Aktive Adaptionen; alle nach `slice-105` neu angelegten Slice-/Welle-Plan-Dateien | `grundlagen-source-precedence.md` §Vergabe (Bestandsschutz für `slice-001`–`slice-105`) |
 | MR-003 <a id="mr-003"></a> | [Der PreToolUse-Guard blockt in-place Textwerkzeuge und Host-Interpreter auf Repo-Pfaden](conventions/MR-003-guard-inplace-textwerkzeug.md) | `.claude/hooks/pretooluse-command-guard.sh`, `tools/harness/mask-quotes.awk`, `tools/harness/run-command-guard-tests.sh`, `AGENTS.md` §3.1 „Durchsetzung“ | `grundlagen-durchsetzungsschicht.md` §Grenzen — ehrlich benannt |
+| MR-004 <a id="mr-004"></a> | [Der PreToolUse-Guard sperrt Host-`python` und `python3` am Kopf eines Kommando-Segments unbedingt](conventions/MR-004-guard-host-python-am-kopf.md) | `tools/harness/blocked/python`, `.claude/hooks/pretooluse-command-guard.sh`, `tools/harness/run-command-guard-tests.sh`, `AGENTS.md` §3.1 „Durchsetzung“ | `modul-13-quality-gates.md` §Guard-Härtung |
 
 ### Aufgelöste Adaptionen
 
