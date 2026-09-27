@@ -22,8 +22,14 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **15×**
-(evidence/slice-transformationen-start-reihenfolge.md — Form **Befehl**, F-1 (HIGH, daher
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **16×**
+(evidence/slice-capture-leerlauf-quellbelege.md — Form **Adresse**, F-1 (MEDIUM, daher
+Datei trotz Deckel): der CI-Anker von `ADR-0129` nennt einen Lauf ohne Versuchsnummer, die
+Adresse löst heute zu Versuch 2 (beide Legs grün) auf, der beschriebene Stand („PostgreSQL 18
+rot, Replication-Tier `skipped`“) ist nur mit `--attempt 1` auflösbar; die Aussage war
+zeitgestempelt und wahr, die Berichtigung steht als Beleg mit Versuchsnummer und Job-Kennungen
+in der Closure-Notiz des Slice, die ADR bleibt (`Accepted`);
+evidence/slice-transformationen-start-reihenfolge.md — Form **Befehl**, F-1 (HIGH, daher
 Datei trotz Deckel): die Negativaussage „keine Stelle in `docs/user`, `harness`, `spec`
 beschreibt die Reihenfolge“ reichte über Suchraum und Muster des Feldes hinaus; die Spec
 trägt die Zusage (`spec/pflichtenheft.md:341`); der Ursprung lag im Planungs-Feld des Planners,

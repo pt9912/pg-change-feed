@@ -69,6 +69,18 @@ Sensor bleibt ausgeschlossen (Prosa über einen Test, `AGENTS.md` §3.12 §Grenz
 `git grep -n "Stellen\*\*, an denen sie erprobt ist" -- AGENTS.md .claude/agents/architect.md`
 liefert zwei Treffer.
 
+- `ADR-0129` Festlegung 2 (Punkt 4 „ungebunden“: die Startposition des Neustarts und die
+  Wartezeit auf die Inaktivität des Slots stützen sich auf je einen grünen Lauf, die
+  Mutation „Neustart ab `confirmed_flush_lsn + 1`“ des Reviewers ist an PostgreSQL 17 rot;
+  Punkt 2 „eine zweite committende Transaktion nicht gemessen“ nennt die Menge „nur der
+  committete Test“ nicht, `ADR-0121` §Gemessen berichtet den Aufbau einmalig an PostgreSQL 18):
+  **akzeptiertes Negativ**, kein Supersede. Beide Sätze gehen in die konservative
+  Richtung, keine Festlegung hängt an ihnen, der ADR-Review fand keine tragende Aussage
+  breiter als ihre Messung (Menge, gedruckte Zeilen, Mutationszuordnung, Anker). Die Lesehilfe
+  steht in der Closure-Notiz von `slice-capture-leerlauf-quellbelege` (§7); die Berichtigung
+  trägt die nächste Berührung von `ADR-0129` (neue ADR mit `Supersedes` oder Zitat-Korrektur
+  nach `ADR-0073`, Entscheidung beim Architect).
+
 Verwandt, nicht doppelt gezählt: `BEO-PGC/architect-verdikt-rollen-scope-luecke`.
 
-Zähler: 8× (Dateien unter `evidence/`).
+Zähler: 9× (Dateien unter `evidence/`).

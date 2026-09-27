@@ -134,7 +134,7 @@ Festlegung 2 durch den Architect.
       vom Planner **gemessen**): Job 108529548457 (Leg 17.11) und Job 108531740887
       (Leg 18.6, zweiter Versuch) tragen die Ausgabezeile der Phase, Ende 3 s nach
       der Last, Klasse `storage`.
-- [ ] Die Ergänzung von
+- [x] Die Ergänzung von
       [`ADR-0121`](../../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md)
       Festlegung 2 liegt vor:
       [`ADR-0129`](../../adr/0129-capture-quellseite-keepalive-test-an-beiden-pins.md)
@@ -147,7 +147,12 @@ Festlegung 2 durch den Architect.
       belegen durch:* die ADR und ihre Index-Zeile in
       [`docs/plan/adr/README.md`](../../adr/README.md) (beide liegen vor) und die
       Lese-Prüfung der ADR gegen den Verfasser-Satz durch den Reviewer (frischer
-      Kontext, Diff `e4b77a05..4e654153`) — sie steht aus (Risiko §6, letzte Zeile).
+      Kontext, Diff `e4b77a05..4e654153`): Review-Report
+      [`review-adr-0129-capture-quellseite-keepalive`](../../../reviews/review-adr-0129-capture-quellseite-keepalive.md)
+      (Commit `027533aa`; 0 HIGH · 1 MEDIUM · 2 LOW · 2 INFO, aus dem Report
+      **übernommen**) — Menge, gedruckte Zeilen, Mutationszuordnung und Grenzen der
+      ADR halten der Nachmessung des Reviewers stand, keine Fixrunde an der ADR;
+      die Ränder F-1 bis F-3 stehen als Lesehilfe in §7 (Risiko §6, letzte Zeile).
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9): Lauf des
       Planners am Stand `3f107381` (Inhalts-Commit der Closure-Notiz), Exit 0,
@@ -168,17 +173,17 @@ Festlegung 2 durch den Architect.
       die benannte Grenze); das Benutzerhandbuch bleibt unberührt (keine
       Betreiber-Oberfläche).
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
-      Sensor · benannte Spec-Lücke) — §7 trägt ihn; der Ausgang des letzten
-      Risikos aus §6 und die Lese-Prüfung von `ADR-0129` stehen aus.
+      Sensor · benannte Spec-Lücke) — §7 trägt ihn.
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
-      der Closure der nächsten Welle (die Roadmap führt
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+      der Closure dieses Slice (§7) und zusätzlich der Closure der nächsten Welle
+      (die Roadmap führt
       [welle-transformationen](../welle-transformationen.md) unter *Offene
       Wellen*, das Ereignis kann eintreten; ein Slice ohne Welle wird von ihr
       mitgeprüft).
@@ -350,19 +355,28 @@ liegt vor + Closure-Notiz mit Lerneintrag geschrieben.
 - **Die Ergänzung von `ADR-0121` behauptet mehr als der Beleg trägt**
   (`BEO-PGC/adr-aussage-breiter-als-ihre-messung`, 5×, verkörpert). *Erwartet,
   zu belegen durch:* der Reviewer liest die ADR im Diff gegen
-  [`AGENTS.md`](../../../../AGENTS.md) §3.12 „Verfasser einer ADR“. **Ausgang:**
-  steht aus — [`ADR-0129`](../../adr/0129-capture-quellseite-keepalive-test-an-beiden-pins.md)
-  liegt seit `4e654153` vor, ihre Lese-Prüfung durch den Reviewer (frischer Kontext,
-  Diff `e4b77a05..4e654153`, Prüfpunkte: jede Aussage über eine Menge nennt die Menge,
-  jede Mutation der Fitness-Function-Zeilen nennt Stellen und Instanz) ist nicht
-  gelaufen. Der Ausgang wird nach ihr gesetzt; der Slice bleibt bis dahin in
-  `in-progress/`.
+  [`AGENTS.md`](../../../../AGENTS.md) §3.12 „Verfasser einer ADR“. **Ausgang:
+  entfallen** für die Aussagen, die der Review gebunden hat.
+  [`ADR-0129`](../../adr/0129-capture-quellseite-keepalive-test-an-beiden-pins.md)
+  (seit `4e654153`) wurde vom Reviewer im frischen Kontext gegen den Diff
+  `e4b77a05..4e654153` gelesen
+  ([Review-Report](../../../reviews/review-adr-0129-capture-quellseite-keepalive.md),
+  aus dem Report **übernommen**): Menge (zwei Pins mit Digest-Anker), gedruckte
+  Zeilen, Mutationszuordnung (Stellen, Instanz, Farbe je Mutation; die Verallgemeinerung
+  „auch an 17 rot“ steht als *hergeleitet*), Grenzen und Träger-Liste halten der
+  Nachmessung stand; keine Fixrunde. Am Rand steht Reichweite, die die Messung nicht
+  ganz trägt: F-1 (MEDIUM, CI-Anker ohne Versuchsnummer), F-2 und F-3 (je LOW, „ungebunden“
+  und „nicht gemessen“ ohne Menge). Sie berühren keine Festlegung; als Ausgang
+  „eingetreten“ führt der Plan sie nicht, weil kein Träger und keine Entscheidung an ihnen
+  hängt und die ADR (`Accepted`) nicht berichtigt wird — die Berichtigung trägt eine
+  spätere Berührung der ADR (Architect), die Lesehilfe steht in §7. Die Mutationen R1 bis
+  R3 des Reviewers sind **übernommen**, nicht nachgefahren.
 
 ## 7. Closure-Notiz
 
-Stand dieser Notiz: nach Review, Verifikation, Architect-Zug (`ADR-0129`) und den
-Post-Push-Läufen zu `e4b77a05`; die Lese-Prüfung von `ADR-0129` und der Ausgang des
-letzten Risikos aus §6 stehen aus.
+Stand dieser Notiz: nach Review, Verifikation, Architect-Zug (`ADR-0129`), den
+Post-Push-Läufen zu `e4b77a05` und dem ADR-Review zu `ADR-0129` (Commit `027533aa`);
+alle Risiken aus §6 tragen einen Ausgang.
 
 - **Was hat funktioniert:** Die Rollen-Kette trug. Der Review (0 HIGH · 1 MEDIUM ·
   3 LOW · 3 INFO, aus dem Report **übernommen**) fuhr sieben Mutationen am
@@ -377,7 +391,11 @@ letzten Risikos aus §6 stehen aus.
   Der Architect entschied den Befund der Klasse als Codefehler und beauftragte den
   Träger-Slice, ohne diesen Slice zu blockieren: die Grenze stand benannt im
   Plan und in `harness/README.md`. Die Quellseite ist an beiden Pins ein committeter
-  Wächter, der seit dem Push in beiden Legs von `e2e.yml` läuft (DoD 1).
+  Wächter, der seit dem Push in beiden Legs von `e2e.yml` läuft (DoD 1). Der ADR-Review
+  (0 HIGH · 1 MEDIUM · 2 LOW · 2 INFO, aus dem Report **übernommen**) las `ADR-0129` im
+  frischen Kontext gegen den Verfasser-Satz von `AGENTS.md` §3.12, verglich jede gedruckte
+  Zeile mit dem Verifikations-Report und mutierte an PostgreSQL 17 an drei Stellen
+  (R1 bis R3, **übernommen**, nicht nachgefahren): keine Fixrunde an der ADR.
 - **Was ging anders als geplant:** (1) Der Keepalive-Test ist ein roher
   Protokoll-Client über **eine** Transaktion statt Stream-Adapter mit erster und
   zweiter Transaktion (§3); der Wortlaut von DoD 1 zog erst die Closure nach
@@ -386,8 +404,9 @@ letzten Risikos aus §6 stehen aus.
   statt `replication`: „Grenze bleibt“, Träger
   `slice-wal-fehlerschwelle-ausgangsklasse`. (4) Der erste `e2e.yml`-Lauf nach dem
   Push war im Leg PostgreSQL 18 im ersten Versuch rot, in der **bestehenden**
-  Phase „Leerlauf-Bestätigung“ (Lauf 36287009221, Job 108529548391); die Schritte
-  dahinter liefen dort nicht, der Wiederholungsversuch war grün. Ursache offen:
+  Phase „Leerlauf-Bestätigung“ (Lauf 36287009221, Versuch 1, Job 108529548391); die
+  Schritte dahinter liefen dort nicht, der Wiederholungsversuch (Versuch 2, Job
+  108531740887) war grün. Ursache offen:
   Register, Frage an den Architect. [`AGENTS.md`](../../../../AGENTS.md) §3.10
   greift nicht (kein Workflow im Diff), der Lauf war Beobachtung, keine
   Closure-Bedingung. (5) Das Suchlauf-Feld mit `diff` als zweitem Stand wurde mit
@@ -407,12 +426,18 @@ letzten Risikos aus §6 stehen aus.
   §Sensors, kein Gate (Laufzeit, Docker und Datenbank). *(b) Geschärfte Regel —
   keine, mit Grund.* Die Befunde dieses Slice sind Klassen mit Träger im Register
   (Nachzug lässt den Nachbarn stehen, Haken ohne Anker, Kommentar-Allaussage,
-  Tatsachenbehauptung im Report); ein neuer Wortlaut in `AGENTS.md` oder im Skill
-  fügt keiner davon eine Linie hinzu. *(c) Benannte Lücken, keine Spec-Lücke.*
-  (i) Ungebunden im Keepalive-Test: die Startposition des Neustarts, die Wartezeit
-  auf die Inaktivität des Slots, mehr als ein Keepalive je Transaktion,
-  `proto_version 2` mit Streaming, eine zweite gleichzeitige Quelltransaktion
-  (`ADR-0129` Festlegung 2). (ii) Die Klasse `storage` der Fehlerschwellen-Kette ist ein
+  Tatsachenbehauptung im Report, Aussage einer ADR breiter als ihre Messung, Beleg-Adresse
+  ohne Versuchsnummer); ein neuer Wortlaut in `AGENTS.md` oder im Skill
+  fügt keiner davon eine Linie hinzu. Der ADR-Review hat den Verfasser-Satz von
+  `AGENTS.md` §3.12 als Leser gebraucht und an drei Rändern Reichweite gefunden, die die
+  Messung nicht trug (Lesehilfe unten): die Klasse hat ihren Leser, der Satz bleibt.
+  *(c) Benannte Lücken, keine Spec-Lücke.*
+  (i) Nicht gebunden im Keepalive-Test: die Startposition des Neustarts **nach unten**
+  (gefahren ist `START_REPLICATION` ab 0, grün; ab `confirmed_flush_lsn + 1` ist der Test an
+  PostgreSQL 17 rot, Reviewer R2, **übernommen**), die Wartezeit auf die Inaktivität des
+  Slots (ein grüner Lauf der Streichung), mehr als ein Keepalive je Transaktion,
+  `proto_version 2` mit Streaming, eine zweite gleichzeitige Quelltransaktion **im Test**
+  (`ADR-0129` Festlegung 2; die Lesehilfe unten schärft die Reichweite). (ii) Die Klasse `storage` der Fehlerschwellen-Kette ist ein
   Codefehler mit Träger. (iii) Es gibt keine Regel dafür, ob der erste CI-Lauf eines
   Tests, der in einer **bestehenden** Workflow-Phase mitläuft, Closure-Bedingung ist:
   [`AGENTS.md`](../../../../AGENTS.md) §3.10 gilt für einen neuen oder strukturell
@@ -433,7 +458,13 @@ letzten Risikos aus §6 stehen aus.
   F-4, F-5, Verifikation V-5, V-6), `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`
   (14×; F-1, V-1, MEDIUM), `BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker`
   (4×; F-2, V-2), `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (11×;
-  V-4), `BEO-PGC/slice-pfad-als-link-in-berichten` (5×; F-7). `state.md` fortgeschrieben:
+  V-4), `BEO-PGC/slice-pfad-als-link-in-berichten` (5×; F-7), und aus dem ADR-Review zu
+  `ADR-0129` (dessen Findings hier als „ADR-Review F-<n>“ geführt, um sie von den Findings
+  des Slice-Reviews zu trennen): `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (9×;
+  ADR-Review F-2 und F-3, beide LOW, eine Datei; der Zähler stand vor dem Review bei 8×, der
+  Deckel greift erst ab 10×) und `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (16×;
+  ADR-Review F-1, MEDIUM, Form „Adresse“, daher Datei trotz Deckel bei 14×). `state.md`
+  fortgeschrieben (zusätzlich zu den beiden neuen Dateien):
   `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` (Ausgang „verkörpert“, 1×),
   `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke` (Falsifikation der Phase,
   unverändert 5×). **Ohne Datei (Deckel, `../observations/README.md`):** F-3 und V-3
@@ -442,7 +473,31 @@ letzten Risikos aus §6 stehen aus.
   `slice-code-kommentare-bereinigung`) an `BEO-PGC/arbeit-ueberholt-stehenden-traeger`
   (Deckel); alle vor dem Merge von Lesern gefunden. **Ohne Klasse:** F-6 (Bindung und
   Grenze des Tests, steht in `ADR-0129` Festlegung 2), V-7 (dieselbe Bindung), V-8
-  (übernommen und nicht gefahren, im Report benannt).
+  (übernommen und nicht gefahren, im Report benannt), ADR-Review F-4 (INFO: Aussage (a)
+  bindet die Zeile, an der keine Mutation der ADR ansetzt; Reviewer-Probe R1 trägt, keine
+  Aktion erwartet) und ADR-Review F-5 (INFO: „etwa 11,1 Tausend Änderungen“ ist über die
+  Läufe nicht stabil, der Vorbehalt „kein Vertrag“ steht in der ADR).
+- **Lesehilfe zu `ADR-0129` (ADR-Review F-1 bis F-3; die ADR ist `Accepted` und bleibt
+  unberührt, die Berichtigung trägt ihre nächste Berührung durch den Architect):**
+  (F-1) Der CI-Anker der ADR nennt Lauf 36287009221 ohne Versuchsnummer. Am 2026-09-27
+  vom Planner **gemessen** (`gh run view 36287009221 --attempt 1|2 --json jobs`, Job-Logs
+  mit `gh api repos/pt9912/pg-change-feed/actions/jobs/<Job>/logs`): *Versuch 1* —
+  PostgreSQL 18, Job 108529548391, `failure` im Schritt „Compose-Integrationstest
+  (Black-Box-E2E)“, die Schritte „Replication-Tier“ und beide Coverage-Schritte `skipped`
+  (Log der Phase „Leerlauf-Bestätigung“: „WAL-Rückstand 15238216 Bytes über Fehlerschwelle
+  8388608 Bytes“); PostgreSQL 17, Job 108529548457, `success`, `PASS` 40,72 s, 11538 von
+  400000 Änderungen; *Versuch 2* — PostgreSQL 18, Job 108531740887, `success`, `PASS`
+  43,20 s, 11541 Änderungen; PostgreSQL 17, Job 108531741788, `success` (der zweite
+  Versuch führt beide Legs auf). Der Satz der ADR „in CI weder belegt noch widerlegt“ gilt
+  für ihren Stand gegen 02:07 UTC; belegt ist der Test in CI durch diese Läufe. Ohne
+  `--attempt` liefert der Befehl heute Versuch 2. (F-2) „Ungebunden“ in Festlegung 2
+  Punkt 4 heißt: gefahren ist ein Wert; die Startposition des Neustarts ist nach oben
+  gebunden (`confirmed_flush_lsn + 1` ist an PostgreSQL 17 rot, Reviewer R2,
+  **übernommen**), die Wartezeit stützt sich auf einen grünen Lauf. (F-3) „Eine zweite
+  committende Transaktion ist nicht gemessen“ in Festlegung 2 Punkt 2 gilt **für den
+  committeten Test**; `ADR-0121` §Gemessen (in Kraft) berichtet den Aufbau einmalig an
+  PostgreSQL 18 (Stand-in hält die erste Transaktion, eine zweite committet 400.000
+  Änderungen).
 - **Folge-Slices:** keiner neu angelegt. Adressen: `slice-wal-fehlerschwelle-ausgangsklasse`
   (Klasse der Fehlerschwelle, Kommentare der Runner-Phase), `slice-start-vorlauf-grenze`,
   `slice-code-kommentare-bereinigung` (Übergabe der zwei Godoc-Kommentare zum durch
@@ -461,10 +516,11 @@ letzten Risikos aus §6 stehen aus.
   `slice-code-kommentare-bereinigung` übergeben. (4) Slice-Plan: DoD 1 und DoD 3,
   Stände des Suchlauf-Feldes nachgezogen. (5) CI-Beleg und Befund: DoD 1 und DoD 2
   tragen die Läufe, das Register die Zuordnung der roten Phase.
-- **Risiken aus §6:** vier Ausgänge gesetzt — drei entfallen mit Messung (der Test ist
-  nicht zeitabhängig ausgefallen, 17.11 liefert dieselbe Position, der Aufbau der Phase
-  trug in jedem Lauf), einer weiter offen im Register (Laufzeit); der fünfte, die
-  Lese-Prüfung von `ADR-0129`, steht aus.
+- **Risiken aus §6:** fünf Ausgänge gesetzt, je Risiko einer — vier entfallen mit Messung
+  (der Test ist nicht zeitabhängig ausgefallen, 17.11 liefert dieselbe Position, der Aufbau
+  der Phase trug in jedem Lauf, `ADR-0129` hält der Lese-Prüfung des Reviewers an ihren
+  tragenden Aussagen stand, mit den Rändern der Lesehilfe oben), einer weiter offen im
+  Register (Laufzeit, `BEO-PGC/test-integration-retention-timing-flake`).
 - **Drei Paarungen:** dieser Slice hat keine Welle; die Roadmap führt
   [welle-transformationen](../welle-transformationen.md) unter *Offene Wellen*, das
   Ereignis kann eintreten: die Closure dieser Welle prüft die Paarungen mit. Die
