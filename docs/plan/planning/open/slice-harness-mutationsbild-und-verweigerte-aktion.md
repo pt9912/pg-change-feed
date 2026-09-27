@@ -350,7 +350,7 @@ liegen vor (Herkunft oben).
 
 **Reihenfolge (Empfehlung an den Orchestrator, mit Begründung):** nach `slice-leerlauf-phase-last-in-stuecken`
 (liegt in `in-progress/`; das WIP-Limit ordnet das), nach
-[`slice-harness-guard-blocked-python`](slice-harness-guard-blocked-python.md) und **vor**
+`slice-harness-guard-blocked-python` und **vor**
 [`slice-wal-fehlerschwelle-ausgangsklasse`](slice-wal-fehlerschwelle-ausgangsklasse.md), also
 `slice-leerlauf-phase-last-in-stuecken` → `slice-harness-guard-blocked-python` →
 `slice-harness-mutationsbild-und-verweigerte-aktion` → `slice-wal-fehlerschwelle-ausgangsklasse`. Eine technische Kante gibt
