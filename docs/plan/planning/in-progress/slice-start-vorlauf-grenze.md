@@ -165,6 +165,35 @@ ihre Mutationen hergeleitet).
       Beide Mutationen auf der Arbeitskopie gefahren, Quelle danach
       unverändert wiederhergestellt (Differenz gegen die gesicherte Kopie
       geprüft).
+      **Fixrunde nach Review** (`docs/reviews/review-slice-start-vorlauf-grenze.md`
+      F-1/F-2, beide MEDIUM): F-1 — die Klassifikation prüfte
+      `errors.Is(ctx.Err(), context.DeadlineExceeded)` (Ambient-Zustand) statt des
+      von `applyAdministrationRequest` zurückgegebenen Fehlers selbst; korrigiert
+      auf `errors.Is(err, context.DeadlineExceeded)`. Neuer Test
+      `TestProcessAdministrationRequestsClassifiesADomainErrorAfterTheDeadlineAsAFailureNotAsATimeout`
+      mit dem Fake `successAfterDeadlineEnableTableUseCase` (liefert nach
+      Kontext-Ende Erfolg statt `ctx.Err()`, der nächste Schritt `Registered`
+      liefert den eigenständigen Domänenfehler „Aktivierung ohne
+      Bindungs-Zeile“): grün unter der korrigierten Fassung, `MarkFailed`
+      greift statt des Frist-Warn-Eintrags. Die Mutation des Reviewers
+      (`errors.Is(err, …)` zurück auf `errors.Is(ctx.Err(), …)`) auf einer
+      `git worktree`-Kopie real gefahren: der neue Test färbt sich rot
+      (`der Antrag ist nicht failed vermerkt, wollen MarkFailed`) — vor dem
+      Fix protokollierte derselbe Fall fälschlich „Vorlauf-Frist abgelaufen“.
+      F-2 — der Kontrollpunkt `if ctx.Err() != nil { return }` am
+      Schleifenkopf war ungetestet (des Reviewers Mutation, die drei Zeilen
+      entfernt, ließ den ganzen Paketlauf grün). Neuer Test
+      `TestProcessAdministrationRequestsStopsAtTheLoopHeadWhenTheContextIsAlreadyDone`
+      (ein bereits abgelaufener Kontext vor einer `Rejected`-Zeile und einem
+      regulären Antrag dahinter — beide bleiben unvermerkt `pending`): grün
+      unter der bestehenden Fassung. Dieselbe Mutation (die drei Zeilen
+      entfernt) auf einer `git worktree`-Kopie real gefahren: genau dieser
+      eine Test färbt sich rot (`die Rejected-Zeile ist failed vermerkt,
+      wollen unverändert pending`), der volle Paketlauf zeigt sonst keinen
+      weiteren Fehlschlag — die Mutation ist jetzt gebunden, wo sie es vorher
+      nicht war. Beide Mutationen liefen an einer `git worktree
+      add --detach`-Kopie (Muster des Reviews), Quelle des Arbeitsbaums
+      unberührt; `make test` (Race-Detector, ganzer Baum) grün.
 - [x] **Ein realer Rundlauf trägt es am Prozess.** Eine Phase im Runner von
       `make test-integration`: eine Sperre an einer eigenen Tabelle (länger als
       die Frist), ein `pending`-Antrag `enable` auf sie, Neustart des
@@ -211,10 +240,17 @@ ihre Mutationen hergeleitet).
       (`HEAD~5..HEAD`, ohne Struktur-ID im Betreff), `coverage-gate`
       (85,30 % ≥ 80 %), `generated-sync` (byte-gleich), `a-check`
       (0 Befund).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
+      **Belegt:** [`docs/reviews/review-slice-start-vorlauf-grenze.md`](../../../reviews/review-slice-start-vorlauf-grenze.md)
+      (0 HIGH, 2 MEDIUM, 1 LOW, 0 INFO, nicht merge-blockierend, Fixrunde vor
+      Closure empfohlen); F-1/F-2 sind in der Fixrunde behoben (siehe DoD
+      „Der Vorlauf trägt die Frist“ oben), F-3 (LOW) bleibt bewusst unverändert
+      (der Reviewer nennt sie optional, Verteidigung in der Tiefe bereits über
+      den älteren Test `TestRunStreamAfterAdministrationPassAppliesTheRuleRemovalBeforeTheStreamAssemblesTheFirstTransaction`
+      vorhanden).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13); der Nachzug der Träger nach
@@ -298,15 +334,21 @@ Das Wort „Vorlauf“ am Baum (alle Treffer, inklusive des Homonyms):
 ```suchlauf
 53fab37b 162 -n -E 'Vorlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 569e5db2 170 -n -E 'Vorlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 193 -n -E 'Vorlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 197 -n -E 'Vorlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 ```
 
-Die Differenz `569e5db2` (170) → `diff` (193): 23 neue Treffer, ganz überwiegend die
+Die Differenz `569e5db2` (170) → `diff` (197): 27 neue Treffer, ganz überwiegend die
 neu geschriebenen Kommentare/Godocs dieses Slice selbst (`administrationPassTimeout`,
 `runStreamAfterAdministrationPassWithTimeout`, die beiden neuen Tests, die neue
 Runner-Phase samt ihrem Kommentarblock und der neuen `abdeckung_declare`-Zeile,
-`docs/user/e2e-abdeckung.md` als Erzeugnis, die Pflichtenheft- und `harness/README.md`-Sätze)
-— keine Fundstelle verschwindet, die Bewegung ist ausschließlich Zuwachs.
+`docs/user/e2e-abdeckung.md` als Erzeugnis, die Pflichtenheft- und `harness/README.md`-Sätze),
+dazu die Fixrunde nach dem Review (F-1/F-2, `docs/reviews/review-slice-start-vorlauf-grenze.md`):
+die geschärfte Godoc-Zeile von `processAdministrationRequests` ersetzt eine Fundstelle
+1:1 (kein Netto-Zuwachs dort), die beiden neuen Tests
+(`TestProcessAdministrationRequestsClassifiesADomainErrorAfterTheDeadlineAsAFailureNotAsATimeout`,
+`TestProcessAdministrationRequestsStopsAtTheLoopHeadWhenTheContextIsAlreadyDone`) tragen die
+vier zusätzlichen Treffer — keine Fundstelle verschwindet, die Bewegung ist ausschließlich
+Zuwachs.
 
 | Träger | Befund (Stand `53fab37b`, vom Planner gelesen) | Behandlung | Ausgang (Implementer, Stand `diff`) |
 |---|---|---|---|
