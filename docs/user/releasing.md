@@ -336,19 +336,11 @@ Cloudsmith-Download-Pfad antwortet HTTP 200 für die POM-Datei
 das Jar, das Sources-Jar, die Moduldatei und `maven-metadata.xml` (Abrufe der
 Verifikation, 2026-09-26). Cloudsmith hat die von Gradle mitveröffentlichte
 Moduldatei angenommen. Der Abruf antwortet erst nach der asynchronen
-Verarbeitung mit HTTP 200 (im Lauf zu `sdk-kotlin-v0.2.2` nach rund zwei
-Minuten, Angabe der Verifikation, übernommen); HTTP 404 direkt nach dem grünen
-Upload-Schritt ist kein Fehler, der Beleg entsteht durch Wiederholen des
-Abrufs. Die Versionen `0.2.0` und `0.2.1` liegen nur auf GitHub Packages; auf
-Cloudsmith liegen die Versionen ab `0.2.2` (`maven-metadata.xml` nennt
-`latest` und `release` `0.2.2`).
-
-Nicht geprüft: ob die Cloudsmith-Paketseite die POM-Beschreibung anzeigt
-(optional pflegt der Betreiber dort den Text in der Web-App); die
-Usage-Seite des Repositories in der Web-App, auf der der Betreiber das
-Kontingent einsieht (eine Version trägt rund 187 kB, abgeleitet aus den
-Dateigrößen Jar 144457, Sources-Jar 39041 und POM 3095 Bytes); ein
-Doppel-Upload derselben Version.
+Verarbeitung mit HTTP 200 (typisch nach ein bis zwei Minuten); HTTP 404
+direkt nach dem grünen Upload-Schritt ist kein Fehler, der Beleg entsteht
+durch Wiederholen des Abrufs. Die Versionen `0.2.0` und `0.2.1` liegen nur
+auf GitHub Packages; auf Cloudsmith liegen die Versionen ab `0.2.2`
+(`maven-metadata.xml` nennt `latest` und `release` `0.2.2`).
 
 Kein `:latest`-Äquivalent (weder GitHub Packages noch Cloudsmith kennen
 eines) und kein GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb
@@ -362,9 +354,6 @@ GitHub Packages veroeffentlichen (Gradle-Aufgabe des Ziels, im Docker-Image)"
 ruft die Einzel-Aufgabe `publishMavenPublicationToGitHubPackagesRepository`,
 der Schritt „Nach Cloudsmith veroeffentlichen (Gradle-Aufgabe des Ziels, im
 Docker-Image)" die des zweiten Ziels; beide Aufgaben stehen im Lauf-Log. Die
-Paketversionen auf GitHub Packages sind über die GitHub-API abfragbar (`gh api
-/users/pt9912/packages/maven/io.github.pt9912.pgchangefeed-kotlin/versions`
-nennt `0.2.2`, `0.2.1` und `0.2.0`, Abruf der Verifikation, 2026-09-26). Die
 Werte der Zugangsdaten stehen im Lauf-Log maskiert (`***`), die
 `docker run`-Zeilen tragen nur die Namen.
 
@@ -372,8 +361,7 @@ Werte der Zugangsdaten stehen im Lauf-Log maskiert (`***`), die
 Maven-Paketen weder eine README noch die `<description>` der POM an; die
 Paketseite trägt ein Beschreibungsfeld („Write a description"), das nur in der
 Weboberfläche gepflegt wird — die REST- und die GraphQL-Schnittstelle bieten
-dafür keine schreibende Operation (geprüft mit `gh api`: `PackageVersion.readme`
-ist nur lesbar, die einzige Paket-Mutation ist `deletePackageVersion`). Nach
+dafür keine schreibende Operation. Nach
 jedem Kotlin-Release wird der Inhalt von
 [`sdks/kotlin/pgchangefeed-kotlin/README.md`](../../sdks/kotlin/pgchangefeed-kotlin/README.md)
 in dieses Feld eingefügt. Ob ein eingetragener Text bei der nächsten
