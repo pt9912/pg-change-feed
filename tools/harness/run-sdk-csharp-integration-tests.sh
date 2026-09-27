@@ -311,9 +311,28 @@ HTTP_IDENT=$(run_phase \
 # Folge-Slices (Kotlin, Python-HTTP) eigene Abschnitte daneben tragen.
 # Die Kennungsspalte trägt je Kennung den Link auf ihr Definitionsdokument
 # (ids des Doku-Gates).
+
+# trim_blank_edges <mehrzeiliger String> — entfernt führende und
+# nachgestellte Leerzeilen, interne Leerzeilen bleiben erhalten; reines awk,
+# kein externes Werkzeug.
+trim_blank_edges() {
+  awk '
+    { lines[NR] = $0 }
+    END {
+      start = 1
+      while (start <= NR && lines[start] == "") start++
+      e = NR
+      while (e >= start && lines[e] == "") e--
+      for (i = start; i <= e; i++) print lines[i]
+    }
+  ' <<<"$1"
+}
+
 abdeckung_csharp_abschnitt() {
   printf '%s\n' \
     '<!-- pgchangefeed-sdk-e2e:csharp-begin -->' \
+    '| Spec-Kennung | Kurzbeschreibung | Nachweis | Ort |' \
+    '| --- | --- | --- | --- |' \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedGrpcClient\`) öffnet real den gRPC-Server-Stream gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Öffnungsversuch ohne gültiges Token endet mit gRPC-Status \`Unauthenticated\` | \`GrpcRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedSseClient\`) öffnet real \`GET /changes/stream\` und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`SseRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`NatsRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
@@ -327,11 +346,16 @@ abdeckung_schreiben() {
   abschnitt=$(abdeckung_csharp_abschnitt)
   # Fremde, marker-gegrenzte Abschnitte (Kotlin/Python-HTTP der Folge-Slices)
   # hinter dem eigenen end-Marker bleiben erhalten — jeder Runner ersetzt nur
-  # seinen eigenen Abschnitt.
+  # seinen eigenen Abschnitt. Jeder Sprachabschnitt trägt seine eigene
+  # Kopf-/Trennzeile (eine eigenständige Markdown-Tabelle je Sprache): eine
+  # HTML-Kommentarzeile ohne Pipe-Zeichen zwischen einer gemeinsamen
+  # Kopfzeile und den Datenzeilen hätte die Tabelle für jeden
+  # Markdown-Renderer nach der Kopfzeile beendet.
   local rest=""
   if [ -f "$ABDECKUNG_ZIEL_DATEI" ]; then
     rest=$(awk '/pgchangefeed-sdk-e2e:csharp-end/{gefunden=1; next} gefunden{print}' "$ABDECKUNG_ZIEL_DATEI")
   fi
+  rest=$(trim_blank_edges "$rest")
   temp=$(mktemp)
   {
     printf '%s\n' \
@@ -345,13 +369,10 @@ abdeckung_schreiben() {
       'Datei ist eine **stabile Abdeckungs-Deklaration**, kein Lauf-Beleg: der' \
       'Runner schreibt sie nur bei inhaltlicher Abweichung. Sie trägt nur' \
       'Zeilen real existierender Runner-Phasen — ein Beleg steht hier nie,' \
-      'bevor sein Lauf grün lief.' \
-      '' \
-      '| Spec-Kennung | Kurzbeschreibung | Nachweis | Ort |' \
-      '| --- | --- | --- | --- |'
-    printf '%s\n' "$abschnitt"
+      'bevor sein Lauf grün lief.'
+    printf '\n%s\n' "$abschnitt"
     if [ -n "$rest" ]; then
-      printf '%s\n' "$rest"
+      printf '\n%s\n' "$rest"
     fi
   } > "$temp"
   if [ -f "$ABDECKUNG_ZIEL_DATEI" ] && cmp -s "$temp" "$ABDECKUNG_ZIEL_DATEI"; then
