@@ -76,7 +76,9 @@ Die Wortliste steht in einem Fragment `tools/harness/blocked/python`, das der Gu
   ([`ADR-0129`](../../adr/0129-capture-quellseite-keepalive-test-an-beiden-pins.md), kein Repo-Pfad) passierte den Guard,
   ein Reviewer-Aufruf `python3 --version` im selben Vorgang wurde geblockt, ein Implementer-Aufruf `python3 -c 1` in
   `slice-leerlauf-phase-last-in-stuecken` trägt im Bericht keinen Guard-Ausgang. Keiner hatte
-  Wirkung auf eine Repo-Datei. Das Register trägt sie als Belege (§3, Träger-Tabelle).
+  Wirkung auf eine Repo-Datei. Das Register trägt den Vorgang der ADR als sechste Beleg-Datei; die zwei
+  Aufrufe ohne abgeschlossenen Vorgang (Planner-Slice-Anlage, Implementer) stehen ungezählt im `state.md`, die
+  Beleg-Datei des Implementer-Aufrufs legt der Planner der Closure von `slice-leerlauf-phase-last-in-stuecken` an.
 - *Entscheidung:* der Nutzer hat „Weg 3“ gewählt — die kleinere Liste, nur `python python3`,
   „die einzigen Interpreter mit Belegen“ (Wortlaut der Wege: `slice-transformationen-map-value`
   §7). Die übrigen Namen der ursprünglichen Liste (`go gofmt node dotnet java gradle uv`)
@@ -417,7 +419,7 @@ Sub-Areas — kein Anlass zur Ausdifferenzierung.
 **Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen (Zähler gemessen am
 2026-09-27 mit `ls evidence | wc -l` je Eintrag, Stand `cea198fb`) —
 `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (verkörpert, 5×: der Gegenstand; Adresse der
-Kopf-Liste, Risiken 1, 3, 4, 6; der Nachzug des Planners bei der Anlage fügt Beleg-Dateien hinzu),
+Kopf-Liste, Risiken 1, 3, 4, 6; der Nachzug des Planners bei der Anlage fügt eine Beleg-Datei hinzu, 6×),
 `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration` (verkörpert, 2×: Zeiger,
 Liefer-Punkt 3d), `BEO-PGC/regel-weiter-als-ihr-sensor` (verkörpert, 4×, Risiko 6),
 `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (19×, Deckel; Risiko 2, die Mutationen je Eingabeseite),
