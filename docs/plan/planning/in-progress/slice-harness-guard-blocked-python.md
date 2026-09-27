@@ -220,7 +220,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors (Liefer-Punkt 3c);
       das Benutzerhandbuch bleibt unberührt (keine Betreiber-Oberfläche).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
@@ -228,9 +228,9 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (Liefer-Punkt 3d); je ein Anfall
       im Lauf dieses Slice ist eine weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine Antwort und
       wird in §7 notiert (§8 nennt die Einträge, die dieser Slice trägt).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Slice-Closure selbst (der Slice hat keine Welle; das Ereignis kann
       eintreten).
 
@@ -454,46 +454,150 @@ keiner — `make test-command-guard` wird erweitert, ohne Gate).
 - **1. Falsch-positive Blockaden harmloser Aufrufe.** `python3 --version` blockt jetzt (gewollt); eine Heredoc-Zeile, die mit
   `python3` beginnt, blockt (die Quote-Lesung liest keine Heredocs, `MR-003` Obergrenze); ein `python3` als Argument, in
   Anführungszeichen, als Musterteil oder als Pfadteil blockt nicht (der Kopf entscheidet). *Erwartet, zu belegen durch:* die
-  Pass-Fälle neben jedem Block-Fall und die benannten Ränder von Liefer-Punkt 2 (b), (c). **Ausgang:** *(bei Closure)*
+  Pass-Fälle neben jedem Block-Fall und die benannten Ränder von Liefer-Punkt 2 (b), (c). **Ausgang:** eingetreten,
+  wie gewollt — 20 eigene Hook-Proben des Reviewers und 10 eigene Hook-Proben des Verifiers bestätigen unabhängig:
+  `python3 --version`, eine Heredoc-Zeile mit `python3` und `cd <Repo> && python3 …` blocken; `make`/`docker`/
+  `command -v python3`/`echo python3`/ein Pfad mit `python` im Verzeichnisnamen bleiben frei
+  (`docs/reviews/review-slice-harness-guard-blocked-python.md` „Eigene Messungen“; `verifikation-…md` §4a).
 - **2. Die Tabellentest-Bindung färbt nur an der Ausgabeseite** (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`,
   verkörpert). Der Test liest das Fragment aus dem Repo; die Eingabeseite ist die Wortliste (fehlt, leer, gekürzt,
   erweitert), die Ladung und die Kopf-Erkennung. *Erwartet, zu belegen durch:* je eine Mutation, deren Farbe der Implementer
-  **gesehen** und im Bericht genannt hat (Stelle, Instanz, Farbe; Liste in DoD 2). **Ausgang:** *(bei Closure)*
+  **gesehen** und im Bericht genannt hat (Stelle, Instanz, Farbe; Liste in DoD 2). **Ausgang:** entfallen/erfüllt —
+  der Implementer fuhr elf Mutationen, der Reviewer sechs eigene (Fragment fehlt/leer/gekürzt/erweitert, `env`
+  entfernt), der Verifier acht eigene (davon vier neue Ränder: gemischte Zeilenenden, Leerzeilen am Ende,
+  Kommentar-Token nach der Liste — alle grün, kein Kollateralschaden); die Eingabeseite (Fragment-Ladung, Wortliste,
+  Kopf-Erkennung) ist damit über drei unabhängige Läufe gebunden, nicht nur die Ausgabeseite des Tests.
 - **3. Ein Rollenlauf braucht legitim Python.** Zulässiger Weg: Edit/Write, ein Repo-Werkzeug hinter `make`, `sed … > Kopie`
   (`AGENTS.md` §3.1); `docker run … python3 …` passiert den Guard (Kopf `docker`), ist aber nur mit einem gepinnten Image
   Weg nach §3.1 — der Slice führt keinen neuen Weg ein. Ein Bedarf ohne Weg ist eine Beleg-Datei im Register oder ein `make`-Ziel,
   keine Ausnahme im Guard. *Erwartet, zu belegen durch:* die Blockmeldung nennt die Wege (DoD 1); ein Review-Lauf und ein
-  Verifikations-Lauf unter dem Guard melden, ob ein Bedarf ohne Weg auftrat. **Ausgang:** *(bei Closure)*
+  Verifikations-Lauf unter dem Guard melden, ob ein Bedarf ohne Weg auftrat. **Ausgang:** nicht eingetreten — weder
+  Reviewer noch Verifier berichten einen Python-Bedarf ohne Weg; die Blockmeldung (`REASON_PKG`) nennt die drei
+  §3.1-Wege, an der Hook-Schnittstelle real gelesen.
 - **4. Wirkung auf laufende Rollen-Aufträge und Sitzungen.** Der Guard wirkt ab dem Fragment im Arbeitsbaum, nicht erst ab dem
   Commit; ein Auftrag, der `python3` nennt, läuft in einen Block. Die Repo-Texte verweisen auf `AGENTS.md` §3.1 statt den
   `--version`-Satz zu wiederholen (`.claude/commands/implement-slice.md` Zeile 30 und `.harness/skills/reviewer.md`
   Zeile 236, gelesen). *Erwartet, zu belegen durch:* das WIP-Limit (§4) und die Träger-Tabelle (§3): kein Repo-Text nennt
-  `python3` als zulässigen Weg. **Ausgang:** *(bei Closure)*
+  `python3` als zulässigen Weg. **Ausgang:** eingetreten, in dokumentierter Form — die vier `--version`-Vorfälle aus
+  Agenten-Berichten (§1 des Plans), dazu ein während der Implementierung dieses Slice selbst vom Guard geblockter
+  Heredoc für eine Commit-Message (Review F-4): der Implementer wechselte auf das Write-Tool, ein vorgesehener, kein
+  ausweichender Weg (Review/Verifikation stimmen überein). Kein Repo-Text nennt `python3` als zulässigen Weg.
 - **5. Der Zweig der Repo-Pfad-Regel für `python`/`python3` wird als toter Code gestrichen.** Er bleibt für `python3.<N>` und
   `perl` in Kraft. *Erwartet, zu belegen durch:* die Fälle mit Kopf `python3.12` und ihre Zeichenklassen (Liefer-Punkt 2 e)
-  und der Kommentar am Zweig. **Ausgang:** *(bei Closure)*
+  und der Kommentar am Zweig. **Ausgang:** entfallen — die Fälle mit Kopf `python3.12`/`python2` (ohne Repo-Pfad)
+  bleiben Pass, mit Repo-Pfad weiter unter der Repo-Pfad-Regel; Reviewer und Verifier bestätigen den Zweig eigens
+  gelesen und über eigene Proben erreichbar.
 - **6. Die Sperre verspricht mehr, als sie kann** (`BEO-PGC/regel-weiter-als-ihr-sensor`, verkörpert). Nicht gelesen:
   jeder nicht gelistete Name, ein Name aus einer Variablen oder einem Alias, Umleitungen, ein Skript eines anderen
   Interpreters. *Erwartet, zu belegen durch:* die Grenz-Zeile von `MR-004`, die Kurzform im Kopfkommentar und in
   `AGENTS.md` §3.1, die benannten Grenz-Fälle im Tabellentest (Liefer-Punkt 2 d); der Reviewer liest die drei Stellen
-  gegeneinander. **Ausgang:** *(bei Closure)*
+  gegeneinander. **Ausgang:** eingetreten, an einer nicht benannten Stelle gefunden und behoben — der Reviewer fand
+  eine reale, in der ursprünglichen Grenz-Zeile von `MR-004` nicht genannte Lücke (F-2 MEDIUM: ein CRLF-Zeilenende im
+  Fragment lässt das letzte Wort der Zeile unbemerkt durch); die Fixrunde härtete die Ladung (`${frag//$'\r'/}`) und
+  ergänzte die Grenz-Zeile, der Verifier bestätigte den Fix gegen vier eigene Regressionsproben ohne Nebenwirkung.
+  Die übrigen Grenzen (nicht gelistete Namen, Variablen/Aliase, Umleitungen) sind wie zugesagt ungelesen geblieben.
 - **7. Die neuen Fälle laufen nicht** (`BEO-PGC/test-runner-stiller-ausschluss`, offen, 2×). *Erwartet, zu belegen durch:* die
   gedruckte Zahl von `make test-command-guard` (Instanz A, `AGENTS.md` §3.12) und die Farbe der Mutationen. **Ausgang:**
-  *(bei Closure)*
+  entfallen — `make test-command-guard` druckt real 368 Fälle (Reviewer und Verifier unabhängig gegengerechnet,
+  `grep -cE '^(block|pass) '` plus manuelle Inkremente), die neuen Gruppen liefen nachweislich mit, keine stille
+  Ausklammerung gefunden.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
-- **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure trägt sie
-  selbst, nach dem `git mv` nach `done/`.
+- **Was hat funktioniert:** (1) Der Guard-Mechanismus selbst trägt ausnahmslos, was der Plan
+  zugesagt hat: 20 eigene Hook-Proben des Reviewers und 10 eigene des Verifiers (block —
+  `python3 --version`, `python`, `cd <Repo> && python3 …`, ein Pfad ohne Repo-Namen, `env python3`,
+  `bash -c`, absoluter Pfad, `xargs`, `find -exec`; pass — `make`, `docker run … python3 …`,
+  `command -v python3`, `echo python3`, ein Grep-Muster, ein Pfad mit `python` im Verzeichnisnamen,
+  `python3.12`/`python2` ohne Repo-Pfad) sowie der volle Tabellentest-Lauf bestätigen die Wirkung
+  unabhängig voneinander (`docs/reviews/review-slice-harness-guard-blocked-python.md` „Eigene
+  Messungen“, `verifikation-…md` §4a). (2) Die Leser-Kette fand, was der Implementer-Lauf nicht
+  fand: der Reviewer stellte per `git worktree add --detach 42b5a9ca` fest, dass vier Zahlen des
+  committeten §3.13-Suchlauf-Felds (Zeilen 1, 2, 5, 6) bereits beim Commit, der sie als „gemessen“
+  ausgibt, von der reproduzierbaren Messung abwichen (23/53/3/14 statt real 26/54/4/16, F-1 HIGH) —
+  und fuhr eine eigene, im Plan nicht verlangte Mutation (CRLF-Zeilenende im Fragment), die eine
+  reale, bis dahin unbenannte Lücke offenlegte (F-2 MEDIUM: `\r` bleibt am letzten Wort einer Zeile
+  hängen, `python3` fällt unbemerkt auf die schwächere Repo-Pfad-Regel zurück). Beide Findings sind
+  in der Fixrunde behoben (`3d380abe` Suchlauf-Zahlen berichtigt, `1df70522` CRLF-Härtung
+  `${frag//$'\r'/}` samt Tabellentest-Fall) und vom Verifier ein zweites Mal unabhängig nachgemessen
+  (`make suchlauf-nachmessen` 14/14 grün; vier eigene Regressionsproben gegen den CRLF-Fix, davon
+  drei über den bisherigen Prüfumfang hinaus — gemischte Zeilenenden, Leerzeilen am Ende,
+  Kommentar-Token —, alle grün ohne Nebenwirkung). (3) Die Nutzer-Entscheidung „Weg 3“ (nur
+  `python`/`python3`, keine der übrigen Toolchain-Namen) ist exakt umgesetzt und von beiden Lesern
+  bestätigt; `MR-003` blieb unverändert (`make doc-immutable` Exit 0 an beiden Leser-Läufen).
+- **Was ging anders als geplant:** (1) Der Plan schätzte den Tabellentest-Umbau auf „52 bestehende
+  Fälle plus neue Gruppen“ (317 → geschätzt nicht genannte Zielzahl); real wuchs der Bestand auf
+  368 Fälle (367 nach der Implementierung, ein weiterer aus der F-2-Fixrunde), eine Netto-Differenz
+  von 51 (nicht 50, wie eine erste Lesart des Reviews nahelegte — die „52“ und die „50“ sind zwei
+  verschiedene, beide korrekte Messungen an verschiedenen Objekten, siehe Review „Eigene Messungen“).
+  (2) Der committete §3.13-Suchlauf des Plans selbst driftete — nicht durch spätere, unabhängige
+  Arbeit, sondern schon beim Commit, der die Zahlen als „gemessen“ ausgab (F-1); eine Fixrunde war
+  nötig, bevor der DoD-Haken „§3.13-Suchlauf“ zu Recht auf `[x]` stehen konnte. (3) Die
+  CRLF-Zeilenenden-Grenze der Fragment-Ladung stand nicht im ursprünglichen Plan/DoD und auch nicht
+  in der ersten Fassung von `MR-004` §Grenz-Zeile — sie kam ausschließlich durch eine über den
+  Auftrag hinausgehende Reviewer-Mutation ans Licht, nicht durch die im Plan benannten Mutationen.
+- **Steering-Loop-Eintrag (Lerneintrag):** *(a) Geschärfte Regel.*
+  [`AGENTS.md`](../../../../AGENTS.md) §3.1 Absatz „Durchsetzung“ und `MR-004` (neu, per `cp` aus
+  der Baseline-Vorlage) — der PreToolUse-Guard sperrt Host-`python`/`python3` am Kopf eines
+  Kommando-Segments jetzt **unbedingt**, unabhängig vom Befehlsstring (auch hinter `cd <Repo> &&`,
+  auf einem Pfad ohne Repo-Namen, bei `--version`); `python3.<N>`/`perl` bleiben unter der
+  Repo-Pfad-Regel von `MR-003` (unverändert, `Accepted`, immutable). Die Fragment-Ladung
+  (`tools/harness/blocked/python`) normalisiert seit der Fixrunde zusätzlich CRLF-Zeilenenden
+  (`${frag//$'\r'/}`), dokumentiert in `MR-004` §Grenz-Zeile. *(b) Neuer Sensor.* keiner —
+  `make test-command-guard` wird um Fragment-Ladung, `BLOCKED_DIR`-Override und die neuen
+  Fall-Gruppen erweitert, bleibt aber ein Werkzeug ohne Gate-Bindung (kein Gate ohne ADR,
+  `AGENTS.md` §3.6; ein Wächter gehört nicht in die Gate-Tabelle, Baseline
+  `modul-13-quality-gates.md` §Guard-Härtung). *(c) Prozess-Erkenntnis, kein neuer Registereintrag
+  (benannte Grenze eines bestehenden Sensors).* Der §3.13-Suchlauf ist eine **committete Prosa-Zahl**,
+  kein Sensor, der sich selbst vor dem Commit erzwingt — `make suchlauf-nachmessen` prüft, ob eine
+  bereits geschriebene Zahl heute stimmt, nicht, ob der Implementer sie unmittelbar vor dem Commit
+  ein letztes Mal laufen ließ; F-1 ist eine reale Instanz genau dieser Grenze, gefunden vom
+  Reviewer, nicht vom Sensor. Der Verifier hat gezielt nach einem dritten Auftreten der engeren
+  Formulierung „Suchlauf-Nachmessung committet vor dem letzten Gegencheck“ gesucht
+  (`grep -rn` über `docs/reviews/*.md`) und **keinen Vorläufer** gefunden — ein eigener, engerer
+  Registereintrag ist damit (noch) nicht fällig; die Instanz ist als 24. Evidence-Datei im
+  bestehenden, gedeckelten Eintrag `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (Deckel bei
+  23×, diese Instanz trotz Deckel mit eigener Datei, weil HIGH statt ≤ LOW) geführt.
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`
+  — Ausgang **verkörpert** (Kopf-Liste durch Fragment, `MR-004`, Tabellentest verkörpert; die
+  Nutzer-Entscheidung „Weg 3“ eingetragen); 8. Evidence-Datei (die während der Implementierung
+  selbst bemerkte und zurückgenommene Umleitung beim Anlegen des Fragments, Review F-3, „eingetreten,
+  ohne Wirkung im Endergebnis“); der Fließtext-Zahlenwert „367 Fälle“ auf „368“ berichtigt (V-1 der
+  Verifikation — war beim Schreiben korrekt, seit dem CRLF-Fix veraltet). `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`
+  — Zeiger auf die Durchsetzung nachgezogen, kein eigenes Auftreten, Zähler unverändert.
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` — 24. Evidence-Datei (F-1, HIGH, trotz Deckel;
+  siehe Lerneintrag (c) oben), Zähler 23× → 24×. Kein weiterer Anfall angefallen: F-2 (MEDIUM) ist
+  eine reale, in der Fixrunde geschlossene Regelgrenze (`MR-004` §Grenz-Zeile), keine eigene
+  Beleg-Klasse; F-3 (INFO, Umleitung) und F-4 (INFO, Ersatzweg-Bewertung) sind bereits im ersten
+  Register bzw. ohne Repo-Beleg behandelt (Review/Verifikation, keine Aktion nötig).
+- **Folge-Slices:** keiner. Die im Suchlauf gemeldete fremde Datei
+  `docs/plan/planning/open/slice-code-kommentare-bereinigung.md` §6 bleibt unverändert wahr (kein
+  Nachzug nötig, geprüft bei dieser Closure); der einzige wandernde Markdown-Link auf diesen Slice
+  (`slice-harness-mutationsbild-und-verweigerte-aktion.md`) war bereits vor dieser Closure auf
+  Zitatform umgestellt (`cb1df743`) und bleibt nach dem `git mv` nach `done/` unberührt korrekt
+  (kein Pfad-Link, nur die zitierte Kennung); kein weiterer Markdown-Link auf den `in-progress/`-
+  oder `open/`-Pfad dieses Slice existiert im Baum außerhalb von `docs/reviews/**` (Records,
+  Einfrierung) und `docs/plan/planning/done/**` (bei dieser Closure per `git grep` geprüft).
+- **Risiken aus §6:** je ein Ausgang, mit Beleg direkt in §6 eingetragen. Eingetreten (wie gewollt
+  oder in dokumentierter Form): Risiko 1 (Falsch-positive Blockaden, gewollt), Risiko 4 (Wirkung auf
+  laufende Rollen-Aufträge, inkl. eines während dieser Implementierung selbst geblockten Heredocs,
+  vorgesehen behandelt), Risiko 6 (eine reale, zuvor unbenannte Lücke — CRLF — gefunden und behoben).
+  Entfallen/erfüllt: Risiko 2 (Tabellentest an die Eingabeseite gebunden, drei unabhängige
+  Mutationsläufe), Risiko 5 (Repo-Pfad-Zweig lebt weiter über `python3.<N>`/`python2`), Risiko 7
+  (`make test-command-guard` druckt real 368, keine stille Ausklammerung). Nicht eingetreten:
+  Risiko 3 (kein Python-Bedarf ohne Weg berichtet).
+- **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure trägt sie selbst, nach dem
+  `git mv` nach `done/`. *Anker* — [`AGENTS.md`](../../../../AGENTS.md) §3.1 Durchsetzung nennt
+  `MR-004` neben `MR-003` und trägt `· seit slice-harness-guard-blocked-python`;
+  `harness/conventions.md` §Aktive Adaptionen führt `MR-004` (Anker `mr-004`); `harness/README.md`
+  §Sensors, Zeile `make test-command-guard`, trägt `· seit slice-harness-guard-inplace-textwerkzeug,
+  erweitert seit slice-harness-guard-blocked-python` (`git grep -n 'slice-harness-guard-blocked-python'
+  -- AGENTS.md harness/README.md harness/conventions`, bei dieser Closure erneut geprüft). *Folge-Slice*
+  — keiner (siehe oben). *Register* — `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`,
+  `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration` und
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` existieren je als Verzeichnis mit nicht leerem
+  `evidence/` (`ls docs/plan/planning/observations/BEO-PGC/<slug>/evidence`, bei dieser Closure
+  geprüft: 8, 2, 24 Dateien).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

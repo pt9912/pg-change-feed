@@ -20,7 +20,7 @@ Kopf-Liste `tools/harness/blocked/go`: **entschieden** — der Nutzer hat „Weg
 nicht die volle Liste (`go gofmt python python3 node dotnet java gradle uv`), sondern nur `python python3`;
 die übrigen Namen bleiben ungesperrt, weil für sie kein Beleg vorliegt. Ausgang dieses Teils: **verkörpert** →
 `slice-harness-guard-blocked-python` (Fragment `tools/harness/blocked/python` — der Name folgt der Konvention
-`blocked/<sprache>` des Guards —, `MR-004`, Tabellentest `make test-command-guard` mit 367 Fällen). Der Guard
+`blocked/<sprache>` des Guards —, `MR-004`, Tabellentest `make test-command-guard` mit 368 Fällen). Der Guard
 blockt `python`/`python3` am Kopf jetzt unbedingt; `python3.<N>`/`perl` bleiben unter der Repo-Pfad-Regel.
 Ausgelöst hat die Neubewertung das zweite Trigger-Kriterium von `MR-003` (Auflösungs-Trigger: die Closure
 des nächsten Slice, dessen Läufe unter diesem Guard liefen; eingetreten mit der Closure von

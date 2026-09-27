@@ -37,7 +37,11 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **23×** (evidence/slice-retention-lauf-speicher-begrenzung.md — eine
+Zähler (abgeleitet): **24×** (evidence/slice-harness-guard-blocked-python.md — vier
+`diff`-Zeilen des §3.13-Suchlaufs standen als „gemessen“, obwohl sie bereits beim Commit,
+der sie schreibt, von der reproduzierbaren Messung abwichen (23/53/3/14 statt 26/54/4/16),
+Review F-1 (HIGH, daher Datei trotz Deckel), Verifikation §5;
+evidence/slice-retention-lauf-speicher-begrenzung.md — eine
 unbedingte Aussage („hängt nicht an der Zahl der Changes“) gegen die gemessene Steigung im
 selben Träger, Review F-1 (MEDIUM, daher Datei trotz Deckel), F-2, und die Zählwörter des
 Suchlauf-Felds ohne Stand-Commit, Verifikation V-2;
@@ -65,6 +69,18 @@ evidence/slice-backfill-change-origin.md,
 evidence/slice-backfill-snapshot-reader.md) —
 **Schwelle erreicht** (bereits verkörpert, kein neuer Schwellen-Übertritt; der
 Lese-Schritt der Closure von `welle-backfill-bestand` liest den Eintrag mit, 22×).
+Der vierundzwanzigste Beleg (slice-harness-guard-blocked-python) trifft die Klasse an ihrem
+eigenen Sensor: der §3.13-Suchlauf, der genau diese Art Drift verhindern soll, trug selbst
+vier falsche Zahlen — nicht erst durch spätere Arbeit gedriftet, sondern schon beim Commit
+falsch, der sie als „gemessen“ ausgibt (der Reviewer stellte das per `git worktree` genau an
+diesem Commit nach). Gefunden hat es der Reviewer durch Nachmessen, nicht der Sensor selbst
+(`make suchlauf-nachmessen` prüft Zahlen und Stände eines committeten Blocks, nicht ob der
+Implementer ihn vor dem Commit ein letztes Mal laufen ließ). Die Fixrunde setzte die
+gemessenen Werte, der Verifier maß sie unabhängig ein zweites Mal nach. Kein Schwellen-Übertritt
+(bereits verkörpert); kein neuer, engerer Registereintrag — die eigene Suche des Verifiers über
+`docs/reviews/*.md` fand keinen Vorläufer dieser engen Formulierung (§6 der Verifikation), ein
+dritter Anfall der engeren Klasse „Suchlauf-Nachmessung committet vor dem letzten Gegencheck“
+bliebe die Schwelle für einen eigenen, engeren Eintrag.
 Der zwanzigste Beleg (slice-backfill-slot-leerlauf-bestaetigung) trifft einen Handbuch-Lauf
 ohne auflösbaren Träger und **Zahlen im Suchlauf-Feld eines Plans**, dessen Suchraum die
 Plan-Datei selbst enthält: ihre Treffer sind ein Selbstverweis und driften mit jedem Edit
