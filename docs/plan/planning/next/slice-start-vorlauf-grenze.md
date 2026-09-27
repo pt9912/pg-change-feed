@@ -33,7 +33,7 @@ Datenverlust, Persist-before-ACK),
 [`SPEC-013`](../../../../spec/pflichtenheft.md) (Fehlergrenze des
 Capture-Abstands) — gelesen, nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent.
 
 **Autor:** Planner-Agent, Planner-Zug nach dem Architect-Verdikt
 [`architect-verdict-welle-transformationen-offene-fragen`](../../../reviews/architect-verdict-welle-transformationen-offene-fragen.md).
