@@ -66,7 +66,7 @@ fachliches Vorbild für Nachrichtenschema, Rechtsklassen, Fehlerform).
       `schema`/`table`-Parameter, leer = ungefiltert (Regressionstest für
       den parameterlosen Aufruf).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`), kein Self-Review.
 - [x] `docs/user/benutzerhandbuch.md`: beide gRPC-Abschnitte („Zugriff über
       den gRPC-Change-Stream", „Zugriff über die gRPC-Verwaltungs-API")
