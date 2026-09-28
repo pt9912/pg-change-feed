@@ -355,8 +355,11 @@ Die Lastenheft-Fähigkeit ist gefordert ([`LH-FA-CFG-008`](lastenheft.md)),
 das Modell der Zustellziele, Konfigurationsmechanismus und Ausdrucksform der
 Routing-Regeln sowie ihre Auflösung bei mehreren zutreffenden Regeln sind
 offene technische Fragen, ADR-pflichtig. Die bestehenden Zustellwege tragen
-kein Zielmodell: gRPC und SSE liefern ungefiltert (`SPEC-020`, `SPEC-021`),
-das NATS-Subjekt (`SPEC-024`) ist die einzige adressierbare Zielform.
+kein serverseitig konfigurierbares Zielmodell: gRPC und SSE lassen den
+Consumer einen optionalen `schema`/`table`-Filter je eigener Verbindung
+setzen (`SPEC-020`, `SPEC-021`), aber keine Routing-Regel lenkt eine Change
+ohne Zutun des Consumers an ein bestimmtes Ziel; das NATS-Subjekt
+(`SPEC-024`) bleibt die einzige adressierbare Zielform.
 
 ### LH-FA-SST-009.a — Sprachmatrix und Vertriebsweg offen
 
@@ -801,7 +804,7 @@ trägt kein Replay ([`LH-FA-SST-008`](lastenheft.md) Boundary).
 |---|---|
 | Protokoll / Dienst | gRPC über HTTP/2 mit Protobuf (`proto3`); Paket `cdc.stream.v1`, Dienst `ChangeStream`, Quelldatei `proto/cdc/stream/v1/changestream.proto` |
 | RPC | `StreamChanges(StreamChangesRequest) returns (stream Change)` — ein Server-Streaming-Aufruf: ein Öffnungsversuch, viele Antwortnachrichten über die Zeit |
-| Request | `StreamChangesRequest` trägt keine Felder; eine tabellen-granulare Filterung ist nicht Teil dieser Version |
+| Request | `StreamChangesRequest` trägt zwei optionale, unabhängig setzbare Felder `schema`/`table` (string, Feldnummern 1/2); ein leeres Feld trägt keinen Filter auf dieser Dimension, ein leeres Paar (der proto3-Zero-Value, auch einer noch nicht neu generierten `StreamChangesRequest{}` alter Clients) liefert wie zuvor jeden Change ungefiltert. Ein gesetztes `schema` ohne `table` filtert auf alle Tabellen dieses Schemas, ein gesetztes `table` ohne `schema` auf jede Tabelle dieses Namens unabhängig vom Schema, beide gesetzt filtert exakt eine Tabelle. Die Filterprüfung läuft im Driving-Handler nach dem Empfang aus dem `Broadcaster`, dessen Fan-out unverändert ungefiltert bleibt |
 | Nachricht `Change` | dieselben Felder wie der Domain-Typ `model.Change` (`OldImage`/`NewImage`, `internal/domain/model/change.go`): `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, eine der drei Operationen `INSERT`, `UPDATE`, `DELETE`), `old_image` (bytes), `new_image` (bytes), `schema_version` (string), `schema` (string), `table` (string); das Feld `origin` (`SPEC-002`) gehört nicht zur Nachricht |
 | Granularität | eine Nachricht je Zeilen-Change der committed Transaktion, in deren Reihenfolge — keine Deduplizierung nach Tabelle |
 | Zustellgarantie | keine (Fire-and-Forget, verlustbehaftet): ein Consumer, der nicht verbunden ist **oder langsamer liest als Changes eintreffen**, verpasst die betroffenen Nachrichten ersatzlos — je Abonnent trägt der `Broadcaster` eine begrenzte Empfangs-Warteschlange, deren Überlauf verworfen wird. Ein Replay innerhalb des Streams gibt es nicht; verpasste Changes bleiben über den bestehenden Lesezugriffsweg ([`LH-FA-REA-001`](lastenheft.md) ff.) und die bestätigte Consumer-Position ([`LH-FA-CON-003`](lastenheft.md)/[`LH-FA-CON-005`](lastenheft.md)) nachholbar ([`LH-FA-SST-008`](lastenheft.md) Boundary) |
@@ -819,6 +822,7 @@ Technische Ausgestaltung von [`LH-FA-SST-008`](lastenheft.md), zweiter Zustellwe
 |---|---|
 | Endpunkt / Methode | `GET /changes/stream` |
 | Rechtsklasse | `reader` oder `admin` — Streaming ist rein lesend |
+| Query-Parameter | `schema`, `table` (je optional und unabhängig, dieselben Feldnamen und dieselbe Kombinatorik wie `SPEC-020`s gRPC-Request und `GET /changes`, `SPEC-022`); ohne Parameter liefert der Endpunkt wie zuvor jeden Change ungefiltert. Ein Parameter außerhalb dieser Menge endet mit `400`, vor jedem SSE-Event |
 | Response-Form | `Content-Type: text/event-stream`; je Change ein Event, sofort über `http.Flusher` ausgeliefert |
 | Event-Typ | `event: change` |
 | Event-Daten | `data:` trägt ein JSON-Objekt mit denselben zehn Feldern wie der Domain-Typ `model.Change`, ohne das Feld `origin` (`SPEC-002`): `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, `INSERT`/`UPDATE`/`DELETE`), `old_image`, `new_image`, `schema_version` (string), `schema` (string), `table` (string). Die Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild ist `null` |
@@ -1291,3 +1295,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-26 | `SPEC-019` Spalte `requested_at` und neuer Absatz „Ordnung der Verarbeitung“: `requested_at` ist der Zeitpunkt des Funktionsaufrufs, Aufrufe einer Transaktion werden in Aufrufreihenfolge verarbeitet, Verarbeitungs- und Ableitungsordnung sind dieselbe (Kennung als deterministischer Zweitschlüssel); Grenzen: Aufruf- statt Festschreibungs-Zeitpunkt, Serveruhr; K1 nennt, dass Entfernen und Neusetzen in einer Transaktion stehen dürfen |
 | 2026-09-26 | `SPEC-019` Absatz „Transformations-Antragsarten“: die Prüfung von Regelname und Regelform liegt in der Verarbeitung, nicht im Antrags-Konstruktor — ein fehlender oder ungültiger Wert endet `failed` mit dem Fehlertext der Tabelle, die Queue lehnt den Antrag nicht beim Lesen ab |
 | 2026-09-26 | `SPEC-019` neuer Absatz „Zeilen, die kein Antrag sind“: die Lesung der Queue lehnt keine Zeile ab, eine vom Antrags-Konstruktor verworfene Zeile (leere Quelle, leeres Schema, leerer Tabellenname, unbekannte Antragsart, leere Spalte der Spalten-Antragsarten) endet in der Verarbeitung `failed` mit Klartext und Antrags-Kennung als Adresse, die Zeilen dahinter laufen weiter; Grenze: eine Zeile ohne Kennung wird mit Warnung übersprungen; Zeilen `schema_name`/`table_name`/`column_name` und Absatz „Transformations-Antragsarten“ nachgezogen |
+| 2026-09-28 | `SPEC-020` Zeile „Request“: `StreamChangesRequest` trägt zwei optionale, unabhängig setzbare Felder `schema`/`table` statt keiner Felder — Kombinatorik und Filterort ergänzt; `SPEC-021` neue Zeile „Query-Parameter“: `GET /changes/stream` nimmt dieselben zwei Felder als Query-Parameter, ein Parameter außerhalb der Menge endet `400`; `LH-FA-CFG-008.a` umformuliert — „gRPC und SSE liefern ungefiltert" trifft nicht mehr zu, die offene Frage bleibt auf das serverseitig konfigurierbare Routing-Zielmodell beschränkt |

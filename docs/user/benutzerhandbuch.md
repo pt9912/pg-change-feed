@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.73
+Version: 1.74
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-28
 
@@ -1290,7 +1290,17 @@ Jede Nachricht trägt zehn Felder:
 | `schema` | string | Schema-Name der Tabelle |
 | `table` | string | Tabellenname |
 
-Eine Filterung nach Tabelle ist nicht Teil dieser Version.
+**Filterung:** Der Request `StreamChangesRequest` trägt zwei optionale,
+unabhängig setzbare Felder `schema`/`table`. Ein gesetztes `schema` ohne
+`table` liefert alle Tabellen dieses Schemas, ein gesetztes `table` ohne
+`schema` jede Tabelle dieses Namens unabhängig vom Schema, beide gesetzt
+liefert exakt eine Tabelle; bleiben beide leer (der unveränderte, alte
+Aufruf), liefert der Stream wie zuvor jeden Change aller aktivierten
+Tabellen. Die Prüfung läuft serverseitig, bevor eine nicht passende Change
+über das Netz geht. Die Beispiel-Clients (Go, C#, Kotlin) und die drei
+SDK-Packages (`PgChangeFeed.Client`, `pgchangefeed`, `pgchangefeed-kotlin`)
+nehmen den Filter noch nicht als eigenen Aufrufparameter entgegen — das
+bleibt ein offener, noch nicht terminierter Folge-Schritt.
 
 **Zustellsemantik:** Es gibt **keine** Zustellgarantie (Fire-and-Forget,
 verlustbehaftet). Je Abonnent trägt der Server eine begrenzte
@@ -1466,6 +1476,15 @@ denselben zehn Feldern wie der gRPC-Stream trägt (siehe
 ein fehlendes Row Image ist `null`. Jedes Event wird sofort ausgeliefert. Ist
 die Adresse gesetzt, aber kein Live-Stream-Träger verdrahtet, antwortet der
 Endpunkt mit `503`.
+
+**Filterung:** Zwei optionale, unabhängig setzbare Query-Parameter
+`schema`/`table` — dieselben Feldnamen und dieselbe Kombinatorik wie beim
+gRPC-Stream oben und bei `GET /changes` (siehe
+[Änderungen lesen](#änderungen-lesen)). Ohne Parameter liefert der Endpunkt
+wie zuvor jeden Change; ein Parameter außerhalb dieser beiden Namen endet
+mit `400`, bevor das erste Event läuft. Wie beim gRPC-Stream nehmen die
+Beispiel-Clients und die drei SDK-Packages den Filter noch nicht als
+eigenen Aufrufparameter entgegen — offener Folge-Schritt.
 
 **Zustellsemantik:** keine Zustellgarantie (Fire-and-Forget): Ein nicht
 verbundener oder langsamer lesender Client verpasst die betroffenen
@@ -2155,3 +2174,4 @@ MIT — siehe `LICENSE`.
 | 1.71 | 2026-09-28 | Neuer §4-Abschnitt „Zugriff über die gRPC-Verwaltungs-API“ (`LH-FA-SST-006`, `ADR-0130`): die neun Fähigkeiten der HTTP-API als gRPC-Dienst `Administration`, Rechtsklassen-Tabelle, Fehlercode-Tabelle (`InvalidArgument`/`Unauthenticated`/`PermissionDenied`/`NotFound`/`Internal`), Hinweis auf das noch fehlende Beispiel-Programm/SDK je Sprache; §5 `CDC_GRPC_ADDR`-Zeile nennt jetzt beide Dienste (`ChangeStream` und `Administration`) statt nur den Streaming-Server |
 | 1.72 | 2026-09-28 | Zehnter RPC `ReadChanges` im §4-Abschnitt „Zugriff über die gRPC-Verwaltungs-API“ ergänzt (`LH-FA-SST-006`, `LH-FA-REA-001`…`006`, `ADR-0131`): Fähigkeiten-Tabelle trägt jetzt zehn Zeilen, Absatz zu Filter-/Bereichs-Semantik und dem `ChangeRecord`-Nachrichtenschema (dieselben dreizehn Felder wie `GET /changes`), kein `NotFound` bei leerem Treffer; der Hinweis auf das fehlende Beispiel-Programm/SDK je Sprache benennt jetzt ausdrücklich, dass auch `ReadChanges` davon unberührt bleibt |
 | 1.73 | 2026-09-28 | Diagnose über zwei neue Netzwerkzugriffswege dokumentiert (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`, `LH-FA-RET-005`/`006`, `LH-FA-CAP-009`, `ADR-0132`): §4 „Diagnose ausführen“ nennt `GET /diagnose` und den elften gRPC-RPC `Diagnose` als gleichwertige Alternativen neben dem bestehenden CLI-Aufruf; „Zugriff über die HTTP-/JSON-API“ trägt eine neue Tabellenzeile und einen Absatz zum Antwortschema; „Zugriff über die gRPC-Verwaltungs-API“ trägt `Diagnose` als elfte Zeile samt Nachrichtenschema-Absatz; beide Beispiele-/SDK-Hinweise benennen `Diagnose` ausdrücklich als noch nicht abgedeckt |
+| 1.74 | 2026-09-28 | Tabellen-granulare Filterung für gRPC-Change-Stream und SSE ergänzt (`LH-FA-SST-008`, `ADR-0133`): „Zugriff über den gRPC-Change-Stream“ und „Zugriff über Server-Sent-Events“ tragen je einen neuen `**Filterung:**`-Absatz — ein optionales, unabhängig setzbares `schema`/`table`-Paar (Request-Felder bzw. Query-Parameter), dieselbe Kombinatorik wie `GET /changes`; die beiden Sätze „Eine Filterung nach Tabelle ist nicht Teil dieser Version“ entfallen. Beide Absätze benennen die Beispiel-Clients und die drei SDK-Packages ausdrücklich als noch nicht abgedeckt (offener Folge-Schritt) |
