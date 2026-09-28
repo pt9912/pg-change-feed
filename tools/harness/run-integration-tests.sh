@@ -2424,6 +2424,73 @@ fi
 
 echo "run-integration-tests: gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt — ein Wegwerf-Client (tools/harness/grpcclient) öffnete real über gRPC den Server-Stream gegen den laufenden Feed-Container ($GRPC_ADDR) und empfing eine danach committete Änderung (Tabelle, Operation und Spaltenwert real am Stream; die Feldvollständigkeit trägt server_test.go auf Unit-Ebene), deren change_id ($grpc_change_id) unabhängig über cdc.changes lesbar ist; ein Stream-Öffnungsversuch ohne gültiges Token wurde mit gRPC-Status Unauthenticated abgelehnt: $grpc_client_output"
 
+abdeckung_declare "gRPC-Administration-Rundlauf" "LH-FA-CON-001,LH-FA-CFG-004" "ein Wegwerf-Client ruft real über gRPC mindestens eine Administration-RPC je Token-Klasse auf (ListTables mit dem reader-Token, RegisterConsumer mit dem admin-Token); ein Aufruf ohne Token endet mit gRPC-Status Unauthenticated, ein reader-Token gegen die admin-RPC RegisterConsumer mit PermissionDenied" "gRPC-Administration-Rundlauf (ADR-0130) belegt"
+
+# gRPC-Administration-Rundlauf (ADR-0130): ein Wegwerf-Client
+# (tools/harness/grpcadminclient, per `go run` im Toolchain-Container)
+# verbindet sich real über gRPC mit dem laufenden Feed-Container und ruft
+# den neuen `Administration`-Service auf — ListTables mit dem
+# reader-Token, RegisterConsumer mit dem admin-Token. Das Ergebnis von
+# RegisterConsumer wird unabhängig gegen den Lesezugriffsweg `cdc.consumer`
+# gehalten. Abschließend belegt derselbe Prozess die beiden
+# Negative-Pfade: ein Aufruf ohne Token endet mit gRPC-Status
+# `Unauthenticated`, ein reader-Token gegen die admin-RPC RegisterConsumer
+# mit `PermissionDenied`. Ein echter Netzwerk-Request über denselben
+# Compose-Netz-Alias wie der gRPC-Stream-Rundlauf oben, kein `docker exec`
+# und kein Mock.
+GRPC_ADMIN_CONSUMER_ID="grpc-admin-e2e-consumer"
+# `set +e` um den Client-Aufruf: der Ausgang wird von der folgenden Prüfung
+# ausgewertet und über eine sichtbare Fehlerzeile gemeldet; unter `set -e`
+# beendet ein fehlgeschlagenes `docker run` schon die Zuweisung selbst und
+# die Phase endet rot ohne Ausgabe (AGENTS.md §3.9).
+set +e
+grpc_admin_output=$(docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/grpcadminclient "$GRPC_ADDR" "$HTTP_TOKEN_READER" "$HTTP_TOKEN_ADMIN" "$GRPC_ADMIN_CONSUMER_ID" src-e2e pub_pgc_e2e 2>&1)
+grpc_admin_exit=$?
+set -e
+if [ "$grpc_admin_exit" -ne 0 ]; then
+  echo "run-integration-tests: gRPC-Administration-Rundlauf — Test-Client endete nicht mit Ausgang 0 (Ausgang: $grpc_admin_exit): $grpc_admin_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$grpc_admin_output" | grep -qE '^LISTED tables=[0-9]+ retained=[0-9]+$'; then
+  echo "run-integration-tests: gRPC-Administration-Rundlauf — keine LISTED-Zeile (ListTables mit reader-Token): $grpc_admin_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$grpc_admin_output" | grep -qF "REGISTERED consumer_id=$GRPC_ADMIN_CONSUMER_ID"; then
+  echo "run-integration-tests: gRPC-Administration-Rundlauf — keine REGISTERED-Zeile (RegisterConsumer mit admin-Token): $grpc_admin_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$grpc_admin_output" | grep -qF "REJECTED code=Unauthenticated"; then
+  echo "run-integration-tests: gRPC-Administration-Rundlauf — Aufruf ohne Token wurde nicht mit Unauthenticated abgelehnt: $grpc_admin_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$grpc_admin_output" | grep -qF "REJECTED code=PermissionDenied"; then
+  echo "run-integration-tests: gRPC-Administration-Rundlauf — reader-Token gegen RegisterConsumer wurde nicht mit PermissionDenied abgelehnt: $grpc_admin_output" >&2
+  exit 1
+fi
+
+# Unabhängiger SQL-Beleg, dass RegisterConsumer real über den bestehenden
+# Lesezugriffsweg cdc.consumer sichtbar ist — kein erfundenes REGISTERED
+# des Clients.
+grpc_admin_registered=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.consumer WHERE consumer_id = '$GRPC_ADMIN_CONSUMER_ID'")
+if [ -z "$grpc_admin_registered" ] || [ "$grpc_admin_registered" -lt 1 ]; then
+  echo "run-integration-tests: gRPC-Administration-Rundlauf — der über RegisterConsumer registrierte Consumer ($GRPC_ADMIN_CONSUMER_ID) ist nicht real über cdc.consumer lesbar (count=${grpc_admin_registered:-leer})" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem gRPC-Administration-Rundlauf nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: gRPC-Administration-Rundlauf (ADR-0130) belegt — ein Wegwerf-Client (tools/harness/grpcadminclient) rief real über gRPC ListTables (reader-Token) und RegisterConsumer (admin-Token) gegen den laufenden Feed-Container ($GRPC_ADDR) auf, der registrierte Consumer ($GRPC_ADMIN_CONSUMER_ID) ist unabhängig über cdc.consumer lesbar; ein Aufruf ohne Token wurde mit Unauthenticated, ein reader-Token gegen RegisterConsumer mit PermissionDenied abgelehnt: $grpc_admin_output"
+
 abdeckung_declare "SSE-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real per HTTP den Endpunkt \`GET /changes/stream\` gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401" "SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt"
 
 # SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061): ein Wegwerf-Client
