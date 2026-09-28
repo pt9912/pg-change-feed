@@ -5,8 +5,10 @@ namespace CdcExamples.Grpc;
 /// dokumentierten Umgebungsvariablen (<c>ADR-0076</c> Festlegung 1). Das
 /// Umgebungs-Lookup ist injiziert (<paramref name="getEnv"/> statt
 /// <c>Environment.GetEnvironmentVariable</c> direkt) — das macht die Funktion
-/// rein und netzlos testbar, ohne echte Prozessumgebung zu setzen. Form-Vorbild:
-/// <c>examples/csharp/sse-client/Cli.cs</c>, <c>examples/grpc-client/main.go</c>
+/// rein und netzlos testbar, ohne echte Prozessumgebung zu setzen. Diese
+/// Funktion prüft nur die Flag-Syntax; ob ein Verb bekannt ist oder seine
+/// Pflichtfelder trägt, prüft <see cref="Validator"/>. Form-Vorbild:
+/// <c>examples/csharp/http-client/Cli.cs</c>, <c>examples/grpc-client/main.go</c>
 /// (<c>parseFlags</c>).
 /// </summary>
 public static class Cli
@@ -15,10 +17,26 @@ public static class Cli
     {
         var addr = getEnv("CDC_GRPC_ADDR") ?? "";
         var token = getEnv("CDC_API_TOKEN_READER") ?? "";
+        var adminToken = getEnv("CDC_API_TOKEN_ADMIN") ?? "";
+        var verb = "stream";
+        var schema = "";
+        var table = "";
+        var consumerId = "";
+        var name = "";
+        var offset = 0UL;
+        var tableId = "";
+        var schemaVersionId = "";
+        var version = 1L;
+        var source = "";
+        var publication = "";
+        var from = 0UL;
+        var to = 0UL;
+        var limit = 0L;
+        var minAgeNanos = 0L;
 
         for (var i = 0; i < args.Length; i++)
         {
-            var (name, inline) = SplitFlag(args[i]);
+            var (flagName, inline) = SplitFlag(args[i]);
 
             string NextValue()
             {
@@ -28,12 +46,12 @@ public static class Cli
                 }
                 if (i + 1 >= args.Length)
                 {
-                    throw new ArgumentException($"grpc-client: Flag {name} braucht einen Wert");
+                    throw new ArgumentException($"grpc-client: Flag {flagName} braucht einen Wert");
                 }
                 return args[++i];
             }
 
-            switch (name)
+            switch (flagName)
             {
                 case "--addr":
                     addr = NextValue();
@@ -41,12 +59,84 @@ public static class Cli
                 case "--token":
                     token = NextValue();
                     break;
+                case "--admin-token":
+                    adminToken = NextValue();
+                    break;
+                case "--verb":
+                    verb = NextValue();
+                    break;
+                case "--schema":
+                    schema = NextValue();
+                    break;
+                case "--table":
+                    table = NextValue();
+                    break;
+                case "--consumer-id":
+                    consumerId = NextValue();
+                    break;
+                case "--name":
+                    name = NextValue();
+                    break;
+                case "--offset":
+                    offset = ParseUInt64(flagName, NextValue());
+                    break;
+                case "--table-id":
+                    tableId = NextValue();
+                    break;
+                case "--schema-version-id":
+                    schemaVersionId = NextValue();
+                    break;
+                case "--version":
+                    version = ParseInt64(flagName, NextValue());
+                    break;
+                case "--source":
+                    source = NextValue();
+                    break;
+                case "--publication":
+                    publication = NextValue();
+                    break;
+                case "--from":
+                    from = ParseUInt64(flagName, NextValue());
+                    break;
+                case "--to":
+                    to = ParseUInt64(flagName, NextValue());
+                    break;
+                case "--limit":
+                    limit = ParseInt64(flagName, NextValue());
+                    break;
+                case "--min-age-nanos":
+                    minAgeNanos = ParseInt64(flagName, NextValue());
+                    break;
                 default:
-                    throw new ArgumentException($"grpc-client: unbekanntes Flag {name}");
+                    throw new ArgumentException($"grpc-client: unbekanntes Flag {flagName}");
             }
         }
 
-        return new Config(addr, token);
+        return new Config(
+            Addr: addr, Token: token, AdminToken: adminToken, Verb: verb,
+            Schema: schema, Table: table,
+            ConsumerId: consumerId, Name: name, Offset: offset,
+            TableId: tableId, SchemaVersionId: schemaVersionId, Version: version,
+            Source: source, Publication: publication,
+            From: from, To: to, Limit: limit, MinAgeNanos: minAgeNanos);
+    }
+
+    private static ulong ParseUInt64(string flagName, string value)
+    {
+        if (!ulong.TryParse(value, out var parsed))
+        {
+            throw new ArgumentException($"grpc-client: Flag {flagName} braucht eine nicht-negative Ganzzahl, erhielt \"{value}\"");
+        }
+        return parsed;
+    }
+
+    private static long ParseInt64(string flagName, string value)
+    {
+        if (!long.TryParse(value, out var parsed))
+        {
+            throw new ArgumentException($"grpc-client: Flag {flagName} braucht eine Ganzzahl, erhielt \"{value}\"");
+        }
+        return parsed;
     }
 
     /// <summary>

@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.75
+Version: 1.76
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-28
 
@@ -1299,11 +1299,11 @@ unabhängig setzbare Felder `schema`/`table`. Ein gesetztes `schema` ohne
 liefert exakt eine Tabelle; bleiben beide leer (der unveränderte, alte
 Aufruf), liefert der Stream wie zuvor jeden Change aller aktivierten
 Tabellen. Die Prüfung läuft serverseitig, bevor eine nicht passende Change
-über das Netz geht. Das Go-Beispiel nimmt den Filter über `-schema`/`-table`
-entgegen; die C#-/Kotlin-Beispiele und die drei SDK-Packages
-(`PgChangeFeed.Client`, `pgchangefeed`, `pgchangefeed-kotlin`) nehmen ihn
-noch nicht als eigenen Aufrufparameter entgegen — das bleibt ein offener,
-noch nicht terminierter Folge-Schritt.
+über das Netz geht. Das Go- und das C#-Beispiel nehmen den Filter über
+`-schema`/`-table` bzw. `--schema`/`--table` entgegen; das Kotlin-Beispiel und
+die drei SDK-Packages (`PgChangeFeed.Client`, `pgchangefeed`,
+`pgchangefeed-kotlin`) nehmen ihn noch nicht als eigenen Aufrufparameter
+entgegen — das bleibt ein offener, noch nicht terminierter Folge-Schritt.
 
 **Zustellsemantik:** Es gibt **keine** Zustellgarantie (Fire-and-Forget,
 verlustbehaftet). Je Abonnent trägt der Server eine begrenzte
@@ -1334,9 +1334,12 @@ und lässt sich per Flag übersteuern.
   ab
 - **C#:** `examples/csharp/grpc-client` — Container-Aufruf über
   `make example-run-csharp SURFACE=grpc` (startet das mit
-  `make examples-csharp` gebaute Image; der Stub entsteht im Bau aus der
-  `.proto`, über einen zusätzlichen, benannten Bau-Kontext gelesen —
-  `ADR-0090`)
+  `make examples-csharp` gebaute Image; die beiden Stubs entstehen im Bau aus
+  den `.proto`-Dateien, über einen zusätzlichen, benannten Bau-Kontext gelesen
+  — `ADR-0090`); das Default-Verb `stream` nimmt den optionalen
+  `--schema`/`--table`-Filter entgegen (`ADR-0133`); dasselbe Programm deckt
+  über `--verb` zusätzlich die elf RPCs der
+  [gRPC-Verwaltungs-API](#zugriff-über-die-grpc-verwaltungs-api) ab
 - **Kotlin:** `examples/kotlin/grpc-client` — Container-Aufruf über
   `make example-run-kotlin SURFACE=grpc` (startet das mit
   `make examples-kotlin` gebaute Image; derselbe Stub-im-Bau-Mechanismus wie
@@ -1458,15 +1461,18 @@ kein Blocker, unbekannte Schätzung/unbekannter Rückstand).
 **Zustellsemantik:** wie die HTTP-API — synchrone Anfrage/Antwort je RPC,
 keine Warteschlange dazwischen.
 
-**Beispiele:** Das Go-Beispiel `examples/grpc-client` (siehe [gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)
-oben) deckt über dasselbe `-verb`-Flag alle elf Fähigkeiten der Tabelle oben
-ab (Default `stream` — die ursprüngliche, einzige Aufrufform bleibt damit
-unverändert funktionsfähig); Adresse und Token liest es aus
-`CDC_GRPC_ADDR`/`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN` und lässt sich
+**Beispiele:** Das Go-Beispiel `examples/grpc-client` und das C#-Beispiel
+`examples/csharp/grpc-client` (siehe [gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)
+oben) decken über dasselbe `-verb`-/`--verb`-Flag alle elf Fähigkeiten der
+Tabelle oben ab (Default `stream` — die ursprüngliche, einzige Aufrufform
+bleibt damit unverändert funktionsfähig); Adresse und Token lesen beide aus
+`CDC_GRPC_ADDR`/`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN` und lassen sich
 per Flag übersteuern, z. B.
-`make example-run-go SURFACE=grpc ARGS="-verb=list-tables -source=<quelle> -publication=<publication>"`.
+`make example-run-go SURFACE=grpc ARGS="-verb=list-tables -source=<quelle> -publication=<publication>"`
+bzw.
+`make example-run-csharp SURFACE=grpc ARGS="--verb=list-tables --source=<quelle> --publication=<publication>"`.
 
-Für C# und Kotlin existiert für diese Fläche weiterhin kein dediziertes
+Für Kotlin existiert für diese Fläche weiterhin kein dediziertes
 Beispiel-Programm; dasselbe gilt für die drei SDK-Packages
 (`PgChangeFeed.Client`, `pgchangefeed`, `pgchangefeed-kotlin`) — keines von
 ihnen trägt bislang einen Methodensatz für diese Fläche. Ihre Aufnahme
@@ -2189,3 +2195,4 @@ MIT — siehe `LICENSE`.
 | 1.73 | 2026-09-28 | Diagnose über zwei neue Netzwerkzugriffswege dokumentiert (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`, `LH-FA-RET-005`/`006`, `LH-FA-CAP-009`, `ADR-0132`): §4 „Diagnose ausführen“ nennt `GET /diagnose` und den elften gRPC-RPC `Diagnose` als gleichwertige Alternativen neben dem bestehenden CLI-Aufruf; „Zugriff über die HTTP-/JSON-API“ trägt eine neue Tabellenzeile und einen Absatz zum Antwortschema; „Zugriff über die gRPC-Verwaltungs-API“ trägt `Diagnose` als elfte Zeile samt Nachrichtenschema-Absatz; beide Beispiele-/SDK-Hinweise benennen `Diagnose` ausdrücklich als noch nicht abgedeckt |
 | 1.74 | 2026-09-28 | Tabellen-granulare Filterung für gRPC-Change-Stream und SSE ergänzt (`LH-FA-SST-008`, `ADR-0133`): „Zugriff über den gRPC-Change-Stream“ und „Zugriff über Server-Sent-Events“ tragen je einen neuen `**Filterung:**`-Absatz — ein optionales, unabhängig setzbares `schema`/`table`-Paar (Request-Felder bzw. Query-Parameter), dieselbe Kombinatorik wie `GET /changes`; die beiden Sätze „Eine Filterung nach Tabelle ist nicht Teil dieser Version“ entfallen. Beide Absätze benennen die Beispiel-Clients und die drei SDK-Packages ausdrücklich als noch nicht abgedeckt (offener Folge-Schritt) |
 | 1.75 | 2026-09-28 | Go-Beispiel `examples/grpc-client` von der Ein-Fähigkeit-Form (nur `StreamChanges`) auf die volle gRPC-Fläche erweitert (`LH-FA-SST-006`, `LH-FA-SST-008`): ein `-verb`-Flag (Default `stream` — die ursprüngliche Aufrufform bleibt unverändert funktionsfähig) deckt zusätzlich alle elf RPCs des `Administration`-Diensts ab; das Default-Verb `stream` nimmt den optionalen `-schema`/`-table`-Filter entgegen (`ADR-0133`). „Zugriff über den gRPC-Change-Stream“ nennt den Filter-Flag und den neuen `-verb`-Umfang des Go-Beispiels; „Zugriff über die gRPC-Verwaltungs-API“ trägt jetzt einen eigenen `**Beispiele:**`-Absatz statt der Aussage, keine Sprache decke diese Fläche ab — C#/Kotlin und alle drei SDK-Packages bleiben unverändert offener Folge-Schritt |
+| 1.76 | 2026-09-28 | C#-Beispiel `examples/csharp/grpc-client` von der Ein-Fähigkeit-Form (nur `StreamChanges`) auf die volle gRPC-Fläche erweitert (`LH-FA-SST-006`, `LH-FA-SST-008`), analog zum Go-Beispiel: ein `--verb`-Flag (Default `stream` — die ursprüngliche Aufrufform bleibt unverändert funktionsfähig) deckt zusätzlich alle elf RPCs des `Administration`-Diensts ab; das Default-Verb `stream` nimmt den optionalen `--schema`/`--table`-Filter entgegen (`ADR-0133`). „Zugriff über den gRPC-Change-Stream“ nennt den Filter-Flag des C#-Beispiels und dessen neuen `--verb`-Umfang; „Zugriff über die gRPC-Verwaltungs-API“ nennt das C#-Beispiel jetzt gleichrangig neben Go im `**Beispiele:**`-Absatz — Kotlin und alle drei SDK-Packages bleiben unverändert offener Folge-Schritt |

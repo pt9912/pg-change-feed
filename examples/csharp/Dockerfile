@@ -72,6 +72,9 @@ COPY nats-stream-client/ nats-stream-client/
 # Zusatzkontext real abbricht (kein Fallback, kein übersprungener Schritt;
 # Beleg im Bericht des Zuges, der diese Zeile eingeführt hat).
 COPY --from=proto cdc/stream/v1/changestream.proto grpc-client/proto/changestream.proto
+# Die zweite COPY-Zeile trägt die elf RPCs des `Administration`-Diensts, die
+# grpc-client zusätzlich zum Stream aufruft.
+COPY --from=proto cdc/administration/v1/administration.proto grpc-client/proto/administration.proto
 
 RUN dotnet build http-client/http-client.csproj -c Release --no-restore
 RUN dotnet test http-client/HttpClient.Tests/HttpClient.Tests.csproj -c Release --no-restore

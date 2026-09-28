@@ -5,8 +5,10 @@ namespace CdcExamples.Grpc.Tests;
 /// <summary>
 /// Prüft <see cref="Cli.Parse"/>: Umgebungs-Default, Flag-Override, beide
 /// Flag-Formen (<c>--name=wert</c> und <c>--name wert</c>) und die
-/// Fehlerfälle (unbekanntes Flag, fehlender Wert). Form-Vorbild:
-/// <c>examples/csharp/sse-client/SseClient.Tests/CliTests.cs</c>.
+/// Fehlerfälle (unbekanntes Flag, fehlender Wert, ungültige Ganzzahl). Diese
+/// Funktion prüft nur die Flag-Syntax; Rechtsklassen und Pflichtfelder je
+/// Verb prüft <see cref="ValidatorTests"/>. Form-Vorbild:
+/// <c>examples/csharp/http-client/HttpClient.Tests/CliTests.cs</c>.
 /// </summary>
 public class CliTests
 {
@@ -22,12 +24,22 @@ public class CliTests
         {
             ["CDC_GRPC_ADDR"] = "feed:9090",
             ["CDC_API_TOKEN_READER"] = "reader-token",
+            ["CDC_API_TOKEN_ADMIN"] = "admin-token",
         });
 
         var cfg = Cli.Parse([], env);
 
         Assert.Equal("feed:9090", cfg.Addr);
         Assert.Equal("reader-token", cfg.Token);
+        Assert.Equal("admin-token", cfg.AdminToken);
+    }
+
+    [Fact]
+    public void Parse_DefaultVerbIsStream()
+    {
+        var cfg = Cli.Parse([], NoEnv);
+
+        Assert.Equal("stream", cfg.Verb);
     }
 
     [Fact]
@@ -52,6 +64,61 @@ public class CliTests
 
         Assert.Equal("", cfg.Addr);
         Assert.Equal("", cfg.Token);
+        Assert.Equal("", cfg.AdminToken);
+    }
+
+    [Fact]
+    public void Parse_StreamFilterFlags()
+    {
+        var cfg = Cli.Parse(["--schema=public", "--table=orders"], NoEnv);
+
+        Assert.Equal("public", cfg.Schema);
+        Assert.Equal("orders", cfg.Table);
+    }
+
+    [Fact]
+    public void Parse_EnableTableFields()
+    {
+        var cfg = Cli.Parse(
+            ["--verb=enable-table", "--source=quelle-1", "--schema=public", "--table=orders",
+                "--table-id=public.orders", "--schema-version-id=public.orders-v2", "--version=2",
+                "--publication=pub_quelle_1"],
+            NoEnv);
+
+        Assert.Equal("enable-table", cfg.Verb);
+        Assert.Equal("quelle-1", cfg.Source);
+        Assert.Equal("public.orders", cfg.TableId);
+        Assert.Equal("public.orders-v2", cfg.SchemaVersionId);
+        Assert.Equal(2L, cfg.Version);
+        Assert.Equal("pub_quelle_1", cfg.Publication);
+    }
+
+    [Fact]
+    public void Parse_ConsumerFields()
+    {
+        var cfg = Cli.Parse(["--consumer-id=c-1", "--name=Consumer", "--offset=42"], NoEnv);
+
+        Assert.Equal("c-1", cfg.ConsumerId);
+        Assert.Equal("Consumer", cfg.Name);
+        Assert.Equal(42UL, cfg.Offset);
+    }
+
+    [Fact]
+    public void Parse_ReadChangesRangeFields()
+    {
+        var cfg = Cli.Parse(["--from=10", "--to=20", "--limit=5"], NoEnv);
+
+        Assert.Equal(10UL, cfg.From);
+        Assert.Equal(20UL, cfg.To);
+        Assert.Equal(5L, cfg.Limit);
+    }
+
+    [Fact]
+    public void Parse_RunRetentionMinAgeNanos()
+    {
+        var cfg = Cli.Parse(["--min-age-nanos=1000000000"], NoEnv);
+
+        Assert.Equal(1_000_000_000L, cfg.MinAgeNanos);
     }
 
     [Fact]
@@ -66,5 +133,19 @@ public class CliTests
     {
         var ex = Assert.Throws<ArgumentException>(() => Cli.Parse(["--addr"], NoEnv));
         Assert.Contains("braucht einen Wert", ex.Message);
+    }
+
+    [Fact]
+    public void Parse_OffsetNotAnInteger_Throws()
+    {
+        var ex = Assert.Throws<ArgumentException>(() => Cli.Parse(["--offset=abc"], NoEnv));
+        Assert.Contains("nicht-negative Ganzzahl", ex.Message);
+    }
+
+    [Fact]
+    public void Parse_VersionNotAnInteger_Throws()
+    {
+        var ex = Assert.Throws<ArgumentException>(() => Cli.Parse(["--version=abc"], NoEnv));
+        Assert.Contains("Ganzzahl", ex.Message);
     }
 }

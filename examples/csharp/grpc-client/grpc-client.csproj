@@ -28,14 +28,17 @@
     <PackageReference Include="Google.Protobuf" />
   </ItemGroup>
 
-  <!-- Die `.proto` selbst liegt NICHT in diesem Verzeichnis — sie kommt erst
-       im Docker-Bau hierher, kopiert aus dem zusätzlichen, benannten
+  <!-- Beide `.proto`-Dateien liegen NICHT in diesem Verzeichnis — sie kommen
+       erst im Docker-Bau hierher, kopiert aus dem zusätzlichen, benannten
        Bau-Kontext `proto` (examples/csharp/Dockerfile, ADR-0090
        Festlegung 2). Dieser Pfad existiert deshalb nur innerhalb des Baus,
        nicht im committeten Baum (ADR-0090 Festlegung 3 — kein committeter
        Stub, keine committete Kopie der `.proto`). -->
   <ItemGroup>
     <Protobuf Include="proto/changestream.proto" GrpcServices="Client" />
+    <!-- `administration.proto` trägt die elf RPCs des `Administration`-Diensts,
+         den dieses Programm zusätzlich zum Stream aufruft. -->
+    <Protobuf Include="proto/administration.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

@@ -71,6 +71,16 @@ Startform bleibt unverändert funktionsfähig): `changes`, `register-consumer`,
 dokumentierten Fähigkeiten der HTTP-/JSON-API auf, je mit den zu ihrem
 Endpunkt passenden Flags (z. B. `ARGS="-verb=changes -source <quelle>"`).
 
+`grpc-client` trägt zusätzlich das `-verb`-Flag (Default `stream`, die obige
+Startform bleibt unverändert funktionsfähig und nimmt den optionalen
+`-schema`/`-table`-Filter entgegen): `register-consumer`,
+`acknowledge-consumer`, `get-consumer-position`, `remove-consumer`,
+`enable-table`, `disable-table`, `get-table-status`, `list-tables`,
+`run-retention`, `read-changes` und `diagnose` rufen die elf RPCs der
+[gRPC-Verwaltungs-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-grpc-verwaltungs-api)
+auf, je mit den zu ihrer RPC passenden Flags (z. B.
+`ARGS="-verb=list-tables -source <quelle> -publication <publication>"`).
+
 ## C#
 
 Eigene Sprach-Wurzel [`csharp/`](csharp), gebaut über
@@ -97,6 +107,16 @@ obige Startform bleibt unverändert funktionsfähig): `changes`,
 `enable-table`, `disable-table`, `table-status` und `retention-run` rufen die
 übrigen neun dokumentierten Fähigkeiten der HTTP-/JSON-API auf, je mit den zu
 ihrem Endpunkt passenden Flags (z. B. `ARGS="--verb=changes --source <quelle>"`).
+
+`csharp/grpc-client` trägt zusätzlich das `--verb`-Flag (Default `stream`,
+die obige Startform bleibt unverändert funktionsfähig und nimmt den
+optionalen `--schema`/`--table`-Filter entgegen): `register-consumer`,
+`acknowledge-consumer`, `get-consumer-position`, `remove-consumer`,
+`enable-table`, `disable-table`, `get-table-status`, `list-tables`,
+`run-retention`, `read-changes` und `diagnose` rufen die elf RPCs der
+[gRPC-Verwaltungs-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-grpc-verwaltungs-api)
+auf, je mit den zu ihrer RPC passenden Flags (z. B.
+`ARGS="--verb=list-tables --source <quelle> --publication <publication>"`).
 
 ## Kotlin
 

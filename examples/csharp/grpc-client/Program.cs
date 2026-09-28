@@ -1,3 +1,4 @@
+using Cdc.Administration.V1;
 using Cdc.Stream.V1;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -5,27 +6,26 @@ using Grpc.Net.Client;
 namespace CdcExamples.Grpc;
 
 /// <summary>
-/// Command grpc-client ist ein öffentliches Beispiel für den Live-Change-Stream
-/// über gRPC (<c>LH-FA-SST-008</c>, <c>ADR-0060</c>, <c>ADR-0090</c>): es
-/// öffnet den Server-Streaming-RPC <c>ChangeStream/StreamChanges</c> real
-/// gegen den laufenden Feed-Container und gibt jede empfangene Nachricht aus.
-/// Startform ist ein Container-Aufruf, kein Host-Aufruf (<c>ADR-0087</c>
-/// Festlegung 3); Adresse und Token kommen aus
-/// <c>CDC_GRPC_ADDR</c>/<c>CDC_API_TOKEN_READER</c> und lassen sich per Flag
-/// übersteuern (<c>--addr</c>, <c>--token</c>).
+/// Command grpc-client ist ein öffentliches Beispiel für die vollständige
+/// gRPC-Fläche (<c>LH-FA-SST-006</c>): das <c>--verb</c>-Flag ruft eine von
+/// zwölf dokumentierten Fähigkeiten real gegen den laufenden Feed-Container
+/// auf — der Live-Change-Stream (Default-Verb <c>stream</c>, unverändert die
+/// ursprüngliche Aufrufform) und die elf unären RPCs des
+/// <c>Administration</c>-Diensts. Startform ist ein Container-Aufruf, kein
+/// Host-Aufruf; die Zugriffs-Abschnitte des Benutzerhandbuchs sind „Zugriff
+/// über den gRPC-Change-Stream" und „Zugriff über die gRPC-Verwaltungs-API"
+/// (<c>docs/user/benutzerhandbuch.md</c>).
 ///
-/// Form-Vorbild: <c>examples/grpc-client</c> (Go). Der Stub entsteht **im
-/// Bau** aus der über den benannten Zusatzkontext gelesenen <c>.proto</c> —
-/// er liegt nicht im committeten Baum (<c>ADR-0090</c> Festlegung 3). Dieses
-/// Programm trägt keine Zustandsmaschine: der Stream kennt kein Replay
-/// (<c>ADR-0060</c>), verpasste Changes holt der bestehende Lesezugriffsweg
+/// Form-Vorbild: <c>examples/grpc-client</c> (Go). Beide Stubs entstehen im
+/// Bau aus den über den benannten Zusatzkontext gelesenen <c>.proto</c>-
+/// Dateien — sie liegen nicht im committeten Baum. Dieses Programm trägt
+/// keine Zustandsmaschine: die elf RPCs stellen je eine Anfrage und enden,
+/// der Stream bleibt offen und kennt kein Replay — verpasste Changes holt
+/// der bestehende Lesezugriffsweg (<c>ReadChanges</c>, <c>GET /changes</c>)
 /// nach.
 /// </summary>
 internal static class Program
 {
-    private const string AuthorizationMetadataKey = "authorization";
-    private const string BearerPrefix = "Bearer ";
-
     private static async Task<int> Main(string[] args)
     {
         Config cfg;
@@ -39,14 +39,10 @@ internal static class Program
             return 2;
         }
 
-        if (string.IsNullOrEmpty(cfg.Addr))
+        var validationError = Validator.Validate(cfg);
+        if (validationError is not null)
         {
-            Console.Error.WriteLine("grpc-client: keine gRPC-Adresse gesetzt — CDC_GRPC_ADDR (oder --addr) ist noetig, um den Stream zu oeffnen");
-            return 2;
-        }
-        if (string.IsNullOrEmpty(cfg.Token))
-        {
-            Console.Error.WriteLine("grpc-client: kein Token gesetzt — CDC_API_TOKEN_READER (oder --token) ist noetig, um ueber die reader-Rechtsklasse zu lesen");
+            Console.Error.WriteLine($"grpc-client: {validationError}");
             return 2;
         }
 
@@ -57,13 +53,43 @@ internal static class Program
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
         using var channel = GrpcChannel.ForAddress($"http://{cfg.Addr}");
-        var client = new ChangeStream.ChangeStreamClient(channel);
 
-        var headers = new Metadata { { AuthorizationMetadataKey, BearerPrefix + cfg.Token } };
+        if (cfg.Verb == "stream")
+        {
+            return await RunStreamAsync(channel, cfg).ConfigureAwait(false);
+        }
+
+        var client = new Administration.AdministrationClient(channel);
+        try
+        {
+            var output = await Dispatcher.DispatchAdminAsync(client, cfg).ConfigureAwait(false);
+            Console.WriteLine(output);
+            return 0;
+        }
+        catch (RpcException ex)
+        {
+            Console.Error.WriteLine($"grpc-client: --verb={cfg.Verb} fehlgeschlagen: {ex.Status}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// RunStreamAsync öffnet den Server-Streaming-RPC
+    /// <c>ChangeStream/StreamChanges</c> real gegen den laufenden
+    /// Feed-Container und gibt jede empfangene Nachricht aus, bis die
+    /// Verbindung endet. <c>cfg.Schema</c>/<c>cfg.Table</c> tragen den
+    /// optionalen, unabhängig setzbaren Filter (<c>ADR-0133</c>) — beide leer
+    /// liefert jeden Change aller aktivierten Tabellen.
+    /// </summary>
+    private static async Task<int> RunStreamAsync(GrpcChannel channel, Config cfg)
+    {
+        var client = new ChangeStream.ChangeStreamClient(channel);
+        var headers = CallMetadata.Headers(cfg.Token);
 
         try
         {
-            using var call = client.StreamChanges(new StreamChangesRequest(), headers: headers);
+            using var call = client.StreamChanges(
+                new StreamChangesRequest { Schema = cfg.Schema, Table = cfg.Table }, headers: headers);
             await foreach (var change in call.ResponseStream.ReadAllAsync())
             {
                 Console.WriteLine(Format.FormatChange(change));

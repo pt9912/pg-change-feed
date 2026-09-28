@@ -2,10 +2,29 @@ namespace CdcExamples.Grpc;
 
 /// <summary>
 /// Config trägt die Laufzeit-Eingabe des Beispiels: die Horch-Adresse des
-/// gRPC-Streaming-Servers und das Token der lesenden Rechtsklasse. Beide
-/// kommen aus denselben Umgebungsvariablen, die das Benutzerhandbuch führt
-/// (<c>CDC_GRPC_ADDR</c>, <c>CDC_API_TOKEN_READER</c>), und lassen sich per
-/// Flag übersteuern (<c>ADR-0076</c> Festlegung 1). Form-Vorbild:
-/// <c>examples/grpc-client</c> (Go), <c>config</c> in <c>main.go</c>.
+/// gRPC-Servers, die zwei Token-Klassen und die Felder aller zwölf
+/// Fähigkeiten — je Verb prüft <see cref="Validator.Validate"/> nur die
+/// tatsächlich nötigen Felder. <c>Schema</c>/<c>Table</c> dienen doppelt: als
+/// optionaler Stream-Filter (<c>ADR-0133</c>) und als Tabellen-Identität der
+/// Verwaltungs-RPCs. Form-Vorbild: <c>examples/grpc-client</c> (Go),
+/// <c>config</c> in <c>main.go</c>.
 /// </summary>
-public sealed record Config(string Addr, string Token);
+public sealed record Config(
+    string Addr,
+    string Token,
+    string AdminToken,
+    string Verb,
+    string Schema,
+    string Table,
+    string ConsumerId,
+    string Name,
+    ulong Offset,
+    string TableId,
+    string SchemaVersionId,
+    long Version,
+    string Source,
+    string Publication,
+    ulong From,
+    ulong To,
+    long Limit,
+    long MinAgeNanos);
