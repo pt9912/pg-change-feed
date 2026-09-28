@@ -56,23 +56,26 @@ Import-Form, statt sie erneut zu entdecken.
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SST-009` erfüllt: `PgChangeFeedAdministrationClient` deckt alle
+- [x] `LH-FA-SST-009` erfüllt: `PgChangeFeedAdministrationClient` deckt alle
       elf RPCs mit typisierten Requests/Responses und einer versiegelten
       (`sealed class`) Fehlerklasse für die gRPC-Status-Codes ab (Formvorbild
-      die bestehende HTTP-Fehlerklasse); Unit-Tests je RPC.
-- [ ] `ADR-0133` erfüllt: `streamChanges()` trägt optionale `schema`/`table`-
+      die bestehende HTTP-Fehlerklasse); Unit-Tests je RPC. (Requests/
+      Responses sind die generierten Protobuf-Nachrichten direkt, kein
+      eigener Modell-Layer — siehe „Abweichung vom Plan" unten.)
+- [x] `ADR-0133` erfüllt: `streamChanges()` trägt optionale `schema`/`table`-
       Parameter, leer = ungefiltert (Regressionstest für den parameterlosen
       Aufruf).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`), kein Self-Review.
-- [ ] `docs/user/benutzerhandbuch.md`: beide gRPC-Abschnitte nennen Kotlin
+- [x] `docs/user/benutzerhandbuch.md`: beide gRPC-Abschnitte nennen Kotlin
       jetzt mit der vollen Fläche — mit dieser Zeile ist die Drei-Sprachen-
       SDK-Matrix für die gRPC-Verwaltungs-API vollständig; Versionshistorie
       nachgezogen. `sdks/kotlin/pgchangefeed-kotlin/README.md` nachgezogen.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — kein neuer
+      Eintrag angefallen, siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [ ] Die drei Paarungen sind getragen — von der Welle-Closure.
 
 ## 3. Plan (vor Code)
@@ -80,12 +83,21 @@ Import-Form, statt sie erneut zu entdecken.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/grpc/PgChangeFeedAdministrationClient.kt` | neu | elf RPC-Methoden, Formvorbild `examples/kotlin/grpc-client/src/main/kotlin/cdcexamples/grpc/{ConsumerClient,TablesAdminClient,RetentionClient,ChangesClient,DiagnoseClient}.kt` |
-| `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/grpc/model/*.kt` | neu | typisierte Request-/Response-Modelle, Import über `AdministrationOuterClass.*` (siehe §1-Fund) |
-| `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/grpc/PgChangeFeedGrpcException.kt` (oder analog benannt) | neu | `sealed class` für die gRPC-Status-Codes |
+| `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/grpc/PgChangeFeedGrpcException.kt` | neu | versiegelte (`sealed class`) Fehlerklasse für die gRPC-Status-Codes |
 | `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/grpc/PgChangeFeedGrpcClient.kt` | update | `streamChanges()` um optionale `schema`/`table`-Parameter erweitern |
-| `sdks/kotlin/pgchangefeed-kotlin/src/test/kotlin/.../grpc/*Test.kt` | neu | je RPC ein Happy-/Boundary-/Negative-Fall, Regressionstest für `streamChanges()` ohne Filter |
+| `sdks/kotlin/Dockerfile` | update (nicht geplant, siehe „Abweichung vom Plan") | zweite `COPY --from=proto`-Zeile für `administration.proto` — ohne sie bricht `make sdk-pack-kotlin` am Kotlin-Compiler ab |
+| `sdks/kotlin/pgchangefeed-kotlin/src/test/kotlin/io/github/pt9912/pgchangefeed/grpc/{FakeAdministrationTransport,AdministrationTestClientFactory,PgChangeFeedAdministrationClient{Consumer,Table,RetentionAndChanges,Diagnose,ErrorMapping}Test,PgChangeFeedGrpcClientFilterTest}.kt` | neu | je RPC ein Happy-/Boundary-/Negative-Fall, Regressionstest für `streamChanges()` ohne Filter |
 | `docs/user/benutzerhandbuch.md` | update | beide gRPC-Abschnitte, Versionshistorie |
 | `sdks/kotlin/pgchangefeed-kotlin/README.md` | update | Administration-Client dokumentieren |
+
+**Abweichung vom Plan:** `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/grpc/model/*.kt`
+entsteht **nicht** — die elf RPC-Methoden von `PgChangeFeedAdministrationClient`
+nehmen die generierten Protobuf-Nachrichten aus `AdministrationOuterClass`
+direkt als Parameter/Rückgabetyp, ohne eigene Zwischenschicht (dieselbe
+Entscheidung wie beim C#-Geschwister-SDK und wie beim bestehenden
+`PgChangeFeedGrpcClient` für den Stream). Zusätzlich, nicht im ursprünglichen
+Plan: `sdks/kotlin/Dockerfile` braucht eine zweite `COPY --from=proto`-Zeile
+für `administration.proto` (siehe §7 „Was ging anders als geplant").
 
 ## 4. Trigger
 
@@ -119,18 +131,73 @@ Closure-Notiz geschrieben.
   Zeitpunkt der Implementierung dieses Slice gepusht ist (`internal/bootstrap/assemblersync.go`),
   bevor ein Realserver-Test dieses Slice `enable-table` gegen eine frische
   Tabelle nutzt. — **Ausgang:** entfallen (Fix bereits gepusht, real
-  bestätigt) | weiter offen (Fix noch nicht gepusht — dann keinen eigenen
-  Realserver-Test auf frischer Tabelle bauen, sondern auf eine bereits
-  aktivierte Tabelle ausweichen).
+  bestätigt: `a40b4809 fix(bootstrap): EnableTable/DisableTable über
+  HTTP/gRPC aktualisieren den laufenden Assembler`, Datei
+  `internal/bootstrap/assemblersync.go` vorhanden) — dieser Slice fährt
+  ohnehin keinen Realserver-Test (Unit-Tests gegen
+  `FakeAdministrationTransport`/`FakeGrpcStreamTransport`, kein
+  Docker-Compose-Rundlauf), der Realserver-Beleg bleibt Gegenstand von
+  `make test-sdk-kotlin-integration`.
+
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „`pgchangefeed-kotlin`
+deckt die gRPC-Verwaltungs-API/den Stream-Filter noch nicht ab" in
+`docs/user/benutzerhandbuch.md`/`sdks/kotlin/pgchangefeed-kotlin/README.md`;
+beide Stände gemessen, Parent `fd39b68b`):**
+
+| Träger | Suchbefehl | Befund | Behandlung |
+|---|---|---|---|
+| „nehmen ihn noch nicht als eigenen Aufrufparameter" (Stream-Filter-Absatz) | `git grep -n "nehmen ihn noch nicht als eigenen Aufrufparameter"` über `docs/user/benutzerhandbuch.md`, Parent `fd39b68b` und Diff (Block unten, Zeilen 1–2) | Parent: 1 Trefferzeile (Zeile 1312, direkt nach dem C#-/Python-Filterhinweis) — nannte `pgchangefeed`/`pgchangefeed-kotlin` gemeinsam als noch nicht filterfähig; zum Zeitpunkt dieser Messung hatte der parallele Python-Slice den Python-Teil bereits uncommittet im Arbeitsbaum korrigiert (`pgchangefeed` filtert bereits), der Kotlin-Teil war noch offen. Diff: 0 — Satz umgeschrieben, `pgchangefeed-kotlin` jetzt namentlich mit `streamChanges(schema, table)` genannt. Nichtgefunden: keine weitere Stelle, die den Stream-Filter-Stand von `pgchangefeed-kotlin` nennt. | Absatz auf alle drei Packages als filterfähig umgeschrieben (Zeile 1301 ff.); der `**SDK:**`-Absatz im gRPC-Change-Stream-Abschnitt (Zeile ~1372 ff.) ergänzt zusätzlich die zwei Parameter im Fließtext. |
+| „Methodensatz dafür" (Verwaltungs-API-Absatz, gemeinsame Offen-Aussage für `pgchangefeed`/`pgchangefeed-kotlin`) | `git grep -n "Methodensatz dafür"` über `docs/user/benutzerhandbuch.md`, Parent `fd39b68b` und Diff (Block unten, Zeilen 3–4) | Parent: 1 Trefferzeile (Zeile 1510) — „keines von ihnen trägt bislang einen Methodensatz dafür" für beide verbliebenen Packages. Diff: 0 — Absatz durch einen eigenen Kotlin-`**SDK:**`-Absatz ersetzt (der Python-Absatz stand zum Messzeitpunkt bereits uncommittet im Arbeitsbaum). Nichtgefunden: keine weitere Stelle. | Neuer Absatz nach dem Python-Absatz eingefügt, nennt alle elf RPC-Methoden und die versiegelte Fehlerklasse; schließt mit „Drei-Sprachen-SDK-Matrix … vollständig". |
+| „cannot be filtered by table" (Kotlin-README, veraltete Pauschalaussage) | `git grep -n "cannot be filtered by table"` über `sdks/kotlin/pgchangefeed-kotlin/README.md`, Parent `fd39b68b` und Diff (Block unten, Zeile 5–6) | Parent: 1 Trefferzeile („The gRPC and SSE streams cannot be filtered by table…"), jetzt falsch für gRPC. Diff: 0. Nichtgefunden: keine weitere Pauschalaussage dieser Art in der README. | Satz präzisiert: „The gRPC stream can be filtered by schema/table (`streamChanges(schema, table)`); the SSE stream cannot yet; …" — SSE-Teilaussage bleibt korrekt bestehen. |
+
+```suchlauf
+fd39b68b 1 -n "nehmen ihn noch nicht als eigenen Aufrufparameter" -- docs/user/benutzerhandbuch.md
+diff 0 -n "nehmen ihn noch nicht als eigenen Aufrufparameter" -- docs/user/benutzerhandbuch.md
+fd39b68b 1 -n "Methodensatz dafür" -- docs/user/benutzerhandbuch.md
+diff 0 -n "Methodensatz dafür" -- docs/user/benutzerhandbuch.md
+fd39b68b 1 -n "cannot be filtered by table" -- sdks/kotlin/pgchangefeed-kotlin/README.md
+diff 0 -n "cannot be filtered by table" -- sdks/kotlin/pgchangefeed-kotlin/README.md
+```
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <wird bei Closure gefüllt>
-- **Was ging anders als geplant:** <wird bei Closure gefüllt>
-- **Steering-Loop-Eintrag:** <wird bei Closure gefüllt, falls einer entsteht>
-- **Beobachtungs-Register (`../observations/`):** <wird bei Closure gefüllt>
-- **Folge-Slices:** <wird bei Closure gefüllt, falls einer entsteht>
-- **Risiken aus §6:** <wird bei Closure gefüllt — siehe §6>
+- **Was hat funktioniert:** Das direkte fachliche Vorbild
+  (`examples/kotlin/grpc-client`) und das C#-Geschwister-SDK
+  (`PgChangeFeedAdministrationClient`/`PgChangeFeedGrpcException`) trugen die
+  Nachrichtenschema-, Rechtsklassen- und Fehlerform-Entscheidungen bereits
+  vollständig vor — Übertragung auf Kotlin ohne neue Design-Fragen. Der
+  `AdministrationTransport`-Schnitt (ein Interface mit elf suspend-Methoden,
+  gespiegelt von `GrpcStreamTransport`) hielt die elf RPC-Tests netzlos ohne
+  einen echten `Channel`.
+- **Was ging anders als geplant:** `sdks/kotlin/Dockerfile` kopierte im
+  bestehenden Bau-Kontext nur `changestream.proto`, nicht
+  `administration.proto` — der erste `make sdk-pack-kotlin`-Lauf scheiterte
+  am Kotlin-Compiler mit „Unresolved reference 'administration'" über die
+  gesamte neue Datei. Ursache: `ADR-0133`s Vorbild-Slice (C#) hatte diese
+  zweite `COPY --from=proto`-Zeile bereits in `sdks/csharp/Dockerfile`
+  ergänzt (slice-sdk-csharp-grpc-administration-flaeche), die Kotlin-Fläche
+  war zu diesem Zeitpunkt noch nicht nachgezogen — kein Plan-Fehler dieses
+  Slice, sondern eine fehlende Parallel-Übertragung, hier direkt behoben
+  (zweite `COPY`-Zeile analog zu `sdks/csharp/Dockerfile`). Plan §3 wird
+  dafür um `sdks/kotlin/Dockerfile` ergänzt (siehe „Abweichung vom Plan"
+  unten).
+- **Steering-Loop-Eintrag:** keiner — die Dockerfile-Lücke ist eine
+  Bau-Konfigurationslücke, kein wiederkehrendes Agenten-Verhalten.
+- **Beobachtungs-Register (`../observations/`):** kein neuer Eintrag —
+  `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall` bleibt bei 2×
+  (kein neuer Randfall-Fund, siehe §6); die Dockerfile-Lücke ist keine
+  Agenten-Verhaltens-Beobachtung im Sinne des Registers, sondern eine
+  zwischen den drei SDK-Slices der Welle nicht mitgezogene Bau-Datei — die
+  Welle-Closure prüft, ob die übrigen Sprach-Dockerfiles (Python) dieselbe
+  Lücke trugen.
+- **Folge-Slices:** keiner aus diesem Slice heraus — `make
+  test-sdk-kotlin-integration` (Realserver-Beleg der neuen Fläche) bleibt
+  Gegenstand eines eigenen, hier nicht geplanten Folge-Slices, analog zum
+  C#-Geschwister.
+- **Risiken aus §6:** beide aufgelöst — `drei-sprachen-kopie-divergiert-am-
+  randfall` bleibt unter der Schwelle (weiter offen, Register unverändert);
+  der Server-Fehler-Risiko ist entfallen (Fix bereits gepusht und real
+  bestätigt).
 - **Drei Paarungen:** von der Welle-Closure (`welle-sdk-grpc-administration-flaeche`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

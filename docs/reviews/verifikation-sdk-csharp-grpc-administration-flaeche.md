@@ -6,7 +6,7 @@ Plan-vs-Code-Diff + Gates. Review-Artefakt des Reviewers:
 [`review-sdk-csharp-grpc-administration-flaeche.md`](review-sdk-csharp-grpc-administration-flaeche.md).
 
 **Gegenstand:** Slice-Plan
-[`slice-sdk-csharp-grpc-administration-flaeche.md`](../plan/planning/in-progress/slice-sdk-csharp-grpc-administration-flaeche.md)
+[`slice-sdk-csharp-grpc-administration-flaeche.md`](../plan/planning/done/slice-sdk-csharp-grpc-administration-flaeche.md)
 (Welle `welle-sdk-grpc-administration-flaeche`), Basis `046782ae`, sechs Commits:
 
 - `3fc5b0d1` — feat(sdk): C#-Administration-Client mit allen elf RPCs, Stream-Filter (`LH-FA-SST-009`, `ADR-0133`)

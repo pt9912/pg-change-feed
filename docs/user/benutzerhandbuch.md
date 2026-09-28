@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.79
+Version: 1.81
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-28
 
@@ -1308,9 +1308,10 @@ Tabellen. Die Prüfung läuft serverseitig, bevor eine nicht passende Change
 über das Netz geht. Go, C# und Kotlin nehmen den Filter über `-schema`/`-table`
 bzw. `--schema`/`--table` entgegen; das NuGet-Package `PgChangeFeed.Client`
 nimmt ihn jetzt ebenfalls entgegen (`StreamChangesAsync(schema, table,
-cancellationToken)`, beide Parameter optional); `pgchangefeed` und
-`pgchangefeed-kotlin` nehmen ihn noch nicht als eigenen Aufrufparameter
-entgegen — das bleibt ein offener, noch nicht terminierter Folge-Schritt.
+cancellationToken)`, beide Parameter optional), ebenso das PyPI-Package
+`pgchangefeed` (`stream_changes(timeout, schema, table)`, beide Parameter
+optional) und das Gradle-/Maven-Package `pgchangefeed-kotlin`
+(`streamChanges(schema, table)`, beide Parameter optional, Default `null`).
 
 **Zustellsemantik:** Es gibt **keine** Zustellgarantie (Fire-and-Forget,
 verlustbehaftet). Je Abonnent trägt der Server eine begrenzte
@@ -1374,7 +1375,9 @@ Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
 `PgChangeFeedGrpcClient.streamChanges()` öffnet denselben
 `ChangeStream/StreamChanges`-RPC und liefert ein
 `kotlinx.coroutines.flow.Flow<Change>` mit allen zehn Feldern der Tabelle
-oben; das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
+oben; zwei optionale Parameter `schema`/`table` tragen denselben Filter wie
+oben beschrieben (`ADR-0133`), beide `null` (der Default) liefert wie zuvor
+jeden Change. Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
 fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 `Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren. Derselbe
 Package trägt außerdem den SSE-Stream (siehe „Zugriff über
@@ -1397,7 +1400,9 @@ der Tabelle oben; das Bearer-Token landet im `authorization`-Metadata-Eintrag,
 ein fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 `Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren
 (`timeout` ist der Gesamtfriestempel des Aufrufs in Sekunden, `None` =
-unbegrenzt). Siehe `sdks/python/README.md`.
+unbegrenzt); zwei optionale Parameter `schema`/`table` tragen denselben
+Filter wie oben beschrieben (`ADR-0133`), beide `None` (der Default) liefert
+wie zuvor jeden Change. Siehe `sdks/python/README.md`.
 
 ### Zugriff über die gRPC-Verwaltungs-API
 
@@ -1505,10 +1510,31 @@ eigener DTO-Layer. Ein nicht-`OK`-Status wird zu einer typisierten
 oben, statt den Draht-Vertrag selbst zu implementieren; siehe
 `sdks/csharp/README.md`.
 
-Für die beiden übrigen SDK-Packages (`pgchangefeed`, `pgchangefeed-kotlin`)
-bleibt diese Fläche offen — keines von ihnen trägt bislang einen
-Methodensatz dafür. Ihre Aufnahme bleibt ein eigener, noch nicht
-terminierter Folge-Schritt.
+Python-Anwendungen können statt der Beispiele das offizielle PyPI-Package
+`pgchangefeed` einbinden (`LH-FA-SST-009`, `pip install pgchangefeed`) —
+`PgChangeFeedAdministrationClient` trägt alle elf RPCs der Tabelle oben als
+eigene Methode (`register_consumer`, `acknowledge_consumer`,
+`get_consumer_position`, `remove_consumer`, `enable_table`, `disable_table`,
+`get_table_status`, `list_tables`, `run_retention`, `read_changes`,
+`diagnose`); Requests und Responses sind die generierten Protobuf-Nachrichten
+unverändert, kein eigener DTO-Layer. Ein nicht-`OK`-Status wird zu einer
+typisierten `PgChangeFeedGrpcError`-Unterklasse je gRPC-Code der
+Fehlerform-Tabelle oben, statt den Draht-Vertrag selbst zu implementieren;
+siehe `sdks/python/README.md`.
+
+Kotlin/JVM-Anwendungen können statt der Beispiele dasselbe offizielle
+Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
+Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
+`PgChangeFeedAdministrationClient` trägt alle elf RPCs der Tabelle oben als
+eigene `suspend fun`-Methode (`registerConsumer`, `acknowledgeConsumer`,
+`getConsumerPosition`, `removeConsumer`, `enableTable`, `disableTable`,
+`getTableStatus`, `listTables`, `runRetention`, `readChanges`, `diagnose`);
+Requests und Responses sind die generierten Protobuf-Nachrichten unverändert,
+kein eigener DTO-Layer. Ein nicht-`OK`-Status wird zu einer versiegelten
+(`sealed class`) `PgChangeFeedGrpcException`-Unterklasse je gRPC-Code der
+Fehlerform-Tabelle oben, statt den Draht-Vertrag selbst zu implementieren;
+siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`. Mit dieser Zeile ist die
+Drei-Sprachen-SDK-Matrix für die gRPC-Verwaltungs-API vollständig.
 
 ### Zugriff über Server-Sent-Events
 
@@ -2233,3 +2259,5 @@ MIT — siehe `LICENSE`.
 | 1.77 | 2026-09-28 | Kotlin-Beispiel `examples/kotlin/grpc-client` von der Ein-Fähigkeit-Form (nur `StreamChanges`) auf die volle gRPC-Fläche erweitert (`LH-FA-SST-006`, `LH-FA-SST-008`), analog zum Go-/C#-Beispiel: ein `--verb`-Flag (Default `stream` — die ursprüngliche Aufrufform bleibt unverändert funktionsfähig) deckt zusätzlich alle elf RPCs des `Administration`-Diensts ab; das Default-Verb `stream` nimmt den optionalen `--schema`/`--table`-Filter entgegen (`ADR-0133`). „Zugriff über den gRPC-Change-Stream“ nennt den Filter-Flag des Kotlin-Beispiels und dessen neuen `--verb`-Umfang; „Zugriff über die gRPC-Verwaltungs-API“ nennt das Kotlin-Beispiel jetzt gleichrangig neben Go/C# im `**Beispiele:**`-Absatz — mit dieser Zeile ist die volle Drei-Sprachen-Matrix für die gRPC-Verwaltungs-API vollständig; die drei SDK-Packages bleiben unverändert offener Folge-Schritt |
 | 1.78 | 2026-09-28 | `EnableTable`/`DisableTable` über den direkten HTTP-/gRPC-Zugriffsweg (`LH-FA-CFG-001`, `LH-FA-CFG-002`) aktualisieren jetzt den laufenden Erfassungsprozess unmittelbar mit der Antwort, ohne Neustart — „Zugriff über die HTTP-/JSON-API“ und „Zugriff über die gRPC-Verwaltungs-API“ tragen je einen neuen Hinweisabsatz, der diese Zusage neben den SQL-Antragsweg stellt (siehe „Tabelle live aktivieren“) |
 | 1.79 | 2026-09-28 | C#-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-csharp-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene async-Methode, `PgChangeFeedGrpcClient.StreamChangesAsync` nimmt den optionalen `schema`/`table`-Filter jetzt als Parameter entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `PgChangeFeed.Client` jetzt namentlich statt als offenen Folge-Schritt; `pgchangefeed`/`pgchangefeed-kotlin` bleiben unverändert offen |
+| 1.80 | 2026-09-28 | Python-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-python-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene Methode, `PgChangeFeedGrpcClient.stream_changes()` nimmt die optionalen `schema`/`table`-Parameter jetzt entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `pgchangefeed` jetzt namentlich statt als offenen Folge-Schritt; `pgchangefeed-kotlin` bleibt unverändert offen |
+| 1.81 | 2026-09-28 | Kotlin-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-kotlin-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene `suspend fun`-Methode, `PgChangeFeedGrpcClient.streamChanges()` nimmt die optionalen `schema`/`table`-Parameter jetzt entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `pgchangefeed-kotlin` jetzt namentlich statt als offenen Folge-Schritt — mit dieser Zeile ist die Drei-Sprachen-SDK-Matrix für die gRPC-Verwaltungs-API vollständig |
