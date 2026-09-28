@@ -2008,6 +2008,8 @@ echo "run-integration-tests: NATS-Negative-Beleg (LH-FA-SST-007, Reconnect-Nachh
 
 abdeckung_declare "HTTP-API-Rundlauf" "LH-FA-SST-005,LH-FA-SST-006,LH-FA-REA-001" "ein Wegwerf-Client ruft RegisterConsumer mit dem admin-Token und ListTables mit dem reader-Token real per HTTP gegen den laufenden Feed-Container auf und liest zusätzlich Changes über \`GET /changes\` mit dem reader-Token; die Registrierung wird gegen cdc.consumer bestätigt, der gelesene Change gegen cdc.changes — die spätere API, deren Ermöglichung \`LH-FA-SST-005\` forderte, ohne das interne CDC-Modell zu verändern; der Lesezugriff trägt einen echten Bereich \`[from, to)\` zweier Positionen (\`LH-FA-REA-001\`)" "GET /changes real per HTTP mit reader-Token (die eigens eingefügte Zeile"
 
+abdeckung_declare "HTTP-Diagnose-Querabgleich" "LH-FA-SST-006,LH-FA-SST-003,LH-FA-ADM-002,LH-FA-ADM-003" "GET /diagnose liefert denselben Betriebsstatus (Lebenszeichen bekannt, Fehlerzustand) wie eine kontemporäre docker exec diagnose-Ausgabe — ein echter Wertabgleich zwischen zwei Zugriffswegen, nicht nur die Feld-Präsenz der Antwort" "HTTP-Diagnose-Querabgleich (ADR-0132) belegt"
+
 # HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057, ADR-0081): ein Wegwerf-Client
 # (tools/harness/httpclient) ruft RegisterConsumer mit dem admin-Token,
 # ListTables mit dem reader-Token und `GET /changes` mit dem reader-Token
@@ -2052,6 +2054,19 @@ if [ -z "$http_read_position" ]; then
   exit 1
 fi
 http_read_to=$((http_read_position + 1))
+
+# Kontemporäre CLI-Diagnose-Baseline (docker exec, unmittelbar vor dem
+# HTTP-Aufruf) — der Querabgleich unten hält den über GET /diagnose
+# gelesenen Betriebsstatus gegen diese Ausgabe, nicht nur gegen die
+# Feld-Präsenz der Antwort (ADR-0132).
+set +e
+http_diagnose_cli_output=$(exec_feed diagnose)
+http_diagnose_cli_status=$?
+set -e
+if [ "$http_diagnose_cli_status" -ne 0 ]; then
+  echo "run-integration-tests: HTTP-Diagnose-Querabgleich — CLI-Diagnose-Baseline (docker exec diagnose) endete mit Ausgang $http_diagnose_cli_status: $http_diagnose_cli_output" >&2
+  exit 1
+fi
 
 # `set +e` um den Client-Aufruf: der Ausgang des Clients wird von der
 # `http_status`-Prüfung ausgewertet und über die folgende Fehlerzeile
@@ -2098,6 +2113,44 @@ if ! printf '%s' "$http_output" | grep -qE 'DIAGNOSED body=.*"heartbeat_age_seco
   exit 1
 fi
 
+# Querabgleich (ADR-0132): dieselbe Quelle über zwei unabhängige
+# Zugriffswege — der CLI-Sondermodus (Baseline oben) und GET /diagnose —
+# tragen an diesem Zeitpunkt denselben Betriebsstatus. Verglichen werden
+# zwei robuste, boolesche Ableitungen statt roher Zeitstempel/Sekundenwerte
+# (die zwischen zwei sequenziellen Aufrufen nie exakt gleich wären): ob ein
+# Lebenszeichen bekannt ist, und ob ein Fehlerzustand vorliegt.
+if printf '%s' "$http_diagnose_cli_output" | grep -qF "Betriebsstatus (LH-FA-ADM-002): Lebenszeichen vor"; then
+  http_diagnose_cli_known=1
+else
+  http_diagnose_cli_known=0
+fi
+if printf '%s' "$http_output" | grep -qE 'DIAGNOSED body=.*"heartbeat_age_seconds":null'; then
+  http_diagnose_http_known=0
+else
+  http_diagnose_http_known=1
+fi
+if [ "$http_diagnose_cli_known" != "$http_diagnose_http_known" ]; then
+  echo "run-integration-tests: HTTP-Diagnose-Querabgleich — Betriebsstatus (Lebenszeichen bekannt) widersprüchlich zwischen CLI (known=$http_diagnose_cli_known) und GET /diagnose (known=$http_diagnose_http_known): CLI=$http_diagnose_cli_output HTTP=$http_output" >&2
+  exit 1
+fi
+
+if printf '%s' "$http_diagnose_cli_output" | grep -qF "Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)"; then
+  http_diagnose_cli_no_error=1
+else
+  http_diagnose_cli_no_error=0
+fi
+if printf '%s' "$http_output" | grep -qE 'DIAGNOSED body=.*"error_class":null'; then
+  http_diagnose_http_no_error=1
+else
+  http_diagnose_http_no_error=0
+fi
+if [ "$http_diagnose_cli_no_error" != "$http_diagnose_http_no_error" ]; then
+  echo "run-integration-tests: HTTP-Diagnose-Querabgleich — Fehlerzustand widersprüchlich zwischen CLI (kein Fehler=$http_diagnose_cli_no_error) und GET /diagnose (kein Fehler=$http_diagnose_http_no_error): CLI=$http_diagnose_cli_output HTTP=$http_output" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: HTTP-Diagnose-Querabgleich (ADR-0132) belegt — GET /diagnose (reader-Token) und eine kontemporäre docker exec diagnose-Ausgabe tragen denselben Betriebsstatus: Lebenszeichen bekannt=$http_diagnose_http_known, kein Fehlerzustand=$http_diagnose_http_no_error"
+
 registered_via_http=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   "SELECT consumer_id FROM cdc.consumer WHERE consumer_id = '$HTTP_CONSUMER'")
 if [ "$registered_via_http" != "$HTTP_CONSUMER" ]; then
@@ -2127,7 +2180,7 @@ if [ "$feed_running" != "true" ]; then
   exit 1
 fi
 
-echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057/ADR-0081, erweitert ADR-0132) belegt — RegisterConsumer real per HTTP mit admin-Token ($HTTP_CONSUMER, cdc.consumer bestätigt), ListTables real per HTTP mit reader-Token (feed_e2e_full in der Antwort), GET /changes real per HTTP mit reader-Token (die eigens eingefügte Zeile id=$HTTP_READ_ID/$HTTP_READ_SENTINEL, Bereich [$http_read_position,$http_read_to), change_id=$http_read_change_id gegen cdc.changes gehalten), GET /diagnose real per HTTP mit reader-Token (Betriebsstatus über denselben Betriebsstatus wie der bestehende docker exec … diagnose-Rundlauf): $http_output"
+echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057/ADR-0081) belegt — RegisterConsumer real per HTTP mit admin-Token ($HTTP_CONSUMER, cdc.consumer bestätigt), ListTables real per HTTP mit reader-Token (feed_e2e_full in der Antwort), GET /changes real per HTTP mit reader-Token (die eigens eingefügte Zeile id=$HTTP_READ_ID/$HTTP_READ_SENTINEL, Bereich [$http_read_position,$http_read_to), change_id=$http_read_change_id gegen cdc.changes gehalten), GET /diagnose real per HTTP mit reader-Token (HTTP-Diagnose-Querabgleich siehe oben): $http_output"
 
 abdeckung_declare "HTTP-API-Consumer-Entfernung" "LH-FA-CON-006" "derselbe Wegwerf-Client bestätigt real per HTTP eine Position für den zuvor registrierten Consumer (macht ihn zum Retention-Blocker der Quelle, real gegen cdc.retention_blockers geprüft) und entfernt ihn danach über POST /consumers/remove mit dem admin-Token; cdc.consumer und cdc.consumer_position tragen ihn danach beide nicht mehr" "HTTP-API-Consumer-Entfernung (LH-FA-CON-006, ADR-0057) belegt"
 
@@ -2434,6 +2487,8 @@ echo "run-integration-tests: gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) bele
 
 abdeckung_declare "gRPC-Administration-Rundlauf" "LH-FA-CON-001,LH-FA-CFG-004,LH-FA-REA-001" "ein Wegwerf-Client ruft real über gRPC mindestens eine Administration-RPC je Token-Klasse auf (ListTables und ReadChanges mit dem reader-Token, RegisterConsumer mit dem admin-Token); ein Aufruf ohne Token endet mit gRPC-Status Unauthenticated, ein reader-Token gegen die admin-RPC RegisterConsumer mit PermissionDenied" "gRPC-Administration-Rundlauf (ADR-0131) belegt"
 
+abdeckung_declare "gRPC-Diagnose-Querabgleich" "LH-FA-SST-006,LH-FA-SST-003,LH-FA-ADM-002,LH-FA-ADM-003" "der gRPC-Diagnose-RPC liefert denselben Betriebsstatus (Lebenszeichen bekannt, Fehlerzustand) wie eine kontemporäre docker exec diagnose-Ausgabe — ein echter Wertabgleich zwischen zwei Zugriffswegen, nicht nur die Feld-Präsenz der Antwort" "gRPC-Diagnose-Querabgleich (ADR-0132) belegt"
+
 # gRPC-Administration-Rundlauf (ADR-0131): ein Wegwerf-Client
 # (tools/harness/grpcadminclient, per `go run` im Toolchain-Container)
 # verbindet sich real über gRPC mit dem laufenden Feed-Container und ruft
@@ -2479,6 +2534,19 @@ if [ -z "$grpc_admin_read_position" ]; then
 fi
 grpc_admin_read_to=$((grpc_admin_read_position + 1))
 
+# Kontemporäre CLI-Diagnose-Baseline (docker exec, unmittelbar vor dem
+# gRPC-Aufruf) — der Querabgleich unten hält den über gRPC gelesenen
+# Betriebsstatus gegen diese Ausgabe, nicht nur gegen die Feld-Präsenz der
+# Antwort (ADR-0132).
+set +e
+grpc_admin_diagnose_cli_output=$(exec_feed diagnose)
+grpc_admin_diagnose_cli_status=$?
+set -e
+if [ "$grpc_admin_diagnose_cli_status" -ne 0 ]; then
+  echo "run-integration-tests: gRPC-Diagnose-Querabgleich — CLI-Diagnose-Baseline (docker exec diagnose) endete mit Ausgang $grpc_admin_diagnose_cli_status: $grpc_admin_diagnose_cli_output" >&2
+  exit 1
+fi
+
 # `set +e` um den Client-Aufruf: der Ausgang wird von der folgenden Prüfung
 # ausgewertet und über eine sichtbare Fehlerzeile gemeldet; unter `set -e`
 # beendet ein fehlgeschlagenes `docker run` schon die Zuweisung selbst und
@@ -2517,6 +2585,50 @@ if ! printf '%s' "$grpc_admin_output" | grep -qE '^DIAGNOSED heartbeat_known='; 
   echo "run-integration-tests: gRPC-Administration-Rundlauf — keine DIAGNOSED-Zeile (Diagnose mit reader-Token): $grpc_admin_output" >&2
   exit 1
 fi
+
+# Querabgleich (ADR-0132): dieselbe Quelle über zwei unabhängige
+# Zugriffswege — der CLI-Sondermodus (Baseline oben) und der gRPC-RPC —
+# tragen an diesem Zeitpunkt denselben Betriebsstatus. Verglichen werden
+# zwei robuste, boolesche Ableitungen statt roher Zeitstempel/Sekundenwerte
+# (die zwischen zwei sequenziellen Aufrufen nie exakt gleich wären): ob ein
+# Lebenszeichen bekannt ist, und ob ein Fehlerzustand vorliegt.
+if printf '%s' "$grpc_admin_diagnose_cli_output" | grep -qF "Betriebsstatus (LH-FA-ADM-002): Lebenszeichen vor"; then
+  grpc_admin_diagnose_cli_known=1
+else
+  grpc_admin_diagnose_cli_known=0
+fi
+grpc_admin_diagnose_known_line=$(printf '%s' "$grpc_admin_output" | grep -oE '^DIAGNOSED heartbeat_known=[a-z]+' | head -n1)
+case "$grpc_admin_diagnose_known_line" in
+  *heartbeat_known=true) grpc_admin_diagnose_grpc_known=1 ;;
+  *heartbeat_known=false) grpc_admin_diagnose_grpc_known=0 ;;
+  *)
+    echo "run-integration-tests: gRPC-Diagnose-Querabgleich — DIAGNOSED-Zeile trägt kein auswertbares heartbeat_known: $grpc_admin_output" >&2
+    exit 1
+    ;;
+esac
+if [ "$grpc_admin_diagnose_cli_known" != "$grpc_admin_diagnose_grpc_known" ]; then
+  echo "run-integration-tests: gRPC-Diagnose-Querabgleich — Betriebsstatus (Lebenszeichen bekannt) widersprüchlich zwischen CLI (known=$grpc_admin_diagnose_cli_known) und gRPC (known=$grpc_admin_diagnose_grpc_known): CLI=$grpc_admin_diagnose_cli_output GRPC=$grpc_admin_output" >&2
+  exit 1
+fi
+
+if printf '%s' "$grpc_admin_diagnose_cli_output" | grep -qF "Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)"; then
+  grpc_admin_diagnose_cli_no_error=1
+else
+  grpc_admin_diagnose_cli_no_error=0
+fi
+grpc_admin_diagnose_error_class=$(printf '%s' "$grpc_admin_output" | grep -oE 'heartbeat_error_class=[^ ]*' | head -n1 | cut -d= -f2)
+if [ -z "$grpc_admin_diagnose_error_class" ]; then
+  grpc_admin_diagnose_grpc_no_error=1
+else
+  grpc_admin_diagnose_grpc_no_error=0
+fi
+if [ "$grpc_admin_diagnose_cli_no_error" != "$grpc_admin_diagnose_grpc_no_error" ]; then
+  echo "run-integration-tests: gRPC-Diagnose-Querabgleich — Fehlerzustand widersprüchlich zwischen CLI (kein Fehler=$grpc_admin_diagnose_cli_no_error) und gRPC (kein Fehler=$grpc_admin_diagnose_grpc_no_error): CLI=$grpc_admin_diagnose_cli_output GRPC=$grpc_admin_output" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: gRPC-Diagnose-Querabgleich (ADR-0132) belegt — der gRPC-Diagnose-RPC (reader-Token) und eine kontemporäre docker exec diagnose-Ausgabe tragen denselben Betriebsstatus: Lebenszeichen bekannt=$grpc_admin_diagnose_grpc_known, kein Fehlerzustand=$grpc_admin_diagnose_grpc_no_error"
+
 if ! printf '%s' "$grpc_admin_output" | grep -qF "REJECTED code=Unauthenticated"; then
   echo "run-integration-tests: gRPC-Administration-Rundlauf — Aufruf ohne Token wurde nicht mit Unauthenticated abgelehnt: $grpc_admin_output" >&2
   exit 1
@@ -2558,7 +2670,7 @@ if [ "$feed_running" != "true" ]; then
   exit 1
 fi
 
-echo "run-integration-tests: gRPC-Administration-Rundlauf (ADR-0131, erweitert ADR-0132) belegt — ein Wegwerf-Client (tools/harness/grpcadminclient) rief real über gRPC ListTables (reader-Token), ReadChanges (reader-Token, Bereich [$grpc_admin_read_position,$grpc_admin_read_to), change_id=$grpc_admin_read_change_id gegen cdc.changes gehalten), Diagnose (reader-Token, derselbe Betriebsstatus wie der bestehende docker exec … diagnose-Rundlauf) und RegisterConsumer (admin-Token) gegen den laufenden Feed-Container ($GRPC_ADDR) auf, der registrierte Consumer ($GRPC_ADMIN_CONSUMER_ID) ist unabhängig über cdc.consumer lesbar; ein Aufruf ohne Token wurde mit Unauthenticated, ein reader-Token gegen RegisterConsumer mit PermissionDenied abgelehnt: $grpc_admin_output"
+echo "run-integration-tests: gRPC-Administration-Rundlauf (ADR-0131) belegt — ein Wegwerf-Client (tools/harness/grpcadminclient) rief real über gRPC ListTables (reader-Token), ReadChanges (reader-Token, Bereich [$grpc_admin_read_position,$grpc_admin_read_to), change_id=$grpc_admin_read_change_id gegen cdc.changes gehalten), Diagnose (reader-Token, gRPC-Diagnose-Querabgleich siehe oben) und RegisterConsumer (admin-Token) gegen den laufenden Feed-Container ($GRPC_ADDR) auf, der registrierte Consumer ($GRPC_ADMIN_CONSUMER_ID) ist unabhängig über cdc.consumer lesbar; ein Aufruf ohne Token wurde mit Unauthenticated, ein reader-Token gegen RegisterConsumer mit PermissionDenied abgelehnt: $grpc_admin_output"
 
 abdeckung_declare "SSE-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real per HTTP den Endpunkt \`GET /changes/stream\` gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401" "SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt"
 

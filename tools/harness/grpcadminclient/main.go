@@ -181,9 +181,11 @@ func readChanges(client administrationv1.AdministrationClient, readerToken, sour
 }
 
 // diagnose ruft die reader-RPC `Diagnose` auf und meldet auf stdout
-// ("DIAGNOSED"), ob ein Lebenszeichen bekannt ist und den gelesenen
-// CDC-Abstand — genug, um den Aufruf gegen den bestehenden
-// `docker exec … diagnose`-Rundlauf querabzugleichen (ADR-0132).
+// ("DIAGNOSED") den bekannten Betriebsstatus — ob ein Lebenszeichen bekannt
+// ist, dessen Fehlerzustand (leer = Normalbetrieb) und den gelesenen
+// CDC-Abstand. Der Aufrufer hält `heartbeat_known`/`heartbeat_error_class`
+// gegen eine kontemporäre `docker exec … diagnose`-Ausgabe (Querabgleich,
+// nicht bloße Feld-Präsenz).
 func diagnose(client administrationv1.AdministrationClient, readerToken, source string) error {
 	ctx, cancel := callCtx(readerToken)
 	defer cancel()
@@ -191,8 +193,8 @@ func diagnose(client administrationv1.AdministrationClient, readerToken, source 
 	if err != nil {
 		return fmt.Errorf("Diagnose (reader) fehlgeschlagen: %w", err)
 	}
-	fmt.Printf("DIAGNOSED heartbeat_known=%v capture_lag=%f consumer_lags=%d backfill=%d\n",
-		resp.GetHeartbeat().GetKnown(), resp.GetCaptureLag(), len(resp.GetConsumerLags()), len(resp.GetBackfill()))
+	fmt.Printf("DIAGNOSED heartbeat_known=%v heartbeat_error_class=%s capture_lag=%f consumer_lags=%d backfill=%d\n",
+		resp.GetHeartbeat().GetKnown(), resp.GetHeartbeat().GetErrorClass(), resp.GetCaptureLag(), len(resp.GetConsumerLags()), len(resp.GetBackfill()))
 	return nil
 }
 
