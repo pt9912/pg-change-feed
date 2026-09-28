@@ -2089,6 +2089,14 @@ if ! printf '%s' "$http_output" | grep -qF "$HTTP_READ_SENTINEL"; then
   echo "run-integration-tests: HTTP-API-Rundlauf — die READ-Zeile trägt die eigens eingefügte Zeile (id=$HTTP_READ_ID, $HTTP_READ_SENTINEL) nicht: $http_output" >&2
   exit 1
 fi
+if ! printf '%s' "$http_output" | grep -qF "DIAGNOSED body="; then
+  echo "run-integration-tests: HTTP-API-Rundlauf — keine DIAGNOSED-Zeile (reader-Token, GET /diagnose): $http_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$http_output" | grep -qE 'DIAGNOSED body=.*"heartbeat_age_seconds"'; then
+  echo "run-integration-tests: HTTP-API-Rundlauf — die DIAGNOSED-Zeile trägt kein heartbeat_age_seconds-Feld: $http_output" >&2
+  exit 1
+fi
 
 registered_via_http=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   "SELECT consumer_id FROM cdc.consumer WHERE consumer_id = '$HTTP_CONSUMER'")
@@ -2119,7 +2127,7 @@ if [ "$feed_running" != "true" ]; then
   exit 1
 fi
 
-echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057/ADR-0081) belegt — RegisterConsumer real per HTTP mit admin-Token ($HTTP_CONSUMER, cdc.consumer bestätigt), ListTables real per HTTP mit reader-Token (feed_e2e_full in der Antwort), GET /changes real per HTTP mit reader-Token (die eigens eingefügte Zeile id=$HTTP_READ_ID/$HTTP_READ_SENTINEL, Bereich [$http_read_position,$http_read_to), change_id=$http_read_change_id gegen cdc.changes gehalten): $http_output"
+echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057/ADR-0081, erweitert ADR-0132) belegt — RegisterConsumer real per HTTP mit admin-Token ($HTTP_CONSUMER, cdc.consumer bestätigt), ListTables real per HTTP mit reader-Token (feed_e2e_full in der Antwort), GET /changes real per HTTP mit reader-Token (die eigens eingefügte Zeile id=$HTTP_READ_ID/$HTTP_READ_SENTINEL, Bereich [$http_read_position,$http_read_to), change_id=$http_read_change_id gegen cdc.changes gehalten), GET /diagnose real per HTTP mit reader-Token (Betriebsstatus über denselben Betriebsstatus wie der bestehende docker exec … diagnose-Rundlauf): $http_output"
 
 abdeckung_declare "HTTP-API-Consumer-Entfernung" "LH-FA-CON-006" "derselbe Wegwerf-Client bestätigt real per HTTP eine Position für den zuvor registrierten Consumer (macht ihn zum Retention-Blocker der Quelle, real gegen cdc.retention_blockers geprüft) und entfernt ihn danach über POST /consumers/remove mit dem admin-Token; cdc.consumer und cdc.consumer_position tragen ihn danach beide nicht mehr" "HTTP-API-Consumer-Entfernung (LH-FA-CON-006, ADR-0057) belegt"
 
@@ -2505,6 +2513,10 @@ if ! printf '%s' "$grpc_admin_output" | grep -qF "$GRPC_ADMIN_READ_SENTINEL"; th
   echo "run-integration-tests: gRPC-Administration-Rundlauf — die READ-Zeile trägt die eigens eingefügte Zeile (id=$GRPC_ADMIN_READ_ID, $GRPC_ADMIN_READ_SENTINEL) nicht: $grpc_admin_output" >&2
   exit 1
 fi
+if ! printf '%s' "$grpc_admin_output" | grep -qE '^DIAGNOSED heartbeat_known='; then
+  echo "run-integration-tests: gRPC-Administration-Rundlauf — keine DIAGNOSED-Zeile (Diagnose mit reader-Token): $grpc_admin_output" >&2
+  exit 1
+fi
 if ! printf '%s' "$grpc_admin_output" | grep -qF "REJECTED code=Unauthenticated"; then
   echo "run-integration-tests: gRPC-Administration-Rundlauf — Aufruf ohne Token wurde nicht mit Unauthenticated abgelehnt: $grpc_admin_output" >&2
   exit 1
@@ -2546,7 +2558,7 @@ if [ "$feed_running" != "true" ]; then
   exit 1
 fi
 
-echo "run-integration-tests: gRPC-Administration-Rundlauf (ADR-0131) belegt — ein Wegwerf-Client (tools/harness/grpcadminclient) rief real über gRPC ListTables (reader-Token), ReadChanges (reader-Token, Bereich [$grpc_admin_read_position,$grpc_admin_read_to), change_id=$grpc_admin_read_change_id gegen cdc.changes gehalten) und RegisterConsumer (admin-Token) gegen den laufenden Feed-Container ($GRPC_ADDR) auf, der registrierte Consumer ($GRPC_ADMIN_CONSUMER_ID) ist unabhängig über cdc.consumer lesbar; ein Aufruf ohne Token wurde mit Unauthenticated, ein reader-Token gegen RegisterConsumer mit PermissionDenied abgelehnt: $grpc_admin_output"
+echo "run-integration-tests: gRPC-Administration-Rundlauf (ADR-0131, erweitert ADR-0132) belegt — ein Wegwerf-Client (tools/harness/grpcadminclient) rief real über gRPC ListTables (reader-Token), ReadChanges (reader-Token, Bereich [$grpc_admin_read_position,$grpc_admin_read_to), change_id=$grpc_admin_read_change_id gegen cdc.changes gehalten), Diagnose (reader-Token, derselbe Betriebsstatus wie der bestehende docker exec … diagnose-Rundlauf) und RegisterConsumer (admin-Token) gegen den laufenden Feed-Container ($GRPC_ADDR) auf, der registrierte Consumer ($GRPC_ADMIN_CONSUMER_ID) ist unabhängig über cdc.consumer lesbar; ein Aufruf ohne Token wurde mit Unauthenticated, ein reader-Token gegen RegisterConsumer mit PermissionDenied abgelehnt: $grpc_admin_output"
 
 abdeckung_declare "SSE-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real per HTTP den Endpunkt \`GET /changes/stream\` gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401" "SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt"
 

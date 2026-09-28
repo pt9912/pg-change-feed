@@ -1,24 +1,24 @@
 // Command httpclient ist ein Wegwerf-Testclient für die HTTP-API-E2E-Belege
-// (LH-FA-SST-006, ADR-0057, ADR-0081): er ruft einen administrativen Endpunkt
-// (RegisterConsumer) mit einem Admin-Token und zwei lesende Endpunkte
-// (ListTables und `GET /changes`) mit einem Reader-Token real per HTTP auf.
+// (LH-FA-SST-006): er ruft einen administrativen Endpunkt (RegisterConsumer)
+// mit einem Admin-Token und drei lesende Endpunkte (ListTables, `GET
+// /changes` und `GET /diagnose`) mit einem Reader-Token real per HTTP auf.
 // Der Changes-Aufruf wertet die Antwort inhaltlich aus — Form, Filter-Treue,
 // Operationswerte und Reihenfolge —, nicht nur ihren Status; jedes Ergebnis
 // meldet er über eine benannte Zeile auf stdout. Träger ist
 // tools/harness/run-integration-tests.sh — der Aufrufer liest die
 // stdout-Zeilen dieses Prozesses.
 //
-// Zwei weitere Modi (erstes Argument `acknowledge` bzw. `remove`) tragen
-// die administrative Consumer-Entfernung (LH-FA-CON-006) als zwei
-// getrennte Aufrufe — der Aufrufer prüft den DB-Zustand real dazwischen
-// (Retention-Blocker vor, Abwesenheit nach der Entfernung), was innerhalb
-// eines einzigen Prozesslaufs nicht beobachtbar wäre.
+// Zwei weitere Modi (erstes Argument `acknowledge` bzw. `remove`) tragen die
+// administrative Consumer-Entfernung als zwei getrennte Aufrufe — der
+// Aufrufer prüft den DB-Zustand real dazwischen (Retention-Blocker vor,
+// Abwesenheit nach der Entfernung), was innerhalb eines einzigen
+// Prozesslaufs nicht beobachtbar wäre.
 //
-// Zwei lesende Modi tragen den Backfill-Beleg (LH-FA-CAP-009): `changes`
-// liest `GET /changes` mit dem reader-Token und gibt je Change eine
-// READ-Zeile mit Kennung, Operation, Commit-Position, Row Image und
-// `origin` aus; `position` liest `GET /consumers/position` und gibt den
-// Antwort-Body als POSITION-Zeile aus.
+// Zwei lesende Modi tragen den Backfill-Beleg: `changes` liest `GET
+// /changes` mit dem reader-Token und gibt je Change eine READ-Zeile mit
+// Kennung, Operation, Commit-Position, Row Image und `origin` aus;
+// `position` liest `GET /consumers/position` und gibt den Antwort-Body als
+// POSITION-Zeile aus.
 package main
 
 import (
@@ -107,6 +107,13 @@ func main() {
 		fmt.Fprintf(os.Stderr, "httpclient: GET /changes (reader) fehlgeschlagen: %v\n", err)
 		os.Exit(1)
 	}
+
+	diagnoseBody, err := call(client, http.MethodGet, baseURL+"/diagnose?source="+url.QueryEscape(source), readerToken, nil, http.StatusOK)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "httpclient: GET /diagnose (reader) fehlgeschlagen: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("DIAGNOSED body=%s\n", diagnoseBody)
 }
 
 // readChanges ruft `GET /changes` mit der `reader`-Klasse auf und prüft die

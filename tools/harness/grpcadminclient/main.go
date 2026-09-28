@@ -1,14 +1,13 @@
 // Command grpcadminclient ist ein Wegwerf-Testclient für den
-// gRPC-Administration-E2E-Beleg (ADR-0131): er ruft real gegen den
-// laufenden Feed-Container mindestens eine RPC je Token-Klasse auf
-// (ListTables und ReadChanges mit dem reader-Token, RegisterConsumer mit
-// dem admin-Token), meldet jedes Ergebnis auf stdout und belegt
-// abschließend die beiden Negative-Pfade — ein Aufruf ohne Token endet mit
-// gRPC-Status `Unauthenticated`, ein reader-Token gegen die admin-RPC
-// RegisterConsumer mit `PermissionDenied`. Träger ist
-// tools/harness/run-integration-tests.sh — der Aufrufer liest die
-// stdout-Zeilen dieses Prozesses über `docker logs`, analog zu
-// tools/harness/grpcclient.
+// gRPC-Administration-E2E-Beleg (ADR-0132): er ruft real gegen den laufenden
+// Feed-Container mindestens eine RPC je Token-Klasse auf (ListTables,
+// ReadChanges und Diagnose mit dem reader-Token, RegisterConsumer mit dem
+// admin-Token), meldet jedes Ergebnis auf stdout und belegt abschließend die
+// beiden Negative-Pfade — ein Aufruf ohne Token endet mit gRPC-Status
+// `Unauthenticated`, ein reader-Token gegen die admin-RPC RegisterConsumer
+// mit `PermissionDenied`. Träger ist tools/harness/run-integration-tests.sh
+// — der Aufrufer liest die stdout-Zeilen dieses Prozesses über
+// `docker logs`, analog zu tools/harness/grpcclient.
 package main
 
 import (
@@ -60,6 +59,10 @@ func main() {
 		os.Exit(1)
 	}
 	if err := readChanges(client, readerToken, source, readSchema, readTable, readFrom, readTo, readLimit); err != nil {
+		fmt.Fprintf(os.Stderr, "grpcadminclient: %v\n", err)
+		os.Exit(1)
+	}
+	if err := diagnose(client, readerToken, source); err != nil {
 		fmt.Fprintf(os.Stderr, "grpcadminclient: %v\n", err)
 		os.Exit(1)
 	}
@@ -174,6 +177,22 @@ func readChanges(client administrationv1.AdministrationClient, readerToken, sour
 		fmt.Printf("READ changes=%d table=%s schema=%s change_id=%s operation=%s commit_position=%d new_image=%s origin=%s\n",
 			len(changes), change.GetTable(), change.GetSchema(), change.GetChangeId(), change.GetOperation(), change.GetCommitPosition(), string(change.GetNewImage()), change.GetOrigin())
 	}
+	return nil
+}
+
+// diagnose ruft die reader-RPC `Diagnose` auf und meldet auf stdout
+// ("DIAGNOSED"), ob ein Lebenszeichen bekannt ist und den gelesenen
+// CDC-Abstand — genug, um den Aufruf gegen den bestehenden
+// `docker exec … diagnose`-Rundlauf querabzugleichen (ADR-0132).
+func diagnose(client administrationv1.AdministrationClient, readerToken, source string) error {
+	ctx, cancel := callCtx(readerToken)
+	defer cancel()
+	resp, err := client.Diagnose(ctx, &administrationv1.DiagnoseRequest{Source: source})
+	if err != nil {
+		return fmt.Errorf("Diagnose (reader) fehlgeschlagen: %w", err)
+	}
+	fmt.Printf("DIAGNOSED heartbeat_known=%v capture_lag=%f consumer_lags=%d backfill=%d\n",
+		resp.GetHeartbeat().GetKnown(), resp.GetCaptureLag(), len(resp.GetConsumerLags()), len(resp.GetBackfill()))
 	return nil
 }
 
