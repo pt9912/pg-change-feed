@@ -72,8 +72,8 @@ fachliches Vorbild für Nachrichtenschema, Rechtsklassen, Fehlerform).
       den gRPC-Change-Stream", „Zugriff über die gRPC-Verwaltungs-API")
       nennen C# jetzt mit der vollen Fläche statt „SDK folgt"; Versions­historie
       nachgezogen. `sdks/csharp/README.md` nachgezogen.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder eine weitere `evidence/`-Datei; keine Beobachtung
       angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
@@ -183,12 +183,30 @@ laufen grün gegen die generierten Typen.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <wird bei Closure gefüllt>
-- **Was ging anders als geplant:** <wird bei Closure gefüllt>
-- **Steering-Loop-Eintrag:** <wird bei Closure gefüllt, falls einer entsteht>
-- **Beobachtungs-Register (`../observations/`):** <wird bei Closure gefüllt>
-- **Folge-Slices:** <wird bei Closure gefüllt, falls einer entsteht>
-- **Risiken aus §6:** <wird bei Closure gefüllt — siehe §6>
+- **Was hat funktioniert:** Das direkte fachliche Vorbild (`examples/csharp/grpc-client`,
+  bereits vollständig implementiert/gereviewt/verifiziert) übertrug sich
+  ohne Reibung auf die SDK-Fläche — Rechtsklassen, Nachrichtenschema und
+  Fehlerform stimmten beim ersten Entwurf bereits exakt. Die Rollen-Sequenz
+  (Implementer → Reviewer → Fixrunde → Verifier) fing eine reale
+  Beleg-Lücke (F-1) vor dem Merge.
+- **Was ging anders als geplant:** kein eigener `Models/*.cs`-DTO-Layer
+  (siehe §3 „Abweichung vom Plan") — dieselbe, bereits im Repo etablierte
+  Entscheidung wie beim Stream-Client, real geprüft und vom Reviewer als
+  vertretbar bestätigt (F-4, kein Befund).
+- **Steering-Loop-Eintrag:** keiner — F-1 ist eine neue Instanz der
+  bereits verkörperten Regel „Beleg trägt seinen Satz nicht"
+  (`.harness/skills/reviewer.md`), kein neuer Mechanismus nötig.
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`
+  um `evidence/slice-sdk-csharp-grpc-administration-flaeche.md` ergänzt
+  (HIGH, neue Form „Assertion" trotz Deckel bei 14×, da Schwere > LOW) —
+  Zähler steht bei 18×.
+- **Folge-Slices:** keiner — der offene Realserver-Beleg für
+  `PgChangeFeedAdministrationClient` ist Gegenstand eines späteren,
+  eigenständigen `make test-sdk-csharp-integration`-Zugs, hier nicht neu
+  benannt (bereits bekannter Folge-Bedarf, siehe §6).
+- **Risiken aus §6:** alle drei mit Ausgang — siehe §6 (1× weiter offen
+  unter der Register-Schwelle, 2× entfallen — einmal mangels Auslösung,
+  einmal real widerlegt).
 - **Drei Paarungen:** von der Welle-Closure (`welle-sdk-grpc-administration-flaeche`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
