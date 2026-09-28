@@ -52,17 +52,21 @@ Beispiel-Client-Vorbild `grpc_client.py` im Bau aus der `.proto`).
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SST-009` erfüllt: `PgChangeFeedAdministrationClient` deckt alle
-      elf RPCs mit typisierten Requests/Responses (`dataclasses`, Formvorbild
-      `models.py`) und einer typisierten Fehlerklasse für die gRPC-Status-Codes
-      ab (Formvorbild `exceptions.py`); Unit-Tests je RPC.
-- [ ] `ADR-0133` erfüllt: `stream_changes()` trägt optionale `schema`/`table`-
+- [x] `LH-FA-SST-009` erfüllt: `PgChangeFeedAdministrationClient` deckt alle
+      elf RPCs ab — Requests/Responses sind die generierten
+      `administration_pb2`-Protobuf-Nachrichten direkt (kein `dataclasses`-Layer;
+      Deviation ggü. diesem Plan, siehe §3-Anmerkung, folgt dem bereits
+      etablierten Python-Muster von `grpc_client.py`/C#) — und eine typisierte
+      Fehlerklasse für die gRPC-Status-Codes (`exceptions.py`,
+      `PgChangeFeedGrpcError` + sechs Unterklassen); Unit-Tests je RPC
+      (Happy/Boundary/Negative, `test_administration_client.py`).
+- [x] `ADR-0133` erfüllt: `stream_changes()` trägt optionale `schema`/`table`-
       Parameter, `None`/leer = ungefiltert (Regressionstest für den
-      parameterlosen Aufruf).
-- [ ] `make gates` grün.
+      parameterlosen Aufruf, drei neue Filter-Tests in `test_grpc_client.py`).
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`), kein Self-Review.
-- [ ] `docs/user/benutzerhandbuch.md`: beide gRPC-Abschnitte nennen Python
+- [x] `docs/user/benutzerhandbuch.md`: beide gRPC-Abschnitte nennen Python
       jetzt mit der vollen Fläche; Versionshistorie nachgezogen.
       `sdks/python/README.md` nachgezogen.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
@@ -82,6 +86,65 @@ Beispiel-Client-Vorbild `grpc_client.py` im Bau aus der `.proto`).
 | `sdks/python/pgchangefeed/integration/test_grpc_administration_realserver.py` | neu (optional) | Realserver-Beleg, Formvorbild `test_grpc_realserver.py`/`test_grpc_rule_realserver.py`, nur falls im Slice-Zeitbudget |
 | `docs/user/benutzerhandbuch.md` | update | beide gRPC-Abschnitte, Versionshistorie |
 | `sdks/python/README.md` | update | Administration-Client dokumentieren |
+| `sdks/python/Dockerfile` | update | zweite `COPY --from=proto`-Zeile + `protoc`-Aufruf für `administration.proto`; ein zusätzlicher `sed`-Schritt redigiert eine interne Kennung, die das gRPC-Plugin aus dem `.proto`-Kommentar in die generierten `_pb2_grpc.py`-Docstrings kopiert (`tests/test_public_text.py` verbietet das je Python-Quelldatei, anders als `sdk-public-doc-check.sh`, das `grpc_gen` bewusst ausnimmt und die Prüfung an diesen Test delegiert) — Fix bleibt in der generierten Datei, die geteilte `.proto`-Quelle und `gen/**` (Go) bleiben unberührt |
+| `sdks/python/pgchangefeed/src/pgchangefeed/grpc_gen/__init__.py` | update | Docstring nennt jetzt beide `.proto`-Quellen |
+| `sdks/python/pgchangefeed/tests/test_readme_examples.py` | update | `_binds`/der direkte Aufrufpfad überspringt jetzt einen Aufruf, dessen Ziel `inspect.signature` strukturell nicht introspizieren kann (ein generiertes Protobuf-Message-Konstruktor, `ValueError` statt `TypeError`) — ohne diese Erweiterung bricht das neue README-Beispiel den bestehenden Test hart ab, statt eine Assertion auszuwerten |
+
+**Deviation ggü. diesem Plan:** `models.py` bleibt unverändert — der bereits im
+Python-SDK etablierte gRPC-Stream-Client (`grpc_client.py`) übersetzt die
+generierten Protobuf-Nachrichten nicht in eigene `dataclasses` (Docstring dort:
+„There is no separate data class layer … the generated message already is the
+typed form"), exakt dieselbe Entscheidung, die `sdks/csharp/PgChangeFeed.Client/Grpc/PgChangeFeedAdministrationClient.cs`
+für C# bereits getroffen hat. `PgChangeFeedAdministrationClient` folgt diesem
+bereits etablierten Python-Muster: alle elf Methoden nehmen die generierten
+`administration_pb2`-Request-Nachrichten entgegen und geben die generierten
+Response-Nachrichten unverändert zurück — kein neuer `dataclasses`-Layer in
+`models.py`. Die typisierte Fehlerklasse (`exceptions.py`, sechs neue
+`PgChangeFeedGrpc*Error`-Klassen, eigene Hierarchie unter `PgChangeFeedGrpcError`,
+nicht unter `PgChangeFeedError`, weil ein gRPC-Status ein `grpc.StatusCode`-Enum
+ist, kein HTTP-Statuscode-Integer) ist wie geplant umgesetzt.
+
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „kein Python-SDK für
+die gRPC-Verwaltungs-API"; Parent `fd39b68b263a3dbcf8ce20fc70b164eb5c5130e9`,
+der Stand vor jeder Inhaltsänderung dieses Slice, beide Stände gemessen).**
+
+Symbol `PgChangeFeedAdministrationClient`, eingegrenzt auf die Python-SDK-Fläche
+(das Symbol bestand vor diesem Slice bereits in C#/Kotlin — die volle
+Baum-Suche wäre für „Python bekommt es jetzt" nicht aussagekräftig):
+
+```suchlauf
+fd39b68b263a3dbcf8ce20fc70b164eb5c5130e9 0 -n -F 'PgChangeFeedAdministrationClient' -- sdks/python
+diff 11 -n -F 'PgChangeFeedAdministrationClient' -- sdks/python
+```
+
+Zählwort „elf RPCs der Tabelle oben" (ganzer Baum, Standard-Ausnahmen):
+
+```suchlauf
+fd39b68b263a3dbcf8ce20fc70b164eb5c5130e9 1 -n -F 'elf RPCs der Tabelle oben' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 3 -n -F 'elf RPCs der Tabelle oben' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+```
+
+Beschreibung samt Hedge („trägt bislang keinen Methodensatz" /
+„bleibt diese Fläche offen" / „noch nicht terminierter Folge-Schritt", ganzer
+Baum, Standard-Ausnahmen) — **Gefunden** am Parent (zwei Stellen in
+`docs/user/benutzerhandbuch.md`, beide durch diesen Zug ersetzt) und **nicht
+mehr vorhanden** am Diff:
+
+```suchlauf
+fd39b68b263a3dbcf8ce20fc70b164eb5c5130e9 2 -n -i -E 'trägt bislang keinen|bleibt diese Fläche offen|noch nicht terminierter Folge-Schritt' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 0 -n -i -E 'trägt bislang keinen|bleibt diese Fläche offen|noch nicht terminierter Folge-Schritt' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+```
+
+**Hinweis zur Messung am Diff:** `docs/user/benutzerhandbuch.md` trug beim
+Schreiben dieses Zugs zusätzlich die nebenläufige Kotlin-Slice-Änderung
+(dieselbe Datei, additiv verschränkt — die eigene Python-Zeile ließ sich
+zeilenscharf nicht mehr isoliert committen, siehe Bericht an den Aufrufer).
+Der Commit `b239d849` (Kotlin-Slice-Closure) hat die Datei — inklusive dieser
+Python-Zeilen — bereits vor dem eigenen Commit dieses Slice übernommen; die
+Datei selbst ist deshalb **nicht** Teil des eigenen Commits dieses Slice. Die
+Diff-Zahlen oben (gemessen gegen den Arbeitsbaum nach `b239d849`) schließen den
+Kotlin-Beitrag mit ein — das ist der reale, gemessene Bestand, keine isolierte
+Python-only-Zahl.
 
 ## 4. Trigger
 
@@ -106,20 +169,34 @@ Closure-Notiz geschrieben.
   dort), hier speziell: Python liest ein `bytes`-Feld (`old_image`/
   `new_image`) möglicherweise anders als C#/Kotlin bei Abwesenheit
   (`None` vs. leeres `bytes`-Objekt) — real gegen die generierten Stubs
-  prüfen, nicht annehmen. — **Ausgang:** weiter offen: → Register (unter
-  der Schwelle).
+  prüfen, nicht annehmen. — **Ausgang:** geprüft, kein neuer Fall: Python
+  liefert bei einem nicht gesetzten `bytes`-Feld (`old_image`/`new_image` in
+  `ChangeRecord`) ein leeres `bytes`-Objekt (`b""`), nie `None` — dasselbe
+  Verhalten, das der bestehende Stream-Client (`grpc_client.py`,
+  `changestream_pb2.Change`) bereits zeigt (siehe `test_grpc_client.py`s
+  `first`-Fixture, die `old_image` bei `INSERT` ungesetzt lässt). Da
+  `PgChangeFeedAdministrationClient` keinen DTO-Layer trägt (§3-Anmerkung),
+  übersetzt kein eigener Code dieses Feld — es gibt keine
+  Python-SDK-spezifische Übersetzungsstelle, die divergieren könnte. Weiter
+  offen als repo-weites Beobachtungsthema (Register, unter der Schwelle;
+  C#/Kotlin bringen ihre eigenen Befunde bei).
 - **Server-Fehler analog zum Kotlin-Beispiel-Client-Fund** (`EnableTable`
   über gRPC, separat gefixt) — siehe C#-Geschwister-Slice §6. —
-  **Ausgang:** eingetreten: Blockade melden | entfallen: Fix bereits
-  gepusht | weiter offen.
+  **Ausgang:** entfallen: Fix bereits gepusht (`internal/bootstrap/assemblersync.go`,
+  vor Beginn dieses Slice bereits im Arbeitsbaum).
 - **Kein generierter Stub committet** (anders als C#/Kotlin, deren
   Build-Systeme die Stubs in einem eigenen Verzeichnis erzeugen) — die
   Administration-Client-Klasse muss denselben Bau-Kontext (`--build-context
   proto=proto`, `ADR-0090` Festlegung 2) wie `grpc_client.py` bereits nutzt,
   korrekt für die zweite `.proto`-Quelle (`administration.proto`) erweitern.
-  — **Ausgang:** eingetreten: Dockerfile-Korrektur im selben Slice | entfallen:
-  Bau-Kontext deckt bereits beide Quellen ab (real prüfen, siehe
-  `sdks/python/Dockerfile`) | weiter offen.
+  — **Ausgang:** eingetreten: Dockerfile-Korrektur im selben Slice — zweite
+  `COPY --from=proto`-Zeile, `protoc`-Aufruf trägt jetzt beide `.proto`-Dateien,
+  zweiter `sed`-Import-Fix für `administration_pb2_grpc.py`; zusätzlich ein
+  dritter, so nicht geplanter `sed`-Schritt gegen eine interne Kennung, die das
+  gRPC-Plugin aus dem `.proto`-Servicekommentar in die generierten
+  Docstrings kopiert (real erst beim `make sdk-pack-python`-Lauf gefunden,
+  siehe §3-Anmerkung) — real belegt: `make sdk-pack-python` erfolgreich
+  (Build+130 Tests+Pack), `make gates` Exit 0.
 
 ## 7. Closure-Notiz
 
