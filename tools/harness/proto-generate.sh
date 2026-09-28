@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # proto-generate.sh — Protobuf-/gRPC-Go-Code aus proto/cdc/stream/v1/changestream.proto
-# erzeugen (Docker-only, Build-Zeit-Erzeugung, Host-Extraktion; ADR-0060).
+# und proto/cdc/administration/v1/administration.proto erzeugen (Docker-only,
+# Build-Zeit-Erzeugung, Host-Extraktion; ADR-0060, ADR-0130).
 #
 # Der Generator ist die Dockerfile-Stufe `proto-export` (seit slice-104): sie
 # kopiert die `.proto`-Quelle per COPY hinein (kein Bind-Mount) und erzeugt

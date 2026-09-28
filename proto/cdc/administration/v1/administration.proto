@@ -1,0 +1,139 @@
+// Administration mirrors the nine management capabilities of the HTTP API
+// (consumer registration/acknowledgement/position/removal, table
+// enable/disable/status/list, retention run) over gRPC: the same inbound
+// use cases, the same two token classes, unary request/response RPCs
+// (no streaming advantage for request/response calls, SPEC-031).
+syntax = "proto3";
+
+package cdc.administration.v1;
+
+option go_package = "github.com/pt9912/pg-change-feed/gen/cdc/administration/v1;administrationv1";
+
+// SourceTable identifies one table of a source (table_id, source, schema,
+// table) — the same four fields as the HTTP API's sourceTableResponse.
+message SourceTable {
+  string table_id = 1;
+  string source = 2;
+  string schema = 3;
+  string table = 4;
+}
+
+message RegisterConsumerRequest {
+  string consumer_id = 1;
+  string name = 2;
+}
+
+message RegisterConsumerResponse {
+  string consumer_id = 1;
+  string name = 2;
+  bool already_registered = 3;
+}
+
+message AcknowledgeConsumerRequest {
+  string consumer_id = 1;
+  string source_id = 2;
+  uint64 offset = 3;
+}
+
+message AcknowledgeConsumerResponse {
+  string consumer_id = 1;
+  string source_id = 2;
+  uint64 offset = 3;
+}
+
+message GetConsumerPositionRequest {
+  string consumer_id = 1;
+}
+
+message GetConsumerPositionResponse {
+  string consumer_id = 1;
+  string source_id = 2;
+  uint64 offset = 3;
+  bool acknowledged = 4;
+}
+
+message RemoveConsumerRequest {
+  string consumer_id = 1;
+}
+
+message RemoveConsumerResponse {
+  string consumer_id = 1;
+  bool removed = 2;
+}
+
+message EnableTableRequest {
+  string source = 1;
+  string schema = 2;
+  string table = 3;
+  string table_id = 4;
+  string schema_version_id = 5;
+  int64 version = 6;
+  string publication = 7;
+}
+
+message EnableTableResponse {
+  string table_id = 1;
+  string source = 2;
+  string schema = 3;
+  string table = 4;
+  bool already_enabled = 5;
+}
+
+message DisableTableRequest {
+  string source = 1;
+  string schema = 2;
+  string table = 3;
+  string publication = 4;
+}
+
+message DisableTableResponse {
+  bool removed = 1;
+  bool retained = 2;
+}
+
+message GetTableStatusRequest {
+  string source = 1;
+  string schema = 2;
+  string table = 3;
+  string publication = 4;
+}
+
+message GetTableStatusResponse {
+  bool enabled = 1;
+  bool retained = 2;
+}
+
+message ListTablesRequest {
+  string source = 1;
+  string publication = 2;
+}
+
+message ListTablesResponse {
+  repeated SourceTable tables = 1;
+  repeated SourceTable retained = 2;
+}
+
+message RunRetentionRequest {
+  string source = 1;
+  int64 min_age_nanos = 2;
+}
+
+message RunRetentionResponse {
+  int64 deleted = 1;
+}
+
+// Administration offers the nine management capabilities as unary
+// request/response RPCs (SPEC-031). Authentication/authorization mirrors
+// the stream service: the `authorization` metadata entry, checked by
+// authUnaryInterceptor against the same two token classes.
+service Administration {
+  rpc RegisterConsumer(RegisterConsumerRequest) returns (RegisterConsumerResponse);
+  rpc AcknowledgeConsumer(AcknowledgeConsumerRequest) returns (AcknowledgeConsumerResponse);
+  rpc GetConsumerPosition(GetConsumerPositionRequest) returns (GetConsumerPositionResponse);
+  rpc RemoveConsumer(RemoveConsumerRequest) returns (RemoveConsumerResponse);
+  rpc EnableTable(EnableTableRequest) returns (EnableTableResponse);
+  rpc DisableTable(DisableTableRequest) returns (DisableTableResponse);
+  rpc GetTableStatus(GetTableStatusRequest) returns (GetTableStatusResponse);
+  rpc ListTables(ListTablesRequest) returns (ListTablesResponse);
+  rpc RunRetention(RunRetentionRequest) returns (RunRetentionResponse);
+}

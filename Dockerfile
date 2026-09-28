@@ -63,7 +63,8 @@ RUN mkdir -p /out && \
     protoc -I proto \
       --go_out=/out --go_opt=module=github.com/pt9912/pg-change-feed \
       --go-grpc_out=/out --go-grpc_opt=module=github.com/pt9912/pg-change-feed \
-      proto/cdc/stream/v1/changestream.proto
+      proto/cdc/stream/v1/changestream.proto \
+      proto/cdc/administration/v1/administration.proto
 ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
 
 # --- coverage: Go-Test-Coverage ueber die netzlos pruefbare Flaeche des
