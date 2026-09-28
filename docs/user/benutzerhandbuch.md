@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.70
+Version: 1.71
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-28
 
@@ -1339,6 +1339,71 @@ ein fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 (`timeout` ist der Gesamtfriestempel des Aufrufs in Sekunden, `None` =
 unbegrenzt). Siehe `sdks/python/README.md`.
 
+### Zugriff über die gRPC-Verwaltungs-API
+
+Dieselben Verwaltungsfähigkeiten wie die HTTP-/JSON-API (siehe [Zugriff über
+die HTTP-/JSON-API](#zugriff-über-die-http-json-api)) sind zusätzlich über
+gRPC erreichbar — jede Fähigkeit ruft dieselbe Domänenlogik über denselben
+Inbound Use Case auf wie ihr HTTP-Äquivalent und ist fachlich gleichwertig,
+kein Zweitpfad.
+
+**Erreichbarkeit:** aktiv, sobald `CDC_GRPC_ADDR` gesetzt ist — dieselbe
+Horch-Adresse wie der [gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)
+oben; ein gesetzter Wert aktiviert beide Services gemeinsam auf demselben
+Server/Port. Ungesetzt bleibt auch diese Fläche vollständig deaktiviert.
+
+**Authentifizierung:** derselbe Mechanismus wie beim gRPC-Change-Stream —
+Bearer-Token im gRPC-Metadata-Eintrag `authorization` in der Form
+`Bearer <token>`, dieselben zwei Token-Klassen (`CDC_API_TOKEN_READER`,
+`CDC_API_TOKEN_ADMIN`) wie bei der HTTP-API. Ein fehlender oder keinem
+konfigurierten Token entsprechender Wert endet mit dem gRPC-Status
+`Unauthenticated`, ein bekanntes Token mit unzureichender Klasse mit
+`PermissionDenied`.
+
+Der Dienst `Administration` (Paket `cdc.administration.v1`) trägt neun
+unäre RPCs:
+
+| Fähigkeit | RPC | Rechtsklasse |
+|---|---|---|
+| Consumer registrieren | `RegisterConsumer` | `admin` |
+| Position bestätigen | `AcknowledgeConsumer` | `admin` |
+| Consumer-Position lesen | `GetConsumerPosition` | `reader` |
+| Consumer entfernen | `RemoveConsumer` | `admin` |
+| Tabelle aktivieren | `EnableTable` | `admin` |
+| Tabelle deaktivieren | `DisableTable` | `admin` |
+| Tabellen-Status | `GetTableStatus` | `reader` |
+| Tabellen auflisten | `ListTables` | `reader` |
+| Aufbewahrung auslösen | `RunRetention` | `admin` |
+
+Die lesenden RPCs sind mit dem Admin-Token ebenso erreichbar; mit dem
+Reader-Token sind die administrativen RPCs nicht erreichbar
+(`PermissionDenied`). Nachrichtenfelder entsprechen 1:1 den Request-/
+Response-Feldern der gleichnamigen HTTP-Fähigkeit (Tabelle unter [Zugriff
+über die HTTP-/JSON-API](#zugriff-über-die-http-json-api)); `ListTables`
+liefert `tables` und `retained` als je eine Liste einer `SourceTable`
+genannten Nachricht (`table_id`, `source`, `schema`, `table`). Das Lesen
+eines Bereichs persistierter Änderungen (`GET /changes`) ist über diese
+gRPC-Fläche nicht erreichbar — dafür bleibt der [gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)
+oben der Zugriffsweg für neue Changes.
+
+**Fehlerform:** Ein gRPC-Status ersetzt den jeweiligen HTTP-Statuscode:
+
+| HTTP-Status (Ursache) | gRPC-Code |
+|---|---|
+| `400` — Domänen-Invariante verletzt | `InvalidArgument` |
+| `401` — fehlender/unbekannter Bearer-Token | `Unauthenticated` |
+| `403` — Rechtsklasse unzureichend | `PermissionDenied` |
+| `404` — Tabelle nicht gefunden | `NotFound` |
+| `500` — unerwarteter interner Fehler | `Internal` |
+
+**Zustellsemantik:** wie die HTTP-API — synchrone Anfrage/Antwort je RPC,
+keine Warteschlange dazwischen.
+
+Für keine der drei Sprachen (Go, C#, Kotlin) existiert für diese Fläche
+bislang ein dediziertes Beispiel-Programm oder ein SDK-Methodensatz — anders
+als beim gRPC-Change-Stream oben deckt sie noch kein `examples/`-Programm
+und kein SDK-Package ab.
+
 ### Zugriff über Server-Sent-Events
 
 **Erreichbarkeit:** derselbe HTTP-Server wie oben — aktiv, sobald
@@ -1589,7 +1654,7 @@ das Package dieselbe Vier-Wege-Matrix wie die C#-/Kotlin-Pendants. Siehe
 | `CDC_HTTP_ADDR` | nein | Horch-Adresse der HTTP-/JSON-API (`host:port`); ungesetzt bleibt die API vollständig deaktiviert — kein Server, keine zusätzliche Verbindung. Anders als `CDC_NATS_URL` ist die Adresse **keine** Start-Vorbedingung: Ist sie gesetzt, öffnet der Prozess den Server in eigener Goroutine und läuft unverändert weiter; scheitert das Binden der Adresse (z. B. belegter Port), meldet er das im Log und der Erfassungsbetrieb bleibt davon unberührt |
 | `CDC_API_TOKEN_READER` | nein | Bearer-Token der lesenden Rechtsklasse der HTTP- und gRPC-API; ungesetzt (leer) ist die Klasse nicht konfiguriert — ein Aufruf mit einem Token, das keiner konfigurierten Klasse entspricht, endet `401` |
 | `CDC_API_TOKEN_ADMIN` | nein | Bearer-Token der administrativen Rechtsklasse der HTTP- und gRPC-API (deckt die lesende Klasse implizit mit ab); leer bedeutet dieselbe Deaktivierung wie bei `CDC_API_TOKEN_READER` |
-| `CDC_GRPC_ADDR` | nein | Horch-Adresse des gRPC-Streaming-Servers (`host:port`); ungesetzt bleibt der Streaming-Server vollständig deaktiviert — kein Listener. Wie `CDC_HTTP_ADDR` keine Start-Vorbedingung |
+| `CDC_GRPC_ADDR` | nein | Horch-Adresse des gRPC-Servers (`host:port`); aktiviert gemeinsam den Change-Stream (`ChangeStream`) und die Verwaltungs-API (`Administration`) auf demselben Port. Ungesetzt bleibt der Server vollständig deaktiviert — kein Listener. Wie `CDC_HTTP_ADDR` keine Start-Vorbedingung |
 | `CDC_CONFIG_FILE` | nein | Pfad zu einer optionalen YAML-Konfigurationsdatei (siehe unten) |
 
 Fehlt eine Pflichtvariable und liefert auch keine Konfigurationsdatei
@@ -2042,3 +2107,4 @@ MIT — siehe `LICENSE`.
 | 1.68 | 2026-09-27 | Fixrunde nach Review (`LH-FA-CFG-007`, `ADR-0112`, `ADR-0125`, slice-transformationen-betriebsdoku Fixrunde): der Fehlertext eines `::jsonb`-Aufrufs von `cdc.set_transformation` in „Transformationsregel konfigurieren“ auf den tatsächlich gemessenen Wortlaut korrigiert (`unknown` statt `text` als Parametertyp der vier Textliterale — PostgreSQL typisiert nicht gecastete String-Literale beim Signatur-Fehler als `unknown`); der Absatz „Zeilen, die kein Antrag sind“ um das dritte, im Plan verlangte Beispiel ergänzt (leere Spalte bei `exclude_column`/`include_column`, belegt durch `TestAdministrationRequestListPendingPassesRejectedRowsThrough`) |
 | 1.69 | 2026-09-28 | „Transformationsregel konfigurieren“ aufgabenbasiert überarbeitet (`LH-FA-CFG-007`, `ADR-0112`): Voraussetzung/nummeriertes Vorgehen/Ergebnis statt Fließtext, zwei eigene Fehler/Ursache/Lösung-Blöcke (Konfliktfehler, Fehlerklasse `schema`) statt einer Bullet-Liste; ADR-/Review-Verweise, Go-Testnamen und Benchmark-Rohwerte aus dem Fließtext entfernt (Betreiber brauchen sie nicht, dieselben zwei Verweise auch aus dem Backfill-Abschnitt „Bestand als Backfill überführen“ entfernt) |
 | 1.70 | 2026-09-28 | §4 „Zugriff über die HTTP-/JSON-API“ Beispiele-Absatz auf die volle Zehn-Fähigkeiten-Fläche der drei Sprachbeispiele nachgezogen (`LH-FA-SST-006`): ein Verb-Flag (Default `tables`) statt eines festen `GET /tables`-Aufrufs, Hinweis auf `make example-transformation-demo` bei `-verb=changes`/`--verb=changes` |
+| 1.71 | 2026-09-28 | Neuer §4-Abschnitt „Zugriff über die gRPC-Verwaltungs-API“ (`LH-FA-SST-006`, `ADR-0130`): die neun Fähigkeiten der HTTP-API als gRPC-Dienst `Administration`, Rechtsklassen-Tabelle, Fehlercode-Tabelle (`InvalidArgument`/`Unauthenticated`/`PermissionDenied`/`NotFound`/`Internal`), Hinweis auf das noch fehlende Beispiel-Programm/SDK je Sprache; §5 `CDC_GRPC_ADDR`-Zeile nennt jetzt beide Dienste (`ChangeStream` und `Administration`) statt nur den Streaming-Server |

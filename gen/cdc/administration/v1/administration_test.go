@@ -1,6 +1,6 @@
 // Diese Tests prüfen den erzeugten Protokoll-Stub des `Administration`-
-// Service an den Stellen, die eine Zusage des Draht-Vertrags tragen
-// (`SPEC-031`, `ADR-0130`): die Feld-Getter, die Fehler-Weitergabe des
+// Service an den Stellen, die eine Zusage des Draht-Vertrags (`ADR-0130`)
+// tragen: die Feld-Getter, die Fehler-Weitergabe des
 // erzeugten unären Clients, die Vorwärtskompatibilitäts-Stubs
 // (`UnimplementedAdministrationServer`) und die Handler-Verklebung des
 // Servers (Dekodier-Fehler, Aufruf ohne und mit Interceptor). Der erzeugte
