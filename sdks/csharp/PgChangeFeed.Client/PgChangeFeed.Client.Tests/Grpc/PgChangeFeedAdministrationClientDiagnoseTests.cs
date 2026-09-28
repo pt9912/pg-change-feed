@@ -64,6 +64,22 @@ public class PgChangeFeedAdministrationClientDiagnoseTests
     }
 
     [Fact]
+    public async Task DiagnoseAsync_UnknownConsumerLag_ReportsKnownFalse()
+    {
+        var invoker = FakeUnaryCallInvoker.WithResponse(new DiagnoseResponse
+        {
+            Heartbeat = new HeartbeatStatus { Known = true },
+            RetentionBlocker = new RetentionBlocker { Present = false },
+            ConsumerLags = { new ConsumerLag { ConsumerId = "c-1", Known = false, Lag = 0 } },
+        });
+        var client = AdministrationTestClientFactory.Create(invoker);
+
+        var response = await client.DiagnoseAsync(new DiagnoseRequest { Source = "src" });
+
+        Assert.False(response.ConsumerLags[0].Known);
+    }
+
+    [Fact]
     public async Task DiagnoseAsync_UnknownEstimate_ReportsEstimatedRowsKnownFalse()
     {
         var invoker = FakeUnaryCallInvoker.WithResponse(new DiagnoseResponse
