@@ -15,7 +15,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`.
 hinaus; das Nachrichtenschema selbst steht bereits in `SPEC-031`/`SPEC-020`,
 unverändert durch diesen Slice).
 
-**Verantwortlich:** —.
+**Verantwortlich:** Implementer-Agent.
 
 **Autor:** Planner-Agent. **Datum:** 2026-09-28.
 
