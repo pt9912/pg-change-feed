@@ -156,7 +156,7 @@ type changeStreamService struct {
 // (`ADR-0060` Teilfrage 3): kein Replay — ein ab Verbindungsaufbau
 // eintreffender Change geht über den Stream, ältere bleiben dem
 // Lesezugriffsweg vorbehalten (`LH-FA-SST-008` Boundary).
-func (s *changeStreamService) StreamChanges(_ *streamv1.StreamChangesRequest, stream grpc.ServerStreamingServer[streamv1.Change]) error {
+func (s *changeStreamService) StreamChanges(req *streamv1.StreamChangesRequest, stream grpc.ServerStreamingServer[streamv1.Change]) error {
 	if s.subscriber == nil {
 		return status.Error(codes.Internal, "ChangeStream ohne Broadcaster verdrahtet")
 	}
@@ -164,11 +164,19 @@ func (s *changeStreamService) StreamChanges(_ *streamv1.StreamChangesRequest, st
 	defer cancel()
 	s.log.Info(stream.Context(), "grpc: Stream geöffnet")
 	defer s.log.Info(context.Background(), "grpc: Stream beendet")
+	// Das optionale `schema`/`table`-Filterpaar (`ADR-0133`) wird hier, nach
+	// dem `Subscribe()`-Aufruf, geprüft — der Broadcaster bleibt unverändert
+	// ungefiltert, ein nicht passender Change wird verworfen, bevor er über
+	// das Netz geht.
+	schema, table := req.GetSchema(), req.GetTable()
 	for {
 		select {
 		case <-stream.Context().Done():
 			return stream.Context().Err()
 		case change := <-changes:
+			if !change.MatchesFilter(schema, table) {
+				continue
+			}
 			if err := stream.Send(toProtoChange(change)); err != nil {
 				return err
 			}

@@ -86,12 +86,20 @@ func startTestServerMitTokenKonfiguration(t *testing.T, subscriber changeSubscri
 // leerer Wert lässt die Metadata weg.
 func streamMitToken(t *testing.T, client streamv1.ChangeStreamClient, authorization string) grpc.ServerStreamingClient[streamv1.Change] {
 	t.Helper()
+	return streamMitTokenUndFilter(t, client, authorization, "", "")
+}
+
+// streamMitTokenUndFilter öffnet den Stream mit dem übergebenen
+// Metadata-Wert und dem übergebenen `schema`/`table`-Filterpaar
+// (`ADR-0133`); ein leeres Feld trägt kein Filterfeld in der Request.
+func streamMitTokenUndFilter(t *testing.T, client streamv1.ChangeStreamClient, authorization, schema, table string) grpc.ServerStreamingClient[streamv1.Change] {
+	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	if authorization != "" {
 		ctx = metadata.AppendToOutgoingContext(ctx, authorizationMetadataKey, authorization)
 	}
-	stream, err := client.StreamChanges(ctx, &streamv1.StreamChangesRequest{})
+	stream, err := client.StreamChanges(ctx, &streamv1.StreamChangesRequest{Schema: schema, Table: table})
 	if err != nil {
 		t.Fatalf("Stream öffnen: %v", err)
 	}
@@ -206,6 +214,81 @@ func traegtTokenOeffnetStreamUndTraegtChange(t *testing.T, token string) {
 	}
 	if string(msg.GetOldImage()) != `{"id":1}` || string(msg.GetNewImage()) != `{"id":1,"bestellstatus":"bezahlt"}` {
 		t.Fatalf("übertragener Change trägt nicht die erwarteten Row Images: old=%q new=%q", msg.GetOldImage(), msg.GetNewImage())
+	}
+}
+
+// TestStreamChangesFilterLaesstNurTreffer trägt die Fitness Function aus
+// `ADR-0133`: ein gesetztes `schema`/`table`-Filterpaar liefert nur Changes
+// der passenden Kombination — ein nicht passender Change kommt beim Client
+// nicht an, ein passender kommt an. Die Eingabeseite ist der gesendete
+// Change (Schema/Tabelle), nicht die Filterwerte der Request.
+// Rot färbende Mutation: `change.MatchesFilter` durch `true` ersetzen — dann
+// erreicht auch der nicht passende Change den Client.
+func TestStreamChangesFilterLaesstNurTreffer(t *testing.T) {
+	subscriber := newFakeSubscriber()
+	client := startTestServer(t, subscriber)
+	stream := streamMitTokenUndFilter(t, client, bearerPrefix+testReaderToken, "public", "orders")
+
+	select {
+	case <-subscriber.ready:
+	case <-time.After(3 * time.Second):
+		t.Fatal("der Stream hat sich nicht am Broadcaster registriert")
+	}
+
+	nichtPassend, err := model.NewChange("change-skip", "tx-1", "table-1", 1, model.OperationInsert, nil, []byte(`{}`), "table-1-v1")
+	if err != nil {
+		t.Fatalf("Change bauen: %v", err)
+	}
+	nichtPassend.Schema = "public"
+	nichtPassend.Table = "customers"
+	subscriber.changes <- &nichtPassend
+
+	passend, err := model.NewChange("change-match", "tx-1", "table-1", 2, model.OperationInsert, nil, []byte(`{}`), "table-1-v1")
+	if err != nil {
+		t.Fatalf("Change bauen: %v", err)
+	}
+	passend.Schema = "public"
+	passend.Table = "orders"
+	subscriber.changes <- &passend
+
+	msg, err := recvChange(t, stream)
+	if err != nil {
+		t.Fatalf("Recv: %v", err)
+	}
+	if msg.GetChangeId() != "change-match" {
+		t.Fatalf("erhaltener Change: %q (Erwartung: nur der passende Change, der nicht passende wurde verworfen)", msg.GetChangeId())
+	}
+}
+
+// TestStreamChangesOhneFilterLiefertAlle trägt die Regressions-Hälfte der
+// Fitness Function: eine leere `StreamChangesRequest{}` (proto3-Zero-Value,
+// wie ein noch nicht neu generierter Client sie weiterhin sendet) liefert
+// weiterhin jeden Change, unabhängig von Schema/Tabelle.
+func TestStreamChangesOhneFilterLiefertAlle(t *testing.T) {
+	subscriber := newFakeSubscriber()
+	client := startTestServer(t, subscriber)
+	stream := streamMitToken(t, client, bearerPrefix+testReaderToken)
+
+	select {
+	case <-subscriber.ready:
+	case <-time.After(3 * time.Second):
+		t.Fatal("der Stream hat sich nicht am Broadcaster registriert")
+	}
+
+	change, err := model.NewChange("change-1", "tx-1", "table-1", 1, model.OperationInsert, nil, []byte(`{}`), "table-1-v1")
+	if err != nil {
+		t.Fatalf("Change bauen: %v", err)
+	}
+	change.Schema = "other"
+	change.Table = "unrelated"
+	subscriber.changes <- &change
+
+	msg, err := recvChange(t, stream)
+	if err != nil {
+		t.Fatalf("Recv: %v", err)
+	}
+	if msg.GetChangeId() != "change-1" {
+		t.Fatalf("erhaltener Change: %q (Erwartung: change-1, ungefiltert)", msg.GetChangeId())
 	}
 }
 

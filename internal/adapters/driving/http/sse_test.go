@@ -76,7 +76,19 @@ func newTestSSEServer(t *testing.T, subscriber changeSubscriber) *httptest.Serve
 // `Authorization`-Header weg.
 func streamMitToken(t *testing.T, ts *httptest.Server, ctx context.Context, token string) *http.Response {
 	t.Helper()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/changes/stream", nil)
+	return streamMitTokenUndQuery(t, ts, ctx, token, "")
+}
+
+// streamMitTokenUndQuery öffnet den Stream mit der übergebenen, bereits
+// kodierten Query-Zeichenkette (`ADR-0133`); eine leere Zeichenkette trägt
+// keine Query.
+func streamMitTokenUndQuery(t *testing.T, ts *httptest.Server, ctx context.Context, token, query string) *http.Response {
+	t.Helper()
+	url := ts.URL + "/changes/stream"
+	if query != "" {
+		url += "?" + query
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		t.Fatalf("Request bauen: %v", err)
 	}
@@ -232,6 +244,112 @@ func traegtTokenOeffnetStreamUndTraegtChange(t *testing.T, token string) {
 	oldImage, ok := got["old_image"].(map[string]any)
 	if !ok || oldImage["id"] != float64(1) {
 		t.Fatalf("old_image trägt nicht den erwarteten Inhalt: %v", got["old_image"])
+	}
+}
+
+// TestStreamFilterLaesstNurTreffer trägt die Fitness Function aus
+// `ADR-0133` für den SSE-Weg: ein gesetztes `schema`/`table`-Filterpaar
+// liefert nur Changes der passenden Kombination. Die Eingabeseite ist der
+// zugestellte Change (Schema/Tabelle), nicht die Filterwerte der Query.
+// Rot färbende Mutation: `change.MatchesFilter` durch `true` ersetzen — dann
+// erreicht auch der nicht passende Change den Client.
+func TestStreamFilterLaesstNurTreffer(t *testing.T) {
+	subscriber := newFakeChangeSubscriber(4)
+	ts := newTestSSEServer(t, subscriber)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	resp := streamMitTokenUndQuery(t, ts, ctx, testReaderToken, "schema=public&table=orders")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Status: %d (Erwartung: 200)", resp.StatusCode)
+	}
+	select {
+	case <-subscriber.ready:
+	case <-time.After(3 * time.Second):
+		t.Fatal("der Stream hat sich nicht am Broadcaster registriert")
+	}
+
+	nichtPassend, err := model.NewChange("change-skip", "tx-1", "table-1", 1, model.OperationInsert, nil, []byte(`{}`), "table-1-v1")
+	if err != nil {
+		t.Fatalf("Change bauen: %v", err)
+	}
+	nichtPassend.Schema = "public"
+	nichtPassend.Table = "customers"
+	subscriber.changes <- &nichtPassend
+
+	passend, err := model.NewChange("change-match", "tx-1", "table-1", 2, model.OperationInsert, nil, []byte(`{}`), "table-1-v1")
+	if err != nil {
+		t.Fatalf("Change bauen: %v", err)
+	}
+	passend.Schema = "public"
+	passend.Table = "orders"
+	subscriber.changes <- &passend
+
+	_, data := readSSEEvent(t, bufio.NewReader(resp.Body))
+	var got map[string]any
+	if err := json.Unmarshal([]byte(data), &got); err != nil {
+		t.Fatalf("Event-Daten sind kein JSON: %v (%q)", err, data)
+	}
+	if got["change_id"] != "change-match" {
+		t.Fatalf("erhaltener Change: %v (Erwartung: nur der passende Change, der nicht passende wurde verworfen)", got["change_id"])
+	}
+}
+
+// TestStreamOhneFilterLiefertAlle trägt die Regressions-Hälfte der Fitness
+// Function: ein Aufruf ohne Query-Parameter liefert weiterhin jeden Change,
+// unabhängig von Schema/Tabelle.
+func TestStreamOhneFilterLiefertAlle(t *testing.T) {
+	subscriber := newFakeChangeSubscriber(4)
+	ts := newTestSSEServer(t, subscriber)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	resp := streamMitToken(t, ts, ctx, testReaderToken)
+	defer resp.Body.Close()
+	select {
+	case <-subscriber.ready:
+	case <-time.After(3 * time.Second):
+		t.Fatal("der Stream hat sich nicht am Broadcaster registriert")
+	}
+
+	change, err := model.NewChange("change-1", "tx-1", "table-1", 1, model.OperationInsert, nil, []byte(`{}`), "table-1-v1")
+	if err != nil {
+		t.Fatalf("Change bauen: %v", err)
+	}
+	change.Schema = "other"
+	change.Table = "unrelated"
+	subscriber.changes <- &change
+
+	_, data := readSSEEvent(t, bufio.NewReader(resp.Body))
+	var got map[string]any
+	if err := json.Unmarshal([]byte(data), &got); err != nil {
+		t.Fatalf("Event-Daten sind kein JSON: %v (%q)", err, data)
+	}
+	if got["change_id"] != "change-1" {
+		t.Fatalf("erhaltener Change: %v (Erwartung: change-1, ungefiltert)", got["change_id"])
+	}
+}
+
+// TestStreamUnbekannterQueryParameterEndetMit400 trägt die zweite Hälfte der
+// Fitness Function: ein Query-Parameter außerhalb der geschlossenen Menge
+// (`schema`/`table`) endet mit `400`, vor jedem SSE-Event (`ADR-0133`
+// Teilfrage 4).
+func TestStreamUnbekannterQueryParameterEndetMit400(t *testing.T) {
+	subscriber := newFakeChangeSubscriber(1)
+	ts := newTestSSEServer(t, subscriber)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	resp := streamMitTokenUndQuery(t, ts, ctx, testReaderToken, "tabelle=orders")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("Status: %d (Erwartung: 400)", resp.StatusCode)
+	}
+	select {
+	case <-subscriber.ready:
+		t.Fatal("der Handler registrierte trotz 400 eine Subskription am Broadcaster")
+	default:
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
@@ -13,6 +14,35 @@ import (
 // sseEventChange ist der `event:`-Typ jedes Change-Events (`SPEC-018`,
 // Abschnitt `GET /changes/stream`).
 const sseEventChange = "change"
+
+// Die Query-Parameter des SSE-Endpunkts `GET /changes/stream` (`ADR-0133`
+// Teilfrage 4): `schema`/`table`, dieselben Feldnamen wie beim gRPC-Stream
+// und bei `GET /changes`, je optional und unabhängig.
+const (
+	streamChangesParamSchema = "schema"
+	streamChangesParamTable  = "table"
+)
+
+// streamChangesParams trägt die geschlossene Parameter-Menge dieses
+// Endpunkts; ein Parameter außerhalb der Menge endet mit `400`, dieselbe
+// Begründung wie bei `GET /changes` (`ADR-0081` Teilfrage 4) — ein Filter,
+// der still ignoriert wird, ändert den zugestellten Ergebnisstand.
+var streamChangesParams = map[string]bool{
+	streamChangesParamSchema: true,
+	streamChangesParamTable:  true,
+}
+
+// parseStreamChangesFilter liest das optionale `schema`/`table`-Filterpaar
+// aus den Query-Parametern; ein Parameter außerhalb der geschlossenen Menge
+// endet sichtbar (`ADR-0133` Teilfrage 4).
+func parseStreamChangesFilter(values url.Values) (schema, table string, err error) {
+	for name := range values {
+		if !streamChangesParams[name] {
+			return "", "", fmt.Errorf("unbekannter Query-Parameter %q", name)
+		}
+	}
+	return values.Get(streamChangesParamSchema), values.Get(streamChangesParamTable), nil
+}
 
 // changeSubscriber trägt die eine Fähigkeit, die dieser Adapter vom
 // `Broadcaster` braucht (`ADR-0061` Teilfrage 1/2): registrieren und einen
@@ -91,6 +121,11 @@ func streamChangesHandler(subscriber changeSubscriber, log outbound.LogPort) htt
 			writeError(w, http.StatusServiceUnavailable, "ChangeStream ohne Broadcaster verdrahtet")
 			return
 		}
+		schema, table, err := parseStreamChangesFilter(r.URL.Query())
+		if err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
 		flusher, ok := w.(http.Flusher)
 		if !ok {
 			writeError(w, http.StatusInternalServerError, "Antwort-Writer trägt kein http.Flusher")
@@ -112,6 +147,12 @@ func streamChangesHandler(subscriber changeSubscriber, log outbound.LogPort) htt
 			case <-r.Context().Done():
 				return
 			case change := <-changes:
+				// Dasselbe Filterpaar wie beim gRPC-Stream, geprüft nach dem
+				// `Subscribe()`-Aufruf (`ADR-0133`): der Broadcaster bleibt
+				// unverändert ungefiltert.
+				if !change.MatchesFilter(schema, table) {
+					continue
+				}
 				payload, err := json.Marshal(toStreamChange(change))
 				if err != nil {
 					log.Warn(r.Context(), "http: SSE-Change nicht kodierbar", "error", err)
