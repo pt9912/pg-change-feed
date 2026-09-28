@@ -34,11 +34,17 @@ const (
 )
 
 func main() {
-	if len(os.Args) != 3 {
-		fmt.Fprintln(os.Stderr, "usage: grpcclient <addr> <token>")
+	if len(os.Args) != 3 && len(os.Args) != 5 {
+		fmt.Fprintln(os.Stderr, "usage: grpcclient <addr> <token> [<schema> <table>]")
 		os.Exit(2)
 	}
 	addr, token := os.Args[1], os.Args[2]
+	// Zwei optionale, nachgestellte Argumente tragen das Filterpaar der
+	// Request (`ADR-0133`); ohne sie bleibt die Request unverändert leer.
+	var schema, table string
+	if len(os.Args) == 5 {
+		schema, table = os.Args[3], os.Args[4]
+	}
 
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -53,7 +59,7 @@ func main() {
 	defer cancel()
 	stream, err := client.StreamChanges(
 		metadata.AppendToOutgoingContext(ctx, authorizationMetadataKey, bearerPrefix+token),
-		&streamv1.StreamChangesRequest{})
+		&streamv1.StreamChangesRequest{Schema: schema, Table: table})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "grpcclient: StreamChanges (authentifiziert) fehlgeschlagen: %v\n", err)
 		os.Exit(1)

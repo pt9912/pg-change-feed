@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -32,16 +33,33 @@ type sseChange struct {
 }
 
 func main() {
-	if len(os.Args) != 3 {
-		fmt.Fprintln(os.Stderr, "usage: sseclient <base-url> <token>")
+	if len(os.Args) != 3 && len(os.Args) != 5 {
+		fmt.Fprintln(os.Stderr, "usage: sseclient <base-url> <token> [<schema> <table>]")
 		os.Exit(2)
 	}
 	baseURL, token := os.Args[1], os.Args[2]
+	// Zwei optionale, nachgestellte Argumente tragen das Filterpaar der
+	// Query (`ADR-0133`); ohne sie bleibt die Query unverändert leer.
+	var schema, table string
+	if len(os.Args) == 5 {
+		schema, table = os.Args[3], os.Args[4]
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/changes/stream", nil)
+	streamURL := baseURL + "/changes/stream"
+	if schema != "" || table != "" {
+		query := url.Values{}
+		if schema != "" {
+			query.Set("schema", schema)
+		}
+		if table != "" {
+			query.Set("table", table)
+		}
+		streamURL += "?" + query.Encode()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, streamURL, nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sseclient: Request bauen: %v\n", err)
 		os.Exit(1)

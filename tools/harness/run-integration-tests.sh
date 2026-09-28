@@ -2485,6 +2485,124 @@ fi
 
 echo "run-integration-tests: gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt — ein Wegwerf-Client (tools/harness/grpcclient) öffnete real über gRPC den Server-Stream gegen den laufenden Feed-Container ($GRPC_ADDR) und empfing eine danach committete Änderung (Tabelle, Operation und Spaltenwert real am Stream; die Feldvollständigkeit trägt server_test.go auf Unit-Ebene), deren change_id ($grpc_change_id) unabhängig über cdc.changes lesbar ist; ein Stream-Öffnungsversuch ohne gültiges Token wurde mit gRPC-Status Unauthenticated abgelehnt: $grpc_client_output"
 
+abdeckung_declare "gRPC-Stream-Filter-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet den Server-Stream mit gesetztem schema/table-Filter; eine Change auf der gefilterten Tabelle wird zugestellt, eine Change auf einer anderen, aktivierten Tabelle bleibt bei aktivem Filter unzugestellt" "gRPC-Stream-Filter-Rundlauf (LH-FA-SST-008, ADR-0133) belegt"
+
+# gRPC-Stream-Filter-Rundlauf (ADR-0133): derselbe Wegwerf-Client
+# (tools/harness/grpcclient), jetzt mit gesetztem schema/table-Filter
+# (public/feed_e2e_full) geöffnet. Erst eine Change auf einer anderen,
+# ebenfalls aktivierten Tabelle (feed_e2e_schema, über CDC_TABLES aktiviert
+# und seit TestE2ESchemaChangeAddColumn oben capturebar — ihre reale
+# Spaltenentfernung, die die Erfassung dieser Tabelle dauerhaft beendet,
+# läuft erst deutlich später als TestE2ESchemaChangeDropColumn) — eine
+# begrenzte, reale Wartezeit belegt, dass sie NICHT beim Client ankommt
+# (`stream.Recv()` bleibt blockiert, keine RECEIVED-Zeile). Danach eine
+# Change auf der gefilterten Tabelle — sie erreicht den Client, geprüft
+# über dieselbe RECEIVED-Zeile und ihre `change_id` gegen `cdc.changes`.
+# Eigener, von IDs 260ff. und 270ff. getrennter Wertebereich (280ff. auf
+# feed_e2e_full, id=10 auf feed_e2e_schema — dort bereits 1/2 belegt).
+GRPC_FILTER_CLIENT_CONTAINER=cdc-e2e-grpcclient-filter
+GRPC_FILTER_TABLE=feed_e2e_full
+GRPC_FILTER_OTHER_TABLE=feed_e2e_schema
+GRPC_FILTER_SENTINEL=GrpcFilterMatchE2ESentinel
+GRPC_FILTER_OTHER_SENTINEL=GrpcFilterOtherE2ESentinel
+
+docker rm -fv "$GRPC_FILTER_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+docker run -d --name "$GRPC_FILTER_CLIENT_CONTAINER" --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/grpcclient "$GRPC_ADDR" "$HTTP_TOKEN_READER" public "$GRPC_FILTER_TABLE" >/dev/null
+
+grpc_filter_client_ready=0
+for _ in $(seq 1 60); do
+  if docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+    grpc_filter_client_ready=1
+    break
+  fi
+  if [ "$(docker inspect --format '{{.State.Running}}' "$GRPC_FILTER_CLIENT_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    break
+  fi
+  sleep 1
+done
+if [ "$grpc_filter_client_ready" -ne 1 ]; then
+  echo "run-integration-tests: gRPC-Stream-Filter-Rundlauf — Test-Client wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>&1 || true)" >&2
+  docker rm -fv "$GRPC_FILTER_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$GRPC_FILTER_OTHER_TABLE (id, name) VALUES (10, '$GRPC_FILTER_OTHER_SENTINEL');
+SQL
+
+# Keine Zustellung ist kein Ereignis, das ein Poll beobachten kann — eine
+# reale, aber begrenzte Wartezeit, bevor geprüft wird, dass die
+# nicht passende Change NICHT ankommt.
+sleep 3
+if docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+  grpc_filter_leaked_output=$(docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>&1 || true)
+  docker rm -fv "$GRPC_FILTER_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+  echo "run-integration-tests: gRPC-Stream-Filter-Rundlauf — eine Change auf $GRPC_FILTER_OTHER_TABLE erreichte den auf $GRPC_FILTER_TABLE gefilterten Client (Filter griff nicht): $grpc_filter_leaked_output" >&2
+  exit 1
+fi
+
+grpc_filter_received=0
+for grpc_filter_attempt in $(seq 1 5); do
+  grpc_filter_id=$((280 + grpc_filter_attempt))
+  docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$GRPC_FILTER_TABLE (id, name) VALUES ($grpc_filter_id, '$GRPC_FILTER_SENTINEL');
+SQL
+  for _ in $(seq 1 20); do
+    if docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+      grpc_filter_received=1
+      break
+    fi
+    if [ "$(docker inspect --format '{{.State.Running}}' "$GRPC_FILTER_CLIENT_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+      break
+    fi
+    sleep 0.5
+  done
+  if [ "$grpc_filter_received" -eq 1 ]; then
+    break
+  fi
+done
+
+grpc_filter_client_output=$(docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>&1 || true)
+docker rm -fv "$GRPC_FILTER_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+
+if [ "$grpc_filter_received" -ne 1 ]; then
+  echo "run-integration-tests: gRPC-Stream-Filter-Rundlauf — Test-Client empfing keine der committeten Änderungen auf der gefilterten Tabelle ($GRPC_FILTER_TABLE, $GRPC_FILTER_SENTINEL): $grpc_filter_client_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$grpc_filter_client_output" | grep -qE "RECEIVED .*table=$GRPC_FILTER_TABLE .*operation=INSERT .*new_image=.*$GRPC_FILTER_SENTINEL"; then
+  echo "run-integration-tests: gRPC-Stream-Filter-Rundlauf — die RECEIVED-Zeile trägt nicht die erwartete gefilterte Änderung ($GRPC_FILTER_TABLE, $GRPC_FILTER_SENTINEL): $grpc_filter_client_output" >&2
+  exit 1
+fi
+if printf '%s' "$grpc_filter_client_output" | grep -qF "$GRPC_FILTER_OTHER_SENTINEL"; then
+  echo "run-integration-tests: gRPC-Stream-Filter-Rundlauf — die nicht passende Change ($GRPC_FILTER_OTHER_TABLE, $GRPC_FILTER_OTHER_SENTINEL) erscheint dennoch in der Client-Ausgabe: $grpc_filter_client_output" >&2
+  exit 1
+fi
+
+grpc_filter_change_id=$(printf '%s' "$grpc_filter_client_output" | grep -oE 'RECEIVED change_id=[^ ]+' | head -n1 | cut -d= -f2 || true)
+if [ -z "$grpc_filter_change_id" ]; then
+  echo "run-integration-tests: gRPC-Stream-Filter-Rundlauf — die RECEIVED-Zeile trägt keine change_id: $grpc_filter_client_output" >&2
+  exit 1
+fi
+grpc_filter_captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$grpc_filter_change_id' AND table_name = '$GRPC_FILTER_TABLE' AND new_data->>'name' = '$GRPC_FILTER_SENTINEL'")
+if [ -z "$grpc_filter_captured" ] || [ "$grpc_filter_captured" -lt 1 ]; then
+  echo "run-integration-tests: gRPC-Stream-Filter-Rundlauf — die über den gefilterten Stream empfangene Änderung (change_id=$grpc_filter_change_id, $GRPC_FILTER_SENTINEL) ist nicht real über cdc.changes lesbar (count=${grpc_filter_captured:-leer})" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem gRPC-Stream-Filter-Rundlauf nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: gRPC-Stream-Filter-Rundlauf (LH-FA-SST-008, ADR-0133) belegt — ein mit schema=public/table=$GRPC_FILTER_TABLE gefilterter Wegwerf-Client (tools/harness/grpcclient) empfing eine Change auf $GRPC_FILTER_OTHER_TABLE nicht (3s reale Wartezeit ohne RECEIVED-Zeile), aber eine danach committete Änderung auf $GRPC_FILTER_TABLE (change_id=$grpc_filter_change_id, unabhängig über cdc.changes gelesen)"
+
 abdeckung_declare "gRPC-Administration-Rundlauf" "LH-FA-CON-001,LH-FA-CFG-004,LH-FA-REA-001" "ein Wegwerf-Client ruft real über gRPC mindestens eine Administration-RPC je Token-Klasse auf (ListTables und ReadChanges mit dem reader-Token, RegisterConsumer mit dem admin-Token); ein Aufruf ohne Token endet mit gRPC-Status Unauthenticated, ein reader-Token gegen die admin-RPC RegisterConsumer mit PermissionDenied" "gRPC-Administration-Rundlauf (ADR-0131) belegt"
 
 abdeckung_declare "gRPC-Diagnose-Querabgleich" "LH-FA-SST-006,LH-FA-SST-003,LH-FA-ADM-002,LH-FA-ADM-003" "der gRPC-Diagnose-RPC liefert denselben Betriebsstatus (Lebenszeichen bekannt, Fehlerzustand) wie eine kontemporäre docker exec diagnose-Ausgabe — ein echter Wertabgleich zwischen zwei Zugriffswegen, nicht nur die Feld-Präsenz der Antwort" "gRPC-Diagnose-Querabgleich (ADR-0132) belegt"
@@ -2814,6 +2932,120 @@ if [ "$feed_running" != "true" ]; then
 fi
 
 echo "run-integration-tests: SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt — ein Wegwerf-Client (tools/harness/sseclient) öffnete real per HTTP den SSE-Stream GET /changes/stream gegen den laufenden Feed-Container ($HTTP_BASE_URL) und empfing eine danach committete Änderung (Tabelle, Operation und Spaltenwert real am Stream; die Feldvollständigkeit trägt sse_test.go auf Unit-Ebene), deren change_id ($sse_change_id) unabhängig über cdc.changes lesbar ist; ein Stream-Öffnungsversuch ohne gültiges Token wurde mit HTTP-Status 401 abgelehnt: $sse_client_output"
+
+abdeckung_declare "SSE-Stream-Filter-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet GET /changes/stream mit gesetztem schema/table-Query-Filter; eine Change auf der gefilterten Tabelle wird zugestellt, eine Change auf einer anderen, aktivierten Tabelle bleibt bei aktivem Filter unzugestellt" "SSE-Stream-Filter-Rundlauf (LH-FA-SST-008, ADR-0133) belegt"
+
+# SSE-Stream-Filter-Rundlauf (ADR-0133): derselbe Wegwerf-Client
+# (tools/harness/sseclient), jetzt mit gesetztem schema/table-Query-Filter
+# (public/feed_e2e_full) geöffnet — dieselbe Reihenfolge wie beim
+# gRPC-Filter-Rundlauf oben: erst eine Change auf feed_e2e_schema (real
+# geprüfte Abwesenheit über eine begrenzte Wartezeit; die Tabelle bleibt
+# bis TestE2ESchemaChangeDropColumn unten capturebar, siehe gRPC-Block
+# oben), danach eine Change auf der gefilterten Tabelle. Eigener
+# Wertebereich (290ff. auf feed_e2e_full, id=11 auf feed_e2e_schema,
+# getrennt vom id=10 des gRPC-Filter-Rundlaufs oben).
+SSE_FILTER_CLIENT_CONTAINER=cdc-e2e-sseclient-filter
+SSE_FILTER_TABLE=feed_e2e_full
+SSE_FILTER_OTHER_TABLE=feed_e2e_schema
+SSE_FILTER_SENTINEL=SseFilterMatchE2ESentinel
+SSE_FILTER_OTHER_SENTINEL=SseFilterOtherE2ESentinel
+
+docker rm -fv "$SSE_FILTER_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+docker run -d --name "$SSE_FILTER_CLIENT_CONTAINER" --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/sseclient "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" public "$SSE_FILTER_TABLE" >/dev/null
+
+sse_filter_client_ready=0
+for _ in $(seq 1 60); do
+  if docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+    sse_filter_client_ready=1
+    break
+  fi
+  if [ "$(docker inspect --format '{{.State.Running}}' "$SSE_FILTER_CLIENT_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    break
+  fi
+  sleep 1
+done
+if [ "$sse_filter_client_ready" -ne 1 ]; then
+  echo "run-integration-tests: SSE-Stream-Filter-Rundlauf — Test-Client wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>&1 || true)" >&2
+  docker rm -fv "$SSE_FILTER_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$SSE_FILTER_OTHER_TABLE (id, name) VALUES (11, '$SSE_FILTER_OTHER_SENTINEL');
+SQL
+
+# Keine Zustellung ist kein Ereignis, das ein Poll beobachten kann — eine
+# reale, aber begrenzte Wartezeit, bevor geprüft wird, dass die
+# nicht passende Change NICHT ankommt.
+sleep 3
+if docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+  sse_filter_leaked_output=$(docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>&1 || true)
+  docker rm -fv "$SSE_FILTER_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+  echo "run-integration-tests: SSE-Stream-Filter-Rundlauf — eine Change auf $SSE_FILTER_OTHER_TABLE erreichte den auf $SSE_FILTER_TABLE gefilterten Client (Filter griff nicht): $sse_filter_leaked_output" >&2
+  exit 1
+fi
+
+sse_filter_received=0
+for sse_filter_attempt in $(seq 1 5); do
+  sse_filter_id=$((290 + sse_filter_attempt))
+  docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$SSE_FILTER_TABLE (id, name) VALUES ($sse_filter_id, '$SSE_FILTER_SENTINEL');
+SQL
+  for _ in $(seq 1 20); do
+    if docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+      sse_filter_received=1
+      break
+    fi
+    if [ "$(docker inspect --format '{{.State.Running}}' "$SSE_FILTER_CLIENT_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+      break
+    fi
+    sleep 0.5
+  done
+  if [ "$sse_filter_received" -eq 1 ]; then
+    break
+  fi
+done
+
+sse_filter_client_output=$(docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>&1 || true)
+docker rm -fv "$SSE_FILTER_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+
+if [ "$sse_filter_received" -ne 1 ]; then
+  echo "run-integration-tests: SSE-Stream-Filter-Rundlauf — Test-Client empfing keine der committeten Änderungen auf der gefilterten Tabelle ($SSE_FILTER_TABLE, $SSE_FILTER_SENTINEL): $sse_filter_client_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$sse_filter_client_output" | grep -qE "RECEIVED .*table=$SSE_FILTER_TABLE .*operation=INSERT .*new_image=.*$SSE_FILTER_SENTINEL"; then
+  echo "run-integration-tests: SSE-Stream-Filter-Rundlauf — die RECEIVED-Zeile trägt nicht die erwartete gefilterte Änderung ($SSE_FILTER_TABLE, $SSE_FILTER_SENTINEL): $sse_filter_client_output" >&2
+  exit 1
+fi
+if printf '%s' "$sse_filter_client_output" | grep -qF "$SSE_FILTER_OTHER_SENTINEL"; then
+  echo "run-integration-tests: SSE-Stream-Filter-Rundlauf — die nicht passende Change ($SSE_FILTER_OTHER_TABLE, $SSE_FILTER_OTHER_SENTINEL) erscheint dennoch in der Client-Ausgabe: $sse_filter_client_output" >&2
+  exit 1
+fi
+
+sse_filter_change_id=$(printf '%s' "$sse_filter_client_output" | grep -oE 'RECEIVED change_id=[^ ]+' | head -n1 | cut -d= -f2 || true)
+if [ -z "$sse_filter_change_id" ]; then
+  echo "run-integration-tests: SSE-Stream-Filter-Rundlauf — die RECEIVED-Zeile trägt keine change_id: $sse_filter_client_output" >&2
+  exit 1
+fi
+sse_filter_captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$sse_filter_change_id' AND table_name = '$SSE_FILTER_TABLE' AND new_data->>'name' = '$SSE_FILTER_SENTINEL'")
+if [ -z "$sse_filter_captured" ] || [ "$sse_filter_captured" -lt 1 ]; then
+  echo "run-integration-tests: SSE-Stream-Filter-Rundlauf — die über den gefilterten Stream empfangene Änderung (change_id=$sse_filter_change_id, $SSE_FILTER_SENTINEL) ist nicht real über cdc.changes lesbar (count=${sse_filter_captured:-leer})" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem SSE-Stream-Filter-Rundlauf nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: SSE-Stream-Filter-Rundlauf (LH-FA-SST-008, ADR-0133) belegt — ein mit schema=public/table=$SSE_FILTER_TABLE gefilterter Wegwerf-Client (tools/harness/sseclient) empfing eine Change auf $SSE_FILTER_OTHER_TABLE nicht (3s reale Wartezeit ohne RECEIVED-Zeile), aber eine danach committete Änderung auf $SSE_FILTER_TABLE (change_id=$sse_filter_change_id, unabhängig über cdc.changes gelesen)"
 
 abdeckung_declare "NATS-Vollinhalts-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client verbindet sich real über NATS mit gültigem Token, abonniert cdc.stream.<...> und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch ohne und einer mit falschem Token werden vom NATS-Server abgelehnt; das bestehende Wecksignal (natssub) funktioniert mit demselben Test-Token unverändert weiter" "NATS-Vollinhalts-Stream-Rundlauf (LH-FA-SST-008, ADR-0100) belegt"
 
