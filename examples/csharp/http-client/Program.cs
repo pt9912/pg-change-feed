@@ -5,8 +5,8 @@ namespace CdcExamples.Http;
 /// Anfrage/Antwort-Zugriff über die HTTP-/JSON-API (<c>LH-FA-SST-006</c>):
 /// das <c>--verb</c>-Flag ruft eine von zehn dokumentierten Fähigkeiten real
 /// gegen den laufenden Feed-Container auf und gibt die Antwort aus. Startform
-/// ist ein Container-Aufruf, kein Host-Aufruf (<c>ADR-0087</c> Festlegung 3);
-/// Default-Verb ist <c>tables</c> — die bestehende Startform
+/// ist ein Container-Aufruf, kein Host-Aufruf; Default-Verb ist <c>tables</c>
+/// — die bestehende Startform
 /// <c>ARGS="--source &lt;quelle&gt; --publication &lt;publication&gt;"</c>
 /// bleibt unverändert funktionsfähig.
 ///
