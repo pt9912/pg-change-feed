@@ -1,15 +1,18 @@
-// Command grpc-client ist ein öffentliches Beispiel für den Live-Change-Stream
-// über gRPC (`LH-FA-SST-008`, `ADR-0060`, `ADR-0076`): es öffnet den
-// Server-Streaming-RPC `ChangeStream/StreamChanges` real gegen den laufenden
-// Feed-Container und gibt jede empfangene Nachricht aus. Startform ist
-// `go run ./examples/grpc-client`; der Zugriffs-Abschnitt des
-// Benutzerhandbuchs ist `### Zugriff über den gRPC-Change-Stream`
+// Command grpc-client ist ein öffentliches Beispiel für die vollständige
+// gRPC-Fläche (`LH-FA-SST-006`): das `-verb`-Flag ruft eine von zwölf
+// dokumentierten Fähigkeiten real gegen den laufenden Feed-Container auf —
+// der Live-Change-Stream (Default-Verb `stream`, unverändert die
+// ursprüngliche Aufrufform) und die elf unären RPCs des
+// `Administration`-Diensts. Startform ist `go run ./examples/grpc-client`;
+// die Zugriffs-Abschnitte des Benutzerhandbuchs sind `### Zugriff über den
+// gRPC-Change-Stream` und `### Zugriff über die gRPC-Verwaltungs-API`
 // (`docs/user/benutzerhandbuch.md`).
 //
-// Dieses Programm ist das Vorbild (minimal, lesbar); der E2E-Belegträger zu
-// LH-FA-SST-008 ist der Wegwerf-Client `tools/harness/grpcclient`. Das
-// Beispiel trägt keine Zustandsmaschine: der Stream kennt kein Replay
-// (`ADR-0060`), verpasste Changes holt der bestehende Lesezugriffsweg nach.
+// Dieses Programm ist das Vorbild (minimal, lesbar); der E2E-Belegträger ist
+// der Wegwerf-Client `tools/harness/grpcadminclient`. Das Beispiel trägt
+// keine Zustandsmaschine: die elf RPCs stellen je eine Anfrage und enden,
+// der Stream bleibt offen und kennt kein Replay — verpasste Changes holt der
+// bestehende Lesezugriffsweg (`ReadChanges`, `GET /changes`) nach.
 package main
 
 import (
@@ -17,12 +20,13 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	streamv1 "github.com/pt9912/pg-change-feed/gen/cdc/stream/v1"
+	administrationv1 "github.com/pt9912/pg-change-feed/gen/cdc/administration/v1"
 )
 
 // authorizationMetadataKey und bearerPrefix tragen dieselbe Wertform wie der
@@ -33,24 +37,64 @@ const (
 	bearerPrefix             = "Bearer "
 )
 
+// requestTimeout begrenzt einen einzelnen unären RPC-Aufruf; die
+// Administration-API antwortet synchron (dieselbe Frist wie
+// `examples/http-client`s `doRequestJSON`). Der Stream-Verb trägt keine
+// eigene Frist — er bleibt offen, bis die Verbindung endet.
+const requestTimeout = 10 * time.Second
+
 // config trägt die Laufzeit-Eingabe des Beispiels: die Horch-Adresse des
-// gRPC-Streaming-Servers und das Token der lesenden Rechtsklasse. Beide
-// kommen aus denselben Umgebungsvariablen, die das Benutzerhandbuch führt
-// (`CDC_GRPC_ADDR`, `CDC_API_TOKEN_READER`), und lassen sich per Flag
-// übersteuern (`ADR-0076` Festlegung 1).
+// gRPC-Servers, die zwei Token-Klassen und die Felder aller zwölf
+// Fähigkeiten — je Verb werden nur die tatsächlich nötigen Felder geprüft
+// (`validate`). `schema`/`table` dienen doppelt: als optionaler Stream-Filter
+// (ADR-0133) und als Tabellen-Identität der Verwaltungs-RPCs.
 type config struct {
-	addr  string
-	token string
+	addr       string
+	token      string
+	adminToken string
+	verb       string
+
+	schema string
+	table  string
+
+	consumerID string
+	name       string
+	offset     uint64
+
+	tableID         string
+	schemaVersionID string
+	version         int64
+	source          string
+	publication     string
+
+	from  uint64
+	to    uint64
+	limit int64
+
+	minAgeNanos int64
+}
+
+// knownVerbs trägt die geschlossene Menge der `-verb`-Werte — ein
+// unbekannter Wert bricht ab, bevor ein Netzwerkaufruf versucht wird.
+var knownVerbs = map[string]bool{
+	"stream":                true,
+	"register-consumer":     true,
+	"acknowledge-consumer":  true,
+	"get-consumer-position": true,
+	"remove-consumer":       true,
+	"enable-table":          true,
+	"disable-table":         true,
+	"get-table-status":      true,
+	"list-tables":           true,
+	"run-retention":         true,
+	"read-changes":          true,
+	"diagnose":              true,
 }
 
 func main() {
 	cfg := parseFlags()
-	if cfg.addr == "" {
-		fmt.Fprintln(os.Stderr, "grpc-client: keine gRPC-Adresse gesetzt — CDC_GRPC_ADDR (oder -addr) ist nötig, um den Stream zu öffnen")
-		os.Exit(2)
-	}
-	if cfg.token == "" {
-		fmt.Fprintln(os.Stderr, "grpc-client: kein Token gesetzt — CDC_API_TOKEN_READER (oder -token) ist nötig, um über die reader-Rechtsklasse zu lesen")
+	if err := validate(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "grpc-client: %v\n", err)
 		os.Exit(2)
 	}
 
@@ -61,33 +105,201 @@ func main() {
 	}
 	defer func() { _ = conn.Close() }()
 
-	client := streamv1.NewChangeStreamClient(conn)
+	if cfg.verb == "stream" {
+		runStream(conn, cfg)
+		return
+	}
 
-	// Der Stream bleibt offen, bis die Verbindung endet: der Aufruf läuft
-	// ohne eigene Frist über `context.Background()`.
-	ctx := metadata.AppendToOutgoingContext(context.Background(), authorizationMetadataKey, bearerPrefix+cfg.token)
-	stream, err := client.StreamChanges(ctx, &streamv1.StreamChangesRequest{})
+	client := administrationv1.NewAdministrationClient(conn)
+	out, err := dispatchAdmin(client, cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "grpc-client: StreamChanges fehlgeschlagen: %v\n", err)
+		fmt.Fprintf(os.Stderr, "grpc-client: -verb=%s fehlgeschlagen: %v\n", cfg.verb, err)
 		os.Exit(1)
 	}
-
-	for {
-		change, err := stream.Recv()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "grpc-client: Stream endete: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Println(formatChange(change))
-	}
+	fmt.Println(out)
 }
 
 // parseFlags liest die Flag-Werte und füllt fehlende Felder aus den im
 // Handbuch dokumentierten Umgebungsvariablen (`ADR-0076` Festlegung 1).
 func parseFlags() config {
 	var cfg config
-	flag.StringVar(&cfg.addr, "addr", os.Getenv("CDC_GRPC_ADDR"), "Horch-Adresse des gRPC-Streaming-Servers, host:port (Default: CDC_GRPC_ADDR)")
+	flag.StringVar(&cfg.addr, "addr", os.Getenv("CDC_GRPC_ADDR"), "Horch-Adresse des gRPC-Servers, host:port (Default: CDC_GRPC_ADDR)")
 	flag.StringVar(&cfg.token, "token", os.Getenv("CDC_API_TOKEN_READER"), "Bearer-Token der lesenden Rechtsklasse (Default: CDC_API_TOKEN_READER)")
+	flag.StringVar(&cfg.adminToken, "admin-token", os.Getenv("CDC_API_TOKEN_ADMIN"), "Bearer-Token der administrativen Rechtsklasse (Default: CDC_API_TOKEN_ADMIN)")
+	flag.StringVar(&cfg.verb, "verb", "stream", "Aufgerufene Fähigkeit: stream|register-consumer|acknowledge-consumer|get-consumer-position|remove-consumer|enable-table|disable-table|get-table-status|list-tables|run-retention|read-changes|diagnose")
+
+	flag.StringVar(&cfg.schema, "schema", "", "Schema (Stream-Filter, optional; sonst Pflichtfeld der Tabellen-RPCs)")
+	flag.StringVar(&cfg.table, "table", "", "Tabellenname (Stream-Filter, optional; sonst Pflichtfeld der Tabellen-RPCs)")
+
+	flag.StringVar(&cfg.consumerID, "consumer-id", "", "Consumer-Kennung")
+	flag.StringVar(&cfg.name, "name", "", "Anzeigename des Consumers (nur register-consumer)")
+	flag.Uint64Var(&cfg.offset, "offset", 0, "Bestätigte Position (nur acknowledge-consumer)")
+
+	flag.StringVar(&cfg.tableID, "table-id", "", "Tabellen-Kennung (Default: <schema>.<table>, nur enable-table)")
+	flag.StringVar(&cfg.schemaVersionID, "schema-version-id", "", "Schema-Versions-Kennung (Default: <table-id>-v1, nur enable-table)")
+	flag.Int64Var(&cfg.version, "version", 1, "Versionsnummer der Tabelle (nur enable-table)")
+	flag.StringVar(&cfg.source, "source", "", "Quelle (source_id)")
+	flag.StringVar(&cfg.publication, "publication", "", "Publication")
+
+	flag.Uint64Var(&cfg.from, "from", 0, "Untere Positions-Grenze, einschließlich (nur read-changes, optional)")
+	flag.Uint64Var(&cfg.to, "to", 0, "Obere Positions-Grenze, ausschließlich (nur read-changes, optional)")
+	flag.Int64Var(&cfg.limit, "limit", 0, "Maximale Zeilenzahl (nur read-changes, optional)")
+
+	flag.Int64Var(&cfg.minAgeNanos, "min-age-nanos", 0, "Mindestalter der Retention-Policy in Nanosekunden (nur run-retention)")
 	flag.Parse()
 	return cfg
+}
+
+// validate prüft cfg gegen die Pflichtfelder des gewählten Verbs — vor jedem
+// Netzwerkaufruf. Jedes Verb braucht die Horch-Adresse und die zu seiner
+// Rechtsklasse passende Token-Variable (Rechtsklassen-Tabelle: `ADR-0130`).
+func validate(cfg config) error {
+	if !knownVerbs[cfg.verb] {
+		return fmt.Errorf("unbekanntes -verb %q", cfg.verb)
+	}
+	if cfg.addr == "" {
+		return fmt.Errorf("keine gRPC-Adresse gesetzt — CDC_GRPC_ADDR (oder -addr) ist nötig, um den Server zu erreichen")
+	}
+
+	switch cfg.verb {
+	case "stream":
+		return requireReaderToken(cfg)
+	case "register-consumer":
+		if err := requireAdminToken(cfg); err != nil {
+			return err
+		}
+		if cfg.consumerID == "" || cfg.name == "" {
+			return fmt.Errorf("-consumer-id und -name sind Pflicht — sie sind die zwei Pflichtfelder von RegisterConsumer")
+		}
+	case "acknowledge-consumer":
+		if err := requireAdminToken(cfg); err != nil {
+			return err
+		}
+		if cfg.consumerID == "" || cfg.source == "" {
+			return fmt.Errorf("-consumer-id und -source sind Pflicht — sie sind zwei der drei Pflichtfelder von AcknowledgeConsumer")
+		}
+	case "get-consumer-position":
+		if err := requireReaderToken(cfg); err != nil {
+			return err
+		}
+		if cfg.consumerID == "" {
+			return fmt.Errorf("-consumer-id ist Pflicht — es ist das einzige Pflichtfeld von GetConsumerPosition")
+		}
+	case "remove-consumer":
+		if err := requireAdminToken(cfg); err != nil {
+			return err
+		}
+		if cfg.consumerID == "" {
+			return fmt.Errorf("-consumer-id ist Pflicht — es ist das einzige Pflichtfeld von RemoveConsumer")
+		}
+	case "enable-table":
+		if err := requireAdminToken(cfg); err != nil {
+			return err
+		}
+		if cfg.source == "" || cfg.schema == "" || cfg.table == "" || cfg.publication == "" {
+			return fmt.Errorf("-source, -schema, -table und -publication sind Pflicht — table-id und schema-version-id haben einen Default")
+		}
+	case "disable-table":
+		if err := requireAdminToken(cfg); err != nil {
+			return err
+		}
+		if cfg.source == "" || cfg.schema == "" || cfg.table == "" || cfg.publication == "" {
+			return fmt.Errorf("-source, -schema, -table und -publication sind Pflicht — sie sind die vier Pflichtfelder von DisableTable")
+		}
+	case "get-table-status":
+		if err := requireReaderToken(cfg); err != nil {
+			return err
+		}
+		if cfg.source == "" || cfg.schema == "" || cfg.table == "" || cfg.publication == "" {
+			return fmt.Errorf("-source, -schema, -table und -publication sind Pflicht — sie sind die vier Pflichtfelder von GetTableStatus")
+		}
+	case "list-tables":
+		if err := requireReaderToken(cfg); err != nil {
+			return err
+		}
+		if cfg.source == "" || cfg.publication == "" {
+			return fmt.Errorf("-source und -publication sind Pflicht — sie sind die zwei Pflichtfelder von ListTables")
+		}
+	case "run-retention":
+		if err := requireAdminToken(cfg); err != nil {
+			return err
+		}
+		if cfg.source == "" {
+			return fmt.Errorf("-source ist Pflicht — es ist eines der zwei Pflichtfelder von RunRetention")
+		}
+	case "read-changes":
+		if err := requireReaderToken(cfg); err != nil {
+			return err
+		}
+		if cfg.source == "" {
+			return fmt.Errorf("-source ist Pflicht — es ist das einzige Pflichtfeld von ReadChanges")
+		}
+	case "diagnose":
+		if err := requireReaderToken(cfg); err != nil {
+			return err
+		}
+		if cfg.source == "" {
+			return fmt.Errorf("-source ist Pflicht — es ist das einzige Pflichtfeld von Diagnose")
+		}
+	}
+	return nil
+}
+
+func requireReaderToken(cfg config) error {
+	if cfg.token == "" {
+		return fmt.Errorf("kein Token gesetzt — CDC_API_TOKEN_READER (oder -token) ist nötig, um über die reader-Rechtsklasse zu lesen")
+	}
+	return nil
+}
+
+func requireAdminToken(cfg config) error {
+	if cfg.adminToken == "" {
+		return fmt.Errorf("kein Admin-Token gesetzt — CDC_API_TOKEN_ADMIN (oder -admin-token) ist nötig, um über die admin-Rechtsklasse zu schreiben")
+	}
+	return nil
+}
+
+// dispatchAdmin ruft die zum Verb gehörende Administration-RPC auf und
+// liefert die formatierte Ausgabe. `stream` läuft nicht hier durch — er hat
+// eine eigene, dauerhafte Schleife (`runStream`, `stream.go`).
+func dispatchAdmin(client administrationv1.AdministrationClient, cfg config) (string, error) {
+	switch cfg.verb {
+	case "register-consumer":
+		return registerConsumer(client, cfg)
+	case "acknowledge-consumer":
+		return acknowledgeConsumer(client, cfg)
+	case "get-consumer-position":
+		return getConsumerPosition(client, cfg)
+	case "remove-consumer":
+		return removeConsumer(client, cfg)
+	case "enable-table":
+		if cfg.tableID == "" {
+			cfg.tableID = cfg.schema + "." + cfg.table
+		}
+		if cfg.schemaVersionID == "" {
+			cfg.schemaVersionID = cfg.tableID + "-v1"
+		}
+		return enableTable(client, cfg)
+	case "disable-table":
+		return disableTable(client, cfg)
+	case "get-table-status":
+		return getTableStatus(client, cfg)
+	case "list-tables":
+		return listTables(client, cfg)
+	case "run-retention":
+		return runRetention(client, cfg)
+	case "read-changes":
+		return readChanges(client, cfg)
+	case "diagnose":
+		return diagnose(client, cfg)
+	default:
+		return "", fmt.Errorf("unbekanntes -verb %q", cfg.verb)
+	}
+}
+
+// callCtx trägt die Aufruf-Frist und den `authorization`-Metadata-Eintrag in
+// der `Bearer`-Wertform — der gemeinsame Ablauf aller elf Administration-RPCs.
+func callCtx(token string) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	return metadata.AppendToOutgoingContext(ctx, authorizationMetadataKey, bearerPrefix+token), cancel
 }
