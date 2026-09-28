@@ -73,6 +73,8 @@ await foreach (var change in client.StreamChangesAsync())
 }
 ```
 
+`StreamChangesAsync` takes two optional parameters, `schema` and `table`, each independent: a schema without a table matches every table of that schema, a table without a schema matches every table of that name across schemas, both set matches exactly one table, and both left out (the default) delivers every change of every captured table — the same filter form as `ReadChangesAsync` below.
+
 Server-Sent Events (the address is the HTTP base URL; the request timeout must be off for a long-lived stream):
 
 ```csharp
@@ -103,6 +105,31 @@ await foreach (var change in client.StreamChangesAsync(subject))
 }
 ```
 
+### Manage tables and consumers over gRPC
+
+`PgChangeFeedAdministrationClient` wraps the same eleven management/read/diagnose capabilities as `PgChangeFeedHttpClient`, over gRPC instead of HTTP — one method per RPC, same convenience/advanced constructor pair as `PgChangeFeedGrpcClient` above. Requests and responses are the generated `Cdc.Administration.V1` protobuf messages directly, not a separate DTO type:
+
+```csharp
+using PgChangeFeed.Client;
+using PgChangeFeed.Client.Grpc;
+using Cdc.Administration.V1;
+
+var options = new PgChangeFeedClientOptions(new Uri("http://feed.example.com:9090"), "<admin token>");
+using var admin = new PgChangeFeedAdministrationClient(options);
+
+await admin.EnableTableAsync(new EnableTableRequest
+{
+    Source = "my-source", Schema = "public", Table = "orders",
+    TableId = "orders", SchemaVersionId = "v1", Version = 1, Publication = "my_publication",
+});
+
+var tables = await admin.ListTablesAsync(new ListTablesRequest { Source = "my-source", Publication = "my_publication" });
+foreach (var t in tables.Tables)
+{
+    Console.WriteLine($"{t.Schema}.{t.Table}");
+}
+```
+
 ## API overview
 
 `PgChangeFeedHttpClient(httpClient, options)` wraps the HTTP API. The `HttpClient` you pass in stays yours; the library never disposes it. Every method also takes an optional `CancellationToken`.
@@ -128,9 +155,25 @@ The live streams each have one method:
 
 | Class | Method | What it does |
 |---|---|---|
-| `PgChangeFeedGrpcClient(options)` | `StreamChangesAsync(cancellationToken)` | Opens the gRPC stream and yields generated `Cdc.Stream.V1.Change` messages. The client owns its channel; dispose it when done. |
+| `PgChangeFeedGrpcClient(options)` | `StreamChangesAsync(schema, table, cancellationToken)` | Opens the gRPC stream and yields generated `Cdc.Stream.V1.Change` messages. `schema`/`table` are optional and independent, both left out delivers every change. The client owns its channel; dispose it when done. |
 | `PgChangeFeedSseClient(httpClient, options)` | `StreamChangesAsync(cancellationToken)` | Opens `GET /changes/stream` and yields `PgChangeFeed.Client.Sse.Models.Change` objects. |
 | `PgChangeFeedNatsStreamClient(options)` | `StreamChangesAsync(subject, cancellationToken)` | Subscribes to a subject and yields `PgChangeFeed.Client.Nats.Models.Change` objects. Dispose the client when done. |
+
+`PgChangeFeedAdministrationClient(options)` wraps the eleven RPCs of the `Administration` gRPC service — the same capabilities as the HTTP table above, over gRPC. Requests and responses are the generated `Cdc.Administration.V1` protobuf messages, used directly (no separate model type):
+
+| Method | What it does | Token |
+|---|---|---|
+| `RegisterConsumerAsync(request)` | Registers a consumer. Registering an existing consumer changes nothing (`AlreadyRegistered` is true). | admin |
+| `AcknowledgeConsumerAsync(request)` | Stores the consumer's position. Repeating the same position has no effect; an earlier position is rejected. | admin |
+| `GetConsumerPositionAsync(request)` | Reads the stored position (`Offset`, and `Acknowledged`, which is false for a consumer that never acknowledged). | reader |
+| `RemoveConsumerAsync(request)` | Removes a consumer (`Removed` is false for one that was never registered). | admin |
+| `EnableTableAsync(request)` | Starts capturing a table. A table that is already captured changes nothing (`AlreadyEnabled` is true); a table that does not exist throws `PgChangeFeedGrpcNotFoundException`. | admin |
+| `DisableTableAsync(request)` | Stops capturing a table. `Retained` reports that changes already stored for it remain. | admin |
+| `GetTableStatusAsync(request)` | Tells whether a table is captured (`Enabled`) or no longer captured with stored changes remaining (`Retained`). | reader |
+| `ListTablesAsync(request)` | Lists the captured tables (`Tables`) and the tables whose stored changes remain (`Retained`), each a `SourceTable`. | reader |
+| `RunRetentionAsync(request)` | Deletes stored changes older than `MinAgeNanos` that every consumer with a stored position has passed; returns the number deleted (`Deleted`). | admin |
+| `ReadChangesAsync(request)` | Reads stored changes of a source, optionally for one schema and table and for the range `[From, To)` of commit positions; `Changes` is a list of `ChangeRecord`. | reader |
+| `DiagnoseAsync(request)` | Reads the operational diagnose report (heartbeat, capture lag, per-consumer lag, retention blocker, storage, backfill status). | reader |
 
 ## The change object
 
@@ -190,11 +233,22 @@ catch (PgChangeFeedException error)
 
 The gRPC stream reports a missing or unknown token as a `Grpc.Core.RpcException` with status `Unauthenticated`. The NATS stream throws the connection exception of the NATS client library when the server rejects the token, and `PgChangeFeedNatsMalformedMessageException` when a message cannot be read.
 
+A `PgChangeFeedAdministrationClient` call that the server answers with a non-`OK` gRPC status throws a subclass of `PgChangeFeedGrpcException`, which carries the `Grpc.Core.StatusCode`; the original `Grpc.Core.RpcException` is always the `InnerException`.
+
+| Exception | gRPC status |
+|---|---|
+| `PgChangeFeedGrpcInvalidArgumentException` | `InvalidArgument` — invalid request or a violated rule. |
+| `PgChangeFeedGrpcUnauthenticatedException` | `Unauthenticated` — token missing or unknown. |
+| `PgChangeFeedGrpcPermissionDeniedException` | `PermissionDenied` — known token whose class may not call this RPC (for example a reader token on an admin call). |
+| `PgChangeFeedGrpcNotFoundException` | `NotFound` — the table does not exist in the source database (`EnableTableAsync`, `DisableTableAsync`, `GetTableStatusAsync`). |
+| `PgChangeFeedGrpcInternalException` | `Internal` — unexpected error inside the server. |
+| `PgChangeFeedGrpcUnexpectedStatusException` | any other non-`OK` status. |
+
 ## Reading versus streaming
 
 - **Reading over HTTP** (`ReadChangesAsync`) is asking: you name a range, the server answers from the changes it has stored. You can read the same range again, and with a registered consumer you can carry on after a restart exactly where you stopped. Changes stay readable until the retention removes them.
 - **The live streams** (gRPC, SSE, NATS) are pushing: you get every change committed after you connected, in commit order, with the full row content. There is no delivery guarantee and no replay. A change committed while you were disconnected, or while you read too slowly, does not arrive on the stream. Use the stream to react quickly and `ReadChangesAsync` to catch up on what it missed.
-- The gRPC and SSE streams cannot be filtered by table; on the NATS stream the subject chooses the source or the table.
+- The gRPC stream can be filtered by schema/table (`StreamChangesAsync(schema, table)`); the SSE stream cannot yet; on the NATS stream the subject chooses the source or the table.
 
 ## More
 

@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.78
+Version: 1.79
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-28
 
@@ -1306,10 +1306,11 @@ liefert exakt eine Tabelle; bleiben beide leer (der unveränderte, alte
 Aufruf), liefert der Stream wie zuvor jeden Change aller aktivierten
 Tabellen. Die Prüfung läuft serverseitig, bevor eine nicht passende Change
 über das Netz geht. Go, C# und Kotlin nehmen den Filter über `-schema`/`-table`
-bzw. `--schema`/`--table` entgegen; die drei SDK-Packages
-(`PgChangeFeed.Client`, `pgchangefeed`, `pgchangefeed-kotlin`) nehmen ihn noch
-nicht als eigenen Aufrufparameter entgegen — das bleibt ein offener, noch
-nicht terminierter Folge-Schritt.
+bzw. `--schema`/`--table` entgegen; das NuGet-Package `PgChangeFeed.Client`
+nimmt ihn jetzt ebenfalls entgegen (`StreamChangesAsync(schema, table,
+cancellationToken)`, beide Parameter optional); `pgchangefeed` und
+`pgchangefeed-kotlin` nehmen ihn noch nicht als eigenen Aufrufparameter
+entgegen — das bleibt ein offener, noch nicht terminierter Folge-Schritt.
 
 **Zustellsemantik:** Es gibt **keine** Zustellgarantie (Fire-and-Forget,
 verlustbehaftet). Je Abonnent trägt der Server eine begrenzte
@@ -1359,10 +1360,13 @@ und lässt sich per Flag übersteuern.
 NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
 `dotnet add package PgChangeFeed.Client`) — `PgChangeFeedGrpcClient.StreamChangesAsync`
 öffnet den `ChangeStream/StreamChanges`-RPC und liefert ein
-`IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben; das
-Bearer-Token landet im `authorization`-Metadata-Eintrag, ein fehlendes oder
-ungültiges Token endet den Aufruf mit gRPC-Status `Unauthenticated`, statt
-den Draht-Vertrag selbst zu implementieren; siehe `sdks/csharp/README.md`.
+`IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben; zwei
+optionale Parameter `schema`/`table` tragen denselben Filter wie oben
+beschrieben (`ADR-0133`), beide `null` (der Default) liefert wie zuvor jeden
+Change. Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
+fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
+`Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren; siehe
+`sdks/csharp/README.md`.
 
 Kotlin/JVM-Anwendungen können statt des Beispiels dasselbe offizielle
 Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
@@ -1487,10 +1491,24 @@ sich per Flag übersteuern, z. B.
 bzw.
 `make example-run-kotlin SURFACE=grpc ARGS="--verb=list-tables --source=<quelle> --publication=<publication>"`.
 
-Für die drei SDK-Packages (`PgChangeFeed.Client`, `pgchangefeed`,
-`pgchangefeed-kotlin`) bleibt diese Fläche offen — keines von ihnen trägt
-bislang einen Methodensatz dafür. Ihre Aufnahme bleibt ein eigener, noch
-nicht terminierter Folge-Schritt.
+**SDK:** .NET-Anwendungen können statt der Beispiele das offizielle
+NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`,
+`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedAdministrationClient`
+trägt alle elf RPCs der Tabelle oben als eigene async-Methode
+(`RegisterConsumerAsync`, `AcknowledgeConsumerAsync`,
+`GetConsumerPositionAsync`, `RemoveConsumerAsync`, `EnableTableAsync`,
+`DisableTableAsync`, `GetTableStatusAsync`, `ListTablesAsync`,
+`RunRetentionAsync`, `ReadChangesAsync`, `DiagnoseAsync`); Requests und
+Responses sind die generierten Protobuf-Nachrichten unverändert, kein
+eigener DTO-Layer. Ein nicht-`OK`-Status wird zu einer typisierten
+`PgChangeFeedGrpcException`-Unterklasse je gRPC-Code der Fehlerform-Tabelle
+oben, statt den Draht-Vertrag selbst zu implementieren; siehe
+`sdks/csharp/README.md`.
+
+Für die beiden übrigen SDK-Packages (`pgchangefeed`, `pgchangefeed-kotlin`)
+bleibt diese Fläche offen — keines von ihnen trägt bislang einen
+Methodensatz dafür. Ihre Aufnahme bleibt ein eigener, noch nicht
+terminierter Folge-Schritt.
 
 ### Zugriff über Server-Sent-Events
 
@@ -1515,9 +1533,11 @@ Endpunkt mit `503`.
 gRPC-Stream oben und bei `GET /changes` (siehe
 [Änderungen lesen](#änderungen-lesen)). Ohne Parameter liefert der Endpunkt
 wie zuvor jeden Change; ein Parameter außerhalb dieser beiden Namen endet
-mit `400`, bevor das erste Event läuft. Wie beim gRPC-Stream nehmen die
-Beispiel-Clients und die drei SDK-Packages den Filter noch nicht als
-eigenen Aufrufparameter entgegen — offener Folge-Schritt.
+mit `400`, bevor das erste Event läuft. Die Beispiel-Clients (Go/C#/Kotlin)
+und die drei SDK-Packages nehmen den SSE-Filter noch nicht als eigenen
+Aufrufparameter entgegen — offener Folge-Schritt (anders inzwischen der
+gRPC-Stream oben, dessen Filter das NuGet-Package `PgChangeFeed.Client`
+bereits als Parameter entgegennimmt).
 
 **Zustellsemantik:** keine Zustellgarantie (Fire-and-Forget): Ein nicht
 verbundener oder langsamer lesender Client verpasst die betroffenen
@@ -2212,3 +2232,4 @@ MIT — siehe `LICENSE`.
 | 1.76 | 2026-09-28 | C#-Beispiel `examples/csharp/grpc-client` von der Ein-Fähigkeit-Form (nur `StreamChanges`) auf die volle gRPC-Fläche erweitert (`LH-FA-SST-006`, `LH-FA-SST-008`), analog zum Go-Beispiel: ein `--verb`-Flag (Default `stream` — die ursprüngliche Aufrufform bleibt unverändert funktionsfähig) deckt zusätzlich alle elf RPCs des `Administration`-Diensts ab; das Default-Verb `stream` nimmt den optionalen `--schema`/`--table`-Filter entgegen (`ADR-0133`). „Zugriff über den gRPC-Change-Stream“ nennt den Filter-Flag des C#-Beispiels und dessen neuen `--verb`-Umfang; „Zugriff über die gRPC-Verwaltungs-API“ nennt das C#-Beispiel jetzt gleichrangig neben Go im `**Beispiele:**`-Absatz — Kotlin und alle drei SDK-Packages bleiben unverändert offener Folge-Schritt |
 | 1.77 | 2026-09-28 | Kotlin-Beispiel `examples/kotlin/grpc-client` von der Ein-Fähigkeit-Form (nur `StreamChanges`) auf die volle gRPC-Fläche erweitert (`LH-FA-SST-006`, `LH-FA-SST-008`), analog zum Go-/C#-Beispiel: ein `--verb`-Flag (Default `stream` — die ursprüngliche Aufrufform bleibt unverändert funktionsfähig) deckt zusätzlich alle elf RPCs des `Administration`-Diensts ab; das Default-Verb `stream` nimmt den optionalen `--schema`/`--table`-Filter entgegen (`ADR-0133`). „Zugriff über den gRPC-Change-Stream“ nennt den Filter-Flag des Kotlin-Beispiels und dessen neuen `--verb`-Umfang; „Zugriff über die gRPC-Verwaltungs-API“ nennt das Kotlin-Beispiel jetzt gleichrangig neben Go/C# im `**Beispiele:**`-Absatz — mit dieser Zeile ist die volle Drei-Sprachen-Matrix für die gRPC-Verwaltungs-API vollständig; die drei SDK-Packages bleiben unverändert offener Folge-Schritt |
 | 1.78 | 2026-09-28 | `EnableTable`/`DisableTable` über den direkten HTTP-/gRPC-Zugriffsweg (`LH-FA-CFG-001`, `LH-FA-CFG-002`) aktualisieren jetzt den laufenden Erfassungsprozess unmittelbar mit der Antwort, ohne Neustart — „Zugriff über die HTTP-/JSON-API“ und „Zugriff über die gRPC-Verwaltungs-API“ tragen je einen neuen Hinweisabsatz, der diese Zusage neben den SQL-Antragsweg stellt (siehe „Tabelle live aktivieren“) |
+| 1.79 | 2026-09-28 | C#-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-csharp-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene async-Methode, `PgChangeFeedGrpcClient.StreamChangesAsync` nimmt den optionalen `schema`/`table`-Filter jetzt als Parameter entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `PgChangeFeed.Client` jetzt namentlich statt als offenen Folge-Schritt; `pgchangefeed`/`pgchangefeed-kotlin` bleiben unverändert offen |
