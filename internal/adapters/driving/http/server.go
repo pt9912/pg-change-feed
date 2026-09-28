@@ -56,6 +56,9 @@ type Config struct {
 	// Fassade über demselben `ChangeStorePort`, den der View-Direktzugriff
 	// trägt.
 	ReadChanges inbound.ReadChangesUseCase
+	// Diagnose trägt das Diagnose-Lesen über die API (`ADR-0132`) — derselbe
+	// Use Case, den auch der CLI-Sondermodus und der gRPC-Handler aufrufen.
+	Diagnose inbound.DiagnoseUseCase
 	// Subscriber trägt den `Broadcaster`, von dem der SSE-Stream-Endpunkt
 	// seine Changes liest (`LH-FA-SST-008`, `ADR-0061` Teilfrage 1/2).
 	// Ohne ihn antwortet `GET /changes/stream` mit `503` (`sse.go`).
@@ -103,6 +106,8 @@ func New(cfg Config) *Server {
 		readChangesHandler(cfg.ReadChanges, log)))
 	mux.Handle("GET /changes/stream", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
 		streamChangesHandler(cfg.Subscriber, log)))
+	mux.Handle("GET /diagnose", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
+		diagnoseHandler(cfg.Diagnose, log)))
 	return &Server{
 		httpServer: &http.Server{Addr: cfg.Addr, Handler: mux},
 		log:        log,
