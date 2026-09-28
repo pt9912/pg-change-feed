@@ -2424,21 +2424,53 @@ fi
 
 echo "run-integration-tests: gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt — ein Wegwerf-Client (tools/harness/grpcclient) öffnete real über gRPC den Server-Stream gegen den laufenden Feed-Container ($GRPC_ADDR) und empfing eine danach committete Änderung (Tabelle, Operation und Spaltenwert real am Stream; die Feldvollständigkeit trägt server_test.go auf Unit-Ebene), deren change_id ($grpc_change_id) unabhängig über cdc.changes lesbar ist; ein Stream-Öffnungsversuch ohne gültiges Token wurde mit gRPC-Status Unauthenticated abgelehnt: $grpc_client_output"
 
-abdeckung_declare "gRPC-Administration-Rundlauf" "LH-FA-CON-001,LH-FA-CFG-004" "ein Wegwerf-Client ruft real über gRPC mindestens eine Administration-RPC je Token-Klasse auf (ListTables mit dem reader-Token, RegisterConsumer mit dem admin-Token); ein Aufruf ohne Token endet mit gRPC-Status Unauthenticated, ein reader-Token gegen die admin-RPC RegisterConsumer mit PermissionDenied" "gRPC-Administration-Rundlauf (ADR-0130) belegt"
+abdeckung_declare "gRPC-Administration-Rundlauf" "LH-FA-CON-001,LH-FA-CFG-004,LH-FA-REA-001" "ein Wegwerf-Client ruft real über gRPC mindestens eine Administration-RPC je Token-Klasse auf (ListTables und ReadChanges mit dem reader-Token, RegisterConsumer mit dem admin-Token); ein Aufruf ohne Token endet mit gRPC-Status Unauthenticated, ein reader-Token gegen die admin-RPC RegisterConsumer mit PermissionDenied" "gRPC-Administration-Rundlauf (ADR-0131) belegt"
 
-# gRPC-Administration-Rundlauf (ADR-0130): ein Wegwerf-Client
+# gRPC-Administration-Rundlauf (ADR-0131): ein Wegwerf-Client
 # (tools/harness/grpcadminclient, per `go run` im Toolchain-Container)
 # verbindet sich real über gRPC mit dem laufenden Feed-Container und ruft
-# den neuen `Administration`-Service auf — ListTables mit dem
+# den `Administration`-Service auf — ListTables und ReadChanges mit dem
 # reader-Token, RegisterConsumer mit dem admin-Token. Das Ergebnis von
 # RegisterConsumer wird unabhängig gegen den Lesezugriffsweg `cdc.consumer`
-# gehalten. Abschließend belegt derselbe Prozess die beiden
-# Negative-Pfade: ein Aufruf ohne Token endet mit gRPC-Status
-# `Unauthenticated`, ein reader-Token gegen die admin-RPC RegisterConsumer
-# mit `PermissionDenied`. Ein echter Netzwerk-Request über denselben
-# Compose-Netz-Alias wie der gRPC-Stream-Rundlauf oben, kein `docker exec`
-# und kein Mock.
+# gehalten, das Ergebnis von ReadChanges gegen `cdc.changes`. Abschließend
+# belegt derselbe Prozess die beiden Negative-Pfade: ein Aufruf ohne Token
+# endet mit gRPC-Status `Unauthenticated`, ein reader-Token gegen die
+# admin-RPC RegisterConsumer mit `PermissionDenied`. Ein echter
+# Netzwerk-Request über denselben Compose-Netz-Alias wie der
+# gRPC-Stream-Rundlauf oben, kein `docker exec` und kein Mock.
+#
+# Der ReadChanges-Beleg braucht eine bestimmte, unmittelbar zuvor erfasste
+# Änderung: der Runner fügt eine eigene Zeile in die dauerhaft aktivierte
+# Tabelle feed_e2e_full ein und wartet ihre Erfassung über cdc.changes ab,
+# BEVOR der Client sie über die RPC liest; ihre commit_position geht als
+# Bereich `[from, to)` in den Aufruf ein (ADR-0131 Teilfrage 3), ihre
+# change_id wird unabhängig gegen denselben Lesezugriffsweg gehalten.
 GRPC_ADMIN_CONSUMER_ID="grpc-admin-e2e-consumer"
+GRPC_ADMIN_READ_SCHEMA=public
+GRPC_ADMIN_READ_TABLE=feed_e2e_full
+GRPC_ADMIN_READ_SENTINEL=GrpcAdminChangesReadE2ESentinel
+GRPC_ADMIN_READ_ID=286
+GRPC_ADMIN_READ_LIMIT=100
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$GRPC_ADMIN_READ_TABLE (id, name) VALUES ($GRPC_ADMIN_READ_ID, '$GRPC_ADMIN_READ_SENTINEL');
+SQL
+
+grpc_admin_read_position=""
+for _ in $(seq 1 60); do
+  grpc_admin_read_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$GRPC_ADMIN_READ_TABLE' AND new_data->>'id' = '$GRPC_ADMIN_READ_ID'" 2>/dev/null || true)
+  if [ -n "$grpc_admin_read_position" ]; then
+    break
+  fi
+  sleep 0.5
+done
+if [ -z "$grpc_admin_read_position" ]; then
+  echo "run-integration-tests: gRPC-Administration-Rundlauf — die eigens eingefügte Zeile (id=$GRPC_ADMIN_READ_ID, $GRPC_ADMIN_READ_TABLE) wurde nicht innerhalb der Zeitspanne über cdc.changes erfasst" >&2
+  exit 1
+fi
+grpc_admin_read_to=$((grpc_admin_read_position + 1))
+
 # `set +e` um den Client-Aufruf: der Ausgang wird von der folgenden Prüfung
 # ausgewertet und über eine sichtbare Fehlerzeile gemeldet; unter `set -e`
 # beendet ein fehlgeschlagenes `docker run` schon die Zuweisung selbst und
@@ -2449,7 +2481,8 @@ grpc_admin_output=$(docker run --rm --network "$NETWORK" \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
   -w /src \
   -e GOCACHE=/tmp/gocache \
-  "$TOOLCHAIN_IMAGE" go run ./tools/harness/grpcadminclient "$GRPC_ADDR" "$HTTP_TOKEN_READER" "$HTTP_TOKEN_ADMIN" "$GRPC_ADMIN_CONSUMER_ID" src-e2e pub_pgc_e2e 2>&1)
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/grpcadminclient "$GRPC_ADDR" "$HTTP_TOKEN_READER" "$HTTP_TOKEN_ADMIN" "$GRPC_ADMIN_CONSUMER_ID" src-e2e pub_pgc_e2e \
+  "$GRPC_ADMIN_READ_SCHEMA" "$GRPC_ADMIN_READ_TABLE" "$grpc_admin_read_position" "$grpc_admin_read_to" "$GRPC_ADMIN_READ_LIMIT" 2>&1)
 grpc_admin_exit=$?
 set -e
 if [ "$grpc_admin_exit" -ne 0 ]; then
@@ -2462,6 +2495,14 @@ if ! printf '%s' "$grpc_admin_output" | grep -qE '^LISTED tables=[0-9]+ retained
 fi
 if ! printf '%s' "$grpc_admin_output" | grep -qF "REGISTERED consumer_id=$GRPC_ADMIN_CONSUMER_ID"; then
   echo "run-integration-tests: gRPC-Administration-Rundlauf — keine REGISTERED-Zeile (RegisterConsumer mit admin-Token): $grpc_admin_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$grpc_admin_output" | grep -qE '^READ changes=[0-9]+ table=feed_e2e_full schema=public '; then
+  echo "run-integration-tests: gRPC-Administration-Rundlauf — keine READ-Zeile des ReadChanges-Aufrufs (reader-Token, Bereich [$grpc_admin_read_position,$grpc_admin_read_to)): $grpc_admin_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$grpc_admin_output" | grep -qF "$GRPC_ADMIN_READ_SENTINEL"; then
+  echo "run-integration-tests: gRPC-Administration-Rundlauf — die READ-Zeile trägt die eigens eingefügte Zeile (id=$GRPC_ADMIN_READ_ID, $GRPC_ADMIN_READ_SENTINEL) nicht: $grpc_admin_output" >&2
   exit 1
 fi
 if ! printf '%s' "$grpc_admin_output" | grep -qF "REJECTED code=Unauthenticated"; then
@@ -2483,13 +2524,29 @@ if [ -z "$grpc_admin_registered" ] || [ "$grpc_admin_registered" -lt 1 ]; then
   exit 1
 fi
 
+# Unabhängiger SQL-Beleg, dass genau die über ReadChanges gelesene Änderung
+# real erfasst wurde: die change_id der sentinel-tragenden READ-Zeile steht
+# über den bestehenden Lesezugriffsweg in cdc.changes — der gRPC-Leseweg ist
+# damit keine erfundene Ausgabe des Clients.
+grpc_admin_read_change_id=$(printf '%s' "$grpc_admin_output" | grep -F "$GRPC_ADMIN_READ_SENTINEL" | grep -oE 'change_id=[^ ]+' | head -n1 | cut -d= -f2 || true)
+if [ -z "$grpc_admin_read_change_id" ]; then
+  echo "run-integration-tests: gRPC-Administration-Rundlauf — die sentinel-tragende READ-Zeile trägt keine change_id: $grpc_admin_output" >&2
+  exit 1
+fi
+grpc_admin_read_captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$grpc_admin_read_change_id' AND table_name = '$GRPC_ADMIN_READ_TABLE' AND new_data->>'name' = '$GRPC_ADMIN_READ_SENTINEL'")
+if [ -z "$grpc_admin_read_captured" ] || [ "$grpc_admin_read_captured" -lt 1 ]; then
+  echo "run-integration-tests: gRPC-Administration-Rundlauf — die über ReadChanges gelesene Änderung (change_id=$grpc_admin_read_change_id, $GRPC_ADMIN_READ_SENTINEL) ist nicht real über cdc.changes lesbar (count=${grpc_admin_read_captured:-leer})" >&2
+  exit 1
+fi
+
 feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
 if [ "$feed_running" != "true" ]; then
   echo "run-integration-tests: Feed-Container lief nach dem gRPC-Administration-Rundlauf nicht mehr weiter (kein Neustart erwartet)" >&2
   exit 1
 fi
 
-echo "run-integration-tests: gRPC-Administration-Rundlauf (ADR-0130) belegt — ein Wegwerf-Client (tools/harness/grpcadminclient) rief real über gRPC ListTables (reader-Token) und RegisterConsumer (admin-Token) gegen den laufenden Feed-Container ($GRPC_ADDR) auf, der registrierte Consumer ($GRPC_ADMIN_CONSUMER_ID) ist unabhängig über cdc.consumer lesbar; ein Aufruf ohne Token wurde mit Unauthenticated, ein reader-Token gegen RegisterConsumer mit PermissionDenied abgelehnt: $grpc_admin_output"
+echo "run-integration-tests: gRPC-Administration-Rundlauf (ADR-0131) belegt — ein Wegwerf-Client (tools/harness/grpcadminclient) rief real über gRPC ListTables (reader-Token), ReadChanges (reader-Token, Bereich [$grpc_admin_read_position,$grpc_admin_read_to), change_id=$grpc_admin_read_change_id gegen cdc.changes gehalten) und RegisterConsumer (admin-Token) gegen den laufenden Feed-Container ($GRPC_ADDR) auf, der registrierte Consumer ($GRPC_ADMIN_CONSUMER_ID) ist unabhängig über cdc.consumer lesbar; ein Aufruf ohne Token wurde mit Unauthenticated, ein reader-Token gegen RegisterConsumer mit PermissionDenied abgelehnt: $grpc_admin_output"
 
 abdeckung_declare "SSE-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real per HTTP den Endpunkt \`GET /changes/stream\` gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401" "SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt"
 

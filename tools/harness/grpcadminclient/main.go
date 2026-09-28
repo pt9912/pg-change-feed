@@ -1,19 +1,21 @@
 // Command grpcadminclient ist ein Wegwerf-Testclient für den
-// gRPC-Administration-E2E-Beleg (ADR-0130): er ruft real gegen den
+// gRPC-Administration-E2E-Beleg (ADR-0131): er ruft real gegen den
 // laufenden Feed-Container mindestens eine RPC je Token-Klasse auf
-// (ListTables mit dem reader-Token, RegisterConsumer mit dem admin-Token),
-// meldet jedes Ergebnis auf stdout und belegt abschließend die beiden
-// Negative-Pfade — ein Aufruf ohne Token endet mit gRPC-Status
-// `Unauthenticated`, ein reader-Token gegen die admin-RPC RegisterConsumer
-// mit `PermissionDenied`. Träger ist tools/harness/run-integration-tests.sh
-// — der Aufrufer liest die stdout-Zeilen dieses Prozesses über `docker
-// logs`, analog zu tools/harness/grpcclient.
+// (ListTables und ReadChanges mit dem reader-Token, RegisterConsumer mit
+// dem admin-Token), meldet jedes Ergebnis auf stdout und belegt
+// abschließend die beiden Negative-Pfade — ein Aufruf ohne Token endet mit
+// gRPC-Status `Unauthenticated`, ein reader-Token gegen die admin-RPC
+// RegisterConsumer mit `PermissionDenied`. Träger ist
+// tools/harness/run-integration-tests.sh — der Aufrufer liest die
+// stdout-Zeilen dieses Prozesses über `docker logs`, analog zu
+// tools/harness/grpcclient.
 package main
 
 import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"google.golang.org/grpc"
@@ -33,11 +35,12 @@ const (
 )
 
 func main() {
-	if len(os.Args) != 7 {
-		fmt.Fprintln(os.Stderr, "usage: grpcadminclient <addr> <reader-token> <admin-token> <consumer-id> <source> <publication>")
+	if len(os.Args) != 12 {
+		fmt.Fprintln(os.Stderr, "usage: grpcadminclient <addr> <reader-token> <admin-token> <consumer-id> <source> <publication> <read-schema> <read-table> <read-from> <read-to> <read-limit>")
 		os.Exit(2)
 	}
 	addr, readerToken, adminToken, consumerID, source, publication := os.Args[1], os.Args[2], os.Args[3], os.Args[4], os.Args[5], os.Args[6]
+	readSchema, readTable, readFrom, readTo, readLimit := os.Args[7], os.Args[8], os.Args[9], os.Args[10], os.Args[11]
 
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -53,6 +56,10 @@ func main() {
 		os.Exit(1)
 	}
 	if err := registerConsumer(client, adminToken, consumerID); err != nil {
+		fmt.Fprintf(os.Stderr, "grpcadminclient: %v\n", err)
+		os.Exit(1)
+	}
+	if err := readChanges(client, readerToken, source, readSchema, readTable, readFrom, readTo, readLimit); err != nil {
 		fmt.Fprintf(os.Stderr, "grpcadminclient: %v\n", err)
 		os.Exit(1)
 	}
@@ -102,6 +109,90 @@ func registerConsumer(client administrationv1.AdministrationClient, adminToken, 
 	}
 	fmt.Printf("REGISTERED consumer_id=%s already_registered=%v\n", resp.GetConsumerId(), resp.GetAlreadyRegistered())
 	return nil
+}
+
+// readChanges ruft die reader-RPC `ReadChanges` auf und prüft die Antwort
+// inhaltlich (`ADR-0131`): eine gesetzte, nicht leere Changes-Liste; je
+// Eintrag eine nicht leere Kennung, ein bekannter Operationswert, eine
+// Position ≥ 1 und die zum Filter passende Klartext-Identität. Ein leerer
+// Bereichs-/Limit-Parameter trägt `0` (nicht gesetzt) — dieselbe Semantik
+// wie bei `httpclient`s `GET /changes`.
+func readChanges(client administrationv1.AdministrationClient, readerToken, source, schema, table, from, to, limit string) error {
+	fromVal, err := parseUint64(from)
+	if err != nil {
+		return fmt.Errorf("from %q ist keine Ganzzahl: %w", from, err)
+	}
+	toVal, err := parseUint64(to)
+	if err != nil {
+		return fmt.Errorf("to %q ist keine Ganzzahl: %w", to, err)
+	}
+	limitVal, err := parseInt64(limit)
+	if err != nil {
+		return fmt.Errorf("limit %q ist keine Ganzzahl: %w", limit, err)
+	}
+
+	ctx, cancel := callCtx(readerToken)
+	defer cancel()
+	resp, err := client.ReadChanges(ctx, &administrationv1.ReadChangesRequest{
+		Source: source, Schema: schema, Table: table, From: fromVal, To: toVal, Limit: limitVal,
+	})
+	if err != nil {
+		return fmt.Errorf("ReadChanges (reader) fehlgeschlagen: %w", err)
+	}
+	changes := resp.GetChanges()
+	if len(changes) == 0 {
+		return fmt.Errorf("leere Changes-Liste für den erwarteten Bestand (%s.%s, Bereich [%s,%s))", schema, table, from, to)
+	}
+	var lastPosition int64
+	for i, change := range changes {
+		if change.GetChangeId() == "" {
+			return fmt.Errorf("Eintrag %d trägt keine change_id", i)
+		}
+		if schema != "" && change.GetSchema() != schema {
+			return fmt.Errorf("Eintrag %d trägt schema=%q, der Filter verlangt %q", i, change.GetSchema(), schema)
+		}
+		if table != "" && change.GetTable() != table {
+			return fmt.Errorf("Eintrag %d trägt table=%q, der Filter verlangt %q", i, change.GetTable(), table)
+		}
+		switch change.GetOperation() {
+		case "INSERT", "UPDATE", "DELETE":
+		default:
+			return fmt.Errorf("Eintrag %d trägt die unbekannte Operation %q", i, change.GetOperation())
+		}
+		if change.GetCommitPosition() < 1 {
+			return fmt.Errorf("Eintrag %d trägt die Commit-Position %d (Position 0 existiert nicht)", i, change.GetCommitPosition())
+		}
+		if i > 0 && change.GetCommitPosition() < lastPosition {
+			return fmt.Errorf("Eintrag %d trägt die Commit-Position %d nach %d — die Ordnung ist absteigend", i, change.GetCommitPosition(), lastPosition)
+		}
+		switch change.GetOrigin() {
+		case "wal", "backfill":
+		default:
+			return fmt.Errorf("Eintrag %d trägt die unbekannte Herkunft %q", i, change.GetOrigin())
+		}
+		lastPosition = change.GetCommitPosition()
+		fmt.Printf("READ changes=%d table=%s schema=%s change_id=%s operation=%s commit_position=%d new_image=%s origin=%s\n",
+			len(changes), change.GetTable(), change.GetSchema(), change.GetChangeId(), change.GetOperation(), change.GetCommitPosition(), string(change.GetNewImage()), change.GetOrigin())
+	}
+	return nil
+}
+
+// parseUint64 liest einen optionalen `uint64`-Wert; ein leerer String trägt
+// `0` (nicht gesetzt, ADR-0131 Teilfrage 3).
+func parseUint64(raw string) (uint64, error) {
+	if raw == "" {
+		return 0, nil
+	}
+	return strconv.ParseUint(raw, 10, 64)
+}
+
+// parseInt64 liest einen optionalen `int64`-Wert; ein leerer String trägt
+// `0` (unbegrenzt, ADR-0131 Teilfrage 3).
+func parseInt64(raw string) (int64, error) {
+	if raw == "" {
+		return 0, nil
+	}
+	return strconv.ParseInt(raw, 10, 64)
 }
 
 // assertRejected ruft `RegisterConsumer` (eine admin-RPC) mit dem
