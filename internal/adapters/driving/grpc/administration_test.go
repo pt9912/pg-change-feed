@@ -169,6 +169,19 @@ func (f *fakeReadChanges) ReadChanges(_ context.Context, query inbound.ReadChang
 	return f.result, f.err
 }
 
+type fakeDiagnose struct {
+	called   bool
+	gotQuery inbound.DiagnoseQuery
+	result   inbound.DiagnoseResult
+	err      error
+}
+
+func (f *fakeDiagnose) Diagnose(_ context.Context, query inbound.DiagnoseQuery) (inbound.DiagnoseResult, error) {
+	f.called = true
+	f.gotQuery = query
+	return f.result, f.err
+}
+
 // TestRegisterConsumerRuftUseCaseMitUebersetzterCommandAuf trägt die
 // Bindung an die Eingabeseite (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`):
 // die Felder des Requests erreichen den Use Case unverändert, das Ergebnis
@@ -552,5 +565,105 @@ func TestReadChangesLeereTrefferlisteBleibtGesetzteListe(t *testing.T) {
 	}
 	if resp.GetChanges() == nil {
 		t.Fatalf("leere Trefferliste ist nil statt einer leeren Liste: %+v", resp)
+	}
+}
+
+// TestDiagnoseRuftUseCaseMitDerQuelleAufUndUebersetztDenBericht trägt die
+// Bindung an die Eingabeseite (`ADR-0132` Teilfrage 5): die Quelle erreicht
+// den Use Case unverändert, das Ergebnis erreicht unverändert die
+// Response — die drei Präsenz-Flags (`Known`/`Present`/`EstimatedRowsKnown`)
+// tragen die drei Abwesenheits-Fälle.
+func TestDiagnoseRuftUseCaseMitDerQuelleAufUndUebersetztDenBericht(t *testing.T) {
+	age := 1.5
+	errorClass := "schema"
+	lag := 3.0
+	backlog := int64(7)
+	estimated := int64(10)
+	fake := &fakeDiagnose{result: inbound.DiagnoseResult{
+		HeartbeatAgeSeconds: &age,
+		ErrorClass:          &errorClass,
+		CaptureLag:          2.5,
+		ConsumerLags:        []inbound.ConsumerLag{{ConsumerID: "c-1", Lag: &lag}},
+		RetentionBlocker: &inbound.RetentionBlocker{
+			ConsumerID: "c-1", Name: "Consumer 1", AcknowledgedPosition: 10, Backlog: &backlog,
+		},
+		StorageBytes: 4096,
+		Backfill: []inbound.BackfillTableStatus{{
+			Schema: "public", Table: "orders", Status: "completed", RowsCopied: 5,
+			EstimatedRows: &estimated, WarnEstimatedSize: true, WarnDuration: false,
+		}},
+	}}
+	svc := &administrationService{diagnose: fake, log: outbound.NoopLog}
+
+	resp, err := svc.Diagnose(context.Background(), &administrationv1.DiagnoseRequest{Source: "src-1"})
+	if err != nil {
+		t.Fatalf("Diagnose: %v", err)
+	}
+	if !fake.called || fake.gotQuery.Source != "src-1" {
+		t.Fatalf("Use Case erhielt nicht die Request-Felder: %+v (called=%v)", fake.gotQuery, fake.called)
+	}
+	if !resp.GetHeartbeat().GetKnown() || resp.GetHeartbeat().GetAgeSeconds() != age || resp.GetHeartbeat().GetErrorClass() != errorClass {
+		t.Fatalf("Heartbeat = %+v", resp.GetHeartbeat())
+	}
+	if resp.GetCaptureLag() != 2.5 {
+		t.Fatalf("CaptureLag = %v, wollen 2.5", resp.GetCaptureLag())
+	}
+	if len(resp.GetConsumerLags()) != 1 || !resp.GetConsumerLags()[0].GetKnown() || resp.GetConsumerLags()[0].GetLag() != lag {
+		t.Fatalf("ConsumerLags = %+v", resp.GetConsumerLags())
+	}
+	if !resp.GetRetentionBlocker().GetPresent() || resp.GetRetentionBlocker().GetConsumerId() != "c-1" ||
+		!resp.GetRetentionBlocker().GetBacklogKnown() || resp.GetRetentionBlocker().GetBacklog() != backlog {
+		t.Fatalf("RetentionBlocker = %+v", resp.GetRetentionBlocker())
+	}
+	if resp.GetStorageBytes() != 4096 {
+		t.Fatalf("StorageBytes = %v, wollen 4096", resp.GetStorageBytes())
+	}
+	if len(resp.GetBackfill()) != 1 || !resp.GetBackfill()[0].GetEstimatedRowsKnown() || resp.GetBackfill()[0].GetEstimatedRows() != estimated {
+		t.Fatalf("Backfill = %+v", resp.GetBackfill())
+	}
+}
+
+// TestDiagnoseUebersetztAbwesenheitenAlsUnbekanntFlags trägt die drei
+// Abwesenheits-Fälle (`ADR-0132` Teilfrage 5): kein Lebenszeichen, kein
+// Blocker, unbekannte Schätzung/Rückstand — jeweils über das
+// Präsenz-Flag, nicht über einen Sentinel-Wert wie `0`.
+//
+// Rot färbende Mutation: in `toHeartbeatStatus` den frühen `nil`-Zweig
+// entfernen und stattdessen `AgeSeconds: 0` zurückgeben — `Known` bliebe
+// `true` trotz fehlendem Lebenszeichen, dieser Test färbt rot.
+func TestDiagnoseUebersetztAbwesenheitenAlsUnbekanntFlags(t *testing.T) {
+	fake := &fakeDiagnose{result: inbound.DiagnoseResult{
+		ConsumerLags: []inbound.ConsumerLag{{ConsumerID: "c-1", Lag: nil}},
+		Backfill:     []inbound.BackfillTableStatus{{Schema: "public", Table: "orders", EstimatedRows: nil}},
+	}}
+	svc := &administrationService{diagnose: fake, log: outbound.NoopLog}
+
+	resp, err := svc.Diagnose(context.Background(), &administrationv1.DiagnoseRequest{Source: "src-1"})
+	if err != nil {
+		t.Fatalf("Diagnose: %v", err)
+	}
+	if resp.GetHeartbeat().GetKnown() {
+		t.Fatalf("Heartbeat.Known = true, wollen false (kein Lebenszeichen)")
+	}
+	if resp.GetRetentionBlocker().GetPresent() {
+		t.Fatalf("RetentionBlocker.Present = true, wollen false (kein Blocker)")
+	}
+	if resp.GetConsumerLags()[0].GetKnown() {
+		t.Fatalf("ConsumerLags[0].Known = true, wollen false (unbekannt)")
+	}
+	if resp.GetBackfill()[0].GetEstimatedRowsKnown() {
+		t.Fatalf("Backfill[0].EstimatedRowsKnown = true, wollen false (unbekannt)")
+	}
+}
+
+// TestDiagnoseBildetUnbekanntenFehlerAufInternalAb trägt die Fehlerform
+// (`ADR-0132` Teilfrage 6): ein Fehler der Klasse `storage`
+// (`outbound.ErrDiagnosticsStorage`) endet als `codes.Internal`.
+func TestDiagnoseBildetUnbekanntenFehlerAufInternalAb(t *testing.T) {
+	fake := &fakeDiagnose{err: outbound.ErrDiagnosticsStorage}
+	svc := &administrationService{diagnose: fake, log: outbound.NoopLog}
+	_, err := svc.Diagnose(context.Background(), &administrationv1.DiagnoseRequest{Source: "src-1"})
+	if status.Code(err) != codes.Internal {
+		t.Fatalf("Status: %v (Erwartung: %v)", status.Code(err), codes.Internal)
 	}
 }

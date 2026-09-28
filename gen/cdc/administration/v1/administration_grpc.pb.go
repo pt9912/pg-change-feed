@@ -1,8 +1,8 @@
-// Administration mirrors the nine management capabilities and the bounded
-// changes-read capability of the HTTP API (consumer
+// Administration mirrors the nine management capabilities, the bounded
+// changes-read capability and the diagnose report of the HTTP API (consumer
 // registration/acknowledgement/position/removal, table
-// enable/disable/status/list, retention run, ReadChanges) over gRPC: the
-// same inbound use cases, the same two token classes, unary
+// enable/disable/status/list, retention run, ReadChanges, Diagnose) over
+// gRPC: the same inbound use cases, the same two token classes, unary
 // request/response RPCs (no streaming advantage for request/response
 // calls, SPEC-031).
 
@@ -37,15 +37,16 @@ const (
 	Administration_ListTables_FullMethodName          = "/cdc.administration.v1.Administration/ListTables"
 	Administration_RunRetention_FullMethodName        = "/cdc.administration.v1.Administration/RunRetention"
 	Administration_ReadChanges_FullMethodName         = "/cdc.administration.v1.Administration/ReadChanges"
+	Administration_Diagnose_FullMethodName            = "/cdc.administration.v1.Administration/Diagnose"
 )
 
 // AdministrationClient is the client API for Administration service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// Administration offers the ten management/read capabilities as unary
-// request/response RPCs (SPEC-031). Authentication/authorization mirrors
-// the stream service: the `authorization` metadata entry, checked by
+// Administration offers the eleven management/read/diagnose capabilities as
+// unary request/response RPCs (SPEC-031). Authentication/authorization
+// mirrors the stream service: the `authorization` metadata entry, checked by
 // authUnaryInterceptor against the same two token classes.
 type AdministrationClient interface {
 	RegisterConsumer(ctx context.Context, in *RegisterConsumerRequest, opts ...grpc.CallOption) (*RegisterConsumerResponse, error)
@@ -58,6 +59,7 @@ type AdministrationClient interface {
 	ListTables(ctx context.Context, in *ListTablesRequest, opts ...grpc.CallOption) (*ListTablesResponse, error)
 	RunRetention(ctx context.Context, in *RunRetentionRequest, opts ...grpc.CallOption) (*RunRetentionResponse, error)
 	ReadChanges(ctx context.Context, in *ReadChangesRequest, opts ...grpc.CallOption) (*ReadChangesResponse, error)
+	Diagnose(ctx context.Context, in *DiagnoseRequest, opts ...grpc.CallOption) (*DiagnoseResponse, error)
 }
 
 type administrationClient struct {
@@ -168,13 +170,23 @@ func (c *administrationClient) ReadChanges(ctx context.Context, in *ReadChangesR
 	return out, nil
 }
 
+func (c *administrationClient) Diagnose(ctx context.Context, in *DiagnoseRequest, opts ...grpc.CallOption) (*DiagnoseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DiagnoseResponse)
+	err := c.cc.Invoke(ctx, Administration_Diagnose_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdministrationServer is the server API for Administration service.
 // All implementations must embed UnimplementedAdministrationServer
 // for forward compatibility.
 //
-// Administration offers the ten management/read capabilities as unary
-// request/response RPCs (SPEC-031). Authentication/authorization mirrors
-// the stream service: the `authorization` metadata entry, checked by
+// Administration offers the eleven management/read/diagnose capabilities as
+// unary request/response RPCs (SPEC-031). Authentication/authorization
+// mirrors the stream service: the `authorization` metadata entry, checked by
 // authUnaryInterceptor against the same two token classes.
 type AdministrationServer interface {
 	RegisterConsumer(context.Context, *RegisterConsumerRequest) (*RegisterConsumerResponse, error)
@@ -187,6 +199,7 @@ type AdministrationServer interface {
 	ListTables(context.Context, *ListTablesRequest) (*ListTablesResponse, error)
 	RunRetention(context.Context, *RunRetentionRequest) (*RunRetentionResponse, error)
 	ReadChanges(context.Context, *ReadChangesRequest) (*ReadChangesResponse, error)
+	Diagnose(context.Context, *DiagnoseRequest) (*DiagnoseResponse, error)
 	mustEmbedUnimplementedAdministrationServer()
 }
 
@@ -226,6 +239,9 @@ func (UnimplementedAdministrationServer) RunRetention(context.Context, *RunReten
 }
 func (UnimplementedAdministrationServer) ReadChanges(context.Context, *ReadChangesRequest) (*ReadChangesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReadChanges not implemented")
+}
+func (UnimplementedAdministrationServer) Diagnose(context.Context, *DiagnoseRequest) (*DiagnoseResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Diagnose not implemented")
 }
 func (UnimplementedAdministrationServer) mustEmbedUnimplementedAdministrationServer() {}
 func (UnimplementedAdministrationServer) testEmbeddedByValue()                        {}
@@ -428,6 +444,24 @@ func _Administration_ReadChanges_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Administration_Diagnose_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DiagnoseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdministrationServer).Diagnose(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Administration_Diagnose_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdministrationServer).Diagnose(ctx, req.(*DiagnoseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Administration_ServiceDesc is the grpc.ServiceDesc for Administration service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -474,6 +508,10 @@ var Administration_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReadChanges",
 			Handler:    _Administration_ReadChanges_Handler,
+		},
+		{
+			MethodName: "Diagnose",
+			Handler:    _Administration_Diagnose_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

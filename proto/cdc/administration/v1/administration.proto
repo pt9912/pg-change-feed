@@ -1,8 +1,8 @@
-// Administration mirrors the nine management capabilities and the bounded
-// changes-read capability of the HTTP API (consumer
+// Administration mirrors the nine management capabilities, the bounded
+// changes-read capability and the diagnose report of the HTTP API (consumer
 // registration/acknowledgement/position/removal, table
-// enable/disable/status/list, retention run, ReadChanges) over gRPC: the
-// same inbound use cases, the same two token classes, unary
+// enable/disable/status/list, retention run, ReadChanges, Diagnose) over
+// gRPC: the same inbound use cases, the same two token classes, unary
 // request/response RPCs (no streaming advantage for request/response
 // calls, SPEC-031).
 syntax = "proto3";
@@ -156,9 +156,67 @@ message ReadChangesResponse {
   repeated ChangeRecord changes = 1;
 }
 
-// Administration offers the ten management/read capabilities as unary
-// request/response RPCs (SPEC-031). Authentication/authorization mirrors
-// the stream service: the `authorization` metadata entry, checked by
+// HeartbeatStatus mirrors the operational-status half of the diagnose report
+// (ADR-0132): known = false means no heartbeat has ever been written for the
+// source, in which case age_seconds/error_class carry no meaning.
+message HeartbeatStatus {
+  bool known = 1;
+  double age_seconds = 2;
+  string error_class = 3;
+}
+
+// ConsumerLag mirrors one row of the per-consumer processing lag report
+// (ADR-0132): known = false means the bound source never carried a
+// transaction.
+message ConsumerLag {
+  string consumer_id = 1;
+  bool known = 2;
+  double lag = 3;
+}
+
+// RetentionBlocker mirrors the currently blocking consumer of a source
+// (ADR-0132): present = false means no consumer has ever acknowledged
+// against this source.
+message RetentionBlocker {
+  bool present = 1;
+  string consumer_id = 2;
+  string name = 3;
+  int64 acknowledged_position = 4;
+  bool backlog_known = 5;
+  int64 backlog = 6;
+}
+
+// BackfillTableStatus mirrors the last requested backfill run of one table
+// (ADR-0132): estimated_rows_known = false means the estimate is unknown,
+// never zero.
+message BackfillTableStatus {
+  string schema = 1;
+  string table = 2;
+  string status = 3;
+  int64 rows_copied = 4;
+  bool estimated_rows_known = 5;
+  int64 estimated_rows = 6;
+  bool warn_estimated_size = 7;
+  bool warn_duration = 8;
+  string error_message = 9;
+}
+
+message DiagnoseRequest {
+  string source = 1;
+}
+
+message DiagnoseResponse {
+  HeartbeatStatus heartbeat = 1;
+  double capture_lag = 2;
+  repeated ConsumerLag consumer_lags = 3;
+  RetentionBlocker retention_blocker = 4;
+  double storage_bytes = 5;
+  repeated BackfillTableStatus backfill = 6;
+}
+
+// Administration offers the eleven management/read/diagnose capabilities as
+// unary request/response RPCs (SPEC-031). Authentication/authorization
+// mirrors the stream service: the `authorization` metadata entry, checked by
 // authUnaryInterceptor against the same two token classes.
 service Administration {
   rpc RegisterConsumer(RegisterConsumerRequest) returns (RegisterConsumerResponse);
@@ -171,4 +229,5 @@ service Administration {
   rpc ListTables(ListTablesRequest) returns (ListTablesResponse);
   rpc RunRetention(RunRetentionRequest) returns (RunRetentionResponse);
   rpc ReadChanges(ReadChangesRequest) returns (ReadChangesResponse);
+  rpc Diagnose(DiagnoseRequest) returns (DiagnoseResponse);
 }

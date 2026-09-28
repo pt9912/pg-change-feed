@@ -62,6 +62,9 @@ type Config struct {
 	ListTables          inbound.ListTablesUseCase
 	RunRetention        inbound.RunRetentionUseCase
 	ReadChanges         inbound.ReadChangesUseCase
+	// Diagnose trägt den elften Inbound Use Case (`ADR-0132`) — derselbe,
+	// den auch der HTTP-Adapter und der umgebaute CLI-Sondermodus aufrufen.
+	Diagnose inbound.DiagnoseUseCase
 	// Log trägt den Telemetrie-Port (`ADR-0024`); ein nicht gesetzter Wert
 	// fällt auf `outbound.NoopLog` zurück.
 	Log outbound.LogPort
@@ -101,6 +104,7 @@ func New(cfg Config) *Server {
 		listTables:          cfg.ListTables,
 		runRetention:        cfg.RunRetention,
 		readChanges:         cfg.ReadChanges,
+		diagnose:            cfg.Diagnose,
 		log:                 log,
 	})
 	return &Server{grpcServer: grpcServer, addr: cfg.Addr, log: log}

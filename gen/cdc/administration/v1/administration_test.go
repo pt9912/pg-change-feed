@@ -286,8 +286,89 @@ func TestReadChangesNachrichtenGetterTragenDenNullwertUndDenGesetztenWert(t *tes
 	}
 }
 
+// TestDiagnoseNachrichtenGetterTragenDenNullwertUndDenGesetztenWert trägt
+// dieselbe Grenze für den elften RPC `Diagnose` (`ADR-0132`): Request,
+// die vier Hilfsnachrichten und Response.
+func TestDiagnoseNachrichtenGetterTragenDenNullwertUndDenGesetztenWert(t *testing.T) {
+	var req *administrationv1.DiagnoseRequest
+	if req.GetSource() != "" {
+		t.Fatalf("DiagnoseRequest auf dem Nullwert liefert keinen Nullwert")
+	}
+	gesetzterReq := &administrationv1.DiagnoseRequest{Source: "src-1"}
+	if gesetzterReq.GetSource() != "src-1" {
+		t.Fatalf("DiagnoseRequest trägt nicht das gesetzte Feld")
+	}
+
+	var heartbeat *administrationv1.HeartbeatStatus
+	if heartbeat.GetKnown() || heartbeat.GetAgeSeconds() != 0 || heartbeat.GetErrorClass() != "" {
+		t.Fatalf("HeartbeatStatus auf dem Nullwert liefert keine Nullwerte")
+	}
+	gesetzterHeartbeat := &administrationv1.HeartbeatStatus{Known: true, AgeSeconds: 1.5, ErrorClass: "schema"}
+	if !gesetzterHeartbeat.GetKnown() || gesetzterHeartbeat.GetAgeSeconds() != 1.5 || gesetzterHeartbeat.GetErrorClass() != "schema" {
+		t.Fatalf("HeartbeatStatus trägt nicht die gesetzten Felder")
+	}
+
+	var lag *administrationv1.ConsumerLag
+	if lag.GetConsumerId() != "" || lag.GetKnown() || lag.GetLag() != 0 {
+		t.Fatalf("ConsumerLag auf dem Nullwert liefert keine Nullwerte")
+	}
+	gesetzterLag := &administrationv1.ConsumerLag{ConsumerId: "c-1", Known: true, Lag: 3}
+	if gesetzterLag.GetConsumerId() != "c-1" || !gesetzterLag.GetKnown() || gesetzterLag.GetLag() != 3 {
+		t.Fatalf("ConsumerLag trägt nicht die gesetzten Felder")
+	}
+
+	var blocker *administrationv1.RetentionBlocker
+	if blocker.GetPresent() || blocker.GetConsumerId() != "" || blocker.GetName() != "" ||
+		blocker.GetAcknowledgedPosition() != 0 || blocker.GetBacklogKnown() || blocker.GetBacklog() != 0 {
+		t.Fatalf("RetentionBlocker auf dem Nullwert liefert keine Nullwerte")
+	}
+	gesetzterBlocker := &administrationv1.RetentionBlocker{
+		Present: true, ConsumerId: "c-1", Name: "Consumer 1", AcknowledgedPosition: 10,
+		BacklogKnown: true, Backlog: 7,
+	}
+	if !gesetzterBlocker.GetPresent() || gesetzterBlocker.GetConsumerId() != "c-1" ||
+		gesetzterBlocker.GetName() != "Consumer 1" || gesetzterBlocker.GetAcknowledgedPosition() != 10 ||
+		!gesetzterBlocker.GetBacklogKnown() || gesetzterBlocker.GetBacklog() != 7 {
+		t.Fatalf("RetentionBlocker trägt nicht die gesetzten Felder")
+	}
+
+	var table *administrationv1.BackfillTableStatus
+	if table.GetSchema() != "" || table.GetTable() != "" || table.GetStatus() != "" ||
+		table.GetRowsCopied() != 0 || table.GetEstimatedRowsKnown() || table.GetEstimatedRows() != 0 ||
+		table.GetWarnEstimatedSize() || table.GetWarnDuration() || table.GetErrorMessage() != "" {
+		t.Fatalf("BackfillTableStatus auf dem Nullwert liefert keine Nullwerte")
+	}
+	gesetzteTable := &administrationv1.BackfillTableStatus{
+		Schema: "public", Table: "orders", Status: "completed", RowsCopied: 5,
+		EstimatedRowsKnown: true, EstimatedRows: 10, WarnEstimatedSize: true, WarnDuration: false,
+		ErrorMessage: "kaputt",
+	}
+	if gesetzteTable.GetSchema() != "public" || gesetzteTable.GetTable() != "orders" ||
+		gesetzteTable.GetStatus() != "completed" || gesetzteTable.GetRowsCopied() != 5 ||
+		!gesetzteTable.GetEstimatedRowsKnown() || gesetzteTable.GetEstimatedRows() != 10 ||
+		!gesetzteTable.GetWarnEstimatedSize() || gesetzteTable.GetWarnDuration() ||
+		gesetzteTable.GetErrorMessage() != "kaputt" {
+		t.Fatalf("BackfillTableStatus trägt nicht die gesetzten Felder")
+	}
+
+	var resp *administrationv1.DiagnoseResponse
+	if resp.GetHeartbeat() != nil || resp.GetCaptureLag() != 0 || resp.GetConsumerLags() != nil ||
+		resp.GetRetentionBlocker() != nil || resp.GetStorageBytes() != 0 || resp.GetBackfill() != nil {
+		t.Fatalf("DiagnoseResponse auf dem Nullwert liefert keine Nullwerte")
+	}
+	gesetzteResp := &administrationv1.DiagnoseResponse{
+		Heartbeat: gesetzterHeartbeat, CaptureLag: 2.5, ConsumerLags: []*administrationv1.ConsumerLag{gesetzterLag},
+		RetentionBlocker: gesetzterBlocker, StorageBytes: 4096, Backfill: []*administrationv1.BackfillTableStatus{gesetzteTable},
+	}
+	if gesetzteResp.GetHeartbeat() != gesetzterHeartbeat || gesetzteResp.GetCaptureLag() != 2.5 ||
+		len(gesetzteResp.GetConsumerLags()) != 1 || gesetzteResp.GetRetentionBlocker() != gesetzterBlocker ||
+		gesetzteResp.GetStorageBytes() != 4096 || len(gesetzteResp.GetBackfill()) != 1 {
+		t.Fatalf("DiagnoseResponse trägt nicht die gesetzten Felder")
+	}
+}
+
 // fakeUnaryClientConn trägt einen `grpc.ClientConnInterface`-Doppel für die
-// zehn unären RPCs: `Invoke` liefert den injizierten Fehler, ohne dass ein
+// elf unären RPCs: `Invoke` liefert den injizierten Fehler, ohne dass ein
 // Transport im Spiel ist — dieselbe Bauform wie `fakeClientConn` in
 // `changestream_test.go`, für unäre statt streamende RPCs.
 type fakeUnaryClientConn struct{ err error }
@@ -304,7 +385,7 @@ var _ grpc.ClientConnInterface = fakeUnaryClientConn{}
 
 // TestAdministrationClientReichtInvokeErgebnisJeRPCWeiter trägt die
 // Fehler-Weitergabe und den Erfolgspfad des erzeugten unären Clients für
-// alle zehn RPCs (`ADR-0131` Teilfrage 2): scheitert `Invoke`, liefert die
+// alle elf RPCs (`ADR-0131` Teilfrage 2): scheitert `Invoke`, liefert die
 // Methode **genau diesen** Fehler und kein Response; gelingt `Invoke`,
 // liefert sie ein Response ohne Fehler.
 // Rot färbende Mutation: in einer Client-Methode den `err != nil`-Zweig
@@ -345,6 +426,9 @@ func TestAdministrationClientReichtInvokeErgebnisJeRPCWeiter(t *testing.T) {
 		{"ReadChanges", func(c administrationv1.AdministrationClient) (any, error) {
 			return c.ReadChanges(context.Background(), &administrationv1.ReadChangesRequest{})
 		}},
+		{"Diagnose", func(c administrationv1.AdministrationClient) (any, error) {
+			return c.Diagnose(context.Background(), &administrationv1.DiagnoseRequest{})
+		}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name+"/Erfolg", func(t *testing.T) {
@@ -368,7 +452,7 @@ func TestAdministrationClientReichtInvokeErgebnisJeRPCWeiter(t *testing.T) {
 }
 
 // TestUnimplementedAdministrationServerEndetMitUnimplemented trägt den
-// Ausgang des Vorwärtskompatibilitäts-Stubs für alle zehn RPCs: eine
+// Ausgang des Vorwärtskompatibilitäts-Stubs für alle elf RPCs: eine
 // Implementierung, die eine Methode nicht trägt, endet mit dem gRPC-Status
 // `Unimplemented` — sichtbar, nicht mit einem stillen leeren Response.
 // Rot färbende Mutation: den Statuscode eines Stubs ändern.
@@ -405,6 +489,9 @@ func TestUnimplementedAdministrationServerEndetMitUnimplemented(t *testing.T) {
 	}
 	if _, err := srv.ReadChanges(ctx, &administrationv1.ReadChangesRequest{}); status.Code(err) != codes.Unimplemented {
 		t.Fatalf("ReadChanges: %v (Erwartung: %v)", status.Code(err), codes.Unimplemented)
+	}
+	if _, err := srv.Diagnose(ctx, &administrationv1.DiagnoseRequest{}); status.Code(err) != codes.Unimplemented {
+		t.Fatalf("Diagnose: %v (Erwartung: %v)", status.Code(err), codes.Unimplemented)
 	}
 }
 
@@ -447,11 +534,14 @@ func (fakeAdministrationServer) RunRetention(context.Context, *administrationv1.
 func (fakeAdministrationServer) ReadChanges(context.Context, *administrationv1.ReadChangesRequest) (*administrationv1.ReadChangesResponse, error) {
 	return &administrationv1.ReadChangesResponse{}, nil
 }
+func (fakeAdministrationServer) Diagnose(context.Context, *administrationv1.DiagnoseRequest) (*administrationv1.DiagnoseResponse, error) {
+	return &administrationv1.DiagnoseResponse{}, nil
+}
 
 var _ administrationv1.AdministrationServer = fakeAdministrationServer{}
 
 // TestAdministrationHandlerVerklebungJeRPC trägt die Handler-Verklebung des
-// erzeugten Servers für alle zehn RPCs, über den veröffentlichten
+// erzeugten Servers für alle elf RPCs, über den veröffentlichten
 // `Administration_ServiceDesc` angesprochen — denselben Wert, den
 // `RegisterAdministrationServer` registriert: ein Dekodier-Fehler endet mit
 // **genau diesem** Fehler, statt die Service-Methode aufzurufen; ohne

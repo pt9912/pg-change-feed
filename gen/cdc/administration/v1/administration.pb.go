@@ -1,8 +1,8 @@
-// Administration mirrors the nine management capabilities and the bounded
-// changes-read capability of the HTTP API (consumer
+// Administration mirrors the nine management capabilities, the bounded
+// changes-read capability and the diagnose report of the HTTP API (consumer
 // registration/acknowledgement/position/removal, table
-// enable/disable/status/list, retention run, ReadChanges) over gRPC: the
-// same inbound use cases, the same two token classes, unary
+// enable/disable/status/list, retention run, ReadChanges, Diagnose) over
+// gRPC: the same inbound use cases, the same two token classes, unary
 // request/response RPCs (no streaming advantage for request/response
 // calls, SPEC-031).
 
@@ -1418,6 +1418,458 @@ func (x *ReadChangesResponse) GetChanges() []*ChangeRecord {
 	return nil
 }
 
+// HeartbeatStatus mirrors the operational-status half of the diagnose report
+// (ADR-0132): known = false means no heartbeat has ever been written for the
+// source, in which case age_seconds/error_class carry no meaning.
+type HeartbeatStatus struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Known         bool                   `protobuf:"varint,1,opt,name=known,proto3" json:"known,omitempty"`
+	AgeSeconds    float64                `protobuf:"fixed64,2,opt,name=age_seconds,json=ageSeconds,proto3" json:"age_seconds,omitempty"`
+	ErrorClass    string                 `protobuf:"bytes,3,opt,name=error_class,json=errorClass,proto3" json:"error_class,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeartbeatStatus) Reset() {
+	*x = HeartbeatStatus{}
+	mi := &file_cdc_administration_v1_administration_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeartbeatStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeartbeatStatus) ProtoMessage() {}
+
+func (x *HeartbeatStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_cdc_administration_v1_administration_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeartbeatStatus.ProtoReflect.Descriptor instead.
+func (*HeartbeatStatus) Descriptor() ([]byte, []int) {
+	return file_cdc_administration_v1_administration_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *HeartbeatStatus) GetKnown() bool {
+	if x != nil {
+		return x.Known
+	}
+	return false
+}
+
+func (x *HeartbeatStatus) GetAgeSeconds() float64 {
+	if x != nil {
+		return x.AgeSeconds
+	}
+	return 0
+}
+
+func (x *HeartbeatStatus) GetErrorClass() string {
+	if x != nil {
+		return x.ErrorClass
+	}
+	return ""
+}
+
+// ConsumerLag mirrors one row of the per-consumer processing lag report
+// (ADR-0132): known = false means the bound source never carried a
+// transaction.
+type ConsumerLag struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ConsumerId    string                 `protobuf:"bytes,1,opt,name=consumer_id,json=consumerId,proto3" json:"consumer_id,omitempty"`
+	Known         bool                   `protobuf:"varint,2,opt,name=known,proto3" json:"known,omitempty"`
+	Lag           float64                `protobuf:"fixed64,3,opt,name=lag,proto3" json:"lag,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConsumerLag) Reset() {
+	*x = ConsumerLag{}
+	mi := &file_cdc_administration_v1_administration_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConsumerLag) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsumerLag) ProtoMessage() {}
+
+func (x *ConsumerLag) ProtoReflect() protoreflect.Message {
+	mi := &file_cdc_administration_v1_administration_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsumerLag.ProtoReflect.Descriptor instead.
+func (*ConsumerLag) Descriptor() ([]byte, []int) {
+	return file_cdc_administration_v1_administration_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *ConsumerLag) GetConsumerId() string {
+	if x != nil {
+		return x.ConsumerId
+	}
+	return ""
+}
+
+func (x *ConsumerLag) GetKnown() bool {
+	if x != nil {
+		return x.Known
+	}
+	return false
+}
+
+func (x *ConsumerLag) GetLag() float64 {
+	if x != nil {
+		return x.Lag
+	}
+	return 0
+}
+
+// RetentionBlocker mirrors the currently blocking consumer of a source
+// (ADR-0132): present = false means no consumer has ever acknowledged
+// against this source.
+type RetentionBlocker struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Present              bool                   `protobuf:"varint,1,opt,name=present,proto3" json:"present,omitempty"`
+	ConsumerId           string                 `protobuf:"bytes,2,opt,name=consumer_id,json=consumerId,proto3" json:"consumer_id,omitempty"`
+	Name                 string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	AcknowledgedPosition int64                  `protobuf:"varint,4,opt,name=acknowledged_position,json=acknowledgedPosition,proto3" json:"acknowledged_position,omitempty"`
+	BacklogKnown         bool                   `protobuf:"varint,5,opt,name=backlog_known,json=backlogKnown,proto3" json:"backlog_known,omitempty"`
+	Backlog              int64                  `protobuf:"varint,6,opt,name=backlog,proto3" json:"backlog,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *RetentionBlocker) Reset() {
+	*x = RetentionBlocker{}
+	mi := &file_cdc_administration_v1_administration_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetentionBlocker) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetentionBlocker) ProtoMessage() {}
+
+func (x *RetentionBlocker) ProtoReflect() protoreflect.Message {
+	mi := &file_cdc_administration_v1_administration_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetentionBlocker.ProtoReflect.Descriptor instead.
+func (*RetentionBlocker) Descriptor() ([]byte, []int) {
+	return file_cdc_administration_v1_administration_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *RetentionBlocker) GetPresent() bool {
+	if x != nil {
+		return x.Present
+	}
+	return false
+}
+
+func (x *RetentionBlocker) GetConsumerId() string {
+	if x != nil {
+		return x.ConsumerId
+	}
+	return ""
+}
+
+func (x *RetentionBlocker) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *RetentionBlocker) GetAcknowledgedPosition() int64 {
+	if x != nil {
+		return x.AcknowledgedPosition
+	}
+	return 0
+}
+
+func (x *RetentionBlocker) GetBacklogKnown() bool {
+	if x != nil {
+		return x.BacklogKnown
+	}
+	return false
+}
+
+func (x *RetentionBlocker) GetBacklog() int64 {
+	if x != nil {
+		return x.Backlog
+	}
+	return 0
+}
+
+// BackfillTableStatus mirrors the last requested backfill run of one table
+// (ADR-0132): estimated_rows_known = false means the estimate is unknown,
+// never zero.
+type BackfillTableStatus struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Schema             string                 `protobuf:"bytes,1,opt,name=schema,proto3" json:"schema,omitempty"`
+	Table              string                 `protobuf:"bytes,2,opt,name=table,proto3" json:"table,omitempty"`
+	Status             string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	RowsCopied         int64                  `protobuf:"varint,4,opt,name=rows_copied,json=rowsCopied,proto3" json:"rows_copied,omitempty"`
+	EstimatedRowsKnown bool                   `protobuf:"varint,5,opt,name=estimated_rows_known,json=estimatedRowsKnown,proto3" json:"estimated_rows_known,omitempty"`
+	EstimatedRows      int64                  `protobuf:"varint,6,opt,name=estimated_rows,json=estimatedRows,proto3" json:"estimated_rows,omitempty"`
+	WarnEstimatedSize  bool                   `protobuf:"varint,7,opt,name=warn_estimated_size,json=warnEstimatedSize,proto3" json:"warn_estimated_size,omitempty"`
+	WarnDuration       bool                   `protobuf:"varint,8,opt,name=warn_duration,json=warnDuration,proto3" json:"warn_duration,omitempty"`
+	ErrorMessage       string                 `protobuf:"bytes,9,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *BackfillTableStatus) Reset() {
+	*x = BackfillTableStatus{}
+	mi := &file_cdc_administration_v1_administration_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BackfillTableStatus) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BackfillTableStatus) ProtoMessage() {}
+
+func (x *BackfillTableStatus) ProtoReflect() protoreflect.Message {
+	mi := &file_cdc_administration_v1_administration_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BackfillTableStatus.ProtoReflect.Descriptor instead.
+func (*BackfillTableStatus) Descriptor() ([]byte, []int) {
+	return file_cdc_administration_v1_administration_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *BackfillTableStatus) GetSchema() string {
+	if x != nil {
+		return x.Schema
+	}
+	return ""
+}
+
+func (x *BackfillTableStatus) GetTable() string {
+	if x != nil {
+		return x.Table
+	}
+	return ""
+}
+
+func (x *BackfillTableStatus) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *BackfillTableStatus) GetRowsCopied() int64 {
+	if x != nil {
+		return x.RowsCopied
+	}
+	return 0
+}
+
+func (x *BackfillTableStatus) GetEstimatedRowsKnown() bool {
+	if x != nil {
+		return x.EstimatedRowsKnown
+	}
+	return false
+}
+
+func (x *BackfillTableStatus) GetEstimatedRows() int64 {
+	if x != nil {
+		return x.EstimatedRows
+	}
+	return 0
+}
+
+func (x *BackfillTableStatus) GetWarnEstimatedSize() bool {
+	if x != nil {
+		return x.WarnEstimatedSize
+	}
+	return false
+}
+
+func (x *BackfillTableStatus) GetWarnDuration() bool {
+	if x != nil {
+		return x.WarnDuration
+	}
+	return false
+}
+
+func (x *BackfillTableStatus) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+type DiagnoseRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Source        string                 `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DiagnoseRequest) Reset() {
+	*x = DiagnoseRequest{}
+	mi := &file_cdc_administration_v1_administration_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DiagnoseRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DiagnoseRequest) ProtoMessage() {}
+
+func (x *DiagnoseRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cdc_administration_v1_administration_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DiagnoseRequest.ProtoReflect.Descriptor instead.
+func (*DiagnoseRequest) Descriptor() ([]byte, []int) {
+	return file_cdc_administration_v1_administration_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *DiagnoseRequest) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+type DiagnoseResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Heartbeat        *HeartbeatStatus       `protobuf:"bytes,1,opt,name=heartbeat,proto3" json:"heartbeat,omitempty"`
+	CaptureLag       float64                `protobuf:"fixed64,2,opt,name=capture_lag,json=captureLag,proto3" json:"capture_lag,omitempty"`
+	ConsumerLags     []*ConsumerLag         `protobuf:"bytes,3,rep,name=consumer_lags,json=consumerLags,proto3" json:"consumer_lags,omitempty"`
+	RetentionBlocker *RetentionBlocker      `protobuf:"bytes,4,opt,name=retention_blocker,json=retentionBlocker,proto3" json:"retention_blocker,omitempty"`
+	StorageBytes     float64                `protobuf:"fixed64,5,opt,name=storage_bytes,json=storageBytes,proto3" json:"storage_bytes,omitempty"`
+	Backfill         []*BackfillTableStatus `protobuf:"bytes,6,rep,name=backfill,proto3" json:"backfill,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *DiagnoseResponse) Reset() {
+	*x = DiagnoseResponse{}
+	mi := &file_cdc_administration_v1_administration_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DiagnoseResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DiagnoseResponse) ProtoMessage() {}
+
+func (x *DiagnoseResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cdc_administration_v1_administration_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DiagnoseResponse.ProtoReflect.Descriptor instead.
+func (*DiagnoseResponse) Descriptor() ([]byte, []int) {
+	return file_cdc_administration_v1_administration_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *DiagnoseResponse) GetHeartbeat() *HeartbeatStatus {
+	if x != nil {
+		return x.Heartbeat
+	}
+	return nil
+}
+
+func (x *DiagnoseResponse) GetCaptureLag() float64 {
+	if x != nil {
+		return x.CaptureLag
+	}
+	return 0
+}
+
+func (x *DiagnoseResponse) GetConsumerLags() []*ConsumerLag {
+	if x != nil {
+		return x.ConsumerLags
+	}
+	return nil
+}
+
+func (x *DiagnoseResponse) GetRetentionBlocker() *RetentionBlocker {
+	if x != nil {
+		return x.RetentionBlocker
+	}
+	return nil
+}
+
+func (x *DiagnoseResponse) GetStorageBytes() float64 {
+	if x != nil {
+		return x.StorageBytes
+	}
+	return 0
+}
+
+func (x *DiagnoseResponse) GetBackfill() []*BackfillTableStatus {
+	if x != nil {
+		return x.Backfill
+	}
+	return nil
+}
+
 var File_cdc_administration_v1_administration_proto protoreflect.FileDescriptor
 
 const file_cdc_administration_v1_administration_proto_rawDesc = "" +
@@ -1527,7 +1979,47 @@ const file_cdc_administration_v1_administration_proto_rawDesc = "" +
 	"\fcommitted_at\x18\f \x01(\tR\vcommittedAt\x12\x16\n" +
 	"\x06origin\x18\r \x01(\tR\x06origin\"T\n" +
 	"\x13ReadChangesResponse\x12=\n" +
-	"\achanges\x18\x01 \x03(\v2#.cdc.administration.v1.ChangeRecordR\achanges2\xe0\b\n" +
+	"\achanges\x18\x01 \x03(\v2#.cdc.administration.v1.ChangeRecordR\achanges\"i\n" +
+	"\x0fHeartbeatStatus\x12\x14\n" +
+	"\x05known\x18\x01 \x01(\bR\x05known\x12\x1f\n" +
+	"\vage_seconds\x18\x02 \x01(\x01R\n" +
+	"ageSeconds\x12\x1f\n" +
+	"\verror_class\x18\x03 \x01(\tR\n" +
+	"errorClass\"V\n" +
+	"\vConsumerLag\x12\x1f\n" +
+	"\vconsumer_id\x18\x01 \x01(\tR\n" +
+	"consumerId\x12\x14\n" +
+	"\x05known\x18\x02 \x01(\bR\x05known\x12\x10\n" +
+	"\x03lag\x18\x03 \x01(\x01R\x03lag\"\xd5\x01\n" +
+	"\x10RetentionBlocker\x12\x18\n" +
+	"\apresent\x18\x01 \x01(\bR\apresent\x12\x1f\n" +
+	"\vconsumer_id\x18\x02 \x01(\tR\n" +
+	"consumerId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x123\n" +
+	"\x15acknowledged_position\x18\x04 \x01(\x03R\x14acknowledgedPosition\x12#\n" +
+	"\rbacklog_known\x18\x05 \x01(\bR\fbacklogKnown\x12\x18\n" +
+	"\abacklog\x18\x06 \x01(\x03R\abacklog\"\xcf\x02\n" +
+	"\x13BackfillTableStatus\x12\x16\n" +
+	"\x06schema\x18\x01 \x01(\tR\x06schema\x12\x14\n" +
+	"\x05table\x18\x02 \x01(\tR\x05table\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1f\n" +
+	"\vrows_copied\x18\x04 \x01(\x03R\n" +
+	"rowsCopied\x120\n" +
+	"\x14estimated_rows_known\x18\x05 \x01(\bR\x12estimatedRowsKnown\x12%\n" +
+	"\x0eestimated_rows\x18\x06 \x01(\x03R\restimatedRows\x12.\n" +
+	"\x13warn_estimated_size\x18\a \x01(\bR\x11warnEstimatedSize\x12#\n" +
+	"\rwarn_duration\x18\b \x01(\bR\fwarnDuration\x12#\n" +
+	"\rerror_message\x18\t \x01(\tR\ferrorMessage\")\n" +
+	"\x0fDiagnoseRequest\x12\x16\n" +
+	"\x06source\x18\x01 \x01(\tR\x06source\"\x85\x03\n" +
+	"\x10DiagnoseResponse\x12D\n" +
+	"\theartbeat\x18\x01 \x01(\v2&.cdc.administration.v1.HeartbeatStatusR\theartbeat\x12\x1f\n" +
+	"\vcapture_lag\x18\x02 \x01(\x01R\n" +
+	"captureLag\x12G\n" +
+	"\rconsumer_lags\x18\x03 \x03(\v2\".cdc.administration.v1.ConsumerLagR\fconsumerLags\x12T\n" +
+	"\x11retention_blocker\x18\x04 \x01(\v2'.cdc.administration.v1.RetentionBlockerR\x10retentionBlocker\x12#\n" +
+	"\rstorage_bytes\x18\x05 \x01(\x01R\fstorageBytes\x12F\n" +
+	"\bbackfill\x18\x06 \x03(\v2*.cdc.administration.v1.BackfillTableStatusR\bbackfill2\xbd\t\n" +
 	"\x0eAdministration\x12s\n" +
 	"\x10RegisterConsumer\x12..cdc.administration.v1.RegisterConsumerRequest\x1a/.cdc.administration.v1.RegisterConsumerResponse\x12|\n" +
 	"\x13AcknowledgeConsumer\x121.cdc.administration.v1.AcknowledgeConsumerRequest\x1a2.cdc.administration.v1.AcknowledgeConsumerResponse\x12|\n" +
@@ -1539,7 +2031,8 @@ const file_cdc_administration_v1_administration_proto_rawDesc = "" +
 	"\n" +
 	"ListTables\x12(.cdc.administration.v1.ListTablesRequest\x1a).cdc.administration.v1.ListTablesResponse\x12g\n" +
 	"\fRunRetention\x12*.cdc.administration.v1.RunRetentionRequest\x1a+.cdc.administration.v1.RunRetentionResponse\x12d\n" +
-	"\vReadChanges\x12).cdc.administration.v1.ReadChangesRequest\x1a*.cdc.administration.v1.ReadChangesResponseBMZKgithub.com/pt9912/pg-change-feed/gen/cdc/administration/v1;administrationv1b\x06proto3"
+	"\vReadChanges\x12).cdc.administration.v1.ReadChangesRequest\x1a*.cdc.administration.v1.ReadChangesResponse\x12[\n" +
+	"\bDiagnose\x12&.cdc.administration.v1.DiagnoseRequest\x1a'.cdc.administration.v1.DiagnoseResponseBMZKgithub.com/pt9912/pg-change-feed/gen/cdc/administration/v1;administrationv1b\x06proto3"
 
 var (
 	file_cdc_administration_v1_administration_proto_rawDescOnce sync.Once
@@ -1553,7 +2046,7 @@ func file_cdc_administration_v1_administration_proto_rawDescGZIP() []byte {
 	return file_cdc_administration_v1_administration_proto_rawDescData
 }
 
-var file_cdc_administration_v1_administration_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_cdc_administration_v1_administration_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_cdc_administration_v1_administration_proto_goTypes = []any{
 	(*SourceTable)(nil),                 // 0: cdc.administration.v1.SourceTable
 	(*RegisterConsumerRequest)(nil),     // 1: cdc.administration.v1.RegisterConsumerRequest
@@ -1577,36 +2070,48 @@ var file_cdc_administration_v1_administration_proto_goTypes = []any{
 	(*ReadChangesRequest)(nil),          // 19: cdc.administration.v1.ReadChangesRequest
 	(*ChangeRecord)(nil),                // 20: cdc.administration.v1.ChangeRecord
 	(*ReadChangesResponse)(nil),         // 21: cdc.administration.v1.ReadChangesResponse
+	(*HeartbeatStatus)(nil),             // 22: cdc.administration.v1.HeartbeatStatus
+	(*ConsumerLag)(nil),                 // 23: cdc.administration.v1.ConsumerLag
+	(*RetentionBlocker)(nil),            // 24: cdc.administration.v1.RetentionBlocker
+	(*BackfillTableStatus)(nil),         // 25: cdc.administration.v1.BackfillTableStatus
+	(*DiagnoseRequest)(nil),             // 26: cdc.administration.v1.DiagnoseRequest
+	(*DiagnoseResponse)(nil),            // 27: cdc.administration.v1.DiagnoseResponse
 }
 var file_cdc_administration_v1_administration_proto_depIdxs = []int32{
 	0,  // 0: cdc.administration.v1.ListTablesResponse.tables:type_name -> cdc.administration.v1.SourceTable
 	0,  // 1: cdc.administration.v1.ListTablesResponse.retained:type_name -> cdc.administration.v1.SourceTable
 	20, // 2: cdc.administration.v1.ReadChangesResponse.changes:type_name -> cdc.administration.v1.ChangeRecord
-	1,  // 3: cdc.administration.v1.Administration.RegisterConsumer:input_type -> cdc.administration.v1.RegisterConsumerRequest
-	3,  // 4: cdc.administration.v1.Administration.AcknowledgeConsumer:input_type -> cdc.administration.v1.AcknowledgeConsumerRequest
-	5,  // 5: cdc.administration.v1.Administration.GetConsumerPosition:input_type -> cdc.administration.v1.GetConsumerPositionRequest
-	7,  // 6: cdc.administration.v1.Administration.RemoveConsumer:input_type -> cdc.administration.v1.RemoveConsumerRequest
-	9,  // 7: cdc.administration.v1.Administration.EnableTable:input_type -> cdc.administration.v1.EnableTableRequest
-	11, // 8: cdc.administration.v1.Administration.DisableTable:input_type -> cdc.administration.v1.DisableTableRequest
-	13, // 9: cdc.administration.v1.Administration.GetTableStatus:input_type -> cdc.administration.v1.GetTableStatusRequest
-	15, // 10: cdc.administration.v1.Administration.ListTables:input_type -> cdc.administration.v1.ListTablesRequest
-	17, // 11: cdc.administration.v1.Administration.RunRetention:input_type -> cdc.administration.v1.RunRetentionRequest
-	19, // 12: cdc.administration.v1.Administration.ReadChanges:input_type -> cdc.administration.v1.ReadChangesRequest
-	2,  // 13: cdc.administration.v1.Administration.RegisterConsumer:output_type -> cdc.administration.v1.RegisterConsumerResponse
-	4,  // 14: cdc.administration.v1.Administration.AcknowledgeConsumer:output_type -> cdc.administration.v1.AcknowledgeConsumerResponse
-	6,  // 15: cdc.administration.v1.Administration.GetConsumerPosition:output_type -> cdc.administration.v1.GetConsumerPositionResponse
-	8,  // 16: cdc.administration.v1.Administration.RemoveConsumer:output_type -> cdc.administration.v1.RemoveConsumerResponse
-	10, // 17: cdc.administration.v1.Administration.EnableTable:output_type -> cdc.administration.v1.EnableTableResponse
-	12, // 18: cdc.administration.v1.Administration.DisableTable:output_type -> cdc.administration.v1.DisableTableResponse
-	14, // 19: cdc.administration.v1.Administration.GetTableStatus:output_type -> cdc.administration.v1.GetTableStatusResponse
-	16, // 20: cdc.administration.v1.Administration.ListTables:output_type -> cdc.administration.v1.ListTablesResponse
-	18, // 21: cdc.administration.v1.Administration.RunRetention:output_type -> cdc.administration.v1.RunRetentionResponse
-	21, // 22: cdc.administration.v1.Administration.ReadChanges:output_type -> cdc.administration.v1.ReadChangesResponse
-	13, // [13:23] is the sub-list for method output_type
-	3,  // [3:13] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	22, // 3: cdc.administration.v1.DiagnoseResponse.heartbeat:type_name -> cdc.administration.v1.HeartbeatStatus
+	23, // 4: cdc.administration.v1.DiagnoseResponse.consumer_lags:type_name -> cdc.administration.v1.ConsumerLag
+	24, // 5: cdc.administration.v1.DiagnoseResponse.retention_blocker:type_name -> cdc.administration.v1.RetentionBlocker
+	25, // 6: cdc.administration.v1.DiagnoseResponse.backfill:type_name -> cdc.administration.v1.BackfillTableStatus
+	1,  // 7: cdc.administration.v1.Administration.RegisterConsumer:input_type -> cdc.administration.v1.RegisterConsumerRequest
+	3,  // 8: cdc.administration.v1.Administration.AcknowledgeConsumer:input_type -> cdc.administration.v1.AcknowledgeConsumerRequest
+	5,  // 9: cdc.administration.v1.Administration.GetConsumerPosition:input_type -> cdc.administration.v1.GetConsumerPositionRequest
+	7,  // 10: cdc.administration.v1.Administration.RemoveConsumer:input_type -> cdc.administration.v1.RemoveConsumerRequest
+	9,  // 11: cdc.administration.v1.Administration.EnableTable:input_type -> cdc.administration.v1.EnableTableRequest
+	11, // 12: cdc.administration.v1.Administration.DisableTable:input_type -> cdc.administration.v1.DisableTableRequest
+	13, // 13: cdc.administration.v1.Administration.GetTableStatus:input_type -> cdc.administration.v1.GetTableStatusRequest
+	15, // 14: cdc.administration.v1.Administration.ListTables:input_type -> cdc.administration.v1.ListTablesRequest
+	17, // 15: cdc.administration.v1.Administration.RunRetention:input_type -> cdc.administration.v1.RunRetentionRequest
+	19, // 16: cdc.administration.v1.Administration.ReadChanges:input_type -> cdc.administration.v1.ReadChangesRequest
+	26, // 17: cdc.administration.v1.Administration.Diagnose:input_type -> cdc.administration.v1.DiagnoseRequest
+	2,  // 18: cdc.administration.v1.Administration.RegisterConsumer:output_type -> cdc.administration.v1.RegisterConsumerResponse
+	4,  // 19: cdc.administration.v1.Administration.AcknowledgeConsumer:output_type -> cdc.administration.v1.AcknowledgeConsumerResponse
+	6,  // 20: cdc.administration.v1.Administration.GetConsumerPosition:output_type -> cdc.administration.v1.GetConsumerPositionResponse
+	8,  // 21: cdc.administration.v1.Administration.RemoveConsumer:output_type -> cdc.administration.v1.RemoveConsumerResponse
+	10, // 22: cdc.administration.v1.Administration.EnableTable:output_type -> cdc.administration.v1.EnableTableResponse
+	12, // 23: cdc.administration.v1.Administration.DisableTable:output_type -> cdc.administration.v1.DisableTableResponse
+	14, // 24: cdc.administration.v1.Administration.GetTableStatus:output_type -> cdc.administration.v1.GetTableStatusResponse
+	16, // 25: cdc.administration.v1.Administration.ListTables:output_type -> cdc.administration.v1.ListTablesResponse
+	18, // 26: cdc.administration.v1.Administration.RunRetention:output_type -> cdc.administration.v1.RunRetentionResponse
+	21, // 27: cdc.administration.v1.Administration.ReadChanges:output_type -> cdc.administration.v1.ReadChangesResponse
+	27, // 28: cdc.administration.v1.Administration.Diagnose:output_type -> cdc.administration.v1.DiagnoseResponse
+	18, // [18:29] is the sub-list for method output_type
+	7,  // [7:18] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_cdc_administration_v1_administration_proto_init() }
@@ -1620,7 +2125,7 @@ func file_cdc_administration_v1_administration_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cdc_administration_v1_administration_proto_rawDesc), len(file_cdc_administration_v1_administration_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   22,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

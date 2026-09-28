@@ -1,11 +1,10 @@
-// administration.go trägt den `Administration`-Service (`ADR-0131`): zehn
-// unäre RPCs, jeder ruft denselben Inbound Use Case wie sein
-// HTTP-Äquivalent in `internal/adapters/driving/http/{consumer,
-// registerconsumer,verwaltung,retention,readchanges}.go` — kein zweiter
-// Domänenpfad. Der Adapter importiert ausschließlich Inbound Ports und
-// Domain-Typen zur Übersetzung, keine Driven-Adapter- oder
-// Application-Interna, dieselbe Grenze wie beim bestehenden Stream-Handler
-// und beim HTTP-Adapter.
+// administration.go trägt den `Administration`-Service (`ADR-0132`): elf
+// unäre RPCs, jeder ruft denselben Inbound Use Case wie sein HTTP-Äquivalent
+// in `internal/adapters/driving/http/{consumer,registerconsumer,verwaltung,
+// retention,readchanges,diagnose}.go` — kein zweiter Domänenpfad. Der
+// Adapter importiert ausschließlich Inbound Ports und Domain-Typen zur
+// Übersetzung, keine Driven-Adapter- oder Application-Interna, dieselbe
+// Grenze wie beim bestehenden Stream-Handler und beim HTTP-Adapter.
 package grpc
 
 import (
@@ -38,6 +37,7 @@ type administrationService struct {
 	listTables          inbound.ListTablesUseCase
 	runRetention        inbound.RunRetentionUseCase
 	readChanges         inbound.ReadChangesUseCase
+	diagnose            inbound.DiagnoseUseCase
 	log                 outbound.LogPort
 }
 
@@ -318,4 +318,95 @@ func (s *administrationService) ReadChanges(ctx context.Context, req *administra
 		changes = append(changes, toChangeRecord(change))
 	}
 	return &administrationv1.ReadChangesResponse{Changes: changes}, nil
+}
+
+// toHeartbeatStatus übersetzt den Betriebsstatus-Teil des Diagnose-Berichts
+// (`ADR-0132` Teilfrage 5): `Known = false` trägt „kein Lebenszeichen" —
+// `AgeSeconds`/`ErrorClass` sind dann ohne Bedeutung.
+func toHeartbeatStatus(result inbound.DiagnoseResult) *administrationv1.HeartbeatStatus {
+	if result.HeartbeatAgeSeconds == nil {
+		return &administrationv1.HeartbeatStatus{Known: false}
+	}
+	errorClass := ""
+	if result.ErrorClass != nil {
+		errorClass = *result.ErrorClass
+	}
+	return &administrationv1.HeartbeatStatus{Known: true, AgeSeconds: *result.HeartbeatAgeSeconds, ErrorClass: errorClass}
+}
+
+// toConsumerLags übersetzt die Verarbeitungsrückstände je Consumer
+// (`ADR-0132` Teilfrage 5): `Known = false` trägt „Quelle trug noch nie eine
+// Transaktion".
+func toConsumerLags(lags []inbound.ConsumerLag) []*administrationv1.ConsumerLag {
+	out := make([]*administrationv1.ConsumerLag, 0, len(lags))
+	for _, lag := range lags {
+		entry := &administrationv1.ConsumerLag{ConsumerId: lag.ConsumerID}
+		if lag.Lag != nil {
+			entry.Known = true
+			entry.Lag = *lag.Lag
+		}
+		out = append(out, entry)
+	}
+	return out
+}
+
+// toRetentionBlocker übersetzt den blockierenden Consumer (`ADR-0132`
+// Teilfrage 5): `Present = false` trägt „kein Blocker".
+func toRetentionBlocker(blocker *inbound.RetentionBlocker) *administrationv1.RetentionBlocker {
+	if blocker == nil {
+		return &administrationv1.RetentionBlocker{Present: false}
+	}
+	out := &administrationv1.RetentionBlocker{
+		Present:              true,
+		ConsumerId:           blocker.ConsumerID,
+		Name:                 blocker.Name,
+		AcknowledgedPosition: blocker.AcknowledgedPosition,
+	}
+	if blocker.Backlog != nil {
+		out.BacklogKnown = true
+		out.Backlog = *blocker.Backlog
+	}
+	return out
+}
+
+// toBackfillTableStatus übersetzt den Backfill-Bericht je Tabelle
+// (`ADR-0132` Teilfrage 5): `EstimatedRowsKnown = false` trägt „unbekannt",
+// nie eine Schätzung von `0`.
+func toBackfillTableStatus(tables []inbound.BackfillTableStatus) []*administrationv1.BackfillTableStatus {
+	out := make([]*administrationv1.BackfillTableStatus, 0, len(tables))
+	for _, table := range tables {
+		entry := &administrationv1.BackfillTableStatus{
+			Schema:            table.Schema,
+			Table:             table.Table,
+			Status:            table.Status,
+			RowsCopied:        table.RowsCopied,
+			WarnEstimatedSize: table.WarnEstimatedSize,
+			WarnDuration:      table.WarnDuration,
+			ErrorMessage:      table.ErrorMessage,
+		}
+		if table.EstimatedRows != nil {
+			entry.EstimatedRowsKnown = true
+			entry.EstimatedRows = *table.EstimatedRows
+		}
+		out = append(out, entry)
+	}
+	return out
+}
+
+// Diagnose liest die Diagnosesignale einer Quelle (`ADR-0132`); ruft
+// denselben Inbound Use Case wie `diagnoseHandler` (HTTP-Adapter) und der
+// umgebaute CLI-Sondermodus — kein zweiter Domänenpfad.
+func (s *administrationService) Diagnose(ctx context.Context, req *administrationv1.DiagnoseRequest) (*administrationv1.DiagnoseResponse, error) {
+	result, err := s.diagnose.Diagnose(ctx, inbound.DiagnoseQuery{Source: model.SourceID(req.GetSource())})
+	if err != nil {
+		return nil, administrationError(ctx, s.log, "Diagnose", err)
+	}
+	return &administrationv1.DiagnoseResponse{
+		Heartbeat:        toHeartbeatStatus(result),
+		CaptureLag:       result.CaptureLag,
+		ConsumerLags:     toConsumerLags(result.ConsumerLags),
+		RetentionBlocker: toRetentionBlocker(result.RetentionBlocker),
+		StorageBytes:     result.StorageBytes,
+		Backfill:         toBackfillTableStatus(result.Backfill),
+	}, nil
 }

@@ -97,8 +97,8 @@ func authStreamInterceptor(readerToken, adminToken string) grpc.StreamServerInte
 	}
 }
 
-// administrationRPCRoles trägt die Rechtsklassen-Tabelle der zehn
-// `Administration`-RPCs (`ADR-0131` Teilfrage 4): dieselbe Rollen-Zuordnung
+// administrationRPCRoles trägt die Rechtsklassen-Tabelle der elf
+// `Administration`-RPCs (`ADR-0132` Teilfrage 6): dieselbe Rollen-Zuordnung
 // wie `withToken` in `internal/adapters/driving/http/middleware.go`.
 var administrationRPCRoles = map[string]role{
 	"RegisterConsumer":    roleAdmin,
@@ -111,6 +111,7 @@ var administrationRPCRoles = map[string]role{
 	"GetTableStatus":      roleReader,
 	"ListTables":          roleReader,
 	"ReadChanges":         roleReader,
+	"Diagnose":            roleReader,
 }
 
 // methodName liest das letzte Pfadsegment aus `info.FullMethod`
