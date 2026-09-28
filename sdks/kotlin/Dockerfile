@@ -55,6 +55,9 @@ COPY pgchangefeed-kotlin/src src
 # Quellmenge `src/main/proto/` (pgchangefeed-kotlin/build.gradle.kts), dasselbe
 # Muster wie examples/kotlin/Dockerfile/grpc-client.
 COPY --from=proto cdc/stream/v1/changestream.proto src/main/proto/changestream.proto
+# Die zweite COPY-Zeile trägt die elf RPCs des `Administration`-Diensts, die
+# `PgChangeFeedAdministrationClient` aufruft.
+COPY --from=proto cdc/administration/v1/administration.proto src/main/proto/administration.proto
 
 RUN ./gradlew --no-daemon test
 RUN ./gradlew --no-daemon build

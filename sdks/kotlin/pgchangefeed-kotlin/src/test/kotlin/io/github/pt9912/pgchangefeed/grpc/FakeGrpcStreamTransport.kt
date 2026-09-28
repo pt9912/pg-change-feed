@@ -1,6 +1,7 @@
 package io.github.pt9912.pgchangefeed.grpc
 
 import cdc.stream.v1.Changestream.Change
+import cdc.stream.v1.Changestream.StreamChangesRequest
 import io.grpc.Metadata
 import io.grpc.Status
 import io.grpc.StatusException
@@ -13,7 +14,8 @@ import kotlinx.coroutines.flow.flow
  * constructor KDoc for why `java.net.http`-style socket-free faking is not
  * available at the [io.grpc.Channel] level for the generated coroutine
  * stub. [lastHeaders] lets a test assert on the exact `authorization`
- * metadata entry the client under test built.
+ * metadata entry the client under test built; [lastRequest] lets it assert
+ * on the exact `schema`/`table` filter fields the client under test sent.
  */
 internal class FakeGrpcStreamTransport private constructor(
     private val messages: List<Change>,
@@ -22,8 +24,11 @@ internal class FakeGrpcStreamTransport private constructor(
 
     var lastHeaders: Metadata? = null
         private set
+    var lastRequest: StreamChangesRequest? = null
+        private set
 
-    override fun streamChanges(headers: Metadata): Flow<Change> {
+    override fun streamChanges(request: StreamChangesRequest, headers: Metadata): Flow<Change> {
+        lastRequest = request
         lastHeaders = headers
         return flow {
             messages.forEach { emit(it) }

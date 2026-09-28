@@ -24,10 +24,11 @@ import kotlinx.coroutines.flow.Flow
  * `Bearer <token>` on every call — there is no global or static state; a
  * process can hold several independently configured instances at once.
  *
- * **Limits:** the stream carries no replay and cannot be filtered by table. A
- * consumer that needs either uses the read path
+ * **Limits:** the stream carries no replay — a consumer that needs replay
+ * uses the read path
  * (`io.github.pt9912.pgchangefeed.http.PgChangeFeedHttpClient.readChanges`),
- * not this stream.
+ * not this stream. [streamChanges]'s optional `schema`/`table` filter
+ * narrows which captured tables reach this connection.
  *
  * The `.proto` file is not part of the committed tree of this package: the
  * generated coroutine stub ([ChangeStreamGrpcKt]) and the message type
@@ -82,17 +83,27 @@ class PgChangeFeedGrpcClient private constructor(
     /**
      * Opens the server-streaming call and yields every [Change] the server
      * sends from connection time onward: fire-and-forget, no replay, one
-     * message per row change in commit order. The request carries no filter.
+     * message per row change in commit order. [schema] and [table] are each
+     * optional and independent: a set [schema] without [table] delivers
+     * every table of that schema, a set [table] without [schema] delivers
+     * every table of that name regardless of schema, both set delivers
+     * exactly one table, and both left `null` (the default) delivers every
+     * change of every captured table, unchanged from the original,
+     * filter-less contract.
      *
      * A missing or invalid bearer token ends the call with gRPC status
      * `UNAUTHENTICATED` — this surfaces as an `io.grpc.StatusException` from
      * the returned [Flow] once collected, not as a silently empty stream.
      */
-    fun streamChanges(): Flow<Change> {
+    fun streamChanges(schema: String? = null, table: String? = null): Flow<Change> {
         val headers = Metadata().apply {
             put(AUTHORIZATION_METADATA_ENTRY, BEARER_PREFIX + options.apiToken)
         }
-        return transport.streamChanges(headers)
+        val request = StreamChangesRequest.newBuilder().apply {
+            if (schema != null) setSchema(schema)
+            if (table != null) setTable(table)
+        }.build()
+        return transport.streamChanges(request, headers)
     }
 
     /** Shuts down the channel this instance owns, if any (see the convenience constructor). */
@@ -124,13 +135,13 @@ class PgChangeFeedGrpcClient private constructor(
  * and what `internal` does and does not restrict.
  */
 internal fun interface GrpcStreamTransport {
-    fun streamChanges(headers: Metadata): Flow<Change>
+    fun streamChanges(request: StreamChangesRequest, headers: Metadata): Flow<Change>
 }
 
 /** The real [GrpcStreamTransport]: wraps the generated coroutine stub. */
 internal class GeneratedStubTransport(channel: Channel) : GrpcStreamTransport {
     private val stub = ChangeStreamGrpcKt.ChangeStreamCoroutineStub(channel)
 
-    override fun streamChanges(headers: Metadata): Flow<Change> =
-        stub.streamChanges(StreamChangesRequest.getDefaultInstance(), headers)
+    override fun streamChanges(request: StreamChangesRequest, headers: Metadata): Flow<Change> =
+        stub.streamChanges(request, headers)
 }
