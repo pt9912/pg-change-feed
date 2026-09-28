@@ -163,15 +163,6 @@ func TestAuthUnaryInterceptorAdminTokenErreichtBeideRechtsklassen(t *testing.T) 
 	}
 }
 
-// TestAuthUnaryInterceptorUnbekannteMethodeFaelltFailClosedAufRoleAdmin
-// trägt den Fail-closed-Zweig: ein Methodenname ohne Eintrag in der
-// Rechtsklassen-Tabelle fällt auf `roleAdmin` — ein `reader`-Token erreicht
-// ihn nicht.
-//
-// Rot färbende Mutation: in `authUnaryInterceptor` den `!ok`-Zweig
-// entfernen — der Nullwert von `role` ist `roleNone` (nicht `roleAdmin`),
-// jedes bekannte Token würde die dann implizit offene RPC erreichen, dieser
-// Test färbt rot.
 // TestAuthUnaryInterceptorReadChangesRechtsklasse trägt die Fitness Function
 // des zehnten RPC (`ADR-0131` Teilfrage 4): ein Aufruf ohne oder mit
 // unbekanntem Token endet mit `Unauthenticated`; ein gültiges `reader`-Token
@@ -203,6 +194,15 @@ func TestAuthUnaryInterceptorReadChangesRechtsklasse(t *testing.T) {
 	}
 }
 
+// TestAuthUnaryInterceptorUnbekannteMethodeFaelltFailClosedAufRoleAdmin
+// trägt den Fail-closed-Zweig: ein Methodenname ohne Eintrag in der
+// Rechtsklassen-Tabelle fällt auf `roleAdmin` — ein `reader`-Token erreicht
+// ihn nicht.
+//
+// Rot färbende Mutation: in `authUnaryInterceptor` den `!ok`-Zweig
+// entfernen — der Nullwert von `role` ist `roleNone` (nicht `roleAdmin`),
+// jedes bekannte Token würde die dann implizit offene RPC erreichen, dieser
+// Test färbt rot.
 func TestAuthUnaryInterceptorUnbekannteMethodeFaelltFailClosedAufRoleAdmin(t *testing.T) {
 	interceptor := authUnaryInterceptor(testReaderToken, testAdminToken, administrationRPCRoles)
 	info := &grpc.UnaryServerInfo{FullMethod: "/cdc.administration.v1.Administration/UnbekannteMethode"}
