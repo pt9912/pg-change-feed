@@ -106,6 +106,24 @@ func TestAcknowledgeConsumerParsesSuccessResponse(t *testing.T) {
 	}
 }
 
+// TestAcknowledgeConsumerFailsOnNon2xx prüft den Fehlerpfad.
+func TestAcknowledgeConsumerFailsOnNon2xx(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "consumer_id, source und offset sind Pflichtfelder"})
+	}))
+	defer server.Close()
+
+	cfg := config{addr: strings.TrimPrefix(server.URL, "http://"), adminToken: "admin-token"}
+	_, err := acknowledgeConsumer(server.Client(), cfg)
+	if err == nil {
+		t.Fatal("acknowledgeConsumer: erwarteter Fehler blieb aus")
+	}
+	if !strings.Contains(err.Error(), "400") || !strings.Contains(err.Error(), "Pflichtfelder") {
+		t.Fatalf("Fehlertext trägt weder Status noch Antworttext: %v", err)
+	}
+}
+
 // TestConsumerPositionParsesSuccessResponse prüft die Erfolgs-Antwort von
 // `GET /consumers/position`, inklusive der Boundary `acknowledged=false`.
 func TestConsumerPositionParsesSuccessResponse(t *testing.T) {
@@ -128,6 +146,24 @@ func TestConsumerPositionParsesSuccessResponse(t *testing.T) {
 	}
 }
 
+// TestConsumerPositionFailsOnNon2xx prüft den Fehlerpfad.
+func TestConsumerPositionFailsOnNon2xx(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "consumer_id ist Pflichtfeld"})
+	}))
+	defer server.Close()
+
+	cfg := config{addr: strings.TrimPrefix(server.URL, "http://"), token: "reader-token"}
+	_, err := consumerPosition(server.Client(), cfg)
+	if err == nil {
+		t.Fatal("consumerPosition: erwarteter Fehler blieb aus")
+	}
+	if !strings.Contains(err.Error(), "400") || !strings.Contains(err.Error(), "Pflichtfeld") {
+		t.Fatalf("Fehlertext trägt weder Status noch Antworttext: %v", err)
+	}
+}
+
 // TestRemoveConsumerParsesIdempotentOutcome prüft `LH-FA-CON-006`s
 // Idempotenz-Ausgang: ein nie registrierter Consumer meldet `removed=false`
 // über `200`, keinen `404`.
@@ -145,5 +181,23 @@ func TestRemoveConsumerParsesIdempotentOutcome(t *testing.T) {
 	}
 	if resp.Removed {
 		t.Fatalf("unerwartete Antwort: %+v", resp)
+	}
+}
+
+// TestRemoveConsumerFailsOnNon2xx prüft den Fehlerpfad.
+func TestRemoveConsumerFailsOnNon2xx(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "consumer_id ist Pflichtfeld"})
+	}))
+	defer server.Close()
+
+	cfg := config{addr: strings.TrimPrefix(server.URL, "http://"), adminToken: "admin-token"}
+	_, err := removeConsumer(server.Client(), cfg)
+	if err == nil {
+		t.Fatal("removeConsumer: erwarteter Fehler blieb aus")
+	}
+	if !strings.Contains(err.Error(), "400") || !strings.Contains(err.Error(), "Pflichtfeld") {
+		t.Fatalf("Fehlertext trägt weder Status noch Antworttext: %v", err)
 	}
 }

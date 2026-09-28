@@ -48,9 +48,11 @@ func ChangesURL(addr, source, schema, table, from, to, limit string) string {
 	return u.String()
 }
 
-// setIfNotEmpty setzt einen Query-Parameter nur, wenn ein Wert vorliegt:
-// `GET /changes` trägt eine geschlossene Parameter-Menge und lässt einen
-// unbekannten oder leeren Parameter mit `400` enden.
+// setIfNotEmpty setzt einen Query-Parameter nur, wenn ein Wert vorliegt.
+// `GET /changes` lässt nur einen unbekannten Parameter**namen** mit `400`
+// enden; ein leerer Wert eines bekannten optionalen Parameters (`schema`,
+// `table`, `from`, `to`, `limit`) bleibt für den Server unberücksichtigt und
+// endet mit `200` — dieser Client sendet ihn trotzdem gar nicht erst.
 func setIfNotEmpty(q url.Values, key, value string) {
 	if value != "" {
 		q.Set(key, value)

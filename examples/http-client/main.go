@@ -109,8 +109,8 @@ func parseFlags() config {
 	flag.StringVar(&cfg.schemaVersionID, "schema-version-id", "", "Schema-Versions-Kennung (Default: <table-id>-v1, nur enable-table)")
 	flag.Int64Var(&cfg.version, "version", 1, "Versionsnummer der Tabelle (nur enable-table)")
 
-	flag.StringVar(&cfg.from, "from", "", "Untere Positions-Grenze, ausschließlich (nur changes, optional)")
-	flag.StringVar(&cfg.to, "to", "", "Obere Positions-Grenze, einschließlich (nur changes, optional)")
+	flag.StringVar(&cfg.from, "from", "", "Untere Positions-Grenze, einschließlich (nur changes, optional)")
+	flag.StringVar(&cfg.to, "to", "", "Obere Positions-Grenze, ausschließlich (nur changes, optional)")
 	flag.StringVar(&cfg.limit, "limit", "", "Maximale Zeilenzahl (nur changes, optional)")
 
 	flag.Int64Var(&cfg.minAgeNanos, "min-age-nanos", 0, "Mindestalter der Retention-Policy in Nanosekunden (nur retention-run)")
@@ -226,7 +226,7 @@ func requireAdminToken(cfg config) error {
 func dispatch(client *http.Client, cfg config) (string, error) {
 	switch cfg.verb {
 	case "tables":
-		return listTables(cfg)
+		return listTables(client, cfg)
 	case "changes":
 		resp, err := readChanges(client, cfg)
 		return marshalIndent(resp, err)
@@ -281,15 +281,15 @@ func marshalIndent(v any, err error) (string, error) {
 // listTables ruft die Tabellen-Auflistung mit dem `reader`-Token ab und
 // liefert den Response-Body als Text — die einzige Fähigkeit ohne
 // typisierte Antwort (`tables.go` trägt nur die URL-Bau-Funktion
-// `TablesURL`).
-func listTables(cfg config) (string, error) {
+// `TablesURL`). Der `*http.Client` kommt von `dispatch`, wie bei den neun
+// übrigen Verben — kein eigener zweiter Client.
+func listTables(client *http.Client, cfg config) (string, error) {
 	req, err := http.NewRequest(http.MethodGet, TablesURL(cfg.addr, cfg.source, cfg.publication), nil)
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+cfg.token)
 
-	client := &http.Client{Timeout: requestTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err

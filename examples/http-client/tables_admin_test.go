@@ -87,6 +87,24 @@ func TestDisableTableParsesBothOutcomeFields(t *testing.T) {
 	}
 }
 
+// TestDisableTableFailsOnNon2xx prüft den Fehlerpfad.
+func TestDisableTableFailsOnNon2xx(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "source, schema, table und publication sind Pflichtfelder"})
+	}))
+	defer server.Close()
+
+	cfg := config{addr: strings.TrimPrefix(server.URL, "http://"), adminToken: "admin-token"}
+	_, err := disableTable(server.Client(), cfg)
+	if err == nil {
+		t.Fatal("disableTable: erwarteter Fehler blieb aus")
+	}
+	if !strings.Contains(err.Error(), "400") || !strings.Contains(err.Error(), "Pflichtfelder") {
+		t.Fatalf("Fehlertext trägt weder Status noch Antworttext: %v", err)
+	}
+}
+
 // TestTableStatusParsesNeverEnabledBoundary prüft `LH-FA-CFG-003`s
 // Boundary: eine nie registrierte Tabelle trägt beide Felder `false`.
 func TestTableStatusParsesNeverEnabledBoundary(t *testing.T) {
@@ -103,5 +121,23 @@ func TestTableStatusParsesNeverEnabledBoundary(t *testing.T) {
 	}
 	if resp.Enabled || resp.Retained {
 		t.Fatalf("unerwartete Antwort: %+v", resp)
+	}
+}
+
+// TestTableStatusFailsOnNon2xx prüft den Fehlerpfad.
+func TestTableStatusFailsOnNon2xx(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "source, schema, table und publication sind Pflichtfelder"})
+	}))
+	defer server.Close()
+
+	cfg := config{addr: strings.TrimPrefix(server.URL, "http://"), token: "reader-token"}
+	_, err := tableStatus(server.Client(), cfg)
+	if err == nil {
+		t.Fatal("tableStatus: erwarteter Fehler blieb aus")
+	}
+	if !strings.Contains(err.Error(), "400") || !strings.Contains(err.Error(), "Pflichtfelder") {
+		t.Fatalf("Fehlertext trägt weder Status noch Antworttext: %v", err)
 	}
 }
