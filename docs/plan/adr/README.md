@@ -69,7 +69,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0054 | Coverage-Gate und Benchmark-Infrastruktur (→ ADR-0071, teilweise) | Accepted | 2026-09-13 | [0054-coverage-gate-und-benchmark-infrastruktur.md](0054-coverage-gate-und-benchmark-infrastruktur.md) |
 | ADR-0055 | NATS-Change-Notification als Wecksignal (→ ADR-0056, teilweise) | Accepted | 2026-09-13 | [0055-nats-change-notification-wecksignal.md](0055-nats-change-notification-wecksignal.md) |
 | ADR-0056 | NATS-Wecksignal — tabellen-granulares Subjekt | Accepted | 2026-09-13 | [0056-nats-tabellen-granulares-subjekt.md](0056-nats-tabellen-granulares-subjekt.md) |
-| ADR-0057 | HTTP/JSON-API mit Token-Authn (Supersedes ADR-0020) | Accepted | 2026-09-14 | [0057-http-grpc-api.md](0057-http-grpc-api.md) |
+| ADR-0057 | HTTP/JSON-API mit Token-Authn (Supersedes ADR-0020; → ADR-0130, teilw.) | Accepted | 2026-09-14 | [0057-http-grpc-api.md](0057-http-grpc-api.md) |
 | ADR-0058 | Testansatz für fünf Lastenheft-Kennungen ohne Testbeleg (→ ADR-0063/0064) | Accepted | 2026-09-14 | [0058-testansatz-fuenf-luecken.md](0058-testansatz-fuenf-luecken.md) |
 | ADR-0059 | Spaltenauswahl — Mechanismus, Granularität und Wirkort (→ ADR-0065, teilweise) | Accepted | 2026-09-14 | [0059-spaltenauswahl-mechanismus.md](0059-spaltenauswahl-mechanismus.md) |
 | ADR-0060 | gRPC-Server-Streaming für Live-Change-Zustellung (→ ADR-0066, teilweise) | Accepted | 2026-09-14 | [0060-grpc-streaming-mechanismus.md](0060-grpc-streaming-mechanismus.md) |
@@ -142,3 +142,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0127 | Antrags-Queue: `requested_at` ist der Aufrufzeitpunkt (ergänzt ADR-0050) | Accepted | 2026-09-26 | [0127-antrags-queue-requested-at-aufrufzeitpunkt.md](0127-antrags-queue-requested-at-aufrufzeitpunkt.md) |
 | ADR-0128 | Prozessstart: Frist des Vorlaufs, Strom im Stream-Lauf (schärft ADR-0112) | Accepted | 2026-09-27 | [0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md](0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md) |
 | ADR-0129 | Capture: Quellseite als Test an beiden PG-Pins (Supers. ADR-0121, teilw.) | Accepted | 2026-09-27 | [0129-capture-quellseite-keepalive-test-an-beiden-pins.md](0129-capture-quellseite-keepalive-test-an-beiden-pins.md) |
+| ADR-0130 | gRPC-Administration: neun RPCs, eigener Service (Supers. ADR-0057, teilw.) | Accepted | 2026-09-28 | [0130-grpc-verwaltungs-api-neun-rpcs.md](0130-grpc-verwaltungs-api-neun-rpcs.md) |
