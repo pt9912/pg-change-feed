@@ -150,3 +150,14 @@ example-demo-up: ## Demo-Umgebung hochfahren + bootstrappen (postgres+nats+feed,
 .PHONY: example-demo-down
 example-demo-down: ## Demo-Umgebung abräumen (Container+Netzwerk; Werkzeug, kein Gate; ADR-0098)
 	docker compose -f examples/compose.yaml down -v --remove-orphans
+
+# `example-transformation-demo` zeigt die Wirkung einer Transformationsregel
+# live in der bereits laufenden Demo-Umgebung (ADR-0112): der Ablauf steht in
+# examples/transformation-demo.sh (Regel anwenden, Status-Poll, neue Zeile,
+# Rohform/transformierte Form gegenüberstellen) — dieses Ziel ruft es nur
+# auf; Exit-Code direkt gelesen wie bei jedem anderen Ziel (AGENTS.md §3.9).
+# Kein Gate: braucht die laufende Demo-Umgebung (`make example-demo-up`
+# zuvor), dasselbe Werkzeug-statt-Gate-Argument wie `example-demo-up`.
+.PHONY: example-transformation-demo
+example-transformation-demo: ## Transformationsregel live an der Demo-Umgebung zeigen (braucht vorherigen make example-demo-up; Werkzeug, kein Gate; ADR-0112)
+	@bash examples/transformation-demo.sh
