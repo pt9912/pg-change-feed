@@ -233,10 +233,10 @@ func (s *Stream) BindIdleConfirmation(idle inbound.IdleConfirmationInboundPort) 
 
 // Assembler trägt den laufenden `mapper.Assembler` dieses Streams nach
 // außen (`ADR-0050`): die Administrations-Verarbeitung der Composition Root
-// (Goroutine und Vorlauf vor `Run`) trägt über ihn eine neue oder entfallene
-// `TableBinding` synchronisiert
-// nach (`Assembler.AddBinding`/`RemoveBinding`), nachdem eine über SQL
-// beantragte Aktivierung/Deaktivierung real ausgeführt wurde — derselbe
+// (SQL-Antragsqueue-Goroutine, ihr Vorlauf vor `Run`, oder der direkte
+// HTTP-/gRPC-Zugriffsweg) trägt über ihn eine neue oder entfallene
+// `TableBinding` synchronisiert nach (`Assembler.AddBinding`/`RemoveBinding`),
+// nachdem eine Aktivierung/Deaktivierung real ausgeführt wurde — derselbe
 // laufende Übersetzer, den `Consume` in `Run` verwendet, kein zweiter.
 func (s *Stream) Assembler() *mapper.Assembler {
 	return s.assembler

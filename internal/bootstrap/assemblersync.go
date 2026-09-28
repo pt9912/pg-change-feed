@@ -17,10 +17,9 @@ import (
 // Schema-Version, der dauerhafte Ausschluss- und Regelstand der Quelle. Dies
 // ist der eine Mechanismus, den sowohl `applyAdministrationRequest`s
 // Enable-Zweig (SQL-Antragsqueue) als auch `enableTableWithAssemblerSync`
-// (direkter HTTP-/gRPC-Zugriffsweg) aufrufen — beide riefen bislang denselben
-// `EnableTableUseCase` auf, aber nur der Antragsqueue-Pfad trug den Nachtrag
-// in den laufenden Prozess; eine über HTTP oder gRPC aktivierte Tabelle blieb
-// bis zum nächsten Neustart unerfasst (`LH-FA-CFG-001`).
+// (direkter HTTP-/gRPC-Zugriffsweg) aufrufen — beide Pfade tragen dieselbe
+// Aktivierung unabhängig vom Auslöser in den laufenden Prozess nach
+// (`LH-FA-CFG-001`).
 func syncAssemblerAddBinding(ctx context.Context, assembler *mapper.Assembler, activation outbound.TableActivationPort, schemaStore outbound.SchemaStorePort, columnExclusion outbound.ColumnExclusionPort, transformations outbound.TransformationPort, source model.SourceID, schema, table string) error {
 	qualified := schema + "." + table
 	registered, found, err := activation.Registered(ctx, source, schema, table)
@@ -64,11 +63,11 @@ func syncAssemblerRemoveBinding(assembler *mapper.Assembler, schema, table strin
 
 // enableTableWithAssemblerSync dekoriert den `EnableTableUseCase` des
 // direkten HTTP-/gRPC-Zugriffswegs: nach erfolgreichem `Enable` trägt sie die
-// Bindung über `syncAssemblerAddBinding` in den laufenden `Assembler` nach —
-// ohne diesen Nachtrag verliert eine über diesen Weg aktivierte Tabelle jede
-// Änderung bis zum nächsten Prozess-Neustart (`LH-FA-CFG-001`). Ein Fehler
-// des Nachtrags trägt den Aufruf insgesamt als Fehlschlag, mit leerem
-// Ergebnis — derselbe Ausgang wie ein Fehler des inneren Use Cases selbst.
+// Bindung über `syncAssemblerAddBinding` in den laufenden `Assembler` nach,
+// damit eine über diesen Weg aktivierte Tabelle ab diesem Aufruf erfasst
+// wird (`LH-FA-CFG-001`). Ein Fehler des Nachtrags trägt den Aufruf insgesamt
+// als Fehlschlag, mit leerem Ergebnis — derselbe Ausgang wie ein Fehler des
+// inneren Use Cases selbst.
 type enableTableWithAssemblerSync struct {
 	inbound.EnableTableUseCase
 	assembler       *mapper.Assembler

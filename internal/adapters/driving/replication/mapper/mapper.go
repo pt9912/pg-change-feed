@@ -436,10 +436,10 @@ func (a *Assembler) lookupBinding(qualified string) (TableBinding, bool) {
 	return binding, activated
 }
 
-// AddBinding trägt eine `TableBinding` synchronisiert nach — die
-// Administrations-Verarbeitung ruft sie auf, wenn eine über SQL beantragte
-// Aktivierung real ausgeführt wurde, für eine bislang nicht aktivierte
-// Tabelle: im Dauerbetrieb die Administrations-Goroutine aus einer zweiten
+// AddBinding trägt eine `TableBinding` synchronisiert nach — aufgerufen,
+// wenn eine Aktivierung real ausgeführt wurde, für eine bislang nicht
+// aktivierte Tabelle: im Dauerbetrieb die Administrations-Goroutine (SQL-
+// Antragsqueue) oder der direkte HTTP-/gRPC-Zugriffsweg aus einer zweiten
 // Goroutine, beim Prozessstart der Vorlauf vor dem Stream-Lauf. Trägt die
 // Tabelle bereits eine Bindung, bleiben deren `ExcludedColumns` und
 // `Transformations` stehen: der Aufruf setzt `TableID`/`SchemaVersion` neu
@@ -639,12 +639,11 @@ func containsColumn(columns []string, name string) bool {
 	return false
 }
 
-// RemoveBinding entfernt eine `TableBinding` synchronisiert — die
-// Administrations-Verarbeitung (Goroutine und Vorlauf vor dem Stream-Lauf) ruft
-// sie auf, nachdem eine über SQL beantragte Deaktivierung real ausgeführt wurde
-// (`ADR-0050`). Eine nicht (mehr)
-// vorhandene Bindung bleibt ohne Wirkung (Idempotenz, wie
-// `DisableTableUseCase`).
+// RemoveBinding entfernt eine `TableBinding` synchronisiert — aufgerufen,
+// nachdem eine Deaktivierung real ausgeführt wurde, über die SQL-
+// Antragsqueue (Goroutine und Vorlauf vor dem Stream-Lauf) oder den direkten
+// HTTP-/gRPC-Zugriffsweg. Eine nicht (mehr) vorhandene Bindung bleibt ohne
+// Wirkung (Idempotenz, wie `DisableTableUseCase`).
 func (a *Assembler) RemoveBinding(qualified string) {
 	a.tablesMu.Lock()
 	defer a.tablesMu.Unlock()
