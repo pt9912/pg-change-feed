@@ -40,7 +40,7 @@ Stufen-Wechsel bewusst** (kein stiller Verlust, siehe
 - **Dynamische `.proto`-Dateierkennung.** Vorher fand das Skript alle
   `.proto`-Dateien unter dem Quellverzeichnis selbst (`find … -name
   '*.proto'`) und generierte sie alle. Die Stufe `proto-export` nennt ihre
-  Datei namentlich (ihr `RUN`-Schritt) — dieselbe Einschränkung trug `make
+  Dateien namentlich (ihr `RUN`-Schritt) — dieselbe Einschränkung trug `make
   proto-generate`s Stufe bereits seit slice-104; dieses Gate zieht mit dem
   Stufen-Wechsel nur nach, was für das Erzeugungsziel schon galt, kein neu
   eingeführter Verlust. Die verbleibende `find`-Ermittlung im Skript ist nur
