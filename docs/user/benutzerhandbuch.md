@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.68
+Version: 1.70
 Software-Version: siehe `docs/user/version.md`
-Stand: 2026-09-27
+Stand: 2026-09-28
 
 ## 1. Einleitung
 
@@ -1162,20 +1162,30 @@ dazwischen. Die Ausnahme ist der Live-Stream auf `GET /changes/stream` (siehe
 unten), der die Verbindung offen hält — `GET /changes` ist demgegenüber die
 nicht streamende Form desselben Gegenstands.
 
-**Beispiele:** Jede Sprache ruft denselben `reader`-Endpunkt `GET /tables`
-auf und gibt die Antwort aus; Adresse und Token liest jedes Beispiel aus
-`CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` und lässt sich per Flag
-übersteuern.
+**Beispiele:** Jede Sprache deckt alle zehn Fähigkeiten der Tabelle oben über
+ein Verb-Flag ab (Default `tables` — die ursprüngliche, einzige Aufrufform
+bleibt damit unverändert funktionsfähig); Adresse und Token liest jedes
+Beispiel aus `CDC_HTTP_ADDR`/`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN` und
+lässt sich per Flag übersteuern.
 
 - **Go:** `examples/http-client` — Container-Aufruf über
-  `make example-run-go SURFACE=http ARGS="-source <quelle> -publication <publication>"`
+  `make example-run-go SURFACE=http ARGS="-verb=<verb> ..."`
   (baut bei Bedarf `pg-change-feed-examples:go` aus `examples/Dockerfile`)
 - **C#:** `examples/csharp/http-client` — Container-Aufruf über
-  `make example-run-csharp SURFACE=http ARGS="--source <quelle> --publication <publication>"`
+  `make example-run-csharp SURFACE=http ARGS="--verb=<verb> ..."`
   (startet das mit `make examples-csharp` gebaute Image)
 - **Kotlin:** `examples/kotlin/http-client` — Container-Aufruf über
-  `make example-run-kotlin SURFACE=http ARGS="--source <quelle> --publication <publication>"`
+  `make example-run-kotlin SURFACE=http ARGS="--verb=<verb> ..."`
   (startet das mit `make examples-kotlin` gebaute Image)
+
+`<verb>` ist eine der zehn Fähigkeiten der Tabelle oben (z. B. `tables`,
+`changes`, `register-consumer`, `enable-table`); die je Verb nötigen
+zusätzlichen Flags (z. B. `-source`/`--source`, `-consumer-id`/
+`--consumer-id`) entsprechen den Request-Feldern der jeweiligen Zeile. Ein
+Aufruf mit `-verb=changes`/`--verb=changes` zeigt auch die Wirkung einer
+zuvor über [Transformationsregel konfigurieren](#transformationsregel-konfigurieren)
+angewendeten Regel — etwa nach einem Lauf von `make
+example-transformation-demo`.
 
 **SDK:** .NET-Anwendungen können statt der Beispiele das offizielle
 NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
@@ -2030,3 +2040,5 @@ MIT — siehe `LICENSE`.
 | 1.66 | 2026-09-27 | Zusage der Bestätigung im Leerlauf an die Grenze des Mechanismus angeglichen (`LH-QA-REL-001`, `ADR-0120`, slice-leerlauf-phase-last-in-stuecken): §4 „Bestand als Backfill überführen“ (Absatz „WAL-Rückstand des Capture-Slots“) und „WAL-Rückstand prüfen“ (Ergebnis) nennen als Zusage WAL ohne Inhalt für die Publication, das der Feed zwischen den Schreibvorgängen bestätigt, nicht mehr „jeden Schreiber“; ein neuer Absatz „Grenze der Bestätigung im Leerlauf“ beschreibt, dass ein Stoß über `wal_retention_error_bytes` bis zur nächsten Bestätigung im Rückstand steht, und nennt das Heben der Fehlerschwelle als Weg |
 | 1.67 | 2026-09-27 | Transformationsregeln dokumentiert (`LH-FA-CFG-007`, `ADR-0112`, `ADR-0125`, `ADR-0126`, `ADR-0117`, `ADR-0127`, `ADR-0128`, slice-transformationen-betriebsdoku): §4 neuer Abschnitt „Transformationsregel konfigurieren“ (`cdc.set_transformation`/`cdc.remove_transformation`, Aufrufform des `json`-Parameters, Regeltypen, Konfliktfreiheit K1–K4, Wirkung, Informationsverlust bei `map_value`, Verhältnis zum Spaltenausschluss, Reihenfolge der Aufrufe, Dauerhaftigkeit samt Grenze bei einem älteren Binärstand, Nichtanwendbarkeit samt Abhilfe im Erfassungspfad und im Backfill-Run, Backfill-Bezug, Wartezeit des Stream-Starts, Kosten der Lesung im Backfill, Form auf allen Zustellwegen); §2 Rollen nennt die beiden Funktionen, §6 Fehlerklassen die Nichtanwendbarkeit in der Zeile `schema`, §8 Glossar den Begriff „Transformationsregel“ |
 | 1.68 | 2026-09-27 | Fixrunde nach Review (`LH-FA-CFG-007`, `ADR-0112`, `ADR-0125`, slice-transformationen-betriebsdoku Fixrunde): der Fehlertext eines `::jsonb`-Aufrufs von `cdc.set_transformation` in „Transformationsregel konfigurieren“ auf den tatsächlich gemessenen Wortlaut korrigiert (`unknown` statt `text` als Parametertyp der vier Textliterale — PostgreSQL typisiert nicht gecastete String-Literale beim Signatur-Fehler als `unknown`); der Absatz „Zeilen, die kein Antrag sind“ um das dritte, im Plan verlangte Beispiel ergänzt (leere Spalte bei `exclude_column`/`include_column`, belegt durch `TestAdministrationRequestListPendingPassesRejectedRowsThrough`) |
+| 1.69 | 2026-09-28 | „Transformationsregel konfigurieren“ aufgabenbasiert überarbeitet (`LH-FA-CFG-007`, `ADR-0112`): Voraussetzung/nummeriertes Vorgehen/Ergebnis statt Fließtext, zwei eigene Fehler/Ursache/Lösung-Blöcke (Konfliktfehler, Fehlerklasse `schema`) statt einer Bullet-Liste; ADR-/Review-Verweise, Go-Testnamen und Benchmark-Rohwerte aus dem Fließtext entfernt (Betreiber brauchen sie nicht, dieselben zwei Verweise auch aus dem Backfill-Abschnitt „Bestand als Backfill überführen“ entfernt) |
+| 1.70 | 2026-09-28 | §4 „Zugriff über die HTTP-/JSON-API“ Beispiele-Absatz auf die volle Zehn-Fähigkeiten-Fläche der drei Sprachbeispiele nachgezogen (`LH-FA-SST-006`): ein Verb-Flag (Default `tables`) statt eines festen `GET /tables`-Aufrufs, Hinweis auf `make example-transformation-demo` bei `-verb=changes`/`--verb=changes` |
