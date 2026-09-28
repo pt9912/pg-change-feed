@@ -72,8 +72,8 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0057 | HTTP/JSON-API mit Token-Authn (Supersedes ADR-0020; → ADR-0130, teilw.) | Accepted | 2026-09-14 | [0057-http-grpc-api.md](0057-http-grpc-api.md) |
 | ADR-0058 | Testansatz für fünf Lastenheft-Kennungen ohne Testbeleg (→ ADR-0063/0064) | Accepted | 2026-09-14 | [0058-testansatz-fuenf-luecken.md](0058-testansatz-fuenf-luecken.md) |
 | ADR-0059 | Spaltenauswahl — Mechanismus, Granularität und Wirkort (→ ADR-0065, teilweise) | Accepted | 2026-09-14 | [0059-spaltenauswahl-mechanismus.md](0059-spaltenauswahl-mechanismus.md) |
-| ADR-0060 | gRPC-Server-Streaming für Live-Change-Zustellung (→ ADR-0066, teilweise) | Accepted | 2026-09-14 | [0060-grpc-streaming-mechanismus.md](0060-grpc-streaming-mechanismus.md) |
-| ADR-0061 | HTTP/SSE zusätzlich zu gRPC für Live-Change-Zustellung | Accepted | 2026-09-14 | [0061-http-sse-zusaetzlich-zu-grpc.md](0061-http-sse-zusaetzlich-zu-grpc.md) |
+| ADR-0060 | gRPC-Server-Streaming für Live-Change-Zustellung (→ ADR-0066/0133, teilw.) | Accepted | 2026-09-14 | [0060-grpc-streaming-mechanismus.md](0060-grpc-streaming-mechanismus.md) |
+| ADR-0061 | HTTP/SSE zusätzlich zu gRPC für Live-Change-Zustellung (→ ADR-0133, teilw.) | Accepted | 2026-09-14 | [0061-http-sse-zusaetzlich-zu-grpc.md](0061-http-sse-zusaetzlich-zu-grpc.md) |
 | ADR-0062 | Lokaler commit-msg-Hook (Supersedes ADR-0045, teilweise) (→ ADR-0069) | Accepted | 2026-09-14 | [0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md](0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md) |
 | ADR-0063 | Testform-Korrektur „Entfernte Spalten“ (Supersedes ADR-0058, teilweise) | Accepted | 2026-09-14 | [0063-lh-fa-sch-003-testform-korrektur.md](0063-lh-fa-sch-003-testform-korrektur.md) |
 | ADR-0064 | `LH-QA-OPS-005`-Testansatz-Korrektur (Supersedes ADR-0058, teilweise) | Accepted | 2026-09-14 | [0064-lh-qa-ops-005-testansatz-korrektur.md](0064-lh-qa-ops-005-testansatz-korrektur.md) |
@@ -145,3 +145,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0130 | gRPC-Administration: neun RPCs, eigener Service (Supers. ADR-0057, teilw.) | Accepted | 2026-09-28 | [0130-grpc-verwaltungs-api-neun-rpcs.md](0130-grpc-verwaltungs-api-neun-rpcs.md) |
 | ADR-0131 | gRPC-`ReadChanges` — zehnter RPC im `Administration`-Service (ergänzt ADR-0130) | Accepted | 2026-09-28 | [0131-grpc-readchanges-zehnter-rpc.md](0131-grpc-readchanges-zehnter-rpc.md) |
 | ADR-0132 | Diagnose über Inbound Port — HTTP und gRPC (Supers. ADR-0057, teilw.) | Accepted | 2026-09-28 | [0132-diagnose-ueber-inbound-port-http-grpc.md](0132-diagnose-ueber-inbound-port-http-grpc.md) |
+| ADR-0133 | Tabellen-granulare Filterung gRPC-Stream/SSE (Supers. ADR-0060/0061, teilw.) | Accepted | 2026-09-28 | [0133-tabellen-granulare-filterung-grpc-sse.md](0133-tabellen-granulare-filterung-grpc-sse.md) |
