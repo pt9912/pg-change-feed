@@ -14,7 +14,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`.
 **Berührte Spec-Stellen:** — (kein SPEC-/ARC-Eintrag über `LH-FA-SST-009`
 hinaus).
 
-**Verantwortlich:** —.
+**Verantwortlich:** Implementer-Agent.
 
 **Autor:** Planner-Agent. **Datum:** 2026-09-28.
 
