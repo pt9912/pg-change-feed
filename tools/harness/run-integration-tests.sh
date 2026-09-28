@@ -2499,7 +2499,9 @@ abdeckung_declare "gRPC-Stream-Filter-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Cli
 # Change auf der gefilterten Tabelle — sie erreicht den Client, geprüft
 # über dieselbe RECEIVED-Zeile und ihre `change_id` gegen `cdc.changes`.
 # Eigener, von IDs 260ff. und 270ff. getrennter Wertebereich (280ff. auf
-# feed_e2e_full, id=10 auf feed_e2e_schema — dort bereits 1/2 belegt).
+# feed_e2e_full, id=9010 auf feed_e2e_schema — vierstellig gewählt, damit
+# kein späterer Bestandstest auf derselben Tabelle denselben Schlüssel
+# beansprucht (feed_e2e_schema führt sonst nur 1/2/3/4/10/11)).
 GRPC_FILTER_CLIENT_CONTAINER=cdc-e2e-grpcclient-filter
 GRPC_FILTER_TABLE=feed_e2e_full
 GRPC_FILTER_OTHER_TABLE=feed_e2e_schema
@@ -2532,7 +2534,7 @@ if [ "$grpc_filter_client_ready" -ne 1 ]; then
 fi
 
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
-INSERT INTO public.$GRPC_FILTER_OTHER_TABLE (id, name) VALUES (10, '$GRPC_FILTER_OTHER_SENTINEL');
+INSERT INTO public.$GRPC_FILTER_OTHER_TABLE (id, name) VALUES (9010, '$GRPC_FILTER_OTHER_SENTINEL');
 SQL
 
 # Keine Zustellung ist kein Ereignis, das ein Poll beobachten kann — eine
@@ -2942,8 +2944,10 @@ abdeckung_declare "SSE-Stream-Filter-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Clie
 # geprüfte Abwesenheit über eine begrenzte Wartezeit; die Tabelle bleibt
 # bis TestE2ESchemaChangeDropColumn unten capturebar, siehe gRPC-Block
 # oben), danach eine Change auf der gefilterten Tabelle. Eigener
-# Wertebereich (290ff. auf feed_e2e_full, id=11 auf feed_e2e_schema,
-# getrennt vom id=10 des gRPC-Filter-Rundlaufs oben).
+# Wertebereich (290ff. auf feed_e2e_full, id=9011 auf feed_e2e_schema,
+# getrennt vom id=9010 des gRPC-Filter-Rundlaufs oben — beide vierstellig,
+# damit kein späterer Bestandstest auf derselben Tabelle denselben
+# Schlüssel beansprucht).
 SSE_FILTER_CLIENT_CONTAINER=cdc-e2e-sseclient-filter
 SSE_FILTER_TABLE=feed_e2e_full
 SSE_FILTER_OTHER_TABLE=feed_e2e_schema
@@ -2976,7 +2980,7 @@ if [ "$sse_filter_client_ready" -ne 1 ]; then
 fi
 
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
-INSERT INTO public.$SSE_FILTER_OTHER_TABLE (id, name) VALUES (11, '$SSE_FILTER_OTHER_SENTINEL');
+INSERT INTO public.$SSE_FILTER_OTHER_TABLE (id, name) VALUES (9011, '$SSE_FILTER_OTHER_SENTINEL');
 SQL
 
 # Keine Zustellung ist kein Ereignis, das ein Poll beobachten kann — eine
