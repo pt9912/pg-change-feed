@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.71
+Version: 1.72
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-28
 
@@ -1360,7 +1360,7 @@ konfigurierten Token entsprechender Wert endet mit dem gRPC-Status
 `Unauthenticated`, ein bekanntes Token mit unzureichender Klasse mit
 `PermissionDenied`.
 
-Der Dienst `Administration` (Paket `cdc.administration.v1`) trägt neun
+Der Dienst `Administration` (Paket `cdc.administration.v1`) trägt zehn
 unäre RPCs:
 
 | Fähigkeit | RPC | Rechtsklasse |
@@ -1374,6 +1374,7 @@ unäre RPCs:
 | Tabellen-Status | `GetTableStatus` | `reader` |
 | Tabellen auflisten | `ListTables` | `reader` |
 | Aufbewahrung auslösen | `RunRetention` | `admin` |
+| Changes lesen (begrenzter Bereich) | `ReadChanges` | `reader` |
 
 Die lesenden RPCs sind mit dem Admin-Token ebenso erreichbar; mit dem
 Reader-Token sind die administrativen RPCs nicht erreichbar
@@ -1381,10 +1382,17 @@ Reader-Token sind die administrativen RPCs nicht erreichbar
 Response-Feldern der gleichnamigen HTTP-Fähigkeit (Tabelle unter [Zugriff
 über die HTTP-/JSON-API](#zugriff-über-die-http-json-api)); `ListTables`
 liefert `tables` und `retained` als je eine Liste einer `SourceTable`
-genannten Nachricht (`table_id`, `source`, `schema`, `table`). Das Lesen
-eines Bereichs persistierter Änderungen (`GET /changes`) ist über diese
-gRPC-Fläche nicht erreichbar — dafür bleibt der [gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)
-oben der Zugriffsweg für neue Changes.
+genannten Nachricht (`table_id`, `source`, `schema`, `table`). `ReadChanges`
+liest einen begrenzten Bereich persistierter Änderungen — dieselbe Filter-
+und Bereichs-Semantik wie `GET /changes` (Quelle Pflicht, `schema`/`table`
+optional und unabhängig, `from`/`to` als Positions-Bereich `[from, to)`,
+`limit`), die Antwort trägt `changes` als Liste einer `ChangeRecord`
+genannten Nachricht mit denselben dreizehn Feldern wie die HTTP-Antwort
+(`commit_position`, `change_id`, `transaction_id`, `source_table_id`,
+`schema`, `table`, `sequence`, `operation`, `old_image`, `new_image`,
+`schema_version`, `committed_at`, `origin`); kein Treffer liefert eine
+leere, gesetzte Liste statt eines Fehlers. Der [gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)
+oben bleibt der Zugriffsweg für neue, laufend eintreffende Changes.
 
 **Fehlerform:** Ein gRPC-Status ersetzt den jeweiligen HTTP-Statuscode:
 
@@ -1402,7 +1410,10 @@ keine Warteschlange dazwischen.
 Für keine der drei Sprachen (Go, C#, Kotlin) existiert für diese Fläche
 bislang ein dediziertes Beispiel-Programm oder ein SDK-Methodensatz — anders
 als beim gRPC-Change-Stream oben deckt sie noch kein `examples/`-Programm
-und kein SDK-Package ab.
+und kein SDK-Package ab. Das gilt unverändert auch für den zehnten RPC
+`ReadChanges`: seine Aufnahme in die Beispiel-Clients und die drei
+SDK-Packages (`PgChangeFeed.Client`, `pgchangefeed`, `pgchangefeed-kotlin`)
+bleibt ein eigener, noch nicht terminierter Folge-Schritt.
 
 ### Zugriff über Server-Sent-Events
 
@@ -2108,3 +2119,4 @@ MIT — siehe `LICENSE`.
 | 1.69 | 2026-09-28 | „Transformationsregel konfigurieren“ aufgabenbasiert überarbeitet (`LH-FA-CFG-007`, `ADR-0112`): Voraussetzung/nummeriertes Vorgehen/Ergebnis statt Fließtext, zwei eigene Fehler/Ursache/Lösung-Blöcke (Konfliktfehler, Fehlerklasse `schema`) statt einer Bullet-Liste; ADR-/Review-Verweise, Go-Testnamen und Benchmark-Rohwerte aus dem Fließtext entfernt (Betreiber brauchen sie nicht, dieselben zwei Verweise auch aus dem Backfill-Abschnitt „Bestand als Backfill überführen“ entfernt) |
 | 1.70 | 2026-09-28 | §4 „Zugriff über die HTTP-/JSON-API“ Beispiele-Absatz auf die volle Zehn-Fähigkeiten-Fläche der drei Sprachbeispiele nachgezogen (`LH-FA-SST-006`): ein Verb-Flag (Default `tables`) statt eines festen `GET /tables`-Aufrufs, Hinweis auf `make example-transformation-demo` bei `-verb=changes`/`--verb=changes` |
 | 1.71 | 2026-09-28 | Neuer §4-Abschnitt „Zugriff über die gRPC-Verwaltungs-API“ (`LH-FA-SST-006`, `ADR-0130`): die neun Fähigkeiten der HTTP-API als gRPC-Dienst `Administration`, Rechtsklassen-Tabelle, Fehlercode-Tabelle (`InvalidArgument`/`Unauthenticated`/`PermissionDenied`/`NotFound`/`Internal`), Hinweis auf das noch fehlende Beispiel-Programm/SDK je Sprache; §5 `CDC_GRPC_ADDR`-Zeile nennt jetzt beide Dienste (`ChangeStream` und `Administration`) statt nur den Streaming-Server |
+| 1.72 | 2026-09-28 | Zehnter RPC `ReadChanges` im §4-Abschnitt „Zugriff über die gRPC-Verwaltungs-API“ ergänzt (`LH-FA-SST-006`, `LH-FA-REA-001`…`006`, `ADR-0131`): Fähigkeiten-Tabelle trägt jetzt zehn Zeilen, Absatz zu Filter-/Bereichs-Semantik und dem `ChangeRecord`-Nachrichtenschema (dieselben dreizehn Felder wie `GET /changes`), kein `NotFound` bei leerem Treffer; der Hinweis auf das fehlende Beispiel-Programm/SDK je Sprache benennt jetzt ausdrücklich, dass auch `ReadChanges` davon unberührt bleibt |
