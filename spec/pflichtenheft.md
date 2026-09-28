@@ -1044,6 +1044,66 @@ die Schlüsselreihenfolge der Images ist nicht zugesagt):
   der Relation; die nächste Change der Tabelle endet im Erfassungspfad mit der
   Fehlerklasse `schema`, bis die Regel entfernt ist (`LH-FA-CFG-007.a`, Abhilfe).
 
+### SPEC-031 — gRPC-Verwaltungs-API: Dienst, RPCs, Nachrichtenschema, Fehlercodes
+
+Technische Ausgestaltung von [`LH-FA-CON-001`](lastenheft.md),
+[`LH-FA-CON-003`](lastenheft.md)…[`LH-FA-CON-006`](lastenheft.md),
+[`LH-FA-CFG-001`](lastenheft.md)…[`LH-FA-CFG-004`](lastenheft.md),
+[`LH-FA-RET-002`](lastenheft.md)…[`LH-FA-RET-004`](lastenheft.md) über einen
+zweiten Zugriffsweg (gRPC): dieselben neun Fähigkeiten wie `SPEC-018`s
+HTTP-Kontrakt, dieselben Inbound Use Cases — kein zweiter Domänenpfad,
+fachlich gleichwertig (`LH-FA-SST-006` Boundary).
+
+**Dienst:** Paket `cdc.administration.v1`, Dienst `Administration`,
+Quelldatei `proto/cdc/administration/v1/administration.proto` — eigenständig
+von Paket `cdc.stream.v1`/Dienst `ChangeStream` (`SPEC-020`): Letzterer
+bleibt durch diesen Eintrag byte-identisch unverändert. Beide Dienste laufen
+auf demselben `grpc.Server`, derselben Adresse `CDC_GRPC_ADDR`.
+
+**Authentifizierung** (für alle neun RPCs gleich): gRPC-Metadata-Eintrag
+`authorization` in der Wertform `Bearer <token>` — dieselben zwei
+Token-Klassen wie die HTTP-API (`SPEC-018`, `CDC_API_TOKEN_READER`/
+`CDC_API_TOKEN_ADMIN`); ein fehlender oder keiner Klasse entsprechender Wert
+endet mit gRPC-Status `Unauthenticated`, ein bekanntes `reader`-Token gegen
+eine `admin`-RPC mit `PermissionDenied`. Ein `admin`-Token erreicht jede RPC.
+
+**RPCs** (alle unär, Request/Response — kein Streaming-Vorteil bei
+Anfrage/Antwort-Aufrufen, dieselbe Begründung wie `SPEC-018`):
+
+| RPC | Rechtsklasse | Request-Felder | Response-Felder |
+|---|---|---|---|
+| `RegisterConsumer` ([`LH-FA-CON-001`](lastenheft.md)) | `admin` | `consumer_id`, `name` — beide Pflicht | `consumer_id`, `name`, `already_registered` |
+| `AcknowledgeConsumer` ([`LH-FA-CON-004`](lastenheft.md)) | `admin` | `consumer_id`, `source_id`, `offset` (`uint64`) — alle Pflicht | `consumer_id`, `source_id`, `offset` (`uint64`) |
+| `GetConsumerPosition` ([`LH-FA-CON-003`](lastenheft.md), [`LH-FA-CON-005`](lastenheft.md)) | `reader` | `consumer_id` Pflicht | `consumer_id`, `source_id`, `offset` (`uint64`), `acknowledged` (`bool`) |
+| `RemoveConsumer` ([`LH-FA-CON-006`](lastenheft.md)) | `admin` | `consumer_id` Pflicht | `consumer_id`, `removed` (`bool`) |
+| `EnableTable` ([`LH-FA-CFG-001`](lastenheft.md)) | `admin` | `source`, `schema`, `table`, `table_id`, `schema_version_id`, `version` (`int64`), `publication` — alle Pflicht | `table_id`, `source`, `schema`, `table`, `already_enabled` (`bool`) |
+| `DisableTable` ([`LH-FA-CFG-002`](lastenheft.md)) | `admin` | `source`, `schema`, `table`, `publication` — alle Pflicht | `removed` (`bool`), `retained` (`bool`) |
+| `GetTableStatus` ([`LH-FA-CFG-003`](lastenheft.md)) | `reader` | `source`, `schema`, `table`, `publication` — alle Pflicht | `enabled` (`bool`), `retained` (`bool`) |
+| `ListTables` ([`LH-FA-CFG-004`](lastenheft.md)) | `reader` | `source`, `publication` — beide Pflicht | `tables` (`repeated SourceTable`), `retained` (`repeated SourceTable`) — ohne Aktivierung beide leer |
+| `RunRetention` ([`LH-FA-RET-002`](lastenheft.md)…[`004`](lastenheft.md)) | `admin` | `source` Pflicht, `min_age_nanos` (`int64`) ≥ 0 | `deleted` (`int64`) — Anzahl real gelöschter Changes |
+
+Hilfsnachricht `SourceTable` (für `ListTables`): `table_id`, `source`,
+`schema`, `table` — dieselben vier Felder wie `sourceTableResponse` im
+HTTP-Adapter. Alle String-Felder tragen proto3-`string`; `snake_case` im
+`.proto` wird zu `camelCase` im generierten Go-/C#-/Kotlin-Code — Formsache
+der Zielsprache, keine inhaltliche Abweichung.
+
+**Fehlercodes** (ersetzt den jeweiligen HTTP-Statuscode aus `SPEC-018`; ein
+JSON-Decode-Fehler entfällt strukturell, das Nachrichtenschema ist bereits
+typisiert):
+
+| Ursache | gRPC-Code |
+|---|---|
+| Domänen-Invariante verletzt (Pflichtfeld leer, ungültiger Wertebereich) | `codes.InvalidArgument` |
+| fehlender/unbekannter Bearer-Token | `codes.Unauthenticated` |
+| bekanntes Token mit unzureichender Rechtsklasse | `codes.PermissionDenied` |
+| an der Quelle physisch fehlende Tabelle (nur `EnableTable`/`DisableTable`/`GetTableStatus`) | `codes.NotFound` |
+| unerwarteter interner Fehler | `codes.Internal` |
+
+**Aktivierung:** optional über `CDC_GRPC_ADDR`, dieselbe Variable wie
+`ChangeStream` (`SPEC-020`); ungesetzt bedeutet deaktiviertes Feature, kein
+Listener, unverändertes Bestandsverhalten.
+
 ---
 
 ## 3. Defaults und Konstanten
