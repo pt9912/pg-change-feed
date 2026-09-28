@@ -77,6 +77,97 @@ func TestValidateAcknowledgeConsumerRequiresAdminTokenNotReaderToken(t *testing.
 	}
 }
 
+// TestValidateRegisterConsumerRequiresAdminTokenNotReaderToken prüft dieselbe
+// Rechtsklassen-Bindung für `register-consumer` (`admin`-Endpunkt).
+func TestValidateRegisterConsumerRequiresAdminTokenNotReaderToken(t *testing.T) {
+	cfg := config{addr: "feed:9090", token: "reader-token", verb: "register-consumer", consumerID: "consumer-1", name: "Consumer"}
+	err := validate(cfg)
+	if err == nil || !strings.Contains(err.Error(), "Admin-Token") {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+}
+
+// TestValidateRemoveConsumerRequiresAdminTokenNotReaderToken prüft dieselbe
+// Rechtsklassen-Bindung für `remove-consumer` (`admin`-Endpunkt).
+func TestValidateRemoveConsumerRequiresAdminTokenNotReaderToken(t *testing.T) {
+	cfg := config{addr: "feed:9090", token: "reader-token", verb: "remove-consumer", consumerID: "consumer-1"}
+	err := validate(cfg)
+	if err == nil || !strings.Contains(err.Error(), "Admin-Token") {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+}
+
+// TestValidateGetConsumerPositionRequiresReaderTokenNotAdminToken prüft die
+// Rechtsklassen-Bindung: `get-consumer-position` ist ein `reader`-Endpunkt —
+// ein gesetztes Admin-Token allein genügt nicht.
+func TestValidateGetConsumerPositionRequiresReaderTokenNotAdminToken(t *testing.T) {
+	cfg := config{addr: "feed:9090", adminToken: "admin-token", verb: "get-consumer-position", consumerID: "consumer-1"}
+	err := validate(cfg)
+	if err == nil || !strings.Contains(err.Error(), "CDC_API_TOKEN_READER") {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+}
+
+// TestValidateEnableTableRequiresAdminTokenNotReaderToken prüft dieselbe
+// Rechtsklassen-Bindung für `enable-table` (`admin`-Endpunkt).
+func TestValidateEnableTableRequiresAdminTokenNotReaderToken(t *testing.T) {
+	cfg := config{addr: "feed:9090", token: "reader-token", verb: "enable-table", source: "quelle-1", schema: "public", table: "orders", publication: "pub_quelle_1"}
+	err := validate(cfg)
+	if err == nil || !strings.Contains(err.Error(), "Admin-Token") {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+}
+
+// TestValidateDisableTableRequiresAdminTokenNotReaderToken prüft dieselbe
+// Rechtsklassen-Bindung für `disable-table` (`admin`-Endpunkt).
+func TestValidateDisableTableRequiresAdminTokenNotReaderToken(t *testing.T) {
+	cfg := config{addr: "feed:9090", token: "reader-token", verb: "disable-table", source: "quelle-1", schema: "public", table: "orders", publication: "pub_quelle_1"}
+	err := validate(cfg)
+	if err == nil || !strings.Contains(err.Error(), "Admin-Token") {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+}
+
+// TestValidateGetTableStatusRequiresReaderTokenNotAdminToken prüft dieselbe
+// Rechtsklassen-Bindung für `get-table-status` (`reader`-Endpunkt).
+func TestValidateGetTableStatusRequiresReaderTokenNotAdminToken(t *testing.T) {
+	cfg := config{addr: "feed:9090", adminToken: "admin-token", verb: "get-table-status", source: "quelle-1", schema: "public", table: "orders", publication: "pub_quelle_1"}
+	err := validate(cfg)
+	if err == nil || !strings.Contains(err.Error(), "CDC_API_TOKEN_READER") {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+}
+
+// TestValidateListTablesRequiresReaderTokenNotAdminToken prüft dieselbe
+// Rechtsklassen-Bindung für `list-tables` (`reader`-Endpunkt).
+func TestValidateListTablesRequiresReaderTokenNotAdminToken(t *testing.T) {
+	cfg := config{addr: "feed:9090", adminToken: "admin-token", verb: "list-tables", source: "quelle-1", publication: "pub_quelle_1"}
+	err := validate(cfg)
+	if err == nil || !strings.Contains(err.Error(), "CDC_API_TOKEN_READER") {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+}
+
+// TestValidateRunRetentionRequiresAdminTokenNotReaderToken prüft dieselbe
+// Rechtsklassen-Bindung für `run-retention` (`admin`-Endpunkt).
+func TestValidateRunRetentionRequiresAdminTokenNotReaderToken(t *testing.T) {
+	cfg := config{addr: "feed:9090", token: "reader-token", verb: "run-retention", source: "quelle-1"}
+	err := validate(cfg)
+	if err == nil || !strings.Contains(err.Error(), "Admin-Token") {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+}
+
+// TestValidateDiagnoseRequiresReaderTokenNotAdminToken prüft dieselbe
+// Rechtsklassen-Bindung für `diagnose` (`reader`-Endpunkt).
+func TestValidateDiagnoseRequiresReaderTokenNotAdminToken(t *testing.T) {
+	cfg := config{addr: "feed:9090", adminToken: "admin-token", verb: "diagnose", source: "quelle-1"}
+	err := validate(cfg)
+	if err == nil || !strings.Contains(err.Error(), "CDC_API_TOKEN_READER") {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+}
+
 // TestValidateReadChangesRequiresReaderTokenNotAdminToken prüft die
 // Rechtsklassen-Bindung: `read-changes` ist ein `reader`-Endpunkt — ein
 // gesetztes Admin-Token allein genügt nicht.

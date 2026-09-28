@@ -53,7 +53,7 @@ func getTableStatus(client administrationv1.AdministrationClient, cfg config) (s
 	return fmt.Sprintf("grpc-client: enabled=%v retained=%v", resp.GetEnabled(), resp.GetRetained()), nil
 }
 
-// listTables ruft die reader-RPC `ListTables` auf (`LH-FA-SST-006`) und
+// listTables ruft die reader-RPC `ListTables` auf (`LH-FA-CFG-004`) und
 // listet jede Tabelle der Antwort — `tables` und `retained` je eine
 // `SourceTable`-Zeile.
 func listTables(client administrationv1.AdministrationClient, cfg config) (string, error) {

@@ -15,7 +15,7 @@ import (
 // real gegen den laufenden Feed-Container und gibt jede empfangene Nachricht
 // aus, bis die Verbindung endet. `cfg.schema`/`cfg.table` tragen den
 // optionalen, unabhängig setzbaren Filter (`ADR-0133`) — beide leer liefert
-// wie zuvor jeden Change aller aktivierten Tabellen.
+// jeden Change aller aktivierten Tabellen.
 func runStream(conn *grpc.ClientConn, cfg config) {
 	client := streamv1.NewChangeStreamClient(conn)
 
