@@ -6,8 +6,8 @@ den realen Server-Kontrakt (`internal/adapters/driving/http/*.go`), `AGENTS.md`
 
 **Gegenstand:** `git diff be2d23e7..HEAD -- examples/http-client examples/README.md`
 = Commit `b0948065` („feat(examples): Go http-client deckt alle zehn
-HTTP-API-Fähigkeiten (LH-FA-SST-006)“, mit bereits eingefaltetem
-Kommentar-`--amend`).
+HTTP-API-Fähigkeiten ([`LH-FA-SST-006`](../../spec/lastenheft.md))“, mit
+bereits eingefaltetem Kommentar-`--amend`).
 
 **Skill:** `.harness/skills/reviewer.md` @ `c5207cc1`
 **Modell:** claude-sonnet-5 · **Datum:** 2026-09-28
