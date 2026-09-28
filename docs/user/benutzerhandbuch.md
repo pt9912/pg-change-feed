@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.72
+Version: 1.73
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-28
 
@@ -902,6 +902,14 @@ In der Compose-Umgebung: `docker compose run --rm pg-change-feed diagnose`,
 oder gegen einen bereits laufenden Feed-Container: `docker exec <container>
 /pg-change-feed diagnose`.
 
+Derselbe Bericht ist zusätzlich über zwei Netzwerkzugriffswege lesbar —
+ohne `docker exec` und ohne SQL-Direktzugriff, fachlich gleichwertig, kein
+zweiter Domänenpfad: `GET /diagnose?source=<quelle-id>` (siehe [Zugriff über
+die HTTP-/JSON-API](#zugriff-über-die-http-json-api)) und der gRPC-RPC
+`Diagnose` (siehe [Zugriff über die gRPC-Verwaltungs-API](#zugriff-über-die-grpc-verwaltungs-api)),
+beide mit der Rechtsklasse `reader`. Der CLI-Sondermodus bleibt der einzige
+Zugriffsweg für ein Deployment ohne `CDC_HTTP_ADDR`/`CDC_GRPC_ADDR`.
+
 **Ausgabe (Beispiel):**
 
 ```text
@@ -1126,6 +1134,7 @@ fixierte Rolle. Fehlerantworten tragen die Form `{"error": "<Klartext>"}`.
 | Tabellen auflisten | `GET /tables` | `reader` |
 | Änderungen lesen | `GET /changes` | `reader` |
 | Aufbewahrung auslösen | `POST /retention/run` | `admin` |
+| Diagnose lesen | `GET /diagnose` | `reader` |
 
 Die lesenden Endpunkte sind mit dem Admin-Token ebenso erreichbar; mit dem
 Reader-Token sind die administrativen Endpunkte nicht erreichbar (`403`).
@@ -1156,6 +1165,18 @@ außerhalb der genannten Liste endet `400`, ebenso ein fehlendes `source`,
 eine nicht lesbare Zahl, `from`/`to` unter 1, `limit` unter 1 und
 `from > to`.
 
+**Diagnose lesen:** `GET /diagnose?source=<quelle-id>` liefert denselben
+Bericht wie [Diagnose ausführen](#diagnose-ausführen) — Betriebsstatus und
+Fehlerzustand, CDC-Abstand, Verarbeitungsrückstand je Consumer, blockierender
+Consumer, Speicherverbrauch und der zuletzt beantragte Backfill-Run je
+Tabelle — strukturiert statt als Text. `source` ist Pflicht, ein Parameter
+außerhalb dieser einen Angabe endet `400`, ebenso wie bei `GET /changes`.
+Fehlende Werte stehen als `null` (`heartbeat_age_seconds`/`error_class`
+gemeinsam bei fehlendem Lebenszeichen, `retention_blocker` ohne Blocker,
+`lag`/`estimated_rows` bei unbekanntem Rückstand bzw. unbekannter Schätzung);
+`consumer_lags`/`backfill` sind ohne Treffer leere, gesetzte Listen. Ein
+Lesefehler an einer der Diagnose-Views endet `500`.
+
 **Zustellsemantik:** Diese Fähigkeiten sind synchrone Anfrage/Antwort — die
 Antwort trägt das Ergebnis des Aufrufs, es gibt keine Warteschlange
 dazwischen. Die Ausnahme ist der Live-Stream auf `GET /changes/stream` (siehe
@@ -1166,7 +1187,11 @@ nicht streamende Form desselben Gegenstands.
 ein Verb-Flag ab (Default `tables` — die ursprüngliche, einzige Aufrufform
 bleibt damit unverändert funktionsfähig); Adresse und Token liest jedes
 Beispiel aus `CDC_HTTP_ADDR`/`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN` und
-lässt sich per Flag übersteuern.
+lässt sich per Flag übersteuern. `Diagnose lesen` (`GET /diagnose`) ist davon
+noch nicht abgedeckt — wie beim elften gRPC-RPC `Diagnose` (siehe [Zugriff
+über die gRPC-Verwaltungs-API](#zugriff-über-die-grpc-verwaltungs-api))
+bleibt die Aufnahme in die Beispiel-Clients und die drei SDK-Packages ein
+eigener, noch nicht terminierter Folge-Schritt.
 
 - **Go:** `examples/http-client` — Container-Aufruf über
   `make example-run-go SURFACE=http ARGS="-verb=<verb> ..."`
@@ -1360,7 +1385,7 @@ konfigurierten Token entsprechender Wert endet mit dem gRPC-Status
 `Unauthenticated`, ein bekanntes Token mit unzureichender Klasse mit
 `PermissionDenied`.
 
-Der Dienst `Administration` (Paket `cdc.administration.v1`) trägt zehn
+Der Dienst `Administration` (Paket `cdc.administration.v1`) trägt elf
 unäre RPCs:
 
 | Fähigkeit | RPC | Rechtsklasse |
@@ -1375,6 +1400,7 @@ unäre RPCs:
 | Tabellen auflisten | `ListTables` | `reader` |
 | Aufbewahrung auslösen | `RunRetention` | `admin` |
 | Changes lesen (begrenzter Bereich) | `ReadChanges` | `reader` |
+| Diagnose lesen | `Diagnose` | `reader` |
 
 Die lesenden RPCs sind mit dem Admin-Token ebenso erreichbar; mit dem
 Reader-Token sind die administrativen RPCs nicht erreichbar
@@ -1393,6 +1419,13 @@ genannten Nachricht mit denselben dreizehn Feldern wie die HTTP-Antwort
 `schema_version`, `committed_at`, `origin`); kein Treffer liefert eine
 leere, gesetzte Liste statt eines Fehlers. Der [gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)
 oben bleibt der Zugriffsweg für neue, laufend eintreffende Changes.
+`Diagnose` liefert denselben Bericht wie [Diagnose ausführen](#diagnose-ausführen)
+und `GET /diagnose` (siehe [Zugriff über die HTTP-/JSON-API](#zugriff-über-die-http-json-api))
+— dieselben sechs Signalgruppen, strukturiert über die Nachrichten
+`HeartbeatStatus`, `ConsumerLag`, `RetentionBlocker` und
+`BackfillTableStatus`; ein `known`/`present`/`*_known`-Feld auf `false`
+trägt dieselben Abwesenheits-Fälle wie der CLI-Text (kein Lebenszeichen,
+kein Blocker, unbekannte Schätzung/unbekannter Rückstand).
 
 **Fehlerform:** Ein gRPC-Status ersetzt den jeweiligen HTTP-Statuscode:
 
@@ -1411,9 +1444,10 @@ Für keine der drei Sprachen (Go, C#, Kotlin) existiert für diese Fläche
 bislang ein dediziertes Beispiel-Programm oder ein SDK-Methodensatz — anders
 als beim gRPC-Change-Stream oben deckt sie noch kein `examples/`-Programm
 und kein SDK-Package ab. Das gilt unverändert auch für den zehnten RPC
-`ReadChanges`: seine Aufnahme in die Beispiel-Clients und die drei
-SDK-Packages (`PgChangeFeed.Client`, `pgchangefeed`, `pgchangefeed-kotlin`)
-bleibt ein eigener, noch nicht terminierter Folge-Schritt.
+`ReadChanges` und den elften RPC `Diagnose`: ihre Aufnahme in die
+Beispiel-Clients und die drei SDK-Packages (`PgChangeFeed.Client`,
+`pgchangefeed`, `pgchangefeed-kotlin`) bleibt ein eigener, noch nicht
+terminierter Folge-Schritt.
 
 ### Zugriff über Server-Sent-Events
 
@@ -2120,3 +2154,4 @@ MIT — siehe `LICENSE`.
 | 1.70 | 2026-09-28 | §4 „Zugriff über die HTTP-/JSON-API“ Beispiele-Absatz auf die volle Zehn-Fähigkeiten-Fläche der drei Sprachbeispiele nachgezogen (`LH-FA-SST-006`): ein Verb-Flag (Default `tables`) statt eines festen `GET /tables`-Aufrufs, Hinweis auf `make example-transformation-demo` bei `-verb=changes`/`--verb=changes` |
 | 1.71 | 2026-09-28 | Neuer §4-Abschnitt „Zugriff über die gRPC-Verwaltungs-API“ (`LH-FA-SST-006`, `ADR-0130`): die neun Fähigkeiten der HTTP-API als gRPC-Dienst `Administration`, Rechtsklassen-Tabelle, Fehlercode-Tabelle (`InvalidArgument`/`Unauthenticated`/`PermissionDenied`/`NotFound`/`Internal`), Hinweis auf das noch fehlende Beispiel-Programm/SDK je Sprache; §5 `CDC_GRPC_ADDR`-Zeile nennt jetzt beide Dienste (`ChangeStream` und `Administration`) statt nur den Streaming-Server |
 | 1.72 | 2026-09-28 | Zehnter RPC `ReadChanges` im §4-Abschnitt „Zugriff über die gRPC-Verwaltungs-API“ ergänzt (`LH-FA-SST-006`, `LH-FA-REA-001`…`006`, `ADR-0131`): Fähigkeiten-Tabelle trägt jetzt zehn Zeilen, Absatz zu Filter-/Bereichs-Semantik und dem `ChangeRecord`-Nachrichtenschema (dieselben dreizehn Felder wie `GET /changes`), kein `NotFound` bei leerem Treffer; der Hinweis auf das fehlende Beispiel-Programm/SDK je Sprache benennt jetzt ausdrücklich, dass auch `ReadChanges` davon unberührt bleibt |
+| 1.73 | 2026-09-28 | Diagnose über zwei neue Netzwerkzugriffswege dokumentiert (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`, `LH-FA-RET-005`/`006`, `LH-FA-CAP-009`, `ADR-0132`): §4 „Diagnose ausführen“ nennt `GET /diagnose` und den elften gRPC-RPC `Diagnose` als gleichwertige Alternativen neben dem bestehenden CLI-Aufruf; „Zugriff über die HTTP-/JSON-API“ trägt eine neue Tabellenzeile und einen Absatz zum Antwortschema; „Zugriff über die gRPC-Verwaltungs-API“ trägt `Diagnose` als elfte Zeile samt Nachrichtenschema-Absatz; beide Beispiele-/SDK-Hinweise benennen `Diagnose` ausdrücklich als noch nicht abgedeckt |

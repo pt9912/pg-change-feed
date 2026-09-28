@@ -558,9 +558,10 @@ ausschließlich beim bestehenden Lesezugriffsweg
 
 Technische Ausgestaltung von [`LH-FA-SST-006`](lastenheft.md): Endpunkt,
 Methode, JSON-Schema und Token-Header-Form für alle neun Port-gedeckten
-Fähigkeiten des HTTP-Adapters. Das Changes-Lesen
-([`LH-FA-REA-*`](lastenheft.md)) ist in `SPEC-022` ausgestaltet;
-Diagnose/Health bleibt außerhalb.
+Fähigkeiten des HTTP-Adapters, sowie den zehnten, lesenden Endpunkt
+`GET /diagnose`. Das Changes-Lesen ([`LH-FA-REA-*`](lastenheft.md)) ist in
+`SPEC-022` ausgestaltet; Health (`Healthcheck`, das binäre Docker-Verdikt)
+bleibt außerhalb.
 
 **Authn-Header** (für alle Endpunkte gleich): `Authorization: Bearer
 <token>` — fehlend oder einer nicht konfigurierten Klasse entsprechend →
@@ -594,6 +595,7 @@ interner Fehler (`500`).
 | `GetStatus` ([`LH-FA-CFG-003`](lastenheft.md)) | `GET /tables/status?source=<string>&schema=<string>&table=<string>&publication=<string>` | `reader` oder `admin` | alle vier Query-Parameter Pflicht | `200`: `{"enabled": <bool>, "retained": <bool>}` — beide `false` liest eine nie aktivierte Tabelle; physisch fehlende Tabelle an der Quelle → `404` |
 | `ListTables` ([`LH-FA-CFG-004`](lastenheft.md)) | `GET /tables?source=<string>&publication=<string>` | `reader` oder `admin` | beide Query-Parameter Pflicht | `200`: `{"tables": [{"table_id": "<string>", "source": "<string>", "schema": "<string>", "table": "<string>"}, …], "retained": [...]}` — ohne Aktivierung beide Listen leer |
 | `RunRetention` ([`LH-FA-RET-002`](lastenheft.md)…[`004`](lastenheft.md)) | `POST /retention/run` | `admin` | `{"source": "<string>", "min_age_nanos": <int64>}` — `source` Pflicht, `min_age_nanos` ≥ 0 | `200`: `{"deleted": <int>}` — Anzahl real gelöschter Changes |
+| `Diagnose` ([`LH-FA-SST-003`](lastenheft.md), deckt [`LH-FA-ADM-002`](lastenheft.md)…[`005`](lastenheft.md), [`LH-FA-RET-005`](lastenheft.md), [`LH-FA-RET-006`](lastenheft.md), [`LH-FA-CAP-009`](lastenheft.md)) | `GET /diagnose?source=<string>` | `reader` oder `admin` | Query-Parameter `source` Pflicht, **kein** weiterer Parameter zulässig (`400` sonst, strenger als die neun Bestandsendpunkte oben, dieselbe Begründung wie `GET /changes` in `SPEC-022`) | `200`: `{"heartbeat_age_seconds": <float64 \| null>, "error_class": "<string> \| null", "capture_lag": <float64>, "consumer_lags": [{"consumer_id": "<string>", "lag": <float64 \| null>}, …], "retention_blocker": {"consumer_id": "<string>", "name": "<string>", "acknowledged_position": <int64>, "backlog": <int64 \| null>} \| null, "storage_bytes": <float64>, "backfill": [{"schema": "<string>", "table": "<string>", "status": "<string>", "rows_copied": <int64>, "estimated_rows": <int64 \| null>, "warn_estimated_size": <bool>, "warn_duration": <bool>, "error_message": "<string>"}, …]}` — `heartbeat_age_seconds == null` bedeutet „kein Lebenszeichen"; in diesem Fall trägt `error_class` ebenfalls `null`; `retention_blocker == null` bedeutet „kein Blocker"; `consumer_lags`/`backfill` sind leere, gesetzte Listen ohne Treffer, nie `null`; ein Lesefehler an einer der Diagnose-Views → `500` |
 
 ### SPEC-019 — `cdc.administration_request` (Antrags-Datensatz)
 
@@ -1050,10 +1052,13 @@ Technische Ausgestaltung von [`LH-FA-CON-001`](lastenheft.md),
 [`LH-FA-CON-003`](lastenheft.md)…[`LH-FA-CON-006`](lastenheft.md),
 [`LH-FA-CFG-001`](lastenheft.md)…[`LH-FA-CFG-004`](lastenheft.md),
 [`LH-FA-RET-002`](lastenheft.md)…[`LH-FA-RET-004`](lastenheft.md) und
-[`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md) über einen zweiten
-Zugriffsweg (gRPC): dieselben zehn Fähigkeiten wie `SPEC-018`s/`SPEC-022`s
-HTTP-Kontrakt, dieselben Inbound Use Cases — kein zweiter Domänenpfad,
-fachlich gleichwertig (`LH-FA-SST-006` Boundary).
+[`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md) und
+[`LH-FA-SST-003`](lastenheft.md) (deckt [`LH-FA-ADM-002`](lastenheft.md)…[`005`](lastenheft.md),
+[`LH-FA-RET-005`](lastenheft.md), [`LH-FA-RET-006`](lastenheft.md),
+[`LH-FA-CAP-009`](lastenheft.md)) über einen zweiten Zugriffsweg (gRPC):
+dieselben elf Fähigkeiten wie `SPEC-018`s/`SPEC-022`s HTTP-Kontrakt,
+dieselben Inbound Use Cases — kein zweiter Domänenpfad, fachlich
+gleichwertig (`LH-FA-SST-006` Boundary).
 
 **Dienst:** Paket `cdc.administration.v1`, Dienst `Administration`,
 Quelldatei `proto/cdc/administration/v1/administration.proto` — eigenständig
@@ -1061,7 +1066,7 @@ von Paket `cdc.stream.v1`/Dienst `ChangeStream` (`SPEC-020`): Letzterer
 bleibt durch diesen Eintrag byte-identisch unverändert. Beide Dienste laufen
 auf demselben `grpc.Server`, derselben Adresse `CDC_GRPC_ADDR`.
 
-**Authentifizierung** (für alle zehn RPCs gleich): gRPC-Metadata-Eintrag
+**Authentifizierung** (für alle elf RPCs gleich): gRPC-Metadata-Eintrag
 `authorization` in der Wertform `Bearer <token>` — dieselben zwei
 Token-Klassen wie die HTTP-API (`SPEC-018`, `CDC_API_TOKEN_READER`/
 `CDC_API_TOKEN_ADMIN`); ein fehlender oder keiner Klasse entsprechender Wert
@@ -1083,6 +1088,7 @@ Anfrage/Antwort-Aufrufen, dieselbe Begründung wie `SPEC-018`):
 | `ListTables` ([`LH-FA-CFG-004`](lastenheft.md)) | `reader` | `source`, `publication` — beide Pflicht | `tables` (`repeated SourceTable`), `retained` (`repeated SourceTable`) — ohne Aktivierung beide leer |
 | `RunRetention` ([`LH-FA-RET-002`](lastenheft.md)…[`004`](lastenheft.md)) | `admin` | `source` Pflicht, `min_age_nanos` (`int64`) ≥ 0 | `deleted` (`int64`) — Anzahl real gelöschter Changes |
 | `ReadChanges` ([`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md)) | `reader` | `source` Pflicht, `schema`, `table` (je optional, unabhängig), `from`, `to` (`uint64`, `0` = nicht gesetzt, Start inklusiv/Ende exklusiv), `limit` (`int64`, `0` = unbegrenzt) | `changes` (`repeated ChangeRecord`) — kein Treffer liefert eine leere, gesetzte Liste (`LH-FA-REA-006` Boundary), kein `NotFound` |
+| `Diagnose` ([`LH-FA-SST-003`](lastenheft.md), deckt [`LH-FA-ADM-002`](lastenheft.md)…[`005`](lastenheft.md), [`LH-FA-RET-005`](lastenheft.md), [`LH-FA-RET-006`](lastenheft.md), [`LH-FA-CAP-009`](lastenheft.md)) | `reader` | `source` Pflicht | `heartbeat` (`HeartbeatStatus`), `capture_lag` (`double`), `consumer_lags` (`repeated ConsumerLag`), `retention_blocker` (`RetentionBlocker`), `storage_bytes` (`double`), `backfill` (`repeated BackfillTableStatus`) — dieselben sechs Signalgruppen wie `GET /diagnose` (`SPEC-018`) |
 
 Hilfsnachricht `SourceTable` (für `ListTables`): `table_id`, `source`,
 `schema`, `table` — dieselben vier Felder wie `sourceTableResponse` im
@@ -1096,6 +1102,20 @@ RFC 3339 mit Nanosekunden, UTC), `origin` — dieselben dreizehn Felder wie
 Alle String-Felder tragen proto3-`string`; `snake_case` im `.proto` wird zu
 `camelCase` im generierten Go-/C#-/Kotlin-Code — Formsache der Zielsprache,
 keine inhaltliche Abweichung.
+
+Hilfsnachrichten von `Diagnose`: `HeartbeatStatus` (`known` (`bool`),
+`age_seconds` (`double`, nur gültig wenn `known`), `error_class` — leer
+bedeutet Normalbetrieb, nur gültig wenn `known`); `ConsumerLag`
+(`consumer_id`, `known` (`bool`), `lag` (`double`, nur gültig wenn
+`known`)); `RetentionBlocker` (`present` (`bool`), `consumer_id`, `name`,
+`acknowledged_position` (`int64`), `backlog_known` (`bool`), `backlog`
+(`int64`, nur gültig wenn `backlog_known`)); `BackfillTableStatus`
+(`schema`, `table`, `status`, `rows_copied` (`int64`),
+`estimated_rows_known` (`bool`), `estimated_rows` (`int64`, nur gültig wenn
+`estimated_rows_known`), `warn_estimated_size` (`bool`), `warn_duration`
+(`bool`), `error_message`) — explizite Präsenz-Flags statt eines
+0-als-„nicht gesetzt"-Sentinels, weil `0.0` für `age_seconds`/`lag` ein real
+möglicher, gültiger Wert ist.
 
 **Fehlercodes** (ersetzt den jeweiligen HTTP-Statuscode aus `SPEC-018`; ein
 JSON-Decode-Fehler entfällt strukturell, das Nachrichtenschema ist bereits
