@@ -8,9 +8,9 @@ import (
 )
 
 // ErrDiagnosticsStorage trägt die Fehlerklasse `storage` dieses Ports
-// (`SPEC-008`, `ADR-0023`): ein Lesefehler an einer der Diagnose-Views
-// bleibt über `errors.Is` klassifizierbar, ohne Treibertyp — dieselbe
-// Übersetzungsform wie `ErrHeartbeatStorage`/`ErrStorage` (`ADR-0132`).
+// (`ADR-0132`): ein Lesefehler an einer der Diagnose-Views bleibt über
+// `errors.Is` klassifizierbar, ohne Treibertyp — dieselbe Übersetzungsform
+// wie `ErrHeartbeatStorage`/`ErrStorage`.
 var ErrDiagnosticsStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler beim Lesen der Diagnose-Views")
 
 // ConsumerLagSnapshot trägt den Verarbeitungsrückstand eines Consumers mit
@@ -62,11 +62,11 @@ type DiagnosticsSnapshot struct {
 }
 
 // DiagnosticsPort trägt den Lesezugriff auf die Diagnose-Views einer Quelle
-// (`ARC-004`, `ADR-0132`): eine Fähigkeit, ein Aufruf, ein Bericht — dieselbe
-// Bündelung, die der bestehende CLI-Sondermodus bereits als Text ausgibt,
-// hier strukturiert statt direkt gedruckt. Die erste Produktionsimplementierung
-// ist der `postgresstorage`-Adapter (`cdc_reader`-Rolle, `ADR-0047`); Tests
-// setzen Fake-Ports ein (`ADR-0030`).
+// (`ADR-0132`): eine Fähigkeit, ein Aufruf, ein Bericht — dieselbe Bündelung,
+// die der bestehende CLI-Sondermodus bereits als Text ausgibt, hier
+// strukturiert statt direkt gedruckt. Die erste Produktionsimplementierung
+// ist der `postgresstorage`-Adapter (`cdc_reader`-Rolle); Tests setzen
+// Fake-Ports ein.
 type DiagnosticsPort interface {
 	// Read liest die sechs Signalgruppen der Quelle in einem Aufruf. Ein
 	// Lesefehler an einer der Views geht als `ErrDiagnosticsStorage`

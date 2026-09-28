@@ -13,12 +13,12 @@ import (
 )
 
 // PostgresDiagnosticsAdapter ist die Referenzimplementierung des
-// `DiagnosticsPort` (`ARC-004`, `ADR-0132`): er bündelt die sechs
-// Diagnose-Lesezugriffe, die bislang als freie Funktion in
+// `DiagnosticsPort` (`ADR-0132`): er bündelt die sechs Diagnose-
+// Lesezugriffe, die bislang als freie Funktion in
 // `internal/bootstrap/wiring.go` standen, hinter einem Port — dieselben
 // SQL-Texte (`queries.SelectDiagnostics*`), mechanisch verschoben, kein
 // neuer SQL-Text. `db` trägt die Ausführung über die schmale Naht
-// (`sqlexec`, `ADR-0071` Punkt 5).
+// (`sqlexec`).
 type PostgresDiagnosticsAdapter struct {
 	db  sqlexec.DB
 	log outbound.LogPort
@@ -26,8 +26,8 @@ type PostgresDiagnosticsAdapter struct {
 
 // NewDiagnostics baut den Verbindungspool gegen die Instanz (`ADR-0132`):
 // dieselbe Konstruktions-Form wie jeder andere `postgresstorage`-Adapter
-// (`NewHeartbeat`, …). Der Aufrufer übergibt `cfg.ReaderDSN` (`ADR-0047`:
-// alle sechs Views tragen ein `SELECT`-Grant an `cdc_reader`).
+// (`NewHeartbeat`, …). Der Aufrufer übergibt `cfg.ReaderDSN` — alle sechs
+// Views tragen ein `SELECT`-Grant an `cdc_reader`.
 func NewDiagnostics(ctx context.Context, dsn string, opts ...Option) (*PostgresDiagnosticsAdapter, error) {
 	o := newOptions(opts)
 	pool, err := pgxpool.New(ctx, dsn)
@@ -43,10 +43,9 @@ func NewDiagnostics(ctx context.Context, dsn string, opts ...Option) (*PostgresD
 }
 
 // diagnosticsStorageFailure trägt die Übersetzungsverantwortung dieses
-// Adapters (`ADR-0023`, `SPEC-008`): Treiber-Fehler gehen an dieser Grenze
-// in die Klasse `storage` über den Port-Sentinel (`outbound.
-// ErrDiagnosticsStorage`) — die technische Ursache bleibt über die zweite
-// Wrappung lesbar.
+// Adapters (`ADR-0132`): Treiber-Fehler gehen an dieser Grenze in die
+// Klasse `storage` über den Port-Sentinel (`outbound.ErrDiagnosticsStorage`)
+// — die technische Ursache bleibt über die zweite Wrappung lesbar.
 func diagnosticsStorageFailure(ctx context.Context, log outbound.LogPort, cause error) error {
 	log.Error(ctx, "diagnostics: Datenbankfehler", "error", cause)
 	return sqlexec.Classify(outbound.ErrDiagnosticsStorage, cause)

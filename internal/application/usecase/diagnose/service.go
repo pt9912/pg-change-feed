@@ -1,6 +1,6 @@
-// Package diagnose trägt den Diagnose-Use-Case (`ARC-002`, `ADR-0132`): er
-// ist eine dünne Fassade über dem `DiagnosticsPort` — keine eigene Abfrage,
-// keine zweite Sortierung, kein zweiter Lesepfad.
+// Package diagnose trägt den Diagnose-Use-Case (`ADR-0132`): er ist eine
+// dünne Fassade über dem `DiagnosticsPort` — keine eigene Abfrage, keine
+// zweite Sortierung, kein zweiter Lesepfad.
 package diagnose
 
 import (

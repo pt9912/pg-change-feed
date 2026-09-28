@@ -1,7 +1,6 @@
-// Der Diagnose-Use-Case trägt diese Datei an einer Stelle (`ARC-003`): die
-// Driving-Adapter (CLI, HTTP, gRPC, `ARC-005`) lesen die Diagnosesignale
-// einer Quelle über ihn (`ADR-0132`); die Orchestrierung liegt im
-// Application Service (`ARC-002`).
+// Der Diagnose-Use-Case trägt diese Datei an einer Stelle (`ADR-0132`): die
+// Driving-Adapter (CLI, HTTP, gRPC) lesen die Diagnosesignale einer Quelle
+// über ihn; die Orchestrierung liegt im Application Service.
 
 package inbound
 

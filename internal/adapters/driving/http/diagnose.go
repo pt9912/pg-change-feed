@@ -12,12 +12,12 @@ import (
 )
 
 // diagnoseParamSource trägt den einzigen Query-Parameter des lesenden
-// Endpunkts `GET /diagnose` (`SPEC-018`, `ADR-0132`).
+// Endpunkts `GET /diagnose` (`ADR-0132`).
 const diagnoseParamSource = "source"
 
 // diagnoseParams trägt die geschlossene Parameter-Menge dieses Endpunkts —
-// dieselbe Verschärfung wie bei `GET /changes` (`ADR-0081` Teilfrage 4,
-// `ADR-0132` Teilfrage 4): ein Parameter außerhalb der Menge endet mit `400`.
+// dieselbe Verschärfung wie bei `GET /changes` (`ADR-0132` Teilfrage 4): ein
+// Parameter außerhalb der Menge endet mit `400`.
 var diagnoseParams = map[string]bool{diagnoseParamSource: true}
 
 // diagnoseConsumerLagResponse, diagnoseRetentionBlockerResponse und
