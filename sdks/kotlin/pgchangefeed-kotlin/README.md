@@ -131,6 +131,8 @@ fun main() = runBlocking {
 }
 ```
 
+`streamChanges` takes two optional parameters, `schema` and `table`, each independent: a schema without a table matches every table of that schema, a table without a schema matches every table of that name across schemas, both set matches exactly one table, and both left `null` (the default) delivers every change of every captured table — the same filter form as `readChanges` below.
+
 Server-Sent Events (the address is the HTTP base URL; `streamChanges()` returns a `Sequence` that blocks while it waits for the next change):
 
 ```kotlin
@@ -166,6 +168,36 @@ fun main() {
 }
 ```
 
+### Manage tables and consumers over gRPC
+
+`PgChangeFeedAdministrationClient` wraps the same eleven management/read/diagnose capabilities as `PgChangeFeedHttpClient`, over gRPC instead of HTTP — one `suspend fun` per RPC, same convenience/advanced constructor pair as `PgChangeFeedGrpcClient` above. Requests and responses are the generated `cdc.administration.v1` protobuf messages directly, not a separate DTO type:
+
+```kotlin
+import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions
+import io.github.pt9912.pgchangefeed.grpc.PgChangeFeedAdministrationClient
+import cdc.administration.v1.AdministrationOuterClass.EnableTableRequest
+import cdc.administration.v1.AdministrationOuterClass.ListTablesRequest
+import java.net.URI
+import kotlinx.coroutines.runBlocking
+
+fun main() = runBlocking {
+    val options = PgChangeFeedClientOptions(URI("http://feed.example.com:9090"), "<admin token>")
+    PgChangeFeedAdministrationClient(options).use { admin ->
+        admin.enableTable(
+            EnableTableRequest.newBuilder()
+                .setSource("my-source").setSchema("public").setTable("orders")
+                .setTableId("orders").setSchemaVersionId("v1").setVersion(1).setPublication("my_publication")
+                .build(),
+        )
+
+        val tables = admin.listTables(ListTablesRequest.newBuilder().setSource("my-source").setPublication("my_publication").build())
+        for (t in tables.tablesList) {
+            println("${t.schema}.${t.table}")
+        }
+    }
+}
+```
+
 ## API overview
 
 `PgChangeFeedHttpClient(httpClient, options)` wraps the HTTP API. The `java.net.http.HttpClient` you pass in stays yours; the library never closes it.
@@ -191,9 +223,25 @@ The live streams each have one method:
 
 | Class | Method | What it does |
 |---|---|---|
-| `PgChangeFeedGrpcClient(options)` | `streamChanges()` | Opens the gRPC stream and returns a `Flow` of the generated `Change` messages. `close()` shuts down the channel the client owns. |
+| `PgChangeFeedGrpcClient(options)` | `streamChanges(schema, table)` | Opens the gRPC stream and returns a `Flow` of the generated `Change` messages. `schema`/`table` are optional and independent, both left `null` delivers every change. `close()` shuts down the channel the client owns. |
 | `PgChangeFeedSseClient(httpClient, options)` | `streamChanges()` | Opens `GET /changes/stream` and returns a `Sequence` of `io.github.pt9912.pgchangefeed.sse.model.Change` objects. |
 | `PgChangeFeedNatsStreamClient(options)` | `streamChanges(subject)` | Subscribes to a subject and returns a `Sequence` of `io.github.pt9912.pgchangefeed.nats.model.Change` objects. `close()` closes the connection the client owns. |
+
+`PgChangeFeedAdministrationClient(options)` wraps the eleven RPCs of the `Administration` gRPC service — the same capabilities as the HTTP table above, over gRPC. Requests and responses are the generated `cdc.administration.v1` protobuf messages, used directly (no separate model type):
+
+| Method | What it does | Token |
+|---|---|---|
+| `registerConsumer(request)` | Registers a consumer. Registering an existing consumer changes nothing (`alreadyRegistered` is true). | admin |
+| `acknowledgeConsumer(request)` | Stores the consumer's position. Repeating the same position has no effect; an earlier position is rejected. | admin |
+| `getConsumerPosition(request)` | Reads the stored position (`offset`, and `acknowledged`, which is false for a consumer that never acknowledged). | reader |
+| `removeConsumer(request)` | Removes a consumer (`removed` is false for one that was never registered). | admin |
+| `enableTable(request)` | Starts capturing a table. A table that is already captured changes nothing (`alreadyEnabled` is true); a table that does not exist throws `PgChangeFeedGrpcNotFoundException`. | admin |
+| `disableTable(request)` | Stops capturing a table. `retained` reports that changes already stored for it remain. | admin |
+| `getTableStatus(request)` | Tells whether a table is captured (`enabled`) or no longer captured with stored changes remaining (`retained`). | reader |
+| `listTables(request)` | Lists the captured tables (`tablesList`) and the tables whose stored changes remain (`retainedList`), each a `SourceTable`. | reader |
+| `runRetention(request)` | Deletes stored changes older than `minAgeNanos` that every consumer with a stored position has passed; returns the number deleted (`deleted`). | admin |
+| `readChanges(request)` | Reads stored changes of a source, optionally for one schema and table and for the range `[from, to)` of commit positions; `changesList` is a list of `ChangeRecord`. | reader |
+| `diagnose(request)` | Reads the operational diagnose report (heartbeat, capture lag, per-consumer lag, retention blocker, storage, backfill status). | reader |
 
 ## The change object
 
@@ -251,11 +299,22 @@ fun listTablesReportingErrors(client: PgChangeFeedHttpClient) {
 
 The gRPC stream reports a missing or unknown token as an `io.grpc.StatusException` with status `UNAUTHENTICATED`, thrown while the `Flow` is collected. The NATS client passes on the exception of the NATS client library (`io.nats.client`) when the server rejects the token, and throws `PgChangeFeedNatsMalformedMessageException` when a message cannot be read.
 
+A `PgChangeFeedAdministrationClient` call that the server answers with a non-`OK` gRPC status throws a subclass of the sealed class `PgChangeFeedGrpcException`, which carries the `io.grpc.Status.Code`; the original `io.grpc.StatusException` is always the `cause`.
+
+| Exception | gRPC status |
+|---|---|
+| `PgChangeFeedGrpcInvalidArgumentException` | `INVALID_ARGUMENT` — invalid request or a violated rule. |
+| `PgChangeFeedGrpcUnauthenticatedException` | `UNAUTHENTICATED` — token missing or unknown. |
+| `PgChangeFeedGrpcPermissionDeniedException` | `PERMISSION_DENIED` — known token whose class may not call this RPC (for example a reader token on an admin RPC). |
+| `PgChangeFeedGrpcNotFoundException` | `NOT_FOUND` — the table does not exist in the source database (`enableTable`, `disableTable`, `getTableStatus`). |
+| `PgChangeFeedGrpcInternalException` | `INTERNAL` — unexpected error inside the server. |
+| `PgChangeFeedGrpcUnexpectedStatusException` | any other non-`OK` status. |
+
 ## Reading versus streaming
 
 - **Reading over HTTP** (`readChanges`) is asking: you name a range, the server answers from the changes it has stored. You can read the same range again, and with a registered consumer you can carry on after a restart exactly where you stopped. Changes stay readable until the retention removes them.
 - **The live streams** (gRPC, SSE, NATS) are pushing: you get every change committed after you connected, in commit order, with the full row content. There is no delivery guarantee and no replay. A change committed while you were disconnected, or while you read too slowly, does not arrive on the stream. Use the stream to react quickly and `readChanges` to catch up on what it missed.
-- The gRPC and SSE streams cannot be filtered by table; on the NATS stream the subject chooses the source or the table.
+- The gRPC stream can be filtered by schema/table (`streamChanges(schema, table)`); the SSE stream cannot yet; on the NATS stream the subject chooses the source or the table.
 
 ## More
 
