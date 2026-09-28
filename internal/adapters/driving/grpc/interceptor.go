@@ -96,3 +96,54 @@ func authStreamInterceptor(readerToken, adminToken string) grpc.StreamServerInte
 		return handler(srv, stream)
 	}
 }
+
+// administrationRPCRoles trägt die Rechtsklassen-Tabelle der neun
+// `Administration`-RPCs (`ADR-0130` Teilfrage 4): dieselbe Rollen-Zuordnung
+// wie `withToken` in `internal/adapters/driving/http/middleware.go`.
+var administrationRPCRoles = map[string]role{
+	"RegisterConsumer":    roleAdmin,
+	"AcknowledgeConsumer": roleAdmin,
+	"RemoveConsumer":      roleAdmin,
+	"EnableTable":         roleAdmin,
+	"DisableTable":        roleAdmin,
+	"RunRetention":        roleAdmin,
+	"GetConsumerPosition": roleReader,
+	"GetTableStatus":      roleReader,
+	"ListTables":          roleReader,
+}
+
+// methodName liest das letzte Pfadsegment aus `info.FullMethod`
+// (Form `/cdc.administration.v1.Administration/<Methode>`, `ADR-0130`
+// Teilfrage 4).
+func methodName(fullMethod string) string {
+	if idx := strings.LastIndex(fullMethod, "/"); idx >= 0 {
+		return fullMethod[idx+1:]
+	}
+	return fullMethod
+}
+
+// authUnaryInterceptor schützt alle unären RPCs des `Administration`-Service
+// (`ADR-0130` Teilfrage 4, Fitness Function): ein Aufruf ohne
+// `authorization`-Metadata oder mit einem Wert, der keiner der beiden
+// konfigurierten Klassen entspricht, endet mit `Unauthenticated`; ein
+// bekanntes Token unterhalb der für die Methode verlangten Rechtsklasse
+// endet mit `PermissionDenied`. Ein Methodenname ohne Eintrag in `rights`
+// fällt fail-closed auf `roleAdmin` — am fest verdrahteten RPC-Satz sollte
+// das nicht vorkommen (dieselbe Vorsichtsrichtung wie `classifyToken`s
+// Behandlung eines leer konfigurierten Tokens).
+func authUnaryInterceptor(readerToken, adminToken string, rights map[string]role) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		required, ok := rights[methodName(info.FullMethod)]
+		if !ok {
+			required = roleAdmin
+		}
+		caller := classifyToken(credentialToken(ctx), readerToken, adminToken)
+		if caller == roleNone {
+			return nil, status.Error(codes.Unauthenticated, "fehlender oder unbekannter authorization-Metadata-Wert")
+		}
+		if caller < required {
+			return nil, status.Error(codes.PermissionDenied, "Rechtsklasse unzureichend für diese RPC")
+		}
+		return handler(ctx, req)
+	}
+}

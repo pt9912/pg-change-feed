@@ -907,28 +907,41 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		runRetentionCleanup(retentionCtx, retentionUseCase, cfg.Source, retentionInterval, retentionPolicy, log)
 	}()
 
-	// Der HTTP/JSON-Driving-Adapter (`ADR-0057`, `LH-FA-SST-006`) bleibt
-	// vollständig deaktiviert, solange `cfg.HTTPAddr` leer ist — kein
-	// `http.Server` wird konstruiert, keine zusätzliche Verbindung
-	// geöffnet (additiv, unverändertes Bestandsverhalten, analog zum
-	// Change-Notification-Wecksignal oben, `ADR-0055` Punkt 5). Ist die
-	// Adresse gesetzt, trägt der Adapter eine eigene `cdc_admin`-
-	// Verbindung (`ADR-0047`) für die Consumer-Fähigkeiten
-	// (Registrierung/Bestätigung/Position/Entfernung); die
-	// Tabellen-Verwaltung und der Retention-Lauf nutzen dieselben
-	// Use-Case-Instanzen wie die übrige Verdrahtung (`activation`,
-	// `enableTables`, `disableTables`, `retentionUseCase` oben). Der
-	// Adapter trägt daneben den SSE-Stream-Endpunkt (`LH-FA-SST-008`,
-	// `ADR-0061`): er liest aus `changeBroadcaster`, demselben Broadcaster
-	// wie der gRPC-Server.
-	var httpServer *apihttp.Server
-	var httpDone sync.WaitGroup
-	if cfg.HTTPAddr != "" {
+	// Die Consumer-Use-Cases (Registrierung/Bestätigung/Position/Entfernung)
+	// tragen eine eigene `cdc_admin`-Verbindung, geteilt zwischen HTTP- und
+	// gRPC-Administration-Adapter (`ADR-0130` Folgepflicht 1: derselbe
+	// Inbound Use Case, kein zweiter Domänenpfad) — sie entsteht nur, wenn
+	// mindestens einer der beiden Adapter aktiviert ist (additiv,
+	// unverändertes Bestandsverhalten gegenüber einem Deployment ohne
+	// Netzwerk-Zugriffsweg).
+	var registerConsumerUseCase inbound.RegisterConsumerUseCase
+	var acknowledgeConsumerUseCase inbound.AcknowledgeConsumerUseCase
+	var getConsumerPositionUseCase inbound.GetConsumerPositionUseCase
+	var removeConsumerUseCase inbound.RemoveConsumerUseCase
+	if cfg.HTTPAddr != "" || cfg.GRPCAddr != "" {
 		apiConsumerState, err := postgresstorage.NewConsumerState(ctx, cfg.AdminDSN, postgresstorage.WithLog(log))
 		if err != nil {
 			return err
 		}
 		defer apiConsumerState.Close()
+		registerConsumerUseCase = register.NewRegisterConsumerService(apiConsumerState)
+		acknowledgeConsumerUseCase = acknowledge.NewAcknowledgeConsumerService(apiConsumerState)
+		getConsumerPositionUseCase = position.NewGetConsumerPositionService(apiConsumerState)
+		removeConsumerUseCase = remove.NewRemoveConsumerService(apiConsumerState)
+	}
+
+	// Der HTTP/JSON-Driving-Adapter (`ADR-0057`) bleibt vollständig
+	// deaktiviert, solange `cfg.HTTPAddr` leer ist — kein `http.Server` wird
+	// konstruiert, keine zusätzliche Verbindung geöffnet (additiv,
+	// unverändertes Bestandsverhalten). Ist die Adresse gesetzt, nutzen die
+	// Consumer-Fähigkeiten die oben geteilten Use-Case-Instanzen;
+	// Tabellen-Verwaltung, Retention-Lauf und der SSE-Stream-Endpunkt nutzen
+	// dieselben Use-Case-Instanzen und denselben Broadcaster wie die übrige
+	// Verdrahtung (`activation`, `enableTables`, `disableTables`,
+	// `retentionUseCase`, `changeBroadcaster` oben).
+	var httpServer *apihttp.Server
+	var httpDone sync.WaitGroup
+	if cfg.HTTPAddr != "" {
 		// Der lesende Endpunkt `GET /changes` liest über denselben
 		// `ChangeStorePort` wie der View-Direktzugriff (`ADR-0081`) — eine
 		// eigene Verbindung derselben Rolle `cdc_admin`, die als einzige
@@ -945,10 +958,10 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			Addr:                cfg.HTTPAddr,
 			TokenReader:         cfg.APITokenReader,
 			TokenAdmin:          cfg.APITokenAdmin,
-			RegisterConsumer:    register.NewRegisterConsumerService(apiConsumerState),
-			AcknowledgeConsumer: acknowledge.NewAcknowledgeConsumerService(apiConsumerState),
-			GetConsumerPosition: position.NewGetConsumerPositionService(apiConsumerState),
-			RemoveConsumer:      remove.NewRemoveConsumerService(apiConsumerState),
+			RegisterConsumer:    registerConsumerUseCase,
+			AcknowledgeConsumer: acknowledgeConsumerUseCase,
+			GetConsumerPosition: getConsumerPositionUseCase,
+			RemoveConsumer:      removeConsumerUseCase,
 			EnableTable:         enableTables,
 			DisableTable:        disableTables,
 			GetStatus:           status.NewGetStatusService(activation),
@@ -967,24 +980,33 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		}()
 	}
 
-	// Der gRPC-Streaming-Driving-Adapter (`ADR-0060`, `LH-FA-SST-008`)
-	// bleibt vollständig deaktiviert, solange `cfg.GRPCAddr` leer ist — kein
-	// `grpc.Server`, kein Listener (additiv, unverändertes
-	// Bestandsverhalten, analog zum HTTP-Adapter oben, `ADR-0060`
-	// Teilfrage 6). Ist die Adresse gesetzt, liest der Server aus demselben
-	// `changeBroadcaster`, den der `CaptureService` oben über
-	// `WithChangeStream` bedient (`ADR-0060` Teilfrage 2). Der Adapter trägt
-	// dieselben beiden Token-Klassen wie der HTTP-Adapter (`ADR-0060`
-	// Teilfrage 4).
+	// Der gRPC-Driving-Adapter (`ADR-0130` für den `Administration`-Service
+	// zusätzlich zum bestehenden `ChangeStream`) bleibt vollständig
+	// deaktiviert, solange `cfg.GRPCAddr` leer ist — kein `grpc.Server`,
+	// kein Listener (additiv, unverändertes Bestandsverhalten, analog zum
+	// HTTP-Adapter oben). Ist die Adresse gesetzt, liest `ChangeStream` aus
+	// demselben `changeBroadcaster` wie der `CaptureService` oben;
+	// `Administration` nutzt dieselben Use-Case-Instanzen wie der
+	// HTTP-Adapter oben. Der Adapter trägt dieselben beiden Token-Klassen
+	// wie der HTTP-Adapter.
 	var grpcServer *apigrpc.Server
 	var grpcDone sync.WaitGroup
 	if cfg.GRPCAddr != "" {
 		grpcServer = apigrpc.New(apigrpc.Config{
-			Addr:        cfg.GRPCAddr,
-			TokenReader: cfg.APITokenReader,
-			TokenAdmin:  cfg.APITokenAdmin,
-			Subscriber:  changeBroadcaster,
-			Log:         log,
+			Addr:                cfg.GRPCAddr,
+			TokenReader:         cfg.APITokenReader,
+			TokenAdmin:          cfg.APITokenAdmin,
+			Subscriber:          changeBroadcaster,
+			RegisterConsumer:    registerConsumerUseCase,
+			AcknowledgeConsumer: acknowledgeConsumerUseCase,
+			GetConsumerPosition: getConsumerPositionUseCase,
+			RemoveConsumer:      removeConsumerUseCase,
+			EnableTable:         enableTables,
+			DisableTable:        disableTables,
+			GetStatus:           status.NewGetStatusService(activation),
+			ListTables:          list.NewListTablesService(activation),
+			RunRetention:        retentionUseCase,
+			Log:                 log,
 		})
 		grpcDone.Add(1)
 		go func() {

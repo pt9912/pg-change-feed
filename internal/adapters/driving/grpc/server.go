@@ -17,7 +17,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	administrationv1 "github.com/pt9912/pg-change-feed/gen/cdc/administration/v1"
 	"github.com/pt9912/pg-change-feed/gen/cdc/stream/v1"
+	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
@@ -47,6 +49,18 @@ type Config struct {
 	// liest. Ohne ihn öffnet kein Stream — der RPC endet sichtbar statt
 	// still leer (`StreamChanges`).
 	Subscriber changeSubscriber
+	// Die folgenden neun Felder tragen dieselben Inbound Use Cases wie der
+	// HTTP-Adapter (`ADR-0130` Folgepflicht 1): der `Administration`-Service
+	// ruft keinen zweiten Domänenpfad auf.
+	RegisterConsumer    inbound.RegisterConsumerUseCase
+	AcknowledgeConsumer inbound.AcknowledgeConsumerUseCase
+	GetConsumerPosition inbound.GetConsumerPositionUseCase
+	RemoveConsumer      inbound.RemoveConsumerUseCase
+	EnableTable         inbound.EnableTableUseCase
+	DisableTable        inbound.DisableTableUseCase
+	GetStatus           inbound.GetStatusUseCase
+	ListTables          inbound.ListTablesUseCase
+	RunRetention        inbound.RunRetentionUseCase
 	// Log trägt den Telemetrie-Port (`ADR-0024`); ein nicht gesetzter Wert
 	// fällt auf `outbound.NoopLog` zurück.
 	Log outbound.LogPort
@@ -59,15 +73,34 @@ type Server struct {
 	log        outbound.LogPort
 }
 
-// New verdrahtet den Stream-Service und den Auth-Interceptor; der
-// zurückgegebene Server ist noch nicht gestartet (`Start`).
+// New verdrahtet den Stream-Service, den `Administration`-Service
+// (`ADR-0130` Teilfrage 6, Option B: derselbe `grpc.Server`, dieselbe
+// Adresse) und beide Interceptoren; der zurückgegebene Server ist noch
+// nicht gestartet (`Start`). Beide Interceptoren koexistieren
+// konfliktfrei: `ChangeStream` trägt ausschließlich Streaming-RPCs,
+// `Administration` ausschließlich unäre — kein RPC durchläuft beide.
 func New(cfg Config) *Server {
 	log := cfg.Log
 	if log == nil {
 		log = outbound.NoopLog
 	}
-	grpcServer := grpc.NewServer(grpc.StreamInterceptor(authStreamInterceptor(cfg.TokenReader, cfg.TokenAdmin)))
+	grpcServer := grpc.NewServer(
+		grpc.StreamInterceptor(authStreamInterceptor(cfg.TokenReader, cfg.TokenAdmin)),
+		grpc.UnaryInterceptor(authUnaryInterceptor(cfg.TokenReader, cfg.TokenAdmin, administrationRPCRoles)),
+	)
 	streamv1.RegisterChangeStreamServer(grpcServer, &changeStreamService{subscriber: cfg.Subscriber, log: log})
+	administrationv1.RegisterAdministrationServer(grpcServer, &administrationService{
+		registerConsumer:    cfg.RegisterConsumer,
+		acknowledgeConsumer: cfg.AcknowledgeConsumer,
+		getConsumerPosition: cfg.GetConsumerPosition,
+		removeConsumer:      cfg.RemoveConsumer,
+		enableTable:         cfg.EnableTable,
+		disableTable:        cfg.DisableTable,
+		getStatus:           cfg.GetStatus,
+		listTables:          cfg.ListTables,
+		runRetention:        cfg.RunRetention,
+		log:                 log,
+	})
 	return &Server{grpcServer: grpcServer, addr: cfg.Addr, log: log}
 }
 
