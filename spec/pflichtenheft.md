@@ -1049,8 +1049,9 @@ die Schlüsselreihenfolge der Images ist nicht zugesagt):
 Technische Ausgestaltung von [`LH-FA-CON-001`](lastenheft.md),
 [`LH-FA-CON-003`](lastenheft.md)…[`LH-FA-CON-006`](lastenheft.md),
 [`LH-FA-CFG-001`](lastenheft.md)…[`LH-FA-CFG-004`](lastenheft.md),
-[`LH-FA-RET-002`](lastenheft.md)…[`LH-FA-RET-004`](lastenheft.md) über einen
-zweiten Zugriffsweg (gRPC): dieselben neun Fähigkeiten wie `SPEC-018`s
+[`LH-FA-RET-002`](lastenheft.md)…[`LH-FA-RET-004`](lastenheft.md) und
+[`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md) über einen zweiten
+Zugriffsweg (gRPC): dieselben zehn Fähigkeiten wie `SPEC-018`s/`SPEC-022`s
 HTTP-Kontrakt, dieselben Inbound Use Cases — kein zweiter Domänenpfad,
 fachlich gleichwertig (`LH-FA-SST-006` Boundary).
 
@@ -1060,7 +1061,7 @@ von Paket `cdc.stream.v1`/Dienst `ChangeStream` (`SPEC-020`): Letzterer
 bleibt durch diesen Eintrag byte-identisch unverändert. Beide Dienste laufen
 auf demselben `grpc.Server`, derselben Adresse `CDC_GRPC_ADDR`.
 
-**Authentifizierung** (für alle neun RPCs gleich): gRPC-Metadata-Eintrag
+**Authentifizierung** (für alle zehn RPCs gleich): gRPC-Metadata-Eintrag
 `authorization` in der Wertform `Bearer <token>` — dieselben zwei
 Token-Klassen wie die HTTP-API (`SPEC-018`, `CDC_API_TOKEN_READER`/
 `CDC_API_TOKEN_ADMIN`); ein fehlender oder keiner Klasse entsprechender Wert
@@ -1081,12 +1082,20 @@ Anfrage/Antwort-Aufrufen, dieselbe Begründung wie `SPEC-018`):
 | `GetTableStatus` ([`LH-FA-CFG-003`](lastenheft.md)) | `reader` | `source`, `schema`, `table`, `publication` — alle Pflicht | `enabled` (`bool`), `retained` (`bool`) |
 | `ListTables` ([`LH-FA-CFG-004`](lastenheft.md)) | `reader` | `source`, `publication` — beide Pflicht | `tables` (`repeated SourceTable`), `retained` (`repeated SourceTable`) — ohne Aktivierung beide leer |
 | `RunRetention` ([`LH-FA-RET-002`](lastenheft.md)…[`004`](lastenheft.md)) | `admin` | `source` Pflicht, `min_age_nanos` (`int64`) ≥ 0 | `deleted` (`int64`) — Anzahl real gelöschter Changes |
+| `ReadChanges` ([`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md)) | `reader` | `source` Pflicht, `schema`, `table` (je optional, unabhängig), `from`, `to` (`uint64`, `0` = nicht gesetzt, Start inklusiv/Ende exklusiv), `limit` (`int64`, `0` = unbegrenzt) | `changes` (`repeated ChangeRecord`) — kein Treffer liefert eine leere, gesetzte Liste (`LH-FA-REA-006` Boundary), kein `NotFound` |
 
 Hilfsnachricht `SourceTable` (für `ListTables`): `table_id`, `source`,
 `schema`, `table` — dieselben vier Felder wie `sourceTableResponse` im
-HTTP-Adapter. Alle String-Felder tragen proto3-`string`; `snake_case` im
-`.proto` wird zu `camelCase` im generierten Go-/C#-/Kotlin-Code — Formsache
-der Zielsprache, keine inhaltliche Abweichung.
+HTTP-Adapter. Hilfsnachricht `ChangeRecord` (für `ReadChanges`):
+`commit_position` (`int64`), `change_id`, `transaction_id`,
+`source_table_id`, `schema`, `table` (`string`), `sequence` (`int64`),
+`operation`, `old_image`, `new_image` (`bytes`, rohe JSON-Bytes, dieselbe
+Form wie `streamv1.Change`), `schema_version`, `committed_at` (`string`,
+RFC 3339 mit Nanosekunden, UTC), `origin` — dieselben dreizehn Felder wie
+`readChangeResponse` im HTTP-Adapter (`SPEC-022`), in derselben Reihenfolge.
+Alle String-Felder tragen proto3-`string`; `snake_case` im `.proto` wird zu
+`camelCase` im generierten Go-/C#-/Kotlin-Code — Formsache der Zielsprache,
+keine inhaltliche Abweichung.
 
 **Fehlercodes** (ersetzt den jeweiligen HTTP-Statuscode aus `SPEC-018`; ein
 JSON-Decode-Fehler entfällt strukturell, das Nachrichtenschema ist bereits
@@ -1098,6 +1107,7 @@ typisiert):
 | fehlender/unbekannter Bearer-Token | `codes.Unauthenticated` |
 | bekanntes Token mit unzureichender Rechtsklasse | `codes.PermissionDenied` |
 | an der Quelle physisch fehlende Tabelle (nur `EnableTable`/`DisableTable`/`GetTableStatus`) | `codes.NotFound` |
+| `ReadChanges` ohne Treffer (unbekannte Quelle/Schema/Tabelle, leerer Bereich) | kein Fehler — `200`-Äquivalent mit leerer, gesetzter `changes`-Liste |
 | unerwarteter interner Fehler | `codes.Internal` |
 
 **Aktivierung:** optional über `CDC_GRPC_ADDR`, dieselbe Variable wie
