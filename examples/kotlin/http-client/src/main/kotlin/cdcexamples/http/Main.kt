@@ -9,8 +9,8 @@ import kotlin.system.exitProcess
  * Anfrage/Antwort-Zugriff über die HTTP-/JSON-API (`LH-FA-SST-006`): das
  * `--verb`-Flag ruft eine von zehn dokumentierten Fähigkeiten real gegen
  * den laufenden Feed-Container auf und gibt die Antwort aus. Startform ist
- * ein Container-Aufruf, kein Host-Aufruf (`ADR-0087` Festlegung 3);
- * Default-Verb ist `tables` — die bestehende Startform
+ * ein Container-Aufruf, kein Host-Aufruf; Default-Verb ist `tables` — die
+ * bestehende Startform
  * `ARGS="--source <quelle> --publication <publication>"` bleibt
  * unverändert funktionsfähig.
  *
