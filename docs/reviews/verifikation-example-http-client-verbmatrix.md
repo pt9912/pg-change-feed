@@ -16,9 +16,9 @@ Fixrunde `79c92471`). Kein eigener Slice-Plan; dieser Lauf prüft ausschließlic
 Auflösung der vier Review-Findings gegen den Ist-Zustand, keine DoD-Zeilen eines
 Slice-Plans. Dieser Lauf ändert weder Code noch Doku am Gegenstand; er schreibt nur
 diesen Report. `HEAD` bei Abschluss dieses Laufs: `13d9997e` (ein während dieses
-Laufs parallel gelandeter, fremder Commit — `docs(adr): gRPC-Verwaltungs-API — neun
-RPCs …`, ADR-0130 — berührt `examples/http-client` nicht und ist nicht Gegenstand
-dieser Verifikation; siehe §5).
+Laufs parallel gelandeter, fremder Commit — „docs(adr): gRPC-Verwaltungs-API — neun
+RPCs …“, [`ADR-0130`](../plan/adr/0130-grpc-verwaltungs-api-neun-rpcs.md) — berührt
+`examples/http-client` nicht und ist nicht Gegenstand dieser Verifikation; siehe §5).
 
 **Eingangs-Kontext:**
 
