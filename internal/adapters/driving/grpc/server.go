@@ -49,8 +49,8 @@ type Config struct {
 	// liest. Ohne ihn öffnet kein Stream — der RPC endet sichtbar statt
 	// still leer (`StreamChanges`).
 	Subscriber changeSubscriber
-	// Die folgenden neun Felder tragen dieselben Inbound Use Cases wie der
-	// HTTP-Adapter (`ADR-0130` Folgepflicht 1): der `Administration`-Service
+	// Die folgenden zehn Felder tragen dieselben Inbound Use Cases wie der
+	// HTTP-Adapter (`ADR-0131` Folgepflicht): der `Administration`-Service
 	// ruft keinen zweiten Domänenpfad auf.
 	RegisterConsumer    inbound.RegisterConsumerUseCase
 	AcknowledgeConsumer inbound.AcknowledgeConsumerUseCase
@@ -61,6 +61,7 @@ type Config struct {
 	GetStatus           inbound.GetStatusUseCase
 	ListTables          inbound.ListTablesUseCase
 	RunRetention        inbound.RunRetentionUseCase
+	ReadChanges         inbound.ReadChangesUseCase
 	// Log trägt den Telemetrie-Port (`ADR-0024`); ein nicht gesetzter Wert
 	// fällt auf `outbound.NoopLog` zurück.
 	Log outbound.LogPort
@@ -99,6 +100,7 @@ func New(cfg Config) *Server {
 		getStatus:           cfg.GetStatus,
 		listTables:          cfg.ListTables,
 		runRetention:        cfg.RunRetention,
+		readChanges:         cfg.ReadChanges,
 		log:                 log,
 	})
 	return &Server{grpcServer: grpcServer, addr: cfg.Addr, log: log}

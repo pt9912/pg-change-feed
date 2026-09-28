@@ -1,15 +1,17 @@
-// administration.go trägt den `Administration`-Service (`ADR-0130`): neun
+// administration.go trägt den `Administration`-Service (`ADR-0131`): zehn
 // unäre RPCs, jeder ruft denselben Inbound Use Case wie sein
 // HTTP-Äquivalent in `internal/adapters/driving/http/{consumer,
-// registerconsumer,verwaltung,retention}.go` — kein zweiter Domänenpfad.
-// Der Adapter importiert ausschließlich Inbound Ports und Domain-Typen zur
-// Übersetzung, keine Driven-Adapter- oder Application-Interna, dieselbe
-// Grenze wie beim bestehenden Stream-Handler und beim HTTP-Adapter.
+// registerconsumer,verwaltung,retention,readchanges}.go` — kein zweiter
+// Domänenpfad. Der Adapter importiert ausschließlich Inbound Ports und
+// Domain-Typen zur Übersetzung, keine Driven-Adapter- oder
+// Application-Interna, dieselbe Grenze wie beim bestehenden Stream-Handler
+// und beim HTTP-Adapter.
 package grpc
 
 import (
 	"context"
 	"errors"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -35,6 +37,7 @@ type administrationService struct {
 	getStatus           inbound.GetStatusUseCase
 	listTables          inbound.ListTablesUseCase
 	runRetention        inbound.RunRetentionUseCase
+	readChanges         inbound.ReadChangesUseCase
 	log                 outbound.LogPort
 }
 
@@ -244,4 +247,75 @@ func (s *administrationService) RunRetention(ctx context.Context, req *administr
 		return nil, administrationError(ctx, s.log, "RunRetention", err)
 	}
 	return &administrationv1.RunRetentionResponse{Deleted: int64(result.Deleted)}, nil
+}
+
+// readChangesPosition übersetzt einen `from`/`to`-Wert des Requests in eine
+// optionale Positions-Grenze: `0` trägt „nicht gesetzt" (`ADR-0131`
+// Teilfrage 3), eine gültige Quellposition ist immer `≥ 1`.
+func readChangesPosition(source model.SourceID, offset uint64) (*model.SourcePosition, error) {
+	if offset == 0 {
+		return nil, nil
+	}
+	position, err := model.NewSourcePosition(source, offset)
+	if err != nil {
+		return nil, err
+	}
+	return &position, nil
+}
+
+// toChangeRecord übersetzt einen gelesenen Change in seine Protobuf-Form
+// (`ADR-0131` Teilfrage 3) — dieselben dreizehn Felder wie
+// `readChangeResponse` im HTTP-Adapter, in derselben Reihenfolge.
+func toChangeRecord(change inbound.ReadChange) *administrationv1.ChangeRecord {
+	return &administrationv1.ChangeRecord{
+		CommitPosition: int64(change.Position.Offset),
+		ChangeId:       string(change.Change.ID),
+		TransactionId:  string(change.Change.TransactionID),
+		SourceTableId:  string(change.Change.SourceTableID),
+		Schema:         change.Change.Schema,
+		Table:          change.Change.Table,
+		Sequence:       change.Change.Sequence,
+		Operation:      string(change.Change.Operation),
+		OldImage:       change.Change.OldImage,
+		NewImage:       change.Change.NewImage,
+		SchemaVersion:  string(change.Change.SchemaVersion),
+		CommittedAt:    time.Unix(0, change.CommittedAt.UnixNanos).UTC().Format(time.RFC3339Nano),
+		Origin:         string(change.Change.Origin.OrDefault()),
+	}
+}
+
+// ReadChanges liest persistierte Changes über einen begrenzten Bereich
+// (`ADR-0131`); ruft denselben Inbound Use Case wie `readChangesHandler`
+// (HTTP-Adapter) — kein zweiter Lesepfad.
+func (s *administrationService) ReadChanges(ctx context.Context, req *administrationv1.ReadChangesRequest) (*administrationv1.ReadChangesResponse, error) {
+	source := model.SourceID(req.GetSource())
+	start, err := readChangesPosition(source, req.GetFrom())
+	if err != nil {
+		return nil, administrationError(ctx, s.log, "ReadChanges", err)
+	}
+	end, err := readChangesPosition(source, req.GetTo())
+	if err != nil {
+		return nil, administrationError(ctx, s.log, "ReadChanges", err)
+	}
+	var limit *int
+	if l := req.GetLimit(); l != 0 {
+		v := int(l)
+		limit = &v
+	}
+	result, err := s.readChanges.ReadChanges(ctx, inbound.ReadChangesQuery{
+		Source: source,
+		Schema: req.GetSchema(),
+		Table:  req.GetTable(),
+		Start:  start,
+		End:    end,
+		Limit:  limit,
+	})
+	if err != nil {
+		return nil, administrationError(ctx, s.log, "ReadChanges", err)
+	}
+	changes := make([]*administrationv1.ChangeRecord, 0, len(result.Changes))
+	for _, change := range result.Changes {
+		changes = append(changes, toChangeRecord(change))
+	}
+	return &administrationv1.ReadChangesResponse{Changes: changes}, nil
 }

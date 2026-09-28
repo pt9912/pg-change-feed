@@ -1,8 +1,10 @@
-// Administration mirrors the nine management capabilities of the HTTP API
-// (consumer registration/acknowledgement/position/removal, table
-// enable/disable/status/list, retention run) over gRPC: the same inbound
-// use cases, the same two token classes, unary request/response RPCs
-// (no streaming advantage for request/response calls, SPEC-031).
+// Administration mirrors the nine management capabilities and the bounded
+// changes-read capability of the HTTP API (consumer
+// registration/acknowledgement/position/removal, table
+// enable/disable/status/list, retention run, ReadChanges) over gRPC: the
+// same inbound use cases, the same two token classes, unary
+// request/response RPCs (no streaming advantage for request/response
+// calls, SPEC-031).
 syntax = "proto3";
 
 package cdc.administration.v1;
@@ -122,7 +124,39 @@ message RunRetentionResponse {
   int64 deleted = 1;
 }
 
-// Administration offers the nine management capabilities as unary
+message ReadChangesRequest {
+  string source = 1;
+  string schema = 2;
+  string table = 3;
+  uint64 from = 4;
+  uint64 to = 5;
+  int64 limit = 6;
+}
+
+// ChangeRecord mirrors the HTTP API's readChangeResponse (SPEC-022): the
+// same thirteen fields, in the same order. old_image/new_image travel as
+// raw JSON bytes, the same form as streamv1.Change.
+message ChangeRecord {
+  int64 commit_position = 1;
+  string change_id = 2;
+  string transaction_id = 3;
+  string source_table_id = 4;
+  string schema = 5;
+  string table = 6;
+  int64 sequence = 7;
+  string operation = 8;
+  bytes old_image = 9;
+  bytes new_image = 10;
+  string schema_version = 11;
+  string committed_at = 12;
+  string origin = 13;
+}
+
+message ReadChangesResponse {
+  repeated ChangeRecord changes = 1;
+}
+
+// Administration offers the ten management/read capabilities as unary
 // request/response RPCs (SPEC-031). Authentication/authorization mirrors
 // the stream service: the `authorization` metadata entry, checked by
 // authUnaryInterceptor against the same two token classes.
@@ -136,4 +170,5 @@ service Administration {
   rpc GetTableStatus(GetTableStatusRequest) returns (GetTableStatusResponse);
   rpc ListTables(ListTablesRequest) returns (ListTablesResponse);
   rpc RunRetention(RunRetentionRequest) returns (RunRetentionResponse);
+  rpc ReadChanges(ReadChangesRequest) returns (ReadChangesResponse);
 }

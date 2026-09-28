@@ -930,6 +930,23 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		removeConsumerUseCase = remove.NewRemoveConsumerService(apiConsumerState)
 	}
 
+	// Der lesende Zugriffsweg `ReadChanges` liest über denselben
+	// `ChangeStorePort` wie der View-Direktzugriff — eine eigene Verbindung
+	// derselben Rolle `cdc_admin`, die als einzige `SELECT` auf
+	// `cdc.change`/`cdc.transaction` trägt (`tools/schema/nacharbeit-roles.sql`);
+	// `cdc_reader` liest ausschließlich die Views. HTTP und gRPC teilen
+	// dieselbe Use-Case-Instanz — kein zweiter Lesepfad (`ADR-0131`
+	// Teilfrage 1).
+	var readChangesUseCase inbound.ReadChangesUseCase
+	if cfg.HTTPAddr != "" || cfg.GRPCAddr != "" {
+		apiChangeStore, err := postgresstorage.New(ctx, cfg.AdminDSN, postgresstorage.WithLog(log))
+		if err != nil {
+			return err
+		}
+		defer apiChangeStore.Close()
+		readChangesUseCase = readchanges.NewReadChangesService(apiChangeStore)
+	}
+
 	// Der HTTP/JSON-Driving-Adapter (`ADR-0057`) bleibt vollständig
 	// deaktiviert, solange `cfg.HTTPAddr` leer ist — kein `http.Server` wird
 	// konstruiert, keine zusätzliche Verbindung geöffnet (additiv,
@@ -942,18 +959,6 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	var httpServer *apihttp.Server
 	var httpDone sync.WaitGroup
 	if cfg.HTTPAddr != "" {
-		// Der lesende Endpunkt `GET /changes` liest über denselben
-		// `ChangeStorePort` wie der View-Direktzugriff (`ADR-0081`) — eine
-		// eigene Verbindung derselben Rolle `cdc_admin`, die als einzige
-		// `SELECT` auf `cdc.change`/`cdc.transaction` trägt
-		// (`tools/schema/nacharbeit-roles.sql`); `cdc_reader` liest
-		// ausschließlich die Views. Kein zweiter Lesepfad: derselbe
-		// Adapter-Typ, derselbe Port.
-		apiChangeStore, err := postgresstorage.New(ctx, cfg.AdminDSN, postgresstorage.WithLog(log))
-		if err != nil {
-			return err
-		}
-		defer apiChangeStore.Close()
 		httpServer = apihttp.New(apihttp.Config{
 			Addr:                cfg.HTTPAddr,
 			TokenReader:         cfg.APITokenReader,
@@ -967,7 +972,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			GetStatus:           status.NewGetStatusService(activation),
 			ListTables:          list.NewListTablesService(activation),
 			RunRetention:        retentionUseCase,
-			ReadChanges:         readchanges.NewReadChangesService(apiChangeStore),
+			ReadChanges:         readChangesUseCase,
 			Subscriber:          changeBroadcaster,
 			Log:                 log,
 		})
@@ -1006,6 +1011,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			GetStatus:           status.NewGetStatusService(activation),
 			ListTables:          list.NewListTablesService(activation),
 			RunRetention:        retentionUseCase,
+			ReadChanges:         readChangesUseCase,
 			Log:                 log,
 		})
 		grpcDone.Add(1)

@@ -234,8 +234,60 @@ func TestTabellenNachrichtenGetterTragenDenNullwertUndDenGesetztenWert(t *testin
 	}
 }
 
+// TestReadChangesNachrichtenGetterTragenDenNullwertUndDenGesetztenWert trägt
+// dieselbe Grenze für den zehnten RPC `ReadChanges` (`ADR-0131`): Request,
+// `ChangeRecord` und Response.
+func TestReadChangesNachrichtenGetterTragenDenNullwertUndDenGesetztenWert(t *testing.T) {
+	var req *administrationv1.ReadChangesRequest
+	if req.GetSource() != "" || req.GetSchema() != "" || req.GetTable() != "" ||
+		req.GetFrom() != 0 || req.GetTo() != 0 || req.GetLimit() != 0 {
+		t.Fatalf("ReadChangesRequest auf dem Nullwert liefert keine Nullwerte")
+	}
+	gesetzterReq := &administrationv1.ReadChangesRequest{
+		Source: "src-1", Schema: "public", Table: "orders", From: 1, To: 10, Limit: 5,
+	}
+	if gesetzterReq.GetSource() != "src-1" || gesetzterReq.GetSchema() != "public" ||
+		gesetzterReq.GetTable() != "orders" || gesetzterReq.GetFrom() != 1 ||
+		gesetzterReq.GetTo() != 10 || gesetzterReq.GetLimit() != 5 {
+		t.Fatalf("ReadChangesRequest trägt nicht die gesetzten Felder")
+	}
+
+	var record *administrationv1.ChangeRecord
+	if record.GetCommitPosition() != 0 || record.GetChangeId() != "" || record.GetTransactionId() != "" ||
+		record.GetSourceTableId() != "" || record.GetSchema() != "" || record.GetTable() != "" ||
+		record.GetSequence() != 0 || record.GetOperation() != "" || record.GetOldImage() != nil ||
+		record.GetNewImage() != nil || record.GetSchemaVersion() != "" || record.GetCommittedAt() != "" ||
+		record.GetOrigin() != "" {
+		t.Fatalf("ChangeRecord auf dem Nullwert liefert keine Nullwerte")
+	}
+	gesetzterRecord := &administrationv1.ChangeRecord{
+		CommitPosition: 1, ChangeId: "c-1", TransactionId: "t-1", SourceTableId: "st-1",
+		Schema: "public", Table: "orders", Sequence: 1, Operation: "INSERT",
+		OldImage: []byte(`{}`), NewImage: []byte(`{"a":1}`), SchemaVersion: "sv-1",
+		CommittedAt: "2026-09-28T00:00:00Z", Origin: "wal",
+	}
+	if gesetzterRecord.GetCommitPosition() != 1 || gesetzterRecord.GetChangeId() != "c-1" ||
+		gesetzterRecord.GetTransactionId() != "t-1" || gesetzterRecord.GetSourceTableId() != "st-1" ||
+		gesetzterRecord.GetSchema() != "public" || gesetzterRecord.GetTable() != "orders" ||
+		gesetzterRecord.GetSequence() != 1 || gesetzterRecord.GetOperation() != "INSERT" ||
+		string(gesetzterRecord.GetOldImage()) != "{}" || string(gesetzterRecord.GetNewImage()) != `{"a":1}` ||
+		gesetzterRecord.GetSchemaVersion() != "sv-1" || gesetzterRecord.GetCommittedAt() != "2026-09-28T00:00:00Z" ||
+		gesetzterRecord.GetOrigin() != "wal" {
+		t.Fatalf("ChangeRecord trägt nicht die gesetzten Felder")
+	}
+
+	var resp *administrationv1.ReadChangesResponse
+	if resp.GetChanges() != nil {
+		t.Fatalf("ReadChangesResponse auf dem Nullwert liefert kein nil")
+	}
+	gesetzteResp := &administrationv1.ReadChangesResponse{Changes: []*administrationv1.ChangeRecord{gesetzterRecord}}
+	if len(gesetzteResp.GetChanges()) != 1 {
+		t.Fatalf("ReadChangesResponse trägt nicht die gesetzte Liste")
+	}
+}
+
 // fakeUnaryClientConn trägt einen `grpc.ClientConnInterface`-Doppel für die
-// neun unären RPCs: `Invoke` liefert den injizierten Fehler, ohne dass ein
+// zehn unären RPCs: `Invoke` liefert den injizierten Fehler, ohne dass ein
 // Transport im Spiel ist — dieselbe Bauform wie `fakeClientConn` in
 // `changestream_test.go`, für unäre statt streamende RPCs.
 type fakeUnaryClientConn struct{ err error }
@@ -252,7 +304,7 @@ var _ grpc.ClientConnInterface = fakeUnaryClientConn{}
 
 // TestAdministrationClientReichtInvokeErgebnisJeRPCWeiter trägt die
 // Fehler-Weitergabe und den Erfolgspfad des erzeugten unären Clients für
-// alle neun RPCs (`ADR-0130` Teilfrage 2): scheitert `Invoke`, liefert die
+// alle zehn RPCs (`ADR-0131` Teilfrage 2): scheitert `Invoke`, liefert die
 // Methode **genau diesen** Fehler und kein Response; gelingt `Invoke`,
 // liefert sie ein Response ohne Fehler.
 // Rot färbende Mutation: in einer Client-Methode den `err != nil`-Zweig
@@ -290,6 +342,9 @@ func TestAdministrationClientReichtInvokeErgebnisJeRPCWeiter(t *testing.T) {
 		{"RunRetention", func(c administrationv1.AdministrationClient) (any, error) {
 			return c.RunRetention(context.Background(), &administrationv1.RunRetentionRequest{})
 		}},
+		{"ReadChanges", func(c administrationv1.AdministrationClient) (any, error) {
+			return c.ReadChanges(context.Background(), &administrationv1.ReadChangesRequest{})
+		}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name+"/Erfolg", func(t *testing.T) {
@@ -313,7 +368,7 @@ func TestAdministrationClientReichtInvokeErgebnisJeRPCWeiter(t *testing.T) {
 }
 
 // TestUnimplementedAdministrationServerEndetMitUnimplemented trägt den
-// Ausgang des Vorwärtskompatibilitäts-Stubs für alle neun RPCs: eine
+// Ausgang des Vorwärtskompatibilitäts-Stubs für alle zehn RPCs: eine
 // Implementierung, die eine Methode nicht trägt, endet mit dem gRPC-Status
 // `Unimplemented` — sichtbar, nicht mit einem stillen leeren Response.
 // Rot färbende Mutation: den Statuscode eines Stubs ändern.
@@ -347,6 +402,9 @@ func TestUnimplementedAdministrationServerEndetMitUnimplemented(t *testing.T) {
 	}
 	if _, err := srv.RunRetention(ctx, &administrationv1.RunRetentionRequest{}); status.Code(err) != codes.Unimplemented {
 		t.Fatalf("RunRetention: %v (Erwartung: %v)", status.Code(err), codes.Unimplemented)
+	}
+	if _, err := srv.ReadChanges(ctx, &administrationv1.ReadChangesRequest{}); status.Code(err) != codes.Unimplemented {
+		t.Fatalf("ReadChanges: %v (Erwartung: %v)", status.Code(err), codes.Unimplemented)
 	}
 }
 
@@ -386,11 +444,14 @@ func (fakeAdministrationServer) ListTables(context.Context, *administrationv1.Li
 func (fakeAdministrationServer) RunRetention(context.Context, *administrationv1.RunRetentionRequest) (*administrationv1.RunRetentionResponse, error) {
 	return &administrationv1.RunRetentionResponse{}, nil
 }
+func (fakeAdministrationServer) ReadChanges(context.Context, *administrationv1.ReadChangesRequest) (*administrationv1.ReadChangesResponse, error) {
+	return &administrationv1.ReadChangesResponse{}, nil
+}
 
 var _ administrationv1.AdministrationServer = fakeAdministrationServer{}
 
 // TestAdministrationHandlerVerklebungJeRPC trägt die Handler-Verklebung des
-// erzeugten Servers für alle neun RPCs, über den veröffentlichten
+// erzeugten Servers für alle zehn RPCs, über den veröffentlichten
 // `Administration_ServiceDesc` angesprochen — denselben Wert, den
 // `RegisterAdministrationServer` registriert: ein Dekodier-Fehler endet mit
 // **genau diesem** Fehler, statt die Service-Methode aufzurufen; ohne

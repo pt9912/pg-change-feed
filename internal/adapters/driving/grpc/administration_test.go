@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -152,6 +153,19 @@ type fakeRunRetention struct {
 
 func (f *fakeRunRetention) Run(_ context.Context, cmd inbound.RunRetentionCommand) (inbound.RunRetentionResult, error) {
 	f.gotCmd = cmd
+	return f.result, f.err
+}
+
+type fakeReadChanges struct {
+	called   bool
+	gotQuery inbound.ReadChangesQuery
+	result   inbound.ReadChangesResult
+	err      error
+}
+
+func (f *fakeReadChanges) ReadChanges(_ context.Context, query inbound.ReadChangesQuery) (inbound.ReadChangesResult, error) {
+	f.called = true
+	f.gotQuery = query
 	return f.result, f.err
 }
 
@@ -424,5 +438,119 @@ func TestRunRetentionNegativeDauerEndetMitInvalidArgumentOhneUseCaseAufruf(t *te
 	}
 	if fake.gotCmd != (inbound.RunRetentionCommand{}) {
 		t.Fatalf("der Use Case wurde trotz ungültiger Dauer aufgerufen: %+v", fake.gotCmd)
+	}
+}
+
+// TestReadChangesRuftUseCaseMitUebersetzterQueryAuf trägt die Bindung an
+// die Eingabeseite (`ADR-0131` Teilfrage 3): Quelle, Klartext-Filter,
+// Positionsbereich und Limit erreichen den Use Case unverändert übersetzt,
+// das Ergebnis erreicht unverändert die Response — dieselben dreizehn
+// Felder wie `readChangeResponse` im HTTP-Adapter.
+func TestReadChangesRuftUseCaseMitUebersetzterQueryAuf(t *testing.T) {
+	committedAt := time.Date(2026, 9, 28, 10, 30, 0, 123456789, time.UTC)
+	position, err := model.NewSourcePosition("src-1", 4711)
+	if err != nil {
+		t.Fatalf("NewSourcePosition: %v", err)
+	}
+	change, err := model.NewChange(
+		model.ChangeID("c-1"), model.TransactionID("tx-1"), model.SourceTableID("tbl-1"),
+		3, model.OperationUpdate, []byte(`{"id":1}`), []byte(`{"id":1,"name":"neu"}`), model.SchemaVersionID("sv-1"),
+	)
+	if err != nil {
+		t.Fatalf("NewChange: %v", err)
+	}
+	change.Schema = "public"
+	change.Table = "orders"
+	fake := &fakeReadChanges{result: inbound.ReadChangesResult{Changes: []inbound.ReadChange{{
+		Position:    position,
+		Change:      change,
+		CommittedAt: model.NewTimePoint(committedAt.UnixNano()),
+	}}}}
+	svc := &administrationService{readChanges: fake, log: outbound.NoopLog}
+
+	resp, err := svc.ReadChanges(context.Background(), &administrationv1.ReadChangesRequest{
+		Source: "src-1", Schema: "public", Table: "orders", From: 100, To: 500, Limit: 10,
+	})
+	if err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+	if !fake.called {
+		t.Fatalf("der Use Case wurde nicht aufgerufen")
+	}
+	if fake.gotQuery.Source != "src-1" || fake.gotQuery.Schema != "public" || fake.gotQuery.Table != "orders" {
+		t.Fatalf("Abfrage = %+v, wollen Quelle/schema/table übersetzt", fake.gotQuery)
+	}
+	if fake.gotQuery.Start == nil || fake.gotQuery.Start.Offset != 100 ||
+		fake.gotQuery.End == nil || fake.gotQuery.End.Offset != 500 {
+		t.Fatalf("Bereich = %+v, wollen [100,500)", fake.gotQuery)
+	}
+	if fake.gotQuery.Limit == nil || *fake.gotQuery.Limit != 10 {
+		t.Fatalf("Limit = %v, wollen 10", fake.gotQuery.Limit)
+	}
+	if len(resp.GetChanges()) != 1 {
+		t.Fatalf("Response trägt nicht genau einen Change: %+v", resp)
+	}
+	record := resp.GetChanges()[0]
+	if record.GetCommitPosition() != 4711 || record.GetChangeId() != "c-1" || record.GetTransactionId() != "tx-1" ||
+		record.GetSourceTableId() != "tbl-1" || record.GetSchema() != "public" || record.GetTable() != "orders" ||
+		record.GetSequence() != 3 || record.GetOperation() != "UPDATE" ||
+		string(record.GetOldImage()) != `{"id":1}` || string(record.GetNewImage()) != `{"id":1,"name":"neu"}` ||
+		record.GetSchemaVersion() != "sv-1" || record.GetOrigin() != "wal" {
+		t.Fatalf("Response trägt nicht das Use-Case-Ergebnis: %+v", record)
+	}
+	if want := committedAt.Format(time.RFC3339Nano); record.GetCommittedAt() != want {
+		t.Fatalf("CommittedAt = %q, wollen %q", record.GetCommittedAt(), want)
+	}
+}
+
+// TestReadChangesOhneBereichTraegtKeineGrenze trägt die Nullwert-Semantik
+// aus `ADR-0131` Teilfrage 3: `from`/`to`/`limit` auf `0` bleiben
+// unbegrenzt (`nil`) — keine `model.NewSourcePosition`-Invariante wird für
+// eine nicht gesetzte Grenze geprüft.
+func TestReadChangesOhneBereichTraegtKeineGrenze(t *testing.T) {
+	fake := &fakeReadChanges{}
+	svc := &administrationService{readChanges: fake, log: outbound.NoopLog}
+	_, err := svc.ReadChanges(context.Background(), &administrationv1.ReadChangesRequest{Source: "src-1"})
+	if err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+	if fake.gotQuery.Start != nil || fake.gotQuery.End != nil || fake.gotQuery.Limit != nil {
+		t.Fatalf("Abfrage trägt eine Grenze trotz unbegrenzter Anfrage: %+v", fake.gotQuery)
+	}
+}
+
+// TestReadChangesLeereQuelleMitPositionEndetMitInvalidArgumentOhneUseCaseAufruf
+// trägt die Domänen-Invariante vor dem Use-Case-Aufruf
+// (`domainerrors.ErrEmptyIdentifier`, `model.NewSourcePosition`): eine leere
+// Quelle mit gesetztem `from` endet als `codes.InvalidArgument`, der Use
+// Case wird nicht erreicht.
+//
+// Rot färbende Mutation: den Fehlerpfad von `readChangesPosition` verwerfen
+// und stattdessen den Use Case mit der leeren Quelle aufrufen — `fake.called`
+// bliebe dann `true`, dieser Test färbt rot.
+func TestReadChangesLeereQuelleMitPositionEndetMitInvalidArgumentOhneUseCaseAufruf(t *testing.T) {
+	fake := &fakeReadChanges{}
+	svc := &administrationService{readChanges: fake, log: outbound.NoopLog}
+	_, err := svc.ReadChanges(context.Background(), &administrationv1.ReadChangesRequest{From: 5})
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("Status: %v (Erwartung: %v)", status.Code(err), codes.InvalidArgument)
+	}
+	if fake.called {
+		t.Fatalf("der Use Case wurde trotz ungültiger Quelle aufgerufen: %+v", fake.gotQuery)
+	}
+}
+
+// TestReadChangesLeereTrefferlisteBleibtGesetzteListe trägt dieselbe Zusage
+// wie `TestListTablesLeereMengenSindNieNil`: eine leere Menge trägt eine
+// leere, gesetzte Liste, nie `nil` (`LH-FA-REA-006` Boundary).
+func TestReadChangesLeereTrefferlisteBleibtGesetzteListe(t *testing.T) {
+	fake := &fakeReadChanges{result: inbound.ReadChangesResult{}}
+	svc := &administrationService{readChanges: fake, log: outbound.NoopLog}
+	resp, err := svc.ReadChanges(context.Background(), &administrationv1.ReadChangesRequest{Source: "src-1"})
+	if err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+	if resp.GetChanges() == nil {
+		t.Fatalf("leere Trefferliste ist nil statt einer leeren Liste: %+v", resp)
 	}
 }

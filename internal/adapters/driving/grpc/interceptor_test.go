@@ -172,6 +172,37 @@ func TestAuthUnaryInterceptorAdminTokenErreichtBeideRechtsklassen(t *testing.T) 
 // entfernen — der Nullwert von `role` ist `roleNone` (nicht `roleAdmin`),
 // jedes bekannte Token würde die dann implizit offene RPC erreichen, dieser
 // Test färbt rot.
+// TestAuthUnaryInterceptorReadChangesRechtsklasse trägt die Fitness Function
+// des zehnten RPC (`ADR-0131` Teilfrage 4): ein Aufruf ohne oder mit
+// unbekanntem Token endet mit `Unauthenticated`; ein gültiges `reader`-Token
+// erreicht `ReadChanges`, ein gültiges `admin`-Token ebenfalls
+// (`roleAdmin ≥ roleReader`).
+func TestAuthUnaryInterceptorReadChangesRechtsklasse(t *testing.T) {
+	interceptor := authUnaryInterceptor(testReaderToken, testAdminToken, administrationRPCRoles)
+	info := &grpc.UnaryServerInfo{FullMethod: "/cdc.administration.v1.Administration/ReadChanges"}
+
+	for _, authorization := range []string{"", bearerPrefix, bearerPrefix + "unbekannt"} {
+		gerufen, handler := unaryHandlerAufruf()
+		_, err := interceptor(unaryCtxMitToken(authorization), nil, info, handler)
+		if status.Code(err) != codes.Unauthenticated {
+			t.Fatalf("authorization %q: Status %v (Erwartung: %v)", authorization, status.Code(err), codes.Unauthenticated)
+		}
+		if *gerufen {
+			t.Fatalf("authorization %q: der Handler wurde ohne gültiges Token erreicht", authorization)
+		}
+	}
+
+	for _, token := range []string{testReaderToken, testAdminToken} {
+		gerufen, handler := unaryHandlerAufruf()
+		if _, err := interceptor(unaryCtxMitToken(bearerPrefix+token), nil, info, handler); err != nil {
+			t.Fatalf("Token %q: %v (Erwartung: kein Fehler)", token, err)
+		}
+		if !*gerufen {
+			t.Fatalf("Token %q: der Handler wurde nicht erreicht", token)
+		}
+	}
+}
+
 func TestAuthUnaryInterceptorUnbekannteMethodeFaelltFailClosedAufRoleAdmin(t *testing.T) {
 	interceptor := authUnaryInterceptor(testReaderToken, testAdminToken, administrationRPCRoles)
 	info := &grpc.UnaryServerInfo{FullMethod: "/cdc.administration.v1.Administration/UnbekannteMethode"}
