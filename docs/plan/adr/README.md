@@ -144,3 +144,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0129 | Capture: Quellseite als Test an beiden PG-Pins (Supers. ADR-0121, teilw.) | Accepted | 2026-09-27 | [0129-capture-quellseite-keepalive-test-an-beiden-pins.md](0129-capture-quellseite-keepalive-test-an-beiden-pins.md) |
 | ADR-0130 | gRPC-Administration: neun RPCs, eigener Service (Supers. ADR-0057, teilw.) | Accepted | 2026-09-28 | [0130-grpc-verwaltungs-api-neun-rpcs.md](0130-grpc-verwaltungs-api-neun-rpcs.md) |
 | ADR-0131 | gRPC-`ReadChanges` — zehnter RPC im `Administration`-Service (ergänzt ADR-0130) | Accepted | 2026-09-28 | [0131-grpc-readchanges-zehnter-rpc.md](0131-grpc-readchanges-zehnter-rpc.md) |
+| ADR-0132 | Diagnose über Inbound Port — HTTP und gRPC (Supers. ADR-0057, teilw.) | Accepted | 2026-09-28 | [0132-diagnose-ueber-inbound-port-http-grpc.md](0132-diagnose-ueber-inbound-port-http-grpc.md) |
