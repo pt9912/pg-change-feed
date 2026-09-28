@@ -16,7 +16,12 @@ public class TablesClientTests
     public async Task ListTablesAsyncFailsOnUnreachableHost()
     {
         using var httpClient = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(2) };
-        var cfg = new Config("127.0.0.1:1", "token", "quelle", "pub");
+        var cfg = new Config(
+            Addr: "127.0.0.1:1", Token: "token", AdminToken: "", Verb: "tables",
+            Source: "quelle", Publication: "pub",
+            ConsumerId: "", Name: "", Offset: 0,
+            Schema: "", Table: "", TableId: "", SchemaVersionId: "", Version: 1,
+            From: "", To: "", Limit: "", MinAgeNanos: 0);
 
         await Assert.ThrowsAnyAsync<Exception>(() => TablesClient.ListTablesAsync(httpClient, cfg));
     }

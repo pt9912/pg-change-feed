@@ -2,14 +2,13 @@ namespace CdcExamples.Http;
 
 /// <summary>
 /// Command http-client ist ein öffentliches Beispiel für den
-/// Anfrage/Antwort-Zugriff über die HTTP-/JSON-API (<c>LH-FA-SST-006</c>,
-/// <c>ADR-0057</c>, <c>ADR-0090</c>): es ruft den <c>reader</c>-Endpunkt
-/// <c>GET /tables</c> real gegen den laufenden Feed-Container auf und gibt
-/// die Antwort aus. Startform ist ein Container-Aufruf, kein Host-Aufruf
-/// (<c>ADR-0087</c> Festlegung 3); Adresse und Token kommen aus
-/// <c>CDC_HTTP_ADDR</c>/<c>CDC_API_TOKEN_READER</c> und lassen sich per Flag
-/// übersteuern (<c>--addr</c>, <c>--token</c>, <c>--source</c>,
-/// <c>--publication</c>).
+/// Anfrage/Antwort-Zugriff über die HTTP-/JSON-API (<c>LH-FA-SST-006</c>):
+/// das <c>--verb</c>-Flag ruft eine von zehn dokumentierten Fähigkeiten real
+/// gegen den laufenden Feed-Container auf und gibt die Antwort aus. Startform
+/// ist ein Container-Aufruf, kein Host-Aufruf (<c>ADR-0087</c> Festlegung 3);
+/// Default-Verb ist <c>tables</c> — die bestehende Startform
+/// <c>ARGS="--source &lt;quelle&gt; --publication &lt;publication&gt;"</c>
+/// bleibt unverändert funktionsfähig.
 ///
 /// Form-Vorbild: <c>examples/http-client</c> (Go). Dieses Programm trägt
 /// keine Zustandsmaschine: es stellt eine Anfrage und endet.
@@ -31,35 +30,23 @@ internal static class Program
             return 2;
         }
 
-        // `CDC_HTTP_ADDR` ungesetzt heißt: die HTTP-API ist deaktiviert — die
-        // Zeile dazu steht in §5 *Konfiguration* des Handbuchs. Es gibt dann
-        // keinen Endpunkt, und das Beispiel endet mit dieser Meldung.
-        if (string.IsNullOrEmpty(cfg.Addr))
+        var validationError = Validator.Validate(cfg);
+        if (validationError is not null)
         {
-            Console.Error.WriteLine("http-client: keine HTTP-Adresse gesetzt — CDC_HTTP_ADDR (oder --addr) ist noetig, um die Verwaltungs-API zu erreichen");
-            return 2;
-        }
-        if (string.IsNullOrEmpty(cfg.Token))
-        {
-            Console.Error.WriteLine("http-client: kein Token gesetzt — CDC_API_TOKEN_READER (oder --token) ist noetig, um ueber die reader-Rechtsklasse zu lesen");
-            return 2;
-        }
-        if (string.IsNullOrEmpty(cfg.Source) || string.IsNullOrEmpty(cfg.Publication))
-        {
-            Console.Error.WriteLine("http-client: --source und --publication sind Pflicht — sie sind die zwei Pflichtfelder von GET /tables");
+            Console.Error.WriteLine($"http-client: {validationError}");
             return 2;
         }
 
         using var httpClient = new System.Net.Http.HttpClient { Timeout = RequestTimeout };
         try
         {
-            var body = await TablesClient.ListTablesAsync(httpClient, cfg);
+            var body = await Dispatcher.DispatchAsync(httpClient, cfg).ConfigureAwait(false);
             Console.WriteLine(body);
             return 0;
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"http-client: GET /tables fehlgeschlagen: {ex.Message}");
+            Console.Error.WriteLine($"http-client: --verb={cfg.Verb} fehlgeschlagen: {ex.Message}");
             return 1;
         }
     }

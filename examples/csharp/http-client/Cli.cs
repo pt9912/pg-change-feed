@@ -6,7 +6,9 @@ namespace CdcExamples.Http;
 /// Umgebungs-Lookup ist injiziert (<paramref name="getEnv"/> statt
 /// <c>Environment.GetEnvironmentVariable</c> direkt) — das macht die Funktion
 /// rein und netzlos testbar, ohne echte Prozessumgebung zu setzen. Form-Vorbild:
-/// <c>examples/http-client/main.go</c>, <c>parseFlags</c>.
+/// <c>examples/http-client/main.go</c>, <c>parseFlags</c>. Diese Funktion
+/// prüft nur die Flag-Syntax; ob ein Verb bekannt ist oder ein Verb seine
+/// Pflichtfelder trägt, prüft <see cref="Validator"/>.
 /// </summary>
 public static class Cli
 {
@@ -14,12 +16,26 @@ public static class Cli
     {
         var addr = getEnv("CDC_HTTP_ADDR") ?? "";
         var token = getEnv("CDC_API_TOKEN_READER") ?? "";
+        var adminToken = getEnv("CDC_API_TOKEN_ADMIN") ?? "";
+        var verb = "tables";
         var source = "";
         var publication = "";
+        var consumerId = "";
+        var name = "";
+        var offset = 0UL;
+        var schema = "";
+        var table = "";
+        var tableId = "";
+        var schemaVersionId = "";
+        var version = 1L;
+        var from = "";
+        var to = "";
+        var limit = "";
+        var minAgeNanos = 0L;
 
         for (var i = 0; i < args.Length; i++)
         {
-            var (name, inline) = SplitFlag(args[i]);
+            var (flagName, inline) = SplitFlag(args[i]);
 
             string NextValue()
             {
@@ -29,12 +45,12 @@ public static class Cli
                 }
                 if (i + 1 >= args.Length)
                 {
-                    throw new ArgumentException($"http-client: Flag {name} braucht einen Wert");
+                    throw new ArgumentException($"http-client: Flag {flagName} braucht einen Wert");
                 }
                 return args[++i];
             }
 
-            switch (name)
+            switch (flagName)
             {
                 case "--addr":
                     addr = NextValue();
@@ -42,18 +58,83 @@ public static class Cli
                 case "--token":
                     token = NextValue();
                     break;
+                case "--admin-token":
+                    adminToken = NextValue();
+                    break;
+                case "--verb":
+                    verb = NextValue();
+                    break;
                 case "--source":
                     source = NextValue();
                     break;
                 case "--publication":
                     publication = NextValue();
                     break;
+                case "--consumer-id":
+                    consumerId = NextValue();
+                    break;
+                case "--name":
+                    name = NextValue();
+                    break;
+                case "--offset":
+                    offset = ParseUInt64(flagName, NextValue());
+                    break;
+                case "--schema":
+                    schema = NextValue();
+                    break;
+                case "--table":
+                    table = NextValue();
+                    break;
+                case "--table-id":
+                    tableId = NextValue();
+                    break;
+                case "--schema-version-id":
+                    schemaVersionId = NextValue();
+                    break;
+                case "--version":
+                    version = ParseInt64(flagName, NextValue());
+                    break;
+                case "--from":
+                    from = NextValue();
+                    break;
+                case "--to":
+                    to = NextValue();
+                    break;
+                case "--limit":
+                    limit = NextValue();
+                    break;
+                case "--min-age-nanos":
+                    minAgeNanos = ParseInt64(flagName, NextValue());
+                    break;
                 default:
-                    throw new ArgumentException($"http-client: unbekanntes Flag {name}");
+                    throw new ArgumentException($"http-client: unbekanntes Flag {flagName}");
             }
         }
 
-        return new Config(addr, token, source, publication);
+        return new Config(
+            Addr: addr, Token: token, AdminToken: adminToken, Verb: verb,
+            Source: source, Publication: publication,
+            ConsumerId: consumerId, Name: name, Offset: offset,
+            Schema: schema, Table: table, TableId: tableId, SchemaVersionId: schemaVersionId, Version: version,
+            From: from, To: to, Limit: limit, MinAgeNanos: minAgeNanos);
+    }
+
+    private static ulong ParseUInt64(string flagName, string value)
+    {
+        if (!ulong.TryParse(value, out var parsed))
+        {
+            throw new ArgumentException($"http-client: Flag {flagName} braucht eine nicht-negative Ganzzahl, erhielt \"{value}\"");
+        }
+        return parsed;
+    }
+
+    private static long ParseInt64(string flagName, string value)
+    {
+        if (!long.TryParse(value, out var parsed))
+        {
+            throw new ArgumentException($"http-client: Flag {flagName} braucht eine Ganzzahl, erhielt \"{value}\"");
+        }
+        return parsed;
     }
 
     /// <summary>
