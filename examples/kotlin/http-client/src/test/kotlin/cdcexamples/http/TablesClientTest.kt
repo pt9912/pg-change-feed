@@ -18,7 +18,13 @@ class TablesClientTest {
         val httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(2))
             .build()
-        val cfg = Config("127.0.0.1:1", "token", "quelle", "pub")
+        val cfg = Config(
+            addr = "127.0.0.1:1", token = "token", adminToken = "", verb = "tables",
+            source = "quelle", publication = "pub",
+            consumerId = "", name = "", offset = 0,
+            schema = "", table = "", tableId = "", schemaVersionId = "", version = 1,
+            from = "", to = "", limit = "", minAgeNanos = 0,
+        )
 
         assertFailsWith<Exception> { TablesClient.listTables(httpClient, cfg) }
     }
