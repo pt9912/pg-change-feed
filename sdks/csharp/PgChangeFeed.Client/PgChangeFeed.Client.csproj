@@ -59,13 +59,16 @@
     <PackageReference Include="NATS.Net" />
   </ItemGroup>
 
-  <!-- The `.proto` itself is not in this directory: the Docker build copies it
+  <!-- Neither `.proto` is in this directory: the Docker build copies both
        here from the additional named build context `proto`
-       (sdks/csharp/Dockerfile). The path therefore exists only inside the
+       (sdks/csharp/Dockerfile). The paths therefore exist only inside the
        build, not in the committed tree: no committed stub, no committed copy
-       of the `.proto`. -->
+       of either `.proto`. -->
   <ItemGroup>
     <Protobuf Include="Grpc/proto/changestream.proto" GrpcServices="Client" />
+    <!-- `administration.proto` carries the eleven RPCs of the `Administration`
+         service, called by `PgChangeFeedAdministrationClient`. -->
+    <Protobuf Include="Grpc/proto/administration.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

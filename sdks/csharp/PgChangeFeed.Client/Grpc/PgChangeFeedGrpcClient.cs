@@ -21,8 +21,8 @@ namespace PgChangeFeed.Client.Grpc;
 /// state; a process can hold several independently configured instances at
 /// once.
 ///
-/// <b>Limits:</b> the stream carries no replay and cannot be filtered by
-/// table. A consumer that needs either uses the read path
+/// <b>Limits:</b> the stream carries no replay. A consumer that needs
+/// replay uses the read path
 /// (<c>PgChangeFeed.Client.Http.PgChangeFeedHttpClient.ReadChangesAsync</c>),
 /// not this stream.
 /// </summary>
@@ -70,8 +70,15 @@ public sealed class PgChangeFeedGrpcClient : IDisposable
     /// <summary>
     /// Opens the server-streaming call and yields every <see cref="Change"/>
     /// the server sends from connection time onward: fire-and-forget, no
-    /// replay, one message per row change in commit order. The request carries
-    /// no filter.
+    /// replay, one message per row change in commit order.
+    /// <paramref name="schema"/> and <paramref name="table"/> are each
+    /// optional and independent: a set <paramref name="schema"/>
+    /// without <paramref name="table"/> delivers every table of that schema,
+    /// a set <paramref name="table"/> without <paramref name="schema"/>
+    /// delivers every table of that name regardless of schema, both set
+    /// delivers exactly one table, and both left <c>null</c> (the default)
+    /// delivers every change of every captured table, unchanged from the
+    /// original, filter-less contract.
     ///
     /// A missing or invalid bearer token ends the call with gRPC status
     /// <see cref="StatusCode.Unauthenticated"/> — this surfaces as an
@@ -79,11 +86,22 @@ public sealed class PgChangeFeedGrpcClient : IDisposable
     /// silently empty stream.
     /// </summary>
     public async IAsyncEnumerable<Change> StreamChangesAsync(
+        string? schema = null,
+        string? table = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var headers = new Metadata { { AuthorizationMetadataKey, BearerPrefix + _options.ApiToken } };
+        var request = new StreamChangesRequest();
+        if (schema is not null)
+        {
+            request.Schema = schema;
+        }
+        if (table is not null)
+        {
+            request.Table = table;
+        }
         using var call = _client.StreamChanges(
-            new StreamChangesRequest(), headers: headers, cancellationToken: cancellationToken);
+            request, headers: headers, cancellationToken: cancellationToken);
 
         await foreach (var change in call.ResponseStream.ReadAllAsync(cancellationToken).ConfigureAwait(false))
         {

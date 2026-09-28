@@ -19,6 +19,7 @@ internal sealed class FakeCallInvoker : CallInvoker
     private readonly Status? _failureStatus;
 
     public CallOptions? LastCallOptions { get; private set; }
+    public object? LastRequest { get; private set; }
 
     private FakeCallInvoker(object[] messages, Status? failureStatus)
     {
@@ -47,6 +48,7 @@ internal sealed class FakeCallInvoker : CallInvoker
         Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request)
     {
         LastCallOptions = options;
+        LastRequest = request;
         var typedMessages = _messages.Cast<TResponse>().ToArray();
         var reader = new FakeAsyncStreamReader<TResponse>(typedMessages, _failureStatus);
         var finalStatus = _failureStatus ?? new Status(StatusCode.OK, string.Empty);

@@ -49,6 +49,9 @@ COPY PgChangeFeed.Client/ PgChangeFeed.Client/
 # relativen `Protobuf Include`-Pfad in PgChangeFeed.Client.csproj
 # (`Grpc/proto/changestream.proto`).
 COPY --from=proto cdc/stream/v1/changestream.proto PgChangeFeed.Client/Grpc/proto/changestream.proto
+# Die zweite COPY-Zeile trägt die elf RPCs des `Administration`-Diensts, die
+# `PgChangeFeedAdministrationClient` aufruft.
+COPY --from=proto cdc/administration/v1/administration.proto PgChangeFeed.Client/Grpc/proto/administration.proto
 
 RUN dotnet build PgChangeFeed.Client/PgChangeFeed.Client.csproj -c Release --no-restore
 RUN dotnet test PgChangeFeed.Client/PgChangeFeed.Client.Tests/PgChangeFeed.Client.Tests.csproj -c Release --no-restore

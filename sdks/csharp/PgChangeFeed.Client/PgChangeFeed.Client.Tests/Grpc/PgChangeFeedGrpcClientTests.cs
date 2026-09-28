@@ -75,6 +75,54 @@ public class PgChangeFeedGrpcClientTests
     }
 
     [Fact]
+    public async Task StreamChangesAsync_NoFilter_SendsEmptyRequest()
+    {
+        var invoker = FakeCallInvoker.WithMessages<Change>();
+        using var client = new PgChangeFeedGrpcClient(invoker, Options());
+
+        await foreach (var _ in client.StreamChangesAsync())
+        {
+            // draining is enough to trigger the call.
+        }
+
+        var sent = Assert.IsType<StreamChangesRequest>(invoker.LastRequest);
+        Assert.Equal(string.Empty, sent.Schema);
+        Assert.Equal(string.Empty, sent.Table);
+    }
+
+    [Fact]
+    public async Task StreamChangesAsync_WithSchemaAndTable_SendsBothInRequest()
+    {
+        var invoker = FakeCallInvoker.WithMessages<Change>();
+        using var client = new PgChangeFeedGrpcClient(invoker, Options());
+
+        await foreach (var _ in client.StreamChangesAsync(schema: "public", table: "orders"))
+        {
+            // draining is enough to trigger the call.
+        }
+
+        var sent = Assert.IsType<StreamChangesRequest>(invoker.LastRequest);
+        Assert.Equal("public", sent.Schema);
+        Assert.Equal("orders", sent.Table);
+    }
+
+    [Fact]
+    public async Task StreamChangesAsync_WithSchemaOnly_LeavesTableEmpty()
+    {
+        var invoker = FakeCallInvoker.WithMessages<Change>();
+        using var client = new PgChangeFeedGrpcClient(invoker, Options());
+
+        await foreach (var _ in client.StreamChangesAsync(schema: "public"))
+        {
+            // draining is enough to trigger the call.
+        }
+
+        var sent = Assert.IsType<StreamChangesRequest>(invoker.LastRequest);
+        Assert.Equal("public", sent.Schema);
+        Assert.Equal(string.Empty, sent.Table);
+    }
+
+    [Fact]
     public async Task StreamChangesAsync_MissingOrInvalidToken_ThrowsUnauthenticated()
     {
         var invoker = FakeCallInvoker.WithStatus(new Status(StatusCode.Unauthenticated, "missing or unknown bearer token"));
