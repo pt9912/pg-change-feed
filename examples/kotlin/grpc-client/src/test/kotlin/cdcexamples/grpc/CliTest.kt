@@ -6,8 +6,10 @@ import kotlin.test.assertFailsWith
 
 /**
  * Prüft den Aufbau der Laufzeit-Konfiguration aus Flags und einem
- * injizierten Umgebungs-Lookup — netzlos, reine Funktion. Form-Vorbild:
- * `examples/csharp/grpc-client/GrpcClient.Tests/CliTests.cs` (`slice-102`),
+ * injizierten Umgebungs-Lookup — netzlos, reine Funktion. Diese Funktion
+ * prüft nur die Flag-Syntax; Rechtsklassen und Pflichtfelder je Verb prüft
+ * [ValidatorTest]. Form-Vorbild:
+ * `examples/csharp/grpc-client/GrpcClient.Tests/CliTests.cs`,
  * `examples/kotlin/http-client/CliTest.kt`.
  */
 class CliTest {
@@ -19,10 +21,19 @@ class CliTest {
             when (name) {
                 "CDC_GRPC_ADDR" -> "feed:9090"
                 "CDC_API_TOKEN_READER" -> "reader-token"
+                "CDC_API_TOKEN_ADMIN" -> "admin-token"
                 else -> null
             }
         }
-        assertEquals(Config("feed:9090", "reader-token"), got)
+        assertEquals("feed:9090", got.addr)
+        assertEquals("reader-token", got.token)
+        assertEquals("admin-token", got.adminToken)
+    }
+
+    @Test
+    fun parseDefaultVerbIsStream() {
+        val got = Cli.parse(emptyArray(), emptyEnv)
+        assertEquals("stream", got.verb)
     }
 
     @Test
@@ -30,13 +41,63 @@ class CliTest {
         val got = Cli.parse(
             arrayOf("--addr", "other:9091", "--token=other-token"),
         ) { name -> if (name == "CDC_GRPC_ADDR") "feed:9090" else null }
-        assertEquals(Config("other:9091", "other-token"), got)
+        assertEquals("other:9091", got.addr)
+        assertEquals("other-token", got.token)
     }
 
     @Test
     fun parseNoEnvironmentNoFlagsReturnsEmpty() {
         val got = Cli.parse(emptyArray(), emptyEnv)
-        assertEquals(Config("", ""), got)
+        assertEquals("", got.addr)
+        assertEquals("", got.token)
+        assertEquals("", got.adminToken)
+    }
+
+    @Test
+    fun parseStreamFilterFlags() {
+        val got = Cli.parse(arrayOf("--schema=public", "--table=orders"), emptyEnv)
+        assertEquals("public", got.schema)
+        assertEquals("orders", got.table)
+    }
+
+    @Test
+    fun parseEnableTableFields() {
+        val got = Cli.parse(
+            arrayOf(
+                "--verb=enable-table", "--source=quelle-1", "--schema=public", "--table=orders",
+                "--table-id=public.orders", "--schema-version-id=public.orders-v2", "--version=2",
+                "--publication=pub_quelle_1",
+            ),
+            emptyEnv,
+        )
+        assertEquals("enable-table", got.verb)
+        assertEquals("quelle-1", got.source)
+        assertEquals("public.orders", got.tableId)
+        assertEquals("public.orders-v2", got.schemaVersionId)
+        assertEquals(2L, got.version)
+        assertEquals("pub_quelle_1", got.publication)
+    }
+
+    @Test
+    fun parseConsumerFields() {
+        val got = Cli.parse(arrayOf("--consumer-id=c-1", "--name=Consumer", "--offset=42"), emptyEnv)
+        assertEquals("c-1", got.consumerId)
+        assertEquals("Consumer", got.name)
+        assertEquals(42L, got.offset)
+    }
+
+    @Test
+    fun parseReadChangesRangeFields() {
+        val got = Cli.parse(arrayOf("--from=10", "--to=20", "--limit=5"), emptyEnv)
+        assertEquals(10L, got.from)
+        assertEquals(20L, got.to)
+        assertEquals(5L, got.limit)
+    }
+
+    @Test
+    fun parseRunRetentionMinAgeNanos() {
+        val got = Cli.parse(arrayOf("--min-age-nanos=1000000000"), emptyEnv)
+        assertEquals(1_000_000_000L, got.minAgeNanos)
     }
 
     @Test
@@ -49,5 +110,17 @@ class CliTest {
     fun parseRejectsMissingFlagValue() {
         val ex = assertFailsWith<IllegalArgumentException> { Cli.parse(arrayOf("--addr"), emptyEnv) }
         assert(ex.message?.contains("braucht einen Wert") == true)
+    }
+
+    @Test
+    fun parseRejectsNonIntegerOffset() {
+        val ex = assertFailsWith<IllegalArgumentException> { Cli.parse(arrayOf("--offset=abc"), emptyEnv) }
+        assert(ex.message?.contains("nicht-negative Ganzzahl") == true)
+    }
+
+    @Test
+    fun parseRejectsNonIntegerVersion() {
+        val ex = assertFailsWith<IllegalArgumentException> { Cli.parse(arrayOf("--version=abc"), emptyEnv) }
+        assert(ex.message?.contains("Ganzzahl") == true)
     }
 }

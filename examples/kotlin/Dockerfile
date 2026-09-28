@@ -5,9 +5,10 @@
 # Kontext-Bindung 4).
 #
 # Das gRPC-Programm (grpc-client, ADR-0090 Festlegung 2, slice-103 — die in
-# slice-102 am C#-Bau gemessene Form übertragen) liest die `.proto` NICHT aus
-# diesem Kontext — sie liegt außerhalb davon, unter proto/cdc/stream/v1/ an
-# der Repo-Wurzel. Sie kommt über einen ZUSÄTZLICHEN, benannten Bau-Kontext
+# slice-102 am C#-Bau gemessene Form übertragen) liest seine beiden `.proto`-
+# Quellen NICHT aus diesem Kontext — sie liegen außerhalb davon, unter
+# proto/cdc/stream/v1/ und proto/cdc/administration/v1/ an der Repo-Wurzel.
+# Sie kommen über einen ZUSÄTZLICHEN, benannten Bau-Kontext
 # namens `proto` herein (`COPY --from=proto …` unten); der Aufrufer bringt
 # ihn mit `docker build --build-context proto=proto …` mit
 # (harness/mk/examples.mk). Ohne ihn bricht der Bau an der COPY-Zeile ab —
@@ -67,6 +68,10 @@ COPY nats-stream-client/src nats-stream-client/src
 # beim C#-Ziel `grpc-client/proto/`, das `Grpc.Tools`s `<Protobuf Include=…>`
 # frei wählt.
 COPY --from=proto cdc/stream/v1/changestream.proto grpc-client/src/main/proto/changestream.proto
+# Die zweite COPY-Zeile trägt die elf RPCs des `Administration`-Diensts, die
+# grpc-client zusätzlich zum Stream aufruft (dieselbe zweite Zeile wie
+# examples/csharp/Dockerfile).
+COPY --from=proto cdc/administration/v1/administration.proto grpc-client/src/main/proto/administration.proto
 
 RUN ./gradlew --no-daemon :http-client:test :sse-client:test :nats-client:test :grpc-client:test :nats-stream-client:test
 RUN ./gradlew --no-daemon :http-client:installDist :sse-client:installDist :nats-client:installDist :grpc-client:installDist :nats-stream-client:installDist

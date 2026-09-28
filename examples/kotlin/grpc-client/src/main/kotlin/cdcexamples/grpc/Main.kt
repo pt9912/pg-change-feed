@@ -1,45 +1,45 @@
 package cdcexamples.grpc
 
+import cdc.administration.v1.AdministrationGrpcKt
 import cdc.stream.v1.ChangeStreamGrpcKt
 import cdc.stream.v1.Changestream.StreamChangesRequest
+import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
-import io.grpc.Metadata
 import io.grpc.StatusException
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlin.system.exitProcess
 
 /**
- * Command grpc-client ist ein öffentliches Beispiel für den Live-Change-Stream
- * über gRPC (`LH-FA-SST-008`, `ADR-0060`, `ADR-0090`): es öffnet den
- * Server-Streaming-RPC `ChangeStream/StreamChanges` real gegen den laufenden
- * Feed-Container und gibt jede empfangene Nachricht aus. Startform ist ein
- * Container-Aufruf, kein Host-Aufruf (`ADR-0087` Festlegung 3); Adresse und
- * Token kommen aus `CDC_GRPC_ADDR`/`CDC_API_TOKEN_READER` und lassen sich per
- * Flag übersteuern (`--addr`, `--token`).
+ * Command grpc-client ist ein öffentliches Beispiel für die vollständige
+ * gRPC-Fläche (`LH-FA-SST-006`): das `--verb`-Flag ruft eine von zwölf
+ * dokumentierten Fähigkeiten real gegen den laufenden Feed-Container auf —
+ * der Live-Change-Stream (Default-Verb `stream`, unverändert die
+ * ursprüngliche Aufrufform) und die elf unären RPCs des
+ * `Administration`-Diensts. Startform ist ein Container-Aufruf, kein
+ * Host-Aufruf; die Zugriffs-Abschnitte des Benutzerhandbuchs sind „Zugriff
+ * über den gRPC-Change-Stream" und „Zugriff über die gRPC-Verwaltungs-API"
+ * (`docs/user/benutzerhandbuch.md`).
  *
  * Form-Vorbild: `examples/grpc-client` (Go), `examples/csharp/grpc-client`
- * (C#, `slice-102`) — dieselbe Form (benannter Zusatzkontext, Generator-Stufe)
- * auf die Kotlin-Werkzeugkette übertragen (`slice-103`). Der Stub entsteht
- * **im Bau** aus der über den benannten Zusatzkontext gelesenen `.proto` — er
- * liegt nicht im committeten Baum (`ADR-0090` Festlegung 3). Dieses Programm
- * trägt keine Zustandsmaschine: der Stream kennt kein Replay (`ADR-0060`),
- * verpasste Changes holt der bestehende Lesezugriffsweg nach.
+ * (C#) — dieselbe Form (benannter Zusatzkontext, Generator-Stufe, zwölf
+ * Verben) auf die Kotlin-Werkzeugkette übertragen. Beide Stubs entstehen im
+ * Bau aus den über den benannten Zusatzkontext gelesenen `.proto`-Dateien —
+ * sie liegen nicht im committeten Baum. Dieses Programm trägt keine
+ * Zustandsmaschine: die elf RPCs stellen je eine Anfrage und enden, der
+ * Stream bleibt offen und kennt kein Replay — verpasste Changes holt der
+ * bestehende Lesezugriffsweg (`ReadChanges`, `GET /changes`) nach.
  *
  * Anders als der C#-Client (`Grpc.Net.Client`, ein `HttpClient`-basierter
  * Kanal) braucht der Kotlin-Client einen `ManagedChannel`
- * (`io.grpc:grpc-netty-shaded`) und den generierten Coroutine-Stub
+ * (`io.grpc:grpc-netty-shaded`) und die generierten Coroutine-Stubs
  * (`io.grpc:grpc-kotlin-stub`) — beides Laufzeit-Unterschiede der
- * Werkzeugkette, kein Unterschied in der übertragenen Bau-Form (benannter
- * Zusatzkontext, Generator-Stufe): der `main`-Prozess läuft in
- * `runBlocking`, weil der generierte Server-Streaming-Aufruf einen kalten
- * `Flow<Change>` liefert, den nur ein Coroutine-Scope einsammeln kann.
+ * Werkzeugkette, kein Unterschied in der übertragenen Bau-Form: der
+ * `main`-Prozess läuft in `runBlocking`, weil sowohl der
+ * Server-Streaming-Aufruf (`Flow<Change>`) als auch jeder unäre
+ * Administration-Aufruf (`suspend fun`) nur aus einem Coroutine-Scope
+ * heraus aufrufbar sind.
  */
-private const val AUTHORIZATION_METADATA_KEY = "authorization"
-private const val BEARER_PREFIX = "Bearer "
-private val AUTHORIZATION_METADATA_ENTRY: Metadata.Key<String> =
-    Metadata.Key.of(AUTHORIZATION_METADATA_KEY, Metadata.ASCII_STRING_MARSHALLER)
-
 fun main(args: Array<String>): Unit = runBlocking {
     val cfg = try {
         Cli.parse(args) { name -> System.getenv(name) }
@@ -48,16 +48,9 @@ fun main(args: Array<String>): Unit = runBlocking {
         exitProcess(2)
     }
 
-    if (cfg.addr.isEmpty()) {
-        System.err.println(
-            "grpc-client: keine gRPC-Adresse gesetzt — CDC_GRPC_ADDR (oder --addr) ist noetig, um den Stream zu oeffnen",
-        )
-        exitProcess(2)
-    }
-    if (cfg.token.isEmpty()) {
-        System.err.println(
-            "grpc-client: kein Token gesetzt — CDC_API_TOKEN_READER (oder --token) ist noetig, um ueber die reader-Rechtsklasse zu lesen",
-        )
+    val validationError = Validator.validate(cfg)
+    if (validationError != null) {
+        System.err.println("grpc-client: $validationError")
         exitProcess(2)
     }
 
@@ -67,20 +60,42 @@ fun main(args: Array<String>): Unit = runBlocking {
     // Transportverschlüsselung.
     val channel = ManagedChannelBuilder.forTarget(cfg.addr).usePlaintext().build()
     try {
-        val stub = ChangeStreamGrpcKt.ChangeStreamCoroutineStub(channel)
-        val headers = Metadata().apply { put(AUTHORIZATION_METADATA_ENTRY, BEARER_PREFIX + cfg.token) }
-
-        try {
-            stub.streamChanges(StreamChangesRequest.getDefaultInstance(), headers)
-                .collect { change -> println(Format.formatChange(change)) }
-        } catch (ex: StatusException) {
-            System.err.println("grpc-client: Stream endete: ${ex.status}")
-            exitProcess(1)
+        if (cfg.verb == "stream") {
+            runStream(channel, cfg)
+            return@runBlocking
         }
 
-        System.err.println("grpc-client: Stream endete")
-        exitProcess(1)
+        val client = AdministrationGrpcKt.AdministrationCoroutineStub(channel)
+        try {
+            println(Dispatcher.dispatchAdmin(client, cfg))
+        } catch (ex: StatusException) {
+            System.err.println("grpc-client: --verb=${cfg.verb} fehlgeschlagen: ${ex.status}")
+            exitProcess(1)
+        }
     } finally {
         channel.shutdownNow()
     }
+}
+
+/**
+ * runStream öffnet den Server-Streaming-RPC `ChangeStream/StreamChanges`
+ * real gegen den laufenden Feed-Container und gibt jede empfangene
+ * Nachricht aus, bis die Verbindung endet. `cfg.schema`/`cfg.table` tragen
+ * den optionalen, unabhängig setzbaren Filter (`ADR-0133`) — beide leer
+ * liefert jeden Change aller aktivierten Tabellen.
+ */
+private suspend fun runStream(channel: ManagedChannel, cfg: Config) {
+    val stub = ChangeStreamGrpcKt.ChangeStreamCoroutineStub(channel)
+    val headers = CallMetadata.headers(cfg.token)
+    val request = StreamChangesRequest.newBuilder().setSchema(cfg.schema).setTable(cfg.table).build()
+
+    try {
+        stub.streamChanges(request, headers).collect { change -> println(Format.formatChange(change)) }
+    } catch (ex: StatusException) {
+        System.err.println("grpc-client: Stream endete: ${ex.status}")
+        exitProcess(1)
+    }
+
+    System.err.println("grpc-client: Stream endete")
+    exitProcess(1)
 }

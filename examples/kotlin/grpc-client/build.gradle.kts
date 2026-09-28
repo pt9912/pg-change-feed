@@ -5,12 +5,13 @@
 // `protoc` und zwei Codegen-Plugins — `protoc-gen-grpc-java` (der
 // Java-Service-Deskriptor, den der Kotlin-Stub referenziert) und
 // `protoc-gen-grpc-kotlin` (der eigentliche Coroutine-Stub, Plugin-Id
-// `grpckt`). Die `.proto` selbst liegt NICHT in diesem Verzeichnis — sie
-// kommt erst im Docker-Bau nach `src/main/proto/` (examples/kotlin/Dockerfile),
-// kopiert aus dem zusätzlichen, benannten Bau-Kontext `proto` (ADR-0090
-// Festlegung 2). Dieser Pfad existiert deshalb nur innerhalb des Baus, nicht
-// im committeten Baum (ADR-0090 Festlegung 3 — kein committeter Stub, keine
-// committete Kopie der `.proto`).
+// `grpckt`). Die beiden `.proto`-Quellen (Stream und Administration) liegen
+// NICHT in diesem Verzeichnis — sie kommen erst im Docker-Bau nach
+// `src/main/proto/` (examples/kotlin/Dockerfile), kopiert aus dem
+// zusätzlichen, benannten Bau-Kontext `proto` (ADR-0090 Festlegung 2). Dieser
+// Pfad existiert deshalb nur innerhalb des Baus, nicht im committeten Baum
+// (ADR-0090 Festlegung 3 — kein committeter Stub, keine committete Kopie der
+// `.proto`).
 //
 // Gepinnte, exakte Versionen (Maven Central, gemessen 2026-09-17,
 // maven-metadata.xml je Artefakt — deckungsgleich mit den in ADR-0090
