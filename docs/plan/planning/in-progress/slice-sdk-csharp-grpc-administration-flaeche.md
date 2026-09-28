@@ -56,18 +56,19 @@ fachliches Vorbild für Nachrichtenschema, Rechtsklassen, Fehlerform).
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SST-009` erfüllt: `PgChangeFeedAdministrationClient` deckt alle
+- [x] `LH-FA-SST-009` erfüllt: `PgChangeFeedAdministrationClient` deckt alle
       elf RPCs mit typisierten Requests/Responses und einer typisierten
       Fehlerklasse für die gRPC-Status-Codes ab (analog
       `PgChangeFeedHttpClient`s `PgChangeFeedException`-Muster); Unit-Tests
-      je RPC.
-- [ ] `ADR-0133` erfüllt: `StreamChangesAsync` trägt optionale
+      je RPC. (Requests/Responses sind die generierten Protobuf-Nachrichten
+      direkt, kein eigener Modell-Layer — siehe „Abweichung vom Plan" unten.)
+- [x] `ADR-0133` erfüllt: `StreamChangesAsync` trägt optionale
       `schema`/`table`-Parameter, leer = ungefiltert (Regressionstest für
       den parameterlosen Aufruf).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`), kein Self-Review.
-- [ ] `docs/user/benutzerhandbuch.md`: beide gRPC-Abschnitte („Zugriff über
+- [x] `docs/user/benutzerhandbuch.md`: beide gRPC-Abschnitte („Zugriff über
       den gRPC-Change-Stream", „Zugriff über die gRPC-Verwaltungs-API")
       nennen C# jetzt mit der vollen Fläche statt „SDK folgt"; Versions­historie
       nachgezogen. `sdks/csharp/README.md` nachgezogen.
@@ -75,7 +76,7 @@ fachliches Vorbild für Nachrichtenschema, Rechtsklassen, Fehlerform).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder eine weitere `evidence/`-Datei; keine Beobachtung
       angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       von der nächsten Welle-Closure (`welle-sdk-grpc-administration-flaeche`).
 
@@ -116,23 +117,69 @@ Closure-Notiz geschrieben.
   Randfall (z. B. ein leeres `old_image`/`new_image`-Byte-Array bei
   `ReadChanges`, ein `null`-Consumer-Lag) unterschiedlich lesen, wenn der
   Implementer nur das Formvorbild kopiert, ohne die eigene Sprach-Laufzeit
-  gegenzuprüfen. — **Ausgang:** weiter offen: → Register (unter der
-  Schwelle; falls dieser Slice einen neuen Fund beisteuert, `evidence/`
-  ergänzen).
+  gegenzuprüfen. — **Ausgang:** weiter offen, kein neuer Fund: die
+  proto3-Zero-Value-Semantik (`ByteString.Empty` für ein leeres
+  `old_image`/`new_image`, `Known = false` statt `null` für
+  `ConsumerLag`/`HeartbeatStatus`) ist in C# real getestet
+  (`PgChangeFeedAdministrationClientRetentionAndChangesTests`,
+  `PgChangeFeedAdministrationClientDiagnoseTests`) und deckungsgleich mit
+  dem Go-/Kotlin-Formvorbild — kein Randfall gefunden, Zähler bleibt bei 2×
+  → Register unverändert.
 - **Server-Fehler analog zum Kotlin-Beispiel-Client-Fund** (`EnableTable`
   über gRPC aktualisiert den laufenden Capture-Prozess nicht ohne
   Neustart, separat gefixt) — ein Realserver-Test dieses Slice könnte
   denselben (jetzt gefixten) oder einen verwandten Effekt erneut zeigen,
   falls der Fix zum Zeitpunkt der Implementierung noch nicht gepusht ist.
-  — **Ausgang:** eingetreten: Blockade melden, nicht selbst reparieren |
-  entfallen: Fix bereits gepusht, kein erneutes Auftreten | weiter offen.
+  — **Ausgang:** entfallen (nicht ausgelöst) — dieser Slice fährt keinen
+  Realserver-Test (Unit-Tests gegen `FakeUnaryCallInvoker`/`FakeCallInvoker`,
+  kein Docker-Compose-Rundlauf); ein Realserver-Beleg für
+  `PgChangeFeedAdministrationClient` bleibt Gegenstand eines späteren
+  Integrationstest-Slices (`make test-sdk-csharp-integration`), zu dessen
+  Zeitpunkt der Assembler-Sync-Fix (`internal/bootstrap/assemblersync.go`,
+  siehe Aufgabenstellung) bereits gepusht ist.
 - **`protoc`-Namenskonflikt** (Kotlin-Beispiel-Client-Fund:
   `AdministrationOuterClass` statt `Administration` als generierter
   Klassenname) — für C# (`Grpc.Tools`) tritt vermutlich ein anderes,
   eigenes Namensschema auf; vor dem Schreiben von Business-Code real am
   generierten Code verifizieren, nicht annehmen. — **Ausgang:** entfallen
-  (kein Konflikt in C#s Codegen) | weiter offen: → eigener Beobachtungs-Eintrag,
-  falls doch.
+  (kein Konflikt in C#s Codegen) — real verifiziert: `Administration.AdministrationClient`
+  (Grpc.Tools generiert keinen `OuterClass`-Namen für den C#-Namespace
+  `Cdc.Administration.V1`), `make sdk-pack-csharp` baut und testet grün
+  (109 Tests, `Passed: 109`) mit genau diesem Bezeichner, identisch zum
+  bereits gepushten `examples/csharp/grpc-client`.
+
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die drei
+SDK-Packages decken die gRPC-Verwaltungs-API/den Stream-Filter noch nicht
+ab" in `docs/user/benutzerhandbuch.md`/`sdks/csharp/README.md`; beide
+Stände gemessen, Parent `046782ae`):**
+
+| Träger | Suchbefehl | Befund | Behandlung |
+|---|---|---|---|
+| „drei SDK-Packages" als offener Folge-Schritt (gRPC-Fläche) | `git grep -n "drei SDK-Packages"` über `docs/user/benutzerhandbuch.md sdks/csharp/README.md`, Parent `046782ae` und Diff (Block unten, Zeilen 1–2) | Parent: 8 Trefferzeilen — Zeile 1201 (HTTP `GET /diagnose`-SDK-Methode, außerhalb des Scopes dieses Slice), Zeile 1309 (gRPC-Stream-Filterung), Zeile 1490 (gRPC-Verwaltungs-API), Zeile 1519 (SSE-Filterung, außerhalb des Scopes — nur der gRPC-Stream und die Verwaltungs-API sind Gegenstand), fünf Versionshistorie-Zeilen 1.74–1.77 (Chronik, unberührt). Diff: 6 (Zeilen 1309 und 1490 aufgelöst — C# jetzt namentlich genannt; 1201, 1519 und die fünf Chronik-Zeilen bleiben unverändert korrekt). Nichtgefunden: keine weitere Stelle außerhalb dieser beiden Dateien, die den gRPC-Fähigkeitsstand der drei SDK-Packages nennt (Suchraum bewusst auf die beiden Nutzer-Dokumente beschränkt — `docs/plan/adr/*` sind `Accepted`/unberührbar, `docs/plan/planning/welle-sdk-grpc-administration-flaeche.md` ist Eigentum der Welle-Closure, nicht dieses Slice). | Zeile 1309 (Filterungs-Absatz) und Zeile 1490 (Verwaltungs-API-Absatz) auf `PgChangeFeed.Client` als abdeckend umgeschrieben; Zeile 1201 (HTTP-Diagnose) und Zeile 1519 (SSE-Filter) bleiben unverändert korrekt offen — beide außerhalb des Scopes dieses Slice; die fünf Chronik-Zeilen bleiben unverändert (Versionshistorie ist append-only). |
+| „cannot be filtered by table" (README, veraltete Pauschalaussage nach dem Stream-Filter-Zusatz) | `git grep -n "cannot be filtered"` über `sdks/csharp/README.md`, Parent `046782ae` und Diff (Block unten, Zeile 3) | Parent: 1 Trefferzeile („The gRPC and SSE streams cannot be filtered by table…"), jetzt falsch für gRPC. Diff: 0. Nichtgefunden: keine weitere Pauschalaussage dieser Art in der README. | Satz präzisiert: „The gRPC stream can be filtered by schema/table (…); the SSE stream cannot yet; …" — SSE-Teilaussage bleibt korrekt bestehen. |
+
+```suchlauf
+046782ae 8 -n "drei SDK-Packages" -- docs/user/benutzerhandbuch.md sdks/csharp/README.md
+diff 6 -n "drei SDK-Packages" -- docs/user/benutzerhandbuch.md sdks/csharp/README.md
+046782ae 1 -n "cannot be filtered" -- sdks/csharp/README.md
+diff 0 -n "cannot be filtered" -- sdks/csharp/README.md
+```
+
+**Abweichung vom Plan (§3):** `sdks/csharp/PgChangeFeed.Client/Grpc/Models/*.cs`
+entsteht **nicht** — die elf RPC-Methoden von `PgChangeFeedAdministrationClient`
+nehmen die generierten Protobuf-Nachrichten aus `Cdc.Administration.V1`
+direkt als Parameter/Rückgabetyp, ohne eigene Zwischenschicht. Begründung:
+Ein Protobuf-Message ist bereits eine typisierte C#-Klasse; eine
+handgeschriebene Spiegelung von elf Nachrichtenformen hätte keinen
+Deserialisierungs-Bedarf zu rechtfertigen (anders als bei
+`PgChangeFeedHttpClient`, dessen `Http/Models/*.cs` json-Zieltypen sind).
+Dieselbe Entscheidung trägt bereits `PgChangeFeedGrpcClient` für den
+Stream (eigener Doc-Kommentar: „There is no separate DTO layer … the
+generated message already is the typed form"); diese Klasse folgt
+demselben, bereits im Repo etablierten Muster statt es für die
+Verwaltungs-API zu brechen. Real geprüft: alle elf Methoden kompilieren
+und elf RPC-Testdateien (`PgChangeFeed.Client.Tests/Grpc/PgChangeFeedAdministrationClient*Tests.cs`)
+laufen grün gegen die generierten Typen.
 
 ## 7. Closure-Notiz
 
