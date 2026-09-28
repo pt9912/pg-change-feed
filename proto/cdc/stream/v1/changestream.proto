@@ -24,9 +24,15 @@ message Change {
   string table = 10;
 }
 
-// StreamChangesRequest carries no filter: a subscriber receives the changes of
-// all captured tables.
-message StreamChangesRequest {}
+// StreamChangesRequest carries an optional schema/table filter pair
+// (ADR-0133): schema and table are each optional and independent. A field
+// left empty applies no filter on that dimension; both empty (the original,
+// still valid zero-value request) delivers every change of all captured
+// tables, unchanged from the original contract.
+message StreamChangesRequest {
+  string schema = 1;
+  string table = 2;
+}
 
 // ChangeStream offers the live change stream.
 service ChangeStream {

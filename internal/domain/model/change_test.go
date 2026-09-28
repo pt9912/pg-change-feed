@@ -168,3 +168,37 @@ func TestChangeOriginOrDefault(t *testing.T) {
 		t.Fatalf("gesetzte Herkunft bleibt: %q", got)
 	}
 }
+
+// TestChangeMatchesFilter trägt die Kombinatorik aus `ADR-0133` Teilfrage 1:
+// beide Felder unabhängig optional, beide leer lässt jeden Change passieren.
+// Rot färbende Mutation: eine der beiden `if`-Bedingungen streichen — dann
+// passiert ein nicht passender Change trotz gesetztem Filter auf dieser
+// Dimension.
+func TestChangeMatchesFilter(t *testing.T) {
+	change := buildChange(t, validChangeArgs())
+	change.Schema = "public"
+	change.Table = "orders"
+
+	cases := []struct {
+		name         string
+		filterSchema string
+		filterTable  string
+		want         bool
+	}{
+		{"kein Filter", "", "", true},
+		{"Schema passt, kein Table-Filter", "public", "", true},
+		{"Schema passt nicht", "other", "", false},
+		{"Table passt, kein Schema-Filter", "", "orders", true},
+		{"Table passt nicht", "", "customers", false},
+		{"beide passen", "public", "orders", true},
+		{"Schema passt, Table nicht", "public", "customers", false},
+		{"Schema passt nicht, Table passt", "other", "orders", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := change.MatchesFilter(tc.filterSchema, tc.filterTable); got != tc.want {
+				t.Fatalf("MatchesFilter(%q, %q) = %v, wollen %v", tc.filterSchema, tc.filterTable, got, tc.want)
+			}
+		})
+	}
+}

@@ -149,3 +149,19 @@ func (c Change) WithOrigin(origin ChangeOrigin) (Change, error) {
 	c.Origin = checked
 	return c, nil
 }
+
+// MatchesFilter prüft den Change gegen ein optionales, unabhängig
+// setzbares `schema`/`table`-Filterpaar (`ADR-0133`): ein leeres Feld
+// trägt keinen Filter auf dieser Dimension, beide leer lässt jeden Change
+// passieren. Der gRPC- und der SSE-Stream-Handler rufen diese eine
+// Funktion, damit ein gefilterter Change nie zwischen den beiden
+// Zugriffswegen auseinanderläuft.
+func (c Change) MatchesFilter(schema, table string) bool {
+	if schema != "" && c.Schema != schema {
+		return false
+	}
+	if table != "" && c.Table != table {
+		return false
+	}
+	return true
+}
