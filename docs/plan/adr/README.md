@@ -143,3 +143,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0128 | Prozessstart: Frist des Vorlaufs, Strom im Stream-Lauf (schärft ADR-0112) | Accepted | 2026-09-27 | [0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md](0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md) |
 | ADR-0129 | Capture: Quellseite als Test an beiden PG-Pins (Supers. ADR-0121, teilw.) | Accepted | 2026-09-27 | [0129-capture-quellseite-keepalive-test-an-beiden-pins.md](0129-capture-quellseite-keepalive-test-an-beiden-pins.md) |
 | ADR-0130 | gRPC-Administration: neun RPCs, eigener Service (Supers. ADR-0057, teilw.) | Accepted | 2026-09-28 | [0130-grpc-verwaltungs-api-neun-rpcs.md](0130-grpc-verwaltungs-api-neun-rpcs.md) |
+| ADR-0131 | gRPC-`ReadChanges` — zehnter RPC im `Administration`-Service (ergänzt ADR-0130) | Accepted | 2026-09-28 | [0131-grpc-readchanges-zehnter-rpc.md](0131-grpc-readchanges-zehnter-rpc.md) |
