@@ -14,7 +14,7 @@ vier repo-spezifische HIGH-Regeln)
 **Eingangs-Kontext:**
 
 - `docs/plan/adr/0130-grpc-verwaltungs-api-neun-rpcs.md` (Accepted) — vollständig gelesen
-- `spec/pflichtenheft.md` §SPEC-031 (technische Ausgestaltung der ADR)
+- `spec/pflichtenheft.md` §[SPEC-031](../../spec/pflichtenheft.md) (technische Ausgestaltung der ADR)
 - `internal/adapters/driving/http/{consumer,registerconsumer,verwaltung,retention}.go` (Kontrakt-Referenz)
 - `AGENTS.md` §3 Hard Rules, insbesondere §3.1, §3.7, §3.9, §3.12, §3.13
 - `harness/conventions.md` (MR-000/MR-001)
@@ -24,7 +24,7 @@ vier repo-spezifische HIGH-Regeln)
 
 ## Vorgehen (zusammengefasst)
 
-- Gesamten Diff gelesen, Zeile für Zeile gegen ADR-0130 (alle sechs
+- Gesamten Diff gelesen, Zeile für Zeile gegen [ADR-0130](../plan/adr/0130-grpc-verwaltungs-api-neun-rpcs.md) (alle sechs
   Teilfragen) und gegen die vier HTTP-Handler-Dateien gehalten.
 - `git diff --stat` gegen `proto/cdc/stream/v1/changestream.proto` und
   `gen/cdc/stream/v1/*` geprüft — leer, nicht Teil des Diffs (bestätigt
@@ -39,7 +39,7 @@ vier repo-spezifische HIGH-Regeln)
   lassen (nicht nur den Bericht geglaubt) — bis zur letzten Zeile
   `Lauf abgeschlossen` unter `set -euo pipefail`, danach sauberer
   Compose-Teardown bestätigt.
-- `spec/pflichtenheft.md`s SPEC-031-Historie-Lücke per `git log -S` gegen
+- `spec/pflichtenheft.md`s [SPEC-031](../../spec/pflichtenheft.md)-Historie-Lücke per `git log -S` gegen
   den Commit-Zeitpunkt geprüft (liegt außerhalb des Diffs).
 
 ---
@@ -65,7 +65,7 @@ vier repo-spezifische HIGH-Regeln)
   `docs/user/benutzerhandbuch.md` vollständig unberührt (`git diff --stat`
   bestätigt: keine Zeile). Es existiert **kein** committetes Artefakt, das
   einen Aufschub mit Adresse (Folge-Slice-ID) benennt: kein
-  `docs/plan/planning/{open,next,in-progress}/`-Eintrag zu ADR-0130, kein
+  `docs/plan/planning/{open,next,in-progress}/`-Eintrag zu [ADR-0130](../plan/adr/0130-grpc-verwaltungs-api-neun-rpcs.md), kein
   Verweis in den vier Commit-Messages, kein Verweis in der ADR selbst
   (deren Folgepflichten-Liste Beispiel-Clients, SDK-Erweiterung und
   E2E-Beleg nennt, aber keine Handbuch-Zeile). Die Behauptung des
@@ -130,11 +130,11 @@ vier repo-spezifische HIGH-Regeln)
 
 ## Bestätigte Implementer-Behauptungen (eigenständig nachgeprüft, nicht nur gelesen)
 
-- **ADR-0130-Konformität (Teilfragen 1–6):** Service-/Paketname, RPC-Form,
+- **[ADR-0130](../plan/adr/0130-grpc-verwaltungs-api-neun-rpcs.md)-Konformität (Teilfragen 1–6):** Service-/Paketname, RPC-Form,
   alle neun Nachrichtenschemata (Feldnamen 1:1), Rechtsklassen-Tabelle,
-  Fehlercode-Tabelle und Server-Platzierung stimmen exakt mit ADR-0130
+  Fehlercode-Tabelle und Server-Platzierung stimmen exakt mit [ADR-0130](../plan/adr/0130-grpc-verwaltungs-api-neun-rpcs.md)
   überein — Zeile für Zeile gegen die ADR-Tabellen und gegen
-  `spec/pflichtenheft.md` §SPEC-031 gehalten.
+  `spec/pflichtenheft.md` §[SPEC-031](../../spec/pflichtenheft.md) gehalten.
 - **`changestream.proto`/`gen/cdc/stream/v1/*` unverändert:**
   `git diff --stat b317d529..HEAD` führt keine dieser Dateien;
   `make generated-sync` bestätigt Byte-Gleichheit für beide `.proto`-Quellen.
@@ -145,7 +145,7 @@ vier repo-spezifische HIGH-Regeln)
   bestätigt Feld- und Fehlerpfad-Parität (`administrationError` ==
   `writeDomainError` in der Fehlerklassen-Zuordnung).
 - **`authUnaryInterceptor` fail-closed:** Rechtsklassen-Tabelle
-  (`administrationRPCRoles`) deckungsgleich mit ADR-0130 Teilfrage 4 (6×
+  (`administrationRPCRoles`) deckungsgleich mit [ADR-0130](../plan/adr/0130-grpc-verwaltungs-api-neun-rpcs.md) Teilfrage 4 (6×
   `roleAdmin`, 3× `roleReader`); `methodName()` ist robust gegen ein
   Format ohne `/` (fällt auf den vollen String zurück, trifft dann keinen
   Tabelleneintrag, landet im fail-closed-Zweig `roleAdmin`). Beide
@@ -200,13 +200,13 @@ vier repo-spezifische HIGH-Regeln)
   korrekt auf „beide Quellen" nachgezogen; Diff geprüft, Formulierung
   stimmt mit dem tatsächlichen `Dockerfile`-/`proto-generate.sh`-Verhalten
   überein (ein `protoc`-Aufruf für beide `.proto`-Dateien).
-- **SPEC-031-Beobachtung ist korrekt als vorbestehend eingeordnet:**
+- **[SPEC-031](../../spec/pflichtenheft.md)-Beobachtung ist korrekt als vorbestehend eingeordnet:**
   `git log -S"SPEC-031" -- spec/pflichtenheft.md` zeigt den einzigen
   Treffer bei Commit `7892de6f`; `git merge-base --is-ancestor 7892de6f
   b317d529` bestätigt, dass dieser Commit **vor** dem Review-Startpunkt
   liegt — außerhalb des geprüften Diffs, `spec/pflichtenheft.md` ist in
   `git diff b317d529..HEAD --stat` nicht enthalten. Die Beobachtung
-  („SPEC-031 hat keine §6/§7-Gegenzeile wie SPEC-020") ist sachlich
+  („[SPEC-031](../../spec/pflichtenheft.md) hat keine §6/§7-Gegenzeile wie [SPEC-020](../../spec/pflichtenheft.md)") ist sachlich
   richtig, aber kein Fund dieses Reviews.
 - **Vier Commits, sauberer Arbeitsbaum:** `git status --short` nach `HEAD`
   ist leer; jeder der vier Commits trägt exakt die im Bericht genannten
@@ -218,7 +218,7 @@ vier repo-spezifische HIGH-Regeln)
 ## Negativbefunde
 
 - geprüft, ohne Befund: `proto/cdc/administration/v1/administration.proto`
-  (vollständig gegen ADR-0130 Teilfrage 2/3 gehalten)
+  (vollständig gegen [ADR-0130](../plan/adr/0130-grpc-verwaltungs-api-neun-rpcs.md) Teilfrage 2/3 gehalten)
 - geprüft, ohne Befund: `internal/adapters/driving/grpc/administration.go`
   (alle neun Handler, Zeile für Zeile gegen HTTP-Äquivalente)
 - geprüft, ohne Befund: `internal/adapters/driving/grpc/interceptor.go`
@@ -250,7 +250,7 @@ vier repo-spezifische HIGH-Regeln)
 - geprüft, mit Befund F-1: `docs/user/benutzerhandbuch.md` (im Diff nicht
   berührt)
 - geprüft, ohne Befund (außerhalb des Diffs, zur Einordnung der
-  Implementer-Beobachtung): `spec/pflichtenheft.md` §SPEC-031
+  Implementer-Beobachtung): `spec/pflichtenheft.md` §[SPEC-031](../../spec/pflichtenheft.md)
 
 ---
 
