@@ -183,12 +183,39 @@ def test_stream_changes_leaves_the_call_deadline_unbounded_by_default() -> None:
     assert timeout is None
 
 
-def test_stream_changes_sends_a_filterless_request() -> None:
+def test_stream_changes_sends_a_filterless_request_by_default() -> None:
     client, channel = _make_client()
     list(client.stream_changes())
     _metadata, request, _timeout = channel.invocations[0]
     assert isinstance(request, changestream_pb2.StreamChangesRequest)
     assert request.SerializeToString() == b""
+
+
+# --- Filter: schema/table are each optional and independent ---
+
+
+def test_stream_changes_sets_only_schema_when_table_is_left_out() -> None:
+    client, channel = _make_client()
+    list(client.stream_changes(schema="public"))
+    _metadata, request, _timeout = channel.invocations[0]
+    assert request.schema == "public"
+    assert request.table == ""
+
+
+def test_stream_changes_sets_only_table_when_schema_is_left_out() -> None:
+    client, channel = _make_client()
+    list(client.stream_changes(table="orders"))
+    _metadata, request, _timeout = channel.invocations[0]
+    assert request.schema == ""
+    assert request.table == "orders"
+
+
+def test_stream_changes_sets_both_schema_and_table_when_both_are_given() -> None:
+    client, channel = _make_client()
+    list(client.stream_changes(schema="public", table="orders"))
+    _metadata, request, _timeout = channel.invocations[0]
+    assert request.schema == "public"
+    assert request.table == "orders"
 
 
 # --- Auth boundary: UNAUTHENTICATED surfaces, the stream is not silently

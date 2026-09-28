@@ -109,6 +109,21 @@ def _resolve(func: ast.expr, namespace: dict[str, object]) -> object | None:
     return None
 
 
+def _has_signature(target: object) -> bool:
+    """Whether ``inspect.signature`` can introspect ``target`` at all.
+
+    A generated protobuf message class has a C-implemented constructor with
+    no introspectable signature (``inspect.signature`` raises ``ValueError``,
+    not the ``TypeError`` a bad call raises) -- there is nothing to check a
+    call against, so such a call is skipped rather than asserted.
+    """
+    try:
+        inspect.signature(target)
+    except ValueError:
+        return False
+    return True
+
+
 def _binds(target: object, call: ast.Call, *, unbound_method: bool) -> bool:
     """Whether ``call`` fits the signature of ``target`` (values are ignored)."""
     assert not any(isinstance(arg, ast.Starred) for arg in call.args), ast.dump(call)
@@ -174,7 +189,7 @@ def test_every_call_of_a_readme_example_fits_the_real_signature(index: int) -> N
             checked += 1
             continue
         target = _resolve(func, namespace)
-        if target is not None and callable(target):
+        if target is not None and callable(target) and _has_signature(target):
             assert _binds(target, node, unbound_method=False), (
                 f"call does not fit the signature of {ast.unparse(func)}: {ast.unparse(node)}"
             )

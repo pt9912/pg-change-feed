@@ -62,6 +62,9 @@ COPY pgchangefeed/integration pgchangefeed/integration
 # `cdc/stream/v1/` — genau wie die `.proto`-Einspeisung oben eine vom Aufruf
 # erwartete relative Stelle.
 COPY --from=proto cdc/stream/v1/changestream.proto changestream.proto
+# Die zweite COPY-Zeile trägt die elf RPCs des `Administration`-Diensts, die
+# `PgChangeFeedAdministrationClient` aufruft (Muster sdks/csharp/Dockerfile).
+COPY --from=proto cdc/administration/v1/administration.proto administration.proto
 
 WORKDIR /src/pgchangefeed
 # grpcio-tools vor der Stub-Erzeugung: ihr `protoc`-Modul (pip-Extra
@@ -74,9 +77,21 @@ WORKDIR /src/pgchangefeed
 # generierter Python-Stubs (grpc-Handbuch, "Generated Code"-Leitfaden,
 # import statement), damit `pgchangefeed.grpc_gen.changestream_pb2_grpc`
 # als Package-Modul laedt.
+# Beide `.proto`-Quellen laufen in einem Aufruf, wie proto-export im
+# Wurzel-Dockerfile beide Quellen in einem `protoc`-Aufruf erzeugt.
 RUN pip install --no-cache-dir -e ".[test]"
-RUN python -m grpc_tools.protoc -I.. --python_out=src/pgchangefeed/grpc_gen --grpc_python_out=src/pgchangefeed/grpc_gen changestream.proto \
-    && sed -i 's/^import changestream_pb2 as changestream__pb2$/from pgchangefeed.grpc_gen import changestream_pb2 as changestream__pb2/' src/pgchangefeed/grpc_gen/changestream_pb2_grpc.py
+# The grpc plugin copies a service's leading .proto comment onto the
+# generated stub/servicer/registration docstrings; the Administration
+# service's comment carries an internal requirement-document reference
+# (tests/test_public_text.py forbids that in every shipped source, unlike
+# changestream.proto's comment, which carries none). The third `sed`
+# below drops that one parenthetical from the three docstring copies,
+# leaving the sentence intact -- a build-time redaction confined to this
+# generated file, no change to the shared `.proto` source.
+RUN python -m grpc_tools.protoc -I.. --python_out=src/pgchangefeed/grpc_gen --grpc_python_out=src/pgchangefeed/grpc_gen changestream.proto administration.proto \
+    && sed -i 's/^import changestream_pb2 as changestream__pb2$/from pgchangefeed.grpc_gen import changestream_pb2 as changestream__pb2/' src/pgchangefeed/grpc_gen/changestream_pb2_grpc.py \
+    && sed -i 's/^import administration_pb2 as administration__pb2$/from pgchangefeed.grpc_gen import administration_pb2 as administration__pb2/' src/pgchangefeed/grpc_gen/administration_pb2_grpc.py \
+    && sed -i -E 's/unary request\/response RPCs \([A-Z]+-[0-9]+\)\./unary request\/response RPCs./' src/pgchangefeed/grpc_gen/administration_pb2_grpc.py
 # Der blanke `pytest`-Lauf sammelt nur die Unit-Tests (pyproject.toml
 # testpaths = tests) — die Realserver-Tests unter pgchangefeed/integration/
 # laufen nur in der `integration`-Stufe (expliziter Pfad-Aufruf dort).

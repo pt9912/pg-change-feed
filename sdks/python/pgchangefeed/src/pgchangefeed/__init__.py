@@ -1,6 +1,6 @@
 """PG Change Feed Python client library.
 
-The package offers four clients and one shared configuration class:
+The package offers five clients and one shared configuration class:
 
 - ``ClientOptions`` -- server address and token, shared by all clients.
 - ``PgChangeFeedHttpClient`` -- the HTTP API: manage consumers, enable and
@@ -10,16 +10,26 @@ The package offers four clients and one shared configuration class:
   Events.
 - ``PgChangeFeedNatsStreamClient`` -- a live stream of changes over NATS; the
   token is checked once when the connection is opened.
+- ``PgChangeFeedAdministrationClient`` -- the same management/read/diagnose
+  capabilities as ``PgChangeFeedHttpClient``, over gRPC instead of HTTP.
 
 The three live streams carry the same change messages. They deliver what is
 committed while the client is connected; they do not repeat changes that were
 missed (use ``PgChangeFeedHttpClient.read_changes`` for catching up).
 """
 
+from pgchangefeed.administration_client import PgChangeFeedAdministrationClient
 from pgchangefeed.exceptions import (
     PgChangeFeedBadRequestError,
     PgChangeFeedError,
     PgChangeFeedForbiddenError,
+    PgChangeFeedGrpcError,
+    PgChangeFeedGrpcInternalError,
+    PgChangeFeedGrpcInvalidArgumentError,
+    PgChangeFeedGrpcNotFoundError,
+    PgChangeFeedGrpcPermissionDeniedError,
+    PgChangeFeedGrpcUnauthenticatedError,
+    PgChangeFeedGrpcUnexpectedStatusError,
     PgChangeFeedMalformedResponseError,
     PgChangeFeedNotFoundError,
     PgChangeFeedServerError,
@@ -39,6 +49,7 @@ __all__ = [
     "PgChangeFeedGrpcClient",
     "PgChangeFeedSseClient",
     "PgChangeFeedNatsStreamClient",
+    "PgChangeFeedAdministrationClient",
     "StreamChange",
     "PgChangeFeedError",
     "PgChangeFeedBadRequestError",
@@ -48,4 +59,11 @@ __all__ = [
     "PgChangeFeedServerError",
     "PgChangeFeedUnexpectedStatusError",
     "PgChangeFeedMalformedResponseError",
+    "PgChangeFeedGrpcError",
+    "PgChangeFeedGrpcInvalidArgumentError",
+    "PgChangeFeedGrpcUnauthenticatedError",
+    "PgChangeFeedGrpcPermissionDeniedError",
+    "PgChangeFeedGrpcNotFoundError",
+    "PgChangeFeedGrpcInternalError",
+    "PgChangeFeedGrpcUnexpectedStatusError",
 ]

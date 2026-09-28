@@ -8,6 +8,13 @@ call and yields the generated ``Change`` message with the ten fields
 is no separate data class layer (unlike ``pgchangefeed.models`` for the HTTP
 client): the generated message already is the typed form of the stream schema.
 
+``schema``/``table`` are each optional and independent: a set ``schema``
+without ``table`` delivers every table of that schema, a set ``table``
+without ``schema`` delivers every table of that name regardless of schema,
+both set delivers exactly one table, and both left ``None`` (the default)
+delivers every change of every captured table, unchanged from the original,
+filter-less contract.
+
 The bearer token is sent in the ``authorization`` call metadata entry as
 ``Bearer <token>``. The ``grpc.Channel`` is passed in, not owned: the caller
 controls its lifetime and sharing; this class never closes it. There is no
@@ -49,17 +56,28 @@ class PgChangeFeedGrpcClient:
         self._client = changestream_pb2_grpc.ChangeStreamStub(channel)
         self._options = options
 
-    def stream_changes(self, timeout: float | None = None) -> Iterator[_Change]:
+    def stream_changes(
+        self,
+        timeout: float | None = None,
+        schema: str | None = None,
+        table: str | None = None,
+    ) -> Iterator[_Change]:
         """Opens the server stream and yields every ``Change`` the server sends
         from connection time onward: fire-and-forget, no replay, one message
-        per row change in commit order. The request carries no filter.
+        per row change in commit order.
 
         A missing or invalid bearer token ends the call with gRPC status
         ``UNAUTHENTICATED``, raised by the iterator. ``timeout`` is the
         deadline of the whole call in seconds (``None`` = unbounded, the grpcio
         default); the iterator raises ``DEADLINE_EXCEEDED`` once it lapses.
+        ``schema``/``table`` filter the stream (see the module docstring);
+        left out, the request carries no filter, unchanged from the original
+        contract.
         """
         metadata = ((_AUTHORIZATION_METADATA_KEY, f"{_BEARER_PREFIX}{self._options.api_token}"),)
-        return self._client.StreamChanges(
-            _StreamChangesRequest(), metadata=metadata, timeout=timeout
-        )
+        request = _StreamChangesRequest()
+        if schema is not None:
+            request.schema = schema
+        if table is not None:
+            request.table = table
+        return self._client.StreamChanges(request, metadata=metadata, timeout=timeout)
