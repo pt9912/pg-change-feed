@@ -961,6 +961,26 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		diagnoseUseCase = diagnose.NewDiagnoseService(apiDiagnostics)
 	}
 
+	// enableTableAPI/disableTableAPI tragen den direkten HTTP-/gRPC-Zugriffsweg:
+	// dieselben zwei Instanzen gehen unten in beide Adapter-Konfigurationen ein
+	// — eine Korrektur trifft beide Protokolle gleichzeitig. Der Nachtrag in
+	// den laufenden `Assembler` läuft über denselben Mechanismus
+	// (`syncAssemblerAddBinding`/`syncAssemblerRemoveBinding`, `assemblersync.go`),
+	// den auch der SQL-Antragsqueue-Pfad (`applyAdministrationRequest`) aufruft
+	// (`LH-FA-CFG-001`).
+	enableTableAPI := enableTableWithAssemblerSync{
+		EnableTableUseCase: enableTables,
+		assembler:          stream.Assembler(),
+		activation:         activation,
+		schemaStore:        schemaStore,
+		columnExclusion:    activation,
+		transformations:    activation,
+	}
+	disableTableAPI := disableTableWithAssemblerSync{
+		DisableTableUseCase: disableTables,
+		assembler:           stream.Assembler(),
+	}
+
 	// Der HTTP/JSON-Driving-Adapter (`ADR-0057`) bleibt vollständig
 	// deaktiviert, solange `cfg.HTTPAddr` leer ist — kein `http.Server` wird
 	// konstruiert, keine zusätzliche Verbindung geöffnet (additiv,
@@ -968,7 +988,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// Consumer-Fähigkeiten die oben geteilten Use-Case-Instanzen;
 	// Tabellen-Verwaltung, Retention-Lauf und der SSE-Stream-Endpunkt nutzen
 	// dieselben Use-Case-Instanzen und denselben Broadcaster wie die übrige
-	// Verdrahtung (`activation`, `enableTables`, `disableTables`,
+	// Verdrahtung (`activation`, `enableTableAPI`, `disableTableAPI`,
 	// `retentionUseCase`, `changeBroadcaster` oben).
 	var httpServer *apihttp.Server
 	var httpDone sync.WaitGroup
@@ -981,8 +1001,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			AcknowledgeConsumer: acknowledgeConsumerUseCase,
 			GetConsumerPosition: getConsumerPositionUseCase,
 			RemoveConsumer:      removeConsumerUseCase,
-			EnableTable:         enableTables,
-			DisableTable:        disableTables,
+			EnableTable:         enableTableAPI,
+			DisableTable:        disableTableAPI,
 			GetStatus:           status.NewGetStatusService(activation),
 			ListTables:          list.NewListTablesService(activation),
 			RunRetention:        retentionUseCase,
@@ -1021,8 +1041,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			AcknowledgeConsumer: acknowledgeConsumerUseCase,
 			GetConsumerPosition: getConsumerPositionUseCase,
 			RemoveConsumer:      removeConsumerUseCase,
-			EnableTable:         enableTables,
-			DisableTable:        disableTables,
+			EnableTable:         enableTableAPI,
+			DisableTable:        disableTableAPI,
 			GetStatus:           status.NewGetStatusService(activation),
 			ListTables:          list.NewListTablesService(activation),
 			RunRetention:        retentionUseCase,
@@ -1605,35 +1625,7 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 		}); err != nil {
 			return err
 		}
-		registered, found, err := deps.activation.Registered(ctx, request.Source, request.Schema, request.Table)
-		if err != nil {
-			return err
-		}
-		if !found {
-			return fmt.Errorf("Aktivierung ohne Bindungs-Zeile: %s", qualified)
-		}
-		current, found, err := deps.schemaStore.CurrentVersion(ctx, registered.ID)
-		if err != nil {
-			return err
-		}
-		if !found {
-			return fmt.Errorf("Aktivierung ohne registrierte Schema-Version: %s", qualified)
-		}
-		excluded, err := deps.columnExclusion.ExcludedColumns(ctx, request.Source)
-		if err != nil {
-			return err
-		}
-		rules, err := deps.transformations.TransformationRules(ctx, request.Source)
-		if err != nil {
-			return err
-		}
-		deps.assembler.AddBinding(qualified, mapper.TableBinding{
-			TableID:         registered.ID,
-			SchemaVersion:   current.ID,
-			ExcludedColumns: excluded[qualified],
-			Transformations: rules[qualified],
-		})
-		return nil
+		return syncAssemblerAddBinding(ctx, deps.assembler, deps.activation, deps.schemaStore, deps.columnExclusion, deps.transformations, request.Source, request.Schema, request.Table)
 	case model.AdministrationRequestDisable:
 		if _, err := deps.disableTables.Disable(ctx, inbound.DisableTableCommand{
 			Source:      request.Source,
@@ -1643,7 +1635,7 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 		}); err != nil {
 			return err
 		}
-		deps.assembler.RemoveBinding(qualified)
+		syncAssemblerRemoveBinding(deps.assembler, request.Schema, request.Table)
 		return nil
 	case model.AdministrationRequestExcludeColumn:
 		if err := deps.excludeColumns.Exclude(ctx, inbound.ExcludeColumnCommand{

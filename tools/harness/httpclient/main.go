@@ -64,12 +64,22 @@ func main() {
 		runPositionFlow(os.Args[2:])
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "enable-table" {
+		runEnableTableFlow(os.Args[2:])
+		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "disable-table" {
+		runDisableTableFlow(os.Args[2:])
+		return
+	}
 	if len(os.Args) != 13 {
 		fmt.Fprintln(os.Stderr, "usage: httpclient <base-url> <admin-token> <reader-token> <consumer-id> <consumer-name> <source> <publication> <schema> <table> <from> <to> <limit>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient acknowledge <base-url> <admin-token> <consumer-id> <source-id> <offset>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient remove <base-url> <admin-token> <consumer-id>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient changes <base-url> <reader-token> <source> <schema> <table> <from> <to>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient position <base-url> <reader-token> <consumer-id>")
+		fmt.Fprintln(os.Stderr, "   or: httpclient enable-table <base-url> <admin-token> <source> <schema> <table> <table-id> <schema-version-id> <publication>")
+		fmt.Fprintln(os.Stderr, "   or: httpclient disable-table <base-url> <admin-token> <source> <schema> <table> <publication>")
 		os.Exit(2)
 	}
 	baseURL := os.Args[1]
@@ -224,6 +234,50 @@ func runPositionFlow(args []string) {
 		os.Exit(1)
 	}
 	fmt.Printf("POSITION consumer=%s body=%s\n", args[2], strings.TrimSpace(body))
+}
+
+// runEnableTableFlow trägt EnableTable real per HTTP mit dem Admin-Token
+// (LH-FA-CFG-001): aktiviert die Tabelle über den direkten HTTP-Zugriffsweg,
+// ohne die SQL-Antragsqueue (`cdc.enable_table`) zu durchlaufen — der Beleg
+// dafür, dass dieser Weg den laufenden Feed-Container ohne Neustart
+// erfassend macht.
+func runEnableTableFlow(args []string) {
+	if len(args) != 8 {
+		fmt.Fprintln(os.Stderr, "usage: httpclient enable-table <base-url> <admin-token> <source> <schema> <table> <table-id> <schema-version-id> <publication>")
+		os.Exit(2)
+	}
+	baseURL, adminToken, source, schema, table, tableID, schemaVersionID, publication := args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	body, err := call(client, http.MethodPost, baseURL+"/tables/enable", adminToken, map[string]any{
+		"source": source, "schema": schema, "table": table,
+		"table_id": tableID, "schema_version_id": schemaVersionID, "version": 1, "publication": publication,
+	}, http.StatusCreated)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "httpclient: EnableTable (admin) fehlgeschlagen: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("ENABLED body=%s\n", body)
+}
+
+// runDisableTableFlow trägt DisableTable real per HTTP mit dem Admin-Token
+// (LH-FA-CFG-002): das Gegenstück zu `runEnableTableFlow`.
+func runDisableTableFlow(args []string) {
+	if len(args) != 6 {
+		fmt.Fprintln(os.Stderr, "usage: httpclient disable-table <base-url> <admin-token> <source> <schema> <table> <publication>")
+		os.Exit(2)
+	}
+	baseURL, adminToken, source, schema, table, publication := args[0], args[1], args[2], args[3], args[4], args[5]
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	body, err := call(client, http.MethodPost, baseURL+"/tables/disable", adminToken, map[string]any{
+		"source": source, "schema": schema, "table": table, "publication": publication,
+	}, http.StatusOK)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "httpclient: DisableTable (admin) fehlgeschlagen: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("DISABLED body=%s\n", body)
 }
 
 // runAcknowledgeFlow trägt AcknowledgeConsumer real per HTTP mit dem

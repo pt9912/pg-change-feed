@@ -352,6 +352,8 @@ CREATE TABLE public.feed_e2e_sql_admin (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_e2e_walsender_timing (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_e2e_startgrenze (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_e2e_transform_abhilfe (id int PRIMARY KEY, name text);
+CREATE TABLE public.feed_e2e_api_enable_grpc (id int PRIMARY KEY, name text);
+CREATE TABLE public.feed_e2e_api_enable_http (id int PRIMARY KEY, name text);
 INSERT INTO cdc.source (source_id, name) VALUES ('src-e2e', 'E2E-Quelle');
 SQL
 
@@ -2791,6 +2793,171 @@ if [ "$feed_running" != "true" ]; then
 fi
 
 echo "run-integration-tests: gRPC-Administration-Rundlauf (ADR-0131) belegt — ein Wegwerf-Client (tools/harness/grpcadminclient) rief real über gRPC ListTables (reader-Token), ReadChanges (reader-Token, Bereich [$grpc_admin_read_position,$grpc_admin_read_to), change_id=$grpc_admin_read_change_id gegen cdc.changes gehalten), Diagnose (reader-Token, gRPC-Diagnose-Querabgleich siehe oben) und RegisterConsumer (admin-Token) gegen den laufenden Feed-Container ($GRPC_ADDR) auf, der registrierte Consumer ($GRPC_ADMIN_CONSUMER_ID) ist unabhängig über cdc.consumer lesbar; ein Aufruf ohne Token wurde mit Unauthenticated, ein reader-Token gegen RegisterConsumer mit PermissionDenied abgelehnt: $grpc_admin_output"
+
+abdeckung_declare "Direkter Zugriffsweg Live-Reload (gRPC enable)" "LH-FA-CFG-001" "EnableTable über den direkten gRPC-Zugriffsweg (ohne die SQL-Antragsqueue) aktualisiert den laufenden Assembler ohne Neustart — derselbe Live-Reload-Vertrag wie der SQL-Antragsqueue-Pfad, jetzt für den bis dahin nicht nachgetragenen direkten Weg belegt" "Direkter gRPC-Zugriffsweg — EnableTable"
+abdeckung_declare "Direkter Zugriffsweg Live-Reload (gRPC disable)" "LH-FA-CFG-002" "derselbe direkte gRPC-Zugriffsweg spiegelbildlich: DisableTable beendet die Erfassung dieser Tabelle ohne Neustart, der Feed-Container läuft weiter" "Direkter gRPC-Zugriffsweg — DisableTable"
+abdeckung_declare "Direkter Zugriffsweg Live-Reload (HTTP enable)" "LH-FA-CFG-001" "derselbe Beleg über den direkten HTTP-Zugriffsweg — fachliche Gleichwertigkeit von HTTP und gRPC (\`LH-FA-SST-006\`)" "Direkter HTTP-Zugriffsweg — EnableTable"
+
+# Direkter gRPC-/HTTP-Zugriffsweg — EnableTable/DisableTable ohne die
+# SQL-Antragsqueue (LH-FA-CFG-001, LH-FA-CFG-002): bis zu diesem Zug
+# aktualisierte nur der SQL-Antragsqueue-Pfad (cdc.enable_table/
+# cdc.disable_table, verarbeitet von der Administrations-Goroutine) den
+# laufenden Assembler — EnableTable/DisableTable über gRPC oder HTTP riefen
+# denselben Inbound Use Case auf, ohne den Nachtrag in den laufenden Prozess
+# (internal/bootstrap/assemblersync.go). Eine über diesen Weg aktivierte
+# Tabelle verlor jede Änderung zwischen Aktivierung und dem nächsten
+# Prozess-Neustart. Dieser Beleg spielt exakt das ursprüngliche
+# Reproduktionsszenario nach: enable-table/disable-table real über gRPC bzw.
+# HTTP gegen den laufenden Feed-Container, ohne die SQL-Antragsqueue zu
+# berühren.
+GRPC_API_ENABLE_TABLE=feed_e2e_api_enable_grpc
+GRPC_API_ENABLE_TABLE_ID=tbl-e2e-api-enable-grpc
+GRPC_API_ENABLE_SCHEMA_VERSION_ID=tbl-e2e-api-enable-grpc-v1
+
+set +e
+grpc_api_enable_output=$(docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/grpcenabletableclient "$GRPC_ADDR" enable-table \
+  "$HTTP_TOKEN_ADMIN" src-e2e public "$GRPC_API_ENABLE_TABLE" "$GRPC_API_ENABLE_TABLE_ID" "$GRPC_API_ENABLE_SCHEMA_VERSION_ID" pub_pgc_e2e 2>&1)
+grpc_api_enable_status=$?
+set -e
+if [ "$grpc_api_enable_status" -ne 0 ]; then
+  echo "run-integration-tests: direkter gRPC-Zugriffsweg — EnableTable($GRPC_API_ENABLE_TABLE) endete mit Ausgang $grpc_api_enable_status: $grpc_api_enable_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$grpc_api_enable_output" | grep -qF "ENABLED"; then
+  echo "run-integration-tests: direkter gRPC-Zugriffsweg — keine ENABLED-Zeile: $grpc_api_enable_output" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$GRPC_API_ENABLE_TABLE (id, name) VALUES (1, 'GrpcApiEnabled');
+SQL
+
+grpc_api_enable_captured=0
+for _ in $(seq 1 120); do
+  found=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$GRPC_API_ENABLE_TABLE' AND new_data->>'id' = '1'")
+  if [ "$found" = "1" ]; then
+    grpc_api_enable_captured=1
+    break
+  fi
+  sleep 0.25
+done
+if [ "$grpc_api_enable_captured" -ne 1 ]; then
+  echo "run-integration-tests: direkter gRPC-Zugriffsweg — über EnableTable aktivierte Tabelle $GRPC_API_ENABLE_TABLE — Änderung (id=1) wurde nicht vom laufenden Feed-Container erfasst (kein Neustart) — genau der Fehler, den dieser Zug behebt" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem direkten gRPC-EnableTable nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Direkter gRPC-Zugriffsweg — EnableTable($GRPC_API_ENABLE_TABLE) ohne SQL-Antragsqueue und ohne Neustart verarbeitet, Änderung id=1 real erfasst: $grpc_api_enable_output"
+
+# Deaktivierung: derselbe direkte gRPC-Zugriffsweg, spiegelbildlich.
+set +e
+grpc_api_disable_output=$(docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/grpcenabletableclient "$GRPC_ADDR" disable-table \
+  "$HTTP_TOKEN_ADMIN" src-e2e public "$GRPC_API_ENABLE_TABLE" pub_pgc_e2e 2>&1)
+grpc_api_disable_status=$?
+set -e
+if [ "$grpc_api_disable_status" -ne 0 ]; then
+  echo "run-integration-tests: direkter gRPC-Zugriffsweg — DisableTable($GRPC_API_ENABLE_TABLE) endete mit Ausgang $grpc_api_disable_status: $grpc_api_disable_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$grpc_api_disable_output" | grep -qF "DISABLED"; then
+  echo "run-integration-tests: direkter gRPC-Zugriffsweg — keine DISABLED-Zeile: $grpc_api_disable_output" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$GRPC_API_ENABLE_TABLE (id, name) VALUES (2, 'GrpcApiDisabled');
+SQL
+
+# Keine Erfassung ist kein Ereignis, das ein Poll beobachten kann — eine
+# reale, aber begrenzte Wartezeit, bevor geprüft wird, dass die Zeile NICHT
+# in cdc.changes ankommt (dasselbe Muster wie der SQL-Administration
+# Live-Reload-Beleg oben).
+sleep 3
+grpc_api_disabled_leaked=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$GRPC_API_ENABLE_TABLE' AND new_data->>'id' = '2'")
+if [ "$grpc_api_disabled_leaked" != "0" ]; then
+  echo "run-integration-tests: direkter gRPC-Zugriffsweg — nach DisableTable($GRPC_API_ENABLE_TABLE) wurde eine Änderung (id=2) dennoch erfasst — Deaktivierung griff nicht" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem direkten gRPC-DisableTable nicht mehr weiter (der Prozess muss weiterlaufen, nur die Tabellen-Erfassung endet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Direkter gRPC-Zugriffsweg — DisableTable($GRPC_API_ENABLE_TABLE) ohne SQL-Antragsqueue verarbeitet, Änderung id=2 nicht erfasst, Feed-Container läuft unverändert weiter: $grpc_api_disable_output"
+
+# Derselbe Beleg über den direkten HTTP-Zugriffsweg (nur der Enable-Fall,
+# LH-FA-SST-006 Boundary „fachliche Gleichwertigkeit über alle
+# Zugriffswege"): ein Wegwerf-Client (tools/harness/httpclient enable-table)
+# ruft EnableTable real per HTTP mit dem Admin-Token auf, ohne die
+# SQL-Antragsqueue zu durchlaufen.
+HTTP_API_ENABLE_TABLE=feed_e2e_api_enable_http
+HTTP_API_ENABLE_TABLE_ID=tbl-e2e-api-enable-http
+HTTP_API_ENABLE_SCHEMA_VERSION_ID=tbl-e2e-api-enable-http-v1
+
+set +e
+http_api_enable_output=$(docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/httpclient enable-table \
+  "$HTTP_BASE_URL" "$HTTP_TOKEN_ADMIN" src-e2e public "$HTTP_API_ENABLE_TABLE" "$HTTP_API_ENABLE_TABLE_ID" "$HTTP_API_ENABLE_SCHEMA_VERSION_ID" pub_pgc_e2e 2>&1)
+http_api_enable_status=$?
+set -e
+if [ "$http_api_enable_status" -ne 0 ]; then
+  echo "run-integration-tests: direkter HTTP-Zugriffsweg — EnableTable($HTTP_API_ENABLE_TABLE) endete mit Ausgang $http_api_enable_status: $http_api_enable_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$http_api_enable_output" | grep -qF "ENABLED"; then
+  echo "run-integration-tests: direkter HTTP-Zugriffsweg — keine ENABLED-Zeile: $http_api_enable_output" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$HTTP_API_ENABLE_TABLE (id, name) VALUES (1, 'HttpApiEnabled');
+SQL
+
+http_api_enable_captured=0
+for _ in $(seq 1 120); do
+  found=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$HTTP_API_ENABLE_TABLE' AND new_data->>'id' = '1'")
+  if [ "$found" = "1" ]; then
+    http_api_enable_captured=1
+    break
+  fi
+  sleep 0.25
+done
+if [ "$http_api_enable_captured" -ne 1 ]; then
+  echo "run-integration-tests: direkter HTTP-Zugriffsweg — über EnableTable aktivierte Tabelle $HTTP_API_ENABLE_TABLE — Änderung (id=1) wurde nicht vom laufenden Feed-Container erfasst (kein Neustart) — genau der Fehler, den dieser Zug behebt" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem direkten HTTP-EnableTable nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Direkter HTTP-Zugriffsweg — EnableTable($HTTP_API_ENABLE_TABLE) ohne SQL-Antragsqueue und ohne Neustart verarbeitet, Änderung id=1 real erfasst: $http_api_enable_output"
 
 abdeckung_declare "SSE-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real per HTTP den Endpunkt \`GET /changes/stream\` gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401" "SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt"
 

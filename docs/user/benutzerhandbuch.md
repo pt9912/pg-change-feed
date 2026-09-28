@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.77
+Version: 1.78
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-28
 
@@ -1139,6 +1139,12 @@ fixierte Rolle. Fehlerantworten tragen die Form `{"error": "<Klartext>"}`.
 Die lesenden Endpunkte sind mit dem Admin-Token ebenso erreichbar; mit dem
 Reader-Token sind die administrativen Endpunkte nicht erreichbar (`403`).
 
+**Tabelle aktivieren/deaktivieren wirkt sofort:** `POST /tables/enable`/`POST
+/tables/disable` aktualisieren den laufenden Erfassungsprozess unmittelbar
+mit der Antwort — ohne Neustart und ohne die Antrags-Queue des SQL-Zugriffswegs
+(siehe [Tabelle live aktivieren](#tabelle-live-aktivieren)) zu durchlaufen:
+derselbe Live-Reload-Vertrag, ein anderer Netzwerkzugriffsweg.
+
 **Changes lesen:** `GET /changes?source=<quelle-id>` liefert persistierte
 Änderungen einer Quelle — optional gefiltert über `schema` und `table`
 (je einzeln oder zusammen), eingegrenzt über `from` (inklusive) und `to`
@@ -1429,7 +1435,10 @@ unäre RPCs:
 
 Die lesenden RPCs sind mit dem Admin-Token ebenso erreichbar; mit dem
 Reader-Token sind die administrativen RPCs nicht erreichbar
-(`PermissionDenied`). Nachrichtenfelder entsprechen 1:1 den Request-/
+(`PermissionDenied`). `EnableTable`/`DisableTable` wirken wie ihr
+HTTP-Äquivalent sofort auf den laufenden Erfassungsprozess, ohne Neustart
+(siehe [Zugriff über die HTTP-/JSON-API](#zugriff-über-die-http-json-api)).
+Nachrichtenfelder entsprechen 1:1 den Request-/
 Response-Feldern der gleichnamigen HTTP-Fähigkeit (Tabelle unter [Zugriff
 über die HTTP-/JSON-API](#zugriff-über-die-http-json-api)); `ListTables`
 liefert `tables` und `retained` als je eine Liste einer `SourceTable`
@@ -2202,3 +2211,4 @@ MIT — siehe `LICENSE`.
 | 1.75 | 2026-09-28 | Go-Beispiel `examples/grpc-client` von der Ein-Fähigkeit-Form (nur `StreamChanges`) auf die volle gRPC-Fläche erweitert (`LH-FA-SST-006`, `LH-FA-SST-008`): ein `-verb`-Flag (Default `stream` — die ursprüngliche Aufrufform bleibt unverändert funktionsfähig) deckt zusätzlich alle elf RPCs des `Administration`-Diensts ab; das Default-Verb `stream` nimmt den optionalen `-schema`/`-table`-Filter entgegen (`ADR-0133`). „Zugriff über den gRPC-Change-Stream“ nennt den Filter-Flag und den neuen `-verb`-Umfang des Go-Beispiels; „Zugriff über die gRPC-Verwaltungs-API“ trägt jetzt einen eigenen `**Beispiele:**`-Absatz statt der Aussage, keine Sprache decke diese Fläche ab — C#/Kotlin und alle drei SDK-Packages bleiben unverändert offener Folge-Schritt |
 | 1.76 | 2026-09-28 | C#-Beispiel `examples/csharp/grpc-client` von der Ein-Fähigkeit-Form (nur `StreamChanges`) auf die volle gRPC-Fläche erweitert (`LH-FA-SST-006`, `LH-FA-SST-008`), analog zum Go-Beispiel: ein `--verb`-Flag (Default `stream` — die ursprüngliche Aufrufform bleibt unverändert funktionsfähig) deckt zusätzlich alle elf RPCs des `Administration`-Diensts ab; das Default-Verb `stream` nimmt den optionalen `--schema`/`--table`-Filter entgegen (`ADR-0133`). „Zugriff über den gRPC-Change-Stream“ nennt den Filter-Flag des C#-Beispiels und dessen neuen `--verb`-Umfang; „Zugriff über die gRPC-Verwaltungs-API“ nennt das C#-Beispiel jetzt gleichrangig neben Go im `**Beispiele:**`-Absatz — Kotlin und alle drei SDK-Packages bleiben unverändert offener Folge-Schritt |
 | 1.77 | 2026-09-28 | Kotlin-Beispiel `examples/kotlin/grpc-client` von der Ein-Fähigkeit-Form (nur `StreamChanges`) auf die volle gRPC-Fläche erweitert (`LH-FA-SST-006`, `LH-FA-SST-008`), analog zum Go-/C#-Beispiel: ein `--verb`-Flag (Default `stream` — die ursprüngliche Aufrufform bleibt unverändert funktionsfähig) deckt zusätzlich alle elf RPCs des `Administration`-Diensts ab; das Default-Verb `stream` nimmt den optionalen `--schema`/`--table`-Filter entgegen (`ADR-0133`). „Zugriff über den gRPC-Change-Stream“ nennt den Filter-Flag des Kotlin-Beispiels und dessen neuen `--verb`-Umfang; „Zugriff über die gRPC-Verwaltungs-API“ nennt das Kotlin-Beispiel jetzt gleichrangig neben Go/C# im `**Beispiele:**`-Absatz — mit dieser Zeile ist die volle Drei-Sprachen-Matrix für die gRPC-Verwaltungs-API vollständig; die drei SDK-Packages bleiben unverändert offener Folge-Schritt |
+| 1.78 | 2026-09-28 | `EnableTable`/`DisableTable` über den direkten HTTP-/gRPC-Zugriffsweg (`LH-FA-CFG-001`, `LH-FA-CFG-002`) aktualisieren jetzt den laufenden Erfassungsprozess unmittelbar mit der Antwort, ohne Neustart — „Zugriff über die HTTP-/JSON-API“ und „Zugriff über die gRPC-Verwaltungs-API“ tragen je einen neuen Hinweisabsatz, der diese Zusage neben den SQL-Antragsweg stellt (siehe „Tabelle live aktivieren“) |
