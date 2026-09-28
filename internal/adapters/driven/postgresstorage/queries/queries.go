@@ -518,3 +518,35 @@ const InsertBackfillChange = `
 INSERT INTO cdc.change
     (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version, origin)
 VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9)`
+
+// SelectDiagnosticsHeartbeat liest Alter und Fehlerzustand des letzten
+// Lebenszeichens der Quelle (`ADR-0132`, mechanisch aus dem bisherigen
+// CLI-Sondermodus übernommen); die Abwesenheit einer Zeile bedeutet „kein
+// Lebenszeichen — Instanz hat noch nie geschlagen".
+const SelectDiagnosticsHeartbeat = `SELECT age_seconds, error_class FROM cdc.heartbeat WHERE source_id = $1`
+
+// SelectDiagnosticsCaptureLag liest den quellenweiten CDC-Abstand
+// (`ADR-0132`).
+const SelectDiagnosticsCaptureLag = `SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_capture_lag'`
+
+// SelectDiagnosticsConsumerLags liest den Verarbeitungsrückstand je
+// Consumer mit mindestens einer bestätigten Position; ein `NULL`-Wert
+// bedeutet, dass die gebundene Quelle noch nie eine Transaktion trug
+// (`ADR-0132`).
+const SelectDiagnosticsConsumerLags = `SELECT label, value FROM cdc.metrics WHERE metric_name = 'cdc_consumer_lag' ORDER BY label`
+
+// SelectDiagnosticsRetentionBlocker liest den aktuell die Löschung
+// blockierenden Consumer der Quelle; die Abwesenheit einer Zeile bedeutet
+// „kein Blocker" (`ADR-0132`).
+const SelectDiagnosticsRetentionBlocker = `
+SELECT consumer_id, name, acknowledged_position, backlog FROM cdc.retention_blockers WHERE source_id = $1`
+
+// SelectDiagnosticsStorageBytes liest den Speicherverbrauch (`ADR-0132`).
+const SelectDiagnosticsStorageBytes = `SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_storage_bytes'`
+
+// SelectDiagnosticsBackfillStatus liest den zuletzt beantragten Backfill-Run
+// je Tabelle der Quelle; eine unbekannte Schätzung bleibt `NULL`, nie `0`
+// (`ADR-0132`).
+const SelectDiagnosticsBackfillStatus = `
+SELECT schema_name, table_name, status, rows_copied, estimated_rows, warn_estimated_size, warn_duration, COALESCE(error_message, '')
+FROM cdc.backfill_status WHERE source_id = $1 ORDER BY schema_name, table_name`

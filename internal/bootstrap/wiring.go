@@ -50,6 +50,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/acknowledge"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/backfill"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/capture"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/diagnose"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/disable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/excludecolumn"
@@ -947,6 +948,19 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		readChangesUseCase = readchanges.NewReadChangesService(apiChangeStore)
 	}
 
+	// Der Diagnose-Zugriffsweg (`ADR-0132`) liest über `cfg.ReaderDSN` —
+	// dieselbe Rolle wie der bestehende CLI-Sondermodus. HTTP und gRPC teilen
+	// dieselbe Use-Case-Instanz, kein zweiter Lesepfad.
+	var diagnoseUseCase inbound.DiagnoseUseCase
+	if cfg.HTTPAddr != "" || cfg.GRPCAddr != "" {
+		apiDiagnostics, err := postgresstorage.NewDiagnostics(ctx, cfg.ReaderDSN, postgresstorage.WithLog(log))
+		if err != nil {
+			return err
+		}
+		defer apiDiagnostics.Close()
+		diagnoseUseCase = diagnose.NewDiagnoseService(apiDiagnostics)
+	}
+
 	// Der HTTP/JSON-Driving-Adapter (`ADR-0057`) bleibt vollständig
 	// deaktiviert, solange `cfg.HTTPAddr` leer ist — kein `http.Server` wird
 	// konstruiert, keine zusätzliche Verbindung geöffnet (additiv,
@@ -973,6 +987,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			ListTables:          list.NewListTablesService(activation),
 			RunRetention:        retentionUseCase,
 			ReadChanges:         readChangesUseCase,
+			Diagnose:            diagnoseUseCase,
 			Subscriber:          changeBroadcaster,
 			Log:                 log,
 		})
@@ -1012,6 +1027,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			ListTables:          list.NewListTablesService(activation),
 			RunRetention:        retentionUseCase,
 			ReadChanges:         readChangesUseCase,
+			Diagnose:            diagnoseUseCase,
 			Log:                 log,
 		})
 		grpcDone.Add(1)
@@ -1904,146 +1920,91 @@ func Healthcheck(ctx context.Context, dsn string, source model.SourceID) int {
 	return 0
 }
 
-// Diagnose liest die in `LH-FA-SST-003`s Boundary genannten
-// Status-/Diagnosesignale über dieselben SQL-Lese-Views wie `Healthcheck`
-// oben (`cdc.heartbeat`, `cdc.metrics`) sowie `cdc.retention_blockers` und
-// gibt sie menschenlesbar auf `stdout` aus: Betriebsstatus und
-// Fehlerzustand (`LH-FA-ADM-002`/`003`, aus `cdc.heartbeat`), CDC-Abstand
-// (`LH-FA-ADM-004`, `cdc_capture_lag`), Verarbeitungsrückstand je Consumer
-// (`LH-FA-ADM-005`, `cdc_consumer_lag{consumer}`), der aktuell die Löschung
-// blockierende Consumer je Quelle (`LH-FA-RET-005`, `cdc.retention_blockers`)
-// und der Speicherverbrauch (`LH-FA-RET-006`, `cdc_storage_bytes`) sowie der
-// zuletzt beantragte Backfill-Run je Tabelle (`LH-FA-CAP-009`,
-// `cdc.backfill_status`, `diagnoseBackfillStatus`). Anders
-// als `Healthcheck` trifft dieser Befehl keine binäre Verdikt-Entscheidung —
-// er gibt die Rohwerte aller Views unverändert weiter, keine
-// Schwellenwert-Klassifikation (`SPEC-007` bleibt Sache des lesenden
-// Systems, wie bei den Views selbst). Der Prozess-Ausgang trägt nur den
-// Lese-Erfolg: 0 nach vollständig gelesenen Views — unabhängig vom Inhalt,
-// ein gemeldeter Fehlerzustand oder Rückstand ist Berichtsinhalt, kein
-// Befehlsfehler —, 1 bei Verbindungs- oder Query-Fehler (dieselben ersten
-// beiden Fehlerklassen wie `Healthcheck`: DSN ungültig, Instanz nicht
-// erreichbar, plus eine dritte je nicht lesbarer View). Eine Quelle ohne
-// Zeile in `cdc.retention_blockers` (kein Consumer hat je gegen sie
-// bestätigt) meldet „kein Blocker" — dieselbe Abwesenheits-Lesart wie beim
-// Betriebsstatus oben, kein Fehlerzustand. Der Aufruf öffnet eine eigene,
-// kurzlebige Verbindung — kein Bestandteil der laufenden Verdrahtung
-// (`Run` oben); der Aufrufer übergibt `cfg.ReaderDSN` (`ADR-0047`: alle
-// vier Views tragen ein `SELECT`-Grant an `cdc_reader`).
+// Diagnose gibt die Diagnosesignale einer Quelle menschenlesbar auf
+// `stdout` aus: Betriebsstatus und Fehlerzustand, CDC-Abstand,
+// Verarbeitungsrückstand je Consumer, der aktuell die Löschung blockierende
+// Consumer und der Speicherverbrauch sowie der zuletzt beantragte
+// Backfill-Run je Tabelle. Der Befehl ist ein dünner Formatierungs-Wrapper
+// um `inbound.DiagnoseUseCase` (`ADR-0132`) — derselbe Use Case, den auch
+// der HTTP- und der gRPC-Zugriffsweg aufrufen, kein zweiter Domänenpfad;
+// der Text-Bericht bleibt gegenüber dem Stand vor diesem Umbau byte-gleich.
+// Anders als `Healthcheck` trifft dieser Befehl keine binäre
+// Verdikt-Entscheidung — er gibt die Rohwerte aller Signale unverändert
+// weiter, keine Schwellenwert-Klassifikation. Der Prozess-Ausgang trägt nur
+// den Lese-Erfolg: 0 nach vollständig gelesenen Signalen — unabhängig vom
+// Inhalt, ein gemeldeter Fehlerzustand oder Rückstand ist Berichtsinhalt,
+// kein Befehlsfehler —, 1 bei Verbindungs- oder Lesefehler. Der Aufruf
+// öffnet eine eigene, kurzlebige Verbindung — kein Bestandteil der
+// laufenden Verdrahtung (`Run` oben); der Aufrufer übergibt `cfg.ReaderDSN`.
 func Diagnose(ctx context.Context, dsn string, source model.SourceID) int {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
-	pool, err := pgxpool.New(ctx, dsn)
+	diagnostics, err := postgresstorage.NewDiagnostics(ctx, dsn)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: DSN ungültig: %v\n", err)
-		return 1
-	}
-	defer pool.Close()
-	if err := pool.Ping(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: Instanz nicht erreichbar: %v\n", err)
 		return 1
 	}
+	defer diagnostics.Close()
 
 	fmt.Printf("pg-change-feed diagnose: Quelle %q\n", source)
 
-	var ageSeconds float64
-	var errorClass *string
-	err = pool.QueryRow(ctx, "SELECT age_seconds, error_class FROM cdc.heartbeat WHERE source_id = $1", string(source)).Scan(&ageSeconds, &errorClass)
-	switch {
-	case errors.Is(err, pgx.ErrNoRows):
+	result, err := diagnose.NewDiagnoseService(diagnostics).Diagnose(ctx, inbound.DiagnoseQuery{Source: source})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: Diagnosedaten nicht lesbar: %v\n", err)
+		return 1
+	}
+	printDiagnoseReport(result)
+	return 0
+}
+
+// printDiagnoseReport gibt den Diagnose-Bericht auf `stdout` aus — dieselbe
+// Textform, die vor dem Umbau auf `inbound.DiagnoseUseCase` (`ADR-0132`)
+// direkt aus den SQL-Zeilen entstand.
+func printDiagnoseReport(result inbound.DiagnoseResult) {
+	if result.HeartbeatAgeSeconds == nil {
 		fmt.Println("  Betriebsstatus (LH-FA-ADM-002): kein Lebenszeichen — Instanz hat noch nie geschlagen")
 		fmt.Println("  Fehlerzustand (LH-FA-ADM-003): unbekannt (kein Lebenszeichen)")
-	case err != nil:
-		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.heartbeat nicht lesbar (Schema-Rollout gelaufen?): %v\n", err)
-		return 1
-	default:
-		fmt.Printf("  Betriebsstatus (LH-FA-ADM-002): Lebenszeichen vor %.3fs\n", ageSeconds)
-		if errorClass == nil {
+	} else {
+		fmt.Printf("  Betriebsstatus (LH-FA-ADM-002): Lebenszeichen vor %.3fs\n", *result.HeartbeatAgeSeconds)
+		if result.ErrorClass == nil {
 			fmt.Println("  Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)")
 		} else {
-			fmt.Printf("  Fehlerzustand (LH-FA-ADM-003): %s\n", *errorClass)
+			fmt.Printf("  Fehlerzustand (LH-FA-ADM-003): %s\n", *result.ErrorClass)
 		}
 	}
 
-	var captureLag float64
-	if err := pool.QueryRow(ctx, "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_capture_lag'").Scan(&captureLag); err != nil {
-		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.metrics (cdc_capture_lag) nicht lesbar: %v\n", err)
-		return 1
-	}
-	fmt.Printf("  CDC-Abstand cdc_capture_lag (LH-FA-ADM-004): %.3fs\n", captureLag)
+	fmt.Printf("  CDC-Abstand cdc_capture_lag (LH-FA-ADM-004): %.3fs\n", result.CaptureLag)
 
-	rows, err := pool.Query(ctx, "SELECT label, value FROM cdc.metrics WHERE metric_name = 'cdc_consumer_lag' ORDER BY label")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.metrics (cdc_consumer_lag) nicht lesbar: %v\n", err)
-		return 1
-	}
-	defer rows.Close()
-	// Nur Consumer mit mindestens einer bestätigten Position tragen eine
-	// Zeile (cdc.metrics-Definition, nacharbeit-observability.sql): ein
-	// frisch registrierter, noch nie bestätigender Consumer erscheint
-	// hier nicht — der Text unten benennt das ausdrücklich, statt sein
-	// Fehlen als "kein Rückstand" lesbar zu lassen. `value` selbst ist für
-	// eine solche Zeile trotzdem NULL, wenn die gebundene Quelle noch nie
-	// eine Transaktion trug (`latest_commit_position`-Unterabfrage liefert
-	// dann NULL, `WHERE cs.acknowledged_position IS NOT NULL` filtert das
-	// nicht heraus) — der Scan liest deshalb über einen Zeiger, statt auf
-	// diesen Fall mit einem Lesefehler zu enden.
 	fmt.Println("  Verarbeitungsrückstand cdc_consumer_lag je Consumer (LH-FA-ADM-005, nur Consumer mit mindestens einer bestätigten Position):")
-	found := false
-	for rows.Next() {
-		var consumer string
-		var lag *float64
-		if err := rows.Scan(&consumer, &lag); err != nil {
-			fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.metrics (cdc_consumer_lag) nicht lesbar: %v\n", err)
-			return 1
-		}
-		if lag == nil {
-			fmt.Printf("    %s: unbekannt (Quelle trug noch nie eine Transaktion)\n", consumer)
-		} else {
-			fmt.Printf("    %s: %.0f\n", consumer, *lag)
-		}
-		found = true
-	}
-	if err := rows.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.metrics (cdc_consumer_lag) nicht lesbar: %v\n", err)
-		return 1
-	}
-	if !found {
+	if len(result.ConsumerLags) == 0 {
 		fmt.Println("    (keiner — kein Consumer mit bestätigter Position)")
 	}
-
-	var blockerConsumer, blockerName string
-	var blockerAckPos int64
-	var blockerBacklog *int64
-	err = pool.QueryRow(ctx,
-		"SELECT consumer_id, name, acknowledged_position, backlog FROM cdc.retention_blockers WHERE source_id = $1",
-		string(source),
-	).Scan(&blockerConsumer, &blockerName, &blockerAckPos, &blockerBacklog)
-	switch {
-	case errors.Is(err, pgx.ErrNoRows):
-		fmt.Println("  Blockierender Consumer (LH-FA-RET-005): kein Blocker (kein Consumer hat je gegen diese Quelle bestätigt)")
-	case err != nil:
-		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.retention_blockers nicht lesbar: %v\n", err)
-		return 1
-	default:
-		if blockerBacklog == nil {
-			fmt.Printf("  Blockierender Consumer (LH-FA-RET-005): %s (%s), bestätigte Position %d, Rückstand unbekannt (Quelle trug noch nie eine Transaktion)\n", blockerName, blockerConsumer, blockerAckPos)
+	for _, lag := range result.ConsumerLags {
+		if lag.Lag == nil {
+			fmt.Printf("    %s: unbekannt (Quelle trug noch nie eine Transaktion)\n", lag.ConsumerID)
 		} else {
-			fmt.Printf("  Blockierender Consumer (LH-FA-RET-005): %s (%s), bestätigte Position %d, Rückstand %d\n", blockerName, blockerConsumer, blockerAckPos, *blockerBacklog)
+			fmt.Printf("    %s: %.0f\n", lag.ConsumerID, *lag.Lag)
 		}
 	}
 
-	var storageBytes float64
-	if err := pool.QueryRow(ctx, "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_storage_bytes'").Scan(&storageBytes); err != nil {
-		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.metrics (cdc_storage_bytes) nicht lesbar: %v\n", err)
-		return 1
+	if result.RetentionBlocker == nil {
+		fmt.Println("  Blockierender Consumer (LH-FA-RET-005): kein Blocker (kein Consumer hat je gegen diese Quelle bestätigt)")
+	} else {
+		blocker := result.RetentionBlocker
+		if blocker.Backlog == nil {
+			fmt.Printf("  Blockierender Consumer (LH-FA-RET-005): %s (%s), bestätigte Position %d, Rückstand unbekannt (Quelle trug noch nie eine Transaktion)\n", blocker.Name, blocker.ConsumerID, blocker.AcknowledgedPosition)
+		} else {
+			fmt.Printf("  Blockierender Consumer (LH-FA-RET-005): %s (%s), bestätigte Position %d, Rückstand %d\n", blocker.Name, blocker.ConsumerID, blocker.AcknowledgedPosition, *blocker.Backlog)
+		}
 	}
-	fmt.Printf("  Speicherverbrauch cdc_storage_bytes (LH-FA-RET-006): %.0f Bytes\n", storageBytes)
 
-	if err := diagnoseBackfillStatus(ctx, pool, source); err != nil {
-		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.backfill_status nicht lesbar: %v\n", err)
-		return 1
+	fmt.Printf("  Speicherverbrauch cdc_storage_bytes (LH-FA-RET-006): %.0f Bytes\n", result.StorageBytes)
+
+	fmt.Println("  Backfill je Tabelle (LH-FA-CAP-009, letzter Run; die Zeilenzahl ist geschätzt):")
+	if len(result.Backfill) == 0 {
+		fmt.Println("    (keiner — kein Backfill beantragt)")
 	}
-
-	return 0
+	for _, table := range result.Backfill {
+		fmt.Print(formatBackfillRun(table.Schema, table.Table, table.Status, table.RowsCopied, table.EstimatedRows, table.WarnEstimatedSize, table.WarnDuration, table.ErrorMessage))
+	}
 }

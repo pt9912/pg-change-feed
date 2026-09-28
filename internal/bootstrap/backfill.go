@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
@@ -156,46 +154,6 @@ func reconcileBackfillRuns(ctx context.Context, runs outbound.BackfillRunPort, c
 	}
 	if interrupted > 0 {
 		log.Warn(ctx, "backfill: laufende Runs beim Start auf interrupted gesetzt", "source", string(source), "runs", interrupted)
-	}
-	return nil
-}
-
-// diagnoseBackfillStatus gibt den zuletzt beantragten Backfill-Run je Tabelle
-// der Quelle aus `cdc.backfill_status` aus (`LH-FA-SST-003`, `SPEC-029`):
-// Status und Fortschritt, die **geschätzte** Zeilenzahl (unbekannt bleibt
-// „unbekannt“, nie `0`), die zwei Warn-Kennzeichnungen und bei einem
-// `failed`-Run der Fehlertext. Ein `failed`- oder `interrupted`-Run ist
-// Berichtsinhalt, kein Befehlsfehler; der Rückgabewert meldet nur, dass die
-// View lesbar war.
-func diagnoseBackfillStatus(ctx context.Context, pool *pgxpool.Pool, source model.SourceID) error {
-	rows, err := pool.Query(ctx,
-		`SELECT schema_name, table_name, status, rows_copied, estimated_rows, warn_estimated_size, warn_duration, COALESCE(error_message, '')
-		 FROM cdc.backfill_status WHERE source_id = $1 ORDER BY schema_name, table_name`, string(source))
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	fmt.Println("  Backfill je Tabelle (LH-FA-CAP-009, letzter Run; die Zeilenzahl ist geschätzt):")
-	found := false
-	for rows.Next() {
-		var (
-			schema, table, status, message string
-			copied                         int64
-			estimated                      *int64
-			warnSize, warnDuration         bool
-		)
-		if err := rows.Scan(&schema, &table, &status, &copied, &estimated, &warnSize, &warnDuration, &message); err != nil {
-			return err
-		}
-		fmt.Print(formatBackfillRun(schema, table, status, copied, estimated, warnSize, warnDuration, message))
-		found = true
-	}
-	if err := rows.Err(); err != nil {
-		return err
-	}
-	if !found {
-		fmt.Println("    (keiner — kein Backfill beantragt)")
 	}
 	return nil
 }
