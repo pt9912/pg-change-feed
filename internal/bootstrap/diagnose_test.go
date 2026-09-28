@@ -33,6 +33,25 @@ func TestDiagnoseReportsConnectionFailure(t *testing.T) {
 	}
 }
 
+// TestDiagnoseReportsDSNParseFailureAsUnreachable belegt den ersten
+// zusammengelegten Fehlerzweig (Review zu `ADR-0132`): eine syntaktisch
+// ungültige DSN scheitert bereits am Parsen, bevor ein Verbindungsversuch
+// überhaupt stattfindet — netzlos (`make test`) — und trägt dieselbe
+// Sammelmeldung wie ein Verbindungsfehler, nicht mehr die vor diesem Umbau
+// getrennte "DSN ungültig"-Zeile.
+func TestDiagnoseReportsDSNParseFailureAsUnreachable(t *testing.T) {
+	var code int
+	output := captureStderr(t, func() {
+		code = bootstrap.Diagnose(context.Background(), "keine gueltige dsn ohne gleichheitszeichen", "src-1")
+	})
+	if code != 1 {
+		t.Fatalf("Diagnose-Exit-Code = %d, wollen 1 (DSN-Parse-Fehler)", code)
+	}
+	if !strings.Contains(output, "nicht erreichbar") {
+		t.Fatalf("stderr = %q, wollen dieselbe Sammelmeldung 'nicht erreichbar' wie beim Verbindungsfehler", output)
+	}
+}
+
 const diagnoseTestSource = "src-diagnose-test"
 const diagnoseTestConsumer = "diagnose-test-consumer"
 
@@ -421,15 +440,61 @@ func diagnoseReaderDSN(t *testing.T, pool *pgxpool.Pool, baseDSN string) string 
 	return parsed.String()
 }
 
-// TestDiagnoseReportsTheLatestBackfillRunPerTable belegt die Ausgabe des
-// Backfills in `diagnose` (`LH-FA-SST-003`, `LH-FA-CAP-009`, `SPEC-029`) unter
-// der Rolle, die die Verdrahtung `diagnose` zuweist (`cdc_reader`): je Tabelle
-// der zuletzt beantragte Run mit Status, Fortschritt, **geschätzter**
-// Zeilenzahl und den zwei Kennzeichnungen; eine unbekannte Schätzung (NULL)
-// erscheint als „unbekannt“, nie als 0; ein `failed`-Run trägt seinen
-// Fehlertext und ist Berichtsinhalt (Exit 0); ein Run einer fremden Quelle
-// erscheint nicht. Rot färbende Mutationen (je eine, in
-// `diagnoseBackfillStatus`): `COALESCE(estimated_rows, 0)` in der Abfrage —
+// TestDiagnoseReportsUnreadableViewAsStorageFailure belegt den zweiten
+// zusammengelegten Fehlerzweig (Review zu `ADR-0132`): eine Login-Identität
+// ohne `cdc_reader`-Mitgliedschaft (keine `USAGE`-Berechtigung auf dem
+// Schema `cdc`) scheitert am ersten Diagnose-Lesezugriff (`cdc.heartbeat`)
+// mit einem Berechtigungsfehler, den `Diagnose` als Sammelmeldung meldet —
+// dieselbe Zeile, die jeder der übrigen fünf View-Lesefehler träfe.
+func TestDiagnoseReportsUnreadableViewAsStorageFailure(t *testing.T) {
+	baseDSN := os.Getenv("CDC_STORE_TEST_DSN")
+	if baseDSN == "" {
+		t.Skip("CDC_STORE_TEST_DSN nicht gesetzt — reale PostgreSQL-Tests laufen über make test-store")
+	}
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, baseDSN)
+	if err != nil {
+		t.Fatalf("Verbindungsaufbau: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	const login, password = "pgc_test_diagnose_no_grant", "test-login-password"
+	if _, err := pool.Exec(ctx, "DROP ROLE IF EXISTS "+login); err != nil {
+		t.Fatalf("Vorab-Aufräumen der Login-Identität: %v", err)
+	}
+	if _, err := pool.Exec(ctx, "CREATE ROLE "+login+" LOGIN PASSWORD '"+password+"'"); err != nil {
+		t.Fatalf("Login-Identität anlegen (ohne cdc_reader-Mitgliedschaft): %v", err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), "DROP ROLE IF EXISTS "+login) })
+
+	parsed, err := url.Parse(baseDSN)
+	if err != nil {
+		t.Fatalf("Basis-DSN nicht parsebar: %v", err)
+	}
+	parsed.User = url.UserPassword(login, password)
+
+	var code int
+	output := captureStderr(t, func() {
+		code = bootstrap.Diagnose(ctx, parsed.String(), diagnoseTestSource)
+	})
+	if code != 1 {
+		t.Fatalf("Diagnose-Exit-Code = %d, wollen 1 (Lesefehler ohne Berechtigung)", code)
+	}
+	if !strings.Contains(output, "Diagnosedaten nicht lesbar") {
+		t.Fatalf("stderr = %q, wollen die zusammengelegte Lesefehler-Zeile 'Diagnosedaten nicht lesbar'", output)
+	}
+}
+
+// TestDiagnoseReportsTheLatestBackfillRunPerTable belegt die Backfill-Zeile
+// des diagnose-Berichts (`LH-FA-CAP-009`) unter der Rolle, die die
+// Verdrahtung `diagnose` zuweist (`cdc_reader`): je Tabelle der zuletzt
+// beantragte Run mit Status, Fortschritt, **geschätzter** Zeilenzahl und den
+// zwei Kennzeichnungen; eine unbekannte Schätzung (NULL) erscheint als
+// „unbekannt“, nie als 0; ein `failed`-Run trägt seinen Fehlertext und ist
+// Berichtsinhalt (Exit 0); ein Run einer fremden Quelle erscheint nicht.
+// Rot färbende Mutationen (je eine, in
+// `PostgresDiagnosticsAdapter.Read`/`scanBackfillStatus`):
+// `COALESCE(estimated_rows, 0)` in der Abfrage —
 // die unbekannte Schätzung erscheint als 0; `WHERE source_id = $1` durch
 // `WHERE $1::text IS NOT NULL` ersetzen — die Tabelle der fremden Quelle
 // erscheint; den Fehlertext nicht ausgeben; den Exit-Code eines

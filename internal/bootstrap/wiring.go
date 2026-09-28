@@ -1927,7 +1927,11 @@ func Healthcheck(ctx context.Context, dsn string, source model.SourceID) int {
 // Backfill-Run je Tabelle. Der Befehl ist ein dünner Formatierungs-Wrapper
 // um `inbound.DiagnoseUseCase` (`ADR-0132`) — derselbe Use Case, den auch
 // der HTTP- und der gRPC-Zugriffsweg aufrufen, kein zweiter Domänenpfad;
-// der Text-Bericht bleibt gegenüber dem Stand vor diesem Umbau byte-gleich.
+// der Text-Bericht bleibt für den Erfolgspfad byte-gleich zum Stand vor
+// diesem Umbau. Zwei vormals getrennte Fehlertexte sind dabei bewusst
+// zusammengelegt: ein DSN-Parse- und ein Verbindungsfehler tragen jetzt
+// eine gemeinsame Meldung, ebenso alle sechs View-Lesefehler — je ein
+// Testfall belegt beide Sammelzweige (internal/bootstrap/diagnose_test.go).
 // Anders als `Healthcheck` trifft dieser Befehl keine binäre
 // Verdikt-Entscheidung — er gibt die Rohwerte aller Signale unverändert
 // weiter, keine Schwellenwert-Klassifikation. Der Prozess-Ausgang trägt nur
