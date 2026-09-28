@@ -64,6 +64,13 @@ und startet den Container real gegen das Docker-Netzwerk `cdc-examples` mit
 `--env-file examples/.env` (Umgebungsdatei-Kontrakt und Netzwerk legt
 `slice-beispiele-compose-bootstrap` an).
 
+`http-client` trägt zusätzlich das `-verb`-Flag (Default `tables`, die obige
+Startform bleibt unverändert funktionsfähig): `changes`, `register-consumer`,
+`acknowledge`, `consumer-position`, `remove-consumer`, `enable-table`,
+`disable-table`, `table-status` und `retention-run` rufen die übrigen neun
+dokumentierten Fähigkeiten der HTTP-/JSON-API auf, je mit den zu ihrem
+Endpunkt passenden Flags (z. B. `ARGS="-verb=changes -source <quelle>"`).
+
 ## C#
 
 Eigene Sprach-Wurzel [`csharp/`](csharp), gebaut über
