@@ -9,7 +9,7 @@ Entscheidungs-Konformität + Plan-vs-Code-Diff + Gates. Review-Artefakte:
 (0 HIGH/MEDIUM, Fixrunde bestätigt).
 
 **Gegenstand:** Slice-Plan
-[`slice-sdk-kotlin-grpc-administration-flaeche.md`](../plan/planning/in-progress/slice-sdk-kotlin-grpc-administration-flaeche.md)
+[`slice-sdk-kotlin-grpc-administration-flaeche.md`](../plan/planning/done/slice-sdk-kotlin-grpc-administration-flaeche.md)
 (Welle `welle-sdk-grpc-administration-flaeche`), Basis `76afcad4`, drei
 Slice-Commits:
 

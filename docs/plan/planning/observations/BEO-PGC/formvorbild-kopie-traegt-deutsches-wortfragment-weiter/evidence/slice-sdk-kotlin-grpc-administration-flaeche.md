@@ -3,7 +3,7 @@
 Vorgang: `slice-sdk-kotlin-grpc-administration-flaeche` — viertes Auftreten
 der Klasse, erstes in einer **Test-Fixture-Zeichenkette** statt in
 KDoc/Plan-Prosa (Kotlin-Review F-1, HIGH,
-`docs/reviews/review-sdk-kotlin-grpc-administration-flaeche.md`).
+`review-sdk-kotlin-grpc-administration-flaeche.md`).
 
 Fund: Die neue Testklasse
 `sdks/kotlin/pgchangefeed-kotlin/src/test/kotlin/io/github/pt9912/pgchangefeed/grpc/PgChangeFeedAdministrationClientErrorMappingTest.kt`

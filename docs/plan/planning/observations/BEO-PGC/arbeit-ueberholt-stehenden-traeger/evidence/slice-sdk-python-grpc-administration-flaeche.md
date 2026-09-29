@@ -2,7 +2,7 @@
 
 Vorgang: `slice-sdk-python-grpc-administration-flaeche` — der
 Python-Verifikations-Report
-(`docs/reviews/verifikation-slice-sdk-python-grpc-administration-flaeche.md`,
+(`verifikation-slice-sdk-python-grpc-administration-flaeche.md`,
 V-1, MEDIUM) führt die Klasse an: der Träger liegt diesmal in der Datei,
 die der Zug selbst berührt hat.
 

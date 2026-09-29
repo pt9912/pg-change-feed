@@ -2,7 +2,7 @@
 
 Vorgang: `slice-sdk-kotlin-grpc-administration-flaeche` — Erstauftreten
 der Klasse, befundet als F-4 (INFO) im
-`docs/reviews/review-sdk-kotlin-grpc-administration-flaeche.md`,
+`review-sdk-kotlin-grpc-administration-flaeche.md`,
 ausdrücklich als Prozess-Beobachtung an die Welle-Closure übergeben.
 
 Fund: `b239d849` (Betreff: „plan(slice): DoD, Suchlauf und Closure-Notiz

@@ -2,7 +2,7 @@
 
 Vorgang: `slice-sdk-kotlin-grpc-administration-flaeche` — Erstauftreten
 der Klasse, befundet als V-1 (MEDIUM) im
-`docs/reviews/verifikation-slice-sdk-kotlin-grpc-administration-flaeche.md`.
+`verifikation-slice-sdk-kotlin-grpc-administration-flaeche.md`.
 
 Fund: Die `@Test`-Methode
 `PgChangeFeedAdministrationClientTableTest.disableTable table missing at

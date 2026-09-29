@@ -9,7 +9,7 @@ Plan-vs-Code-Diff + Gates. Review-Artefakte des Reviewers:
 (0 HIGH/MEDIUM).
 
 **Gegenstand:** Slice-Plan
-[`slice-sdk-python-grpc-administration-flaeche.md`](../plan/planning/in-progress/slice-sdk-python-grpc-administration-flaeche.md)
+[`slice-sdk-python-grpc-administration-flaeche.md`](../plan/planning/done/slice-sdk-python-grpc-administration-flaeche.md)
 (Welle `welle-sdk-grpc-administration-flaeche`), Parent `fd39b68b`, die fünf
 Python-relevanten Commits seit dem Parent:
 
