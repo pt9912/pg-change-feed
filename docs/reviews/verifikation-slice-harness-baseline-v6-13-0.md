@@ -70,7 +70,7 @@ an die §7-Closure übergeben. **Keine unbenannte Erweiterung.**
 
 ## 4. Entscheidungs-Konformität
 
-- **ADR-0095-Zitat-Korrektur (`00d96eb7`, `5bb4eabc`).** Diff geprüft: nur das
+- **[ADR-0095](../plan/adr/0095-review-klasse-exempt-status-check.md)-Zitat-Korrektur (`00d96eb7`, `5bb4eabc`).** Diff geprüft: nur das
   Versions-Pfadsegment in §Verglichene Alternativen Option A geändert, die
   Aussage unverändert. Referent eigenständig geprüft: die
   v6.13.0-Vorlage `templates/.d-check.yml` trägt
@@ -79,7 +79,7 @@ an die §7-Closure übergeben. **Keine unbenannte Erweiterung.**
   Beide Commits nennen [`ADR-0073`](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
   im Subject; die §Geschichte-Zeile (2026-09-29, Zitat-Korrektur, `00d96eb`)
   ist gesetzt. Die im Audit §4.2 dokumentierte Spanne zu `AGENTS.md` §3.5
-  (Sektionen-Liste „nie" vs ADR-0073-Kurzform „Gerüst ja, Aussage nie") ist
+  (Sektionen-Liste „nie" vs [ADR-0073](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)-Kurzform „Gerüst ja, Aussage nie") ist
   mit Lesart und Folge-Träger (Beobachtungs-Eintrag, Planner bei Closure;
   engere Lesart — Folge-ADR — für neue Fälle) getragen; die ADR selbst bleibt
   unberührt. Konform.
@@ -126,6 +126,8 @@ Referent-Grenze ein.
 
 **Übergabe:** an den Planner — Slice-Closure (DoD 7–10, §7 mit
 Steering-Loop-Eintrag, Risiko-Ausgänge, drei Paarungen; F-2/F-3/F-5 als
-Closure-Punkte, `BEO-PGC`-Eintrag zur ADR-0073/§3.5-Spanne öffnen, `git mv`
+Closure-Punkte, `BEO-PGC`-Eintrag zur
+[ADR-0073](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)/§3.5-Spanne
+öffnen, `git mv`
 nach `done/`). Dieser Report ist ein **Lauf-Beleg** (dieser Stand, dieser
 Lauf) und ersetzt weder Review noch Closure.
