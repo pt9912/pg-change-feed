@@ -64,8 +64,12 @@ Beispiel-Client-Vorbild `grpc_client.py` im Bau aus der `.proto`).
       Parameter, `None`/leer = ungefiltert (Regressionstest für den
       parameterlosen Aufruf, drei neue Filter-Tests in `test_grpc_client.py`).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`), kein Self-Review.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`), kein Self-Review —
+      `docs/reviews/review-sdk-python-grpc-administration-flaeche.md` (1
+      HIGH, Fixrunde) und
+      `docs/reviews/review-fixrunde-welle-sdk-grpc-administration-flaeche.md`
+      (0 HIGH/MEDIUM, Fixrunde bestätigt).
 - [x] `docs/user/benutzerhandbuch.md`: beide gRPC-Abschnitte nennen Python
       jetzt mit der vollen Fläche; Versionshistorie nachgezogen.
       `sdks/python/README.md` nachgezogen.

@@ -66,8 +66,12 @@ Import-Form, statt sie erneut zu entdecken.
       Parameter, leer = ungefiltert (Regressionstest für den parameterlosen
       Aufruf).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`), kein Self-Review.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`), kein Self-Review —
+      `docs/reviews/review-sdk-kotlin-grpc-administration-flaeche.md` (1
+      HIGH, Fixrunde) und
+      `docs/reviews/review-fixrunde-welle-sdk-grpc-administration-flaeche.md`
+      (0 HIGH/MEDIUM, Fixrunde bestätigt).
 - [x] `docs/user/benutzerhandbuch.md`: beide gRPC-Abschnitte nennen Kotlin
       jetzt mit der vollen Fläche — mit dieser Zeile ist die Drei-Sprachen-
       SDK-Matrix für die gRPC-Verwaltungs-API vollständig; Versionshistorie
