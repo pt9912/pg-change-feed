@@ -5,7 +5,7 @@
 Entscheidungs-Konformität + Plan-vs-Code-Diff + Gates.
 
 **Gegenstand:** Slice-Plan
-[`slice-harness-baseline-v6-13-0.md`](../plan/planning/in-progress/slice-harness-baseline-v6-13-0.md),
+[`slice-harness-baseline-v6-13-0.md`](../plan/planning/done/slice-harness-baseline-v6-13-0.md),
 Range `7103ad59..6ed5c4d9` (10 Commits). Rollenzug:
 
 - Architect: `d443ee39` (Bundle v6.13.0), `ad530688` (Drift-Audit),
