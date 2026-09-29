@@ -10,7 +10,8 @@ DoD-Verifikation — das ist die Aufgabe des Verifiers (Modul 11).
 (Werkzeug-Erweiterung + Tabellentests + Plan-Nachzug Messraum-Entscheidung),
 die Tranchen `279e6416` (T1 Shell), `9cac13d0` (T2 YAML), `357b482c` (T3
 Make), `58b9e415` (T4 SQL), `dd681e1f` (T5 Dockerfile) und `b16831d5`
-(T2–T5-Rest, Träger-Nachzug Sensor-Vertrag/README, Suchlauf-Feld).
+(T2–T5-Rest, Träger-Nachzug Sensor-Vertrag/README, Suchlauf-Feld); nach
+Fixrunde `754f0558`.
 
 **Skill:** `.harness/skills/reviewer.md` (geschärft 2026-09-09) ·
 **Modell:** GLM (Claude-Agent-SDK, Typ `reviewer`) · **Datum:** 2026-09-29
@@ -31,6 +32,9 @@ Make), `58b9e415` (T4 SQL), `dd681e1f` (T5 Dockerfile) und `b16831d5`
 ---
 
 ## Findings
+
+*(Stand des Erst-Reviews, Diff `cd3a1c60..b16831d5`; der Stand nach der
+Fixrunde steht im Abschnitt „Fixrunde-Prüfung".)*
 
 ### F-1 — Sensor-Vertrag: Grenze 2 widerspricht der erweiterten Messform im selben Träger
 
@@ -164,6 +168,45 @@ Make), `58b9e415` (T4 SQL), `dd681e1f` (T5 Dockerfile) und `b16831d5`
   entfernen: kein Test wird rot)
 - `klasse`: „Grenzfallestreuung unter Formen"
 
+## Fixrunde-Prüfung (`754f0558`, 2026-09-29)
+
+Je Finding nachgemessen bzw. nachgelesen; die Fixrunde bestätigt alle sechs:
+
+- **F-1 — bestätigt (behoben).** Grenze 2 ist auf „Nur Code- und
+  Konfig-Kommentare, keine Prosa" gestellt, nennt d-check `ids` als
+  Prosa-Ebene und die Ausnahmen `gen/**`/`.harness/**` — konsistent mit dem
+  Kandidat-Abschnitt; der §Test-Abschnitt zählt die Nicht-Go-Fälle auf
+  (Form-Auswahl, Blockgrenze, Baum-Lauf, Diff-Modus). Nachgelesen am
+  Stand `754f0558`.
+- **F-2 — bestätigt (behoben).** Der Plan-Basismessung-Satz trägt jetzt beide
+  Instrumente (149 mit `89d4fa3e`, **160** mit dem finalen Werkzeug am selben
+  Stand — 160 gegen meine eigene Messung bestätigt), nennt die Grenz-Marker-
+  Regel als Instrument-Anteil und führt den Schwellen-Ausgang (160 > ~150)
+  für §7.
+- **F-3 — bestätigt (behoben, Rest unten).** Die Pfadspec des Wrappers liest
+  die sechs Nicht-Go-Formen mit (`.sh`, `.mk`, `.yml`, `.yaml`, `.sql`,
+  `Makefile`, `Dockerfile`, `**/Dockerfile`). Mechanisch reproduziert: ein
+  frisch hinzugefügter Shell-Block mit zwei Kennungen erscheint im
+  DIFF-Lauf (`probe.sh:1-1  ADR-0001, ADR-0002`). Verbleibend: die
+  Vertragszeile `DIFF=<Basis>` dokumentiert als Eingabe noch
+  `git diff -U0 <Basis> -- '*.go'` — stumm gegen die erweiterte Wrapperspec
+  (LOW-Rest, s. „Verbleibende Risiken").
+- **F-4 — bestätigt (behoben).** Die unstimmige je-Form-Aufzählung ist
+  entfernt; die Basismessung trägt nur noch die Totalen mit Instrument-Label
+  (die per-Form-Zahlen dieses Reviews: sh 62/59, yml 19/21, sql 15/25, mk 14,
+  yaml 13/15, Makefile 4, Dockerfile-Familie 8 — alt/finalem Instrument).
+- **F-5 — bestätigt (behoben).** Die False-positive-Klassen (YAML-Blockskalare,
+  Shell-Heredocs, SQL-Zeichenketten) sind in Grenze 2 benannt, mit Geltung
+  („neue Fälle sind Befund") — der Ort, an den der Erst-Befund verwies.
+- **F-6 — bestätigt (behoben).** `TestLineBlocks` trägt den nur-marker-
+  Grenzfall jetzt zusätzlich mit SQL-Marker (Fall „nur-Marker-Zeile ist
+  Grenz-Marker (SQL)").
+
+**Sensors nach der Fixrunde (Exit direkt gelesen, `AGENTS.md` §3.9):**
+`make test` Exit 0 · `make fmt-check` Exit 0 · `make suchlauf-nachmessen`
+2/2 OK, Exit 0 · `make kommentar-kennungen COUNT=1` = 14, Exit 0 ·
+DIFF-Probe (siehe F-3) — Nicht-Go-Kandidat wird gemeldet.
+
 ## Negativbefunde
 
 - geprüft, ohne Befund: **Messstand** — `make kommentar-kennungen COUNT=1` =
@@ -204,17 +247,17 @@ Make), `58b9e415` (T4 SQL), `dd681e1f` (T5 Dockerfile) und `b16831d5`
   ([ADR-0002](../plan/adr/0002-abhaengigkeitsrichtung.md)
   Abhängigkeitsrichtung, 0076/0079 gegen Existenz).
 - geprüft, ohne Befund: **Chronik-/Vorher-Nachher-Sprache in +Zeilen** —
-  Mustersuche über alle +Zeilen: drei Treffer, keiner Chronik („make image
-  vorher" = zeitliche Anweisung; „künftige Changes" = Zustandsbeschreibung;
-  README-Sensors-Zeile trägt den erlaubten Herkunfts-Anker „· seit
-  slice-kommentar-kennungen-skripte").
+  Mustersuche über alle +Zeilen (inkl. Fixrunde `754f0558`): Treffer nur als
+  Zustandsbeschreibung oder erlaubter Herkunfts-Anker („· seit
+  slice-kommentar-kennungen-skripte" in der README-Sensors-Zeile).
 - geprüft, ohne Befund: **Suchlauf-Feld** — `make suchlauf-nachmessen
   PLAN=docs/plan/planning/in-progress/slice-kommentar-kennungen-skripte.md`:
-  2/2 Zeilen OK (506 @ `89d4fa3e`, 350 Arbeitsbaum), Exit 0.
+  2/2 Zeilen OK (506 @ `89d4fa3e`, 350 Arbeitsbaum), Exit 0 — auch nach der
+  Fixrunde.
 - geprüft, ohne Befund: **Sensors** — `make test` (Exit 0, ungefiltert
-  gesichert), `make fmt-check` (295 Go-Dateien, alle formatiert, Exit 0),
+  gesichert; vor und nach der Fixrunde), `make fmt-check` (Exit 0),
   `make a-check` (0 Befunde, Exit 0 — berührt, weil `.a-check.yml` im Diff
-  ist), `make kommentar-kennungen` (5 Läufe, s. o.).
+  ist), `make kommentar-kennungen` (7 Läufe, s. o.).
 - geprüft, ohne Befund: **Docker-only** — der Diff führt keine
   Host-Toolchain, keine in-place-Umschreibung und keine Umleitung auf
   Repo-Dateien ein; die Werkzeug-Tests laufen im gepinnten Toolchain-Container
@@ -222,12 +265,11 @@ Make), `58b9e415` (T4 SQL), `dd681e1f` (T5 Dockerfile) und `b16831d5`
 
 ## Summary
 
-| Kategorie | Anzahl |
-|---|---|
-| HIGH | 0 |
-| MEDIUM | 3 |
-| LOW | 3 |
-| INFO | 0 |
+| Kategorie | Anzahl (vor Fixrunde) | nach Fixrunde |
+|---|---|---|
+| HIGH | 0 | 0 |
+| MEDIUM | 3 | 0 |
+| LOW | 3 | 0 (Reste: „Verbleibende Risiken") |
 
 **Finding-Klassen dieses Laufs:** „Nachzug widerspricht dem Nachbarn im
 selben Träger" (1×) · „Messwerkzeugwechsel in Tranche — Zahlen nicht
@@ -237,33 +279,20 @@ des Sensors unbenannt" (1×) · „Grenzfallestreuung unter Formen" (1×)
 
 ## Verdikt
 
-**Merge-blockierend:** ja — F-1, F-2 und F-3 (MEDIUM) ziehen eine Fixrunde
-am Implementer nach sich; der Slice-Closure-Trigger („Review ohne offenes
-HIGH/MEDIUM") ist sonst nicht erfüllt. Der Gegenstand ist schmal:
+**Merge-blockierend: nein (nach Fixrunde).** Alle drei MEDIUM- und drei
+LOW-Findings sind durch `754f0558` behoben und von mir gegen die eigenen
+Messungen bestätigt (Fixrunde-Prüfung oben); die Sensor-Läufe nach der
+Fixrunde sind grün (Exit-Codes direkt gelesen).
 
-- F-1: Grenze 2 und der §Test-Abschnitt im Sensor-Vertrag an die erweiterte
-  Messform anpassen (der Kandidat-Abschnitt trägt die Definition bereits
-  korrekt).
-- F-2: die Basismessung im Plan mit dem Instrument labeln (Werkzeugstand
-  `89d4fa3e`) oder mit dem finalen Werkzeug neu messen (160) und den
-  Schwellen-Ausgang („~150", Rückführung §4) darauf neu feststellen; die
-  Grenz-Marker-Regel im Plan-Nachzug nennen.
-- F-3: entscheiden — entweder Pfadspec und §Wer-es-aufruft auf die
-  Nicht-Go-Formen nachziehen oder die Schranke als Grenze in den Vertrag
-  schreiben.
+**Verbleibende Risiken (nicht merge-blockierend):**
 
-Die DoD-Zeile „Review durchgeführt, Report unter `docs/reviews/` liegt vor"
-bleibt offen: es gibt Fixrunde-Findings, der Nachzug läuft regulär bei
-Schritt 21 des Implementer-Workflows.
-
-**Übergabe:** Findings gehen an den Implementer (Fixrunde); die
-Finding-Klassen gehen zusätzlich in die Slice-Closure §7 und von dort in den
-Steering-Loop-Zähler (neu: „Messwerkzeugwechsel in Tranche — Zahlen nicht
-komparabel", „Messform erweitert, Aufrufer-Pfadspec nicht nachgezogen" —
-je 1×, erstes Auftreten). Dieser Report ist ein Lauf-Beleg.
-
-**Verbleibende Risiken (nicht Findings):**
-
+- Die Vertragszeile `DIFF=<Basis>` dokumentiert als Eingabe noch
+  `git diff -U0 <Basis> -- '*.go'` — die Wrapperspec liest seit der Fixrunde
+  mehr; ein Leser, der die Eingabe nachbaut, filtert die Nicht-Go-Formen
+  wieder heraus (LOW-Rest; eine Zeile im Sensor-Vertrag, für §7).
+- Pfadspec-Restlücke: ein künftiges `Dockerfile.<Variante>` (das Werkzeug
+  matcht das Namens-Präfix) würde baumseitig gelesen, im DIFF-Modus aber von
+  keiner Pathspec-Form erfasst; im Bestand existiert keine solche Datei.
 - Die Zahl „11 gemessene Ketten, 5 Shell + 6 Makefile" (Plan §3-Nachzug,
   nachgestellte Kommentare) ist nicht unabhängig nachgemessen — das
   Zählprogramm für „Kette" ist nicht definiert; sie stützt keine Entscheidung.
@@ -271,3 +300,10 @@ je 1×, erstes Auftreten). Dieser Report ist ein Lauf-Beleg.
   Kennungen in `test/integration` bewegt sie; die Ausnahme in `AGENTS.md`
   §3.7 trägt den Umfang („Godocs der `func TestE2E*`"), ein Gate hält ihn
   nicht.
+
+**Übergabe:** die Finding-Klassen gehen in die Slice-Closure §7 und von dort
+in den Steering-Loop-Zähler (neu: „Messwerkzeugwechsel in Tranche — Zahlen
+nicht komparabel", „Messform erweitert, Aufrufer-Pfadspec nicht nachgezogen",
+„Aufzählung trägt die Summe nicht", „Grenze des Sensors unbenannt",
+„Grenzfallestreuung unter Formen" — je 1×, erstes Auftreten). Dieser Report
+ist ein Lauf-Beleg.
