@@ -246,9 +246,9 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
    Das Paket trägt **49 von 49** Statements gedeckt (Lauf `slice-094`): auch die
    vier Sondermodi werden gefahren, mit vollständiger Umgebung und nicht
    erreichbarer Instanz, und enden am Verbindungsaufbau ihrer eigenen Rolle
-   (`ADR-0047`, `ReaderDSN` bzw. `AdminDSN`) — die Aufrufe `main.go:44`
-   (`Healthcheck`), `:62` (`RegisterConsumer`), `:86` (`AcknowledgeConsumer`)
-   und `:101` (`Diagnose`) sind netzlos erreichbar. Dienstgebunden ist der
+   (`ADR-0047`, `ReaderDSN` bzw. `AdminDSN`) — die Aufrufe `main.go:50`
+   (`Healthcheck`), `:68` (`RegisterConsumer`), `:92` (`AcknowledgeConsumer`)
+   und `:107` (`Diagnose`) sind netzlos erreichbar. Dienstgebunden ist der
    **Rumpf** dieser vier Funktionen, nicht ihr Aufruf.
 
    **`gen/cdc/stream/v1` ist keins dieser drei Pakete.**
