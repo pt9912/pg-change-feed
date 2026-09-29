@@ -97,6 +97,7 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 		Tables: map[string]mapper.TableBinding{
 			feed: {TableID: tableID, SchemaVersion: schemaV},
 		},
+		Log: diagLogger{t},
 	})
 	if err != nil {
 		t.Fatalf("erster Stream: %v", err)
@@ -198,4 +199,23 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatalf("Retry-Zyklus endet nach Kontext-Ende nicht")
 	}
+}
+
+// diagLogger trägt die Log-Ausgabe des untersuchten Streams in den Test-Log.
+type diagLogger struct{ t *testing.T }
+
+func (l diagLogger) Debug(_ context.Context, msg string, args ...any) {
+	l.t.Logf("DEBUG %s %v", msg, args)
+}
+
+func (l diagLogger) Info(_ context.Context, msg string, args ...any) {
+	l.t.Logf("INFO %s %v", msg, args)
+}
+
+func (l diagLogger) Warn(_ context.Context, msg string, args ...any) {
+	l.t.Logf("WARN %s %v", msg, args)
+}
+
+func (l diagLogger) Error(_ context.Context, msg string, args ...any) {
+	l.t.Logf("ERROR %s %v", msg, args)
 }
