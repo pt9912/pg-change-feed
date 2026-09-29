@@ -11,7 +11,7 @@ import (
 )
 
 // Die Zeilen-Übersetzung läuft ohne PostgreSQL-Instanz: die
-// Positions-Abbildung (`SPEC-003`) und die Bild-Form (`SPEC-002`) sind
+// Positions-Abbildung (`SPEC-003`) und die Bild-Form sind
 // reine Übersetzungsregeln und tragen ihre Grenzen ohne Treiber.
 
 // Eine Position im bigint-Bereich trägt ihre Abbildung in beide
@@ -161,7 +161,7 @@ func TestToChangeCarriesSchemaAndTable(t *testing.T) {
 
 // Ein fehlendes Bild und ein leeres Byte-Slice sind Abwesenheit und lesen
 // sich beide als NULL; ein nicht-leeres Bild geht als JSON-Text in die
-// `jsonb`-Spalte (`SPEC-002`, `LH-FA-CAP-008` Boundary).
+// `jsonb`-Spalte (`SPEC-002`).
 func TestJSONImageCarriesAbsenceAndText(t *testing.T) {
 	if got := mapper.JSONImage(nil); got != nil {
 		t.Fatalf("JSONImage(nil) = %v, wollen nil (Abwesenheit)", got)

@@ -127,8 +127,8 @@ func TestNotifyWrapsPublishFailureAsTransient(t *testing.T) {
 }
 
 // TestNotifyPublishesEmptyPayloadOnSubject trägt den echten
-// Publish-Erfolgsbeleg gegen einen laufenden NATS-Server (`SPEC-017`,
-// `ADR-0056`): Subjekt-Schema `cdc.changes.<source_id>.<schema>.<table>`,
+// Publish-Erfolgsbeleg gegen einen laufenden NATS-Server (`SPEC-017`):
+// Subjekt-Schema `cdc.changes.<source_id>.<schema>.<table>`,
 // leerer Payload — kein Change-Inhalt, keine Positionsangabe. Läuft nur
 // über `make test-notify` (`CDC_NATS_TEST_URL` gesetzt); ohne Server
 // übersprungen.
@@ -172,7 +172,7 @@ func TestNotifyPublishesEmptyPayloadOnSubject(t *testing.T) {
 	}
 }
 
-// recordingLog trägt den `LogPort` der Tests (`LH-QA-OPS-004`, `ADR-0024`):
+// recordingLog trägt den `LogPort` der Tests (`ADR-0024`):
 // er hält die Aufrufe fest, ohne sie auszugeben.
 type recordingLog struct {
 	infos  []string
@@ -191,7 +191,7 @@ func (l *recordingLog) Error(_ context.Context, msg string, _ ...any) {
 var _ outbound.LogPort = (*recordingLog)(nil)
 
 // TestNewWithLogReichtDenLogPortDurch trägt beide Kettenglieder der
-// Konstruktions-Option (`ADR-0024`, `LH-QA-OPS-004`): der über `WithLog`
+// Konstruktions-Option (`ADR-0024`): der über `WithLog`
 // übergebene `LogPort` ist der, über den der Adapter protokolliert —
 // erstens im Konstruktionsaufruf selbst, zweitens von seinem **Adapterfeld**
 // aus an einem späteren Aufruf (`notifyFailure`). Das zweite Glied ist das

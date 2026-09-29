@@ -17,7 +17,8 @@ import (
 // Die natsstream-Adapter-Tests tragen die beiden Regressionsklassen aus
 // `ADR-0100` §Fitness Function, die dieses Paket netzlos (`make test`)
 // tragen kann: die Subjekt-Wurzel `cdc.stream` (niemals `cdc.changes`,
-// Abgrenzung gegen `ADR-0056`s Wecksignal-Namensraum) und die
+// Abgrenzung gegen den Wecksignal-Namensraum des `natsnotify`-Adapters)
+// und die
 // Fire-and-Forget-Eigenschaft (ein Publish ohne verbundenen NATS-Server
 // blockiert nicht). Der reale Empfangsbeleg gegen einen laufenden
 // NATS-Server (ein abonnierter Test-Client erhält das vollständige
@@ -72,7 +73,7 @@ func testChange(t *testing.T) *model.Change {
 	return &change
 }
 
-// recordingLog trägt den `LogPort` der Tests (`LH-QA-OPS-004`, `ADR-0024`):
+// recordingLog trägt den `LogPort` der Tests (`ADR-0024`):
 // er hält die Aufrufe fest, ohne sie auszugeben.
 type recordingLog struct {
 	infos []string
@@ -118,8 +119,7 @@ func TestNewRequiresSourceID(t *testing.T) {
 // TestSubjectRootIsNeverCdcChanges trägt die erste Regressionsklasse aus
 // `ADR-0100` §Fitness Function: das publizierte Subjekt trägt den
 // Wurzel-Token `cdc.stream`, niemals `cdc.changes` — Regressionstest gegen
-// eine versehentliche Kollision mit dem Wecksignal-Namensraum aus
-// `ADR-0056`.
+// eine versehentliche Kollision mit dem Wecksignal-Namensraum.
 //
 // Rot färbende Mutation: `subjectPrefix` auf `"cdc.changes."` ändern —
 // dieser Test färbt sofort rot.
@@ -258,7 +258,7 @@ func TestPublishSkipsUnusableSubjectName(t *testing.T) {
 }
 
 // TestToStreamMessageCarriesAllTenFields trägt die Nachrichtenform
-// (`SPEC-021`/`SPEC-024`): dieselben zehn Felder wie `model.Change` ohne
+// (`SPEC-024`): dieselben zehn Felder wie `model.Change` ohne
 // `Origin`, ein fehlendes Row Image wird zu JSON `null`.
 func TestToStreamMessageCarriesAllTenFields(t *testing.T) {
 	change := testChange(t)
@@ -291,7 +291,7 @@ func TestToStreamMessageCarriesAllTenFields(t *testing.T) {
 }
 
 // TestNewWithLogReichtDenLogPortDurch trägt beide Kettenglieder der
-// Konstruktions-Option (`ADR-0024`, `LH-QA-OPS-004`): der über `WithLog`
+// Konstruktions-Option (`ADR-0024`): der über `WithLog`
 // übergebene `LogPort` ist der, über den der Publisher protokolliert —
 // erstens im Konstruktionsaufruf, zweitens von seinem Adapterfeld aus an
 // einem späteren Aufruf.

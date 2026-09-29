@@ -21,7 +21,7 @@ import (
 // Die Consumer-State-Tests laufen gegen dieselbe reale PostgreSQL-Instanz
 // wie die Store-Tests (`make test-store`, `ADR-0030`); ohne DSN
 // überspringen sie. Die Consumer-State-Tabellen (`cdc.consumer`,
-// `cdc.consumer_position`) trägt der d-migrate-Rollout (`ADR-0043`) — die
+// `cdc.consumer_position`) trägt der d-migrate-Rollout — die
 // handgeschriebene DDL des Store-Adapters trägt sie nicht; der
 // `test-store`-Lauf rollt das Schema vor dem Testlauf aus.
 const (
@@ -177,8 +177,7 @@ func TestAcknowledgeCarriesPosition(t *testing.T) {
 }
 
 // TestAcknowledgeIsMonotonic trägt den monotonen ACK-Vertrag
-// (`ADR-0029`, Regel 2; `LH-FA-CON-003` Boundary, `LH-FA-CON-004`
-// Boundary): eine frühere Position endet über die Invariante, die
+// (`ADR-0029`, Regel 2): eine frühere Position endet über die Invariante, die
 // Wiederholung derselben Position ist idempotent, der gespeicherte
 // Fortschritt bleibt bei der abgewiesenen Bestätigung stehen.
 func TestAcknowledgeIsMonotonic(t *testing.T) {
@@ -221,7 +220,7 @@ func TestAcknowledgeIsMonotonic(t *testing.T) {
 }
 
 // TestAcknowledgeLockCarriesConcurrentOrdering trägt die Zeilen-Sperre
-// unter Konkurrenz (`LH-FA-CON-002`, `ADR-0029` Regel 2): die zweite
+// unter Konkurrenz (`ADR-0029` Regel 2): die zweite
 // Bestätigung desselben Consumers blockiert am gesperrten Lese, liest
 // nach dem Commit des Vorwärts-Laufs dessen fortgeschriebenen Stand und
 // endet über die Invariante — der Stand des Vorwärts-Laufs bleibt
@@ -297,7 +296,7 @@ func TestAcknowledgeLockCarriesConcurrentOrdering(t *testing.T) {
 }
 
 // TestAcknowledgeCarriesSourceBinding trägt die Quell-Bindung der
-// bestätigten Position (`ADR-0005`): die erste Bestätigung bindet die
+// bestätigten Position: die erste Bestätigung bindet die
 // Quelle, eine Position einer anderen Quelle ist keine
 // Bestätigungs-Größe (`ADR-0029` Regel 2 über die Domänen-Ordnung).
 func TestAcknowledgeCarriesSourceBinding(t *testing.T) {
@@ -472,7 +471,7 @@ func TestRemoveCarriesConsumerAndPosition(t *testing.T) {
 // die Domänen-Invarianten (`ADR-0029`) — bei Register über den
 // Domänen-Konstruktor, dieselbe Grenze wie bei Position, Acknowledge und
 // Remove; ein Offset außerhalb des bigint-Bereichs endet über die
-// PostgreSQL-Abbildung (`SPEC-003`).
+// PostgreSQL-Abbildung.
 func TestConsumerStateCarriesContractBounds(t *testing.T) {
 	adapter, _ := newTestConsumerState(t)
 	ctx := context.Background()

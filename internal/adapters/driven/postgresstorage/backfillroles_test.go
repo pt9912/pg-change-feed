@@ -14,8 +14,7 @@ import (
 )
 
 // Die Rollen-Tests dieser Datei führen die drei Backfill-Adapter unter der
-// Rolle, die die Verdrahtung ihnen zuweist (`ADR-0113` Festlegung 1,
-// `ADR-0047`, `LH-QA-SEC-001`, `LH-QA-SEC-002`): die Annahme als
+// Rolle, die die Verdrahtung ihnen zuweist (`ADR-0113` Festlegung 1): die Annahme als
 // `cdc_admin`-Login, der Run-Zustand und der Schreiber als
 // `cdc_capture`-Login — beide ohne Superuser-Recht und ohne Eigentum an
 // einem `cdc`-Objekt. Die Rollen-Tests in `roles_test.go` führen rohe

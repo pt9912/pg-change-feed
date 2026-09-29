@@ -10,8 +10,8 @@ import (
 )
 
 // Die Rollen-Tests belegen die Least-Privilege-Trennung nach
-// LH-QA-SEC-001…003 gegen die reale PostgreSQL-Instanz (`make test-store`,
-// `ADR-0030`); ohne DSN überspringen sie. Die drei Rollen (`cdc_capture`,
+// `LH-QA-SEC-001` gegen die reale PostgreSQL-Instanz (`make test-store`);
+// ohne DSN überspringen sie. Die drei Rollen (`cdc_capture`,
 // `cdc_admin`, `cdc_reader`) trägt der d-migrate-Rollout
 // (`tools/schema/nacharbeit-roles.sql`), dieselbe Kette wie die drei
 // Lese-Views (`sqlviews_test.go`).
@@ -65,7 +65,7 @@ func permissionDenied(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "SQLSTATE 42501")
 }
 
-// TestCdcCaptureRoleWritesChangesNotSchema belegt LH-QA-SEC-001/002:
+// TestCdcCaptureRoleWritesChangesNotSchema belegt LH-QA-SEC-001:
 // cdc_capture trägt den Erfassungspfad (INSERT auf transaction), aber
 // keine Verwaltungsrechte (INSERT auf source_table bleibt cdc_admin
 // vorbehalten).
@@ -101,7 +101,7 @@ func TestCdcCaptureRoleWritesChangesNotSchema(t *testing.T) {
 	}
 }
 
-// TestCdcAdminRoleManagesSchemaNotChanges belegt LH-QA-SEC-001/002:
+// TestCdcAdminRoleManagesSchemaNotChanges belegt LH-QA-SEC-001:
 // cdc_admin trägt den Registrierungspfad (INSERT auf source_table), aber
 // keinen Erfassungszugriff (INSERT auf change bleibt cdc_capture
 // vorbehalten) — Admin ersetzt Capture nicht, dieselbe Trennung in beide
@@ -322,7 +322,7 @@ func TestCdcReaderRoleReadsViewsNotBaseTables(t *testing.T) {
 }
 
 // TestMetricsViewCarriesConsumerLag belegt das Metriken-Minimum
-// (LH-FA-SST-004/LH-QA-OPS-003, SPEC-009): cdc_consumer_lag trägt die
+// (LH-FA-SST-004): cdc_consumer_lag trägt die
 // Differenz aus bestätigter und letzter Commit-Position je Consumer,
 // dieselbe Rechnung wie cdc.consumer_status.
 func TestMetricsViewCarriesConsumerLag(t *testing.T) {
@@ -364,8 +364,8 @@ func TestMetricsViewCarriesConsumerLag(t *testing.T) {
 	}
 }
 
-// TestMetricsViewCarriesStorageBytes belegt LH-FA-RET-006 (SPEC-009
-// cdc_storage_bytes): cdc.metrics trägt einen realen, positiven Wert für
+// TestMetricsViewCarriesStorageBytes belegt LH-FA-RET-006
+// (cdc_storage_bytes): cdc.metrics trägt einen realen, positiven Wert für
 // die physische Speichergröße von cdc.change über pg_relation_size, nach
 // dem Einfügen einer vollständigen Change-Zeile (Transaktion,
 // Tabellen-/Schema-Referenz, Change selbst) — ein numerischer Wert, kein
@@ -417,7 +417,7 @@ func TestMetricsViewCarriesStorageBytes(t *testing.T) {
 }
 
 // Die drei Tests unten belegen den Rollenschnitt auf `cdc.backfill_run`
-// (`SPEC-029`, `ADR-0113` Festlegung 1, `LH-QA-SEC-001`…`003`) je Rolle
+// (`ADR-0113` Festlegung 1) je Rolle
 // real: was die Rolle darf, gelingt; was sie nicht darf, scheitert mit
 // SQLSTATE 42501. Rot färbende Mutation je Zeile der Grants in
 // `tools/schema/nacharbeit-roles.sql`: `INSERT` an `cdc_capture`, `UPDATE`
@@ -554,7 +554,7 @@ func TestCdcReaderRoleReadsTheBackfillRunThroughTheStatusView(t *testing.T) {
 }
 
 // Die Tests unten belegen den Rollenschnitt auf
-// `cdc.administration_request` (`ADR-0050`, `LH-QA-SEC-001`…`003`) je Rolle
+// `cdc.administration_request` (`ADR-0050`) je Rolle
 // real: `cdc_admin` liest und vermerkt Anträge (`SELECT`, `UPDATE`), legt
 // keine an und löscht keine; `cdc_capture` und `cdc_reader` tragen kein
 // Recht auf die Tabelle. Rot färbende Mutation je Zeile der Grants in

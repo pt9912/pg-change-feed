@@ -181,7 +181,7 @@ func count(t *testing.T, pool *pgxpool.Pool, statement string, args ...any) int 
 	return n
 }
 
-// Idempotenz (`ADR-0011`, `LH-QA-REL-001.a`): dieselbe committed
+// Idempotenz (`ADR-0011`): dieselbe committed
 // Transaktion erneut persistiert — der Crash zwischen Persistenz und ACK
 // wiederholt sie — ändert keinen Stand und meldet keinen Fehler; die
 // Deduplizierungsbasis trägt die interne Transaktions-ID.
@@ -289,8 +289,8 @@ func TestReadIsDeterministicallySorted(t *testing.T) {
 	}
 }
 
-// Lesen ab bekannter Position (`LH-FA-REA-002`) und Bereich
-// (`LH-FA-REA-001`): `[p1, p2)` ist start-inklusiv und end-exklusiv, ein
+// Lesen ab bekannter Position und Bereich (`LH-FA-REA-001`): `[p1, p2)`
+// ist start-inklusiv und end-exklusiv, ein
 // leerer Bereich trägt eine leere Menge, ein invertierter Bereich endet am
 // Port-Kontrakt (Negative).
 func TestReadCarriesPositionsAndRanges(t *testing.T) {
@@ -362,7 +362,7 @@ func TestReadCarriesLimit(t *testing.T) {
 	}
 }
 
-// Tabellenfilter (`LH-FA-REA-006`, `ADR-0081` Teilfrage 3): die Filterachse
+// Tabellenfilter (`ADR-0081` Teilfrage 3): die Filterachse
 // ist Klartext und **eine** Form — Schema und Tabelle je optional und
 // unabhängig. Der Test deckt die Achse einzeln (Schema, Tabelle),
 // kombiniert, leer und ohne Treffer; die Rückgabe trägt die
@@ -423,7 +423,7 @@ func TestReadCarriesTableFilter(t *testing.T) {
 }
 
 // Erneutes Lesen innerhalb der Aufbewahrung (`LH-FA-REA-005`) und Lesen
-// ohne Positionsänderung (`LH-FA-REA-002`): dieselbe Abfrage trägt
+// ohne Positionsänderung: dieselbe Abfrage trägt
 // denselben Stand, der gespeicherte Stand bleibt unverändert.
 func TestReadLeavesPersistedStateUnchanged(t *testing.T) {
 	store, pool := newTestStore(t)
@@ -496,7 +496,7 @@ func TestPersistCarriesSourceCommittedAtNotPersistenceTime(t *testing.T) {
 }
 
 // DeleteChanges entfernt physisch genau die übergebenen Changes
-// (`LH-FA-RET-002`…`004`, `ADR-0014`): eine Teilmenge geht, die übrigen
+// (`ADR-0014`): eine Teilmenge geht, die übrigen
 // bleiben unangetastet — die Freigabe-Entscheidung trägt der aufrufende
 // Use Case, dieser Adapter führt nur die übergebene Menge aus.
 func TestDeleteChangesRemovesOnlyGivenChanges(t *testing.T) {
@@ -578,7 +578,7 @@ func TestDeleteChangesRemovesOrphanedTransactionOnly(t *testing.T) {
 
 // ReadChanges trägt den realen Quell-Commit-Zeitpunkt jeder Zeile
 // (`LH-FA-ADM-004`) an ihrem Record mit — die Retention-Alters-Berechnung
-// (`LH-FA-RET-003`) liest ihn über `RunRetentionUseCase`; dieser Test
+// liest ihn über `RunRetentionUseCase`; dieser Test
 // belegt, dass die Spalte real am Record ankommt.
 func TestReadChangesCarriesCommittedAt(t *testing.T) {
 	store, pool := newTestStore(t)
@@ -618,7 +618,7 @@ func TestReadChangesCarriesCommittedAt(t *testing.T) {
 }
 
 // Treiber-Fehler tragen die Klasse `storage` (`outbound.ErrStorage`,
-// `SPEC-008`, `ADR-0023`); Application und Betrieb klassifizieren über
+// `ADR-0023`); Application und Betrieb klassifizieren über
 // errors.Is und kennen keinen Treibertyp. Die technische Ursache bleibt
 // über errors.Is hinter der Klasse lesbar.
 
@@ -738,10 +738,10 @@ func committedOriginTransaction(t *testing.T, id string, offset uint64, origins 
 }
 
 // TestPersistAndReadCarryChangeOrigin belegt das Feld `origin` am Store
-// (`SPEC-002`, `LH-FA-CAP-009`): der Konstruktor-Default `wal` und ein
+// (`SPEC-002`): der Konstruktor-Default `wal` und ein
 // gesetztes `backfill` gehen als Text in die Spalte und lesen über
 // `ReadChanges` unverändert zurück; eine Zeile ohne Wert (`NULL`) liest
-// als `wal` (`LH-FA-DAT-006` Boundary).
+// als `wal`.
 func TestPersistAndReadCarryChangeOrigin(t *testing.T) {
 	store, pool := newTestStore(t)
 	seedReference(t, pool)

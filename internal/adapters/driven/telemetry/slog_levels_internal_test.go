@@ -11,14 +11,14 @@ import (
 
 // TestNewWithWriterWarnAndErrorCarryTheirLevel trägt den Vertrag des
 // `LogPort` für die beiden Stufen, die der Adapter über den
-// JSON-Handler-Standard hinausreichen muss (`LH-QA-OPS-004`,
-// `ARC-006`, `ADR-0024`): `Warn`/`Error` rufen genau die gleichnamige
+// JSON-Handler-Standard hinausreichen muss (`LH-QA-OPS-004`):
+// `Warn`/`Error` rufen genau die gleichnamige
 // `*Context`-Methode ihres Levels auf, der JSON-Handler setzt `level` auf
 // `WARN`/`ERROR` und trägt die übergebenen Attribute unverändert mit.
 //
 // Die zwei Stufen sind kein Detail: `runWALRetentionCheck` protokolliert
 // den Warn-Bereich („kontrollierte Fortsetzung") über `Warn`, den
-// Abbruch über `Error` (`SPEC-008`, `ADR-0049`) — eine Vertauschung der
+// Abbruch über `Error` — eine Vertauschung der
 // beiden Methodenrümpfe ließe den Betreiber die beiden Lagen nicht mehr
 // unterscheiden, ohne den Testlauf zu stören.
 //

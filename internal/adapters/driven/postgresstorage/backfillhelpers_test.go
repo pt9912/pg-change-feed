@@ -17,7 +17,7 @@ import (
 // `backfillrun_test.go`, `backfillwriter_test.go`) laufen gegen dieselbe
 // reale PostgreSQL-Instanz wie die übrigen Store-Tests (`make test-store`,
 // `ADR-0030`); ohne DSN überspringen sie. `cdc.backfill_run` trägt der
-// d-migrate-Rollout (`tools/schema/schema.yaml`, `ADR-0043`), die Grants die
+// d-migrate-Rollout (`tools/schema/schema.yaml`), die Grants die
 // Rollen-Datei (`tools/schema/nacharbeit-roles.sql`).
 //
 // Kopplung: diese Dateien und `roles_test.go` müssen vor `store_test.go`

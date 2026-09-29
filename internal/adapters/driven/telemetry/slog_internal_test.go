@@ -10,7 +10,7 @@ import (
 )
 
 // TestNewWithWriterWritesStructuredJSON trägt den Beleg für
-// `LH-QA-OPS-004`/`ADR-0024` auf Unit-Test-Ebene, unabhängig vom
+// `LH-QA-OPS-004` auf Unit-Test-Ebene, unabhängig vom
 // Integrationstest-stdout-Diff: die Ausgabe von `New` (über den
 // paketinternen Test-Zugang `newWithWriter`, derselbe Handler-Aufbau wie
 // am `stdout`-Pfad) ist gültiges JSON mit `msg`, `level` und den

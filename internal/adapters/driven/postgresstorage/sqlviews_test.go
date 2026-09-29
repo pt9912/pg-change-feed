@@ -14,10 +14,10 @@ import (
 
 // Die SQL-View-Tests belegen den direkten SQL-Zugriff nach
 // `LH-FA-SST-002` (Konfiguration, Status, Kernlesezugriffe über SQL) gegen
-// die reale PostgreSQL-Instanz (`make test-store`, `ADR-0030`); ohne DSN
+// die reale PostgreSQL-Instanz (`make test-store`); ohne DSN
 // überspringen sie. Die Views (`cdc.active_tables`, `cdc.consumer_status`,
-// `cdc.changes`) trägt der d-migrate-Rollout (`tools/schema/schema.yaml`,
-// `ADR-0043`) — dieselbe Quelle wie die Consumer-State-Tabellen; die
+// `cdc.changes`) trägt der d-migrate-Rollout (`tools/schema/schema.yaml`)
+// — dieselbe Quelle wie die Consumer-State-Tabellen; die
 // handgeschriebene DDL des Store-Adapters (`ApplySchema`) trägt sie nicht.
 //
 // Kopplung: diese Datei muss vor `store_test.go` laufen — deren Tests
@@ -109,7 +109,7 @@ func TestActiveTablesViewCarriesCurrentSchemaVersion(t *testing.T) {
 }
 
 // TestConsumerStatusViewCarriesBacklog belegt die Status-Sicht
-// (`LH-FA-SST-002`, `LH-FA-ADM-005`): ein bestätigender Consumer trägt
+// (`LH-FA-SST-002`): ein bestätigender Consumer trägt
 // seinen Rückstand als Differenz der beiden Positionsspalten, ein
 // unbestätigter Consumer trägt die Positionsspalten als NULL statt eines
 // Fehlers.
@@ -170,9 +170,8 @@ func TestConsumerStatusViewCarriesBacklog(t *testing.T) {
 }
 
 // TestChangesViewCarriesRangeLimitAndFilter belegt den Kernlesezugriff
-// (`LH-FA-SST-002`): dieselben Bereichs- (`LH-FA-REA-001`), Limit-
-// (`LH-FA-REA-003`), Ordnungs- (`LH-FA-REA-004`) und Filter-Zusagen
-// (`LH-FA-REA-006`) wie am Go-Port, hier über WHERE/LIMIT der SQL-Sicht
+// (`LH-FA-SST-002`): dieselben Bereichs-, Limit-, Ordnungs- und
+// Filter-Zusagen wie am Go-Port, hier über WHERE/LIMIT der SQL-Sicht
 // statt über `ChangeQuery`.
 func TestChangesViewCarriesRangeLimitAndFilter(t *testing.T) {
 	pool := newTestViews(t)
@@ -225,7 +224,7 @@ func TestChangesViewCarriesRangeLimitAndFilter(t *testing.T) {
 		}
 	}
 
-	// Bereich [1100, 1300) mit Limit 1 (LH-FA-REA-001, LH-FA-REA-003):
+	// Bereich [1100, 1300) mit Limit 1 (LH-FA-REA-001):
 	// trägt genau den ersten Change in Commit-Position-Ordnung.
 	rangeRows, err := pool.Query(ctx,
 		`SELECT change_id FROM cdc.changes
@@ -273,7 +272,7 @@ func TestChangesViewCarriesRangeLimitAndFilter(t *testing.T) {
 }
 
 // TestChangesViewCarriesOriginLikeReadChanges belegt das Feld `origin` an
-// der View (`SPEC-002`, `LH-FA-CAP-009`, `LH-FA-DAT-006` Boundary) und die
+// der View (`SPEC-002`) und die
 // Spaltenmenge-Parität von View und `ReadChanges`
 // (`BEO-PGC/lese-doppelquelle`): `origin` ist die **letzte** Spalte von
 // `cdc.changes`; eine gespeicherte Zeile mit `wal`, mit `backfill` und eine

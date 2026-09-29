@@ -299,7 +299,7 @@ func TestList(t *testing.T) {
 
 // TestTableExistsMissing trägt die Abwesenheit der Quelle-Tabelle; die
 // Negative-Pfade der Aktivierung, Deaktivierung und Status-Abfrage
-// (`LH-FA-CFG-001`/`002`/`003`) lesen darüber.
+// lesen darüber.
 func TestTableExistsMissing(t *testing.T) {
 	activation, _, _ := newTestActivation(t)
 	ctx, cancel := activationContext(t)

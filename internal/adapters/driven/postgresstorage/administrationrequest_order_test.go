@@ -13,7 +13,7 @@ import (
 // Die Ordnung der offenen Anträge (`ListPending`) und die Ordnung der
 // Ableitung des dauerhaften Standes (`ExcludedColumns`,
 // `TransformationRules`) sind dieselbe: `requested_at`, bei gleichem
-// Zeitstempel `administration_request_id` (`SPEC-019`, `ADR-0127`). Die
+// Zeitstempel `administration_request_id` (`ADR-0127`). Die
 // Verarbeitung führt live und beim Prozessstart nur dann zum selben Stand,
 // wenn beide Stellen sie in derselben Reihenfolge lesen.
 
@@ -47,8 +47,8 @@ func pendingOrder(t *testing.T, adapter *postgresstorage.AdministrationRequestAd
 }
 
 // TestAdministrationRequestListPendingOrdersTiesByRequestID trägt die
-// Ordnung der Queue gegen die reale PostgreSQL (`LH-FA-CFG-007`,
-// `LH-FA-CFG-005`, `SPEC-019`): vier offene Anträge mit demselben
+// Ordnung der Queue gegen die reale PostgreSQL (`SPEC-019`): vier offene
+// Anträge mit demselben
 // `requested_at` — ein Remove und ein Set derselben Regel, ein Exclude und
 // ein Include derselben Spalte — kommen in der Ordnung der Antrags-Kennung
 // aus `ListPending`, unabhängig von der Einfüge-Ordnung, und die Verarbeitung

@@ -356,7 +356,7 @@ func TestBackfillProgressDoesNotWaitForTheOpenWriteTransaction(t *testing.T) {
 	}
 }
 
-// Ordnung (`ADR-0111` Teilfrage 6, `LH-FA-CAP-004`, `LH-FA-REA-004`): mit
+// Ordnung (`ADR-0111` Teilfrage 6): mit
 // einem WAL-Commit **auf derselben Position `X`** liest `cdc.changes` die
 // Backfill-Blöcke `0bf-…` vor dem WAL-Commit, nach `(commit_position,
 // transaction_id, sequence)` — im Lesezugriff des Store-Adapters ebenso wie in

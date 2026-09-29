@@ -16,8 +16,8 @@ import (
 // Die Schema-Store-Tests laufen gegen dieselbe reale PostgreSQL-Instanz
 // wie die Store-Tests (`make test-store`, `ADR-0030`); ohne DSN
 // überspringen sie. Die Tabelle `cdc.table_schema` trägt der
-// d-migrate-Rollout (`tools/schema/schema.yaml`, `ADR-0043`, `ADR-0015`
-// Folgepflicht) — die handgeschriebene DDL des Store-Adapters
+// d-migrate-Rollout (`tools/schema/schema.yaml`) — die handgeschriebene
+// DDL des Store-Adapters
 // (`ApplySchema`) trägt sie nicht, dieselbe Abgrenzung wie bei den
 // Consumer-State-Tabellen (`consumerstate_test.go`).
 //
@@ -112,8 +112,7 @@ func TestSchemaStoreCurrentVersionMissing(t *testing.T) {
 }
 
 // TestSchemaStoreRegisterAndReadRoundTrip trägt den Round-Trip:
-// Registrierung, aktuelle Version, Spaltenform (`SPEC-004`,
-// `LH-FA-SCH-005`).
+// Registrierung, aktuelle Version, Spaltenform (`SPEC-004`).
 func TestSchemaStoreRegisterAndReadRoundTrip(t *testing.T) {
 	store, pool := newTestSchemaStore(t)
 	table := registerSchemaStoreTable(t, pool, "tbl-schema-roundtrip")

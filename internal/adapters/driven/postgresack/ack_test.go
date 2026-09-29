@@ -18,8 +18,7 @@ import (
 // Standby-Status-Aufrufs (`SPEC-008`, Klasse `replication`). Die
 // Standby-Status-Wirkung am realen Treiber trägt der Verdrahtungs-Test
 // in der Composition-Root (`internal/bootstrap`); die reale Verbindung
-// kommt aus dem gepinnten Testcontainer (`make test-replication`,
-// `ADR-0030`).
+// kommt aus dem gepinnten Testcontainer (`make test-replication`).
 
 // newTestConn baut die Replication-Verbindung der Tests; ohne DSN
 // überspringen die realen Tests — die Konstruktions-Grenze trägt der

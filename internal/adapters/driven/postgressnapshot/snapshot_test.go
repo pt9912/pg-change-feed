@@ -26,7 +26,7 @@ import (
 // Jeder Test dieses Pakets setzt einen PostgreSQL mit `wal_level=logical`
 // voraus und überspringt ohne `CDC_REPLICATION_TEST_DSN` (`make
 // test-replication`): das Paket steht aus dem Nenner des Coverage-Gates
-// heraus (`ADR-0071` Punkt 1), solange kein Test netzlos läuft. Die
+// heraus, solange kein Test netzlos läuft. Die
 // Tests tragen die Messungen M1–M5 aus `ADR-0111`.
 
 const (
@@ -620,7 +620,7 @@ var gucLagen = []gucLage{
 }
 
 // TestImageParityWalAndBackfill trägt die Typ-Parität (`ADR-0115`
-// Festlegung 4, M5 aus `ADR-0111`): über die Typ-Tabelle ist der Roh-Text
+// Festlegung 4): über die Typ-Tabelle ist der Roh-Text
 // jeder Spalte im Backfill-Pfad byte-gleich dem des WAL-Pfads (Publication,
 // Slot, Walsender), und das über `BuildRowImage` gebaute Bild ebenso — in
 // drei Sitzungs-GUC-Lagen der Rolle.
@@ -1213,7 +1213,7 @@ func TestRewriteInWindowIsTransient(t *testing.T) {
 // TestNoRewriteInWindowReadsTheSnapshot ist die Kontrolle zu
 // `TestRewriteInWindowIsTransient`: ohne Umschreiben im Fenster bricht der
 // Import nicht ab. Eine kompatible Spalten-Erweiterung ändert die Datei nicht
-// (Bestand im Snapshot-Stand, `ADR-0116`); ein `DROP COLUMN` endet weiter am
+// (Bestand im Snapshot-Stand); ein `DROP COLUMN` endet weiter am
 // Cursor als Klasse `storage` (`ADR-0118` Festlegung 5).
 func TestNoRewriteInWindowReadsTheSnapshot(t *testing.T) {
 	dsn := testDSN(t)

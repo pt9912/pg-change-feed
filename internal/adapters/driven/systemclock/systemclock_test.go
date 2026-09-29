@@ -8,8 +8,8 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 )
 
-// TestAdapterImplementsClockPort belegt die Port-Kante (`ARC-004`,
-// `ADR-0040`): der Adapter erfüllt `outbound.ClockPort` als Wert, keinen
+// TestAdapterImplementsClockPort belegt die Port-Kante (`ADR-0040`):
+// der Adapter erfüllt `outbound.ClockPort` als Wert, keinen
 // Zeiger nötig — er trägt keinen Zustand.
 func TestAdapterImplementsClockPort(t *testing.T) {
 	var port outbound.ClockPort = systemclock.New()

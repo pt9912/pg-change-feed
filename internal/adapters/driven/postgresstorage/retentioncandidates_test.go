@@ -318,7 +318,7 @@ func TestRetentionCandidatesRejectInvalidInput(t *testing.T) {
 }
 
 // TestRetentionCandidatesRunUnderTheirRoles belegt den Zugriff unter den
-// Login-Identitäten (`ADR-0053`, `ADR-0047`): die Login-Identität in der
+// Login-Identitäten (`ADR-0047`): die Login-Identität in der
 // Gruppenrolle `cdc_admin` — ohne Superuser-Recht — liest die Seiten; die
 // Identitäten in `cdc_capture` und `cdc_reader` scheitern am Lesen mit
 // SQLSTATE 42501. Rot färbende Mutation: `SELECT` an `cdc_admin` auf

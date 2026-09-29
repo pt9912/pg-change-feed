@@ -24,7 +24,7 @@ func newBackfillAdmission(t *testing.T, f *backfillFixture) *postgresstorage.Bac
 
 // Die Annahme hinterlässt Run-Zeile `queued` und Antragsvermerk `applied`
 // **zugleich** (`ADR-0113` Festlegung 1); die Run-Zeile trägt die Werte des
-// Runs und die Defaults der übrigen Spalten (`SPEC-029`).
+// Runs und die Defaults der übrigen Spalten.
 func TestBackfillAdmitLeavesQueuedRunAndAppliedRequestTogether(t *testing.T) {
 	f := newBackfillFixture(t)
 	admission := newBackfillAdmission(t, f)

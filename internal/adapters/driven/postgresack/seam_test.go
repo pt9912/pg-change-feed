@@ -39,8 +39,8 @@ func (f *fakeSender) SendStandbyStatusUpdate(_ context.Context, ssu pglogrepl.St
 
 var _ standbySender = (*fakeSender)(nil)
 
-// recordingLog trägt den `LogPort` der Tests (`LH-QA-OPS-004`,
-// `ADR-0024`): er hält die Fehler-Aufrufe fest, ohne sie auszugeben.
+// recordingLog trägt den `LogPort` der Tests (`ADR-0024`): er hält die
+// Fehler-Aufrufe fest, ohne sie auszugeben.
 type recordingLog struct {
 	errors []string
 }
@@ -99,8 +99,7 @@ func TestAckLSNCarriesOffset(t *testing.T) {
 
 // TestReplicationClassWrapsCause trägt das Fehlerklassen-Wrapping am
 // Treiber-Fehler: er endet über `outbound.ErrReplication`, die technische
-// Ursache bleibt über die zweite Wrappung lesbar (`ADR-0023`,
-// `SPEC-008`).
+// Ursache bleibt über die zweite Wrappung lesbar (`ADR-0023`).
 func TestReplicationClassWrapsCause(t *testing.T) {
 	err := replicationClass(stderrors.New("verbindung weg"))
 	if !stderrors.Is(err, outbound.ErrReplication) {
@@ -158,8 +157,7 @@ func TestAcknowledgeZeroPositionSendsNothing(t *testing.T) {
 
 // TestAcknowledgeWrapsSenderFailure trägt den Fehlerpfad der Verklebung:
 // ein Treiber-Fehler endet über `outbound.ErrReplication`, trägt die
-// technische Ursache und geht durch den `LogPort` (`ADR-0023`,
-// `LH-QA-OPS-004`).
+// technische Ursache und geht durch den `LogPort` (`ADR-0023`).
 func TestAcknowledgeWrapsSenderFailure(t *testing.T) {
 	sender := &fakeSender{err: stderrors.New("verbindung weg")}
 	log := &recordingLog{}

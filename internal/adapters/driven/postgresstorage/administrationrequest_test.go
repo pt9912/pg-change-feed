@@ -23,9 +23,9 @@ import (
 // Die Antrags-Queue-Tests laufen gegen dieselbe reale PostgreSQL-Instanz wie
 // die übrigen Store-Tests (`make test-store`, `ADR-0030`); ohne DSN
 // überspringen sie. `cdc.administration_request` trägt der d-migrate-Rollout
-// (`tools/schema/schema.yaml`, `ADR-0043`), `cdc.enable_table`/
-// `cdc.disable_table` die Ausweichform (`tools/schema/nacharbeit-administration.sql`,
-// `ADR-0050`) — beide Objektklassen entstehen im selben `make
+// (`tools/schema/schema.yaml`), `cdc.enable_table`/
+// `cdc.disable_table` die Ausweichform (`tools/schema/nacharbeit-administration.sql`)
+// — beide Objektklassen entstehen im selben `make
 // schema-rollout`-Lauf, vor diesem Testlauf.
 //
 // Kopplung: diese Datei muss vor `consumerstate_test.go`/`store_test.go`/
@@ -228,11 +228,11 @@ func TestAdministrationRequestDisableTableWritesPendingRequestAndNotifies(t *tes
 
 // TestAdministrationRequestColumnRequestsCarryColumnAndExitStatus trägt den
 // realen Antrags-Weg des Spaltenausschlusses/-einschlusses
-// (`LH-FA-CFG-005`, `ADR-0059`): die beiden vierteiligen Funktionen legen
+// (`ADR-0059`): die beiden vierteiligen Funktionen legen
 // eine Zeile mit `column_name` und `request_kind` an, der Adapter liest
 // beides zurück, und der Ergebnis-Vermerk endet für eine vorhandene Spalte
 // als `applied`, für eine nicht existierende als `failed` samt Fehlertext
-// (`LH-FA-CFG-005` Negative) — dieselbe asynchrone Sichtbarkeit wie bei den
+// — dieselbe asynchrone Sichtbarkeit wie bei den
 // beiden Tabellen-Antragsarten.
 func TestAdministrationRequestColumnRequestsCarryColumnAndExitStatus(t *testing.T) {
 	pool, dsn := newTestAdministrationRequestPool(t)
@@ -496,7 +496,7 @@ func TestAdministrationRequestAdapterMarkAppliedLogsOnlyARequestItMarked(t *test
 
 // TestTableActivationExcludedColumnsDerivesAppliedColumnRequests trägt die
 // Ableitung des dauerhaften Ausschlussstandes gegen die reale PostgreSQL
-// (`LH-FA-CFG-005`, `ADR-0065`): die `applied`-Zeilen der beiden
+// (`ADR-0065`): die `applied`-Zeilen der beiden
 // Spalten-Antragsarten tragen den Stand, `exclude_column` trägt einen Namen
 // ein, `include_column` nimmt ihn wieder heraus. Der Test setzt die
 // Antrags-Zeilen direkt (`requested_at` und Antrags-ID sind hier
@@ -618,8 +618,8 @@ func TestAdministrationListenerWaitForNotification(t *testing.T) {
 }
 
 // TestAdministrationRequestBackfillTableWritesOnlyTheRequestAndNotifies trägt
-// den Antrags-Weg der Bestands-Antragsart (`LH-FA-CAP-009`, `ADR-0111`
-// Teilfrage 5, `ADR-0050`): `cdc.backfill_table` legt genau eine Zeile der Art
+// den Antrags-Weg der Bestands-Antragsart (`ADR-0111`
+// Teilfrage 5): `cdc.backfill_table` legt genau eine Zeile der Art
 // `backfill` ohne Spalte mit Status `pending` an und sendet `pg_notify` mit
 // der Antrags-Kennung; sie legt weder eine Run-Zeile an noch berührt sie
 // Bindung oder Publication. Rot färbende Mutation: den `INSERT` der Funktion
@@ -680,7 +680,7 @@ func TestAdministrationRequestBackfillTableWritesOnlyTheRequestAndNotifies(t *te
 
 // TestAdministrationRequestBackfillTableRequiresCdcAdminMembership belegt das
 // `REVOKE … FROM PUBLIC`/`GRANT … TO cdc_admin`-Paar für `cdc.backfill_table`
-// (`ADR-0047`, `LH-QA-SEC-001`…`003`): eine Rolle ohne `cdc_admin`-Mitgliedschaft
+// (`ADR-0047`): eine Rolle ohne `cdc_admin`-Mitgliedschaft
 // scheitert mit SQLSTATE 42501 („permission denied for function“). Rot färbende
 // Mutation: `cdc.backfill_table(text, text, text)` aus der `REVOKE`-Zeile der
 // Nacharbeit-Datei streichen — `PUBLIC` behält `EXECUTE`, der Aufruf gelingt.
@@ -868,8 +868,8 @@ func TestAdministrationRequestTransformationRequestsCarryRuleAndNotify(t *testin
 
 // TestAdministrationRequestTransformationFunctionsRequireCdcAdminMembership
 // belegt das `REVOKE … FROM PUBLIC`/`GRANT … TO cdc_admin`-Paar für
-// `cdc.set_transformation` und `cdc.remove_transformation` (`ADR-0047`,
-// `LH-QA-SEC-001`…`003`): eine Rolle ohne `cdc_admin`-Mitgliedschaft scheitert
+// `cdc.set_transformation` und `cdc.remove_transformation` (`ADR-0047`):
+// eine Rolle ohne `cdc_admin`-Mitgliedschaft scheitert
 // mit SQLSTATE 42501 („permission denied for function“), und der gescheiterte
 // Aufruf hinterlässt keine Zeile. Rot färbende Mutation: die jeweilige
 // Signatur aus der `REVOKE`-Zeile der Nacharbeit-Datei streichen — `PUBLIC`
@@ -944,7 +944,7 @@ func TestAdministrationRequestRuleColumnsAreNullable(t *testing.T) {
 
 // TestAdministrationRequestSetTransformationAcceptanceSet trägt die
 // Annahmemenge des Parameters `rule_spec` von `cdc.set_transformation`
-// (`ADR-0126` Festlegung 1, `SPEC-019`): jede Form läuft als Text, der über
+// (`ADR-0126` Festlegung 1): jede Form läuft als Text, der über
 // `::text::json` zum Parameter wird — der Weg eines Clients mit Literal. Eine
 // angenommene Form schreibt genau eine `pending`-Zeile und liest ihren Wert
 // als `rule_spec::text` zurück (`jsonb` normalisiert: der letzte Wert eines
@@ -1029,7 +1029,7 @@ func TestAdministrationRequestSetTransformationAcceptanceSet(t *testing.T) {
 // TestAdministrationFunctionsPinSecurityDefinerAndSearchPath bindet die Zusage
 // „`SECURITY DEFINER` mit gepinntem `search_path`“ an den Katalog der realen
 // Instanz: jede der sieben schreibenden Funktionen trägt `prosecdef` und
-// `proconfig = {search_path=cdc, pg_temp}` (`ADR-0050`, `LH-QA-SEC-002`).
+// `proconfig = {search_path=cdc, pg_temp}` (`ADR-0050`).
 // Rot färbende Mutation (Eingabeseite): die Zeile `SET search_path = cdc,
 // pg_temp` einer Funktion in `tools/schema/nacharbeit-administration.sql`
 // streichen — die Funktion erscheint in der Meldung.
@@ -1062,7 +1062,7 @@ func describeSpec(spec *string) string {
 
 // TestTableActivationTransformationRulesDeriveAppliedRuleRequests trägt die
 // Ableitung des dauerhaften Regelstandes gegen die reale PostgreSQL
-// (`LH-FA-CFG-007`, `SPEC-019`): die `applied`-Zeilen der beiden
+// (`SPEC-019`): die `applied`-Zeilen der beiden
 // Transformations-Antragsarten tragen den Stand, `set_transformation` trägt
 // eine Regel ein, `remove_transformation` nimmt sie unter dem Namen heraus.
 // Der Test setzt die Antrags-Zeilen direkt (`requested_at` und Antrags-ID sind

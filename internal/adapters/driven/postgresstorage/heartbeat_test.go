@@ -18,7 +18,7 @@ import (
 // Die Heartbeat-Tests laufen gegen dieselbe reale PostgreSQL-Instanz wie
 // die Store- und Consumer-State-Tests (`make test-store`, `ADR-0030`);
 // ohne DSN überspringen sie. Die Tabelle `cdc.process_heartbeat` trägt der
-// d-migrate-Rollout (`tools/schema/schema.yaml`, `ADR-0043`), die View
+// d-migrate-Rollout (`tools/schema/schema.yaml`), die View
 // `cdc.heartbeat` die Nacharbeit (`tools/schema/nacharbeit-heartbeat.sql`)
 // — beide trägt die handgeschriebene DDL des Store-Adapters nicht.
 //
@@ -153,8 +153,8 @@ func TestBeatRejectsEmptySource(t *testing.T) {
 	}
 }
 
-// TestHeartbeatViewProjectsAge belegt die Lese-Seite (`LH-QA-OPS-002`,
-// `ADR-0046` Kategorie C): `cdc.heartbeat` liest Zeitstempel und Alter der
+// TestHeartbeatViewProjectsAge belegt die Lese-Seite (`ADR-0046`
+// Kategorie C): `cdc.heartbeat` liest Zeitstempel und Alter der
 // Quelle, ohne eine Schwellenwert-Entscheidung zu treffen (das bleibt
 // Sache des lesenden Systems, wie bei `cdc.metrics`).
 func TestHeartbeatViewProjectsAge(t *testing.T) {
@@ -195,8 +195,8 @@ func TestHeartbeatViewProjectsAge(t *testing.T) {
 	}
 }
 
-// TestFaultWritesErrorClass belegt den Happy Path (`LH-FA-ADM-003`,
-// `LH-QA-REL-003`): der Fehlerzustand landet in derselben Zeile wie das
+// TestFaultWritesErrorClass belegt den Happy Path (`LH-FA-ADM-003`):
+// der Fehlerzustand landet in derselben Zeile wie das
 // Lebenszeichen, unterscheidbar vom Normalbetrieb (NULL).
 func TestFaultWritesErrorClass(t *testing.T) {
 	adapter, pool := newTestHeartbeat(t)
