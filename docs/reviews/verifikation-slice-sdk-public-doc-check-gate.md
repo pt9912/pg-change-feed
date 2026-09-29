@@ -12,7 +12,7 @@ expliziten Übergabe-Plan des Verifiers von der Haupt-Rolle gefahren worden
 (§1, letzte zwei Zeilen); die Bewertung trifft der Report gemeinsam.
 
 **Gegenstand:** Slice-Plan
-[`slice-sdk-public-doc-check-gate.md`](../plan/planning/in-progress/slice-sdk-public-doc-check-gate.md)
+[`slice-sdk-public-doc-check-gate.md`](../plan/planning/done/slice-sdk-public-doc-check-gate.md)
 (WIP-frei gestartet nach Welle-Closure), Basis `f287c81b`, Zug-Commits:
 
 - `73e33f4b` — feat(harness): sdk-public-doc-check wird Gate in make gates
