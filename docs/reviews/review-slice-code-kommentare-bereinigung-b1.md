@@ -1,7 +1,7 @@
 # Review-Report: slice-code-kommentare-bereinigung B1 (T1–T7) — 2026-09-29
 
 **Review-Art:** Code — geprüft gegen den Slice-Plan
-[`slice-code-kommentare-bereinigung`](../plan/planning/in-progress/slice-code-kommentare-bereinigung.md),
+`slice-code-kommentare-bereinigung` (Lifecycle-Ort: `docs/plan/planning/`),
 [`ADR-0083`](../plan/adr/0083-herkunft-von-aussagen-in-traegern.md) und die
 Hard Rules `AGENTS.md` §3.7/§3.12/§3.13/§3.9 (Modul 10). Keine
 DoD-Verifikation — das ist die Aufgabe des Verifiers (Modul 11).

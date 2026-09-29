@@ -9,7 +9,7 @@ Formvorbild dieses Reports:
 [`verifikation-slice-code-kommentare-kennungen.md`](verifikation-slice-code-kommentare-kennungen.md).
 
 **Gegenstand:** Slice-Plan
-[`slice-code-kommentare-bereinigung`](../plan/planning/in-progress/slice-code-kommentare-bereinigung.md)
+`slice-code-kommentare-bereinigung` (Lifecycle-Ort: `docs/plan/planning/`)
 (wellenlos, Harness-Querschnitt), voller Umfang B1 (T1–T7, Nicht-Test-Code) und
 B2 (T8, Test-Code). `HEAD` = `933ea5c0`, Diff-Range `e63a1afd..933ea5c0`,
 24 Commits (Tranchen-Commits T1–T7 und T8, Fixrunden `89d347db`/`933ea5c0`,
