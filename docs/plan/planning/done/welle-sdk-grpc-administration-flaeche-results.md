@@ -65,11 +65,14 @@ funktionierte · was anders lief. Mit ID-Bezug, wo es einen gibt.
   Protoc-Namenskonflikt-Kenntnis (`AdministrationOuterClass` in Kotlin)
   wurde aus dem Beispiel-Client-Review übernommen statt erneut entdeckt.
 - **Die Rollen-Sequenz Implementer → Reviewer → Fixrunde → Verifier fing
-  reale Mängel in drei unabhängigen Läufen:** 2 HIGH (deutsche
-  Fixture-Strings aus dem C#-Formvorbild; falsche Suchlauf-Zahl gegen die
-  eigene Messung), je 1 MEDIUM je Verifikation (stiller Test in Kotlin,
-  selbstwidersprüchlicher Docstring in Python) — alle real gezogen
-  (`bd10c391`, `48e04899`, `3b381f5b`, `8b12198e`) und nachgemessen.
+  reale Mängel in drei unabhängigen Läufen:** 3 HIGH — das C#-HIGH (der
+  Risiko-Ausgang zitierte Test-Belege, die einen Teil der eigenen Aussage
+  nicht abdecken), die deutschen Fixture-Strings aus dem C#-Formvorbild
+  (Kotlin) und die falsche Suchlauf-Zahl gegen die eigene Messung
+  (Python) — dazu je 1 MEDIUM je Verifikation (stiller Test in Kotlin,
+  selbstwidersprüchlicher Docstring in Python). Alle real gezogen
+  (`dfdd16e0`, `bd10c391`, `48e04899`, `3b381f5b`, `8b12198e`) und
+  nachgemessen.
 - **Der Docker-only-Pack-Lauf war das erste, untrügliche Signal der
   fehlenden zweiten `COPY --from=proto`-Zeile** — der Kotlin-Compiler
   brach mit „Unresolved reference 'administration'" ab, bevor irgendein
@@ -119,8 +122,11 @@ Lese-Schritt im Einzelnen:
   (3× → 4×, HIGH, erste Test-Fixture-Zeichenkette; Ausgang unverändert
   *verkörpert* → `.harness/skills/reviewer.md` HIGH-Punkt „Form-Vorbild-Kopie
   trägt ein sprachgebrochenes Wortfragment weiter" — er hat den Fund real
-  getragen) und `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (33× → 34×,
-  MEDIUM; Ausgang unverändert *verkörpert* → `AGENTS.md` §3.13).
+  getragen), `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (33× → 34×,
+  MEDIUM; Ausgang unverändert *verkörpert* → `AGENTS.md` §3.13) und
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (17× → 18×, C#-HIGH,
+  gezogen durch `dfdd16e0`; Ausgang unverändert *verkörpert* →
+  `.harness/skills/reviewer.md` HIGH-Punkt „Beleg trägt seinen Satz nicht").
 - **Neu angelegt, unter der 3×-Schwelle:** `BEO-PGC/test-methode-lauft-still-nicht`
   (1× — die JUnit-Entdeckung überspringt still eine Nicht-void-`@Test`-Methode;
   Nachbar-Eintrag `test-runner-stiller-ausschluss` bleibt auf seinen
@@ -167,7 +173,8 @@ HIGH-Punkt, `AGENTS.md` §3.13 mit „seit welle-20"), geprüft am Ist-Stand.
 `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht leerem `evidence/`
 (`drei-sprachen-kopie-divergiert-am-randfall`, `sdk-python-untergrenze-ohne-anwender-begruendung`,
 `arbeit-ueberholt-stehenden-traeger`, `formvorbild-kopie-traegt-deutsches-wortfragment-weiter`,
-`test-methode-lauft-still-nicht`, `arbeitsbaum-race-ohne-offenlegung`) —
+`beleg-befehl-traegt-seinen-satz-nicht`, `test-methode-lauft-still-nicht`,
+`arbeitsbaum-race-ohne-offenlegung`) —
 grün in allen drei Fällen.
 
 ## Verifikation
@@ -180,12 +187,12 @@ Anker (Hash, Lauf, Zahl). Gate-Exit-Codes ungefiltert direkt gesichert
 | Kriterium (Welle-Datei §3) | Beleg |
 |---|---|
 | Alle drei Slices in `done/` | `ls docs/plan/planning/done \| grep -c 'slice-sdk-.*-grpc-administration-flaeche'` druckt `3` (`slice-sdk-csharp-…` seit `76afcad4`, Kotlin `87e47213`, Python `8c0d9f12`, je reiner `git mv`) |
-| `make gates` grün | Exit `0` am Stand `2047ef96`: `d-check: 1415 Datei(en) geprüft, 0 Befund(e)`, `commit-traceability: OK — 5 Commit(s)`, `coverage-gate: OK — Coverage 80.40% erfüllt Schwelle 80%`, `generated-sync: OK`, a-check `gesamt: 0 Befund(e)`, `baseline-verify: v6.9.0 OK — 54 Dateien`. Der erste Lauf desselben Tages endete Exit `2` mit 6 Befunden (4× Review-Pfad-Token in den neuen Register-Belegen, 2× Linkziel auf die gezogenen Slice-Pläne) — beide Klassen in `2047ef96` gezogen |
+| `make gates` grün | Exit `0` am Stand `2047ef96`: `d-check: 1415 Datei(en) geprüft, 0 Befund(e)`, `commit-traceability: OK — 5 Commit(s)`, `coverage-gate: OK — Coverage 80.50% erfüllt Schwelle 80%` (Zahl nach dem Nachmess-Lauf des Closure-Note-Reviews am selben Stand; der eigene Lauf oben druckte 80,40 % — die gedeckte Zahl streut lauf-gebunden, beide Läufe grün), `generated-sync: OK`, a-check `gesamt: 0 Befund(e)`, `baseline-verify: v6.9.0 OK — 54 Dateien`. Der erste Lauf desselben Tages endete Exit `2` mit 6 Befunden (4× Review-Pfad-Token in den neuen Register-Belegen, 2× Linkziel auf die gezogenen Slice-Pläne) — beide Klassen in `2047ef96` gezogen |
 | `make sdk-pack-csharp` grün | Exit `0`, Erzeugnis `sdks/csharp/dist/PgChangeFeed.Client.0.2.1.nupkg` |
 | `make sdk-pack-python` grün | Exit `0`, Erzeugnisse `sdks/python/dist/pgchangefeed-0.2.1-py3-none-any.whl` + `.tar.gz`; frischer Testlauf im Build-Image 130 passed (Verifikations-Report §1) |
 | `make sdk-pack-kotlin` grün | Exit `0`, Erzeugnisse `sdks/kotlin/dist/pgchangefeed-kotlin-0.2.2.jar` + `-sources.jar`; frischer `--no-cache`-Testlauf 19 Suites/89 Testfälle/0 failures (Verifikations-Report §1) |
 | Handbuch-Träger | beide gRPC-Abschnitte nennen alle drei SDK-Packages als abdeckend, kein offener Folge-Schritt zur gRPC-Verwaltungs-API; Versionshistorie 1.80/1.81 |
-| Review-Artefakte | `review-sdk-csharp-grpc-administration-flaeche.md`, `review-sdk-python-grpc-administration-flaeche.md` (je 1 HIGH, gezogen), `review-sdk-kotlin-grpc-administration-flaeche.md` (1 HIGH, 2 LOW, 1 INFO), `review-fixrunde-welle-sdk-grpc-administration-flaeche.md` (0 Befunde), `verifikation-slice-sdk-kotlin-grpc-administration-flaeche.md` und `verifikation-slice-sdk-python-grpc-administration-flaeche.md` (DoD je „ja") |
+| Review-Artefakte | `review-sdk-csharp-grpc-administration-flaeche.md` (1 HIGH, 2 LOW, 1 INFO), `review-sdk-python-grpc-administration-flaeche.md` (1 HIGH), `review-sdk-kotlin-grpc-administration-flaeche.md` (1 HIGH, 2 LOW, 1 INFO), `review-fixrunde-welle-sdk-grpc-administration-flaeche.md` (0 Befunde), `verifikation-sdk-csharp-grpc-administration-flaeche.md`, `verifikation-slice-sdk-kotlin-grpc-administration-flaeche.md` und `verifikation-slice-sdk-python-grpc-administration-flaeche.md` (DoD je „ja") |
 
 ### Schritt 2 — Trigger-Audit
 
@@ -226,9 +233,16 @@ gleichwohl auszuführen, liegt beim Betreiber.
 
 ### Ausgang des Closure-Note-Reviews
 
-Ein eigener Review-Lauf dieser Closure-Notiz in frischem Kontext
-(`.harness/skills/closure-note-reviewer.md`) liegt zum Zeitpunkt dieses
-Schreibens **nicht** vor. Diese Abweichung ist benannt, nicht
-verschwiegen: die Prüfung obliegt der nächsten Rolle im Workflow, nicht
-diesem Planner-Zug selbst (kein Self-Review, Baseline-Regelwerk
-`modul-08-agentenrollen.md`).
+Der Review-Lauf dieser Closure-Notiz in frischem Kontext
+(`.harness/skills/closure-note-reviewer.md`) liegt vor:
+`review-closure-note-welle-sdk-grpc-administration-flaeche.md` (Commit
+`865c273e`) — 0 HIGH, 2 MEDIUM, 1 LOW, 1 INFO, Verdikt nicht
+merge-blockierend. Die vier Findings sind mit diesem Nachtrag gezogen:
+F-1 (Zählung „2 HIGH" auf 3 HIGH korrigiert, `dfdd16e0` in der
+Commit-Aufzählung ergänzt), F-2 (Coverage-Zahl auf die Nachmessung am
+genannten Stand gezogen), F-3 (das in-Welle-Wachstum von
+`beleg-befehl-traegt-seinen-satz-nicht` im Lese-Schritt und der siebte
+Slug der Paarung-(c)-Aufzählung ergänzt) und F-4 (C#-Verifikations-Report
+benannt, Kompressionsform aufgelöst). Die Register-Seite: die beiden
+MEDIUM-Findings wachsen `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+um einen Beleg (26×, siehe Register).
