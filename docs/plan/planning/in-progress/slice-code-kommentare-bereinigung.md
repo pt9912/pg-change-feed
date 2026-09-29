@@ -95,7 +95,7 @@ Provenienz („`TestXyz` trägt … aus …“) ohne Kennungs-Kette bleibt.
 
 ## 2. Definition of Done
 
-- [ ] **Liefer-Punkt 1 — Nicht-Test-Code (T1 bis T7).** Je Tranche steht die
+- [x] **Liefer-Punkt 1 — Nicht-Test-Code (T1 bis T7).** Je Tranche steht die
       Kandidatenzahl vor und nach der Änderung im Bericht, gemessen mit
       `make kommentar-kennungen COUNT=1 TESTS=exclude PATHS=<Suchraum der
       Tranche>` (Befehl, Lauf und Zahl, Ursprung „gemessen“,
@@ -222,7 +222,18 @@ die Zeilen mit Stand `diff`:
 7b70b34a 125 -l -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go' ':!*_test.go'
 7b70b34a 8 -E '//.* ff\.' -- '*.go'
 7b70b34a 15 -E '\.go:[0-9]+' -- AGENTS.md README.md harness spec docs/user
+diff 1850 -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go'
+diff 147 -l -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go' ':!*_test.go'
+diff 1 -E '//.* ff\.' -- '*.go'
+diff 18 -E '\.go:[0-9]+' -- AGENTS.md README.md harness spec docs/user
 ```
+
+Die `diff`-Zeilen sind am Arbeitsbaum nach T1 bis T7 gemessen (Implementer,
+dieser Lauf). Der Wert 1 der `ff.`-Zeile ist kein Kommentar: der Lauf trifft
+das String-Literal eines Tabellentestfalls in
+`tools/harness/kommentar-kennungen/main_test.go`, dessen Eingabe eine
+„ff."-Zeile als Beispieltext trägt. Die Kennungs-Zeilen und Dateien sinken in
+T8 (Test-Code) weiter; die `diff`-Zeilen trägt die Fortsetzung dann nach.
 
 | Träger | Befund | Behandlung |
 |---|---|---|
