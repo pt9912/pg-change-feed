@@ -1,25 +1,28 @@
-# harness/mk/sdk.mk — Werkzeug-Fragment für die SDK-Packages
+# harness/mk/sdk.mk — Fragment für die SDK-Packages
 # (`PgChangeFeed.Client`, C#/NuGet, ADR-0106; `pgchangefeed`, Python/PyPI,
 # ADR-0107/ADR-0108; `pgchangefeed-kotlin`, Kotlin/GitHub Packages und
-# Cloudsmith, ADR-0109/ADR-0123). Kein Gate: `dotnet restore`/PyPI-Paketbezug/
-# Gradle-Paketbezug braucht Netz, `make gates` bleibt netzlos (ADR-0106
-# Festlegung 4, ADR-0107 Festlegung 5, ADR-0109 Festlegung 5, dieselbe
-# Begründung wie harness/mk/examples.mk) — dieses Fragment hängt deshalb
-# NICHT an GATE_CHECKS.
+# Cloudsmith, ADR-0109/ADR-0123). Das Fragment trägt das Gate
+# `sdk-public-doc-check` (ADR-0134) sowie die Bau- und Test-Werkzeuge:
+# `dotnet restore`/PyPI-Paketbezug/Gradle-Paketbezug braucht Netz, `make gates`
+# bleibt netzlos (ADR-0106 Festlegung 4, ADR-0107 Festlegung 5, ADR-0109
+# Festlegung 5, dieselbe Begründung wie harness/mk/examples.mk) — die
+# `sdk-pack-*`-Ziele hängen deshalb NICHT an GATE_CHECKS.
 #
 # `sdk-public-doc-check` prueft, dass keine Datei unter sdks/ eine interne
 # Kennung (SPEC-/ADR-/ARC-/LH-FA-/LH-QA-, Slice-/Welle-Name) traegt:
 # Kommentare, Docstrings, Fehlertexte, README und Build-Dateien der SDKs
 # erreichen Anwender ueber die Pakete (Wheel/sdist, nupkg mit XML-Doku,
 # Sources-Jar). Reines grep, netzlos und schnell
-# (tools/harness/sdk-public-doc-check.sh); die drei `sdk-pack-*`-Ziele haengen
-# davon ab, damit ein Rueckfall vor dem Bau auffaellt. Bewusst kein Teil von
-# GATE_CHECKS: ein weiteres Gate aendert die Gate-Liste in harness/README.md
-# und ihre Sensor-Bindung; das Ziel bleibt Werkzeug mit eigenem Tabellentest
-# (`make test-sdk-public-doc-check`).
+# (tools/harness/sdk-public-doc-check.sh). Gate in GATE_CHECKS (ADR-0134):
+# ein Rueckfall faellt bei jedem Push/PR auf (ci.yml faehrt make gates), und
+# die drei `sdk-pack-*`-Ziele haengen weiterhin an der Vorgaenger-Kante, damit
+# er vor dem Bau auffaellt. Der Tabellentest zur Wächter-Logik bleibt Werkzeug
+# (`make test-sdk-public-doc-check`, ADR-0134 Teilfrage 2).
 .PHONY: sdk-public-doc-check
-sdk-public-doc-check: ## Keine interne Kennung in den Dateien unter sdks/ (netzlos, grep; Vorstufe der sdk-pack-*-Ziele; Werkzeug, kein Gate)
+sdk-public-doc-check: ## Gate: keine interne Kennung in den Dateien unter sdks/ (netzlos, grep; Vorstufe der sdk-pack-*-Ziele; ADR-0134)
 	@bash tools/harness/sdk-public-doc-check.sh
+
+GATE_CHECKS += sdk-public-doc-check
 
 .PHONY: test-sdk-public-doc-check
 test-sdk-public-doc-check: ## Tabellentest gegen tools/harness/sdk-public-doc-check.sh (netzlos)
