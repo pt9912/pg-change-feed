@@ -104,7 +104,7 @@ unverändert. Sie exemptet `docs/reviews/*.md` ausschließlich von der
 
 | Option | Pro | Contra |
 |---|---|---|
-| A — `review`-Klasse ohne jede `status`-Anwendung, etwa über einen Klassen-lokalen `status: off`-Schalter | sauberer als eine Pfad-Ausnahme, adressiert die Ursache (Klassen-Zugehörigkeit) statt eines Pfad-Musters | technisch nicht verfügbar: `.d-check.yml`s `matrix.status` ist ein einziger, klassen-übergreifender Block (kein `status`-Unterschlüssel je `classes`-Eintrag, geprüft am bestehenden Bestand und an der Baseline-Vorlage `.harness/baseline/v6.9.0/templates/.d-check.yml`, die `status: {forbidden: […]}` ebenfalls nur auf Matrix-Ebene zeigt) — eine Klassen-lokale Abschaltung existiert im Werkzeug nicht |
+| A — `review`-Klasse ohne jede `status`-Anwendung, etwa über einen Klassen-lokalen `status: off`-Schalter | sauberer als eine Pfad-Ausnahme, adressiert die Ursache (Klassen-Zugehörigkeit) statt eines Pfad-Musters | technisch nicht verfügbar: `.d-check.yml`s `matrix.status` ist ein einziger, klassen-übergreifender Block (kein `status`-Unterschlüssel je `classes`-Eintrag, geprüft am bestehenden Bestand und an der Baseline-Vorlage `.harness/baseline/v6.13.0/templates/.d-check.yml`, die `status: {forbidden: […]}` ebenfalls nur auf Matrix-Ebene zeigt) — eine Klassen-lokale Abschaltung existiert im Werkzeug nicht |
 | B — `superseded`/`deprecated` repo-weit aus `matrix.status.forbidden` streichen | löst die 58 Befunde ebenfalls, ein Zeilen-Diff | schwächt die Klasse für `adr`/`spec`/`slice` mit — genau dort bleibt die Prüfung sinnvoll (eine lebende ADR soll keine abgelöste ADR referenzieren); overreach gegenüber dem real beobachteten Problem, das ausschließlich `docs/reviews/**` betrifft |
 | **C — `docs/reviews/*.md` in `matrix.exempt-paths` — gewählt** | exakt dieselbe Begründung und derselbe Mechanismus, den `.d-check.yml`s `versions`-Modul für denselben Pfad bereits trägt (Record-Einfrierung ist zeitlich, `ADR-0073`); real auf 0 Befunde gemessen; die `adr → review`-Regel bleibt real scharf (Gegenprobe) | ein weiterer Eintrag in einer bereits zwei Einträge tragenden Liste — Pfad-Muster statt Klassen-Eigenschaft, siehe A |
 
@@ -152,6 +152,7 @@ permanent.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-18 | Accepted — `docs/reviews/*.md` in `matrix.exempt-paths` ergänzt, Anlass: 58 real gemessene `matrix-inactive`-Befunde nach dem `ADR-0094`-Diff | Architect-Verdikt zur `matrix.status`-Ausnahme für die `review`-Klasse (2026-09-18) |
+| 2026-09-29 | Zitat-Korrektur — Baseline-Vorlagen-Pfad auf v6.13.0 ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

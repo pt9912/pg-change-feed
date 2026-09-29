@@ -90,7 +90,7 @@ Kurs-Baseline: adoptiert v6.9.0, neuester Release v6.13.0` (Release vom
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `.harness/baseline/<Tag>/**` (Tag: v6.13.0) | neu (Bundle) | Träger: Regelwerk + Templates + `SHA256SUMS` aus dem Release-Asset |
-| `.harness/baseline/v6.9.0/**` | entfernt | der alte Stand lebt in der Git-Historie |
+| `.harness/baseline/<Tag>/**` (Tag: v6.9.0) | entfernt | der alte Stand lebt in der Git-Historie |
 | Drift-Audit (Architect) | Bericht unter `docs/reviews/` | Prüfauftrag vor der Verkörperung — der Nachzug folgt den Funden, nicht umgekehrt |
 | `harness/conventions.md` §Baseline | update | adoptierter Stand v6.13.0, Datum, Release-URL |
 | `AGENTS.md` §1 | update | Download-URL auf v6.13.0 |

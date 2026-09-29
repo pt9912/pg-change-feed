@@ -21,6 +21,6 @@ unabhängig voneinander: kein verbliebener kaputter Link außerhalb der vier
 erwarteten Klassen (eigene Plan-Datei, `docs/reviews/**` jetzt exempt,
 `done/`-Records, `ADR-0051` P8-Pininventur).
 
-Quelle: `docs/plan/planning/in-progress/slice-105-baseline-v6.9.0-materialisieren.md`
+Quelle: `docs/plan/planning/done/altbestand/slice-105-baseline-v6.9.0-materialisieren.md`
 §6 (nachträglich ergänztes viertes Risiko) · Review zu `slice-105` ·
 Verifikationsbericht zu `slice-105` §7 · Commit `94de7bb`.

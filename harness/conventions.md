@@ -31,8 +31,8 @@ damit spätere Adaptionen einen Bezugspunkt haben.
 
 - **Konvention:** AI-Harness-Kurs (Baseline-Regelwerk, als Release-Asset
   vendored unter `.harness/baseline/`)
-- **Stand:** v6.9.0
-- **Datum der Adoption:** 2026-09-17
+- **Stand:** v6.13.0
+- **Datum der Adoption:** 2026-09-29
 
 <!--
 Der Stand ist eine VERSION, kein Datum: Er ist der Bezugspunkt, gegen den ein
@@ -56,9 +56,9 @@ ist derivativ — bei Konflikt gilt das Lehrmaterial.
 - **Extern (Lehrmaterial):** <Pfad oder URL>
 - **Vendored Baseline (Regelwerk + Templates):** aus dem self-contained
   Release-Asset
-  https://github.com/pt9912/ai-harness-course/releases/download/v6.9.0/lab-regelwerk.zip
+  https://github.com/pt9912/ai-harness-course/releases/download/v6.13.0/lab-regelwerk.zip
   nach `.harness/baseline/<tag>/{regelwerk,templates}/` entpackt (netzlos,
-  `SHA256SUMS`) — adoptierter Stand: Kurs-Welle 137 · 2026-09-16 (Stand-Zeile
+  `SHA256SUMS`) — adoptierter Stand: Kurs-Welle 153 · 2026-09-28 (Stand-Zeile
   in `regelwerk/README.md`; Wellen-Register: CHANGELOG.md im Kurs-Repo); für
   harte Reproduzierbarkeit das Asset eines Tags ziehen statt `latest`.
 - **In-Repo (verkörperte Form):** <Pfade zu deinen kopiert-und-ausgefüllten
@@ -89,7 +89,7 @@ sie gilt für jeden Lauf.
   Adoptions-Erklärung, keine Adaption)*
 - **Adaption:** *keine inhaltlichen Adaptionen ggü. Baseline-Default
   für Verzeichniskonvention, Lifecycle-Regeln, Carveout-Disziplin,
-  ID-Schema (`<PREFIX>-FA-*`, `<PREFIX>-QA-*`, `SPEC-<NNN>`, `ARC-<NNN>`,
+  ID-Schema (`<PREFIX>-FA-*`, `<PREFIX>-QA-*`, `<PREFIX>-RB-*`, `SPEC-<NNN>`, `ARC-<NNN>`,
   `ADR-<NNNN>`, `CO-<NNN>`, `slice-<NNN>`, `MR-<NNN>`, `BEO-<NNN>`, `RC-<NNN>` — nur das
   Vertrags-Präfix wird repo-weit festgelegt, z. B. `LH`; `SPEC-*` und
   `ARC-*` kodieren das Stratum und sind fest, siehe Baseline-Regelwerk
