@@ -11,7 +11,7 @@ import (
 
 // runRetentionRequest trägt den JSON-Request-Body (`SPEC-018`): `source`
 // Pflicht, `min_age_nanos` das Mindestalter der Policy in Nanosekunden
-// (`LH-FA-RET-003`) — 0 heißt „kein zeitliches Mindestalter" und ist gültig,
+// — 0 heißt „kein zeitliches Mindestalter" und ist gültig,
 // negativ trägt `model.ErrNegativeDuration` (`400`).
 type runRetentionRequest struct {
 	Source      string `json:"source"`
@@ -25,7 +25,7 @@ type runRetentionResponse struct {
 }
 
 // runRetentionHandler übersetzt den JSON-Request in
-// `inbound.RunRetentionCommand` (`LH-FA-RET-002`…`004`, `ADR-0057`
+// `inbound.RunRetentionCommand` (`ADR-0057`
 // Teilfrage 4): der Adapter importiert ausschließlich den Inbound Port und
 // Domain-Typen zur Übersetzung, keine Application-Interna. Die Policy
 // entsteht über den Domänen-Konstruktor — eine negative Dauer endet über die

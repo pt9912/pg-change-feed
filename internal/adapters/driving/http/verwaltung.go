@@ -10,8 +10,7 @@ import (
 )
 
 // enableTableRequest trägt den JSON-Request-Body (`SPEC-018`): alle sieben
-// Felder Pflicht, Übersetzung in `inbound.EnableTableCommand`
-// (`LH-FA-CFG-001`).
+// Felder Pflicht, Übersetzung in `inbound.EnableTableCommand`.
 type enableTableRequest struct {
 	Source          string `json:"source"`
 	Schema          string `json:"schema"`
@@ -23,7 +22,7 @@ type enableTableRequest struct {
 }
 
 // enableTableResponse trägt den JSON-Response-Body bei Erfolg (`SPEC-018`):
-// `AlreadyEnabled` trägt `LH-FA-CFG-001`s Idempotenz-Ausgang fort — derselbe
+// `AlreadyEnabled` trägt den Idempotenz-Ausgang fort — derselbe
 // `201`-Status trägt beide Ausgänge, analog zu `registerConsumerResponse`.
 type enableTableResponse struct {
 	TableID        string `json:"table_id"`
@@ -34,7 +33,7 @@ type enableTableResponse struct {
 }
 
 // enableTableHandler übersetzt den JSON-Request in
-// `inbound.EnableTableCommand` (`LH-FA-CFG-001`, `ADR-0057` Teilfrage 4):
+// `inbound.EnableTableCommand` (`ADR-0057` Teilfrage 4):
 // der Adapter importiert ausschließlich den Inbound Port und Domain-Typen
 // zur Übersetzung, keine Application-Interna. Eine an der Quelle fehlende
 // physische Tabelle trägt `inbound.ErrSourceTableMissing` (`404`,
@@ -72,8 +71,7 @@ func enableTableHandler(useCase inbound.EnableTableUseCase, log outbound.LogPort
 }
 
 // disableTableRequest trägt den JSON-Request-Body (`SPEC-018`): alle vier
-// Felder Pflicht, Übersetzung in `inbound.DisableTableCommand`
-// (`LH-FA-CFG-002`).
+// Felder Pflicht, Übersetzung in `inbound.DisableTableCommand`.
 type disableTableRequest struct {
 	Source      string `json:"source"`
 	Schema      string `json:"schema"`
@@ -83,7 +81,7 @@ type disableTableRequest struct {
 
 // disableTableResponse trägt den JSON-Response-Body bei Erfolg
 // (`SPEC-018`): `Removed`/`Retained` tragen den Bindungs-Zeilen-Ausgang
-// (`LH-FA-CFG-002` Out-of-Scope: das Verhalten persistierter Changes folgt
+// (Out-of-Scope: das Verhalten persistierter Changes folgt
 // der Retention, nicht dieser Deaktivierung).
 type disableTableResponse struct {
 	Removed  bool `json:"removed"`
@@ -117,8 +115,8 @@ func disableTableHandler(useCase inbound.DisableTableUseCase, log outbound.LogPo
 }
 
 // getStatusResponse trägt den JSON-Response-Body bei Erfolg (`SPEC-018`):
-// `Enabled`/`Retained` trennen Erfassungs-Zustand und Herkunft
-// (`LH-FA-CFG-003`); beide `false` liest eine nie aktivierte Tabelle.
+// `Enabled`/`Retained` trennen Erfassungs-Zustand und Herkunft; beide
+// `false` liest eine nie aktivierte Tabelle.
 type getStatusResponse struct {
 	Enabled  bool `json:"enabled"`
 	Retained bool `json:"retained"`
@@ -128,7 +126,7 @@ type getStatusResponse struct {
 // `GET`-Request trägt keinen Body (`ADR-0057` Teilfrage 4, lesender
 // Endpunkt). Eine an der Quelle fehlende physische Tabelle trägt
 // `inbound.ErrSourceTableMissing` (`404`); eine nie registrierte Tabelle
-// trägt `enabled=false, retained=false` (`200`, `LH-FA-CFG-003` Boundary).
+// trägt `enabled=false, retained=false` (`200`).
 func getStatusHandler(useCase inbound.GetStatusUseCase, log outbound.LogPort) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
@@ -166,8 +164,8 @@ type sourceTableResponse struct {
 }
 
 // listTablesResponse trägt den JSON-Response-Body bei Erfolg (`SPEC-018`):
-// `Tables`/`Retained` trennen Erfassungs-Zustand und Herkunft
-// (`LH-FA-CFG-004`); ohne Aktivierung tragen beide leere Listen, nie `null`
+// `Tables`/`Retained` trennen Erfassungs-Zustand und Herkunft; ohne
+// Aktivierung tragen beide leere Listen, nie `null`
 // (`toSourceTableResponse` initialisiert mit `make(…, 0, …)`).
 type listTablesResponse struct {
 	Tables   []sourceTableResponse `json:"tables"`

@@ -6,7 +6,7 @@ import (
 )
 
 // WALRetentionChecker misst den WAL-Rückstand eines Logical-Replication-
-// Slots (`SPEC-009` `cdc_wal_retention_bytes`, `ADR-0049`) über eine
+// Slots (`ADR-0049`, `cdc_wal_retention_bytes`) über eine
 // eigene, von der Stream-Verbindung getrennte Verbindung derselben Rolle
 // (`cdc_capture`): Die Stream-Verbindung (`Stream.conn`) befindet sich
 // während `Stream.Run` durchgehend im COPY-Modus des Replication-

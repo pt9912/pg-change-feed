@@ -1,6 +1,6 @@
 // Package grpc trägt den gRPC-Driving-Adapter (`ADR-0060`): Server,
-// Auth-Interceptor und die Übersetzung Domain-Change ↔ Protobuf-Nachricht
-// (`SPEC-020`). Der Adapter kennt den `Broadcaster` nicht über einen Import
+// Auth-Interceptor und die Übersetzung Domain-Change ↔ Protobuf-Nachricht.
+// Der Adapter kennt den `Broadcaster` nicht über einen Import
 // des Driven-Pakets, sondern über ein hier deklariertes, strukturell
 // erfülltes Interface (`changeSubscriber`, `ADR-0060` Teilfrage 2) — kein
 // Adapter-Paket importiert ein anderes, nur `internal/bootstrap` kennt
@@ -34,7 +34,7 @@ type changeSubscriber interface {
 
 // Config trägt die Verdrahtungs-Eingabe des Adapters (`ADR-0060`
 // Folgepflicht): die Horch-Adresse, die beiden Token-Klassen aus
-// `ADR-0057` Teilfrage 3 und den Broadcaster.
+// Teilfrage 3 und den Broadcaster.
 type Config struct {
 	// Addr trägt die Horch-Adresse (`CDC_GRPC_ADDR`); die Composition Root
 	// entscheidet über den Start, dieser Typ trägt nur die Adresse.
@@ -155,7 +155,7 @@ type changeStreamService struct {
 // jeden eintreffenden Change, bis der Client die Verbindung beendet
 // (`ADR-0060` Teilfrage 3): kein Replay — ein ab Verbindungsaufbau
 // eintreffender Change geht über den Stream, ältere bleiben dem
-// Lesezugriffsweg vorbehalten (`LH-FA-SST-008` Boundary).
+// Lesezugriffsweg vorbehalten.
 func (s *changeStreamService) StreamChanges(req *streamv1.StreamChangesRequest, stream grpc.ServerStreamingServer[streamv1.Change]) error {
 	if s.subscriber == nil {
 		return status.Error(codes.Internal, "ChangeStream ohne Broadcaster verdrahtet")

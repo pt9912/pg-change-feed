@@ -19,7 +19,7 @@ type registerConsumerRequest struct {
 }
 
 // registerConsumerResponse trägt den JSON-Response-Body bei Erfolg
-// (`SPEC-018`): `AlreadyRegistered` trägt `LH-FA-CON-001`s
+// (`SPEC-018`): `AlreadyRegistered` trägt den
 // Idempotenz-Ausgang fort, ohne eine gesonderte Statuscode-Unterscheidung
 // — derselbe `201`-Status trägt beide Ausgänge.
 type registerConsumerResponse struct {
@@ -29,7 +29,7 @@ type registerConsumerResponse struct {
 }
 
 // registerConsumerHandler übersetzt den JSON-Request in
-// `inbound.RegisterConsumerCommand` (`LH-FA-CON-001`, `ADR-0057`
+// `inbound.RegisterConsumerCommand` (`ADR-0057`
 // Teilfrage 4): der Adapter importiert ausschließlich den Inbound Port
 // und Domain-Typen zur Übersetzung, keine Application-Interna.
 func registerConsumerHandler(useCase inbound.RegisterConsumerUseCase, log outbound.LogPort) http.Handler {

@@ -1,13 +1,12 @@
 // Package receive trägt den Replication-Stream-Adapter als Driving
-// Adapter (`ARC-005`, `ADR-0006`): er baut die Replication-Verbindung
-// auf, verwaltet den Logical Replication Slot (`LH-FA-CFG-001.a`),
-// empfängt die `pgoutput`-Nachrichten des Streams (`ADR-0008`,
-// `SPEC-010`) und übersetzt sie über Dekodierung und Mapper in Aufrufe
+// Adapter (`ARC-005`): er baut die Replication-Verbindung
+// auf, verwaltet den Logical Replication Slot,
+// empfängt die `pgoutput`-Nachrichten des Streams und übersetzt sie über
+// Dekodierung und Mapper in Aufrufe
 // des `CaptureInboundPort`. Er entscheidet nicht über Persistenz,
-// Retention oder Source-ACK (`ADR-0006` Konsequenz) — die bestätigte
+// Retention oder Source-ACK — die bestätigte
 // Position kommt ihm ausschließlich als Ergebnis des Capture-Aufrufs oder,
-// im Leerlauf des Streams, der Leerlauf-Bestätigung entgegen
-// (`LH-QA-REL-001.a`, `ADR-0120`).
+// im Leerlauf des Streams, der Leerlauf-Bestätigung entgegen.
 package receive
 
 import (
@@ -31,7 +30,7 @@ import (
 const outputPlugin = "pgoutput"
 
 // ErrReplication trägt die Fehlerklasse `replication` des
-// Stream-Adapters (`SPEC-008`, `ADR-0023`): Störungen an Verbindung und
+// Stream-Adapters (`ADR-0023`): Störungen an Verbindung und
 // Slot enden als sichtbare Fehler — kontrollierte Fortsetzung liegt bei
 // dem Aufrufer, der den Stream startet. Der Aufrufer klassifiziert über
 // `errors.Is`; die technische Ursache bleibt über die zweite Wrappung
@@ -39,7 +38,7 @@ const outputPlugin = "pgoutput"
 var ErrReplication = errors.New("Fehlerklasse replication: Replication-Stream/Slot-Störung")
 
 // ErrConfiguration trägt die Fehlerklasse `configuration` des
-// Stream-Adapters (`SPEC-008`, `ADR-0023`): eine ungültige oder falsch
+// Stream-Adapters (`ADR-0023`): eine ungültige oder falsch
 // gesetzte Konfiguration endet ohne Start und ohne Fortsetzung im
 // falschen Stand.
 var ErrConfiguration = errors.New("Fehlerklasse configuration: ungültige/falsch gesetzte Konfiguration")
@@ -58,13 +57,13 @@ var identifierShape = regexp.MustCompile(`^[a-z0-9_]{1,63}$`)
 // Publication und Slot (`LH-FA-CFG-001.a`) und die aktivierten Tabellen
 // mit ihren Port-Kennungen. Der Capture-Port und der Port der
 // Leerlauf-Bestätigung werden vor dem Lauf verdrahtet (BindCapture,
-// BindIdleConfirmation) — der ACK-Adapter braucht die Verbindung
-// (`ADR-0007`), die `NewStream` erst aufbaut. Die Tabellen-Kennungen
+// BindIdleConfirmation) — der ACK-Adapter braucht die Verbindung, die
+// `NewStream` erst aufbaut. Die Tabellen-Kennungen
 // und die Schema-Versionen liegen initial bei der Konfiguration; die
 // dynamische Re-Versionierung trägt `SchemaStore` über den Mapper
-// (`mapper.Assembler.Consume`, `ADR-0015` Folgepflicht) — die Erkennung
+// (`mapper.Assembler.Consume`) — die Erkennung
 // nicht sicher interpretierbarer Änderungen als Fehlerklasse `schema`
-// bleibt `LH-FA-SCH-004.a`.
+// bleibt sichtbar.
 type Config struct {
 	DSN         string
 	Source      model.SourceID
@@ -81,7 +80,7 @@ type Config struct {
 	// Assemblers wirkungslos — bestehende Aufrufstellen (Tests), die
 	// dieses Feld nicht setzen, bleiben unverändert kompilierbar.
 	SchemaStore outbound.SchemaStorePort
-	// Log trägt den injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`);
+	// Log trägt den injizierten `LogPort` (`ADR-0024`);
 	// ungesetzt (`nil`) fällt `NewStream` auf `outbound.NoopLog` zurück —
 	// bestehende Aufrufstellen (Tests), die dieses Feld nicht setzen,
 	// bleiben unverändert kompilierbar.
@@ -110,9 +109,9 @@ type Stream struct {
 	// lastAcked trägt die letzte bestätigte Position als LSN —
 	// ausschließlich Positionsgröße für Keepalive-Antworten und
 	// Slot-Feedback: confirmed_flush_lsn rückt nur über bestätigte
-	// Positionen (`LH-QA-REL-001.a`), nicht über den Empfangsstand. Sie
+	// Positionen (`LH-QA-REL-001`), nicht über den Empfangsstand. Sie
 	// stammt aus dem Ergebnis eines Capture-Aufrufs oder einer
-	// Leerlauf-Bestätigung (`ADR-0120`) und geht nie zurück.
+	// Leerlauf-Bestätigung und geht nie zurück.
 	lastAcked pglogrepl.LSN
 	// slot, startLSN und publication tragen die Angaben, die `Run` für
 	// `START_REPLICATION` braucht (`ADR-0128`): `NewStream` löst sie auf
@@ -121,7 +120,7 @@ type Stream struct {
 	startLSN    pglogrepl.LSN
 	publication string
 	// log trägt die strukturierte Protokollierung über den injizierten
-	// `LogPort` (`LH-QA-OPS-004`, `ADR-0024`) — nie `nil` (`NewStream`
+	// `LogPort` (`ADR-0024`) — nie `nil` (`NewStream`
 	// trägt den `outbound.NoopLog`-Default nach).
 	log outbound.LogPort
 }
@@ -190,11 +189,11 @@ func newStreamOnSession(session driverSession, conn *pgconn.PgConn, assembler *m
 
 // validateConfig trägt die Konfigurationsgrenzen vor dem
 // Verbindungsaufbau: nichtleere Kennungen und Quelle; Publication- und
-// Slot-Namen tragen das Bezeichner-Alphabet (`SPEC-008`, Klasse
+// Slot-Namen tragen das Bezeichner-Alphabet (Klasse
 // `configuration` — kein Start im falschen Stand). Der Capture-Port
 // wird vor `Run` verdrahtet (BindCapture) — die Composition Root
 // verdrahtet Stream- und ACK-Adapter über dieselbe Verbindung
-// (`ADR-0007`, `ADR-0026`).
+// (`ADR-0007`).
 func validateConfig(cfg Config) error {
 	if cfg.DSN == "" {
 		return fmt.Errorf("%w: DSN fehlt", ErrConfiguration)
@@ -294,7 +293,7 @@ func firstRow(results []*pgconn.Result) ([]string, bool) {
 
 // parseLSN trägt die LSN-Übersetzung eines Katalogwerts in die
 // Positionsform (`ADR-0005`); ein unlesbarer Wert endet über die
-// Fehlerklasse `replication` (`SPEC-008`). `what` benennt die Quelle des
+// Fehlerklasse `replication`. `what` benennt die Quelle des
 // Werts in der Fehlermeldung.
 func parseLSN(what, text string) (pglogrepl.LSN, error) {
 	lsn, err := pglogrepl.ParseLSN(text)
@@ -428,7 +427,7 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 // handleCopyData trägt die Meldungs-Zerlegung des CopyData-Payloads
 // (`ADR-0006`): eine XLogData-Nachricht läuft über `process` in den
 // Capture-Pfad; eine Primary-Keepalive-Nachricht läuft über
-// `confirmIdle` in die Leerlauf-Bestätigung (`ADR-0120`), und nur wenn
+// `confirmIdle` in die Leerlauf-Bestätigung, und nur wenn
 // diese nichts bestätigt, beantwortet der Stream sie bei `ReplyRequested`
 // mit der letzten bestätigten Position — höchstens ein Standby-Status-Update
 // je Keepalive-Nachricht: die Bestätigung über den `ReplicationAckPort` ist
@@ -459,7 +458,7 @@ func (s *Stream) handleCopyData(ctx context.Context, data []byte) error {
 		}
 		// Die Keepalive-Antwort meldet die letzte bestätigte Position —
 		// nie den Empfangsstand; die Bestätigung entscheidet die
-		// Application (`ADR-0007`, `LH-QA-REL-001.a`).
+		// Application (`ADR-0007`).
 		if err := s.session.SendStandbyStatusUpdate(ctx, standbyStatus(s.lastAcked)); err != nil {
 			return fmt.Errorf("%w: Keepalive-Antwort: %v", ErrReplication, err)
 		}
@@ -472,8 +471,7 @@ func (s *Stream) handleCopyData(ctx context.Context, data []byte) error {
 // confirmIdle meldet der Application „Leerlauf bis P“ (`ADR-0120`
 // Festlegung 1) und setzt die bestätigte Position aus dem Ergebnis dieses
 // Aufrufs. Es geschieht nichts — die Meldung unterbleibt —, solange eine
-// Quelltransaktion zwischen BEGIN und COMMIT offen ist (das WAL-Ende liegt
-// dann hinter Nachrichten, die noch nicht gespeichert sind) und solange das
+// Quelltransaktion zwischen BEGIN und COMMIT offen ist und solange das
 // WAL-Ende der Quelle nicht hinter der bestätigten Position liegt (die
 // Bestätigung geht nie zurück). Der Rückgabewert meldet, ob die Application
 // bestätigt hat; ein Fehler des Ports endet in der Klasse `replication`
@@ -539,8 +537,7 @@ func standbyStatus(lsn pglogrepl.LSN) pglogrepl.StandbyStatusUpdate {
 // Mapper und ruft den `CaptureInboundPort` auf; das Capture-Ergebnis
 // trägt die bestätigte Position und setzt den Stand des Slot-Feedbacks.
 // Ein Fehler endet der Stream — Persist-before-ACK und das Verbot des
-// stillen Überspringens gelten an der Adapter-Grenze (`LH-QA-REL-001.a`,
-// `SPEC-008`).
+// stillen Überspringens gelten an der Adapter-Grenze (`LH-QA-REL-001`).
 func (s *Stream) process(ctx context.Context, payload []byte) error {
 	event, err := s.decoder.Decode(payload)
 	if err != nil {

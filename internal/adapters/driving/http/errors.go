@@ -14,7 +14,7 @@ import (
 // `inbound.ErrSourceTableMissing` trägt eine unbekannte Ressource an der
 // Quelle (`404`); die benannten Domänen-Invarianten (`ADR-0029`) und die
 // Kontrakt-Sentinels des Leseports (`outbound.ErrNonPositiveLimit`,
-// `outbound.ErrRangeInverted`, `LH-FA-REA-001`/`003` Negative) tragen eine
+// `outbound.ErrRangeInverted`) tragen eine
 // ungültige Eingabe (`400`) — dieselbe Klasse wie
 // `domainerrors.ErrEmptyIdentifier` in `registerconsumer.go`; jeder übrige
 // (unbekannte) Fehler ist ein unerwarteter interner Fehler (`500`) und wird

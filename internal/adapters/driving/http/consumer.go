@@ -18,7 +18,7 @@ type acknowledgeConsumerRequest struct {
 }
 
 // acknowledgeConsumerResponse trägt den JSON-Response-Body bei Erfolg
-// (`SPEC-018`): die fortgeführte Position (`LH-FA-CON-004`).
+// (`SPEC-018`): die fortgeführte Position.
 type acknowledgeConsumerResponse struct {
 	ConsumerID string `json:"consumer_id"`
 	SourceID   string `json:"source_id"`
@@ -26,7 +26,7 @@ type acknowledgeConsumerResponse struct {
 }
 
 // acknowledgeConsumerHandler übersetzt den JSON-Request in
-// `inbound.AcknowledgeConsumerCommand` (`LH-FA-CON-004`, `ADR-0057`
+// `inbound.AcknowledgeConsumerCommand` (`ADR-0057`
 // Teilfrage 4): der Adapter importiert ausschließlich den Inbound Port und
 // Domain-Typen zur Übersetzung, keine Application-Interna.
 func acknowledgeConsumerHandler(useCase inbound.AcknowledgeConsumerUseCase, log outbound.LogPort) http.Handler {
@@ -55,10 +55,10 @@ func acknowledgeConsumerHandler(useCase inbound.AcknowledgeConsumerUseCase, log 
 }
 
 // getConsumerPositionResponse trägt den JSON-Response-Body bei Erfolg
-// (`SPEC-018`): `Acknowledged` trägt `LH-FA-CON-005`s Boundary — der
+// (`SPEC-018`): `Acknowledged` trägt den Boundary der Position — der
 // Nullwert liest die definierte Anfangsposition eines Consumers ohne
 // Bestätigung, statt sie von einer echten Bestätigung mit Offset 0 zu
-// unterscheiden (Letzteres ist keine gültige Position, `SPEC-003`).
+// unterscheiden (Letzteres ist keine gültige Position).
 type getConsumerPositionResponse struct {
 	ConsumerID   string `json:"consumer_id"`
 	SourceID     string `json:"source_id"`
@@ -101,11 +101,11 @@ type removeConsumerRequest struct {
 }
 
 // removeConsumerResponse trägt den JSON-Response-Body bei Erfolg
-// (`SPEC-018`): `Removed` trägt `LH-FA-CON-006`s Idempotenz-Ausgang — ein
+// (`SPEC-018`): `Removed` trägt den Idempotenz-Ausgang der Entfernung — ein
 // nie registrierter Consumer meldet `false`, kein `404`: der Use Case
 // behandelt die Entfernung als Idempotenz, nicht als Fehler gegen eine
 // unbekannte Ressource, dieselbe fachliche Gleichwertigkeit über alle
-// Zugriffswege wie CLI/SQL (`LH-FA-SST-006` Boundary).
+// Zugriffswege wie CLI/SQL.
 type removeConsumerResponse struct {
 	ConsumerID string `json:"consumer_id"`
 	Removed    bool   `json:"removed"`

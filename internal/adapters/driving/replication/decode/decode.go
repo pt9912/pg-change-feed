@@ -1,14 +1,13 @@
 // Package decode trägt die `pgoutput`-Dekodierung des
-// Replication-Stream-Adapters (`ADR-0008`, `SPEC-010`): die binären
+// Replication-Stream-Adapters (`ADR-0008`): die binären
 // Output-Plugin-Nachrichten werden in die typisierten Ereignisse dieses
 // Pakets übersetzt — BEGIN, COMMIT, Relation, INSERT, UPDATE, DELETE und
-// TRUNCATE (`LH-FA-CFG-001.a`), alle übrigen Nachrichtentypen als
-// Abwesenheit. Die Protokoll-Details liegen am Treiber (pglogrepl,
-// `ADR-0032`); dieser Träger hält die Katalog- und Auflösungs-Arbeit der
-// Adapter-Verantwortung (`ADR-0023`): eine Nachricht, die nicht sicher
+// TRUNCATE, alle übrigen Nachrichtentypen als
+// Abwesenheit. Die Protokoll-Details liegen am Treiber (pglogrepl);
+// dieser Träger hält die Katalog- und Auflösungs-Arbeit der
+// Adapter-Verantwortung: eine Nachricht, die nicht sicher
 // interpretierbar ist, endet als sichtbarer Fehler der Klasse `schema`
-// statt als stilles Überspringen (`SPEC-008`,
-// `LH-QA-REL-001.a` Fehlermodi).
+// statt als stilles Überspringen.
 package decode
 
 import (
@@ -19,9 +18,9 @@ import (
 	"github.com/jackc/pglogrepl"
 )
 
-// ErrSchema trägt die Fehlerklasse `schema` der Dekodierung (`SPEC-008`,
-// `ADR-0023`): Dekodierfehler sind sichtbare Fehler, kein stilles
-// Überspringen (`LH-QA-REL-001.a` Fehlermodi, `LH-FA-SCH-004.a`). Der
+// ErrSchema trägt die Fehlerklasse `schema` der Dekodierung (`ADR-0023`):
+// Dekodierfehler sind sichtbare Fehler, kein stilles
+// Überspringen. Der
 // Aufrufer klassifiziert über `errors.Is`; die technische Ursache bleibt
 // über die zweite Wrappung lesbar.
 var ErrSchema = stderrors.New("Fehlerklasse schema: pgoutput-Nachricht nicht sicher interpretierbar")
@@ -41,9 +40,9 @@ type Begin struct {
 func (Begin) isEvent() {}
 
 // Commit trägt den Commit einer Quelltransaktion (Typ `C`): CommitLSN
-// ist die Commit-Position (`SPEC-003`, der Adapter mappt die LSN auf
+// ist die Commit-Position (der Adapter mappt die LSN auf
 // den Offset), EndLSN ist das Transaktionsende. CommitTime trägt den
-// realen Quell-Commit-Zeitpunkt (`LH-FA-ADM-004`) aus
+// realen Quell-Commit-Zeitpunkt aus
 // `pglogrepl.CommitMessage.CommitTime`; der Mapper übersetzt ihn beim
 // Domänen-Commit in `model.TimePoint` (`ADR-0040` — Domain importiert
 // `time` nicht).
@@ -57,9 +56,9 @@ func (Commit) isEvent() {}
 
 // Column ist eine Relation-Spalte; Key markiert eine Spalte der
 // Replica-Identity. TypeOID trägt die rohe PostgreSQL-Typ-OID der Spalte
-// (`ADR-0015` Folgepflicht, `SPEC-004`) — die Grundlage, auf der der
-// Mapper unverändert von kompatibel erweitert unterscheidet
-// (`LH-FA-SCH-005`); die Übersetzung dieser OID in eine
+// (`ADR-0015` Folgepflicht) — die Grundlage, auf der der
+// Mapper unverändert von kompatibel erweitert unterscheidet;
+// die Übersetzung dieser OID in eine
 // Vergleichsentscheidung trägt dieses Paket nicht.
 type Column struct {
 	Name    string
@@ -251,9 +250,9 @@ func relationColumns(message *pglogrepl.RelationMessage) []Column {
 
 // tupleValues trägt die Text-Werte eines vollen Tupels: positionsgleich
 // zu den Relation-Spalten. NULL-Werte und unveränderte TOAST-Stützwerte
-// sind Abwesenheit (`LH-FA-CAP-008` Boundary); ein Binär-Tupel ist
+// sind Abwesenheit (Boundary); ein Binär-Tupel ist
 // nicht sicher interpretierbar, weil die Verbindung im Text-Format
-// streamt (`SPEC-008`, Klasse `schema`).
+// streamt (Klasse `schema`).
 func tupleValues(relation *Relation, tuple *pglogrepl.TupleData) ([]*string, error) {
 	if tuple == nil {
 		return nil, nil

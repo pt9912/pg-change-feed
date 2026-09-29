@@ -1,10 +1,10 @@
 // Package mapper übersetzt die dekodierten `pgoutput`-Ereignisse des
 // Replication-Stream-Adapters in Aufrufe des `CaptureInboundPort`
-// (`ARC-003`, `ADR-0006`, `ADR-0042`): der Träger baut aus BEGIN/Commit
+// (`ARC-003`): der Träger baut aus BEGIN/Commit
 // und den Änderungen eine vollständige, committed Quelltransaktion
-// (`LH-FA-CAP-006.a`) und meldet sie als CaptureCommand. Er entscheidet
+// und meldet sie als CaptureCommand. Er entscheidet
 // nicht über Persistenz oder ACK — Persist-before-ACK liegt am Capture
-// Use Case (`ADR-0027`, `LH-QA-REL-001.a`).
+// Use Case.
 package mapper
 
 import (
@@ -26,7 +26,7 @@ import (
 // ErrTruncateUnsupported trägt die Nicht-Unterstützung von TRUNCATE im
 // MVP (`LH-FA-CFG-001.a`): die Operation wird erkannt und als sichtbarer
 // Fehler der Klasse `schema` behandelt, nicht still übersprungen
-// (`SPEC-008`, Lastenheft §5 Out-of-Scope).
+// (Lastenheft §5 Out-of-Scope).
 var ErrTruncateUnsupported = errors.New("Fehlerklasse schema: TRUNCATE wird im MVP nicht unterstützt")
 
 // ErrChangeWithoutBegin trägt einen Stream-Vertragsverstoß: eine
@@ -42,15 +42,15 @@ var ErrCommitWithoutBegin = errors.New("Fehlerklasse replication: Commit ohne of
 // ErrBeginWithoutCommit trägt denselben Vertragsverstoß für ein BEGIN bei
 // bereits offener Transaktion: ein zweites BEGIN überschreibt die offene
 // Transaktion samt ihrer gesammelten Changes nicht still — der Stream
-// serialisiert die Quelltransaktionen (`ADR-0021`, Proposed); ein
+// serialisiert die Quelltransaktionen (`ADR-0021`); ein
 // Doppel-BEGIN ist eine Störung der Stream-Ordnung und endet sichtbar
-// (`LH-QA-REL-001.a` Fehlermodi, `SPEC-008` Klasse `replication`).
+// (Klasse `replication`).
 var ErrBeginWithoutCommit = errors.New("Fehlerklasse replication: BEGIN während offener Quelltransaktion")
 
 // ErrIncompatibleSchemaChange trägt jede nicht sicher als Obermenge
 // erkennbare Relation-Änderung (`relationOther`: Spalte entfernt, Typ
 // einer bestehenden Spalte geändert, Spalte umbenannt) als sichtbaren
-// Fehler der Klasse `schema` (`LH-FA-SCH-004.a`, `SPEC-008`,
+// Fehler der Klasse `schema` (`LH-FA-SCH-004.a`,
 // `observeRelation`) — der Erfassungspfad endet darüber, statt die
 // Änderung stillschweigend zu übernehmen.
 var ErrIncompatibleSchemaChange = errors.New("Fehlerklasse schema: Relation-Änderung nicht sicher als Obermenge interpretierbar")
@@ -69,24 +69,24 @@ var ErrIncompatibleSchemaChange = errors.New("Fehlerklasse schema: Relation-Änd
 var ErrTransformationNotApplicable = errors.New("Fehlerklasse schema: Transformationsregel auf die Änderung nicht anwendbar")
 
 // TableBinding trägt die am Port getragenen Kennungen einer aktivierten
-// Tabelle (`SPEC-001`): die Tabelle und die Schema-Version, die die
+// Tabelle: die Tabelle und die Schema-Version, die die
 // Changes dieser Tabelle referenzieren (`LH-FA-SCH-005`). Die
 // Schema-Version liegt initial bei der Konfiguration und wird von
 // `Assembler.Consume` bei einer real erkannten kompatiblen Erweiterung
-// aktualisiert (`ADR-0015` Folgepflicht) — die Erkennung nicht sicher
+// aktualisiert — die Erkennung nicht sicher
 // interpretierbarer Änderungen als Fehlerklasse `schema` trägt
 // `LH-FA-SCH-004.a` über denselben Metadata-Pfad.
 //
 // `ExcludedColumns` trägt die Spaltennamen, deren Werte die
-// Row-Image-Konstruktion übergeht (`LH-FA-CFG-005`, `ADR-0059`
-// Teilfrage 3): der Wert wird dadurch nie serialisiert und nie an die
+// Row-Image-Konstruktion übergeht: der Wert wird dadurch nie serialisiert
+// und nie an die
 // Persistenzschicht übergeben. Die Liste ist ab dem Schreiben
 // unverändert — jeder Nachtrag ersetzt sie unter `tablesMu` durch eine
 // neue (`Assembler.ExcludeColumn`/`IncludeColumn`), ein Leser hält
 // seinen Schnappschuss ohne eigene Sperre.
 //
-// `Transformations` trägt den Regelstand der Tabelle (`LH-FA-CFG-007`,
-// `ADR-0112` Teilfrage 6): die Regeln, die die Row-Image-Konstruktion nach
+// `Transformations` trägt den Regelstand der Tabelle: die Regeln, die die
+// Row-Image-Konstruktion nach
 // dem Ausschluss auswertet, je Regel unter ihrem Regelnamen. Die Liste
 // hat denselben Vertrag wie `ExcludedColumns` — ab dem Schreiben
 // unverändert, jeder Nachtrag ersetzt sie unter `tablesMu`
@@ -102,15 +102,15 @@ type TableBinding struct {
 }
 
 // Assembler baut aus den dekodierten Ereignissen committed
-// Quelltransaktionen. Ohne Streaming-Option (`ADR-0021`, Proposed)
+// Quelltransaktionen. Ohne Streaming-Option (`ADR-0021`)
 // serialisiert der Stream die Quelltransaktionen — der Träger hält
 // genau eine offene Transaktion. `schemaStore` trägt die dynamische
-// Re-Versionierung (`ADR-0015` Folgepflicht, `LH-FA-SCH-005`); ohne ihn
+// Re-Versionierung; ohne ihn
 // (`nil`) bleibt eine Relation-Nachricht wirkungslos — der Regelfall für
 // Tests, die diesen Pfad nicht prüfen, die reale Verdrahtung übergibt
 // immer eine Instanz (`internal/bootstrap/wiring.go`).
 //
-// `tables` wird über `tablesMu` synchronisiert (`ADR-0050`): der
+// `tables` wird über `tablesMu` synchronisiert: der
 // Capture-Stream liest sie aus `Consume`/`change`/`observeRelation` in
 // seiner eigenen Goroutine, die Administrations-Goroutine schreibt
 // zusätzliche Bindungen über `AddBinding`/`RemoveBinding`, den
@@ -142,8 +142,8 @@ type openTransaction struct {
 // tragen die qualifizierten Tabellennamen (`schema.table`) als
 // Schlüssel. Quelle ohne Kennung und Bindungen ohne Kennungen enden über
 // den Domänen-Fehler der leeren Kennung (`ADR-0029`). `schemaStore` trägt
-// die dynamische Re-Versionierung (`Consume`, `ADR-0015` Folgepflicht);
-// `nil` ist zulässig — die Relation-Behandlung bleibt dann wirkungslos.
+// die dynamische Re-Versionierung (`Consume`); `nil` ist zulässig — die
+// Relation-Behandlung bleibt dann wirkungslos.
 // Die Aktivierungen gehen kopiert in den Assembler ein: eine kompatible
 // Erweiterung schreibt die aktualisierte Bindung in die Kopie
 // (`observeRelation`), nicht in die Aufrufer-Map.
@@ -163,13 +163,13 @@ func NewAssembler(source model.SourceID, tables map[string]TableBinding, schemaS
 
 // Consume übersetzt ein Ereignis in höchstens einen Capture-Aufruf:
 // BEGIN öffnet, Änderungen hängen an, COMMIT bringt die Transaktion an
-// ihre Commit-Position (`SPEC-001`, `cdc.transaction`) samt dem realen
-// Quell-Commit-Zeitpunkt (`LH-FA-ADM-004`, als `model.TimePoint` —
-// `ADR-0040`) und meldet sie konsumierbar (`LH-FA-CAP-006`). Änderungen
+// ihre Commit-Position (`LH-FA-CAP-006`) samt dem realen
+// Quell-Commit-Zeitpunkt (als `model.TimePoint`) und meldet sie
+// konsumierbar. Änderungen
 // an nicht aktivierten Tabellen fließen nicht in die Transaktion — CDC
-// erfasst nur aktivierte Tabellen (`LH-FA-CFG-001`). Eine
+// erfasst nur aktivierte Tabellen. Eine
 // `*decode.Relation`-Nachricht löst die dynamische Re-Versionierung aus
-// (`observeRelation`, `ADR-0015` Folgepflicht) — sie meldet nie ein
+// (`observeRelation`) — sie meldet nie ein
 // CaptureCommand.
 func (a *Assembler) Consume(ctx context.Context, event decode.Event) (*inbound.CaptureCommand, error) {
 	switch event := event.(type) {
@@ -236,11 +236,11 @@ func (a *Assembler) TransactionOpen() bool {
 // change übersetzt eine Änderung in einen Domänen-Change: Kennung aus
 // Transaktion und Sequenz, Operation, Row Images als JSON
 // (`SPEC-002`), Tabelle und Schema-Version über die Aktivierung. Die
-// Sequenz trägt die Anhang-Reihenfolge und startet je Transaktion bei 1
-// (`SPEC-002`). `event.Relation.Schema`/`.Name` sind hier bereits bekannt
+// Sequenz trägt die Anhang-Reihenfolge und startet je Transaktion bei 1.
+// `event.Relation.Schema`/`.Name` sind hier bereits bekannt
 // (die `TableBinding`-Map ist nach dem qualifizierten Namen indiziert) und
-// gehen ohne neuen Lookup in `Change.Schema`/`.Table` ein (`ADR-0056`,
-// NATS-Notify-Pfad). Der Regelstand der Bindung (`LH-FA-CFG-007`) wird vor
+// gehen ohne neuen Lookup in `Change.Schema`/`.Table` ein
+// (NATS-Notify-Pfad). Der Regelstand der Bindung wird vor
 // jeder Serialisierung gegen die Spalten der Relation geprüft; eine nicht
 // anwendbare Regel endet als `ErrTransformationNotApplicable`, ohne dass ein
 // Bild entsteht oder die Sequenz vorrückt. Die Kollision zweier Regeln auf
@@ -364,10 +364,10 @@ func nextSchemaVersionID(table model.SourceTableID, version int64) model.SchemaV
 }
 
 // observeRelation trägt die dynamische Re-Versionierung im laufenden
-// Erfassungspfad (`ADR-0015` Folgepflicht, `LH-FA-SCH-005`): ohne
+// Erfassungspfad (`ADR-0015` Folgepflicht): ohne
 // verdrahteten SchemaStorePort bleibt eine Relation-Nachricht
 // wirkungslos. Eine nicht aktivierte Tabelle trägt keine Bindung und
-// bleibt ebenfalls wirkungslos (`LH-FA-CFG-001`). Trägt die aktuelle
+// bleibt ebenfalls wirkungslos. Trägt die aktuelle
 // Version noch keine TableSchema (die statische Erstaktivierung
 // registriert nur die Versions-Zeile, keine Spaltenform —
 // `TableActivationPort.Register`), bekommt sie ihre Spaltenform aus der
@@ -375,7 +375,7 @@ func nextSchemaVersionID(table model.SourceTableID, version int64) model.SchemaV
 // wechseln. Eine kompatible Erweiterung registriert eine neue Version
 // und hebt die `TableBinding` auf sie; unverändert bleibt ohne Wirkung.
 // Jede andere Änderung (`relationOther`) meldet `ErrIncompatibleSchemaChange`
-// (Fehlerklasse `schema`, `LH-FA-SCH-004.a`) — der Erfassungspfad endet
+// (Fehlerklasse `schema`) — der Erfassungspfad endet
 // darüber sichtbar, statt die Änderung still zu verwerfen.
 func (a *Assembler) observeRelation(ctx context.Context, relation *decode.Relation) error {
 	if a.schemaStore == nil {
@@ -456,10 +456,10 @@ func (a *Assembler) AddBinding(qualified string, binding TableBinding) {
 
 // setSchemaVersion hebt die Schema-Version einer getragenen Bindung
 // synchronisiert auf eine neu registrierte Version und lässt ihre übrigen
-// Felder unangetastet (`observeRelation`, `ADR-0015` Folgepflicht,
-// `LH-FA-SCH-005`): der Ausschlussstand der Bindung überlebt den
-// Schema-Versions-Nachtrag (`ADR-0059` Teilfrage 3), ebenso ihr Regelstand
-// (`ADR-0112` Teilfrage 6). Eine nicht mehr getragene Bindung bleibt ohne
+// Felder unangetastet (`observeRelation`, `ADR-0015` Folgepflicht):
+// der Ausschlussstand der Bindung überlebt den
+// Schema-Versions-Nachtrag, ebenso ihr Regelstand.
+// Eine nicht mehr getragene Bindung bleibt ohne
 // Wirkung — der Nachtrag belebt sie nicht neu.
 func (a *Assembler) setSchemaVersion(qualified string, version model.SchemaVersionID) {
 	a.tablesMu.Lock()
@@ -509,10 +509,10 @@ func (a *Assembler) IncludeColumn(qualified, column string) {
 }
 
 // SetTransformation trägt eine Regel synchronisiert in den Regelstand einer
-// getragenen Bindung nach (`LH-FA-CFG-007`, `ADR-0112` Teilfrage 6): ab dem
+// getragenen Bindung nach (`LH-FA-CFG-007`): ab dem
 // Aufruf wertet die Row-Image-Konstruktion der Tabelle sie aus. Trägt die
 // Bindung bereits eine Regel unter demselben Namen, ersetzt die neue sie an
-// ihrer Stelle; die Konfliktfreiheit der Regelmenge (K1–K4, `SPEC-019`)
+// ihrer Stelle; die Konfliktfreiheit der Regelmenge (K1–K4)
 // prüft der Aufrufer, dieser Aufruf prüft sie nicht. Eine nicht getragene
 // Bindung bleibt ohne Wirkung — derselbe idempotente Vertrag wie
 // `ExcludeColumn`. Die Liste wird neu aufgebaut, ein Leser-Schnappschuss

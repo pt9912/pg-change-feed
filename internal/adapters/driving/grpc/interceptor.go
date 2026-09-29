@@ -13,13 +13,13 @@ import (
 // authorizationMetadataKey trägt den gRPC-Metadata-Schlüssel der
 // Authentifizierung (`ADR-0060` Teilfrage 4): der Interceptor vergleicht
 // seinen Wert gegen dieselben beiden Token-Klassen, die auch die
-// HTTP-Token-Middleware schützt (`SPEC-018`, `CDC_API_TOKEN_READER`/
+// HTTP-Token-Middleware schützt (`CDC_API_TOKEN_READER`/
 // `CDC_API_TOKEN_ADMIN`).
 const authorizationMetadataKey = "authorization"
 
 // bearerPrefix trägt die Wertform des Metadata-Eintrags: derselbe
 // `Bearer `-Vorsprung wie der `Authorization`-Header der HTTP-API
-// (`SPEC-018`) — beide Netzwerk-Zugriffswege tragen dieselbe
+// — beide Netzwerk-Zugriffswege tragen dieselbe
 // Authentifizierungsform, die Token-Klassen bleiben dieselben
 // (`ADR-0060` Teilfrage 4).
 const bearerPrefix = "Bearer "
@@ -84,8 +84,8 @@ func credentialToken(ctx context.Context) string {
 // (`ADR-0060` Teilfrage 4, Fitness Function): ein Öffnungsversuch ohne
 // `authorization`-Metadata oder mit einem Wert, der keiner der beiden
 // konfigurierten Klassen entspricht, endet mit dem gRPC-Status
-// `Unauthenticated` — sichtbar, nicht still mit leeren Daten fortgesetzt
-// (`LH-FA-SST-008` Negative). `ChangeStream` trägt ausschließlich
+// `Unauthenticated` — sichtbar, nicht still mit leeren Daten fortgesetzt.
+// `ChangeStream` trägt ausschließlich
 // Streaming-RPCs, deshalb trägt nur der Stream-Interceptor eine Prüfung;
 // ein Unary-Interceptor hätte hier keinen Aufruf zu schützen.
 func authStreamInterceptor(readerToken, adminToken string) grpc.StreamServerInterceptor {

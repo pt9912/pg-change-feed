@@ -19,10 +19,10 @@ import (
 
 // Config trägt die Verdrahtungs-Eingabe des Adapters (`ADR-0057`
 // Folgepflicht): die Server-Adresse, die beiden Token-Klassen
-// (`ADR-0057` Teilfrage 3) und die Port-gedeckten Use Cases, die dieser
+// (Teilfrage 3) und die Port-gedeckten Use Cases, die dieser
 // Adapter über die API erreichbar macht — die neun aus `ADR-0057` §Umfang
-// der ersten API-Version und das Changes-Lesen (`ADR-0081`). Diagnose/Health
-// bleibt außerhalb, siehe `ADR-0081` §Entscheidung/Offen bleibt.
+// der ersten API-Version und das Changes-Lesen. Diagnose/Health
+// bleibt außerhalb.
 type Config struct {
 	// Addr trägt die Horch-Adresse (`CDC_HTTP_ADDR`); die Composition
 	// Root entscheidet über den Start, dieser Typ trägt nur die Adresse.
@@ -34,25 +34,24 @@ type Config struct {
 	TokenReader string
 	TokenAdmin  string
 	// RegisterConsumer trägt die Registrierung eines Consumers
-	// (`LH-FA-CON-001`, `ADR-0028`).
+	// (`LH-FA-CON-001`).
 	RegisterConsumer inbound.RegisterConsumerUseCase
 	// AcknowledgeConsumer, GetConsumerPosition und RemoveConsumer tragen
 	// die übrigen Consumer-Fähigkeiten: Bestätigung (`LH-FA-CON-004`),
-	// Positions-Lese (`LH-FA-CON-003`/`-005`) und administrative Entfernung
-	// (`LH-FA-CON-006`).
+	// Positions-Lese und administrative Entfernung.
 	AcknowledgeConsumer inbound.AcknowledgeConsumerUseCase
 	GetConsumerPosition inbound.GetConsumerPositionUseCase
 	RemoveConsumer      inbound.RemoveConsumerUseCase
 	// EnableTable, DisableTable, GetStatus und ListTables tragen die
-	// Verwaltungs-Fähigkeiten (`LH-FA-CFG-001`…`004`).
+	// Verwaltungs-Fähigkeiten (`LH-FA-CFG-001`).
 	EnableTable  inbound.EnableTableUseCase
 	DisableTable inbound.DisableTableUseCase
 	GetStatus    inbound.GetStatusUseCase
 	ListTables   inbound.ListTablesUseCase
-	// RunRetention trägt den Retention-Lauf (`LH-FA-RET-002`…`004`).
+	// RunRetention trägt den Retention-Lauf (`LH-FA-RET-002`).
 	RunRetention inbound.RunRetentionUseCase
 	// ReadChanges trägt das Changes-Lesen über die API
-	// (`LH-FA-SST-006`, `LH-FA-REA-001` ff., `ADR-0081`) — eine dünne
+	// (`LH-FA-SST-006`) — eine dünne
 	// Fassade über demselben `ChangeStorePort`, den der View-Direktzugriff
 	// trägt.
 	ReadChanges inbound.ReadChangesUseCase
@@ -60,7 +59,7 @@ type Config struct {
 	// Use Case, den auch der CLI-Sondermodus und der gRPC-Handler aufrufen.
 	Diagnose inbound.DiagnoseUseCase
 	// Subscriber trägt den `Broadcaster`, von dem der SSE-Stream-Endpunkt
-	// seine Changes liest (`LH-FA-SST-008`, `ADR-0061` Teilfrage 1/2).
+	// seine Changes liest (`ADR-0061` Teilfrage 1/2).
 	// Ohne ihn antwortet `GET /changes/stream` mit `503` (`sse.go`).
 	Subscriber changeSubscriber
 	// Log trägt den Telemetrie-Port (`ADR-0024`); ein nicht gesetzter

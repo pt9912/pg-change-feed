@@ -16,7 +16,7 @@ import (
 
 // Die Query-Parameter des lesenden Endpunkts `GET /changes` (`SPEC-022`):
 // `source` Pflicht, `schema`/`table`/`from`/`to`/`limit` optional und
-// unabhängig (`ADR-0081` Teilfrage 2). Die Namen folgen dem API-Vokabular,
+// unabhängig. Die Namen folgen dem API-Vokabular,
 // nicht dem Spaltenvokabular der View (`schema`/`table`, nicht
 // `schema_name`/`table_name`) — dieselbe Form wie `listTablesResponse`.
 const (
@@ -32,7 +32,7 @@ const (
 // Endpunkts. Anders als die neun übrigen Endpunkte endet ein Parameter
 // außerhalb der Menge mit `400`: bei einem Filter-Endpunkt ist das
 // Ignorieren keine Auslassung, sondern eine **stille Änderung des
-// Ergebnisstands** (`ADR-0081` Teilfrage 4, `LH-FA-SST-006` Negative).
+// Ergebnisstands** (`ADR-0081` Teilfrage 4).
 var readChangesParams = map[string]bool{
 	readChangesParamSource: true,
 	readChangesParamSchema: true,
@@ -47,9 +47,9 @@ var readChangesParams = map[string]bool{
 // `model.Change` (`internal/domain/model/change.go`), ergänzt um die
 // Commit-Position seiner Quelltransaktion und deren Commit-Zeitpunkt. Die
 // Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild
-// (`LH-FA-CAP-008` Boundary) wird zu `null`. `committed_at` trägt RFC 3339
+// (Boundary) wird zu `null`. `committed_at` trägt RFC 3339
 // mit Nanosekunden in UTC. `origin` steht als letztes Feld und trägt `wal`
-// oder `backfill` (`SPEC-002`, `LH-FA-CAP-009`); ein fehlender Wert liest
+// oder `backfill`; ein fehlender Wert liest
 // als `wal`. Die Live-Wege tragen das Feld nicht.
 type readChangeResponse struct {
 	CommitPosition int64           `json:"commit_position"`
@@ -69,7 +69,7 @@ type readChangeResponse struct {
 
 // readChangesResponse trägt den JSON-Response-Body bei Erfolg
 // (`SPEC-022`): ohne Treffer eine leere, gesetzte Liste — nie `null`, nie
-// `404` (`LH-FA-REA-006` Boundary, `ADR-0081` Teilfrage 4); die
+// `404` (Boundary); die
 // Initialisierung mit `make(…, 0, …)` trägt das.
 type readChangesResponse struct {
 	Changes []readChangeResponse `json:"changes"`
@@ -77,7 +77,7 @@ type readChangesResponse struct {
 
 // toReadChangeResponse übersetzt einen gelesenen Change in seine
 // Antwortform (`SPEC-022`); die Commit-Position liegt auf der
-// Quelltransaktion (`LH-FA-REA-004.a`).
+// Quelltransaktion.
 func toReadChangeResponse(change inbound.ReadChange) readChangeResponse {
 	return readChangeResponse{
 		CommitPosition: int64(change.Position.Offset),
@@ -97,7 +97,7 @@ func toReadChangeResponse(change inbound.ReadChange) readChangeResponse {
 }
 
 // readChangesHandler trägt den lesenden Endpunkt `GET /changes`
-// (`LH-FA-SST-006`, `LH-FA-REA-001` ff., `ADR-0081`): er übersetzt die
+// (`LH-FA-SST-006`): er übersetzt die
 // Query-Parameter in `inbound.ReadChangesQuery` und ruft den Inbound Port —
 // dieselbe Delegation an denselben `ChangeStorePort` wie der
 // View-Direktzugriff, kein zweiter Lesepfad. Die Authn trägt die
@@ -189,7 +189,7 @@ func readChangesPosition(source, name, raw string) (*model.SourcePosition, error
 
 // readChangesLimit liest das optionale Limit (`LH-FA-REA-003`). Ein leerer
 // Wert trägt kein Limit — der Aufruf liest unbegrenzt, es gibt **kein**
-// Default-Limit (`ADR-0081` Teilfrage 2). Eine nicht lesbare Zahl endet
+// Default-Limit. Eine nicht lesbare Zahl endet
 // sichtbar; die Grenze `≥ 1` trägt der Port-Kontrakt.
 func readChangesLimit(raw string) (*int, error) {
 	if raw == "" {

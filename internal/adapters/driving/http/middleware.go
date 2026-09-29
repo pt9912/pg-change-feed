@@ -8,7 +8,7 @@ import (
 
 // role trägt die zwei Rechtsklassen der Token-Middleware (`ADR-0057`
 // Teilfrage 3): `roleAdmin` deckt implizit `roleReader` ab — dieselbe
-// Hierarchie wie zwischen `cdc_admin` und `cdc_reader` (`ADR-0047`).
+// Hierarchie wie zwischen `cdc_admin` und `cdc_reader`.
 // `roleNone` trägt sowohl den fehlenden als auch den unbekannten Token —
 // beide enden über denselben `401`-Pfad (`withToken`).
 type role int
@@ -74,7 +74,7 @@ func writeError(w http.ResponseWriter, status int, message string) {
 // Teilfrage 3, Fitness Function): ein Aufruf ohne oder mit unbekanntem
 // Bearer-Token endet mit `401`; ein bekanntes Token unterhalb der
 // geforderten Rechtsklasse endet mit `403` — beides sichtbar, nicht still
-// verworfen (`LH-FA-SST-006` Negative-Kriterium).
+// verworfen.
 func withToken(readerToken, adminToken string, required role, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callerRole := classifyToken(bearerToken(r), readerToken, adminToken)

@@ -57,9 +57,9 @@ type changeSubscriber interface {
 
 // streamChange trägt das SSE-Nachrichtenschema eines Change-Events
 // (`SPEC-018`, Abschnitt `GET /changes/stream`): dieselben Felder wie der
-// Domain-Typ `model.Change` ohne `Origin` (`SPEC-002`, `SPEC-021`). Die
+// Domain-Typ `model.Change` ohne `Origin`. Die
 // Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild
-// (`LH-FA-CAP-008` Boundary) wird zu `null`.
+// (Boundary) wird zu `null`.
 type streamChange struct {
 	ChangeID      string          `json:"change_id"`
 	TransactionID string          `json:"transaction_id"`
@@ -101,13 +101,13 @@ func toStreamChange(change *model.Change) streamChange {
 }
 
 // streamChangesHandler trägt den SSE-Endpunkt `GET /changes/stream`
-// (`LH-FA-SST-008`, `SPEC-018`): er registriert einen Empfänger am
+// (`ADR-0061` Teilfrage 1/2): er registriert einen Empfänger am
 // `Broadcaster` und schreibt jeden eintreffenden Change als
 // `text/event-stream`-Event, das er je Event über `http.Flusher` sofort
 // ausliefert. Der `Last-Event-ID`-Header wird weder gesendet noch
 // ausgewertet — der Stream trägt kein Replay (`ADR-0061` Teilfrage 3);
 // verpasste Changes holt ein Consumer über den bestehenden Lesezugriffsweg
-// nach (`LH-FA-REA-001` ff., `LH-FA-SST-008` Boundary). Der Handler hält die
+// nach (Boundary). Der Handler hält die
 // Verbindung bis zum Verbindungsende des Clients offen; sein
 // `Subscribe`-Aufruf wird über die Abmelde-Funktion beim Verlassen
 // freigegeben. Ohne verdrahteten `Broadcaster` antwortet der Endpunkt mit
