@@ -83,7 +83,7 @@ plugins {
 }
 
 group = "io.github.pt9912"
-version = "0.2.2"
+version = "0.3.0"
 
 kotlin {
     jvmToolchain(21)
@@ -207,7 +207,7 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "io.github.pt9912"
             artifactId = "pgchangefeed-kotlin"
-            version = "0.2.2"
+            version = "0.3.0"
             from(components["java"])
             pom {
                 name.set("PG Change Feed Kotlin client")
