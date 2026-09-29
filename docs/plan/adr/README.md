@@ -146,3 +146,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0131 | gRPC-`ReadChanges` — zehnter RPC im `Administration`-Service (ergänzt ADR-0130) | Accepted | 2026-09-28 | [0131-grpc-readchanges-zehnter-rpc.md](0131-grpc-readchanges-zehnter-rpc.md) |
 | ADR-0132 | Diagnose über Inbound Port — HTTP und gRPC (Supers. ADR-0057, teilw.) | Accepted | 2026-09-28 | [0132-diagnose-ueber-inbound-port-http-grpc.md](0132-diagnose-ueber-inbound-port-http-grpc.md) |
 | ADR-0133 | Tabellen-granulare Filterung gRPC-Stream/SSE (Supers. ADR-0060/0061, teilw.) | Accepted | 2026-09-28 | [0133-tabellen-granulare-filterung-grpc-sse.md](0133-tabellen-granulare-filterung-grpc-sse.md) |
+| ADR-0134 | `sdk-public-doc-check` wird Gate in `make gates` | Accepted | 2026-09-29 | [0134-sdk-public-doc-check-gate-make-gates.md](0134-sdk-public-doc-check-gate-make-gates.md) |
