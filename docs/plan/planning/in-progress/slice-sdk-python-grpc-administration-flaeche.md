@@ -114,7 +114,7 @@ Baum-Suche wäre für „Python bekommt es jetzt" nicht aussagekräftig):
 
 ```suchlauf
 fd39b68b263a3dbcf8ce20fc70b164eb5c5130e9 0 -n -F 'PgChangeFeedAdministrationClient' -- sdks/python
-diff 11 -n -F 'PgChangeFeedAdministrationClient' -- sdks/python
+diff 15 -n -F 'PgChangeFeedAdministrationClient' -- sdks/python
 ```
 
 Zählwort „elf RPCs der Tabelle oben" (ganzer Baum, Standard-Ausnahmen):

@@ -48,7 +48,7 @@ class PgChangeFeedAdministrationClientErrorMappingTest {
     @Test
     fun `permissionDenied throws typed permissionDenied exception`() = runBlocking {
         val transport = FakeAdministrationTransport.withStatus(
-            Status.PERMISSION_DENIED.withDescription("Rechtsklasse unzureichend für diese RPC"),
+            Status.PERMISSION_DENIED.withDescription("insufficient role for this rpc"),
         )
 
         val ex = assertFailsWith<PgChangeFeedGrpcPermissionDeniedException> { call(transport) }
@@ -70,7 +70,7 @@ class PgChangeFeedAdministrationClientErrorMappingTest {
     @Test
     fun `internal throws typed internal exception`() = runBlocking {
         val transport = FakeAdministrationTransport.withStatus(
-            Status.INTERNAL.withDescription("interner Fehler"),
+            Status.INTERNAL.withDescription("internal error"),
         )
 
         val ex = assertFailsWith<PgChangeFeedGrpcInternalException> { call(transport) }
