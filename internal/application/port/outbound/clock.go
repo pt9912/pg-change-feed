@@ -1,6 +1,6 @@
 // Package outbound bündelt die Outbound-Ports der Fähigkeiten
 // (`ARC-004`): die Application Services fordern technische Wirkungen über
-// sie an; die Driven-Adapter (`ARC-006`) setzen sie.
+// sie an; die Driven-Adapter setzen sie.
 package outbound
 
 import (

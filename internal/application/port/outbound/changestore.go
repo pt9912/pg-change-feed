@@ -9,11 +9,11 @@ import (
 )
 
 // ChangeRecord trägt einen gelesenen Change mit der Commit-Position seiner
-// Quelltransaktion (`LH-FA-REA-004.a`): die Ordnungs- und Bereichs-Größe
-// des Lesens liegt auf der Transaktion (`LH-FA-DAT-004`), der Change nach
-// `SPEC-002` trägt sie nicht — der Datensatz am Port bündelt beide.
-// CommittedAt trägt den realen Quell-Commit-Zeitpunkt seiner Transaktion
-// (`LH-FA-ADM-004`); die zeitbasierte Retention (`LH-FA-RET-003`) liest ihr
+// Quelltransaktion (`LH-FA-REA-004`): die Ordnungs- und Bereichs-Größe
+// des Lesens liegt auf der Transaktion, der Change
+// trägt sie nicht — der Datensatz am Port bündelt beide.
+// CommittedAt trägt den realen Quell-Commit-Zeitpunkt seiner Transaktion;
+// die zeitbasierte Retention liest ihr
 // Alter gegen diesen Zeitpunkt.
 type ChangeRecord struct {
 	Position    model.SourcePosition
@@ -23,8 +23,7 @@ type ChangeRecord struct {
 
 // RetentionCandidate trägt die drei Größen, die die Bereinigung von einem
 // Change liest: seine Kennung, die Commit-Position seiner Quelltransaktion
-// und deren Commit-Zeitpunkt (`LH-FA-RET-003`, `LH-FA-RET-004`,
-// `ADR-0124`). Row Images gehören nicht dazu.
+// und deren Commit-Zeitpunkt (`ADR-0124`). Row Images gehören nicht dazu.
 type RetentionCandidate struct {
 	ChangeID    model.ChangeID
 	Position    model.SourcePosition
@@ -32,20 +31,19 @@ type RetentionCandidate struct {
 }
 
 // ChangeQuery trägt die Lese-Eingabe am `ChangeStorePort`: Bereich
-// (`LH-FA-REA-001`), Startposition (`LH-FA-REA-002`), Limit
-// (`LH-FA-REA-003`) und den Tabellenfilter (`LH-FA-REA-006`). Nil- und
+// (`LH-FA-REA-001`), Startposition, Limit
+// und den Tabellenfilter. Nil- und
 // leere Felder grenzen nicht ein: ohne Start liest der Aufruf ab dem ersten
 // Change der Quelle, ohne End bis zum letzten, ohne Limit unbegrenzt, ohne
 // Schema-/Tabellenfilter über alle Tabellen der Quelle. Der Start ist
-// inklusive, das Ende exklusiv (`LH-FA-REA-001` Happy Path: Bereich
+// inklusive, das Ende exklusiv (Happy Path: Bereich
 // `[p1, p2)` trägt den Change an `p1`, nicht den an `p2`).
 //
 // Die Filterachse ist **eine** Form: `Schema` und `Table` als Klartext,
 // je optional und **unabhängig** — dieselbe Filter-Grammatik wie die
 // `WHERE`-Klausel des View-Zugriffs auf `cdc.changes`. Klartext ist die
 // Draht-Form: die opake `SourceTableID` ist kein Bezeichner, über den ein
-// Consumer dieselbe Tabelle stabil adressiert (`ADR-0056` Festlegung 1,
-// `ADR-0081` Teilfrage 3).
+// Consumer dieselbe Tabelle stabil adressiert.
 type ChangeQuery struct {
 	Source model.SourceID
 	Start  *model.SourcePosition
@@ -69,9 +67,9 @@ var (
 	// unbegrenzt liest der Aufruf über ein nicht gesetztes Limit).
 	ErrNonPositiveLimit = stderrors.New("Lese-Limit ist kleiner als 1")
 
-	// ErrStorage trägt die Fehlerklasse `storage` des Store (`SPEC-008`,
-	// `ADR-0023`): ein Persistenzfehler im ChangeStore endet ohne
-	// Source-ACK (`LH-QA-REL-001.a`); Application und Betrieb lesen die
+	// ErrStorage trägt die Fehlerklasse `storage` des Store (`ADR-0023`):
+	// ein Persistenzfehler im ChangeStore endet ohne
+	// Source-ACK; Application und Betrieb lesen die
 	// Klasse über errors.Is und kennen keinen Treibertyp. Der Adapter
 	// wickelt seine Treiber-Fehler in dieses Sentinel; die technische
 	// Ursache bleibt über `errors.Is` lesbar.
@@ -103,24 +101,23 @@ func (q ChangeQuery) Validate() error {
 // ChangeStorePort trägt die Persistenz- und Lesefähigkeit des Change
 // Store (`ARC-009`): er persistiert committed CDC-Transaktionen dauerhaft,
 // stellt persistierte Changes bereit und ist die einzige Persistenz-Grenze
-// des Capture-Pfads (`ADR-0009` — ein Fähigkeits-Port, der Lesen und
-// Schreiben gleichermaßen abdeckt). Die erste Produktionsimplementierung
-// ist der `PostgresChangeStoreAdapter`; Tests setzen Fake-Ports ein
-// (`ADR-0030`).
+// des Capture-Pfads — ein Fähigkeits-Port, der Lesen und
+// Schreiben gleichermaßen abdeckt. Die erste Produktionsimplementierung
+// ist der `PostgresChangeStoreAdapter`; Tests setzen Fake-Ports ein.
 //
 // Der Port bestätigt keine Quellpositionen. Bestätigt wird eine Position
 // erst, wenn ihre abhängigen Changes dauerhaft gespeichert sind — ACK nur
-// über nach Persistenz gefragte Positionen (`LH-QA-REL-001.a`,
-// `ADR-0029` Regel 1). Die Quell-Bestätigung ist die Wirkung des
-// `ReplicationAckPort` (`ADR-0007`), keine Speicherwirkung dieses Ports.
+// über nach Persistenz gefragte Positionen.
+// Die Quell-Bestätigung ist die Wirkung des
+// `ReplicationAckPort`, keine Speicherwirkung dieses Ports.
 //
-// Der Port trägt die Idempotenz-Pflicht des Persistierens (`ADR-0011`):
+// Der Port trägt die Idempotenz-Pflicht des Persistierens:
 // PersistTransaction ist deduplizierbar — dieselbe Transaktion darf
 // erneut persistiert werden, wenn ein Crash zwischen Persistenz und ACK
 // sie wiederholt; die Deduplizierungsbasis trägt die interne
-// Transaktions-ID (`SPEC-001`, `cdc.transaction`).
+// Transaktions-ID (`cdc.transaction`).
 //
-// Der Port trägt die Fehlerklassen-Grenze (`ADR-0023`): Treiber-Fehler
+// Der Port trägt die Fehlerklassen-Grenze: Treiber-Fehler
 // gehen an der Adapter-Grenze in die Klassen des Pflichtenhefts; dieser
 // Port führt die Klasse `storage` als `ErrStorage`. Application und
 // Betrieb klassifizieren über `errors.Is`, nicht über den Treiber.
@@ -129,15 +126,15 @@ type ChangeStorePort interface {
 	// dauerhaft — mit interner ID, Commit-Position und Changes in
 	// Sequenz-Reihenfolge (`SPEC-001`, `cdc.transaction`). Die Rückkehr
 	// ohne Fehler meldet den abgeschlossenen Store-Commit
-	// (`LH-QA-REL-001.a`, Schritt COMMIT Store).
+	// (Schritt COMMIT Store).
 	PersistTransaction(ctx context.Context, transaction *model.ChangeTransaction) error
 
-	// ReadChanges liest persistierte Changes über `SPEC-001`-Tabellen und
+	// ReadChanges liest persistierte Changes über die Schema-Tabellen und
 	// ordnet sie deterministisch nach (Commit-Position der Quelltransaktion,
 	// Transaktions-ID, Sequenz innerhalb der Transaktion)
-	// (`LH-FA-REA-004.a`). Lesen verändert keine gespeicherte Position
-	// (`LH-FA-REA-002`); gelesene Changes bleiben innerhalb der Aufbewahrung
-	// erneut lesbar (`LH-FA-REA-005`).
+	// (`LH-FA-REA-004`). Lesen verändert keine gespeicherte Position;
+	// gelesene Changes bleiben innerhalb der Aufbewahrung
+	// erneut lesbar.
 	ReadChanges(ctx context.Context, query ChangeQuery) ([]ChangeRecord, error)
 
 	// ReadRetentionCandidates liest eine Seite von Bereinigungs-Kandidaten
@@ -151,7 +148,7 @@ type ChangeStorePort interface {
 	ReadRetentionCandidates(ctx context.Context, source model.SourceID, after model.ChangeID, limit int) ([]RetentionCandidate, error)
 
 	// DeleteChanges entfernt physisch genau die übergebenen Changes
-	// (`LH-FA-RET-002`…`004`, `ADR-0014`): die Freigabe je Change trägt
+	// (`LH-FA-RET-002`): die Freigabe je Change trägt
 	// `RetentionPolicy.AllowsDeletion` im aufrufenden Use Case, dieser Port
 	// führt nur die bereits freigegebene Menge aus — keine eigene
 	// Freigabe-Entscheidung. Eine leere Menge ist ein gültiger Aufruf ohne

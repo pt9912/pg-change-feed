@@ -8,13 +8,13 @@ import (
 )
 
 // ErrBackfillStorage trägt die Fehlerklasse `storage` der Backfill-Ports
-// (`SPEC-008`, `ADR-0023`): ein Persistenzfehler am Run-Zustand oder am
+// (`ADR-0023`): ein Persistenzfehler am Run-Zustand oder am
 // Schreiber bleibt über `errors.Is` klassifizierbar, ohne Treibertyp.
 var ErrBackfillStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler im Backfill-Speicher")
 
 // BackfillRunPort trägt die Fähigkeit, den Zustand eines angenommenen
-// Backfill-Runs fortzuschreiben (`ARC-004`, Fähigkeits-Port je `ADR-0034`;
-// `SPEC-029`). Er hat **keine** Operation „anlegen": die Run-Zeile entsteht
+// Backfill-Runs fortzuschreiben (`ARC-004`, Fähigkeits-Port).
+// Er hat **keine** Operation „anlegen": die Run-Zeile entsteht
 // allein über `BackfillAdmissionPort.Admit`. Jede schreibende Operation
 // wirkt auf einen Run, der noch nicht endgültig beendet ist, und ändert
 // keinen beendeten Run.

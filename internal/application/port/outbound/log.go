@@ -3,11 +3,9 @@ package outbound
 import "context"
 
 // LogPort trägt strukturiertes Betriebs-Logging als Fähigkeit (`ARC-004`,
-// `ADR-0024`: „Logging-/Metrics-Frameworks bleiben Infrastruktur. …
-// werden durch Driven Adapters implementiert.", geschärft durch `ARC-011`
-// „Metriken und strukturierte Logs … über den Outbound Port
-// substituierbar"). Die vier Stufen spiegeln `log/slog`
-// (Go-Standardbibliothek, `LH-QA-OPS-004`), damit der Driven Adapter sie
+// Logging- und Metrics-Frameworks bleiben Infrastruktur und werden durch
+// Driven Adapter implementiert). Die vier Stufen spiegeln `log/slog`
+// (Go-Standardbibliothek), damit der Driven Adapter sie
 // ohne Übersetzung durchreicht — der Port selbst bindet keine konkrete
 // Logging-Bibliothek; austauschbar bliebe er auch für ein anderes Backend.
 type LogPort interface {

@@ -7,17 +7,16 @@ import (
 )
 
 // ColumnExclusionPort trägt die Fähigkeiten des Spaltenausschlusses an
-// der Quelle (`ARC-004`, Fähigkeits-Port je `ADR-0034`): der
-// Spaltenausschluss/-einschluss (`LH-FA-CFG-005`, `ADR-0059`) prüft
+// der Quelle (`ARC-004`, Fähigkeits-Port): der
+// Spaltenausschluss/-einschluss prüft
 // darüber die Vorbedingung seines Negative-Pfads — dieselbe
 // Katalog-Lesart wie `TableActivationPort.TableExists`, hier auf eine
 // Spalte einer Tabelle gerichtet — und liest den dauerhaften
-// Ausschlussstand, den jeder Pfad beim Anlegen einer Bindung mitführt
-// (`ADR-0065`).
+// Ausschlussstand, den jeder Pfad beim Anlegen einer Bindung mitführt.
 //
 // Beide Fähigkeiten gehören derselben Objektklasse: der Spalte einer
 // Tabelle an der Quelle. Der Ausschluss-Zustand selbst wird nicht hier
-// geschrieben — Schreibpfad bleibt die Antrags-Queue (`ADR-0050`); diese
+// geschrieben — Schreibpfad bleibt die Antrags-Queue; diese
 // Fähigkeit liest ihn nur zurück.
 type ColumnExclusionPort interface {
 	// ColumnExists prüft die physische Spalte an der Quelle; der

@@ -28,24 +28,24 @@ const (
 )
 
 // TableActivationPort trägt die Verwaltungs-Fähigkeit der aktivierten
-// Tabellen an der Quelle (`ARC-004`, Fähigkeits-Port je `ADR-0034`): die
-// Tabellen-Aktivierung (`LH-FA-CFG-001`, `LH-FA-CFG-002`, `ADR-0028`)
-// schreibt die Bindungs-Zeilen der CDC-Referenztabellen (`SPEC-001`,
-// `cdc.source_table`, `cdc.schema_version`) und trägt die Publication
-// der Quelle (`LH-FA-CFG-001.a`, Schritt 2 — Publication-Verwaltung; den
-// Slot trägt der Stream-Adapter, `ADR-0006`).
+// Tabellen an der Quelle (`ARC-004`, Fähigkeits-Port): die
+// Tabellen-Aktivierung
+// schreibt die Bindungs-Zeilen der CDC-Referenztabellen
+// (`cdc.source_table`, `cdc.schema_version`) und trägt die Publication
+// der Quelle (Schritt 2 — Publication-Verwaltung; den
+// Slot trägt der Stream-Adapter).
 //
 // Die Quelle selbst (Zeile `cdc.source`) registriert der Aufrufer
 // vor der ersten Aktivierung — die Fremdschlüssel der DDL setzen sie
 // voraus; die Metadaten-Registrierung ist keine Wirkung der
-// Tabellen-Aktivierung (Kopplung: `SPEC-001`).
+// Tabellen-Aktivierung.
 //
-// Alle Operationen sind idempotent (`LH-FA-CFG-001`/`002` Boundary):
+// Alle Operationen sind idempotent (Boundary):
 // ein erneuter Aufruf ändert keinen Stand und meldet keinen Fehler.
 type TableActivationPort interface {
 	// TableExists prüft die physische Tabelle an der Quelle; die
 	// Negative-Pfade der Aktivierung, Deaktivierung und Status-Abfrage
-	// (`LH-FA-CFG-001`/`002`/`003`) enden über sie sichtbar statt still.
+	// (`LH-FA-CFG-001`) enden über sie sichtbar statt still.
 	TableExists(ctx context.Context, schema, table string) (bool, error)
 
 	// Registered liest die Bindungs-Zeile einer Tabelle; die Abwesenheit
@@ -87,6 +87,6 @@ type TableActivationPort interface {
 	// Published liest die Mitgliedschaft der Tabelle in der Publication;
 	// die Status- und Listen-Abfragen trennen darüber den
 	// Erfassungs-Zustand von der Bindungs-Zeile als Herkunft
-	// (`LH-FA-CFG-003`, `LH-FA-CFG-004`).
+	// (`LH-FA-CFG-003`).
 	Published(ctx context.Context, publication, schema, table string) (bool, error)
 }

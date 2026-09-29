@@ -1,7 +1,7 @@
 // Die Consumer-Use-Cases trägt diese Datei an einer Stelle (`ARC-003`):
-// die Driving-Adapter (`ARC-005`) rufen Registrierung, Bestätigung,
-// Positions-Lese und Entfernung über sie auf (`ADR-0028`, `ADR-0013`); die
-// Orchestrierung liegt in den Application Services (`ARC-002`).
+// die Driving-Adapter rufen Registrierung, Bestätigung,
+// Positions-Lese und Entfernung über sie auf; die
+// Orchestrierung liegt in den Application Services.
 
 package inbound
 
@@ -29,7 +29,7 @@ type RegisterConsumerResult struct {
 
 // AcknowledgeConsumerCommand trägt die Eingabe der Bestätigung
 // (`LH-FA-CON-004`): der Consumer und die verarbeitete Position — der
-// reguläre ACK verläuft nur vorwärts (`ADR-0029`, Regel 2).
+// reguläre ACK verläuft nur vorwärts.
 type AcknowledgeConsumerCommand struct {
 	Consumer model.ConsumerID
 	Position model.SourcePosition
@@ -44,7 +44,7 @@ type AcknowledgeConsumerResult struct {
 
 // GetConsumerPositionQuery trägt die Eingabe des Positions-Lese:
 // der Consumer, dessen bestätigte Position die Abfrage liest
-// (`LH-FA-CON-003`, `LH-FA-CON-005`).
+// (`LH-FA-CON-003`).
 type GetConsumerPositionQuery struct {
 	Consumer model.ConsumerID
 }
@@ -71,21 +71,20 @@ type RemoveConsumerResult struct {
 }
 
 // RegisterConsumerUseCase registriert einen benannten Consumer
-// (`LH-FA-CON-001`, `ADR-0028`).
+// (`LH-FA-CON-001`).
 type RegisterConsumerUseCase interface {
 	Register(ctx context.Context, command RegisterConsumerCommand) (RegisterConsumerResult, error)
 }
 
 // AcknowledgeConsumerUseCase bestätigt die verarbeitete Position eines
-// Consumers (`LH-FA-CON-004`, `ADR-0028`); die Monotonie trägt die
-// Domänen-Ordnung, kein administrativer Reset läuft als ACK durch
-// (`ADR-0013`).
+// Consumers (`LH-FA-CON-004`); die Monotonie trägt die
+// Domänen-Ordnung, kein administrativer Reset läuft als ACK durch.
 type AcknowledgeConsumerUseCase interface {
 	Acknowledge(ctx context.Context, command AcknowledgeConsumerCommand) (AcknowledgeConsumerResult, error)
 }
 
 // GetConsumerPositionUseCase liest die bestätigte Position eines Consumers
-// (`LH-FA-CON-003`, `LH-FA-CON-005`, `ADR-0028`).
+// (`LH-FA-CON-003`).
 type GetConsumerPositionUseCase interface {
 	Position(ctx context.Context, query GetConsumerPositionQuery) (GetConsumerPositionResult, error)
 }

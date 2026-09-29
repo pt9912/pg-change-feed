@@ -17,11 +17,11 @@ import (
 var ErrBackfillBlockInvalid = stderrors.New("Block oder Commit des Backfill-Runs verletzt den Vertrag des Schreibers")
 
 // BackfillWriterPort trägt die Fähigkeit, die Blöcke eines Runs in **einer**
-// Store-Transaktion zu schreiben (`ARC-004`, Fähigkeits-Port je `ADR-0034`;
-// `ADR-0111` Teilfrage 4). Der bestehende `ChangeStorePort.PersistTransaction`
+// Store-Transaktion zu schreiben (`ARC-004`, Fähigkeits-Port).
+// Der bestehende `ChangeStorePort.PersistTransaction`
 // hält eine ganze Transaktion im Speicher und trägt einen Bestand nicht;
 // dieser Port nimmt die Blöcke einzeln entgegen, damit der Aufrufer höchstens
-// einen Block hält (`LH-FA-CAP-006.a`).
+// einen Block hält.
 type BackfillWriterPort interface {
 	// Begin öffnet die Schreibtransaktion des Runs, der `running` ist und
 	// die Position `X` trägt (sonst `ErrBackfillRunInvalid`). Bis zum Commit

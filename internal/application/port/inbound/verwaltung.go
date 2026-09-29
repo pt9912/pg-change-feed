@@ -1,8 +1,8 @@
 // Die Verwaltungs-Use-Cases trägt diese Datei an einer Stelle (`ARC-003`):
-// die Driving-Adapter (`ARC-005`) rufen die Tabellen-Aktivierung, die
+// die Driving-Adapter rufen die Tabellen-Aktivierung, die
 // Deaktivierung, den Status, die Liste und den Spaltenausschluss/-einschluss
-// über sie auf (`ADR-0028`); die Orchestrierung liegt in den Application
-// Services (`ARC-002`).
+// über sie auf; die Orchestrierung liegt in den Application
+// Services.
 
 package inbound
 
@@ -16,7 +16,7 @@ import (
 // ErrSourceTableMissing meldet, dass die angesprochene Tabelle an der
 // Quelle nicht existiert; die Negative-Pfade von Aktivierung,
 // Deaktivierung und Status-Abfrage enden über dieses Sentinel sichtbar
-// (`LH-FA-CFG-001`/`002`/`003`) statt still.
+// (`LH-FA-CFG-001`) statt still.
 var ErrSourceTableMissing = stderrors.New("Tabelle existiert nicht an der Quelle")
 
 // ErrSourceColumnMissing meldet, dass die angesprochene Spalte an der
@@ -27,10 +27,10 @@ var ErrSourceColumnMissing = stderrors.New("Spalte existiert nicht an der Quelle
 
 // EnableTableCommand trägt die Eingabe der Aktivierung (`LH-FA-CFG-001`):
 // die Tabelle mit ihrer Bindung — Tabellen- und Schema-Version-Kennung
-// (`SPEC-001`, `cdc.source_table`/`cdc.schema_version`) — und die
-// Publication, die die Tabelle aufnimmt (`LH-FA-CFG-001.a`). Die
+// (`cdc.source_table`/`cdc.schema_version`) — und die
+// Publication, die die Tabelle aufnimmt. Die
 // Anfangs-Version trägt das erste Schema der Tabelle; spätere Versionen
-// trägt die Schema-Evolution (`LH-FA-SCH-004.a`, Metadata-Pfad).
+// trägt die Schema-Evolution (Metadata-Pfad).
 type EnableTableCommand struct {
 	Source          model.SourceID
 	Schema          string
@@ -84,7 +84,7 @@ type GetStatusQuery struct {
 // Erfassungs-Zustand und Herkunft: `Enabled` liest die Bindungs-Zeile
 // samt Publication-Mitgliedschaft (Zustand „aktiviert", `LH-FA-CFG-003`);
 // `Retained` liest eine Bindungs-Zeile ohne Mitgliedschaft — die Zeile
-// trägt die Herkunft persistierter Changes (`LH-FA-CFG-002` Out-of-Scope:
+// trägt die Herkunft persistierter Changes (Out-of-Scope:
 // ihr Verhalten folgt der Retention), die Erfassung trägt die
 // Publication nicht mehr. Beide false liest eine nie aktivierte Tabelle.
 type GetStatusResult struct {
@@ -104,34 +104,34 @@ type ListTablesQuery struct {
 // Erfassungs-Zustand und Herkunft (`LH-FA-CFG-004`): `Tables` liest die
 // aktivierten Tabellen (Bindungs-Zeile samt Publication-Mitgliedschaft),
 // `Retained` liest die Bindungs-Zeilen, die nur noch Herkunft
-// persistierter Changes tragen (`LH-FA-CFG-002` Out-of-Scope).
+// persistierter Changes tragen (Out-of-Scope).
 type ListTablesResult struct {
 	Tables   []model.SourceTable
 	Retained []model.SourceTable
 }
 
 // EnableTableUseCase aktiviert CDC für eine einzelne Tabelle
-// (`LH-FA-CFG-001`, `ADR-0028`): die Bindungs-Zeilen und die Publication
+// (`LH-FA-CFG-001`): die Bindungs-Zeilen und die Publication
 // der Quelle tragen die Aktivierung.
 type EnableTableUseCase interface {
 	Enable(ctx context.Context, command EnableTableCommand) (EnableTableResult, error)
 }
 
 // DisableTableUseCase deaktiviert CDC für eine einzelne Tabelle
-// (`LH-FA-CFG-002`, `ADR-0028`); das Verhalten der persistierten Changes
+// (`LH-FA-CFG-002`); das Verhalten der persistierten Changes
 // trägt die Retention, nicht die Deaktivierung.
 type DisableTableUseCase interface {
 	Disable(ctx context.Context, command DisableTableCommand) (DisableTableResult, error)
 }
 
 // GetStatusUseCase meldet den CDC-Zustand einer Tabelle
-// (`LH-FA-CFG-003`, `ADR-0028`).
+// (`LH-FA-CFG-003`).
 type GetStatusUseCase interface {
 	Status(ctx context.Context, query GetStatusQuery) (GetStatusResult, error)
 }
 
 // ListTablesUseCase listet die aktivierten Tabellen einer Quelle
-// (`LH-FA-CFG-004`, `ADR-0028`).
+// (`LH-FA-CFG-004`).
 type ListTablesUseCase interface {
 	ListTables(ctx context.Context, query ListTablesQuery) (ListTablesResult, error)
 }
@@ -139,7 +139,7 @@ type ListTablesUseCase interface {
 // ExcludeColumnCommand trägt die Eingabe des Spaltenausschlusses
 // (`LH-FA-CFG-005`): die aktivierte Tabelle und die Spalte, deren Werte
 // von der Erfassung ausgeschlossen werden. Die Bindung liegt bei der
-// Tabelle (`ADR-0059` Teilfrage 2: ausschließlich pro Tabelle).
+// Tabelle (ausschließlich pro Tabelle).
 type ExcludeColumnCommand struct {
 	Source model.SourceID
 	Schema string
@@ -158,7 +158,7 @@ type IncludeColumnCommand struct {
 }
 
 // ExcludeColumnUseCase schließt eine Spalte einer aktivierten Tabelle von
-// der Erfassung aus (`LH-FA-CFG-005`, `ADR-0028`): die Spaltenexistenz ist
+// der Erfassung aus (`LH-FA-CFG-005`): die Spaltenexistenz ist
 // die Vorbedingung, ihre Abwesenheit endet über
 // `ErrSourceColumnMissing`.
 type ExcludeColumnUseCase interface {
@@ -166,7 +166,7 @@ type ExcludeColumnUseCase interface {
 }
 
 // IncludeColumnUseCase hebt den Ausschluss einer Spalte wieder auf
-// (`LH-FA-CFG-005`, `ADR-0028`); dieselbe Vorbedingung wie
+// (`LH-FA-CFG-005`); dieselbe Vorbedingung wie
 // `ExcludeColumnUseCase`.
 type IncludeColumnUseCase interface {
 	Include(ctx context.Context, command IncludeColumnCommand) error

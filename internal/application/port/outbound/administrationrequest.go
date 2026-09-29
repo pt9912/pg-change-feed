@@ -8,7 +8,7 @@ import (
 )
 
 // ErrAdministrationStorage trägt die Fehlerklasse `storage` dieses Ports
-// (`SPEC-008`, `ADR-0023`): ein Persistenzfehler an der Antrags-Queue
+// (`ADR-0023`): ein Persistenzfehler an der Antrags-Queue
 // bleibt über `errors.Is` klassifizierbar, ohne Treibertyp. Wie
 // `ErrHeartbeatStorage` trägt dieser Sentinel keine Klasse-Aktion am
 // Capture-Pfad — ein Lese- oder Vermerk-Fehler der Administrations-
@@ -36,7 +36,7 @@ type RejectedAdministrationRequest struct {
 }
 
 // AdministrationRequestPort trägt die Lese- und Ergebnis-Fähigkeit der
-// Antrags-Queue (`ARC-004`, `LH-FA-ADM-001`): `cdc.enable_table`/
+// Antrags-Queue (`ARC-004`): `cdc.enable_table`/
 // `cdc.disable_table`/`cdc.exclude_column`/`cdc.include_column`/
 // `cdc.backfill_table`/`cdc.set_transformation`/`cdc.remove_transformation`
 // schreiben den Antrags-Datensatz direkt über SQL

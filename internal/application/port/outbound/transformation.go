@@ -7,14 +7,14 @@ import (
 )
 
 // TransformationPort trägt die Lese-Fähigkeiten der Transformationsregeln
-// an der Quelle (`ARC-004`, `ADR-0112` Teilfrage 6, Fähigkeits-Port je
-// `ADR-0034`): den dauerhaften Regelstand, den jeder Pfad beim Anlegen einer
+// an der Quelle (`ARC-004`, Fähigkeits-Port): den dauerhaften Regelstand,
+// den jeder Pfad beim Anlegen einer
 // Bindung mitführt und die Konfliktprüfung K1 bis K3 liest, und die
 // Spaltennamen der Quelltabelle, gegen die K3 und K4 prüfen. Beide
 // Fähigkeiten gehören derselben Frage — welche Regeln die Spalten einer
 // Tabelle tragen dürfen — und derselben Adapter-Instanz wie die Aktivierung
 // (im MVP eine Instanz). Der Regelstand selbst wird nicht hier geschrieben:
-// der Schreibpfad bleibt die Antrags-Queue (`ADR-0050`).
+// der Schreibpfad bleibt die Antrags-Queue.
 type TransformationPort interface {
 	// TransformationRules liefert den dauerhaften Regelstand je Tabelle
 	// einer Quelle (`SPEC-019`): die `applied`-Zeilen der beiden

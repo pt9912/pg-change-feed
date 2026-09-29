@@ -23,9 +23,9 @@ type IdleConfirmationResult struct {
 }
 
 // IdleConfirmationInboundPort nimmt die Meldung „Leerlauf bis P“ des
-// Replication-Stream-Adapters auf (`ADR-0120`, `ADR-0034`): die Application
-// entscheidet über die Bestätigung, der Adapter meldet nur den Zustand
-// (`ADR-0007`). Der Port ist von `CaptureInboundPort` getrennt, weil er eine
+// Replication-Stream-Adapters auf (`ADR-0120`): die Application
+// entscheidet über die Bestätigung, der Adapter meldet nur den Zustand.
+// Der Port ist von `CaptureInboundPort` getrennt, weil er eine
 // eigene Konsistenzgrenze trägt — eine Bestätigung ohne Persistenz, gültig
 // allein im Leerlauf, in dem kein Change der Publication zu speichern ist.
 type IdleConfirmationInboundPort interface {

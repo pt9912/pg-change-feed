@@ -5,7 +5,7 @@ import (
 	stderrors "errors"
 )
 
-// Fehlerklassen des Snapshot-Lesers (`SPEC-008`, `ADR-0023`): jede
+// Fehlerklassen des Snapshot-Lesers (`ADR-0023`): jede
 // Störung endet als sichtbarer Fehler mit einer dieser Klassen. Der
 // Aufrufer klassifiziert über `errors.Is`; die technische Ursache bleibt
 // über die zweite Wrappung lesbar.
@@ -34,9 +34,9 @@ var (
 )
 
 // TableSnapshotPort trägt die Fähigkeit, den Bestand einer Tabelle als
-// konsistenten Snapshot zu lesen (`ARC-004`, Fähigkeits-Port je
-// `ADR-0034`; `LH-FA-CAP-009`). Er kennt weder Run-Zustand noch Store: die
-// Abbildung der Snapshot-Position auf eine `SourcePosition` (`ADR-0005`),
+// konsistenten Snapshot zu lesen (`ARC-004`, Fähigkeits-Port). Er kennt
+// weder Run-Zustand noch Store: die
+// Abbildung der Snapshot-Position auf eine `SourcePosition`,
 // die Bild-Konstruktion (`model.BuildRowImage`) und das Schreiben liegen
 // beim Aufrufer.
 type TableSnapshotPort interface {
@@ -75,7 +75,7 @@ type TableSnapshot interface {
 	// Erzeugung wie der Text, den `pgoutput` je Spalte sendet (`ADR-0115`);
 	// `nil` ist NULL. Ein leerer Block meldet das Ende des Bestands —
 	// auch beim ersten Aufruf einer leeren Tabelle. Die Zeilenzahl eines
-	// Aufrufs ist durch `B` begrenzt (`LH-FA-CAP-006.a`); der Speicherbedarf
+	// Aufrufs ist durch `B` begrenzt; der Speicherbedarf
 	// ist `B` mal die Zeilenbreite, weil die Grenze Zeilen zählt, nicht Bytes,
 	// und der Block bis zur Rückgabe als Treiberbytes und als Zeichenketten
 	// vorliegt (aus dem Treiber-Quelltext abgeleitet, nicht gemessen).

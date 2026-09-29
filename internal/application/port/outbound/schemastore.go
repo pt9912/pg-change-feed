@@ -8,15 +8,15 @@ import (
 )
 
 // ErrSchemaStoreStorage trägt die Fehlerklasse `storage` dieses Ports
-// (`SPEC-008`, `ADR-0023`) — derselbe Aufbau wie `ErrConsumerStateStorage`
+// (`ADR-0023`) — derselbe Aufbau wie `ErrConsumerStateStorage`
 // (`consumerstate.go`): ein Persistenzfehler am Schema Store endet
 // sichtbar, Application und Betrieb klassifizieren über `errors.Is` und
 // kennen keinen Treibertyp.
 var ErrSchemaStoreStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler im Schema Store")
 
 // ErrSchemaVersionUnknown trägt die Abwesenheit einer TableSchema-Zeile zu
-// einer `SchemaVersionID` (`ADR-0015` Folgepflicht, `LH-FA-SCH-004`
-// Negative-Fall): eine referenzierte, aber nicht registrierte Version
+// einer `SchemaVersionID` (`ADR-0015` Folgepflicht): eine referenzierte,
+// aber nicht registrierte Version
 // endet sichtbar — keine stille Fehlinterpretation.
 var ErrSchemaVersionUnknown = stderrors.New("Schema-Version trägt keine TableSchema-Registrierung")
 
@@ -27,13 +27,12 @@ var ErrSchemaVersionUnknown = stderrors.New("Schema-Version trägt keine TableSc
 var ErrSchemaVersionMismatch = stderrors.New("SchemaVersion und TableSchema tragen unterschiedliche Kennungen")
 
 // SchemaStorePort trägt die Persistenz-Fähigkeit der historisch stabilen
-// Schema-Interpretation (`ARC-004`, `ADR-0015` Folgepflicht — Architektur-
-// Sicht §4, Sequenzdiagramm `LH-FA-CFG-001.a`, `SchemaStorePort (ARC-004)`):
-// jeder Change referenziert eine `model.SchemaVersion` (`SPEC-004`), deren
+// Schema-Interpretation (`ARC-004`):
+// jeder Change referenziert eine `model.SchemaVersion`, deren
 // zugehörige Spaltenform (`model.TableSchema`) dieser Port hält — ohne sie
-// bleiben `LH-FA-SCH-004` (inkompatible Typänderungen erkennbar melden)
-// und `LH-FA-SCH-005` (Changes einer Schema-Version zuordenbar,
-// unterscheidbar) unerfüllbar.
+// bleiben inkompatible Typänderungen (erkennbar melden)
+// und die Zuordenbarkeit von Changes zu einer Schema-Version
+// unerfüllbar.
 //
 // Dieser Port trägt ausschließlich die Persistenz-Fähigkeit: weder die
 // dynamische Re-Versionierung im laufenden Erfassungspfad

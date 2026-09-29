@@ -1,8 +1,7 @@
 // Der Backfill-Use-Case trägt diese Datei an einer Stelle (`ARC-003`): der
 // Administrations-Hintergrundzug nimmt einen Antrag über `Request` an, der
-// Backfill-Worker führt einen angenommenen Run über `Execute` aus
-// (`ADR-0028`, `ADR-0111` Teilfrage 5, `ADR-0113` Festlegung 1); die
-// Orchestrierung liegt im Application Service (`ARC-002`).
+// Backfill-Worker führt einen angenommenen Run über `Execute` aus; die
+// Orchestrierung liegt im Application Service.
 
 package inbound
 
@@ -13,7 +12,7 @@ import (
 )
 
 // BackfillRequestCommand trägt die Eingabe der Annahme (`LH-FA-CAP-009`):
-// die Kennung des Antrags — sie wird die Run-Kennung (`SPEC-029`) —, die
+// die Kennung des Antrags — sie wird die Run-Kennung —, die
 // Tabelle und die Publication der Quelle, deren Mitgliedschaft die
 // Vorbedingung mitträgt.
 type BackfillRequestCommand struct {
@@ -44,7 +43,7 @@ type BackfillExecuteResult struct {
 }
 
 // BackfillTableUseCase überführt den Bestand einer aktivierten Tabelle in
-// Backfill-Changes (`LH-FA-CAP-009`, `ADR-0111`).
+// Backfill-Changes (`LH-FA-CAP-009`).
 type BackfillTableUseCase interface {
 	// Request prüft die Vorbedingungen (Tabelle aktiviert mit laufender
 	// Bindung und Mitglied der Publication), liest die geschätzte

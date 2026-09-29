@@ -19,8 +19,7 @@ var ErrBackfillRequestNotPending = stderrors.New("Backfill-Antrag ist nicht offe
 var ErrBackfillRunInvalid = stderrors.New("Backfill-Run passt nicht zur Operation")
 
 // BackfillAdmissionPort trägt die Fähigkeit, einen Backfill-Antrag
-// anzunehmen (`ARC-004`, Fähigkeits-Port je `ADR-0034`; `ADR-0113`
-// Festlegung 1). Er ist der einzige Weg, eine Run-Zeile anzulegen: der
+// anzunehmen (`ARC-004`, Fähigkeits-Port). Er ist der einzige Weg, eine Run-Zeile anzulegen: der
 // `BackfillRunPort` trägt keine Anlage-Operation, damit es keinen zweiten,
 // nicht atomaren Weg gibt.
 type BackfillAdmissionPort interface {
