@@ -80,6 +80,14 @@ type Config struct {
 	// Assemblers wirkungslos — bestehende Aufrufstellen (Tests), die
 	// dieses Feld nicht setzen, bleiben unverändert kompilierbar.
 	SchemaStore outbound.SchemaStorePort
+	// Assembler trägt einen extern gebauten Assembler; ungesetzt (`nil`)
+	// baut `NewStream` einen aus `Tables` und `SchemaStore`. Der
+	// Composition-Root-Neustart (`ADR-0135` Festlegung 1) baut
+	// Stream-Verbindung, ACK-Adapter und Bindung je Wiederholung neu — der
+	// Assembler gehört nicht zu diesem Neuaufbau: seine Bindungen,
+	// Ausschlüsse und Regeln tragen die laufende Synchronisation der
+	// Administrations-Goroutine weiter.
+	Assembler *mapper.Assembler
 	// Log trägt den injizierten `LogPort` (`ADR-0024`);
 	// ungesetzt (`nil`) fällt `NewStream` auf `outbound.NoopLog` zurück —
 	// bestehende Aufrufstellen (Tests), die dieses Feld nicht setzen,
@@ -154,10 +162,14 @@ func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 		conn.Close(ctx)
 		return nil, err
 	}
-	assembler, err := mapper.NewAssembler(cfg.Source, cfg.Tables, cfg.SchemaStore)
-	if err != nil {
-		conn.Close(ctx)
-		return nil, fmt.Errorf("%w: %v", ErrConfiguration, err)
+	assembler := cfg.Assembler
+	if assembler == nil {
+		built, err := mapper.NewAssembler(cfg.Source, cfg.Tables, cfg.SchemaStore)
+		if err != nil {
+			conn.Close(ctx)
+			return nil, fmt.Errorf("%w: %v", ErrConfiguration, err)
+		}
+		assembler = built
 	}
 	stream := newStreamOnSession(session, conn, assembler, cfg.Source, cfg.Capture, log)
 	stream.idle = cfg.IdleConfirmation

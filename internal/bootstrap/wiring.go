@@ -143,6 +143,12 @@ const (
 // der Prozess-Aufrufer meldet sie als Ausgang.
 var ErrConfiguration = errors.New("Fehlerklasse configuration: Verdrahtung ohne vollständige Vorbedingung")
 
+// ErrTransientExhausted trägt die Erschöpfung der begrenzten Wiederholung
+// (`ADR-0135` Festlegung 5): die Klasse `transient` entsteht durch diesen
+// Sentinel im Heartbeat-Fehlerzustand, der Prozess-Aufrufer endet mit
+// Ausgang 1 und setzt den Betrieb neu.
+var ErrTransientExhausted = errors.New("Fehlerklasse transient: Wiederholung erschöpft")
+
 // heartbeatInterval trägt den periodischen Schreib-Zug des
 // Heartbeat-Timers (`LH-FA-ADM-002`): ein MVP-Default ohne
 // eigene Konfigurationsschicht — dieselbe Minimal-Form wie die übrigen
@@ -482,18 +488,22 @@ func changeStreamEnabled(grpcAddr, httpAddr string, natsStreamActive bool) bool 
 	return grpcAddr != "" || httpAddr != "" || natsStreamActive
 }
 
-// Run verdrahtet die Pipeline (`ADR-0026`) und trägt den Stream-Lauf bis
+// Run verdrahtet die Pipeline und trägt den Stream-Lauf bis
 // zum Kontext-Ende: der Stream baut die Replication-Verbindung, der
 // ACK-Adapter bestätigt über dieselbe Verbindung
 // und der Capture Service orchestriert Persist-before-ACK.
 // Die Rückkehr ohne Fehler meldet das reguläre
-// Lauf-Ende. Ein Adapter-Fehler wird durchgereicht, nicht still
-// fortgesetzt: der Prozess-Aufrufer endet auf jeden
-// Adapter-Fehler mit Ausgang 1 — die Fortsetzung nach
-// Verbindungsabbruch trägt der Prozess-Neustart, der Slot liest seinen
-// Start über confirmed_flush_lsn; die `transient`-Aktion
-// (Erneut versuchen mit begrenztem Backoff) trägt dieser
-// Pfad nicht. Ein nicht-`nil`-Ausgang meldet zusätzlich
+// Lauf-Ende. Eine Transport-/Verbindungsstörung am Quellzugriff
+// (`receive.ErrReplication`/`outbound.ErrReplication`) wird mit begrenztem
+// Backoff am Stream-Zyklus wiederholt (`ADR-0135` Festlegungen 1–5):
+// Anfangsverzögerung 2 s, Verdopplung, Obergrenze 30 s, Gesamtfenster
+// 5 Minuten; während der Wiederholung trägt der Heartbeat keinen
+// Fehlerzustand (WARN-Log je Versuch). Ist die Grenze erschöpft — oder bei
+// jedem anderen Fehler (Klassen `configuration`, `permission`, `schema`,
+// `storage`, Stream-Ordnungs-Verletzung) — endet der
+// Prozess-Aufrufer-Zug mit Ausgang 1; die Fortsetzung danach trägt der
+// Prozess-Neustart, der Slot liest seinen
+// Start über confirmed_flush_lsn. Ein nicht-`nil`-Ausgang meldet zusätzlich
 // den Fehlerzustand über den Heartbeat (`reportFault` unten),
 // bevor der Prozess-Aufrufer beendet —
 // der benannte Rückgabewert `runErr` trägt dafür den Fehler über die
@@ -645,19 +655,12 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		return err
 	}
 
-	stream, err := receive.NewStream(ctx, receive.Config{
-		DSN:         cfg.CaptureDSN,
-		Source:      cfg.Source,
-		Publication: cfg.Publication,
-		Slot:        cfg.Slot,
-		Tables:      assemblerTables,
-		SchemaStore: schemaStore,
-		Log:         log,
-	})
-	if err != nil {
-		return err
-	}
-	ack, err := postgresack.New(stream.Conn(), postgresack.WithLog(log))
+	// Der Assembler läuft über die Prozess-Lebensdauer und gehört nicht zum
+	// Neuaufbau des Stream-Zyklus (ADR-0135 Festlegung 1): seine Bindungen,
+	// Ausschlüsse und Transformationen tragen die laufende Synchronisation
+	// der Administrations-Goroutine und der API-Adapter weiter — ein neuer
+	// Stream-Zyklus bekommt denselben Assembler.
+	assembler, err := mapper.NewAssembler(cfg.Source, assemblerTables, schemaStore)
 	if err != nil {
 		return err
 	}
@@ -747,15 +750,13 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		}
 	}
 	// Ein `CaptureService` trägt beide Eingänge des Streams: den Capture-Pfad
-	// und die Leerlauf-Bestätigung (`ADR-0120`), beide über denselben
-	// `ReplicationAckPort`.
-	captureService := capture.NewCaptureService(store, ack, captureOpts...)
-	if err := stream.BindCapture(captureService); err != nil {
-		return err
-	}
-	if err := stream.BindIdleConfirmation(captureService); err != nil {
-		return err
-	}
+	// und die Leerlauf-Bestätigung, beide über denselben
+	// `ReplicationAckPort`. Der ACK-Adapter gehört zum Neuaufbau des
+	// Stream-Zyklus (`ADR-0135` Festlegung 1) — der Capture Service hält
+	// die Weiterleitung `cycleAck`, die der Zyklus je Wiederholung neu
+	// setzt.
+	cycleAckPort := streamCycleAck{}
+	captureService := capture.NewCaptureService(store, &cycleAckPort, captureOpts...)
 
 	// Die Antrags-Queue-Verbindung (`cdc.administration_request`,
 	// `ADR-0050`) trägt dieselbe Rolle wie Aktivierung und Heartbeat
@@ -874,7 +875,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		schemaStore:           schemaStore,
 		columnExclusion:       activation,
 		transformations:       activation,
-		assembler:             stream.Assembler(),
+		assembler:             assembler,
 		setTransformations:    setTransformations,
 		removeTransformations: removeTransformations,
 		backfill:              backfillTables,
@@ -968,7 +969,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// (`LH-FA-CFG-001`).
 	enableTableAPI := enableTableWithAssemblerSync{
 		EnableTableUseCase: enableTables,
-		assembler:          stream.Assembler(),
+		assembler:          assembler,
 		activation:         activation,
 		schemaStore:        schemaStore,
 		columnExclusion:    activation,
@@ -976,7 +977,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	}
 	disableTableAPI := disableTableWithAssemblerSync{
 		DisableTableUseCase: disableTables,
-		assembler:           stream.Assembler(),
+		assembler:           assembler,
 	}
 
 	// Der HTTP/JSON-Driving-Adapter (`ADR-0057`) bleibt vollständig
@@ -1108,7 +1109,50 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		runWALRetentionCheck(walRetentionCtx, walRetention, log, heartbeatInterval, warnBytes, errorBytes, stopStream, &walFault)
 	}()
 
-	streamErr := runStreamAfterAdministrationPass(streamCtx, administration, startAdministration, stream.Run)
+	// Der Stream-Zyklus (`ADR-0135` Festlegung 1): Neuaufbau von
+	// Stream-Verbindung, ACK-Adapter und Bindung, dann der Lauf — je
+	// Wiederholung neu; der Assembler läuft weiter (oben). Der
+	// Start-Vorlauf der Administrations-Anträge läuft einmal pro Prozess
+	// (runStreamAfterAdministrationPass), nicht je Versuch.
+	streamErr := runStreamAfterAdministrationPass(streamCtx, administration, startAdministration, func(runCtx context.Context) error {
+		// Der Wartezug bricht bei Kontext-Ende ab — der Lauf endet dann
+		// regulär (stream.Run kehrt bei Kontext-Ende ohne Fehler zurück).
+		sleepStreamWait := func(d time.Duration) {
+			timer := time.NewTimer(d)
+			defer timer.Stop()
+			select {
+			case <-runCtx.Done():
+			case <-timer.C:
+			}
+		}
+		return runStreamWithRetry(runCtx, log, clock, func(attemptCtx context.Context) error {
+			stream, err := receive.NewStream(attemptCtx, receive.Config{
+				DSN:         cfg.CaptureDSN,
+				Source:      cfg.Source,
+				Publication: cfg.Publication,
+				Slot:        cfg.Slot,
+				Tables:      assemblerTables,
+				SchemaStore: schemaStore,
+				Assembler:   assembler,
+				Log:         log,
+			})
+			if err != nil {
+				return err
+			}
+			cycleAck, err := postgresack.New(stream.Conn(), postgresack.WithLog(log))
+			if err != nil {
+				return err
+			}
+			cycleAckPort.set(cycleAck)
+			if err := stream.BindCapture(captureService); err != nil {
+				return err
+			}
+			if err := stream.BindIdleConfirmation(captureService); err != nil {
+				return err
+			}
+			return stream.Run(attemptCtx)
+		}, sleepStreamWait)
+	})
 	stopHeartbeat()
 	heartbeatDone.Wait()
 	stopWALRetention()
@@ -1758,6 +1802,8 @@ func reportFault(port outbound.HeartbeatPort, source model.SourceID, runErr *err
 // `internal` („unerwarteter interner Fehler").
 func classifyRunError(err error) model.ErrorClass {
 	switch {
+	case errors.Is(err, ErrTransientExhausted):
+		return model.ErrorClassTransient
 	case errors.Is(err, ErrConfiguration),
 		errors.Is(err, receive.ErrConfiguration),
 		errors.Is(err, postgresstorage.ErrActivationConfiguration):
@@ -1780,6 +1826,85 @@ func classifyRunError(err error) model.ErrorClass {
 	default:
 		return model.ErrorClassInternal
 	}
+}
+
+// Die Backoff-Setzungen der Wiederholung (`ADR-0135` Festlegung 2):
+// Anfangsverzögerung, Verdopplung je Fehlversuch, Obergrenze je
+// Warteschritt und Gesamtfenster ab dem ersten wiederholten Fehler —
+// Setzungen ohne Messung, nachschärfbar über eine Folge-ADR.
+const (
+	streamRetryInitialDelay = 2 * time.Second
+	streamRetryMaxDelay     = 30 * time.Second
+	streamRetryWindow       = 5 * time.Minute
+)
+
+// streamCycleAck reicht die Bestätigung an den ACK-Adapter des laufenden
+// Stream-Zyklus weiter (`ADR-0135` Festlegung 1): je Wiederholung baut
+// der Zyklus den ACK-Adapter über die neue Stream-Verbindung neu — der
+// Capture Service hält diese Weiterleitung konstant.
+type streamCycleAck struct {
+	mu  sync.RWMutex
+	ack outbound.ReplicationAckPort
+}
+
+func (p *streamCycleAck) set(ack outbound.ReplicationAckPort) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.ack = ack
+}
+
+func (p *streamCycleAck) Acknowledge(ctx context.Context, position model.SourcePosition) error {
+	p.mu.RLock()
+	ack := p.ack
+	p.mu.RUnlock()
+	if ack == nil {
+		return errors.New("streamCycleAck: kein ACK-Adapter des laufenden Stream-Zyklus gebunden")
+	}
+	return ack.Acknowledge(ctx, position)
+}
+
+// retryableStreamError meldet, ob der Fehler die
+// Transport-/Verbindungsstörung am Quellzugriff trägt (`ADR-0135`
+// Festlegung 3) und damit wiederholt wird: die Kette trägt
+// `receive.ErrReplication` oder `outbound.ErrReplication`. Klassen- und
+// Ordnungs-Fehler enden unverändert mit Ausgang 1.
+func retryableStreamError(err error) bool {
+	return errors.Is(err, receive.ErrReplication) || errors.Is(err, outbound.ErrReplication)
+}
+
+// runStreamWithRetry umschließt den Stream-Zyklus mit der begrenzten
+// Wiederholung (`ADR-0135` Festlegungen 1–5): ein Fehler der
+// Transport-/Verbindungsstörung (retryableStreamError) startet nach
+// Warteschritt einen neuen Zyklus — Anfangsverzögerung 2 s, Verdopplung,
+// Obergrenze 30 s je Schritt, Gesamtfenster 5 Minuten ab dem ersten
+// wiederholten Fehler; ein erfolgreicher Zyklus setzt die Episode zurück.
+// Nicht wiederholbare Fehler und die Erschöpfung des Fensters enden mit
+// dem Lauf-Fehler; die Erschöpfung trägt `ErrTransientExhausted` und damit
+// die Klasse `transient`. Kontext-Ende während des Wartens beendet den
+// Lauf regulär ohne Fehler (dieselbe Rückgabeform wie `stream.Run`).
+func runStreamWithRetry(ctx context.Context, log outbound.LogPort, clock outbound.ClockPort, cycle func(context.Context) error, sleep func(time.Duration)) error {
+	err := cycle(ctx)
+	delay := streamRetryInitialDelay
+	var windowStart model.TimePoint
+	windowStarted := false
+	for err != nil && retryableStreamError(err) && ctx.Err() == nil {
+		now := clock.Now()
+		if windowStarted && now.Sub(windowStart).Nanos > streamRetryWindow.Nanoseconds() {
+			return fmt.Errorf("%w: %v", ErrTransientExhausted, err)
+		}
+		if !windowStarted {
+			windowStart = now
+			windowStarted = true
+		}
+		log.Warn(ctx, "pg-change-feed: Stream-Zyklus wiederholt (transient)", "warteschritt", delay, "error", err)
+		sleep(delay)
+		delay = min(delay*2, streamRetryMaxDelay)
+		if ctx.Err() != nil {
+			return nil
+		}
+		err = cycle(ctx)
+	}
+	return err
 }
 
 // RegisterConsumer verdrahtet den `RegisterConsumerUseCase` (`ADR-0028`)

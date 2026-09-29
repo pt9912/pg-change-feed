@@ -1,7 +1,8 @@
-Zustand: **geplant** — Ausgang: **geplant** →
-[`slice-capture-transient-wiederholung`](../../../next/slice-capture-transient-wiederholung.md)
-(Start: eine ADR des Architects zur Wiederholungsform; Klasse `transient`,
-begrenzter Backoff, Ausgang bei Erschöpfung) · seit welle-backfill-bestand
+Zustand: **umgesetzt** — Ausgang: der Slice
+`slice-capture-transient-wiederholung` (`ADR-0135` legt die
+Wiederholungsform fest: begrenzter Backoff am Stream-Zyklus in der
+Composition Root, Klasse `transient` bei Erschöpfung) · seit
+slice-capture-transient-wiederholung
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §4.1 und §8).
 

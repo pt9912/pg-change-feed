@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.81
+Version: 1.82
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-28
 
@@ -1920,8 +1920,14 @@ Tabellen-Aktivierung schlägt dann an der Fremdschlüsselbedingung fehl.
 
 Der Container startet nicht automatisch neu (`restart: "no"` im
 mitgelieferten `compose.yaml`) — der Neustart liegt beim Aufrufer
-(Orchestrator, Supervisor). Ein Neustart setzt am zuletzt bestätigten
-Slot-Stand fort; keine bereits gespeicherte Änderung geht dabei verloren.
+(Orchestrator, Supervisor). Eine vorübergehend nicht verfügbare Quelle
+(Fehlerklasse `transient`) wiederholt der Capture-Pfad vorher selbst mit
+begrenztem Backoff: Anfangsverzögerung 2 s, Verdopplung bis 30 s je
+Warteschritt, Gesamtfenster 5 Minuten; ein erfolgreicher Zyklus setzt die
+Episode zurück. Erst nach erschöpftem Fenster endet der Prozess mit
+Ausgang 1 und dem sichtbaren Fehlerzustand im Heartbeat. Ein Neustart
+setzt am zuletzt bestätigten Slot-Stand fort; keine bereits gespeicherte
+Änderung geht dabei verloren.
 
 ## 7. FAQ
 
@@ -2179,6 +2185,7 @@ MIT — siehe `LICENSE`.
 
 | Version | Datum | Änderung |
 |---|---|---|
+| 1.82 | 2026-09-29 | „Neustart nach einem Fehler": begrenzte Wiederholung der Klasse `transient` im Capture-Pfad (`ADR-0135`) ergänzt |
 | 1.0 | 2026-09-12 | Erste Fassung |
 | 1.1 | 2026-09-12 | Rollen-spezifische DSN-Verdrahtung (`ADR-0047`): `CDC_SOURCE_DSN` ersatzlos ersetzt durch `CDC_CAPTURE_DSN`/`CDC_ADMIN_DSN`/`CDC_READER_DSN`, Betriebs-Hinweis zum `REPLICATION`-Attribut ergänzt |
 | 1.2 | 2026-09-12 | Fehlerklassen-Tabelle (§6) auf alle sieben Klassen aus `ADR-0023`/`SPEC-008` vervollständigt (`transient`, `permission`, `internal` ergänzt) |

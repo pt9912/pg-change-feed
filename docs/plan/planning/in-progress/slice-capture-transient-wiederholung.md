@@ -144,15 +144,17 @@ Composition Root, ist die Rückführung in §4 zu prüfen.
 auf jeden Adapter-Fehler mit Ausgang 1“; beide Stände gemessen; die Befehle
 stehen im Codeblock, der Implementer trägt Stand und Trefferzahl ein):**
 
-```text
-git grep -n -i -E 'transient|Backoff|erneut versuchen|restart: "no"|Neustart nach einem Fehler|kontrollierte Fortsetzung|Ausgang 1' -- internal spec docs/user harness compose.yaml
-git grep -n -i -E 'endet auf jeden|jeden Adapter-Fehler|nicht wiederholt' -- internal docs/user harness
+```suchlauf
+cd3a1c60 156 -n -i -E 'transient|Backoff|erneut versuchen|restart: "no"|Neustart nach einem Fehler|kontrollierte Fortsetzung|Ausgang 1' -- internal spec docs/user harness compose.yaml
+diff 171 -n -i -E 'transient|Backoff|erneut versuchen|restart: "no"|Neustart nach einem Fehler|kontrollierte Fortsetzung|Ausgang 1' -- internal spec docs/user harness compose.yaml
+cd3a1c60 2 -n -i -E 'endet auf jeden|jeden Adapter-Fehler|nicht wiederholt' -- internal docs/user harness
+diff 1 -n -i -E 'endet auf jeden|jeden Adapter-Fehler|nicht wiederholt' -- internal docs/user harness
 ```
 
 | Träger | Befund | Behandlung |
 |---|---|---|
-| Kommentar an `Run` (`wiring.go`), Container-Vertrags-Zeile (`compose.yaml`), Handbuch, `SPEC-008` | *(Implementer trägt ein)* | jede Aussage „trägt dieser Pfad nicht“ folgt der Wiederholung |
-| Test-Kommentare, die auf die Freigabe des Slots warten (`TestStreamRestartsOnExistingSlot`) | *(Implementer trägt ein)* | Kommentar und Test folgen dem Verhalten |
+| Kommentar an `Run` (`wiring.go`), Container-Vertrags-Zeile (`compose.yaml`), Handbuch, `SPEC-008` | nachgezogen: alle vier nennen die Wiederholung und ihre Grenze (`ADR-0135`); Suchlauf 1: 156 → 167 (+11 Wiederholungs-Erwähnungen) | „jede Aussage ‚trägt dieser Pfad nicht' folgt der Wiederholung" ✓ (der `Run`-Kommentar, `compose.yaml` und das Handbuch nennen die Wiederholung) |
+| Test-Kommentare, die auf die Freigabe des Slots warten (`TestStreamRestartsOnExistingSlot`) | Suchlauf 2: 2 → 1 — der Rest-Treffer ist der `reportFault`-Kommentar (`wiring.go`, „Run endet auf jeden Adapter-Fehler" → auf erschöpfte/nicht wiederholbare Fehler nachgezogen) | Kommentar und Test folgen dem Verhalten ✓ |
 
 ## 4. Trigger
 

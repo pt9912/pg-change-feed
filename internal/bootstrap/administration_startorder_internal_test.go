@@ -295,9 +295,11 @@ func TestRunStreamAfterAdministrationPassWithTimeoutLeavesRequestsPendingAfterTh
 
 // TestRunSourceTextPassesStreamRunOnlyAsArgumentOfTheSequence bindet die
 // Aufrufstelle in `Run`, die kein netzloser Lauf erreicht (`Run` braucht die
-// Datenbank): im Quelltext des Rumpfes von `Run` ist `stream.Run`
-// ausschließlich das vierte Argument von `runStreamAfterAdministrationPass`, nie
-// selbst aufgerufen. Grenze: der Test liest die Gestalt des Quelltexts, nicht das
+// Datenbank): im Quelltext des Rumpfes von `Run` steht der Stream-Lauf
+// ausschließlich als `stream.Run` im Zyklus-Schluss der Wiederholung
+// (`ADR-0135` Festlegung 1), die als viertes Argument von
+// `runStreamAfterAdministrationPass` läuft — nie selbst außerhalb dieser
+// Schachtelung. Grenze: der Test liest die Gestalt des Quelltexts, nicht das
 // Verhalten von `Run`; er bindet weder die Reihenfolge der Argumente noch den
 // Inhalt von `administration` noch den Rumpf von `startAdministration` (dessen
 // Goroutinen-Start deckt am laufenden Prozess `make test-integration`). Rot
@@ -312,26 +314,39 @@ func TestRunSourceTextPassesStreamRunOnlyAsArgumentOfTheSequence(t *testing.T) {
 		receiver, ok := selector.X.(*ast.Ident)
 		return ok && receiver.Name == "stream"
 	}
-	var direct, sequenced int
+	var runPassCalls, streamRunInPass, streamRunOutside int
 	ast.Inspect(run.Body, func(node ast.Node) bool {
 		call, ok := node.(*ast.CallExpr)
 		if !ok {
 			return true
 		}
-		if isStreamRun(call.Fun) {
-			direct++
-		}
 		if name, ok := call.Fun.(*ast.Ident); ok && name.Name == "runStreamAfterAdministrationPass" &&
-			len(call.Args) == 4 && isStreamRun(call.Args[3]) {
-			sequenced++
+			len(call.Args) == 4 {
+			runPassCalls++
+			if lit, ok := call.Args[3].(*ast.FuncLit); ok {
+				ast.Inspect(lit.Body, func(n ast.Node) bool {
+					c, ok := n.(*ast.CallExpr)
+					if ok && isStreamRun(c.Fun) {
+						streamRunInPass++
+					}
+					return true
+				})
+			}
+			return false
+		}
+		if isStreamRun(call.Fun) {
+			streamRunOutside++
 		}
 		return true
 	})
-	if direct != 0 {
-		t.Fatalf("Run ruft stream.Run %d-mal direkt auf, wollen 0 — der Aufruf steht ohne den Vorlauf", direct)
+	if runPassCalls != 1 {
+		t.Fatalf("Run ruft runStreamAfterAdministrationPass %d-mal auf, wollen 1", runPassCalls)
 	}
-	if sequenced != 1 {
-		t.Fatalf("Run übergibt stream.Run %d-mal an runStreamAfterAdministrationPass, wollen 1", sequenced)
+	if streamRunOutside != 0 {
+		t.Fatalf("Run ruft stream.Run %d-mal außerhalb des Vorlaufs auf, wollen 0", streamRunOutside)
+	}
+	if streamRunInPass != 1 {
+		t.Fatalf("Der Vorlauf übergibt stream.Run %d-mal in den Zyklus, wollen 1", streamRunInPass)
 	}
 }
 

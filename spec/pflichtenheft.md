@@ -1168,7 +1168,7 @@ Fehler werden mindestens in die folgenden Klassen klassifiziert
 
 | ID | Klasse | Bedingung | Aktion |
 |---|---|---|---|
-| `SPEC-008` | `transient` | vorübergehend nicht verfügbare Quelle/Speicher | Erneut versuchen mit begrenztem Backoff |
+| `SPEC-008` | `transient` | vorübergehend nicht verfügbare Quelle/Speicher | Erneut versuchen mit begrenztem Backoff — Bedingung: wiederholt wird die Transport-/Verbindungsstörung am Quellzugriff (`receive.ErrReplication`/`outbound.ErrReplication`); nicht wiederholt enden die Klassen `permission`/`configuration`/`schema`/`storage` und Stream-Ordnungs-Verletzungen mit sichtbarem Fehler |
 | `SPEC-008` | `configuration` | ungültige/falsch gesetzte Konfiguration | Sichtbarer Fehler; kein Start und keine Fortsetzung im falschen Stand |
 | `SPEC-008` | `permission` | fehlende Berechtigung | Sichtbarer Fehler; kein stiller Retry |
 | `SPEC-008` | `schema` | nicht sicher interpretierbare Schemaänderung/Dekodierfehler; eine Transformationsregel, die auf die Spalten der Change bzw. des Snapshots nicht anwendbar ist (`SPEC-030`) — im Erfassungspfad und im Run | Sichtbarer Fehler (LH-FA-SCH-004.a); kein stilles Überspringen. Erfassungspfad: keine Persistierung und keine Bestätigung der Transaktion, Erfassung endet sichtbar (Heartbeat, Diagnose); Run: `failed`, run-lokal. Abhilfe nur bei nicht anwendbarer Regel: Regelstand ändern (Absatz unten) |
