@@ -267,6 +267,10 @@ func stateDiff(want, got map[string]replayImage) []string {
 // dahinter. Der Test bricht ab, wenn eine der beiden Seiten leer bleibt. Die
 // Lese-Ordnung `(commit_position, transaction_id, sequence)` trägt
 // `LH-FA-CAP-004`.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2EBackfillReplayInvariant(t *testing.T) {
 	env := newBackfillEnv(t)
 	ctx := context.Background()

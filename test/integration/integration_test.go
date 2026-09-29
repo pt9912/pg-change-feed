@@ -1,28 +1,27 @@
 // Package integration_test trägt den Kern-CDC-Erfassungspfad-Ausschnitt
 // des Compose-Integrationstests (`make test-integration`): PostgreSQL
 // starten → CDC aktivieren → INSERT → UPDATE → DELETE → Changes lesen →
-// Reihenfolge und Inhalt prüfen (`LH-FA-CAP-001`…003, `LH-QA-POR-003`).
+// Reihenfolge und Inhalt prüfen (`LH-QA-POR-003`).
 // Der über den ursprünglichen MVP-Schnitt (Abschnitt 1 Lastenheft)
 // hinausgewachsene Scope desselben Compose-Integrationstests — Rollen-DSN-
-// Verifikation (`ADR-0047`, `LH-QA-SEC-001`…`003`), `cdc_capture_lag`-
+// Verifikation, `cdc_capture_lag`-
 // Lasttest-Beleg und der Black-Box-CLI-Rundlauf — läuft im Runner-Skript
 // (`tools/harness/run-integration-tests.sh`), nicht in diesem Paket. Der
 // Lauf hier fährt das verdrahtete System: der Feed-Container trägt die
 // CDC-Runtime des Binarys — die Verdrahtung (Store, Aktivierung, Stream,
-// Service, ACK) liegt am Composition Root (`ADR-0026`) und läuft im
+// Service, ACK) liegt am Composition Root und läuft im
 // Container, nicht hier. Der Test verdrahtet keinen Stream und betreibt
 // keinen; seinen Lese-Pfad trägt der Store-Adapter
 // (`PostgresChangeStoreAdapter.ReadChanges`) gegen dieselbe Instanz, in
 // die das Binary persistiert — persistierte Changes am Ende-zu-Ende-Pfad
-// haben keinen anderen Schreiber als den Feed-Container
-// (`LH-QA-REL-001.a`).
+// haben keinen anderen Schreiber als den Feed-Container.
 //
 // Die Instanz gehört der Compose-Umgebung (`make test-integration`); der
-// d-migrate-Rollout (ADR-0043) trägt die CDC-Tabellen und der Runner die
+// d-migrate-Rollout trägt die CDC-Tabellen und der Runner die
 // Aktivierungs-Vorbedingung (Quell-Tabellen, Quelle-Zeile) vor dem
 // Container-Start — die Aktivierung selbst läuft über die Verdrahtung des
-// Containers als EnableTable-Aufrufe (`ADR-0028`), und der Test liest den
-// Stand über die Status- und Listen-Use-Cases (`LH-FA-CFG-003`/`004`).
+// Containers als EnableTable-Aufrufe, und der Test liest den
+// Stand über die Status- und Listen-Use-Cases.
 // Ohne DSN überspringt der Test.
 package integration_test
 
@@ -199,6 +198,10 @@ func imageJSON(t *testing.T, raw []byte) map[string]any {
 // unterscheidbar) und `LH-FA-DAT-005` (Row-Image-Werte je Operationstyp
 // real gelesen). Das Wiederlesen desselben Bereichs unten trägt zugleich
 // `LH-QA-REL-004`: zweimaliges Lesen liefert dieselben Changes.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2ECaptureFlow(t *testing.T) {
 	env := newE2EEnv(t, "feed_e2e_flow")
 	ctx := context.Background()
@@ -237,7 +240,7 @@ func TestE2ECaptureFlow(t *testing.T) {
 	}
 
 	// Die Commit-Positionen laufen in Commit-Reihenfolge
-	// (`LH-FA-CAP-004`, `LH-FA-REA-004.a`).
+	// (`LH-FA-CAP-004`).
 	for i := 1; i < len(records); i++ {
 		if !records[i-1].Position.Before(records[i].Position) {
 			t.Fatalf("Positionsordnung: %v läuft nicht vor %v", records[i-1].Position, records[i].Position)
@@ -267,7 +270,7 @@ func TestE2ECaptureFlow(t *testing.T) {
 	}
 
 	// Das Wiederlesen desselben Bereichs trägt dieselben Changes in
-	// derselben Reihenfolge (`LH-FA-REA-004.a`, `LH-FA-REA-005`).
+	// derselben Reihenfolge (`LH-FA-REA-005`).
 	reread, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{
 		Source: e2eSource, Table: env.table,
 	})
@@ -307,6 +310,10 @@ func TestE2ECaptureFlow(t *testing.T) {
 // Feed-Container (`LH-FA-CAP-008`): mit voller Identity trägt die Quelle
 // den kompletten Alt-Stand — `old_data` trägt beide Spalten (`ADR-0016`),
 // nicht nur den Schlüssel.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2EUpdateOldImageWithFullReplicaIdentity(t *testing.T) {
 	env := newE2EEnv(t, "feed_e2e_full")
 	ctx := context.Background()
@@ -430,6 +437,10 @@ func changeRowID(t *testing.T, change model.Change) string {
 // nachgelagerten Lasttest-Beleg und id=95/96 im CLI-E2E-Abschnitt, beide in
 // run-integration-tests.sh) — die Lesung filtert auf den Feldwert, nicht auf
 // die Testreihenfolge.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2EChangesViewMatchesReadChanges(t *testing.T) {
 	env := newE2EEnv(t, "feed_e2e_full")
 	ctx := context.Background()
@@ -511,6 +522,10 @@ func TestE2EChangesViewMatchesReadChanges(t *testing.T) {
 // Sicht berechnet nichts neu, was die Domain-Policy nicht bereits real
 // entscheidet — sie macht nur sichtbar, welche Position aktuell die
 // Löschgrenze trägt.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2ERetentionBlockersViewShowsFurthestBehindConsumer(t *testing.T) {
 	env := newE2EEnv(t, "feed_e2e_full")
 	ctx := context.Background()
@@ -627,6 +642,10 @@ func TestE2ERetentionBlockersViewShowsFurthestBehindConsumer(t *testing.T) {
 // Speichergröße von `cdc.change` — derselbe externe SQL-Lesezugriffsweg wie
 // der bestehende `cdc_capture_lag`-Beleg
 // (`tools/harness/run-integration-tests.sh`), hier gegen dieselbe View.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2EMetricsCarriesStorageBytes(t *testing.T) {
 	env := newE2EEnv(t, "feed_e2e_full")
 	ctx := context.Background()
@@ -655,6 +674,10 @@ func TestE2EMetricsCarriesStorageBytes(t *testing.T) {
 // „aktiviert", die nie aktivierte Tabelle meldet „nicht aktiviert"
 // (Boundary), die fehlende Tabelle endet sichtbar (Negative), und die
 // Liste trägt die aktivierten Tabellen der Quelle.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2EActivationState(t *testing.T) {
 	dsn := os.Getenv("CDC_INTEGRATION_DSN")
 	if dsn == "" {
@@ -731,6 +754,10 @@ func TestE2EActivationState(t *testing.T) {
 // run-integration-tests.sh) und ist damit unabhängig von der
 // Deaktivierung in TestE2EDisableRetainedState, die nur feed_e2e_flow
 // betrifft.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2EActiveTablesViewMatchesActivationState(t *testing.T) {
 	env := newE2EEnv(t, "feed_e2e_full")
 	ctx := context.Background()
@@ -796,6 +823,10 @@ func TestE2EActiveTablesViewMatchesActivationState(t *testing.T) {
 // und Liste trennen den Herkunfts-Bestand vom Erfassungs-Zustand. Der
 // Test läuft nach den Capture-Läufen (Quell-Reihenfolge) und deaktiviert
 // die Tabelle als letztes.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2EDisableRetainedState(t *testing.T) {
 	env := newE2EEnv(t, "feed_e2e_flow")
 	ctx := context.Background()
@@ -878,6 +909,10 @@ func TestE2EDisableRetainedState(t *testing.T) {
 // die die `TableBinding` gehoben wird — künftige Changes referenzieren
 // sie, die bereits erfasste Change bleibt bei ihrer ursprünglichen
 // Version.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2ESchemaChangeAddColumn(t *testing.T) {
 	env := newE2EEnv(t, "feed_e2e_schema")
 	ctx := context.Background()
@@ -918,7 +953,7 @@ func TestE2ESchemaChangeAddColumn(t *testing.T) {
 
 	// LH-FA-SCH-005 Boundary: die Schema-Versionen vor und nach der
 	// Erweiterung sind unterscheidbar — `ADD COLUMN` registriert real eine
-	// neue Version (`ADR-0015` Folgepflicht).
+	// neue Version.
 	if beforeRows[0].schemaVersion == afterRows[0].schemaVersion {
 		t.Fatalf("Schema-Version unterscheidet sich nicht: davor %s, danach %s (Erwartung: ADD COLUMN registriert eine neue Version)", beforeRows[0].schemaVersion, afterRows[0].schemaVersion)
 	}
@@ -943,6 +978,10 @@ func TestE2ESchemaChangeAddColumn(t *testing.T) {
 // Spalte `removable` ist eine eigene, wegwerfbare Spalte, getrennt von
 // `amount`/`extra`, die bereits Zustand für
 // `TestE2ESchemaChangeIncompatibleTypeChange` tragen.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2ESchemaChangeDropColumn(t *testing.T) {
 	env := newE2EEnv(t, "feed_e2e_schema")
 	ctx := context.Background()
@@ -964,10 +1003,9 @@ func TestE2ESchemaChangeDropColumn(t *testing.T) {
 		t.Fatalf("INSERT nach der Entfernung: %v", err)
 	}
 
-	// LH-FA-SCH-003 Happy Path (ADR-0063, Supersedes ADR-0058 Entscheidung 1):
-	// die reale Spaltenentfernung löst denselben ErrIncompatibleSchemaChange-
-	// Pfad aus wie jede andere inkompatible Relation-Änderung (Konvergenz
-	// mit LH-FA-SCH-004, bereits von ADR-0059 Teilfrage 4 akzeptiert) —
+	// LH-FA-SCH-003 Happy Path: die reale Spaltenentfernung löst denselben
+	// ErrIncompatibleSchemaChange-
+	// Pfad aus wie jede andere inkompatible Relation-Änderung (Konvergenz) —
 	// sichtbarer schema-Fehler, kein stilles Auslassen.
 	if got := awaitHeartbeatErrorClass(t, env, "schema"); got != "schema" {
 		t.Fatalf("cdc.heartbeat.error_class nach DROP COLUMN: %q, wollen \"schema\"", got)
@@ -980,7 +1018,7 @@ func TestE2ESchemaChangeDropColumn(t *testing.T) {
 		t.Fatalf("cdc.changes trägt id=4 nach dem gemeldeten schema-Fehler: %+v (Erwartung: der Erfassungspfad endete vor dem Commit dieser Transaktion)", rows)
 	}
 
-	// LH-FA-SCH-003 Boundary (unverändert ggü. ADR-0058): die vor der
+	// LH-FA-SCH-003 Boundary: die vor der
 	// Entfernung erfasste Change bleibt über cdc.changes unverändert lesbar,
 	// inklusive des historischen Werts der entfernten Spalte.
 	rereadBefore := awaitChangesViewRows(t, env, "3", 1)
@@ -1004,6 +1042,10 @@ func TestE2ESchemaChangeDropColumn(t *testing.T) {
 // dieselbe Disziplin mit einer sichtbaren `columns:`-Signatur. Die neue
 // Spalte bleibt additiv, nullable, und wird per `t.Cleanup` vor den
 // nachfolgenden Testphasen wieder entfernt (`ADR-0058` Entscheidung 2).
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2EChangeTableMetadataExtensibility(t *testing.T) {
 	env := newE2EEnv(t, "feed_e2e_full")
 	ctx := context.Background()
@@ -1076,6 +1118,10 @@ func TestE2EChangeTableMetadataExtensibility(t *testing.T) {
 // Runner-Skripts, vor `TestE2ESchemaChangeIncompatibleTypeChange` — jener
 // setzt `error_class` dauerhaft auf `schema` und würde den
 // Happy-Path-Beleg sonst verdecken.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2EHeartbeatHealthy(t *testing.T) {
 	dsn := os.Getenv("CDC_INTEGRATION_DSN")
 	if dsn == "" {
@@ -1110,8 +1156,8 @@ func TestE2EHeartbeatHealthy(t *testing.T) {
 // über `env.pool`, bis der erwartete Fehlerzustand ansteht (Polling mit
 // Test-Zeitgrenze) — derselbe externe SQL-Lesezugriffsweg wie
 // `cdc.changes` (`awaitChangesViewRows` oben), gegen die Projektion aus
-// `tools/schema/nacharbeit-heartbeat.sql` (`LH-FA-ADM-003`,
-// `LH-QA-REL-003`). Eine leere Zeichenkette trägt `NULL` (Normalbetrieb,
+// `tools/schema/nacharbeit-heartbeat.sql` (`LH-FA-ADM-003`).
+// Eine leere Zeichenkette trägt `NULL` (Normalbetrieb,
 // `error_class` noch nicht gesetzt).
 func awaitHeartbeatErrorClass(t *testing.T, env *e2eEnv, want string) string {
 	t.Helper()
@@ -1165,6 +1211,10 @@ func awaitHeartbeatErrorClass(t *testing.T, env *e2eEnv, want string) string {
 // Zeile id=11 bleibt dabei unerfasst: ihre Transaktion trägt die
 // auslösende Relation-Nachricht vor ihrem eigenen Commit, und der
 // Erfassungspfad endet, bevor sie committed wird.
+//
+// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
+// Kürzen auf einen Anker.
 func TestE2ESchemaChangeIncompatibleTypeChange(t *testing.T) {
 	env := newE2EEnv(t, "feed_e2e_schema")
 	ctx := context.Background()
