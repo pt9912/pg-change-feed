@@ -1,6 +1,5 @@
-// Package status trägt den GetStatus Use Case (`ARC-002`, `ADR-0028`):
-// die Status-Abfrage meldet den CDC-Zustand einer Tabelle
-// (`LH-FA-CFG-003`).
+// Package status trägt den GetStatus Use Case (`ARC-002`):
+// die Status-Abfrage meldet den CDC-Zustand einer Tabelle.
 package status
 
 import (
@@ -43,7 +42,7 @@ var _ inbound.GetStatusUseCase = (*GetStatusService)(nil)
 // Status meldet den CDC-Zustand der Tabelle: „aktiviert" liest die
 // Bindungs-Zeile samt Publication-Mitgliedschaft; eine Bindungs-Zeile
 // ohne Mitgliedschaft liest sich als Herkunft persistierter Changes
-// (Retained — `LH-FA-CFG-002` Out-of-Scope: ihr Verhalten folgt der
+// (Retained — Out-of-Scope: ihr Verhalten folgt der
 // Retention), ihre Abwesenheit als „nicht aktiviert" (`LH-FA-CFG-003`
 // Boundary).
 func (s *GetStatusService) Status(ctx context.Context, query GetStatusQuery) (GetStatusResult, error) {

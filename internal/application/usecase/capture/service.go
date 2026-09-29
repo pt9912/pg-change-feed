@@ -1,6 +1,6 @@
 // Package capture trägt den Capture Use Case (`ARC-002`): die
 // Orchestrierung von Persistenz und Source-ACK liegt im Application Layer
-// (`ADR-0027`) — der Stream-Adapter entscheidet nicht selbst, wann eine
+// — der Stream-Adapter entscheidet nicht selbst, wann eine
 // Position dauerhaft verarbeitet ist.
 package capture
 
@@ -36,9 +36,8 @@ var ErrMissingTransaction = stderrors.New("Capture ohne Quelltransaktion")
 //	Receive → Decode → Persist → COMMIT Store → ACK Source →
 //	Notify (best effort) → Stream-Publish (best effort)
 //
-// (`LH-QA-REL-001.a`, `ADR-0055` für das optionale Wecksignal,
-// `ADR-0056` für dessen tabellen-granulare Deduplizierung, `ADR-0060`
-// Teilfrage 2 für den optionalen Stream-Publish nach dem Wecksignal)
+// (das optionale Wecksignal und der optionale Stream-Publish hängen der
+// Kette als letzte, best-effort Schritte nach)
 type CaptureService struct {
 	store  outbound.ChangeStorePort
 	ack    outbound.ReplicationAckPort
@@ -66,7 +65,7 @@ func WithChangeNotification(notify outbound.ChangeNotificationPort) Option {
 // ohne diese Option unverändert. Der Aufruf reiht sich nach `ACK Source` und
 // nach dem Notify-Schritt ein und trägt die Zustellsemantik des Ports: er
 // blockiert nicht auf einen Abonnenten, sein Fehler geht nicht in den
-// Rückgabewert von `Capture` ein (`ADR-0066`).
+// Rückgabewert von `Capture` ein.
 func WithChangeStream(stream outbound.ChangeStreamPort) Option {
 	return func(s *CaptureService) { s.stream = stream }
 }
@@ -80,8 +79,8 @@ func WithLog(log outbound.LogPort) Option {
 
 // NewCaptureService verdrahtet den Capture Use Case mit seinen beiden
 // obligatorischen Outbound-Ports; `ChangeNotificationPort` und
-// `ChangeStreamPort` sind optional (`WithChangeNotification`, `ADR-0055`;
-// `WithChangeStream`, `ADR-0060` Teilfrage 2).
+// `ChangeStreamPort` sind optional (`WithChangeNotification`,
+// `WithChangeStream`).
 func NewCaptureService(store outbound.ChangeStorePort, ack outbound.ReplicationAckPort, opts ...Option) *CaptureService {
 	s := &CaptureService{store: store, ack: ack, log: outbound.NoopLog}
 	for _, opt := range opts {
@@ -95,7 +94,7 @@ var _ inbound.CaptureInboundPort = (*CaptureService)(nil)
 // Capture persistiert die committed Quelltransaktion über den
 // `ChangeStorePort` und bestätigt ihre Commit-Position erst nach dem
 // Store-Commit über den `ReplicationAckPort`. Ein Persistenzfehler endet
-// ohne Source-ACK (`SPEC-008`, Klasse `storage`); ein Fehler beim ACK
+// ohne Source-ACK; ein Fehler beim ACK
 // lässt die Persistenz bestehen — der Crash zwischen Persistenz und ACK
 // erzeugt höchstens erneute Verarbeitung, Wiederholung wird gegenüber
 // möglichem Datenverlust bevorzugt (`ADR-0012`).
@@ -104,7 +103,7 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 	if tx == nil {
 		return CaptureResult{}, ErrMissingTransaction
 	}
-	// Offene Transaktionen sind nicht konsumierbar (`ADR-0029`, Regel 3);
+	// Offene Transaktionen sind nicht konsumierbar;
 	// zurückgerollte Transaktionen erreichen den Commit nicht
 	// (`LH-FA-CAP-007`). Die Position liest der Pfad nur am committed
 	// Transaktionsträger.
@@ -124,8 +123,8 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 	// erfolgte Persistierung und Bestätigung bleiben davon unberührt. Ohne
 	// konfigurierten Port (`s.notify == nil`) unterbleibt der Versuch
 	// vollständig, bestehendes Verhalten bleibt bit-identisch. Ein Notify
-	// je distinkter `(schema, table)`-Paarung der Transaktion, dedupliziert
-	// (`ADR-0056`): mehrere Changes derselben Tabelle lösen genau ein
+	// je distinkter `(schema, table)`-Paarung der Transaktion, dedupliziert:
+	// mehrere Changes derselben Tabelle lösen genau ein
 	// Signal aus.
 	if s.notify != nil {
 		for _, table := range distinctTables(tx) {
@@ -137,9 +136,9 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 	// Der Stream-Publish läuft als letzter Schritt der Best-Effort-Kette
 	// (`ADR-0060` Teilfrage 2): genau ein Aufruf je Change der Transaktion in
 	// der Reihenfolge von `tx.Changes()`, ohne Deduplizierung nach Tabelle —
-	// `LH-FA-SST-008` verlangt den vollständigen Inhalt je Zeilen-Change. Der
+	// verlangt ist der vollständige Inhalt je Zeilen-Change. Der
 	// Aufruf blockiert nicht auf einen Abonnenten; die Entkopplung trägt der
-	// Port (`ADR-0066`), deshalb braucht diese Aufrufstelle keine eigene
+	// Port, deshalb braucht diese Aufrufstelle keine eigene
 	// Zeit-Isolation. Sein Fehler geht nie in den Rückgabewert dieses Aufrufs
 	// ein, die bereits erfolgte Persistierung und Bestätigung bleiben
 	// unberührt. Ohne konfigurierten Port (`s.stream == nil`) unterbleibt der
@@ -164,7 +163,7 @@ var ErrMissingIdlePosition = stderrors.New("Leerlauf-Bestätigung ohne Position"
 // Publication zu speichern ist (`ADR-0120` Festlegung 1): der Aufruf erreicht
 // nie den `ChangeStorePort`, benachrichtigt nicht und veröffentlicht nichts.
 // Ein Fehler des Ports geht unverändert durch (Klasse `replication`,
-// `ADR-0120` Festlegung 3, `SPEC-008`); die Bestätigung gilt erst mit der
+// `ADR-0120` Festlegung 3); die Bestätigung gilt erst mit der
 // Rückkehr ohne Fehler.
 func (s *CaptureService) ConfirmIdle(ctx context.Context, command inbound.IdleConfirmationCommand) (inbound.IdleConfirmationResult, error) {
 	if command.Position.IsZero() {

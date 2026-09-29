@@ -1,7 +1,6 @@
-// Package enable trägt den EnableTable Use Case (`ARC-002`, `ADR-0028`):
+// Package enable trägt den EnableTable Use Case (`ARC-002`):
 // die Aktivierung einer Tabelle schreibt die Bindungs-Zeilen der
-// CDC-Referenztabellen und trägt die Publication der Quelle
-// (`LH-FA-CFG-001`).
+// CDC-Referenztabellen und trägt die Publication der Quelle.
 package enable
 
 import (
@@ -43,7 +42,7 @@ var _ inbound.EnableTableUseCase = (*EnableTableService)(nil)
 // Enable aktiviert die Tabelle idempotent (`LH-FA-CFG-001` Boundary): die
 // Bindungs-Zeile läuft vor der Publication — die Publication trägt nur
 // Tabellen, deren Bindungs-Zeile die Fremdschlüssel der ersten Persistenz
-// vorhält (`SPEC-001`); eine fehlgeschlagene Publication hinterlässt die
+// vorhält; eine fehlgeschlagene Publication hinterlässt die
 // Bindung ohne Erfassung, ein erneuter Aufruf trägt die Publication nach.
 // Eine bereits aktivierte Tabelle bleibt unverändert; die Rückkehr meldet
 // den Ausgang über `AlreadyEnabled`.

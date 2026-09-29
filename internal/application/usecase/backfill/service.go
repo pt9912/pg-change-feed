@@ -1,6 +1,6 @@
-// Package backfill trägt den BackfillTable Use Case (`ARC-002`,
-// `ADR-0028`): die Annahme eines Backfill-Antrags und die Ausführung des
-// angenommenen Runs (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`).
+// Package backfill trägt den BackfillTable Use Case (`ARC-002`):
+// die Annahme eines Backfill-Antrags und die Ausführung des
+// angenommenen Runs.
 package backfill
 
 import (
@@ -27,10 +27,10 @@ type (
 // Ports bündelt die neun obligatorischen Outbound-Ports des Use Cases; alle
 // sind Fähigkeits-Ports (`ADR-0034`): Bindung und Publication
 // (`TableActivationPort`), Ausschlussstand (`ColumnExclusionPort`),
-// Regelstand (`TransformationPort`, `ADR-0112` Folgepflicht 7),
+// Regelstand (`TransformationPort`),
 // Schema-Version der Tabelle (`SchemaStorePort`), Snapshot
 // (`TableSnapshotPort`), Annahme, Run-Zustand und Schreiber sowie die Uhr
-// (`ClockPort`, `ADR-0040`).
+// (`ClockPort`).
 type Ports struct {
 	Activation      outbound.TableActivationPort
 	Exclusion       outbound.ColumnExclusionPort
@@ -51,7 +51,7 @@ type Ports struct {
 // seine Zeilenzahl mal die Zeilenbreite (`TableSnapshot.NextBlock`).
 //
 // Fehler eines Runs sind run-lokal: sie enden den Run, sie berühren weder
-// den Heartbeat-Fehlerzustand noch den Capture-Pfad (`SPEC-008`).
+// den Heartbeat-Fehlerzustand noch den Capture-Pfad.
 type BackfillTableService struct {
 	ports  Ports
 	notify outbound.ChangeNotificationPort
@@ -167,21 +167,19 @@ func (s *BackfillTableService) Execute(ctx context.Context, command BackfillExec
 // Schreibtransaktion.
 //
 // Alle Blöcke tragen die Position `X` des Snapshots und den
-// Snapshot-Zeitpunkt (die Uhr wird nach dem Öffnen des Snapshots gelesen,
-// `ADR-0111` Teilfrage 7).
+// Snapshot-Zeitpunkt (die Uhr wird nach dem Öffnen des Snapshots gelesen).
 //
-// Der Regelstand der Tabelle (`LH-FA-CFG-007`, `ADR-0112` Folgepflicht 7)
-// wird einmal nach dem Öffnen des Snapshots gelesen und gegen dessen Spalten
+// Der Regelstand der Tabelle wird einmal nach dem Öffnen des Snapshots
+// gelesen und gegen dessen Spalten
 // geprüft (`checkRulesApplicable`), bevor eine Zeile gelesen und bevor die
 // Schreibtransaktion geöffnet wird: eine Regel, die auf die Spalten nicht
-// anwendbar ist, endet den Run mit der Klasse `schema` (`ADR-0117`
-// Festlegung 1 und 2), auch bei einer leeren Tabelle. Dieser Stand ist der
+// anwendbar ist, endet den Run mit der Klasse `schema`, auch bei einer
+// leeren Tabelle. Dieser Stand ist der
 // Stand des Runs; ein Antrag, der ihn danach ändert, endet den Run mit
-// `configuration`, sobald eine Lesung die Änderung sieht (`ADR-0117`
-// Festlegung 5).
+// `configuration`, sobald eine Lesung die Änderung sieht.
 //
 // Jeder Block liest Ausschluss- und Regelstand neu und baut das Bild mit
-// ihnen. Fail-closed (`ADR-0111` Teilfrage 4, `LH-QA-SEC-004`): jeder weitere
+// ihnen. Fail-closed (`ADR-0111` Teilfrage 4): jeder weitere
 // Block und der Zustand unmittelbar vor dem Commit tragen denselben
 // Ausschlussstand wie der erste Block und denselben Regelstand wie die Lesung
 // zu Beginn (je als Menge, unabhängig von der Reihenfolge), und die Bindung
@@ -365,13 +363,13 @@ func failureText(class model.ErrorClass, cause error) string {
 
 // classifyError ordnet die Ursache eines Run-Fehlers einer der Klassen des
 // Run-Vertrags zu — `permission`, `configuration`, `storage`, `transient`,
-// `replication` (`ADR-0111` Teilfrage 5) und `schema` (`ADR-0117`
-// Festlegung 1: eine Regel des Regelstands ist auf die Spalten des Snapshots
+// `replication` (`ADR-0111` Teilfrage 5) und `schema`
+// (eine Regel des Regelstands ist auf die Spalten des Snapshots
 // oder auf eine Zeile nicht anwendbar, `ErrTransformationColumnMissing`,
 // `ErrTransformationTargetCollides`); ein nicht erkannter Fehler bleibt
 // `internal`, so auch eine `applied`-Zeile des Regelstands, die die Faltung
 // nicht mehr in eine Regel führt. Ein Wechsel von Ausschluss- oder Regelstand
-// während des Runs ist `configuration` (`ADR-0117` Festlegung 5). Die
+// während des Runs ist `configuration`. Die
 // Abbildung gilt dem Run und ist nicht die des Capture-Pfads.
 func classifyError(err error) model.ErrorClass {
 	switch {
@@ -435,7 +433,7 @@ func (s *BackfillTableService) stillBound(ctx context.Context, table model.Sourc
 }
 
 // currentVersion liest die aktuelle Schema-Version der Tabelle, auf die
-// jeder Change des Runs verweist (`ADR-0029`, Regel 7). Die Referenz ist eine
+// jeder Change des Runs verweist. Die Referenz ist eine
 // Kennung der Reihenfolge und beschreibt die Spalten des Bildes nicht: sie
 // kann hinter dem Bild liegen (Erweiterung der Tabelle vor oder während des
 // Runs) oder auf eine Version ohne Spaltenform zeigen (`ADR-0116`

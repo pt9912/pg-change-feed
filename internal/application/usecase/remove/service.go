@@ -1,7 +1,6 @@
 // Package remove trägt den RemoveConsumer Use Case (`ARC-002`): die
-// administrative Entfernung eines Consumers (`LH-FA-CON-006`) — der
-// Consumer trägt danach keine Rolle in der Retention
-// (`LH-FA-RET-004`).
+// administrative Entfernung eines Consumers — der
+// Consumer trägt danach keine Rolle in der Retention.
 package remove
 
 import (

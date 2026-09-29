@@ -1,5 +1,5 @@
-// Package readchanges trägt den Changes-Lese-Use-Case (`ARC-002`,
-// `ADR-0081`): er ist eine dünne Fassade über dem bestehenden
+// Package readchanges trägt den Changes-Lese-Use-Case (`ARC-002`):
+// er ist eine dünne Fassade über dem bestehenden
 // `ChangeStorePort` — keine eigene Abfrage, keine zweite Sortierung, kein
 // zweiter Lesepfad.
 package readchanges
@@ -43,7 +43,7 @@ var _ inbound.ReadChangesUseCase = (*ReadChangesService)(nil)
 // ruft `ChangeStorePort.ReadChanges`. Der Bereichs- und Limit-Kontrakt des
 // Ports (`outbound.ErrRangeInverted`/`outbound.ErrNonPositiveLimit`) kommt
 // unverändert zurück — der Use Case normiert nichts und entscheidet nichts
-// (`LH-FA-REA-001`/`003` Negative). Eine leere Quellen-Kennung ist eine
+// (`LH-FA-REA-001`). Eine leere Quellen-Kennung ist eine
 // ungültige Eingabe und endet über den bestehenden Fehlerpfad, keine stille
 // Übernahme über alle Quellen. Eine leere Rückgabe trägt eine leere,
 // gesetzte Liste.

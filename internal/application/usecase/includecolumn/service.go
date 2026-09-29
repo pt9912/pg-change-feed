@@ -1,5 +1,5 @@
-// Package includecolumn trägt den IncludeColumn Use Case (`ARC-002`,
-// `ADR-0028`): die Aufhebung eines Spaltenausschlusses (`LH-FA-CFG-005`).
+// Package includecolumn trägt den IncludeColumn Use Case (`ARC-002`):
+// die Aufhebung eines Spaltenausschlusses.
 package includecolumn
 
 import (

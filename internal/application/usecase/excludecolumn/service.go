@@ -1,6 +1,5 @@
-// Package excludecolumn trägt den ExcludeColumn Use Case (`ARC-002`,
-// `ADR-0028`): der Ausschluss einer Spalte von der Erfassung
-// (`LH-FA-CFG-005`).
+// Package excludecolumn trägt den ExcludeColumn Use Case (`ARC-002`):
+// der Ausschluss einer Spalte von der Erfassung.
 package excludecolumn
 
 import (

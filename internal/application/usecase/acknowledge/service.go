@@ -1,7 +1,6 @@
-// Package acknowledge trägt den AcknowledgeConsumer Use Case (`ARC-002`,
-// `ADR-0028`): die Bestätigung der verarbeiteten Position eines Consumers
-// (`LH-FA-CON-004`) — der reguläre ACK verläuft nur vorwärts
-// (`ADR-0029`, Regel 2).
+// Package acknowledge trägt den AcknowledgeConsumer Use Case (`ARC-002`):
+// die Bestätigung der verarbeiteten Position eines Consumers — der
+// reguläre ACK verläuft nur vorwärts.
 package acknowledge
 
 import (
@@ -44,8 +43,8 @@ var _ inbound.AcknowledgeConsumerUseCase = (*AcknowledgeConsumerService)(nil)
 // Acknowledge trägt die bestätigte Position fort (`LH-FA-CON-004`): die
 // Wiederholung derselben Position ist idempotent (Boundary), eine frühere
 // Position und eine Position einer anderen Quelle enden über die
-// Invarianten-Sentinels (`ADR-0029`, Regel 2) — kein administrativer Reset
-// läuft als ACK durch (`ADR-0013`).
+// Invarianten-Sentinels — kein administrativer Reset
+// läuft als ACK durch.
 func (s *AcknowledgeConsumerService) Acknowledge(ctx context.Context, command AcknowledgeConsumerCommand) (AcknowledgeConsumerResult, error) {
 	if command.Consumer == "" {
 		return AcknowledgeConsumerResult{}, domainerrors.ErrEmptyIdentifier

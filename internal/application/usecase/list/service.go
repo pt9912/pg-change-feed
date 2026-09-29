@@ -1,5 +1,5 @@
-// Package list trägt den ListTables Use Case (`ARC-002`, `ADR-0028`): die
-// Liste trägt die aktivierten Tabellen einer Quelle (`LH-FA-CFG-004`).
+// Package list trägt den ListTables Use Case (`ARC-002`): die
+// Liste trägt die aktivierten Tabellen einer Quelle.
 package list
 
 import (
@@ -39,7 +39,7 @@ var _ inbound.ListTablesUseCase = (*ListTablesService)(nil)
 // ListTables liest die Tabellen der Quelle getrennt: `Tables` liest die
 // aktivierten Tabellen (Bindungs-Zeile samt Publication-Mitgliedschaft),
 // `Retained` liest Bindungs-Zeilen, die nur noch Herkunft persistierter
-// Changes tragen (`LH-FA-CFG-002` Out-of-Scope); ohne Aktivierung tragen
+// Changes tragen (Out-of-Scope); ohne Aktivierung tragen
 // beide Rückgaben leere Listen (`LH-FA-CFG-004` Boundary).
 func (s *ListTablesService) ListTables(ctx context.Context, query ListTablesQuery) (ListTablesResult, error) {
 	if query.Source == "" || query.Publication == "" {

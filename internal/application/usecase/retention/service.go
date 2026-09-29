@@ -1,5 +1,5 @@
-// Package retention trägt den RunRetention Use Case (`ARC-002`,
-// `ADR-0014`): die Freigabe je Change trägt
+// Package retention trägt den RunRetention Use Case (`ARC-002`):
+// die Freigabe je Change trägt
 // `model.RetentionPolicy.AllowsDeletion`, die physische Löschung der
 // freigegebenen Menge trägt der `ChangeStorePort`.
 package retention
@@ -52,11 +52,11 @@ const PageSize = 10_000
 // dann die Kandidaten der Quelle seitenweise (`PageSize`, ohne Row Images).
 // Je Seite befragt der Lauf `RetentionPolicy.AllowsDeletion` je Kandidat
 // (Alter aus `CommittedAt` gegen die Wanduhr, Change-Position, alle
-// bestätigten Consumer-Positionen der Quelle, `LH-FA-RET-002`…`004`) und
+// bestätigten Consumer-Positionen der Quelle, `LH-FA-RET-002`) und
 // übergibt ausschließlich die freigegebene Menge dieser Seite an
 // `ChangeStorePort.DeleteChanges`; nur eine leere Seite beendet den Lauf.
 // Der Lauf ist über die Seiten nicht atomar: ein Fehler hinterlässt die
-// Löschungen der Seiten davor, der nächste Lauf setzt fort (`ADR-0124`).
+// Löschungen der Seiten davor, der nächste Lauf setzt fort.
 // Eine Seite, deren letzte Kennung der Cursor ist, verletzt den Seitenvertrag
 // des Ports und endet als Fehler der Klasse `storage`.
 // Eine leere Quellen-Kennung ist eine ungültige Konfiguration und endet über

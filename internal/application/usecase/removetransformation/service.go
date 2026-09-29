@@ -1,6 +1,6 @@
 // Package removetransformation trägt den RemoveTransformation Use Case
-// (`ARC-002`, `ADR-0028`): das Herausnehmen einer Transformationsregel einer
-// Tabelle (`LH-FA-CFG-007`).
+// (`ARC-002`): das Herausnehmen einer Transformationsregel einer
+// Tabelle.
 package removetransformation
 
 import (

@@ -1,6 +1,5 @@
 // Package position trägt den GetConsumerPosition Use Case (`ARC-002`):
-// der Lese der bestätigten Verarbeitungsposition eines Consumers
-// (`LH-FA-CON-003`, `LH-FA-CON-005`).
+// der Lese der bestätigten Verarbeitungsposition eines Consumers.
 package position
 
 import (

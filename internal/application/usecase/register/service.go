@@ -1,6 +1,6 @@
-// Package register trägt den RegisterConsumer Use Case (`ARC-002`,
-// `ADR-0028`): die Registrierung eines benannten Consumers trägt die
-// Consumer-Zeile (`LH-FA-CON-001`).
+// Package register trägt den RegisterConsumer Use Case (`ARC-002`):
+// die Registrierung eines benannten Consumers trägt die
+// Consumer-Zeile.
 package register
 
 import (

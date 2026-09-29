@@ -1,7 +1,6 @@
-// Package disable trägt den DisableTable Use Case (`ARC-002`,
-// `ADR-0028`): die Deaktivierung einer Tabelle entzieht sie der
-// Publication und trägt den Ausgang der Bindungs-Zeile
-// (`LH-FA-CFG-002`).
+// Package disable trägt den DisableTable Use Case (`ARC-002`):
+// die Deaktivierung einer Tabelle entzieht sie der
+// Publication und trägt den Ausgang der Bindungs-Zeile.
 package disable
 
 import (

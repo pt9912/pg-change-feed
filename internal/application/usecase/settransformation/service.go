@@ -1,6 +1,5 @@
-// Package settransformation trägt den SetTransformation Use Case (`ARC-002`,
-// `ADR-0028`): das Anlegen einer Transformationsregel einer Tabelle
-// (`LH-FA-CFG-007`).
+// Package settransformation trägt den SetTransformation Use Case
+// (`ARC-002`): das Anlegen einer Transformationsregel einer Tabelle.
 package settransformation
 
 import (
@@ -41,7 +40,7 @@ var _ inbound.SetTransformationUseCase = (*SetTransformationService)(nil)
 
 // Set prüft den Antrag und liefert die geprüfte Regel. Eine verletzte
 // Vorbedingung endet als Fehler, dessen Text der Fehlertext der Spec ist —
-// Klartext, Doppelpunkt, Leerzeichen, Adresse (`SPEC-019`) — und der über
+// Klartext, Doppelpunkt, Leerzeichen, Adresse — und der über
 // `errors.Is` auf den Grund auflöst; der Regelstand bleibt unverändert, der
 // Use Case schreibt ihn nicht. Die Prüfungen der Regelform laufen vor dem
 // ersten Lesezugriff auf den Port.
