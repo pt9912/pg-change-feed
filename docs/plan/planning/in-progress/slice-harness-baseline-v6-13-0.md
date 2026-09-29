@@ -28,7 +28,7 @@ Bootstrap `Modul 2`), [`harness/conventions.md`](../../../../harness/conventions
 ## 1. Ziel und Abgrenzung
 
 **Ziel:** Das vendored Baseline-Regelwerk steht auf **v6.13.0**
-(`.harness/baseline/v6.13.0/`, Integrität gegen `SHA256SUMS` geprüft), die
+(`.harness/baseline/<Tag>/` — Tag: v6.13.0 —, Integrität gegen `SHA256SUMS` geprüft), die
 verkörperte Form ist an die Änderungen 6.9.0 → 6.13.0 angepasst, und
 `make baseline-verify` wie `make gates` sind grün.
 
@@ -56,7 +56,7 @@ Kurs-Baseline: adoptiert v6.9.0, neuester Release v6.13.0` (Release vom
       [`AGENTS.md`](../../../../AGENTS.md) §3.1), `SHA256SUMS` gegen die
       entpackten Dateien geprüft. *Zu belegen durch:* die Prüf-Ausgabe
       (Exit-Code + Summen-Vergleich) im Bericht.
-- [ ] `.harness/baseline/v6.13.0/` committet (Regelwerk + Templates +
+- [ ] `.harness/baseline/<Tag>/` (Tag: v6.13.0) committet (Regelwerk + Templates +
       `SHA256SUMS`), `v6.9.0/` entfernt (§3.3: Mechanik und Entfernung in
       einen Commit — kein Rename, die Rename-Detection-Regel greift nicht).
 - [ ] Drift-Audit v6.9.0 → v6.13.0 geführt (Architect): Diff über beide
@@ -89,7 +89,7 @@ Kurs-Baseline: adoptiert v6.9.0, neuester Release v6.13.0` (Release vom
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `.harness/baseline/v6.13.0/**` | neu (Bundle) | Träger: Regelwerk + Templates + `SHA256SUMS` aus dem Release-Asset |
+| `.harness/baseline/<Tag>/**` (Tag: v6.13.0) | neu (Bundle) | Träger: Regelwerk + Templates + `SHA256SUMS` aus dem Release-Asset |
 | `.harness/baseline/v6.9.0/**` | entfernt | der alte Stand lebt in der Git-Historie |
 | Drift-Audit (Architect) | Bericht unter `docs/reviews/` | Prüfauftrag vor der Verkörperung — der Nachzug folgt den Funden, nicht umgekehrt |
 | `harness/conventions.md` §Baseline | update | adoptierter Stand v6.13.0, Datum, Release-URL |
