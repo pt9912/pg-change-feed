@@ -50,7 +50,7 @@ func TestSplitQualifiedNameTrenntSchemaUndTabelle(t *testing.T) {
 }
 
 // TestActivatedTableBindingsFehlerpfade trägt den Bindungs-Neuaufbau am
-// Prozessstart (`ADR-0050`, `ADR-0065`): der committed Stand ist die
+// Prozessstart (`ADR-0050`): der committed Stand ist die
 // Grundlage des Stream-Starts — ein Lesefehler einer der vier Quellen
 // (`TableActivationPort.List`, `ColumnExclusionPort.ExcludedColumns`,
 // `TransformationPort.TransformationRules`,
@@ -370,7 +370,7 @@ func TestApplyAdministrationRequestFehlerpfade(t *testing.T) {
 }
 
 // TestRunWALRetentionCheckProtokolliertMessfehlerUndLaeuftWeiter trägt die
-// best-effort-Haltung der WAL-Retention-Prüfung (`SPEC-008`/`ADR-0049`):
+// best-effort-Haltung der WAL-Retention-Prüfung (`ADR-0049`):
 // eine fehlgeschlagene Messung selbst beendet den Erfassungspfad nicht —
 // sie wird protokolliert, der Durchlauf läuft weiter, `stopStream` und
 // `fault` bleiben unberührt. Die Prüfung dieses Zweigs ist zugleich die

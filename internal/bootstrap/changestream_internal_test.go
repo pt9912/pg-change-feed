@@ -6,8 +6,7 @@ import (
 )
 
 // TestChangeStreamEnabled trägt die Oder-Bedingung der
-// Broadcaster-Verdrahtung (`ADR-0061` Teilfrage 5, um die dritte
-// Oder-Bedingung erweitert durch `ADR-0100` Teilfrage 5): Die
+// Broadcaster-Verdrahtung (`ADR-0100` Teilfrage 5): Die
 // Live-Streaming-Fähigkeit ist genau dann aktiv, wenn `CDC_GRPC_ADDR` oder
 // `CDC_HTTP_ADDR` gesetzt ist, oder der dritte NATS-Vollinhalts-Zustellweg
 // aktiv ist (`natsStreamActive`). Sind alle drei Bedingungen falsch, bleibt

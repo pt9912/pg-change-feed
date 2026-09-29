@@ -56,7 +56,7 @@ func TestWALRetentionThresholdsFollowGrowthAtInactiveSlot(t *testing.T) {
 		noise = "public.wal_e2e_noise"
 		slot  = "slot_wal_e2e"
 		// warnBytes/errorBytes sind ein Test-Fixture (Testkommentar oben) —
-		// nicht die SPEC-013-Startwerte (100 MiB/1 GiB, `ADR-0049`(b)).
+		// nicht die SPEC-013-Startwerte (100 MiB/1 GiB).
 		warnBytes  int64 = 32 * 1024
 		errorBytes int64 = 2 * 1024 * 1024
 	)

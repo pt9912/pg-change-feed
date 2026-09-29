@@ -21,9 +21,9 @@ import (
 
 // Der Verdrahtungs-Test läuft im Composition-Root-Layer (`ADR-0026`):
 // er verdrahtet die konkreten Adapter — Replication-Stream, ChangeStore
-// und ACK — und trägt die Persist-before-ACK-Ordnung am realen Treiber
-// (`LH-QA-REL-001.a`). Die Instanz gehört dem gepinnten Testcontainer
-// (`make test-replication`, `ADR-0030`); ohne DSN überspringt der Test.
+// und ACK — und trägt die Persist-before-ACK-Ordnung am realen Treiber.
+// Die Instanz gehört dem gepinnten Testcontainer
+// (`make test-replication`); ohne DSN überspringt der Test.
 
 const (
 	wireSource  = "src-1"
@@ -33,11 +33,11 @@ const (
 )
 
 // TestRealPersistBeforeAck trägt die Persist-before-ACK-Ordnung am
-// realen Treiber (`LH-QA-REL-001.a`): der echte Capture Service
+// realen Treiber: der echte Capture Service
 // persistiert über den ChangeStore und bestätigt die Position über den
 // realen ACK-Adapter an der Stream-Verbindung — confirmed_flush_lsn
 // trägt die bestätigte Position und die persistierten Changes sind
-// lesbar (`ADR-0027`, `ADR-0007`).
+// lesbar (`ADR-0027`).
 func TestRealPersistBeforeAck(t *testing.T) {
 	dsn := os.Getenv("CDC_REPLICATION_TEST_DSN")
 	if dsn == "" {
@@ -253,7 +253,7 @@ func awaitPersistedChanges(t *testing.T, store *postgresstorage.PostgresChangeSt
 }
 
 // TestRealIdleConfirmationReleasesForeignWAL trägt die Leerlauf-Bestätigung
-// am zusammengesetzten System (`ADR-0120`, `ADR-0007`): der echte Capture
+// am zusammengesetzten System (`ADR-0120`): der echte Capture
 // Service bestätigt die vom Stream gemeldete Leerlauf-Position über den
 // realen ACK-Adapter an der Stream-Verbindung. Schreiblast außerhalb der
 // Publication hält den Slot nicht zurück — `confirmed_flush_lsn` erreicht das

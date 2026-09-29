@@ -45,7 +45,7 @@ type prozessLauf struct {
 // Dienst bis zum Verbindungsaufbau kommt und dort scheitert: der lokale
 // Port 1 ist geschlossen, `connect_timeout` begrenzt den Versuch am
 // Adapter (`postgresstorage.New`, `ADR-0082` §Kontext (3)). Der
-// Datenbankname trägt die Rolle des DSN (`ADR-0047`) und macht die drei
+// Datenbankname trägt die Rolle des DSN und macht die drei
 // Vorbedingungen in der Fehlerzeile unterscheidbar.
 const nichtErreichbareQuelle = "postgres://x:x@127.0.0.1:1/%s?sslmode=disable&connect_timeout=1"
 

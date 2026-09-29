@@ -447,7 +447,7 @@ func TestProcessAdministrationRequestsDisableAppliesAndUnbindsAssembler(t *testi
 }
 
 // TestProcessAdministrationRequestsExcludeColumnAppliesWithoutBinding trägt
-// den Happy Path des Spaltenausschlusses (`LH-FA-CFG-005`, `ADR-0059`): der
+// den Happy Path des Spaltenausschlusses (`ADR-0059`): der
 // Antrag läuft über den Inbound Port mit der Spalte aus dem Antrags-Datensatz
 // und wird als `applied` vermerkt — die beiden Spalten-Antragsarten tragen
 // keine `Assembler`-Bindung nach, ihr Ziel ist der Filterzustand einer
@@ -531,7 +531,7 @@ func assemblerRowImage(t *testing.T, assembler *mapper.Assembler, xid uint32, sc
 
 // TestProcessAdministrationRequestsExcludeColumnFiltersAssemblerRowImage
 // trägt die Live-Reload-Wirkung des Spaltenausschlusses über die
-// Verdrahtung (`LH-FA-CFG-005`, `ADR-0059` Bestätigung): ein verarbeiteter
+// Verdrahtung (`ADR-0059` Bestätigung): ein verarbeiteter
 // `exclude_column`-Antrag trägt den Spaltennamen in den Ausschlussstand der
 // laufenden `Assembler`-Bindung nach, ein danach erfasster Change führt ihn
 // nicht mehr — ohne diesen Nachtrag bliebe der Antrag `applied` und ohne

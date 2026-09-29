@@ -153,10 +153,9 @@ func TestCdcCaptureLoginConnectionRejectsAdminWrite(t *testing.T) {
 }
 
 // TestCdcAdminHeartbeatWriteRequiresGrant belegt ADR-0047 §Fitness
-// Function, zweite Zeile (Kontext-Befund 3), und ADR-0048s korrigierten
-// Grant-Text real gegen die exakte Fehlerklasse, die ADR-0048 dokumentiert:
-// drei Stufen — kein Recht (muss scheitern), `INSERT, UPDATE` ohne `SELECT` (der
-// ursprüngliche, von ADR-0048 korrigierte ADR-0047-Text — muss ebenfalls
+// Function, zweite Zeile (Kontext-Befund 3) real gegen die exakte
+// Fehlerklasse: drei Stufen — kein Recht (muss scheitern), `INSERT, UPDATE` ohne `SELECT` (der
+// ursprüngliche ADR-0047-Text — muss ebenfalls
 // scheitern, sonst zeigt der Test eine Regression auf genau diesen Text
 // nicht an) und der vollständige `SELECT, INSERT, UPDATE`-Grant (muss
 // gelingen). Der Test entzieht/erteilt das Recht testweise und stellt den
@@ -201,7 +200,7 @@ func TestCdcAdminHeartbeatWriteRequiresGrant(t *testing.T) {
 	// Stufe 2 (die dokumentierte Regressions-Stufe): exakt der
 	// ursprüngliche ADR-0047-Text (`INSERT, UPDATE` ohne `SELECT`) — dieser
 	// Grant lässt den `ON CONFLICT … DO UPDATE`-Zweig weiterhin mit
-	// SQLSTATE 42501 scheitern (ADR-0048 §Kontext). Ein Test, der diese
+	// SQLSTATE 42501 scheitern. Ein Test, der diese
 	// Stufe nicht real prüft, bliebe grün, wenn `nacharbeit-roles.sql`
 	// versehentlich auf diesen Text zurückfiele.
 	if _, err := adminPool.Exec(ctx, "GRANT INSERT, UPDATE ON cdc.process_heartbeat TO cdc_admin"); err != nil {
@@ -251,7 +250,7 @@ func TestCdcAdminHeartbeatWriteRequiresGrant(t *testing.T) {
 //     (Replication-Stream, `wal_level=logical`) und dessen
 //     Heartbeat-Fehlerpfad bewusst unterdrückt wird (`runHeartbeat`,
 //     `_ = port.Beat(...)` — kein Abbruch des Capture-Pfads durch einen
-//     Heartbeat-Fehler, `SPEC-008`). Diese drei Fälle bauen deshalb den
+//     Heartbeat-Fehler). Diese drei Fälle bauen deshalb den
 //     jeweiligen Adapter direkt mit der falschen Rolle und rufen seine
 //     reale Produktionsmethode auf — das belegt „mit dieser Rolle scheitert
 //     der Aufruf real", nicht „`wiring.go` weist diesem Aufrufer die

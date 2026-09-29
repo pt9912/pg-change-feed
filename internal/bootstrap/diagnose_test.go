@@ -126,7 +126,7 @@ func newDiagnoseTestFixture(t *testing.T) *pgxpool.Pool {
 }
 
 // TestDiagnoseReportsNormalOperation belegt den Happy Path aller vier
-// Signale (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`): ein gesetztes
+// Signale (`LH-FA-SST-003`): ein gesetztes
 // Lebenszeichen ohne Fehlerzustand, ein numerischer `cdc_capture_lag`-Wert
 // und der Rückstand des Test-Consumers (bestätigte Position 1 hinter der
 // zuletzt erfassten Position 2, also Rückstand 1).

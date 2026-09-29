@@ -221,8 +221,8 @@ func TestRunWALRetentionCheckContinuesBelowAndAtWarnLevel(t *testing.T) {
 }
 
 // TestRunWALRetentionCheckStopsStreamAboveErrorThreshold belegt den
-// kontrollierten Abbruch oberhalb der Fehlerschwelle (`SPEC-008`,
-// `ADR-0049`): der Zug protokolliert einen Fehler, ruft `stopStream` genau
+// kontrollierten Abbruch oberhalb der Fehlerschwelle (`ADR-0049`):
+// der Zug protokolliert einen Fehler, ruft `stopStream` genau
 // einmal auf und setzt `fault` auf einen `outbound.ErrReplication`-Fehler.
 // Rot färbende Mutation: den `walRetentionError`-Fall wie `walRetentionWarn`
 // behandeln (nur loggen, kein `stopStream`/`fault.set`) — dann bleibt

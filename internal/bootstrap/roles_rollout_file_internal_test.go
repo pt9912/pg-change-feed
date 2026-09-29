@@ -19,16 +19,15 @@ import (
 // **entziehen und erteilen die Rechte dabei selbst** per `REVOKE`/`GRANT`.
 // Damit messen sie ihren eigenen Aufbau: eine Regression **in der
 // Rollout-Datei** (etwa ein zurückgenommener `SELECT`-Grant auf
-// `cdc.process_heartbeat`, genau der von `ADR-0048` korrigierte
-// Ursprungstext) bliebe dort unsichtbar, und das `Cleanup` des Tests
+// `cdc.process_heartbeat`) bliebe dort unsichtbar, und das `Cleanup` des Tests
 // räumt die Spur mit weg. Dieser Test liest stattdessen die Datei selbst
 // und ist netzlos — er läuft in `make gates` mit.
 //
 // Er prüft nicht, ob die Rechte auf einer laufenden Instanz wirken (das
-// bleibt Sache der `make test-store`-Tests und des Rollen-Rollouts,
-// `ADR-0043`); er prüft, dass der **Grant-Text, den der Rollout ausrollt**,
+// bleibt Sache der `make test-store`-Tests und des Rollen-Rollouts);
+// er prüft, dass der **Grant-Text, den der Rollout ausrollt**,
 // die Rechte trägt, die die Verdrahtung je Rolle voraussetzt
-// (`ADR-0047`, `ADR-0048`, `ADR-0014`, `LH-QA-SEC-001`…`003`).
+// (`ADR-0047`).
 //
 // **Benannte Grenzen dieses Tests — was er strukturell nicht sieht.** Der
 // Parser liest literale `GRANT … ;`-Anweisungen der Datei (Zeilenanfang,
@@ -185,8 +184,8 @@ func istKlassenGrant(objekt string) bool {
 //
 // Rot färbende Mutationen (real gefahren; die Exit-Codes führt §7 der
 // Closure-Notiz von `slice-093`): `SELECT` aus dem
-// `cdc.process_heartbeat`-Grant für `cdc_admin` entfernen (der von
-// `ADR-0048` korrigierte Ursprungstext) · den `DELETE`-Grant auf
+// `cdc.process_heartbeat`-Grant für `cdc_admin` entfernen (der korrigierte
+// Ursprungstext) · den `DELETE`-Grant auf
 // `cdc.transaction`/`cdc.change` für `cdc_admin` entfernen · `DELETE` an
 // `cdc_capture` auf `cdc.change` ergänzen · den Schema-USAGE-Grant
 // entfernen · die Lese-View `cdc.retention_blockers` bzw. `cdc.backfill_status`
@@ -216,7 +215,7 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 	// über `cfg.AdminDSN`. `UpsertHeartbeat` schreibt
 	// `INSERT … ON CONFLICT (source_id) DO UPDATE …`; PostgreSQL verlangt
 	// dafür zusätzlich `SELECT` auf der Zieltabelle (ADR-0048). `cdc_admin`
-	// ist die Rolle dieses Pfads (ADR-0047).
+	// ist die Rolle dieses Pfads.
 	for _, privileg := range []string{"select", "insert", "update"} {
 		if !rechteVon(rechte, "cdc_admin", "cdc.process_heartbeat")[privileg] {
 			t.Fatalf("cdc_admin fehlt %s auf cdc.process_heartbeat im Rollout-Text — der Heartbeat-Schreibpfad (INSERT … ON CONFLICT DO UPDATE, ADR-0048) scheitert real mit SQLSTATE 42501", strings.ToUpper(privileg))
@@ -255,7 +254,7 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 		t.Fatalf("cdc_capture trägt Rechte auf cdc.process_heartbeat im Rollout-Text: %v — die Tabelle gehört zum Admin-Pfad", privilegien)
 	}
 
-	// (4a) Backfill-Run-Zustand (`SPEC-029`, `ADR-0113` Festlegung 1): die
+	// (4a) Backfill-Run-Zustand (`ADR-0113` Festlegung 1): die
 	// Annahme (`cdc_admin`) prüft und legt die Zeile an — `SELECT`,
 	// `INSERT`; der Worker (`cdc_capture`) führt sie fort — `SELECT`,
 	// `UPDATE`. Niemand trägt `DELETE`, `cdc_admin` kein `UPDATE`,
@@ -283,7 +282,7 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 		}
 	}
 
-	// (4b) Antrags-Queue (`ADR-0050`, `LH-FA-ADM-001`): die
+	// (4b) Antrags-Queue (`ADR-0050`): die
 	// Administrations-Goroutine und die Annahme eines Backfills laufen über
 	// `CDC_ADMIN_DSN` und lesen offene Anträge (`ListPending`), leiten den
 	// Spaltenausschluss-Stand ab (`ExcludedColumns`) und vermerken den
@@ -309,8 +308,7 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 	}
 
 	// (5) Lesepfad — `cdc_reader` liest über die **fünf** Lese-Views der
-	// Datei (`LH-FA-SST-002`, mit `retention_blockers` aus
-	// `LH-FA-RET-005` und `backfill_status` aus `SPEC-029`). Die fünf sind der
+	// Datei (`LH-FA-SST-002`). Die fünf sind der
 	// erklärte Lese-Umfang des Rollouts;
 	// fehlt eine, scheitert der jeweilige Lesezugriffsweg real.
 	for _, view := range []string{
@@ -381,7 +379,7 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 // damit eine Betriebsentscheidung treffen, die nicht ihre ist.
 //
 // `cdc_capture` trägt zusätzlich das `REPLICATION`-Attribut: der
-// Replication-Stream verlangt es (`ADR-0008`); PostgreSQL vererbt Attribute
+// Replication-Stream verlangt es; PostgreSQL vererbt Attribute
 // nicht über Mitgliedschaft, der Betreiber setzt es darum zusätzlich auf
 // die Login-Identität (ADR-0047 Kontext-Befund 2).
 //
@@ -487,15 +485,14 @@ func parameterTypen(parameter string) []string {
 
 // TestAdministrationDateiTraegtDieFunktionsRechte bindet das Least-Privilege-
 // Recht der schreibenden SQL-Funktionen an das **reale Artefakt**
-// `tools/schema/nacharbeit-administration.sql` (`LH-QA-SEC-001`…`003`,
-// `ADR-0047`, `ADR-0050`): jede dort definierte `cdc.*`-Funktion steht in
+// `tools/schema/nacharbeit-administration.sql` (`ADR-0050`): jede dort definierte `cdc.*`-Funktion steht in
 // einer `REVOKE EXECUTE … FROM PUBLIC`-Anweisung (PostgreSQL grantet
 // `EXECUTE` einer neuen Funktion standardmäßig an `PUBLIC`) und in einer
 // `GRANT EXECUTE … TO cdc_admin`-Anweisung, und **keine andere Rolle** trägt
 // `EXECUTE` auf eine von ihnen. Die Regel leitet den Umfang aus den
 // `CREATE FUNCTION`-Zeilen der Datei ab, nicht aus einer Namensliste — eine
 // achte Funktion ohne Rechte-Zeile färbt sie rot. Zusätzlich sind die beiden
-// Transformations-Funktionen (`LH-FA-CFG-007`, `ADR-0112` Teilfrage 1) mit
+// Transformations-Funktionen mit
 // ihren Signaturen benannt: die Datei trägt sie.
 //
 // Jede `GRANT`-Anweisung der Datei ist von der Form `GRANT EXECUTE ON FUNCTION

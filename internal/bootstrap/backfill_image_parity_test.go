@@ -16,8 +16,8 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
-// Die Bild-Parität von WAL- und Backfill-Pfad mit Regelstand (`LH-FA-CFG-007`,
-// `ADR-0112` Folgepflicht 7, `ADR-0115` Festlegung 4): dieselbe Zeile und
+// Die Bild-Parität von WAL- und Backfill-Pfad mit Regelstand
+// (`ADR-0112` Folgepflicht 7): dieselbe Zeile und
 // derselbe Regelstand liefern in beiden Erzeugungspfaden byte-gleiche
 // Row Images am Ausgang der gemeinsamen Bild-Konstruktion. Die Composition
 // Root ist der einzige Ort, der beide Pfade zugleich importieren darf

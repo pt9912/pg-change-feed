@@ -18,18 +18,18 @@ import (
 )
 
 // TestAdministrationRequestColumnEndToEndAgainstPostgreSQL trägt den realen
-// Spaltenausschluss-Weg gegen eine PostgreSQL-Instanz (`LH-FA-CFG-005`,
-// `ADR-0059`): der SQL-Funktionsaufruf legt einen Antrag an, der Adapter
+// Spaltenausschluss-Weg gegen eine PostgreSQL-Instanz (`ADR-0059`): der
+// SQL-Funktionsaufruf legt einen Antrag an, der Adapter
 // liest ihn, `applyAdministrationRequest` verarbeitet ihn über den Inbound
 // Port und der Ergebnis-Vermerk schreibt den Ausgang in den Antrags-Datensatz
 // — Happy Path (`applied`, vorhandene Spalte) und Negative-Fall (`failed`
-// samt Fehlertext, nicht existierende Spalte, `LH-FA-CFG-005` Negative). Das
+// samt Fehlertext, nicht existierende Spalte). Das
 // ist der Kompositionsteil, den der Adapter-Test nicht erreichen kann:
 // `applyAdministrationRequest` lebt in dieser Composition Root, die
 // Spaltenprüfung läuft über den realen `ColumnExclusionPort` des
 // Aktivierungs-Adapters gegen den Katalog. Der reale Ende-zu-Ende-Beleg am
 // laufenden Feed-Container liegt in `tools/harness/run-integration-tests.sh`
-// (`make test-integration`, `LH-FA-CFG-005`).
+// (`make test-integration`).
 //
 // Kopplung: der Schema-Stand dieses Laufs kommt aus dem d-migrate-Rollout,
 // den der Lauf-Aufruf vor dem `internal/bootstrap`-Aufruf anwendet

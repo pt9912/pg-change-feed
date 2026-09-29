@@ -17,8 +17,8 @@ import (
 )
 
 // TestReconcileBackfillRunsAgainstPostgreSQL trägt den Abgleich beim
-// Prozessstart gegen die reale Run-Tabelle (`ADR-0111` Teilfrage 4,
-// `ADR-0113` Festlegung 2): ein `running`-Run der eigenen Quelle wird
+// Prozessstart gegen die reale Run-Tabelle (`ADR-0111` Teilfrage 4):
+// ein `running`-Run der eigenen Quelle wird
 // `interrupted`; ein `queued`-Run derselben Quelle bleibt `queued` (der Worker
 // nimmt ihn beim Start auf), ein bereits `interrupted`, `completed` oder
 // `failed` beendeter Run bleibt unverändert, und ein `running`-Run einer

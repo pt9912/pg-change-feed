@@ -11,8 +11,7 @@ import (
 // `config_file_internal_test.go` offenblieb: die Fehlerzweige von
 // `ConfigFromFile` (ungültiges YAML), von `mergeConfig` (die sechs
 // Pflichtfelder über beide Quellen hinweg) und von `mergeTables` (eine
-// Datei-Aktivierung ohne beide Felder). Kein Fall braucht einen Dienst —
-// dieselbe Fläche, die `ADR-0082` als Cluster D2 führt.
+// Datei-Aktivierung ohne beide Felder). Kein Fall braucht einen Dienst.
 
 // TestConfigFromFileLehntUngueltigesYAMLAb trägt die Fehlerklasse
 // `configuration` für ein Dokument, das die YAML-Grammatik bricht — sie
@@ -39,7 +38,7 @@ func TestConfigFromFileLehntUngueltigesYAMLAb(t *testing.T) {
 }
 
 // TestMergeConfigDSNsBleibenEnvVarExklusiv trägt `ADR-0052` Entscheidung 6
-// — die wichtigste Einzelentscheidung dieser ADR (`LH-QA-SEC-001`/`002`):
+// — die wichtigste Einzelentscheidung dieser ADR:
 // die drei DSNs haben **kein** Datei-Gegenstück. Eine vollständige Datei
 // füllt sie deshalb nicht auf; fehlt die jeweilige Umgebungsvariable,
 // bricht der Merge mit einer Zeile ab, die genau diese Variable benennt —
@@ -131,7 +130,7 @@ func TestMergeConfigPflichtfelderAusBeidenQuellenBelegt(t *testing.T) {
 }
 
 // TestMergeConfigDateiAktivierungBrauchtBeideFelder trägt die
-// Form-Vorbedingung der Datei-Aktivierung (`SPEC-016`, `ADR-0052`
+// Form-Vorbedingung der Datei-Aktivierung (`ADR-0052`
 // Entscheidung 6): die YAML-Mapping-Form hat gegenüber `CDC_TABLES` zwei
 // Felder, und eine Aktivierung ohne beide ist keine — sie wird nicht als
 // halbe Bindung übernommen, sondern benennt den qualifizierten Namen und

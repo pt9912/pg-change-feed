@@ -14,8 +14,8 @@ import (
 )
 
 // Whitebox-Tests (`package bootstrap`) des Backfill-Workers, des
-// Start-Abgleichs und des Antragszweigs `backfill` (`ADR-0111` Teilfrage 5,
-// `ADR-0113` Festlegung 2): die Fakes tragen die Port-Verträge nach; der
+// Start-Abgleichs und des Antragszweigs `backfill` (`ADR-0111` Teilfrage 5):
+// die Fakes tragen die Port-Verträge nach; der
 // reale Weg gegen PostgreSQL liegt in `backfill_endtoend_test.go`
 // (`make test-store`) und in `administration_roles_internal_test.go`.
 

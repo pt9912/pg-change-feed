@@ -19,7 +19,7 @@ import (
 // ausschließlich über den in `slice-021`/`slice-022` verdrahteten
 // Zugriffsweg (`bootstrap.RegisterConsumer`/`bootstrap.AcknowledgeConsumer`)
 // und den etablierten Lesezugriffsweg über die SQL-Sicht `cdc.changes`
-// (`LH-FA-SST-002`, `LH-FA-SST-007` Boundary „bestehender Lesezugriffsweg
+// (`LH-FA-SST-002`, Boundary „bestehender Lesezugriffsweg
 // (SQL/API)"; dasselbe Muster wie
 // `postgresstorage/sqlviews_test.go::TestChangesViewCarriesRangeLimitAndFilter`).
 // Das ist das *Mehr* gegenüber den einzelnen Slice-DoDs: `slice-022`s
@@ -125,7 +125,7 @@ func TestWelle6ConsumerFullCycleEndToEnd(t *testing.T) {
 
 	// 2. Lesen — der etablierte Lesezugriffsweg `cdc.changes`
 	// (`LH-FA-SST-002`): erster Ausschnitt, zwei der vier geseedeten
-	// Changes (Limit 2, LH-FA-REA-003).
+	// Changes (Limit 2).
 	firstBatch := readChangesAbove(t, pool, sourceID, 0, 2)
 	if len(firstBatch) != 2 || firstBatch[0].commitPosition != 1000 || firstBatch[1].commitPosition != 2000 {
 		t.Fatalf("erster Lese-Ausschnitt = %v, wollen [1000 2000]", firstBatch)
@@ -183,7 +183,7 @@ type welle6ChangeRow struct {
 }
 
 // readChangesAbove liest über den etablierten Lesezugriffsweg `cdc.changes`
-// (`LH-FA-SST-002`, Bereich/Limit/Ordnung wie `LH-FA-REA-001/003/004`) —
+// (`LH-FA-SST-002`) —
 // derselbe SQL-Zugriff wie `postgresstorage/sqlviews_test.go`, hier als
 // externer Consumer-Lesezugriff auf die von diesem Test geseedeten
 // Changes.

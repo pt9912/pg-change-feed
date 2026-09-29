@@ -190,7 +190,7 @@ func TestHealthcheckVerdictThreshold(t *testing.T) {
 }
 
 // TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes belegt die
-// Übersetzung der Composition Root (`LH-FA-ADM-003`, `ADR-0023`): jeder
+// Übersetzung der Composition Root (`ADR-0023`): jeder
 // bekannte Sentinel trägt die dokumentierte Klasse, ein
 // unbekannter Fehler bleibt `internal`.
 func TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes(t *testing.T) {
