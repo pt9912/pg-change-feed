@@ -3,7 +3,7 @@
 // es verbindet mit einem gültigen CDC_NATS_STREAM_TOKEN, abonniert den
 // Vollinhalts-Namensraum cdc.stream.> real gegen den laufenden Feed-Container
 // und gibt jede empfangene Change aus. Startform ist
-// `make example-run-go SURFACE=nats-stream` (ADR-0098; `go run
+// `make example-run-go SURFACE=nats-stream` (`go run
 // ./examples/nats-stream-client` bleibt technisch funktionsfähig, ist aber
 // nicht mehr die zitierte Startform); der Zugriffs-Abschnitt des
 // Benutzerhandbuchs ist „Zugriff über den NATS-Vollinhalts-Stream"
