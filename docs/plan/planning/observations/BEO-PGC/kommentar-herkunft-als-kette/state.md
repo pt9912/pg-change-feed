@@ -8,11 +8,14 @@ verschiedenen Kennungen oder „ff.“ hinter einer Kennung; kein Gate, keine Au
 `.harness/skills/reviewer.md` (MEDIUM-Unterpunkt „Herkunft als mehrere Felder, Kette, „ff.“ oder
 Spec-Wiederholung“, der Lauf ist Probe, kein Beleg) · seit slice-code-kommentare-kennungen.
 
-Zähler (abgeleitet): 2× (evidence/changestream-publish-godoc.md,
-evidence/slice-code-kommentare-kennungen.md) — unter der Schwelle von 3×; der Ausgang ist
+Zähler (abgeleitet): 3× (evidence/changestream-publish-godoc.md,
+evidence/slice-code-kommentare-kennungen.md,
+evidence/slice-code-kommentare-bereinigung.md); der Ausgang ist
 zugewiesen, weil die Regel mit dem Slice landet, der den Eintrag anlegt (dieselbe Arbeit trägt
-Beobachtung und Verkörperung). Beide Belegdateien haben denselben Ursprung: das erste Auftreten ist
-die Stelle, das zweite die Messung des Bestands.
+Beobachtung und Verkörperung). Der Ursprung je Belegdatei: das erste Auftreten ist
+die Stelle, das zweite die Messung des Bestands, das dritte die Lese-Funde der Bereinigung
+(zwei neue Finding-Klassen: „Kürzung lässt hängende Herkunfts-Referenz zurück“ 4×,
+„ungenau umgeformte Spec-Wiedergabe“ 1×).
 
 Bestand: 597 Kandidaten (400 Nicht-Test, 197 Test) am Stand `d13ab81e`, `make kommentar-kennungen
 COUNT=1` (gemessen 2026-09-26). Die Bereinigung trägt `slice-code-kommentare-bereinigung`
@@ -23,13 +26,16 @@ Worten hinter **einer** Kennung ist kein Kandidat, ebenso ein Kommentar, der ein
 die der Code nicht trägt (Lese-Handlung des Reviewers; `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`).
 Ein Sensor über Prosa bleibt ausgeschlossen (`ADR-0083`).
 
-**Offene Frage — Grenzfälle mit zwei Ankern.** 5 von 30 Kandidaten der Stichprobe (17 %,
-abgeleitet) und 4 von 8 der Review-Stichprobe tragen zwei Anker mit je einer eigenen Aussage der
-Stelle; die Regel verlangt dort einen Anker und die Stelle. Adresse: `slice-code-kommentare-bereinigung`
-(DoD Liefer-Punkt 3: ein Kandidat mit zwei Ankern, den der Implementer als konform begründet, geht
-als Meldung an den Planner — Konkretisierung von `AGENTS.md` §3.7, kein Ausnahme-Eintrag; §4
-Rückführung (a)).
+**Offene Frage — Grenzfälle mit zwei Ankern.** Bejaht: `slice-code-kommentare-bereinigung`
+lieferte mit den 14 gekennzeichneten `TestE2E*`-Godocs den Fall, dessen Kennungs-Menge ein
+Generator maschinell liest (`abdeckungsAdressiert`); die Konkretisierung von
+`AGENTS.md` §3.7 (Erzeugnis-Eingabe ist Abdeckung, nicht Herkunft; Grenz-Vermerk am Block)
+ist im Steering-Loop des Slice verkörpert · seit slice-code-kommentare-bereinigung.
 
 **Trigger für die Gate-Frage** (Architect-Frage mit ADR-Vorschlag, `AGENTS.md` §3.6 und §4): die
 Bereinigung endet mit Kandidatenzahl 0, und ein Kommentar mit Kennungs-Kette erreicht trotz
 gelaufenem Werkzeug den Review. Vorher färbte ein Gate den Bestand rot.
+
+**Ausgang der Gate-Frage:** nicht aufgestellt (`slice-code-kommentare-bereinigung` §7) — die
+Bereinigung endet bei der strukturellen Restmenge 14, ein Gate stünde ohne Ausnahmeliste dauerhaft
+rot. Neubewertung, wenn sich die Restmenge auflöst oder ein zweiter maschineller Leser hinzutritt.

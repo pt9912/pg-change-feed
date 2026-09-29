@@ -275,6 +275,16 @@ eigenen Worten):
 // Publish verteilt … Der Aufruf blockiert nie auf einen Abonnenten … (`ADR-0060`).
 ```
 
+**Ausnahme — Erzeugnis-Eingabe ist Abdeckung, nicht Herkunft.** Liest ein
+Generator die Kennungen eines Blocks maschinell als Eingabe, trägt der Block die
+Menge samt Grenz-Vermerk (Klasse Grenze) am Block; das Kürzen auf einen Anker
+wäre das Löschen von Erzeugnis-Zeilen. Der Block bleibt Kandidat des Werkzeugs
+— es trägt keine Ausnahmeliste, die Konkretisierung lebt in dieser Regel. Umfang
+ist die maschinelle Lesung, nicht die Nähe zu einem Erzeugnis: die Godocs der
+`func TestE2E*` in `test/integration` (die LH-/SPEC-Kennungen speist die
+E2E-Abdeckungstabelle) · seit slice-code-kommentare-bereinigung
+(`BEO-PGC/kommentar-herkunft-als-kette`).
+
 `make kommentar-kennungen` listet die Kommentarblöcke, die diese Form verletzen
 (Kandidaten: mindestens zwei verschiedene Kennungen oder „ff.“;
 [`harness/sensors/kommentar-kennungen.md`](harness/sensors/kommentar-kennungen.md)).
