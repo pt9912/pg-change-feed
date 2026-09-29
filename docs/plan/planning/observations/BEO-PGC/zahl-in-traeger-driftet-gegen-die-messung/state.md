@@ -37,7 +37,10 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **27×** (evidence/slice-sdk-public-doc-check-gate.md —
+Zähler (abgeleitet): **28×** (evidence/slice-harness-baseline-v6-13-0.md —
+Diff-Umfang „36/9/19" gegen gemessen 35/8/20 im selben Bericht, dessen
+Fundtabelle 8 geänderte Templates nannte; korrigiert durch `9f1eb320`, HIGH;
+evidence/slice-sdk-public-doc-check-gate.md —
 Suchlauf-Standzahl „130" gegen gemessen 132 am genannten Stand, falscher
 Parent-Bezug, übergehender Fremd-Commit im Range; gezogen durch `4ca5af64`,
 HIGH; evidence/welle-sdk-grpc-administration-flaeche.md — die
