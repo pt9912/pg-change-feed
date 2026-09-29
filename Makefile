@@ -27,7 +27,7 @@ include a-check.mk
 # (Content-Mirror statt zweitem Build); LATEST=true setzt zusaetzlich
 # :latest auf beiden Registries (nur fuer stabile, nicht-Prerelease Tags —
 # das entscheidet der Aufrufer, release.yml). Ohne VERSION unveraendertes
-# Verhalten: lokal geladen, nur :dev (ADR-0044/ADR-0103).
+# Verhalten: lokal geladen, nur :dev.
 #
 # --platform linux/amd64,linux/arm64 nur im VERSION=-Zweig (Multi-Arch,
 # ADR-0051 additiv): der VERSION-lose :dev-Zweig (--load) bleibt bewusst
@@ -189,7 +189,7 @@ doc-ci-matrix: ## LH-QA-POR-001/002-Beleg: reale GitHub-Actions-Läufe abfragen,
 # postgres:18-alpine` (amd64). Caches leben in Docker-Volumes, Daten im
 # Container — nichts davon im Arbeitsbaum. PG_TEST_IMAGE bleibt hier auf
 # PostgreSQL 18 für lokale/manuelle Läufe (ADR-0058 Entscheidung 4); die
-# CI-Versionsmatrix (LH-QA-POR-001, .github/workflows/e2e.yml) überschreibt
+# CI-Versionsmatrix (.github/workflows/e2e.yml) überschreibt
 # dieselbe Variable je Leg, die compose.yaml per `${PG_TEST_IMAGE}`-
 # Interpolation liest — kein zweiter Mechanismus.
 TOOLCHAIN_IMAGE ?= golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125
@@ -229,8 +229,8 @@ test-integration: ## Compose-Integrationstest — Kern-CDC-Pfad, Rollen-DSN-Veri
 # --- Performance-Benchmarks (kein Gate; ADR-0054 §(b)) ---
 # Vier eigenständige Skripte, je ein Beleg, gebündelt hinter diesem Ziel —
 # analog `d-check`s `Makefile` Zeile 84 (`bench: build`): drei mit Schwelle
-# (LH-QA-PER-001…003) und `tools/bench-backfill.sh`, eine Messung ohne
-# Schwelle (LH-FA-CAP-009, Vertrag: harness/targets/bench-backfill.md); sie
+# und `tools/bench-backfill.sh`, eine Messung ohne
+# Schwelle (Vertrag: harness/targets/bench-backfill.md); sie
 # läuft zuletzt, damit ihr Abbruch keine Schwellen-Prüfung und nicht die
 # Erzeugung von docs/user/bench-abdeckung.md verdeckt.
 # Nicht Teil von `gates`/`ci`/`fullbuild`, weil kein einzelner
@@ -306,8 +306,8 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 # View-Signatur-Änderung (ADR-0114), `schema migrate --execute` mit
 # Pflicht-Report und Rollback-Artefakt, danach die vier psql-Nacharbeit-
 # Dateien tools/schema/nacharbeit-*.sql (Rollen, Views cdc.metrics und
-# cdc.heartbeat, Administrations-Funktionen), die d-migrate nicht ausdrückt
-# (ADR-0043). Vertrag, Reihenfolge, Exit-Codes und Grenzen:
+# cdc.heartbeat, Administrations-Funktionen), die d-migrate nicht ausdrückt.
+# Vertrag, Reihenfolge, Exit-Codes und Grenzen:
 # harness/targets/schema-rollout.md.
 schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflicht-Report und Rollback-Artefakt (braucht DB-Zugang, kein Gate)
 	@mkdir -p tools/schema

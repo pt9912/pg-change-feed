@@ -8,7 +8,7 @@
 #
 A_CHECK_IMAGE ?= ghcr.io/pt9912/a-check@sha256:34d3dfb50e44d99ea735186a35e1040589c4681dcfa2a51ed0f2aaea718cdd2d
 
-# Maschinenform der §2-Schichten-Constraints (ADR-0041, supersedes ADR-0036):
+# Maschinenform der §2-Schichten-Constraints (ADR-0041):
 # a-check haengt an GATE_CHECKS und laeuft damit im `make gates`-Buendel mit.
 
 # Container-Runtime ueber eine Indirektion (podman/nerdctl/docker); wer eine

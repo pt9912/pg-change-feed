@@ -1,5 +1,5 @@
 # harness/mk/generated-sync.mk — Sync-Gate des generierten Protobuf-/gRPC-Codes
-# (ADR-0084 Festlegung 1, Folgepflicht des Generators aus ADR-0060). Der
+# (ADR-0084 Festlegung 1). Der
 # gepinnte Generator (Dockerfile-Stufe `proto-export`, geteilt mit `make
 # proto-generate` seit slice-104) erzeugt den Code zur Build-Zeit und gibt
 # ihn als `tar`-Stream aus; tools/harness/generated-sync.sh extrahiert

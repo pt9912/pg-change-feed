@@ -1,13 +1,13 @@
 # harness/mk/examples.mk — Werkzeug-Fragment für die Beispiel-Client-
-# Sprachwurzeln (ADR-0087, ADR-0090). Kein Gate: der Paket-Bezug (NuGet/Maven)
+# Sprachwurzeln (ADR-0090). Kein Gate: der Paket-Bezug (NuGet/Maven)
 # braucht Netz, und `make gates` bleibt vollständig netzlos (ADR-0090
 # Festlegung 5) — dieses Fragment hängt deshalb NICHT an GATE_CHECKS.
 #
 # `examples-csharp` baut die Werkzeugketten-Images der C#-Sprach-Wurzel
-# (Bau-Kontext examples/csharp/, ADR-0087 Festlegung 3): `dotnet
+# (Bau-Kontext examples/csharp/): `dotnet
 # restore`/`build`/`test` für **alle fünf** Programme (http-client,
-# sse-client, nats-client, grpc-client seit slice-102, nats-stream-client
-# seit ADR-0100) laufen in der gemeinsamen Docker-Stufe `build` (ADR-0090
+# sse-client, nats-client, grpc-client, nats-stream-client)
+# laufen in der gemeinsamen Docker-Stufe `build` (ADR-0090
 # Festlegung 5 — ein Ziel je Sprache trägt den wachsenden Umfang); ein
 # roter Test bricht den `docker build` mit Exit != 0 ab, bevor der nächste
 # Aufruf überhaupt den `build`-Layer-Cache erreicht — der Exit-Code jedes
@@ -33,10 +33,10 @@ examples-csharp: ## C#-Sprachwurzel bauen + testen (examples/csharp, Werkzeug, k
 	docker build --build-context proto=proto --target runtime-nats-stream -t pg-change-feed-examples:csharp-nats-stream examples/csharp
 
 # `examples-kotlin` baut die Werkzeugketten-Images der Kotlin-Sprach-Wurzel
-# (Bau-Kontext examples/kotlin/, ADR-0087 Festlegung 3): der Gradle-Wrapper
+# (Bau-Kontext examples/kotlin/): der Gradle-Wrapper
 # fährt `test`/`installDist` für **alle fünf** Module (http-client,
-# sse-client, nats-client, grpc-client seit slice-103, nats-stream-client
-# seit ADR-0100) in der gemeinsamen Docker-Stufe `build` (ADR-0090
+# sse-client, nats-client, grpc-client, nats-stream-client)
+# in der gemeinsamen Docker-Stufe `build` (ADR-0090
 # Festlegung 5); ein roter Test bricht den `docker build` mit Exit != 0 ab,
 # bevor der nächste Aufruf überhaupt den `build`-Layer-Cache erreicht —
 # derselbe Exit-Code-Lesepfad wie bei jedem anderen Ziel (AGENTS.md §3.9).
@@ -62,22 +62,21 @@ examples-kotlin: ## Kotlin-Sprachwurzel bauen + testen (examples/kotlin, Werkzeu
 	docker build --build-context proto=proto --target runtime-nats-stream -t pg-change-feed-examples:kotlin-nats-stream examples/kotlin
 
 # `example-run-go` startet real ein Go-Beispiel gegen die Demo-Umgebung
-# (ADR-0098 Festlegung 1/2, Supersedes ADR-0076 Festlegung 1/Startform-Bullet
-# in genau dieser Klausel): baut (falls nötig — Docker-Layer-Cache greift bei
+# (ADR-0098 Festlegung 1/2): baut (falls nötig — Docker-Layer-Cache greift bei
 # unverändertem `examples/Dockerfile`-Kontext) das je Oberfläche passende
 # Image aus `examples/Dockerfile` (Wurzel-Bau-Kontext, isoliert über
 # `examples/Dockerfile.dockerignore`) und startet es real per
 # `docker run --rm --network cdc-examples --env-file examples/.env`. `SURFACE=`
 # ist ein Pflicht-Argument (`http`, `sse`, `grpc`, `nats` oder `nats-stream`,
-# der vierte Zugriffsweg seit ADR-0100); ein fehlendes oder unbekanntes
+# der vierte Zugriffsweg); ein fehlendes oder unbekanntes
 # `SURFACE` bricht mit `$(error …)` ab, BEVOR ein `docker
 # build`/`docker run` versucht wird (kein halb gestarteter Zustand). `ARGS=`
-# trägt die Flag-Übersteuerung, die ADR-0076 Festlegung 1 bereits für alle
-# Beispiele vorsieht (z. B. `ARGS="-source demo -publication demo_pub"`).
+# trägt die Flag-Übersteuerung der Beispiele
+# (z. B. `ARGS="-source demo -publication demo_pub"`).
 # `SURFACE=http` liefert das `runtime`-Image ohne `--target` (mirror der
-# ADR-0087-Konvention); die anderen vier Oberflächen adressieren ihre
+# Konvention); die anderen vier Oberflächen adressieren ihre
 # `runtime-<surface>`-Stufe explizit. Das Docker-Netzwerk `cdc-examples` und
-# `examples/.env` legt `slice-beispiele-compose-bootstrap` an — dieses Ziel
+# `examples/.env` legt der Demo-Bootstrap an — dieses Ziel
 # referenziert beide nur, ohne sie zu erzeugen; ein Aufruf ohne sie schlägt
 # real und sichtbar am `docker run` fehl (kein stiller Fallback). Exit-Code
 # jedes Aufrufs wird direkt gelesen, wie bei jedem anderen Ziel (AGENTS.md
@@ -96,14 +95,13 @@ endif
 # `example-run-csharp`/`example-run-kotlin` starten real eines der fünf
 # bereits gebauten C#-/Kotlin-Beispiele gegen die Demo-Umgebung (ADR-0098
 # Festlegung 2). Anders als `example-run-go` bauen sie **nichts**: der Bau
-# liegt bei `make examples-csharp`/`make examples-kotlin` (ADR-0087
-# Festlegung 3, ADR-0090) — dieses Ziel startet nur den bereits vorhandenen
+# liegt bei `make examples-csharp`/`make examples-kotlin` — dieses Ziel startet nur den bereits vorhandenen
 # Image-Tag `pg-change-feed-examples:csharp[-<surface>]`/`:kotlin[-<surface>]`.
 # `SURFACE=` ist wie bei `example-run-go` ein Pflicht-Argument (`http`,
 # `sse`, `grpc`, `nats` oder `nats-stream`); ein fehlendes oder unbekanntes
 # `SURFACE` bricht mit `$(error …)` ab, BEVOR ein `docker run` versucht
 # wird. `ARGS=` trägt dieselbe Flag-Übersteuerung wie bei den anderen
-# beiden Sprachen (ADR-0076 Festlegung 1). Läuft der Bau-Schritt noch nicht
+# beiden Sprachen. Läuft der Bau-Schritt noch nicht
 # (kein `make examples-csharp`/`make examples-kotlin` zuvor), scheitert
 # `docker run` real und sichtbar mit einem Docker-eigenen "image not
 # found" — kein stiller Vorab-Bau und keine stille Fallback-Meldung dieses
@@ -128,12 +126,12 @@ endif
 	docker run --rm --network cdc-examples --env-file examples/.env pg-change-feed-examples:kotlin$(if $(filter $(SURFACE),http),,-$(SURFACE)) $(ARGS)
 
 # `example-demo-up`/`example-demo-down` kapseln die Demo-/Quickstart-
-# Umgebung unter examples/ (LH-QA-OPS-001, ADR-0098 Festlegung 3/4,
-# slice-beispiele-compose-bootstrap): ein Nutzer fährt `postgres`+`nats`+
+# Umgebung unter examples/ (ADR-0098 Festlegung 3/4):
+# ein Nutzer fährt `postgres`+`nats`+
 # den Feed-Container hoch und bekommt ohne manuellen SQL-/`make
 # schema-rollout`-Zwischenschritt reale, sofort lesbare Demo-Daten
-# (`public.orders`, über `CDC_TABLES` beim Feed-Start automatisch aktiviert,
-# ADR-0028). Der eigentliche Ablauf steht in examples/bootstrap.sh
+# (`public.orders`, über `CDC_TABLES` beim Feed-Start automatisch aktiviert).
+# Der eigentliche Ablauf steht in examples/bootstrap.sh
 # (Schema-Rollout über d-migrate, Beispiel-Quelle/-Tabelle-Registrierung,
 # Health-Poll) — dieses Ziel ruft es nur auf; Exit-Code direkt gelesen wie
 # bei jedem anderen Ziel (AGENTS.md §3.9). Kein Gate: die Demo-Umgebung

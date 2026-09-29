@@ -1,4 +1,4 @@
-# harness/mk/coverage.mk — Coverage-Gate-Fragment (ADR-0054, ADR-0071).
+# harness/mk/coverage.mk — Coverage-Gate-Fragment (ADR-0071).
 # Vierte Docker-Stage `coverage` (Dockerfile, nach `deps`) misst real die
 # Go-Test-Coverage ueber die netzlos pruefbare Flaeche (internal/...+cmd/...
 # +gen/... ohne die Pakete, deren Testlauf einen externen Dienst voraussetzt)

@@ -1,11 +1,10 @@
 # harness/mk/sdk.mk — Fragment für die SDK-Packages
-# (`PgChangeFeed.Client`, C#/NuGet, ADR-0106; `pgchangefeed`, Python/PyPI,
-# ADR-0107/ADR-0108; `pgchangefeed-kotlin`, Kotlin/GitHub Packages und
-# Cloudsmith, ADR-0109/ADR-0123). Das Fragment trägt das Gate
+# (`PgChangeFeed.Client`, C#/NuGet; `pgchangefeed`, Python/PyPI;
+# `pgchangefeed-kotlin`, Kotlin/GitHub Packages und
+# Cloudsmith). Das Fragment trägt das Gate
 # `sdk-public-doc-check` (ADR-0134) sowie die Bau- und Test-Werkzeuge:
 # `dotnet restore`/PyPI-Paketbezug/Gradle-Paketbezug braucht Netz, `make gates`
-# bleibt netzlos (ADR-0106 Festlegung 4, ADR-0107 Festlegung 5, ADR-0109
-# Festlegung 5, dieselbe Begründung wie harness/mk/examples.mk) — die
+# bleibt netzlos — die
 # `sdk-pack-*`-Ziele hängen deshalb NICHT an GATE_CHECKS.
 #
 # `sdk-public-doc-check` prüft, dass keine Datei unter sdks/ eine interne
@@ -110,7 +109,7 @@ sdk-pack-python: sdk-public-doc-check ## Python-SDK bauen+testen+paketieren (sdk
 	@bash tools/harness/sdk-pack-python.sh
 
 # `test-sdk-kotlin-integration` ist der Realserver-Integrationstest der
-# Kotlin-SDK-Zustellweg-Flaechen (slice-sdk-kotlin-reale2e, Mechanik-Klasse
+# Kotlin-SDK-Zustellweg-Flaechen (Mechanik-Klasse
 # ADR-0110 Festlegung 2, gespiegelt vom C#-Werkzeug): das Skript
 # tools/harness/run-sdk-kotlin-integration-tests.sh faehrt die
 # compose.yaml-Umgebung hoch, baut die `integration`-Docker-Stufe des
@@ -121,8 +120,8 @@ sdk-pack-python: sdk-public-doc-check ## Python-SDK bauen+testen+paketieren (sdk
 # Docker-Netz wie den Feed-Container — der Pruefling ist die kompilierte
 # Client-Assembly. Kein Gate (braucht DB-Zugang/Docker/Netz, dieselbe
 # Klasse wie `make test-integration`); setzt ein geladenes :dev-Image
-# voraus (`make image` vorher, compose.yaml traegt keinen build:-Block,
-# ADR-0044). Der Runner schreibt den Kotlin-Abschnitt des Abdeckungs-
+# voraus (`make image` vorher, compose.yaml traegt keinen build:-Block).
+# Der Runner schreibt den Kotlin-Abschnitt des Abdeckungs-
 # Traegers docs/user/sdk-e2e-abdeckung.md aus derselben Messung.
 .PHONY: test-sdk-kotlin-integration
 test-sdk-kotlin-integration: ## Kotlin-SDK-Realserver-Integrationstest (compose + integration-Stufe, acht Phasen — vier ohne Regel, vier mit rename_column-Regel; Werkzeug, kein Gate; slice-sdk-kotlin-reale2e)
@@ -140,7 +139,7 @@ test-sdk-kotlin-integration: ## Kotlin-SDK-Realserver-Integrationstest (compose 
 # kompilierte Client-Assembly. Kein Gate (braucht DB-Zugang/Docker/Netz,
 # dieselbe Klasse wie `make test-integration`); setzt ein geladenes
 # :dev-Image voraus (`make image` vorher, compose.yaml traegt keinen
-# build:-Block, ADR-0044). Der Runner schreibt den C#-Abschnitt des
+# build:-Block). Der Runner schreibt den C#-Abschnitt des
 # Abdeckungs-Traegers docs/user/sdk-e2e-abdeckung.md aus derselben Messung.
 .PHONY: test-sdk-csharp-integration
 test-sdk-csharp-integration: ## C#-SDK-Realserver-Integrationstest (compose + integration-Stufe, acht Phasen — vier ohne Regel, vier mit rename_column-Regel; Werkzeug, kein Gate; slice-sdk-csharp-reale2e)
@@ -157,7 +156,7 @@ test-sdk-csharp-integration: ## C#-SDK-Realserver-Integrationstest (compose + in
 # Docker-Netz wie den Feed-Container — der Pruefling ist das SDK selbst.
 # Kein Gate (braucht DB-Zugang/Docker/Netz, dieselbe Klasse wie
 # `make test-integration`); setzt ein geladenes :dev-Image voraus
-# (`make image` vorher, compose.yaml traegt keinen build:-Block, ADR-0044).
+# (`make image` vorher, compose.yaml traegt keinen build:-Block).
 .PHONY: test-sdk-python-integration
 test-sdk-python-integration: ## Python-SDK-Realserver-Integrationstest (compose + integration-Stufe; Werkzeug, kein Gate; ADR-0110)
 	@bash tools/harness/run-sdk-python-integration-tests.sh
