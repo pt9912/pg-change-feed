@@ -6,8 +6,8 @@ import (
 )
 
 // streamMessage trägt dasselbe Nachrichtenschema wie der Publisher
-// (internal/adapters/driven/natsstream) und der SSE-Adapter (SPEC-021/
-// SPEC-024) — hier eigenständig geführt: dieses Beispiel importiert keinen
+// (internal/adapters/driven/natsstream) und der SSE-Adapter —
+// hier eigenständig geführt: dieses Beispiel importiert keinen
 // privaten Paketbaum dieses Repositories (SPEC-023).
 type streamMessage struct {
 	ChangeID      string          `json:"change_id"`

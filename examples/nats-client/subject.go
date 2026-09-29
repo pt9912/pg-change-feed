@@ -7,7 +7,7 @@ import (
 // Subject leitet das tabellen-granulare Wecksignal-Subjekt aus Quelle, Schema
 // und Tabelle ab (`SPEC-017`): `cdc.changes.<source_id>.<schema>.<table>`.
 // Das Subjekt wird abgeleitet, nicht handgetippt — dieselbe Form, die der
-// Feed-Container beim Publizieren bildet (`ADR-0056`).
+// Feed-Container beim Publizieren bildet.
 func Subject(sourceID, schema, table string) string {
 	return "cdc.changes." + sourceID + "." + schema + "." + table
 }

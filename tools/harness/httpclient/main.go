@@ -127,12 +127,12 @@ func main() {
 }
 
 // readChanges ruft `GET /changes` mit der `reader`-Klasse auf und prüft die
-// Antwort inhaltlich (`LH-FA-SST-006`, `LH-FA-REA-001` ff., `ADR-0081`): eine
+// Antwort inhaltlich (`LH-FA-SST-006`): eine
 // gesetzte, nicht leere Changes-Liste; je Eintrag eine nicht leere Kennung,
 // ein bekannter Operationswert, eine Position ≥ 1 und die zum Filter
 // passende Klartext-Identität; die Einträge in nicht absteigender
-// Commit-Position (die deterministische Ordnung des Endpunkts,
-// `LH-FA-REA-004`) und eine Herkunft `wal` oder `backfill`. Ein leerer
+// Commit-Position (die deterministische Ordnung des Endpunkts)
+// und eine Herkunft `wal` oder `backfill`. Ein leerer
 // Parameter lässt den jeweiligen Query-Wert weg — `source` bleibt Pflicht.
 func readChanges(client *http.Client, baseURL, token, source, schema, table, from, to, limit string) error {
 	query := url.Values{}
@@ -203,7 +203,7 @@ func readChanges(client *http.Client, baseURL, token, source, schema, table, fro
 }
 
 // runChangesFlow trägt `GET /changes` als eigenen Modus ohne Registrierung
-// (LH-FA-CAP-009, LH-FA-REA-001): dieselbe inhaltliche Auswertung wie im
+// (LH-FA-CAP-009): dieselbe inhaltliche Auswertung wie im
 // Hauptmodus, ohne einen Consumer anzulegen.
 func runChangesFlow(args []string) {
 	if len(args) != 7 {
@@ -283,7 +283,7 @@ func runDisableTableFlow(args []string) {
 // runAcknowledgeFlow trägt AcknowledgeConsumer real per HTTP mit dem
 // Admin-Token (LH-FA-CON-006-Vorbedingung): der übergebene, zuvor
 // registrierte Consumer trägt die Position danach real als
-// Retention-Blocker der Quelle fort (LH-FA-RET-004) — der Aufrufer prüft
+// Retention-Blocker der Quelle fort — der Aufrufer prüft
 // das über cdc.retention_blockers, bevor er den Consumer entfernt.
 func runAcknowledgeFlow(args []string) {
 	if len(args) != 5 {

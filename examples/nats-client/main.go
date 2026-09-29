@@ -1,9 +1,9 @@
 // Command nats-client ist ein öffentliches Beispiel für den zweiseitigen
-// Zugriffsweg über das NATS-Wecksignal (LH-FA-SST-007, ADR-0079): es abonniert
+// Zugriffsweg über das NATS-Wecksignal (LH-FA-SST-007): es abonniert
 // das tabellen-granulare Subjekt `cdc.changes.<source_id>.<schema>.<table>`
-// (SPEC-017, ADR-0056) und holt beim Weckruf die Änderung selbst über die
-// HTTP-/JSON-API (LH-FA-SST-006) — das Signal trägt per Vertrag einen leeren
-// Payload (ADR-0055), es sagt nur „lies erneut über den bestehenden
+// und holt beim Weckruf die Änderung selbst über die
+// HTTP-/JSON-API — das Signal trägt per Vertrag einen leeren
+// Payload, es sagt nur „lies erneut über den bestehenden
 // Zugriffsweg". Startform ist `go run ./examples/nats-client`; der
 // Zugriffs-Abschnitt des Benutzerhandbuchs ist
 // `### Zugriff über das NATS-Wecksignal` (`docs/user/benutzerhandbuch.md`).
@@ -11,8 +11,7 @@
 // Dieses Programm ist das Vorbild (minimal, lesbar); der E2E-Belegträger zu
 // LH-FA-SST-007 ist der Wegwerf-Client `tools/harness/natssub`. Es ist ein
 // Muster, kein Dauerbetriebs-Client: eine Zustandsmaschine (Reconnect,
-// Deduplizierung, Rückstand) ist bewusst nicht seine Aufgabe (ADR-0055
-// §Konsequenzen).
+// Deduplizierung, Rückstand) ist bewusst nicht seine Aufgabe.
 package main
 
 import (
@@ -59,8 +58,8 @@ func main() {
 
 	// `CDC_HTTP_ADDR` ungesetzt heißt: die HTTP-API ist deaktiviert
 	// (`SPEC-018`). Ohne sie kann der Weckruf keine Änderung holen — das
-	// Beispiel scheitert sichtbar, statt still nichts zu tun (`ADR-0079`
-	// Festlegung 2).
+	// Beispiel scheitert sichtbar, statt still nichts zu tun
+	// (Festlegung 2).
 	if cfg.addr == "" {
 		fmt.Fprintln(os.Stderr, "nats-client: keine HTTP-Adresse gesetzt — CDC_HTTP_ADDR (oder -http-addr) ist nötig, um beim Weckruf die Änderung zu holen")
 		os.Exit(2)

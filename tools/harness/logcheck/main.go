@@ -1,5 +1,5 @@
 // Command logcheck ist ein Wegwerf-Testwerkzeug für den E2E-Beleg der
-// maschinenlesbaren Log-Struktur (LH-QA-OPS-004, ADR-0024): es liest die
+// maschinenlesbaren Log-Struktur (LH-QA-OPS-004): es liest die
 // Zeilen von stdin — der Aufrufer reicht `docker logs` des laufenden
 // Feed-Containers ein — und prüft jede nicht-leere Zeile als eigenständiges
 // JSON-Objekt mit den drei vom `slog.NewJSONHandler`-Standard garantierten

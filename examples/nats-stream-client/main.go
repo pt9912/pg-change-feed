@@ -1,5 +1,5 @@
 // Command nats-stream-client ist ein öffentliches Beispiel für den dritten,
-// vollinhaltstragenden NATS-Zustellweg (LH-FA-SST-008, ADR-0100, SPEC-024):
+// vollinhaltstragenden NATS-Zustellweg (ADR-0100):
 // es verbindet mit einem gültigen CDC_NATS_STREAM_TOKEN, abonniert den
 // Vollinhalts-Namensraum cdc.stream.> real gegen den laufenden Feed-Container
 // und gibt jede empfangene Change aus. Startform ist
@@ -9,10 +9,10 @@
 // Benutzerhandbuchs ist „Zugriff über den NATS-Vollinhalts-Stream"
 // (docs/user/benutzerhandbuch.md).
 //
-// Dieses Programm ist das Vorbild (minimal, lesbar); der E2E-Belegträger zu
-// LH-FA-SST-008 ist der Wegwerf-Client tools/harness/natsstreamsub. Das
-// Beispiel trägt keine Zustandsmaschine: der Stream kennt kein Replay
-// (ADR-0100), verpasste Changes holt der bestehende Lesezugriffsweg nach.
+// Dieses Programm ist das Vorbild (minimal, lesbar); der E2E-Belegträger ist
+// der Wegwerf-Client tools/harness/natsstreamsub. Das
+// Beispiel trägt keine Zustandsmaschine: der Stream kennt kein Replay,
+// verpasste Changes holt der bestehende Lesezugriffsweg nach.
 package main
 
 import (

@@ -1,6 +1,6 @@
 // Command rolloutguard entscheidet, was ein make schema-rollout-Lauf gegen
 // ein bereits migriertes Ziel zusätzlich zum regulären `--execute` tun darf
-// (ADR-0043, ADR-0114): `--allow-destructive`, wenn ausschließlich die
+// (ADR-0043): `--allow-destructive`, wenn ausschließlich die
 // bekannten Fremdobjekte blockieren, und einen Vorlauf `DROP VIEW`, wenn
 // eine im neutralen Modell deklarierte View ihre Signatur ändert — zentral,
 // für jeden Aufrufer gleich, statt bei jedem Aufrufer einzeln

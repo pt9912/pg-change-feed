@@ -1,13 +1,13 @@
 // Command natssub ist ein Wegwerf-Testclient für den NATS-Happy-Path-Beleg
-// (LH-FA-SST-007, ADR-0055): er abonniert ein Subjekt real, bevor die
+// (LH-FA-SST-007): er abonniert ein Subjekt real, bevor die
 // auslösende Change entsteht, meldet die Bereitschaft über die Zeile
 // "READY" auf stdout und wartet danach auf genau ein Wecksignal. Träger ist
 // tools/harness/run-integration-tests.sh — der Aufrufer liest die stdout-
 // Zeilen dieses Prozesses über `docker logs`, nicht über einen Exit-Code
 // allein, weil "READY" vor der auslösenden Change beobachtbar sein muss.
 //
-// Der optionale vierte Aufrufparameter <token> trägt den seit `ADR-0100`
-// serverweiten NATS-Verbindungs-Token (Teilfrage 4/5): sobald
+// Der optionale vierte Aufrufparameter <token> trägt den serverweiten
+// NATS-Verbindungs-Token (Teilfrage 4/5): sobald
 // `compose.yaml`s `nats`-Service mit `--auth` läuft, verlangt der Server ihn
 // von **jeder** Verbindung — auch von diesem bislang anonymen
 // Wecksignal-Testclient. Ein leerer/fehlender Wert verbindet weiterhin ohne

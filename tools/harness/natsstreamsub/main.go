@@ -1,6 +1,6 @@
 // Command natsstreamsub ist ein Wegwerf-Testclient für den dritten,
-// vollinhaltstragenden NATS-Zustellweg (LH-FA-SST-008, ADR-0100): er belegt
-// beide Ablehnungshälften von `ADR-0100` Teilfrage 4 — einen
+// vollinhaltstragenden NATS-Zustellweg (LH-FA-SST-008): er belegt
+// beide Ablehnungshälften des Verbindungs-Tokens — einen
 // Verbindungsversuch **ohne** Token ("REJECTED-NO-TOKEN") und einen mit
 // einem **falschen** Token ("REJECTED-WRONG-TOKEN") lehnt der NATS-Server
 // bereits auf Verbindungsebene ab, unabhängig vom Subjekt-Namensraum, weil
@@ -27,7 +27,7 @@ import (
 )
 
 // streamMessage trägt dasselbe Nachrichtenschema wie
-// `natsstream.streamMessage` (`SPEC-021`/`SPEC-024`) — hier eigenständig
+// `natsstream.streamMessage` (`SPEC-021`) — hier eigenständig
 // geführt: dieses Kommando importiert kein internes Adapter-Paket.
 type streamMessage struct {
 	ChangeID      string          `json:"change_id"`

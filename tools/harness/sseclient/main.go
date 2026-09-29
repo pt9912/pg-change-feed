@@ -1,5 +1,5 @@
 // Command sseclient ist ein Wegwerf-Testclient für den SSE-Stream-E2E-Beleg
-// (LH-FA-SST-008, ADR-0061): er öffnet den Endpunkt `GET /changes/stream` real
+// (LH-FA-SST-008): er öffnet den Endpunkt `GET /changes/stream` real
 // per HTTP gegen den laufenden Feed-Container, meldet die Bereitschaft über
 // die Zeile "READY" auf stdout, empfängt danach einen committeten Change mit
 // vollständigem Inhalt ("RECEIVED") und belegt abschließend, dass ein
@@ -132,7 +132,7 @@ func naechstesChange(body io.Reader) (sseChange, error) {
 
 // assertUnauthorized öffnet den Stream ohne Authorization-Header und
 // erwartet die Ablehnung mit HTTP-Status 401 — sichtbar, nicht still mit
-// leeren Daten fortgesetzt (LH-FA-SST-008 Negative, ADR-0061 Teilfrage 4).
+// leeren Daten fortgesetzt (LH-FA-SST-008 Negative).
 func assertUnauthorized(baseURL string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()

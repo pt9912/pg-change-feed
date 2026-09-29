@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Event trägt ein Frame des Change-Streams (`LH-FA-SST-008`): den Namen aus
+// Event trägt ein Frame des Change-Streams: den Namen aus
 // der `event:`-Zeile und die Nutzlast aus der `data:`-Zeile. Der Server
 // schreibt je Change ein JSON-Objekt mit den zehn Nachrichtenfeldern in die
 // `data:`-Zeile (`ADR-0061`).

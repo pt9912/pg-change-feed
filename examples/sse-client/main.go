@@ -1,14 +1,14 @@
 // Command sse-client ist ein öffentliches Beispiel für den Live-Change-Stream
-// über Server-Sent-Events (`LH-FA-SST-008`, `ADR-0061`, `ADR-0076`): es öffnet
+// über Server-Sent-Events (`ADR-0061`): es öffnet
 // den Endpunkt `GET /changes/stream` real gegen den laufenden Feed-Container
 // und gibt jedes Event aus. Startform ist `go run ./examples/sse-client`; der
 // Zugriffs-Abschnitt des Benutzerhandbuchs ist `### Zugriff über Server-Sent-Events`
 // (`docs/user/benutzerhandbuch.md`).
 //
-// Dieses Programm ist das Vorbild (minimal, lesbar); der E2E-Belegträger zu
-// LH-FA-SST-008 ist der Wegwerf-Client `tools/harness/sseclient`. Das Beispiel
-// trägt keine Zustandsmaschine: der Stream kennt kein Replay (`ADR-0061`),
-// verpasste Changes holt der bestehende Lesezugriffsweg nach.
+// Dieses Programm ist das Vorbild (minimal, lesbar); der E2E-Belegträger ist
+// der Wegwerf-Client `tools/harness/sseclient`. Das Beispiel
+// trägt keine Zustandsmaschine: der Stream kennt kein Replay, verpasste
+// Changes holt der bestehende Lesezugriffsweg nach.
 package main
 
 import (

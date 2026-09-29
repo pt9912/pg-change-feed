@@ -1,5 +1,5 @@
 // Command grpcclient ist ein Wegwerf-Testclient für den gRPC-Stream-E2E-Beleg
-// (LH-FA-SST-008, ADR-0060): er öffnet den Server-Stream real gegen den
+// (LH-FA-SST-008): er öffnet den Server-Stream real gegen den
 // laufenden Feed-Container, meldet die Bereitschaft über die Zeile "READY"
 // auf stdout, empfängt danach einen committeten Change mit vollständigem
 // Inhalt ("RECEIVED") und belegt abschließend, dass ein Öffnungsversuch ohne
@@ -88,7 +88,7 @@ func main() {
 // assertUnauthenticated öffnet einen zweiten Stream ohne
 // `authorization`-Metadata und erwartet die Ablehnung über gRPC-Status
 // `Unauthenticated` — sichtbar, nicht still mit leeren Daten fortgesetzt
-// (LH-FA-SST-008 Negative, ADR-0060 Teilfrage 4). Der Status kann am Aufruf
+// (LH-FA-SST-008 Negative). Der Status kann am Aufruf
 // oder erst am ersten Empfang eintreffen, deshalb deckt die Prüfung beide
 // Ausgänge.
 func assertUnauthenticated(client streamv1.ChangeStreamClient) error {
