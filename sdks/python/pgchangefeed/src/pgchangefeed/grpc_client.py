@@ -25,8 +25,8 @@ A missing or invalid bearer token ends the call with gRPC status
 ``UNAUTHENTICATED``; this is raised as ``grpc.RpcError`` while iterating, the
 stream is never silently empty.
 
-The stream is fire-and-forget: it has no replay and cannot be filtered by
-table. ``PgChangeFeedHttpClient.read_changes`` is the way to catch up.
+The stream is fire-and-forget: it has no replay of already-delivered
+changes. ``PgChangeFeedHttpClient.read_changes`` is the way to catch up.
 """
 
 from __future__ import annotations
