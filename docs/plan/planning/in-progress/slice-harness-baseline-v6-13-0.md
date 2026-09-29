@@ -75,8 +75,11 @@ Kurs-Baseline: adoptiert v6.9.0, neuester Release v6.13.0` (Release vom
 - [ ] `make baseline-verify` grün (Integrität + Vollständigkeit gegen
       `SHA256SUMS`, netzlos) und `make gates` grün (Exit-Code ungefiltert
       gesichert, [`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8):
+      `docs/reviews/review-slice-harness-baseline-v6-13-0.md` (Reviewer,
+      2026-09-29; F-1/F-4 mit `9f1eb320` gegen die Review-Messung
+      geschlossen).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine
       Beobachtung angefallen“ in §7 notiert.
