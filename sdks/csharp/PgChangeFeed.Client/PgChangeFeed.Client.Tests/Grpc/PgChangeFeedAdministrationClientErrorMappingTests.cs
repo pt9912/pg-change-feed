@@ -41,7 +41,7 @@ public class PgChangeFeedAdministrationClientErrorMappingTests
     [Fact]
     public async Task PermissionDenied_ThrowsTypedPermissionDeniedException()
     {
-        var invoker = FakeUnaryCallInvoker.WithStatus(new Status(StatusCode.PermissionDenied, "Rechtsklasse unzureichend für diese RPC"));
+        var invoker = FakeUnaryCallInvoker.WithStatus(new Status(StatusCode.PermissionDenied, "insufficient role for this rpc"));
 
         var ex = await Assert.ThrowsAsync<PgChangeFeedGrpcPermissionDeniedException>(() => Call(invoker));
 
@@ -61,7 +61,7 @@ public class PgChangeFeedAdministrationClientErrorMappingTests
     [Fact]
     public async Task Internal_ThrowsTypedInternalException()
     {
-        var invoker = FakeUnaryCallInvoker.WithStatus(new Status(StatusCode.Internal, "interner Fehler"));
+        var invoker = FakeUnaryCallInvoker.WithStatus(new Status(StatusCode.Internal, "internal error"));
 
         var ex = await Assert.ThrowsAsync<PgChangeFeedGrpcInternalException>(() => Call(invoker));
 
