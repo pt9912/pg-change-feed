@@ -29,13 +29,17 @@ Der Rückführungs-Fall §4 („`SHA256SUMS` löst gegen das Asset nicht auf →
 - **Datei-Menge identisch:** 55 Pfade in beiden Bäumen (`regelwerk/` 26,
   `templates/` 28, `SHA256SUMS`). **0 neue, 0 gelöschte, 0 umbenannte
   Module.**
-- **Inhaltlich unterschiedlich:** 36 Dateien — 26 `regelwerk/`-Dateien
-  (alle, je „Quelle"-URL-Bump plus die Funde unten), 9 Templates, 1×
-  `SHA256SUMS` (per Definition). 19 Templates sind byte-gleich — darunter
+- **Inhaltlich unterschiedlich:** 35 Dateien — 26 `regelwerk/`-Dateien
+  (alle, je „Quelle"-URL-Bump plus die Funde unten), 8 Templates, 1×
+  `SHA256SUMS` (per Definition). 20 Templates sind byte-gleich — darunter
   **beide Reviewer-Skills** (`reviewer.template.md`,
   `closure-note-reviewer.template.md`, Modul-10/11-Form unverändert).
+  Ursprung der Zählung: Nachmessen gegen den committeten Stand `d443ee39`
+  (Blob-Vergleich über `git archive` + `diff -rq`, byte-gleich zur
+  `cmp`-Messung des Reviews, F-1) — die Zählung der ersten Berichtsfassung
+  (36/9/19) war falsch.
 - **Differenz-Text:** 768 Zeilen (`diff -ru` über `regelwerk/`), 285 Zeilen
-  (über `templates/`).
+  (über `templates/`) — gegen den committeten Stand nachgemessen, unverändert.
 - **Struktur erhalten:** über alle `regelwerk/`-Dateien ist genau **ein**
   `##`/`###`-Header neu (`### Nachzug ist keine Überschreibung`, Modul 4),
   **0** entfernt, **0** umbenannt; alle `<a id="…">`-Anker identisch
@@ -115,6 +119,31 @@ identisch):
   generische Pfadform wie in `c8e2904f` bereits angewendet.
 - `baseline-verify.md`-Zeile: Prosa ohne Pin-Muster (gemessen), nur 4.1.7.
 
+**Lesart zur
+[ADR-0095](../plan/adr/0095-review-klasse-exempt-status-check.md)-Spanne
+(F-4, Architect-Verdikt).** Der Pin sitzt in §Verglichene Alternativen — nach
+AGENTS §3.5 eine der Sektionen, die „unberührbar" bleiben („ihre Änderung ist
+eine neue ADR mit `Supersedes`, nie eine Zitat-Korrektur"); nach der
+[ADR-0073](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)-Kurzform
+(„Gerüst ja, Aussage nie") ist eine reine Adress-Korrektur zulässig. Meine
+Lesart: die Sektionen-Liste schützt die **normativen Aussagen** dieser
+Sektionen; eine Änderung, die ausschließlich die Adresse im Zitatgerüst bewegt
+und den Referenten unverändert lässt (hier gemessen), fällt unter die
+[ADR-0073](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)-Ausnahme,
+die AGENTS §3.5 selbst eröffnet. Nach dieser Lesart ist die Ausführung
+(Commit `00d96eb7` mit
+[ADR-0073](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)-Kennung,
+`5bb4eabc` mit der §Geschichte-Zeile) in der Sache konform; der Wortlaut von
+AGENTS §3.5 („nie") trägt freilich auch die engere Lesart, nach der der Weg nur
+über eine Folge-ADR ging. Weil beide Lesarten vertretbar sind und die Klasse
+**wiederkehrt** (jede künftige Versions-Angabe in einer Accepted-ADR, die in
+einer geschützten Sektion sitzt), braucht die Klärung einen **eigenen Träger**:
+Eintrag ins Beobachtungs-Register (`BEO-PGC`), vom Planner bei der Closure zu
+öffnen; bis zur Klärung gilt für neue Fälle die engere Lesart (Folge-ADR statt
+Zitat-Korrektur).
+[ADR-0095](../plan/adr/0095-review-klasse-exempt-status-check.md) selbst bleibt
+unberührt.
+
 ### 4.3 Inhaltliche Funde — Nachzug oder bewusstes Nicht-Nachziehen
 
 | Fund | Entscheidung | Grund |
@@ -163,19 +192,20 @@ der Bericht selbst (diese Datei) liegt in der ausgeschlossenen Fläche.
 
 ## 7. Verbleibende Risiken
 
-1. **`make baseline-verify` ist solange rot, bis `v6.9.0/` entfernt ist** —
+1. **`make baseline-verify` war solange rot, bis `v6.9.0/` entfernt ist** —
    das Skript verlangt genau ein `<tag>`-Verzeichnis; der Bundled-Commit
-   lässt beide bestehen (Auftrag: Entfernung ist Implementer-Zug).
-   Erwartbarer Befund: „mehr als ein `<tag>`-Verzeichnis".
+   ließ beide bestehen (Auftrag: Entfernung ist Implementer-Zug). Nach
+   `88cea828` ist die Entfernung vollzogen.
 2. **`versions`-Befunde der Observations-Evidence** (4.2) sind bis zur
    Closure-Entscheidung offen — andernfalls bleibt `make gates` nach dem
    Konventions-Update rot, auch wenn 4.1 abgearbeitet ist.
-3. Die **Zitat-Korrektur an
-   [ADR-0095](../plan/adr/0095-review-klasse-exempt-status-check.md)** berührt
-   eine `Accepted`-ADR in-place — streng auf die
-   [ADR-0073](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)-Bedingungen
-   achten (nur Zitat-/Verweisgerüst, Beleg-Zeile
-   in §Geschichte); jede darüber hinausgehende Änderung ist Folge-ADR.
+3. Die **Spanne zur Zitat-Korrektur an
+   [ADR-0095](../plan/adr/0095-review-klasse-exempt-status-check.md)**
+   (AGENTS §3.5 Sektionen-Liste vs.
+   [ADR-0073](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)-Kurzform)
+   ist in §4.2 mit Lesart dokumentiert; die Klärung braucht einen eigenen
+   Träger (Beobachtungs-Eintrag), bis dahin gilt für neue Fälle die engere
+   Lesart.
 4. **Nicht gemessen, sondern hergeleitet:** die `versions`-Befunds-Erwartung
    in 4.2 folgt aus der Modulkonfiguration; der erste reale Gate-Lauf nach
    dem Konventions-Update ist der Beleg.
