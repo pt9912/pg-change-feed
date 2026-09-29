@@ -92,8 +92,7 @@ func (f *fakeAck) Acknowledge(ctx context.Context, position model.SourcePosition
 // `ChangeNotificationPort` darf `Capture()` nicht scheitern lassen, wenn
 // `store`/`ack` erfolgreich waren — `notifyErr` ist standardmäßig gesetzt,
 // damit der Test den ungünstigsten Fall trägt. `notified` trägt die
-// distinkten `(schema, table)`-Aufrufe für den Deduplizierungs-Beleg
-// (`ADR-0056`).
+// distinkten `(schema, table)`-Aufrufe für den Deduplizierungs-Beleg.
 type fakeNotify struct {
 	events    *[]string
 	notifyErr error
@@ -120,8 +119,7 @@ func newService(t *testing.T) (*capture.CaptureService, *[]string, *fakeStore, *
 }
 
 // committedTransaction legt eine committed Quelltransaktion mit count
-// Changes an derselben Tabelle `public.tbl-1` an (`LH-FA-CAP-005`,
-// `LH-FA-DAT-004`).
+// Changes an derselben Tabelle `public.tbl-1` an (`LH-FA-CAP-005`).
 func committedTransaction(t *testing.T, id model.TransactionID, offset uint64, count int) *model.ChangeTransaction {
 	t.Helper()
 	return committedTransactionOverTables(t, id, offset, tableSpec{schema: "public", table: "tbl-1", count: count})
@@ -207,7 +205,7 @@ func TestCapturePersistsBeforeAck(t *testing.T) {
 // Eine committed Quelltransaktion ohne Changes passiert den Pfad: sie
 // wird mit ihrer Commit-Position persistiert und geackt (`LH-FA-CAP-006.a`,
 // Grenze am `CaptureInboundPort`) — das Ablehnen würde dieselbe leere
-// Transaktion in einer Wiederholung (`ADR-0012`) endlos neu liefern.
+// Transaktion in einer Wiederholung endlos neu liefern.
 func TestCapturePersistsEmptyCommittedTransaction(t *testing.T) {
 	service, events, store, ack := newService(t)
 	tx := committedTransaction(t, "t-1", 100, 0)
@@ -230,7 +228,7 @@ func TestCapturePersistsEmptyCommittedTransaction(t *testing.T) {
 	}
 }
 
-// Persistenzfehler → kein Source-ACK (`LH-QA-REL-001.a`; `SPEC-008`,
+// Persistenzfehler → kein Source-ACK (`LH-QA-REL-001.a`;
 // Klasse `storage`): der Store-Commit endet mit Fehler, der Fake-ACK
 // trägt keine Bestätigung.
 func TestCaptureDoesNotAckOnPersistenceError(t *testing.T) {
@@ -254,7 +252,7 @@ func TestCaptureDoesNotAckOnPersistenceError(t *testing.T) {
 }
 
 // Offene Transaktionen sind nicht konsumierbar (`LH-FA-CAP-006`);
-// zurückgerollte Transaktionen erreichen den Commit nicht (`LH-FA-CAP-007`)
+// zurückgerollte Transaktionen erreichen den Commit nicht
 // — der Capture-Pfad persistiert sie nicht und bestätigt nichts.
 func TestCaptureRejectsOpenTransaction(t *testing.T) {
 	service, _, store, ack := newService(t)
@@ -288,12 +286,12 @@ func TestCaptureRejectsMissingTransaction(t *testing.T) {
 	}
 }
 
-// Crash zwischen Persistenz und ACK (`LH-QA-REL-002`, `LH-QA-REL-001.a`):
+// Crash zwischen Persistenz und ACK (`LH-QA-REL-002`):
 // die Persistenz besteht, der ACK fehlt; der erneute Aufruf mit derselben
-// Transaktion führt die Ordnung zu Ende — Wiederholung statt Datenverlust
-// (`ADR-0012`). Der Fake-Store trägt die Transaktion dann zweimal; die
-// reale Idempotenz des Stores trägt die Deduplizierungsbasis (`SPEC-002`,
-// change_id) und bleibt Beleg des realen Adapters.
+// Transaktion führt die Ordnung zu Ende — Wiederholung statt Datenverlust.
+// Der Fake-Store trägt die Transaktion dann zweimal; die
+// reale Idempotenz des Stores trägt die Deduplizierungsbasis
+// (change_id) und bleibt Beleg des realen Adapters.
 func TestCrashBetweenPersistAndAckLeadsToReprocessing(t *testing.T) {
 	service, events, store, ack := newService(t)
 	ackErr := stderrors.New("Quelle zwischen Persistenz und ACK nicht erreichbar")
@@ -448,7 +446,7 @@ func TestCaptureNotifiesDistinctlyForTwoTables(t *testing.T) {
 }
 
 // fakeStream trägt den optionalen `ChangeStreamPort` (`ADR-0060` Teilfrage 2)
-// und spiegelt die Zustellsemantik des realen Ports (`ADR-0066`): er kehrt
+// und spiegelt die Zustellsemantik des realen Ports: er kehrt
 // unabhängig davon zurück, ob ein Empfänger liest. `publishErr` trägt den
 // Regressionsbeleg — er ist standardmäßig gesetzt, damit der ungünstigste
 // Fall im Test steht. `nichtLesenderEmpfaenger` modelliert einen
@@ -496,7 +494,7 @@ func (f *fakeBlockingStream) Publish(ctx context.Context, change *model.Change) 
 }
 
 // TestCapturePublishesEachChangeOnceAfterAckAndNotify trägt den Happy Path
-// aus `LH-FA-SST-008` und die Ordnung aus `ADR-0060` Teilfrage 2: der
+// und die Ordnung aus `ADR-0060` Teilfrage 2: der
 // Stream-Publish reiht sich als letzter Best-Effort-Schritt ein — nach
 // `ACK Source` und nach dem Wecksignal — und ruft je Change der Transaktion
 // genau einmal auf, in der Reihenfolge von `tx.Changes()` und ohne
@@ -553,7 +551,7 @@ func TestCaptureWithoutStreamPortLeavesBehaviourUnchanged(t *testing.T) {
 }
 
 // Regressionstest — die wichtigste Einzeleigenschaft aus `ADR-0060`
-// Teilfrage 2 (`SPEC-020`, Zeile *Fehler bei Publish-Fehlschlag*): ein
+// Teilfrage 2 (Zeile *Fehler bei Publish-Fehlschlag*): ein
 // fehlschlagender `ChangeStreamPort` darf `Capture()` nicht scheitern lassen,
 // wenn `store`/`ack` bereits erfolgreich waren. Der Aufruf läuft über alle
 // Changes weiter — ein Fehler auf dem ersten verwirft die übrigen nicht.
@@ -664,8 +662,8 @@ func TestCaptureKehrtOhneUndMitNichtLesendemStreamEmpfaengerZurueck(t *testing.T
 // einen Abonnenten wartend zurück —, diese Aufrufstelle ruft ihn synchron in
 // der Best-Effort-Kette. Ein Port, der dennoch nicht zurückkehrt, kann die
 // Capture-kritische Kette nicht mehr berühren: Persistenz und Source-ACK sind
-// geschrieben, bevor der erste Change das Haus verlässt (`ADR-0011`,
-// `ADR-0027`), und der Rückgabewert von `Capture()` hängt an einem Port, der
+// geschrieben, bevor der erste Change das Haus verlässt,
+// und der Rückgabewert von `Capture()` hängt an einem Port, der
 // seinen Vertrag nicht verletzt.
 func TestCapturePublishOhneRueckkehrHaeltKritischeKetteNichtAn(t *testing.T) {
 	events := []string{}
@@ -722,8 +720,8 @@ var _ outbound.LogPort = (*fakeLog)(nil)
 
 // TestCaptureLoggtFehlschlaegeUeberDenInjiziertenPort trägt `ADR-0024`
 // (strukturiertes Logging bleibt Infrastruktur und wird über den Outbound
-// Port substituiert): beide Best-Effort-Fehlerpfade — Wecksignal (`ADR-0055`)
-// und Stream-Publish (`ADR-0060` Teilfrage 2) — melden ihren Fehlschlag über
+// Port substituiert): beide Best-Effort-Fehlerpfade — Wecksignal
+// und Stream-Publish — melden ihren Fehlschlag über
 // den injizierten `LogPort`; das Attribut der Warn-Zeile trägt die
 // gescheiterte Tabelle bzw. den gescheiterten Change.
 func TestCaptureLoggtFehlschlaegeUeberDenInjiziertenPort(t *testing.T) {

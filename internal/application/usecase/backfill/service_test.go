@@ -640,7 +640,7 @@ func TestRequestCarriesEstimate(t *testing.T) {
 }
 
 // TestRequestPreconditionFailuresLeaveNoRun trägt die Vorbedingungs-Fehler
-// (`LH-FA-CAP-009`, `ADR-0111` Teilfrage 5): jeder endet vor `Admit`, ohne
+// (`ADR-0111` Teilfrage 5): jeder endet vor `Admit`, ohne
 // Run-Zeile, ohne geöffneten Snapshot und ohne Schätzung; eine fehlende
 // Bindung und eine fehlende Publication-Mitgliedschaft tragen
 // `ErrTableNotActivated`, ein Port-Fehler bleibt sein Fehler.
@@ -760,7 +760,7 @@ func TestPortsCarryNoCapturePathPort(t *testing.T) {
 // --- Execute: Happy Path --------------------------------------------------
 
 // TestExecuteWritesAllBlocksInOneTransaction trägt den Happy Path
-// (`LH-FA-CAP-009`, `ADR-0111` Teilfrage 2/6): alle Blöcke in **einer**
+// (`ADR-0111` Teilfrage 2/6): alle Blöcke in **einer**
 // Transaktion, ein Commit mit der Run-Zeile `completed`; jeder Change ist ein
 // `INSERT` der Herkunft `backfill` ohne `old_data`, sein Bild trägt nur die
 // nicht ausgeschlossenen, nicht-NULL-Spalten; Position `X` an jedem Block;
@@ -1133,7 +1133,7 @@ func TestExecuteMidCopyFailureKeepsProgressAndWritesNothing(t *testing.T) {
 
 // --- Execute: Fail-closed --------------------------------------------------
 
-// TestExecuteFailClosed trägt `LH-QA-SEC-004` (`ADR-0111` Teilfrage 4): jede
+// TestExecuteFailClosed trägt den Fail-closed-Vertrag (`ADR-0111` Teilfrage 4): jede
 // Abweichung des Ausschlussstands oder der Bindung zwischen dem Bau der
 // Blöcke und dem Commit rollt zurück und endet den Run `failed`
 // (`configuration`) — auch eine Abweichung in einem Zwischenblock, die am Ende
@@ -1226,7 +1226,7 @@ func TestExecuteFailClosed(t *testing.T) {
 }
 
 // TestExecuteExclusionReadFailure trägt den Lesefehler-Zweig der
-// Fail-closed-Prüfung (`LH-QA-SEC-004`, `ADR-0111` Teilfrage 4): ein Stand, der
+// Fail-closed-Prüfung (`ADR-0111` Teilfrage 4): ein Stand, der
 // nicht gelesen werden kann, ist kein bestätigter Stand. Der n-te Lesefehler
 // (Lesung 1..3 je Block, Lesung 4 unmittelbar vor dem Commit) endet den Run
 // `failed` mit der Klasse der Ursache, ohne Commit und ohne Wecksignal; die
@@ -1381,8 +1381,8 @@ func TestExecuteEmptyTableFinishFailure(t *testing.T) {
 	})
 }
 
-// TestExecuteFinishedAt trägt `finished_at` in jedem Endzustand (`SPEC-029`,
-// `ADR-0113` Festlegung 3: die Kopierdauer ist `finished_at − started_at`):
+// TestExecuteFinishedAt trägt `finished_at` in jedem Endzustand
+// (`ADR-0113` Festlegung 3: die Kopierdauer ist `finished_at − started_at`):
 // der Zeitpunkt ist die letzte Lesung der Uhr, die je Aufruf weiterläuft, und
 // steht sowohl im Ergebnis als auch an dem Port, der den Endzustand festhält
 // (Commit oder `Finish`). Ein gestarteter Run trägt ihn nach `started_at`.

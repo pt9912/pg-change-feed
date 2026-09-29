@@ -7,7 +7,7 @@ import (
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 )
 
-// LH-FA-ADM-003, Happy Path: jede der sieben stabilen Kategorien aus
+// Happy Path: jede der sieben stabilen Kategorien aus
 // `ADR-0023` ist eine gültige Fehlerklasse.
 func TestNewErrorClassAcceptsTheSevenADR0023Categories(t *testing.T) {
 	cases := []ErrorClass{

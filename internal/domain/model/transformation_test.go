@@ -133,7 +133,7 @@ func TestCheckApplicable(t *testing.T) {
 var transformationColumns = []string{"id", "secret", "name", "status"}
 
 // `rename_column` setzt den Schlüssel unter den Zielnamen, an die Position
-// seiner Quellspalte, mit unverändertem Wert (`SPEC-030`, `ADR-0112`
+// seiner Quellspalte, mit unverändertem Wert (`ADR-0112`
 // Teilfrage 3). Rot färbende Mutationen je Fall: in `applyTransformations`
 // `rule.to` durch `column` ersetzen (Schlüssel bleibt), den Wert verändern,
 // bzw. das Bild in `BuildRowImage` nach Regel-Schlüsseln hinten anfügen

@@ -20,7 +20,7 @@ func mustSourcePosition(t *testing.T, source SourceID, offset uint64) SourcePosi
 	return position
 }
 
-// LH-FA-DAT-004, Happy Path: die Positionen zweier committed Changes
+// Happy Path: die Positionen zweier committed Changes
 // bestimmen die Ordnung; sie entspricht der logischen Reihenfolge
 // (LH-FA-CAP-004).
 func TestLHFADAT004PositionsAreSortable(t *testing.T) {

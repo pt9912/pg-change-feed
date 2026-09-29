@@ -12,8 +12,8 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
-// Die Tests dieser Datei tragen die Regelauswertung im Run (`LH-FA-CFG-007`,
-// `ADR-0112` Folgepflicht 7, `ADR-0117`): der Rig hält die Tabelle
+// Die Tests dieser Datei tragen die Regelauswertung im Run
+// (`ADR-0112` Folgepflicht 7): der Rig hält die Tabelle
 // `public.orders` mit den Spalten `id`, `name`, `secret`; der Regelstand
 // kommt aus `fakeRules`. Die Lesungen des Regelstands eines Runs über die drei
 // Blöcke des Rigs sind: Lesung 1 zu Beginn (nach dem Öffnen des Snapshots),

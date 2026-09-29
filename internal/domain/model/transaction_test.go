@@ -215,7 +215,7 @@ func TestChangeTransactionRejectsInvariantViolations(t *testing.T) {
 	})
 }
 
-// LH-FA-CAP-006 / ADR-0029, Regel 3: solange die Transaktion offen ist,
+// ADR-0029, Regel 3: solange die Transaktion offen ist,
 // trägt sie keine Commit-Position, und ihre Changes sind nicht konsumierbar
 // — Changes() liefert einen Fehler.
 func TestLHFACAP006OpenTransactionIsNotConsumable(t *testing.T) {

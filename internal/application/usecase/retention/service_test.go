@@ -217,7 +217,7 @@ func mustAckedConsumer(t *testing.T, id string, offset uint64) model.ConsumerPos
 }
 
 // TestRunDistinguishesEligibleChangesFromMixedSet trägt die Freigabe je
-// betrachtetem Change (`LH-FA-RET-002`…`004`): eine gemischte Menge aus
+// betrachtetem Change (`LH-FA-RET-002`): eine gemischte Menge aus
 // löschbar (alt genug, Consumer bereits vorbei), nicht löschbar wegen
 // Alters (zu jung, obwohl der Consumer bereits vorbei ist) und nicht
 // löschbar wegen eines zurückhängenden Consumers (alt genug, Consumer noch

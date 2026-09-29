@@ -8,8 +8,7 @@ import (
 )
 
 // NewTableSchema verlangt eine nichtleere Versions-Kennung, mindestens
-// eine Spalte und nichtleere Spaltennamen (`SPEC-004`, `ADR-0015`
-// Folgepflicht).
+// eine Spalte und nichtleere Spaltennamen (`SPEC-004`).
 func TestNewTableSchemaHappyPath(t *testing.T) {
 	schema, err := NewTableSchema("sv-1", []Column{
 		{Name: "id", OID: 23},

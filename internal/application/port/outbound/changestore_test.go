@@ -9,8 +9,8 @@ import (
 )
 
 // Die Abfrage-Validierung trägt die Grenzen des Lese-Vertrags am Port
-// (`ADR-0042`): Bereich (`LH-FA-REA-001`), Limit (`LH-FA-REA-003`) und
-// Quellen-Ordnung (`ADR-0005`) enden hier als sichtbare Fehler, bevor ein
+// (`ADR-0042`): Bereich, Limit und
+// Quellen-Ordnung enden hier als sichtbare Fehler, bevor ein
 // Adapter sie in SQL übersetzt.
 
 func position(source string, offset uint64) *model.SourcePosition {
@@ -79,8 +79,8 @@ func TestChangeQueryValidateRejectsMissingSource(t *testing.T) {
 	}
 }
 
-// Die Klartext-Filterachse ist optional und unabhängig (`LH-FA-REA-006`,
-// `ADR-0081` Teilfrage 3): Schema und Tabelle sind keine
+// Die Klartext-Filterachse ist optional und unabhängig (`ADR-0081`
+// Teilfrage 3): Schema und Tabelle sind keine
 // Kontrakt-Invariante — die Abfrage bleibt einzeln, kombiniert und leer
 // gültig, die Filterwirkung trägt der Lesepfad.
 func TestChangeQueryValidateAcceptsOptionalTextFilter(t *testing.T) {

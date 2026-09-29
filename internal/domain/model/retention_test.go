@@ -8,7 +8,7 @@ import (
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 )
 
-// LH-FA-RET-004 / ADR-0029, Regel 5: Retention löscht keine benötigten
+// ADR-0029, Regel 5: Retention löscht keine benötigten
 // Changes — eine unbestätigte Consumer-Position oder eine Position hinter
 // der Change-Position blockiert die Bereinigung.
 func TestLHFARET004RetentionRequiresAcknowledgedPositions(t *testing.T) {

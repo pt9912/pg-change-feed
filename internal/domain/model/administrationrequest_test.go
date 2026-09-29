@@ -8,7 +8,7 @@ import (
 )
 
 // NewAdministrationRequest trägt die Tabellen-Antragsarten der geschlossenen
-// Menge (`LH-FA-ADM-001`, `LH-FA-CAP-009`); `enable`, `disable` und
+// Menge (`LH-FA-ADM-001`); `enable`, `disable` und
 // `backfill` tragen weder Spalte noch Regel. Rot färbende Mutation:
 // `AdministrationRequestBackfill` aus dem `switch` des Konstruktors
 // streichen — die Art endet als `ErrInvalidAdministrationRequestKind`.
@@ -46,7 +46,7 @@ func TestNewAdministrationRequestAcceptsSpaltenAntragsarten(t *testing.T) {
 }
 
 // Die beiden Transformations-Antragsarten tragen Regelname und — nur
-// `set_transformation` — die Regelform (`LH-FA-CFG-007`, `ADR-0112`
+// `set_transformation` — die Regelform (`ADR-0112`
 // Teilfrage 1). Rot färbende Mutation: `AdministrationRequestSetTransformation`
 // bzw. `AdministrationRequestRemoveTransformation` aus dem `switch` des
 // Konstruktors streichen — die Art endet als
@@ -68,8 +68,8 @@ func TestNewAdministrationRequestAcceptsTransformationsAntragsarten(t *testing.T
 	}
 }
 
-// Die Ablehnungszweige des Konstruktors (`LH-FA-ADM-001`,
-// `LH-FA-CFG-005`): leere Kennungen, die Spalten-Antragsart ohne Spalte und eine
+// Die Ablehnungszweige des Konstruktors (`LH-FA-ADM-001`):
+// leere Kennungen, die Spalten-Antragsart ohne Spalte und eine
 // Antragsart außerhalb der geschlossenen Menge.
 func TestNewAdministrationRequestRejectsInvariantViolations(t *testing.T) {
 	t.Run("leere Kennung", func(t *testing.T) {

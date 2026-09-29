@@ -95,7 +95,7 @@ func TestNewChangeRejectsInvariantViolations(t *testing.T) {
 	}
 }
 
-// LH-FA-CAP-009 / SPEC-002: der Konstruktor legt einen Change mit der
+// SPEC-002: der Konstruktor legt einen Change mit der
 // Herkunft `wal` an.
 func TestNewChangeDefaultsOriginToWAL(t *testing.T) {
 	change := buildChange(t, validChangeArgs())
@@ -106,8 +106,7 @@ func TestNewChangeDefaultsOriginToWAL(t *testing.T) {
 
 // Die Herkunft ist eine geschlossene Menge (`SPEC-002`): `wal` und
 // `backfill` werden angenommen, jeder andere Wert abgelehnt; die leere
-// Zeichenkette (fehlender Wert, `NULL`) liest als `wal`
-// (`LH-FA-DAT-006` Boundary).
+// Zeichenkette (fehlender Wert, `NULL`) liest als `wal`.
 func TestNewChangeOriginClosedSet(t *testing.T) {
 	cases := []struct {
 		raw     string

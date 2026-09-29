@@ -9,7 +9,7 @@ import (
 )
 
 // Die verbleibenden Konstruktoren erzwingen die Nichtleere ihrer Kennungen
-// (`LH-FA-DAT-002`, `LH-FA-SCH-005`, `ADR-0029`, Regel 7).
+// (`ADR-0029`, Regel 7).
 func TestValueObjectConstructorsRejectInvariantViolations(t *testing.T) {
 	t.Run("Source ohne Kennung", func(t *testing.T) {
 		if _, err := NewSource("", "quelle"); !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
@@ -49,7 +49,7 @@ func TestValueObjectConstructorsRejectInvariantViolations(t *testing.T) {
 
 // NewSource trägt Kennung und Name der Quelle (`SPEC-001`, Tabelle
 // `cdc.source`) — der Rückgabe-Pfad des Konstruktors, den der Paket-Kommentar
-// als den einzigen geprüften Weg zum gültigen Wert nennt (`ADR-0029`).
+// als den einzigen geprüften Weg zum gültigen Wert nennt.
 func TestNewSourceCarriesIdentifierAndName(t *testing.T) {
 	source, err := NewSource("src-1", "quelle")
 	if err != nil {
@@ -61,8 +61,7 @@ func TestNewSourceCarriesIdentifierAndName(t *testing.T) {
 }
 
 // NewOpenTransaction liefert eine offene Transaktion (`LH-FA-CAP-005`): sie
-// trägt noch keine Commit-Position — konsumierbar wird sie erst über `Commit`
-// (`LH-FA-CAP-006`).
+// trägt noch keine Commit-Position — konsumierbar wird sie erst über `Commit`.
 func TestNewOpenTransactionCarriesNoCommitPosition(t *testing.T) {
 	tx, err := NewOpenTransaction("t-1", "src-1")
 	if err != nil {
