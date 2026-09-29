@@ -8,18 +8,26 @@ verschiedenen Kennungen oder „ff.“ hinter einer Kennung; kein Gate, keine Au
 `.harness/skills/reviewer.md` (MEDIUM-Unterpunkt „Herkunft als mehrere Felder, Kette, „ff.“ oder
 Spec-Wiederholung“, der Lauf ist Probe, kein Beleg) · seit slice-code-kommentare-kennungen.
 
-Zähler (abgeleitet): 3× (evidence/changestream-publish-godoc.md,
+Zähler (abgeleitet): 4× (evidence/changestream-publish-godoc.md,
 evidence/slice-code-kommentare-kennungen.md,
-evidence/slice-code-kommentare-bereinigung.md); der Ausgang ist
+evidence/slice-code-kommentare-bereinigung.md,
+evidence/slice-kommentar-kennungen-skripte.md); der Ausgang ist
 zugewiesen, weil die Regel mit dem Slice landet, der den Eintrag anlegt (dieselbe Arbeit trägt
 Beobachtung und Verkörperung). Der Ursprung je Belegdatei: das erste Auftreten ist
 die Stelle, das zweite die Messung des Bestands, das dritte die Lese-Funde der Bereinigung
-(zwei neue Finding-Klassen: „Kürzung lässt hängende Herkunfts-Referenz zurück“ 4×,
-„ungenau umgeformte Spec-Wiedergabe“ 1×).
+(zwei neue Finding-Klassen: „Kürzung lässt hängende Herkunfts-Referenz zurück” 4×,
+„ungenau umgeformte Spec-Wiedergabe” 1×), das vierte die MEDIUM-Finding-Klassen der
+Nicht-Go-Ausdehnung („Nachzug widerspricht dem Nachbarn im selben Träger” 1×,
+„Messwerkzeugwechsel in Tranche — Zahlen nicht komparabel” 1×, „Messform erweitert,
+Aufrufer-Pfadspec nicht nachgezogen” 1×).
 
-Bestand: 597 Kandidaten (400 Nicht-Test, 197 Test) am Stand `d13ab81e`, `make kommentar-kennungen
-COUNT=1` (gemessen 2026-09-26). Die Bereinigung trägt `slice-code-kommentare-bereinigung`
-(Datei in `open/`); jede ihrer Tranchen misst vor und nach.
+Bestand: 14 Kandidaten am Arbeitsbaum, alle Go, alle in `test/integration`
+(Erzeugnis-Eingabe der E2E-Abdeckungstabelle, §3.7-Ausnahme), `make
+kommentar-kennungen COUNT=1` (gemessen 2026-09-29); der Nicht-Go-Messraum
+(Shell, Make, SQL, YAML, Dockerfile) endet bei 0 — gemessen von
+`slice-kommentar-kennungen-skripte`. Der Messraum des Werkzeugs umfasst
+Go-Kommentargruppen und Nicht-Go-Zeilenkommentar-Formen; Markdown-Prosa trägt
+den Messraum nicht (Vertrag Grenze 2).
 
 **Benannte Grenze.** Das Werkzeug prüft die Form, nicht die Wahrheit: eine Spec-Aussage in eigenen
 Worten hinter **einer** Kennung ist kein Kandidat, ebenso ein Kommentar, der eine Zusage macht,
