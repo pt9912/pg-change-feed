@@ -1,5 +1,5 @@
 Zustand: **geplant** — Ausgang: **geplant** →
-[`slice-capture-transient-wiederholung`](../../../open/slice-capture-transient-wiederholung.md)
+[`slice-capture-transient-wiederholung`](../../../next/slice-capture-transient-wiederholung.md)
 (Start: eine ADR des Architects zur Wiederholungsform; Klasse `transient`,
 begrenzter Backoff, Ausgang bei Erschöpfung) · seit welle-backfill-bestand
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
