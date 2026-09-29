@@ -9,8 +9,7 @@ import (
 type SchemaVersionID string
 
 // SchemaVersion trägt eine Version des Tabellenschemas (`SPEC-004`);
-// jeder Change referenziert eine solche Version (`LH-FA-SCH-005`,
-// `ADR-0029`, Regel 7).
+// jeder Change referenziert eine solche Version.
 type SchemaVersion struct {
 	ID            SchemaVersionID
 	SourceTableID SourceTableID

@@ -5,11 +5,11 @@ import (
 )
 
 // RetentionPolicy trägt die Grenzen der Bereinigung (`ADR-0014`). Die
-// Zusage „Retention löscht keine benötigten Changes“ (`ADR-0029`, Regel 5)
+// Zusage, dass die Retention keine benötigten Changes löscht,
 // trägt `AllowsDeletion` am Beleg der Consumer-Positionen: ohne bestätigte
 // Position an oder hinter der Change-Position gibt die Policy keine
-// Bereinigung frei; das Mindestalter ist die zeitbasierte Grenze
-// (`LH-FA-RET-003`). Die Ausführung liegt im Run-Retention-Use-Case, nicht
+// Bereinigung frei; das Mindestalter ist die zeitbasierte Grenze.
+// Die Ausführung liegt im Run-Retention-Use-Case, nicht
 // in diesem Wertobjekt.
 type RetentionPolicy struct {
 	// MinAge ist das Mindestalter eines Changes für die Bereinigung;
@@ -29,7 +29,7 @@ func NewRetentionPolicy(minAge Duration) (RetentionPolicy, error) {
 // AllowsDeletion meldet, ob die Policy die Bereinigung eines Changes an
 // seiner Position freigibt: der Change trägt das Mindestalter, und jede
 // übergebene Consumer-Position ist bestätigt und liegt an oder hinter der
-// Change-Position (`LH-FA-RET-004`, `ADR-0029`, Regel 5). Ohne
+// Change-Position (`LH-FA-RET-004`). Ohne
 // übergebene Positionen blockiert keine Position die Bereinigung; das
 // Mindestalter gilt weiter.
 func (p RetentionPolicy) AllowsDeletion(age Duration, changePosition SourcePosition, consumerPositions []ConsumerPosition) bool {

@@ -4,8 +4,8 @@ import (
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 )
 
-// ColumnOID trägt die rohe PostgreSQL-Typ-OID einer Spalte (`SPEC-004`,
-// `ADR-0015` Folgepflicht); die technologieunabhängige Übersetzung dieser
+// ColumnOID trägt die rohe PostgreSQL-Typ-OID einer Spalte (`ADR-0015`
+// Folgepflicht); die technologieunabhängige Übersetzung dieser
 // OID in eine Vergleichs-/Kompatibilitätsentscheidung trägt dieses Modell
 // nicht.
 type ColumnOID uint32
@@ -19,12 +19,12 @@ type Column struct {
 	OID  ColumnOID
 }
 
-// TableSchema trägt die Spaltenmenge einer Schema-Version (`ADR-0015`,
-// `SPEC-004`, `LH-FA-SCH-005`): jeder Change referenziert eine
+// TableSchema trägt die Spaltenmenge einer Schema-Version (`ADR-0015`):
+// jeder Change referenziert eine
 // SchemaVersionID (siehe `SchemaVersion`, `schema_version.go`); TableSchema
 // trägt die dazugehörige Spaltenform, über die die historisch stabile
 // Interpretation eines Change läuft — ohne sie bleibt eine inkompatible
-// Typänderung unerkennbar (`LH-FA-SCH-004`).
+// Typänderung unerkennbar.
 type TableSchema struct {
 	VersionID SchemaVersionID
 	Columns   []Column

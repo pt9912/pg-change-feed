@@ -5,10 +5,10 @@ import (
 )
 
 // ErrorClass trägt eine der sieben stabilen Fehlerkategorien aus
-// `SPEC-008`/`ADR-0023` (`transient`, `configuration`, `permission`,
+// `ADR-0023` (`transient`, `configuration`, `permission`,
 // `schema`, `storage`, `replication`, `internal`): der Capture-Prozess
 // meldet seinen zuletzt beobachteten Fehlerzustand darüber, erkennbar und
-// unterscheidbar vom Normalbetrieb (`LH-FA-ADM-003`, `LH-QA-REL-003`).
+// unterscheidbar vom Normalbetrieb.
 type ErrorClass string
 
 const (

@@ -24,9 +24,9 @@ func NewConsumer(id ConsumerID, name string) (Consumer, error) {
 }
 
 // ConsumerPosition trägt die zuletzt bestätigte Position eines Consumers
-// (`SPEC-001`, Tabelle `cdc.consumer_position`; `LH-FA-CON-003`). Der
+// (Tabelle `cdc.consumer_position`; `LH-FA-CON-003`). Der
 // Nullwert der Position steht für „noch nichts bestätigt“; die Quelle
-// trägt die Position selbst (`SPEC-003`) — die erste Bestätigung bindet
+// trägt die Position selbst — die erste Bestätigung bindet
 // sie, jede weitere muss dieselbe Quelle wiederholen.
 type ConsumerPosition struct {
 	ConsumerID ConsumerID
@@ -49,10 +49,10 @@ func (c ConsumerPosition) Acknowledged() bool {
 
 // Advance bestätigt eine Position und trägt den neuen Fortschritt. Der
 // Consumer-ACK verläuft regulär nur vorwärts (`ADR-0029`, Regel 2); die
-// Wiederholung derselben Position ist idempotent (`LH-FA-CON-004`), eine
+// Wiederholung derselben Position ist idempotent, eine
 // frühere Position ist ein Fehler, und eine bestätigte Quelle bleibt
 // gebunden — die Position einer anderen Quelle ist keine
-// Bestätigungs-Größe (`ADR-0005`).
+// Bestätigungs-Größe.
 func (c ConsumerPosition) Advance(position SourcePosition) (ConsumerPosition, error) {
 	if c.Acknowledged() {
 		if position.SourceID != c.Position.SourceID {

@@ -9,7 +9,7 @@ import (
 )
 
 // TransformationKind trägt den Regeltyp einer Transformationsregel
-// (`LH-FA-CFG-007`, `SPEC-030`). Die geschlossene Menge der Regeltypen
+// (`SPEC-030`). Die geschlossene Menge der Regeltypen
 // steht in `TransformationKinds`.
 type TransformationKind string
 
@@ -59,7 +59,7 @@ type Transformation struct {
 //   - `to` ist nicht leer, trägt kein U+0000 und hat höchstens 63 Byte in
 //     UTF-8 (beide Verletzungen: `ErrInvalidTransformation`);
 //   - `to` gleicht `column` nicht (`ErrTransformationTargetIsColumn`): der
-//     Fall gehört zu K3 (`SPEC-019`), sein eigener Sentinel trennt ihn von
+//     Fall gehört zu K3, sein eigener Sentinel trennt ihn von
 //     der Formverletzung.
 func NewRenameColumn(name, column, to string) (Transformation, error) {
 	if name == "" {

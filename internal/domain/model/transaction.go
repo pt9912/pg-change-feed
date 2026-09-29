@@ -6,12 +6,12 @@ import (
 
 // ChangeTransaction bündelt die Changes einer Quelltransaktion
 // (`LH-FA-CAP-005`). Eine Transaktion entsteht offen und wird beim Commit
-// an ihre Commit-Position gebracht (`SPEC-001`, `cdc.transaction`):
+// an ihre Commit-Position gebracht (`cdc.transaction`):
 // zurückgerollte Transaktionen erreichen den Commit nicht und erzeugen
-// keine committed Changes (`ADR-0029`, Regel 4). Regel 3 („offene
-// Transaktionen sind nicht konsumierbar") trägt `Changes()`: an einer
-// offenen Transaktion liefert sie einen Fehler; konsumierbar ist die
-// Transaktion erst nach dem Commit (`LH-FA-CAP-006`).
+// keine committed Changes. Eine offene
+// Transaktion ist nicht konsumierbar; `Changes()` liefert an einer
+// offenen Transaktion einen Fehler; konsumierbar ist die
+// Transaktion erst nach dem Commit.
 type ChangeTransaction struct {
 	ID                TransactionID
 	SourceID          SourceID
@@ -56,8 +56,8 @@ func (t *ChangeTransaction) SourceCommittedAt() (TimePoint, bool) {
 
 // Commit bringt die Transaktion an ihre Commit-Position — einmalig, und
 // nur an einer Position der eigenen Quelle (`LH-FA-DAT-004`).
-// sourceCommittedAt trägt den realen Quell-Commit-Zeitpunkt
-// (`LH-FA-ADM-004`), abrufbar über `SourceCommittedAt`.
+// sourceCommittedAt trägt den realen Quell-Commit-Zeitpunkt,
+// abrufbar über `SourceCommittedAt`.
 func (t *ChangeTransaction) Commit(position SourcePosition, sourceCommittedAt TimePoint) error {
 	if t.committed {
 		return domainerrors.ErrTransactionAlreadyCommitted
@@ -93,8 +93,7 @@ func (t *ChangeTransaction) AppendChange(change Change) error {
 // Changes trägt die Changes der committed Transaktion in Anhang-Reihenfolge;
 // die Reihenfolge innerhalb der Transaktion liegt in der Sequenz
 // (`LH-FA-DAT-004`, Boundary). An einer offenen Transaktion liefert sie
-// einen Fehler — offene Transaktionen sind nicht konsumierbar
-// (`ADR-0029`, Regel 3).
+// einen Fehler — offene Transaktionen sind nicht konsumierbar.
 func (t *ChangeTransaction) Changes() ([]Change, error) {
 	if !t.committed {
 		return nil, domainerrors.ErrTransactionNotCommitted

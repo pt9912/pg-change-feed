@@ -8,27 +8,27 @@ import (
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 )
 
-// BuildRowImage trägt das JSON-Row-Image (`SPEC-002`, `ADR-0016`) einer
+// BuildRowImage trägt das JSON-Row-Image (`ADR-0016`) einer
 // Zeile: ein JSON-Objekt über die gesendeten Spalten-Werte in der
 // Reihenfolge von `columns`. Werte sind JSON-Strings — der Text-Stand der
 // Quelle geht unverändert in das Bild, ohne Typ-Interpretation; Namen und
 // Werte tragen die Maskierung von `encoding/json`. `values[i]` gehört zu
 // `columns[i]`; ein nil-Wert trägt NULL oder unverändertes TOAST und ist
-// Abwesenheit (`LH-FA-CAP-008` Boundary), ebenso eine Spalte ohne Wert
+// Abwesenheit (Boundary), ebenso eine Spalte ohne Wert
 // (`i >= len(values)`); überzählige Werte ohne Spalte bleiben unbeachtet.
-// Ein in `excluded` geführter Spaltenname wird ebenso übersprungen
-// (`LH-FA-CFG-005`, `LH-QA-SEC-004`): derselbe Abwesenheits-Vertrag wie beim
-// nil-Wert, kein eigener Platzhalter (`LH-FA-DAT-005` Boundary), sein Wert
+// Ein in `excluded` geführter Spaltenname wird ebenso übersprungen:
+// derselbe Abwesenheits-Vertrag wie beim
+// nil-Wert, kein eigener Platzhalter, sein Wert
 // wird nie serialisiert. Eine nil-Werteliste liefert kein Bild (nil, kein
 // Fehler); eine Werteliste ohne tragenden Wert liefert `{}`.
 //
-// `rules` sind die Transformationsregeln der Tabelle (`LH-FA-CFG-007`,
-// `SPEC-030`). Sie werden in derselben Schleife und erst nach dem Ausschluss
+// `rules` sind die Transformationsregeln der Tabelle. Sie werden in
+// derselben Schleife und erst nach dem Ausschluss
 // und der Abwesenheits-Prüfung ausgewertet: eine ausgeschlossene oder
 // abwesende Spalte erreicht keine Regel, ihr Schlüssel steht weder unter dem
 // Quell- noch unter einem Zielnamen. Ein umbenannter Schlüssel behält die
 // Position seiner Quellspalte. Eine leere Regelmenge liefert dieselben Bytes
-// wie ein Aufruf ohne Regeln. Die Anwendbarkeit der Regeln (`SPEC-030`)
+// wie ein Aufruf ohne Regeln. Die Anwendbarkeit der Regeln
 // prüft der Aufrufer vor dem Aufruf mit `Transformation.CheckApplicable`,
 // damit eine Änderung als nicht anwendbar endet, bevor ein Bild entsteht.
 // Eine Regel, deren Spalte nicht in `columns` steht, trifft keine Spalte und
@@ -40,7 +40,7 @@ import (
 //
 // Die Funktion ist rein: sie hält keinen Zustand, liest ihre Eingaben nur
 // und teilt keinen Speicher mit ihnen. Sie ist die eine Konstruktionsstelle
-// für Row Images (`ADR-0111` Teilfrage 2): jeder Pfad, der ein Row Image
+// für Row Images: jeder Pfad, der ein Row Image
 // erzeugt, ruft sie — der Replication-Mapper mit dem Regelstand der Bindung,
 // der Backfill-Lauf mit dem Regelstand des Blocks.
 func BuildRowImage(columns []string, values []*string, excluded []string, rules []Transformation) ([]byte, error) {

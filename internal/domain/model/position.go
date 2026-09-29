@@ -7,11 +7,11 @@ import (
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 )
 
-// SourcePosition trägt die technologieunabhängige Quellposition
-// (`SPEC-003`): der Quelladapter mappt seine Positionsgröße — beim
-// PostgreSQL-Adapter die LSN — auf den Offset (`ADR-0005`). Die fachliche
+// SourcePosition trägt die technologieunabhängige Quellposition:
+// der Quelladapter mappt seine Positionsgröße — beim
+// PostgreSQL-Adapter die LSN — auf den Offset. Die fachliche
 // Ordnung gilt innerhalb einer Quelle (`LH-FA-DAT-004`); der Vergleich über
-// Quellen ist ein stabiler Sortier-Schlüssel (`LH-FA-REA-004`), keine
+// Quellen ist ein stabiler Sortier-Schlüssel, keine
 // fachliche Aussage über Quellen hinweg.
 type SourcePosition struct {
 	SourceID SourceID

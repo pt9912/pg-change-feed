@@ -14,12 +14,12 @@ type AdministrationRequestID string
 // AdministrationRequestKind trägt die geschlossene Menge der Antragsarten
 // (`chk_administration_request_kind`, Tabelle `cdc.administration_request`):
 // die beiden Tabellen-Antragsarten `enable`/`disable`, die beiden
-// Spalten-Antragsarten `exclude_column`/`include_column`
-// (`LH-FA-CFG-005`), die Bestands-Antragsart `backfill`
-// (`LH-FA-CAP-009`, `ADR-0111`) und die beiden Transformations-Antragsarten
-// `set_transformation`/`remove_transformation` (`LH-FA-CFG-007`,
-// `ADR-0112`). Bei `backfill` heißt der Status `applied` „angenommen": die
-// Ausführung steht in `cdc.backfill_run` (`SPEC-019`).
+// Spalten-Antragsarten `exclude_column`/`include_column`, die
+// Bestands-Antragsart `backfill`
+// (`LH-FA-CAP-009`) und die beiden Transformations-Antragsarten
+// `set_transformation`/`remove_transformation`. Bei `backfill` heißt der
+// Status `applied` „angenommen": die
+// Ausführung steht in `cdc.backfill_run`.
 type AdministrationRequestKind string
 
 const (
@@ -57,7 +57,7 @@ func AdministrationRequestKinds() []AdministrationRequestKind {
 // Regelnamen der beiden Transformations-Antragsarten, `RuleSpec` die
 // Regelform der Antragsart `set_transformation` als JSON-Text; die übrigen
 // Antragsarten tragen beide als leeren Wert. Die Regelform prüft der Use
-// Case, nicht dieser Typ (`ADR-0046`).
+// Case, nicht dieser Typ.
 type AdministrationRequest struct {
 	ID       AdministrationRequestID
 	Source   SourceID

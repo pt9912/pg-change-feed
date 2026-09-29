@@ -52,17 +52,17 @@ func (e RowEstimate) Rows() (rows int64, known bool) {
 	return e.rows, e.known
 }
 
-// BackfillRun trägt den Zustand eines Backfill-Runs (`SPEC-029`,
-// `LH-FA-CAP-009`): eine Zeile je Run. Ein Run entsteht `queued`
+// BackfillRun trägt den Zustand eines Backfill-Runs (`LH-FA-CAP-009`):
+// eine Zeile je Run. Ein Run entsteht `queued`
 // (`NewQueuedBackfillRun`) und wechselt nur über die Methoden dieses Typs;
 // jede liefert einen neuen Wert und lässt den Empfänger unverändert.
 //
 // `StartedAt` ist der Beginn der Kopierdauer (Übergang nach `running`), die
 // Wartezeit in `queued` zählt nicht. `SnapshotPosition` ist die Position `X`
 // des Runs, der Nullwert bis zur Anlage des Snapshots. `ErrorMessage` trägt
-// bei `failed` die Fehlerklasse (`SPEC-008`) vor dem Text, sonst ist er
+// bei `failed` die Fehlerklasse vor dem Text, sonst ist er
 // leer. Die beiden Warn-Kennzeichnungen sind `false`, bis die Auswertung des
-// Use Cases sie setzt (`SPEC-029`, `ADR-0113`); sie ändern weder Status noch
+// Use Cases sie setzt; sie ändern weder Status noch
 // Ablauf des Runs.
 type BackfillRun struct {
 	ID                BackfillRunID

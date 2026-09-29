@@ -15,7 +15,7 @@ type ChangeID string
 // Transaktion und seiner Sequenz: `<Transaktions-ID>-<Sequenz>`
 // (`ADR-0111` Teilfrage 6). Der WAL-Pfad und der Backfill-Pfad rufen diese
 // eine Funktion; sie ist eindeutig, solange die Transaktions-Kennung es ist
-// und die Sequenz innerhalb der Transaktion (`SPEC-002`).
+// und die Sequenz innerhalb der Transaktion eindeutig ist.
 func ChangeIDFor(tx TransactionID, sequence int64) ChangeID {
 	return ChangeID(fmt.Sprintf("%s-%d", tx, sequence))
 }
@@ -25,10 +25,10 @@ func ChangeIDFor(tx TransactionID, sequence int64) ChangeID {
 type TransactionID string
 
 // Operation trägt den Operationstyp eines Changes (`LH-FA-DAT-003`); die
-// Konstanten tragen die Werte aus `SPEC-002`. Die Menge bleibt bei drei
-// Werten: ein Bestands-Change eines Backfills (`LH-FA-CAP-009`) ist
+// Konstanten tragen die Werte des Schemas. Die Menge bleibt bei drei
+// Werten: ein Bestands-Change eines Backfills ist
 // `OperationInsert` mit der Herkunft `ChangeOriginBackfill`, kein vierter
-// Operationswert (`ADR-0111`).
+// Operationswert.
 type Operation string
 
 const (
@@ -37,14 +37,14 @@ const (
 	OperationDelete Operation = "DELETE"
 )
 
-// ChangeOrigin trägt die Herkunft eines Changes (`SPEC-002`, Feld
+// ChangeOrigin trägt die Herkunft eines Changes (`LH-FA-CAP-009`, Feld
 // `origin`): `wal` für einen über den Replication Stream erfassten Change,
-// `backfill` für einen Bestands-Change eines Backfill-Runs
-// (`LH-FA-CAP-009`). Die Menge ist geschlossen; die Datenbankspalte
+// `backfill` für einen Bestands-Change eines Backfill-Runs.
+// Die Menge ist geschlossen; die Datenbankspalte
 // `cdc.change.origin` trägt keinen CHECK, sie erzwingt allein diese
-// Domäne (`ADR-0111` Teilfrage 2). Ein fehlender Wert — die leere
+// Domäne. Ein fehlender Wert — die leere
 // Zeichenkette, in der Datenbank `NULL` — liest als `wal`
-// (`LH-FA-DAT-006`, Boundary).
+// (Boundary).
 type ChangeOrigin string
 
 const (
@@ -78,18 +78,18 @@ func (o ChangeOrigin) OrDefault() ChangeOrigin {
 // Change trägt einen einzelnen erfassten Change nach `SPEC-002`
 // (`cdc.change`). Row Images sind JSON-Bytes; ihre Zusammensetzung bleibt
 // beim Adapter-Mapper. Ein fehlendes Bild ist Abwesenheit, kein Fehler
-// (`LH-FA-CAP-008`, Boundary) — der Konstruktor fordert deshalb kein Bild.
+// (Boundary) — der Konstruktor fordert deshalb kein Bild.
 //
 // Origin trägt die Herkunft (`ChangeOrigin`); `NewChange` setzt `wal`,
-// `WithOrigin` setzt `backfill` (`LH-FA-CAP-009`). Nur die lesenden
+// `WithOrigin` setzt `backfill`. Nur die lesenden
 // Wege `cdc.changes` und `GET /changes` tragen das Feld; die drei
 // Live-Wege (gRPC, SSE, NATS-Vollinhalt) bilden weiter zehn Felder ab und
-// lassen es aus (`SPEC-020`, `SPEC-021`, `SPEC-024`).
+// lassen es aus.
 //
 // Schema und Table tragen die Klartext-Bezeichner der betroffenen Tabelle
 // zusätzlich zur opaken SourceTableID: das tabellen-granulare Subjekt des
-// NATS-Wecksignals (`ChangeNotificationPort`, `ADR-0056`) und die Antwort
-// des lesenden API-Endpunkts (`GET /changes`, `ADR-0081`) adressieren die
+// NATS-Wecksignals (`ChangeNotificationPort`) und die Antwort
+// des lesenden API-Endpunkts (`GET /changes`) adressieren die
 // Tabelle in Klartext. Sie sind bewusst keine Konstruktor-Invariante: der
 // füllende Pfad kennt beide bereits vor dem Aufruf von `NewChange` und
 // setzt sie am Ergebnis — der Driving-Adapter-Mapper aus dem
@@ -111,9 +111,9 @@ type Change struct {
 
 // NewChange legt einen Change an und erzwingt die Change-Invarianten:
 // nichtleere Kennungen (`LH-FA-DAT-001`), Sequenz mindestens 1
-// (`SPEC-002`, eindeutige Sequenz innerhalb der Transaktion),
-// gültiger Operationstyp (`LH-FA-DAT-003`) und eine Schema-Version-Referenz
-// (`ADR-0029`, Regel 7). Die Herkunft ist `wal` (`ChangeOriginWAL`); eine
+// (eindeutige Sequenz innerhalb der Transaktion),
+// gültiger Operationstyp und eine referenzierte Schema-Version.
+// Die Herkunft ist `wal` (`ChangeOriginWAL`); eine
 // andere setzt `WithOrigin`.
 func NewChange(id ChangeID, tx TransactionID, table SourceTableID, sequence int64, op Operation, oldImage, newImage []byte, schemaVersion SchemaVersionID) (Change, error) {
 	if id == "" || tx == "" || table == "" || schemaVersion == "" {

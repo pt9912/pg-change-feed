@@ -1,7 +1,7 @@
 // Package errors trägt die Domänen-Fehler der Invarianten-Verletzungen
 // (`ADR-0029`). Die Konstruktoren in `internal/domain/model` liefern sie
 // als Fehlerursache; Adapter übersetzen sie an ihrer Grenze in die
-// Fehlerklassen des Pflichtenhefts (§4, `SPEC-008`).
+// Fehlerklassen des Pflichtenhefts (§4).
 package errors
 
 import (
@@ -29,12 +29,12 @@ var (
 	ErrNonPositiveVersion = stderrors.New("Versionsnummer ist kleiner als 1")
 
 	// ErrInvalidPosition: eine Quellposition trägt einen Offset größer
-	// als 0 (`SPEC-003`, sortierbare Position `LH-FA-DAT-004`).
+	// als 0 (sortierbare Position `LH-FA-DAT-004`).
 	ErrInvalidPosition = stderrors.New("Position ohne Offset")
 
 	// ErrPositionRegression: der Consumer-ACK verläuft regulär nur
 	// vorwärts (`ADR-0029`, Regel 2); Wiederholung derselben Position ist
-	// idempotent (`LH-FA-CON-004`).
+	// idempotent.
 	ErrPositionRegression = stderrors.New("Position rückt nicht vor")
 
 	// ErrSourceMismatch: Positionen sind nur innerhalb ihrer Quelle
@@ -57,7 +57,7 @@ var (
 
 	// ErrTransactionNotCommitted: offene Transaktionen sind nicht
 	// konsumierbar (`ADR-0029`, Regel 3); ihre Changes sind erst nach dem
-	// Commit lesbar (`LH-FA-CAP-006`).
+	// Commit lesbar.
 	ErrTransactionNotCommitted = stderrors.New("Transaktion ist nicht committed")
 
 	// ErrNegativeDuration: Zeiträume der Retention sind nicht negativ
@@ -65,12 +65,12 @@ var (
 	ErrNegativeDuration = stderrors.New("negative Dauer")
 
 	// ErrInvalidErrorClass: eine Fehlerklasse ist eine der sieben stabilen
-	// Kategorien aus `ADR-0023` (`SPEC-008`) — eine leere oder unbekannte
-	// Klasse verletzt die Invariante (`LH-FA-ADM-003`).
+	// Kategorien aus `ADR-0023` — eine leere oder unbekannte
+	// Klasse verletzt die Invariante.
 	ErrInvalidErrorClass = stderrors.New("unbekannte Fehlerklasse")
 
 	// ErrEmptyColumns: ein TableSchema trägt mindestens eine Spalte
-	// (`SPEC-004`, `ADR-0015` Folgepflicht) — eine Schema-Version ohne
+	// (`ADR-0015` Folgepflicht) — eine Schema-Version ohne
 	// Spaltenform trägt keine historisch stabile Interpretation.
 	ErrEmptyColumns = stderrors.New("TableSchema ohne Spalten")
 
@@ -78,19 +78,18 @@ var (
 	// Administrations-Antrags ist eine der geschlossenen Menge
 	// `enable`/`disable`/`exclude_column`/`include_column`/`backfill`/
 	// `set_transformation`/`remove_transformation`
-	// (`chk_administration_request_kind`, `ADR-0050`, `LH-FA-CFG-005`,
-	// `LH-FA-CAP-009`, `LH-FA-CFG-007`).
+	// (`chk_administration_request_kind`, `ADR-0050`).
 	ErrInvalidAdministrationRequestKind = stderrors.New("unbekannte Antragsart")
 
 	// ErrInvalidChangeOrigin: die Herkunft eines Changes ist `wal` oder
-	// `backfill` (`SPEC-002`, `LH-FA-CAP-009`); die Datenbankspalte
+	// `backfill` (`LH-FA-CAP-009`); die Datenbankspalte
 	// `cdc.change.origin` trägt keinen CHECK, die geschlossene Menge
 	// erzwingt allein die Domäne.
 	ErrInvalidChangeOrigin = stderrors.New("unbekannte Change-Herkunft")
 
 	// ErrInvalidBackfillTransition: ein Backfill-Run wechselt nur entlang
 	// `queued` → `running` → `completed`/`interrupted` und `queued`/`running`
-	// → `failed` (`SPEC-029`, `LH-FA-CAP-009`); ein beendeter Run ist
+	// → `failed` (`LH-FA-CAP-009`); ein beendeter Run ist
 	// endgültig, ein neuer Antrag legt einen neuen Run an.
 	ErrInvalidBackfillTransition = stderrors.New("unzulässiger Statuswechsel des Backfill-Runs")
 
@@ -109,27 +108,26 @@ var (
 
 	// ErrTableNotActivated: die Tabelle trägt keine Bindung oder keine
 	// Mitgliedschaft in der Publication der Quelle — die Vorbedingung eines
-	// Backfills (`LH-FA-CAP-009`, `ADR-0111` Teilfrage 5) und der Fail-closed-
-	// Prüfung vor dem Commit (`ADR-0111` Teilfrage 4). Fehlerklasse
-	// `configuration` (`SPEC-008`).
+	// Backfills (`LH-FA-CAP-009`). Fehlerklasse
+	// `configuration`.
 	ErrTableNotActivated = stderrors.New("Tabelle nicht aktiviert oder nicht in der Publication")
 
 	// ErrBackfillRunActive: für dieselbe Tabelle besteht ein Run im Zustand
-	// `queued` oder `running` (`ADR-0111` Teilfrage 4, `ADR-0113`
+	// `queued` oder `running` (`ADR-0113`
 	// Festlegung 1); der Annahme-Port meldet ihn, es entsteht keine zweite
 	// Run-Zeile.
 	ErrBackfillRunActive = stderrors.New("Für die Tabelle besteht bereits ein aktiver Backfill-Run")
 
 	// ErrExclusionStateChanged: der Ausschlussstand der Tabelle
-	// (`LH-FA-CFG-005`) weicht von dem ab, mit dem die Blöcke eines Runs
-	// gebaut wurden (`ADR-0111` Teilfrage 4, `LH-QA-SEC-004`). Fehlerklasse
-	// `configuration` (`SPEC-008`).
+	// weicht von dem ab, mit dem die Blöcke eines Runs
+	// gebaut wurden (`ADR-0111` Teilfrage 4). Fehlerklasse
+	// `configuration`.
 	ErrExclusionStateChanged = stderrors.New("Ausschlussstand während des Backfills geändert")
 
 	// ErrTransformationStateChanged: der Regelstand der Tabelle
-	// (`LH-FA-CFG-007`) weicht von dem ab, mit dem die Blöcke eines Runs
-	// gebaut wurden (`ADR-0117` Festlegung 5, `ADR-0111` Teilfrage 4).
-	// Fehlerklasse `configuration` (`SPEC-008`): der Zustand wechselt, keine
+	// weicht von dem ab, mit dem die Blöcke eines Runs
+	// gebaut wurden (`ADR-0117` Festlegung 5).
+	// Fehlerklasse `configuration`: der Zustand wechselt, keine
 	// Regel ist auf eine Form nicht anwendbar.
 	ErrTransformationStateChanged = stderrors.New("Regelstand während des Backfills geändert")
 
@@ -141,7 +139,7 @@ var (
 
 	// ErrTransformationTargetIsColumn: der Zielname von `rename_column`
 	// gleicht der Quellspalte; die Quellspalte ist ein Spaltenname der
-	// Quelltabelle, der Fall gehört zu K3 (`SPEC-019`, `SPEC-030`
+	// Quelltabelle, der Fall gehört zu K3 (`SPEC-030`
 	// Randfälle), nicht zur Form der Regel.
 	ErrTransformationTargetIsColumn = stderrors.New("Zielname gleicht der Quellspalte")
 
