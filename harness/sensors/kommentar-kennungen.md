@@ -81,7 +81,7 @@ make kommentar-kennungen [PATHS=<Pfade>] [COUNT=1] [TESTS=exclude|only] [DIFF=<B
 | `PATHS` | Leerzeichen-getrennte Pfade (Dateien oder Verzeichnisse) relativ zur Repo-Wurzel; Standard: der Baum. Ausgenommen sind `gen/`, `sdks/`, `.git`, `.harness` (erzeugter Code; die SDK-Bäume prüft `make sdk-public-doc-check` strenger — dort ist jede Kennung verboten; Repository-Inneres; vendored Baseline). |
 | `COUNT=1` | druckt nur die Zahl der Kandidaten, Exit 0 |
 | `TESTS=exclude` / `TESTS=only` | nur Nicht-Test-Dateien bzw. nur `*_test.go`; ohne Wert beide |
-| `DIFF=<Basis>` | nur Blöcke, die eine seit `<Basis>` **hinzugefügte** Zeile überlappen (Eingabe: `git diff -U0 <Basis> -- '*.go'`); ein Block, den der Diff nur berührt, ohne eine Zeile zu ändern, und eine reine Löschung zählen nicht. Bestandskandidaten färben den Lauf eines Implementers nicht. Neue Dateien vorher `git add` (der Diff sieht nur getrackte Dateien) |
+| `DIFF=<Basis>` | nur Blöcke, die eine seit `<Basis>` **hinzugefügte** Zeile überlappen (Eingabe: `git diff -U0 <Basis> -- '*.go' '*.sh' '*.mk' '*.yml' '*.yaml' '*.sql' 'Makefile' 'Dockerfile' '**/Dockerfile'` — dieselbe Pfadspec wie die `tools/harness/kommentar-kennungen.sh` setzt); ein Block, den der Diff nur berührt, ohne eine Zeile zu ändern, und eine reine Löschung zählen nicht. Bestandskandidaten färben den Lauf eines Implementers nicht. Neue Dateien vorher `git add` (der Diff sieht nur getrackte Dateien) |
 
 Ausgabe je Kandidat: `Datei:Zeile-Zeile  Kennungen` (bei „ff.“ steht es am
 Ende). Die Kandidaten stehen nach Dateipfad und Zeile sortiert.
