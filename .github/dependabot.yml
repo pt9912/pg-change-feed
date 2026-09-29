@@ -3,7 +3,7 @@
 # und `github-actions`, wöchentlich. Der `commit-message.prefix` `[ADR-0051]`
 # ist der ehrliche Anker fuer die daraus entstehenden Commits — ohne ihn
 # erfuellten Dependabot-Commit-Betreffe das Commit-Traceability-Standing-Gate
-# (ADR-0045, `harness/README.md` §Traceability rules) nicht.
+# (`harness/README.md` §Traceability rules) nicht.
 #
 # Bewusst NICHT aufgenommen — `docker`. Ein Digest-Hoist der Basis-Images
 # bleibt ein bewusster Commit, kein Auto-Update (deckt sich mit der

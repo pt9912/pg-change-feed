@@ -22,8 +22,9 @@ matrix:
   # Decken-Regel: kein Spec-Stratum nennt eine ADR oder einen Slice,
   # kein ADR nennt einen Slice. Innerhalb der Spec ist `direction:
   # no-downward` bewusst NICHT gesetzt: die Messmethoden des Lastenhefts
-  # delegieren vertraglich an Pflichtenheft-Festlegungen (LH-QA-POR-001,
-  # LH-QA-PER-002, LH-QA-PER-004 → SPEC-012/013/014); die Within-Spec-
+  # delegieren vertraglich an Pflichtenheft-Festlegungen — jede
+  # Messmethoden-Zeile des Lastenhefts nennt ihre delegierte
+  # Pflichtenheft-Festlegung; die Within-Spec-
   # Ordnung (Vertrag > Technik > Sicht) bleibt Review-Pruefpflicht.
   classes:
     - name: spec
@@ -71,8 +72,7 @@ matrix:
     - {from: adr, to: review, allow: false}
     - {from: observation, to: review, allow: false}
     # Bewusst KEINE Regel fuer {from: slice, to: review} oder
-    # {from: welle, to: review} (ADR-0099, Supersedes ADR-0097 auf diesem
-    # Punkt; bestaetigt ADR-0094s urspruengliche Begruendung): ein Slice
+    # {from: welle, to: review} (ADR-0099): ein Slice
     # zitiert routinemaessig seinen eigenen Review-Report, eine Welle
     # routinemaessig die Reviews ihrer eigenen Slices/ihren eigenen
     # Welle-Review — beide archivieren gemeinsam in dieselbe
@@ -84,24 +84,23 @@ matrix:
   status:
     forbidden: [superseded, deprecated]
     # opt-in: ablösende Datei darf auf ihr abgelöstes (inaktives) Ziel
-    # zeigen — Supersession-Linien (ADR-0039 → ADR-0038) sind legitime
+    # zeigen — Supersession-Linien sind legitime
     # Provenance, kein Drift.
     allow-supersede-lineage: true
     supersede-fields: [Supersedes, Status]
   # Grandfather: immutable Alt-ADRs, deren Fitness-/Folgepflicht-Zeiger auf
-  # eine inzwischen abgelöste ADR zeigt (ADR-0039:121 → ADR-0036, seit
-  # ADR-0041; ADR-0041:47 → ADR-0039, seit ADR-0042) — in-place-Korrektur
+  # eine inzwischen abgelöste ADR zeigt — in-place-Korrektur
   # einer Accepted-ADR ist verboten (AGENTS.md §3.5); die Nachfolge-Kette
   # trägt der ADR-Index.
   # docs/reviews/*.md: Lauf-Belege referenzieren den zum Laufzeitpunkt
   # aktiven ADR-Stand dauerhaft (Record-Einfrierung ist zeitlich, nicht
-  # Status-basiert, ADR-0073/ADR-0095) — dieselbe Begruendung wie im
+  # Status-basiert, ADR-0073) — dieselbe Begruendung wie im
   # versions-Modul unten fuer denselben Pfad; die adr -> review-Regel
   # oben bleibt davon unberuehrt.
   # welle-3-results.md: dieselbe Record-Einfrierung wie bei docs/reviews/*.md
   # (AGENTS.md §3.5 letzter Absatz: "Records (done/, docs/reviews/**) tragen
-  # keine §Geschichte") — die Closure-Notiz nennt den ADR-0018-Verstoss, der
-  # ADR-0046 ausloeste, als reale Geschichte zum Laufzeitpunkt. Dateispezifisch
+  # keine §Geschichte") — die Closure-Notiz nennt den Verstoss, der
+  # sie ausloeste, als reale Geschichte zum Laufzeitpunkt. Dateispezifisch
   # wie die beiden ADR-Grandfather-Eintraege oben, NICHT als "docs/plan/
   # planning/done/**"-Freibrief: jede andere done/-Datei bleibt voll geprueft
   # — eine pauschale Ausnahme wuerde echte kuenftige Drift in genau den

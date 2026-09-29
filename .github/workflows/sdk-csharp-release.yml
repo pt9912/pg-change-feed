@@ -2,7 +2,7 @@
 name: sdk-csharp-release
 
 # NuGet.org-Publish-Workflow fuer das C#-SDK-Package `PgChangeFeed.Client`
-# (ADR-0106 Festlegung 4, LH-FA-SST-009, slice-sdk-csharp-publish-workflow).
+# (ADR-0106 Festlegung 4).
 # Trigger ausschliesslich Git-Tags der Form `sdk-csharp-v<SemVer>` — ein
 # EIGENER Tag-Namensraum, getrennt vom Server-Release-Raum `v*`
 # (ADR-0106 §Verglichene Alternativen E3 verworfen, Festlegung 3:

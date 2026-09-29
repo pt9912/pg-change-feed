@@ -1,9 +1,9 @@
-# Compose-Umgebung der Lauf- und CI-Vertrag-Seite (LH-QA-POR-003,
-# LH-QA-OPS-001): PostgreSQL als Quelle mit Logical Decoding und der
+# Compose-Umgebung der Lauf- und CI-Vertrag-Seite (LH-QA-POR-003):
+# PostgreSQL als Quelle mit Logical Decoding und der
 # PG-Change-Feed-Container als CDC-Runtime. Das Image wird per
 # `make image` geladen (docker buildx build --load, Tag :dev); diese Datei
 # trägt bewusst keinen build:-Block — der Zweit-Build würde das geladene
-# Tag vom Lauf-Beleg in harness/image-hash.txt entkoppeln (ADR-0044).
+# Tag vom Lauf-Beleg in harness/image-hash.txt entkoppeln.
 #
 # Test-Daten bleiben im Container (kein Volume in den Arbeitsbaum); die
 # Umgebung läuft über tools/harness/run-integration-tests.sh und wird dort
@@ -11,7 +11,7 @@
 
 services:
   postgres:
-    # PG_TEST_IMAGE-Interpolation (LH-QA-POR-001, ADR-0058 Entscheidung 4):
+    # PG_TEST_IMAGE-Interpolation (LH-QA-POR-001):
     # ohne gesetzte Umgebungsvariable greift der Default unten — derselbe
     # Digest-Pin wie im Makefile (PG_TEST_IMAGE), PostgreSQL 18. Die
     # CI-Matrix (.github/workflows/e2e.yml) exportiert die Variable je Leg
@@ -31,7 +31,7 @@ services:
     # Der Init-SQL-Lauf legt das CDC-Ziel-Schema an und trägt
     # current_schema() der Rollout-Verbindung — die generated DDL des
     # d-migrate-Rollouts (ADR-0043) trägt unqualifizierte Tabellennamen und
-    # landet über search_path im Schema `cdc` (SPEC-006).
+    # landet über search_path im Schema `cdc`.
     volumes:
       - ./tools/schema/compose-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
@@ -75,7 +75,7 @@ services:
     # (Store, Aktivierung, Stream, Service, ACK, ADR-0026) liest ihre
     # Vorbedingungen aus dieser Umgebung. Die Aktivierung — Publication,
     # Bindungs- und Schema-Version-Zeilen — trägt die Verdrahtung über
-    # den EnableTable Use Case beim Start (ADR-0028, LH-FA-CFG-001.a);
+    # den EnableTable Use Case beim Start;
     # den Slot legt der Stream beim Start selbst an.
     environment:
       # Drei rollen-spezifische DSNs statt einer gemeinsamen Instanz-DSN
@@ -99,12 +99,12 @@ services:
       # erkannt). `debug` trägt den Integrationstest-Beleg (stdout-Diff
       # der JSON-Struktur, slice-Plan §5 Closure-Trigger).
       CDC_LOG_LEVEL: debug
-      # Optionales Change-Notification-Wecksignal (ADR-0055,
-      # LH-FA-SST-007): gesetzt in dieser Compose-Umgebung, damit der
+      # Optionales Change-Notification-Wecksignal (ADR-0055):
+      # gesetzt in dieser Compose-Umgebung, damit der
       # Happy-Path-Beleg real läuft (tools/harness/run-integration-tests.sh).
       CDC_NATS_URL: nats://nats:4222
-      # Dritter, vollinhaltstragender NATS-Zustellweg (ADR-0100,
-      # LH-FA-SST-008): gesetzt zusammen mit CDC_NATS_URL — die
+      # Dritter, vollinhaltstragender NATS-Zustellweg (ADR-0100):
+      # gesetzt zusammen mit CDC_NATS_URL — die
       # Zwei-Bedingungen-Aktivierung (ADR-0100 Teilfrage 5) konstruiert den
       # natsstream.Publisher und trägt dieselbe Token-Client-Option an die
       # nats-Verbindung wie der Server-seitige --auth-Wert oben. Derselbe
@@ -112,7 +112,7 @@ services:
       # (tools/harness/run-integration-tests.sh,
       # tools/harness/natsstreamsub).
       CDC_NATS_STREAM_TOKEN: e2e-nats-stream-token
-      # Optionaler HTTP/JSON-Driving-Adapter (ADR-0057, LH-FA-SST-006):
+      # Optionaler HTTP/JSON-Driving-Adapter (ADR-0057):
       # gesetzt in dieser Compose-Umgebung, damit der reale HTTP-Rundlauf
       # (tools/harness/run-integration-tests.sh, tools/harness/httpclient)
       # gegen einen tatsächlich horchenden Server läuft. Die führende
@@ -122,7 +122,7 @@ services:
       CDC_HTTP_ADDR: ":8090"
       CDC_API_TOKEN_READER: e2e-reader-token
       CDC_API_TOKEN_ADMIN: e2e-admin-token
-      # Optionaler gRPC-Streaming-Driving-Adapter (ADR-0060, LH-FA-SST-008):
+      # Optionaler gRPC-Streaming-Driving-Adapter (ADR-0060):
       # gesetzt in dieser Compose-Umgebung, damit der reale gRPC-Stream-Rundlauf
       # (tools/harness/run-integration-tests.sh, tools/harness/grpcclient)
       # gegen einen tatsächlich horchenden Server läuft. Dieselbe
@@ -143,8 +143,8 @@ services:
     # Fehlerklassen-Tabelle (Erneut versuchen mit begrenztem Backoff)
     # trägt dieser Vertrag nicht.
     restart: "no"
-    # Health-Endpoint per Heartbeat (LH-FA-ADM-002, LH-QA-OPS-002,
-    # slice-012): der Prozess selbst befragt cdc.heartbeat über
+    # Health-Endpoint per Heartbeat (LH-FA-ADM-002):
+    # der Prozess selbst befragt cdc.heartbeat über
     # `--healthcheck` (Binary-CMD statt CMD-SHELL — das distroless
     # Runtime-Image trägt weder Shell noch psql, Dockerfile) und meldet
     # den Zustand über den Exit-Code (bootstrap.Healthcheck).

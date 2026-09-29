@@ -6,19 +6,17 @@
 # (ADR-0043, Folgepflicht).
 #
 # Umfang: die Store-Seite — source, source_table, schema_version,
-# transaction, change (SPEC-001, SPEC-002) — und die Consumer-State-Tabellen
-# consumer, consumer_position (SPEC-001, LH-FA-CON-001…006); ihr Port
+# transaction, change (SPEC-001) — und die Consumer-State-Tabellen
+# consumer, consumer_position; ihr Port
 # (ConsumerStatePort) liegt außerhalb des Store-Adapters, die Tabellenform
 # trägt dieses Modell wie die übrigen. table_schema trägt die Spaltenform
-# einer Schema-Version, eine Zeile je Spalte (ADR-0015 Folgepflicht,
-# SPEC-004); ihr Port (SchemaStorePort) liegt ebenfalls außerhalb des
+# einer Schema-Version, eine Zeile je Spalte; ihr Port (SchemaStorePort) liegt ebenfalls außerhalb des
 # Store-Adapters. process_heartbeat realisiert die in
 # SPEC-001 vorgesehene Betriebs-/Capture-Zustand-Tabelle als Lebenszeichen
-# des Capture-Prozesses (LH-FA-ADM-002, LH-QA-OPS-002); ihr Port
+# des Capture-Prozesses; ihr Port
 # (HeartbeatPort) liegt außerhalb des Store-Adapters, dieselbe Abgrenzung
 # wie beim Consumer-State. administration_request trägt die Antrags-Queue
-# der schreibenden SQL-Administration (ADR-0050, LH-FA-ADM-001,
-# LH-FA-CFG-005, LH-FA-CAP-009, LH-FA-CFG-007) — die
+# der schreibenden SQL-Administration — die
 # Tabelle selbst läuft über dieses Modell, die zugehörigen Funktionen
 # cdc.enable_table/cdc.disable_table/cdc.exclude_column/cdc.include_column/cdc.backfill_table/
 # cdc.set_transformation/cdc.remove_transformation
@@ -28,12 +26,12 @@
 # POST_EXECUTE_DRIFT (Exit 5) ab — real reproduziert auch mit einer
 # trivialen No-Arg-Funktion gegen eine frische PostgreSQL-18-Instanz. Die
 # Funktionen laufen deshalb über die etablierte Ausweichform
-# (tools/schema/nacharbeit-administration.sql, ADR-0043
-# Re-Evaluierungs-Trigger, dieselbe Klasse wie nacharbeit-roles.sql).
+# (tools/schema/nacharbeit-administration.sql,
+# dieselbe Klasse wie nacharbeit-roles.sql).
 # Herkunft: `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit`.
 #
-# backfill_run trägt den Run-Zustand des Backfills (SPEC-029, LH-FA-CAP-009,
-# ADR-0113): eine Zeile je Run, ohne SQL-Funktion und ohne Nacharbeit-Datei —
+# backfill_run trägt den Run-Zustand des Backfills (SPEC-029):
+# eine Zeile je Run, ohne SQL-Funktion und ohne Nacharbeit-Datei —
 # die Tabelle läuft vollständig über dieses Modell, ihre Grants stehen in
 # tools/schema/nacharbeit-roles.sql. Die fünfte View, backfill_status, liest den
 # zuletzt beantragten Run je Tabelle über cdc.backfill_run und trägt die zwei
@@ -42,12 +40,12 @@
 #
 # Die drei Views (active_tables, consumer_status, changes) tragen den
 # SQL-Zugriff nach LH-FA-SST-002 (Konfiguration, Status, Kernlesezugriffe)
-# als eigene Driving-Adapter-Fläche (ARC-005, „SQL-Funktionen/Views"): sie
+# als eigene Driving-Adapter-Fläche („SQL-Funktionen/Views"): sie
 # lesen dieselben Tabellen wie der Go-Store-Adapter, ersetzen ihn aber
 # nicht — Bereich/Limit/Filter tragen WHERE/LIMIT des lesenden SQL-Aufrufs,
 # nicht die View selbst. active_tables bleibt bewusst auf die Bindungs- und
 # Versions-Zeilen beschränkt und bildet die Publication-Mitgliedschaft
-# (LH-FA-CFG-003 „aktiviert" vs. „retained") nicht nach — diese Prüfung
+# („aktiviert" vs. „retained") nicht nach — diese Prüfung
 # bleibt Sache der Go-Use-Case-Schicht (TableActivationPort). Sie leben
 # deklarativ im `views:`-Knoten unten (Pflichtfelder siehe dort).
 #
@@ -163,9 +161,9 @@ tables:
         type: text
         required: true
         references: { table: schema_version, column: schema_version_id }
-      # origin trägt die Herkunft des Changes (SPEC-002, LH-FA-CAP-009):
+      # origin trägt die Herkunft des Changes (SPEC-002):
       # `wal` oder `backfill`. Bewusst nullable, ohne DEFAULT und ohne
-      # CHECK — NULL liest als `wal` (LH-FA-DAT-006), die geschlossene
+      # CHECK — NULL liest als `wal`, die geschlossene
       # Menge erzwingt die Domäne (model.ChangeOrigin), nicht die
       # Datenbank; d-migrate konvergiert eine CHECK-Änderung an einer
       # bestehenden Tabelle nicht (siehe Kopfkommentar).

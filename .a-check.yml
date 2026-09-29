@@ -1,7 +1,7 @@
 # .a-check.yml — Architektur-Regeln für a-check (Modul: hexagonale Schichten).
 # Die Schichten/Edges bilden die Sicht-Stratum-Constraints ab
-# (spec/architecture.md §1/§2; ADR-0002, ADR-0039) — die Maschinenform der
-# Abhängigkeitsregel, die bis hierhin Review-Prüfpflicht war (ADR-0036).
+# (spec/architecture.md §1/§2; ADR-0002) — die Maschinenform der
+# Abhängigkeitsregel.
 # Gerüst: `a-check --print-config`; strikt dekodiert — unbekannte Schlüssel
 # brechen mit Exit 2 ab.
 version: 1
@@ -17,16 +17,14 @@ layers:
   # `tools/harness/**` trägt die Wegwerf-Clients: Sie sprechen den
   # gRPC-Stream über den erzeugten Protokoll-Stub der Vertragsfläche
   # (`gen/cdc/stream/v1`, Gruppe `contract`) real über das Netz an und
-  # verdrahten nichts (ADR-0068; der Stub zog mit `slice-097` von
-  # `internal/adapters/driving/grpc/streamv1` an diesen öffentlichen Pfad um —
-  # `ADR-0076`). `tools/schema/rolloutguard/` (seit
-  # schema-rollout-zentrale-idempotenz-wache) liest ausschließlich den
+  # verdrahten nichts (ADR-0076). `tools/schema/rolloutguard/` liest
+  # ausschließlich den
   # `--plan-only`-Report von `make schema-rollout` und importiert nichts aus
   # `domain`, `ports`, `app`, `adapters` oder `contract`.
   tooling:  ["tools/harness/**", "tools/schema/**"]
   # `examples` ist keine Komponente der Sicht (§2), sondern die Gate-Scope-
   # Gruppe der öffentlichen Beispiel-Clients unter `examples/**`
-  # (ADR-0076/ADR-0079). Ihre Clients benutzen ausschließlich die
+  # (ADR-0079). Ihre Clients benutzen ausschließlich die
   # Standardbibliothek und öffentliche Fremdmodule: `examples/http-client`
   # ruft den `reader`-Endpunkt `GET /tables` an, `examples/sse-client` den
   # Endpunkt `GET /changes/stream`, `examples/grpc-client` öffnet den
@@ -34,7 +32,7 @@ layers:
   # Stub der Vertragsfläche (`gen/cdc/stream/v1`, Gruppe `contract`), und
   # `examples/nats-client` spricht das Wecksignal über
   # `github.com/nats-io/nats.go` samt nachfolgender HTTP-Abfrage an, und
-  # `examples/nats-stream-client` (seit ADR-0100) abonniert über dasselbe
+  # `examples/nats-stream-client` abonniert über dasselbe
   # Fremdmodul den dritten, vollinhaltstragenden Zustellweg — ohne einen
   # Bereich von `domain`, `ports`, `app` oder `adapters` zu importieren. Ein
   # Import aus einer dieser vier Gruppen in `examples/**` bleibt
@@ -51,7 +49,7 @@ layers:
 edges:
   # Abhängigkeiten zeigen nach innen (ADR-0002): Ports und Use Cases
   # referenzieren die Domain; Adapter referenzieren Ports und Domain-Typen
-  # (Mapper übersetzen, ADR-0039) — nicht umgekehrt.
+  # (Mapper übersetzen) — nicht umgekehrt.
   - {from: ports,    to: domain}
   - {from: app,      to: domain}
   - {from: app,      to: ports}
@@ -67,13 +65,14 @@ edges:
   # importiert den erzeugten Protokoll-Stub vom öffentlichen Pfad
   # `gen/cdc/stream/v1`, genau wie `adapters` und `tooling` es bereits tun.
   - {from: examples, to: contract}
-  # `tooling` → `adapters` ist mit `slice-097` ZURÜCKGENOMMEN: Die Kante
+  # `tooling` → `adapters` ist ZURÜCKGENOMMEN: Die Kante
   # (ADR-0068) trug ausschließlich den Zugriff auf den Protokoll-Stub, der
   # damals unter `internal/adapters/driving/grpc/streamv1` lag. Der Stub
   # liegt jetzt unter `gen/cdc/stream/v1` (Gruppe `contract`, siehe oben) —
   # die Kante ist damit gegenstandslos und entfällt. Ein Import aus `app`,
   # `ports`, `domain` oder `adapters` in `tools/harness/**` bleibt
   # `wrong-direction`.
+
 # Composition Root (`ADR-0026`): die Verdrahtung konkreter Adapter lebt in
 # `internal/bootstrap` und `cmd` — und in den Verdrahtungs-Tests, die
 # denselben Aufbau als Test tragen (MVP-Integrationstest gegen die

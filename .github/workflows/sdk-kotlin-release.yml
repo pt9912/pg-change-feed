@@ -2,7 +2,7 @@
 name: sdk-kotlin-release
 
 # Publish-Workflow fuer das Kotlin-SDK-Package `pgchangefeed-kotlin`
-# (ADR-0109 Festlegung 2/5, ADR-0123, LH-FA-SST-009). Zwei Ziele: GitHub
+# (ADR-0109 Festlegung 2/5). Zwei Ziele: GitHub
 # Packages und Cloudsmith (anonym lesbares Open-Source-Repository). Trigger
 # ausschliesslich Git-Tags der Form `sdk-kotlin-v<SemVer 2.0>` — ein EIGENER
 # Tag-Namensraum, getrennt vom Server-Release-Raum `v*` und den beiden anderen

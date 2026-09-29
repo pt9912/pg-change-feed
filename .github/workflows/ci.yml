@@ -17,7 +17,7 @@ name: ci
 # Einzige Ausnahme: Der Schritt "Linux-Plattform-Assertion" laeuft bewusst
 # auf dem Runner selbst statt in Docker — er prueft die Runner-Plattform
 # (`uname -s`/`go env GOOS` gegen Linux/linux, sichtbarer Fehlschlag bei
-# Abweichung, LH-QA-POR-002, ADR-0058 Entscheidung 5), nicht eine
+# Abweichung, LH-QA-POR-002), nicht eine
 # Docker-Umgebung; ein `make`-Target dafuer gaebe es nichts zu isolieren.
 #
 # `make test` laeuft mit `--network none` gegen einen vorab befuellten

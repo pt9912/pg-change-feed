@@ -1,7 +1,7 @@
 ---
 name: examples
 
-# Beispiel-Client-Sprachwurzeln (ADR-0087, ADR-0090): faehrt die
+# Beispiel-Client-Sprachwurzeln (ADR-0090): faehrt die
 # `make examples-<sprache>`-Werkzeuge auf jeden Pull Request und jeden
 # Branch-Push, wie `ci.yml`/`e2e.yml` (Tag-Pushes ausgenommen,
 # `tags-ignore: ['**']`). Anders als `ci.yml` ist dieser Workflow bewusst

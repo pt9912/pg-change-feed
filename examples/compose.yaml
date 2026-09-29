@@ -1,12 +1,12 @@
-# Demo-/Quickstart-Umgebung unter examples/ (LH-QA-OPS-001, ADR-0098
-# Festlegung 3/4). Eigenständig von der Wurzel-`compose.yaml` (Lauf-/
-# CI-Vertrag-Seite, LH-QA-POR-003) — eigener Container-Satz, eigenes
+# Demo-/Quickstart-Umgebung unter examples/ (ADR-0098
+# Festlegung 3/4). Eigenständig von der Wurzel-`compose.yaml` —
+# eigener Container-Satz, eigenes
 # Docker-Netzwerk `cdc-examples`, eigene PostgreSQL-Instanz mit eigenen
 # Daten; beide Dateien können gleichzeitig laufen (getrennte Netz-/
 # Container-Namen). Das Feed-Image wird per `make image` geladen (Tag
 # :dev); diese Datei trägt bewusst keinen build:-Block — der Zweit-Build
 # würde das geladene Tag vom Lauf-Beleg in harness/image-hash.txt
-# entkoppeln (ADR-0044).
+# entkoppeln.
 #
 # Bootstrapping (Schema-Rollout, Beispiel-Quelle/-Tabelle, Demo-Zeile)
 # läuft NICHT in dieser Datei — Compose kennt keinen "nach healthy einmalig
@@ -49,7 +49,7 @@ services:
       - cdc-examples
 
   nats:
-    # Digest-Pin identisch zur Wurzel-compose.yaml (ADR-0055). --auth trägt
+    # Digest-Pin identisch zur Wurzel-compose.yaml. --auth trägt
     # denselben serverweiten Verbindungs-Token wie die Wurzel-compose.yaml
     # (ADR-0100 Teilfrage 4/5) — dieselbe Demo-Zugangsdaten-Klasse wie die
     # übrigen Werte in examples/.env, kein Secret.
