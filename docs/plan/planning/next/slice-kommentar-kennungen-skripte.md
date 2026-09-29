@@ -21,7 +21,7 @@ liest nur Go-Kommentargruppen) und §3.12.
 **Berührte Spec-Stellen:** — (Kommentare in Skripten, Bau- und
 Konfigurationsdateien; keine Spec-Stelle).
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent.
 
 **Autor:** Planner-Agent, angelegt bei der Closure von
 `slice-code-kommentare-bereinigung` (deren Plan §1 „Ausdrücklich NICHT“ und
