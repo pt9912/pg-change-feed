@@ -58,8 +58,7 @@ func main() {
 
 	// `CDC_HTTP_ADDR` ungesetzt heißt: die HTTP-API ist deaktiviert
 	// (`SPEC-018`). Ohne sie kann der Weckruf keine Änderung holen — das
-	// Beispiel scheitert sichtbar, statt still nichts zu tun
-	// (Festlegung 2).
+	// Beispiel scheitert sichtbar, statt still nichts zu tun.
 	if cfg.addr == "" {
 		fmt.Fprintln(os.Stderr, "nats-client: keine HTTP-Adresse gesetzt — CDC_HTTP_ADDR (oder -http-addr) ist nötig, um beim Weckruf die Änderung zu holen")
 		os.Exit(2)

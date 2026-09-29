@@ -3,7 +3,8 @@
 // additiv, mit Umgebungsvariable-schlägt-Datei-Feld-für-Feld-Precedence
 // (`ADR-0052` Entscheidung 2). Env-var-exklusiv sind die
 // zugangsdaten-tragenden Felder; die zulässige
-// Feldmenge trägt die Decision Festlegung 2. Der Zugriffsweg ist
+// Feldmenge trägt die Struktur `fileConfig` unter dem strikten
+// Decoding unten. Der Zugriffsweg ist
 // ausschließlich `CDC_CONFIG_FILE` (`ADR-0052` Entscheidung 5) — ein
 // `--config`-CLI-Flag ist Folgepflicht, nicht Teil dieses Standes.
 package bootstrap

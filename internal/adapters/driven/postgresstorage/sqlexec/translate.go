@@ -413,8 +413,8 @@ func ReadPendingRequests(ctx context.Context, exec Executor, statement Statement
 // Leerzeichen und der Antrags-Kennung (`SPEC-019`, dieselbe Form wie die
 // Fehlertexte der Verarbeitung). Die erste verletzte Prüfung bestimmt den
 // Text; die Reihenfolge Quelle, Schema, Tabelle, Antragsart, Spalte
-// gehört dieser Stelle und bildet die Spalten-Ordnung der Antrags-Tabelle
-// ab — der Antrags-Konstruktor prüft Kennung, Quelle, Schema und Tabelle
+// gehört dieser Stelle — der Antrags-Konstruktor prüft Kennung, Quelle,
+// Schema und Tabelle
 // in einem Ausdruck und nennt einen Grund. Ein Grund außerhalb dieser
 // Liste trägt den
 // allgemeinen Klartext. Eine Zeile ohne Kennung trägt statt der Kennung

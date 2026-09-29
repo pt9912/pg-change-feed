@@ -7,7 +7,7 @@
 // allein, weil "READY" vor der auslösenden Change beobachtbar sein muss.
 //
 // Der optionale vierte Aufrufparameter <token> trägt den serverweiten
-// NATS-Verbindungs-Token (Teilfrage 4/5): sobald
+// NATS-Verbindungs-Token: sobald
 // `compose.yaml`s `nats`-Service mit `--auth` läuft, verlangt der Server ihn
 // von **jeder** Verbindung — auch von diesem bislang anonymen
 // Wecksignal-Testclient. Ein leerer/fehlender Wert verbindet weiterhin ohne
