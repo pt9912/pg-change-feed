@@ -8,7 +8,7 @@ import (
 
 // Whitebox-Test (`package mapper`, nicht `mapper_test`): `setSchemaVersion`
 // ist ein unexportiertes Nach trag-Detail der dynamischen
-// Re-Versionierung (`ADR-0015` Folgepflicht, `ADR-0059` Teilfrage 3). Sein
+// Re-Versionierung (`ADR-0015` Folgepflicht). Sein
 // Vertrag für eine **nicht** getragene Bindung — der Nachtrag belebt sie
 // nicht neu — ist über `observeRelation` nicht erreichbar: der Aufrufer
 // löst die Bindung unmittelbar davor auf. Der Test greift deshalb direkt

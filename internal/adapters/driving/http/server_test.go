@@ -115,7 +115,7 @@ func TestRegisterConsumerReaderTokenEndetMit403(t *testing.T) {
 }
 
 // TestRegisterConsumerAdminTokenRegistriert trägt den Happy-Path
-// (`LH-FA-SST-006`, `LH-FA-CON-001`): ein gültiges `admin`-Token
+// (`LH-FA-SST-006`): ein gültiges `admin`-Token
 // registriert den Consumer, die Antwort trägt die übersetzten Felder.
 func TestRegisterConsumerAdminTokenRegistriert(t *testing.T) {
 	ts := newTestServer(t, newFakeRegisterConsumerUseCase())
@@ -222,7 +222,7 @@ func TestClassifyTokenLeereKonfigurationTrifftKeinToken(t *testing.T) {
 }
 
 // TestClassifyTokenAdminDecktReaderAb trägt die Hierarchie aus `ADR-0057`
-// Teilfrage 3 (analog `ADR-0047`).
+// Teilfrage 3.
 func TestClassifyTokenAdminDecktReaderAb(t *testing.T) {
 	if got := classifyToken(testAdminToken, testReaderToken, testAdminToken); got != roleAdmin {
 		t.Fatalf("classifyToken(admin) = %v (Erwartung: roleAdmin)", got)

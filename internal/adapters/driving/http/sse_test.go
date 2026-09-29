@@ -16,7 +16,7 @@ import (
 )
 
 // fakeChangeSubscriber trägt eine In-Memory-Fälschung des
-// `changeSubscriber` (`ADR-0030`): Whitebox-Test des Adapters ohne den
+// `changeSubscriber`: Whitebox-Test des Adapters ohne den
 // Driven-Broadcaster — der Adapter-Test darf kein Adapter-Paket importieren
 // (Richtungskonvention `spec/architecture.md` §1, maschinell über
 // `a-check`). `ready` schließt `Subscribe` einmalig und macht die
@@ -147,8 +147,7 @@ func readSSEEvent(t *testing.T, reader *bufio.Reader) (event, data string) {
 
 // TestStreamOhneTokenEndetMit401 trägt die erste Hälfte der Fitness Function
 // aus `ADR-0061` Teilfrage 4: ein Aufruf ohne Bearer-Token endet mit `401`,
-// bevor der Handler läuft und damit vor jedem geschriebenen SSE-Event
-// (`LH-FA-SST-008` Negative).
+// bevor der Handler läuft und damit vor jedem geschriebenen SSE-Event.
 func TestStreamOhneTokenEndetMit401(t *testing.T) {
 	subscriber := newFakeChangeSubscriber(1)
 	ts := newTestSSEServer(t, subscriber)
@@ -185,8 +184,7 @@ func TestStreamUnbekannterTokenEndetMit401(t *testing.T) {
 // TestStreamReaderTokenOeffnetTraegtChange trägt die zweite Hälfte der
 // Fitness Function: ein gültiges `reader`-Token öffnet den Stream als
 // `text/event-stream`, und ein über den Broadcaster verteilter Change
-// erreicht den Client als vollständiges Event (`LH-FA-SST-008` Happy Path,
-// `SPEC-018`).
+// erreicht den Client als vollständiges Event (`LH-FA-SST-008` Happy Path).
 func TestStreamReaderTokenOeffnetTraegtChange(t *testing.T) {
 	traegtTokenOeffnetStreamUndTraegtChange(t, testReaderToken)
 }
@@ -408,7 +406,7 @@ func TestStreamOhneBroadcasterAntwortetMit503(t *testing.T) {
 // Fire-and-Forget-Hälfte der Fitness Function aus `ADR-0061`: ohne
 // verbundenen SSE-Client liegt am Adapter keine Subskription, auf die ein
 // `Publish` warten könnte — der nicht-blockierende Handoff an die begrenzte
-// Empfangs-Warteschlange kehrt sofort zurück (`ADR-0066` Festlegung 1/3).
+// Empfangs-Warteschlange kehrt sofort zurück.
 func TestStreamOhneVerbundenenClientBlockiertNicht(t *testing.T) {
 	subscriber := newFakeChangeSubscriber(1)
 	_ = newTestSSEServer(t, subscriber)

@@ -131,7 +131,7 @@ func recvChange(t *testing.T, stream grpc.ServerStreamingClient[streamv1.Change]
 // TestStreamChangesOhneMetadataEndetMitUnauthenticated trägt die erste
 // Hälfte der Fitness Function aus `ADR-0060` Teilfrage 4: ein
 // Stream-Öffnungsversuch ohne `authorization`-Metadata endet mit dem
-// gRPC-Status `Unauthenticated` (`LH-FA-SST-008` Negative).
+// gRPC-Status `Unauthenticated`.
 func TestStreamChangesOhneMetadataEndetMitUnauthenticated(t *testing.T) {
 	client := startTestServer(t, newFakeSubscriber())
 	stream := streamMitToken(t, client, "")
@@ -168,7 +168,7 @@ func TestStreamChangesFalscheWertformEndetMitUnauthenticated(t *testing.T) {
 // TestStreamChangesReaderTokenOeffnetTraegtChange trägt die zweite Hälfte
 // der Fitness Function: ein gültiges `reader`-Token öffnet den Stream, und
 // ein vom Broadcaster gelieferter Change erreicht den Client mit
-// vollständigem Inhalt (`LH-FA-SST-008` Happy Path, `SPEC-020`).
+// vollständigem Inhalt (`LH-FA-SST-008` Happy Path).
 func TestStreamChangesReaderTokenOeffnetTraegtChange(t *testing.T) {
 	traegtTokenOeffnetStreamUndTraegtChange(t, testReaderToken)
 }

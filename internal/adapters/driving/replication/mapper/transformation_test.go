@@ -16,7 +16,7 @@ import (
 )
 
 // Die Tests dieser Datei tragen den Regelstand einer Bindung
-// (`LH-FA-CFG-007`, `ADR-0112`): Wirkung von `rename_column` auf beide Row
+// (`ADR-0112`): Wirkung von `rename_column` auf beide Row
 // Images, Anwendbarkeits-Prüfung vor jeder Serialisierung, Live-Reload des
 // Regelstands und die Fitness Function der Entscheidung.
 

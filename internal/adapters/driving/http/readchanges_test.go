@@ -75,7 +75,7 @@ func body(t *testing.T, resp *http.Response) string {
 }
 
 // TestReadChangesOhneTokenEndetMit401 trägt die Authn-Grenze des Endpunkts
-// (`SPEC-022`, `ADR-0057` Teilfrage 3): ohne Bearer-Token kein Lesezugriff.
+// (`ADR-0057` Teilfrage 3): ohne Bearer-Token kein Lesezugriff.
 func TestReadChangesOhneTokenEndetMit401(t *testing.T) {
 	ts := newReadChangesServer(t, &fakeReadChangesUseCase{})
 	resp := getChanges(t, ts, "", "/changes?source=src-1")
@@ -174,7 +174,7 @@ func TestReadChangesAdminTokenLiest(t *testing.T) {
 }
 
 // TestReadChangesKeinTrefferEndetMit200Leer trägt die Boundary
-// (`LH-FA-REA-006`, `ADR-0081` Teilfrage 4): kein Treffer ist kein Fehler —
+// (`ADR-0081` Teilfrage 4): kein Treffer ist kein Fehler —
 // `200` mit leerer, gesetzter Liste, nie `404`, nie `null`.
 func TestReadChangesKeinTrefferEndetMit200Leer(t *testing.T) {
 	ts := newReadChangesServer(t, &fakeReadChangesUseCase{})
@@ -394,7 +394,7 @@ func TestReadChangesOhneVerdrahtungEndetVorDemHandler(t *testing.T) {
 var _ inbound.ReadChangesUseCase = (*fakeReadChangesUseCase)(nil)
 
 // TestReadChangesTraegtOriginAlsLetztesFeld trägt das Antwortfeld `origin`
-// (`SPEC-022`, `LH-FA-CAP-009`): `wal` und `backfill` stehen so in der
+// (`SPEC-022`): `wal` und `backfill` stehen so in der
 // Antwort, wie der Change sie trägt; ein fehlender Wert (ein Change ohne
 // gesetzte Herkunft) liest als `wal`. Das Feld steht als letztes — die
 // Reihenfolge der übrigen Felder bleibt.

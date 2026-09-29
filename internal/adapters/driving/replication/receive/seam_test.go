@@ -451,8 +451,8 @@ func TestSlotLSNQueryNamesTheSlot(t *testing.T) {
 	}
 }
 
-// TestMeasureComputesWALBacklog trägt die Rückstands-Messung (`SPEC-009`
-// `cdc_wal_retention_bytes`, `ADR-0049`): die Differenz zwischen der
+// TestMeasureComputesWALBacklog trägt die Rückstands-Messung
+// (`ADR-0049`): die Differenz zwischen der
 // aktuellen WAL-Schreibposition der Quelle und `confirmed_flush_lsn` des
 // Slots.
 func TestMeasureComputesWALBacklog(t *testing.T) {
@@ -585,8 +585,8 @@ func copyData(data []byte) pgproto3.BackendMessage {
 }
 
 // TestRunAnswersKeepaliveWithAcknowledgedPosition trägt die
-// Keepalive-Behandlung der Empfangs-Schleife (`ADR-0007`,
-// `LH-QA-REL-001.a`): trägt die Nachricht kein WAL-Ende hinter der
+// Keepalive-Behandlung der Empfangs-Schleife (`ADR-0007`): trägt die
+// Nachricht kein WAL-Ende hinter der
 // bestätigten Position, meldet die Antwort die letzte bestätigte Position —
 // hier den Stand des Adapters, nicht das WAL-Ende der Quelle. Die
 // Leerlauf-Bestätigung wird nicht gerufen.
@@ -691,7 +691,7 @@ func TestRunIdleConfirmationSendsNoSecondUpdate(t *testing.T) {
 }
 
 // TestRunNoConfirmationInsideOpenTransaction trägt die Sicherheits-Grenze
-// (`ADR-0120` Festlegung 1 Punkt 3, `LH-QA-REL-001.a`): zwischen BEGIN und
+// (`ADR-0120` Festlegung 1 Punkt 3): zwischen BEGIN und
 // COMMIT bestätigt der Adapter nicht — das WAL-Ende liegt dann hinter
 // Nachrichten, die noch nicht gespeichert sind. Eine `ReplyRequested`-
 // Antwort meldet dort die bestätigte Position, nicht das WAL-Ende. Nach dem

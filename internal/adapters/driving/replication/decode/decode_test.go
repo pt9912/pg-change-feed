@@ -15,7 +15,7 @@ import (
 // Die Dekodier-Tests tragen die `pgoutput`-Binärcodes in Handform
 // (`ADR-0008`): BEGIN, COMMIT, Relation, Insert, Update, Delete,
 // TRUNCATE und die Tupel-Typen werden als bekannte Byte-Stände gefüttert
-// — kein Netz, kein Treiber (`ADR-0030`). Die Binärform folgt der
+// — kein Netz, kein Treiber. Die Binärform folgt der
 // Logical-Replication-Protokoll-Form des Output-Plugins.
 
 // testColumn trägt eine Relation-Spalte für relationPayload; typeOID
@@ -325,10 +325,10 @@ func TestDecodeRelationInsert(t *testing.T) {
 }
 
 // TestDecodeRelationColumnTypeOID trägt die Spalten-Typ-OID einer
-// Relation-Nachricht (`ADR-0015` Folgepflicht, `SPEC-004`): zwei Spalten
+// Relation-Nachricht (`ADR-0015` Folgepflicht): zwei Spalten
 // mit unterschiedlichen Typ-OIDs bleiben nach der Dekodierung
 // unterscheidbar — die Grundlage, auf der der Mapper unverändert von
-// kompatibel erweitert unterscheidet (`LH-FA-SCH-005`).
+// kompatibel erweitert unterscheidet.
 func TestDecodeRelationColumnTypeOID(t *testing.T) {
 	decoder := decode.NewDecoder()
 	relation := decodeOne(t, decoder, relationPayload(30010, "public", "typed",
@@ -465,9 +465,8 @@ func TestDecodeChangeBeforeRelation(t *testing.T) {
 
 // TestDecodeFlowToCapture trägt den vollständigen Byte-Durchlauf:
 // BEGIN, Relation, Insert, COMMIT — das COMMIT meldet die committed
-// Quelltransaktion als CaptureCommand (`LH-FA-CAP-006.a`,
-// `LH-QA-REL-001.a` Schritte Receive und Decode). Der Zeitstempel-Fluss
-// (`LH-FA-ADM-004`) läuft mit: dieselbe COMMIT-Nachricht trägt den realen
+// Quelltransaktion als CaptureCommand (`LH-FA-CAP-006.a`).
+// Der Zeitstempel-Fluss läuft mit: dieselbe COMMIT-Nachricht trägt den realen
 // Quell-Commit-Zeitpunkt vom dekodierten `pgoutput`-Byte-Stand über den
 // Mapper bis zum Domänen-Zugriff `SourceCommittedAt()`.
 func TestDecodeFlowToCapture(t *testing.T) {

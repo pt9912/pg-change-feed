@@ -33,7 +33,7 @@ func (f fakeRunRetentionFailingUseCase) Run(context.Context, inbound.RunRetentio
 }
 
 // TestRunRetentionAdminTokenLoescht trägt den Happy-Path
-// (`LH-FA-RET-002`…`004`).
+// (`LH-FA-RET-002`).
 func TestRunRetentionAdminTokenLoescht(t *testing.T) {
 	ts := newDefaultTestServer(t, Config{RunRetention: fakeRunRetentionUseCase{deleted: 3}})
 	resp := doRequest(t, ts, http.MethodPost, "/retention/run", testAdminToken,

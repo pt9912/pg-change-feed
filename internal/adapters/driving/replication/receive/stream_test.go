@@ -21,13 +21,13 @@ import (
 )
 
 // Die Stream-Tests laufen gegen eine reale PostgreSQL-Instanz mit
-// Publication und Logical Replication Slot im Testcontainer (`ADR-0030`,
-// `LH-FA-CFG-001.a`), gepinnt über `make test-replication`; ohne DSN
+// Publication und Logical Replication Slot im Testcontainer (`ADR-0030`),
+// gepinnt über `make test-replication`; ohne DSN
 // überspringen sie — die Dekodier- und Mapper-Seite tragen die
 // Unit-Tests gegen die `pgoutput`-Binärcodes. Die
 // Verdrahtung mit ChangeStore und ACK-Adapter trägt der
-// Verdrahtungs-Test in der Composition-Root (`internal/bootstrap`,
-// `ADR-0026`). Die Instanz gehört dem Container: Tabellen, Publication
+// Verdrahtungs-Test in der Composition-Root (`internal/bootstrap`).
+// Die Instanz gehört dem Container: Tabellen, Publication
 // und Slot werden je Test frisch aufgesetzt, Daten bleiben im Container
 // und landen nicht im Arbeitsbaum.
 
@@ -256,7 +256,7 @@ func awaitNoCommand(t *testing.T, commands chan *inbound.CaptureCommand, duratio
 // Pfad: INSERT, UPDATE und DELETE auf der aktivierten Tabelle erzeugen
 // committed Quelltransaktionen mit ihren Row Images; die Transaktion
 // über die nicht aktivierte Tabelle kommt ohne Change
-// (`LH-FA-CAP-001`…003, `LH-FA-CFG-001`).
+// (`LH-FA-CFG-001`).
 func TestStreamTranslatesRealChanges(t *testing.T) {
 	pool, ctx := newPool(t)
 	env := newTestEnv(t, "changes")
@@ -334,7 +334,7 @@ func TestStreamTranslatesRealChanges(t *testing.T) {
 	}
 
 	// Die Commit-Positionen der Feed-Transaktionen laufen in
-	// Commit-Reihenfolge (`LH-FA-CAP-004`, `LH-FA-DAT-004`).
+	// Commit-Reihenfolge (`LH-FA-CAP-004`).
 	var feedPosition []model.SourcePosition
 	for _, command := range delivered {
 		position, committed := command.Transaction.CommitPosition()
@@ -504,7 +504,7 @@ func TestStreamKeepaliveReportsAcknowledgedPosition(t *testing.T) {
 
 // TestWALRetentionMeasuresGrowingBytes trägt die reale Byte-Differenz
 // zwischen dem aktuellen WAL-Schreibstand und `confirmed_flush_lsn` eines
-// inaktiven Slots (`SPEC-009` `cdc_wal_retention_bytes`, `ADR-0049`): der
+// inaktiven Slots (`ADR-0049`): der
 // Stream bestätigt eine erste Transaktion und endet danach — der Slot
 // bleibt mit seinem Bestand liegen (derselbe inaktive Zustand wie in
 // `TestStreamRestartsOnExistingSlot`). Weitere, unbestätigte Transaktionen
@@ -762,7 +762,7 @@ func awaitSlotInactive(t *testing.T, pool *pgxpool.Pool, slot string, timeout ti
 // der Restart legt denselben Slot wieder auf — `ensureSlot` liest den
 // Slot-Bestand (`confirmed_flush_lsn`) statt still neu anzulegen, und
 // der Stream setzt dort fort; die wiederholte Lieferung bestätigter
-// Transaktionen ist der At-Least-Once-Fall (`ADR-0011`, `ADR-0012`).
+// Transaktionen ist der At-Least-Once-Fall.
 func TestStreamRestartsOnExistingSlot(t *testing.T) {
 	pool, ctx := newPool(t)
 	env := newTestEnv(t, "restart")
@@ -1009,7 +1009,7 @@ func runForeignWAL(t *testing.T, dsnVariable, name string, standIn *fakeCapture,
 }
 
 // TestStreamIdleConfirmationReleasesForeignWAL trägt die Form X1 des
-// Verdikts am realen Stream (`ADR-0120`, `LH-QA-REL-001.a`): WAL ohne Inhalt
+// Verdikts am realen Stream (`ADR-0120`): WAL ohne Inhalt
 // für die Publication hält den Rückstand des Slots nicht — nach wenigen
 // Keepalive-Takten liegt er unter einem Zehntel der Last, und der Stand-in
 // hat Leerlauf-Positionen bestätigt. Die Instanz trägt den Standardwert von
@@ -1059,8 +1059,8 @@ func TestStreamIdleConfirmationReachesEndOfForeignWAL(t *testing.T) {
 }
 
 // TestStreamIdleConfirmationKeepsOpenTransactionDeliverable ist der
-// Sicherheits-Test der Leerlauf-Bestätigung (`ADR-0120` Festlegung 1,
-// `LH-QA-REL-001`): eine Quelltransaktion auf einer veröffentlichten Tabelle
+// Sicherheits-Test der Leerlauf-Bestätigung (`ADR-0120` Festlegung 1):
+// eine Quelltransaktion auf einer veröffentlichten Tabelle
 // bleibt offen, währenddessen bestätigt der Stream im Leerlauf ein WAL-Ende
 // hinter dem ersten Change dieser Transaktion (`confirmed_flush_lsn` liegt
 // danach hinter ihm). Endet der Stream und committet die Transaktion danach,

@@ -18,11 +18,10 @@ import (
 )
 
 // Die Mapper-Tests tragen die Übersetzung in die Domänen-Transaktion:
-// Sequenz-Ordnung, Row Images (`SPEC-002`), Aktivierungs-Filter
-// (`LH-FA-CAP-001`…003), Commit-Position (`SPEC-003`), die Fehlergrenzen
+// Sequenz-Ordnung, Row Images (`SPEC-002`), Aktivierungs-Filter,
+// Commit-Position, die Fehlergrenzen
 // von TRUNCATE und Stream-Vertragsverstoß sowie die dynamische
-// Re-Versionierung über eine `*decode.Relation`-Nachricht (`ADR-0015`
-// Folgepflicht, `LH-FA-SCH-005`).
+// Re-Versionierung über eine `*decode.Relation`-Nachricht.
 
 // relation trägt eine Dekodier-Relation für die Tests.
 func relation(schema, name string, columns ...decode.Column) *decode.Relation {
@@ -108,7 +107,7 @@ func testTables() map[string]mapper.TableBinding {
 // TestConsumeFullTransaction trägt einen vollständigen Durchlauf: BEGIN,
 // Relation, Insert, Update, Delete, COMMIT — der Commit meldet die
 // Transaktion als CaptureCommand mit Sequenz-Reihenfolge und
-// Commit-Position (`LH-FA-CAP-001`…003, `LH-FA-CAP-006.a`).
+// Commit-Position (`LH-FA-CAP-006.a`).
 func TestConsumeFullTransaction(t *testing.T) {
 	ctx := context.Background()
 	assembler := newAssembler(t, testTables())
@@ -557,7 +556,7 @@ func excludedBindingTables() map[string]mapper.TableBinding {
 }
 
 // TestConsumeExcludedColumnAbsentFromRowImages trägt die Filterwirkung des
-// Spaltenausschlusses (`LH-FA-CFG-005`, `ADR-0059` Teilfrage 3) auf allen
+// Spaltenausschlusses (`ADR-0059` Teilfrage 3) auf allen
 // drei Operationen: ein in `TableBinding.ExcludedColumns` geführter
 // Spaltenname erscheint weder als Schlüssel noch als Wert im `old_data`-
 // und `new_data`-Bild — die übrigen Spalten bleiben unverändert.
@@ -645,7 +644,7 @@ func TestConsumeExcludedColumnSurvivesSchemaBump(t *testing.T) {
 }
 
 // TestConsumeExcludedColumnDroppedInSourceReportsSchemaError trägt die
-// Konvergenz mit `LH-FA-SCH-003` (`ADR-0059` Teilfrage 4): eine real
+// Konvergenz (`ADR-0059` Teilfrage 4): eine real
 // gelöschte, zuvor ausgeschlossene Spalte fehlt in der eingehenden
 // Relation wie jede andere gelöschte Spalte und endet über denselben
 // `ErrIncompatibleSchemaChange`-Pfad — kein Sonderfall für den
