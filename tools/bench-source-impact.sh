@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# bench-source-impact.sh — LH-QA-PER-001-Beleg (ADR-0104, Supersedes
-# ADR-0054 §(b) teilweise): Schreibdurchsatz/-latenz derselben Insert-Last
+# bench-source-impact.sh — LH-QA-PER-001-Beleg: Schreibdurchsatz/-latenz derselben Insert-Last
 # auf dieselbe Quelltabelle, einmal ohne jeden Replication-Slot/Capture-
 # Prozess (Phase "ohne CDC") und einmal mit aktivem Slot und laufendem
 # Feed-Container (Phase "mit CDC"). Je Phase mehrere Läufe, Median als
-# Kennzahl (Vorbild: d-checks bench-fixture.sh, ADR-0054 Kontext).
+# Kennzahl (Vorbild: d-checks bench-fixture.sh).
 # N und RUNS sind bewusst groß gewählt: Jede einzelne Insert-Anweisung
 # läuft als eigene, separat committete Transaktion (siehe gen_inserts
 # unten) — bei zu kurzer Gesamtdauer schlägt gewöhnliches WAL-Fsync-/
@@ -20,7 +19,7 @@ source tools/bench-lib.sh
 
 trap bench::cleanup EXIT
 
-# THRESHOLD_PCT trägt SPEC-025s Quell-Overhead-Schwelle (ADR-0104): der
+# THRESHOLD_PCT trägt SPEC-025s Quell-Overhead-Schwelle: der
 # Median-Overhead über RUNS Läufe darf sie nicht überschreiten.
 THRESHOLD_PCT=35
 N=${BENCH_SOURCE_IMPACT_N:-5000}

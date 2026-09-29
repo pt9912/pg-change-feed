@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bench-backfill.sh — Messung des Backfills (LH-FA-CAP-009, ADR-0111, ADR-0113):
+# bench-backfill.sh — Messung des Backfills (ADR-0111):
 # Kopierdauer je Tabellengröße, Abweichung der geschätzten Zeilenzahl,
 # Speicher des Feed-Containers und Wirkung eines Runs auf die Live-Erfassung.
 # Eine Messung mit gedruckter Zahl, kein Pass/Fail gegen eine Schwelle.

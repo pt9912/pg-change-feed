@@ -2,11 +2,11 @@
 # run-replication-tests — Replication-Stream-Tests gegen reale PostgreSQL
 # mit Publication und Logical Replication Slot im Testcontainer (ADR-0030).
 # wal_sender_timeout=2000 zieht die Keepalive-Antwort-Pflicht auf etwa eine
-# Sekunde — der Keepalive-Beleg (LH-QA-REL-001.a) braucht den Antwort-Zug
+# Sekunde — der Keepalive-Beleg braucht den Antwort-Zug
 # in Test-Zeitspanne; der Default (60s) läge jenseits der Testgrenze. Eine
 # zweite Instanz mit dem Standardwert und ohne gleichzeitigen fremden Schreiber
 # (CDC_REPLICATION_TEST_STANDARD_DSN) trägt die Rückstand-Messungen der
-# Leerlauf-Bestätigung (ADR-0120) und, nach dem Tier-Lauf, den Beleg der
+# Leerlauf-Bestätigung und, nach dem Tier-Lauf, den Beleg der
 # WAL-Rückstand-Schwellen (CDC_WALRETENTION_TEST_DSN) und den Keepalive-Beleg
 # der Quellseite (CDC_SOURCE_KEEPALIVE_TEST_DSN).
 # Der Pin der Datenbank ist über `PG_TEST_IMAGE` übersteuerbar; der Lauf an

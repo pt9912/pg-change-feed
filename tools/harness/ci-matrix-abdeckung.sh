@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ci-matrix-abdeckung.sh — LH-QA-POR-001/002-Beleg (ADR-0105): fragt den
+# ci-matrix-abdeckung.sh — LH-QA-POR-001-Beleg: fragt den
 # jeweils letzten erfolgreichen Lauf von .github/workflows/e2e.yml
 # (PostgreSQL-Versionsmatrix) und ci.yml (Linux-Plattform-Assertion) über
 # die oeffentliche GitHub-REST-API ab und schreibt bei realem Erfolg

@@ -451,6 +451,12 @@ func TestLineBlocks(t *testing.T) {
 				{file: "a/x.sh", start: 1, end: 1, ids: []string{"ADR-0001", "ADR-0002"}},
 				{file: "a/x.sh", start: 3, end: 3, ids: []string{"ADR-0003"}},
 			}},
+		{"nur-Marker-Zeile ist Grenz-Marker", "a/x.sh", "#",
+			"# ADR-0001 und ADR-0002\n#\n# ADR-0003\n",
+			[]block{
+				{file: "a/x.sh", start: 1, end: 1, ids: []string{"ADR-0001", "ADR-0002"}},
+				{file: "a/x.sh", start: 3, end: 3, ids: []string{"ADR-0003"}},
+			}},
 		{"eingrückte Kommentare gehören zum Block", "a/x.sh", "#",
 			"#\tADM (ADR-0001)\n#\tund (ADR-0002)\n",
 			[]block{{file: "a/x.sh", start: 1, end: 2, ids: []string{"ADR-0001", "ADR-0002"}}}},

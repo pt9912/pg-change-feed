@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # bench-lib.sh — gemeinsame Umgebungs-Bausteine für tools/bench-*.sh
-# (LH-QA-PER-001…003, LH-FA-CAP-009, ADR-0054 §(b)): eigene, von
+# (ADR-0054 §(b)): eigene, von
 # tools/harness/run-integration-tests.sh unabhängige PostgreSQL-/
 # Feed-Umgebung über `docker network`/`docker run` (kein compose.yaml-Bezug,
 # damit ein Bench-Lauf nicht mit einem laufenden `make test-integration`
 # um dieselben Container-/Netznamen konkurriert), Schema-Rollout über
-# d-migrate (ADR-0043) und Cleanup. Geteilt ist die Umgebung, nicht die
+# d-migrate und Cleanup. Geteilt ist die Umgebung, nicht die
 # Messung: Jedes der vier Bench-Skripte bleibt ein eigenständiger Beleg
 # (ADR-0054 §(b) — "je Beleg ein eigenes Bench-Skript"), quellt diese
 # Datei nur für Aufbau/Abbau.

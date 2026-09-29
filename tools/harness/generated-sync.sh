@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # generated-sync.sh — Sync-Gate des generierten Protobuf-/gRPC-Codes
-# (ADR-0084 Festlegung 1; loest die Folgepflicht des Generators aus ADR-0060 ein).
+# (ADR-0084 Festlegung 1).
 #
 # Gegenstand ist genau eine Paarung: committetes Erzeugnis = Ausgabe des
 # gepinnten Generators aus der committeten Quelle. Nicht Gegenstand: dass der

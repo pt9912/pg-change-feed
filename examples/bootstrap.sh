@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # bootstrap.sh — bringt die Demo-Umgebung unter examples/ real und ohne
-# manuellen Zwischenschritt hoch (LH-QA-OPS-001, ADR-0098). Gekapselt hinter
+# manuellen Zwischenschritt hoch (ADR-0098). Gekapselt hinter
 # `make example-demo-up` (harness/mk/examples.mk).
 #
 # Ablauf, host-seitig (kein Compose-Hook — Compose kennt kein "nach healthy
 # einmalig SQL ausführen"):
 #   1. postgres+nats hochfahren, auf reale Verbindungsbereitschaft warten
 #      (dasselbe Muster wie tools/schema/apply-rollout.sh).
-#   2. Schema-Rollout über d-migrate treiben (tools/schema/schema.yaml,
-#      ADR-0043) — derselbe Weg wie Testläufe und Betrieb.
+#   2. Schema-Rollout über d-migrate treiben (tools/schema/schema.yaml) —
+#      derselbe Weg wie Testläufe und Betrieb.
 #   3. Beispiel-Quelle (`cdc.source`) registrieren, Beispiel-Tabelle
 #      (`public.orders`) leer anlegen — die physische Tabelle muss vor dem
 #      Feed-Start existieren, damit `ALTER PUBLICATION ... ADD TABLE` sie
@@ -68,7 +68,7 @@ docker exec "$CONTAINER" psql -U "$DBUSER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "ALTER ROLE $DBUSER IN DATABASE $DB SET search_path = cdc"
 
 # `make schema-rollout` ist gegen ein bereits migriertes Ziel idempotent
-# (zentrale Wache `tools/schema/rolloutguard`, ADR-0043). Die Wache hier ist
+# (zentrale Wache `tools/schema/rolloutguard`). Die Wache hier ist
 # trotzdem ein einfacher Existenz-Check: eine bereits vom ersten Rollout
 # angelegte Tabelle bedeutet "schon migriert", der zweite `example-demo-up`-Lauf
 # überspringt den Rollout-Schritt. Ein weiterlebendes Demo-Volume mit einem

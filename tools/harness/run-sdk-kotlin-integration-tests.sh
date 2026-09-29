@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # run-sdk-kotlin-integration-tests.sh — Realserver-Integrationstest der
-# Kotlin-SDK-Zustellweg-Flächen (slice-sdk-kotlin-reale2e; Mechanik-Klasse
+# Kotlin-SDK-Zustellweg-Flächen (Mechanik-Klasse
 # ADR-0110 §Entscheidung Festlegung 2, gespiegelt vom Python-Vorbild und dem
 # C#-Spiegel tools/harness/run-sdk-csharp-integration-tests.sh): acht
-# Phasen — die vier Flächen des Packages pgchangefeed-kotlin (HTTP SPEC-018,
-# gRPC SPEC-020, SSE SPEC-021, NATS-Vollinhalt SPEC-024) prüfen ihre
+# Phasen — die vier Flächen des Packages pgchangefeed-kotlin (HTTP,
+# gRPC, SSE, NATS-Vollinhalt) prüfen ihre
 # Protokoll-Annahmen je gegen eine reale, laufende Server-Instanz ohne
 # Regel, und dieselben vier Flächen ein zweites Mal gegen eine Tabelle mit
-# aktiver `rename_column`-Regel (slice-sdk-regel-realserver-e2e, ADR-0112) —
+# aktiver `rename_column`-Regel —
 # der Prüfling ist die kompilierte Client-Assembly, der Integrationstest
 # importiert io.github.pt9912.pgchangefeed direkt (kein
 # Wegwerf-Duplikat-Client daneben).

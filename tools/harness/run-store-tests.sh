@@ -80,7 +80,7 @@ docker run --rm --network "$NETWORK" \
 
 # `internal/bootstrap` läuft in einem eigenen, vorgezogenen Aufruf: seine
 # Zugriffsweg-Tests (`register-consumer`, `acknowledge-consumer`,
-# `LH-FA-CON-001.a`/`LH-FA-CON-004.a`) schreiben gegen dieselben Zeilen
+# `LH-FA-CON-001.a`) schreiben gegen dieselben Zeilen
 # (`cdc.consumer`/`cdc.consumer_position`), die mehrere Tests im Paket
 # `postgresstorage` tabellenweit abräumen bzw. per `DROP SCHEMA cdc
 # CASCADE` neu aufsetzen (`store_test.go`, `tableactivation_test.go`) —

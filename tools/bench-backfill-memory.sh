@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # bench-backfill-memory.sh — Speicher des Feed-Containers im Backfill-Run
-# (LH-FA-CAP-009, ADR-0111, ADR-0113): Verlauf im Run, Nachlauf, Zeilenzahl,
+# (ADR-0111): Verlauf im Run, Nachlauf, Zeilenzahl,
 # Zeilenbreite, Feed-Einstellung. Eine Messung mit gedruckter Zahl, kein
 # Pass/Fail. Vertrag, Ablauf und Grenzen: harness/targets/bench-backfill.md.
 set -euo pipefail

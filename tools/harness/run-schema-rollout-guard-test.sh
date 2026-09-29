@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # run-schema-rollout-guard-test — realer Beleg der zentralen
-# `make schema-rollout`-Wache (ADR-0043, ADR-0114, tools/schema/rolloutguard,
+# `make schema-rollout`-Wache (ADR-0043, tools/schema/rolloutguard,
 # BEO-PGC/schema-rollout-fremdobjekte): sechs Läufe gegen eigenständige
 # Ziel-Datenbanken derselben Wegwerf-Instanz.
 #

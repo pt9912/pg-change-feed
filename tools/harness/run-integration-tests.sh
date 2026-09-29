@@ -3,52 +3,77 @@
 # Compose-Umgebung (compose.yaml; LH-QA-POR-003), inhaltlich über den
 # ursprünglichen MVP-Zuschnitt hinausgewachsen (Rollen-DSN-Trennung,
 # Lasttest-Beleg, Black-Box-CLI-Rundlauf). Kette je Lauf:
+#
 # Compose-PostgreSQL frisch hochfahren → Schema-Rollout über d-migrate
-# (ADR-0043) → Rollen-DSN-Verifikation direkt gegen die Instanz
-# (LH-QA-SEC-001…003, ADR-0047) → Vorbedingungen der Aktivierung
-# (Quell-Tabellen, Quelle-Zeile) → Feed-Container als CDC-Runtime
-# starten — seine Verdrahtung aktiviert die Tabellen über den
-# EnableTable Use Case (ADR-0028), nicht über Seed-SQL → Toolchain-
-# Container gegen das Compose-Netz. Der Feed-Container streamt dabei
-# selbst (Verdrahtung je ADR-0026); der Test schreibt nur Quelländerungen
-# und liest den Store. Am Ende der Kette steht ein Black-Box-Rundlauf
+# (ADR-0043).
+#
+# Rollen-DSN-Verifikation direkt gegen die Instanz (ADR-0047).
+#
+# Vorbedingungen der Aktivierung (Quell-Tabellen, Quelle-Zeile).
+# Feed-Container als CDC-Runtime starten — seine Verdrahtung aktiviert die
+# Tabellen über den EnableTable Use Case (ADR-0028), nicht über Seed-SQL.
+# Toolchain-Container gegen das Compose-Netz.
+#
+# Der Feed-Container streamt dabei selbst — die Verdrahtung liegt am
+# Composition Root (ADR-0026); der Test schreibt nur Quelländerungen
+# und liest den Store.
+#
+# Am Ende der Kette steht ein Black-Box-Rundlauf
 # (ADR-0030 E2E-Tier): `register-consumer`/`acknowledge-consumer` laufen
 # dort ausschließlich als externer `docker exec`-Aufruf gegen den
 # laufenden Feed-Container, über einen simulierten Container-Neustart
 # hinweg — kein Go-Paket-Import interner Anwendungslogik in diesem
-# Abschnitt. Danach ein CLI-Diagnose-Beleg (LH-FA-SST-003, deckt
-# LH-FA-ADM-002…005, slice-038): derselbe externe `docker exec`-Zugriffsweg
+# Abschnitt.
+#
+# Danach ein CLI-Diagnose-Beleg (LH-FA-SST-003): derselbe externe
+# `docker exec`-Zugriffsweg
 # gegen den `diagnose`-Sondermodus, einmal im Normalbetrieb und einmal mit
 # einem direkt in `cdc.process_heartbeat` geschriebenen Fehlerzustand
-# (LH-FA-ADM-003 Boundary). Ergänzend ein Retention-Sichtbarkeits-Beleg
-# (deckt LH-FA-RET-005/006) über denselben `diagnose`-Aufruf: „kein
+# (Boundary).
+#
+# Ergänzend ein Retention-Sichtbarkeits-Beleg (LH-FA-RET-005) über
+# denselben `diagnose`-Aufruf: „kein
 # Blocker" vor jeder Consumer-Bestätigung, dann ein real blockierender
-# Consumer samt `cdc_storage_bytes`. Direkt davor ein kombinierter
-# Retention-Lebenszyklus-Rundlauf (deckt LH-FA-RET-002…006 in einer Kette):
+# Consumer samt `cdc_storage_bytes`.
+#
+# Direkt davor ein kombinierter
+# Retention-Lebenszyklus-Rundlauf (LH-FA-RET-002):
 # eine eigene, isolierte Zeile und ein eigener Consumer durchlaufen real
 # Blocker-Sichtbarkeit über `cdc.retention_blockers`, Bestätigung über die
 # Position hinweg, die reale Abwesenheit jeder Zeile für `src-e2e` danach,
 # die reale Löschung sowie die durchgehende numerische Lesbarkeit von
-# `cdc_storage_bytes`. Ein Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005,
-# ADR-0064) folgt danach: ein realer Container-Tausch über
+# `cdc_storage_bytes`.
+#
+# Ein Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005)
+# folgt danach: ein realer Container-Tausch über
 # `$COMPOSE up -d --force-recreate --no-deps pg-change-feed` ersetzt den
 # Feed-Container durch eine neue Instanz desselben `:dev`-Images, während
 # `postgres`/`nats` unberührt bleiben — Datenstand vor dem Tausch bleibt
 # über `cdc.changes` identisch lesbar, eine danach eingefügte Zeile wird
-# weiterhin erfasst. Die Backfill-Rundläufe (LH-FA-CAP-009: Happy Path,
+# weiterhin erfasst.
+#
+# Die Backfill-Rundläufe (LH-FA-CAP-009: Happy Path,
 # Schema-Version, Startposition eines frisch registrierten Consumers,
 # Boundary, Regelstand mit rename_column, Ausschluss und nicht anwendbarer
-# Regel, Replay-Invariante, DDL-Fenster, Negative) und die
-# Leerlauf-Bestätigung (ADR-0120: WAL über der Fehlerschwelle, der
-# Feed-Container läuft weiter) mit ihrer Gegenseite (ADR-0049: bei gehaltener
-# Persistierung beendet die Fehlerschwelle den Feed-Container) laufen vor dem
+# Regel, Replay-Invariante, DDL-Fenster, Negative) laufen vor dem
 # Upgrade-Sicherheits-Rundlauf;
 # die Haltepunkte der Backfill-Phasen beschreibt der Kopf des Abschnitts
-# `Backfill-Rundläufe`. Die Transformations-Rundläufe (LH-FA-CFG-007: die
+# `Backfill-Rundläufe`.
+#
+# Die Leerlauf-Bestätigung (ADR-0120: WAL über der Fehlerschwelle, der
+# Feed-Container läuft weiter) läuft ebenfalls vor dem
+# Upgrade-Sicherheits-Rundlauf.
+#
+# Ihre Gegenseite: bei gehaltener Persistierung beendet die
+# Fehlerschwelle den Feed-Container (ADR-0049).
+#
+# Die Transformations-Rundläufe (LH-FA-CFG-007: die
 # Form der Regeln auf allen fünf Zustellwegen, Neustart, Ausschluss mit
 # Regel) laufen nach der Leerlauf-Bestätigung, ebenfalls vor dem
-# Upgrade-Sicherheits-Rundlauf. Nichtanwendbarkeit einer Regel und ihre
-# Abhilfe (ADR-0112 Teilfrage 4 und Folgepflicht 5) laufen als eigener,
+# Upgrade-Sicherheits-Rundlauf.
+#
+# Nichtanwendbarkeit einer Regel und ihre
+# Abhilfe (ADR-0112) laufen als eigener,
 # letzter Rundlauf nach TestE2ESchemaChangeIncompatibleTypeChange:
 # eine kompatible Spalten-Erweiterung, deren Name den Zielnamen einer aktiven
 # rename_column-Regel trifft, beendet den Erfassungspfad sichtbar; nach
@@ -255,8 +280,8 @@ bash tools/schema/rollout-restore.sh make schema-rollout SCHEMA_TARGET="db:$DSN"
 
 abdeckung_declare "Rollen-DSN-Verifikation" "LH-QA-SEC-001,LH-QA-SEC-002,LH-QA-SEC-003" "die drei Gruppenrollen real gegeneinander geprüft: ein Reader-Login scheitert am schreibenden Aufruf, eine Replication-Verbindung ohne REPLICATION-Attribut scheitert, dieselbe Verbindung mit der Capture-Rolle gelingt" "Rollen-DSN-Verifikation belegt — cdc_reader-Login-Identität schreibender Zugriff abgelehnt"
 
-# Rollen-DSN-Verifikation gegen den Compose-Stack (LH-QA-SEC-001…003,
-# ADR-0047, BEO-PGC/rollen-test-abdeckungsluecken): Die laufende
+# Rollen-DSN-Verifikation gegen den Compose-Stack (ADR-0047,
+# BEO-PGC/rollen-test-abdeckungsluecken): Die laufende
 # CDC_CAPTURE_DSN/CDC_ADMIN_DSN/CDC_READER_DSN-Verdrahtung des
 # Feed-Containers verbindet sich testbedingt mit allen drei DSNs über den
 # Superuser postgres (siehe compose.yaml-Kommentar) — die drei
@@ -266,7 +291,7 @@ abdeckung_declare "Rollen-DSN-Verifikation" "LH-QA-SEC-001,LH-QA-SEC-002,LH-QA-S
 # internal/bootstrap/roles_wiring_test.go::newTestLoginRole: anmeldefähige
 # Test-Identitäten je Rolle, angelegt und am Ende dieses Abschnitts wieder
 # entfernt — kein Bestandteil des Rollen-DDL
-# (tools/schema/nacharbeit-roles.sql, unverändert seit slice-011/-023).
+# (tools/schema/nacharbeit-roles.sql).
 #
 # Zwei Prüfungen: (1) ein cdc_reader-Login scheitert an einem schreibenden
 # Aufruf — dieselbe Fehlerklasse wie
@@ -335,13 +360,13 @@ echo "run-integration-tests: Rollen-DSN-Verifikation belegt — cdc_reader-Login
 
 # Vorbedingung der Aktivierung (LH-FA-CFG-001.a): die physischen
 # Quell-Tabellen und die Zeile der Quelle in cdc.source — die
-# Metadaten-Registrierung ist Vorbedingung der Aktivierung (SPEC-001,
-# Fremdschlüssel). Die Aktivierung selbst trägt die Verdrahtung des
+# Metadaten-Registrierung ist Vorbedingung der Aktivierung
+# (Fremdschlüssel). Die Aktivierung selbst trägt die Verdrahtung des
 # Feed-Containers: die Bindungen aus CDC_TABLES laufen als
-# EnableTable-Aufrufe (ADR-0028) — Publication, Bindungs- und
+# EnableTable-Aufrufe — Publication, Bindungs- und
 # Schema-Version-Zeilen entstehen dort, nicht hier. Die REPLICA IDENTITY
-# trägt der Runner für die volle Alt-Bild-Prüfung (LH-FA-CAP-008); sie
-# bleibt vom Aktivieren unberührt (LH-FA-CFG-001.a).
+# trägt der Runner für die volle Alt-Bild-Prüfung; sie
+# bleibt vom Aktivieren unberührt.
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<'SQL'
 CREATE TABLE public.feed_e2e_flow (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_e2e_full (id int PRIMARY KEY, name text);
@@ -384,7 +409,7 @@ if [ "$wired" -ne 1 ]; then
   exit 1
 fi
 
-# Compose-Healthcheck-Vertrag (LH-FA-ADM-002, LH-QA-OPS-002, slice-012):
+# Compose-Healthcheck-Vertrag (LH-FA-ADM-002):
 # der Feed-Container befragt cdc.heartbeat über seinen eigenen
 # `--healthcheck`-Ausgang (compose.yaml); dieser Lauf belegt den
 # End-zu-Ende-Vertrag am realen Docker-Health-Status statt nur am
@@ -424,8 +449,8 @@ docker run --rm --network "$NETWORK" \
 # hier, solange der Feed-Container noch gebraucht wird. Eine künftig
 # ergänzte Testfunktion gehört in dieses `-run`-Muster, sofern sie den
 # laufenden Container nicht ebenfalls beendet. `TestE2ESchemaChangeDropColumn`
-# (`LH-FA-SCH-003`, `ADR-0063` Supersedes `ADR-0058` Entscheidung 1) beendet
-# den Erfassungspfad seit der Testform-Korrektur ebenfalls dauerhaft (derselbe
+# (`LH-FA-SCH-003`) beendet
+# den Erfassungspfad ebenfalls dauerhaft (derselbe
 # `relationOther`/`ErrIncompatibleSchemaChange`-Pfad wie eine inkompatible
 # Typänderung) und läuft deshalb NICHT hier, sondern als eigener Aufruf nach
 # der Container-Ende-Grenze, mit einem expliziten Neustart davor — siehe dort.
@@ -447,7 +472,7 @@ abdeckung_go_zeilen_lesen
 
 abdeckung_declare "Spaltenausschluss-Rundlauf" "LH-FA-CFG-005,LH-QA-SEC-004" "eine nicht gelistete Tabelle wird über den SQL-Antragsweg aktiviert, der Spaltenausschluss real verarbeitet — die danach erfasste Change trägt den Schlüssel nicht mehr im Row Image, die davor erfasste bleibt mit ihrem Wert unverändert lesbar" "Spaltenausschluss-Rundlauf (LH-FA-CFG-005 Happy Path, ADR-0059) belegt"
 
-# Spaltenausschluss-Rundlauf (LH-FA-CFG-005, ADR-0059): der reale Pfad
+# Spaltenausschluss-Rundlauf (ADR-0059): der reale Pfad
 # SQL-Antrag → Live-Reload → gefiltertes Row Image am laufenden
 # Feed-Container. Eine eigene, dedizierte Tabelle wird über dieselbe
 # Antrags-Queue aktiviert wie im SQL-Administration-Live-Reload-Beleg
@@ -588,9 +613,9 @@ fi
 
 # Der vor dem Ausschluss erfasste Change bleibt über cdc.changes unverändert
 # lesbar und trägt seinen damals erfassten Wert weiter: die Filterung liegt
-# in der Row-Image-Konstruktion (ADR-0059 Teilfrage 3; cdc.changes ist eine
+# in der Row-Image-Konstruktion (Teilfrage 3; cdc.changes ist eine
 # reine Projektion über cdc.change) und schreibt persistierte Changes nicht
-# rückwirkend um — LH-FA-CFG-005 adressiert „künftige Changes von t".
+# rückwirkend um — sie adressiert „künftige Changes von t".
 column_history_value=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   "SELECT new_data->>'$COLUMN_NAME' FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$COLUMN_TABLE' AND new_data->>'id' = '1'")
 if [ "$column_history_value" != "$COLUMN_VALUE_BEFORE" ]; then
@@ -729,7 +754,7 @@ echo "run-integration-tests: Spaltenausschluss-Negative-Beleg (LH-FA-CFG-005) �
 
 abdeckung_declare "Lasttest-Beleg cdc_capture_lag" "LH-FA-ADM-004,LH-QA-PER-004" "cdc_capture_lag bildet den Abstand zwischen Quelländerung und CDC-Verfügbarkeit ab: eine durch eine pausierte CDC-Runtime künstlich verzögerte Transaktion liegt über der ungehinderten — dieselbe Latenz-Messmethode, die \`LH-QA-PER-004\` über \`LH-FA-ADM-004\` verlangt" "Lasttest-Beleg cdc_capture_lag — Baseline"
 
-# Lasttest-Beleg (LH-FA-ADM-004, SPEC-013 CDC_LAG_THRESHOLDS): cdc_capture_lag
+# Lasttest-Beleg (LH-FA-ADM-004): cdc_capture_lag
 # bildet den Abstand zwischen Quelländerung und CDC-Verfügbarkeit ab. Zwei
 # Quelltransaktionen auf derselben Tabelle zeigen den Unterschied: eine
 # ungehinderte Transaktion liefert einen kleinen Wert; eine Transaktion,
@@ -837,14 +862,14 @@ fi
 
 abdeckung_declare "Black-Box-CLI-Rundlauf" "LH-QA-POR-003,LH-FA-CON-001,LH-FA-CON-003,LH-FA-CON-004,LH-FA-CON-005" "register-consumer und acknowledge-consumer laufen ausschließlich als externe docker exec-Aufrufe gegen den Produktions-Binary, über einen simulierten Container-Neustart hinweg — Registrierung, Positions-Persistierung (cdc.consumer_position gegen die bestätigte Position gehalten), Bestätigung und Fortsetzen ab der bestätigten Position nach dem Neustart real belegt" "Black-Box-CLI-Rundlauf belegt — register-consumer/acknowledge-consumer extern"
 
-# Black-Box-CLI-Rundlauf (LH-QA-POR-003, ADR-0030 E2E-Tier): anders als der
+# Black-Box-CLI-Rundlauf (ADR-0030 E2E-Tier): anders als der
 # Go-Testlauf oben (`go test ./test/integration/...`, der intern gegen
 # `postgresstorage`/`bootstrap` läuft) ruft dieser Abschnitt
 # `register-consumer`/`acknowledge-consumer` ausschließlich als externen
 # Prozess gegen den laufenden, containerisierten Produktions-Binary auf
 # (`docker exec … /pg-change-feed …`, distroless — kein Shell im
 # Feed-Container, daher kein `sh -c`-Umweg nötig). Lesen bleibt über den
-# bestehenden externen Lesezugriffsweg `cdc.changes` (LH-FA-SST-002) — die
+# bestehenden externen Lesezugriffsweg `cdc.changes` — die
 # CLI trägt keinen Lese-Unterbefehl. `feed_e2e_full` trägt denselben Grund
 # wie beim Lasttest-Beleg oben: die Tabelle bleibt über den ganzen Lauf
 # aktiviert. Die IDs 95/96 liegen in einem eigenen Wertebereich, getrennt
@@ -858,7 +883,7 @@ abdeckung_declare "Retention-Lebenszyklus-Rundlauf (Blocker-Sichtbarkeit)" "LH-F
 
 abdeckung_declare "Retention-Lebenszyklus-Rundlauf (kombiniert)" "LH-FA-RET-002,LH-FA-RET-003,LH-FA-RET-004,LH-FA-RET-005,LH-FA-RET-006" "eine isolierte Zeile und ein eigener Consumer durchlaufen real Blocker-Sichtbarkeit, Bestätigung über die Position hinweg, Löschung sowie die durchgehende numerische Lesbarkeit der Speichergröße" "Retention-Lebenszyklus-Rundlauf (kombiniert) — 'RetentionLifecycle'"
 
-# Retention-Lebenszyklus-Rundlauf (kombiniert, LH-FA-RET-002…006): eine
+# Retention-Lebenszyklus-Rundlauf (kombiniert, LH-FA-RET-002): eine
 # eigene, isolierte Zeile (id=210 auf feed_e2e_full) und ein eigener, neu
 # registrierter Consumer durchlaufen real die vollständige Kette in einer
 # Kette, statt sie wie in den folgenden Abschnitten über mehrere getrennte
@@ -959,7 +984,7 @@ fi
 # real in cdc.consumer_position bestehen (kein DELETE vorher) — der
 # folgende Poll belegt dadurch real, dass die Bestätigung über die Position
 # hinweg allein die Löschung freigibt, unabhängig von einer späteren
-# Entfernung der Position selbst (LH-FA-RET-003/004).
+# Entfernung der Position selbst (LH-FA-RET-003).
 lifecycle_deleted=0
 for _ in $(seq 1 60); do
   remaining=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
@@ -1012,7 +1037,7 @@ echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf (kombiniert) — 'R
 abdeckung_declare "Retention-Sichtbarkeits-Beleg (kein Blocker)" "LH-FA-RET-005,LH-FA-RET-006" "die diagnose-Ausgabe zeigt vor jeder Consumer-Bestätigung 'kein Blocker' und eine numerische Speichergröße" "Retention-Sichtbarkeits-Beleg (CLI, Zustand 1)"
 
 # Retention-Sichtbarkeits-Beleg (CLI), Zustand 1 — kein Blocker
-# (LH-FA-SST-003, deckt LH-FA-RET-005/006): an dieser Stelle hat noch kein
+# (LH-FA-SST-003): an dieser Stelle hat noch kein
 # über register-consumer/acknowledge-consumer geführter Consumer gegen
 # `src-e2e` bestätigt — die beiden Consumer, die
 # TestE2ERetentionBlockersViewShowsFurthestBehindConsumer weiter oben direkt
@@ -1248,7 +1273,7 @@ echo "run-integration-tests: Verarbeitungsrückstand-Beleg cdc.consumer_status �
 
 abdeckung_declare "CLI-Diagnose-Beleg (Normalbetrieb)" "LH-FA-SST-003,LH-FA-ADM-002,LH-FA-ADM-003,LH-FA-ADM-004,LH-FA-ADM-005" "der diagnose-Sondermodus trägt im Normalbetrieb alle vier Signale: Betriebsstatus, fehlenden Fehlerzustand, numerischen CDC-Abstand und die Rückstände der geführten Consumer" "CLI-Diagnose-Beleg (Normalbetrieb) —"
 
-# CLI-Diagnose-Beleg (LH-FA-SST-003, deckt LH-FA-ADM-002…005, slice-038):
+# CLI-Diagnose-Beleg (LH-FA-SST-003):
 # der neue `diagnose`-Sondermodus liest denselben SQL-Zugriffsweg wie
 # `--healthcheck` oben (`cfg.ReaderDSN`) plus `cdc.metrics` und gibt alle
 # vier Signale menschenlesbar aus — extern per `docker exec` gegen den
@@ -1263,7 +1288,7 @@ abdeckung_declare "CLI-Diagnose-Beleg (Normalbetrieb)" "LH-FA-SST-003,LH-FA-ADM-
 # Tabelle nach seiner letzten Bestätigung); nur BACKLOG_CONSUMER, dessen
 # zweite Bestätigung unmittelbar davor lief, ist an dieser Stelle
 # verlässlich 0. Retention-Sichtbarkeits-Beleg (CLI), Zustand 2 — realer
-# Blocker (LH-FA-RET-005/006): `cdc.retention_blockers` wählt je Quelle den
+# Blocker: `cdc.retention_blockers` wählt je Quelle den
 # Consumer mit der kleinsten bestätigten Position — das ist an dieser
 # Stelle real CLI_CONSUMER (Rückstand ungleich 0, siehe oben), nicht
 # BACKLOG_CONSUMER (Rückstand 0). `cdc_storage_bytes` trägt zu diesem
@@ -1355,8 +1380,7 @@ abdeckung_declare "SQL-Administration Live-Reload (enable)" "LH-FA-ADM-001,LH-FA
 
 abdeckung_declare "SQL-Administration Live-Reload (disable)" "LH-FA-CFG-002" "derselbe Antrags-Weg spiegelbildlich: die Deaktivierung beendet die Erfassung dieser Tabelle, der Prozess läuft weiter" "SQL-Administration Live-Reload-Beleg (disable)"
 
-# SQL-Administration Live-Reload-Beleg (ADR-0050, LH-FA-ADM-001,
-# LH-FA-CFG-001/002): `feed_e2e_sql_admin` ist bewusst NICHT Teil von
+# SQL-Administration Live-Reload-Beleg (ADR-0050): `feed_e2e_sql_admin` ist bewusst NICHT Teil von
 # CDC_TABLES (compose.yaml) — ihre Aktivierung/Deaktivierung läuft
 # ausschließlich über die Antrags-Queue (`cdc.enable_table`/
 # `cdc.disable_table`), verarbeitet von der Administrations-Goroutine des
@@ -1503,7 +1527,7 @@ echo "run-integration-tests: SQL-Administration Live-Reload-Beleg (disable) — 
 abdeckung_declare "Publication-Entzug-Wirksamkeit" "LH-FA-CFG-002" "ein direkter Publication-Entzug per DDL trennt die PostgreSQL-seitige Filterung von der App-seitigen Assembler-Filterung: die Assembler-Bindung bleibt über den ganzen Beleg aktiv" "Publication-Entzug-Wirksamkeit — nach ALTER PUBLICATION"
 
 # Publication-Entzug-Wirksamkeit — isolierter Beleg (BEO-PGC/walsender-wirksamkeit,
-# LH-FA-CFG-002, ADR-0050, der Architect-Verdikt zur Walsender-Wirksamkeit):
+# LH-FA-CFG-002, der Architect-Verdikt zur Walsender-Wirksamkeit):
 # Der SQL-Administration Live-Reload-Beleg (disable) oben prüft nur die
 # App-seitige Assembler-Filterung — RemoveBinding läuft synchron mit
 # cdc.disable_table und verwirft jede Änderung der Tabelle, unabhängig
@@ -1607,7 +1631,7 @@ fi
 
 abdeckung_declare "Retention-Beleg (Alters- und Consumer-Freigabe)" "LH-FA-RET-002,LH-FA-RET-003,LH-FA-RET-004" "eine zurückdatierte Zeile bleibt erhalten, solange ein Consumer zurückhängt, und wird nach der Freigabe durch beide Consumer real entfernt; die zu junge Zeile bleibt durchgehend erhalten" "Retention-Beleg — 'RetentionOld' (id=200) blieb erhalten, solange ein Consumer zurückhing"
 
-# Retention-Beleg (LH-FA-RET-002…004, ADR-0014): der Hintergrundzug
+# Retention-Beleg (ADR-0014): der Hintergrundzug
 # runRetentionCleanup ruft RunRetentionUseCase periodisch real auf
 # (retentionInterval, wiring.go). Zwei Zeilen auf feed_e2e_full (bereits
 # über den ganzen Lauf aktiviert): 'RetentionOld' (id=200), deren
@@ -1620,10 +1644,10 @@ abdeckung_declare "Retention-Beleg (Alters- und Consumer-Freigabe)" "LH-FA-RET-0
 # geführten Consumer (CLI_CONSUMER, BACKLOG_CONSUMER) und sind damit
 # zusätzlich zur Alters-Prüfung durch die Consumer-Positionen blockiert:
 # der erste Poll unten belegt, dass die bereits alte Zeile trotzdem
-# erhalten bleibt, solange ein Consumer zurückhängt (LH-FA-RET-004). Erst
+# erhalten bleibt, solange ein Consumer zurückhängt. Erst
 # die zweite Bestätigung beider Consumer über die neue Position hinweg
 # gibt beide Zeilen aus Consumer-Sicht frei; der zweite Poll belegt, dass
-# danach nur die zurückdatierte Zeile real entfernt wird (LH-FA-RET-003),
+# danach nur die zurückdatierte Zeile real entfernt wird,
 # die junge nicht — beides ohne Neustart des Feed-Containers.
 RETENTION_TABLE=feed_e2e_full
 
@@ -1727,13 +1751,13 @@ abdeckung_declare "NATS-Boundary-Beleg" "LH-FA-SST-007" "eine Change ohne jeden 
 
 abdeckung_declare "NATS-Negative-Beleg (Reconnect-Nachholen)" "LH-FA-SST-007" "ein real vom Compose-Netz getrennter Subscriber verpasst die Change ohne jedes Wecksignal; ein frischer Wiederverbindungs-Subscriber empfängt die nächste" "NATS-Negative-Beleg (LH-FA-SST-007, Reconnect-Nachholen)"
 
-# NATS-Happy-Path-Beleg (LH-FA-SST-007, ADR-0055, ADR-0056): compose.yaml
+# NATS-Happy-Path-Beleg (ADR-0055): compose.yaml
 # verdrahtet den Feed-Container mit CDC_NATS_URL=nats://nats:4222 (siehe
 # dortigen Kommentar). Ein eigener Wegwerf-Testclient
 # (tools/harness/natssub/main.go, per `go run` im Toolchain-Container)
 # abonniert das tabellen-granulare Subjekt
 # cdc.changes.src-e2e.public.feed_e2e_full real, BEVOR die auslösende
-# Change entsteht — Core NATS liefert nichts nach (ADR-0055 Punkt 1,
+# Change entsteht — Core NATS liefert nichts nach (ADR-0055,
 # Fire-and-Forget); ein Subscriber, der erst danach abonniert, verpasst das
 # Signal strukturell. Der Subscriber läuft dazu als eigener, per Name
 # adressierter Container (nicht `--rm` vor dem Poll): `docker logs` trägt
@@ -1800,7 +1824,7 @@ fi
 
 echo "run-integration-tests: NATS-Happy-Path-Beleg (LH-FA-SST-007) — Test-Subscriber ($NATS_SUBJECT) abonnierte real vor der Change (id=230, feed_e2e_full) und empfing danach real das leere Wecksignal: $nats_subscriber_output"
 
-# NATS-Boundary-Beleg (LH-FA-SST-007, ADR-0055): Gegenstück zum
+# NATS-Boundary-Beleg (ADR-0055): Gegenstück zum
 # Happy-Path-Beleg oben — hier abonniert **kein** Client das Subjekt
 # cdc.changes.src-e2e.public.feed_e2e_full. Der reale Beleg, dass zum
 # Zeitpunkt der Change tatsächlich niemand verbunden ist, kommt aus dem
@@ -1854,8 +1878,7 @@ fi
 
 echo "run-integration-tests: NATS-Boundary-Beleg (LH-FA-SST-007) — Change (id=231, feed_e2e_full) entstand real ohne einen auf $NATS_SUBJECT abonnierten Client (belegt über NATS-Server-Monitor /subsz vor und nach der Change), blieb vollständig über cdc.changes lesbar, und der Feed-Container lief unverändert weiter"
 
-# NATS-Negative-Beleg — Reconnect-Nachholen (LH-FA-SST-007, ADR-0055,
-# ADR-0056): Gegenstück zum Boundary-Beleg oben (dort: nie abonniert
+# NATS-Negative-Beleg — Reconnect-Nachholen (ADR-0055): Gegenstück zum Boundary-Beleg oben (dort: nie abonniert
 # gewesen) — hier ist der Test-Subscriber bereits real verbunden und
 # abonniert, bevor er real vom Compose-Netz getrennt wird
 # (`docker network disconnect "$NETWORK" "$NATS_RECONNECT_BEFORE_CONTAINER"`),
@@ -2012,7 +2035,7 @@ abdeckung_declare "HTTP-API-Rundlauf" "LH-FA-SST-005,LH-FA-SST-006,LH-FA-REA-001
 
 abdeckung_declare "HTTP-Diagnose-Querabgleich" "LH-FA-SST-006,LH-FA-SST-003,LH-FA-ADM-002,LH-FA-ADM-003" "GET /diagnose liefert denselben Betriebsstatus (Lebenszeichen bekannt, Fehlerzustand) wie eine kontemporäre docker exec diagnose-Ausgabe — ein echter Wertabgleich zwischen zwei Zugriffswegen, nicht nur die Feld-Präsenz der Antwort" "HTTP-Diagnose-Querabgleich (ADR-0132) belegt"
 
-# HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057, ADR-0081): ein Wegwerf-Client
+# HTTP-API-Rundlauf (LH-FA-SST-006): ein Wegwerf-Client
 # (tools/harness/httpclient) ruft RegisterConsumer mit dem admin-Token,
 # ListTables mit dem reader-Token und `GET /changes` mit dem reader-Token
 # real per HTTP gegen den laufenden Feed-Container auf — ein echter
@@ -2186,14 +2209,14 @@ echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057/ADR-0081
 
 abdeckung_declare "HTTP-API-Consumer-Entfernung" "LH-FA-CON-006" "derselbe Wegwerf-Client bestätigt real per HTTP eine Position für den zuvor registrierten Consumer (macht ihn zum Retention-Blocker der Quelle, real gegen cdc.retention_blockers geprüft) und entfernt ihn danach über POST /consumers/remove mit dem admin-Token; cdc.consumer und cdc.consumer_position tragen ihn danach beide nicht mehr" "HTTP-API-Consumer-Entfernung (LH-FA-CON-006, ADR-0057) belegt"
 
-# HTTP-API-Consumer-Entfernung (LH-FA-CON-006, ADR-0057): zwei getrennte
+# HTTP-API-Consumer-Entfernung (LH-FA-CON-006): zwei getrennte
 # Aufrufe desselben Wegwerf-Clients (tools/harness/httpclient), damit der
 # DB-Zustand real dazwischen geprüft werden kann — innerhalb eines
 # einzigen Prozesslaufs wäre das nicht beobachtbar. Läuft nach dem
 # bestehenden HTTP-API-Rundlauf oben, damit dessen eigene
 # registered_via_http-Prüfung den noch registrierten Consumer sieht,
 # bevor dieser Block ihn entfernt. Offset 1 liegt weit unter jeder realen
-# LSN-abgeleiteten Position der übrigen Consumer dieses Laufs (`ADR-0005`)
+# LSN-abgeleiteten Position der übrigen Consumer dieses Laufs
 # — real garantiert der kleinste Wert für src-e2e.
 HTTP_REMOVE_OFFSET=1
 
@@ -2259,7 +2282,7 @@ echo "run-integration-tests: HTTP-API-Consumer-Entfernung (LH-FA-CON-006, ADR-00
 
 abdeckung_declare "Strukturiertes-Logging-Beleg" "LH-QA-OPS-004" "ein Wegwerf-Werkzeug liest die stdout-Logzeilen des laufenden Feed-Containers real per docker logs und prüft jede nicht-leere Zeile als eigenständiges JSON-Objekt mit den Feldern time/level/msg" "Strukturiertes-Logging-Beleg (LH-QA-OPS-004, ADR-0024) belegt"
 
-# Strukturiertes-Logging-Beleg (LH-QA-OPS-004, ADR-0024): tools/harness/logcheck
+# Strukturiertes-Logging-Beleg (LH-QA-OPS-004): tools/harness/logcheck
 # liest die bislang akkumulierten stdout-Logzeilen des laufenden
 # Feed-Containers (docker logs, CDC_LOG_LEVEL=debug in compose.yaml —
 # reichlich Zeilen bis zu diesem späten Punkt im Lauf) und prüft jede
@@ -2289,10 +2312,10 @@ echo "run-integration-tests: Strukturiertes-Logging-Beleg (LH-QA-OPS-004, ADR-00
 
 abdeckung_declare "Metriken-Minimum-Beleg (ausstehende Changes, Fehlerklassen)" "LH-QA-OPS-003" "ein eigener, zurückliegender Consumer und ein direkt in die Heartbeat-Projektion geschriebener Fehlerzustand belegen real über cdc.metrics die beiden bislang fehlenden Dimensionen: ausstehende Changes je Consumer und Fehler je Klasse" "Metriken-Minimum-Beleg (LH-QA-OPS-003, SPEC-009) belegt"
 
-# Metriken-Minimum-Beleg (LH-QA-OPS-003, SPEC-009): cdc.metrics trägt
+# Metriken-Minimum-Beleg (LH-QA-OPS-003): cdc.metrics trägt
 # fünf der sieben im Lastenheft geforderten Dimensionen bereits mit
-# eigenen Belegen anderswo (u. a. cdc_capture_lag über LH-FA-ADM-004,
-# cdc_storage_bytes über LH-FA-RET-006). Dieser Beleg schließt die beiden
+# eigenen Belegen anderswo (u. a. cdc_capture_lag,
+# cdc_storage_bytes). Dieser Beleg schließt die beiden
 # zuvor fehlenden real: ein eigener, zurückliegender Consumer belegt
 # cdc_changes_pending; ein direkt geschriebener Fehlerzustand belegt
 # cdc_errors_total — derselbe Schreibweg und dieselbe Wiederholschleife
@@ -2342,7 +2365,7 @@ echo "run-integration-tests: Metriken-Minimum-Beleg (LH-QA-OPS-003, SPEC-009) be
 
 abdeckung_declare "gRPC-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real über gRPC den Server-Stream gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Öffnungsversuch ohne gültiges Token endet mit gRPC-Status Unauthenticated" "gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt"
 
-# gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060): ein Wegwerf-Client
+# gRPC-Stream-Rundlauf (ADR-0060): ein Wegwerf-Client
 # (tools/harness/grpcclient, per `go run` im Toolchain-Container) verbindet
 # sich real über gRPC mit dem laufenden Feed-Container, öffnet den
 # Server-Stream und empfängt eine danach committete Änderung. Geprüft wird
@@ -2799,7 +2822,7 @@ abdeckung_declare "Direkter Zugriffsweg Live-Reload (gRPC disable)" "LH-FA-CFG-0
 abdeckung_declare "Direkter Zugriffsweg Live-Reload (HTTP enable)" "LH-FA-CFG-001" "derselbe Beleg über den direkten HTTP-Zugriffsweg — fachliche Gleichwertigkeit von HTTP und gRPC (\`LH-FA-SST-006\`)" "Direkter HTTP-Zugriffsweg — EnableTable"
 
 # Direkter gRPC-/HTTP-Zugriffsweg — EnableTable/DisableTable ohne die
-# SQL-Antragsqueue (LH-FA-CFG-001, LH-FA-CFG-002): bis zu diesem Zug
+# SQL-Antragsqueue (LH-FA-CFG-001): bis zu diesem Zug
 # aktualisierte nur der SQL-Antragsqueue-Pfad (cdc.enable_table/
 # cdc.disable_table, verarbeitet von der Administrations-Goroutine) den
 # laufenden Assembler — EnableTable/DisableTable über gRPC oder HTTP riefen
@@ -2961,7 +2984,7 @@ echo "run-integration-tests: Direkter HTTP-Zugriffsweg — EnableTable($HTTP_API
 
 abdeckung_declare "SSE-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real per HTTP den Endpunkt \`GET /changes/stream\` gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401" "SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt"
 
-# SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061): ein Wegwerf-Client
+# SSE-Stream-Rundlauf (ADR-0061): ein Wegwerf-Client
 # (tools/harness/sseclient, per `go run` im Toolchain-Container) verbindet
 # sich real per HTTP mit dem laufenden Feed-Container, öffnet den
 # SSE-Stream `GET /changes/stream` und empfängt eine danach committete
@@ -3220,7 +3243,7 @@ echo "run-integration-tests: SSE-Stream-Filter-Rundlauf (LH-FA-SST-008, ADR-0133
 
 abdeckung_declare "NATS-Vollinhalts-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client verbindet sich real über NATS mit gültigem Token, abonniert cdc.stream.<...> und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch ohne und einer mit falschem Token werden vom NATS-Server abgelehnt; das bestehende Wecksignal (natssub) funktioniert mit demselben Test-Token unverändert weiter" "NATS-Vollinhalts-Stream-Rundlauf (LH-FA-SST-008, ADR-0100) belegt"
 
-# NATS-Vollinhalts-Stream-Rundlauf (LH-FA-SST-008, ADR-0100): ein
+# NATS-Vollinhalts-Stream-Rundlauf (ADR-0100): ein
 # Wegwerf-Client (tools/harness/natsstreamsub, per `go run` im
 # Toolchain-Container) belegt beide Ablehnungshälften — ein
 # Verbindungsversuch ohne Token ("REJECTED-NO-TOKEN") und einer mit einem
@@ -3374,7 +3397,7 @@ fi
 
 echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf (LH-FA-SST-008, ADR-0100) belegt — ein Wegwerf-Client (tools/harness/natsstreamsub) verband sich real mit gültigem Token über NATS, empfing eine danach committete Änderung als vollständiges JSON-Event über $NATS_STREAM_SUBJECT (Tabelle, Operation und Spaltenwert real am Event; die Feldvollständigkeit trägt publisher_test.go auf Unit-Ebene), deren change_id ($nats_stream_change_id) unabhängig über cdc.changes lesbar ist; Verbindungsversuche ohne und mit falschem Token wurden vom NATS-Server abgelehnt, und das bestehende Wecksignal (natssub) funktionierte mit demselben Test-Token unverändert weiter (siehe NATS-Happy-Path-/Negative-Belege oben): $nats_stream_client_output"
 
-# --- Backfill-Rundläufe (LH-FA-CAP-009, ADR-0111) ----------------------------
+# --- Backfill-Rundläufe (LH-FA-CAP-009) ----------------------------
 # Die Phasen laufen am laufenden Feed-Container und lesen und lösen
 # ausschließlich über externe Wege: SQL-Funktionen und Views, HTTP,
 # `docker exec`, `docker kill`. Drei Haltepunkte machen die Zeitpunkte eines
@@ -4039,7 +4062,7 @@ abdeckung_declare "Leerlauf-Bestätigung (WAL ohne Inhalt für die Publication, 
 # Stück im Rückstand des Slots; das WAL je Stück liegt unter der Warnschwelle,
 # die Summe der Stücke über der Fehlerschwelle. Der Runner wartet nach jedem
 # Stück, bis `confirmed_flush_lsn` die WAL-Position hinter dem Stück erreicht
-# hat (`ADR-0120`).
+# hat.
 BF_PHASE="Leerlauf-Bestätigung"
 WAL_TABLE=feed_e2e_wal_backfill
 WAL_FOREIGN=feed_e2e_wal_foreign
@@ -4591,7 +4614,7 @@ echo "run-integration-tests: Prozessstart-Vorlauf-Frist (ADR-0128) belegt — Ne
 
 abdeckung_declare "Upgrade-Sicherheits-Rundlauf" "LH-QA-OPS-005,LH-FA-RET-001" "ein realer Container-Tausch ersetzt den Feed-Container durch eine neue Instanz desselben Images, während Datenbank und NATS unberührt bleiben — der Datenstand davor bleibt lesbar (\`count(*)\`-Beleg gegen cdc.changes nach dem Tausch, \`LH-FA-RET-001\`), danach Eingefügtes wird weiter erfasst" "Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064) belegt"
 
-# Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064): bildet den
+# Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005): bildet den
 # Mechanismus eines Anwendungs-Upgrades nach — ein realer Container-Tausch
 # über `$COMPOSE up -d --force-recreate --no-deps pg-change-feed` ersetzt den
 # Feed-Container durch eine neue Instanz desselben Images. Der Tausch belegt
@@ -4692,8 +4715,7 @@ echo "run-integration-tests: Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-00
 
 abdeckung_declare "Schema-Wiederanlauf nach der Spaltenentfernung" "LH-FA-SCH-003" "nach dem dauerhaften Ende des Erfassungspfads stellt der Runner einen sauberen Zustand wieder her: Replication-Slot neu angelegt, aktuelle Schema-Version nachgetragen, Feed-Container wieder healthy" "TestE2ESchemaChangeDropColumn (LH-FA-SCH-003, ADR-0063) belegt"
 
-# TestE2ESchemaChangeDropColumn (LH-FA-SCH-003, ADR-0063 Supersedes
-# ADR-0058 Entscheidung 1) läuft als eigener go-test-Aufruf, NACH allem,
+# TestE2ESchemaChangeDropColumn (LH-FA-SCH-003) läuft als eigener go-test-Aufruf, NACH allem,
 # was den bislang unversehrten Feed-Container noch braucht (Lasttest-Beleg,
 # Black-Box-CLI-Rundlauf, Retention-/NATS-/HTTP-Belege oben) und VOR
 # TestE2ESchemaChangeIncompatibleTypeChange: eine real entfernte Spalte löst
@@ -4792,7 +4814,7 @@ echo "run-integration-tests: TestE2ESchemaChangeDropColumn (LH-FA-SCH-003, ADR-0
 # siehe Funktionskommentar). Alles, was den laufenden Container noch
 # braucht (Lasttest-Beleg, Black-Box-CLI-Rundlauf oben), lief davor;
 # TestE2ESchemaChangeDropColumn direkt davor beendete den Container
-# ebenfalls bereits dauerhaft (ADR-0063) — der Neustart oben stellt einen
+# ebenfalls bereits dauerhaft — der Neustart oben stellt einen
 # sauberen, healthy Zustand wieder her, bevor diese Funktion ihren eigenen
 # Mechanismus real prüft. Die Phase „Transformationen-Nichtanwendbarkeit
 # und Abhilfe“ unten stellt den Container nach dieser Funktion noch einmal

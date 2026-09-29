@@ -170,7 +170,9 @@ func lineCommentMarker(name string) string {
 // lineBlocks liest die Kommentarblöcke einer Nicht-Go-Quelle. Ein Block ist
 // eine Folge aufeinanderfolgender Zeilen, deren erster Nicht-Leerraum-Text
 // mit dem Marker beginnt; jede andere Zeile — auch eine Leerzeile — beendet
-// ihn. Nachgestellte Kommentaranteile hinter Code liest die Messung nicht:
+// ihn. Eine nur aus dem Marker bestehende Zeile (`#`, `--`) ist Grenz-Marker
+// und beendet den Block ebenfalls; sie ist die Absatz-Form dieser Formen.
+// Nachgestellte Kommentaranteile hinter Code liest die Messung nicht:
 // ihre Trennstelle ist in diesen Formen syntaktisch mehrdeutig.
 func lineBlocks(name, marker string, src []byte) []block {
 	var out []block
@@ -189,6 +191,10 @@ func lineBlocks(name, marker string, src []byte) []block {
 	for i, line := range strings.Split(string(src), "\n") {
 		trimmed := strings.TrimLeft(line, " \t")
 		if !strings.HasPrefix(trimmed, marker) {
+			flush()
+			continue
+		}
+		if content := strings.TrimPrefix(trimmed, marker); strings.TrimSpace(content) == "" {
 			flush()
 			continue
 		}

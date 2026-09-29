@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # sdk-pack-python.sh — baut/testet/paketiert das Python-SDK-Package
-# `pgchangefeed` (ADR-0107 Festlegung 5, ADR-0108 §Entscheidung
-# Festlegung 1/3, slice-sdk-python-pack-werkzeug).
+# `pgchangefeed` (ADR-0107 Festlegung 5).
 #
 # Docker-only: `pip install`/`pytest`/`uv build --no-sources` laufen
 # ausschliesslich im gepinnten `python:3.14-slim`-Image

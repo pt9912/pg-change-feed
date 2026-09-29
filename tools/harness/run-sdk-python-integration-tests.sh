@@ -24,10 +24,7 @@
 # `cdc.changes` gehalten (dieselbe Disziplin wie die Rundläufe im
 # Server-E2E-Runner).
 #
-# Eine Phase je Fläche (slice-sdk-python-grpc-client-flaeche: gRPC,
-# SPEC-020; slice-sdk-python-sse-client-flaeche: SSE, SPEC-021;
-# slice-sdk-python-nats-stream-client-flaeche: NATS-Vollinhalt, SPEC-024;
-# slice-sdk-python-http-reale2e: HTTP-API, SPEC-018 — der Rundlauf
+# Eine Phase je Fläche (gRPC, SSE, NATS-Vollinhalt, HTTP-API — der Rundlauf
 # RegisterConsumer/ListTables mit SQL-Gegenprüfung gegen cdc.consumer):
 # jede Phase trägt ihre Testdatei explizit als Umgebungsvariable
 # `PGCHANGEFEED_TEST_FILE` (kein stiller
@@ -35,7 +32,7 @@
 # trägt eigenen Sentinel- und ID-Wertebereich, damit sich die Phasen
 # nicht in die Quere kommen. Dieselben vier Flächen fahren danach ein
 # zweites Mal gegen eine Tabelle mit aktiver `rename_column`-Regel
-# (slice-sdk-regel-realserver-e2e, ADR-0112, Vorbereitung über
+# (Vorbereitung über
 # tools/harness/lib-sdk-rule-fixture.sh) — ohne REJECTED-Beleg (das Negativ
 # steht bei den vier Phasen ohne Regel), mit der change_id gegen den
 # umbenannten Zielschlüssel gehalten.
@@ -66,7 +63,7 @@ PG_PASSWORD=postgres
 SLOT=slot_pgc_e2e
 # Derselbe Reader-Token wie der Container-Vertrag in compose.yaml
 # (CDC_API_TOKEN_READER): gRPC-Stream und SSE-Endpunkt akzeptieren beide
-# Token-Klassen (SPEC-020/SPEC-021), die Tests tragen die Reader-Klasse.
+# Token-Klassen, die Tests tragen die Reader-Klasse.
 API_TOKEN=e2e-reader-token
 API_TOKEN_ADMIN=e2e-admin-token
 API_TOKEN_READER=e2e-reader-token
@@ -124,10 +121,10 @@ bash tools/schema/rollout-restore.sh make schema-rollout SCHEMA_TARGET="db:$DSN"
 
 # Vorbedingungen der Aktivierung: die drei CDC_TABLES-Tabellen existieren
 # physisch, die Quelle-Zeile trägt die Fremdschlüssel-Registrierung
-# (SPEC-001); die Aktivierung selbst (Publication, Bindungs- und
+# (Fremdschlüssel); die Aktivierung selbst (Publication, Bindungs- und
 # Schema-Version-Zeilen) trägt die Verdrahtung des Feed-Containers
-# (ADR-0028, LH-FA-CFG-001.a). Die REPLICA IDENTITY FULL bleibt vom
-# Aktivieren unberührt (LH-FA-CFG-001.a).
+# (LH-FA-CFG-001.a). Die REPLICA IDENTITY FULL bleibt vom
+# Aktivieren unberührt.
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<'SQL'
 CREATE TABLE public.feed_e2e_flow (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_e2e_full (id int PRIMARY KEY, name text);
@@ -185,7 +182,7 @@ docker build --build-context proto=proto -f sdks/python/Dockerfile \
 # SDK-Fläche: Container starten (die Adress-/Auth-Variablen je Fläche kommen
 # als Leerzeichen-getrennte Extra-Env-Liste herein), auf READY warten, bei
 # Stream-Phasen eine begrenzte Folge eindeutiger Zeilen committen
-# (Fire-and-Forget-Fenster, SPEC-020/SPEC-021/SPEC-024 — die HTTP-Fläche
+# (Fire-and-Forget-Fenster — die HTTP-Fläche
 # committet ihre Änderung selbst: RegisterConsumer, kein CDC-Empfang, kein
 # Insert-Anteil), bei nicht-leerem Reject-Marker auf ihn warten, auf das
 # Prozessende warten, die RECEIVED-Zeile prüfen und die Identität unabhängig

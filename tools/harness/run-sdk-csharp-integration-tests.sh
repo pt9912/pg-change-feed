@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # run-sdk-csharp-integration-tests.sh — Realserver-Integrationstest der
-# C#-SDK-Zustellweg-Flächen (slice-sdk-csharp-reale2e; Mechanik-Klasse
+# C#-SDK-Zustellweg-Flächen (Mechanik-Klasse
 # ADR-0110 §Entscheidung Festlegung 2, gespiegelt vom Python-Vorbild
 # tools/harness/run-sdk-python-integration-tests.sh): acht Phasen — die vier
-# Flächen des Packages PgChangeFeed.Client (HTTP SPEC-018, gRPC SPEC-020, SSE
-# SPEC-021, NATS-Vollinhalt SPEC-024) prüfen ihre Protokoll-Annahmen je gegen
+# Flächen des Packages PgChangeFeed.Client (HTTP, gRPC, SSE
+# und NATS-Vollinhalt) prüfen ihre Protokoll-Annahmen je gegen
 # eine reale, laufende Server-Instanz ohne Regel, und dieselben vier Flächen
-# ein zweites Mal gegen eine Tabelle mit aktiver `rename_column`-Regel
-# (slice-sdk-regel-realserver-e2e, ADR-0112) — der Prüfling ist die
+# ein zweites Mal gegen eine Tabelle mit aktiver `rename_column`-Regel —
+# der Prüfling ist die
 # kompilierte Client-Assembly, der Integrationstest importiert
 # PgChangeFeed.Client direkt (kein Wegwerf-Duplikat-Client daneben).
 #
