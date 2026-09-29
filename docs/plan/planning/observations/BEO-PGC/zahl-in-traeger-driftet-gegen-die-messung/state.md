@@ -37,7 +37,10 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **26×** (evidence/welle-sdk-grpc-administration-flaeche.md — die
+Zähler (abgeleitet): **27×** (evidence/slice-sdk-public-doc-check-gate.md —
+Suchlauf-Standzahl „130" gegen gemessen 132 am genannten Stand, falscher
+Parent-Bezug, übergehender Fremd-Commit im Range; gezogen durch `4ca5af64`,
+HIGH; evidence/welle-sdk-grpc-administration-flaeche.md — die
 beiden MEDIUM-Findings des Closure-Note-Reviews an der Notiz der
 `welle-sdk-grpc-administration-flaeche` in einem Vorgang: die Zählung „2 HIGH" stand
 gegen drei Review-Reports samt eigener Verifikations-Tabelle (1+1+1), und die

@@ -113,12 +113,13 @@ Grund gegen ein netzloses, 0,013 s schnelles Gate trägt er nicht.
       Belegt: [`review-fixrunde-slice-sdk-public-doc-check-gate.md`](../../../reviews/review-fixrunde-slice-sdk-public-doc-check-gate.md)
       (Erst-Review: `review-slice-sdk-public-doc-check-gate.md`; Fixrunde
       `4ca5af64` — Checkbox-Nachzug ohne Fixrunde).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine
-      Beobachtung angefallen“ in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo
-      **mit** Wellen von der nächsten Welle-Closure geprüft.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine
+      Beobachtung angefallen" in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo
+      **mit** Wellen von der nächsten Welle-Closure geprüft; hier (wellenloser
+      Slice) in §7 selbst geprüft.
 
 ## 3. Plan (vor Code)
 
@@ -155,11 +156,56 @@ Closure-Notiz mit Steering-Loop-Eintrag geschrieben.
   `make gates` läuft an einem Arbeitsbaum mit unversionierten Dateien unter `sdks/`
   (`dist/`, `obj/`, `bin/` u. a.; der Tabellentest belegt die Ausnahmen an
   Beispieldateien). *Zu belegen durch:* ein Lauf von `make gates` am Arbeitsbaum nach
-  `make sdk-pack-*`. **Ausgang:** offen bis zum Start.
+  `make sdk-pack-*`. **Ausgang:** entfallen (nicht ausgelöst) — gemessen am
+  Arbeitsbaum mit vorhandenen, ignorierten Bau-Ausgaben (`sdks/*/dist`,
+  `grpc_gen`): `make sdk-public-doc-check` und `make gates` färben dort nicht
+  rot (Exit 0); Messungen: Erst-Review (Sensors-Abschnitt), Implementer-Abschlusslauf
+  und Verifier-Abschlusslauf (`1a6224d1`).
 
 ## 7. Closure-Notiz
 
-*(wird bei der Closure durch den Planner gefüllt)*
+- **Was hat funktioniert:** Der ADR-Träger vor dem Start ([`ADR-0134`](../../adr/0134-sdk-public-doc-check-gate-make-gates.md),
+  `Accepted`) machte den Slice klein — Verdrahtung (`GATE_CHECKS +=`,
+  Nachweis-Stempel zuletzt), Sensor-Datei in Form der übrigen und README-Zug
+  liefen in einem Zug; der Rot/Grün-Beleg der Eingabeseite traf die
+  vertraglich beschriebene Form beim ersten Versuch (Exit 2 mit
+  `datei:zeile:`-Meldung bei `SPEC-001`, Rücknahme grün).
+- **Was ging anders als geplant:** die Suchlauf-Zahlen des DoD-Felds waren
+  abgeleitet (112 + 18) statt am genannten Stand gemessen — der im selben
+  Range liegende Fremd-Commit `865c273e` (zwei Treffer) und ein falscher
+  Parent-Bezug machten „130" falsch (Review F-1, HIGH); dazu lief der
+  Suchraum beidseitig von §3.13 ab, ohne den Grund im Feld zu nennen
+  (F-2, LOW), und der neue `sdk.mk`-Kommentarblock mischte ASCII- und
+  Umlaut-Form (F-3, LOW). Alles in der Fixrunde `4ca5af64` gezogen: beide
+  Zahlen tragen ihren Stand als Commit-Kennung (Parent `865c273e` 114,
+  Stand `72293784` 132, je Datei verifiziert), der Grund des Pathspecs
+  steht im Feld samt Gesamtbaum-Messung (56/74), der Block ist durchgängig
+  Umlaut-Form.
+- **Steering-Loop-Eintrag:** keiner — F-1/F-2 sind Anwendungen der bereits
+  verkörperten Regel (`zahl-in-traeger-driftet-gegen-die-messung` →
+  `AGENTS.md` §3.12 Instanz A); ihre Anwendungs-Schärfung (jede Suchlauf-Zahl
+  trägt ihren Stand als Commit-Kennung, sobald im Range fremde Commits
+  liegen; jede Raum-Einschränkung steht mit Grund im Feld) steht im
+  Register-Beleg, nicht als neue Regel.
+- **Beobachtungs-Register (`../observations/`):**
+  `zahl-in-traeger-driftet-gegen-die-messung` um
+  `evidence/slice-sdk-public-doc-check-gate.md` ergänzt (26× → 27×, HIGH —
+  der Fall ist nicht Teil des Welle-Nachzugs, dessen Beleg die Findings des
+  Closure-Note-Reviews an der Results-Notiz trägt). F-2 und F-3 tragen
+  keinen eigenen Eintrag: jeweils erste, in der Fixrunde geschlossene
+  LOW-Form ohne passende Bestands-Klasse und ohne Wiederholungssignal
+  (F-3 ist semantisch wirkungslos); die Form-Pflicht für das Suchlauf-Feld
+  trägt die verkörperte Regel `AGENTS.md` §3.13 selbst.
+- **Folge-Slices:** keiner — der F-4-Anschluss (Bestands-Mischformen in
+  `harness/mk/sdk.mk` ab Zeile 31) ist in `slice-code-kommentare-bereinigung`
+  benannt (bestehender offener Slice, keine Neuanlage).
+- **Risiken aus §6:** entfallen (nicht ausgelöst) — siehe §6.
+- **Drei Paarungen:** hier geprüft (wellenloser Slice): kein `liegt in`-Feld
+  in diesem Slice (Anker vacuously erfüllt), kein Folge-Slice neu genannt
+  (die genannte `slice-code-kommentare-bereinigung` existiert in `open/`),
+  die referenzierten Kennungen `gate-scope-erweiterung-ohne-adr-traeger` (2×)
+  und `intern-kennungen-in-ausgelieferten-texten` (1×) existieren real mit
+  nicht leerem `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
