@@ -114,9 +114,11 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 		defer close(holderDone)
 		_ = holderStream.Run(holderCtx)
 	}()
+	t.Logf("diagnose: Halter-Goroutine gestartet")
 	if _, err := pool.Exec(ctx, "INSERT INTO "+feed+" (id, name) VALUES (1, 'Halter')"); err != nil {
 		t.Fatalf("INSERT (Halter): %v", err)
 	}
+	t.Logf("diagnose: Halter-INSERT committet")
 	holderDeadline := time.Now().Add(15 * time.Second)
 	for {
 		var count int
@@ -137,6 +139,7 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 	// (der Slot ist aktiv), der Wartezug gibt den Slot frei, und der zweite
 	// Versuch liefert die danach committete Change.
 	cycle := func(attemptCtx context.Context) error {
+		t.Logf("diagnose: Zyklus-Versuch startet (attemptCtx: %v)", attemptCtx.Err())
 		cycleStream, err := receive.NewStream(attemptCtx, receive.Config{
 			DSN:         dsn,
 			Source:      source,
@@ -157,6 +160,7 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 		if err := cycleStream.BindCapture(cycleService); err != nil {
 			return err
 		}
+		t.Logf("diagnose: Zyklus gebunden, Run startet")
 		return cycleStream.Run(attemptCtx)
 	}
 
