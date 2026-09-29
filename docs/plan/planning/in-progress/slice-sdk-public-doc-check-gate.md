@@ -107,9 +107,12 @@ Grund gegen ein netzloses, 0,013 s schnelles Gate trägt er nicht.
       Belegt: finaler Lauf nach Rücknahme und Plan-Nachzug, Exit 0
       (Implementer-Bericht, §3.9-Disziplin: Exit ungepiped gesichert,
       Ausgabe nur gegen die Log-Datei).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow, kein Self-Review (Modul 8).
+      Belegt: [`review-fixrunde-slice-sdk-public-doc-check-gate.md`](../../../reviews/review-fixrunde-slice-sdk-public-doc-check-gate.md)
+      (Erst-Review: `review-slice-sdk-public-doc-check-gate.md`; Fixrunde
+      `4ca5af64` — Checkbox-Nachzug ohne Fixrunde).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine
       Beobachtung angefallen“ in §7 notiert.
