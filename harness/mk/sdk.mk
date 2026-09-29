@@ -8,15 +8,15 @@
 # Festlegung 5, dieselbe Begründung wie harness/mk/examples.mk) — die
 # `sdk-pack-*`-Ziele hängen deshalb NICHT an GATE_CHECKS.
 #
-# `sdk-public-doc-check` prueft, dass keine Datei unter sdks/ eine interne
-# Kennung (SPEC-/ADR-/ARC-/LH-FA-/LH-QA-, Slice-/Welle-Name) traegt:
+# `sdk-public-doc-check` prüft, dass keine Datei unter sdks/ eine interne
+# Kennung (SPEC-/ADR-/ARC-/LH-FA-/LH-QA-, Slice-/Welle-Name) trägt:
 # Kommentare, Docstrings, Fehlertexte, README und Build-Dateien der SDKs
-# erreichen Anwender ueber die Pakete (Wheel/sdist, nupkg mit XML-Doku,
+# erreichen Anwender über die Pakete (Wheel/sdist, nupkg mit XML-Doku,
 # Sources-Jar). Reines grep, netzlos und schnell
 # (tools/harness/sdk-public-doc-check.sh). Gate in GATE_CHECKS (ADR-0134):
-# ein Rueckfall faellt bei jedem Push/PR auf (ci.yml faehrt make gates), und
-# die drei `sdk-pack-*`-Ziele haengen weiterhin an der Vorgaenger-Kante, damit
-# er vor dem Bau auffaellt. Der Tabellentest zur Wächter-Logik bleibt Werkzeug
+# ein Rückfall fällt bei jedem Push/PR auf (ci.yml fährt make gates), und
+# die drei `sdk-pack-*`-Ziele hängen weiterhin an der Vorgänger-Kante, damit
+# er vor dem Bau auffällt. Der Tabellentest zur Wächter-Logik bleibt Werkzeug
 # (`make test-sdk-public-doc-check`, ADR-0134 Teilfrage 2).
 .PHONY: sdk-public-doc-check
 sdk-public-doc-check: ## Gate: keine interne Kennung in den Dateien unter sdks/ (netzlos, grep; Vorstufe der sdk-pack-*-Ziele; ADR-0134)

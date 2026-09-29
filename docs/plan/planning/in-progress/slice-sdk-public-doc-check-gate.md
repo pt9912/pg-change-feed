@@ -73,12 +73,27 @@ Grund gegen ein netzloses, 0,013 s schnelles Gate trägt er nicht.
       die Begründung „kein Gate“ in `harness/mk/sdk.mk` und `harness/README.md`
       entfernt bzw. auf den Ist-Zustand gezogen (Suchlauf §3.13 über
       `git grep -n 'sdk-public-doc-check' -- harness AGENTS.md docs`).
-      Belegt: Suchlauf im Implementer-Bericht — Parent `f287c81b` 112 Treffer,
-      Arbeitsbaum nach dem Zug 130 (+18: Sensor-Datei neu 12, `harness/mk/sdk.mk`
-      +2, `harness/README.md` +2, dieser Plan +2); die „kein Gate“-Begründungen
-      in `harness/mk/sdk.mk` und `harness/README.md` sind auf den Ist-Zustand
-      gezogen, die Treffer in `harness/sensors/kommentar-kennungen.md`
-      (Zweitverweise auf das Werkzeug, beide Stände wahr) bleiben unverändert.
+      Belegt: Suchlauf, beide Stände selbst gemessen — Parent `865c273e`
+      114 Treffer, Stand `72293784` 132 Treffer (Plan-Pathspec
+      `git grep -n 'sdk-public-doc-check' -- harness AGENTS.md docs`;
+      +18: Sensor-Datei neu 12, `harness/mk/sdk.mk` 12→14,
+      `harness/README.md` 1→3, dieser Plan 10→12). Der Pathspec ist
+      enger als der §3.13-Gesamtbaum, weil die Träger der bewegten
+      Eigenschaft („kein Gate“-Begründung) dem ADR-Bezug nach
+      `harness/`-Dateien waren; der Gesamtbaum (exklusive
+      `docs/reviews/**`, `done/**`, `.harness/baseline/**`) misst
+      56 (`865c273e`) gegen 74 (`72293784`), dieselbe +18 — die
+      außerhalb des Pathspecs liegenden Treffer sind Eigenbezüge der
+      Werkzeuge (`tools/harness/sdk-public-doc-check.sh`,
+      `tools/harness/run-sdk-public-doc-check-tests.sh`,
+      `tools/harness/kommentar-kennungen/main.go`) ohne
+      „kein Gate“-Aussage; die übrigen Kennungen stehen im
+      [`ADR-0134`](../../adr/0134-sdk-public-doc-check-gate-make-gates.md)-Kontext
+      und als Plan-Zitat. Die „kein Gate“-Begründungen
+      in `harness/mk/sdk.mk` und `harness/README.md` sind auf den
+      Ist-Zustand gezogen, die Treffer in
+      `harness/sensors/kommentar-kennungen.md` (Zweitverweise auf das
+      Werkzeug, beide Stände wahr) bleiben unverändert.
 - [x] Beleg der Eingabeseite: eine Kennung in eine Datei unter `sdks/` eingefügt
       färbt `make gates` rot (Exit ≠ 0, Meldung des Wächters gedruckt), die
       Rücknahme grün.
