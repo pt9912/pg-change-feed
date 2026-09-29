@@ -21,7 +21,7 @@ import (
 const backfillRetryInterval = administrationPollInterval
 
 // backfillWorkerDeps bündelt die Abhängigkeiten des Backfill-Workers
-// (`runBackfillWorker`, `ADR-0111` Teilfrage 5, `ADR-0113` Festlegung 2):
+// (`runBackfillWorker`, `ADR-0111` Teilfrage 5):
 // der Run-Zustands-Port liefert die `queued`-Runs der Quelle, der Use Case
 // führt sie aus.
 type backfillWorkerDeps struct {
@@ -63,7 +63,7 @@ func signalBackfillWorker(wake chan<- struct{}) {
 // erneut liest; die erste Lesung geschieht beim Start (`ADR-0113`
 // Festlegung 2). Nach einem Durchgang mit Fehler liest der Worker nach
 // `retryAfter` erneut. Eine `interrupted`-Zeile nimmt der Worker nicht auf:
-// nur `queued` wird gelesen (`ADR-0111` Teilfrage 4).
+// nur `queued` wird gelesen.
 func runBackfillWorker(ctx context.Context, deps backfillWorkerDeps) {
 	for {
 		if ctx.Err() != nil {
@@ -143,7 +143,7 @@ func logBackfillResult(ctx context.Context, log outbound.LogPort, run model.Back
 }
 
 // reconcileBackfillRuns setzt beim Prozessstart jeden `running`-Run der
-// Quelle auf `interrupted` (`ADR-0111` Teilfrage 4, `ADR-0113` Festlegung 2):
+// Quelle auf `interrupted` (`ADR-0111` Teilfrage 4):
 // eine Instanz je Quelle trägt den Slot, ein `running`-Run gehört also zu
 // einem beendeten Prozess. `queued`-Runs bleiben unberührt; die Aufnahme
 // übernimmt der Worker.

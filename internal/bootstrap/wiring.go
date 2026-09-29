@@ -1,10 +1,10 @@
 // Package bootstrap ist die Composition Root (`ADR-0026`): er kennt die
 // konkreten Adapter und verdrahtet die Pipeline an genau einer Stelle —
 // ChangeStore-Driven-Adapter, Aktivierungs-Driven-Adapter mit dem
-// EnableTable Use Case (`ADR-0028`), Heartbeat-Driven-Adapter mit dem
-// periodischen Timer-Zug (`ADR-0024`), Retention-Use-Case mit
-// periodischem Lösch-Takt über den System-Clock-Adapter (`ADR-0014`,
-// `ADR-0040`), Replication-Stream-Driving-Adapter, Capture Service und
+// EnableTable Use Case, Heartbeat-Driven-Adapter mit dem
+// periodischen Timer-Zug, Retention-Use-Case mit
+// periodischem Lösch-Takt über den System-Clock-Adapter,
+// Replication-Stream-Driving-Adapter, Capture Service und
 // Replication-ACK-Driven-Adapter.
 // Die Abhängigkeitsregel (§2 der Architektur-Sicht) bleibt hier lokal
 // einhaltbar; `main` referenziert keinen Adapter-Konstruktor.
@@ -13,8 +13,7 @@
 // Publication, Slot-Name und die Tabellen-Aktivierungen (`ConfigFromEnv`).
 // Eine optionale YAML-Konfigurationsdatei ergänzt das additiv, mit
 // Umgebungsvariable-schlägt-Datei-Feld-für-Feld-Precedence und
-// env-var-exklusiven Zugangsdaten (`ConfigFromEnvAndFile`, `config_file.go`,
-// `ADR-0052`, `ADR-0088`).
+// env-var-exklusiven Zugangsdaten (`ConfigFromEnvAndFile`, `config_file.go`).
 package bootstrap
 
 import (
@@ -88,7 +87,7 @@ const (
 	// nicht ab.
 	envLogLevel = "CDC_LOG_LEVEL"
 	// envNatsURL trägt die optionale NATS-Server-URL für das
-	// Change-Notification-Wecksignal (`ADR-0055`, `LH-FA-SST-007`): anders
+	// Change-Notification-Wecksignal (`ADR-0055`): anders
 	// als die fünf Namen oben ist sie keine Start-Vorbedingung — ungesetzt
 	// bleibt das Feature vollständig deaktiviert, kein
 	// `ChangeNotificationPort` wird konstruiert und keine NATS-Verbindung
@@ -99,8 +98,8 @@ const (
 	// Erfassung selbst nicht gefährdet.
 	envNatsURL = "CDC_NATS_URL"
 	// envNatsStreamToken trägt den optionalen NATS-Verbindungs-Token des
-	// dritten, vollinhaltstragenden Zustellwegs (`ADR-0100` Teilfrage 4/5,
-	// `LH-FA-SST-008`): eine gesetzte `CDC_NATS_STREAM_TOKEN` aktiviert —
+	// dritten, vollinhaltstragenden Zustellwegs (`ADR-0100` Teilfrage 4/5):
+	// eine gesetzte `CDC_NATS_STREAM_TOKEN` aktiviert —
 	// zusammen mit `envNatsURL` — sowohl den `natsstream.Publisher` als
 	// auch eine Token-Client-Option an der bestehenden
 	// `nats.Connect`-Aufrufstelle. Ist nur `envNatsURL` gesetzt (heutiger
@@ -114,21 +113,21 @@ const (
 	// Verbindungsziel angibt, soll das beim Start bemerken.
 	envNatsStreamToken = "CDC_NATS_STREAM_TOKEN"
 	// envHTTPAddr trägt die optionale Horch-Adresse des HTTP/JSON-Driving-
-	// Adapters (`ADR-0057`, `LH-FA-SST-006`): anders als die sechs
+	// Adapters (`ADR-0057`): anders als die sechs
 	// Vorbedingungen oben ist sie keine Start-Vorbedingung — ungesetzt
 	// bleibt die API vollständig deaktiviert, kein `http.Server` wird
 	// konstruiert (additiv, kein Breaking Change für bestehende
-	// Deployments, analog zu `envNatsURL`/`ADR-0055` Punkt 5).
+	// Deployments, analog zu `envNatsURL`).
 	envHTTPAddr = "CDC_HTTP_ADDR"
 	// envAPITokenReader und envAPITokenAdmin tragen die beiden
-	// Rechtsklassen der Token-Middleware (`ADR-0057` Teilfrage 3,
-	// analog zum DB-Rollenmodell `ADR-0047`); beide bleiben optional wie
+	// Rechtsklassen der Token-Middleware (`ADR-0057` Teilfrage 3); beide
+	// bleiben optional wie
 	// `envHTTPAddr` — ein leerer Wert deaktiviert die jeweilige Klasse
 	// (`internal/adapters/driving/http`, `classifyToken`).
 	envAPITokenReader = "CDC_API_TOKEN_READER"
 	envAPITokenAdmin  = "CDC_API_TOKEN_ADMIN"
 	// envGRPCAddr trägt die optionale Horch-Adresse des
-	// gRPC-Streaming-Driving-Adapters (`ADR-0060`, `LH-FA-SST-008`): wie
+	// gRPC-Streaming-Driving-Adapters (`ADR-0060`): wie
 	// `envHTTPAddr` ist sie keine Start-Vorbedingung — ungesetzt bleibt der
 	// Streaming-Server vollständig deaktiviert, kein Listener wird geöffnet
 	// (additiv, unverändertes Bestandsverhalten, `ADR-0060` Teilfrage 6).
@@ -139,7 +138,7 @@ const (
 )
 
 // ErrConfiguration trägt die Fehlerklasse `configuration` der Verdrahtung
-// (`SPEC-008`, `ADR-0023`): eine fehlende oder falsch gesetzte
+// (`ADR-0023`): eine fehlende oder falsch gesetzte
 // Vorbedingung endet ohne Start und ohne Fortsetzung im falschen Stand;
 // der Prozess-Aufrufer meldet sie als Ausgang.
 var ErrConfiguration = errors.New("Fehlerklasse configuration: Verdrahtung ohne vollständige Vorbedingung")
@@ -176,10 +175,10 @@ const administrationPollInterval = heartbeatInterval
 const administrationPassTimeout = 30 * time.Second
 
 // retentionInterval trägt den periodischen Lösch-Takt der
-// Retention-Goroutine (`runRetentionCleanup`, `LH-FA-RET-002`…`004`,
-// `ADR-0014`): ein MVP-Default ohne eigene Konfigurationsschicht, analog
+// Retention-Goroutine (`runRetentionCleanup`, `ADR-0014`): ein MVP-Default
+// ohne eigene Konfigurationsschicht, analog
 // zu `heartbeatInterval` — Implementer-Entscheidung. Jeder Takt liest die
-// Kandidaten der Quelle seitenweise ohne Row Images (`ADR-0124`) und befragt
+// Kandidaten der Quelle seitenweise ohne Row Images und befragt
 // `RetentionPolicy.AllowsDeletion`; ein selteneres Intervall als der Heartbeat-Takt
 // hält diese breitere Leseoperation von der kritischen Sektion des Capture-Pfads fern.
 const retentionInterval = 10 * time.Second
@@ -192,11 +191,11 @@ const retentionInterval = 10 * time.Second
 const retentionMinAge = 24 * time.Hour
 
 // walRetentionWarnBytes und walRetentionErrorBytes tragen die
-// SPEC-013-Startwerte für `cdc_wal_retention_bytes` (`CDC_THRESHOLDS`,
-// präzisiert durch `ADR-0049`(b)): unterhalb der Warnschwelle bleibt der
+// SPEC-013-Startwerte für `cdc_wal_retention_bytes` (`CDC_THRESHOLDS`):
+// unterhalb der Warnschwelle bleibt der
 // periodische Schwellen-Vergleich unauffällig, zwischen Warn- und
-// Fehlerschwelle setzt sich der Capture-Betrieb sichtbar fort (`SPEC-008`
-// „kontrollierte Fortsetzung"), oberhalb der Fehlerschwelle klassifiziert
+// Fehlerschwelle setzt sich der Capture-Betrieb sichtbar fort
+// („kontrollierte Fortsetzung"), oberhalb der Fehlerschwelle klassifiziert
 // `Run` den Lauf als `replication`-Fehler (`outbound.ErrReplication`) und
 // bricht über den bestehenden Abbruchpfad ab (`classifyRunError`,
 // `reportFault`). `Config.WALRetentionWarnBytes`/`WALRetentionErrorBytes`
@@ -211,7 +210,7 @@ const (
 // Quelle und der CDC-Speicher bleiben dieselbe Instanz (MVP-Schnitt,
 // Abschnitt 1 Lastenheft), die Rollentrennung greift auf Ebene der
 // PostgreSQL-Anmeldung. Dazu die Quelle, die Verwaltungs-Namen
-// Publication und Slot (`LH-FA-CFG-001.a`) und die aktivierten Tabellen
+// Publication und Slot und die aktivierten Tabellen
 // mit ihren Port-Kennungen.
 type Config struct {
 	// CaptureDSN bindet an die Rolle `cdc_capture` (`ADR-0047`):
@@ -237,7 +236,7 @@ type Config struct {
 	LogLevel slog.Level
 	// WALRetentionWarnBytes und WALRetentionErrorBytes überschreiben die
 	// SPEC-013-Startwerte (`walRetentionWarnBytes`/`walRetentionErrorBytes`
-	// unten, `ADR-0049`(b)) — für Testläufe, die beide Seiten der Schwelle
+	// unten) — für Testläufe, die beide Seiten der Schwelle
 	// in vertretbarer Testzeit real durchlaufen wollen, statt 100 MiB/1 GiB
 	// abzuwarten. Ungesetzt (0 oder negativ) übernimmt `Run` die
 	// SPEC-013-Startwerte; kein Umgebungsname liest hierher — kein
@@ -248,19 +247,19 @@ type Config struct {
 	// Change-Notification-Wecksignals (`envNatsURL`, `ADR-0055`); leer
 	// heißt Feature deaktiviert. Seine Herkunft ist auf beiden Ladepfaden
 	// die Umgebungsvariable: die URL-Form kann Zugangsdaten einbetten und
-	// gehört damit zur env-var-exklusiven Klasse (`ADR-0088` Festlegung 1).
+	// gehört damit zur env-var-exklusiven Klasse.
 	NatsURL string
 	// HTTPAddr trägt die optionale Horch-Adresse des HTTP/JSON-Driving-
 	// Adapters; leer heißt Feature deaktiviert — derselbe additive
 	// Zuschnitt wie `NatsURL`. Herkunft ist `envHTTPAddr` oder das
 	// Datei-Feld `http_addr`, mit Feld-für-Feld-Vorrang der
-	// Umgebungsvariable (`ADR-0088` Festlegung 2/3).
+	// Umgebungsvariable.
 	HTTPAddr string
 	// APITokenReader und APITokenAdmin tragen die beiden Rechtsklassen
 	// der Token-Middleware (`envAPITokenReader`/`envAPITokenAdmin`,
 	// `ADR-0057` Teilfrage 3); leer heißt die jeweilige Klasse
 	// deaktiviert. Beide sind Zugangsdaten und damit auf beiden
-	// Ladepfaden env-var-exklusiv (`ADR-0088` Festlegung 1).
+	// Ladepfaden env-var-exklusiv.
 	APITokenReader string
 	APITokenAdmin  string
 	// GRPCAddr trägt die optionale Horch-Adresse des
@@ -273,8 +272,8 @@ type Config struct {
 	// NatsStreamToken trägt den optionalen NATS-Verbindungs-Token des
 	// dritten, vollinhaltstragenden Zustellwegs (`envNatsStreamToken`,
 	// `ADR-0100` Teilfrage 4/5); leer heißt der dritte Weg deaktiviert. Er
-	// trägt Zugangsdaten und ist damit auf beiden Ladepfaden env-var-exklusiv
-	// (`ADR-0088` Festlegung 1), wie `NatsURL`/`APITokenReader`/`APITokenAdmin`.
+	// trägt Zugangsdaten und ist damit auf beiden Ladepfaden env-var-exklusiv,
+	// wie `NatsURL`/`APITokenReader`/`APITokenAdmin`.
 	NatsStreamToken string
 }
 
@@ -332,7 +331,7 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 // dritten Zustellweg aktiviert, aber kein Verbindungsziel angibt, bemerkt
 // das beim Start. Geteilt zwischen `ConfigFromEnv` und `mergeConfig`
 // (`config_file.go`): beide Ladepfade lesen beide Felder ausschließlich aus
-// der Umgebung (`ADR-0088` Festlegung 1), die Vorbedingung gilt auf beiden
+// der Umgebung, die Vorbedingung gilt auf beiden
 // gleich.
 func validateNatsStreamTokenRequiresURL(natsURL, natsStreamToken string) error {
 	if natsStreamToken != "" && natsURL == "" {
@@ -409,15 +408,15 @@ func parseTables(raw string) (map[string]mapper.TableBinding, error) {
 // Interpretationsgrundlage.
 //
 // Der Ausschlussstand kommt aus seiner dauerhaften Herkunft
-// (`ColumnExclusionPort.ExcludedColumns`, `ADR-0065`) und geht je Tabelle
+// (`ColumnExclusionPort.ExcludedColumns`) und geht je Tabelle
 // in die Bindung ein — der Bindungs-Neuaufbau trägt damit auch einen
 // früher beantragten Spaltenausschluss. Die Lese-Fähigkeit trägt dieselbe
-// Adapter-Instanz wie die Aktivierung (im MVP eine Instanz, `ARC-004`);
+// Adapter-Instanz wie die Aktivierung (im MVP eine Instanz);
 // ein Lesefehler endet vor dem Stream-Start in der Startfehlerklasse des
-// bestehenden Pfads (`storage`, `SPEC-008`).
+// bestehenden Pfads (`storage`).
 //
 // Der Regelstand kommt aus seiner dauerhaften Herkunft
-// (`TransformationPort.TransformationRules`, `ADR-0112` Teilfrage 6) und
+// (`TransformationPort.TransformationRules`) und
 // geht wie der Ausschlussstand je Tabelle in die Bindung ein; eine Tabelle
 // ohne Regel trägt eine Bindung ohne Regelstand. Die Lesung baut je Aufruf
 // frische Listen, die die Bindung behält und die niemand mehr schreibt
@@ -470,8 +469,8 @@ func splitQualifiedName(qualified string) (string, string, error) {
 }
 
 // changeStreamEnabled meldet, ob die Live-Streaming-Fähigkeit aktiv ist
-// (`ADR-0061` Teilfrage 5, um eine dritte Oder-Bedingung erweitert durch
-// `ADR-0100` Teilfrage 5): Der `Broadcaster` wird konstruiert und über
+// (`ADR-0061` Teilfrage 5, um eine dritte Oder-Bedingung erweitert): Der
+// `Broadcaster` wird konstruiert und über
 // `CaptureService.WithChangeStream` verdrahtet, sobald mindestens einer von
 // drei Zustellwegen aktiv ist — `CDC_GRPC_ADDR` gesetzt, `CDC_HTTP_ADDR`
 // gesetzt, oder `natsStreamActive` (beide `CDC_NATS_URL` und
@@ -485,25 +484,25 @@ func changeStreamEnabled(grpcAddr, httpAddr string, natsStreamActive bool) bool 
 
 // Run verdrahtet die Pipeline (`ADR-0026`) und trägt den Stream-Lauf bis
 // zum Kontext-Ende: der Stream baut die Replication-Verbindung, der
-// ACK-Adapter bestätigt über dieselbe Verbindung (`ADR-0007`, Option C)
-// und der Capture Service orchestriert Persist-before-ACK
-// (`LH-QA-REL-001.a`). Die Rückkehr ohne Fehler meldet das reguläre
+// ACK-Adapter bestätigt über dieselbe Verbindung
+// und der Capture Service orchestriert Persist-before-ACK.
+// Die Rückkehr ohne Fehler meldet das reguläre
 // Lauf-Ende. Ein Adapter-Fehler wird durchgereicht, nicht still
-// fortgesetzt (`SPEC-008`): der Prozess-Aufrufer endet auf jeden
+// fortgesetzt: der Prozess-Aufrufer endet auf jeden
 // Adapter-Fehler mit Ausgang 1 — die Fortsetzung nach
 // Verbindungsabbruch trägt der Prozess-Neustart, der Slot liest seinen
-// Start über confirmed_flush_lsn (`ADR-0012`); die `transient`-Aktion
-// (Erneut versuchen mit begrenztem Backoff, `SPEC-008`) trägt dieser
+// Start über confirmed_flush_lsn; die `transient`-Aktion
+// (Erneut versuchen mit begrenztem Backoff) trägt dieser
 // Pfad nicht. Ein nicht-`nil`-Ausgang meldet zusätzlich
-// den Fehlerzustand über den Heartbeat (`reportFault` unten,
-// `LH-FA-ADM-003`, `LH-QA-REL-003`), bevor der Prozess-Aufrufer beendet —
+// den Fehlerzustand über den Heartbeat (`reportFault` unten),
+// bevor der Prozess-Aufrufer beendet —
 // der benannte Rückgabewert `runErr` trägt dafür den Fehler über die
 // `defer`-Kette hinweg.
 func Run(ctx context.Context, cfg Config) (runErr error) {
 	// Der Telemetrie-Driven-Adapter (`ADR-0024`: „Logging-/Metrics-
 	// Frameworks bleiben Infrastruktur. … werden durch Driven Adapters
-	// implementiert.", geschärft durch `ARC-011`) baut den JSON-Handler
-	// (`telemetry.New`, `LH-QA-OPS-004`) — die Composition Root hält ihn
+	// implementiert.") baut den JSON-Handler
+	// (`telemetry.New`) — die Composition Root hält ihn
 	// als lokale Variable und injiziert ihn über `WithLog`/`Config.Log`
 	// in jeden Adapter-Konstruktor unten; kein Paket-globaler
 	// Logging-Zustand — ein `slog.SetDefault` an dieser Stelle verletzt
@@ -525,25 +524,25 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	defer store.Close()
 
 	// Die dynamische Re-Versionierung im laufenden Erfassungspfad
-	// (`mapper.Assembler.Consume`, `ADR-0015` Folgepflicht) liest und
-	// schreibt über dieselbe Rolle wie Store und Stream (`cdc_capture`,
-	// `ADR-0047`) — derselbe DSN, ein eigener Pool.
+	// (`mapper.Assembler.Consume`) liest und
+	// schreibt über dieselbe Rolle wie Store und Stream (`cdc_capture`) —
+	// derselbe DSN, ein eigener Pool.
 	schemaStore, err := postgresstorage.NewSchemaStore(ctx, cfg.CaptureDSN, postgresstorage.WithLog(log))
 	if err != nil {
 		return err
 	}
 	defer schemaStore.Close()
 
-	// Die Aktivierung läuft als Use Case (`ADR-0028`, `LH-FA-CFG-001`):
+	// Die Aktivierung läuft als Use Case (`ADR-0028`):
 	// die Bindungen der Konfiguration laufen vor dem Stream-Start als
 	// EnableTable-Aufrufe — die Publication ist Start-Vorbedingung des
-	// Stream-Adapters (`LH-FA-CFG-001.a`) und die Bindungs-Zeilen tragen
-	// die Fremdschlüssel der ersten Persistenz (`SPEC-001`). Der Aufruf
-	// ist idempotent (`LH-FA-CFG-001` Boundary) und trägt den Stand auch
+	// Stream-Adapters und die Bindungs-Zeilen tragen
+	// die Fremdschlüssel der ersten Persistenz. Der Aufruf
+	// ist idempotent (Boundary) und trägt den Stand auch
 	// nach einem Container-Neustart nach.
 	// Die Verdrahtung trägt vier Verbindungen gegen dieselbe Instanz —
 	// Store-Pool, Aktivierungs-Pool, Heartbeat-Pool, Stream-Verbindung —,
-	// verteilt auf zwei PostgreSQL-Rollen (`ADR-0047`): Store, Stream und
+	// verteilt auf zwei PostgreSQL-Rollen: Store, Stream und
 	// der ACK-Adapter (der die Stream-Verbindung teilt) binden an
 	// `cdc_capture`, Aktivierung und Heartbeat an `cdc_admin`. Das MVP
 	// hält die Adapter-Lebenszyklen getrennt, statt einen Pool über die
@@ -620,7 +619,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			// Die Umgebung trägt die Bindungs-Kennungen; die
 			// Anfangs-Version trägt die Verdrahtung als erste Version
 			// (`SPEC-004`) — spätere Versionen trägt die Schema-Evolution
-			// über den Metadata-Pfad (`LH-FA-SCH-004.a`).
+			// über den Metadata-Pfad.
 			Version:     1,
 			Publication: cfg.Publication,
 		}); err != nil {
@@ -639,9 +638,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// Stream-Starts ist der committed Stand — ein Prozess-Neustart verliert
 	// damit weder eine zwischenzeitlich per SQL aktivierte Tabelle, deren
 	// Kennung `CDC_TABLES` nicht trägt, noch einen dauerhaft vermerkten
-	// Spaltenausschluss (`ADR-0065`) oder eine Transformationsregel
-	// (`ADR-0112`). Die Aktivierungs-Instanz trägt die Lese-Fähigkeiten
-	// (`ARC-004`).
+	// Spaltenausschluss oder eine Transformationsregel. Die
+	// Aktivierungs-Instanz trägt die Lese-Fähigkeiten.
 	assemblerTables, err := activatedTableBindings(ctx, activation, schemaStore, activation, activation, cfg.Source)
 	if err != nil {
 		return err
@@ -664,15 +662,15 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		return err
 	}
 
-	// Der In-Prozess-`Broadcaster` (`ADR-0060` Teilfrage 2/5, dritter
-	// Abonnent seit `ADR-0100`) ist die eine Stelle, an der die Zustellwege
+	// Der In-Prozess-`Broadcaster` (`ADR-0060` Teilfrage 2/5) ist die eine
+	// Stelle, an der die Zustellwege
 	// zusammenlaufen: die beiden Driving-Adapter (gRPC-Server und
-	// SSE-Endpunkt) und seit `ADR-0100` zusätzlich der Driven-Adapter
+	// SSE-Endpunkt) und der Driven-Adapter
 	// `natsstream.Publisher` lesen aus ihm, der `CaptureService` schreibt
 	// über den Outbound Port `ChangeStreamPort` in ihn. Er wird
 	// konstruiert, sobald mindestens einer der drei Zustellwege aktiv ist
-	// (`changeStreamEnabled`, `ADR-0061` Teilfrage 5, `ADR-0100`
-	// Teilfrage 5); sind alle drei Bedingungen falsch, entsteht kein
+	// (`changeStreamEnabled`); sind alle drei
+	// Bedingungen falsch, entsteht kein
 	// Broadcaster und der `CaptureService` trägt keinen Stream-Publish-
 	// Schritt (additiv, unverändertes Bestandsverhalten). Die Bindung ist
 	// keine Start-Vorbedingung: die Server starten weiter unten in eigener
@@ -685,22 +683,22 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		changeBroadcaster = grpcstream.New()
 		captureOpts = append(captureOpts, capture.WithChangeStream(changeBroadcaster))
 	}
-	// Das Change-Notification-Wecksignal (`ADR-0055`, `LH-FA-SST-007`)
+	// Das Change-Notification-Wecksignal (`ADR-0055`)
 	// bleibt vollständig deaktiviert, solange `envNatsURL` leer ist — kein
 	// Verbindungsversuch, kein `ChangeNotificationPort`. Ist die
 	// Umgebungsvariable gesetzt, ist die Verbindung eine explizite
 	// Vorbedingung dieses Laufs: anders als der Notify-Aufruf selbst später
-	// (best-effort nach ACK, `ADR-0055` Punkt 4) meldet ein
+	// (best-effort nach ACK) meldet ein
 	// Verbindungsfehler an dieser Stelle die Klasse `configuration`
 	// (`ErrConfiguration`) — ein Betreiber, der das Feature einschaltet,
 	// aber die Server-Adresse falsch trägt, soll das beim Start bemerken,
 	// nicht durch ein unauffällig ausbleibendes Wecksignal. Dieselbe
-	// Verbindung trägt seit `ADR-0100` zusätzlich den dritten,
-	// vollinhaltstragenden Zustellweg — keine zweite Verbindung (Teilfrage
-	// 5 Option B): eine gesetzte `CDC_NATS_STREAM_TOKEN` erweitert diesen
+	// Verbindung trägt zusätzlich den dritten,
+	// vollinhaltstragenden Zustellweg — keine zweite Verbindung: eine
+	// gesetzte `CDC_NATS_STREAM_TOKEN` erweitert diesen
 	// `nats.Connect`-Aufruf um eine Token-Client-Option, die der NATS-Server
-	// serverweit erzwingt (bewusst benannter Nebeneffekt, `ADR-0100`
-	// §Konsequenzen) — auch für diese bislang anonyme Wecksignal-Verbindung.
+	// serverweit erzwingt (bewusst benannter Nebeneffekt) — auch für diese
+	// bislang anonyme Wecksignal-Verbindung.
 	stopNatsStreamPublisher := func() {}
 	var natsStreamPublisherDone sync.WaitGroup
 	// changeNotification trägt dasselbe Wecksignal für den Backfill-Run
@@ -731,7 +729,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		// eigener Hintergrund-Zug (eigene Goroutine, eigener WaitGroup-
 		// Eintrag) — dieselbe Struktur wie Heartbeat/Administration/
 		// Retention: kein Eingriff in die kritische Sektion des
-		// Capture-Persist-ACK-Pfads (`LH-QA-REL-001.a`), weil er
+		// Capture-Persist-ACK-Pfads, weil er
 		// ausschließlich aus dem bereits isolierten Broadcaster-Kanal
 		// liest, nicht aus dem `CaptureService` selbst.
 		if natsStreamActive {
@@ -782,7 +780,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		_ = adminListener.Close(closeCtx)
 	}()
 
-	// Der Backfill (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`): die Annahme
+	// Der Backfill (`LH-FA-CAP-009`): die Annahme
 	// eines Antrags läuft über den Pool der Administrations-Goroutine
 	// (`cdc_admin`), Run-Zustand und Schreiber laufen je über einen eigenen
 	// Pool der Rolle `cdc_capture`, der Snapshot-Adapter liest über dieselbe
@@ -896,10 +894,10 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 
 	// Die Retention-Goroutine läuft wie Heartbeat, Administration und
 	// WAL-Retention über den eigenen Pool und die eigene Goroutine — kein
-	// Eingriff in die kritische Sektion des Capture-Persist-ACK-Pfads
-	// (`LH-QA-REL-001.a`). Der Lösch-Takt trägt `retentionInterval`, die
+	// Eingriff in die kritische Sektion des Capture-Persist-ACK-Pfads.
+	// Der Lösch-Takt trägt `retentionInterval`, die
 	// Freigabe je Change `RetentionPolicy.AllowsDeletion` über
-	// `retentionPolicy` (`LH-FA-RET-002`…`004`, `ADR-0014`).
+	// `retentionPolicy` (`ADR-0014`).
 	retentionCtx, stopRetention := context.WithCancel(ctx)
 	var retentionDone sync.WaitGroup
 	retentionDone.Add(1)
@@ -1059,8 +1057,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		}()
 	}
 
-	// Der WAL-Rückstand-Health-Check (`SPEC-009` `cdc_wal_retention_bytes`,
-	// `ADR-0049`) braucht eine eigene Verbindung derselben Rolle
+	// Der WAL-Rückstand-Health-Check (`ADR-0049`,
+	// `cdc_wal_retention_bytes`) braucht eine eigene Verbindung derselben Rolle
 	// (`cdc_capture`) — die Stream-Verbindung steht während `stream.Run` im
 	// COPY-Modus des Replication-Protokolls und nimmt keine Abfragen mehr
 	// entgegen. Der Slot besteht an dieser Stelle bereits (`NewStream`
@@ -1140,7 +1138,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 // ctx endet (`LH-FA-ADM-002`). Ein Persistenzfehler des
 // Heartbeats bricht den Aufruf nicht ab und wird verworfen: ein
 // Schreibfehler des Heartbeats ist keine Fehlerklasse des Capture-Pfads
-// (`SPEC-008`) — seine Abwesenheit zeigt sich stattdessen über das Alter
+// — seine Abwesenheit zeigt sich stattdessen über das Alter
 // der Lebenszeichen-Zeile (`cdc.heartbeat`, Healthcheck unten), nicht über
 // einen abgebrochenen Stream-Lauf.
 func runHeartbeat(ctx context.Context, port outbound.HeartbeatPort, source model.SourceID, interval time.Duration) {
@@ -1166,7 +1164,7 @@ type walRetentionMeasurer interface {
 }
 
 // walRetentionLevel trägt die drei Zustände des Schwellen-Vergleichs
-// (`SPEC-008` „kontrollierte Fortsetzung", `ADR-0049`(b)).
+// (`ADR-0049`).
 type walRetentionLevel int
 
 const (
@@ -1268,9 +1266,9 @@ func mergeStreamAndWALFaultOutcome(streamErr error, fault *walRetentionFault) er
 }
 
 // runWALRetentionCheck misst den WAL-Rückstand des Capture-Slots periodisch
-// und vergleicht ihn gegen die Warn-/Fehlerschwelle (`SPEC-009`
-// `cdc_wal_retention_bytes`, `SPEC-008` „kontrollierte Fortsetzung",
-// `ADR-0049`): unterhalb der Warnschwelle protokolliert der Zug den Wert
+// und vergleicht ihn gegen die Warn-/Fehlerschwelle (`SPEC-009`,
+// `cdc_wal_retention_bytes`): unterhalb der Warnschwelle
+// protokolliert der Zug den Wert
 // unauffällig — ein Betreiber liest ihn aus dem Log, ohne dass die Erhebung
 // über `cdc.metrics`/`cdc_reader` läuft (dieselbe Begründung wie beim
 // Health-Endpoint: `pg_replication_slots`/`IDENTIFY_SYSTEM` liegen
@@ -1318,12 +1316,12 @@ func runWALRetentionCheck(ctx context.Context, checker walRetentionMeasurer, log
 }
 
 // runRetentionCleanup ruft die Retention-Bereinigung periodisch für die
-// konfigurierte Quelle auf, bis `ctx` endet (`LH-FA-RET-002`…`004`,
-// `ADR-0014`): jeder Tick befragt `RunRetentionUseCase.Run` — die Freigabe
+// konfigurierte Quelle auf, bis `ctx` endet (`LH-FA-RET-002`): jeder Tick
+// befragt `RunRetentionUseCase.Run` — die Freigabe
 // je Change trägt `RetentionPolicy.AllowsDeletion` im Use Case, diese
 // Schleife trägt nur den periodischen Auslöser. Ein Fehler des Aufrufs
 // bricht den Lauf nicht ab und wird protokolliert: eine gescheiterte
-// Bereinigung ist kein Fehlerzustand des Capture-Pfads (`SPEC-008`) —
+// Bereinigung ist kein Fehlerzustand des Capture-Pfads —
 // dieselbe best-effort-Haltung wie beim Heartbeat-Schreib-Zug und der
 // WAL-Rückstand-Messung oben.
 func runRetentionCleanup(ctx context.Context, useCase inbound.RunRetentionUseCase, source model.SourceID, interval time.Duration, policy model.RetentionPolicy, log outbound.LogPort) {
@@ -1385,7 +1383,7 @@ type administrationDeps struct {
 	// backfill nimmt einen Antrag der Art `backfill` an (`Request`) und
 	// weckt danach den Backfill-Worker über `backfillWake`; die Ausführung
 	// des Runs trägt der Worker, nicht diese Goroutine (`ADR-0111`
-	// Teilfrage 5, `ADR-0113` Festlegung 2).
+	// Teilfrage 5).
 	backfill     inbound.BackfillTableUseCase
 	backfillWake chan<- struct{}
 	// source ist die Quelle dieser Instanz: ein `backfill`-Antrag einer
@@ -1553,7 +1551,7 @@ func processedAdministrationKinds() string {
 
 // applyAdministrationRequest führt einen einzelnen Antrag über den
 // passenden Inbound Port aus (einziger Schreibpfad auf Bindungs-Zeile und
-// Publication bleibt der Port, `ADR-0018`/`ADR-0046` unverändert) und
+// Publication bleibt der Port, `ADR-0046`) und
 // trägt bei Erfolg die laufende `Assembler`-Bindung nach. Die
 // Bindungs-Kennungen einer SQL-beantragten Aktivierung liegen nicht am
 // Antrags-Datensatz (anders als bei `CDC_TABLES`) — `administrationTableID`
@@ -1561,7 +1559,7 @@ func processedAdministrationKinds() string {
 // Durchlauf über denselben (bereits verarbeiteten) Antrag — etwa nach
 // einem Prozess-Neustart, bevor der vorige Durchlauf den Vermerk schreiben
 // konnte — trägt dieselbe Kennung und trifft über `EnableTableUseCase`s
-// Idempotenz (`LH-FA-CFG-001` Boundary) dieselbe Zeile. Nach `Enable`
+// Idempotenz (Boundary) dieselbe Zeile. Nach `Enable`
 // liest der Aufruf die tatsächlich registrierte Bindung über
 // `TableActivationPort.Registered` zurück, statt der soeben übergebenen
 // Kennung blind zu vertrauen — bereits vor diesem Antrag über `CDC_TABLES`
@@ -1571,12 +1569,12 @@ func processedAdministrationKinds() string {
 // Die beiden Spalten-Antragsarten rufen ihren Use Case auf und tragen
 // danach den Ausschlussstand in die laufende `Assembler`-Bindung nach: ihr
 // Ziel ist der Filterzustand der laufenden Erfassung, nicht die Bindungs-
-// oder Publication-Menge, die die beiden Tabellen-Antragsarten tragen
-// (`ADR-0059` Teilfrage 3). Die Nachträge greifen unter `tablesMu` —
+// oder Publication-Menge, die die beiden Tabellen-Antragsarten tragen.
+// Die Nachträge greifen unter `tablesMu` —
 // derselbe synchronisierte Schreibpfad wie `AddBinding`/`RemoveBinding`.
 //
 // Der Aktivierungs-Zweig liest den dauerhaften Ausschlussstand der Tabelle
-// (`ADR-0065`) und ihren Regelstand (`ADR-0112` Teilfrage 6) und übergibt
+// und ihren Regelstand und übergibt
 // beide an `AddBinding`: `RemoveBinding` hat den Bindungs-Eintrag samt
 // Ausschluss- und Regelstand entfernt, dieser Zweig legt sie über die
 // Herkunft neu an — die Stände überleben den `disable`/`enable`-Zyklus ohne
@@ -1591,9 +1589,9 @@ func processedAdministrationKinds() string {
 // kein Fehler). Eine verletzte Vorbedingung und ein aktiver Run derselben
 // Tabelle enden als Fehler und damit im `failed`-Vermerk.
 //
-// Die Antragsarten `set_transformation`/`remove_transformation`
-// (`LH-FA-CFG-007`) rufen ihren Use Case auf, der Form und Konfliktfreiheit
-// K1 bis K4 (`SPEC-019`) prüft, und tragen danach die geprüfte Regel bzw. das
+// Die Antragsarten `set_transformation`/`remove_transformation` rufen
+// ihren Use Case auf, der Form und Konfliktfreiheit
+// K1 bis K4 prüft, und tragen danach die geprüfte Regel bzw. das
 // Herausnehmen in den Regelstand der laufenden `Assembler`-Bindung nach — wie
 // die Spalten-Antragsarten unter `tablesMu`, ohne Bindungs- oder
 // Publication-Änderung. Eine Tabelle ohne laufende Bindung lässt den Nachtrag
@@ -1733,7 +1731,7 @@ func administrationSchemaVersionID(table model.SourceTableID) model.SchemaVersio
 }
 
 // reportFault meldet einen nicht-`nil` Lauf-Fehler als Fehlerzustand über
-// den Heartbeat (`LH-FA-ADM-003`, `LH-QA-REL-003`) — die
+// den Heartbeat (`LH-FA-ADM-003`) — die
 // Sichtbarkeit gilt für „Erfassung kann nicht fortsetzen" (`Run` endet auf
 // jeden Adapter-Fehler, Dateikommentar oben), nicht für einen regulären
 // Lauf-Abschluss (`runErr == nil`). Der Schreib-Zug trägt eine eigene,
@@ -1752,12 +1750,12 @@ func reportFault(port outbound.HeartbeatPort, source model.SourceID, runErr *err
 }
 
 // classifyRunError übersetzt den Lauf-Fehler in eine der sieben stabilen
-// Kategorien aus `ADR-0023`/`SPEC-008`: die Composition Root kennt die
+// Kategorien aus `ADR-0023`: die Composition Root kennt die
 // Sentinel-Fehler aller beteiligten Adapter (`.a-check.yml`
 // `composition_root` — kein Hexagon-Schichten-Edge, der diese Referenz
 // einschränkt) und übersetzt sie in den Fehlerzustand, den `reportFault`
 // oben fortträgt. Ein nicht erkannter Fehler bleibt in der Kategorie
-// `internal` (`SPEC-008`: „unerwarteter interner Fehler").
+// `internal` („unerwarteter interner Fehler").
 func classifyRunError(err error) model.ErrorClass {
 	switch {
 	case errors.Is(err, ErrConfiguration),
@@ -1786,14 +1784,14 @@ func classifyRunError(err error) model.ErrorClass {
 
 // RegisterConsumer verdrahtet den `RegisterConsumerUseCase` (`ADR-0028`)
 // für den `register-consumer`-Sondermodus
-// (`cmd/pg-change-feed/main.go`, `LH-FA-CON-001.a`) und trägt dessen
+// (`cmd/pg-change-feed/main.go`) und trägt dessen
 // Prozess-Ausgang: 0 nach Registrierung — neu oder bereits registriert,
-// beide Fälle tragen `LH-FA-CON-001`s Boundary-Kriterium, die Ausgabe
+// beide Fälle tragen das Boundary-Kriterium, die Ausgabe
 // unterscheidet sie —, 1 bei Verdrahtungs- oder Domänenfehler. Der Aufruf
 // öffnet eine eigene, kurzlebige Verbindung über denselben
 // `ConsumerStatePort`-Adapter, den die laufende Verdrahtung (`Run` oben)
 // nutzen würde — kein Bestandteil des Dauerbetriebs, gebunden an die Rolle
-// `cdc_admin` (`ADR-0047`: DML auf `consumer`/`consumer_position`).
+// `cdc_admin` (DML auf `consumer`/`consumer_position`).
 // Consumer-Kennung und -Name tragen denselben Wert (`name`); dieser
 // Zugriffsweg trennt beide (noch) nicht.
 func RegisterConsumer(ctx context.Context, cfg Config, name string) int {
@@ -1822,9 +1820,9 @@ func RegisterConsumer(ctx context.Context, cfg Config, name string) int {
 
 // AcknowledgeConsumer verdrahtet den `AcknowledgeConsumerUseCase`
 // (`ADR-0028`) für den `acknowledge-consumer`-Sondermodus
-// (`cmd/pg-change-feed/main.go`, `LH-FA-CON-004.a`) und trägt dessen
+// (`cmd/pg-change-feed/main.go`) und trägt dessen
 // Prozess-Ausgang: 0 nach Bestätigung — neu vorgerückt oder eine
-// Wiederholung derselben Position, beide Fälle tragen `LH-FA-CON-004`s
+// Wiederholung derselben Position, beide Fälle tragen das
 // Boundary-Kriterium (Idempotenz), die Ausgabe unterscheidet sie nicht
 // gesondert —, 1 bei Verdrahtungs- oder Domänenfehler, unter anderem ein
 // echter Rückschritt (`domainerrors.ErrPositionRegression`) oder eine
@@ -1832,7 +1830,7 @@ func RegisterConsumer(ctx context.Context, cfg Config, name string) int {
 // Aufruf öffnet eine eigene, kurzlebige Verbindung über denselben
 // `ConsumerStatePort`-Adapter, den die laufende Verdrahtung (`Run` oben)
 // nutzen würde — kein Bestandteil des Dauerbetriebs, gebunden an die Rolle
-// `cdc_admin` (`ADR-0047`: DML auf `consumer`/`consumer_position`). Die
+// `cdc_admin` (DML auf `consumer`/`consumer_position`). Die
 // bestätigte Position trägt dieselbe Quelle wie die laufende Erfassung
 // (`cfg.Source`); der Zugriffsweg unterscheidet keine zweite Quelle.
 func AcknowledgeConsumer(ctx context.Context, cfg Config, consumerID string, offset uint64) int {
@@ -1867,19 +1865,20 @@ func healthcheckVerdict(age time.Duration) int {
 }
 
 // Healthcheck liest das Alter des letzten Lebenszeichens über die
-// SQL-Lese-View `cdc.heartbeat` (`LH-FA-ADM-002`, `LH-QA-OPS-002`,
-// `ADR-0046` Kategorie C) und trägt den Prozess-Ausgang des
+// SQL-Lese-View `cdc.heartbeat` (`LH-FA-ADM-002`) und trägt den
+// Prozess-Ausgang des
 // `--healthcheck`-Laufs (`cmd/pg-change-feed/main.go`): 0 (healthy)
 // unterhalb der Schwelle, 1 sonst — ein Verbindungsfehler, eine fehlende
 // Zeile (die Instanz hat noch nie geschlagen) und eine nicht lesbare View
 // (z. B. Schema-Rollout nicht gelaufen) gelten als nicht gesund. Jede der
 // drei Fehlerklassen trägt eine eigene, kurze `stderr`-Zeile — ein
 // Docker-Healthcheck-Fail unterscheidet sich sonst nicht von echter
-// Staleness; kein neues Fehlerklassen-Schema, nur Diagnose-Text. Die Klassifikation `SPEC-007`
-// (`HEALTH_STATES`) bleibt Sache des lesenden Systems; der Exit-Code
+// Staleness; kein neues Fehlerklassen-Schema, nur Diagnose-Text. Die
+// Klassifikation (`HEALTH_STATES`) bleibt Sache des lesenden Systems; der
+// Exit-Code
 // trägt nur die binäre Compose-Semantik. Der Aufruf öffnet eine eigene,
 // kurzlebige Verbindung — kein Bestandteil der laufenden Verdrahtung
-// (`Run` oben); der Aufrufer übergibt `cfg.ReaderDSN` (`ADR-0047`: die
+// (`Run` oben); der Aufrufer übergibt `cfg.ReaderDSN` (die
 // View-Lesung deckt sich mit dem `SELECT`-Grant der Rolle `cdc_reader`).
 func Healthcheck(ctx context.Context, dsn string, source model.SourceID) int {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)

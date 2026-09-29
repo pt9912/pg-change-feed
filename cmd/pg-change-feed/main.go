@@ -16,10 +16,10 @@ import (
 )
 
 // version trägt den Lieferstand des Binarys — Default für einen lokalen
-// `:dev`-Build ohne `VERSION` (`make image`, `ADR-0044`/`ADR-0103`); der
+// `:dev`-Build ohne `VERSION` (`make image`, `ADR-0103`); der
 // veröffentlichte Build injiziert den realen Release-Stand über
-// `-ldflags -X main.version=<VERSION>` (`Dockerfile` `build`-Stufe,
-// `ADR-0051`) aus demselben `VERSION`-Parameter wie die Image-Tags — eine
+// `-ldflags -X main.version=<VERSION>` (`Dockerfile` `build`-Stufe)
+// aus demselben `VERSION`-Parameter wie die Image-Tags — eine
 // Variable statt einer Konstante, weil `-X` nur Variablen überschreiben
 // kann.
 var version = "dev"
@@ -30,14 +30,14 @@ func main() {
 		return
 	}
 	if len(os.Args) == 2 && os.Args[1] == "--healthcheck" {
-		// Der Compose-Healthcheck des Feed-Containers (`compose.yaml`,
-		// `LH-FA-ADM-002`, `LH-QA-OPS-002`): das Runtime-Image
+		// Der Compose-Healthcheck des Feed-Containers (`compose.yaml`):
+		// das Runtime-Image
 		// ist distroless (kein Shell, kein `psql`, Dockerfile) — der
 		// einzige Aufruf, den Compose innerhalb dieses Containers
 		// ausführen kann, ist das Binary selbst (`CMD`-Form ohne Shell).
 		// Dieselben Umgebungs-/Datei-Vorbedingungen wie der reguläre Lauf
 		// (`ConfigFromEnvAndFile`, `ADR-0052`) tragen die drei
-		// rollen-spezifischen DSNs und die Quelle (`ADR-0047`) — der
+		// rollen-spezifischen DSNs und die Quelle — der
 		// Healthcheck-Lauf selbst nutzt nur `cfg.ReaderDSN`;
 		// Publication/Slot/Tabellen bleiben ungenutzt, die
 		// Vorbedingungsprüfung teilt sich beide Läufe trotzdem, statt eine
@@ -94,7 +94,7 @@ func main() {
 	if len(os.Args) == 2 && os.Args[1] == "diagnose" {
 		// Der Sondermodus liest Betriebsstatus, sichtbare Fehlerzustände,
 		// CDC-Abstand und Verarbeitungsrückstand über `cdc.heartbeat` +
-		// `cdc.metrics` (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`) und
+		// `cdc.metrics` (`LH-FA-SST-003`) und
 		// beendet sich, ohne je den Capture-Loop (`bootstrap.Run`) zu
 		// erreichen — dasselbe Muster wie `--healthcheck` oben, dieselben
 		// Vorbedingungen (`ConfigFromEnvAndFile`); der Aufruf nutzt nur

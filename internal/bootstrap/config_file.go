@@ -2,8 +2,8 @@
 // (`ADR-0052`): eine YAML-Konfigurationsdatei ergänzt `ConfigFromEnv`
 // additiv, mit Umgebungsvariable-schlägt-Datei-Feld-für-Feld-Precedence
 // (`ADR-0052` Entscheidung 2). Env-var-exklusiv sind die
-// zugangsdaten-tragenden Felder (`ADR-0088` Festlegung 1); die zulässige
-// Feldmenge trägt `ADR-0088` Festlegung 2. Der Zugriffsweg ist
+// zugangsdaten-tragenden Felder; die zulässige
+// Feldmenge trägt die Decision Festlegung 2. Der Zugriffsweg ist
 // ausschließlich `CDC_CONFIG_FILE` (`ADR-0052` Entscheidung 5) — ein
 // `--config`-CLI-Flag ist Folgepflicht, nicht Teil dieses Standes.
 package bootstrap
@@ -30,13 +30,13 @@ const envConfigFile = "CDC_CONFIG_FILE"
 // forbiddenFileCredentialKeys trägt die Schlüssel der
 // zugangsdaten-tragenden Klasse, die in der Konfigurationsdatei nicht
 // vorkommen dürfen (`ADR-0088` Festlegung 1: Secrets bleiben
-// env-var-exklusiv, `LH-QA-SEC-001`/`002`; `SPEC-016`). Die Klasse umfasst
+// env-var-exklusiv). Die Klasse umfasst
 // die drei DSN-Schlüssel, die drei Token-Schlüssel und `nats_url` — dessen
 // URL-Form Benutzer und Passwort einbetten kann; `http_addr`/`grpc_addr`
 // gehören ihr nicht an, weil `host:port` keine Zugangsdaten tragen kann.
 // `nats_stream_token` trägt den Verbindungs-Token des dritten,
-// vollinhaltstragenden NATS-Zustellwegs (`ADR-0100` Teilfrage 4/5,
-// Folgepflicht zu `SPEC-016`) — derselbe Zugangsdaten-Charakter wie die
+// vollinhaltstragenden NATS-Zustellwegs — derselbe Zugangsdaten-Charakter
+// wie die
 // beiden API-Token-Schlüssel. Ein Treffer bricht das Laden mit einer
 // eigenen, den Grund benennenden Fehlerzeile ab, statt nur als generischer
 // „unbekannter Schlüssel" des strikten Decodings unten zu erscheinen.
@@ -70,7 +70,7 @@ type fileConfig struct {
 	// Oberflächen in der Form `host:port` (`SPEC-016`); sie tragen dieselbe
 	// Feld-für-Feld-Precedence wie `source_id`/`publication`/`slot` —
 	// eine gesetzte Umgebungsvariable schlägt den Datei-Wert, eine leere
-	// lässt ihn stehen (`ADR-0088` Festlegung 3). Ein leeres Feld heißt
+	// lässt ihn stehen. Ein leeres Feld heißt
 	// wie eine leere Umgebungsvariable: die Oberfläche bleibt deaktiviert.
 	HTTPAddr string `yaml:"http_addr"`
 	GRPCAddr string `yaml:"grpc_addr"`
@@ -89,8 +89,8 @@ type fileConfig struct {
 // Kontrollfluss immer zuerst — `ErrConfiguration` mit einer eigenen, den
 // Grund benennenden Fehlerzeile (`ADR-0088` Festlegung 4). Jeder andere
 // unbekannte Schlüssel liefert `ErrConfiguration` über striktes
-// YAML-Decoding (`yaml.Decoder.KnownFields(true)`, `ADR-0052`
-// Entscheidung 1); da `fileConfig` auch keinen Schlüssel dieser Klasse
+// YAML-Decoding (`yaml.Decoder.KnownFields(true)`); da `fileConfig` auch
+// keinen Schlüssel dieser Klasse
 // deklariert, würde `KnownFields` sie ebenfalls ablehnen, sollte der
 // explizite Check je entfallen — im jetzigen Kontrollfluss ist dieser Pfad
 // für die Klasse nicht erreichbar, weil der explizite Check vorher
@@ -160,14 +160,14 @@ func overrideString(fileValue, envValue string) string {
 // gesetzten Umgebungsvariable (`ADR-0052` Entscheidung 2) und validiert die
 // Vorbedingung danach — dieselben sechs Pflichtfelder wie `ConfigFromEnv`,
 // hier über beide Quellen hinweg geprüft. Die zugangsdaten-tragenden
-// Schlüssel bleiben env-var-exklusiv (`ADR-0088` Festlegung 1): die drei
+// Schlüssel bleiben env-var-exklusiv: die drei
 // DSNs, die drei Token-Klassen (`APITokenReader`/`APITokenAdmin`/
 // `NatsStreamToken`) und `NatsURL` haben kein Datei-Gegenstück
 // und werden auf beiden Pfaden direkt aus der Umgebung gelesen
-// (`ADR-0088` Festlegung 3) — „kein Datei-Feld" heißt nicht „die
+// — „kein Datei-Feld" heißt nicht „die
 // Umgebungsvariable wird ignoriert". `HTTPAddr`/`GRPCAddr` tragen ein
 // Datei-Gegenstück und damit dieselbe `overrideString`-Precedence wie
-// `Source`/`Publication`/`Slot` (`ADR-0088` Festlegung 2/3).
+// `Source`/`Publication`/`Slot`.
 func mergeConfig(file fileConfig, getenv func(string) string) (Config, error) {
 	cfg := Config{
 		CaptureDSN: getenv(envCaptureDSN),
@@ -217,7 +217,7 @@ func mergeConfig(file fileConfig, getenv func(string) string) (Config, error) {
 
 	// Die env-exklusive Klasse der Oberflächen-Variablen wirkt auch unter
 	// geladener Datei: ihr Wert kommt aus der Umgebung, die Datei kann ihn
-	// weder setzen noch überschreiben (`ADR-0088` Festlegung 1/3, `SPEC-016`).
+	// weder setzen noch überschreiben (`ADR-0088` Festlegung 1/3).
 	cfg.NatsURL = getenv(envNatsURL)
 	cfg.APITokenReader = getenv(envAPITokenReader)
 	cfg.APITokenAdmin = getenv(envAPITokenAdmin)
@@ -232,8 +232,8 @@ func mergeConfig(file fileConfig, getenv func(string) string) (Config, error) {
 // mergeTables trägt die `tables`-Merge-Precedence (`SPEC-016`): eine
 // gesetzte `CDC_TABLES` schlägt die gesamte Datei-`tables`-Mapping
 // vollständig — keine Vermischung einzelner Tabellen aus beiden Quellen
-// innerhalb derselben Liste. Die Feld-für-Feld-Precedence aus `ADR-0052`
-// Entscheidung 2 behandelt `tables` damit als ein Feld (die ganze
+// innerhalb derselben Liste. Die Feld-für-Feld-Precedence behandelt
+// `tables` damit als ein Feld (die ganze
 // Aktivierungsliste), nicht als Menge einzeln überschreibbarer Einträge.
 func mergeTables(fileTables map[string]fileTableBinding, envRaw string) (map[string]mapper.TableBinding, error) {
 	if strings.TrimSpace(envRaw) != "" {
