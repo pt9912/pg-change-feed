@@ -38,8 +38,6 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [welle-sdk-grpc-administration-flaeche](../welle-sdk-grpc-administration-flaeche.md)
-
 Nichts in Arbeit — kein Slice liegt in `in-progress/` (WIP-Limit 1 gilt je
 Slice, nicht je offener Welle-Datei; mehrere gleichzeitig eröffnete Wellen sind
 kein Verstoß).
@@ -157,6 +155,9 @@ flowchart LR
     MBV[wellenlos: slice-harness-mutationsbild-und-verweigerte-aktion]
     TEA[slice-transformationen-e2e-abhilfe]
 
+    A0130[ADR-0130 bis ADR-0133 Accepted]
+    WSDKADM[welle-sdk-grpc-administration-flaeche: SDK-gRPC-Verwaltungsfläche]
+
     A58 --> W17
     A59 --> W18
     A6061 --> W19
@@ -191,6 +192,7 @@ flowchart LR
     LPS -.->|Runner| WFA
     WFA -.->|wiring.go, Runner| SVG
     SVG -.->|K4 Startpfad| TEA
+    A0130 --> WSDKADM
 ```
 
 **Benannte Kopplung zwischen den beiden offenen Wellen**
@@ -272,6 +274,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-sdk-reale2e — SDK-Realserver-E2E: die zwölf Zustellweg-Flächen der drei SDK-Packages (3 Sprachen × 4 Wege) tragen reale Server-Belege, Abdeckungs-Träger `docs/user/sdk-e2e-abdeckung.md` + `trace.coverage`-Eintrag (Label `SDK-E2E`) (`ADR-0110`) | 2026-09-23 | [welle-sdk-reale2e-results.md](../done/welle-sdk-reale2e-results.md) |
 | welle-backfill-bestand — Backfill des Bestands: der Tabellenbestand einer aktivierten Tabelle wird als Backfill erkennbar (`origin`) über den bestehenden Lesezugriffsweg lesbar, elf Slices (`LH-FA-CAP-009`, `ADR-0111`) | 2026-09-25 | [welle-backfill-bestand-results.md](../done/welle-backfill-bestand-results.md) |
 | welle-transformationen — Transformationen: erfasste Changes tragen vor der Persistierung die durch deklarative Regeln bestimmte Form, konfiguriert über die SQL-Antrags-Queue, zehn Slices plus neun wellenlose Kanten-Slices (`LH-FA-CFG-007`, `ADR-0112`) | 2026-09-27 | [welle-transformationen-results.md](../done/welle-transformationen-results.md) |
+| welle-sdk-grpc-administration-flaeche — SDK-Erweiterung um die gRPC-Verwaltungs-API: alle drei SDK-Packages decken die elf Administration-RPCs und den Stream-Filter ab, Drei-Sprachen-Matrix für `LH-FA-SST-009` vollständig (`ADR-0130`, `ADR-0131`, `ADR-0132`, `ADR-0133`) | 2026-09-29 | [welle-sdk-grpc-administration-flaeche-results.md](../done/welle-sdk-grpc-administration-flaeche-results.md) |
 
 ## Historische Trigger-Verschiebungen
 
