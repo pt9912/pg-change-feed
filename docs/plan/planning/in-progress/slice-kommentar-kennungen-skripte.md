@@ -60,7 +60,7 @@ Werkzeuggedanke auf die übrigen Formen.
 
 ## 2. Definition of Done
 
-- [ ] **Liefer-Punkt 1 — Blockgrenze und Messform.** Je Kommentarform
+- [x] **Liefer-Punkt 1 — Blockgrenze und Messform.** Je Kommentarform
       (`#` in Shell/Makefile/YAML/Dockerfile, `--` in SQL, Markdown-Kommentare)
       steht die Blockgrenze fest (zusammenhängende Kommentarzeilen vs.
       Grenz-Marker je Form) und ist im Werkzeug oder einem Nebenläufer umgesetzt;
@@ -68,7 +68,7 @@ Werkzeuggedanke auf die übrigen Formen.
       Nicht-Go-Pendant) trägt die Definition samt Beispiel. *Zu belegen
       durch:* Tabellentest je Form (Treffer, Blockgrenze, Nicht-Treffer),
       `make test` grün.
-- [ ] **Liefer-Punkt 2 — Bestands-Messung und Bereinigung.** Basismessung über
+- [x] **Liefer-Punkt 2 — Bestands-Messung und Bereinigung.** Basismessung über
       den ganzen Nicht-Go-Baum (zahlt: `tools/`, `harness/mk/`, `Makefile`,
       `tools/schema/*.sql`, `compose.yaml`, `.github/workflows`, Dockerfiles,
       Markdown) mit Befehl, Stand und Zahl je Tranche; Bereinigung in
@@ -76,7 +76,7 @@ Werkzeuggedanke auf die übrigen Formen.
       mit `Datei:Zeile`, Klasse und Grund. *Zu belegen durch:* je Tranche
       Diff ohne Nicht-Kommentarzeile, `make test`/`make fmt-check` (soweit
       Formen betreffen) und die Zahlen vor/nach.
-- [ ] **Liefer-Punkt 3 — Träger.** Living-Docs, die die Kennungs-Form der
+- [x] **Liefer-Punkt 3 — Träger.** Living-Docs, die die Kennungs-Form der
       Nicht-Go-Kommentare beschreiben (`AGENTS.md` §3.7,
       `harness/sensors/kommentar-kennungen.md`), tragen die erweiterte
       Geltung; `make docs-check` grün. *Zu belegen durch:* der Diff der
@@ -87,9 +87,9 @@ Werkzeuggedanke auf die übrigen Formen.
       (`.harness/skills/reviewer.md`); Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6),
       kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: committetes Feld im Plan, Gefundenes und Nichtgefundenes
+- [x] §3.13-Suchlauf: committetes Feld im Plan, Gefundenes und Nichtgefundenes
       je Träger, beide Stände gemessen.
-- [ ] Doku-Update für den erweiterten Werkzeugvertrag, falls ein öffentlicher
+- [x] Doku-Update für den erweiterten Werkzeugvertrag, falls ein öffentlicher
       Vertrag berührt ist (Sensors-Tabelle in `harness/README.md`).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
@@ -111,6 +111,15 @@ Größe.
 | Skripte, `Makefile`, `harness/mk`, `.sql`, `.yml`, Dockerfiles, Markdown des Baums | update (nur Kommentare) | Bereinigung nach §3.7-Klassen in Tranchen. |
 | `harness/README.md` §Sensors | update | Zeile `make kommentar-kennungen` trägt die erweiterte Messform (Liefer-Punkt 3). |
 | **Plan-Nachzug — Messraum-Entscheidung Markdown:** Markdown ist **nicht** im Messraum. Begründung: Markdown-Prosa ist selbst der Träger — sie hat keine Kommentarform; die einzige Form (`<!-- -->`) ist Inhalts-Form (Zitate, Guidance) und in ADR-/Record-Dateien belegt. Die Kennungs-Linkpflicht in Prosa trägt d-check `ids` als eigene maschinelle Ebene; eine §3.7-Pflicht hier wäre Doppelregulierung. Ausgeschlossen sind außerdem `.harness/baseline/**` (vendored, SHA-gepinnt — kein bearbeitbarer Kommentar-Bestand) und Go (Vorgänger-Slice). Messraum: `#`-Blöcke in `.sh`/`.mk`/`.yml`/`.yaml`/Makefile/Dockerfile und `--`-Blöcke in `.sql`, vollzeilig (Marker am Zeilenanfang nach Leerraum), nachgestellte Kommentaranteile ausgenommen (Trennstelle mehrdeutig — 11 gemessene Ketten, 5 Shell + 6 Makefile). **Basismessung am Stand `933ea5c0` mit dem erweiterten Werkzeug:** 149 Kandidaten gesamt, davon 135 Nicht-Go (sh 62, yml 19, sql 15, mk 14, yaml 13, Makefile 4, Dockerfile 3) und 14 Go-Restmenge — unter der Rückführungs-Schwelle (~150). | update (Plan) | Rückführung §4: Entscheidung statt Architect-Frage — Markdown ist messbar, aber keine Kommentarform. |
+
+**§3.13-Suchlauf (committetes Feld).** Bewegte Eigenschaft: die Kennungs-Zeilen
+der Nicht-Go-Kommentarformen (Messraum §3-Nachzug). Gemessen an den Ständen
+Werkzeug-Stand `89d4fa3e` (vor der Bereinigung) und Arbeitsbaum (nach T1–T5):
+
+```suchlauf
+89d4fa3e 506 -E '^(#|--).*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.sh' '*.mk' '*.yml' '*.yaml' '*.sql' 'Makefile' 'Dockerfile' 'examples/Dockerfile' 'examples/csharp/Dockerfile' 'examples/kotlin/Dockerfile'
+diff 350 -E '^(#|--).*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.sh' '*.mk' '*.yml' '*.yaml' '*.sql' 'Makefile' 'Dockerfile' 'examples/Dockerfile' 'examples/csharp/Dockerfile' 'examples/kotlin/Dockerfile'
+```
 
 ## 4. Trigger
 

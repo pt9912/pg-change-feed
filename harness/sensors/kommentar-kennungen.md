@@ -1,4 +1,4 @@
-# `make kommentar-kennungen` — listet Go-Kommentarblöcke, die ihre Herkunft nicht als ein Feld tragen
+# `make kommentar-kennungen` — listet Kommentarblöcke, die ihre Herkunft nicht als ein Feld tragen
 
 ## Vertrag
 
@@ -14,9 +14,11 @@ sind Lese-Handlungen des Reviewers
 Gegenstand ist die Regel „Herkunft im Kommentar ist ein auflösbares Feld“
 ([`AGENTS.md`](../../AGENTS.md) §3.7): höchstens **eine** Kennung je Kommentar,
 keine Kette, keine Kompaktform, kein „ff.“. `make kommentar-kennungen` liest die
-Kommentarblöcke der `.go`-Dateien und meldet jeden, der sie verletzt
-(**Kandidat**). Die Herkunft der Regel und die Grenze „kein Sensor über Prosa“
-führt [`ADR-0083`](../../docs/plan/adr/0083-herkunft-von-aussagen-in-traegern.md).
+Kommentarblöcke der `.go`-Dateien und der Nicht-Go-Zeilenkommentar-Formen
+(`.sh`, `.mk`, `.yml`, `.yaml`, `.sql`, Makefile, Dockerfile) und meldet jeden,
+der sie verletzt (**Kandidat**). Die Herkunft der Regel und die Grenze „kein
+Sensor über Prosa“ führt
+[`ADR-0083`](../../docs/plan/adr/0083-herkunft-von-aussagen-in-traegern.md).
 
 **Kein Gate.** Das Ziel steht in keinem Gate-Bündel (`make gates`) und hat
 **keinen Ausnahme-Pfad** (keine Marker im Quelltext, keine Ausnahmeliste,
@@ -35,11 +37,24 @@ einen Textmuster-Sensor ausschließt. Der Chronik-Kandidatenlauf in
 
 ## Kandidat
 
-Ein **Kommentarblock** ist eine Kommentargruppe des Go-Parsers (`go/parser`,
-`ParseComments`): eine Folge von Kommentaren ohne Leerzeile und ohne Code
-dazwischen; ein Endkommentar hinter Code bildet einen eigenen Block. Direktiven
-(`//go:…`) zählen nicht mit. Eine Kennung in einem Zeichenketten-Literal ist kein
-Kommentar und wird nicht gelesen.
+Ein **Kommentarblock** ist je Form definiert:
+
+- **Go (`.go`):** eine Kommentargruppe des Go-Parsers (`go/parser`,
+  `ParseComments`): eine Folge von Kommentaren ohne Leerzeile und ohne Code
+  dazwischen; ein Endkommentar hinter Code bildet einen eigenen Block.
+  Direktiven (`//go:…`) zählen nicht mit. Eine Kennung in einem
+  Zeichenketten-Literal ist kein Kommentar und wird nicht gelesen.
+- **Zeilenkommentare (`#` in `.sh`/`.mk`/`.yml`/`.yaml`/Makefile/Dockerfile,
+  `--` in `.sql`):** eine Folge aufeinanderfolgender vollzeiliger
+  Kommentarzeilen (erster Nicht-Leerraum-Text beginnt mit dem Marker); jede
+  andere Zeile — auch eine Leerzeile — beendet den Block, und eine nur aus dem
+  Marker bestehende Zeile (`#`, `--`) ist Grenz-Marker. Nachgestellte
+  Kommentaranteile hinter Code liest die Messung nicht (die Trennstelle ist
+  in diesen Formen syntaktisch mehrdeutig).
+
+Nicht im Messraum: Markdown (Prosa-Träger ohne Kommentarform; die
+Kennungs-Linkpflicht in Prosa trägt d-check `ids`), `gen/**` und `sdks/**`
+(excludedRoots) sowie `.harness/**` (vendored Baseline, SHA-gepinnt).
 
 Eine **Kennung** hat eine von vier Arten: `ADR-NNNN`, `LH-FA-XXX-NNN` oder
 `LH-QA-XXX-NNN`, `SPEC-NNN`, `ARC-NNN`. Ein Block ist Kandidat, wenn er
