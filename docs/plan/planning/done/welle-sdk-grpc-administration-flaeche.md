@@ -84,7 +84,7 @@ Filter-Parameter am bestehenden `PgChangeFeedGrpcClient`.
 - **Server-seitige Änderungen** — die vier ADRs sind serverseitig
   abgeschlossen; findet ein SDK-Slice einen Server-Fehler (wie bereits
   einmal bei der Beispiel-Client-Arbeit geschehen, siehe
-  [`docs/reviews/review-example-kotlin-grpc-client-verbmatrix.md`](../reviews/review-example-kotlin-grpc-client-verbmatrix.md)
+  [`docs/reviews/review-example-kotlin-grpc-client-verbmatrix.md`](../../../reviews/review-example-kotlin-grpc-client-verbmatrix.md)
   INFO-1), wird er gemeldet, nicht in dieser Welle repariert.
 - **Diagnose/Health über HTTP** — bereits eigenständig umgesetzt
   (`ADR-0132`), kein Gegenstand der SDK-Erweiterung dieser Welle über den
