@@ -80,12 +80,15 @@ class PgChangeFeedAdministrationClientTableTest {
         )
         val client = AdministrationTestClientFactory.create(transport)
 
-        assertFailsWith<PgChangeFeedGrpcNotFoundException> {
+        val ex = assertFailsWith<PgChangeFeedGrpcNotFoundException> {
             client.disableTable(
                 DisableTableRequest.newBuilder()
                     .setSource("src").setSchema("public").setTable("orders").setPublication("pub").build(),
             )
         }
+
+        assertEquals(Status.Code.NOT_FOUND, ex.statusCode)
+        assertEquals("table does not exist at source", ex.message)
     }
 
     @Test
