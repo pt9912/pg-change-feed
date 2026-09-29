@@ -47,7 +47,7 @@ e63a1afd..933ea5c0 -U0 -- '*.go'`: 2256 Inhalts-Zeilen (`+`/`−` ohne
 Header-Zeilen), davon **0** Zeilen, die nicht nach Leerraum mit `//` beginnen
 (auch unter `-w` 0) — 179 Go-Dateien, 1119+/1137−. Keine Endkommentar-Zeile,
 keine Nicht-Go-Datei in den Tranchen- und Fixrunden-Commits. Die drei
-Parallel-Commits `47792d6e` (ADR-0135), `e658a1bd` (Plan-Move) und `5d572c44`
+Parallel-Commits `47792d6e` ([ADR-0135](../plan/adr/0135-capture-transient-wiederholung-stream-zyklus.md)), `e658a1bd` (Plan-Move) und `5d572c44`
 (Register) berühren kein Go (geprüft: nur `docs/`-Dateien bzw. reiner `git mv`).
 
 ---
@@ -62,7 +62,7 @@ Parallel-Commits `47792d6e` (ADR-0135), `e658a1bd` (Plan-Move) und `5d572c44`
 | 4 | **Reviews** | **erfüllt** | zwei Reports committet: B1 `56301e57` (1 HIGH, 3 MEDIUM) und B2 `e4738ef2` (1 MEDIUM, 3 LOW, 1 INFO); Fixrunden verifiziert (§3); kein offenes HIGH/MEDIUM in beiden Reports |
 | 5 | **Suchlauf (§3.13)** | **erfüllt** | Feld im Plan committet (`532093c8`) mit vier Zeilen am Stand `793bb71b` (1732/147/1/18) und vier Zeilen am Plan-Stand `7b70b34a`; eigener Lauf Exit 0, 8/8 Zeilen stimmen; Ist-Messung am Arbeitsbaum deckt die Zahlen (Fixrunde driftet nichts, B2-Risiko-Vermerk damit entwarnisiert) |
 | 6 | **`make gates` grün, Exit gesondert** | **erfüllt** | eigener Lauf, Exit 0 direkt gesichert (§1), alle sieben Gate-Ziele im Log sichtbar |
-| 7 | **Doku-Update entfällt** | **erfüllt** | `git diff e63a1afd..933ea5c0 --stat -- docs/`: Abdeckungstabelle (Erzeugnis, 30 Zeilen), Slice-Plan (Suchlauf-Feld, DoD-Haken), zwei Review-Reports, dazu die drei Parallel-Plan-Commits (ADR-0135, Plan-Move, Register-Zeile), vom B1-Report ausdrücklich als fremd deklariert; `docs/user/` trägt nur die Abdeckungstabelle, das Benutzerhandbuch ist unberührt |
+| 7 | **Doku-Update entfällt** | **erfüllt** | `git diff e63a1afd..933ea5c0 --stat -- docs/`: Abdeckungstabelle (Erzeugnis, 30 Zeilen), Slice-Plan (Suchlauf-Feld, DoD-Haken), zwei Review-Reports, dazu die drei Parallel-Plan-Commits ([ADR-0135](../plan/adr/0135-capture-transient-wiederholung-stream-zyklus.md), Plan-Move, Register-Zeile), vom B1-Report ausdrücklich als fremd deklariert; `docs/user/` trägt nur die Abdeckungstabelle, das Benutzerhandbuch ist unberührt |
 | 8 | **Beobachtungs-Register** | **offen (Closure)** | kein neues `evidence/`-Artefakt in `BEO-PGC/kommentar-herkunft-als-kette` (Bestand: `changestream-publish-godoc.md`, `slice-code-kommentare-kennungen.md`); „kein Anfall ist ebenfalls eine Antwort“ — der Eintrag ist bei Closure zu tragen, nicht blockierend |
 
 **DoD-Zustand:** Die Haken zu Liefer-Punkt 1/2 sind im Plan gesetzt
