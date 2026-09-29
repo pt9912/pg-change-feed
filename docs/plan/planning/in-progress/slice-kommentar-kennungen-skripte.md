@@ -109,6 +109,8 @@ Größe.
 | `tools/harness/kommentar-kennungen/` oder ein Geschwister-Programm | update/neu | Blockgrenze je Form und Kandidaten-Erkennung für Nicht-Go-Kommentare; Go-Pfad bleibt unverändert. |
 | `harness/sensors/kommentar-kennungen.md` | update | Vertrag trägt die erweiterte bzw. geteilte Messform. |
 | Skripte, `Makefile`, `harness/mk`, `.sql`, `.yml`, Dockerfiles, Markdown des Baums | update (nur Kommentare) | Bereinigung nach §3.7-Klassen in Tranchen. |
+| `harness/README.md` §Sensors | update | Zeile `make kommentar-kennungen` trägt die erweiterte Messform (Liefer-Punkt 3). |
+| **Plan-Nachzug — Messraum-Entscheidung Markdown:** Markdown ist **nicht** im Messraum. Begründung: Markdown-Prosa ist selbst der Träger — sie hat keine Kommentarform; die einzige Form (`<!-- -->`) ist Inhalts-Form (Zitate, Guidance) und in ADR-/Record-Dateien belegt. Die Kennungs-Linkpflicht in Prosa trägt d-check `ids` als eigene maschinelle Ebene; eine §3.7-Pflicht hier wäre Doppelregulierung. Ausgeschlossen sind außerdem `.harness/baseline/**` (vendored, SHA-gepinnt — kein bearbeitbarer Kommentar-Bestand) und Go (Vorgänger-Slice). Messraum: `#`-Blöcke in `.sh`/`.mk`/`.yml`/`.yaml`/Makefile/Dockerfile und `--`-Blöcke in `.sql`, vollzeilig (Marker am Zeilenanfang nach Leerraum), nachgestellte Kommentaranteile ausgenommen (Trennstelle mehrdeutig — 11 gemessene Ketten, 5 Shell + 6 Makefile). **Basismessung am Stand `933ea5c0` mit dem erweiterten Werkzeug:** 149 Kandidaten gesamt, davon 135 Nicht-Go (sh 62, yml 19, sql 15, mk 14, yaml 13, Makefile 4, Dockerfile 3) und 14 Go-Restmenge — unter der Rückführungs-Schwelle (~150). | update (Plan) | Rückführung §4: Entscheidung statt Architect-Frage — Markdown ist messbar, aber keine Kommentarform. |
 
 ## 4. Trigger
 

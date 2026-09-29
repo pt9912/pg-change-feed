@@ -1,5 +1,6 @@
-// Command kommentar-kennungen listet die Kommentarblöcke der Go-Dateien, die
-// ihre Herkunft nicht als ein auflösbares Feld tragen: Kandidat ist ein Block
+// Command kommentar-kennungen listet die Kommentarblöcke der Go-Dateien und
+// der Nicht-Go-Zeilenkommentar-Dateien, die ihre Herkunft nicht als ein
+// auflösbares Feld tragen: Kandidat ist ein Block
 // mit mindestens zwei verschiedenen Kennungen (ADR, LH-FA, LH-QA, SPEC, ARC)
 // oder mit „ff.“ hinter einer Kennung. Es prüft die Form, nicht die Wahrheit
 // eines Kommentars. Vertrag, Grenze und Exit-Codes:
@@ -8,7 +9,9 @@
 // Aufruf: kommentar-kennungen [-count] [-tests all|exclude|only] [-diff] [Pfad ...]
 // Ohne Pfad liest es den Baum ab dem Arbeitsverzeichnis. Mit -diff liest es
 // einen `git diff -U0`-Strom von stdin und meldet nur Blöcke, die eine
-// hinzugefügte Zeile überlappen.
+// hinzugefügte Zeile überlappen. Nicht-Go-Formen (.sh, .mk, .yml, .yaml,
+// .sql, Makefile, Dockerfile) liest es als vollzeilige Kommentarblöcke;
+// -tests gilt nur für Go-Testdateien.
 // Exit: 0 kein Kandidat (oder -count) · 1 mindestens ein Kandidat · 2 Eingabefehler
 package main
 
@@ -146,6 +149,59 @@ func blocksOf(name string, src []byte) ([]block, error) {
 	return out, nil
 }
 
+// lineCommentMarker liefert den Zeilenkommentar-Marker einer Nicht-Go-Datei
+// nach Name oder Endung — „#“ für Shell, Makefile, YAML und Dockerfile,
+// „--“ für SQL — oder "", wenn die Form nicht gelesen wird.
+func lineCommentMarker(name string) string {
+	base := filepath.Base(name)
+	if base == "Makefile" || strings.HasPrefix(base, "Dockerfile") {
+		return "#"
+	}
+	switch {
+	case strings.HasSuffix(base, ".mk"), strings.HasSuffix(base, ".sh"),
+		strings.HasSuffix(base, ".yml"), strings.HasSuffix(base, ".yaml"):
+		return "#"
+	case strings.HasSuffix(base, ".sql"):
+		return "--"
+	}
+	return ""
+}
+
+// lineBlocks liest die Kommentarblöcke einer Nicht-Go-Quelle. Ein Block ist
+// eine Folge aufeinanderfolgender Zeilen, deren erster Nicht-Leerraum-Text
+// mit dem Marker beginnt; jede andere Zeile — auch eine Leerzeile — beendet
+// ihn. Nachgestellte Kommentaranteile hinter Code liest die Messung nicht:
+// ihre Trennstelle ist in diesen Formen syntaktisch mehrdeutig.
+func lineBlocks(name, marker string, src []byte) []block {
+	var out []block
+	var texts []string
+	start, end := 0, 0
+	flush := func() {
+		if len(texts) == 0 {
+			return
+		}
+		ids, ff := scanText(strings.Join(texts, " "))
+		if len(ids) > 0 {
+			out = append(out, block{file: name, start: start, end: end, ids: ids, ff: ff})
+		}
+		texts = nil
+	}
+	for i, line := range strings.Split(string(src), "\n") {
+		trimmed := strings.TrimLeft(line, " \t")
+		if !strings.HasPrefix(trimmed, marker) {
+			flush()
+			continue
+		}
+		if len(texts) == 0 {
+			start = i + 1
+		}
+		end = i + 1
+		texts = append(texts, strings.TrimPrefix(trimmed, marker))
+	}
+	flush()
+	return out
+}
+
 // lineRange ist ein geschlossener Zeilenbereich.
 type lineRange struct{ from, to int }
 
@@ -232,9 +288,10 @@ func (b block) overlaps(rs []lineRange) bool {
 	return false
 }
 
-// goFiles sammelt die `.go`-Dateien unter den Pfaden, sortiert und ohne die
+// commentFiles sammelt die gelesenen Dateien unter den Pfaden — Go-Dateien
+// (.go) und die Nicht-Go-Zeilenkommentar-Formen —, sortiert und ohne die
 // ausgenommenen Wurzeln (relativ zum Arbeitsverzeichnis).
-func goFiles(paths []string) ([]string, error) {
+func commentFiles(paths []string) ([]string, error) {
 	seen := map[string]bool{}
 	var files []string
 	for _, p := range paths {
@@ -243,7 +300,7 @@ func goFiles(paths []string) ([]string, error) {
 			return nil, err
 		}
 		if !info.IsDir() {
-			if strings.HasSuffix(p, ".go") && !seen[p] && !excluded(p) {
+			if readForm(p) && !seen[p] && !excluded(p) {
 				seen[p] = true
 				files = append(files, p)
 			}
@@ -259,7 +316,7 @@ func goFiles(paths []string) ([]string, error) {
 				}
 				return nil
 			}
-			if !d.IsDir() && strings.HasSuffix(path, ".go") && !seen[path] {
+			if !d.IsDir() && readForm(path) && !seen[path] {
 				seen[path] = true
 				files = append(files, path)
 			}
@@ -271,6 +328,12 @@ func goFiles(paths []string) ([]string, error) {
 	}
 	sort.Strings(files)
 	return files, nil
+}
+
+// readForm meldet, ob eine Datei zu den gelesenen Formen gehört: Go oder
+// eine der Nicht-Go-Zeilenkommentar-Formen.
+func readForm(name string) bool {
+	return strings.HasSuffix(name, ".go") || lineCommentMarker(name) != ""
 }
 
 // excluded prüft die erste Pfadkomponente relativ zum Arbeitsverzeichnis.
@@ -309,15 +372,19 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			return 2
 		}
 	}
-	files, err := goFiles(paths)
+	files, err := commentFiles(paths)
 	if err != nil {
 		fmt.Fprintf(stderr, "kommentar-kennungen: %v\n", err)
 		return 2
 	}
 	var found []block
 	for _, name := range files {
+		isGo := strings.HasSuffix(name, ".go")
 		isTest := strings.HasSuffix(name, "_test.go")
-		if (*tests == "exclude" && isTest) || (*tests == "only" && !isTest) {
+		if isGo && ((*tests == "exclude" && isTest) || (*tests == "only" && !isTest)) {
+			continue
+		}
+		if !isGo && *tests == "only" {
 			continue
 		}
 		src, err := os.ReadFile(name)
@@ -325,9 +392,16 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			fmt.Fprintf(stderr, "kommentar-kennungen: %v\n", err)
 			return 2
 		}
-		blocks, err := blocksOf(filepath.ToSlash(filepath.Clean(name)), src)
-		if err != nil {
-			fmt.Fprintf(stderr, "kommentar-kennungen: %v\n", err)
+		slashName := filepath.ToSlash(filepath.Clean(name))
+		var blocks []block
+		var err2 error
+		if isGo {
+			blocks, err2 = blocksOf(slashName, src)
+		} else {
+			blocks = lineBlocks(slashName, lineCommentMarker(name), src)
+		}
+		if err2 != nil {
+			fmt.Fprintf(stderr, "kommentar-kennungen: %v\n", err2)
 			return 2
 		}
 		for _, b := range blocks {

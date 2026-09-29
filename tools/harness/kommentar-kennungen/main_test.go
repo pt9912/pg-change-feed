@@ -305,6 +305,47 @@ func TestRunModes(t *testing.T) {
 	}
 }
 
+func TestRunLineForms(t *testing.T) {
+	writeTree(t, map[string]string{
+		"a/skript.sh":    "# trägt die Ordnung (ADR-0001, ADR-0002)\nx=1\n",
+		"a/schema.sql":   "-- trägt die Spalten (SPEC-002, SPEC-003)\nCREATE TABLE t ();\n",
+		"a/pipeline.yml": "# trägt die Stufen (ARC-002, ARC-003)\nkey: value\n",
+		"Makefile":       "# trägt die Ziele (ADR-0001, ADR-0002)\nall:\n",
+		"Dockerfile":     "# trägt die Stufen (ARC-002, ARC-003)\nFROM scratch\n",
+		"a/ok.sh":        "# trägt die Ordnung (ADR-0001)\nx=1\n",
+		"a/nachgestellt.sh": "x=1 # ADR-0001, ADR-0002\n",
+		"a/notgo.txt":    "# ADR-0001, ADR-0002\n",
+		"gen/x.sh":       "# ADR-0001, ADR-0002\n",
+	})
+	cases := []struct {
+		name     string
+		args     []string
+		wantCode int
+		wantOut  string
+	}{
+		{"alle Nicht-Go-Formen", []string{"-tests", "exclude"}, 1,
+			"Dockerfile:1-1  ARC-002, ARC-003\nMakefile:1-1  ADR-0001, ADR-0002\n" +
+				"a/pipeline.yml:1-1  ARC-002, ARC-003\na/schema.sql:1-1  SPEC-002, SPEC-003\na/skript.sh:1-1  ADR-0001, ADR-0002\n"},
+		{"nur Testdateien liest keine Nicht-Go-Form", []string{"-tests", "only"}, 0, ""},
+		{"Zahl", []string{"-count", "-tests", "exclude"}, 0, "5\n"},
+		{"nachgestellter Kommentar ist kein Kandidat", []string{"-tests", "exclude", "a/nachgestellt.sh"}, 0, ""},
+		{"Form ohne Kennung ist kein Kandidat", []string{"-tests", "exclude", "a/ok.sh"}, 0, ""},
+		{".txt wird nicht gelesen", []string{"-tests", "exclude", "a/notgo.txt"}, 0, ""},
+		{"ausgenommene Wurzel", []string{"-tests", "exclude", "gen"}, 0, ""},
+		{"Diff-Modus: hinzugefügte Zeile im Shell-Block", []string{"-tests", "exclude", "-diff", "a/skript.sh"}, 1,
+			"a/skript.sh:1-1  ADR-0001, ADR-0002\n"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			code, out, errOut := runTool(t, "+++ b/a/skript.sh\n@@ -1 +1 @@\n-x\n+# trägt die Ordnung (ADR-0001, ADR-0002)\n", c.args...)
+			if code != c.wantCode || out != c.wantOut {
+				t.Fatalf("Exit %d, Ausgabe %q (stderr %q); erwartet Exit %d, Ausgabe %q",
+					code, out, errOut, c.wantCode, c.wantOut)
+			}
+		})
+	}
+}
+
 func TestRunDiffMode(t *testing.T) {
 	writeTree(t, map[string]string{"a/x.go": candidateSrc + "\n// SPEC-003 und ARC-002\nvar v = 1\n"})
 	overlapping := "+++ b/a/x.go\n@@ -3,0 +3,1 @@\n+x\n"
@@ -360,6 +401,80 @@ func TestRunInputErrors(t *testing.T) {
 			code, out, errOut := runTool(t, c.stdin, c.args...)
 			if code != 2 || out != "" || errOut == "" {
 				t.Fatalf("Exit %d, Ausgabe %q, stderr %q; erwartet Exit 2, keine Ausgabe, eine Meldung", code, out, errOut)
+			}
+		})
+	}
+}
+
+// TestLineCommentMarker bindet die Form-Auswahl an Name und Endung.
+func TestLineCommentMarker(t *testing.T) {
+	cases := []struct {
+		name   string
+		want   string
+	}{
+		{"a/skript.sh", "#"},
+		{"a/bibliothek.mk", "#"},
+		{"a/pipeline.yml", "#"},
+		{"a/pipeline.yaml", "#"},
+		{"Makefile", "#"},
+		{"Dockerfile", "#"},
+		{"a/Dockerfile.dev", "#"},
+		{"a/schema.sql", "--"},
+		{"a/notiz.txt", ""},
+		{"a/main.go", ""},
+	}
+	for _, c := range cases {
+		if got := lineCommentMarker(c.name); got != c.want {
+			t.Fatalf("lineCommentMarker(%q) = %q; erwartet %q", c.name, got, c.want)
+		}
+	}
+}
+
+// TestLineBlocks bindet die Blockgrenze der Nicht-Go-Formen an die Quelle:
+// fortlaufende vollzeilige Kommentare sind ein Block, jede andere Zeile — auch
+// eine Leerzeile — beendet ihn; nachgestellte Kommentaranteile werden nicht
+// gelesen.
+func TestLineBlocks(t *testing.T) {
+	cases := []struct {
+		name   string
+		file   string
+		marker string
+		src    string
+		want   []block
+	}{
+		{"Shell-Block mit zwei Kennungen, Shebang gehört mit", "a/x.sh", "#",
+			"#!/bin/sh\n# trägt die Ordnung (ADR-0001, ADR-0002)\nx=1\n",
+			[]block{{file: "a/x.sh", start: 1, end: 2, ids: []string{"ADR-0001", "ADR-0002"}}}},
+		{"Leerzeile beendet den Block", "a/x.sh", "#",
+			"# ADR-0001 und ADR-0002\n\n# ADR-0003\n",
+			[]block{
+				{file: "a/x.sh", start: 1, end: 1, ids: []string{"ADR-0001", "ADR-0002"}},
+				{file: "a/x.sh", start: 3, end: 3, ids: []string{"ADR-0003"}},
+			}},
+		{"eingrückte Kommentare gehören zum Block", "a/x.sh", "#",
+			"#\tADM (ADR-0001)\n#\tund (ADR-0002)\n",
+			[]block{{file: "a/x.sh", start: 1, end: 2, ids: []string{"ADR-0001", "ADR-0002"}}}},
+		{"nachgestellter Kommentar wird nicht gelesen", "a/x.sh", "#",
+			"x=1 # ADR-0001, ADR-0002\n",
+			nil},
+		{"SQL-Block mit zwei Kennungen", "a/x.sql", "--",
+			"-- trägt die Spalten (SPEC-002, SPEC-003)\nCREATE TABLE t ();\n",
+			[]block{{file: "a/x.sql", start: 1, end: 1, ids: []string{"SPEC-002", "SPEC-003"}}}},
+		{"Makefile: Ziel-Zeile mit ## ist kein Block", "Makefile", "#",
+			"build: ## trägt (ADR-0001, ADR-0002)\n",
+			nil},
+		{"ff. zählt auch hier", "a/x.sh", "#",
+			"# (ADR-0001 ff.)\n",
+			[]block{{file: "a/x.sh", start: 1, end: 1, ids: []string{"ADR-0001"}, ff: true}}},
+		{"eine Kennung ist kein Kandidat", "a/x.sh", "#",
+			"# trägt die Ordnung (ADR-0001)\n",
+			[]block{{file: "a/x.sh", start: 1, end: 1, ids: []string{"ADR-0001"}}}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := lineBlocks(c.file, c.marker, []byte(c.src))
+			if !reflect.DeepEqual(got, c.want) {
+				t.Fatalf("lineBlocks(%q) = %v; erwartet %v", c.src, got, c.want)
 			}
 		})
 	}
