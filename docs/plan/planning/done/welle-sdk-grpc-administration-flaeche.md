@@ -17,17 +17,17 @@ keinen Meilenstein-Eintrag im Lastenheft).
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
-Die drei SDK-Packages ([`PgChangeFeed.Client`](../../../sdks/csharp/README.md)
-(C#), [`pgchangefeed`](../../../sdks/python/README.md) (Python),
-[`pgchangefeed-kotlin`](../../../sdks/kotlin/pgchangefeed-kotlin/README.md) (Kotlin),
-[`LH-FA-SST-009`](../../../spec/lastenheft.md)) decken die gRPC-Fläche heute
+Die drei SDK-Packages ([`PgChangeFeed.Client`](../../../../sdks/csharp/README.md)
+(C#), [`pgchangefeed`](../../../../sdks/python/README.md) (Python),
+[`pgchangefeed-kotlin`](../../../../sdks/kotlin/pgchangefeed-kotlin/README.md) (Kotlin),
+[`LH-FA-SST-009`](../../../../spec/lastenheft.md)) decken die gRPC-Fläche heute
 nur mit dem Live-Change-Stream (`StreamChanges`) ab. Vier bereits
 umgesetzte, servers­eitig vollständig gepushte ADRs erweitern die
 gRPC-Fläche seither um elf Administration-RPCs und einen Stream-Filter:
-[`ADR-0130`](../adr/0130-grpc-verwaltungs-api-neun-rpcs.md) (neun
-Verwaltungsfähigkeiten), [`ADR-0131`](../adr/0131-grpc-readchanges-zehnter-rpc.md)
-(`ReadChanges`), [`ADR-0132`](../adr/0132-diagnose-ueber-inbound-port-http-grpc.md)
-(`Diagnose`), [`ADR-0133`](../adr/0133-tabellen-granulare-filterung-grpc-sse.md)
+[`ADR-0130`](../../adr/0130-grpc-verwaltungs-api-neun-rpcs.md) (neun
+Verwaltungsfähigkeiten), [`ADR-0131`](../../adr/0131-grpc-readchanges-zehnter-rpc.md)
+(`ReadChanges`), [`ADR-0132`](../../adr/0132-diagnose-ueber-inbound-port-http-grpc.md)
+(`Diagnose`), [`ADR-0133`](../../adr/0133-tabellen-granulare-filterung-grpc-sse.md)
 (`schema`/`table`-Filter an `StreamChanges`). Alle vier benennen die
 SDK-Erweiterung ausdrücklich als eigene, hier nicht umgesetzte Folgepflicht.
 Die drei Beispiel-Client-Sprachen (`examples/grpc-client` (Go),
@@ -65,9 +65,9 @@ Filter-Parameter am bestehenden `PgChangeFeedGrpcClient`.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-sdk-csharp-grpc-administration-flaeche | C#-SDK: `PgChangeFeedAdministrationClient` + Stream-Filter | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
-| slice-sdk-python-grpc-administration-flaeche | Python-SDK: `PgChangeFeedAdministrationClient` + Stream-Filter | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
-| slice-sdk-kotlin-grpc-administration-flaeche | Kotlin-SDK: `PgChangeFeedAdministrationClient` + Stream-Filter | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
+| slice-sdk-csharp-grpc-administration-flaeche | C#-SDK: `PgChangeFeedAdministrationClient` + Stream-Filter | [`LH-FA-SST-009`](../../../../spec/lastenheft.md) |
+| slice-sdk-python-grpc-administration-flaeche | Python-SDK: `PgChangeFeedAdministrationClient` + Stream-Filter | [`LH-FA-SST-009`](../../../../spec/lastenheft.md) |
+| slice-sdk-kotlin-grpc-administration-flaeche | Kotlin-SDK: `PgChangeFeedAdministrationClient` + Stream-Filter | [`LH-FA-SST-009`](../../../../spec/lastenheft.md) |
 
 ## 5. Abhängigkeiten
 
@@ -84,7 +84,7 @@ Filter-Parameter am bestehenden `PgChangeFeedGrpcClient`.
 - **Server-seitige Änderungen** — die vier ADRs sind serverseitig
   abgeschlossen; findet ein SDK-Slice einen Server-Fehler (wie bereits
   einmal bei der Beispiel-Client-Arbeit geschehen, siehe
-  [`docs/reviews/review-example-kotlin-grpc-client-verbmatrix.md`](../../reviews/review-example-kotlin-grpc-client-verbmatrix.md)
+  [`docs/reviews/review-example-kotlin-grpc-client-verbmatrix.md`](../reviews/review-example-kotlin-grpc-client-verbmatrix.md)
   INFO-1), wird er gemeldet, nicht in dieser Welle repariert.
 - **Diagnose/Health über HTTP** — bereits eigenständig umgesetzt
   (`ADR-0132`), kein Gegenstand der SDK-Erweiterung dieser Welle über den
