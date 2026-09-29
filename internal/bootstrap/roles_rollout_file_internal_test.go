@@ -184,8 +184,8 @@ func istKlassenGrant(objekt string) bool {
 //
 // Rot färbende Mutationen (real gefahren; die Exit-Codes führt §7 der
 // Closure-Notiz von `slice-093`): `SELECT` aus dem
-// `cdc.process_heartbeat`-Grant für `cdc_admin` entfernen (der korrigierte
-// Ursprungstext) · den `DELETE`-Grant auf
+// `cdc.process_heartbeat`-Grant für `cdc_admin` entfernen · den
+// `DELETE`-Grant auf
 // `cdc.transaction`/`cdc.change` für `cdc_admin` entfernen · `DELETE` an
 // `cdc_capture` auf `cdc.change` ergänzen · den Schema-USAGE-Grant
 // entfernen · die Lese-View `cdc.retention_blockers` bzw. `cdc.backfill_status`

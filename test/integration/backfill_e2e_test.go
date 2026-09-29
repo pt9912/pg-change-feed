@@ -268,7 +268,7 @@ func stateDiff(want, got map[string]replayImage) []string {
 // Lese-Ordnung `(commit_position, transaction_id, sequence)` trägt
 // `LH-FA-CAP-004`.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2EBackfillReplayInvariant(t *testing.T) {

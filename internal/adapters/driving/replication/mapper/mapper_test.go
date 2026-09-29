@@ -644,7 +644,7 @@ func TestConsumeExcludedColumnSurvivesSchemaBump(t *testing.T) {
 }
 
 // TestConsumeExcludedColumnDroppedInSourceReportsSchemaError trägt die
-// Konvergenz (`ADR-0059` Teilfrage 4): eine real
+// Gleichbehandlung (`ADR-0059` Teilfrage 4): eine real
 // gelöschte, zuvor ausgeschlossene Spalte fehlt in der eingehenden
 // Relation wie jede andere gelöschte Spalte und endet über denselben
 // `ErrIncompatibleSchemaChange`-Pfad — kein Sonderfall für den

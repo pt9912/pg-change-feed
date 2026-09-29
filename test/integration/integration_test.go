@@ -199,7 +199,7 @@ func imageJSON(t *testing.T, raw []byte) map[string]any {
 // real gelesen). Das Wiederlesen desselben Bereichs unten trägt zugleich
 // `LH-QA-REL-004`: zweimaliges Lesen liefert dieselben Changes.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2ECaptureFlow(t *testing.T) {
@@ -311,7 +311,7 @@ func TestE2ECaptureFlow(t *testing.T) {
 // den kompletten Alt-Stand — `old_data` trägt beide Spalten (`ADR-0016`),
 // nicht nur den Schlüssel.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2EUpdateOldImageWithFullReplicaIdentity(t *testing.T) {
@@ -438,7 +438,7 @@ func changeRowID(t *testing.T, change model.Change) string {
 // run-integration-tests.sh) — die Lesung filtert auf den Feldwert, nicht auf
 // die Testreihenfolge.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2EChangesViewMatchesReadChanges(t *testing.T) {
@@ -523,7 +523,7 @@ func TestE2EChangesViewMatchesReadChanges(t *testing.T) {
 // entscheidet — sie macht nur sichtbar, welche Position aktuell die
 // Löschgrenze trägt.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2ERetentionBlockersViewShowsFurthestBehindConsumer(t *testing.T) {
@@ -643,7 +643,7 @@ func TestE2ERetentionBlockersViewShowsFurthestBehindConsumer(t *testing.T) {
 // der bestehende `cdc_capture_lag`-Beleg
 // (`tools/harness/run-integration-tests.sh`), hier gegen dieselbe View.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2EMetricsCarriesStorageBytes(t *testing.T) {
@@ -675,7 +675,7 @@ func TestE2EMetricsCarriesStorageBytes(t *testing.T) {
 // (Boundary), die fehlende Tabelle endet sichtbar (Negative), und die
 // Liste trägt die aktivierten Tabellen der Quelle.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2EActivationState(t *testing.T) {
@@ -755,7 +755,7 @@ func TestE2EActivationState(t *testing.T) {
 // Deaktivierung in TestE2EDisableRetainedState, die nur feed_e2e_flow
 // betrifft.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2EActiveTablesViewMatchesActivationState(t *testing.T) {
@@ -824,7 +824,7 @@ func TestE2EActiveTablesViewMatchesActivationState(t *testing.T) {
 // Test läuft nach den Capture-Läufen (Quell-Reihenfolge) und deaktiviert
 // die Tabelle als letztes.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2EDisableRetainedState(t *testing.T) {
@@ -910,7 +910,7 @@ func TestE2EDisableRetainedState(t *testing.T) {
 // sie, die bereits erfasste Change bleibt bei ihrer ursprünglichen
 // Version.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2ESchemaChangeAddColumn(t *testing.T) {
@@ -979,7 +979,7 @@ func TestE2ESchemaChangeAddColumn(t *testing.T) {
 // `amount`/`extra`, die bereits Zustand für
 // `TestE2ESchemaChangeIncompatibleTypeChange` tragen.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2ESchemaChangeDropColumn(t *testing.T) {
@@ -1005,7 +1005,7 @@ func TestE2ESchemaChangeDropColumn(t *testing.T) {
 
 	// LH-FA-SCH-003 Happy Path: die reale Spaltenentfernung löst denselben
 	// ErrIncompatibleSchemaChange-
-	// Pfad aus wie jede andere inkompatible Relation-Änderung (Konvergenz) —
+	// Pfad aus wie jede andere inkompatible Relation-Änderung —
 	// sichtbarer schema-Fehler, kein stilles Auslassen.
 	if got := awaitHeartbeatErrorClass(t, env, "schema"); got != "schema" {
 		t.Fatalf("cdc.heartbeat.error_class nach DROP COLUMN: %q, wollen \"schema\"", got)
@@ -1043,7 +1043,7 @@ func TestE2ESchemaChangeDropColumn(t *testing.T) {
 // Spalte bleibt additiv, nullable, und wird per `t.Cleanup` vor den
 // nachfolgenden Testphasen wieder entfernt (`ADR-0058` Entscheidung 2).
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2EChangeTableMetadataExtensibility(t *testing.T) {
@@ -1119,7 +1119,7 @@ func TestE2EChangeTableMetadataExtensibility(t *testing.T) {
 // setzt `error_class` dauerhaft auf `schema` und würde den
 // Happy-Path-Beleg sonst verdecken.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2EHeartbeatHealthy(t *testing.T) {
@@ -1212,7 +1212,7 @@ func awaitHeartbeatErrorClass(t *testing.T, env *e2eEnv, want string) string {
 // auslösende Relation-Nachricht vor ihrem eigenen Commit, und der
 // Erfassungspfad endet, bevor sie committed wird.
 //
-// Kennungs-Menge: die Kennungen dieses Blocks trägt die
+// Kennungs-Menge: die LH- und SPEC-Kennungen dieses Blocks trägt die
 // E2E-Abdeckungstabelle je Testzeile — Abdeckung, keine Herkunft, kein
 // Kürzen auf einen Anker.
 func TestE2ESchemaChangeIncompatibleTypeChange(t *testing.T) {
