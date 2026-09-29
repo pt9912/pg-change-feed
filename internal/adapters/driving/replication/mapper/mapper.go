@@ -73,9 +73,8 @@ var ErrTransformationNotApplicable = errors.New("Fehlerklasse schema: Transforma
 // Changes dieser Tabelle referenzieren (`LH-FA-SCH-005`). Die
 // Schema-Version liegt initial bei der Konfiguration und wird von
 // `Assembler.Consume` bei einer real erkannten kompatiblen Erweiterung
-// aktualisiert — die Erkennung nicht sicher
-// interpretierbarer Änderungen als Fehlerklasse `schema` trägt
-// `LH-FA-SCH-004.a` über denselben Metadata-Pfad.
+// aktualisiert — eine nicht sicher interpretierbare Änderung endet als
+// Fehlerklasse `schema` über denselben Metadata-Pfad.
 //
 // `ExcludedColumns` trägt die Spaltennamen, deren Werte die
 // Row-Image-Konstruktion übergeht: der Wert wird dadurch nie serialisiert
