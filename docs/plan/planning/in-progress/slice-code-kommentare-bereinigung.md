@@ -222,18 +222,20 @@ die Zeilen mit Stand `diff`:
 7b70b34a 125 -l -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go' ':!*_test.go'
 7b70b34a 8 -E '//.* ff\.' -- '*.go'
 7b70b34a 15 -E '\.go:[0-9]+' -- AGENTS.md README.md harness spec docs/user
-diff 1850 -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go'
-diff 147 -l -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go' ':!*_test.go'
-diff 1 -E '//.* ff\.' -- '*.go'
-diff 18 -E '\.go:[0-9]+' -- AGENTS.md README.md harness spec docs/user
+793bb71b 1732 -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go'
+793bb71b 147 -l -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go' ':!*_test.go'
+793bb71b 1 -E '//.* ff\.' -- '*.go'
+793bb71b 18 -E '\.go:[0-9]+' -- AGENTS.md README.md harness spec docs/user
 ```
 
-Die `diff`-Zeilen sind am Arbeitsbaum nach T1 bis T7 gemessen (Implementer,
-dieser Lauf). Der Wert 1 der `ff.`-Zeile ist kein Kommentar: der Lauf trifft
+Die Zeilen am Stand `793bb71b` sind nach T8 gemessen (Implementer,
+dieser Lauf): die Kennungs-Zeilen sinken 1850 → 1732 (T8-Kürzungen, die
+14 gekennzeichneten TestE2E-Abdeckungs-Blöcke behalten ihre Mengen), die
+Nicht-Test-Dateien bleiben 147 (T8 berührt nur `*_test.go`). Der Wert 1
+der `ff.`-Zeile ist kein Kommentar: der Lauf trifft
 das String-Literal eines Tabellentestfalls in
 `tools/harness/kommentar-kennungen/main_test.go`, dessen Eingabe eine
-„ff."-Zeile als Beispieltext trägt. Die Kennungs-Zeilen und Dateien sinken in
-T8 (Test-Code) weiter; die `diff`-Zeilen trägt die Fortsetzung dann nach.
+„ff."-Zeile als Beispieltext trägt.
 
 | Träger | Befund | Behandlung |
 |---|---|---|
