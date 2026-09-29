@@ -1,6 +1,6 @@
 # Review-Report: slice-sdk-public-doc-check-gate — 2026-09-29
 
-**Review-Art:** Code — Diff gegen Plan (§1–§6), ADR-0134 und Hard Rules
+**Review-Art:** Code — Diff gegen Plan (§1–§6), [ADR-0134](../plan/adr/0134-sdk-public-doc-check-gate-make-gates.md) und Hard Rules
 (Maintainability). DoD-Vollständigkeit bleibt Verifier-Aufgabe.
 
 **Gegenstand:** Diff `f287c81b..72293784` — `73e33f4b` (feat(harness):
@@ -56,9 +56,9 @@ Prüfauftrags, aber zählerrelevant für F-1.
   `done/`-Records mit, die §3.13 ausnimmt (in der 112er-Baseline stammen
   über 30 Treffer aus diesen Bereichen). Der materielle Befund trägt
   trotzdem: ein Gesamtbaum-Grep mit den §3.13-Ausnahmen findet die
-  „ein weiteres Gate“-Begründung nur noch in ADR-0134 (Kontext-Abschnitt)
+  „ein weiteres Gate“-Begründung nur noch in [ADR-0134](../plan/adr/0134-sdk-public-doc-check-gate-make-gates.md) (Kontext-Abschnitt)
   und in der wörtlichen Zitat-Verwendung des Plans selbst — beide legitim.
-- `verifizierbar`: ja — `git grep -n 'ein weiteres Gate' -- ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'` → 2 Treffer (ADR-0134 Kontext, Plan §1).
+- `verifizierbar`: ja — `git grep -n 'ein weiteres Gate' -- ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'` → 2 Treffer ([ADR-0134](../plan/adr/0134-sdk-public-doc-check-gate-make-gates.md) Kontext, Plan §1).
 - `klasse`: „Suchlauf-Raum enger/anderer als §3.13 ohne Grund im Feld“
 
 ### F-3 — Orthografische Mischform im neu geschriebenen `sdk.mk`-Kommentarblock
@@ -79,7 +79,7 @@ Prüfauftrags, aber zählerrelevant für F-1.
 - `kategorie`: INFO
 - `quelle`: `AGENTS.md` §3.7 („Herkunft im Go-Kommentar ist ein Feld“)
 - `pfad`: `harness/mk/sdk.mk:1-9`
-- `befund`: Der Header-Block nennt ADR-0134 neben ADR-0106/0107/0108/0109/0123
+- `befund`: Der Header-Block nennt [ADR-0134](../plan/adr/0134-sdk-public-doc-check-gate-make-gates.md) neben [ADR-0106](../plan/adr/0106-csharp-nuget-erstes-sdk-package.md)/0107/0108/0109/0123
   im selben Block. Die Ein-Kennung-Regel ist auf Go-Kommentare gecooped und
   `make kommentar-kennungen` liest nur Go-Dateien; das Muster steht so schon
   im Bestand — der Zug hat es fortgeschrieben, nicht eingeführt. Hinweis ohne
@@ -101,10 +101,10 @@ Prüfauftrags, aber zählerrelevant für F-1.
   Sperren, Bindung); zitiertes Muster byte-gleich zum Skript
   (`tools/harness/sdk-public-doc-check.sh:29`); Exit-Tabelle (1 → make 2) und
   Prune-Liste decken den Skripttext; Grenze 2 trägt die fail-closed-Richtung
-  einer neuen erzeugten Verzeichnisklasse aus ADR-0134 Festlegung 4
-- geprüft, ohne Befund: `harness/README.md` — Gate-Zeile bindet ADR-0134 und
+  einer neuen erzeugten Verzeichnisklasse aus [ADR-0134](../plan/adr/0134-sdk-public-doc-check-gate-make-gates.md) Festlegung 4
+- geprüft, ohne Befund: `harness/README.md` — Gate-Zeile bindet [ADR-0134](../plan/adr/0134-sdk-public-doc-check-gate-make-gates.md) und
   Sensor-Datei, `make gates`-Zeile listet sieben Gates, Tabellentest-Zeile
-  bleibt Werkzeug (ADR-0134 Teilfrage 2), keine „kein Gate“-Leiche
+  bleibt Werkzeug ([ADR-0134](../plan/adr/0134-sdk-public-doc-check-gate-make-gates.md) Teilfrage 2), keine „kein Gate“-Leiche
 - geprüft, ohne Befund: Rot/Grün-Beleg — Rot-Probe im Scratchpad nachgefahren
   (`SPEC-001` in Wegwerf-Verzeichnis, Aufrufform mit Wurzel-Argument: Exit 1,
   `datei:zeile:`-Treffer plus Sammelzeile); `make sdk-public-doc-check` am
@@ -122,7 +122,8 @@ Prüfauftrags, aber zählerrelevant für F-1.
   (Skript unverändert), kein README-Beispiel-Wächter, Tabellentest bleibt
   Werkzeug; Zwei-Quellen-Drift README ↔ Sensor-Datei: Sensor-Datei ist
   Vertrag, README-Zeile fasst zusammen, kein Widerspruch
-- geprüft, ohne Befund: Spec-Stratum — keine Spec-Änderung im Diff; ADR-0134
+- geprüft, ohne Befund: Spec-Stratum — keine Spec-Änderung im Diff;
+  [ADR-0134](../plan/adr/0134-sdk-public-doc-check-gate-make-gates.md)
   Folgepflicht („spec/ braucht keine Änderung“) eingehalten
 
 ## Summary
@@ -142,7 +143,7 @@ Mischform in neu geschriebenem Kommentarblock · Herkunft als mehrere Felder
 ## Ausgeführte Sensors
 
 - `make gates` — Exit **0**, ungepiped gesichert (`make gates > <log> 2>&1; ec=$?`), Filterung nur gegen die Log-Datei; alle sieben Gates inkl. `sdk-public-doc-check: keine interne Kennung unter sdks` (Log-Z. 839), Coverage 80,40 % ≥ 80 %, commit-traceability OK
-- `make sdk-public-doc-check` — Exit 0 (am Arbeitsbaum mit vorhandenen ignorierten Bau-Ausgaben `sdks/*/dist`, `grpc_gen` — ADR-0134 Festlegung 4 real abgedeckt)
+- `make sdk-public-doc-check` — Exit 0 (am Arbeitsbaum mit vorhandenen ignorierten Bau-Ausgaben `sdks/*/dist`, `grpc_gen` — [ADR-0134](../plan/adr/0134-sdk-public-doc-check-gate-make-gates.md) Festlegung 4 real abgedeckt)
 - `make test-sdk-public-doc-check` — Exit 0
 - Rot-Probe des Wächters im Wegwerf-Verzeichnis (Wurzel-Argument-Form) — Exit 1 wie im Vertrag beschrieben
 
