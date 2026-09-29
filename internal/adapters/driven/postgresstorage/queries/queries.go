@@ -1,6 +1,5 @@
 // Package queries trägt die SQL-Texte der postgresstorage-Adapter
-// (Paketstruktur je `ADR-0042`, der die Struktur-Regeln des abgelösten
-// `ADR-0039` als Rest fortgilt): die Tabellennamen nach `SPEC-001` stehen
+// (Paketstruktur je `ADR-0042`): die Tabellennamen stehen
 // hier und nirgends sonst im Adapter; die Zeilen-Übersetzung trägt der
 // Mapper.
 package queries
@@ -10,8 +9,8 @@ package queries
 // Primärschlüssel `transaction_id`: die erneut persistierte Transaktion
 // konfligiert und bleibt ohne Wirkung — die Rückkehr meldet keinen Fehler,
 // und der zuerst geschriebene committed_at-Wert bleibt bestehen.
-// committed_at trägt den realen Quell-Commit-Zeitpunkt
-// (`LH-FA-ADM-004`) — der Store übergibt ihn explizit; die Spalten-DEFAULT
+// committed_at trägt den realen Quell-Commit-Zeitpunkt — der Store
+// übergibt ihn explizit; die Spalten-DEFAULT
 // (`current_timestamp`) greift nur außerhalb dieses Anwendungspfads.
 const InsertTransaction = `
 INSERT INTO cdc.transaction (transaction_id, source_id, commit_position, committed_at)
@@ -21,28 +20,28 @@ ON CONFLICT (transaction_id) DO NOTHING`
 // InsertChange persistiert einen Change; die Deduplizierungsbasis ist der
 // Primärschlüssel `change_id` (`SPEC-002`). Die Row Images gehen als Text
 // in die `jsonb`-Spalten; ein fehlendes Bild geht als NULL
-// (Abwesenheit, `LH-FA-CAP-008` Boundary). Die Spaltenliste ist explizit
-// und trägt `origin` als letzte Spalte (`SPEC-002`, `LH-FA-CAP-009`).
+// (Abwesenheit). Die Spaltenliste ist explizit
+// und trägt `origin` als letzte Spalte.
 const InsertChange = `
 INSERT INTO cdc.change
     (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version, origin)
 VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9)
 ON CONFLICT (change_id) DO NOTHING`
 
-// SelectChanges liest deterministisch sortiert (`LH-FA-REA-004.a`):
+// SelectChanges liest deterministisch sortiert (`LH-FA-REA-004`):
 // Sortierung nach (Commit-Position der Quelltransaktion, Transaktions-ID,
 // Sequenz innerhalb der Transaktion). Der Start ist inklusive, das Ende
-// exklusiv (`LH-FA-REA-001`); NULL-Grenzen grenzen nicht ein, LIMIT NULL
+// exklusiv; NULL-Grenzen grenzen nicht ein, LIMIT NULL
 // liest unbegrenzt. Der Tabellenfilter läuft über die Klartext-Bezeichner
 // der Bindungs-Zeile (`st.schema_name`/`st.table_name`), je optional und
 // unabhängig; der Join auf `cdc.source_table` trägt dieselben Bezeichner
 // in die Projektion, damit die Rückgabe die Tabellen-Identität in Klartext
 // führt — dieselbe Projektion wie die View `cdc.changes`. Lesen trägt nur
-// SELECT — gespeicherte Positionen bleiben unverändert (`LH-FA-REA-002`).
+// SELECT — gespeicherte Positionen bleiben unverändert.
 // committed_at trägt den realen Quell-Commit-Zeitpunkt der Transaktion
-// (`LH-FA-ADM-004`) — die zeitbasierte Retention (`LH-FA-RET-003`) liest
+// — die zeitbasierte Retention liest
 // ihr Alter dagegen. `origin` steht als letzte Spalte, `NULL` einer Zeile
-// ohne das Feld liest als `wal` (`LH-FA-DAT-006` Boundary) — derselbe
+// ohne das Feld liest als `wal` (Boundary) — derselbe
 // `COALESCE` wie in der View `cdc.changes`.
 const SelectChanges = `
 SELECT
@@ -90,7 +89,7 @@ ORDER BY c.change_id
 LIMIT $3`
 
 // DeleteChanges entfernt genau die übergebenen Change-Zeilen
-// (`LH-FA-RET-002`…`004`); die Freigabe je Change trägt der aufrufende Use
+// (`LH-FA-RET-002`); die Freigabe je Change trägt der aufrufende Use
 // Case über `RetentionPolicy.AllowsDeletion` — diese Abfrage führt nur die
 // bereits freigegebene Menge aus. Eine Kennung ohne Zeile bleibt ohne
 // Wirkung (Idempotenz). RETURNING liefert die betroffenen
@@ -140,7 +139,7 @@ VALUES ($1, $2, $3, $4)
 ON CONFLICT DO NOTHING`
 
 // InsertSchemaVersion trägt die Schema-Version-Zeile einer Aktivierung
-// (`LH-FA-CFG-001`, `SPEC-004`); dieselbe Idempotenz über den
+// (`LH-FA-CFG-001`); dieselbe Idempotenz über den
 // Primärschlüssel.
 const InsertSchemaVersion = `
 INSERT INTO cdc.schema_version (schema_version_id, source_table_id, version)
@@ -240,7 +239,7 @@ WHERE source_id = $1`
 
 // UpsertConsumerPosition trägt die bestätigte Position fort
 // (`LH-FA-CON-003` Boundary); die Monotonie trägt der Domänen-Vergleich
-// vor dem Schreiben (`ADR-0029`, Regel 2), nicht der SQL-Ausdruck — die
+// vor dem Schreiben, nicht der SQL-Ausdruck — die
 // gesperrte Zeile liest der Adapter vor diesem Upsert.
 const UpsertConsumerPosition = `
 INSERT INTO cdc.consumer_position (consumer_id, source_id, acknowledged_position)
@@ -266,15 +265,14 @@ DELETE FROM cdc.consumer WHERE consumer_id = $1`
 // Aufrufer übergibt keine Uhr. Eine bestehende Zeile aktualisiert ihren
 // Zeitstempel; je Quelle bleibt genau eine Zeile. Ein erfolgreicher Beat
 // löscht einen zuvor gemeldeten Fehlerzustand (`error_class`) wieder —
-// der Fehlerzustand endet dadurch selbst erkennbar (`LH-FA-ADM-003`
-// Boundary).
+// der Fehlerzustand endet dadurch selbst erkennbar.
 const UpsertHeartbeat = `
 INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class)
 VALUES ($1, current_timestamp, NULL)
 ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_class = NULL`
 
 // InsertTableSchemaColumn persistiert eine Spalten-Zeile einer
-// TableSchema-Version (`ADR-0015` Folgepflicht, `SPEC-004`) — eine Zeile
+// TableSchema-Version (`ADR-0015` Folgepflicht) — eine Zeile
 // je Spalte, in Anlage-Reihenfolge über `ordinal_position` sortiert
 // (`SelectTableSchemaColumns`); dieselbe Deduplizierungsbasis wie
 // `InsertChange`.
@@ -306,8 +304,8 @@ const CountTableSchemaColumns = `
 SELECT count(*) FROM cdc.table_schema WHERE schema_version_id = $1`
 
 // UpsertHeartbeatFault trägt den zuletzt beobachteten Fehlerzustand der
-// Quelle fort (`cdc.process_heartbeat.error_class`, `LH-FA-ADM-003`,
-// `LH-QA-REL-003`): dieselbe Zeile wie UpsertHeartbeat,
+// Quelle fort (`cdc.process_heartbeat.error_class`, `LH-FA-ADM-003`):
+// dieselbe Zeile wie UpsertHeartbeat,
 // derselbe fortlaufende Zeitstempel — ein Fehlerzustand ist ein
 // Lebenszeichen mit Klasse, keine zweite Tabelle.
 const UpsertHeartbeatFault = `
@@ -324,7 +322,7 @@ ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_cl
 // und SelectAppliedTransformationRequests den dauerhaften Stand ableiten,
 // und die Verarbeitung führt damit live und beim Prozessstart zum selben
 // Stand. `requested_at` ist der Aufrufzeitpunkt der schreibenden Funktion
-// (`clock_timestamp()`, `ADR-0127`): Aufrufe derselben Transaktion tragen
+// (`clock_timestamp()`): Aufrufe derselben Transaktion tragen
 // verschiedene Zeitstempel in der Reihenfolge des Aufrufs, die Kennung
 // ordnet nur bei gleichem Zeitstempel. Die sieben Antragsarten teilen sich eine
 // Tabelle; die Antragsarten `enable`, `disable`, `backfill` und die beiden
@@ -341,10 +339,10 @@ WHERE status = 'pending'
 ORDER BY requested_at, administration_request_id`
 
 // SelectAppliedColumnRequests liest die `applied`-Zeilen der beiden
-// Spalten-Antragsarten einer Quelle (`LH-FA-CFG-005`, `ADR-0065`): der
+// Spalten-Antragsarten einer Quelle (`LH-FA-CFG-005`): der
 // Adapter wertet sie zur Reihenfolge aus und trägt damit den dauerhaften
 // Ausschlussstand. `requested_at` ist der Aufrufzeitpunkt der schreibenden
-// Funktion (`clock_timestamp()`, `ADR-0127`); der Zweitschlüssel
+// Funktion (`clock_timestamp()`); der Zweitschlüssel
 // `administration_request_id` ordnet Zeilen mit gleichem Zeitstempel
 // deterministisch, dieselbe Antrags-Menge trägt damit genau eine
 // Reihenfolge. Die fünf übrigen Antragsarten (`enable`,
@@ -360,11 +358,11 @@ WHERE source_id = $1
 ORDER BY requested_at, administration_request_id`
 
 // SelectAppliedTransformationRequests liest die `applied`-Zeilen der beiden
-// Transformations-Antragsarten einer Quelle (`LH-FA-CFG-007`, `SPEC-019`):
+// Transformations-Antragsarten einer Quelle (`LH-FA-CFG-007`):
 // der Adapter faltet sie zum Regelstand je Tabelle
 // (`model.FoldTransformations`). Ordnung und Zweitschlüssel wie in
 // SelectAppliedColumnRequests: `requested_at` ist der Aufrufzeitpunkt der
-// schreibenden Funktion (`ADR-0127`), `administration_request_id` macht die
+// schreibenden Funktion, `administration_request_id` macht die
 // Reihenfolge bei gleichem Zeitstempel deterministisch. `COALESCE` normalisiert das
 // NULL-bare `rule_spec` (bei `remove_transformation` leer) auf den leeren
 // Text; die Regelform steht als JSON-Text (`jsonb` nach `text`).
@@ -377,7 +375,7 @@ WHERE source_id = $1
 ORDER BY requested_at, administration_request_id`
 
 // SelectTableColumns liest die Spaltennamen einer Tabelle über den Katalog
-// in der Reihenfolge der Tabelle (`LH-FA-CFG-007`, K3/K4 in `SPEC-019`) —
+// in der Reihenfolge der Tabelle (`LH-FA-CFG-007`) —
 // dieselbe Katalog-Quelle wie SelectTableColumnExists
 // (information_schema.columns), hier als Liste statt als Existenzprüfung.
 const SelectTableColumns = `
@@ -420,7 +418,7 @@ const SelectAdministrationRequestStatus = `
 SELECT status FROM cdc.administration_request WHERE administration_request_id = $1`
 
 // SelectActiveBackfillRun liest, ob für die Tabelle ein Run im Zustand
-// `queued` oder `running` besteht (`SPEC-029`, `ADR-0111` Teilfrage 4): die
+// `queued` oder `running` besteht (`SPEC-029`): die
 // Prüfung „kein aktiver Run“ der Annahme-Transaktion (Lesen vor Einfügen).
 const SelectActiveBackfillRun = `
 SELECT EXISTS (

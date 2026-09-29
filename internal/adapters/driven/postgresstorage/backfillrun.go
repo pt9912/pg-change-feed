@@ -21,8 +21,8 @@ import (
 var errBackfillRunAbsent = stderrors.New("Run-Zeile besteht nicht")
 
 // BackfillRunAdapter implementiert den `BackfillRunPort` (`outbound`,
-// `ARC-004`, `SPEC-029`) über den Verbindungspool des Backfill-Workers
-// (`cdc_capture`-Rolle, `ADR-0047`, `ADR-0113` Festlegung 1). Er legt keine
+// `ARC-004`) über den Verbindungspool des Backfill-Workers
+// (`cdc_capture`-Rolle). Er legt keine
 // Run-Zeile an: die Anlage trägt allein `BackfillAdmissionAdapter`. Jede
 // schreibende Anweisung trägt den erlaubten Ausgangszustand in ihrer
 // `WHERE`-Klausel, ein beendeter Run bleibt damit unverändert.

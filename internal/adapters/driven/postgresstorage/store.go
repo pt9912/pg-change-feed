@@ -14,14 +14,14 @@ import (
 )
 
 // PostgresChangeStoreAdapter ist die Referenzimplementierung des
-// `ChangeStorePort` (`ADR-0009`, `ADR-0010`): er persistiert committed
-// CDC-Transaktionen und liest persistierte Changes gegen die CDC-Tabellen
-// (`SPEC-001`). Der Treiber (pgx/v5) und die PostgreSQL-Typen bleiben
-// Adapterdetail (`ADR-0032`, rein Go, CGO-frei). `log` trägt die
+// `ChangeStorePort` (`ADR-0009`): er persistiert committed
+// CDC-Transaktionen und liest persistierte Changes gegen die CDC-Tabellen.
+// Der Treiber (pgx/v5) und die PostgreSQL-Typen bleiben
+// Adapterdetail (rein Go, CGO-frei). `log` trägt die
 // strukturierte Protokollierung über den injizierten `LogPort`
-// (`LH-QA-OPS-004`, `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`,
+// (`WithLog`) — Default `outbound.NoopLog`,
 // kein Paket-globaler Logging-Zustand. `db` trägt die Ausführung über die
-// schmale Naht (`sqlexec`, `ADR-0071` Punkt 5) — der Adapter baut den
+// schmale Naht (`sqlexec`) — der Adapter baut den
 // konkreten Pool in `New`, hängt aber an keiner seiner Methoden.
 type PostgresChangeStoreAdapter struct {
 	db  sqlexec.DB
@@ -47,12 +47,12 @@ func New(ctx context.Context, dsn string, opts ...Option) (*PostgresChangeStoreA
 }
 
 // storageFailure trägt die Übersetzungsverantwortung des Adapters
-// (`ADR-0023`, `SPEC-008`): Treiber-Fehler gehen an dieser Grenze in die
+// (`ADR-0023`): Treiber-Fehler gehen an dieser Grenze in die
 // Klasse `storage` — Application und Betrieb klassifizieren über
 // `errors.Is(err, outbound.ErrStorage)` und kennen keinen Treibertyp; die
 // technische Ursache bleibt über die zweite Wrappung lesbar. Derselbe
 // Aufruf trägt den strukturierten Fehler-Log über den injizierten
-// `LogPort` (`LH-QA-OPS-004`, `ADR-0024`) — der einzige
+// `LogPort` — der einzige
 // Übersetzungspunkt dieses Adapters *und* von `tableactivation.go`
 // (gleiches Paket), kein Log je Aufrufstelle; `log`/`ctx` reicht jeder
 // Aufrufer explizit durch (Konstruktoren: `o.log`, Methoden: `a.log`).
@@ -71,16 +71,15 @@ func (a *PostgresChangeStoreAdapter) Close() {
 var _ outbound.ChangeStorePort = (*PostgresChangeStoreAdapter)(nil)
 
 // PersistTransaction persistiert die committed Quelltransaktion in EINEM
-// Store-Commit (`LH-QA-REL-001.a`, Schritte Persist und COMMIT Store) —
+// Store-Commit (`LH-QA-REL-001`, Schritte Persist und COMMIT Store) —
 // Changes und Transaktions-Zeile gehen gemeinsam, die Rückkehr ohne Fehler
-// meldet den abgeschlossenen Store-Commit. Die Idempotenz (`ADR-0011`)
+// meldet den abgeschlossenen Store-Commit. Die Idempotenz
 // trägt die Primärschlüssel über den internen IDs: die erneut persistierte
 // Transaktion dedupliziert über ON CONFLICT DO NOTHING, ändert keinen
 // Stand und meldet keinen Fehler. Treiber-Fehler gehen in die Klasse
 // `storage` (storageFailure); ein Persistenzfehler endet ohne
-// Source-ACK (`LH-QA-REL-001.a`). Eine offene Transaktion verwirft der
-// Domänen-Träger selbst (`model.ChangeTransaction.Changes`,
-// `ADR-0029` Regel 3).
+// Source-ACK. Eine offene Transaktion verwirft der
+// Domänen-Träger selbst (`model.ChangeTransaction.Changes`).
 func (a *PostgresChangeStoreAdapter) PersistTransaction(ctx context.Context, transaction *model.ChangeTransaction) error {
 	position, committed := transaction.CommitPosition()
 	if !committed {
@@ -138,13 +137,12 @@ func (a *PostgresChangeStoreAdapter) PersistTransaction(ctx context.Context, tra
 	return nil
 }
 
-// ReadChanges liest persistierte Changes über die `SPEC-001`-Tabellen;
+// ReadChanges liest persistierte Changes über die CDC-Tabellen;
 // Bereich, Limit und Filter liegen in der Abfrage, die Ordnung trägt die
-// SQL-Sortierung (`LH-FA-REA-004.a`). Treiber-Fehler gehen in die Klasse
+// SQL-Sortierung (`LH-FA-REA-004`). Treiber-Fehler gehen in die Klasse
 // `storage` (storageFailure); die Zeilen laufen zurück durch die
 // Domänen-Konstruktoren — eine Zeile, die die Change-Invarianten verletzt,
-// endet als sichtbarer Fehler, nicht als still gefälschter Change
-// (`ADR-0029`).
+// endet als sichtbarer Fehler, nicht als still gefälschter Change.
 func (a *PostgresChangeStoreAdapter) ReadChanges(ctx context.Context, query outbound.ChangeQuery) ([]outbound.ChangeRecord, error) {
 	if err := query.Validate(); err != nil {
 		return nil, err
@@ -187,7 +185,7 @@ func (a *PostgresChangeStoreAdapter) ReadRetentionCandidates(ctx context.Context
 }
 
 // DeleteChanges entfernt physisch genau die übergebenen Changes
-// (`LH-FA-RET-002`…`004`, `ADR-0014`): die Freigabe je Change trägt der
+// (`LH-FA-RET-002`): die Freigabe je Change trägt der
 // aufrufende Use Case über `RetentionPolicy.AllowsDeletion`, dieser Adapter
 // führt nur die bereits freigegebene Menge aus. Eine leere Menge bleibt
 // ohne Datenbank-Aufruf; Treiber-Fehler gehen in die Klasse `storage`

@@ -4,7 +4,7 @@
 // Fetch-Anweisung, Bezeichner-Quoting,
 // Zeilenwerte, Schätzungs-Abbildung und Fehlerklassifikation. Das Paket
 // öffnet keine Verbindung und läuft im Unit-Gegenstand des Coverage-Gates
-// (`make test`, `ADR-0071` Punkt 1); die Verbindungsschritte liegen im
+// (`make test`); die Verbindungsschritte liegen im
 // Elternpaket `postgressnapshot`.
 package snapshotlogic
 

@@ -13,18 +13,18 @@ import (
 )
 
 // PostgresSchemaStoreAdapter ist die Referenzimplementierung des
-// `SchemaStorePort` (`ARC-004`, `ADR-0015` Folgepflicht): er persistiert
-// `TableSchema`-/`SchemaVersion`-Modelle je Change (`SPEC-004`) gegen die
+// `SchemaStorePort` (`ARC-004`): er persistiert
+// `TableSchema`-/`SchemaVersion`-Modelle je Change gegen die
 // Tabelle `cdc.table_schema`, ausgerollt über d-migrate
-// (`tools/schema/schema.yaml`, `ADR-0043`) — die handgeschriebene DDL des
+// (`tools/schema/schema.yaml`) — die handgeschriebene DDL des
 // Store-Adapters (`schema.sql`) trägt sie nicht, dieselbe Abgrenzung wie
 // bei den Consumer-State-Tabellen (`consumerstate.go`). Dieser Adapter
 // trägt ausschließlich die Persistenz-Fähigkeit: weder die dynamische
 // Re-Versionierung im laufenden Erfassungspfad noch die
 // Typ-Kompatibilitätsprüfung gehören zu ihm. `log` trägt die strukturierte
-// Protokollierung über den injizierten `LogPort` (`LH-QA-OPS-004`,
-// `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`. `db` trägt die
-// Ausführung über die schmale Naht (`sqlexec`, `ADR-0071` Punkt 5).
+// Protokollierung über den injizierten `LogPort` (`WithLog`) — Default
+// `outbound.NoopLog`. `db` trägt die
+// Ausführung über die schmale Naht (`sqlexec`).
 type PostgresSchemaStoreAdapter struct {
 	db  sqlexec.DB
 	log outbound.LogPort
@@ -48,10 +48,10 @@ func NewSchemaStore(ctx context.Context, dsn string, opts ...Option) (*PostgresS
 }
 
 // schemaStoreFailure trägt die Übersetzungsverantwortung dieses Adapters
-// (`ADR-0023`, `SPEC-008`) — derselbe Aufbau wie `stateStorageFailure`
+// (`ADR-0023`) — derselbe Aufbau wie `stateStorageFailure`
 // (`consumerstate.go`), eigener Sentinel (`outbound.ErrSchemaStoreStorage`):
-// die Klasse-Aktion des ChangeStore-Sentinels (kein Source-ACK,
-// `LH-QA-REL-001.a`) trägt dieser Port nicht.
+// die Klasse-Aktion des ChangeStore-Sentinels (kein Source-ACK)
+// trägt dieser Port nicht.
 func schemaStoreFailure(ctx context.Context, log outbound.LogPort, cause error) error {
 	log.Error(ctx, "schemastore: Datenbankfehler", "error", cause)
 	return sqlexec.Classify(outbound.ErrSchemaStoreStorage, cause)
@@ -149,7 +149,7 @@ func (a *PostgresSchemaStoreAdapter) RegisterVersion(ctx context.Context, versio
 // TableSchema liest die Spaltenform einer Schema-Version in
 // Spalten-Reihenfolge; die Abwesenheit endet über
 // `outbound.ErrSchemaVersionUnknown` sichtbar (`ADR-0015` Folgepflicht —
-// keine stille Fehlinterpretation, `LH-FA-SCH-004`).
+// keine stille Fehlinterpretation).
 func (a *PostgresSchemaStoreAdapter) TableSchema(ctx context.Context, versionID model.SchemaVersionID) (model.TableSchema, error) {
 	if versionID == "" {
 		return model.TableSchema{}, domainerrors.ErrEmptyIdentifier

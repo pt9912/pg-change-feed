@@ -4,8 +4,8 @@ import "github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 
 // Option konfiguriert einen `postgresstorage`-Adapter bei der Konstruktion
 // (`New`, `NewTableActivation`, `NewHeartbeat`, `NewConsumerState`);
-// aktuell trägt sie nur den optionalen `LogPort` (`LH-QA-OPS-004`,
-// `ADR-0024`). Variadisch statt Pflichtparameter, damit bestehende
+// aktuell trägt sie nur den optionalen `LogPort` (`ADR-0024`).
+// Variadisch statt Pflichtparameter, damit bestehende
 // Aufrufstellen (Tests) unverändert kompilieren — ungesetzt bleibt die
 // Protokollierung beim No-Op (`outbound.NoopLog`).
 type Option func(*options)

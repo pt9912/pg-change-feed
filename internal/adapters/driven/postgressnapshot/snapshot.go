@@ -1,6 +1,6 @@
 // Package postgressnapshot trägt den `PostgresTableSnapshotAdapter` als
-// Driven-Implementierung des `TableSnapshotPort` (`ARC-006`,
-// `LH-FA-CAP-009`, `ADR-0111` Teilfrage 1): er liest den Bestand einer
+// Driven-Implementierung des `TableSnapshotPort` (`ARC-006`): er liest den
+// Bestand einer
 // Tabelle in dem `REPEATABLE READ`-Snapshot, den ein je Run angelegter
 // temporärer logischer Slot exportiert. Snapshot und Position `X` (der
 // `consistent_point` des Slots) sind dadurch exakt gepaart.
@@ -8,14 +8,13 @@
 // Alle Verbindungen laufen über denselben DSN (`CDC_CAPTURE_DSN`): die
 // Replication-Verbindung legt den Slot an und endet nach dem Import, eine
 // reguläre Verbindung sperrt die Tabelle, prüft sie auf ein Umschreiben seit
-// dem Export (`ADR-0118`) und liest im importierten Snapshot. Der Adapter liegt in
+// dem Export und liest im importierten Snapshot. Der Adapter liegt in
 // einem eigenen Paket, weil er die Quelltabelle über eine
 // Replication-Verbindung liest und der Run-Store (`postgresstorage`) eine
 // andere Verantwortung trägt. Sein Testlauf setzt einen PostgreSQL mit
 // `wal_level=logical` voraus (`make test-replication`); netzlos prüfbare
 // Logik liegt außerhalb des Pakets (Unterpaket `snapshotlogic`,
-// `model.BuildRowImage`), damit der Gegenstand der DB-Adapter-Coverage nur
-// real Gedecktes zählt (`ADR-0071` Punkt 1).
+// `model.BuildRowImage`).
 package postgressnapshot
 
 import (

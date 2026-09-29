@@ -1,11 +1,10 @@
 // Package postgresack trägt den `PostgresReplicationAckAdapter` als
-// Driven-Implementierung des `ReplicationAckPort` (`ARC-006`,
-// `ADR-0007`): er bestätigt die vom Capture Use Case gemeldete Position
-// gegenüber der Quelle — erst nach bestätigter Persistenz
-// (`LH-QA-REL-001.a`); die Ordnung trägt die Application (`ADR-0027`).
+// Driven-Implementierung des `ReplicationAckPort` (`ARC-006`): er
+// bestätigt die vom Capture Use Case gemeldete Position
+// gegenüber der Quelle — erst nach bestätigter Persistenz;
+// die Ordnung trägt die Application.
 // Der Treiber (pglogrepl über den pgx-Verbindungstyp) bleibt
-// Adapterdetail (`ADR-0032`) und liegt hinter der Naht (`seam.go`,
-// `ADR-0080`).
+// Adapterdetail und liegt hinter der Naht (`seam.go`).
 package postgresack
 
 import (
@@ -20,7 +19,7 @@ import (
 )
 
 // Option konfiguriert den Adapter bei der Konstruktion (`New`); aktuell
-// trägt sie nur den optionalen `LogPort` (`LH-QA-OPS-004`, `ADR-0024`) —
+// trägt sie nur den optionalen `LogPort` (`ADR-0024`) —
 // variadisch, damit bestehende Aufrufstellen (Tests) unverändert
 // kompilieren. Ungesetzt bleibt die Protokollierung beim No-Op
 // (`outbound.NoopLog`).
@@ -49,9 +48,9 @@ func WithLog(log outbound.LogPort) Option {
 // PostgresReplicationAckAdapter bestätigt Positionen gegenüber dem
 // Quell-PostgreSQL über die Replication-Verbindung des Streams: Stream
 // und ACK sind getrennte Rollen an einer technischen Verbindung
-// (`ADR-0007`, Option C). `sender` ist die Naht zum Treiber (`ADR-0080`),
+// (`ADR-0007`, Option C). `sender` ist die Naht zum Treiber,
 // `log` trägt die strukturierte Protokollierung über den injizierten
-// `LogPort` (`LH-QA-OPS-004`, `ADR-0024`) — Default `outbound.NoopLog`.
+// `LogPort` — Default `outbound.NoopLog`.
 type PostgresReplicationAckAdapter struct {
 	sender standbySender
 	log    outbound.LogPort
@@ -64,8 +63,7 @@ var errNoConnection = fmt.Errorf("%w: keine Replication-Verbindung", outbound.Er
 // New legt den ACK-Adapter auf die Replication-Verbindung des Streams;
 // die Composition Root verdrahtet beide Adapter über
 // `receive.Stream.Conn` (`ADR-0026`). Die Verbindung geht in die
-// Treiber-Hülle (`seam.go`), damit die Logik an der Naht hängt
-// (`ADR-0080`).
+// Treiber-Hülle (`seam.go`), damit die Logik an der Naht hängt.
 func New(conn *pgconn.PgConn, opts ...Option) (*PostgresReplicationAckAdapter, error) {
 	if conn == nil {
 		return nil, errNoConnection
@@ -95,8 +93,8 @@ func newOnSender(sender standbySender, opts ...Option) (*PostgresReplicationAckA
 var _ outbound.ReplicationAckPort = (*PostgresReplicationAckAdapter)(nil)
 
 // ackLSN trägt die Null-Positions-Grenze und die LSN-Form (`ADR-0005`):
-// ohne Position gibt es nichts zu bestätigen (`SPEC-008`, Klasse
-// `replication`); sonst wandert der Offset als LSN weiter.
+// ohne Position gibt es nichts zu bestätigen; sonst wandert der Offset als
+// LSN weiter.
 func ackLSN(position model.SourcePosition) (pglogrepl.LSN, error) {
 	if position.IsZero() {
 		return 0, fmt.Errorf("%w: Bestätigung ohne Position", outbound.ErrReplication)
@@ -116,7 +114,7 @@ func standbyStatus(lsn pglogrepl.LSN) pglogrepl.StandbyStatusUpdate {
 }
 
 // replicationClass trägt die Übersetzungsverantwortung des Adapters
-// (`ADR-0023`, `SPEC-008`): Treiber-Fehler gehen an dieser Grenze in die
+// (`ADR-0023`): Treiber-Fehler gehen an dieser Grenze in die
 // Klasse `replication` (`outbound.ErrReplication`); die technische
 // Ursache bleibt über die zweite Wrappung lesbar.
 func replicationClass(cause error) error {
@@ -124,7 +122,7 @@ func replicationClass(cause error) error {
 }
 
 // replicationFailure trägt den strukturierten Fehler-Log über den
-// injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`) und reicht die
+// injizierten `LogPort` (`ADR-0024`) und reicht die
 // Fehlerklasse durch (`replicationClass`).
 func replicationFailure(ctx context.Context, log outbound.LogPort, cause error) error {
 	log.Error(ctx, "replicationack: Bestätigungsfehler", "error", cause)

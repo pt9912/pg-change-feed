@@ -1,9 +1,8 @@
 // Package mapper trägt die Zeilen-Übersetzung des PostgresChangeStore-
-// Adapters (Paketstruktur je `ADR-0042`, der die Struktur-Regeln des
-// abgelösten `ADR-0039` als Rest fortgilt): die Row-Typen sind die
-// Zeilenabbilder der `SPEC-001`/`SPEC-002`-Tabellen, die Funktionen
+// Adapters (Paketstruktur je `ADR-0042`): die Row-Typen sind die
+// Zeilenabbilder der CDC-Tabellen, die Funktionen
 // übersetzen sie gegen das Domänenmodell — PostgreSQL-Berührungen bleiben
-// im Adapter (`ADR-0032`).
+// im Adapter.
 package mapper
 
 import (
@@ -22,7 +21,7 @@ import (
 var ErrPositionOutOfRange = stderrors.New("Position liegt außerhalb des bigint-Bereichs")
 
 // TransactionRow trägt eine Zeile aus `cdc.transaction` (`SPEC-001`).
-// CommittedAt trägt den realen Quell-Commit-Zeitpunkt (`LH-FA-ADM-004`) —
+// CommittedAt trägt den realen Quell-Commit-Zeitpunkt —
 // der Store schreibt ihn explizit, die Spalten-DEFAULT greift nur
 // außerhalb des Anwendungspfads.
 type TransactionRow struct {
@@ -54,8 +53,8 @@ type ChangeRow struct {
 // NewTransactionRow trägt die `cdc.transaction`-Zeile einer committed
 // Quelltransaktion. Die Position muss in den bigint-Bereich der Spalte
 // passen (`SPEC-003`, PostgreSQL-Abbildung). Der Zeitstempel kommt über
-// `SourceCommittedAt` aus dem bereits committed Domänenobjekt
-// (`LH-FA-ADM-004`); das zweite Rückgabe-Ergebnis ist an dieser Stelle
+// `SourceCommittedAt` aus dem bereits committed Domänenobjekt; das zweite
+// Rückgabe-Ergebnis ist an dieser Stelle
 // immer `true` — der Aufrufer (`PersistTransaction`) hat die Committed-
 // Bedingung bereits über `CommitPosition` geprüft, bevor er hierher
 // gelangt, genau wie bei der Position selbst.
@@ -125,11 +124,11 @@ func ToPosition(source string, commitPosition int64) (model.SourcePosition, erro
 // ToChange trägt den Change aus einer `cdc.change`-Zeile; die Domänen-
 // Konstruktoren prüfen die Zeile über die Change-Invarianten (`ADR-0029`).
 // Schema und Tabelle setzt der Mapper aus den Klartext-Bezeichnern der
-// Zeile — sie sind keine Konstruktor-Invariante von `model.NewChange`
-// (`ADR-0081` Teilfrage 3), der Lesepfad trägt sie aber in der Rückgabe.
+// Zeile — sie sind keine Konstruktor-Invariante von `model.NewChange`,
+// der Lesepfad trägt sie aber in der Rückgabe.
 // Die Herkunft der Zeile läuft durch die geschlossene Menge: die leere
 // Zeichenkette (`NULL` einer Zeile ohne das Feld) liest als `wal`
-// (`LH-FA-DAT-006` Boundary), ein unbekannter Wert endet als Domänen-Fehler.
+// (Boundary), ein unbekannter Wert endet als Domänen-Fehler.
 func ToChange(row ChangeRow) (model.Change, error) {
 	origin, err := model.NewChangeOrigin(row.Origin)
 	if err != nil {

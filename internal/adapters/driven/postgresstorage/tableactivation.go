@@ -14,7 +14,7 @@ import (
 )
 
 // ErrActivationConfiguration trägt die Fehlerklasse `configuration` des
-// Aktivierungs-Adapters (`SPEC-008`, `ADR-0023`): Bezeichner, die nicht
+// Aktivierungs-Adapters (`ADR-0023`): Bezeichner, die nicht
 // ins Bezeichner-Alphabet der Quelle passen, enden vor dem ersten
 // SQL-Aufruf — kein Start im falschen Stand.
 var ErrActivationConfiguration = fmt.Errorf("Fehlerklasse configuration: Aktivierung ohne gültige Bezeichner")
@@ -31,15 +31,15 @@ var identifierShape = regexp.MustCompile(`^[a-z0-9_]{1,63}$`)
 // `ColumnExclusionPort` und den `TransformationPort` (`outbound`, `ARC-004`)
 // gegen dieselbe Instanz: im MVP trägt eine Instanz die Quelle und den
 // CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft) — die Bindungs-Zeilen
-// der CDC-Referenztabellen (`SPEC-001`), die Publication der Quelle und die
-// Katalog-Prüfungen ihrer Objekte laufen über denselben Verbindungspool
-// (`LH-FA-CFG-001.a`). Die Ports bleiben getrennt: der Spaltenausschluss
-// (`LH-FA-CFG-005`) und die Transformationsregeln (`LH-FA-CFG-007`) hängen
+// der CDC-Referenztabellen, die Publication der Quelle und die
+// Katalog-Prüfungen ihrer Objekte laufen über denselben Verbindungspool.
+// Die Ports bleiben getrennt: der Spaltenausschluss
+// und die Transformationsregeln hängen
 // an der Spalten-Prüfung und den Antrags-Zeilen, nicht an Bindungs-Zeilen
 // oder Publication. `log` trägt die strukturierte Protokollierung über den
-// injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`, `WithLog`) — Default
+// injizierten `LogPort` (`WithLog`) — Default
 // `outbound.NoopLog`. `db` trägt die Ausführung über die schmale Naht
-// (`sqlexec`, `ADR-0071` Punkt 5).
+// (`sqlexec`).
 type TableActivationAdapter struct {
 	db  sqlexec.DB
 	log outbound.LogPort
@@ -97,12 +97,12 @@ func (a *TableActivationAdapter) ColumnExists(ctx context.Context, schema, table
 }
 
 // ExcludedColumns liest den dauerhaften Ausschlussstand je Tabelle einer
-// Quelle (`LH-FA-CFG-005`, `ADR-0065`): die `applied`-Zeilen der beiden
+// Quelle (`LH-FA-CFG-005`): die `applied`-Zeilen der beiden
 // Spalten-Antragsarten in `cdc.administration_request`, in
 // `requested_at`-Ordnung mit der Antrags-ID als deterministischem
 // Zweitschlüssel (Query-Kommentar). `exclude_column` trägt den
 // Spaltennamen ein, `include_column` nimmt ihn wieder heraus — derselbe
-// Schreibpfad wie der Live-Reload (`ADR-0059` Teilfrage 5), nur über die
+// Schreibpfad wie der Live-Reload, nur über die
 // dauerhafte Herkunft statt über den Prozessspeicher. Eine nicht
 // vermerkte (`pending`/`failed`) Zeile und eine Zeile jeder übrigen
 // Antragsart tragen keinen Stand; eine Quelle ohne
@@ -116,12 +116,12 @@ func (a *TableActivationAdapter) ExcludedColumns(ctx context.Context, source mod
 }
 
 // TransformationRules liest den dauerhaften Regelstand je Tabelle einer
-// Quelle (`LH-FA-CFG-007`, `ADR-0112` Teilfrage 6): die `applied`-Zeilen der
+// Quelle (`LH-FA-CFG-007`): die `applied`-Zeilen der
 // beiden Transformations-Antragsarten in `cdc.administration_request`, in
 // `requested_at`-Ordnung mit der Antrags-ID als deterministischem
 // Zweitschlüssel (Query-Kommentar), je Tabelle zum Stand gefaltet. Dasselbe
 // Recht wie `ExcludedColumns` trägt das Lesen: `SELECT` der Rolle `cdc_admin`
-// auf der Antrags-Tabelle (`SPEC-019` Grants).
+// auf der Antrags-Tabelle (Grants).
 func (a *TableActivationAdapter) TransformationRules(ctx context.Context, source model.SourceID) (map[string][]model.Transformation, error) {
 	return sqlexec.ReadTransformationRules(ctx, a.db, sqlexec.Statement{
 		SQL:  queries.SelectAppliedTransformationRequests,
@@ -131,7 +131,7 @@ func (a *TableActivationAdapter) TransformationRules(ctx context.Context, source
 }
 
 // SourceColumns liest die Spaltennamen der Quelltabelle in der Reihenfolge
-// der Tabelle über den Katalog (`LH-FA-CFG-007`, K3/K4 in `SPEC-019`):
+// der Tabelle über den Katalog (`LH-FA-CFG-007`):
 // dieselbe Katalog-Lesart wie `ColumnExists`, deshalb dieselben Sichtbarkeits-
 // Grenzen — `information_schema.columns` nennt die Spalten der Tabellen, an
 // denen die Login-Identität ein Recht trägt. Schema und Tabelle tragen
@@ -152,7 +152,7 @@ func (a *TableActivationAdapter) SourceColumns(ctx context.Context, schema, tabl
 
 // TableExists prüft die physische Tabelle über den Katalog; die
 // Negative-Pfade der Aktivierung, Deaktivierung und Status-Abfrage enden
-// über die Abwesenheit sichtbar (`LH-FA-CFG-001`/`002`/`003`).
+// über die Abwesenheit sichtbar (`LH-FA-CFG-001`).
 func (a *TableActivationAdapter) TableExists(ctx context.Context, schema, table string) (bool, error) {
 	if err := validateIdentifier(schema); err != nil {
 		return false, err
@@ -349,7 +349,7 @@ func (a *TableActivationAdapter) Unpublish(ctx context.Context, publication, sch
 // Published liest die Mitgliedschaft der Tabelle in der Publication; eine
 // fehlende Publication liest als Abwesenheit der Mitgliedschaft — die
 // Status- und Listen-Abfragen trennen darüber den Erfassungs-Zustand von
-// der Herkunft (`LH-FA-CFG-003`, `LH-FA-CFG-004`).
+// der Herkunft (`LH-FA-CFG-003`).
 func (a *TableActivationAdapter) Published(ctx context.Context, publication, schema, table string) (bool, error) {
 	if err := validateIdentifier(publication); err != nil {
 		return false, err

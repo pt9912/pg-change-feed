@@ -18,8 +18,8 @@ import (
 )
 
 // BackfillWriterAdapter implementiert den `BackfillWriterPort` (`outbound`,
-// `ARC-004`, `ADR-0111` Teilfrage 4) über den Verbindungspool des
-// Backfill-Workers (`cdc_capture`-Rolle, `ADR-0047`): **eine**
+// `ARC-004`) über den Verbindungspool des
+// Backfill-Workers (`cdc_capture`-Rolle): **eine**
 // Store-Transaktion über alle Blöcke eines Runs und ein Commit am Ende,
 // zusammen mit der Run-Zeile `completed`. Die Transaktion berührt die
 // Run-Zeile erst mit der letzten Anweisung vor dem Commit — der Fortschritt

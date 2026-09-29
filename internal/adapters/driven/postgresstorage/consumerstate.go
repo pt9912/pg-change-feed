@@ -15,17 +15,17 @@ import (
 )
 
 // PostgresConsumerStateAdapter ist die Referenzimplementierung des
-// `ConsumerStatePort` (`ARC-004`, `ADR-0013`): er trägt die
+// `ConsumerStatePort` (`ARC-004`): er trägt die
 // Registrierung, die Bestätigung, den Fortsetzungs-Lese und die
 // administrative Entfernung gegen die Consumer-State-Tabellen
-// (`SPEC-001`, `cdc.consumer`/`cdc.consumer_position`). Der Treiber
-// (pgx/v5) und die PostgreSQL-Typen bleiben Adapterdetail (`ADR-0032`,
-// rein Go, CGO-frei); die Tabellenform trägt der d-migrate-Rollout
-// (`ADR-0043`) — die DDL des Store-Adapters (schema.sql) trägt die
+// (`cdc.consumer`/`cdc.consumer_position`). Der Treiber
+// (pgx/v5) und die PostgreSQL-Typen bleiben Adapterdetail
+// (rein Go, CGO-frei); die Tabellenform trägt der d-migrate-Rollout
+// — die DDL des Store-Adapters (schema.sql) trägt die
 // Consumer-State-Tabellen nicht. `log` trägt die strukturierte
-// Protokollierung über den injizierten `LogPort` (`LH-QA-OPS-004`,
-// `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`. `db` trägt die
-// Ausführung über die schmale Naht (`sqlexec`, `ADR-0071` Punkt 5).
+// Protokollierung über den injizierten `LogPort` (`WithLog`) — Default
+// `outbound.NoopLog`. `db` trägt die
+// Ausführung über die schmale Naht (`sqlexec`).
 type PostgresConsumerStateAdapter struct {
 	db  sqlexec.DB
 	log outbound.LogPort
@@ -50,13 +50,13 @@ func NewConsumerState(ctx context.Context, dsn string, opts ...Option) (*Postgre
 }
 
 // stateStorageFailure trägt die Übersetzungsverantwortung dieses Adapters
-// (`ADR-0023`, `SPEC-008`): Treiber-Fehler gehen an dieser Grenze in die
+// (`ADR-0023`): Treiber-Fehler gehen an dieser Grenze in die
 // Klasse `storage` über den eigenen Sentinel des Ports
 // (`outbound.ErrConsumerStateStorage`) — die Klasse-Aktion des
-// ChangeStore-Sentinels (kein Source-ACK, `LH-QA-REL-001.a`) trägt dieser
+// ChangeStore-Sentinels (kein Source-ACK) trägt dieser
 // Adapter nicht; die technische Ursache bleibt über die zweite Wrappung
 // lesbar. Derselbe Aufruf trägt den strukturierten Fehler-Log über den
-// injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`), aus demselben
+// injizierten `LogPort`, aus demselben
 // Grund mit explizitem `ctx`/`log`-Parameter wie `storageFailure`
 // (`store.go`).
 func stateStorageFailure(ctx context.Context, log outbound.LogPort, cause error) error {
@@ -73,7 +73,7 @@ var _ outbound.ConsumerStatePort = (*PostgresConsumerStateAdapter)(nil)
 
 // Register trägt die Consumer-Zeile ein; die Kennungs- und Namens-Grenze
 // läuft vor dem ersten SQL-Aufruf über den Domänen-Konstruktor — dieselbe
-// Grenze wie bei Position, Acknowledge und Remove (`ADR-0029`); die
+// Grenze wie bei Position, Acknowledge und Remove; die
 // Idempotenz (`LH-FA-CON-001` Boundary) trägt der Primärschlüssel über
 // ON CONFLICT DO NOTHING — die erneut registrierte Kennung bleibt ohne
 // Wirkung und die Rückkehr meldet den Ausgang. Treiber-Fehler gehen in
@@ -100,9 +100,9 @@ func (a *PostgresConsumerStateAdapter) Register(ctx context.Context, consumer mo
 // Position liest die bestätigte Position des Consumers (`LH-FA-CON-003`
 // Happy Path); die Abwesenheit der Zeile liest sich als Nullwert — die
 // definierte Anfangsposition eines Consumers ohne Bestätigung
-// (`LH-FA-CON-005` Boundary, auch über einen Neustart hinweg). Die Zeile
+// (Boundary, auch über einen Neustart hinweg). Die Zeile
 // läuft zurück durch den Domänen-Konstruktor; die Spalten-Kante der DDL
-// hält die Position positiv (`SPEC-001`).
+// hält die Position positiv.
 func (a *PostgresConsumerStateAdapter) Position(ctx context.Context, consumer model.ConsumerID) (model.ConsumerPosition, error) {
 	if consumer == "" {
 		return model.ConsumerPosition{}, domainerrors.ErrEmptyIdentifier
@@ -120,7 +120,7 @@ func (a *PostgresConsumerStateAdapter) Position(ctx context.Context, consumer mo
 // Acknowledge trägt die bestätigte Position fort (`LH-FA-CON-004`): der
 // gespeicherte Fortschritt liest innerhalb des Store-Commits gegen die
 // Zeilen-Sperre (SelectConsumerPositionLocked) und führt über den
-// Domänen-Vergleich (`model.ConsumerPosition.Advance`, `ADR-0029` Regel 2)
+// Domänen-Vergleich (`model.ConsumerPosition.Advance`)
 // — eine frühere Position und eine Position einer anderen Quelle enden
 // über die Invarianten-Sentinels, die Wiederholung derselben Position ist
 // idempotent. Ein Consumer ohne Zeile trägt seine erste Bestätigung als
@@ -128,7 +128,7 @@ func (a *PostgresConsumerStateAdapter) Position(ctx context.Context, consumer mo
 // (stateStorageFailure); der Aufruf ohne Registrierung endet über
 // `outbound.ErrConsumerUnregistered` sichtbar — die Rest-Grenze zwischen
 // Prüfung und Schreiben trägt der Fremdschlüssel der DDL über dieselbe
-// Klasse (`SPEC-001`).
+// Klasse.
 func (a *PostgresConsumerStateAdapter) Acknowledge(ctx context.Context, position model.ConsumerPosition) (model.ConsumerPosition, error) {
 	if position.ConsumerID == "" {
 		return model.ConsumerPosition{}, domainerrors.ErrEmptyIdentifier

@@ -1,10 +1,10 @@
 // Package natsnotify trägt den `NatsChangeNotificationAdapter` als
-// Driven-Implementierung des `ChangeNotificationPort` (`ARC-013`,
-// `ADR-0055`): ein dünner Publish-Aufruf gegen Core NATS, ohne eigene
+// Driven-Implementierung des `ChangeNotificationPort` (`ARC-013`): ein
+// dünner Publish-Aufruf gegen Core NATS, ohne eigene
 // Zustellgarantie und ohne eigenen Zustand — die Nachvollziehbarkeit
-// bleibt beim bestehenden `ChangeStorePort`-Lesezugriffsweg (`SPEC-017`).
-// Der Verbindungsaufbau (`nats.Connect`) bleibt Composition-Root-Detail
-// (`ADR-0026`), wie schon der `PostgresReplicationAckAdapter` seine
+// bleibt beim bestehenden `ChangeStorePort`-Lesezugriffsweg.
+// Der Verbindungsaufbau (`nats.Connect`) bleibt Composition-Root-Detail,
+// wie schon der `PostgresReplicationAckAdapter` seine
 // Replication-Verbindung von außen erhält.
 package natsnotify
 
@@ -20,7 +20,7 @@ import (
 )
 
 // subjectPrefix trägt das Subjekt-Schema
-// `cdc.changes.<source_id>.<schema>.<table>` (`SPEC-017`, `ADR-0056`): ein
+// `cdc.changes.<source_id>.<schema>.<table>` (`SPEC-017`): ein
 // Subjekt je Tabelle einer Quelle, konsistent mit der übrigen
 // Quelle-Skopierung (Publication-/Slot-Namen).
 const subjectPrefix = "cdc.changes."
@@ -33,7 +33,7 @@ const subjectPrefix = "cdc.changes."
 const reservedSubjectChars = ".*>"
 
 // Option konfiguriert den Adapter bei der Konstruktion (`New`); aktuell
-// trägt sie nur den optionalen `LogPort` (`LH-QA-OPS-004`, `ADR-0024`) —
+// trägt sie nur den optionalen `LogPort` (`ADR-0024`) —
 // dasselbe Muster wie `postgresack.Option`.
 type Option func(*options)
 
@@ -59,7 +59,7 @@ func WithLog(log outbound.LogPort) Option {
 // NatsChangeNotificationAdapter sendet das Wecksignal über eine bestehende
 // Core-NATS-Verbindung (`ADR-0055`, Option C): kein eigener Zustand, kein
 // Payload-Inhalt. `log` trägt die strukturierte Protokollierung über den
-// injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`) — Default
+// injizierten `LogPort` — Default
 // `outbound.NoopLog`.
 type NatsChangeNotificationAdapter struct {
 	conn *nats.Conn
@@ -84,11 +84,10 @@ func New(conn *nats.Conn, opts ...Option) (*NatsChangeNotificationAdapter, error
 var _ outbound.ChangeNotificationPort = (*NatsChangeNotificationAdapter)(nil)
 
 // notifyFailure trägt die Übersetzungsverantwortung des Adapters
-// (`ADR-0023`, `SPEC-008`): Treiber-Fehler gehen an dieser Grenze in die
+// (`ADR-0023`): Treiber-Fehler gehen an dieser Grenze in die
 // Klasse `transient` (`outbound.ErrNotify`); die technische Ursache bleibt
 // über die zweite Wrappung lesbar. Derselbe Aufruf trägt den
-// strukturierten Fehler-Log über den injizierten `LogPort`
-// (`LH-QA-OPS-004`, `ADR-0024`).
+// strukturierten Fehler-Log über den injizierten `LogPort`.
 func notifyFailure(ctx context.Context, log outbound.LogPort, cause error) error {
 	log.Error(ctx, "natsnotify: Signalfehler", "error", cause)
 	return fmt.Errorf("%w: %v", outbound.ErrNotify, cause)
@@ -111,13 +110,13 @@ func containsReservedSubjectToken(token string) bool {
 
 // Notify sendet das Wecksignal auf
 // `cdc.changes.<source_id>.<schema>.<table>` mit leerem Payload
-// (`SPEC-017`, `ADR-0056`): kein Change-Inhalt, keine Positionsangabe —
+// (`SPEC-017`): kein Change-Inhalt, keine Positionsangabe —
 // jede Nachricht bedeutet ausschließlich „lies erneut über den
 // bestehenden Zugriffsweg". Core NATS trägt keine Zustellgarantie
 // (Fire-and-Forget); die Rückkehr ohne Fehler meldet den abgeschickten
 // Publish-Versuch. Schema/Tabelle mit NATS-reservierten Zeichen
 // (`.`, `*`, `>`) oder Whitespace werden vor dem Publish-Versuch
-// abgelehnt (`ADR-0056` Folgepflicht) — sonst spaltet ein Punkt im Token
+// abgelehnt — sonst spaltet ein Punkt im Token
 // das Subjekt unbeabsichtigt in weitere Ebenen auf.
 func (a *NatsChangeNotificationAdapter) Notify(ctx context.Context, sourceID, schema, table string) error {
 	if sourceID == "" {

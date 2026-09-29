@@ -23,7 +23,7 @@ import (
 const administrationChannel = "cdc_administration"
 
 // administrationStorageFailure trägt die Übersetzungsverantwortung dieses
-// Adapters (`ADR-0023`, `SPEC-008`): Treiber-Fehler gehen an dieser Grenze
+// Adapters (`ADR-0023`): Treiber-Fehler gehen an dieser Grenze
 // in die Klasse `storage` über `outbound.ErrAdministrationStorage`.
 func administrationStorageFailure(ctx context.Context, log outbound.LogPort, cause error) error {
 	log.Error(ctx, "administrationrequest: Datenbankfehler", "error", cause)
@@ -33,12 +33,12 @@ func administrationStorageFailure(ctx context.Context, log outbound.LogPort, cau
 // AdministrationRequestAdapter implementiert den
 // `AdministrationRequestPort` (`outbound`, `ARC-004`) gegen dieselbe
 // Instanz: Lesen offener Anträge und Ergebnis-Vermerk laufen über den
-// Verbindungspool der Administrations-Goroutine (`cdc_admin`-Rolle,
-// `ADR-0047`), getrennt vom dedizierten `LISTEN`-Verbindungsträger
+// Verbindungspool der Administrations-Goroutine (`cdc_admin`-Rolle),
+// getrennt vom dedizierten `LISTEN`-Verbindungsträger
 // (`AdministrationListener` unten) — Pool-Verbindungen sind für
 // `WaitForNotification` ungeeignet, weil jede Anfrage eine beliebige
 // Pool-Verbindung ziehen kann. `db` trägt die Ausführung über die schmale
-// Naht (`sqlexec`, `ADR-0071` Punkt 5).
+// Naht (`sqlexec`).
 type AdministrationRequestAdapter struct {
 	db  sqlexec.DB
 	log outbound.LogPort

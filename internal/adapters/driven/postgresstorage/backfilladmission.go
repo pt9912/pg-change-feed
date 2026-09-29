@@ -18,11 +18,11 @@ import (
 )
 
 // BackfillAdmissionAdapter implementiert den `BackfillAdmissionPort`
-// (`outbound`, `ARC-004`, `ADR-0113` Festlegung 1) über den Verbindungspool
-// der Administrations-Goroutine (`cdc_admin`-Rolle, `ADR-0047`): die Annahme
+// (`outbound`, `ARC-004`) über den Verbindungspool
+// der Administrations-Goroutine (`cdc_admin`-Rolle): die Annahme
 // ist **eine** Transaktion über `cdc.backfill_run` und
 // `cdc.administration_request`. `db` trägt die Ausführung über die schmale
-// Naht (`sqlexec`, `ADR-0071` Punkt 5).
+// Naht (`sqlexec`).
 type BackfillAdmissionAdapter struct {
 	db      sqlexec.DB
 	log     outbound.LogPort

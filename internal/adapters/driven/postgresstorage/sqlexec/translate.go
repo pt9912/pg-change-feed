@@ -25,7 +25,7 @@ import (
 // Ergebnis-Zeilen in ChangeRecords: die Commit-Position kommt von der
 // Transaktion, der Change aus seiner Zeile samt den Klartext-Bezeichnern
 // der Tabelle aus dem Join. Die Reihenfolge der Rückgabe trägt die
-// SQL-Sortierung (`LH-FA-REA-004.a`).
+// SQL-Sortierung.
 func ReadChanges(ctx context.Context, exec Executor, statement Statement) ([]outbound.ChangeRecord, error) {
 	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)
 	if err != nil {
@@ -116,7 +116,7 @@ func ReadRetentionCandidates(ctx context.Context, exec Executor, source model.So
 // ReadConsumerPosition liest die bestätigte Position eines Consumers
 // (`LH-FA-CON-003` Happy Path); die Abwesenheit der Zeile liest sich als
 // Nullwert — die definierte Anfangsposition eines Consumers ohne
-// Bestätigung (`LH-FA-CON-005` Boundary). Die Zeile läuft zurück durch den
+// Bestätigung. Die Zeile läuft zurück durch den
 // Domänen-Konstruktor.
 func ReadConsumerPosition(ctx context.Context, exec Executor, consumer model.ConsumerID, statement Statement) (model.ConsumerPosition, error) {
 	var source string
@@ -170,7 +170,7 @@ func ReadConsumerPositions(ctx context.Context, exec Executor, source model.Sour
 
 // ReadSourceTables liest die Bindungs-Zeilen einer Quelle in Schema- und
 // Tabellen-Ordnung (`LH-FA-CFG-004`); jede Zeile läuft durch den
-// Domänen-Konstruktor (`ADR-0029`).
+// Domänen-Konstruktor.
 func ReadSourceTables(ctx context.Context, exec Executor, statement Statement) ([]model.SourceTable, error) {
 	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)
 	if err != nil {
@@ -197,11 +197,11 @@ func ReadSourceTables(ctx context.Context, exec Executor, statement Statement) (
 }
 
 // ReadExcludedColumns liest den dauerhaften Ausschlussstand je Tabelle einer
-// Quelle (`LH-FA-CFG-005`, `ADR-0065`): die `applied`-Zeilen der beiden
+// Quelle (`LH-FA-CFG-005`): die `applied`-Zeilen der beiden
 // Spalten-Antragsarten, in der Ordnung der Abfrage (Antrags-Zeitpunkt mit
 // der Antrags-ID als Zweitschlüssel). `exclude_column` trägt den
 // Spaltennamen ein, `include_column` nimmt ihn wieder heraus — derselbe
-// Schreibpfad wie der Live-Reload (`ADR-0059` Teilfrage 5), nur über die
+// Schreibpfad wie der Live-Reload, nur über die
 // dauerhafte Herkunft statt über den Prozessspeicher. Eine nicht vermerkte
 // (`pending`/`failed`) Zeile und eine Zeile jeder übrigen Antragsart
 // tragen keinen Stand; eine Quelle ohne
@@ -243,7 +243,7 @@ func ReadExcludedColumns(ctx context.Context, exec Executor, statement Statement
 }
 
 // ReadTransformationRules liest den dauerhaften Regelstand je Tabelle einer
-// Quelle (`LH-FA-CFG-007`, `ADR-0112` Teilfrage 6): die `applied`-Zeilen der
+// Quelle (`LH-FA-CFG-007`): die `applied`-Zeilen der
 // beiden Transformations-Antragsarten in der Ordnung der Abfrage
 // (Antrags-Zeitpunkt mit der Antrags-ID als Zweitschlüssel), je Tabelle in
 // `model.FoldTransformations` zum Stand gefaltet — dieselbe Ableitung für den
@@ -342,7 +342,7 @@ func removeColumn(columns []string, name string) []string {
 // ReadTableSchema liest die Spaltenform einer Schema-Version in
 // Spalten-Reihenfolge; eine Version ohne Spaltenform endet über
 // `outbound.ErrSchemaVersionUnknown` sichtbar (`ADR-0015` Folgepflicht —
-// keine stille Fehlinterpretation, `LH-FA-SCH-004`).
+// keine stille Fehlinterpretation).
 func ReadTableSchema(ctx context.Context, exec Executor, versionID model.SchemaVersionID, statement Statement) (model.TableSchema, error) {
 	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)
 	if err != nil {
@@ -412,8 +412,11 @@ func ReadPendingRequests(ctx context.Context, exec Executor, statement Statement
 // verworfenen Zeile: der Klartext des Grundes, gefolgt von Doppelpunkt,
 // Leerzeichen und der Antrags-Kennung (`SPEC-019`, dieselbe Form wie die
 // Fehlertexte der Verarbeitung). Die erste verletzte Prüfung bestimmt den
-// Text, in der Reihenfolge der Prüfungen des Konstruktors: Quelle, Schema,
-// Tabelle, Antragsart, Spalte; ein Grund außerhalb dieser Liste trägt den
+// Text; die Reihenfolge Quelle, Schema, Tabelle, Antragsart, Spalte
+// gehört dieser Stelle und bildet die Spalten-Ordnung der Antrags-Tabelle
+// ab — der Antrags-Konstruktor prüft Kennung, Quelle, Schema und Tabelle
+// in einem Ausdruck und nennt einen Grund. Ein Grund außerhalb dieser
+// Liste trägt den
 // allgemeinen Klartext. Eine Zeile ohne Kennung trägt statt der Kennung
 // `schema.table` als Adresse — sie bleibt unvermerkt (`ID` leer).
 func rejectionMessage(cause error, id, source, schema, table, column string) string {
@@ -449,7 +452,7 @@ func RegisterConsumer(ctx context.Context, exec Executor, statement Statement) (
 
 // ReadBackfillRuns liest Run-Zeilen (`SPEC-029`) in der Ordnung der Abfrage;
 // jede Zeile läuft durch den Mapper und damit durch die Domänen-Konstruktoren
-// (`ADR-0029`) — eine Zeile außerhalb der Invarianten endet sichtbar, nicht
+// — eine Zeile außerhalb der Invarianten endet sichtbar, nicht
 // als still gefälschter Run.
 func ReadBackfillRuns(ctx context.Context, exec Executor, statement Statement) ([]model.BackfillRun, error) {
 	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)

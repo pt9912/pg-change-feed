@@ -13,16 +13,15 @@ import (
 )
 
 // PostgresHeartbeatAdapter ist die Referenzimplementierung des
-// `HeartbeatPort` (`ARC-004`, `ADR-0024`): er trägt das periodische
+// `HeartbeatPort` (`ARC-004`): er trägt das periodische
 // Lebenszeichen des Capture-Prozesses gegen `cdc.process_heartbeat`
-// fort. Der Treiber (pgx/v5) bleibt Adapterdetail (`ADR-0032`, rein Go,
-// CGO-frei); die Tabellenform trägt der d-migrate-Rollout (`ADR-0043`) —
+// fort. Der Treiber (pgx/v5) bleibt Adapterdetail (rein Go,
+// CGO-frei); die Tabellenform trägt der d-migrate-Rollout —
 // die DDL des Store-Adapters (schema.sql) trägt sie nicht (dieselbe
 // Abgrenzung wie bei den Consumer-State-Tabellen). `log` trägt die
 // strukturierte Protokollierung über den injizierten `LogPort`
-// (`LH-QA-OPS-004`, `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`.
-// `db` trägt die Ausführung über die schmale Naht (`sqlexec`, `ADR-0071`
-// Punkt 5).
+// (`WithLog`) — Default `outbound.NoopLog`.
+// `db` trägt die Ausführung über die schmale Naht (`sqlexec`).
 type PostgresHeartbeatAdapter struct {
 	db  sqlexec.DB
 	log outbound.LogPort
@@ -31,10 +30,10 @@ type PostgresHeartbeatAdapter struct {
 // NewHeartbeat baut den Verbindungspool gegen die Instanz, die Quelle und
 // CDC-Speicher gleichermaßen trägt (Abschnitt 1 Lastenheft), und meldet
 // eine nicht erreichbare Instanz als Fehler der Klasse `storage`
-// (`outbound.ErrHeartbeatStorage`, `SPEC-008`). Der Pool bleibt vom
+// (`outbound.ErrHeartbeatStorage`). Der Pool bleibt vom
 // Store- und Aktivierungs-Pool getrennt (`internal/bootstrap/wiring.go`)
 // — der periodische Schreib-Zug teilt keine Verbindung mit der
-// Capture-Persist-ACK-Schleife (`LH-QA-REL-001.a`).
+// Capture-Persist-ACK-Schleife (`LH-QA-REL-001`).
 func NewHeartbeat(ctx context.Context, dsn string, opts ...Option) (*PostgresHeartbeatAdapter, error) {
 	o := newOptions(opts)
 	pool, err := pgxpool.New(ctx, dsn)
@@ -50,12 +49,12 @@ func NewHeartbeat(ctx context.Context, dsn string, opts ...Option) (*PostgresHea
 }
 
 // heartbeatStorageFailure trägt die Übersetzungsverantwortung dieses
-// Adapters (`ADR-0023`, `SPEC-008`): Treiber-Fehler gehen an dieser
+// Adapters (`ADR-0023`): Treiber-Fehler gehen an dieser
 // Grenze in die Klasse `storage` über den eigenen Sentinel des Ports
 // (`outbound.ErrHeartbeatStorage`) — die technische Ursache bleibt über
 // die zweite Wrappung lesbar. Derselbe Aufruf trägt den strukturierten
-// Fehler-Log über den injizierten `LogPort` (`LH-QA-OPS-004`,
-// `ADR-0024`), aus demselben Grund mit explizitem `ctx`/`log`-Parameter
+// Fehler-Log über den injizierten `LogPort`, aus demselben Grund mit
+// explizitem `ctx`/`log`-Parameter
 // wie `storageFailure` (`store.go`).
 func heartbeatStorageFailure(ctx context.Context, log outbound.LogPort, cause error) error {
 	log.Error(ctx, "heartbeat: Datenbankfehler", "error", cause)
@@ -88,9 +87,9 @@ func (a *PostgresHeartbeatAdapter) Beat(ctx context.Context, source model.Source
 }
 
 // Fault trägt den zuletzt beobachteten Fehlerzustand der Quelle fort
-// (`LH-FA-ADM-003`, `LH-QA-REL-003`) — dieselbe Zeile und
+// (`LH-FA-ADM-003`) — dieselbe Zeile und
 // derselbe Zeitstempel-Mechanismus wie Beat, nur mit Klasse. Eine leere
-// Quelle oder eine Klasse außerhalb der sieben `ADR-0023`-Kategorien
+// Quelle oder eine Klasse außerhalb der sieben stabilen Kategorien
 // erreicht keinen SQL-Aufruf (Port-Grenze, wie bei Beat).
 func (a *PostgresHeartbeatAdapter) Fault(ctx context.Context, source model.SourceID, class model.ErrorClass) error {
 	if source == "" {

@@ -38,7 +38,7 @@ type BackfillRunRow struct {
 // ToBackfillRun trägt den Run aus einer `cdc.backfill_run`-Zeile. Die
 // Kennungen laufen durch den Domänen-Konstruktor (`ADR-0029`), der Status
 // durch die geschlossene Menge; eine NULL-Schätzung liest als „unbekannt“
-// (`model.UnknownRowEstimate`), nie als 0 (`SPEC-029`), eine NULL-Position
+// (`model.UnknownRowEstimate`), nie als 0, eine NULL-Position
 // als Nullwert.
 func ToBackfillRun(row BackfillRunRow) (model.BackfillRun, error) {
 	run, err := model.NewQueuedBackfillRun(

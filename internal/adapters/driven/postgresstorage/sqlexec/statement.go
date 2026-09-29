@@ -3,7 +3,7 @@ package sqlexec
 // Statement trägt eine Anweisung an die Naht samt der Übersetzungs-
 // Verantwortung ihres Aufrufers: `SQL`/`Args` gehen an den Executor, `Fail`
 // klassifiziert einen Treiber-Fehler und protokolliert ihn über den
-// `LogPort` des Adapters (`LH-QA-OPS-004`, `ADR-0024`) — der eine
+// `LogPort` des Adapters (`ADR-0024`) — der eine
 // Übersetzungspunkt, den jeder Adapter führt (`storageFailure` und
 // Geschwister). Ein Domänen-Fehler der Übersetzung läuft **nicht** durch
 // `fail`: er trägt seine Klasse schon selbst und wird unverändert

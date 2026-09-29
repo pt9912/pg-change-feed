@@ -1,12 +1,12 @@
 // Package grpcstream trägt den `Broadcaster` als Driven-Implementierung des
-// `ChangeStreamPort` (`ADR-0060` Teilfrage 2/5, `ADR-0066`): ein
+// `ChangeStreamPort` (`ADR-0060` Teilfrage 2/5): ein
 // In-Prozess-Fan-out ohne externes System — jeder aktive Live-Stream
 // registriert sich über `Subscribe`, `Publish` verteilt jeden Change an alle
 // registrierten Empfänger. Die Verteilung ist nicht-blockierend: jeder
 // Empfänger trägt eine begrenzte Empfangs-Warteschlange, deren Überlauf
-// verworfen wird, der Erzeuger hält nie auf einen Empfänger an (`ADR-0066`).
-// Die Nachvollziehbarkeit bleibt beim bestehenden Lesezugriffsweg
-// (`LH-FA-REA-001` ff.); der Broadcaster trägt keinen Zustand über den
+// verworfen wird, der Erzeuger hält nie auf einen Empfänger an.
+// Die Nachvollziehbarkeit bleibt beim bestehenden Lesezugriffsweg;
+// der Broadcaster trägt keinen Zustand über den
 // Verteilungszeitpunkt hinaus (`ADR-0060` Teilfrage 3, Fire-and-Forget ohne
 // Replay).
 package grpcstream
@@ -40,7 +40,7 @@ const queueCapacity = 64
 // Abmeldung gegen laufende Verteilungen über `mu` synchronisiert ist. Jeder
 // Empfänger trägt eine begrenzte Empfangs-Warteschlange (`queueCapacity`);
 // `Publish` legt einen Change nicht-blockierend ab und verwirft ihn für einen
-// Empfänger, dessen Warteschlange voll ist (`ADR-0066`). Der Erzeuger hält
+// Empfänger, dessen Warteschlange voll ist. Der Erzeuger hält
 // damit nie auf einen Empfänger an.
 type Broadcaster struct {
 	mu   sync.Mutex
@@ -54,8 +54,8 @@ func New() *Broadcaster {
 }
 
 // Subscribe registriert einen Empfänger und liefert dessen begrenzte
-// Empfangs-Warteschlange samt Abmelde-Funktion (`ADR-0060` Teilfrage 2,
-// `ADR-0066` Festlegung 2). Jeder Aufruf registriert einen eigenen Empfänger;
+// Empfangs-Warteschlange samt Abmelde-Funktion (`ADR-0060` Teilfrage 2).
+// Jeder Aufruf registriert einen eigenen Empfänger;
 // `Publish` verteilt an alle. Die Abmelde-Funktion ist idempotent, entfernt
 // genau diesen Empfänger und verwirft dabei die noch in seiner Warteschlange
 // liegenden Changes. Der gelieferte Kanal wird bewusst nie geschlossen: ein
@@ -83,7 +83,7 @@ func (b *Broadcaster) Subscribe() (<-chan *model.Change, func()) {
 }
 
 // Publish verteilt einen Change an alle zum Aufrufzeitpunkt registrierten
-// Empfänger (`ChangeStreamPort`, `ADR-0060` Teilfrage 3, `ADR-0066`). Der
+// Empfänger (`ChangeStreamPort`, `ADR-0060` Teilfrage 3). Der
 // Aufruf blockiert nie auf einen Empfänger: er legt den Change je Empfänger
 // nicht-blockierend in dessen begrenzte Empfangs-Warteschlange; ist sie voll,
 // wird der eintreffende Change für diesen Empfänger verworfen (Drop-Newest,

@@ -1,5 +1,5 @@
 // Package telemetry trägt den `SlogAdapter` als Driven-Implementierung des
-// `LogPort` (`ARC-006`, `ADR-0024`): das strukturierte
+// `LogPort` (`ARC-006`): das strukturierte
 // Logging-Framework (`log/slog`, Go-Standardbibliothek) bleibt
 // Infrastruktur und lebt ausschließlich hier — kein anderer Adapter und
 // nicht die Composition Root importieren `log/slog`, um selbst zu

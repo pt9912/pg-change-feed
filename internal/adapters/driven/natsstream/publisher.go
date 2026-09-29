@@ -5,10 +5,10 @@
 // Subjekt-Namensraum (`cdc.stream.<source_id>.<schema>.<table>`,
 // Teilfrage 2), fire-and-forget ohne eigene Zustellgarantie (Teilfrage 3).
 // Die Nachvollziehbarkeit bleibt beim bestehenden Lesezugriffsweg
-// (`LH-FA-REA-001` ff.) — dieselbe Isolation wie die beiden bestehenden
+// — dieselbe Isolation wie die beiden bestehenden
 // Zustellwege (gRPC, SSE): ein Publish-Fehlschlag bleibt lokal, er erreicht
 // weder den `CaptureService` noch den kritischen Erfassungspfad.
-// `ADR-0055`/`ADR-0056`s Wecksignal (`internal/adapters/driven/natsnotify`)
+// Das Wecksignal (`internal/adapters/driven/natsnotify`)
 // bleibt davon byte-identisch unberührt — eigener Subjekt-Namensraum,
 // eigenes Paket, kein Adapter-→-Adapter-Import (`ADR-0100` Teilfrage 1).
 package natsstream
@@ -29,11 +29,11 @@ import (
 
 // subjectPrefix trägt das Subjekt-Schema `cdc.stream.<source_id>.<schema>.<table>`
 // (`ADR-0100` Teilfrage 2) — ein eigener Wurzel-Token, niemals `cdc.changes`
-// (`ADR-0055`/`ADR-0056`s Wecksignal-Namensraum bleibt unberührt).
+// (der Wecksignal-Namensraum bleibt unberührt).
 const subjectPrefix = "cdc.stream."
 
 // reservedSubjectChars trägt dieselben NATS-Subjekt-Sonderzeichen wie
-// `natsnotify` (`ADR-0056` Folgepflicht) — hier eigenständig geführt, kein
+// `natsnotify` — hier eigenständig geführt, kein
 // Adapter-Paket importiert ein anderes (`ADR-0100` Teilfrage 1).
 const reservedSubjectChars = ".*>"
 
@@ -54,7 +54,7 @@ type changeSubscriber interface {
 }
 
 // Option konfiguriert den Publisher bei der Konstruktion (`New`) — aktuell
-// nur der optionale `LogPort` (`LH-QA-OPS-004`, `ADR-0024`), dasselbe Muster
+// nur der optionale `LogPort` (`ADR-0024`), dasselbe Muster
 // wie `natsnotify.Option`.
 type Option func(*options)
 
@@ -132,11 +132,11 @@ func (p *Publisher) Run(ctx context.Context) {
 }
 
 // streamMessage trägt dasselbe Nachrichtenschema wie die SSE-Ereignisse
-// (`SPEC-021`, `ADR-0100` Teilfrage 2) — dieselben zehn Felder wie
-// `model.Change` ohne `Origin` (`SPEC-002`, `SPEC-024`), hier eigenständig
+// (`ADR-0100` Teilfrage 2) — dieselben zehn Felder wie
+// `model.Change` ohne `Origin`, hier eigenständig
 // geführt (kein Adapter-→-Adapter-Import, `ADR-0100` Teilfrage 1). Die
 // Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild
-// (`LH-FA-CAP-008` Boundary) wird zu `null`.
+// (Boundary) wird zu `null`.
 type streamMessage struct {
 	ChangeID      string          `json:"change_id"`
 	TransactionID string          `json:"transaction_id"`
@@ -162,7 +162,7 @@ func rowImage(image []byte) json.RawMessage {
 }
 
 // toStreamMessage übersetzt einen Domain-Change in seine NATS-Nachrichtenform
-// (`SPEC-021`/`SPEC-024`): dieselben Felder wie das SSE-Event, Row Images
+// (`SPEC-021`): dieselben Felder wie das SSE-Event, Row Images
 // unverändert übernommen.
 func toStreamMessage(change *model.Change) streamMessage {
 	return streamMessage{
@@ -207,8 +207,8 @@ func subjectFor(sourceID, schema, table string) string {
 // ein Name mit NATS-reserviertem Zeichen oder Whitespace, ein Kodierfehler
 // oder ein Publish-Fehlschlag bleiben lokal — kein Rückgabewert, kein
 // propagierter Fehler: derselbe Fire-and-Forget-Vertrag wie der
-// `Broadcaster` selbst (`ADR-0060` Teilfrage 3). Die Leerwert- und
-// Zeichen-Grenze entspricht `natsnotify.Notify` (`ADR-0056` Folgepflicht):
+// `Broadcaster` selbst (`ADR-0100` Teilfrage 3). Die Leerwert- und
+// Zeichen-Grenze entspricht `natsnotify.Notify`:
 // ohne die Leerwert-Prüfung entstünde aus einem leeren Relationsnamen ein
 // verkürztes Subjekt (`cdc.stream.<source>.<schema>.`), das still
 // publiziert würde. Ein Publish-Fehlschlag erreicht weder den

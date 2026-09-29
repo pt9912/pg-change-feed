@@ -1,5 +1,5 @@
 // Package systemclock trägt den `SystemClockAdapter` als Driven-
-// Implementierung des `ClockPort` (`ARC-006`, `ADR-0040`): die Wanduhr
+// Implementierung des `ClockPort` (`ARC-006`): die Wanduhr
 // bleibt Infrastruktur und lebt ausschließlich hier — Domain- und
 // Application-Code rufen `time.Now()` nicht direkt auf, sie beziehen den
 // aktuellen Zeitpunkt über den Port; Tests setzen eine Fake-Uhr ein

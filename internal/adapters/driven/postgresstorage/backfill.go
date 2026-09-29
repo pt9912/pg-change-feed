@@ -31,7 +31,7 @@ const (
 )
 
 // backfillStorageFailure trägt die Übersetzungsverantwortung der drei
-// Backfill-Adapter (`ADR-0023`, `SPEC-008`): Treiber-Fehler gehen an dieser
+// Backfill-Adapter (`ADR-0023`): Treiber-Fehler gehen an dieser
 // Grenze in die Klasse `storage` über `outbound.ErrBackfillStorage`, die
 // technische Ursache bleibt über die zweite Wrappung lesbar.
 func backfillStorageFailure(ctx context.Context, log outbound.LogPort, cause error) error {
