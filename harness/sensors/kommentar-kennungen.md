@@ -129,8 +129,13 @@ von 1 und 2 trägt die Make-Meldung `Fehler <n>` (der Exit des Skripts), die Aus
 ## Grenze
 
 1. **Form, nicht Wahrheit** (erster Absatz).
-2. **Nur Go-Kommentare.** Skripte, `Makefile`, `.sql`, `.yml` und Dockerfiles liest
-   das Werkzeug nicht; `sdks/` deckt `make sdk-public-doc-check`.
+2. **Nur Code- und Konfig-Kommentare, keine Prosa.** Markdown liest das Werkzeug
+   nicht — Prosa ist selbst der Träger; die Kennungs-Linkpflicht dort trägt
+   d-check `ids`. `sdks/` deckt `make sdk-public-doc-check`, `gen/**` und
+   `.harness/**` sind ausgenommen. Zeilenformen lesen vollzeilige Kommentare
+   nach Konvention, nicht Syntax: YAML-Blockskalare, Shell-Heredocs und
+   SQL-Zeichenketten können eine Zeile vortäuschen, die als Kommentar gelesen
+   wird — im Bestand ist kein solcher Fall bekannt; neue Fälle sind Befund.
 3. **Zählregel, keine Bewertung.** Ein Kommentar mit zwei Ankern kann eine legitime
    Kopplung oder Abgrenzung sein; das Werkzeug meldet ihn trotzdem, die Regel
    verlangt dort die Stelle (Datei, Funktion) statt einer Kennungsreihe
@@ -152,7 +157,12 @@ Zeichenketten-Literal · Direktive · Blockkommentar · „ff.“ über einen
 Zeilenumbruch), den Diff-Modus (überlappende und nicht überlappende Zeile ·
 Löschung · andere Datei · leerer Diff), die Modi `-count`/`-tests`, die
 ausgenommenen Wurzeln (`gen`, `sdks`, `.harness`, `.git`), das Präfix der
-Zieldatei-Zeile und die Exit-Codes.
+Zieldatei-Zeile und die Exit-Codes. Die Nicht-Go-Formen tragen eigene Fälle:
+Form-Auswahl je Name/Endung, Blockgrenze der Zeilenformen (Leerzeile ·
+Grenz-Marker · Einrückung · nachgestellter Kommentar nicht gelesen · SQL
+`--` · Makefile-Zielzeile mit `##`), Lauf über den Baum mit allen Formen
+(`-tests only` liest sie nicht, `.txt` bleibt ungelesen) und Diff-Modus für
+eine Shell-Datei.
 
 Der Aufrufer `tools/harness/kommentar-kennungen.sh` trägt seinen eigenen
 Tabellentest, `tools/harness/run-kommentar-kennungen-tests.sh` (bash, ein

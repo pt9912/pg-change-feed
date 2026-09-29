@@ -50,7 +50,8 @@ if [ -n "$diff_base" ]; then
   # `diff.dstPrefix`, `diff.external`, `color.diff`, `core.quotePath`); das
   # Programm liest die Zieldatei-Zeilen mit dem Präfix `b/`.
   if ! git -c core.quotePath=false diff -U0 --no-color --no-ext-diff --no-textconv \
-    --src-prefix=a/ --dst-prefix=b/ "$diff_base" -- '*.go' >"$difffile"; then
+    --src-prefix=a/ --dst-prefix=b/ "$diff_base" -- '*.go' '*.sh' '*.mk' '*.yml' \
+    '*.yaml' '*.sql' 'Makefile' 'Dockerfile' '**/Dockerfile' >"$difffile"; then
     echo "kommentar-kennungen: git diff gegen '$diff_base' schlug fehl" >&2
     exit 2
   fi
