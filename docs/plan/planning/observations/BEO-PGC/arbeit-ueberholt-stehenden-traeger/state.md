@@ -18,7 +18,10 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **33×** — der Beleg
+Ordinal-Erzählung unten übernommen): **34×** — der jüngste Beleg
+`evidence/slice-sdk-python-grpc-administration-flaeche.md` (Python-Verifikation
+V-1, MEDIUM: der Stream-Filter-Docstring in der vom Zug selbst berührten
+`grpc_client.py` blieb stehen; gezogen durch `8b12198e`); der Beleg
 `evidence/slice-transformationen-e2e-wirkung.md` (die bewegte Eigenschaft, der Deckungsstand von
 `LH-FA-CFG-007` im RTM-Lauf, seit `fc0b8d38` durch eine E2E-Zeile gedeckt, trug zwei Träger, die
 ihn nicht nachzogen: die Waisen-Zahl in der Zeile `make doc-trace` von `harness/README.md` und

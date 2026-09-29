@@ -73,9 +73,9 @@ Beispiel-Client-Vorbild `grpc_client.py` im Bau aus der `.proto`).
 - [x] `docs/user/benutzerhandbuch.md`: beide gRPC-Abschnitte nennen Python
       jetzt mit der vollen Fläche; Versionshistorie nachgezogen.
       `sdks/python/README.md` nachgezogen.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [ ] Die drei Paarungen sind getragen — von der nächsten Welle-Closure.
 
 ## 3. Plan (vor Code)
@@ -204,12 +204,53 @@ Closure-Notiz geschrieben.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <wird bei Closure gefüllt>
-- **Was ging anders als geplant:** <wird bei Closure gefüllt>
-- **Steering-Loop-Eintrag:** <wird bei Closure gefüllt, falls einer entsteht>
-- **Beobachtungs-Register (`../observations/`):** <wird bei Closure gefüllt>
-- **Folge-Slices:** <wird bei Closure gefüllt, falls einer entsteht>
-- **Risiken aus §6:** <wird bei Closure gefüllt — siehe §6>
+- **Was hat funktioniert:** Das Go-Vorbild (`examples/grpc-client`) und die
+  beiden Geschwister-SDKs trugen die Entscheidungen vor (generierte
+  Protobuf-Nachrichten direkt statt eines `dataclasses`-Layers,
+  Fehlerform-Tabelle, Filter-Semantik) — die Python-Übertragung hatte
+  keine offene Designfrage. Die Transport-Schnittstelle
+  (`FakeAdministrationTransport`, dieselbe Form wie beim Stream-Client)
+  hielt alle elf RPC-Tests netzlos; der frische Container-Testlauf meldet
+  130 passed, `make sdk-pack-python` baut beide Artefakte (Exit 0,
+  Verifikations-Report §1).
+- **Was ging anders als geplant:** drei Punkte, alle im Plan nachgetragen
+  oder als Deviation benannt: (1) `models.py` bleibt unverändert —
+  Deviation §3, dieselbe Entscheidung wie `grpc_client.py` und das
+  C#-Geschwister-SDK; (2) der `sdks/python/Dockerfile`-Umbau wurde breiter
+  als geplant: zweite `COPY --from=proto`-Zeile, `protoc`-Aufruf mit
+  beiden `.proto`-Quellen, zweiter `sed`-Import-Fix und ein dritter, so
+  nicht geplanter `sed`-Schritt gegen die interne Kennung, die das
+  gRPC-Plugin aus dem `.proto`-Kommentar in die generierten Docstrings
+  kopiert (real erst beim Pack-Lauf gefunden, §3-Tabellenzeile); (3) die
+  optional geplante Integrationstest-Datei (`test_grpc_administration_realserver.py`)
+  wurde nicht angelegt — laut Plan §3 bewusst zeitbudget-abhängig, laut
+  Verifikation kein fehlender Umfang (V-3/V-4 dort, INFO).
+- **Steering-Loop-Eintrag:** keiner aus dem eigenen Ergebnis — die
+  Dockerfile-Lücke ist eine Bau-Konfigurationslücke, kein wiederkehrendes
+  Agenten-Verhalten. Der Verifikations-Befund V-1 (MEDIUM) trifft dagegen
+  eine Beobachtungs-Klasse und geht als Beleg in das Register (nächster
+  Punkt); die Berichtigung des selbstwidersprüchlichen Docstring-Satzes
+  ist durch `8b12198e` gezogen (pytest im Frischlauf 130 passed).
+- **Beobachtungs-Register (`../observations/`):** die Welle-Closure trägt
+  die Findings von Review, Fixrunde und Verifikation nach, weil beide
+  Reports nach dem eigenen Closure-Commit (`70e19f51`) liegen:
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` um
+  `evidence/slice-sdk-python-grpc-administration-flaeche.md` ergänzt
+  (V-1, MEDIUM, Zähler 34×). Neu angelegt durch die Welle-Closure:
+  `BEO-PGC/test-methode-lauft-still-nicht` (Kotlin V-1, andere Sub-Area)
+  und `BEO-PGC/arbeitsbaum-race-ohne-offenlegung` (Kotlin F-4, INFO).
+  Kein neuer Eintrag aus dem Python-Ergebnis selbst;
+  `drei-sprachen-kopie-divergiert-am-randfall` bleibt bei 2× (§6: geprüft,
+  kein Fall — `bytes`-Abwesenheit liefert `b""`, nicht `None`).
+- **Folge-Slices:** keiner aus diesem Slice heraus — der Realserver-Beleg
+  der Administration-Fläche bleibt Gegenstand eines eigenen, hier nicht
+  geplanten Folge-Slices analog zu `make test-sdk-csharp-integration`/
+  `make test-sdk-kotlin-integration` (keine neue Benennung nötig).
+- **Risiken aus §6:** alle drei mit Ausgang — (1) `drei-sprachen-kopie-…`
+  weiter offen unter der Register-Schwelle, real geprüft; (2)
+  Server-Fehler entfallen (Fix `a40b4809` bereits gepusht); (3)
+  Stub-/Dockerfile-Risiko eingetreten und im selben Zug behoben, real
+  belegt durch den grünen Pack-Lauf.
 - **Drei Paarungen:** von der Welle-Closure (`welle-sdk-grpc-administration-flaeche`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

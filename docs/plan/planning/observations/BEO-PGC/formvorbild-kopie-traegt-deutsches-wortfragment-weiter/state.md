@@ -8,11 +8,18 @@ durch den Architect-Verdikt zur Form-Vorbild-Kopie und der Sprachreinheit
 je Form-Teil
 (`docs/reviews/architect-verdict-formvorbild-kopie-sprachreinheit-je-form-teil.md`) <!-- d-check:status-provenance -->
 
-Zähler (abgeleitet): 3× (evidence/slice-sdk-csharp-projektgeruest.md,
+Zähler (abgeleitet): 4× (evidence/slice-sdk-csharp-projektgeruest.md,
 evidence/slice-sdk-kotlin-projektgeruest.md,
-evidence/slice-sdk-python-http-reale2e.md) — Schwelle mit dem dritten
-Beleg erreicht; der Lese-Schritt der `welle-sdk-reale2e`-Closure trug den
-Fund als offene Übergabe weiter, dieses Architect-Verdikt schließt sie.
+evidence/slice-sdk-python-http-reale2e.md,
+evidence/slice-sdk-kotlin-grpc-administration-flaeche.md) — Schwelle mit
+dem dritten Beleg erreicht; der Lese-Schritt der `welle-sdk-reale2e`-Closure
+trug den Fund als offene Übergabe weiter, dieses Architect-Verdikt
+schließt sie. Der vierte Beleg (HIGH, Test-Fixture-Zeichenkette statt
+Prosa/KDoc, gezogen durch `bd10c391` samt C#-Altbestand `48e04899`)
+wanderte durch die Welle
+`welle-sdk-grpc-administration-flaeche`; der Ausgang (verkörpert,
+Reviewer-Skill HIGH-Punkt) bleibt zuständig und hat den Fund real
+getragen — keine neue Verkörperung nötig.
 
 Der Name des Eintrags nennt die Kopie als Mechanismus — der Zähler trägt
 auch das Erstauftreten selbst (das C#-Fragment wurde frisch aus der
