@@ -61,21 +61,37 @@ Grund gegen ein netzloses, 0,013 s schnelles Gate trägt er nicht.
 
 ## 2. Definition of Done
 
-- [ ] ADR (Architect, `Accepted`, Index in `docs/plan/adr/README.md`): der
+- [x] ADR (Architect, `Accepted`, Index in `docs/plan/adr/README.md`): der
       Kennungs-Wächter der SDK-Dateien ist ein Gate; Festlegung zum Tabellentest,
       zur Sensor-Bindung und zur Reichweite (Lauf im Repo-Wurzel-`make gates`,
       netzlos). *Zu belegen durch:* die ADR selbst.
-- [ ] `harness/mk/sdk.mk` hängt das Ziel an `GATE_CHECKS`; `harness/sensors/sdk-public-doc-check.md`
+      Belegt: [`ADR-0134`](../../adr/0134-sdk-public-doc-check-gate-make-gates.md),
+      `Accepted` (Commit `be33b446`), Index-Eintrag im ADR-Index.
+- [x] `harness/mk/sdk.mk` hängt das Ziel an `GATE_CHECKS`; `harness/sensors/sdk-public-doc-check.md`
       (Vertrag, Grenze, Bindung, wie die übrigen Sensor-Dateien),
       `harness/README.md` §Sensors (Zeile in der Gate-Tabelle und in `make gates`),
       die Begründung „kein Gate“ in `harness/mk/sdk.mk` und `harness/README.md`
       entfernt bzw. auf den Ist-Zustand gezogen (Suchlauf §3.13 über
       `git grep -n 'sdk-public-doc-check' -- harness AGENTS.md docs`).
-- [ ] Beleg der Eingabeseite: eine Kennung in eine Datei unter `sdks/` eingefügt
+      Belegt: Suchlauf im Implementer-Bericht — Parent `f287c81b` 112 Treffer,
+      Arbeitsbaum nach dem Zug 130 (+18: Sensor-Datei neu 12, `harness/mk/sdk.mk`
+      +2, `harness/README.md` +2, dieser Plan +2); die „kein Gate“-Begründungen
+      in `harness/mk/sdk.mk` und `harness/README.md` sind auf den Ist-Zustand
+      gezogen, die Treffer in `harness/sensors/kommentar-kennungen.md`
+      (Zweitverweise auf das Werkzeug, beide Stände wahr) bleiben unverändert.
+- [x] Beleg der Eingabeseite: eine Kennung in eine Datei unter `sdks/` eingefügt
       färbt `make gates` rot (Exit ≠ 0, Meldung des Wächters gedruckt), die
       Rücknahme grün.
-- [ ] `make gates` grün (Exit-Code ungefiltert gesichert,
+      Belegt: Probe `SPEC-001` in
+      `sdks/python/pgchangefeed/src/pgchangefeed/__init__.py` — `make gates`
+      Exit 2 (`make: *** [harness/mk/sdk.mk:23: sdk-public-doc-check] Fehler 1`),
+      Wächter-Meldung `sdks/python/pgchangefeed/src/pgchangefeed/__init__.py:3`
+      plus Sammelzeile gedruckt; Rücknahme per `git checkout`.
+- [x] `make gates` grün (Exit-Code ungefiltert gesichert,
       [`AGENTS.md`](../../../../AGENTS.md) §3.9).
+      Belegt: finaler Lauf nach Rücknahme und Plan-Nachzug, Exit 0
+      (Implementer-Bericht, §3.9-Disziplin: Exit ungepiped gesichert,
+      Ausgabe nur gegen die Log-Datei).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow, kein Self-Review (Modul 8).
