@@ -1,5 +1,5 @@
--- CDC-Schema der Referenzimplementierung (`ARC-009`): die Tabellen aus
--- `spec/pflichtenheft.md` §2 (SPEC-001, SPEC-002). Angewendet wird die DDL
+-- CDC-Schema der Referenzimplementierung: die Tabellen aus
+-- `spec/pflichtenheft.md` §2 (SPEC-001). Angewendet wird die DDL
 -- über `postgresstorage.ApplySchema` (schema.go); sie ist idempotent
 -- (IF NOT EXISTS) und läuft gegen eine frische Instanz wie gegen eine mit
 -- Bestand.
@@ -25,8 +25,7 @@ CREATE TABLE IF NOT EXISTS cdc.source (
 );
 
 -- Aktivierte Tabelle je Quelle (`SPEC-001`, Tabelle `cdc.source_table`);
--- Schema- und Tabellenname machen gleichnamige Tabellen unterscheidbar
--- (`LH-FA-DAT-002`).
+-- Schema- und Tabellenname machen gleichnamige Tabellen unterscheidbar.
 CREATE TABLE IF NOT EXISTS cdc.source_table (
     source_table_id text PRIMARY KEY,
     source_id       text NOT NULL REFERENCES cdc.source (source_id),
@@ -35,8 +34,7 @@ CREATE TABLE IF NOT EXISTS cdc.source_table (
     UNIQUE (source_id, schema_name, table_name)
 );
 
--- Schema-Version (`SPEC-004`); jeder Change referenziert eine Version
--- (`LH-FA-SCH-005`).
+-- Schema-Version (`SPEC-004`); jeder Change referenziert eine Version.
 CREATE TABLE IF NOT EXISTS cdc.schema_version (
     schema_version_id text PRIMARY KEY,
     source_table_id   text NOT NULL REFERENCES cdc.source_table (source_table_id),
@@ -47,8 +45,8 @@ CREATE TABLE IF NOT EXISTS cdc.schema_version (
 -- `cdc.transaction`): der Primärschlüssel trägt die interne
 -- Transaktions-ID und ist damit die Deduplizierungsbasis der
 -- Idempotenz — dieselbe Transaktion erneut persistiert ändert keinen
--- Stand (`ADR-0011`). Die Commit-Position trägt die sortierbare
--- Quellposition (`LH-FA-DAT-004`, `SPEC-003`: der Adapter mappt die
+-- Stand. Die Commit-Position trägt die sortierbare
+-- Quellposition (der Adapter mappt die
 -- PostgreSQL-LSN auf den Offset).
 CREATE TABLE IF NOT EXISTS cdc.transaction (
     transaction_id  text PRIMARY KEY,
@@ -63,12 +61,12 @@ CREATE INDEX IF NOT EXISTS cdc_transaction_source_position_idx
     ON cdc.transaction (source_id, commit_position);
 
 -- Einzelner Change (`SPEC-002`, Tabelle `cdc.change`): Row Images als
--- `jsonb`, ein fehlendes Bild ist NULL (Abwesenheit, kein Fehler,
--- `LH-FA-CAP-008` Boundary). Die Sequenz ist innerhalb der Transaktion
--- eindeutig und mindestens 1 (`SPEC-002`); die UNIQUE-Kante erzwingt die
--- Domänen-Invariante (`ADR-0029`, Regel 6) auch gegen Bestand außerhalb
--- der Domänen-Konstruktoren. `origin` trägt die Herkunft (`SPEC-002`,
--- `LH-FA-CAP-009`): nullable, ohne DEFAULT und ohne CHECK — NULL liest
+-- `jsonb`, ein fehlendes Bild ist NULL (Abwesenheit, kein Fehler).
+-- Die Sequenz ist innerhalb der Transaktion
+-- eindeutig und mindestens 1; die UNIQUE-Kante erzwingt die
+-- Domänen-Invariante auch gegen Bestand außerhalb
+-- der Domänen-Konstruktoren. `origin` trägt die Herkunft (`SPEC-002`):
+-- nullable, ohne DEFAULT und ohne CHECK — NULL liest
 -- als `wal`, die geschlossene Menge erzwingt die Domäne
 -- (`model.ChangeOrigin`); dieselbe Spaltenform wie `tools/schema/schema.yaml`.
 CREATE TABLE IF NOT EXISTS cdc.change (

@@ -6,8 +6,7 @@
 -- (1) cdc.enable_table/cdc.disable_table/cdc.exclude_column/
 -- cdc.include_column/cdc.backfill_table/cdc.set_transformation/
 -- cdc.remove_transformation sind ihre schreibenden SQL-Funktionen
--- (ADR-0050, LH-FA-ADM-001, LH-FA-CFG-005, LH-FA-CAP-009, LH-FA-CFG-007,
--- ADR-0112). d-migrate 1.3.1 generiert ihre
+-- (ADR-0050). d-migrate 1.3.1 generiert ihre
 -- DDL korrekt über
 -- den `functions:`-Knoten (`schema generate`), aber `schema migrate --execute`
 -- bricht für jede dort deklarierte Funktion mit POST_EXECUTE_DRIFT (Exit 5)
@@ -43,19 +42,19 @@
 -- Publication nicht direkt (das bleibt exklusiv TableActivationAdapter über
 -- EnableTableUseCase/DisableTableUseCase vorbehalten, ausgeführt von der
 -- Administrations-Goroutine). Dieselbe Disziplin trägt
--- der Spaltenausschluss (`LH-FA-CFG-005`, ADR-0059): cdc.exclude_column/
+-- der Spaltenausschluss: cdc.exclude_column/
 -- cdc.include_column schreiben ausschließlich den Antrags-Datensatz samt
 -- Spaltennamen und prüfen nichts an der Quelle — die Spaltenexistenz trägt
--- der Use Case über ColumnExclusionPort. cdc.backfill_table (`LH-FA-CAP-009`,
--- ADR-0111) schreibt ebenso ausschließlich den Antrags-Datensatz der Art
+-- der Use Case über ColumnExclusionPort. cdc.backfill_table
+-- schreibt ebenso ausschließlich den Antrags-Datensatz der Art
 -- `backfill` (ohne Spalte); Vorbedingungen und Annahme trägt der Use Case,
--- und `applied` heißt dort „angenommen“ (SPEC-019).
--- cdc.set_transformation/cdc.remove_transformation (`LH-FA-CFG-007`, ADR-0112)
+-- und `applied` heißt dort „angenommen“.
+-- cdc.set_transformation/cdc.remove_transformation
 -- schreiben ebenso ausschließlich den Antrags-Datensatz samt Regelname, die
 -- erste zusätzlich die Regelform, und prüfen nichts — weder die Regelform
--- noch die Spalte; beides trägt der Capture-Prozess (ADR-0046). Die Regelform
--- kommt als `json`-Parameter und geht als `jsonb` in die Spalte `rule_spec`
--- (ADR-0125); der Parametertyp ist `json`, weil d-migrate 1.3.1 jede Funktion mit `json`-
+-- noch die Spalte; beides trägt der Capture-Prozess. Die Regelform
+-- kommt als `json`-Parameter und geht als `jsonb` in die Spalte `rule_spec`;
+-- der Parametertyp ist `json`, weil d-migrate 1.3.1 jede Funktion mit `json`-
 -- oder `jsonb`-Parameter als `in:json` meldet und ihren Abbau im zweiten
 -- Rollout als `DROP FUNCTION … (…, json)` rendert — für eine Funktion mit
 -- `jsonb`-Parameter existiert diese Signatur nicht, der Abbau scheitert dort
@@ -66,7 +65,7 @@
 -- (der Spalten-Default `current_timestamp`, der Transaktionsbeginn, greift nur
 -- für einen INSERT ohne Wert): Aufrufe derselben Transaktion tragen
 -- verschiedene Zeitstempel in der Reihenfolge des Aufrufs, und die Ordnung
--- der Antrags-Queue ist die Ordnung des Aufrufs (ADR-0127).
+-- der Antrags-Queue ist die Ordnung des Aufrufs.
 -- Der Kanal-Name `cdc_administration` ist Implementer-Entscheidung, real mit
 -- `LISTEN`/pgx WaitForNotification getestet (administrationrequest_test.go).
 --
@@ -74,7 +73,7 @@
 -- eine SECURITY-DEFINER-Routine braucht: ohne ihn entscheidet der Suchpfad
 -- des Aufrufers, welche Tabelle der Rumpf trifft) — Definer-Semantik, wie sie
 -- die drei Lese-Views bereits ohne `security_invoker` tragen (nacharbeit-roles.sql).
--- Least-Privilege (LH-QA-SEC-001…003, ADR-0047): PostgreSQL grantet EXECUTE
+-- Least-Privilege (ADR-0047): PostgreSQL grantet EXECUTE
 -- auf eine neue Funktion standardmäßig an PUBLIC — die REVOKE-Zeile schließt
 -- das, bevor cdc_admin exklusiv das Recht bekommt (real geprüft: ein Login
 -- ohne cdc_admin-Mitgliedschaft scheitert mit „permission denied for

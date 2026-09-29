@@ -1,33 +1,33 @@
 -- Berichtete manuelle Nacharbeit am Schema-Rollout (ADR-0043
 -- §Re-Evaluierungs-Trigger: zulässige Ausweichform für Rollout-Schritte,
 -- die d-migrate nicht aus tools/schema/schema.yaml erzeugt): die drei
--- Least-Privilege-Rollen nach LH-QA-SEC-001…003 sind kein Tabellen- oder
+-- Least-Privilege-Rollen sind kein Tabellen- oder
 -- View-Objekt und liegen deshalb außerhalb von tools/schema/schema.yaml
--- (dessen tables:-Knoten trägt nur d-migrate-überführbare Objekte,
--- ADR-0043). CREATE ROLE kennt kein IF NOT EXISTS — der DO-Block macht
+-- (dessen tables:-Knoten trägt nur d-migrate-überführbare Objekte).
+-- CREATE ROLE kennt kein IF NOT EXISTS — der DO-Block macht
 -- den Schritt wiederholbar wie die übrigen Nacharbeit-Dateien.
 --
 -- Rollenschnitt (LH-QA-SEC-001 Least-Privilege,
--- LH-QA-SEC-002 getrennte Berechtigbarkeit): cdc_capture trägt den
--- Erfassungspfad — REPLICATION-Attribut für den Replication-Stream
--- (ADR-0008), INSERT auf transaction/change (queries.go InsertTransaction/
+-- getrennte Berechtigbarkeit): cdc_capture trägt den
+-- Erfassungspfad — REPLICATION-Attribut für den Replication-Stream,
+-- INSERT auf transaction/change (queries.go InsertTransaction/
 -- InsertChange), SELECT auf source_table/schema_version für die
 -- Bindungs-Auflösung und die Fortführung des Backfill-Run-Zustands
--- (SELECT, UPDATE auf backfill_run, SPEC-029). cdc_admin trägt die
+-- (SELECT, UPDATE auf backfill_run). cdc_admin trägt die
 -- Registrierungs-/Verwaltungspfade — DML auf source_table/schema_version
--- (LH-FA-CFG-001.a) und consumer/consumer_position (LH-FA-CON-001…006),
--- die Annahme eines Backfills (SELECT, INSERT auf backfill_run, ADR-0113
--- Festlegung 1), die Verarbeitung der Antrags-Queue (SELECT, UPDATE auf
--- administration_request, ADR-0050: offene Anträge lesen, den
+-- und consumer/consumer_position,
+-- die Annahme eines Backfills (SELECT, INSERT auf backfill_run),
+-- die Verarbeitung der Antrags-Queue (SELECT, UPDATE auf
+-- administration_request: offene Anträge lesen, den
 -- Spaltenausschluss-Stand ableiten, den Ausgang vermerken), CREATE auf der
 -- Datenbank für `CREATE PUBLICATION` selbst
 -- (tableactivation.go CREATE/ALTER PUBLICATION) — für das Hinzufügen von
 -- Tabellen zur Publication reicht das allein nicht, siehe die Grenze
 -- weiter unten. cdc_reader trägt
--- ausschließlich die Lese-Views (LH-FA-SST-002) — kein Grant auf eine
+-- ausschließlich die Lese-Views — kein Grant auf eine
 -- Basistabelle: PostgreSQL-Views laufen mit den Rechten des
 -- View-Eigentümers (Definer-Semantik ohne `security_invoker`), das
--- SELECT-Grant auf die View allein trägt den Lesezugriff (LH-QA-SEC-003).
+-- SELECT-Grant auf die View allein trägt den Lesezugriff.
 -- cdc.metrics (tools/schema/nacharbeit-observability.sql) grantet sich
 -- selbst an cdc_reader, weil die View dort erst entsteht — diese Datei
 -- läuft im schema-rollout-Lauf davor (Makefile).
@@ -58,13 +58,13 @@ $$;
 
 GRANT USAGE ON SCHEMA cdc TO cdc_capture, cdc_admin, cdc_reader;
 
--- cdc_capture: Erfassungspfad (ADR-0008, SPEC-002).
+-- cdc_capture: Erfassungspfad (ADR-0008).
 GRANT SELECT ON cdc.source_table, cdc.schema_version TO cdc_capture;
 GRANT INSERT ON cdc.transaction, cdc.change TO cdc_capture;
 
--- cdc_admin: Registrierungs- und Verwaltungspfad (LH-FA-CFG-001.a,
--- LH-FA-CON-001…006) sowie die Retention-Löschausführung
--- (RunRetentionUseCase, ADR-0014) — DELETE auf transaction/change trägt
+-- cdc_admin: Registrierungs- und Verwaltungspfad
+-- sowie die Retention-Löschausführung
+-- (RunRetentionUseCase) — DELETE auf transaction/change trägt
 -- ausschließlich die von RetentionPolicy.AllowsDeletion freigegebene Menge
 -- (DeleteChanges/DeleteOrphanedTransactions, queries.go); der
 -- Erfassungspfad bleibt cdc_capture auf INSERT beschränkt (LH-QA-SEC-002).
@@ -103,8 +103,8 @@ $$;
 -- getestet (roles_test.go), nicht angenommen.
 
 -- cdc_reader: ausschließlich die fünf Lese-Views aus
--- tools/schema/schema.yaml (retention_blockers, LH-FA-RET-005, und
--- backfill_status, SPEC-029, dabei —
+-- tools/schema/schema.yaml (retention_blockers und
+-- backfill_status dabei —
 -- dieselbe Definer-Semantik trägt den Lesezugriff auf
 -- cdc.consumer_position/cdc.consumer/cdc.transaction, ohne dass cdc_reader
 -- je einen Grant auf eine dieser Basistabellen bekommt).
@@ -137,7 +137,7 @@ GRANT SELECT, INSERT, UPDATE ON cdc.process_heartbeat TO cdc_admin;
 GRANT INSERT ON cdc.schema_version TO cdc_capture;
 GRANT SELECT, INSERT ON cdc.table_schema TO cdc_capture;
 
--- Backfill-Run-Zustand (SPEC-029, ADR-0113 Festlegung 1): cdc_admin legt die
+-- Backfill-Run-Zustand (ADR-0113 Festlegung 1): cdc_admin legt die
 -- Zeile bei der Annahme an (SELECT für die Prüfung „kein aktiver Run“, INSERT
 -- für die Anlage im Status queued); cdc_capture führt sie fort (SELECT für die
 -- WHERE-Klausel und das Lesen der queued-Runs, UPDATE für Statuswechsel,
@@ -147,10 +147,10 @@ GRANT SELECT, INSERT ON cdc.table_schema TO cdc_capture;
 GRANT SELECT, INSERT ON cdc.backfill_run TO cdc_admin;
 GRANT SELECT, UPDATE ON cdc.backfill_run TO cdc_capture;
 
--- Antrags-Queue (ADR-0050, LH-FA-ADM-001): die Administrations-Goroutine und
+-- Antrags-Queue (ADR-0050): die Administrations-Goroutine und
 -- die Annahme eines Backfills laufen über CDC_ADMIN_DSN. SELECT trägt
 -- ListPending und die Ableitung des Spaltenausschluss-Standes
--- (SelectAppliedColumnRequests, ADR-0065), UPDATE den Vermerk applied/failed
+-- (SelectAppliedColumnRequests), UPDATE den Vermerk applied/failed
 -- (UpdateAdministrationRequestApplied/-Failed, dieselbe Anweisung wie im
 -- Vermerk der Annahme). Angelegt werden Anträge ausschließlich von den
 -- SECURITY-DEFINER-Funktionen cdc.enable_table/disable_table/exclude_column/
