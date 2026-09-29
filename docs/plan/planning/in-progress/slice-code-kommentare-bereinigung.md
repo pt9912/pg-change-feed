@@ -111,7 +111,7 @@ Provenienz („`TestXyz` trägt … aus …“) ohne Kennungs-Kette bleibt.
       ändert, wird so umformuliert, dass er stabil bleibt); `make a-check`
       grün; die Zusagen der Kommentare bleiben (der Reviewer liest je Tranche
       Stichproben gegen den Code, Zahl der Stichproben im Bericht).
-- [ ] **Liefer-Punkt 2 — Test-Code (T8).** Dasselbe Nachweis-Paket mit
+- [x] **Liefer-Punkt 2 — Test-Code (T8).** Dasselbe Nachweis-Paket mit
       `TESTS=only` in fünf Teil-Commits; der Teil `test/integration` ist der
       letzte und schließt mit einem realen, grünen `make test-integration`-Lauf,
       der die Datei [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md)
