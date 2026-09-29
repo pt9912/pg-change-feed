@@ -127,6 +127,29 @@ geschrieben.
   Stand dann nicht trustbar;Slice geht nach `open` zurück (§4). *Zu belegen
   durch:* die Prüf-Ausgabe. **Ausgang:** offen bis zum Download.
 
+## Suchlauf (AGENTS §3.13)
+
+Bewegte Eigenschaft: der adoptierte Baseline-Stand (v6.9.0 → v6.13.0).
+Gemessen an beiden Ständen, Plan-Datei ausgeschlossen:
+
+```suchlauf
+ad530688 16 -n 'v6\.9\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 4 -n 'v6\.9\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+ad530688 8 -nE '\.harness/baseline/v6\.9\.0/' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 0 -nE '\.harness/baseline/v6\.9\.0/' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+ad530688 1 -n 'Kurs-Welle 137' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 0 -n 'Kurs-Welle 137' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+```
+
+Die vier verbleibenden `v6.9.0`-Treffer des Arbeitsbaums sind
+Vorgangs-Angaben der `slice-105`-Records („Baseline … auf `v6.9.0`
+gehoben"; der Dateiname `slice-105-baseline-v6.9.0-materialisieren.md`) und
+eine Vergleichsnennung im Register `BEO-PGC/kommentar-herkunft-als-kette`.
+Keine davon trägt das Pin-Muster (`versions.pin-pattern` trifft keine der
+vier; `make docs-check` meldet 0 Befunde); ihre Änderung würde die
+Record-Aussage selbst ändern (ADR-0073 §Entscheidung 1, Record-Grenze) —
+sie bleiben, vom Reviewer zu bestätigen.
+
 ## 7. Closure-Notiz
 
 *(wird bei der Closure durch den Planner gefüllt)*
