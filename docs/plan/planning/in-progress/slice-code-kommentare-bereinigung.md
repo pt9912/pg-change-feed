@@ -122,7 +122,7 @@ Provenienz („`TestXyz` trägt … aus …“) ohne Kennungs-Kette bleibt.
       0 oder der Restmenge; der `make test-integration`-Lauf mit seiner
       gedruckten Zeile; `git diff` der Erzeugnis-Datei zeigt nur verschobene
       Lokatoren.
-- [ ] **Liefer-Punkt 3 — Restmenge und Träger.** Jeder nach T8 verbleibende
+- [x] **Liefer-Punkt 3 — Restmenge und Träger.** Jeder nach T8 verbleibende
       Kandidat steht im Bericht und in §7 mit `Datei:Zeile`, Klasse (Zusage ·
       Kopplung · Abgrenzung · Rang-Zeiger · Grenze) und Grund; die Gesamtzahl
       des Werkzeugs ist 0 oder gleich der Restmenge; ein Kandidat mit zwei
@@ -132,28 +132,28 @@ Provenienz („`TestXyz` trägt … aus …“) ohne Kennungs-Kette bleibt.
       die die Bewegung beschreiben (§3-Suchlauf), sind nachgezogen oder mit
       Adresse gemeldet. *Zu belegen durch:* der Lauf des Werkzeugs, die Liste im
       Bericht und das Suchlauf-Feld in §3.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — je einer nach T7 und nach T8 (zwei
       Reports; ein Report über den ganzen Diff trüge ihn nicht, §4);
       Rollenwechsel nach Schritt 8 des Minimal Agent Workflow
       ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=<Plan-Datei>` läuft nach jeder Fixrunde
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update entfällt: nur Kommentare ändern sich; das Benutzerhandbuch
+- [x] Doku-Update entfällt: nur Kommentare ändern sich; das Benutzerhandbuch
       bleibt unberührt (keine Betreiber-Oberfläche).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — eine weitere
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — eine weitere
       `evidence/`-Datei in `BEO-PGC/kommentar-herkunft-als-kette` (angelegt von
       `slice-code-kommentare-kennungen`) oder ein neuer Eintrag; kein Anfall ist
       ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Slice-Closure selbst (der Slice hat keine Welle; das Ereignis kann
@@ -337,23 +337,106 @@ geschrieben; der Planner legt in der Closure den Folge-Slice
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag:** *(zu tragen bei Closure — geschärfte Regel · neuer
-  Sensor · benannte Spec-Lücke; erwartet: die Antwort auf die Trigger-Frage der
-  Gate-Aufnahme in `slice-code-kommentare-kennungen` §1 und, falls Fälle mit zwei
-  Ankern auftraten, die Konkretisierung von
-  [`AGENTS.md`](../../../../AGENTS.md) §3.7; ohne Eintrag kein `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(zu tragen bei Closure)*
-- **Restmenge:** *(zu tragen bei Closure — `Datei:Zeile`, Klasse, Grund je
-  Kandidat, oder „0“)*
-- **Folge-Slices:** `slice-kommentar-kennungen-skripte` (Kommentare außerhalb von
-  Go — Skripte, `Makefile`, `harness/mk`, `.sql`, `.yml`, Dockerfiles): der
-  Planner legt die Datei bei dieser Closure in `open/` an, damit der Punkt eine
-  Adresse hat, die ihn annimmt.
-- **Risiken aus §6:** *(je ein Ausgang, zu tragen bei Closure)*
-- **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure selbst trägt
-  die drei Paarungen (Anker · Folge-Slice · Register), nach dem `git mv` nach
+- **Was hat funktioniert:** die Tranchen-Form — acht Tranchen, je Commit mit
+  Zahlen vor/nach (`make kommentar-kennungen COUNT=1`, Ursprung „gemessen“),
+  Diff-Nachweis „nur Kommentarzeilen“ über den ganzen Range (0
+  Nicht-Kommentar-Zeilen in 2256 Inhalts-Zeilen) und der Sensors-Ring `make
+  test`/`make fmt-check`/`make a-check` je Tranche; 597 → 14. Die Regeln je
+  Kandidat (§1) trugen in den sauberen Blöcken — „Regel bleibt, ein Anker
+  bleibt" ist das Muster, das die Review-Stichproben (47 Blöcke/Stellen)
+  bestätigten. Die beiden plan-vorgesehenen Übergaben landeten: `rejectionMessage`
+  (T5) in der plan-gemäßen Zuordnung — ihre Unschärfe flog im Review auf und
+  wurde behoben —, `confirmIdle`/`TestRunNoConfirmationInsideOpenTransaction`
+  (T4/T8) mit Regel und `ADR-0120` als einen Anker. Das §3.13-Suchlauf-Feld
+  fing beide Träger (Erzeugnis `docs/user/e2e-abdeckung.md`,
+  `harness/sensors/coverage-gate.md`), und `make suchlauf-nachmessen` hielt
+  8/8 Zeilen über beide Fixrunden.
+- **Was ging anders als geplant:** (1) Die Plan-Zahlen waren am Start ersetzt —
+  Start-Messung `e63a1afd`: 383 Nicht-Test + 188 Test (Zustandsgröße,
+  [`AGENTS.md`](../../../../AGENTS.md) §3.12); die Tranchen-Tabelle trägt die
+  Start-Stände. (2) Das Kürzen selbst wurde zur Fundgrube: die neue Klasse
+  „Kürzung lässt hängende Herkunfts-Referenz zurück“ (1 HIGH, 3 MEDIUM, 2 LOW
+  über B1+B2, Fixrunden `89d347db`/`933ea5c0`) traf Teileretzungen — der Anker
+  geht, das Teil-Fragment bleibt hängen. Kein Werkzeug zählt hängende Verweise;
+  gefunden hat der Reviewer durch Lesen. (3) T8 endete bei 14 statt 0 — eine
+  strukturelle Restmenge (Erzeugnis-Eingabe), plan-gemäß („0 oder begründete,
+  benannte Restmenge“), aber mit der Konsequenz der §3.7-Konkretisierung
+  (Steering-Loop-Eintrag).
+- **Steering-Loop-Eintrag:** (a) *Geschärfte Regel* —
+  [`AGENTS.md`](../../../../AGENTS.md) §3.7 trägt die Ausnahme „Erzeugnis-Eingabe
+  ist Abdeckung, nicht Herkunft“: ein Generator, der die Kennungen eines Blocks
+  maschinell als Eingabe liest, braucht die Menge; der Block trägt sie samt
+  Grenz-Vermerk, das Kürzen auf einen Anker wäre das Löschen von
+  Erzeugnis-Zeilen; der Block bleibt Kandidat des Werkzeugs (keine
+  Ausnahmeliste) — liegt in `AGENTS.md` §3.7 · seit
+  slice-code-kommentare-bereinigung. Auslöser:
+  `BEO-PGC/kommentar-herkunft-als-kette` (die offene Frage „Grenzfälle mit zwei
+  Ankern“, bejaht durch die 14 `TestE2E*`-Blöcke; B2-Report F-5). (b)
+  *Gate-Aufnahme-Frage* (`slice-code-kommentare-kennungen` §1) — entschieden:
+  **kein Gate**. Die Trigger-Bedingung (Kandidatenzahl 0) trat nicht ein; die
+  Restmenge 14 ist strukturell, ein Gate stünde ohne Ausnahmeliste dauerhaft
+  rot; und die vier realen Lese-Funde der Fixrunden (hängende Referenzen,
+  ungenaue Umformung) trug **keiner** der Werkzeug-Läufe — ein Gate auf der
+  Werkzeug-Zahl wäre falsche Sicherheit ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
+  benannte Grenze: das Werkzeug prüft die Form, nicht die Wahrheit).
+  Neubewertung, wenn sich die Restmenge auflöst oder ein zweiter maschineller
+  Leser hinzutritt. (c) *Benannte Spec-Lücke* — hängende Referenzen und ungenau
+  umgeformte Wiedergaben sind Lese-Handlung des Reviewers, keine Zählung;
+  als Findings-Klassen ins Register eingeschrieben.
+- **Beobachtungs-Register (`../observations/`):**
+  `evidence/slice-code-kommentare-bereinigung.md` in
+  `BEO-PGC/kommentar-herkunft-als-kette` ergänzt — Zähler steht damit bei 3×;
+  die offene Frage des Eintrags ist mit der §3.7-Konkretisierung beantwortet.
+- **Restmenge:** 14 (`make kommentar-kennungen COUNT=1` = 14, gemessen am
+  Arbeitsbaum; 1× `backfill_e2e_test.go`, 13× `integration_test.go`); alle
+  Godocs von `func TestE2E*`, alle Klasse **Grenze**, alle mit demselben Grund:
+  die LH- und SPEC-Kennungs-Menge des Blocks ist Erzeugnis-Eingabe der
+  E2E-Abdeckungstabelle (`abdeckungsAdressiert` liest sie je Testzeile); Kürzen
+  auf einen Anker ließe Abdeckungszeilen entfallen — der Schluss-Absatz
+  „Kennungs-Menge:" trägt die Grenze am Block (§3.7-Ausnahme, s. o.).
+
+  | # | `Datei:Zeile` | Klasse | Grund |
+  |---|---|---|---|
+  | 1 | `test/integration/backfill_e2e_test.go:258-273` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 2 | `test/integration/integration_test.go:185-204` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 3 | `test/integration/integration_test.go:308-316` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 4 | `test/integration/integration_test.go:428-443` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 5 | `test/integration/integration_test.go:504-528` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 6 | `test/integration/integration_test.go:639-648` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 7 | `test/integration/integration_test.go:671-680` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 8 | `test/integration/integration_test.go:746-760` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 9 | `test/integration/integration_test.go:819-829` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 10 | `test/integration/integration_test.go:898-915` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 11 | `test/integration/integration_test.go:962-984` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 12 | `test/integration/integration_test.go:1034-1048` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 13 | `test/integration/integration_test.go:1107-1124` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+  | 14 | `test/integration/integration_test.go:1182-1217` | Grenze | Erzeugnis-Eingabe der E2E-Abdeckungstabelle |
+
+- **Folge-Slices:** `slice-kommentar-kennungen-skripte` (Kommentare außerhalb
+  von Go — Blockgrenze und Messung, dann Bereinigung): Datei in `open/`
+  angelegt.
+- **Risiken aus §6:** (1) Zusagen beim Kürzen verloren — **eingetreten** (1×,
+  F-4 B1: ungenau umgeformte Spec-Wiedergabe, behoben `89d347db`; 47
+  Stichproben, übrige Kürzungen sauber). (2) In-place-Textwerkzeug —
+  **entfallen** (Diff über Edit-Werkzeug; Hygiene-Vermerke von Reviews und
+  Verifikation: kein in-place-Aufruf, keine Umleitung). (3) Diff ändert Code —
+  **entfallen** (mechanisch: 0 Nicht-Kommentar-Zeilen im ganzen Range). (4)
+  gofmt formt um — **entfallen** (`make fmt-check` Exit 0 nach jeder Tranche,
+  295 Dateien). (5) Restmenge wird zur Ausnahmeliste — **entfallen** (Werkzeug
+  trägt keinen Marker und keine Liste; 14 = Menge, Grenz-Vermerk trägt die
+  Begründung am Block, §3.7-Ausnahme ist Regel, keine Ausnahme). (6) Chronik
+  statt Kette — **entfallen** (Suche in +Zeilen: 1 Treffer =
+  Zustandsbeschreibung). (7) `make test-integration` rot/flackert —
+  **entfallen** (grüner Lauf mit gedruckter Zeile, Wiederholung nach Fixrunde
+  grün, Erzeugnis unverändert). (8) Zahlen bewegen sich — **eingetreten,
+  ohne Schaden** (Plan-Stand ersetzt durch Start-Messung; jede Zahl trägt
+  Befehl und Stand). (9) Größe trägt keinen Review — **entfallen** (zwei
+  Reviews B1/B2, Fixrunden abgeschlossen, kein offenes HIGH/MEDIUM).
+- **Drei Paarungen:** Anker — die §3.7-Ausnahme steht in
+  [`AGENTS.md`](../../../../AGENTS.md) §3.7 mit `seit`-Anker; Folge-Slice —
+  `slice-kommentar-kennungen-skripte` ist Datei in `open/`; Register —
+  `BEO-PGC/kommentar-herkunft-als-kette` mit nicht leerem `evidence/`. Getragen
+  von dieser Slice-Closure (keine Welle); Haken in §2 nach dem `git mv` nach
   `done/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
