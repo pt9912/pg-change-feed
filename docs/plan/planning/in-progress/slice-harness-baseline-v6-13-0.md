@@ -147,7 +147,9 @@ gehoben"; der Dateiname `slice-105-baseline-v6.9.0-materialisieren.md`) und
 eine Vergleichsnennung im Register `BEO-PGC/kommentar-herkunft-als-kette`.
 Keine davon trägt das Pin-Muster (`versions.pin-pattern` trifft keine der
 vier; `make docs-check` meldet 0 Befunde); ihre Änderung würde die
-Record-Aussage selbst ändern (ADR-0073 §Entscheidung 1, Record-Grenze) —
+Record-Aussage selbst ändern
+([`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
+§Entscheidung 1, Record-Grenze) —
 sie bleiben, vom Reviewer zu bestätigen.
 
 ## 7. Closure-Notiz
