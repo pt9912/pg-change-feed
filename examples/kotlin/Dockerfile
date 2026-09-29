@@ -1,8 +1,7 @@
 # examples/kotlin/Dockerfile — Werkzeugketten-Image der Kotlin-Sprach-Wurzel
-# (ADR-0087 Festlegung 3, ADR-0090 Festlegung 1/5). Bau-Kontext ist
+# (ADR-0087 Festlegung 3). Bau-Kontext ist
 # examples/kotlin/ selbst — NICHT die Repo-Wurzel; die Wurzel-`Dockerfile`
-# und `.dockerignore` bleiben davon unberührt (ADR-0087 Festlegung 3,
-# Kontext-Bindung 4).
+# und `.dockerignore` bleiben davon unberührt (Kontext-Bindung 4).
 #
 # Das gRPC-Programm (grpc-client, ADR-0090 Festlegung 2, slice-103 — die in
 # slice-102 am C#-Bau gemessene Form übertragen) liest seine beiden `.proto`-
@@ -25,18 +24,17 @@
 
 # Stufe `build`: `./gradlew test`/`installDist` im gepinnten JDK-Image, für
 # **alle fünf** Module dieser Sprach-Wurzel (ADR-0090 Festlegung 1/5 — ein
-# `make`-Ziel je Sprache trägt den wachsenden Umfang, hier fünf Programme
-# seit ADR-0100). Der Paket-Bezug (Maven Central, Gradle Plugin
+# `make`-Ziel je Sprache trägt den wachsenden Umfang). Der Paket-Bezug (Maven Central, Gradle Plugin
 # Portal, der Gradle-Distributions-Download selbst) braucht Netz — deshalb
 # bleibt `make examples-kotlin` ein Werkzeug, kein Gate (ADR-0090
 # Festlegung 5). Die Tests selbst sind reine Funktionen ohne externen Dienst
-# (netzlos prüfbar im Sinn von ADR-0087 Festlegung 4); ein `RUN ./gradlew
+# (netzlos prüfbar); ein `RUN ./gradlew
 # test`, das fehlschlägt, bricht den Bau mit Exit != 0 ab. Der
 # Gradle-Wrapper verifiziert die Gradle-Distribution selbst gegen
 # `distributionSha256Sum` in `gradle-wrapper.properties`. Für grpc-client
 # erzeugen `protoc-gen-grpc-java`/`protoc-gen-grpc-kotlin` den Stub aus der
 # über den Zusatzkontext gelesenen `.proto` während dieses Builds (ADR-0090
-# Festlegung 2/3, slice-103) — der Stub selbst verlässt diese Stufe nie.
+# Festlegung 2/3) — der Stub selbst verlässt diese Stufe nie.
 FROM eclipse-temurin:21-jdk@sha256:085eb93e049c7397f725bd8be31c4fd52ba4777a75168e851428508234aa224e AS build
 WORKDIR /src
 

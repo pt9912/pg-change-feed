@@ -307,15 +307,15 @@ func TestRunModes(t *testing.T) {
 
 func TestRunLineForms(t *testing.T) {
 	writeTree(t, map[string]string{
-		"a/skript.sh":    "# trägt die Ordnung (ADR-0001, ADR-0002)\nx=1\n",
-		"a/schema.sql":   "-- trägt die Spalten (SPEC-002, SPEC-003)\nCREATE TABLE t ();\n",
-		"a/pipeline.yml": "# trägt die Stufen (ARC-002, ARC-003)\nkey: value\n",
-		"Makefile":       "# trägt die Ziele (ADR-0001, ADR-0002)\nall:\n",
-		"Dockerfile":     "# trägt die Stufen (ARC-002, ARC-003)\nFROM scratch\n",
-		"a/ok.sh":        "# trägt die Ordnung (ADR-0001)\nx=1\n",
+		"a/skript.sh":       "# trägt die Ordnung (ADR-0001, ADR-0002)\nx=1\n",
+		"a/schema.sql":      "-- trägt die Spalten (SPEC-002, SPEC-003)\nCREATE TABLE t ();\n",
+		"a/pipeline.yml":    "# trägt die Stufen (ARC-002, ARC-003)\nkey: value\n",
+		"Makefile":          "# trägt die Ziele (ADR-0001, ADR-0002)\nall:\n",
+		"Dockerfile":        "# trägt die Stufen (ARC-002, ARC-003)\nFROM scratch\n",
+		"a/ok.sh":           "# trägt die Ordnung (ADR-0001)\nx=1\n",
 		"a/nachgestellt.sh": "x=1 # ADR-0001, ADR-0002\n",
-		"a/notgo.txt":    "# ADR-0001, ADR-0002\n",
-		"gen/x.sh":       "# ADR-0001, ADR-0002\n",
+		"a/notgo.txt":       "# ADR-0001, ADR-0002\n",
+		"gen/x.sh":          "# ADR-0001, ADR-0002\n",
 	})
 	cases := []struct {
 		name     string
@@ -409,8 +409,8 @@ func TestRunInputErrors(t *testing.T) {
 // TestLineCommentMarker bindet die Form-Auswahl an Name und Endung.
 func TestLineCommentMarker(t *testing.T) {
 	cases := []struct {
-		name   string
-		want   string
+		name string
+		want string
 	}{
 		{"a/skript.sh", "#"},
 		{"a/bibliothek.mk", "#"},

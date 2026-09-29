@@ -30,7 +30,7 @@ COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
 # --- proto: Docker-only Toolchain-Stufe der Protobuf-/gRPC-Codegenerierung
-# (`ADR-0060` Folgepflicht, `LH-FA-SST-008`). `protoc` und die beiden
+# (`ADR-0060` Folgepflicht). `protoc` und die beiden
 # `protoc-gen-*`-Plugins laufen ausschliesslich hier (`AGENTS.md` §3.1: kein
 # Host-`protoc`/`buf`); die Plugin-Versionen sind gepinnt, die Basis ist der
 # bereits digest-gepinnte Toolchain-Stand aus `deps`. Diese Stufe traegt nur
@@ -68,16 +68,12 @@ RUN mkdir -p /out && \
 ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
 
 # --- coverage: Go-Test-Coverage ueber die netzlos pruefbare Flaeche des
-# Baums und Gate-Skript gegen COVERAGE_THRESHOLD (ADR-0071, ADR-0054;
+# Baums und Gate-Skript gegen COVERAGE_THRESHOLD (ADR-0071;
 # Kalibrierungs-Bindung harness/README.md §Sensors). Die Flaeche ist
 # internal/...+cmd/...+gen/... ohne die Pakete, deren Testlauf einen externen
 # Dienst voraussetzt — der Filter unten nennt die vier namentlich, die
 # tragende Regel ist die Eigenschaft, nicht die Liste; die Paketliste selbst
-# kommt aus `go list` und zieht neue Pakete mit. `gen/...` ist seit
-# `slice-097` Teil der Liste: der Umzug der erzeugten Vertragsflaeche
-# (`ADR-0076`) bewegt den Traeger, nicht den Gegenstand — die Eigenschaft
-# (netzlos pruefbar, `ADR-0071` Punkt 1) bleibt erfuellt, siehe den
-# Architect-Verdikt zum Coverage-Messgegenstand von slice-097. `-coverpkg` misst ueber
+# kommt aus `go list` und zieht neue Pakete mit. `-coverpkg` misst ueber
 # die Paketgrenzen hinweg, sonst zaehlt nur paket-lokale Abdeckung.
 # `test/integration/` bleibt ausgeschlossen (eigene Black-Box-Paketwurzel
 # gegen einen laufenden Compose-Container, kein Unit-Coverage-Kandidat).
@@ -109,7 +105,7 @@ RUN mkdir -p /out && \
     bash tools/coverage-gate.sh /out/coverage-func.txt "$COVERAGE_THRESHOLD"
 
 # --- build: Kompilierung getrennt vom Cache-sensiblen Layer; CGO aus
-# (ADR-0042: die Struktur-Regeln der abgeloesten Kette ADR-0038/0039 bleiben fortgeltend).
+# (ADR-0042: die Struktur-Regeln bleiben fortgeltend).
 # TARGETOS/TARGETARCH werden von buildx pro `--platform`-Durchlauf gesetzt;
 # das reine Go-Cross-Compiling (CGO_ENABLED=0) braucht dafuer keine
 # C-Toolchain pro Zielarchitektur und laeuft nativ auf dem Bau-Host (Stufe

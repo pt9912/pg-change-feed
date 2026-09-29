@@ -1,9 +1,9 @@
 # examples/Dockerfile — Bau-/Startform der vier Go-Beispiele (ADR-0098
-# Festlegung 1, Supersedes ADR-0076 Festlegung 1/Startform-Bullet). Bau-Kontext
+# Festlegung 1). Bau-Kontext
 # ist die Repo-Wurzel (`docker build -f examples/Dockerfile .`), NICHT
 # `examples/` selbst — die vier Go-Programme sind Wurzelmodul-Code
 # (`go.mod`/`go.sum`/`gen/`) und liegen außerhalb eines Sprach-Wurzel-
-# Verzeichnisses, anders als bei C#/Kotlin (ADR-0087 Festlegung 3).
+# Verzeichnisses, anders als bei C#/Kotlin.
 #
 # Der Bau-Kontext ist über die dateispezifische Ignore-Datei
 # `examples/Dockerfile.dockerignore` isoliert (Docker-Mechanismus:

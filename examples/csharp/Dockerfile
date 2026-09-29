@@ -1,8 +1,7 @@
 # examples/csharp/Dockerfile — Werkzeugketten-Image der C#-Sprach-Wurzel
-# (ADR-0087 Festlegung 3, ADR-0090 Festlegung 1/5). Bau-Kontext ist
+# (ADR-0087 Festlegung 3). Bau-Kontext ist
 # examples/csharp/ selbst — NICHT die Repo-Wurzel; die Wurzel-`Dockerfile`
-# und `.dockerignore` bleiben davon unberührt (ADR-0087 Festlegung 3,
-# Kontext-Bindung 4).
+# und `.dockerignore` bleiben davon unberührt (Kontext-Bindung 4).
 #
 # Das gRPC-Programm (grpc-client, ADR-0090 Festlegung 2, slice-102) liest die
 # `.proto` NICHT aus diesem Kontext — sie liegt außerhalb davon, unter
@@ -24,14 +23,13 @@
 
 # Stufe `build`: `dotnet restore`/`build`/`test` im gepinnten SDK-Image, für
 # **alle fünf** Programme dieser Sprach-Wurzel (ADR-0090 Festlegung 1/5 — ein
-# `make`-Ziel je Sprache trägt den wachsenden Umfang, hier fünf Programme
-# seit ADR-0100). Der Paket-Bezug (NuGet) braucht Netz —
+# `make`-Ziel je Sprache trägt den wachsenden Umfang). Der Paket-Bezug (NuGet) braucht Netz —
 # deshalb bleibt `make examples-csharp` ein Werkzeug, kein Gate (ADR-0090
 # Festlegung 5). Die Tests selbst sind reine Funktionen ohne externen Dienst
-# (netzlos prüfbar im Sinn von ADR-0087 Festlegung 4); ein `RUN dotnet test`,
+# (netzlos prüfbar); ein `RUN dotnet test`,
 # das fehlschlägt, bricht den Bau mit Exit != 0 ab. Für grpc-client erzeugt
 # `Grpc.Tools` den Stub aus der über den Zusatzkontext gelesenen `.proto`
-# während dieses Builds (ADR-0090 Festlegung 2/3, slice-102) — der Stub
+# während dieses Builds (ADR-0090 Festlegung 2/3) — der Stub
 # selbst verlässt diese Stufe nie.
 FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:60a2b2230a0d052bc54c0d453e97e331219ed503c5411470ee226859420e693c AS build
 WORKDIR /src
