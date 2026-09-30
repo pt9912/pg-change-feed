@@ -1148,7 +1148,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			newAck := func(conn *pgconn.PgConn) (outbound.ReplicationAckPort, error) {
 				return postgresack.New(conn, postgresack.WithLog(log))
 			}
-			return runStreamCycle(attemptCtx, streamRetryMaxDelay, open, newAck, &cycleAckPort, captureService)
+			return runStreamCycle(attemptCtx, streamSetupTimeout, open, newAck, &cycleAckPort, captureService)
 		}, sleepStreamWait)
 	})
 	stopHeartbeat()
@@ -1841,6 +1841,9 @@ const (
 	// `START_REPLICATION`, ab der ein Zyklus die Episode zurücksetzt; die
 	// Dauer des Verbindungsaufbaus zählt nie dazu (`ADR-0136`).
 	streamRetryStableAfter = streamRetryMaxDelay
+	// streamSetupTimeout ist die Frist des Verbindungsaufbaus je Zyklus, die
+	// `Run` an `runStreamCycle` übergibt (`ADR-0136`).
+	streamSetupTimeout = 30 * time.Second
 )
 
 // streamCycleAck reicht die Bestätigung an den ACK-Adapter des laufenden

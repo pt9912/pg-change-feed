@@ -415,6 +415,38 @@ func TestRunSourceTextPassesTheStreamingSignalToTheStream(t *testing.T) {
 	}
 }
 
+// TestRunSourceTextPassesTheSetupTimeoutToTheStreamCycle bindet die Aufbau-Frist
+// in zwei Teilen: der Wert der Größe `streamSetupTimeout` ist 30 s, und `Run`
+// übergibt genau diese Größe als zweites Argument von `runStreamCycle`. Grenze:
+// der zweite Teil liest die Gestalt des Quelltexts, kein Lauf. Rot färbende
+// Mutationen: den Wert der Konstante ändern (Wert-Teil); im Aufruf in `Run` ein
+// anderes Argument einsetzen, etwa `10*streamRetryWindow` (Verwendungs-Teil).
+func TestRunSourceTextPassesTheSetupTimeoutToTheStreamCycle(t *testing.T) {
+	if streamSetupTimeout != 30*time.Second {
+		t.Fatalf("streamSetupTimeout = %v, wollen 30s", streamSetupTimeout)
+	}
+	run := runFunction(t)
+	calls := 0
+	var arg ast.Expr
+	ast.Inspect(run.Body, func(node ast.Node) bool {
+		call, ok := node.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		if name, ok := call.Fun.(*ast.Ident); ok && name.Name == "runStreamCycle" && len(call.Args) > 1 {
+			calls++
+			arg = call.Args[1]
+		}
+		return true
+	})
+	if calls != 1 {
+		t.Fatalf("Run ruft runStreamCycle %d-mal auf, wollen 1", calls)
+	}
+	if ident, ok := arg.(*ast.Ident); !ok || ident.Name != "streamSetupTimeout" {
+		t.Fatalf("zweites Argument von runStreamCycle in Run ist nicht streamSetupTimeout")
+	}
+}
+
 // runFunction liest die Funktion `Run` aus `wiring.go` (Quelltext-Gestalt, kein
 // Lauf).
 func runFunction(t *testing.T) *ast.FuncDecl {

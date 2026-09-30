@@ -56,8 +56,28 @@ N-5) und unabhängig vom Verifier (Verifikations-Report §4).
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/bootstrap/wiring.go` (Aufruf von `runStreamCycle` in `Run`) | update | Wert als benannte Größe, falls der Test sie braucht. |
-| `internal/bootstrap/replication_stream_retry_internal_test.go` oder `administration_startorder_internal_test.go` | update | Bindung an den Aufrufwert; das Muster des Quelltext-Tests zur Weitergabe von `OnStreaming` steht dort. |
+| `internal/bootstrap/wiring.go` (Aufruf von `runStreamCycle` in `Run`) | update | Wert als benannte Größe `streamSetupTimeout` (30 s, Wert unverändert); der Aufruf in `Run` übergibt sie statt `streamRetryMaxDelay`. |
+| `internal/bootstrap/administration_startorder_internal_test.go` | update | `TestRunSourceTextPassesTheSetupTimeoutToTheStreamCycle` bindet den Wert der Größe (30 s) und ihre Verwendung als zweites Argument von `runStreamCycle` in `Run`; Muster: der Quelltext-Test zur Weitergabe von `OnStreaming`. |
+
+**Suchlauf (`AGENTS.md` §3.13).** Bewegte Eigenschaft: der Wert, den `Run` als
+Aufbau-Frist übergibt (vorher `streamRetryMaxDelay`, jetzt `streamSetupTimeout`).
+Parent `b56b0e87`.
+
+```suchlauf
+b56b0e87 4 -n streamRetryMaxDelay -- internal
+diff 3 -n streamRetryMaxDelay -- internal
+b56b0e87 0 -n streamSetupTimeout -- internal
+diff 8 -n streamSetupTimeout -- internal
+b56b0e87 3 -n streamRetryMaxDelay -- docs spec harness :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 3 -n streamRetryMaxDelay -- docs spec harness :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+```
+
+Befund: der Parent führte vier Stellen mit `streamRetryMaxDelay` in `internal`
+(Definition, Backoff-Deckel, `streamRetryStableAfter`, der Aufruf in `Run`); der
+Diff drei, die Aufbau-Frist trägt nun die eigene Größe. Die drei Treffer in der
+Doku sind `ADR-0136` (`Accepted`, unberührbar) und beschreiben den Wert 30 s, der
+gleich bleibt. Nichtgefunden: kein weiterer Aufrufer von `runStreamCycle` mit
+einem Produktionswert außerhalb von `Run`.
 
 ## 4. Trigger
 
