@@ -198,3 +198,56 @@ F-1 bis F-7 sind behoben (F-1 mit N-1, F-7 ungetestet); F-8 und F-9 bleiben INFO
 **Merge-blockierend: ja** — N-1 (MEDIUM: das Gesamtfenster ist bei hängendem Verbindungsaufbau umgehbar, und eine ungesetzte Schwelle trägt es) und N-2 (MEDIUM: Folge-ADR des Architects für Stabilitäts-Messgröße und SQLSTATE-Auswahl). N-3 und N-4 (LOW) blockieren nicht. Die DoD-Checkbox „Review durchgeführt" bleibt offen.
 
 Geprüft, ohne Befund (Fixrunde): `docs/user/benutzerhandbuch.md` (Version 1.82, Historie), `docs/plan/planning/in-progress/slice-capture-transient-wiederholung.md` (Suchlauf, Träger-Tabelle), `internal/adapters/driving/replication/receive/walretention.go`, `internal/bootstrap/stream_retry_internal_test.go` (Bindung an die ADR-Werte, Mutationen `n1`–`n5`).
+
+---
+
+## Fixrunde 2 — Re-Review 2026-09-30
+
+**Gegenstand:** `git diff 8ad34a01 HEAD` (Commits `92e8aed8`, `5a4556b8`, `a8d6f579`, `71911290`), gegen `ADR-0136` §Folgepflichten und N-1..N-4 der Fixrunde 1.
+**Modell:** Sonnet 5.5
+
+Nachgefahren, nicht übernommen: `make suchlauf-nachmessen PLAN=…` Exit 0 (acht Zeilen stimmen: 156 / 185 / 2 / 1 / 55 / 61 / 99 / 112); `make kommentar-kennungen DIFF=50d9ecc4~1` Exit 0, keine Kandidaten (Probe, nicht Beleg); `make fmt-check` Exit 0 (300 Dateien); `go test -race` über `internal/bootstrap` und `internal/adapters/driving/replication/receive` grün auf einer Kopie von `HEAD`. Mutationen auf Kopien im Scratchpad (`git archive HEAD`, `sed … > Kopie`, kein `sed -i`), Race-Image mit `--network none`; der Arbeitsbaum blieb unberührt.
+
+### Status je Folgepflicht und Finding
+
+| Punkt | Status | Beleg |
+|---|---|---|
+| N-1 Stabilitätsmaß ab Streaming-Signal | behoben | `Stream.Run` ruft `onStreaming` erst nach erfolgreicher Rückkehr von `StartReplication`; bei Startfehler `return serverFault(…)` davor, nie ein Signal (`TestRunSignalsNothingWhenStartReplicationFails`). `runStreamWithRetry` setzt `streamStart`/`streamed` je Schleifendurchlauf neu und prüft `streamed && now.Sub(streamStart) >= streamRetryStableAfter`. Mutation `m1` (Bedingung `streamed` neutralisiert) rot in `…AufbauGrenzeGesamtfenster`; `m2` (Schwelle 60 s) rot in `…Stabilitaetsschwelle` und `…AufbauZaehltNichtZurStabilitaet`; `m7` (Signalaufruf in `Run` gelöscht) rot in `TestRunSignalsStreamingAfterStartReplication`; `m9` (`OnStreaming: streaming` aus der Verdrahtung gelöscht) rot im Quelltext-Test `TestRunSourceTextPassesTheStreamingSignalToTheStream`. |
+| Aufbau-Frist nur am Aufbau | behoben, Lücke LOW (N-5) | `runStreamCycle`: `open` unter `WithTimeout(ctx, setupTimeout)`, `cancelSetup()` direkt nach `open`, `stream.Run(ctx)` am Prozess-Kontext. Mutation `m6` (`Run(setupCtx)`) rot in `…SetupDeadlineBindsOnlyTheSetup`. Fristablauf gegen den Treiber: `TestNewStreamSetupDeadlineEndsWithReplicationError` und `…AgainstSilentListener` (Loopback-Listener, netzlos) liefern `ErrReplication` ohne `ErrRejected`/`ErrPermission`. |
+| 25006 und SQLSTATE-Tabelle | behoben | `serverFault` nimmt `code == "25006"` auf; Tabelle deckt 08, 40, 53, 55, 57, 58, 25006, 25P02, XX000, 42704, 3D000, 0A000, 42501, 28000, 28P01, umwickelten `PgError` und Fehler ohne SQLSTATE. Mutationen `m3` (25006 entfernt), `m4` (Präfix 40 entfernt), `m4b` (Präfix 58 entfernt): alle rot in `TestServerFaultKlassifiziertNachSQLState`. Damit ist N-3 (40/58 ungebunden) geschlossen. |
+| Close-Pfade (N-4a) | behoben | `runStreamCycle` ist herausgelöst; `TestRunStreamCycleClosesTheStreamOnEveryPathBeforeRun` bindet `Close` = 1 und `Run` = 0 an ACK-Adapter, `BindCapture`, `BindIdleConfirmation`; `TestStreamCloseClosesTheSession` trägt `Stream.Close`. Mutation `m5` (`Close` im `BindIdleConfirmation`-Pfad entfernt) rot. |
+| INFO aus dem Signal (N-4b) | behoben | Das INFO steht im `streaming`-Rückruf, nicht am Zyklus-Ende; `TestRunStreamWithRetryOhneSignalKeinFortgesetzt` bindet „kein Signal, kein INFO", `…Sichtbarkeit` die drei erwarteten Einträge samt `versuche`. |
+| `SPEC-008` (N-3b) | behoben | Zeile `transient` nennt Fehler ohne SQLSTATE, Klassen 08/40/53/55/57/58, Code 25006 und führt `receive.ErrRejected` unter „nicht wiederholt"; `spec/architecture.md` unberührt. |
+| Handbuch 1.83 gegen Code | behoben | Kopf 1.83, Zeile 1.83 hinter 1.82. „Gestreamt" = Bestätigung von `START_REPLICATION`; Aufbau-Frist 30 s (`streamRetryMaxDelay` im Aufruf in `Run`); INFO sobald Streaming erreicht; Wiederholt: ohne SQLSTATE, 08/40/53/55/57/58, 25006; nicht wiederholt: 42501/Klasse 28 und jede andere Abweisung, Ausgang 1. Jede Aussage stimmt mit `serverFault`, `retryableStreamError` und `runStreamWithRetry` überein. |
+| `compose.yaml`-/Run-Kommentare (Zusagen-Klausel) | behoben | `compose.yaml` nennt „Server-Abweisungen außerhalb der SQLSTATE-Auswahl" als ohne Wiederholung endend — der Code trägt das (`ErrRejected`). Kommentare an `Run`, `retryableStreamError`, `runStreamCycle` („Jeder Fehler zwischen Aufbau und Lauf schließt den Stream": alle drei Pfade schließen, `Run` schließt selbst), `ErrRejected`, `serverFault`, `Config.OnStreaming` sind vom Code getragen; eine Kennung je Kommentar, kein Vorher/Nachher. |
+| Suchlauf-Feld / Träger-Tabelle | behoben | Beide Stände nachgemessen (siehe oben); die Zeile „Suchlauf 2 (`diff` 1)" erklärt den Resttreffer der neuen Handbuch-Zeile zutreffend. |
+| Persist-before-ACK | unberührt | `streamCycleAck` und `ackPort.set(cycleAck)` stehen unverändert im Diff-freien Bereich bzw. an derselben Stelle vor `BindCapture`/`Run`; der Assembler läuft weiter über die Prozess-Lebensdauer. |
+| `cycleStream` (Namensüberdeckung) | kompiliert, INFO (N-7) | siehe unten. |
+
+### Neue Findings
+
+#### N-5 LOW — Der Wert der Aufbau-Frist in der Verdrahtung (`Run`) ist nicht gebunden
+
+- `kategorie`: LOW
+- `quelle`: `ADR-0136` Festlegung 2 („Frist von `streamRetryMaxDelay`"); Skill „Zusage ohne Bindung an ihre Eingabeseite"
+- `pfad`: `internal/bootstrap/wiring.go:1151` (`runStreamCycle(attemptCtx, streamRetryMaxDelay, open, …)`)
+- `befund`: Die Tests von `runStreamCycle` übergeben die Frist selbst (40 s, 300 ms); der Aufruf in `Run` ist nur über die Quelltext-Tests zur Weitergabe von `OnStreaming` und zur Stellung von `stream.Run` erreicht. Mutation `m8` (`streamRetryMaxDelay` → `10*streamRetryWindow` im Aufruf in `Run`) bleibt grün — die Frist im Betrieb kann ohne roten Test von 30 s auf 50 min wachsen und das Gesamtfenster bei „Quelle unerreichbar" wieder aufheben. Die Mutation wurde gefahren (Instanz: Go-Test-Lauf beider Pakete, grün).
+- `verifizierbar`: ja
+- `klasse`: Zusage ohne Bindung an ihre Eingabeseite
+
+#### N-6 INFO — Die Hälfte „`Run` ist von der Frist unberührt" ist nur mit einem Fake belegt
+
+- `pfad`: `internal/bootstrap/stream_cycle_internal_test.go` (`…SetupDeadlineBindsOnlyTheSetup`), `ADR-0136` Folgepflicht 2(d)
+- `befund`: Die ADR verlangt, dass „eine spätere `Run` desselben Streams von der Frist unberührt" ist. Der Test belegt mit einem Fake-Stream, dass `Run` einen anderen, noch lebenden Kontext erhält; dass ein realer `pgconn` nach einem bereits beendeten Aufbau-Kontext weiter benutzbar ist, ist nicht gefahren. Gelesen (nicht gefahren) in `pgx/v5` `pgconn.go`: die Kontext-Beobachtung ist je Aufruf `Watch`/`Unwatch`, und der Verbindungsaufbau entfernt seine Beobachtung vor der Rückkehr; das stützt die Herleitung der ADR. `make test-replication` (Fremdlauf, hier nicht gefahren) wäre der Ort eines Belegs gegen einen realen Server. Zuständig: Verifier (Belegstärke).
+
+#### N-7 INFO — Lokale Variable `cycleStream` überdeckt den neuen Typnamen im Test
+
+- `pfad`: `internal/bootstrap/replication_stream_retry_internal_test.go:142-166`
+- `befund`: Der Test bindet `cycleStream, err := receive.NewStream(…)` und überdeckt damit innerhalb der Funktion den Typ `cycleStream` (`wiring.go:1887`). Es kompiliert und trägt keine Wirkung; ein späteres Nutzen des Typs in diesem Testkörper würde auf die Variable statt den Typ auflösen. Keine Aktion erwartet.
+
+### Verdikt der Fixrunde 2
+
+Alle Folgepflichten 1 bis 3 von `ADR-0136` sind im Code getragen; N-1 bis N-4 der Fixrunde 1 sind behoben. Elf Mutationen gefahren (`m1`–`m9`, `m4b`, `m11` — Fensterbeginn je Fehler neu gesetzt, rot in zwei Tests; `m10` — `ackPort.set` entfernt — brach den Bau und zählt nicht), zehn rot, eine grün (`m8`, N-5). Neue Findings: 0 HIGH, 0 MEDIUM, 1 LOW, 2 INFO.
+**Merge-blockierend: nein.** N-5 (LOW) ist eine Fixrunde-3-Kandidatin ohne Blockade, N-6 und N-7 sind INFO. Die DoD-Checkbox „Review durchgeführt" im Slice-Plan bleibt unberührt; der Verifier folgt.
+
+Geprüft, ohne Befund (Fixrunde 2): `spec/pflichtenheft.md` (Zeile `transient`), `compose.yaml` (Kommentar), `docs/user/benutzerhandbuch.md` (Version 1.83, Historie, Abschnitt „Neustart nach einem Fehler"), `docs/plan/planning/in-progress/slice-capture-transient-wiederholung.md` (Suchlauf, Träger-Tabelle), `internal/adapters/driving/replication/receive/` (Signal, `serverFault`, Tests), `internal/bootstrap/administration_startorder_internal_test.go` (Quelltext-Tests).
