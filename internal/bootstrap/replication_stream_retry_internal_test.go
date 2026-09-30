@@ -27,11 +27,13 @@ import (
 // der Fitness Function (`ADR-0135`): der erste Lauf hält den Slot, der
 // Retry-Zyklus scheitert am SQLSTATE 55006 (Transport-/Verbindungsstörung,
 // wiederholbar), der Wartezug gibt den Slot frei und der zweite Versuch
-// liefert die danach committete Change — Fortsetzung an
-// `confirmed_flush_lsn`, Persist-before-ACK unberührt. Der Test bindet die
-// Ursache des ersten Fehlschlags (SQLSTATE 55006), genau zwei Versuche,
-// genau eine Lieferung im zweiten Versuch hinter dem Slot-Stand vor seinem
-// Aufbau und genau zwei persistierte Changes; der Zyklus ist `runStreamCycle`.
+// liefert die danach committete Change, Persist-before-ACK unberührt. Der Test
+// bindet die Ursache des ersten Fehlschlags (SQLSTATE 55006), genau zwei
+// Versuche, genau eine Lieferung im zweiten Versuch hinter dem Slot-Stand vor
+// seinem Aufbau und genau zwei persistierte Changes; der Zyklus ist
+// `runStreamCycle`. Grenze: die Start-Position des Adapters ist nicht gebunden
+// — setzt er vor `confirmed_flush_lsn` an, setzt der Server selbst dort an, der
+// Test bleibt grün.
 func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 	dsn := os.Getenv("CDC_REPLICATION_TEST_DSN")
 	if dsn == "" {
@@ -151,7 +153,14 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 	// Der Server nimmt die Bestätigung asynchron an: der Slot-Stand rückt
 	// auf die Halter-Position, bevor der Retry beginnt.
 	flushDeadline := time.Now().Add(10 * time.Second)
-	for readConfirmedFlush(t, pool, slot) < haltedPosition {
+	for {
+		flush, err := readConfirmedFlush(pool, slot)
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
+		if flush >= haltedPosition {
+			break
+		}
 		if time.Now().After(flushDeadline) {
 			t.Fatalf("confirmed_flush_lsn erreicht die Halter-Position %d nicht", haltedPosition)
 		}
@@ -168,7 +177,12 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 	recorder.cycleService = capture.NewCaptureService(store, ackPort)
 	var trace attemptTrace
 	cycle := func(attemptCtx context.Context, streaming func()) error {
-		attempt := trace.begin(readConfirmedFlush(t, pool, slot))
+		flushAtStart, err := readConfirmedFlush(pool, slot)
+		if err != nil {
+			t.Errorf("%v", err)
+			return err
+		}
+		attempt := trace.begin(flushAtStart)
 		recorder.setAttempt(attempt)
 		open := func(setupCtx context.Context) (cycleStream, error) {
 			return receive.NewStream(setupCtx, receive.Config{
@@ -185,7 +199,7 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 		newAck := func(conn *pgconn.PgConn) (outbound.ReplicationAckPort, error) {
 			return postgresack.New(conn)
 		}
-		err := runStreamCycle(attemptCtx, streamSetupTimeout, open, newAck, ackPort, recorder)
+		err = runStreamCycle(attemptCtx, streamSetupTimeout, open, newAck, ackPort, recorder)
 		trace.end(attempt, err)
 		return err
 	}
@@ -287,14 +301,15 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 }
 
 // readConfirmedFlush trägt `confirmed_flush_lsn` des Slots als Offset.
-func readConfirmedFlush(t *testing.T, pool *pgxpool.Pool, slot string) uint64 {
-	t.Helper()
+// Der Fehler geht an den Aufrufer zurück: die Funktion läuft auch in der
+// Zyklus-Closure, also nicht in der Test-Goroutine.
+func readConfirmedFlush(pool *pgxpool.Pool, slot string) (uint64, error) {
 	var flush int64
 	if err := pool.QueryRow(context.Background(),
 		"SELECT (confirmed_flush_lsn - '0/0'::pg_lsn)::bigint FROM pg_replication_slots WHERE slot_name = $1", slot).Scan(&flush); err != nil {
-		t.Fatalf("confirmed_flush_lsn von %s: %v", slot, err)
+		return 0, fmt.Errorf("confirmed_flush_lsn von %s: %w", slot, err)
 	}
-	return uint64(flush)
+	return uint64(flush), nil
 }
 
 // awaitSlotInactive wartet, bis kein Prozess den Slot mehr hält; ein

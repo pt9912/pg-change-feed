@@ -902,6 +902,9 @@ func TestStreamStartsReplicationInRunAfterWaitingLongerThanWalSenderTimeout(t *t
 // streamt trotzdem. Der Neustart auf einem bestehenden Slot liefert als erste
 // Transaktion die nach dem Stream-Ende committete, hinter dem
 // `confirmed_flush_lsn` vor dem Aufbau — keine Wiederholung der bestätigten.
+// Grenze: die Start-Position des Adapters ist nicht gebunden — setzt er vor
+// `confirmed_flush_lsn` an, setzt der Server selbst dort an, der Test bleibt
+// grün; gebunden ist die Benutzbarkeit der Verbindung nach dem Aufbau-Kontext.
 func TestStreamRunOutlivesSetupContextAndContinuesAtConfirmedFlush(t *testing.T) {
 	pool, ctx := newPool(t)
 	env := newTestEnv(t, "setupctx")

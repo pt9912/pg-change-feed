@@ -44,12 +44,16 @@ dass ein realer `pgconn` nach dem Ende des Aufbau-Kontexts benutzbar bleibt
 
 ## 2. Definition of Done
 
-- [ ] Der Realtest prüft die Ursache des ersten Fehlers (`*pgconn.PgError`, Code
-      `55006`), fordert `count == 2` und liest die Start-Position des zweiten
-      Versuchs gegen `confirmed_flush_lsn`. *Zu belegen durch:* `make
-      test-replication` grün, Laufzeit des Realtests gedruckt, je Bindung eine
-      Mutation der Eingabeseite (Slot-Freigabe ohne Fehlschlag; doppelte
-      Lieferung), deren Farbe im Bericht steht.
+- [ ] Der Realtest prüft die Ursache des ersten Fehlers als Text
+      (`START_REPLICATION` und `SQLSTATE 55006` im Fehlertext; `ErrReplication`
+      ohne `ErrRejected`/`ErrPermission` — der Code steht nicht als
+      `*pgconn.PgError` in der Kette, §3), fordert `count == 2` und liest die
+      Lieferposition des zweiten Versuchs gegen `confirmed_flush_lsn` vor seinem
+      Aufbau. Grenze: ein Start des Adapters *vor* `confirmed_flush_lsn` ist
+      nicht gebunden (§6). *Zu belegen durch:* `make test-replication` grün,
+      Laufzeit des Realtests gedruckt, je Bindung eine Mutation der Eingabeseite
+      (Slot-Freigabe ohne Fehlschlag; doppelte Lieferung), deren Farbe in §6
+      steht.
 - [ ] Ein Beleg gegen einen realen `pgconn`: `Run` nach beendetem Aufbau-Kontext
       (N-6). *Zu belegen durch:* derselbe Lauf oder ein eigener Test im
       Replication-Tier.
@@ -97,10 +101,40 @@ Closure-Notiz mit Lerneintrag.
   Slot-Stand vor jedem Versuch und bindet die gelieferte Position dahinter. Ein
   Start *vor* `confirmed_flush_lsn` ist nicht unterscheidbar — der Server setzt
   dann selbst bei `confirmed_flush_lsn` an (Mutation `startLSN = 1` blieb grün).
-  **Ausgang:** *(bei Closure)*
+  Name und Godoc beider Tests tragen diese Grenze. **Ausgang:** *(bei Closure)*
+- **Mutationsfarben** (Stelle, Instanz: der jeweils genannte Go-Test, gefahren
+  an einer Kopie). *Gemessen im Implementer-Lauf:* Halter vor dem Retry beendet
+  und Change „Retry" vorher eingefügt (Stelle: Test) — rot im Bootstrap-Test,
+  „Versuche = 1"; Capture-Service zweimal aufgerufen (Stelle: Mitschnitt) —
+  rot im Bootstrap-Test; Halter ohne ACK — rot im Bootstrap-Test;
+  Aufbau-Kontext an `Run` gebunden (Stelle: `receive.go`, `NewStream`) — rot im
+  Bootstrap- und im Receive-Test; `startLSN = 1` (Stelle: `receive.go`,
+  `NewStream`) — grün in beiden, die Grenze oben. *Übernommen aus dem
+  Review-Report (`review-slice-capture-retry-realtest-belege-schaerfen`,
+  §Eigene Messungen, dort gemessen):* M1 Halter vor dem Retry beendet — rot
+  „Versuche = 1, erwartet genau 2" (Bootstrap); M2a zweite Zeile im Wartezug —
+  rot „cdc.change-Zeilen = 3"; M2b Lieferposition doppelt im Mitschnitt — rot
+  „Lieferungen des zweiten Versuchs = [x x]"; M3 `startLSN = 1` — grün in
+  beiden; M4 Verbindung am Aufbau-Kontext gebunden — rot im Receive-Test
+  („kein CaptureCommand innerhalb 20s") und im Bootstrap-Test (Lauf bricht mit
+  Race-Reports/Panic ab, Ausgabe dort nicht ausgewertet). Nicht mutiert: andere
+  SQLSTATE als 55006 (die Bindung ist eine Text-Assertion).
+- **Bezug zu `ADR-0136` Folgepflicht 2(d).** Der netzlose Fristtest mit
+  Loopback-Listener (`NewStream` endet nach der Frist mit `ErrReplication`, eine
+  spätere `Run` ist von der Frist unberührt) ist im Vorgänger-Slice
+  [slice-capture-transient-wiederholung](../done/slice-capture-transient-wiederholung.md)
+  getragen (§3, `streaming_signal_test.go`, Fixrunde 2) und nicht Gegenstand
+  dieses Slice. Dieser Slice fügt die Gegenprobe gegen einen realen Server hinzu:
+  dieselbe `pgconn`-Aussage (Verbindung bleibt nach dem Aufbau-Kontext
+  benutzbar) am realen `pgconn`, nicht ersetzend.
 - **Ein Test mit Wartezeiten macht `make test-replication` langsam oder flakig.**
   *Erwartet, zu belegen durch:* die gedruckte Laufzeit vor und nach dem Zug
-  (§3.12 Instanz A). *Stand (Implementer, gemessen):* `--- PASS:
+  (§3.12 Instanz A). *Stand (Implementer, gemessen; Einzelzeiten sind die
+  gedruckten `--- PASS`-Zeilen der Läufe von `make test-replication`, die
+  Paketzeiten die `ok`-Zeilen desselben Ziels; unabhängig nachgemessen im
+  Review mit `go test -race -count=1 -v -run` der beiden Tests gegen
+  `postgres:18-alpine`: 1,87 s bis 1,94 s und 0,18 s bis 0,19 s, sechs bzw.
+  drei Läufe, übernommen aus dem Review-Report):* `--- PASS:
   TestRunStreamWithRetrySlotStillActive (0.36s)` vor dem Zug, `(1.94s)` bis
   `(1.97s)` nach dem Zug (sechs Läufe; davon 1,5 s der Nachlauf gegen weitere
   Lieferungen); `TestStreamRunOutlivesSetupContextAndContinuesAtConfirmedFlush`
