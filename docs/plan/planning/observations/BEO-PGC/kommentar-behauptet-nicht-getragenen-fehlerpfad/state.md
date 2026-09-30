@@ -7,7 +7,11 @@ Paket, trägt der Kommentar einen Rang-Zeiger darauf · seit welle-backfill-best
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §4.1, R6b).
 
-Zähler: 7× (Dateien unter `evidence/`; die siebte,
+Zähler: 8× (Dateien unter `evidence/`; die achte,
+`evidence/slice-capture-transient-wiederholung.md`, trägt F-1 (HIGH): ein Kommentar, die ADR
+und das Handbuch sagten die Rücksetzung der Wiederholungs-Episode zu, der Code hatte keine Stelle
+dafür (Ausprägung **Zusage ohne Code**); der Reviewer fand sie durch Nachfahren, die Fixrunde trug
+sie, Ausgang unverändert **verkörpert**; die siebte,
 `evidence/slice-capture-leerlauf-quellbelege.md`, trägt F-4 (LOW) und F-5 (INFO): eine Allaussage
 („nur, wenn der Slot nichts bestätigt“) in einem Kommentar der neuen Runner-Phase, die einen Fall
 belegt, und ein Godoc, dessen Begründungssatz eine später gemessene Aussage überholt hat

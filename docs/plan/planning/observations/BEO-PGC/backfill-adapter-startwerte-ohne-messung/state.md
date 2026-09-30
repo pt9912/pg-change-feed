@@ -4,8 +4,11 @@ Zustand: offen — Ausgang: **weiter offen**, adressiert. Träger der Messung is
 Blockdauer nahe oder über der Frist steht als Befund im Bericht). Die Fristen tragen die
 Kennzeichnung „Startwerte ohne Messung" im Kommentar an den Konstanten; die Einfügeform trägt sie
 am Code nicht (Review F-7). Verwandt: `BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes`
-(dieselbe Messung, andere Größe: Speicher je Block). Zähler (abgeleitet): 1×
-(evidence/slice-backfill-run-store.md).
+(dieselbe Messung, andere Größe: Speicher je Block). Zähler (abgeleitet): 2×
+(evidence/slice-backfill-run-store.md, evidence/slice-capture-transient-wiederholung.md).
+
+Zweiter Beleg: die Wiederholung im Capture-Pfad (`ADR-0135`, `ADR-0136`) trägt ihre Werte als
+Startwerte ohne Messung; Adresse: der Re-Evaluierungs-Trigger in `ADR-0136`.
 
 Messung des Folge-Slices `slice-backfill-bench-richtgroesse`: die mittlere Blockdauer
 liegt bei etwa 0,12 bis 0,13 s (abgeleitet: Dauer durch Blockzahl, Handbuch

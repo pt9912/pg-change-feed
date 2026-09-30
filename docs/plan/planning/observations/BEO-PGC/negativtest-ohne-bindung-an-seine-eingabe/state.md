@@ -37,7 +37,8 @@ Träger“ — eine Gegenentscheidung des Architects ist ein neues Verdikt):
   einer Abfrage-Eingabe; er ist im Slice gebunden (Test mit Run einer fremden Quelle,
   Mutation danach rot), der Reviewer fand ihn vor dem Merge.
 
-Zähler (abgeleitet): **20×** (evidence/slice-harness-mutationsbild-und-verweigerte-aktion.md,
+Zähler (abgeleitet): **21×** (evidence/slice-capture-transient-wiederholung.md,
+evidence/slice-harness-mutationsbild-und-verweigerte-aktion.md,
 evidence/slice-transformationen-e2e-wirkung.md,
 evidence/slice-transformationen-map-value.md,
 evidence/slice-harness-guard-inplace-textwerkzeug.md,
@@ -65,7 +66,13 @@ drei neue Fälle. Derselbe Slice trägt eine zweite, gleichartige Lücke desselb
 Träger-Typs (`rm` prüft `TAG` im Code, aber kein Testfall band den Aufruf; Verifikation
 V-2, LOW) — nach der Deckel-Regel ohne eigene Datei, in der Closure-Notiz des Slice
 genannt und dort mit einem eigenen Testfall gebunden, bevor der Slice nach `done/` ging;
-der Zähler dieses Eintrags zählt nur den HIGH-Fund (Dateien = 1). Der neunzehnte Beleg
+der Zähler dieses Eintrags zählt nur den HIGH-Fund (Dateien = 1). Der einundzwanzigste Beleg
+(`slice-capture-transient-wiederholung`, Review F-3, MEDIUM, daher Datei trotz Deckel) trifft die
+**Grenzwerte einer Wiederholung** (Fenster, Anfangsverzögerung, Obergrenze ungebunden); dieselbe
+Datei nennt N-5 (LOW: der Wert der Aufbau-Frist im Aufruf in `Run` blieb unter Mutation grün) und
+F-8 (LOW: der Realtest erzwingt den Fehlschlag nur indirekt), beide nach der Deckel-Regel ohne
+eigene Datei und an Folge-Slices übergeben; die Regel hat mit Reviewer und Verifier vor dem Merge
+gewirkt. Der neunzehnte Beleg
 (`slice-transformationen-e2e-wirkung`, Review F-2, MEDIUM, daher Datei trotz Deckel) trifft
 eine **reale Aktion in einer Runner-Phase**: die Zusage „nach dem zweiten Neustart“ war an den
 zweiten `docker restart` nicht gebunden (entfernt: grün, Exit 0); gebunden in der Fixrunde durch

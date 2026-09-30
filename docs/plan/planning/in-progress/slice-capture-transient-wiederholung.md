@@ -70,7 +70,7 @@ Handbuch-Abschnitt „Neustart nach einem Fehler“, `restart: "no"` in
 
 ## 2. Definition of Done
 
-- [ ] Die Wiederholung im Capture-Pfad steht nach der ADR des Architects: ein
+- [x] Die Wiederholung im Capture-Pfad steht nach der ADR des Architects: ein
       `transient`-Fehler (Beispiel: SQLSTATE 55006, Slot noch aktiv, den
       `START_REPLICATION` nicht wiederholt) führt zu Wiederholungen mit
       begrenztem Backoff (Anfangswert, Obergrenze, Erschöpfung laut ADR); jede
@@ -88,12 +88,12 @@ Handbuch-Abschnitt „Neustart nach einem Fehler“, `restart: "no"` in
       `make test-replication` mit dem Fall „Slot noch aktiv“
       (`TestStreamRestartsOnExistingSlot`-Muster ohne Wartezeit auf die
       Freigabe im Test).
-- [ ] Die Klassen bleiben getrennt: ein `permission`-, `configuration`-,
+- [x] Die Klassen bleiben getrennt: ein `permission`-, `configuration`-,
       `schema`- oder `storage`-Fehler wird nicht wiederholt und endet den Prozess
       (Rückfall-Verhalten von `classifyRunError`). *Zu belegen
       durch:* `make test` — je Klasse ein Negativtest an seine Eingabe gebunden
       (Mutation: die Klasse als wiederholbar behandeln färbt rot).
-- [ ] Die Träger folgen: der Kommentar an `Run`, der die `transient`-Aktion als
+- [x] Die Träger folgen: der Kommentar an `Run`, der die `transient`-Aktion als
       nicht getragen nennt, die Container-Vertrags-Zeile in `compose.yaml` und der
       Handbuch-Abschnitt „Neustart nach einem Fehler“ nennen die Wiederholung
       und ihre Grenze; die Zeile `transient` von
@@ -101,27 +101,27 @@ Handbuch-Abschnitt „Neustart nach einem Fehler“, `restart: "no"` in
       wenn sie sie präzisiert; die Handbuch-Version und die Änderungshistorie
       tragen eine Zeile. *Zu belegen durch:* Lesen der Träger und `make
       docs-check`.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: siehe dritter Liefer-Punkt (Handbuch, `harness/README.md`
+- [x] Doku-Update: siehe dritter Liefer-Punkt (Handbuch, `harness/README.md`
       falls ein Lauf-Beleg entsteht).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure der nächsten Welle (die Roadmap führt
       [welle-transformationen](../done/welle-transformationen.md) unter *Offene
       Wellen*, das Ereignis kann eintreten; ein Slice ohne Welle wird von ihr
@@ -212,16 +212,34 @@ realer `make test-replication`-Lauf + Closure-Notiz mit Lerneintrag geschrieben.
   (ein `configuration`-Fehler, der wie `transient` aussieht, wird
   wiederholt statt gemeldet). *Erwartet, zu belegen durch:* die
   Negativtests je Klasse (zweiter Liefer-Punkt) und die Klassifikationstabelle
-  der ADR. **Ausgang:** *(bei Closure)*
+  der ADR. **Ausgang: eingetreten und vor dem Merge geschlossen** — der Review fand
+  (F-4) `permission`-Fehler des Servers pauschal als `ErrReplication` wiederholt;
+  `serverFault` trennt sie seitdem (`ErrPermission`, `ErrRejected`), gebunden durch
+  `TestRunStreamWithRetryKlassenEndenOhneWiederholung` und die Tabelle in
+  `serverfault_test.go` (Verifikations-Report §2 Zeile 2: je Klasse `waits == 0`).
+  Die wiederholte Menge ist eine Positivliste ([`ADR-0136`](../../adr/0136-capture-wiederholung-stabilitaetsmass-und-sqlstate-auswahl.md)).
 - **Ein wiederholter Start liest Änderungen doppelt oder überspringt eine.**
   *Erwartet, zu belegen durch:* der Fortsetzungs-Test an `confirmed_flush_lsn`
   gegen die reale Instanz (`make test-replication`), Persist-before-ACK bleibt
-  bindend ([`ADR-0012`](../../adr/0012-at-least-once.md)). **Ausgang:** *(bei
-  Closure)*
+  bindend ([`ADR-0012`](../../adr/0012-at-least-once.md)). **Ausgang: nicht eingetreten, Beleg schwach — weiter offen als
+  `slice-capture-retry-realtest-belege-schaerfen`.** Persist-before-ACK ist
+  unberührt (Capture Service und ACK-Adapter stehen nicht im Diff, der
+  ACK-Port wird je Zyklus neu gesetzt; Verifikations-Report §2 Zeile 1). Der
+  Realtest `TestRunStreamWithRetrySlotStillActive` lief real (`make
+  test-replication`, Exit 0, `internal/bootstrap` 13,8 s gegenüber 1,6 s ohne
+  DSN) und belegt die Lieferung der Folge-Change; er prüft weder SQLSTATE 55006
+  als Ursache noch die Start-Position an `confirmed_flush_lsn`, und `>= 2`
+  schließt Duplikate nicht aus (Verifikations-Report §5, F-8).
 - **Die Grenzwerte sind Startwerte ohne Messung.** *Erwartet, zu belegen durch:*
   die ADR nennt sie als Startwerte mit Nachschärfe-Trigger, und der Bericht
   trennt Messung von Setzung (`BEO-PGC/backfill-adapter-startwerte-ohne-messung`,
-  1×). **Ausgang:** *(bei Closure)*
+  1×). **Ausgang: weiter offen → `BEO-PGC/backfill-adapter-startwerte-ohne-messung`.**
+  Die Werte (2 s Anfang, Faktor 2, 30 s Obergrenze, 5 min Gesamtfenster, 30 s
+  Stabilität und Aufbau-Frist) sind **gesetzt, nicht gemessen**; die ADRs nennen sie
+  als Startwerte, der Nachschärfe-Trigger steht in
+  [`ADR-0136`](../../adr/0136-capture-wiederholung-stabilitaetsmass-und-sqlstate-auswahl.md)
+  §Re-Evaluierungs-Trigger (regelmäßig längerer Aufbau oder Flapping-Episoden,
+  die das Fenster umgehen). Eine Messung im Betrieb liegt nicht vor.
 - **Der Ort des Aufrufs `START_REPLICATION` wandert vor diesem Slice.**
   `slice-start-vorlauf-grenze` verlegt den
   Aufruf von `NewStream` nach `Stream.Run` (`ADR-0128` Festlegung 1); der Fehler
@@ -229,24 +247,69 @@ realer `make test-replication`-Lauf + Closure-Notiz mit Lerneintrag geschrieben.
   Verbindungsaufbau, und die Beispiele in §1, §2 und §3 (Adapter `receive`,
   `TestStreamRestartsOnExistingSlot`) sind am Stand nach jenem Slice zu lesen.
   *Erwartet, zu belegen durch:* der Suchlauf in §3 an beiden Ständen und die ADR
-  zur Wiederholungsform, die den Ort am Start nennt. **Ausgang:** *(bei
-  Closure)*
+  zur Wiederholungsform, die den Ort am Start nennt. **Ausgang: entfallen** — der
+  Slice `slice-start-vorlauf-grenze` liegt in `done/`; der Zyklus liest den Ort
+  am Stand danach: `Stream.Run` sendet `START_REPLICATION` und meldet den
+  Streaming-Beginn erst nach dessen erfolgreicher Rückkehr, bei Startfehler nie
+  (`TestRunSignalsNothingWhenStartReplicationFails`; Review Fixrunde 2, N-1).
 - **Kommentare an `Run` behaupten mehr, als der Code trägt**
   (`BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`, 3×, verkörpert:
   Zusage-Klausel im Reviewer-Skill). *Erwartet, zu belegen durch:* der Reviewer
-  fährt den zugesagten Pfad im Code nach. **Ausgang:** *(bei Closure)*
+  fährt den zugesagten Pfad im Code nach. **Ausgang: eingetreten, vor dem
+  Merge geschlossen** — der Reviewer fuhr den Pfad nach und fand (F-1, HIGH) die
+  Zusage „ein erfolgreicher Zyklus setzt die Episode zurück" in Kommentar und
+  Handbuch ohne Code; ein Scratchpad-Test zeigte die Erschöpfung nach einer
+  Stunde Betrieb. Die Fixrunden trugen sie (Rücksetzung ab Streaming-Signal);
+  die Probe hat gegriffen, Beleg: `docs/reviews/review-slice-capture-transient-wiederholung.md`
+  Fixrunde 1 und 2.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** Die Wiederholung liegt am Stream-Zyklus der
+  Composition Root ([`ADR-0135`](../../adr/0135-capture-transient-wiederholung-stream-zyklus.md)),
+  Adapter, Capture Service und ACK-Adapter blieben unberührt; damit blieb
+  Persist-before-ACK ohne Rückfrage bindend. Die Mutationsprobe des Reviewers
+  fand, was Lesen nicht fand: zwei Runden, in der zweiten elf Mutationen, zehn rot
+  und eine grün (`m8`, N-5; Reviewer-Bericht, übernommen), dazu die eigene
+  Verifier-Mutation, die N-5 unabhängig reproduzierte (Verifikations-Report §4).
+  Der Verifier bestätigte die DoD-Zeilen 1–4 und 6 als getragen; der Realtest
+  lief real (`make test-replication`, Exit 0).
+- **Was ging anders als geplant:** Zwei Fixrunden statt keiner, und eine
+  Folge-ADR: [`ADR-0135`](../../adr/0135-capture-transient-wiederholung-stream-zyklus.md)
+  sagte „ein erfolgreicher Zyklus setzt die Episode zurück" zu, ohne die
+  Messgröße zu nennen (F-1, HIGH: nicht implementiert). Die erste Fixrunde maß
+  die Dauer des Zyklus; erst der Re-Review fand, dass ein hängender Verbindungsaufbau
+  damit das Gesamtfenster aufhob (N-1) und dass die SQLSTATE-Auswahl in keiner ADR
+  stand (N-2). [`ADR-0136`](../../adr/0136-capture-wiederholung-stabilitaetsmass-und-sqlstate-auswahl.md)
+  legt beides fest (Streaming-Signal nach `START_REPLICATION`, Positivliste).
+  Offen bleiben drei Belege-Schwächen ohne DoD-Bruch (N-5, N-6, F-8), übergeben
+  an die Folge-Slices unten.
+- **Steering-Loop-Eintrag (Lerneintrag):** benannte Lücke im Architect-Übergabe-Artefakt:
+  eine ADR, die eine **Rücksetzung oder Schwelle** zusagt, nennt die **Messgröße**
+  (was gemessen wird, ab welchem Signal), nicht nur den Wert; ein „erfolgreicher
+  Zyklus" ohne Signal ist eine Zusage ohne Eingabeseite, die nur Code-Lesen und
+  Mutation fanden, kein Sensor. Der Eintrag ist gezählt, nicht verkörpert:
+  `BEO-PGC/schwelle-ohne-benannte-messgroesse` (1×, angelegt mit diesem Slice). Die
+  Spec-Lücke ist geschlossen, nicht offen: Die Zeile `transient` von
+  [`SPEC-008`](../../../../spec/pflichtenheft.md) trägt die Bedingung der ADR.
+- **Beobachtungs-Register (`../observations/`):** neu angelegt
+  `BEO-PGC/schwelle-ohne-benannte-messgroesse/` mit `evidence/slice-capture-transient-wiederholung.md`
+  (N-1, N-2); ergänzt `evidence/slice-capture-transient-wiederholung.md` in
+  `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad/` (F-1, HIGH — Zähler 8×),
+  in `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe/` (F-3 MEDIUM, N-5 LOW — Zähler 21×)
+  und in `BEO-PGC/backfill-adapter-startwerte-ohne-messung/` (Grenzwerte gesetzt — Zähler 2×);
+  `BEO-PGC/adapter-fehler-ausgang/` trägt den Ausgang `umgesetzt` mit diesem Slice als
+  Anker. Keine weitere Beobachtung: F-8 (Realtest erzwingt den Fehlschlag indirekt) ist eine
+  Ausprägung von `negativtest-ohne-bindung-an-seine-eingabe` unter LOW und steht nach der
+  Deckel-Regel in dieser Notiz, ohne eigene Datei.
+- **Folge-Slices:** `slice-capture-retry-aufbau-frist-bindung` (N-5: Wert der
+  Aufbau-Frist in `Run` an einen Test binden) und `slice-capture-retry-realtest-belege-schaerfen`
+  (F-8: Ursache 55006, `count == 2`, Start-Position gegen `confirmed_flush_lsn`;
+  N-6: realer `pgconn` nach beendetem Aufbau-Kontext) — beide Dateien in `open/`.
+  N-7 (Namensüberdeckung `cycleStream` im Test, INFO, keine Wirkung) bekommt keinen Slice.
+- **Risiken aus §6:** je ein Ausgang, siehe §6 (Klassen: eingetreten, geschlossen ·
+  doppeltes Lesen: weiter offen, Folge-Slice · Grenzwerte: weiter offen, Register ·
+  Ort von `START_REPLICATION`: entfallen · Kommentar-Zusage: eingetreten, geschlossen).
 - **Drei Paarungen:** dieser Slice hat keine Welle; die Prüfung läuft
   regelkonform bei der Closure der nächsten Welle.
 

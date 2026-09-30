@@ -13,3 +13,6 @@ Ausprägung: der Adapter `receive` wiederholt `START_REPLICATION` bei SQLSTATE 5
 Freigabe des Slots.
 
 Zähler: 3× (Dateien unter `evidence/`).
+
+Beleg des Ausgangs: Verifikations-Report `docs/reviews/verifikation-slice-capture-transient-wiederholung.md`
+(DoD-Zeilen 1–4 getragen; Wiederholung am Stream-Zyklus, Klasse `transient` bei Erschöpfung).
