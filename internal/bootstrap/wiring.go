@@ -1141,13 +1141,16 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			}
 			cycleAck, err := postgresack.New(stream.Conn(), postgresack.WithLog(log))
 			if err != nil {
+				stream.Close(attemptCtx)
 				return err
 			}
 			cycleAckPort.set(cycleAck)
 			if err := stream.BindCapture(captureService); err != nil {
+				stream.Close(attemptCtx)
 				return err
 			}
 			if err := stream.BindIdleConfirmation(captureService); err != nil {
+				stream.Close(attemptCtx)
 				return err
 			}
 			return stream.Run(attemptCtx)
@@ -1777,7 +1780,8 @@ func administrationSchemaVersionID(table model.SourceTableID) model.SchemaVersio
 // reportFault meldet einen nicht-`nil` Lauf-Fehler als Fehlerzustand über
 // den Heartbeat (`LH-FA-ADM-003`) — die
 // Sichtbarkeit gilt für „Erfassung kann nicht fortsetzen" (`Run` endet auf
-// jeden Adapter-Fehler, Dateikommentar oben), nicht für einen regulären
+// einen nicht wiederholbaren Adapter-Fehler und auf die Erschöpfung der
+// Wiederholung, `runStreamWithRetry`), nicht für einen regulären
 // Lauf-Abschluss (`runErr == nil`). Der Schreib-Zug trägt eine eigene,
 // kurzlebige Frist, unabhängig von `ctx`: das Beenden des Prozesses selbst
 // hat `ctx` bereits abgebrochen, und genau dann muss der Fehlerzustand noch
@@ -1813,6 +1817,8 @@ func classifyRunError(err error) model.ErrorClass {
 		errors.Is(err, mapper.ErrIncompatibleSchemaChange),
 		errors.Is(err, mapper.ErrTransformationNotApplicable):
 		return model.ErrorClassSchema
+	case errors.Is(err, receive.ErrPermission):
+		return model.ErrorClassPermission
 	case errors.Is(err, receive.ErrReplication),
 		errors.Is(err, outbound.ErrReplication),
 		errors.Is(err, mapper.ErrChangeWithoutBegin),
@@ -1836,6 +1842,9 @@ const (
 	streamRetryInitialDelay = 2 * time.Second
 	streamRetryMaxDelay     = 30 * time.Second
 	streamRetryWindow       = 5 * time.Minute
+	// streamRetryStableAfter trennt einen Zyklus, der sofort wieder scheitert,
+	// von einem, der bis zu seinem Fehler regulär gestreamt hat.
+	streamRetryStableAfter = streamRetryMaxDelay
 )
 
 // streamCycleAck reicht die Bestätigung an den ACK-Adapter des laufenden
@@ -1869,6 +1878,9 @@ func (p *streamCycleAck) Acknowledge(ctx context.Context, position model.SourceP
 // `receive.ErrReplication` oder `outbound.ErrReplication`. Klassen- und
 // Ordnungs-Fehler enden unverändert mit Ausgang 1.
 func retryableStreamError(err error) bool {
+	if errors.Is(err, receive.ErrPermission) || errors.Is(err, receive.ErrRejected) {
+		return false
+	}
 	return errors.Is(err, receive.ErrReplication) || errors.Is(err, outbound.ErrReplication)
 }
 
@@ -1877,18 +1889,38 @@ func retryableStreamError(err error) bool {
 // Transport-/Verbindungsstörung (retryableStreamError) startet nach
 // Warteschritt einen neuen Zyklus — Anfangsverzögerung 2 s, Verdopplung,
 // Obergrenze 30 s je Schritt, Gesamtfenster 5 Minuten ab dem ersten
-// wiederholten Fehler; ein erfolgreicher Zyklus setzt die Episode zurück.
+// wiederholten Fehler; ein Zyklus, der mindestens `streamRetryStableAfter`
+// (die Obergrenze eines Warteschritts) bis zu seinem Fehler gelaufen ist,
+// setzt die Episode zurück — Verzögerung, Fensterbeginn und Versuchszähler.
+// Je Wiederholung steht ein WARN mit Versuchszähler im Log, je Fortsetzung
+// ein INFO.
 // Nicht wiederholbare Fehler und die Erschöpfung des Fensters enden mit
 // dem Lauf-Fehler; die Erschöpfung trägt `ErrTransientExhausted` und damit
 // die Klasse `transient`. Kontext-Ende während des Wartens beendet den
 // Lauf regulär ohne Fehler (dieselbe Rückgabeform wie `stream.Run`).
 func runStreamWithRetry(ctx context.Context, log outbound.LogPort, clock outbound.ClockPort, cycle func(context.Context) error, sleep func(time.Duration)) error {
-	err := cycle(ctx)
 	delay := streamRetryInitialDelay
 	var windowStart model.TimePoint
 	windowStarted := false
-	for err != nil && retryableStreamError(err) && ctx.Err() == nil {
+	attempts := 0
+	for {
+		cycleStart := clock.Now()
+		err := cycle(ctx)
+		if err == nil || !retryableStreamError(err) || ctx.Err() != nil {
+			if err == nil && attempts > 0 {
+				log.Info(ctx, "pg-change-feed: Stream-Zyklus nach Wiederholung regulär beendet", "versuche", attempts)
+			}
+			return err
+		}
 		now := clock.Now()
+		if now.Sub(cycleStart).Nanos >= streamRetryStableAfter.Nanoseconds() {
+			if attempts > 0 {
+				log.Info(ctx, "pg-change-feed: Stream-Zyklus nach Wiederholung fortgesetzt", "versuche", attempts)
+			}
+			delay = streamRetryInitialDelay
+			windowStarted = false
+			attempts = 0
+		}
 		if windowStarted && now.Sub(windowStart).Nanos > streamRetryWindow.Nanoseconds() {
 			return fmt.Errorf("%w: %v", ErrTransientExhausted, err)
 		}
@@ -1896,15 +1928,14 @@ func runStreamWithRetry(ctx context.Context, log outbound.LogPort, clock outboun
 			windowStart = now
 			windowStarted = true
 		}
-		log.Warn(ctx, "pg-change-feed: Stream-Zyklus wiederholt (transient)", "warteschritt", delay, "error", err)
+		attempts++
+		log.Warn(ctx, "pg-change-feed: Stream-Zyklus wiederholt (transient)", "versuch", attempts, "warteschritt", delay, "error", err)
 		sleep(delay)
 		delay = min(delay*2, streamRetryMaxDelay)
 		if ctx.Err() != nil {
 			return nil
 		}
-		err = cycle(ctx)
 	}
-	return err
 }
 
 // RegisterConsumer verdrahtet den `RegisterConsumerUseCase` (`ADR-0028`)

@@ -1870,19 +1870,19 @@ Klassen (`ADR-0023`, `SPEC-008`):
 
 | Klasse | Bedeutung | Verhalten |
 |---|---|---|
-| `transient` | vorübergehend nicht verfügbare Quelle/Speicher | Erneuter Versuch mit begrenztem Backoff; im Erfassungspfad deklariert, aktuell von keinem Adapter konstruiert — ein Backfill-Run trägt sie als Klasse seines Fehlertexts |
+| `transient` | vorübergehend nicht verfügbare Quelle/Speicher | Erneuter Versuch mit begrenztem Backoff (siehe [Neustart nach einem Fehler](#neustart-nach-einem-fehler)); der Erfassungspfad trägt die Klasse, wenn das Wiederholungsfenster erschöpft ist — ein Backfill-Run trägt sie als Klasse seines Fehlertexts |
 | `configuration` | ungültige oder fehlende Umgebungsvariable | Kein Start, sichtbarer Fehler |
-| `permission` | fehlende Berechtigung | Sichtbarer Fehler, kein stiller Retry; im Erfassungspfad deklariert, aktuell von keinem Adapter konstruiert — ein Backfill-Run trägt sie als Klasse seines Fehlertexts (z. B. fehlendes `SELECT` auf die Quelltabelle) |
+| `permission` | fehlende Berechtigung | Sichtbarer Fehler, kein stiller Retry; der Erfassungspfad trägt sie bei SQLSTATE 42501 und bei Fehlern der Klasse 28 (Authentifizierung/Autorisierung) am Quellzugriff, ein Backfill-Run als Klasse seines Fehlertexts (z. B. fehlendes `SELECT` auf die Quelltabelle) |
 | `schema` | eine Replikationsnachricht ist nicht sicher interpretierbar (z. B. TRUNCATE, unbekannter Nachrichtentyp) oder eine Transformationsregel ist auf die Relation einer Change nicht anwendbar (siehe [Transformationsregel konfigurieren](#transformationsregel-konfigurieren)) | Sichtbarer Fehler, kein stilles Überspringen; ein Backfill-Run trägt dieselbe Ursache als Klasse seines Fehlertexts, run-lokal |
 | `storage` | Persistenzfehler | Kein Source-ACK, damit keine Änderung verloren geht |
 | `replication` | zwei Unterarten (`ADR-0049`): **Stream-Ordnungs-Verletzung** (z. B. Commit ohne offene Transaktion) oder **Transport-/Verbindungsstörung** (Verbindungsaufbau, Slot, Keepalive, Quell-Bestätigung) | Stream-Ordnungs-Verletzung: sofortiger, sichtbarer Abbruch, unabhängig vom WAL-Rückstand. Transport-/Verbindungsstörung: Schwellen-Überwachung über den WAL-Rückstand (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)) — kontrollierte Fortsetzung unterhalb 1 GiB, sichtbarer Abbruch darüber |
 | `internal` | unerwarteter interner Fehler, der keiner anderen Klasse zuzuordnen ist | Sichtbarer Fehler; realer Fallback für jeden nicht erkannten Fehler |
 
-`transient` und `permission` gehören zur deklarierten Menge der sieben
-Klassen, werden im Erfassungspfad aber von keinem Adapter aktuell konstruiert
-— beobachtbar sind sie heute nur als Klasse im Fehlertext eines
-fehlgeschlagenen Backfill-Runs (`cdc.backfill_status.error_message`).
-`internal` ist dagegen der real erreichbare
+`transient` und `permission` sind im Erfassungspfad beobachtbar (Heartbeat-Fehlerzustand
+nach erschöpftem Wiederholungsfenster bzw. bei einer Berechtigungs-Abweisung des Servers)
+und als Klasse im Fehlertext eines fehlgeschlagenen Backfill-Runs
+(`cdc.backfill_status.error_message`).
+`internal` ist der real erreichbare
 Fallback-Zweig: Jeder Fehler, der keiner der übrigen sechs Klassen
 zugeordnet werden kann, fällt auf `internal` zurück.
 
@@ -1923,9 +1923,13 @@ mitgelieferten `compose.yaml`) — der Neustart liegt beim Aufrufer
 (Orchestrator, Supervisor). Eine vorübergehend nicht verfügbare Quelle
 (Fehlerklasse `transient`) wiederholt der Capture-Pfad vorher selbst mit
 begrenztem Backoff: Anfangsverzögerung 2 s, Verdopplung bis 30 s je
-Warteschritt, Gesamtfenster 5 Minuten; ein erfolgreicher Zyklus setzt die
-Episode zurück. Erst nach erschöpftem Fenster endet der Prozess mit
-Ausgang 1 und dem sichtbaren Fehlerzustand im Heartbeat. Ein Neustart
+Warteschritt, Gesamtfenster 5 Minuten; ein Zyklus, der mindestens 30 s bis zu
+seinem Fehler gestreamt hat, setzt die Episode zurück. Jede Wiederholung
+steht als WARN mit Versuchszähler im Log, die Fortsetzung als INFO. Nicht
+wiederholt werden Berechtigungsfehler (SQLSTATE 42501, Klasse 28) und
+Server-Abweisungen ohne transiente Ursache. Erst nach erschöpftem Fenster
+endet der Prozess mit Ausgang 1 und dem sichtbaren Fehlerzustand im
+Heartbeat. Ein Neustart
 setzt am zuletzt bestätigten Slot-Stand fort; keine bereits gespeicherte
 Änderung geht dabei verloren.
 
@@ -2185,7 +2189,6 @@ MIT — siehe `LICENSE`.
 
 | Version | Datum | Änderung |
 |---|---|---|
-| 1.82 | 2026-09-29 | „Neustart nach einem Fehler": begrenzte Wiederholung der Klasse `transient` im Capture-Pfad (`ADR-0135`) ergänzt |
 | 1.0 | 2026-09-12 | Erste Fassung |
 | 1.1 | 2026-09-12 | Rollen-spezifische DSN-Verdrahtung (`ADR-0047`): `CDC_SOURCE_DSN` ersatzlos ersetzt durch `CDC_CAPTURE_DSN`/`CDC_ADMIN_DSN`/`CDC_READER_DSN`, Betriebs-Hinweis zum `REPLICATION`-Attribut ergänzt |
 | 1.2 | 2026-09-12 | Fehlerklassen-Tabelle (§6) auf alle sieben Klassen aus `ADR-0023`/`SPEC-008` vervollständigt (`transient`, `permission`, `internal` ergänzt) |
@@ -2268,3 +2271,4 @@ MIT — siehe `LICENSE`.
 | 1.79 | 2026-09-28 | C#-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-csharp-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene async-Methode, `PgChangeFeedGrpcClient.StreamChangesAsync` nimmt den optionalen `schema`/`table`-Filter jetzt als Parameter entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `PgChangeFeed.Client` jetzt namentlich statt als offenen Folge-Schritt; `pgchangefeed`/`pgchangefeed-kotlin` bleiben unverändert offen |
 | 1.80 | 2026-09-28 | Python-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-python-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene Methode, `PgChangeFeedGrpcClient.stream_changes()` nimmt die optionalen `schema`/`table`-Parameter jetzt entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `pgchangefeed` jetzt namentlich statt als offenen Folge-Schritt; `pgchangefeed-kotlin` bleibt unverändert offen |
 | 1.81 | 2026-09-28 | Kotlin-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-kotlin-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene `suspend fun`-Methode, `PgChangeFeedGrpcClient.streamChanges()` nimmt die optionalen `schema`/`table`-Parameter jetzt entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `pgchangefeed-kotlin` jetzt namentlich statt als offenen Folge-Schritt — mit dieser Zeile ist die Drei-Sprachen-SDK-Matrix für die gRPC-Verwaltungs-API vollständig |
+| 1.82 | 2026-09-30 | „Neustart nach einem Fehler": begrenzte Wiederholung der Klasse `transient` im Capture-Pfad (`ADR-0135`) ergänzt — Rücksetzung der Episode nach einem Zyklus von mindestens 30 s, WARN mit Versuchszähler und INFO bei Fortsetzung, keine Wiederholung bei Berechtigungsfehlern und Server-Abweisungen; Fehlerklassen-Tabelle nennt `transient` und `permission` als im Erfassungspfad beobachtbar |

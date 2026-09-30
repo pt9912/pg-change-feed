@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/jackc/pglogrepl"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -36,6 +37,39 @@ const outputPlugin = "pgoutput"
 // `errors.Is`; die technische Ursache bleibt über die zweite Wrappung
 // lesbar.
 var ErrReplication = errors.New("Fehlerklasse replication: Replication-Stream/Slot-Störung")
+
+// ErrPermission trägt die Fehlerklasse `permission` (`ADR-0023`): der Server
+// weist den Zugriff mit SQLSTATE 42501 oder einem Fehler der Klasse 28
+// (Authentifizierung/Autorisierung) ab. Ein Warten gewinnt diese Berechtigung
+// nicht; der Fehler trägt `ErrReplication` nicht.
+var ErrPermission = errors.New("Fehlerklasse permission: fehlende Berechtigung am Replication-Zugriff")
+
+// ErrRejected markiert eine Server-Abweisung, die kein Warten löst (SQLSTATE
+// außerhalb der transienten Klassen 08, 40, 53, 55, 57, 58): der Fehler trägt
+// zusätzlich `ErrReplication`; der Aufrufer wartet auf ihn nicht.
+var ErrRejected = errors.New("Server-Abweisung ohne transiente Ursache")
+
+// serverFault wickelt einen Fehler des Servers oder der Verbindung nach seiner
+// SQLSTATE-Klasse ein: Berechtigungsfehler als `ErrPermission`, nicht
+// transiente Abweisungen als `ErrReplication` samt `ErrRejected`, alles
+// übrige (Verbindungsabbruch, transiente Server-Zustände) als `ErrReplication`.
+func serverFault(what string, err error) error {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) {
+		return fmt.Errorf("%w: %s: %v", ErrReplication, what, err)
+	}
+	code := pgErr.Code
+	switch {
+	case code == "42501" || strings.HasPrefix(code, "28"):
+		return fmt.Errorf("%w: %s: %v", ErrPermission, what, err)
+	case strings.HasPrefix(code, "08"), strings.HasPrefix(code, "40"),
+		strings.HasPrefix(code, "53"), strings.HasPrefix(code, "55"),
+		strings.HasPrefix(code, "57"), strings.HasPrefix(code, "58"):
+		return fmt.Errorf("%w: %s: %v", ErrReplication, what, err)
+	default:
+		return fmt.Errorf("%w: %w: %s: %v", ErrReplication, ErrRejected, what, err)
+	}
+}
 
 // ErrConfiguration trägt die Fehlerklasse `configuration` des
 // Stream-Adapters (`ADR-0023`): eine ungültige oder falsch
@@ -264,7 +298,7 @@ func connectReplication(ctx context.Context, dsn string) (*pgconn.PgConn, error)
 	connConfig.RuntimeParams["replication"] = "database"
 	conn, err := pgconn.ConnectConfig(ctx, connConfig)
 	if err != nil {
-		return nil, fmt.Errorf("%w: Verbindungsaufbau: %v", ErrReplication, err)
+		return nil, serverFault("Verbindungsaufbau", err)
 	}
 	return conn, nil
 }
@@ -282,7 +316,7 @@ func slotLSNQuery(slot string) string {
 func querySingle(ctx context.Context, session driverSession, sql string) ([]string, bool, error) {
 	results, err := session.Exec(ctx, sql)
 	if err != nil {
-		return nil, false, fmt.Errorf("%w: Katalogabfrage: %v", ErrReplication, err)
+		return nil, false, serverFault("Katalogabfrage", err)
 	}
 	values, exists := firstRow(results)
 	return values, exists, nil
@@ -341,7 +375,7 @@ func ensureSlot(ctx context.Context, log outbound.LogPort, session driverSession
 		SnapshotAction: "NOEXPORT_SNAPSHOT",
 	})
 	if err != nil {
-		return 0, fmt.Errorf("%w: CREATE_REPLICATION_SLOT: %v", ErrReplication, err)
+		return 0, serverFault("CREATE_REPLICATION_SLOT", err)
 	}
 	startLSN, err := parseLSN("ConsistentPoint", created.ConsistentPoint)
 	if err != nil {
@@ -372,6 +406,12 @@ func ensurePublication(ctx context.Context, session driverSession, publication s
 // Verbindung (`ADR-0007`, Option C).
 func (s *Stream) Conn() *pgconn.PgConn {
 	return s.conn
+}
+
+// Close schließt die Verbindung eines Streams, dessen `Run` nicht mehr
+// aufgerufen wird; `Run` schließt sie bei seiner Rückkehr selbst.
+func (s *Stream) Close(ctx context.Context) {
+	s.session.Close(ctx)
 }
 
 // Run sendet `START_REPLICATION` als erste Handlung (`ADR-0128`) und
@@ -407,7 +447,7 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 			"publication_names '" + s.publication + "'",
 		},
 	}); err != nil {
-		return fmt.Errorf("%w: START_REPLICATION: %v", ErrReplication, err)
+		return serverFault("START_REPLICATION", err)
 	}
 	s.log.Info(ctx, "replication: Stream gestartet",
 		"source", s.source, "publication", s.publication, "slot", s.slot)
@@ -417,7 +457,7 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 			if ctx.Err() != nil {
 				return nil
 			}
-			return fmt.Errorf("%w: Empfang: %v", ErrReplication, err)
+			return serverFault("Empfang", err)
 		}
 		switch message := rawMessage.(type) {
 		case *pgproto3.CopyData:
@@ -428,7 +468,7 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 			// Der Stream ist regulär beendet.
 			return nil
 		case *pgproto3.ErrorResponse:
-			return fmt.Errorf("%w: %v", ErrReplication, pgconn.ErrorResponseToPgError(message))
+			return serverFault("ErrorResponse", pgconn.ErrorResponseToPgError(message))
 		default:
 			// Übrige Backend-Nachrichten (NoticeResponse u. a.) tragen
 			// keine Stream-Änderung.

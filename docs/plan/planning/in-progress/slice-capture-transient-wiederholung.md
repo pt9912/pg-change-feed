@@ -139,6 +139,9 @@ Composition Root, ist die Rückführung in §4 zu prüfen.
 | `internal/bootstrap/wiring.go` (`classifyRunError`, Kommentar an `Run`) | update | Abbildung der wiederholbaren Fehler auf `transient`; der Kommentar nennt die Aktion als getragen. |
 | `compose.yaml`, `docs/user/benutzerhandbuch.md`, `spec/pflichtenheft.md` (Zeile `transient`) | update | Container-Vertrags-Kommentar, Handbuch-Abschnitt, Bedingung der Klasse. |
 | `internal/adapters/driving/replication/receive/stream_test.go`, Tests der Composition Root | update | Store-Tier-Fall „Slot noch aktiv“, Fake-Tests mit Uhr. |
+| `internal/adapters/driving/replication/receive/receive.go`, `walretention.go`, neu `serverfault_test.go` | update / neu | Fixrunde: `serverFault` klassifiziert Server-Fehler nach SQLSTATE (`ErrPermission` für 42501/Klasse 28, `ErrRejected` für nicht transiente Abweisungen); `Stream.Close` schließt eine nicht gestartete Verbindung. |
+| `internal/bootstrap/wiring.go` (`runStreamWithRetry`, `retryableStreamError`, `classifyRunError`, Zyklus-Closure) | update | Fixrunde: Rücksetzung der Episode nach einem Zyklus von mindestens 30 s, WARN mit Versuchszähler, INFO bei Fortsetzung, `permission`/`ErrRejected` nicht wiederholt, `Stream.Close` bei Fehlern nach `NewStream`. |
+| `internal/bootstrap/stream_retry_internal_test.go` | update | Fixrunde: Tests an die Werte der ADR (2 s, 30 s, 5 min, Faktor 2) und an Rücksetzung, Log-Inhalt, `permission` gebunden. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „der Capture-Pfad endet
 auf jeden Adapter-Fehler mit Ausgang 1“; beide Stände gemessen; die Befehle
@@ -146,15 +149,15 @@ stehen im Codeblock, der Implementer trägt Stand und Trefferzahl ein):**
 
 ```suchlauf
 cd3a1c60 156 -n -i -E 'transient|Backoff|erneut versuchen|restart: "no"|Neustart nach einem Fehler|kontrollierte Fortsetzung|Ausgang 1' -- internal spec docs/user harness compose.yaml
-diff 171 -n -i -E 'transient|Backoff|erneut versuchen|restart: "no"|Neustart nach einem Fehler|kontrollierte Fortsetzung|Ausgang 1' -- internal spec docs/user harness compose.yaml
+diff 182 -n -i -E 'transient|Backoff|erneut versuchen|restart: "no"|Neustart nach einem Fehler|kontrollierte Fortsetzung|Ausgang 1' -- internal spec docs/user harness compose.yaml
 cd3a1c60 2 -n -i -E 'endet auf jeden|jeden Adapter-Fehler|nicht wiederholt' -- internal docs/user harness
-diff 1 -n -i -E 'endet auf jeden|jeden Adapter-Fehler|nicht wiederholt' -- internal docs/user harness
+diff 0 -n -i -E 'endet auf jeden|jeden Adapter-Fehler|nicht wiederholt' -- internal docs/user harness
 ```
 
 | Träger | Befund | Behandlung |
 |---|---|---|
-| Kommentar an `Run` (`wiring.go`), Container-Vertrags-Zeile (`compose.yaml`), Handbuch, `SPEC-008` | nachgezogen: alle vier nennen die Wiederholung und ihre Grenze (`ADR-0135`); Suchlauf 1: 156 → 167 (+11 Wiederholungs-Erwähnungen) | „jede Aussage ‚trägt dieser Pfad nicht' folgt der Wiederholung" ✓ (der `Run`-Kommentar, `compose.yaml` und das Handbuch nennen die Wiederholung) |
-| Test-Kommentare, die auf die Freigabe des Slots warten (`TestStreamRestartsOnExistingSlot`) | Suchlauf 2: 2 → 1 — der Rest-Treffer ist der `reportFault`-Kommentar (`wiring.go`, „Run endet auf jeden Adapter-Fehler" → auf erschöpfte/nicht wiederholbare Fehler nachgezogen) | Kommentar und Test folgen dem Verhalten ✓ |
+| Kommentar an `Run` (`wiring.go`), Container-Vertrags-Zeile (`compose.yaml`), Handbuch, `SPEC-008` | nachgezogen: alle vier nennen die Wiederholung und ihre Grenze (`ADR-0135`); Suchlauf 1: 156 (`cd3a1c60`) → 182 (`diff`, +26 Wiederholungs-Erwähnungen), gemessen mit `make suchlauf-nachmessen` | „jede Aussage ‚trägt dieser Pfad nicht' folgt der Wiederholung" ✓ (der `Run`-Kommentar, `compose.yaml` und das Handbuch nennen die Wiederholung) |
+| Test-Kommentare, die auf die Freigabe des Slots warten (`TestStreamRestartsOnExistingSlot`) | Suchlauf 2: 2 → 0 — beide Ursprungs-Treffer sind nachgezogen; der `reportFault`-Kommentar (`wiring.go`) nennt jetzt „nicht wiederholbaren Adapter-Fehler und die Erschöpfung der Wiederholung" | Kommentar und Test folgen dem Verhalten ✓ |
 
 ## 4. Trigger
 

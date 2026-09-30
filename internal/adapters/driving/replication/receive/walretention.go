@@ -70,7 +70,7 @@ func (c *WALRetentionChecker) Measure(ctx context.Context) (int64, error) {
 	current, err := c.session.IdentifySystem(ctx)
 	if err != nil {
 		c.reconnectAfterError(ctx)
-		return 0, fmt.Errorf("%w: IDENTIFY_SYSTEM: %v", ErrReplication, err)
+		return 0, serverFault("IDENTIFY_SYSTEM", err)
 	}
 	values, exists, err := querySingle(ctx, c.session, slotLSNQuery(c.slot))
 	if err != nil {
