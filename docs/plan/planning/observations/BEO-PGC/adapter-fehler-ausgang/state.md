@@ -14,5 +14,5 @@ Freigabe des Slots.
 
 Zähler: 3× (Dateien unter `evidence/`).
 
-Beleg des Ausgangs: Verifikations-Report `docs/reviews/verifikation-slice-capture-transient-wiederholung.md`
+Beleg des Ausgangs: Verifikations-Report `docs/reviews/verifikation-slice-capture-transient-wiederholung.md` <!-- d-check:status-provenance -->
 (DoD-Zeilen 1–4 getragen; Wiederholung am Stream-Zyklus, Klasse `transient` bei Erschöpfung).
