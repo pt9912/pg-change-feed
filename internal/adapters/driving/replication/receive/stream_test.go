@@ -896,6 +896,95 @@ func TestStreamStartsReplicationInRunAfterWaitingLongerThanWalSenderTimeout(t *t
 	}
 }
 
+// TestStreamRunOutlivesSetupContextAndContinuesAtConfirmedFlush trägt die
+// Trennung von Aufbau- und Lauf-Kontext am realen `pgconn` (`ADR-0136`): der
+// Kontext mit Frist, unter dem `NewStream` aufbaut, endet vor `Run`, und `Run`
+// streamt trotzdem. Der Neustart auf einem bestehenden Slot liefert als erste
+// Transaktion die nach dem Stream-Ende committete, hinter dem
+// `confirmed_flush_lsn` vor dem Aufbau — keine Wiederholung der bestätigten.
+func TestStreamRunOutlivesSetupContextAndContinuesAtConfirmedFlush(t *testing.T) {
+	pool, ctx := newPool(t)
+	env := newTestEnv(t, "setupctx")
+
+	ctx1, cancel1 := context.WithCancel(ctx)
+	defer cancel1()
+	commands1 := make(chan *inbound.CaptureCommand, 32)
+	stream1, err := newStream(ctx1, env, &fakeCapture{commands: commands1})
+	if err != nil {
+		t.Fatalf("NewStream (erster Lauf): %v", err)
+	}
+	runDone1 := make(chan error, 1)
+	go func() { runDone1 <- stream1.Run(ctx1) }()
+	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (1, 'Erste')"); err != nil {
+		t.Fatalf("INSERT: %v", err)
+	}
+	firstPosition, committed := awaitCommand(t, commands1, 15*time.Second).Transaction.CommitPosition()
+	if !committed {
+		t.Fatalf("erste Transaktion ohne Commit-Position")
+	}
+	// Der Server nimmt die Bestätigung asynchron an: der Slot-Stand rückt
+	// vor dem Ende des ersten Laufs auf die bestätigte Position.
+	flushDeadline := time.Now().Add(10 * time.Second)
+	for readConfirmedFlush(t, pool, env.slot) < firstPosition.Offset {
+		if time.Now().After(flushDeadline) {
+			t.Fatalf("confirmed_flush_lsn erreicht die bestätigte Position %x nicht", firstPosition.Offset)
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	cancel1()
+	select {
+	case err := <-runDone1:
+		if err != nil {
+			t.Fatalf("erster Lauf: %v", err)
+		}
+	case <-time.After(15 * time.Second):
+		t.Fatalf("erster Lauf endet nicht")
+	}
+	awaitSlotInactive(t, pool, env.slot, 10*time.Second)
+	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (2, 'Zweite')"); err != nil {
+		t.Fatalf("INSERT nach Stream-Ende: %v", err)
+	}
+	flushBeforeSetup := readConfirmedFlush(t, pool, env.slot)
+
+	commands2 := make(chan *inbound.CaptureCommand, 32)
+	standIn := &fakeCapture{commands: commands2}
+	setupCtx, cancelSetup := context.WithTimeout(ctx, 30*time.Second)
+	stream2, err := newStream(setupCtx, env, standIn)
+	cancelSetup()
+	if err != nil {
+		t.Fatalf("NewStream (Neustart): %v", err)
+	}
+	ctx2, cancel2 := context.WithCancel(ctx)
+	t.Cleanup(cancel2)
+	runDone2 := make(chan error, 1)
+	go func() { runDone2 <- stream2.Run(ctx2) }()
+
+	command := awaitCommand(t, commands2, 20*time.Second)
+	position, committed := command.Transaction.CommitPosition()
+	if !committed {
+		t.Fatalf("Transaktion ohne Commit-Position")
+	}
+	changes, err := command.Transaction.Changes()
+	if err != nil {
+		t.Fatalf("Changes: %v", err)
+	}
+	if len(changes) != 1 || string(changes[0].NewImage) != `{"id":"2","name":"Zweite"}` {
+		t.Fatalf("erste Transaktion des Neustarts: %+v, erwartet die nach dem Stream-Ende committete", changes)
+	}
+	if position.Offset <= flushBeforeSetup {
+		t.Fatalf("gelieferte Position %x liegt nicht hinter confirmed_flush_lsn %x vor dem Aufbau", position.Offset, flushBeforeSetup)
+	}
+	cancel2()
+	select {
+	case err := <-runDone2:
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+	case <-time.After(15 * time.Second):
+		t.Fatalf("Run endet nach dem Abbruch nicht")
+	}
+}
+
 // testForeign trägt die Tabelle außerhalb der Publication: ihr WAL trägt
 // keinen Inhalt für den Stream (`ADR-0120`).
 const testForeign = "public.foreign_stream_test"

@@ -65,9 +65,10 @@ dass ein realer `pgconn` nach dem Ende des Aufbau-Kontexts benutzbar bleibt
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/bootstrap/replication_stream_retry_internal_test.go` | update | Ursache, Anzahl, Start-Position. |
-| `internal/bootstrap/wiring.go` (`runStreamWithRetry`) | update, nur falls nötig | Der Versuchsfehler muss für den Test greifbar sein (Rückruf oder Mitschnitt), ohne Verhalten zu ändern. |
-| `internal/adapters/driving/replication/receive/` (Test) | update / neu | N-6: `Run` nach beendetem Aufbau-Kontext. |
+| `internal/bootstrap/replication_stream_retry_internal_test.go` | update | Ursache, Anzahl, Start-Position. Der Zyklus des Tests ist `runStreamCycle` (derselbe Aufbau-/Lauf-Schnitt wie `Run`: `open` unter `WithTimeout`-Kontext, der vor `Run` endet), der Versuchsfehler wird im Zyklus-Rückruf des Tests mitgeschnitten; ein Mitschnitt der Lieferungen je Versuch (Decorator um den Capture Service) und die Slot-Stände (`confirmed_flush_lsn`) vor jedem Versuch tragen Anzahl und Start-Position. Der Wartezug wartet zusätzlich, bis der Slot inaktiv ist. |
+| `internal/bootstrap/wiring.go` (`runStreamWithRetry`) | keine Änderung | Der Versuchsfehler ist am Test über den Zyklus-Rückruf greifbar; das Verhalten der Schleife bleibt. Der SQLSTATE steht im Fehlertext (`serverFault` wickelt die Ursache mit `%v` ein), nicht als `*pgconn.PgError` in der Kette: die Ursache wird als `SQLSTATE 55006` im Text und über `ErrReplication` ohne `ErrRejected`/`ErrPermission` geprüft. |
+| `internal/adapters/driving/replication/receive/stream_test.go` | update | N-6: `TestStreamRunOutlivesSetupContextAndContinuesAtConfirmedFlush` — `Run` nach beendetem Aufbau-Kontext gegen den realen `pgconn`; die erste gelieferte Transaktion des Neustarts liegt hinter `confirmed_flush_lsn` vor dem Aufbau (`startLSN` ist im `receive_test`-Paket nicht lesbar, die Prüfung läuft über die Position der gelieferten Transaktion). |
+| `internal/bootstrap/replication_stream_retry_internal_test.go` (Korrektur am Bestand) | update | Die Change „Retry" entsteht erst im Wartezug nach dem Halter-Ende: zuvor lag sie vor dem Retry-Start und konnte vom Halter geliefert werden, sodass `count >= 2` ohne zweiten Versuch erfüllbar war. |
 
 ## 4. Trigger
 
@@ -91,10 +92,20 @@ Closure-Notiz mit Lerneintrag.
 - **Die Start-Position des zweiten Versuchs ist am Test nicht beobachtbar.**
   *Erwartet, zu belegen durch:* ein Lesepunkt, der den Adapter-Vertrag nicht
   erweitert; gelingt er nicht, ist die Bindung auf Ursache und Anzahl begrenzt und
-  die Grenze steht in der Closure. **Ausgang:** *(bei Closure)*
+  die Grenze steht in der Closure. *Stand (Implementer):* die Start-Position ist
+  am Test nicht direkt lesbar (`startLSN` ist unexportiert); der Test liest den
+  Slot-Stand vor jedem Versuch und bindet die gelieferte Position dahinter. Ein
+  Start *vor* `confirmed_flush_lsn` ist nicht unterscheidbar — der Server setzt
+  dann selbst bei `confirmed_flush_lsn` an (Mutation `startLSN = 1` blieb grün).
+  **Ausgang:** *(bei Closure)*
 - **Ein Test mit Wartezeiten macht `make test-replication` langsam oder flakig.**
   *Erwartet, zu belegen durch:* die gedruckte Laufzeit vor und nach dem Zug
-  (§3.12 Instanz A). **Ausgang:** *(bei Closure)*
+  (§3.12 Instanz A). *Stand (Implementer, gemessen):* `--- PASS:
+  TestRunStreamWithRetrySlotStillActive (0.36s)` vor dem Zug, `(1.94s)` bis
+  `(1.97s)` nach dem Zug (sechs Läufe; davon 1,5 s der Nachlauf gegen weitere
+  Lieferungen); `TestStreamRunOutlivesSetupContextAndContinuesAtConfirmedFlush`
+  `(0.26s)` bis `(0.47s)`; Paketzeit `internal/bootstrap` im Tier-Lauf 11.958s
+  vor, 13.459s nach dem Zug (`make test-replication`). **Ausgang:** *(bei Closure)*
 
 ## 7. Closure-Notiz
 
