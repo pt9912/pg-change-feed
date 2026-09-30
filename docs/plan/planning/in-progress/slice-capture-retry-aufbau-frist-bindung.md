@@ -46,7 +46,8 @@ N-5) und unabhängig vom Verifier (Verifikations-Report §4).
       Instanz und Farbe im Bericht genannt).
 - [ ] `make gates` grün — Exit-Code ungefiltert gesichert
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`docs/reviews/review-slice-capture-retry-aufbau-frist-bindung.md`).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register fortgeschrieben oder „keine Beobachtung" in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang.
