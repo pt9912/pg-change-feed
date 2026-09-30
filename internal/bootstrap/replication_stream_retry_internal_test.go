@@ -226,8 +226,8 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	// Nachlauf: eine doppelte oder weitere Lieferung hätte in dieser Zeit
-	// den Mitschnitt oder die Zählung verändert.
+	// Nachlauf: eine doppelte oder weitere Lieferung erreicht in dieser Zeit
+	// den Mitschnitt und die Zählung.
 	time.Sleep(1500 * time.Millisecond)
 	stopRetry()
 	select {
