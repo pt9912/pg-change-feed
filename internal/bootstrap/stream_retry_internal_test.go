@@ -210,8 +210,8 @@ func TestRunStreamWithRetryEpisodeNachLangemZyklusZurueckgesetzt(t *testing.T) {
 	}
 }
 
-// TestRunStreamWithRetryStabilitaetsschwelle bindet die Schwelle des
-// erfolgreichen Zyklus an 30 s: 29 s Laufzeit setzen die Episode nicht
+// TestRunStreamWithRetryStabilitaetsschwelle bindet die Schwelle der
+// Streaming-Dauer ab dem Signal an 30 s: 29 s setzen die Episode nicht
 // zurück, 30 s setzen sie zurück.
 func TestRunStreamWithRetryStabilitaetsschwelle(t *testing.T) {
 	cases := []struct {
@@ -371,8 +371,8 @@ func TestRunStreamWithRetryOhneSignalKeinFortgesetzt(t *testing.T) {
 }
 
 // TestRunStreamWithRetryFortsetzungImLog belegt das INFO der Fortsetzung: ein
-// Zyklus nach einer Wiederholung, der bis zu seinem Fehler gestreamt hat,
-// schreibt "fortgesetzt" mit der Zahl der Versuche der beendeten Episode.
+// Zyklus nach einer Wiederholung, der den Streaming-Zustand erreicht,
+// schreibt "fortgesetzt" mit der Zahl der Versuche der laufenden Episode.
 func TestRunStreamWithRetryFortsetzungImLog(t *testing.T) {
 	clk := &retryClock{now: model.NewTimePoint(0)}
 	log := &attrLog{LogPort: outbound.NoopLog}
