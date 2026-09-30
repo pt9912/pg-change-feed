@@ -35,7 +35,7 @@ Wert 30 s).
 ## 3. Plan-vs-Code-Diff
 
 Beide Plan-Zeilen (§3) erscheinen im Diff, nichts darüber hinaus. Wert unverändert 30 s (Nicht-Ziel
-eingehalten; `streamRetryMaxDelay` = 30 s, `streamRetryStableAfter` unberührt). ADR-0136 Festlegung 2
+eingehalten; `streamRetryMaxDelay` = 30 s, `streamRetryStableAfter` unberührt). [`ADR-0136`](../plan/adr/0136-capture-wiederholung-stabilitaetsmass-und-sqlstate-auswahl.md) Festlegung 2
 (Aufbau-Frist 30 s) konform. Suchlauf-Feld im Plan stimmt mit der Nachmessung überein.
 
 ## 4. Eigene Mutationen (Scratchpad-Kopie, `go test -race ./internal/bootstrap/`)
