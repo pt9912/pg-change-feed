@@ -142,7 +142,8 @@ services:
     # Neustart-Vertrag liegt beim Aufrufer — der Neustart setzt am Slot
     # fort, confirmed_flush_lsn trägt die bestätigte Position.
     # Andere Fehlerklassen (permission, configuration, schema, storage)
-    # enden ohne Wiederholung mit Ausgang 1.
+    # und Server-Abweisungen außerhalb der SQLSTATE-Auswahl der
+    # Wiederholung enden ohne Wiederholung mit Ausgang 1.
     restart: "no"
     # Health-Endpoint per Heartbeat (LH-FA-ADM-002):
     # der Prozess selbst befragt cdc.heartbeat über

@@ -496,12 +496,13 @@ func changeStreamEnabled(grpcAddr, httpAddr string, natsStreamActive bool) bool 
 // Die Rückkehr ohne Fehler meldet das reguläre
 // Lauf-Ende. Eine Transport-/Verbindungsstörung am Quellzugriff
 // (`receive.ErrReplication`/`outbound.ErrReplication`) wird mit begrenztem
-// Backoff am Stream-Zyklus wiederholt (`ADR-0135` Festlegungen 1–5):
+// Backoff am Stream-Zyklus wiederholt (`ADR-0136`):
 // Anfangsverzögerung 2 s, Verdopplung, Obergrenze 30 s, Gesamtfenster
 // 5 Minuten; während der Wiederholung trägt der Heartbeat keinen
 // Fehlerzustand (WARN-Log je Versuch). Ist die Grenze erschöpft — oder bei
 // jedem anderen Fehler (Klassen `configuration`, `permission`, `schema`,
-// `storage`, Stream-Ordnungs-Verletzung) — endet der
+// `storage`, Stream-Ordnungs-Verletzung, Server-Abweisung außerhalb der
+// SQLSTATE-Auswahl) — endet der
 // Prozess-Aufrufer-Zug mit Ausgang 1; die Fortsetzung danach trägt der
 // Prozess-Neustart, der Slot liest seinen
 // Start über confirmed_flush_lsn. Ein nicht-`nil`-Ausgang meldet zusätzlich
