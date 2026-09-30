@@ -149,14 +149,14 @@ stehen im Codeblock, der Implementer trägt Stand und Trefferzahl ein):**
 
 ```suchlauf
 cd3a1c60 156 -n -i -E 'transient|Backoff|erneut versuchen|restart: "no"|Neustart nach einem Fehler|kontrollierte Fortsetzung|Ausgang 1' -- internal spec docs/user harness compose.yaml
-diff 182 -n -i -E 'transient|Backoff|erneut versuchen|restart: "no"|Neustart nach einem Fehler|kontrollierte Fortsetzung|Ausgang 1' -- internal spec docs/user harness compose.yaml
+diff 183 -n -i -E 'transient|Backoff|erneut versuchen|restart: "no"|Neustart nach einem Fehler|kontrollierte Fortsetzung|Ausgang 1' -- internal spec docs/user harness compose.yaml
 cd3a1c60 2 -n -i -E 'endet auf jeden|jeden Adapter-Fehler|nicht wiederholt' -- internal docs/user harness
 diff 0 -n -i -E 'endet auf jeden|jeden Adapter-Fehler|nicht wiederholt' -- internal docs/user harness
 ```
 
 | Träger | Befund | Behandlung |
 |---|---|---|
-| Kommentar an `Run` (`wiring.go`), Container-Vertrags-Zeile (`compose.yaml`), Handbuch, `SPEC-008` | nachgezogen: alle vier nennen die Wiederholung und ihre Grenze (`ADR-0135`); Suchlauf 1: 156 (`cd3a1c60`) → 182 (`diff`, +26 Wiederholungs-Erwähnungen), gemessen mit `make suchlauf-nachmessen` | „jede Aussage ‚trägt dieser Pfad nicht' folgt der Wiederholung" ✓ (der `Run`-Kommentar, `compose.yaml` und das Handbuch nennen die Wiederholung) |
+| Kommentar an `Run` (`wiring.go`), Container-Vertrags-Zeile (`compose.yaml`), Handbuch, `SPEC-008` | nachgezogen: alle vier nennen die Wiederholung und ihre Grenze (`ADR-0135`); Suchlauf 1: 156 (`cd3a1c60`) → 183 (`diff`, +27 Wiederholungs-Erwähnungen), gemessen mit `make suchlauf-nachmessen` | „jede Aussage ‚trägt dieser Pfad nicht' folgt der Wiederholung" ✓ (der `Run`-Kommentar, `compose.yaml` und das Handbuch nennen die Wiederholung) |
 | Test-Kommentare, die auf die Freigabe des Slots warten (`TestStreamRestartsOnExistingSlot`) | Suchlauf 2: 2 → 0 — beide Ursprungs-Treffer sind nachgezogen; der `reportFault`-Kommentar (`wiring.go`) nennt jetzt „nicht wiederholbaren Adapter-Fehler und die Erschöpfung der Wiederholung" | Kommentar und Test folgen dem Verhalten ✓ |
 
 ## 4. Trigger
