@@ -29,6 +29,12 @@ func TestServerFaultKlassifiziertNachSQLState(t *testing.T) {
 		{"57P01 admin_shutdown", &pgconn.PgError{Code: "57P01"}, false, false, true},
 		{"08006 connection_failure", &pgconn.PgError{Code: "08006"}, false, false, true},
 		{"53300 too_many_connections", &pgconn.PgError{Code: "53300"}, false, false, true},
+		{"40001 serialization_failure", &pgconn.PgError{Code: "40001"}, false, false, true},
+		{"58030 io_error", &pgconn.PgError{Code: "58030"}, false, false, true},
+		{"25006 read_only_sql_transaction", &pgconn.PgError{Code: "25006"}, false, false, true},
+		{"25P02 in_failed_sql_transaction", &pgconn.PgError{Code: "25P02"}, false, true, true},
+		{"3D000 invalid_catalog_name", &pgconn.PgError{Code: "3D000"}, false, true, true},
+		{"0A000 feature_not_supported", &pgconn.PgError{Code: "0A000"}, false, true, true},
 		{"umwickelter PgError", fmt.Errorf("Ebene: %w", &pgconn.PgError{Code: "42501"}), true, false, false},
 		{"Fehler ohne SQLSTATE", errors.New("connection reset by peer"), false, false, true},
 	}

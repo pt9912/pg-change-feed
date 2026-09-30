@@ -38,18 +38,29 @@ func (s *retrySleeper) sleep(d time.Duration) {
 }
 
 // scriptCycle führt die Skript-Fehler der Reihe nach auf: ein leerer
-// Skript-Eintrag bedeutet Erfolg. runtimes[i] ist die Laufzeit des i-ten
-// Zyklus auf der Test-Uhr.
+// Skript-Eintrag bedeutet Erfolg. setups[i] ist die Dauer des Aufbaus des
+// i-ten Zyklus vor dem Streaming-Signal, runtimes[i] seine Streaming-Dauer
+// bis zum Fehler, beide auf der Test-Uhr. Ein Zyklus in noStream erreicht
+// den Streaming-Zustand nie und meldet kein Signal; seine Laufzeit steht
+// dann in setups[i].
 type scriptCycle struct {
 	clock    *retryClock
 	errs     []error
+	setups   []time.Duration
 	runtimes []time.Duration
+	noStream map[int]bool
 	calls    int
 }
 
-func (c *scriptCycle) run(context.Context) error {
+func (c *scriptCycle) run(_ context.Context, streaming func()) error {
 	i := c.calls
 	c.calls++
+	if i < len(c.setups) {
+		c.clock.advance(c.setups[i])
+	}
+	if !c.noStream[i] {
+		streaming()
+	}
 	if i < len(c.runtimes) {
 		c.clock.advance(c.runtimes[i])
 	}
@@ -260,11 +271,102 @@ func TestRunStreamWithRetrySichtbarkeit(t *testing.T) {
 			t.Errorf("WARN %d: Fehlertext fehlt", i)
 		}
 	}
-	if len(log.infos) != 1 {
-		t.Fatalf("INFO-Einträge = %d, erwartet 1", len(log.infos))
+	// Zwei Zyklen erreichen das Streaming nach einer Wiederholung
+	// (versuche 1 und 2), der dritte endet regulär (versuche 2).
+	if len(log.infos) != 3 {
+		t.Fatalf("INFO-Einträge = %d, erwartet 3: %v", len(log.infos), log.infos)
 	}
-	if got := log.infos[0].attr("versuche"); got != 2 {
-		t.Errorf("INFO: versuche = %v, erwartet 2", got)
+	for i, want := range []any{1, 2, 2} {
+		if got := log.infos[i].attr("versuche"); got != want {
+			t.Errorf("INFO %d: versuche = %v, erwartet %v", i, got, want)
+		}
+	}
+	if log.infos[2].msg != "pg-change-feed: Stream-Zyklus nach Wiederholung regulär beendet" {
+		t.Errorf("INFO 2 = %q, erwartet reguläres Ende", log.infos[2].msg)
+	}
+}
+
+// TestRunStreamWithRetryAufbauGrenzeGesamtfenster belegt ADR-0136 Festlegung
+// 1: Zyklen, die 31 s im Aufbau hängen und den Streaming-Zustand nie
+// erreichen, setzen die Episode nie zurück — das Gesamtfenster erschöpft.
+func TestRunStreamWithRetryAufbauGrenzeGesamtfenster(t *testing.T) {
+	clk := &retryClock{now: model.NewTimePoint(0)}
+	sleeper := &retrySleeper{clock: clk}
+	const n = 60
+	cycle := &scriptCycle{clock: clk, noStream: map[int]bool{}}
+	for i := 0; i < n; i++ {
+		cycle.errs = append(cycle.errs, receive.ErrReplication)
+		cycle.setups = append(cycle.setups, 31*time.Second)
+		cycle.noStream[i] = true
+	}
+	err := runStreamWithRetry(context.Background(), outbound.NoopLog, clk, cycle.run, sleeper.sleep)
+	if !errors.Is(err, ErrTransientExhausted) {
+		t.Fatalf("Fehler = %v, erwartet ErrTransientExhausted", err)
+	}
+	if got := classifyRunError(err); got != model.ErrorClassTransient {
+		t.Fatalf("Klasse = %q, erwartet transient", got)
+	}
+	if cycle.calls >= n {
+		t.Fatalf("Zyklen = %d: das Gesamtfenster erschöpft nicht", cycle.calls)
+	}
+}
+
+// TestRunStreamWithRetryAufbauZaehltNichtZurStabilitaet belegt, dass die
+// Dauer des Aufbaus vor dem Signal nicht zur Stabilität zählt: 31 s Aufbau
+// und 1 s Streaming setzen die Episode nicht zurück, 30 s Streaming nach
+// demselben Aufbau setzen sie zurück.
+func TestRunStreamWithRetryAufbauZaehltNichtZurStabilitaet(t *testing.T) {
+	cases := []struct {
+		name   string
+		stream time.Duration
+		want   []time.Duration
+	}{
+		{"1 s Streaming", time.Second, []time.Duration{2 * time.Second, 4 * time.Second}},
+		{"30 s Streaming", 30 * time.Second, []time.Duration{2 * time.Second, 2 * time.Second}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			clk := &retryClock{now: model.NewTimePoint(0)}
+			sleeper := &retrySleeper{clock: clk}
+			cycle := &scriptCycle{
+				clock:    clk,
+				errs:     []error{receive.ErrReplication, receive.ErrReplication, nil},
+				setups:   []time.Duration{0, 31 * time.Second},
+				runtimes: []time.Duration{0, c.stream},
+			}
+			if err := runStreamWithRetry(context.Background(), outbound.NoopLog, clk, cycle.run, sleeper.sleep); err != nil {
+				t.Fatalf("Erfolg erwartet: %v", err)
+			}
+			if len(sleeper.waits) != len(c.want) {
+				t.Fatalf("Warteschritte = %v, erwartet %v", sleeper.waits, c.want)
+			}
+			for i, w := range c.want {
+				if sleeper.waits[i] != w {
+					t.Fatalf("Warteschritt %d = %v, erwartet %v", i, sleeper.waits[i], w)
+				}
+			}
+		})
+	}
+}
+
+// TestRunStreamWithRetryOhneSignalKeinFortgesetzt belegt ADR-0136 Festlegung
+// 4: das INFO der Fortsetzung folgt dem Streaming-Signal; Zyklen ohne Signal
+// schreiben es nicht.
+func TestRunStreamWithRetryOhneSignalKeinFortgesetzt(t *testing.T) {
+	clk := &retryClock{now: model.NewTimePoint(0)}
+	log := &attrLog{LogPort: outbound.NoopLog}
+	cycle := &scriptCycle{
+		clock:    clk,
+		errs:     []error{receive.ErrReplication, receive.ErrReplication, nil},
+		noStream: map[int]bool{1: true, 2: true},
+	}
+	if err := runStreamWithRetry(context.Background(), log, clk, cycle.run, func(time.Duration) {}); err != nil {
+		t.Fatalf("Erfolg erwartet: %v", err)
+	}
+	for _, e := range log.infos {
+		if e.msg == "pg-change-feed: Stream-Zyklus nach Wiederholung fortgesetzt" {
+			t.Fatalf("INFO der Fortsetzung ohne Streaming-Signal: %v", log.infos)
+		}
 	}
 }
 

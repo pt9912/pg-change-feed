@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/nats-io/nats.go"
@@ -1125,35 +1126,28 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			case <-timer.C:
 			}
 		}
-		return runStreamWithRetry(runCtx, log, clock, func(attemptCtx context.Context) error {
-			stream, err := receive.NewStream(attemptCtx, receive.Config{
-				DSN:         cfg.CaptureDSN,
-				Source:      cfg.Source,
-				Publication: cfg.Publication,
-				Slot:        cfg.Slot,
-				Tables:      assemblerTables,
-				SchemaStore: schemaStore,
-				Assembler:   assembler,
-				Log:         log,
-			})
-			if err != nil {
-				return err
+		return runStreamWithRetry(runCtx, log, clock, func(attemptCtx context.Context, streaming func()) error {
+			open := func(setupCtx context.Context) (cycleStream, error) {
+				stream, err := receive.NewStream(setupCtx, receive.Config{
+					DSN:         cfg.CaptureDSN,
+					Source:      cfg.Source,
+					Publication: cfg.Publication,
+					Slot:        cfg.Slot,
+					Tables:      assemblerTables,
+					SchemaStore: schemaStore,
+					Assembler:   assembler,
+					Log:         log,
+					OnStreaming: streaming,
+				})
+				if err != nil {
+					return nil, err
+				}
+				return stream, nil
 			}
-			cycleAck, err := postgresack.New(stream.Conn(), postgresack.WithLog(log))
-			if err != nil {
-				stream.Close(attemptCtx)
-				return err
+			newAck := func(conn *pgconn.PgConn) (outbound.ReplicationAckPort, error) {
+				return postgresack.New(conn, postgresack.WithLog(log))
 			}
-			cycleAckPort.set(cycleAck)
-			if err := stream.BindCapture(captureService); err != nil {
-				stream.Close(attemptCtx)
-				return err
-			}
-			if err := stream.BindIdleConfirmation(captureService); err != nil {
-				stream.Close(attemptCtx)
-				return err
-			}
-			return stream.Run(attemptCtx)
+			return runStreamCycle(attemptCtx, streamRetryMaxDelay, open, newAck, &cycleAckPort, captureService)
 		}, sleepStreamWait)
 	})
 	stopHeartbeat()
@@ -1842,8 +1836,9 @@ const (
 	streamRetryInitialDelay = 2 * time.Second
 	streamRetryMaxDelay     = 30 * time.Second
 	streamRetryWindow       = 5 * time.Minute
-	// streamRetryStableAfter trennt einen Zyklus, der sofort wieder scheitert,
-	// von einem, der bis zu seinem Fehler regulär gestreamt hat.
+	// streamRetryStableAfter ist die Streaming-Dauer ab der Bestätigung von
+	// `START_REPLICATION`, ab der ein Zyklus die Episode zurücksetzt; die
+	// Dauer des Verbindungsaufbaus zählt nie dazu (`ADR-0136`).
 	streamRetryStableAfter = streamRetryMaxDelay
 )
 
@@ -1873,10 +1868,12 @@ func (p *streamCycleAck) Acknowledge(ctx context.Context, position model.SourceP
 }
 
 // retryableStreamError meldet, ob der Fehler die
-// Transport-/Verbindungsstörung am Quellzugriff trägt (`ADR-0135`
-// Festlegung 3) und damit wiederholt wird: die Kette trägt
-// `receive.ErrReplication` oder `outbound.ErrReplication`. Klassen- und
-// Ordnungs-Fehler enden unverändert mit Ausgang 1.
+// Transport-/Verbindungsstörung am Quellzugriff trägt und damit wiederholt
+// wird: die Kette trägt `receive.ErrReplication` oder
+// `outbound.ErrReplication`, aber weder `receive.ErrPermission` noch
+// `receive.ErrRejected` — die SQLSTATE-Auswahl ist eine Positivliste in
+// `receive.serverFault` (`ADR-0136`). Klassen- und Ordnungs-Fehler enden
+// unverändert mit Ausgang 1.
 func retryableStreamError(err error) bool {
 	if errors.Is(err, receive.ErrPermission) || errors.Is(err, receive.ErrRejected) {
 		return false
@@ -1884,28 +1881,82 @@ func retryableStreamError(err error) bool {
 	return errors.Is(err, receive.ErrReplication) || errors.Is(err, outbound.ErrReplication)
 }
 
+// cycleStream ist die Fläche eines Stream-Zyklus, die `runStreamCycle`
+// braucht; `*receive.Stream` erfüllt sie.
+type cycleStream interface {
+	Conn() *pgconn.PgConn
+	BindCapture(capture inbound.CaptureInboundPort) error
+	BindIdleConfirmation(idle inbound.IdleConfirmationInboundPort) error
+	Close(ctx context.Context)
+	Run(ctx context.Context) error
+}
+
+// cycleService trägt die beiden Ports, die der Capture Service dem Stream
+// bindet.
+type cycleService interface {
+	inbound.CaptureInboundPort
+	inbound.IdleConfirmationInboundPort
+}
+
+// runStreamCycle baut einen Stream-Zyklus auf und führt ihn: `open` läuft
+// unter der Frist `setupTimeout` (Verbindungsaufbau, Katalog- und
+// Slot-Abfragen), `Run` unter dem Kontext des Zyklus (`ADR-0136`). Jeder
+// Fehler zwischen Aufbau und Lauf schließt den Stream.
+func runStreamCycle(ctx context.Context, setupTimeout time.Duration, open func(context.Context) (cycleStream, error), newAck func(*pgconn.PgConn) (outbound.ReplicationAckPort, error), ackPort *streamCycleAck, service cycleService) error {
+	setupCtx, cancelSetup := context.WithTimeout(ctx, setupTimeout)
+	stream, err := open(setupCtx)
+	cancelSetup()
+	if err != nil {
+		return err
+	}
+	cycleAck, err := newAck(stream.Conn())
+	if err != nil {
+		stream.Close(ctx)
+		return err
+	}
+	ackPort.set(cycleAck)
+	if err := stream.BindCapture(service); err != nil {
+		stream.Close(ctx)
+		return err
+	}
+	if err := stream.BindIdleConfirmation(service); err != nil {
+		stream.Close(ctx)
+		return err
+	}
+	return stream.Run(ctx)
+}
+
 // runStreamWithRetry umschließt den Stream-Zyklus mit der begrenzten
-// Wiederholung (`ADR-0135` Festlegungen 1–5): ein Fehler der
-// Transport-/Verbindungsstörung (retryableStreamError) startet nach
-// Warteschritt einen neuen Zyklus — Anfangsverzögerung 2 s, Verdopplung,
-// Obergrenze 30 s je Schritt, Gesamtfenster 5 Minuten ab dem ersten
-// wiederholten Fehler; ein Zyklus, der mindestens `streamRetryStableAfter`
-// (die Obergrenze eines Warteschritts) bis zu seinem Fehler gelaufen ist,
-// setzt die Episode zurück — Verzögerung, Fensterbeginn und Versuchszähler.
+// Wiederholung (`ADR-0136`): ein Fehler der Transport-/Verbindungsstörung
+// (retryableStreamError) startet nach Warteschritt einen neuen Zyklus —
+// Anfangsverzögerung 2 s, Verdopplung, Obergrenze 30 s je Schritt,
+// Gesamtfenster 5 Minuten ab dem ersten wiederholten Fehler. Der Zyklus
+// meldet über `streaming`, dass der Server `START_REPLICATION` bestätigt
+// hat; ein Zyklus, der ab diesem Signal mindestens `streamRetryStableAfter`
+// bis zu seinem Fehler gestreamt hat, setzt die Episode zurück —
+// Verzögerung, Fensterbeginn und Versuchszähler; ohne Signal nie.
 // Je Wiederholung steht ein WARN mit Versuchszähler im Log, je Fortsetzung
-// ein INFO.
+// (das Signal nach einer Wiederholung) ein INFO.
 // Nicht wiederholbare Fehler und die Erschöpfung des Fensters enden mit
 // dem Lauf-Fehler; die Erschöpfung trägt `ErrTransientExhausted` und damit
 // die Klasse `transient`. Kontext-Ende während des Wartens beendet den
 // Lauf regulär ohne Fehler (dieselbe Rückgabeform wie `stream.Run`).
-func runStreamWithRetry(ctx context.Context, log outbound.LogPort, clock outbound.ClockPort, cycle func(context.Context) error, sleep func(time.Duration)) error {
+func runStreamWithRetry(ctx context.Context, log outbound.LogPort, clock outbound.ClockPort, cycle func(ctx context.Context, streaming func()) error, sleep func(time.Duration)) error {
 	delay := streamRetryInitialDelay
 	var windowStart model.TimePoint
 	windowStarted := false
 	attempts := 0
 	for {
-		cycleStart := clock.Now()
-		err := cycle(ctx)
+		var streamStart model.TimePoint
+		streamed := false
+		streaming := func() {
+			streamStart = clock.Now()
+			streamed = true
+			if attempts > 0 {
+				log.Info(ctx, "pg-change-feed: Stream-Zyklus nach Wiederholung fortgesetzt", "versuche", attempts)
+			}
+		}
+		err := cycle(ctx, streaming)
 		if err == nil || !retryableStreamError(err) || ctx.Err() != nil {
 			if err == nil && attempts > 0 {
 				log.Info(ctx, "pg-change-feed: Stream-Zyklus nach Wiederholung regulär beendet", "versuche", attempts)
@@ -1913,10 +1964,7 @@ func runStreamWithRetry(ctx context.Context, log outbound.LogPort, clock outboun
 			return err
 		}
 		now := clock.Now()
-		if now.Sub(cycleStart).Nanos >= streamRetryStableAfter.Nanoseconds() {
-			if attempts > 0 {
-				log.Info(ctx, "pg-change-feed: Stream-Zyklus nach Wiederholung fortgesetzt", "versuche", attempts)
-			}
+		if streamed && now.Sub(streamStart).Nanos >= streamRetryStableAfter.Nanoseconds() {
 			delay = streamRetryInitialDelay
 			windowStarted = false
 			attempts = 0

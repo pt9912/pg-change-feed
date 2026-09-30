@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.82
+Version: 1.83
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-28
 
@@ -1923,11 +1923,20 @@ mitgelieferten `compose.yaml`) — der Neustart liegt beim Aufrufer
 (Orchestrator, Supervisor). Eine vorübergehend nicht verfügbare Quelle
 (Fehlerklasse `transient`) wiederholt der Capture-Pfad vorher selbst mit
 begrenztem Backoff: Anfangsverzögerung 2 s, Verdopplung bis 30 s je
-Warteschritt, Gesamtfenster 5 Minuten; ein Zyklus, der mindestens 30 s bis zu
-seinem Fehler gestreamt hat, setzt die Episode zurück. Jede Wiederholung
-steht als WARN mit Versuchszähler im Log, die Fortsetzung als INFO. Nicht
-wiederholt werden Berechtigungsfehler (SQLSTATE 42501, Klasse 28) und
-Server-Abweisungen ohne transiente Ursache. Erst nach erschöpftem Fenster
+Warteschritt, Gesamtfenster 5 Minuten. „Gestreamt“ heißt: der Server hat
+`START_REPLICATION` bestätigt; ein Zyklus, der ab dieser Bestätigung
+mindestens 30 s bis zu seinem Fehler gestreamt hat, setzt die Episode zurück.
+Verbindungsaufbau, Katalog- und Slot-Abfragen zählen nie dazu, und ein Zyklus,
+der den Streaming-Zustand nicht erreicht, setzt die Episode nicht zurück. Der
+Aufbau eines Zyklus (Verbindung, Katalog- und Slot-Abfragen) hat eine Frist
+von 30 s; ihr Ablauf ist ein wiederholbarer Fehler. Jede Wiederholung steht
+als WARN mit Versuchszähler im Log, die Fortsetzung als INFO, sobald der
+Zyklus den Streaming-Zustand erreicht. Wiederholt werden Fehler ohne SQLSTATE
+(Verbindungsabbruch, Fristablauf), die SQLSTATE-Klassen 08, 40, 53, 55, 57 und
+58 sowie der Code 25006 (schreibgeschützter Knoten während eines Failovers).
+Nicht wiederholt werden Berechtigungsfehler (SQLSTATE 42501, Klasse 28) und
+jede andere Server-Abweisung; der Prozess endet dann sofort mit Ausgang 1.
+Erst nach erschöpftem Fenster
 endet der Prozess mit Ausgang 1 und dem sichtbaren Fehlerzustand im
 Heartbeat. Ein Neustart
 setzt am zuletzt bestätigten Slot-Stand fort; keine bereits gespeicherte
@@ -2272,3 +2281,4 @@ MIT — siehe `LICENSE`.
 | 1.80 | 2026-09-28 | Python-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-python-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene Methode, `PgChangeFeedGrpcClient.stream_changes()` nimmt die optionalen `schema`/`table`-Parameter jetzt entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `pgchangefeed` jetzt namentlich statt als offenen Folge-Schritt; `pgchangefeed-kotlin` bleibt unverändert offen |
 | 1.81 | 2026-09-28 | Kotlin-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-kotlin-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene `suspend fun`-Methode, `PgChangeFeedGrpcClient.streamChanges()` nimmt die optionalen `schema`/`table`-Parameter jetzt entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `pgchangefeed-kotlin` jetzt namentlich statt als offenen Folge-Schritt — mit dieser Zeile ist die Drei-Sprachen-SDK-Matrix für die gRPC-Verwaltungs-API vollständig |
 | 1.82 | 2026-09-30 | „Neustart nach einem Fehler": begrenzte Wiederholung der Klasse `transient` im Capture-Pfad (`ADR-0135`) ergänzt — Rücksetzung der Episode nach einem Zyklus von mindestens 30 s, WARN mit Versuchszähler und INFO bei Fortsetzung, keine Wiederholung bei Berechtigungsfehlern und Server-Abweisungen; Fehlerklassen-Tabelle nennt `transient` und `permission` als im Erfassungspfad beobachtbar |
+| 1.83 | 2026-09-30 | „Neustart nach einem Fehler“ (`ADR-0136`): „gestreamt“ heißt ab Bestätigung von `START_REPLICATION` (Rücksetzung nach mindestens 30 s Streaming, der Aufbau zählt nie), der Aufbau eines Zyklus hat eine Frist von 30 s, das INFO der Fortsetzung folgt dem Streaming-Beginn, die wiederholte Fehlermenge steht als SQLSTATE-Auswahl (Klassen 08, 40, 53, 55, 57, 58 und 25006), jede andere Server-Abweisung endet sofort |

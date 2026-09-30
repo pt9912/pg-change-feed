@@ -299,14 +299,21 @@ func TestRunStreamAfterAdministrationPassWithTimeoutLeavesRequestsPendingAfterTh
 // ausschließlich als `stream.Run` im Zyklus-Schluss der Wiederholung
 // (`ADR-0135` Festlegung 1), die als viertes Argument von
 // `runStreamAfterAdministrationPass` läuft — nie selbst außerhalb dieser
-// Schachtelung. Grenze: der Test liest die Gestalt des Quelltexts, nicht das
+// Schachtelung; `stream.Run` selbst steht genau einmal im Rumpf von
+// `runStreamCycle`. Grenze: der Test liest die Gestalt des Quelltexts, nicht das
 // Verhalten von `Run`; er bindet weder die Reihenfolge der Argumente noch den
 // Inhalt von `administration` noch den Rumpf von `startAdministration` (dessen
 // Goroutinen-Start deckt am laufenden Prozess `make test-integration`). Rot
 // färbende Mutation: den Aufruf durch `stream.Run(streamCtx)` ersetzen.
 func TestRunSourceTextPassesStreamRunOnlyAsArgumentOfTheSequence(t *testing.T) {
 	run := runFunction(t)
+	// Der Stream-Lauf steht in `Run` als Aufruf von `runStreamCycle` (dessen
+	// Rumpf `stream.Run` trägt) oder, falls er wieder dort steht, als
+	// `stream.Run` selbst.
 	isStreamRun := func(expr ast.Expr) bool {
+		if name, ok := expr.(*ast.Ident); ok {
+			return name.Name == "runStreamCycle"
+		}
 		selector, ok := expr.(*ast.SelectorExpr)
 		if !ok || selector.Sel.Name != "Run" {
 			return false
@@ -347,6 +354,64 @@ func TestRunSourceTextPassesStreamRunOnlyAsArgumentOfTheSequence(t *testing.T) {
 	}
 	if streamRunInPass != 1 {
 		t.Fatalf("Der Vorlauf übergibt stream.Run %d-mal in den Zyklus, wollen 1", streamRunInPass)
+	}
+	file, err := parser.ParseFile(token.NewFileSet(), "wiring.go", nil, 0)
+	if err != nil {
+		t.Fatalf("wiring.go lesen: %v", err)
+	}
+	var cycleRuns int
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Recv != nil || fn.Name.Name != "runStreamCycle" {
+			continue
+		}
+		ast.Inspect(fn.Body, func(n ast.Node) bool {
+			if c, ok := n.(*ast.CallExpr); ok {
+				if selector, ok := c.Fun.(*ast.SelectorExpr); ok && isStreamRun(selector) {
+					cycleRuns++
+				}
+			}
+			return true
+		})
+	}
+	if cycleRuns != 1 {
+		t.Fatalf("runStreamCycle ruft stream.Run %d-mal auf, wollen 1", cycleRuns)
+	}
+}
+
+// TestRunSourceTextPassesTheStreamingSignalToTheStream bindet die Weitergabe
+// des Streaming-Signals: die `receive.Config` des Zyklus in `Run` trägt
+// `OnStreaming` — ohne die Weitergabe meldet der Stream den Beginn des
+// Streamings nie, und die Episode setzt sich nie zurück. Grenze: der Test
+// liest die Gestalt des Quelltexts. Rot färbende Mutation: das Feld
+// `OnStreaming` aus dem Literal entfernen.
+func TestRunSourceTextPassesTheStreamingSignalToTheStream(t *testing.T) {
+	run := runFunction(t)
+	configs, withSignal := 0, 0
+	ast.Inspect(run.Body, func(node ast.Node) bool {
+		lit, ok := node.(*ast.CompositeLit)
+		if !ok {
+			return true
+		}
+		selector, ok := lit.Type.(*ast.SelectorExpr)
+		if !ok || selector.Sel.Name != "Config" {
+			return true
+		}
+		if pkg, ok := selector.X.(*ast.Ident); !ok || pkg.Name != "receive" {
+			return true
+		}
+		configs++
+		for _, element := range lit.Elts {
+			if kv, ok := element.(*ast.KeyValueExpr); ok {
+				if key, ok := kv.Key.(*ast.Ident); ok && key.Name == "OnStreaming" {
+					withSignal++
+				}
+			}
+		}
+		return true
+	})
+	if configs != 1 || withSignal != 1 {
+		t.Fatalf("receive.Config in Run: %d, davon mit OnStreaming: %d, wollen 1 und 1", configs, withSignal)
 	}
 }
 

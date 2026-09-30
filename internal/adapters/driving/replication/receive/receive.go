@@ -44,15 +44,17 @@ var ErrReplication = errors.New("Fehlerklasse replication: Replication-Stream/Sl
 // nicht; der Fehler trägt `ErrReplication` nicht.
 var ErrPermission = errors.New("Fehlerklasse permission: fehlende Berechtigung am Replication-Zugriff")
 
-// ErrRejected markiert eine Server-Abweisung, die kein Warten löst (SQLSTATE
-// außerhalb der transienten Klassen 08, 40, 53, 55, 57, 58): der Fehler trägt
-// zusätzlich `ErrReplication`; der Aufrufer wartet auf ihn nicht.
+// ErrRejected markiert eine Server-Abweisung außerhalb der Positivliste der
+// wiederholten SQLSTATE (`serverFault`): der Fehler trägt zusätzlich
+// `ErrReplication`; der Aufrufer wartet auf ihn nicht (`ADR-0136`).
 var ErrRejected = errors.New("Server-Abweisung ohne transiente Ursache")
 
-// serverFault wickelt einen Fehler des Servers oder der Verbindung nach seiner
-// SQLSTATE-Klasse ein: Berechtigungsfehler als `ErrPermission`, nicht
-// transiente Abweisungen als `ErrReplication` samt `ErrRejected`, alles
-// übrige (Verbindungsabbruch, transiente Server-Zustände) als `ErrReplication`.
+// serverFault wickelt einen Fehler des Servers oder der Verbindung nach seinem
+// SQLSTATE ein: Berechtigungsfehler als `ErrPermission`; die Positivliste der
+// wiederholten Fehler (Klassen 08, 40, 53, 55, 57, 58 und der Code 25006) und
+// Fehler ohne SQLSTATE als `ErrReplication`; jeder andere SQLSTATE als
+// `ErrReplication` samt `ErrRejected`. Ein weiterer wiederholter SQLSTATE
+// kommt nur über eine Folge-Entscheidung hinzu (`ADR-0136`).
 func serverFault(what string, err error) error {
 	var pgErr *pgconn.PgError
 	if !errors.As(err, &pgErr) {
@@ -62,7 +64,8 @@ func serverFault(what string, err error) error {
 	switch {
 	case code == "42501" || strings.HasPrefix(code, "28"):
 		return fmt.Errorf("%w: %s: %v", ErrPermission, what, err)
-	case strings.HasPrefix(code, "08"), strings.HasPrefix(code, "40"),
+	case code == "25006",
+		strings.HasPrefix(code, "08"), strings.HasPrefix(code, "40"),
 		strings.HasPrefix(code, "53"), strings.HasPrefix(code, "55"),
 		strings.HasPrefix(code, "57"), strings.HasPrefix(code, "58"):
 		return fmt.Errorf("%w: %s: %v", ErrReplication, what, err)
@@ -127,6 +130,10 @@ type Config struct {
 	// bestehende Aufrufstellen (Tests), die dieses Feld nicht setzen,
 	// bleiben unverändert kompilierbar.
 	Log outbound.LogPort
+	// OnStreaming wird aufgerufen, sobald der Server `START_REPLICATION`
+	// bestätigt hat (`ADR-0136`); ungesetzt (`nil`) bleibt der Beginn des
+	// Streamings ohne Meldung.
+	OnStreaming func()
 }
 
 // Stream ist der Replication-Stream-Driving-Adapter
@@ -165,6 +172,9 @@ type Stream struct {
 	// `LogPort` (`ADR-0024`) — nie `nil` (`NewStream`
 	// trägt den `outbound.NoopLog`-Default nach).
 	log outbound.LogPort
+	// onStreaming trägt `Config.OnStreaming`; `Run` ruft es nach der
+	// Bestätigung von `START_REPLICATION`.
+	onStreaming func()
 }
 
 // NewStream baut die Replication-Verbindung auf: die Verbindung streamt
@@ -210,6 +220,7 @@ func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 	stream.slot = cfg.Slot
 	stream.startLSN = startLSN
 	stream.publication = cfg.Publication
+	stream.onStreaming = cfg.OnStreaming
 	return stream, nil
 }
 
@@ -451,6 +462,9 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 	}
 	s.log.Info(ctx, "replication: Stream gestartet",
 		"source", s.source, "publication", s.publication, "slot", s.slot)
+	if s.onStreaming != nil {
+		s.onStreaming()
+	}
 	for {
 		rawMessage, err := s.session.ReceiveMessage(ctx)
 		if err != nil {

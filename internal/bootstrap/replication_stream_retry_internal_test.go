@@ -138,12 +138,13 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 	// Der Retry: der Zyklus scheitert am ersten Versuch mit SQLSTATE 55006
 	// (der Slot ist aktiv), der Wartezug gibt den Slot frei, und der zweite
 	// Versuch liefert die danach committete Change.
-	cycle := func(attemptCtx context.Context) error {
+	cycle := func(attemptCtx context.Context, streaming func()) error {
 		cycleStream, err := receive.NewStream(attemptCtx, receive.Config{
 			DSN:         dsn,
 			Source:      source,
 			Publication: publication,
 			Slot:        slot,
+			OnStreaming: streaming,
 			Tables: map[string]mapper.TableBinding{
 				feed: {TableID: tableID, SchemaVersion: schemaV},
 			},
