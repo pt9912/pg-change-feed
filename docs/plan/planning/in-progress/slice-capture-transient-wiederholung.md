@@ -142,6 +142,11 @@ Composition Root, ist die Rückführung in §4 zu prüfen.
 | `internal/adapters/driving/replication/receive/receive.go`, `walretention.go`, neu `serverfault_test.go` | update / neu | Fixrunde: `serverFault` klassifiziert Server-Fehler nach SQLSTATE (`ErrPermission` für 42501/Klasse 28, `ErrRejected` für nicht transiente Abweisungen); `Stream.Close` schließt eine nicht gestartete Verbindung. |
 | `internal/bootstrap/wiring.go` (`runStreamWithRetry`, `retryableStreamError`, `classifyRunError`, Zyklus-Closure) | update | Fixrunde: Rücksetzung der Episode nach einem Zyklus von mindestens 30 s, WARN mit Versuchszähler, INFO bei Fortsetzung, `permission`/`ErrRejected` nicht wiederholt, `Stream.Close` bei Fehlern nach `NewStream`. |
 | `internal/bootstrap/stream_retry_internal_test.go` | update | Fixrunde: Tests an die Werte der ADR (2 s, 30 s, 5 min, Faktor 2) und an Rücksetzung, Log-Inhalt, `permission` gebunden. |
+| `internal/adapters/driving/replication/receive/receive.go` (`Config.OnStreaming`, `serverFault` mit 25006) | update | Fixrunde 2 (`ADR-0136`): der Stream meldet nach der Bestätigung von `START_REPLICATION` den Streaming-Beginn; 25006 gehört zur wiederholten Positivliste. |
+| `internal/bootstrap/wiring.go` (`runStreamWithRetry`, neu `runStreamCycle`, `cycleStream`, `cycleService`) | update | Fixrunde 2: Stabilität ab dem Streaming-Signal statt ab Zyklus-Beginn (ohne Signal nie Rücksetzung), INFO „fortgesetzt“ aus dem Signal, Aufbau unter einer Frist von 30 s, `Run` am Prozess-Kontext; die Zyklus-Closure ist als `runStreamCycle` testbar herausgelöst (die Schließ-Pfade sind Gegenstand von Tests). |
+| `internal/bootstrap/stream_cycle_internal_test.go`, `internal/adapters/driving/replication/receive/streaming_signal_test.go` | neu | Fixrunde 2: Tests der Schließ-Pfade und der Aufbau-Frist (Loopback-Listener ohne Antwort, netzlos), des Streaming-Signals und von `Stream.Close`. |
+| `internal/bootstrap/stream_retry_internal_test.go`, `internal/bootstrap/replication_stream_retry_internal_test.go`, `internal/bootstrap/administration_startorder_internal_test.go`, `internal/adapters/driving/replication/receive/serverfault_test.go` | update | Fixrunde 2: Skript-Zyklus mit Aufbau-Dauer, Streaming-Dauer und Signal-Ausfall; Quelltext-Test der Weitergabe von `OnStreaming` und der Stellung von `stream.Run` in `runStreamCycle`; `serverFault`-Tabelle je SQLSTATE-Klasse und Grenzfall. |
+| `compose.yaml` (Kommentar), `docs/user/benutzerhandbuch.md` (1.83), `spec/pflichtenheft.md` (`SPEC-008` Zeile `transient`) | update | Fixrunde 2: Träger der SQLSTATE-Auswahl, des Stabilitätsmaßes und der Aufbau-Frist. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „der Capture-Pfad endet
 auf jeden Adapter-Fehler mit Ausgang 1“; beide Stände gemessen; die Befehle
@@ -149,15 +154,30 @@ stehen im Codeblock, der Implementer trägt Stand und Trefferzahl ein):**
 
 ```suchlauf
 cd3a1c60 156 -n -i -E 'transient|Backoff|erneut versuchen|restart: "no"|Neustart nach einem Fehler|kontrollierte Fortsetzung|Ausgang 1' -- internal spec docs/user harness compose.yaml
-diff 183 -n -i -E 'transient|Backoff|erneut versuchen|restart: "no"|Neustart nach einem Fehler|kontrollierte Fortsetzung|Ausgang 1' -- internal spec docs/user harness compose.yaml
+diff 185 -n -i -E 'transient|Backoff|erneut versuchen|restart: "no"|Neustart nach einem Fehler|kontrollierte Fortsetzung|Ausgang 1' -- internal spec docs/user harness compose.yaml
 cd3a1c60 2 -n -i -E 'endet auf jeden|jeden Adapter-Fehler|nicht wiederholt' -- internal docs/user harness
-diff 0 -n -i -E 'endet auf jeden|jeden Adapter-Fehler|nicht wiederholt' -- internal docs/user harness
+diff 1 -n -i -E 'endet auf jeden|jeden Adapter-Fehler|nicht wiederholt' -- internal docs/user harness
+```
+
+**Fixrunde 2 (`ADR-0136`) — bewegte Eigenschaften: „was eine Rücksetzung der
+Episode trägt“ (Zählwort `30 s`, Beschreibung `stabil`/`gestreamt`, Symbol
+`streamRetryStableAfter`) und „welche Server-Fehler wiederholt werden“
+(Symbole `ErrRejected`/`SQLSTATE`, Beschreibung `Server-Abweisung`); Parent ist
+der Stand vor der Fixrunde:**
+
+```suchlauf
+8ad34a01 55 -n -i -E '30 s|stabil|streamRetryStableAfter|gestreamt|setzt die Episode|erfolgreiche[rn]? Zyklus' -- internal spec docs/user harness compose.yaml
+diff 61 -n -i -E '30 s|stabil|streamRetryStableAfter|gestreamt|setzt die Episode|erfolgreiche[rn]? Zyklus' -- internal spec docs/user harness compose.yaml
+8ad34a01 99 -n -i -E 'Server-Abweisung|SQLSTATE|ErrRejected' -- internal spec docs/user harness compose.yaml
+diff 112 -n -i -E 'Server-Abweisung|SQLSTATE|ErrRejected' -- internal spec docs/user harness compose.yaml
 ```
 
 | Träger | Befund | Behandlung |
 |---|---|---|
-| Kommentar an `Run` (`wiring.go`), Container-Vertrags-Zeile (`compose.yaml`), Handbuch, `SPEC-008` | nachgezogen: alle vier nennen die Wiederholung und ihre Grenze (`ADR-0135`); Suchlauf 1: 156 (`cd3a1c60`) → 183 (`diff`, +27 Wiederholungs-Erwähnungen), gemessen mit `make suchlauf-nachmessen` | „jede Aussage ‚trägt dieser Pfad nicht' folgt der Wiederholung" ✓ (der `Run`-Kommentar, `compose.yaml` und das Handbuch nennen die Wiederholung) |
-| Test-Kommentare, die auf die Freigabe des Slots warten (`TestStreamRestartsOnExistingSlot`) | Suchlauf 2: 2 → 0 — beide Ursprungs-Treffer sind nachgezogen; der `reportFault`-Kommentar (`wiring.go`) nennt jetzt „nicht wiederholbaren Adapter-Fehler und die Erschöpfung der Wiederholung" | Kommentar und Test folgen dem Verhalten ✓ |
+| Kommentar an `Run` (`wiring.go`), Container-Vertrags-Zeile (`compose.yaml`), Handbuch, `SPEC-008` | nachgezogen: alle vier nennen die Wiederholung und ihre Grenze (`ADR-0135`); Suchlauf 1: 156 (`cd3a1c60`) → 185 (`diff`, +29 Wiederholungs-Erwähnungen), gemessen mit `make suchlauf-nachmessen` | „jede Aussage ‚trägt dieser Pfad nicht' folgt der Wiederholung" ✓ (der `Run`-Kommentar, `compose.yaml` und das Handbuch nennen die Wiederholung) |
+| Fixrunde 2: Träger der Rücksetzung der Episode (Handbuch „Neustart nach einem Fehler“, Kommentar an `streamRetryStableAfter` und `runStreamWithRetry`, Test-Kommentare der Schwelle) | Suchlauf 3: 55 (`8ad34a01`) → 61 (`diff`); Fundstellen der Aussage „Zyklus von mindestens 30 s“ bis „Fehler gestreamt“ nachgezogen auf „ab der Bestätigung von `START_REPLICATION`“; die Historienzeile 1.82 des Handbuchs bleibt als Chronik stehen | kein Träger der alten Messgröße außer der Historienzeile ✓ (`git grep` nach `gestreamt|erfolgreiche[rn]? Zyklus|Zyklus.*30 s` trifft nur Handbuch-Abschnitt, Historie, `wiring.go`, Test-Kommentare) |
+| Fixrunde 2: Träger der wiederholten Fehlermenge (`SPEC-008` Zeile `transient`, Handbuch, `compose.yaml`-Kommentar, `Run`-Kommentar, `ErrRejected`/`serverFault`-Kommentare) | Suchlauf 4: 99 (`8ad34a01`) → 112 (`diff`); `SPEC-008` nennt `ErrRejected` und die SQLSTATE-Auswahl, `compose.yaml` und der `Run`-Kommentar nennen die Server-Abweisung außerhalb der Auswahl | jede Nennung der wiederholten Fehler folgt der Positivliste ✓; Suchlauf 2 (`diff` 1) trifft die neue Handbuch-Zeile „Nicht wiederholt werden Berechtigungsfehler …“, die das geltende Verhalten beschreibt, keinen Rest der alten Aussage |
+| Test-Kommentare, die auf die Freigabe des Slots warten (`TestStreamRestartsOnExistingSlot`) | Suchlauf 2: 2 → 1 — beide Ursprungs-Treffer sind nachgezogen, der eine verbleibende Treffer ist die Handbuch-Zeile der Fixrunde 2 (oben); der `reportFault`-Kommentar (`wiring.go`) nennt jetzt „nicht wiederholbaren Adapter-Fehler und die Erschöpfung der Wiederholung" | Kommentar und Test folgen dem Verhalten ✓ |
 
 ## 4. Trigger
 
