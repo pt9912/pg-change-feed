@@ -8,8 +8,8 @@
 **Modell:** Sonnet 5.5 · **Datum:** 2026-09-30
 
 Mutationen liefen auf Kopien im Scratchpad (`git archive HEAD`, Änderung per `sed … > Kopie`),
-Testlauf mit dem Aufruf von `make test` (gepinntes Race-Image, `--network none`) auf dem Paket
-`internal/bootstrap`. Kein `make image`, kein `sed -i`, der Arbeitsbaum blieb unberührt.
+Testlauf im gepinnten Race-Image mit `--network none` (der Aufruf von `make test`, beschränkt auf
+das Paket `internal/bootstrap`). Kein `make image`, kein `sed -i`, der Arbeitsbaum blieb unberührt.
 
 ## Ergebnis in Kürze
 
@@ -30,7 +30,7 @@ Verdikt: **Fixrunde am Implementer nötig.** Die DoD-Checkbox „Review durchgef
 - `quelle`: `ADR-0135` Festlegung 2 („Ein erfolgreicher Stream-Zyklus setzt die Episode zurück"); Reviewer-Skill HIGH „Kommentar trägt keine der Kommentar-Klassen" (Zusage)
 - `pfad`: `internal/bootstrap/wiring.go:1886-1904` (`runStreamWithRetry`), Doc-Kommentar `wiring.go:1875-1884`; Handbuch `docs/user/benutzerhandbuch.md` §6 „Neustart nach einem Fehler"
 - `befund`: `delay` und `windowStart` leben über die ganze Schleife. Ein Zyklus, der nach einem Fehlversuch lange erfolgreich streamt und dann wieder mit `ErrReplication` endet, erbt Verzögerung und Fensterbeginn der alten Episode. Der Kommentar an `runStreamWithRetry` und das Handbuch sagen „ein erfolgreicher Zyklus setzt die Episode zurück", der Code hat keine Stelle, die das tut: nur die Rückkehr mit `nil` verlässt die Funktion.
-- Nachgefahren: Scratchpad-Test `m5` — Zyklus 1 scheitert, Zyklus 2 läuft eine Stunde (Uhr) und scheitert dann. Ergebnis: `Fehlerklasse transient: Wiederholung erschöpft … (waits=[2s])`. Die zweite Störung nach einer Stunde Betrieb gilt als erschöpft. Das ist das Gegenteil von „Kurze Störungen beenden den Container nicht mehr" und beendet den Prozess bei jeder zweiten Störung eines Langläufers.
+- Nachgefahren: Scratchpad-Test `m5` — Zyklus 1 scheitert, Zyklus 2 läuft eine Stunde (Uhr) und scheitert dann. Ergebnis: `Fehlerklasse transient: Wiederholung erschöpft … (waits=[2s])`. Die zweite Störung nach einer Stunde Betrieb gilt als erschöpft; der Prozess endet bei der zweiten Störung eines Langläufers, obwohl die Episode längst vorbei ist. Der vorhandene Test `TestRunStreamWithRetryEpisodeZurueckgesetzt` ruft die Funktion zweimal neu auf und prüft deshalb nur einen frischen Start, nicht die Rücksetzung.
 - `verifizierbar`: ja (`make test` mit dem beschriebenen Test rot)
 - `klasse`: Zusage nicht getragen / Kommentar-Zusage ohne Code
 
@@ -46,14 +46,14 @@ Verdikt: **Fixrunde am Implementer nötig.** Die DoD-Checkbox „Review durchgef
 ### F-3 MEDIUM — Grenzen der Mutationsprobe: Fenster, Anfangsverzögerung und Obergrenze sind nicht an ihre Werte gebunden
 
 - `kategorie`: MEDIUM
-- `quelle`: Plan DoD 1 („je Grenze ein Test, dessen Mutation der Eingabeseite rot färbt"); Skill HIGH-Klasse „Zusage ohne Bindung an ihre Eingabeseite" (hier MEDIUM, weil die Testfamilie vorhanden ist und drei der vier Grenzen teilweise trägt)
+- `quelle`: Plan DoD 1 („je Grenze ein Test, dessen Mutation der Eingabeseite rot färbt"); Skill-Klasse „Zusage ohne Bindung an ihre Eingabeseite" (hier MEDIUM, weil die Testfamilie vorhanden ist und Teile der Grenzen trägt)
 - `pfad`: `internal/bootstrap/stream_retry_internal_test.go` (`…Erschoepfung…`, `…BackoffFolge`, `…Obergrenze`)
 - `befund`: Die Tests referenzieren die Konstanten statt der Werte der ADR. Mutationen (gefahren):
   - Fenster 5 min → 10 min (`m1`): alle `TestRunStreamWithRetry*` grün.
-  - Fenster-Vergleich mit Faktor 3 (`m4`): grün; der Erschöpfungstest springt je Wartezug um 6 min und trifft jede Fenstergröße unter 6 min·n.
-  - Obergrenze 30 s → 60 s zusammen mit Anfangsverzögerung 2 s → 3 s (`m2`): rot — nur, weil die Obergrenzen-Erwartung an feste Indizes hängt.
+  - Fenster-Vergleich mit Faktor 3 (`m4`): grün; der Erschöpfungstest springt je Wartezug um 6 min und trifft jede Fenstergröße unter 12 min.
+  - Obergrenze 30 s → 60 s zusammen mit Anfangsverzögerung 2 s → 3 s (`m2`): rot — nur weil die Obergrenzen-Erwartung an feste Indizes hängt; die Anfangsverzögerung allein ist nicht gebunden (nicht einzeln gefahren, hergeleitet aus dem Bezug auf die Konstante).
   - Klassen als wiederholbar (`m3`: `storage`, `configuration`, `schema`, Ordnungs-Verletzung): rot, gebunden.
-  Damit trägt die Mutation „Grenze verschoben" für das Gesamtfenster nicht; die Zahlen 2 s / 30 s / 5 min der ADR stehen in keinem Test.
+  Das Gesamtfenster trägt die Mutation „Grenze verschoben" nicht; die Zahlen 2 s / 30 s / 5 min der ADR stehen in keinem Test.
 - `verifizierbar`: ja
 - `klasse`: Zusage ohne Bindung an ihre Eingabeseite
 
@@ -62,7 +62,7 @@ Verdikt: **Fixrunde am Implementer nötig.** Die DoD-Checkbox „Review durchgef
 - `kategorie`: MEDIUM
 - `quelle`: `ADR-0135` Festlegung 3 (`permission` „gewinnt Warten nicht"); Plan DoD 2 („je Klasse ein Negativtest", `permission` genannt); `SPEC-008` (`permission`: „kein stiller Retry")
 - `pfad`: `internal/adapters/driving/replication/receive/receive.go:262-267, 410, 431`; `internal/bootstrap/wiring.go` `retryableStreamError`; `stream_retry_internal_test.go` (`…KlassenEndenOhneWiederholung`: vier Fälle, kein `permission`)
-- `befund`: Es gibt im Code keinen `permission`-Sentinel. Verbindungsaufbau (`ErrReplication: Verbindungsaufbau: …`), `START_REPLICATION` und jede `ErrorResponse` im Stream werden mit `ErrReplication` eingewickelt, gleich welcher SQLSTATE (z. B. 42501, 28xxx). Solche Fehler laufen jetzt 5 Minuten durch die Wiederholung statt sofort zu enden. Der Negativtest zur Klasse fehlt, der Zusage-Satz der ADR ist an dieser Stelle nicht getragen; SPEC-008 und Handbuch nennen `permission` als „nicht wiederholt".
+- `befund`: Es gibt im Code keinen `permission`-Sentinel. Verbindungsaufbau (`ErrReplication: Verbindungsaufbau: …`), `START_REPLICATION` und jede `ErrorResponse` im Stream werden mit `ErrReplication` eingewickelt, gleich welcher SQLSTATE (z. B. 42501, 28xxx). Solche Fehler laufen jetzt 5 Minuten durch die Wiederholung statt sofort zu enden. Der Negativtest zur Klasse fehlt, der Zusage-Satz der ADR ist an dieser Stelle nicht getragen; `SPEC-008` und Handbuch nennen `permission` als „nicht wiederholt".
 - `verifizierbar`: ja (Test mit einem `pgconn.PgError` 42501 in einer `ErrReplication`-Kette)
 - `klasse`: ADR-Zusage nicht getragen / fehlender Negativtest
 
@@ -101,21 +101,21 @@ Verdikt: **Fixrunde am Implementer nötig.** Die DoD-Checkbox „Review durchgef
 ### F-9 INFO — Fenster misst nur bis zum nächsten Fehler
 
 - `pfad`: `internal/bootstrap/wiring.go:1892`
-- `befund`: Das „Gesamtfenster 5 Minuten" wird erst bei einem weiteren Fehler geprüft; die Zeit im Zyklus zählt mit, ein Warteschritt (bis 30 s) kann das Fenster überschreiten. Handbuch nennt „Gesamtfenster 5 Minuten" ohne diese Ungenauigkeit. Zuständig: Architect, falls die Toleranz zählt.
+- `befund`: Das „Gesamtfenster 5 Minuten" wird erst bei einem weiteren Fehler geprüft; die Zeit im Zyklus zählt mit, ein Warteschritt (bis 30 s) kann das Fenster überschreiten. Das Handbuch nennt „Gesamtfenster 5 Minuten" ohne diese Ungenauigkeit. Zuständig: Architect, falls die Toleranz zählt.
 
 ## Geprüft, ohne Befund
 
 - Persist-before-ACK: `streamCycleAck` (`RWMutex`, `nil`-Prüfung mit Fehler) und Neuaufbau je Zyklus tragen die Zusage; der Assembler läuft über die Prozess-Lebensdauer (`receive.Config.Assembler`), Administrations- und API-Adapter halten denselben Assembler. `internal/adapters/driving/replication/receive`: ohne weiteren Befund.
 - `compose.yaml`: Kommentar stimmt mit ADR und Code überein (`restart: "no"` unverändert).
-- `spec/pflichtenheft.md` SPEC-008-Zeile `transient`: präzisiert, erweitert nicht (Spec-Stratum). Der Satz zu `permission` hängt an F-4.
-- `docs/plan/adr/`: ADR-0135 unverändert; ADR-Index trägt die Zeile.
+- `spec/pflichtenheft.md`, Zeile `transient` von `SPEC-008`: präzisiert, erweitert nicht (Spec-Stratum). Der Satz zu `permission` hängt an F-4.
+- `docs/plan/adr/`: `ADR-0135` unverändert; ADR-Index trägt die Zeile.
 - Traceability: alle Commits 50d9ecc4..b3667de2 nennen `ADR-0135`.
 - Kommentare im Diff: `make kommentar-kennungen DIFF=50d9ecc4~1` Exit 0, keine Kandidaten (Probe, nicht Beleg); Lesen der neuen Kommentare: kein Ketten- oder Chronik-Befund außer F-1 (Zusage) und F-2 (`reportFault`).
-- `make fmt-check`: 297 Go-Dateien geprüft, alle formatiert. `make docs-check`: Exit 0.
+- `make fmt-check`: 297 Go-Dateien geprüft, alle formatiert.
 - Docker-only: kein Host-Werkzeug-Verstoß im Diff erkennbar. Ersatzweg nach Verweigerung: nicht ablesbar (Bericht des Implementers nicht Teil des Diffs).
 - `internal/bootstrap/administration_startorder_internal_test.go`: Quelltext-Test folgt der neuen Schachtelung, ohne Befund.
 - `docs/plan/planning/observations/BEO-PGC/adapter-fehler-ausgang/state.md`: Zustandsfeld nennt Zustand und Anker, keine Chronik.
 
 ## Nicht Gegenstand
 
-DoD-Erfüllung (Verifier). `make gates`, `make test`, `make test-replication` wurden vom Auftraggeber als grün gemeldet (übernommen, nicht nachgefahren; `make test` lief nur als gezielte Teilmenge auf Kopien).
+DoD-Erfüllung (Verifier). `make gates`, `make test`, `make test-replication` wurden vom Auftraggeber als grün gemeldet (übernommen, nicht nachgefahren; gefahren wurde nur die gezielte Teilmenge auf Kopien).
