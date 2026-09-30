@@ -40,18 +40,19 @@ N-5) und unabhängig vom Verifier (Verifikations-Report §4).
 
 ## 2. Definition of Done
 
-- [ ] Der Aufbau-Frist-Wert in `Run` ist als benannte Größe geführt und durch
+- [x] Der Aufbau-Frist-Wert in `Run` ist als benannte Größe geführt und durch
       einen Quelltext- oder Verdrahtungstest gebunden. *Zu belegen durch:* die
       Mutation des Werts im Aufruf in `Run` färbt `make test` rot (Stelle,
-      Instanz und Farbe im Bericht genannt).
-- [ ] `make gates` grün — Exit-Code ungefiltert gesichert
+      Instanz und Farbe im Bericht genannt). Belegt im Verifikations-Report §4:
+      M1 (Wert 31 s) und M2 (Aufruf mit `10*streamRetryWindow`) rot.
+- [x] `make gates` grün — Exit-Code ungefiltert gesichert
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`docs/reviews/review-slice-capture-retry-aufbau-frist-bindung.md`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register fortgeschrieben oder „keine Beobachtung" in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register fortgeschrieben oder „keine Beobachtung" in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
 
 ## 3. Plan (vor Code)
 
@@ -99,17 +100,52 @@ Closure-Notiz mit Lerneintrag.
 
 - **Ein Quelltext-Test bindet die Schreibweise, nicht das Verhalten.**
   *Erwartet, zu belegen durch:* die Mutation des Werts (nicht des Namens) färbt
-  den Test rot. **Ausgang:** *(bei Closure)*
+  den Test rot. **Ausgang: eingetreten, als bekannte Grenze benannt.** Der Wert,
+  nicht der Name, färbt rot: M1 (Wert der Größe 31 s) und M2 (Aufruf in `Run` mit
+  `10*streamRetryWindow`) färben `TestRunSourceTextPassesTheSetupTimeoutToTheStreamCycle`
+  rot (Verifikations-Report §4, Reviewer und Verifier unabhängig). Die Schreibweise-Grenze
+  bleibt: M3, eine lokale Deklaration `streamSetupTimeout := 10 * streamRetryWindow`
+  direkt vor dem Aufruf, blieb bei beiden grün (Review F-1, LOW; Verifikations-Report
+  §4 M3). Der Test liest den Bezeichner des zweiten Arguments, nicht seine Auflösung;
+  das Shadowing ist die verbleibende Grenze des Quelltext-Tests und wird nicht
+  geschlossen (kein Folge-Slice, Begründung in §7).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure)*
-- **Beobachtungs-Register (`../observations/`):** *(zu tragen bei Closure)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
-- **Drei Paarungen:** *(zu tragen bei Closure)*
+- **Was hat funktioniert:** Die Bindung kam ohne Änderung des Werts aus: die benannte
+  Größe `streamSetupTimeout` (30 s) und ein Quelltext-Test, der ihren Wert und ihre
+  Verwendung als zweites Argument von `runStreamCycle` in `Run` bindet. Reviewer und
+  Verifier mutierten die Eingabeseite unabhängig (Wert der Größe, Wert im Aufruf) und
+  sahen beide rot; `make test` Exit 0, `make gates` Exit 0, `make suchlauf-nachmessen`
+  Exit 0 (Verifikations-Report §1, eigene Läufe des Verifiers).
+- **Was ging anders als geplant:** Nichts am Umfang. Die Mutation M3 (Shadowing) blieb
+  grün (Review F-1, LOW); die DoD verlangt die Wertmutation im Aufruf, nicht die
+  Abwehr jeder umgehenden Form, der Verifier stuft sie nicht als DoD-Bruch ein.
+  F-2 (INFO): der Wert-Teil pinnt 30 s; eine bewusste Schärfung nach dem
+  Re-Evaluierungs-Trigger von `ADR-0136` zieht den Test mit, gewollt.
+- **Steering-Loop-Eintrag (Lerneintrag):** geschärfte Lesart einer bestehenden
+  Regel, kein neuer Sensor: ein Quelltext-Test bindet die **Gestalt** des Quelltexts
+  und ist damit gegen absichtsvolles Umgehen (Shadowing) blind; seine Eingabeseite ist
+  die Wertmutation an den Stellen, die die Zusage nennt, nicht jede Umschreibung.
+  Ursprung: gemessen, Mutationen M1–M3 durch Reviewer und Verifier (Verifikations-Report
+  §4). Die Grenze steht im Test-Kommentar und in §6; ein Test, der Shadowing ausschlösse
+  (Prüfung, dass `Run` keine lokale Deklaration des Namens enthält), ist nicht gebaut.
+- **Beobachtungs-Register (`../observations/`):** einschlägig
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (verkörpert, Deckel 14×
+  überschritten, Zähler 21× Dateien). F-1 ist Schwere LOW, vor dem Merge von
+  Reviewer und Verifier gefunden und trifft einen bekannten Träger-Typ (Test
+  bindet die Eingabeseite nicht vollständig): nach der Deckel-Regel des Eintrags
+  keine `evidence/`-Datei, der Fund steht hier mit Finding-Kennung (Review F-1). Der
+  Zähler bleibt 21×. Der Slice ist zugleich die Bindung, die der Review von
+  `slice-capture-transient-wiederholung` als N-5 fand. Keine weitere Beobachtung.
+- **Folge-Slices:** keiner. Das Shadowing (F-1) bekommt keinen Slice: die Umgehung ist
+  absichtsvoll, der Test benennt seine Grenze. Der Schwester-Slice
+  `slice-capture-retry-realtest-belege-schaerfen` (`open/`) bleibt unberührt.
+- **Risiken aus §6:** ein Ausgang, siehe §6 (eingetreten, als bekannte Grenze
+  benannt).
+- **Drei Paarungen:** dieser Slice hat keine Welle; die Prüfung läuft regelkonform bei
+  der Closure der nächsten Welle. Die Paarung Folge-Slice verlangt für den Schwester-Slice
+  keine Änderung.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
