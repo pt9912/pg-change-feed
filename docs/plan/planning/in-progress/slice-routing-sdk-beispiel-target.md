@@ -77,7 +77,7 @@ Liefer-Punkte:
 
 ## 2. Definition of Done
 
-- [ ] [`LH-FA-SST-009`](../../../../spec/lastenheft.md) und
+- [x] [`LH-FA-SST-009`](../../../../spec/lastenheft.md) und
       [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (A): in jedem der drei Packages
       tragen der HTTP-Lesezugriff, der gRPC-Stream, der SSE-Client (und, nach
       `ADR-0138` Festlegung 1 mit `ReadChangesRequest.target = 7`, der
@@ -92,15 +92,26 @@ Liefer-Punkte:
       `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`). *Zu belegen durch:*
       `make sdk-pack-csharp`, `make sdk-pack-python`, `make sdk-pack-kotlin` (die Tests
       laufen im Bau; ein roter Test bricht ihn ab; Docker-only, braucht Netz).
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (B): die Beispiel-Clients der
+      *Beleg:* [Verifikations-Report](../../../reviews/verifikation-slice-routing-sdk-beispiel-target.md)
+      §1 und §3 — die drei `make sdk-pack-*` kamen dort aus dem Docker-Schicht-Cache ohne
+      Testzeile und belegen keine Ausführung; die Ausführung belegen die Test-Stufen mit
+      `docker build --no-cache` (gedruckt: Python `144 passed`, C# `Passed: 137`; Kotlin druckt
+      im grünen Lauf keine Testzahl, `:test` lief) und zehn selbst gefahrene Mutationen, alle rot.
+      Wire-Wirkung gegen einen laufenden Server ist nicht belegt (Menge: Unit-Ebene,
+      Fake-Transport, Fake-Invoker).
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (B): die Beispiel-Clients der
       vier Flächen in Go, C# und Kotlin (Parent: Go unter `examples/<fläche>-client/`,
       C# unter `examples/csharp/<fläche>-client/`, Kotlin unter `examples/kotlin/`)
       nehmen das Ziel über ein Flag nach dem Muster von `-schema`/`-table`; die Tests
       des jeweiligen Beispiels belegen Flag → Anfrage; `examples/README.md` nennt es. Die
       Beispiele bleiben Doku mit Bau-Bindung, kein Lauf-Beleg. *Zu belegen durch:*
       `make test` (Go-Beispiele), `make examples-csharp`, `make examples-kotlin`
-      (Docker-only, braucht Netz).
-- [ ] [`ADR-0134`](../../adr/0134-sdk-public-doc-check-gate-make-gates.md) und Nachzug
+      (Docker-only, braucht Netz). *Beleg:* Verifikations-Report §1 und §3 — `make test` Exit 0 (fünf
+      Beispiel-Pakete `ok`, nicht gecacht); C#-Beispiele im Bau ohne Cache (`Passed: 54`, `12`, `9`,
+      `52`, `20`, je `Failed: 0`), Kotlin-Beispiele im Bau ohne Cache (`:test` aller fünf Module
+      ausgeführt, keine Testzahl gedruckt); vier Go-Mutationen rot. Die C#- und Kotlin-Beispiele sind
+      vom Verifier nicht mutiert (nur ausgeführt gelesen).
+- [x] [`ADR-0134`](../../adr/0134-sdk-public-doc-check-gate-make-gates.md) und Nachzug
       (C): `make sdk-public-doc-check` Exit 0 (keine Kennung `SPEC-`, `ADR-`, `ARC-`,
       `LH-FA-`, `LH-QA-` und kein Slice-/Welle-Name unter `sdks/`, auch nicht in
       Docstrings, KDoc, XML-Doku, Fehlertexten); die generierten Python-Stubs prüft
@@ -111,26 +122,41 @@ Liefer-Punkte:
       Aussage „Go, C# und Kotlin nehmen den Filter über `-schema`/`-table`" ist
       vollständig; Handbuch-Version und Änderungshistorie tragen die Zeile.
       *Zu belegen durch:* `make sdk-public-doc-check`, `make docs-check`, Suchlauf in §3.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      *Beleg:* `make sdk-public-doc-check` Exit 0 („keine interne Kennung unter sdks“), Handbuch
+      `Version: 1.86` mit Historienzeile 1.86 als letzter Zeile (Verifikations-Report §4 Zeile 3).
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9;
-      `sdk-public-doc-check` ist Teil von `make gates`).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+      `sdk-public-doc-check` ist Teil von `make gates`). *Beleg:* Verifikations-Report §1
+      (Exit 0) und der Lauf der Closure (§7).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+      Self-Review (Modul 8). *Beleg:* Review
+      [`review-slice-routing-sdk-beispiel-target`](../../../reviews/review-slice-routing-sdk-beispiel-target.md)
+      (0 HIGH, 1 MEDIUM F-1 durch die Fixrunde `9e8bc1ce` geschlossen, 2 LOW, 2 INFO) und
+      Verifier-Gegenprüfung der Fixrunde
+      [`verifikation-slice-routing-sdk-beispiel-target`](../../../reviews/verifikation-slice-routing-sdk-beispiel-target.md)
+      (F-1 bis F-5 am Stand `HEAD` gelesen, Test-Stufen ohne Cache ausgeführt, zehn Mutationen). Es gab
+      **kein separates Re-Review** der Fixrunde: engere Fassung von
+      `BEO-PGC/fixrunde-ohne-reviewer-lesung` (Produktionslogik oder Norm geändert, oder kein anderer
+      Kontext hat sie ausgeführt) — die Fixrunde änderte nur READMEs, einen Docstring, das Handbuch und den
+      Plan, und der Verifier hat sie ausgeführt (Verifikations-Report §7).
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-routing-sdk-beispiel-target.md`
-      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: SDK-READMEs, `examples/README.md`, Handbuch (siehe C); kein
-      SPEC-/ARC-Eintrag. Die Package-Versionen bleiben (Abgrenzung §1).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13). *Beleg:* Exit 0, „18 Zeilen
+      stimmen“ (Verifikations-Report §1 und der Lauf der Closure, §7).
+- [x] Doku-Update: SDK-READMEs, `examples/README.md`, Handbuch (siehe C); kein
+      SPEC-/ARC-Eintrag. Die Package-Versionen bleiben (Abgrenzung §1). *Beleg:* Verifikations-Report §2
+      (`git diff --stat`: keine Datei unter `spec/`, `proto/`, `internal/`, `cmd/`, `gen/`; keine
+      Versionsdatei, kein Tag).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7) — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
       Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
@@ -223,23 +249,37 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   Zeichen im Zielnamen, Kodierung im Query-Parameter
   (`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`, offen, 2×;
   `BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter`, verkörpert, 4×). —
-  **Ausgang:** bei der Closure einzutragen (dieselbe Eingabetabelle je Sprache).
+  **Ausgang: teils entfallen, teils eingetreten.** *Entfallen:* HTTP, SSE und gRPC lesen die
+  Eingabetabelle `null`/`""`/`eu`/`a&b=c` in allen drei Sprachen gleich (Tests je Sprache; Reviewer
+  mutierte 13 Stellen in 10 Läufen, der Verifier 10 Stellen, je selbst gefahren, alle rot —
+  Review „Mutationen“, Verifikations-Report §3). *Eingetreten:* der Satz der Python-README zum
+  NATS-Stream war enger als der Code (Review F-3, vor dem Merge gefunden, in der Fixrunde
+  berichtigt) — drittes Auftreten von `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`, Datei
+  `evidence/slice-routing-sdk-beispiel-target.md`, siehe den Ausgang des Python-NATS-Randfalls unten.
 - **Interne Kennung in öffentlichem Text.** Docstrings, KDoc, XML-Doku und Fehlertexte
   erreichen die Anwender über die Packages; ein Kommentar mit `ADR-0137` ist ein Befund
   des Gates (`BEO-PGC/intern-kennungen-in-ausgelieferten-texten`, offen, 1×). —
-  **Ausgang:** bei der Closure einzutragen (`make sdk-public-doc-check` Exit 0).
+  **Ausgang: entfallen.** `make sdk-public-doc-check` Exit 0 („keine interne Kennung unter sdks“,
+  Verifikations-Report §1), Suchlauf `diff 0` für `ADR-|LH-FA|LH-QA|SPEC-|ARC-` unter `sdks/`
+  (§3); `make kommentar-kennungen DIFF=101e24cd~1` ohne Kandidat (Probe der Form, kein Beleg).
 - **Neues Anfrage-Feld, altes Server-Verhalten.** Ein Package mit `target` gegen einen
   Server ohne den Parameter bekommt ungefilterte Changes (gRPC) oder `400` (HTTP, SSE);
   die README sagt es mit dem Ursprung aus `slice-routing-lesewege` §6
   (`BEO-PGC/sdk-decoder-verhalten-am-neuen-feld-ungemessen`, gestrichen, 2×). —
-  **Ausgang:** bei der Closure einzutragen.
+  **Ausgang: weiter offen, hergeleitet.** Die READMEs sagen die Aussage mit dem Ursprung („has not
+  been run against such a release“); ein Lauf gegen ein Release ohne den Parameter ist weder von
+  Reviewer noch von Verifier gefahren (Review „Prüfung nach den Schwerpunkten“ (b), Verifikations-Report
+  §6). Der Beleg ist ein Lauf, der einen Server ohne den Parameter braucht; er hat keinen eigenen Träger
+  (der Realserver-Slice läuft gegen den Stand des Repos).
 - **Kein Realserver-Beleg.** Die Unit-Ebene beweist den Draht gegen Fakes, nicht gegen
   den laufenden Server (Abgrenzung §1; der Realserver-Beleg liegt bei
-  `slice-routing-sdk-realserver-e2e`). — **Ausgang:** bei der Closure einzutragen
-  (Aussage im Bericht auf die Menge „Unit-Ebene, Fake-Transport" beschränkt).
+  `slice-routing-sdk-realserver-e2e`). — **Ausgang: weiter offen**, Adresse
+  [slice-routing-sdk-realserver-e2e](../open/slice-routing-sdk-realserver-e2e.md); alle Aussagen dieses
+  Slice gelten für die Menge „Unit-Ebene, Fake-Transport, Fake-Invoker“ (Verifikations-Report §6).
 - **Netzbezug der Bauten.** `make sdk-pack-*` und `make examples-*` brauchen Netz
-  (Paketquellen) und Zeit; ein Netzausfall ist Umgebung, kein Befund. — **Ausgang:** bei
-  der Closure einzutragen.
+  (Paketquellen) und Zeit; ein Netzausfall ist Umgebung, kein Befund. — **Ausgang: entfallen.**
+  Alle Bauten von Implementer, Reviewer und Verifier endeten mit Exit 0, kein Netzausfall trat auf
+  (Verifikations-Report §1).
 - **Versionsstand der Packages.** Die Packages tragen die Version der letzten
   Veröffentlichung; eine Quelländerung ohne Versionsänderung ist kein Release — der
   Bericht sagt, dass weder Tag noch Version bewegt wurden. **Hinweis für den
@@ -250,32 +290,112 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   Signatur und ist neu zu übersetzen. Ein Java-Aufrufer von
   `PgChangeFeedSseClient.streamChanges` übersetzt nicht mehr ohne Argument (kein
   `@JvmOverloads`; keine Code-Änderung dafür). Der Release trägt einen
-  Versionssprung und einen Hinweis im Release. — **Ausgang:** bei der Closure
-  einzutragen (weiter offen bis zum Release-Entscheid).
+  Versionssprung und einen Hinweis im Release. — **Ausgang: weiter offen bis zum
+  Release-Entscheid des Auftraggebers** (kein Release in der Welle). Beleg: `git diff --stat` über
+  `*.csproj`, `*pyproject.toml`, `*build.gradle.kts` leer und kein Tag nach `101e24cd`
+  (Verifikations-Report §2, F-2).
 - **`schema`/`table` am SSE-Client der Packages.** Der Server filtert den SSE-Stream
   seit `ADR-0133` nach `schema`/`table`; die SSE-Clients der drei Packages und das
   SSE-Beispiel setzen beides nicht, `target` ist ihr einziger Filter. Die Nachlieferung
-  ist als eigener Slice vorgesehen: `slice-sdk-sse-client-schema-table-filter` (der
-  Planner legt die Datei bei der Closure in `open/` an; die öffentliche Doku nennt
-  keinen Slice-Namen). — **Ausgang:** weiter offen, Adresse oben.
+  ist ein eigener Slice (die öffentliche Doku nennt keinen Slice-Namen). —
+  **Ausgang: weiter offen**, Adresse
+  [slice-sdk-sse-client-schema-table-filter](../open/slice-sdk-sse-client-schema-table-filter.md); der
+  Plan dort trägt den Gegenstand (`git grep -n -E 'SSE-Client|schema|table' -- docs/plan/planning/open/slice-sdk-sse-client-schema-table-filter.md`
+  trifft §1 bis §3; seine Zusage „drei optionale“ steht erst nach der Lieferung an den SSE-Absätzen).
 - **Python-NATS-Randfall `target=""`** (Review F-3):
   `drei-sprachen-kopie-divergiert-am-randfall` — Python liest ein leeres Ziel als
   „kein Ziel" (`stream_changes(target="")` abonniert den Namensraum der Quelle), C# und
   Kotlin weisen ein leeres Ziel am Subjekt-Bau ab. Die Differenz folgt dem
   Parameter-Schnitt (Python hat kein Subjekt-Argument) und steht in den READMEs und im
-  Docstring. — **Ausgang:** weiter offen; ob dies ein drittes Auftreten der
-  Beobachtungsklasse zählt, ordnet der Planner ein.
+  Docstring. — **Ausgang: eingetreten und eingeordnet.** Das Verhalten ist eine gewollte
+  API-Form-Differenz, kein Divergenz-Fund; gezählt wird der Satz der Python-README, der dem Wortlaut der
+  Schwester-READMEs folgte und enger als der Code war (gleiche Form wie der zweite Beleg der Klasse):
+  drittes Auftreten, Zähler **3×**, Ausgang beim Lese-Schritt der Closure von
+  [welle-routing](../welle-routing.md) (Begründung im `state.md` der Beobachtung).
+- **Iterator-Test für ein Ziel aus Leerraum (Verifier V-2, LOW).** Die README-Aussage zu Python-NATS
+  („nur Leerraum“ wirft beim ersten `next()`) ist für diese Zeichenklasse am Subjekt-Bau getestet, am
+  Iterator nur mit `"a.b"`. — **Ausgang: hingenommen.** Beide Eingaben laufen im Code durch denselben
+  Pfad (`_target_subject`, gelesen vom Verifier, Verifikations-Report §5 F-3 und §8); der Fehlerzeitpunkt ist
+  durch den Iterator-Test mit `"a.b"` gebunden. Kein Folgezug.
+- **Kotlin-Testzahl im grünen Lauf (Verifier V-1, INFO).** Der grüne Gradle-Lauf druckt keine Testzahl; die
+  Zahl 110 ist aus den roten Mutationsläufen **abgeleitet** (`110 tests completed, 2 failed` und
+  `110 tests completed, 1 failed`), nicht aus einem grünen Lauf gemessen. — **Ausgang: hingenommen**, Eigenschaft
+  des Sensors; die Zahlen 137 (C#) und 144 (Python) sind im Bau ohne Cache gedruckt.
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
-
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** Die drei SDK-Packages (C#, Kotlin, Python) und die Beispiele in Go, C#
+  und Kotlin tragen `target` an HTTP-Lesezugriff, gRPC-Stream, `ReadChanges` des Administration-Clients
+  und SSE sowie das NATS-Zusatz-Subjekt; ohne Angabe bleibt der Aufruf unverändert (Tests je Sprache mit
+  derselben Eingabetabelle `null`/`""`/`eu`/`a&b=c`). Belegt auf der Menge „Unit-Ebene, Fake-Transport,
+  Fake-Invoker“, nicht am laufenden Server. **Ursprung der Zahlen (§3.12):** Testzahlen C# 137 und Python
+  144 hat der Verifier im Bau ohne Cache gedruckt gesehen; Kotlin 110 ist **abgeleitet** aus den
+  roten Mutationsläufen des Verifiers (der grüne Lauf druckt keine Zahl); die C#-Beispiele (54, 12, 9, 52, 20)
+  sind vom Verifier im Bau ohne Cache gedruckt. Mutationen: der Reviewer fuhr 13 Stellen in 10 Läufen selbst, der
+  Verifier 10 Mutationen selbst (Go 4, Python 2, C# 2, Kotlin 2), alle rot; die Mutationen des Implementers sind
+  **übernommen**, nicht nachgefahren. Die Wahrheitsprobe kam von zwei unabhängigen Kontexten, die den Bau
+  selbst ausführten.
+- **Was ging anders als geplant:** (1) Die Annahme der Welle-Eröffnung, alle vier Beispiel-Flächen trügen das Paar
+  `-schema`/`-table`, traf nur `grpc-client` und das `changes`-Verb von `http-client` zu; SSE- und NATS-Beispiel
+  bekamen nur `target` (Plan §3, Suchlauf-Tabelle). (2) Eine Fixrunde (`9e8bc1ce`) zu F-1 (MEDIUM: der Aufschub
+  „offener Folge-Schritt“ für `schema`/`table` am SSE-Client trug keine Adresse; die Aussage wurde auf den
+  Ist-Zustand berichtigt, die Adresse steht in §6), F-3 (Python-README zum leeren Ziel) und F-4
+  (Fehlerzeitpunkt des Python-Generators); sie änderte nur READMEs, einen Docstring, das Handbuch (1.86) und den Plan.
+  Ein Re-Review gab es nicht (engere Fassung von `BEO-PGC/fixrunde-ohne-reviewer-lesung`, Verifier hat
+  ausgeführt). (3) Die drei `make sdk-pack-*` und beide `make examples-*` kamen bei Reviewer und Verifier aus dem
+  Docker-Schicht-Cache und druckten keine Testzeile.
+- **Steering-Loop-Eintrag:** geschärfte Handlung, kein neuer Sensor, nicht verkörpert (gezählt, 1×): **Ein
+  Docker-Cache kann Testläufe still überspringen — ein `make sdk-pack-*`- oder `make examples-*`-Lauf, der
+  aus dem Cache kommt und keine Testzeile druckt, belegt keine Testausführung.** Die Lese-Handlung der
+  Rollen (Reviewer, Verifier, Planner beim Abhaken von „Tests grün“): die gedruckte Testzeile eines Baus
+  ohne Cache an der Test-Stufe (`docker build --no-cache`, Argumente wie das Skript des Makefile-Wegs) oder eine
+  Mutation, die die Stufe rot färbt, ist der Beleg; „Exit 0“ allein ist es nicht. Benannte Lücke: kein Sensor
+  erzwingt den Bau ohne Cache, und der grüne Gradle-Lauf druckt keine Testzahl (V-1). Zweitens, als Beobachtung
+  (nicht als Regel): eine Mutationsreihe nennt absolute Pfade und prüft `git status` nach jedem Lauf — der
+  Reviewer mutierte nach einem fehlgeschlagenen `cd` drei Repo-Dateien (zurückgenommen, selbst berichtet).
+  Beide ohne `liegt in`, weil in diesem Slice nichts verkörpert wurde.
+- **Beobachtungs-Register (`../observations/`):** drei Dateien, zwei Vermerke, ein Deckel-Vermerk.
+  - **`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`** (offen): `evidence/slice-routing-sdk-beispiel-target.md`,
+    Zähler **2×** → **3×** (`ls evidence | wc -l`), **Schwelle erreicht**. Einordnung nach der Zählregel (gezählt
+    wird der Satz, nicht das Verhalten): das Verhalten ist eine gewollte API-Form-Differenz (Plan §3 benennt sie),
+    der Satz der Python-README folgte dem Wortlaut der Schwester-READMEs und war enger als der Code — dieselbe Form
+    wie der zweite Beleg; Begründung im `state.md`. Der Ausgang gehört zum Lese-Schritt der Closure von
+    [welle-routing](../welle-routing.md).
+  - **`BEO-PGC/docker-cache-ueberspringt-tests-still`** (neu, offen, **1×**): Beobachtung, Zustand und
+    `evidence/slice-routing-sdk-beispiel-target.md` angelegt. Eigenes Verzeichnis statt Beleg bei
+    `BEO-PGC/test-runner-stiller-ausschluss` (Skript-Filter) und `BEO-PGC/test-methode-lauft-still-nicht`
+    (Signatur-Form): hier ist der Test vorhanden und erfasst, die Stufe läuft nicht; Abgrenzung in der
+    `observation.md`.
+  - **`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`** (verkörpert, 8× → 9×, unter dem Deckel von 10×):
+    `evidence/slice-routing-sdk-beispiel-target.md` — Mutationsprobe des Reviewers an drei Repo-Dateien nach einem
+    fehlgeschlagenen `cd`, selbst bemerkt und zurückgenommen; im `state.md` als neunter Beleg vermerkt, kein
+    Beleg für das erste Neubewertungs-Kriterium.
+  - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×): **siebter Gegenbeleg, keine Datei** (Verifier hat die
+    Fixrunde ausgeführt); im `state.md` vermerkt, der Ausgang bleibt beim Lese-Schritt der Closure von
+    [welle-routing](../welle-routing.md).
+  - **Kein Eintrag, nach Zählregel entschieden:** Review F-1 (MEDIUM, Aufschub ohne Adresse im Handbuch) — die
+    Regel „Ein Aufschub ohne Adresse ist keiner“ steht in `.claude/commands/implement-slice.md` Schritt 17, der
+    Reviewer fand die Verletzung vor dem Merge mit der dortigen Probe, die Fixrunde schloss sie; es entsteht keine
+    neue Datei, weil keine bestehende Beobachtung den Fall „Adresse fehlt ganz“ als Klasse führt und er mit F-1
+    einmal vorlag (unter der Schwelle, wird bei einem weiteren Auftreten neu angelegt). Review F-2 (Binärkompatibilität),
+    F-4, F-5 sind Träger-Nachzüge im Slice. `BEO-PGC/intern-kennungen-in-ausgelieferten-texten`: kein Auftreten
+    (Gate Exit 0); `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme`: kein Fund in den READMEs.
+- **Folge-Slices:** [slice-sdk-sse-client-schema-table-filter](../open/slice-sdk-sse-client-schema-table-filter.md)
+  (SSE-Client der drei Packages und SSE-Beispiele: `schema`/`table`; ist eine Datei in `open/`, ohne Welle) und
+  [slice-routing-sdk-realserver-e2e](../open/slice-routing-sdk-realserver-e2e.md) (Realserver-Beleg, Welle §4
+  Abweichung 4).
+- **Risiken aus §6:** Randfall in drei Sprachen **teils entfallen, teils eingetreten** (Satz der Python-README, 3×);
+  Interne Kennung **entfallen**; Altserver **weiter offen, hergeleitet**; Realserver **weiter offen**
+  (`slice-routing-sdk-realserver-e2e`); Netzbezug **entfallen**; Versionsstand **weiter offen** bis zum
+  Release-Entscheid des Auftraggebers (Binärinkompatibilität C#/Kotlin benannt); `schema`/`table` am SSE-Client
+  **weiter offen** (`slice-sdk-sse-client-schema-table-filter`); Python-NATS `target=""` **eingetreten und
+  eingeordnet**; V-2 und V-1 **hingenommen**.
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die Prüfung läuft bei deren
+  Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: nichts verkörpert; (b) Folge-Slice: beide genannten Pläne liegen
+  als Datei in `open/`; (c) Register: die genannten Kennungen existieren als Verzeichnis, jede trägt ein nicht leeres
+  `evidence/`.
+- **Validator (Modul 8):** entfällt — der Nutzer-Bedarf ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md)) wird erst
+  durch den Wellen-Beleg am laufenden Server validierbar (`slice-routing-sdk-realserver-e2e`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

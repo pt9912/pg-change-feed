@@ -64,3 +64,10 @@ Guard gemessen; gemessen ist allein, dass die Hook-Eingabe `python3 --version` a
 `cea198fb` mit Exit 0 ohne Ausgabe endet. **Nicht gezählt** (kein abgeschlossener Vorgang mit Beleg-Datei-Namen;
 Ursprung wie oben, keine Wirkung auf eine Repo-Datei): ein Planner-Aufruf `python3` mit leerem Heredoc bei
 einer Slice-Anlage (geblockt; der Vorgang ist im Auftrag nicht benannt).
+Der neunte Beleg (`slice-routing-sdk-beispiel-target`, evidence/slice-routing-sdk-beispiel-target.md)
+ist eine Mutationsprobe des Reviewers, die nach einem fehlgeschlagenen `cd` an drei Repo-Dateien statt an
+der Kopie im Scratchpad lief; der Reviewer bemerkte es an `git status`, nahm sie mit `git checkout` zurück
+und prüfte danach `git status --short` leer. Die Fassung `AGENTS.md` §3.1 („eine Mutationsprobe arbeitet
+auf einer Kopie“) galt; was fehlte, war die Absicherung des Verzeichniswechsels. Beobachtung, keine neue
+Regel: eine Mutationsreihe nennt absolute Pfade und prüft `git status` nach jedem Lauf. Kein Beleg für
+das erste Neubewertungs-Kriterium (kein Host-Interpreter am Kopf).

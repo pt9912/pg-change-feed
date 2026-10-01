@@ -11,6 +11,21 @@ INSERT/DELETE kopierte den Wortlaut der Schwester-READMEs, und die Kotlin-Biblio
 liefert dort `JsonNull` statt `null` (Review F-2, behoben, Kotlin-README nennt
 `JsonNull`). Unter der Schwelle, kein Ausgang zugewiesen.
 
+**Dritter Beleg, Schwelle erreicht (slice-routing-sdk-beispiel-target, Review F-3):** der
+Zähler steht bei **3×** (evidence/slice-backfill-sdk-origin.md,
+evidence/slice-sdk-readme-nutzerdoku.md, evidence/slice-routing-sdk-beispiel-target.md); der Ausgang
+gehört zum Lese-Schritt der Closure von `welle-routing`. Einordnung nach der Zählregel: gezählt wird
+der **Satz**, nicht das Verhalten. Das Verhalten (Python liest das leere Ziel am NATS-Stream als „kein
+Ziel“, C# und Kotlin weisen es am Subjekt-Bau ab) ist eine **gewollte API-Form-Differenz** — im Plan
+benannt, am Parameter-Schnitt begründet, kein Divergenz-Fund einer Bibliothek am Randwert. Der Satz der
+Python-README war dagegen dem Wortlaut der Schwester-READMEs gefolgt und enger als der Code: dieselbe
+Form wie der zweite Beleg (Doku-Aussage über einen Randfall, in drei Sprachen mit unterschiedlichem
+Verhalten kopiert; vom Reviewer vor dem Merge gefunden). Der Eintrag ist `offen`, nicht `verkörpert`,
+der Deckel gilt nicht. Gegenläufig belegt: HTTP, SSE und gRPC lasen dieselbe Eingabetabelle
+(`null`/`""`/`eu`/`a&b=c`) in allen drei Sprachen gleich, weil der Plan sie als Pflicht-Eingabesatz
+je Sprache nannte (der Reviewer mutierte 13 Stellen in 10 Läufen, der Verifier 10 Mutationen, je selbst gefahren) — die Gegenmaßnahme „derselbe Eingabesatz je Sprache im Plan“ ist wirksam, aber nicht für
+die Sätze der README.
+
 **Verwandt, nicht gleich:** `BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter`
 (die Kopie trägt einen Fehler des Vorbilds weiter) und
 `BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft` (zwei Quellen nennen dieselbe
