@@ -187,6 +187,32 @@ func rename(t *testing.T, name, column, to string) model.Transformation {
 	return rule
 }
 
+// fakeRoutes trägt den Routing-Regelstand; er folgt dem Muster von fakeRules.
+type fakeRoutes struct {
+	trace *trace
+	// stateFn liefert den Stand des n-ten Aufrufs (ab 1).
+	stateFn func(call int) map[string][]model.RouteRule
+	// err lässt jeden Aufruf scheitern; ist errCall gesetzt, scheitert nur
+	// der errCall-te Aufruf (ab 1).
+	err       error
+	errCall   int
+	calls     int
+	gotSource model.SourceID
+}
+
+func (f *fakeRoutes) RoutingRules(ctx context.Context, source model.SourceID) (map[string][]model.RouteRule, error) {
+	f.calls++
+	f.trace.add("RoutingRules")
+	f.gotSource = source
+	if f.err != nil && (f.errCall == 0 || f.errCall == f.calls) {
+		return nil, f.err
+	}
+	if f.stateFn == nil {
+		return nil, nil
+	}
+	return f.stateFn(f.calls), nil
+}
+
 type fakeSchemas struct {
 	version model.SchemaVersion
 	found   bool
@@ -483,6 +509,7 @@ type rig struct {
 	activation *fakeActivation
 	exclusion  *fakeExclusion
 	rules      *fakeRules
+	routes     *fakeRoutes
 	schemas    *fakeSchemas
 	snapshotP  *fakeSnapshotPort
 	snapshot   *fakeSnapshot
@@ -504,6 +531,7 @@ func newRig() *rig {
 		activation: &fakeActivation{trace: tr, table: table, published: true},
 		exclusion:  &fakeExclusion{trace: tr},
 		rules:      &fakeRules{trace: tr},
+		routes:     &fakeRoutes{trace: tr},
 		schemas:    &fakeSchemas{version: version, found: true},
 		snapshot: &fakeSnapshot{
 			trace:   tr,
@@ -527,6 +555,7 @@ func newRig() *rig {
 		Activation:      r.activation,
 		Exclusion:       r.exclusion,
 		Transformations: r.rules,
+		Routing:         r.routes,
 		Schemas:         r.schemas,
 		Snapshot:        r.snapshotP,
 		Admission:       r.admission,
@@ -946,7 +975,7 @@ func TestExecuteCommittedAtIsSnapshotTime(t *testing.T) {
 func TestExecuteWithoutNotifier(t *testing.T) {
 	r := newRig()
 	service := backfill.NewBackfillTableService(backfill.Ports{
-		Activation: r.activation, Exclusion: r.exclusion, Transformations: r.rules, Schemas: r.schemas, Snapshot: r.snapshotP,
+		Activation: r.activation, Exclusion: r.exclusion, Transformations: r.rules, Routing: r.routes, Schemas: r.schemas, Snapshot: r.snapshotP,
 		Admission: r.admission, Runs: r.runs, Writer: r.writer, Clock: r.clock,
 	})
 	result, err := service.Execute(context.Background(), backfill.BackfillExecuteCommand{Run: queuedRun(t), Publication: testPublication})
@@ -1597,7 +1626,7 @@ func (c *scriptClock) Now() model.TimePoint {
 func (r *rig) executeWithClock(ctx context.Context, t *testing.T, clock outbound.ClockPort) (backfill.BackfillExecuteResult, error) {
 	t.Helper()
 	service := backfill.NewBackfillTableService(backfill.Ports{
-		Activation: r.activation, Exclusion: r.exclusion, Transformations: r.rules, Schemas: r.schemas, Snapshot: r.snapshotP,
+		Activation: r.activation, Exclusion: r.exclusion, Transformations: r.rules, Routing: r.routes, Schemas: r.schemas, Snapshot: r.snapshotP,
 		Admission: r.admission, Runs: r.runs, Writer: r.writer, Clock: clock,
 	}, backfill.WithChangeNotification(r.notifier), backfill.WithLog(r.log))
 	return service.Execute(ctx, backfill.BackfillExecuteCommand{Run: queuedRun(t), Publication: testPublication})

@@ -209,6 +209,7 @@ func TestBackfillAndWALImagesAreByteEqualWithRules(t *testing.T) {
 						Activation:      &fakeTableActivationPort{registered: map[string]model.SourceTable{qualified: table}},
 						Exclusion:       &fakeColumnExclusionPort{excluded: map[string][]string{qualified: excluded}},
 						Transformations: &fakeTransformationPort{rules: map[string][]model.Transformation{qualified: rules}},
+						Routing:         &fakeRoutingPort{},
 						Schemas:         &fakeSchemaStorePort{versions: map[model.SourceTableID]model.SchemaVersion{table.ID: version}},
 						Snapshot:        &paritySnapshotPort{snapshot: &paritySnapshot{columns: columns, rows: rows}},
 						Runs:            &fakeBackfillRunPort{},

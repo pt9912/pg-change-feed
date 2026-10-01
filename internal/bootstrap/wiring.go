@@ -828,6 +828,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		Activation:      activation,
 		Exclusion:       activation,
 		Transformations: activation,
+		Routing:         activation,
 		Schemas:         schemaStore,
 		Snapshot:        backfillSnapshot,
 		Admission:       backfillAdmission,

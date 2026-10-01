@@ -131,6 +131,12 @@ var (
 	// Regel ist auf eine Form nicht anwendbar.
 	ErrTransformationStateChanged = stderrors.New("Regelstand während des Backfills geändert")
 
+	// ErrRoutingStateChanged: der Routing-Regelstand der Tabelle weicht von
+	// dem ab, mit dem die Blöcke eines Runs gebaut wurden. Fehlerklasse
+	// `configuration`: der Zustand wechselt, keine Regel ist auf eine Form
+	// nicht anwendbar.
+	ErrRoutingStateChanged = stderrors.New("Routing-Regelstand während des Backfills geändert")
+
 	// ErrInvalidTransformation: eine Transformationsregel verletzt die
 	// Invarianten ihres Regeltyps — `column` oder `to` leer, mit dem
 	// Zeichen U+0000, `to` länger als 63 Byte in UTF-8 oder `values` von

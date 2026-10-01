@@ -738,6 +738,7 @@ func checkParity(t *testing.T, dsn string, admin *pgconn.PgConn, set typeSet, vi
 		if !bytes.Equal(walImage, image) {
 			t.Errorf("Zeile %s: WAL-Bild %s ≠ Backfill-Bild %s", id, walImage, image)
 		}
+		checkRouteParity(t, id, walRow, columns, row)
 	}
 
 	// Die Bindung an die Aussage: die Rollen-GUC prägen das Bild tatsächlich,
@@ -757,6 +758,32 @@ func checkParity(t *testing.T, dsn string, admin *pgconn.PgConn, set typeSet, vi
 		t.Errorf("Bild der NULL-Zeile = %s, erwartet {\"id\":\"3\"}", got)
 	}
 	t.Logf("Bild Zeile 1 in der Lage %s: %s", lage.name, image)
+}
+
+// checkRouteParity trägt die Ziel-Parität über den Typ-Satz: für jede Spalte
+// der Zeile eine Routing-Regel, deren Bedingung den Roh-Text des WAL-Pfads
+// trifft, liefert `model.EvaluateRoute` über die Werte des WAL-Pfads und über
+// die des Backfill-Pfads dasselbe Ziel — das Ziel der Regel bei einem Wert, kein
+// Ziel bei NULL. Der Roh-Text ist die Eingabe der Auswertung, nicht das Bild.
+func checkRouteParity(t *testing.T, id string, wal walRow, columns []string, row []*string) {
+	t.Helper()
+	for i, name := range columns {
+		equals, want := "", model.RouteTarget("")
+		if wal.values[i] != nil {
+			equals, want = *wal.values[i], "ziel"
+		}
+		rule, err := model.NewRouteRule("parity-"+name, "ziel", 1, &model.RouteCondition{Column: name, Equals: equals})
+		if err != nil {
+			t.Fatalf("NewRouteRule(%q): %v", name, err)
+		}
+		rules := []model.RouteRule{rule}
+		if got := model.EvaluateRoute(rules, wal.columns, wal.values); got != want {
+			t.Errorf("Zeile %s, Spalte %s: WAL-Ziel %q, erwartet %q", id, name, got, want)
+		}
+		if got := model.EvaluateRoute(rules, columns, row); got != want {
+			t.Errorf("Zeile %s, Spalte %s: Backfill-Ziel %q, erwartet %q", id, name, got, want)
+		}
+	}
 }
 
 func sameText(a, b *string) bool {

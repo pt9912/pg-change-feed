@@ -24,10 +24,11 @@ type (
 	BackfillExecuteResult  = inbound.BackfillExecuteResult
 )
 
-// Ports bündelt die neun obligatorischen Outbound-Ports des Use Cases; alle
+// Ports bündelt die zehn obligatorischen Outbound-Ports des Use Cases; alle
 // sind Fähigkeits-Ports (`ADR-0034`): Bindung und Publication
 // (`TableActivationPort`), Ausschlussstand (`ColumnExclusionPort`),
-// Regelstand (`TransformationPort`),
+// Regelstand der Transformationen (`TransformationPort`) und des Routings
+// (`RoutingPort`),
 // Schema-Version der Tabelle (`SchemaStorePort`), Snapshot
 // (`TableSnapshotPort`), Annahme, Run-Zustand und Schreiber sowie die Uhr
 // (`ClockPort`).
@@ -35,6 +36,7 @@ type Ports struct {
 	Activation      outbound.TableActivationPort
 	Exclusion       outbound.ColumnExclusionPort
 	Transformations outbound.TransformationPort
+	Routing         outbound.RoutingPort
 	Schemas         outbound.SchemaStorePort
 	Snapshot        outbound.TableSnapshotPort
 	Admission       outbound.BackfillAdmissionPort
@@ -169,30 +171,33 @@ func (s *BackfillTableService) Execute(ctx context.Context, command BackfillExec
 // Alle Blöcke tragen die Position `X` des Snapshots und den
 // Snapshot-Zeitpunkt (die Uhr wird nach dem Öffnen des Snapshots gelesen).
 //
-// Der Regelstand der Tabelle wird einmal nach dem Öffnen des Snapshots
-// gelesen und gegen dessen Spalten
-// geprüft (`checkRulesApplicable`), bevor eine Zeile gelesen und bevor die
-// Schreibtransaktion geöffnet wird: eine Regel, die auf die Spalten nicht
-// anwendbar ist, endet den Run mit der Klasse `schema`, auch bei einer
-// leeren Tabelle. Dieser Stand ist der
-// Stand des Runs; ein Antrag, der ihn danach ändert, endet den Run mit
-// `configuration`, sobald eine Lesung die Änderung sieht.
+// Die Regelstände der Tabelle — Transformationen und Routing — werden einmal
+// nach dem Öffnen des Snapshots gelesen und gegen dessen Spalten
+// geprüft (`checkRulesApplicable`, `checkRoutesApplicable`), bevor eine Zeile
+// gelesen und bevor die Schreibtransaktion geöffnet wird: eine Regel, die auf
+// die Spalten nicht anwendbar ist, endet den Run mit der Klasse `schema`, auch
+// bei einer leeren Tabelle; die Transformationen werden zuerst geprüft. Diese
+// Stände sind die Stände des Runs; ein Antrag, der einen von ihnen danach
+// ändert, endet den Run mit `configuration`, sobald eine Lesung die Änderung
+// sieht. Die Anwendbarkeit (`schema`) geht der Änderung des Standes
+// (`configuration`) voraus, weil sie vor dem ersten Block entschieden ist.
 //
-// Jeder Block liest Ausschluss- und Regelstand neu und baut das Bild mit
+// Jeder Block liest Ausschluss- und Regelstände neu und baut Bild und Ziel mit
 // ihnen. Fail-closed (`ADR-0111` Teilfrage 4): jeder weitere
 // Block und der Zustand unmittelbar vor dem Commit tragen denselben
-// Ausschlussstand wie der erste Block und denselben Regelstand wie die Lesung
+// Ausschlussstand wie der erste Block und dieselben Regelstände wie die Lesung
 // zu Beginn (je als Menge, unabhängig von der Reihenfolge), und die Bindung
 // besteht unter derselben Tabellen-Kennung; ein Stand, der nicht gelesen
 // werden kann, endet den Run wie eine Abweichung. Die Prüfung erkennt
 // Abweichungen des Standes zum Zeitpunkt einer Lesung: ein Ausschluss oder
 // eine Regel, die zwischen zwei Lesungen gesetzt und wieder zurückgenommen
-// wird, ist unsichtbar, weil beide Stände (`ExcludedColumns`,
-// `TransformationRules`) keine Historie tragen. Die Kosten: jede Lesung eines
-// Standes liest die `applied`-Zeilen seiner Antragsarten aller Tabellen der
-// Quelle (die Ports kennen keinen Tabellenfilter); ein Run liest den
-// Ausschlussstand je Block und vor dem Commit (Blockzahl plus eine Lesung),
-// den Regelstand zusätzlich zu Beginn (Blockzahl plus zwei Lesungen).
+// wird, ist unsichtbar, weil die Stände (`ExcludedColumns`,
+// `TransformationRules`, `RoutingRules`) keine Historie tragen. Die Kosten:
+// jede Lesung eines Standes liest die `applied`-Zeilen seiner Antragsarten
+// aller Tabellen der Quelle (die Ports kennen keinen Tabellenfilter); ein Run
+// liest den Ausschlussstand je Block und vor dem Commit (Blockzahl plus eine
+// Lesung), jeden der beiden Regelstände zusätzlich zu Beginn (Blockzahl plus
+// zwei Lesungen).
 func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.BackfillRun, table model.SourceTable, version model.SchemaVersion) (model.BackfillRun, error) {
 	snapshot, err := s.ports.Snapshot.OpenSnapshot(ctx, string(run.ID), run.Schema, run.Table)
 	if err != nil {
@@ -220,6 +225,13 @@ func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.Backfil
 		return run, err
 	}
 	if err := checkRulesApplicable(baselineRules, run, builder.columns); err != nil {
+		return run, err
+	}
+	baselineRoutes, err := s.routingRules(ctx, run)
+	if err != nil {
+		return run, err
+	}
+	if err := checkRoutesApplicable(baselineRoutes, run, builder.columns); err != nil {
 		return run, err
 	}
 
@@ -254,6 +266,13 @@ func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.Backfil
 		if !sameSet(baselineRules, rules) {
 			return run, domainerrors.ErrTransformationStateChanged
 		}
+		routes, err := s.routingRules(ctx, run)
+		if err != nil {
+			return run, err
+		}
+		if !sameSet(baselineRoutes, routes) {
+			return run, domainerrors.ErrRoutingStateChanged
+		}
 		if writer == nil {
 			baseline = excluded
 			if writer, err = s.ports.Writer.Begin(ctx, run); err != nil {
@@ -263,7 +282,7 @@ func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.Backfil
 			return run, domainerrors.ErrExclusionStateChanged
 		}
 
-		block, err := builder.build(blockNumber, rows, excluded, rules)
+		block, err := builder.build(blockNumber, rows, excluded, rules, routes)
 		if err != nil {
 			return run, err
 		}
@@ -305,6 +324,13 @@ func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.Backfil
 	}
 	if !sameSet(baselineRules, rules) {
 		return run, domainerrors.ErrTransformationStateChanged
+	}
+	routes, err := s.routingRules(ctx, run)
+	if err != nil {
+		return run, err
+	}
+	if !sameSet(baselineRoutes, routes) {
+		return run, domainerrors.ErrRoutingStateChanged
 	}
 	now := s.ports.Clock.Now()
 	completed, err := run.Complete(now, copied)
@@ -366,22 +392,25 @@ func failureText(class model.ErrorClass, cause error) string {
 // `replication` (`ADR-0111` Teilfrage 5) und `schema`
 // (eine Regel des Regelstands ist auf die Spalten des Snapshots
 // oder auf eine Zeile nicht anwendbar, `ErrTransformationColumnMissing`,
-// `ErrTransformationTargetCollides`); ein nicht erkannter Fehler bleibt
+// `ErrTransformationTargetCollides`, `ErrRoutingColumnMissing`); ein nicht
+// erkannter Fehler bleibt
 // `internal`, so auch eine `applied`-Zeile des Regelstands, die die Faltung
 // nicht mehr in eine Regel führt. Ein Wechsel von Ausschluss- oder Regelstand
-// während des Runs ist `configuration`. Die
+// (Transformationen, Routing) während des Runs ist `configuration`. Die
 // Abbildung gilt dem Run und ist nicht die des Capture-Pfads.
 func classifyError(err error) model.ErrorClass {
 	switch {
 	case errors.Is(err, outbound.ErrSnapshotPermission):
 		return model.ErrorClassPermission
 	case errors.Is(err, domainerrors.ErrTransformationColumnMissing),
-		errors.Is(err, domainerrors.ErrTransformationTargetCollides):
+		errors.Is(err, domainerrors.ErrTransformationTargetCollides),
+		errors.Is(err, domainerrors.ErrRoutingColumnMissing):
 		return model.ErrorClassSchema
 	case errors.Is(err, outbound.ErrSnapshotConfiguration),
 		errors.Is(err, domainerrors.ErrTableNotActivated),
 		errors.Is(err, domainerrors.ErrExclusionStateChanged),
 		errors.Is(err, domainerrors.ErrTransformationStateChanged),
+		errors.Is(err, domainerrors.ErrRoutingStateChanged),
 		errors.Is(err, outbound.ErrSchemaVersionUnknown):
 		return model.ErrorClassConfiguration
 	case errors.Is(err, outbound.ErrSnapshotTransient):
@@ -469,6 +498,30 @@ func (s *BackfillTableService) transformationRules(ctx context.Context, run mode
 	return byTable[run.QualifiedName()], nil
 }
 
+// routingRules liest den dauerhaften Routing-Regelstand der Tabelle des Runs.
+func (s *BackfillTableService) routingRules(ctx context.Context, run model.BackfillRun) ([]model.RouteRule, error) {
+	byTable, err := s.ports.Routing.RoutingRules(ctx, run.Source)
+	if err != nil {
+		return nil, err
+	}
+	return byTable[run.QualifiedName()], nil
+}
+
+// checkRoutesApplicable prüft jede Routing-Regel gegen die Spalten des
+// Snapshots mit `RouteRule.CheckApplicable`, derselben Prüffunktion der Domäne
+// wie der Erfassungspfad. Die Prüfung hängt an Regel- und Spaltenmenge, nie an
+// einer Zeile; die erste nicht anwendbare Regel endet als
+// `ErrRoutingColumnMissing` mit Regelname und Spalte.
+func checkRoutesApplicable(rules []model.RouteRule, run model.BackfillRun, columns []string) error {
+	for _, rule := range rules {
+		if err := rule.CheckApplicable(columns); err != nil {
+			condition, _ := rule.Condition()
+			return fmt.Errorf("Routing-Regel %q (Spalte %q) an %s auf die Spalten des Snapshots nicht anwendbar: %w", rule.Name(), condition.Column, run.QualifiedName(), err)
+		}
+	}
+	return nil
+}
+
 // checkRulesApplicable prüft jede Regel gegen die Spalten des Snapshots mit
 // `Transformation.CheckApplicable`, derselben Prüffunktion der Domäne wie der
 // Erfassungspfad (`ADR-0117` Festlegung 2). Die Prüfung hängt an Regel- und
@@ -533,7 +586,9 @@ func (s *BackfillTableService) rollback(ctx context.Context, writer outbound.Bac
 // blockBuilder baut die synthetische Transaktion eines Blocks. Er ist die
 // eine Stelle des Use Cases, an der ein Row Image entsteht: über
 // `model.BuildRowImage`, dieselbe Funktion wie der WAL-Pfad, mit dem
-// Ausschluss- und dem Regelstand des Blocks (`ADR-0112` Folgepflicht 7).
+// Ausschluss- und dem Regelstand des Blocks (`ADR-0112` Folgepflicht 7); das
+// Zustellziel der Change bestimmt `model.EvaluateRoute`, dieselbe Funktion wie
+// im WAL-Pfad.
 type blockBuilder struct {
 	run      model.BackfillRun
 	table    model.SourceTable
@@ -549,8 +604,10 @@ type blockBuilder struct {
 // Zielnamen und beide Quellspalten der Zeile einen Wert, endet der Bau mit
 // `ErrTransformationTargetCollides` und ohne Block: der Fall hängt an der
 // Zeile, die Anwendbarkeit gegen die Spalten prüft `checkRulesApplicable`
-// vor dem ersten Block.
-func (b blockBuilder) build(blockNumber int, rows [][]*string, excluded []string, rules []model.Transformation) (*model.ChangeTransaction, error) {
+// vor dem ersten Block. Das Ziel der Change bestimmt die Auswertung der
+// Routing-Regeln über die Quellwerte der Zeile — vor jeder Transformation,
+// Bildbasis ist das Neu-Bild — unabhängig von Block und Position der Zeile.
+func (b blockBuilder) build(blockNumber int, rows [][]*string, excluded []string, rules []model.Transformation, routes []model.RouteRule) (*model.ChangeTransaction, error) {
 	id, err := model.BackfillTransactionID(b.run.ID, blockNumber)
 	if err != nil {
 		return nil, err
@@ -572,6 +629,9 @@ func (b blockBuilder) build(blockNumber int, rows [][]*string, excluded []string
 		change.Schema = b.run.Schema
 		change.Table = b.run.Table
 		if change, err = change.WithOrigin(model.ChangeOriginBackfill); err != nil {
+			return nil, err
+		}
+		if change, err = change.WithRouteTarget(model.EvaluateRoute(routes, b.columns, row)); err != nil {
 			return nil, err
 		}
 		if err := transaction.AppendChange(change); err != nil {

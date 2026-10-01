@@ -194,6 +194,7 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 			Activation:      activation,
 			Exclusion:       activation,
 			Transformations: activation,
+			Routing:         activation,
 			Schemas:         schemaStore,
 			Snapshot:        backfillSnapshot,
 			Admission:       backfillAdmission,
