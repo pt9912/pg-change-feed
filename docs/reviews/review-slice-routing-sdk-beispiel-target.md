@@ -3,7 +3,7 @@
 **Review-Art:** Code — geprüft gegen Plan, ADRs, Spec und `AGENTS.md` Hard Rules (Modul 10). Kein DoD-Abgleich (Verifier).
 
 **Gegenstand:** Slice [routing-sdk-beispiel-target](../plan/planning/done/slice-routing-sdk-beispiel-target.md) der Welle
-[welle-routing](../plan/planning/welle-routing.md), Diff-Range `101e24cd~1..HEAD` (`HEAD` = `571bcca7`); Commits `44ee0019` (drei
+[welle-routing](../plan/planning/done/welle-routing.md), Diff-Range `101e24cd~1..HEAD` (`HEAD` = `571bcca7`); Commits `44ee0019` (drei
 SDK-Packages), `11ce6c14` (Beispiel-Clients Go, C#, Kotlin), `571bcca7` (Handbuch 1.85, `examples/README.md`, Plan) sowie die
 beiden Plan-Verschiebungen davor. 94 Dateien laut `git diff --stat` (+1612/−213; die Beauftragung nannte 91).
 

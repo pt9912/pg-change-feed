@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-routing](../welle-routing.md).
+**Welle:** [welle-routing](welle-routing.md).
 
 **Bezug:** [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (Routing —
 Haupt-Bezug), [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Backfill des
@@ -36,7 +36,7 @@ dieser Slice ändert die Spec nicht.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](../welle-routing.md).
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](welle-routing.md).
 **Datum:** 2026-10-01.
 
 ---
@@ -179,7 +179,7 @@ Quellstand) bleibt unberührt.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
-      Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
+      Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
       unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
@@ -405,7 +405,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
     ADR-Wortlaut, nicht die Umsetzung. Die Fixrunde 1, die dem Wortlaut folgte, war der Fehler.
     Die Begründung steht im `state.md` des Eintrags; der Zähler bleibt 2×.
   - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×, Ausgang beim Lese-Schritt der
-    Closure von [welle-routing](../welle-routing.md)): **Gegenbeleg, keine Datei**. Die
+    Closure von [welle-routing](welle-routing.md)): **Gegenbeleg, keine Datei**. Die
     Fixrunde 1 änderte eine Anweisung; der Verifier empfahl ein Re-Review, es wurde gefahren
     (zwei Mutationen, F-N1 gefunden). Die Fixrunde 2 ist eine Rücknahme auf den gelesenen Stand
     (Diff-Beleg oben), keine ungelesene Änderung von Anweisungen. Im `state.md` vermerkt.
@@ -424,7 +424,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   für PostgreSQL 18, **weiter offen** für 17 (Adresse `slice-routing-e2e` §6); Persistenz des Labels
   **entfallen**; Coverage **entfallen**. Befunde ohne Risiko-Eintrag: V-4 (Replay-Invariante nicht
   gefahren, bei `slice-routing-e2e`), V-5 (Lesehinweis zu M3/M3b).
-- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
   Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der Lerneintrag
   verkörpert nichts neu (Ausprägung unter §3.12 Instanz B, Register); (b) Folge-Slice: keiner neu,
   die genannten Pläne liegen unter `open/`; (c) Register: die genannten Kennungen existieren als
@@ -443,7 +443,7 @@ Pfaden `internal/application/usecase/backfill/`, `internal/adapters/driven/` und
 **Vorgelagert — offene Beobachtungen sichten:** das Register wurde durchgegangen
 (Zähler = Zahl der `evidence/`-Dateien, ausgezählt am 2026-10-01); die Treffer
 stehen in §6 und in der Eröffnungs-Sichtung der Welle
-[welle-routing](../welle-routing.md) §6:
+[welle-routing](welle-routing.md) §6:
 `BEO-PGC/run-fehlerklasse-schema-im-transformations-backfill` (verkörpert, 1×),
 `BEO-PGC/run-fehlertext-traegt-klasse-doppelt` (verkörpert, 1×),
 `BEO-PGC/backfill-schema-version-hinter-snapshot-spalten` (verkörpert, 1×),

@@ -3,7 +3,7 @@
 **Review-Art:** Code — geprüft gegen Plan, ADRs, Spec und `AGENTS.md` Hard Rules (Modul 10). Kein DoD-Abgleich
 (Verifier).
 
-**Gegenstand:** Slice `routing-nats-subjekt` der Welle [welle-routing](../plan/planning/welle-routing.md), Diff-Range
+**Gegenstand:** Slice `routing-nats-subjekt` der Welle [welle-routing](../plan/planning/done/welle-routing.md), Diff-Range
 `37825f29~1..HEAD` (`HEAD` = `974e21be`; Commits `e3412bac` Code, Tests, Skript, Doku, und `974e21be` Plan/Übergabe-Block;
 davor die zwei Lifecycle-Commits `37825f29`, `62cdca2c`). Berührt: `internal/adapters/driven/natsstream/publisher.go`,
 `publisher_test.go`, neu `publisher_nats_test.go`, `tools/harness/run-notify-tests.sh`, `Makefile` (Hilfetext),

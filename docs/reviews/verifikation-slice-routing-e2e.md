@@ -15,7 +15,7 @@ Formvorbild: [`verifikation-slice-routing-nats-subjekt.md`](verifikation-slice-r
 [`LH-QA-POR-001`](../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../spec/lastenheft.md),
 [`LH-FA-ADM-003`](../../spec/lastenheft.md), [`LH-FA-REA-005`](../../spec/lastenheft.md),
 [`LH-FA-SST-006`](../../spec/lastenheft.md); Spec-Stellen [`SPEC-019`](../../spec/pflichtenheft.md),
-[`SPEC-032`](../../spec/pflichtenheft.md); Welle [`welle-routing`](../plan/planning/welle-routing.md)).
+[`SPEC-032`](../../spec/pflichtenheft.md); Welle [`welle-routing`](../plan/planning/done/welle-routing.md)).
 Diff `139b25c9~1..HEAD` (`3b97efb7`): 21 Dateien, +1889/−155 (`git diff --stat 139b25c9~1 HEAD`).
 Tests `7ee258b1`, Review-Stand `577e76e7`, Fixrunde `3df6db30` (Runner, drei Wegwerf-Clients,
 Abdeckungs-Erzeugnis) und `3b97efb7` (Spec-Messstand, Plan-Nachzug), dazu `5535f6b2` (Datum der

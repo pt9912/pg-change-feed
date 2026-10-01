@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-routing](../welle-routing.md).
+**Welle:** [welle-routing](welle-routing.md).
 
 **Bezug:** [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (Routing —
 Haupt-Bezug), [`LH-QA-SEC-004`](../../../../spec/lastenheft.md) (ausgeschlossene
@@ -42,7 +42,7 @@ eingetreten.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](../welle-routing.md).
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](welle-routing.md).
 **Datum:** 2026-10-01.
 
 ---
@@ -233,7 +233,7 @@ Waise ist. Drei Liefer-Punkte:
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
-      Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
+      Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
       unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
@@ -388,7 +388,7 @@ geschrieben.
   `PG_TEST_IMAGE` auf PostgreSQL 17 steht aus. — **Ausgang, zwei Teile.** (1) Lesekosten:
   *weiter offen*, **nicht gemessen** — die Verdopplung der Lesungen bleibt *hergeleitet*, die
   Prozentzahlen des Architect-Verdikts *übernommen*; dieser Slice fährt keine Blockdauer-Messung.
-  Adresse: die Results-Notiz von [welle-routing](../welle-routing.md) (nennt die Aussage als
+  Adresse: die Results-Notiz von [welle-routing](welle-routing.md) (nennt die Aussage als
   nicht gemessen); Träger einer Messung: `make bench` (`tools/bench-backfill.sh`,
   [`harness/targets/bench-backfill.md`](../../../../harness/targets/bench-backfill.md)); Trigger:
   der Re-Evaluierungs-Trigger des Architect-Verdikts (Druck an der Blockdauer des Backfill-Runs
@@ -403,7 +403,7 @@ geschrieben.
   klein, nicht gemessen. — **Ausgang:** *weiter offen*, **nicht gemessen**: dieser Slice
   liefert Belege am laufenden System, keine Auswertungs-Messung (Produktivcode und
   Benchmark liegen außerhalb von §1). Adresse: die Results-Notiz von
-  [welle-routing](../welle-routing.md); Träger einer Messung: ein Go-Benchmark im Paket
+  [welle-routing](welle-routing.md); Träger einer Messung: ein Go-Benchmark im Paket
   `mapper` bei zehn und bei hundert Regeln; Trigger: die erste beobachtete Verzögerung der
   Erfassung bei vielen Regeln je Tabelle oder die erste Betriebsanforderung an Regelzahlen
   über zehn.
@@ -517,7 +517,7 @@ geschrieben.
     Re-Review blieb aus, weil der Verifier sie ausgeführt und mutiert hat; die engere Fassung
     (Produktionslogik oder Norm geändert, oder kein anderer Kontext hat sie ausgeführt) trägt
     auch diesen Fall. Im `state.md` vermerkt, der Ausgang bleibt beim Lese-Schritt der
-    Closure von [welle-routing](../welle-routing.md).
+    Closure von [welle-routing](welle-routing.md).
   - **Keine Beobachtung** (Begründung): V-4 (neun gestoppte Container nach rotem Lauf) ist
     weder ein `-run`-Ausschluss noch eine fehlende Deklaration
     (`test-runner-stiller-ausschluss`) und hat keine beobachtete Wirkung auf einen Folgelauf
@@ -537,7 +537,7 @@ geschrieben.
   **entfallen** (Beleg übernommen); Last der Auswertung **weiter offen** (nicht gemessen);
   Laufzeit **weiter offen** bis zum Lauf der Legs von `e2e.yml`; Isolation **entfallen**; Beleg
   nur vom Reviewer **entfallen**; Timing-Flake **entfallen**; Erzeugnis **entfallen**.
-- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
   Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der
   Lerneintrag verkörpert nichts neu (kein Feld `liegt in`); (b) Folge-Slice: der genannte Plan
   liegt als Datei in `open/`; (c) Register: die genannten Kennungen existieren als Verzeichnis,
@@ -557,7 +557,7 @@ Sub-Area (Testschicht).
 **Vorgelagert — offene Beobachtungen sichten:** das Register wurde durchgegangen
 (Zähler = Zahl der `evidence/`-Dateien, ausgezählt am 2026-10-01); die Treffer
 stehen in §6 und in der Eröffnungs-Sichtung der Welle
-[welle-routing](../welle-routing.md) §6:
+[welle-routing](welle-routing.md) §6:
 `BEO-PGC/test-isolation-geteilter-zustand` (offen, 2×),
 `BEO-PGC/test-runner-stiller-ausschluss` (offen, 2×),
 `BEO-PGC/e2e-metrik-boundary-nur-reviewer-belegt` (offen, 1×),

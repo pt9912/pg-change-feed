@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-routing](../welle-routing.md).
+**Welle:** [welle-routing](welle-routing.md).
 
 **Bezug:** [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (Routing —
 Haupt-Bezug), [`LH-FA-ADM-001`](../../../../spec/lastenheft.md) (SQL-Administration),
@@ -35,7 +35,7 @@ der Slice setzt `slice-routing-spec-nachzug` voraus und ändert sie nicht.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](../welle-routing.md).
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](welle-routing.md).
 **Datum:** 2026-10-01.
 
 ---
@@ -179,7 +179,7 @@ Liefer-Punkte:
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
-      Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
+      Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
       unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
@@ -314,7 +314,7 @@ geschrieben.
   jede neu erfasste WAL-Change das Ziel, ein Backfill-Run noch `NULL`; dieselbe
   Tabelle hat zwei Formen, bis `slice-routing-backfill-pfad` (unmittelbar danach)
   liegt. — **Ausgang:** weiter offen. Das Fenster ist das benannte Fenster der Welle
-  ([`welle-routing`](../welle-routing.md) §5), nicht gemessen; Adresse:
+  ([`welle-routing`](welle-routing.md) §5), nicht gemessen; Adresse:
   [`slice-routing-backfill-pfad`](slice-routing-backfill-pfad.md), dessen Start-Trigger
   diesen Slice in `done/` voraussetzt.
 - **Parametertyp `json` gegen `jsonb`.** Die ADR nennt `rule_spec jsonb`;
@@ -336,7 +336,7 @@ geschrieben.
   Serialität bleibt **erwartet**, nicht gemessen (Ursprung: Lesen des Codes, eine
   Administrations-Goroutine); weiter offen unter
   `BEO-PGC/ein-instanz-annahme-ohne-erzwingung`, Ausgang beim Lese-Schritt der Closure
-  von [`welle-routing`](../welle-routing.md).
+  von [`welle-routing`](welle-routing.md).
 - **R4 und die Reihenfolge der Anträge.** Eine Abschlussregel ohne `when` muss die
   höchste `order` tragen; ein später gesetzter Antrag mit höherer `order` endet
   `failed`, auch wenn er ein anderer Zweck wäre. Der Betreiber löst es über
@@ -452,7 +452,7 @@ geschrieben.
     Datei trotz Deckel), Form **Dekorator-Test mit leerem Fake-Port**; Zähler **21×** → **22×**.
   - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen): Verifikation V-1, drittes Auftreten;
     Zähler **2×** → **3×**, damit Schwelle erreicht, Ausgang beim Lese-Schritt der Closure
-    von [`welle-routing`](../welle-routing.md). **Gegenbeleg im Eintrag vermerkt:** hier hat der
+    von [`welle-routing`](welle-routing.md). **Gegenbeleg im Eintrag vermerkt:** hier hat der
     Verifier das Muster benannt und einen Re-Review empfohlen, der Re-Review wurde gefahren und
     fand F-N1 (LOW), das dem Verifier entgangen war; anders als die beiden Vorgänger änderte
     diese Fixrunde Anweisungen (den Parser).
@@ -480,7 +480,7 @@ geschrieben.
   offen** (übernommen, nicht gemessen). Befunde ohne Risiko-Eintrag: V-3 (nicht reproduzierbare
   Aussage zu `run-store-tests.sh`, `make test-store` Exit 0), V-4 (durch F-N2 im Nachzug behoben),
   V-5 (Testebenen-Schnitt), V-6 (Adresse `slice-routing-e2e`).
-- **Drei Paarungen:** dieser Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+- **Drei Paarungen:** dieser Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der
   Lerneintrag verkörpert nichts neu (Ausprägung unter §3.12 Instanz B, Register); (b) Folge-Slice:
   keiner neu, die genannten Pläne liegen unter `open/`; (c) Register: die genannten Kennungen
@@ -500,7 +500,7 @@ Pfaden `internal/domain/`, `internal/application/`, `internal/adapters/driven/`,
 **Vorgelagert — offene Beobachtungen sichten:** das Register wurde durchgegangen
 (Zähler = Zahl der `evidence/`-Dateien, ausgezählt am 2026-10-01); die Treffer
 stehen in §6 und in der Eröffnungs-Sichtung der Welle
-[welle-routing](../welle-routing.md) §6:
+[welle-routing](welle-routing.md) §6:
 `BEO-PGC/schema-rollout-fremdobjekte` (verkörpert, 3×),
 `BEO-PGC/d-migrate-nacharbeit` (verkörpert, 8×),
 `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue` (verkörpert),

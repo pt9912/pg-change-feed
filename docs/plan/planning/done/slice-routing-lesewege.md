@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-routing](../welle-routing.md).
+**Welle:** [welle-routing](welle-routing.md).
 
 **Bezug:** [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (Routing —
 Haupt-Bezug), [`LH-FA-SST-006`](../../../../spec/lastenheft.md) (Gleichwertigkeit
@@ -39,7 +39,7 @@ bleiben unverändert (die Streams haben keinen Lese-Kontrakt).
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](../welle-routing.md).
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](welle-routing.md).
 **Datum:** 2026-10-01.
 
 ---
@@ -186,7 +186,7 @@ Konjunktion, ein ungefilterter Leser sieht weiterhin alle Changes. Drei Liefer-P
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
-      Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
+      Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
       unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
@@ -418,7 +418,7 @@ Block nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
     des Capture-Tests breiter als die gefahrene Strecke); eine neue `evidence/`-Datei, Zähler
     **8×** → **9×** (unter dem Deckel von 10×).
   - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×, Ausgang beim Lese-Schritt der Closure
-    von [welle-routing](../welle-routing.md)): **dritter Gegenbeleg, keine Datei.** Die Fixrunde
+    von [welle-routing](welle-routing.md)): **dritter Gegenbeleg, keine Datei.** Die Fixrunde
     änderte Anweisungen und eine Norm, der Verifier empfahl ein Re-Review (V-3), es wurde gefahren
     (vier Mutationen, F-N3 gefunden) und vor der Closure geschlossen. Im `state.md` vermerkt.
   - Ohne eigene Datei (Deckel gilt für diese Einträge nicht, die Funde sind ≤ LOW und tragen ihre
@@ -443,7 +443,7 @@ Block nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   **entfallen**; V1/Wire-Kompatibilität **entfallen** für die Gleichwertigkeit, Altserver siehe
   oben; Beleg am laufenden System **weiter offen** (Adresse `slice-routing-e2e` §2); Port-Wahl im
   Paritätstest **weiter offen** (benannter Rest); Validate-Aufruf im Store **entfallen**.
-- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
   Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der Lerneintrag
   verkörpert nichts neu in `AGENTS.md` (Prüffrage als Lese-Handlung im Register, zweites Auftreten);
   (b) Folge-Slice: keiner neu, die genannten Pläne liegen unter `open/`; (c) Register: die
@@ -462,7 +462,7 @@ eine Sub-Area.
 **Vorgelagert — offene Beobachtungen sichten:** das Register wurde durchgegangen
 (Zähler = Zahl der `evidence/`-Dateien, ausgezählt am 2026-10-01); die Treffer
 stehen in §6 und in der Eröffnungs-Sichtung der Welle
-[welle-routing](../welle-routing.md) §6:
+[welle-routing](welle-routing.md) §6:
 `BEO-PGC/generierte-artefakte-ohne-sync-sensor` (verkörpert, 4×),
 `BEO-PGC/lese-doppelquelle` (verkörpert, 3×),
 `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (verkörpert, 21×),

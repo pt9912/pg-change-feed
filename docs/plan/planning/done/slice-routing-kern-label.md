@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-routing](../welle-routing.md).
+**Welle:** [welle-routing](welle-routing.md).
 
 **Bezug:** [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (Routing —
 Haupt-Bezug), [`LH-FA-DAT-006`](../../../../spec/lastenheft.md) (Erweiterbarkeit
@@ -41,7 +41,7 @@ zu V3 (Commit `f98bdbc0`); `spec/lastenheft.md` blieb unberührt.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](../welle-routing.md).
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](welle-routing.md).
 **Datum:** 2026-10-01.
 
 ---
@@ -170,7 +170,7 @@ Liefer-Punkte:
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
-      Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
+      Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
       unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
@@ -423,7 +423,7 @@ geschrieben.
   **entfallen**; Vorbedingung des Alt-Tag-Laufs **weiter offen** (Adresse: Release-Zug und
   Planner des ersten Schema-Slice danach); Fixrunde ohne erneuten Review **eingetreten**;
   V-1 **akzeptiert**.
-- **Drei Paarungen:** dieser Slice gehört zu [welle-routing](../welle-routing.md) (offen) —
+- **Drei Paarungen:** dieser Slice gehört zu [welle-routing](welle-routing.md) (offen) —
   die Prüfung läuft regelkonform bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`.
   (a) Anker: der Lerneintrag verkörpert nichts neu (Risiko mit Adresse, Register 2×);
   (b) Folge-Slice: keiner neu, die genannten Pläne liegen unter `open/`; (c) Register: die
@@ -443,7 +443,7 @@ Modus-Deklaration.
 **Vorgelagert — offene Beobachtungen sichten:** das Register wurde durchgegangen
 (Zähler = Zahl der `evidence/`-Dateien, ausgezählt am 2026-10-01); die Treffer
 stehen in §6 und in der Eröffnungs-Sichtung der Welle
-[welle-routing](../welle-routing.md) §6:
+[welle-routing](welle-routing.md) §6:
 `BEO-PGC/schema-rollout-fremdobjekte` (verkörpert, 3×),
 `BEO-PGC/d-migrate-nacharbeit` (verkörpert, 8×),
 `BEO-PGC/lese-doppelquelle` (verkörpert, 3×),

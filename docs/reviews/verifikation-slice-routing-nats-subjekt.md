@@ -11,7 +11,7 @@ Formvorbild: [`verifikation-slice-routing-lesewege.md`](verifikation-slice-routi
 **Gegenstand:** Slice-Plan [`slice-routing-nats-subjekt`](../plan/planning/done/slice-routing-nats-subjekt.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter
 [`LH-FA-SST-008`](../../spec/lastenheft.md), [`LH-FA-SST-006`](../../spec/lastenheft.md); Spec-Zeile
-[`SPEC-024`](../../spec/pflichtenheft.md); Welle [`welle-routing`](../plan/planning/welle-routing.md)).
+[`SPEC-024`](../../spec/pflichtenheft.md); Welle [`welle-routing`](../plan/planning/done/welle-routing.md)).
 Diff `37825f29~1..HEAD` (`d8371372`, Fixrunde): zehn Dateien, +768/−31 (`git diff --stat 37825f29~1 HEAD`).
 Fixrunde = der einzige Commit nach dem Review: `d8371372` (acht Dateien, +88/−25).
 

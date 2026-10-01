@@ -12,7 +12,7 @@ Formvorbild: [`verifikation-slice-routing-spec-nachzug.md`](verifikation-slice-r
 **Gegenstand:** Slice-Plan [`slice-routing-kern-label`](../plan/planning/done/slice-routing-kern-label.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter
 [`LH-FA-DAT-006`](../../spec/lastenheft.md), [`LH-FA-ADM-003`](../../spec/lastenheft.md); Welle
-[`welle-routing`](../plan/planning/welle-routing.md)), Diff `41fbd0ca..HEAD` (`f98bdbc0`): sechs Commits,
+[`welle-routing`](../plan/planning/done/welle-routing.md)), Diff `41fbd0ca..HEAD` (`f98bdbc0`): sechs Commits,
 33 Dateien (`git diff --stat 41fbd0ca HEAD`: +2151/−125). Dieser Lauf ändert weder Code noch Plan noch Spec
 (keine DoD-Häkchen); er schreibt nur diesen Report. Alle Mutationen liefen an einem `git clone` im
 Scratchpad (Mutation per `sed … > Kopie && mv`, nie `sed -i`, nie eine Umleitung auf eine Repo-Datei),

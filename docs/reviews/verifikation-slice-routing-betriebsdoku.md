@@ -14,7 +14,7 @@ Formvorbild: [`verifikation-slice-routing-e2e.md`](verifikation-slice-routing-e2
 **Gegenstand:** Slice-Plan [`slice-routing-betriebsdoku`](../plan/planning/done/slice-routing-betriebsdoku.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter
 [`LH-FA-SST-006`](../../spec/lastenheft.md), [`LH-FA-ADM-001`](../../spec/lastenheft.md); Welle
-[`welle-routing`](../plan/planning/welle-routing.md)). Diff `2e68966f~1..HEAD` (`e465ca1c`):
+[`welle-routing`](../plan/planning/done/welle-routing.md)). Diff `2e68966f~1..HEAD` (`e465ca1c`):
 `docs/user/benutzerhandbuch.md` (Version 1.84) und der Plan; Commits `758ae7a3` (Plan §3 konkretisiert),
 `be178eb6` (Handbuch 1.84), `8cd71c20` (Review), `e465ca1c` (Fixrunde). Reine Doku, `git diff --stat 2e68966f~1 HEAD`
 über Handbuch und Plan: 2 Dateien, +907/−58; `internal`, `cmd`, `proto`, `gen` unberührt.

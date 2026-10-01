@@ -3,7 +3,7 @@
 **Review-Art:** Code (Dokumentations-Diff) — geprüft gegen Plan, ADRs, Spec und `AGENTS.md` Hard Rules (Modul 10), mit
 Schwerpunkt auf [`AGENTS.md`](../../AGENTS.md) §3.12 Instanz A und B. Kein DoD-Abgleich (Verifier).
 
-**Gegenstand:** Slice `routing-betriebsdoku` der Welle [welle-routing](../plan/planning/welle-routing.md), Diff-Range
+**Gegenstand:** Slice `routing-betriebsdoku` der Welle [welle-routing](../plan/planning/done/welle-routing.md), Diff-Range
 `2e68966f~1..HEAD` (`HEAD` = `be178eb6`), begrenzt auf `docs/user/benutzerhandbuch.md` und den Slice-Plan
 [`slice-routing-betriebsdoku`](../plan/planning/done/slice-routing-betriebsdoku.md); Commits `758ae7a3` (Plan,
 Konkretisierung und Suchlauf-Feld) und `be178eb6` (Handbuch 1.84). Reine Dokumentation, kein Code.

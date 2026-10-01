@@ -12,7 +12,7 @@ Formvorbild: [`verifikation-slice-routing-sdk-beispiel-target.md`](verifikation-
 **Gegenstand:** Slice-Plan [`slice-routing-sdk-realserver-e2e`](../plan/planning/done/slice-routing-sdk-realserver-e2e.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter
 [`LH-FA-SST-009`](../../spec/lastenheft.md), [`LH-FA-SST-008`](../../spec/lastenheft.md),
-[`LH-FA-SST-006`](../../spec/lastenheft.md); Welle [`welle-routing`](../plan/planning/welle-routing.md)).
+[`LH-FA-SST-006`](../../spec/lastenheft.md); Welle [`welle-routing`](../plan/planning/done/welle-routing.md)).
 Diff `c0dae530~1..HEAD` (`03a1a20a`): `c0dae530` (Linkziele), `d9824a49` (Routing-Phasen der drei Tiers),
 `45abcbe7` (Review), `03a1a20a` (Fixrunde). `git diff --stat`: 30 Dateien, +1725/−34.
 

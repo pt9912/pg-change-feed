@@ -15,7 +15,7 @@ Formvorbild: [`verifikation-slice-routing-betriebsdoku.md`](verifikation-slice-r
 **Gegenstand:** Slice-Plan [`slice-routing-sdk-beispiel-target`](../plan/planning/done/slice-routing-sdk-beispiel-target.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter
 [`LH-FA-SST-009`](../../spec/lastenheft.md), [`LH-FA-SST-006`](../../spec/lastenheft.md); Welle
-[`welle-routing`](../plan/planning/welle-routing.md)). Diff `101e24cd~1..HEAD` (`9e8bc1ce`): Commits
+[`welle-routing`](../plan/planning/done/welle-routing.md)). Diff `101e24cd~1..HEAD` (`9e8bc1ce`): Commits
 `44ee0019` (drei SDK-Packages), `11ce6c14` (Beispiele Go, C#, Kotlin), `571bcca7` (Handbuch 1.85, Plan),
 `b5274f91` (Review), `9e8bc1ce` (Fixrunde, Handbuch 1.86). `git diff --stat`: 95 Dateien, +1903/−215.
 

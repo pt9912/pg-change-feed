@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-routing](../welle-routing.md) (zehnter Slice, Welle §4
+**Welle:** [welle-routing](welle-routing.md) (zehnter Slice, Welle §4
 Abweichung 4: Entscheidung des Auftraggebers vom 2026-10-01).
 
 **Bezug:** [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (Routing —
@@ -38,7 +38,7 @@ gelesen, nicht geändert.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
-**Autor:** Planner-Agent, Nachzug zu [welle-routing](../welle-routing.md) nach
+**Autor:** Planner-Agent, Nachzug zu [welle-routing](welle-routing.md) nach
 `ADR-0138`. **Datum:** 2026-10-01.
 
 ---
@@ -175,7 +175,7 @@ sieht beide. Dieselbe Change ist unabhängig über `cdc.changes` gegengelesen
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
-      Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
+      Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
       unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
@@ -382,7 +382,7 @@ geschrieben.
     (`docs/reviews/review-slice-routing-sdk-realserver-e2e.md`).
   - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×): **achter Gegenbeleg, keine Datei**
     (Verifier hat die Fixrunde ausgeführt und mutiert); im `state.md` vermerkt, der Ausgang bleibt
-    beim Lese-Schritt der Closure von [welle-routing](../welle-routing.md).
+    beim Lese-Schritt der Closure von [welle-routing](welle-routing.md).
   - **`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`** (offen, 3×): F-6 als Vermerk, **keine
     Datei** — die Sammler enden verschieden, kein Ergebnis ändert sich; gezählt wird der Satz oder
     das divergierende Ergebnis, nicht die Form der Testhilfe. Die Gegenmaßnahme „eine Fixture-Quelle“
@@ -400,7 +400,7 @@ geschrieben.
   **entfallen**; NATS-Kopplung **entfallen**; Übersetzungs-Sensor **weiter offen**
   (`BEO-PGC/integrationsprojekt-uebersetzt-nicht-unbemerkt`); Rohzeilen im Log **weiter offen,
   hingenommen**; Tag-Images **entfallen**.
-- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
   Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der Lerneintrag
   verkörpert nichts neu (kein Feld `liegt in`); (b) Folge-Slice: keiner genannt; (c) Register: die
   genannten Kennungen existieren als Verzeichnis, jede trägt ein nicht leeres `evidence/`.
@@ -415,7 +415,7 @@ Pfaden `tools/harness/`, `sdks/*/` (nur Test-Verzeichnisse), `harness/` und
 `docs/user/` — eine Sub-Area.
 
 **Vorgelagert — offene Beobachtungen sichten:** die Treffer stehen in §6 und in der
-Eröffnungs-Sichtung der Welle [welle-routing](../welle-routing.md) §6; kein offener
+Eröffnungs-Sichtung der Welle [welle-routing](welle-routing.md) §6; kein offener
 Eintrag erreicht mit diesem Slice 3×, den die Welle nicht schon führt (Zähler = Zahl
 der `evidence/`-Dateien, am 2026-10-01 aus dem Register der Welle übernommen).
 

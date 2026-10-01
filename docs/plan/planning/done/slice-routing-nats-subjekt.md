@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-routing](../welle-routing.md).
+**Welle:** [welle-routing](welle-routing.md).
 
 **Bezug:** [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (Routing —
 Haupt-Bezug), [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (Live-Streaming),
@@ -30,7 +30,7 @@ Schwelle gemessen, keine Last-Zusage“) und die Geschichte-Tabelle (Review F-4)
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](../welle-routing.md).
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](welle-routing.md).
 **Datum:** 2026-10-01.
 
 ---
@@ -146,7 +146,7 @@ unverändert. Drei Liefer-Punkte:
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
-      Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
+      Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
       unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
@@ -328,7 +328,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   - **`BEO-PGC/test-runner-stiller-ausschluss`** (offen): F-3 (LOW), der Lauf von
     `make test-notify` hing am `-run`-Namenspräfix; dieselbe Klasse wie die `-run`-Muster
     von `run-integration-tests.sh`; Zähler **2×** → **3×**, Schwelle erreicht, Ausgang beim
-    Lese-Schritt der Closure von [welle-routing](../welle-routing.md). Für das Skript
+    Lese-Schritt der Closure von [welle-routing](welle-routing.md). Für das Skript
     `run-notify-tests.sh` ist die Lücke geschlossen (ganzes Paket, Exit 1 bei Skip); für
     `run-integration-tests.sh` bleibt sie offen.
   - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×): **vierter Gegenbeleg, keine
@@ -337,7 +337,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
     „sobald die Fixrunde Anweisungen ändert“ ist damit zu weit; tragfähiger: „Produktionslogik
     oder Norm geändert, oder nach der Fixrunde hat kein anderer Kontext sie ausgeführt“.
     Im `state.md` vermerkt, die Entscheidung bleibt beim Lese-Schritt der Closure von
-    [welle-routing](../welle-routing.md).
+    [welle-routing](welle-routing.md).
   - **Keine Beobachtung** (Begründung): F-4 (LOW, Spec-Zeile „Last nicht gemessen“) ist ein
     Träger-Nachzug nach §3.13 und im Slice gezogen, der Fall ist durch die geltende Regel
     gedeckt; F-5 und F-6 (INFO) stehen als Grenzen in §2 und §6.
@@ -351,7 +351,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Testcontainer **entfallen**; Überspringen aus anderem Grund **entfallen** als Gefahr, als
   Grenze benannt; feste Wartezeiten **weiter offen** (Adresse `publisher_nats_test.go`,
   Trigger: erste beobachtete Intermittenz).
-- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
   Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der
   Lerneintrag verkörpert nichts neu (Ausprägung unter Register und Reviewer-Skill); (b)
   Folge-Slice: keiner neu, die genannten Pläne liegen unter `open/`; (c) Register: die
@@ -371,7 +371,7 @@ Sub-Area.
 **Vorgelagert — offene Beobachtungen sichten:** das Register wurde durchgegangen
 (Zähler = Zahl der `evidence/`-Dateien, ausgezählt am 2026-10-01); die Treffer
 stehen in §6 und in der Eröffnungs-Sichtung der Welle
-[welle-routing](../welle-routing.md) §6:
+[welle-routing](welle-routing.md) §6:
 `BEO-PGC/geschaetzter-wert-als-grenze`, `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
 (verkörpert, 28×) und `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (verkörpert, 10×)
 — die Kosten-Aussage (Punkt C) trägt ihren Ursprung. Kein offener Eintrag erreicht mit

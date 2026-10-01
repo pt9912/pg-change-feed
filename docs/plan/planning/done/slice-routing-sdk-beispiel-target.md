@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-routing](../welle-routing.md).
+**Welle:** [welle-routing](welle-routing.md).
 
 **Bezug:** [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (Routing —
 Haupt-Bezug), [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (SDK-Packages),
@@ -30,7 +30,7 @@ sie nicht).
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](../welle-routing.md).
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](welle-routing.md).
 **Datum:** 2026-10-01.
 
 ---
@@ -159,7 +159,7 @@ Liefer-Punkte:
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
-      Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
+      Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
       unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
@@ -312,7 +312,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   API-Form-Differenz, kein Divergenz-Fund; gezählt wird der Satz der Python-README, der dem Wortlaut der
   Schwester-READMEs folgte und enger als der Code war (gleiche Form wie der zweite Beleg der Klasse):
   drittes Auftreten, Zähler **3×**, Ausgang beim Lese-Schritt der Closure von
-  [welle-routing](../welle-routing.md) (Begründung im `state.md` der Beobachtung).
+  [welle-routing](welle-routing.md) (Begründung im `state.md` der Beobachtung).
 - **Iterator-Test für ein Ziel aus Leerraum (Verifier V-2, LOW).** Die README-Aussage zu Python-NATS
   („nur Leerraum“ wirft beim ersten `next()`) ist für diese Zeichenklasse am Subjekt-Bau getestet, am
   Iterator nur mit `"a.b"`. — **Ausgang: hingenommen.** Beide Eingaben laufen im Code durch denselben
@@ -361,7 +361,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
     wird der Satz, nicht das Verhalten): das Verhalten ist eine gewollte API-Form-Differenz (Plan §3 benennt sie),
     der Satz der Python-README folgte dem Wortlaut der Schwester-READMEs und war enger als der Code — dieselbe Form
     wie der zweite Beleg; Begründung im `state.md`. Der Ausgang gehört zum Lese-Schritt der Closure von
-    [welle-routing](../welle-routing.md).
+    [welle-routing](welle-routing.md).
   - **`BEO-PGC/docker-cache-ueberspringt-tests-still`** (neu, offen, **1×**): Beobachtung, Zustand und
     `evidence/slice-routing-sdk-beispiel-target.md` angelegt. Eigenes Verzeichnis statt Beleg bei
     `BEO-PGC/test-runner-stiller-ausschluss` (Skript-Filter) und `BEO-PGC/test-methode-lauft-still-nicht`
@@ -373,7 +373,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
     Beleg für das erste Neubewertungs-Kriterium.
   - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×): **siebter Gegenbeleg, keine Datei** (Verifier hat die
     Fixrunde ausgeführt); im `state.md` vermerkt, der Ausgang bleibt beim Lese-Schritt der Closure von
-    [welle-routing](../welle-routing.md).
+    [welle-routing](welle-routing.md).
   - **Kein Eintrag, nach Zählregel entschieden:** Review F-1 (MEDIUM, Aufschub ohne Adresse im Handbuch) — die
     Regel „Ein Aufschub ohne Adresse ist keiner“ steht in `.claude/commands/implement-slice.md` Schritt 17, der
     Reviewer fand die Verletzung vor dem Merge mit der dortigen Probe, die Fixrunde schloss sie; es entsteht keine
@@ -391,7 +391,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   Release-Entscheid des Auftraggebers (Binärinkompatibilität C#/Kotlin benannt); `schema`/`table` am SSE-Client
   **weiter offen** (`slice-sdk-sse-client-schema-table-filter`); Python-NATS `target=""` **eingetreten und
   eingeordnet**; V-2 und V-1 **hingenommen**.
-- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die Prüfung läuft bei deren
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](welle-routing.md) (offen) — die Prüfung läuft bei deren
   Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: nichts verkörpert; (b) Folge-Slice: beide genannten Pläne liegen
   als Datei in `open/`; (c) Register: die genannten Kennungen existieren als Verzeichnis, jede trägt ein nicht leeres
   `evidence/`.
@@ -408,7 +408,7 @@ die Sprach-Wurzeln sind die Nahtstellen einer möglichen Teilung (§4).
 **Vorgelagert — offene Beobachtungen sichten:** das Register wurde durchgegangen
 (Zähler = Zahl der `evidence/`-Dateien, ausgezählt am 2026-10-01); die Treffer
 stehen in §6 und in der Eröffnungs-Sichtung der Welle
-[welle-routing](../welle-routing.md) §6:
+[welle-routing](welle-routing.md) §6:
 `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall` (offen, 2×),
 `BEO-PGC/intern-kennungen-in-ausgelieferten-texten` (offen, 1×),
 `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme` (verkörpert, 3×),

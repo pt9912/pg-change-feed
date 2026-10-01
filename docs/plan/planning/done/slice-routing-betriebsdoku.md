@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-routing](../welle-routing.md).
+**Welle:** [welle-routing](welle-routing.md).
 
 **Bezug:** [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (Routing —
 Haupt-Bezug), [`LH-FA-ADM-001`](../../../../spec/lastenheft.md) (SQL-Administration),
@@ -23,7 +23,7 @@ verweist für Zusagen auf die Spec; es ist selbst keine Spec-Stelle).
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](../welle-routing.md).
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](welle-routing.md).
 **Datum:** 2026-10-01.
 
 ---
@@ -74,7 +74,7 @@ belegt hat. Drei Liefer-Punkte:
 ## 2. Definition of Done
 
 **Übergabe-Block: aufgeschobene Gegenstände aus den Slices der Welle**
-([welle-routing](../welle-routing.md)) — diese Gegenstände haben die Slices mit
+([welle-routing](welle-routing.md)) — diese Gegenstände haben die Slices mit
 Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
 
 - aus `slice-routing-kern-label` — die Spalte `route_target` in der View `cdc.changes`
@@ -258,7 +258,7 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
-      Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
+      Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
       unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
@@ -351,7 +351,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   zehn Zeilen sind vom Verifier am System gegen den Text gehalten (Verifikations-Report §2), die
   zehnte (R4 „höchste `order`“) ist als nicht gefahren gekennzeichnet. Die Drift-Klasse selbst
   bleibt beim Register (`BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft`, offen, 3×);
-  Adresse: Lese-Schritt der Closure von [welle-routing](../welle-routing.md).
+  Adresse: Lese-Schritt der Closure von [welle-routing](welle-routing.md).
 - **Beispiele unter der falschen Rolle.** Ein SQL-Beispiel, das unter `cdc_admin`
   läuft, aber ohne Rollenangabe dasteht, scheitert beim Leser
   (`BEO-PGC/handbuch-beispiel-nicht-unter-genannter-rolle-lauffaehig`). — **Ausgang:**
@@ -451,7 +451,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×): **sechster Gegenbeleg, keine
     Datei.** Der Verifier hat die Fixrunde ausgeführt (Wahrheitsprobe am System); die engere
     Fassung trägt auch diesen Fall. Im `state.md` vermerkt, der Ausgang bleibt beim Lese-Schritt
-    der Closure von [welle-routing](../welle-routing.md).
+    der Closure von [welle-routing](welle-routing.md).
   - **Deckel, keine Datei:** Review F-2 (LOW; das Handbuch ordnete den Fall „Publication mit
     Spaltenliste bei bekannter Spaltenform“ der falschen Ursache zu, am System vom Reviewer
     gefahren) trifft `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (verkörpert,
@@ -470,7 +470,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   Ursprung nicht auflösbar **eingetreten und behoben**; Handbuch nicht nachgezogen/Historie
   **entfallen**; Zwischenzeit mit den SDK-Packages **weiter offen** (Adresse
   `slice-routing-sdk-beispiel-target`).
-- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
   Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der
   Lerneintrag verkörpert nichts neu; (b) Folge-Slice: der genannte Plan liegt als Datei in
   `open/`; (c) Register: die genannten Kennungen existieren als Verzeichnis, jede trägt ein
@@ -488,7 +488,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
 **Vorgelagert — offene Beobachtungen sichten:** das Register wurde durchgegangen
 (Zähler = Zahl der `evidence/`-Dateien, ausgezählt am 2026-10-01); die Treffer
 stehen in §6 und in der Eröffnungs-Sichtung der Welle
-[welle-routing](../welle-routing.md) §6:
+[welle-routing](welle-routing.md) §6:
 `BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft` (offen, 3×),
 `BEO-PGC/handbuch-beispiel-nicht-unter-genannter-rolle-lauffaehig`,
 `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche` (verkörpert, 3×),

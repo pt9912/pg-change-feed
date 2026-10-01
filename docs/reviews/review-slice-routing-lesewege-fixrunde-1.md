@@ -101,7 +101,7 @@ Start-/End-Quelle prüft nur der Use-Case-Test.
   `spec/pflichtenheft.md` entfällt“ (Zeile 131) widersprechen dem Diff, der `SPEC-022`, `SPEC-031` und
   die Geschichte-Zeile ändert; Abschnitt „Berührte Spec-Stellen“ prüfen.
 - V-2: DoD-Zeile 3 (Plan, Zeile 112: „eine leere Antwort, keinen Fehler“) und
-  [`welle-routing.md`](../plan/planning/welle-routing.md) (Zeile 291) führen die unqualifizierte
+  [`welle-routing.md`](../plan/planning/done/welle-routing.md) (Zeile 291) führen die unqualifizierte
   Aussage; „bei sonst gültiger Anfrage“ ergänzen, dazu eine Suchlauf-Zeile für die zweite bewegte
   Eigenschaft ([`AGENTS.md`](../../AGENTS.md) §3.13).
 - V-5: selbst nachgelesen — Handbuch-Zeile 1149 („optional gefiltert über `schema` und `table`“)
@@ -147,7 +147,7 @@ Entscheidung treffe ich nicht.
   Klasse „Nachzug widerspricht dem Nachbarn im selben Träger“, MEDIUM nach Skill, hier LOW, weil die
   Meldung (V-1/V-2) bereits beim Planner liegt und der Plan noch in `in-progress` steht)
 - `quelle`: Maintainability; Verifier V-1, V-2, V-5
-- `pfad`: Plan Zeilen 34, 112, 131; [`welle-routing.md`](../plan/planning/welle-routing.md) Zeile 291;
+- `pfad`: Plan Zeilen 34, 112, 131; [`welle-routing.md`](../plan/planning/done/welle-routing.md) Zeile 291;
   [`slice-routing-betriebsdoku.md`](../plan/planning/done/slice-routing-betriebsdoku.md) (Adressliste ohne Zeile 1149)
 - `befund`: siehe (5); der Plan sagt „Spec unberührt“ und führt die Aussage ohne Qualifier, der Diff
   ändert zwei Spec-Zeilen.

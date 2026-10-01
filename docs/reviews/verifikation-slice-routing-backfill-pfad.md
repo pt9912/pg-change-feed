@@ -11,7 +11,7 @@ Formvorbild: [`verifikation-slice-routing-antragsweg.md`](verifikation-slice-rou
 
 **Gegenstand:** Slice-Plan [`slice-routing-backfill-pfad`](../plan/planning/done/slice-routing-backfill-pfad.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter [`LH-FA-CAP-009`](../../spec/lastenheft.md); Welle
-[`welle-routing`](../plan/planning/welle-routing.md)), Diff `177bbac5~1..HEAD` (`1487be88`, Fixrunde): acht Commits,
+[`welle-routing`](../plan/planning/done/welle-routing.md)), Diff `177bbac5~1..HEAD` (`1487be88`, Fixrunde): acht Commits,
 15 Dateien (`git diff --stat 177bbac5~1 HEAD`: +1180/−49). Dieser Lauf ändert weder Code noch Plan noch Spec
 (keine DoD-Häkchen); er schreibt nur diesen Report. Alle Mutationen liefen an einem `git clone` im Scratchpad
 (Mutation per `sed … > Temp-Datei`, danach `cp` innerhalb des Scratchpads auf die Klon-Datei; nie `sed -i`, nie eine

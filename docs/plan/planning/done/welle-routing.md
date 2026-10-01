@@ -11,7 +11,7 @@ zwei Positionen, nicht drei.
 
 **Verantwortlich:** — (Rolleninhaber der Implementer-Rolle je Slice, gesetzt
 beim Übergang `open` → `next`; geschnitten aus
-[`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
+[`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
 §Folgepflichten durch den Planner). **Datum:** 2026-10-01.
 
 ---
@@ -30,9 +30,9 @@ NATS-Vollinhalts-Weg über das zusätzliche Subjekt
 `cdc.route.<source_id>.<ziel>`; ein ungefilterter Leser sieht weiterhin alle
 Changes; eine auf eine Change nicht anwendbare Regel endet sichtbar statt still.
 Das ist die Aussage der drei Akzeptanzkriterien von
-[`LH-FA-CFG-008`](../../../spec/lastenheft.md) (Happy Path, Boundary, Negative).
+[`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (Happy Path, Boundary, Negative).
 Der Mechanismus ist mit
-[`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
+[`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
 entschieden: ein Zustellziel ist ein benannter Kanal je Quelle, das Label wird im
 `Assembler` vor der Persistierung bestimmt (ein Log, ein Auswertungsort),
 konfiguriert über zwei neue Antragsarten der Antrags-Queue (`cdc.set_route`,
@@ -49,7 +49,7 @@ die Negative braucht die Prüfung im `Assembler`, die Klassen-Abbildung,
 den kein Einzel-DoD beobachtet: die Auswertung liegt an genau **einer** Stelle
 (aufgerufen vom WAL-Pfad **und** vom Backfill-Pfad), die View-Signatur von
 `cdc.changes` wächst über einen Alt-Bestand, und
-[`LH-FA-CFG-008`](../../../spec/lastenheft.md) ist im RTM-Lauf (`make doc-trace`)
+[`LH-FA-CFG-008`](../../../../spec/lastenheft.md) ist im RTM-Lauf (`make doc-trace`)
 nicht mehr Waise.
 
 ## 2. Trigger (Welle startet)
@@ -60,11 +60,11 @@ Mensch ohne Rückfrage sagen kann, ob er eingetreten ist; ein Datum darf erwähn
 werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
-- [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
+- [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
   trägt den Status `Accepted` — **bereits erfüllt**, geprüft an der Zeile
-  `ADR-0137` im ADR-Index ([`docs/plan/adr/README.md`](../adr/README.md),
+  `ADR-0137` im ADR-Index ([`docs/plan/adr/README.md`](../../adr/README.md),
   Status-Spalte `Accepted`, Datum 2026-10-01).
-- Das Lastenheft trägt [`LH-FA-CFG-008`](../../../spec/lastenheft.md) als eigene
+- Das Lastenheft trägt [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) als eigene
   Anforderung — **bereits erfüllt**, geprüft an `spec/lastenheft.md` (Abschnitt
   `LH-FA-CFG-008`, Boundary-Kriterium nennt die Regel-Reihenfolge).
 - Kein weiterer Trigger nötig — die Welle kann sofort eröffnet werden. Die
@@ -78,12 +78,12 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
 
 - Alle zehn Slices in `done/` (die Zahl ist ein Plan-Stand:
-  [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) nennt
+  [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) nennt
   acht Folgepflichten, Folgepflicht 8 ist in `betriebsdoku` und
   `sdk-beispiel-target` geteilt, §4 Abweichung 1; `sdk-realserver-e2e` ist der
   zehnte Slice, §4 Abweichung 4).
 - `make gates` grün — der Exit-Code des Laufs wird ungefiltert gesichert und
-  gesondert ausgewertet ([`AGENTS.md`](../../../AGENTS.md) §3.9).
+  gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - **Ein realer, grüner `make test-integration`-Lauf** mit den Belegen am
   laufenden Feed-Container — Happy Path (eine Herkunfts- und eine Inhaltsregel:
   Ziel A sieht nur A, ein ungefilterter Leser sieht alles, über `cdc.changes`,
@@ -91,7 +91,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   Regeln treffen, `order` entscheidet; je eine Verletzung R1–R6 endet `failed`
   mit Text, der Regelstand bleibt), Neustart-Festigkeit (`docker restart`),
   Ausschluss-Sperre R3 in beiden Richtungen
-  ([`LH-QA-SEC-004`](../../../spec/lastenheft.md)), Replay (erneutes Lesen
+  ([`LH-QA-SEC-004`](../../../../spec/lastenheft.md)), Replay (erneutes Lesen
   derselben Change liefert dasselbe Label), ein Backfill-Bestand mit Label und
   die **Negative** (nicht anwendbare Regel endet sichtbar mit Klasse `schema`).
   Für die Negative gilt V3 (§5, beantwortet durch `ADR-0140`): der Beleg am Weg
@@ -103,7 +103,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   `success` mit allen Routing-Phasen, Laufzeit 25 min 9 s (17) und 19 min 54 s (18) gegen das
   Limit von 60 Minuten (`welle-routing-results.md`, Verifikation).
 - **Die Messung des DELETE-Verhaltens an beiden PostgreSQL-Versionen**
-  ([`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
+  ([`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
   Entscheidung 4, Folgepflicht 7): eine Inhaltsregel auf eine Nicht-Schlüsselspalte
   ohne volle Replica-Identität wirkt bei DELETE nicht; die Aussage gilt erst als
   belegt, wenn ein Lauf gegen PostgreSQL 17 **und** 18 sie trägt
@@ -117,7 +117,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   prüft `make test-replication` gegen ihre Schwelle) und `make schema-rollout`
   zweimal hintereinander gegen dieselbe Ziel-Datenbank (Idempotenz). Dazu der
   **Alt-Tag-Lauf** von `tools/harness/run-schema-rollout-guard-test.sh`
-  ([`ADR-0114`](../adr/0114-schema-rollout-vorlauf-view-signatur.md)
+  ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)
   Entscheidung 7): das Schema des jüngsten `v*`-Tags ausrollen, danach den
   Arbeitsbaum — Exit 0 zweimal, der Datenstand über `cdc.changes` lesbar. Anders
   als bei der Transformations-Welle **ändert diese Welle eine bestehende View**
@@ -125,22 +125,22 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   Vorlauf `DROP VIEW cdc.changes` der Wache über einen Alt-Bestand (erwartet, am
   Lauf zu belegen; `slice-routing-kern-label` trägt den Beleg).
 - **Die Fitness-Function-Tests aus
-  [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
+  [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
   sind grün und tragen ihre Eingabe:** Determinismus und Reihenfolge der
   Auswertung (Domäne), `ErrRoutingNotApplicable` bei fehlender Spalte und
   Nicht-Treffer bei abwesendem Wert (`mapper`), der Eigenschaftstest R3 in beide
   Richtungen, der Store-Test (`route_target` überlebt Persistierung und Lesen,
   NULL liest als „nicht geroutet"), `make a-check` (die Regel in
   `internal/domain/**`), `make generated-sync` (Proto-Änderung).
-- `make doc-trace` führt [`LH-FA-CFG-008`](../../../spec/lastenheft.md) nicht
+- `make doc-trace` führt [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) nicht
   mehr unter den Waisen: die Closure-Messung ist die gedruckte Zeile am
   Arbeitsbaum der Closure und nennt `0 Waise(n)`. **Parent-Stand** (gemessen,
   `make doc-trace` am Arbeitsbaum auf `30fd6cb5`, Exit 0): `80 Anforderung(en),
   1 Waise(n)`. Der Träger der Deckung ist die Zeile in
-  [`docs/user/e2e-abdeckung.md`](../../user/e2e-abdeckung.md), die der Runner von
+  [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md), die der Runner von
   `make test-integration` schreibt (die Datei ist ein Erzeugnis, kein
   Lauf-Beleg); mit der Deckung zieht `slice-routing-e2e` die Aussage über die
-  Waisen in [`harness/README.md`](../../../harness/README.md) (Zeile
+  Waisen in [`harness/README.md`](../../../../harness/README.md) (Zeile
   `make doc-trace`) nach. Beleg: `make doc-trace` am Arbeitsbaum der Closure, Exit 0,
   gedruckt `80 Anforderung(en), 0 Waise(n).` und für `LH-FA-CFG-008` der Nachweis
   `E2E, SDK-E2E`.
@@ -153,7 +153,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   Konsequenzen (Label fest zum Erfassungszeitpunkt, keine Rückwirkung, Change
   ohne Treffer nur ungefiltert und über `route_target IS NULL` sichtbar,
   DELETE und Inhaltsregeln), Abhilfe-Prozedur und Fehlerklassen-Zeile — jede Zahl
-  und Wirkungs-Aussage mit ihrem Ursprung ([`AGENTS.md`](../../../AGENTS.md)
+  und Wirkungs-Aussage mit ihrem Ursprung ([`AGENTS.md`](../../../../AGENTS.md)
   §3.12); die drei SDK-Packages und die Beispiel-Clients tragen den Parameter
   `target` (`slice-routing-sdk-beispiel-target`), ohne interne Kennungen
   (`make sdk-public-doc-check` grün).
@@ -174,16 +174,16 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-routing-spec-nachzug | Pflichtenheft (`LH-FA-CFG-008.a` beantwortet, `SPEC-019`, neue Regelform-Kennung, `SPEC-001`/`-002`, `SPEC-008`, Filterparameter und Zusatz-Subjekt in `SPEC-020`/`-021`/`-022`/`-024`) auf den beschlossenen Stand ziehen — ohne ADR-/Slice-Bezug | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`LH-FA-CFG-008.a`](../../../spec/pflichtenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 1 |
-| slice-routing-kern-label | Domäne: Routing-Regel und reine Auswertung, `Change.RouteTarget`, Auswertung im `Assembler`, `ErrRoutingNotApplicable` und Klassen-Abbildung; Persistenz der Spalte `route_target`, View-Spalte von `cdc.changes` mit Rollout-Vorlauf | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`LH-FA-DAT-006`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 2, [`ADR-0114`](../adr/0114-schema-rollout-vorlauf-view-signatur.md) |
-| slice-routing-antragsweg | Antragsarten `set_route`/`remove_route`, SQL-Funktionen, Use Cases mit R1–R6 (einschließlich der Sperre gegen `exclude_column`), Regelstand-Ableitung, Verdrahtung in `applyAdministrationRequest`, Aktivierungs-Zweig, Prozessstart | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`LH-FA-ADM-001`](../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 3, [`ADR-0065`](../adr/0065-spaltenausschluss-dauerhafter-traeger.md) |
-| slice-routing-backfill-pfad | Auswertung im Backfill-Run: Backfill-Changes tragen das Label des Regelstands zum Run; Fail-closed um den Regelstand, Nichtanwendbarkeit im Run | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 6 |
-| slice-routing-lesewege | Parameter `target` an `GET /changes`, am gRPC-Stream (Proto-Feld, Generierung) und am SSE-Stream; gemeinsame Filterfunktion mit dem Tabellenfilter | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 4, [`ADR-0133`](../adr/0133-tabellen-granulare-filterung-grpc-sse.md) |
-| slice-routing-nats-subjekt | zusätzliche Veröffentlichung jeder gerouteten Change auf `cdc.route.<source_id>.<ziel>` im NATS-Vollinhalts-Weg | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 5, [`ADR-0100`](../adr/0100-nats-dritter-vollinhalts-zustellweg.md) |
-| slice-routing-e2e | `make test-integration`: Regel per SQL, alle Lesewege, Boundary R1–R6, Negative, Neustart, Ausschluss-Sperre, Replay, Backfill-Bestand, DELETE-Messung an PostgreSQL 17 und 18; RTM-Träger für `LH-FA-CFG-008` | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../spec/lastenheft.md), [`LH-FA-ADM-003`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 7 |
-| slice-routing-betriebsdoku | Benutzerhandbuch: Routing-Konfiguration, Konsequenzen, DELETE und Inhaltsregeln, Abhilfe, Fehlerklasse | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 8 (Handbuch-Hälfte) |
-| slice-routing-sdk-beispiel-target | Parameter `target` in den drei SDK-Packages (HTTP, gRPC, SSE, NATS) und den Beispiel-Clients; SDK-Dokumentation ohne interne Kennungen | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 8 (SDK-Hälfte) |
-| slice-routing-sdk-realserver-e2e | Realserver-E2E der drei SDK-Packages für das Routing: die bestehenden Läufe `make test-sdk-{csharp,kotlin,python}-integration` erhalten je Fläche eine Routing-Phase mit gesetztem `target` | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Teilfrage 5, [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) Festlegung 2 (Mechanik) |
+| slice-routing-spec-nachzug | Pflichtenheft (`LH-FA-CFG-008.a` beantwortet, `SPEC-019`, neue Regelform-Kennung, `SPEC-001`/`-002`, `SPEC-008`, Filterparameter und Zusatz-Subjekt in `SPEC-020`/`-021`/`-022`/`-024`) auf den beschlossenen Stand ziehen — ohne ADR-/Slice-Bezug | [`LH-FA-CFG-008`](../../../../spec/lastenheft.md), [`LH-FA-CFG-008.a`](../../../../spec/pflichtenheft.md), [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 1 |
+| slice-routing-kern-label | Domäne: Routing-Regel und reine Auswertung, `Change.RouteTarget`, Auswertung im `Assembler`, `ErrRoutingNotApplicable` und Klassen-Abbildung; Persistenz der Spalte `route_target`, View-Spalte von `cdc.changes` mit Rollout-Vorlauf | [`LH-FA-CFG-008`](../../../../spec/lastenheft.md), [`LH-FA-DAT-006`](../../../../spec/lastenheft.md), [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 2, [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) |
+| slice-routing-antragsweg | Antragsarten `set_route`/`remove_route`, SQL-Funktionen, Use Cases mit R1–R6 (einschließlich der Sperre gegen `exclude_column`), Regelstand-Ableitung, Verdrahtung in `applyAdministrationRequest`, Aktivierungs-Zweig, Prozessstart | [`LH-FA-CFG-008`](../../../../spec/lastenheft.md), [`LH-FA-ADM-001`](../../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../../spec/lastenheft.md), [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 3, [`ADR-0065`](../../adr/0065-spaltenausschluss-dauerhafter-traeger.md) |
+| slice-routing-backfill-pfad | Auswertung im Backfill-Run: Backfill-Changes tragen das Label des Regelstands zum Run; Fail-closed um den Regelstand, Nichtanwendbarkeit im Run | [`LH-FA-CFG-008`](../../../../spec/lastenheft.md), [`LH-FA-CAP-009`](../../../../spec/lastenheft.md), [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 6 |
+| slice-routing-lesewege | Parameter `target` an `GET /changes`, am gRPC-Stream (Proto-Feld, Generierung) und am SSE-Stream; gemeinsame Filterfunktion mit dem Tabellenfilter | [`LH-FA-CFG-008`](../../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../../spec/lastenheft.md), [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 4, [`ADR-0133`](../../adr/0133-tabellen-granulare-filterung-grpc-sse.md) |
+| slice-routing-nats-subjekt | zusätzliche Veröffentlichung jeder gerouteten Change auf `cdc.route.<source_id>.<ziel>` im NATS-Vollinhalts-Weg | [`LH-FA-CFG-008`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md), [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 5, [`ADR-0100`](../../adr/0100-nats-dritter-vollinhalts-zustellweg.md) |
+| slice-routing-e2e | `make test-integration`: Regel per SQL, alle Lesewege, Boundary R1–R6, Negative, Neustart, Ausschluss-Sperre, Replay, Backfill-Bestand, DELETE-Messung an PostgreSQL 17 und 18; RTM-Träger für `LH-FA-CFG-008` | [`LH-FA-CFG-008`](../../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../../spec/lastenheft.md), [`LH-FA-ADM-003`](../../../../spec/lastenheft.md), [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 7 |
+| slice-routing-betriebsdoku | Benutzerhandbuch: Routing-Konfiguration, Konsequenzen, DELETE und Inhaltsregeln, Abhilfe, Fehlerklasse | [`LH-FA-CFG-008`](../../../../spec/lastenheft.md), [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 8 (Handbuch-Hälfte) |
+| slice-routing-sdk-beispiel-target | Parameter `target` in den drei SDK-Packages (HTTP, gRPC, SSE, NATS) und den Beispiel-Clients; SDK-Dokumentation ohne interne Kennungen | [`LH-FA-CFG-008`](../../../../spec/lastenheft.md), [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 8 (SDK-Hälfte) |
+| slice-routing-sdk-realserver-e2e | Realserver-E2E der drei SDK-Packages für das Routing: die bestehenden Läufe `make test-sdk-{csharp,kotlin,python}-integration` erhalten je Fläche eine Routing-Phase mit gesetztem `target` | [`LH-FA-CFG-008`](../../../../spec/lastenheft.md), [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Teilfrage 5, [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) Festlegung 2 (Mechanik) |
 
 **Reihenfolge:** sequentiell in der Tabellen-Reihenfolge (WIP-Limit 1 je
 Rolleninhaber, Baseline-Regelwerk `modul-05-planning-harness.md`); jeder Slice
@@ -194,7 +194,7 @@ das Fenster, in dem Regeln setzbar sind, ein Backfill-Bestand aber noch kein
 Label trägt, ein Slice lang ist (§5).
 
 **Abweichungen vom Schnitt-Vorschlag** in
-[`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
+[`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
 §Folgepflichten (dort ausdrücklich „der Planner formt Welle und Slices"),
 je mit Grund:
 
@@ -212,9 +212,9 @@ je mit Grund:
    (4, 5): sonst wäre ein Regelstand setzbar (nach `antragsweg`), während ein
    Backfill-Run Changes ohne Label liefert, über die Dauer von zwei Slices
    statt einem — dieselbe Regel wie in der Welle
-   [welle-transformationen](done/welle-transformationen.md) §4 Abweichung 5.
+   [welle-transformationen](welle-transformationen.md) §4 Abweichung 5.
 3. **Folgepflicht 3 bleibt ein Slice** (anders als in der Welle
-   [welle-transformationen](done/welle-transformationen.md), die ihn teilte): die
+   [welle-transformationen](welle-transformationen.md), die ihn teilte): die
    Spalten `rule_name`/`rule_spec` und das Muster der Funktionen stehen seit den
    Transformationen, der Schema-Anteil ist deshalb klein (zwei Funktionen, die
    `request_kind`-Menge, Grants, Guard). Der Slice trägt die Teilungsnaht in
@@ -224,7 +224,7 @@ je mit Grund:
    (2026-10-01): die Realserver-Belege der drei SDK-Tiers für das Routing gehören
    zur Welle. Der Slice folgt `sdk-beispiel-target` (die Parameter müssen in den
    Packages stehen) und trägt die Mechanik von
-   [`slice-sdk-regel-realserver-e2e`](done/slice-sdk-regel-realserver-e2e.md).
+   [`slice-sdk-regel-realserver-e2e`](slice-sdk-regel-realserver-e2e.md).
    `sdk-beispiel-target` wird nicht vorab geteilt; die Teilung nach Sprach-Wurzel
    bleibt dort als Rückführung benannt.
 
@@ -234,7 +234,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Roadmap-Struktur: fünf Abschnitte.
 
 - **Wird blockiert von:** keiner Welle;
-  [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) ist
+  [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) ist
   `Accepted`, der Trigger (§2) ist erfüllt. Offene Slices anderer Wellen gibt es
   nicht (`docs/plan/planning/open/` und `in-progress/` tragen vor dieser
   Eröffnung keinen Slice-Plan, gemessen am Arbeitsbaum auf `30fd6cb5`); WIP-Limit 1
@@ -257,31 +257,31 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   30fd6cb5 -- spec/pflichtenheft.md | sort -u | tail -1`): `SPEC-031`; der Slice
   misst an seinem Start neu.
 - **Vorab-Bedingungen** (Lücken im Text von
-  [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md), die
+  [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md), die
   der Planner nicht entscheidet; V1 und V2 sind mit
-  [`ADR-0138`](../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+  [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
   entschieden, V3 mit
-  [`ADR-0140`](../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
+  [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
   beantwortet):
   - **V1 — gRPC-`ReadChanges`.** Beantwortet durch
-    [`ADR-0138`](../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+    [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
     Festlegung 1: `ReadChangesRequest` erhält `string target = 7` (leer = kein
     Filter, Konjunktion mit `schema`/`table`); `ReadChangesUseCase` bedient
     `GET /changes` und den RPC mit demselben Filter. Träger: `slice-routing-lesewege`.
   - **V2 — Nichtanwendbarkeit im Backfill-Run.** Beantwortet durch
-    [`ADR-0138`](../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+    [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
     Festlegung 2: Run `failed`, Klasse `schema`, run-lokal, ohne Change; die
     Prüfung läuft einmal je Run vor der Schreibtransaktion und ruft dieselbe
     Prüffunktion der Domäne wie der Erfassungspfad. Träger:
     `slice-routing-backfill-pfad`.
   - **V3 — Erreichbarkeit der Nichtanwendbarkeit (beantwortet durch
-    [`ADR-0140`](../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md):
+    [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md):
     die Abhilfe-Zusage gilt für den Fall `ErrRoutingNotApplicable`, der Weg
     „Spalte entfernt“ bleibt der Pfad der inkompatiblen Schemaänderung; die
     Systemmessung von (b)/(c) hat `slice-routing-e2e` gefahren — Ausgang: gemessen,
     die Verengung greift nicht).** Eine Routing-Regel ist nicht
     anwendbar, wenn `when.column` in der Relation der Change fehlt
-    ([`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
+    ([`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
     Teilfrage 4). Die naheliegende Ursache — Spalte entfernt (a) — endet nach dem
     Bestand im Pfad der inkompatiblen Schemaänderung (`ErrIncompatibleSchemaChange`,
     Fehlerklasse `schema`, `LH-FA-SCH-003`), **bevor** eine Change assembliert wird
@@ -297,7 +297,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     (die Verengung nach Entscheidung 4 greift nicht, ihr Re-Evaluierungs-Trigger ist nicht
     eingetreten).
   - **A-1/A-2 (Review `review-slice-routing-spec-nachzug`) — geschlossen** durch
-    [`ADR-0139`](../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md):
+    [`ADR-0139`](../../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md):
     der Routing-Regelstand ist im Run fail-closed (Klasse `configuration`, Stand
     des Runs nach dem Öffnen des Snapshots; Träger `slice-routing-backfill-pfad`);
     ein `target` außerhalb des Alphabets liefert auf allen Lesewegen leer
@@ -306,7 +306,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     Lesart „Zustellung" im Lastenheft) bleibt offen und liegt beim Auftraggeber.
   - **V4 — Pflichtenheft-Kennung der Regelform.** Kein Entscheidungsbedarf: die
     Regelform bekommt eine eigene Kennung neben `SPEC-030`
-    ([`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
+    ([`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
     Folgepflicht 1);
     `spec-nachzug` entscheidet die Aufteilung zwischen `SPEC-019` und der neuen
     Kennung wie `slice-transformationen-spec-nachzug`.
@@ -317,7 +317,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   Risiko und Ausgang tragen `antragsweg` §6 und `backfill-pfad` §6.
 - **Benannte Kopplung: View-Signatur.** `kern-label` fügt `route_target` als
   letzte Spalte der bestehenden View `cdc.changes` hinzu; der Rollout läuft über
-  den Vorlauf von [`ADR-0114`](../adr/0114-schema-rollout-vorlauf-view-signatur.md).
+  den Vorlauf von [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md).
   Der Slice trägt den Alt-Tag-Lauf (§3); ein späterer Slice, der die View ändert,
   kollidiert mit seinem Stand — keiner ist geplant.
 - **Ereignis-Adresse.** „Die Closure dieser Welle" ist eine Adresse, die
@@ -325,7 +325,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   Welle hat einen Closure-Trigger (§3).
 
 **Träger der Folgepflichten** — jede Pflicht aus
-[`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
+[`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
 §Folgepflichten hat einen Träger oder eine benannte Adresse
 (`BEO-PGC/adr-folgepflicht-ohne-traeger-slice`):
 
@@ -349,7 +349,7 @@ der Closure-Trigger unerreichbar wird.
 
 - **Aktive Senken** (Webhook, Queue, Dead-Letter, Secrets) und die
   **Consumer-Bindung** an ein Ziel —
-  [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
+  [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
   Teilfrage 1 (Optionen B, D) und Entscheidung 1: Re-Evaluierungs-Trigger mit
   `Supersedes`, kein Teil dieser Welle.
 - **Mehrere Ziele je Change** (Fan-out) — Entscheidung 5; ein Ziel genügt.
@@ -362,11 +362,11 @@ der Closure-Trigger unerreichbar wird.
 - **Warnung oder Sicht für Changes ohne Treffer** — Konsequenz in der ADR:
   `route_target IS NULL` ist die Sicht des Betreibers; eine Warnung ist nicht Teil.
 - **Änderung des Nachrichtenschemas** — die Live-Nachrichten
-  ([`SPEC-020`](../../../spec/pflichtenheft.md)/[`SPEC-021`](../../../spec/pflichtenheft.md)/[`SPEC-024`](../../../spec/pflichtenheft.md))
+  ([`SPEC-020`](../../../../spec/pflichtenheft.md)/[`SPEC-021`](../../../../spec/pflichtenheft.md)/[`SPEC-024`](../../../../spec/pflichtenheft.md))
   tragen zehn Felder, die HTTP-Antwort von
-  [`SPEC-022`](../../../spec/pflichtenheft.md) dreizehn; das Label ist nicht Teil
+  [`SPEC-022`](../../../../spec/pflichtenheft.md) dreizehn; das Label ist nicht Teil
   der Nachrichten, sondern über die SQL-Sicht lesbar. Das Wecksignal
-  ([`SPEC-017`](../../../spec/pflichtenheft.md)) bleibt unverändert. Die
+  ([`SPEC-017`](../../../../spec/pflichtenheft.md)) bleibt unverändert. Die
   Proto-Änderung beschränkt sich auf das Anfrage-Feld `target`
   (`make generated-sync`, `slice-routing-lesewege`).
 - **Ein allgemeiner Recovery-Weg für Schema-Fehler** —
@@ -374,7 +374,7 @@ der Closure-Trigger unerreichbar wird.
   für die Nichtanwendbarkeit einer Routing-Regel (soweit V3 sie erreichbar macht),
   nicht die Wiederinbetriebnahme nach einer entfernten Spalte.
 - **Kein neuer GitHub-Actions-Workflow und keine strukturelle Workflow-Änderung** —
-  [`AGENTS.md`](../../../AGENTS.md) §3.10 greift nicht; `e2e.yml` fährt
+  [`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht; `e2e.yml` fährt
   `make test-integration` unverändert weiter (die Matrix über PostgreSQL 17 und 18
   ist der Träger der DELETE-Messung, §3).
 - **Kein Server-Release und kein SDK-Release** — `docs/user/version.md` und die
@@ -383,7 +383,7 @@ der Closure-Trigger unerreichbar wird.
   Zeilen.
 - **Keine Schwellen-Senkung und keine neue Gate-Klasse** — neue Use-Case-Pakete
   liegen in der netzlos gemessenen Fläche des Coverage-Gates; eine Senkung bliebe
-  per [`AGENTS.md`](../../../AGENTS.md) §3.6 ADR-pflichtig.
+  per [`AGENTS.md`](../../../../AGENTS.md) §3.6 ADR-pflichtig.
 - **Lastenheft unverändert** — die Welle schärft Techniken im Pflichtenheft,
   nicht Anforderungen.
 
@@ -414,7 +414,7 @@ der sie als Risiko trägt (Detail je Slice in §8):
 - `BEO-PGC/adr-folgepflicht-ohne-traeger-slice` (offen, 1×) — die Träger-Tabelle
   in §5 gibt jeder Folgepflicht einen Träger.
 - `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert, 34×,
-  [`AGENTS.md`](../../../AGENTS.md) §3.13) — betrifft jeden Slice; der Suchlauf
+  [`AGENTS.md`](../../../../AGENTS.md) §3.13) — betrifft jeden Slice; der Suchlauf
   steht als committetes Feld je Slice-Plan §3.
   `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (verkörpert, 15×) —
   `spec-nachzug`, `betriebsdoku`.

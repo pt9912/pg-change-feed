@@ -8,7 +8,7 @@
 (Modul 10). Kein DoD-Abgleich (Verifier).
 
 **Gegenstand:** Slice [`slice-routing-backfill-pfad`](../plan/planning/done/slice-routing-backfill-pfad.md)
-([`welle-routing`](../plan/planning/welle-routing.md)), Diff-Range `177bbac5~1..HEAD`: `d8c7cf4f` (Plan), `55384d2f`
+([`welle-routing`](../plan/planning/done/welle-routing.md)), Diff-Range `177bbac5~1..HEAD`: `d8c7cf4f` (Plan), `55384d2f`
 (Code und Tests), `d459ba3a` (Suchlauf-Feld, Übergabe-Block); `013ece33` (Linkkorrektur) liegt in der Range und ist
 reiner Link. 14 Dateien, +1019/−44 (`git diff --stat 177bbac5~1 HEAD`).
 
@@ -22,7 +22,7 @@ Aktion.
 
 **Eingangs-Kontext:**
 
-- Slice-Plan (§1–§3 mit Suchlauf-Feld, §6 Risiken), [`welle-routing`](../plan/planning/welle-routing.md)
+- Slice-Plan (§1–§3 mit Suchlauf-Feld, §6 Risiken), [`welle-routing`](../plan/planning/done/welle-routing.md)
 - [`ADR-0137`](../plan/adr/0137-routing-zustellziele-persistiertes-ziel-label.md),
   [`ADR-0138`](../plan/adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md),
   [`ADR-0139`](../plan/adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md),

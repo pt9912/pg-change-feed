@@ -10,7 +10,7 @@ Plan-vs-Code-Diff. Review-Artefakt:
 
 **Gegenstand:** Slice-Plan [`slice-routing-spec-nachzug`](../plan/planning/done/slice-routing-spec-nachzug.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), Welle
-[`welle-routing`](../plan/planning/welle-routing.md)), Diff `b8085839..HEAD` (`e2f9244c`): sechs
+[`welle-routing`](../plan/planning/done/welle-routing.md)), Diff `b8085839..HEAD` (`e2f9244c`): sechs
 Commits, neun Dateien, davon `spec/pflichtenheft.md` und `spec/architecture.md`; **kein Code**,
 [`spec/lastenheft.md`](../../spec/lastenheft.md) unberührt (`git diff --stat` leer). Dieser Lauf ändert
 weder Spec noch Plan (keine DoD-Häkchen); er schreibt nur diesen Report.

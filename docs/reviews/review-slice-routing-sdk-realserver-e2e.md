@@ -3,7 +3,7 @@
 **Review-Art:** Code — geprüft gegen Plan, ADRs, Spec und `AGENTS.md` Hard Rules (Modul 10). Kein DoD-Abgleich (Verifier).
 
 **Gegenstand:** Slice [routing-sdk-realserver-e2e](../plan/planning/done/slice-routing-sdk-realserver-e2e.md) der Welle
-[welle-routing](../plan/planning/welle-routing.md), Diff-Range `c0dae530~1..HEAD` (`HEAD` = `d9824a49`; Test-Code und Runner der drei
+[welle-routing](../plan/planning/done/welle-routing.md), Diff-Range `c0dae530~1..HEAD` (`HEAD` = `d9824a49`; Test-Code und Runner der drei
 SDK-Realserver-Tiers, die neue Hilfsdatei, drei Abdeckungs-Zeilen, `harness/README.md`, `harness/mk/sdk.mk`, Plan). 29 Dateien laut
 `git diff --stat` (+1484/−34).
 

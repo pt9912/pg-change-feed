@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-routing](../welle-routing.md).
+**Welle:** [welle-routing](welle-routing.md).
 
 **Bezug:** [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (Routing —
 Haupt-Bezug), [`LH-FA-CFG-008.a`](../../../../spec/pflichtenheft.md) (die offene,
@@ -45,7 +45,7 @@ Verweis zeigt **aufwärts**: die Spec nennt diesen Slice nie.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](../welle-routing.md).
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](welle-routing.md).
 **Datum:** 2026-10-01.
 
 ---
@@ -198,7 +198,7 @@ die Doku führt). Umfang:
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen). *Beleg:* §6.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
-      Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
+      Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
       unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
@@ -297,7 +297,7 @@ diff 22 -n -w route_target -- spec
 
 ## 4. Trigger
 
-**Start** (`next` → `in-progress`): wenn die Welle [welle-routing](../welle-routing.md)
+**Start** (`next` → `in-progress`): wenn die Welle [welle-routing](welle-routing.md)
 eröffnet ist und kein anderer Slice in `in-progress/` liegt (WIP-Limit 1). Dieser
 Slice kommt vor jedem übrigen der Welle: jeder Folge-Slice liest die hier
 festgelegten Zusagen. V1 und V2 (Welle §5) sind mit `ADR-0138` entschieden (erfüllt);
@@ -358,7 +358,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   liegt beim Auftraggeber ([`ADR-0139`](../../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md)
   „Offen, nicht entschieden“, Review F-5/A-3). — **Ausgang: weiter offen.** Keine
   DoD-Zeile dieses Slice hängt von ihr ab (Verifikations-Report §6); Träger ist
-  der Auftraggeber, die Adresse die Welle [welle-routing](../welle-routing.md).
+  der Auftraggeber, die Adresse die Welle [welle-routing](welle-routing.md).
 
 ## 7. Closure-Notiz
 
@@ -409,7 +409,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
     Beobachtung** — Einzelfälle ohne Träger-Klasse oder als Risiko geführt.
   - Kein Eintrag steht bei 3× oder mehr ohne Ausgang an, den dieser Slice neu erreichte.
 - **Folge-Slices:** keine neuen. Die Folge-Slices der Welle
-  [welle-routing](../welle-routing.md) tragen die Festlegungen: `slice-routing-kern-label`
+  [welle-routing](welle-routing.md) tragen die Festlegungen: `slice-routing-kern-label`
   (V3-Messung), `slice-routing-antragsweg` (`harness/targets/schema-rollout.md:74`,
   Zählwort „sieben SQL-Funktionen“), `slice-routing-backfill-pfad` und
   `slice-routing-lesewege` (Festlegungen aus `ADR-0139`), `slice-routing-betriebsdoku`
@@ -419,7 +419,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Doppelquelle Handbuch **weiter offen** (Adresse benannt); Doc-Gate-Regeln
   **entfallen**; V3 **weiter offen**, V1/V2 **entfallen**; A-3 **weiter offen**
   (Auftraggeber).
-- **Drei Paarungen:** dieser Slice gehört zu [welle-routing](../welle-routing.md) (offen)
+- **Drei Paarungen:** dieser Slice gehört zu [welle-routing](welle-routing.md) (offen)
   — die Prüfung läuft regelkonform bei deren Closure; die DoD-Zeile bleibt deshalb
   `[ ]`. (a) Anker: der Lerneintrag verkörpert nichts neu; (b) Folge-Slice: keiner neu,
   die Übergaben stehen in den Plänen der Welle; (c) Register: die genannten Kennungen
@@ -437,7 +437,7 @@ Pfad `spec/` — eine Sub-Area, keine zu grobe Zusammenfassung.
 **Vorgelagert — offene Beobachtungen sichten:** das Register wurde durchgegangen
 (Zähler = Zahl der `evidence/`-Dateien, ausgezählt am 2026-10-01); die Treffer
 dieses Slice stehen in §6 und in der Eröffnungs-Sichtung der Welle
-[welle-routing](../welle-routing.md) §6:
+[welle-routing](welle-routing.md) §6:
 `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (verkörpert, 15×),
 `BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft` (offen, 3×),
 `BEO-PGC/zitat-nennt-die-falsche-stelle` (verkörpert, 9×). Kein offener Eintrag
