@@ -150,7 +150,7 @@ sechs rot, eine grün. Alles, was der Plan oder die Tests über weitere Mutation
 ## Negativbefunde
 
 - geprüft, ohne Befund: **`internal/adapters/driven/natsstream/publisher.go`, Schwerpunkt (a)** — der Payload wird einmal
-  marshalt; das Tabellen-Subjekt kommt zuerst, das Ziel-Subjekt nur bei `RouteTarget != ""` mit demselben Slice; die zwei
+  marshallt; das Tabellen-Subjekt kommt zuerst, das Ziel-Subjekt nur bei `RouteTarget != ""` mit demselben Slice; die zwei
   Veröffentlichungen laufen über getrennte Prüf- und Sende-Schritte (`tableSubject`/`routeSubject`/`send`), ein Fehlschlag
   bleibt als Warnung lokal (M5 färbt rot, `TestRouteFailureStaysLocal` bindet zwei Warnungen für zwei Changes); die
   Hilfsfunktion `send` hat keinen Rückgabewert, keine Fehlerausbreitung. `cdc.stream`-Subjekt, `Broadcaster`-Anbindung und
