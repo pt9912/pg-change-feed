@@ -16,11 +16,14 @@
 // einen Exit-Code allein, weil "READY" vor der auslösenden Change
 // beobachtbar sein muss. Die Flags `-source` und `-target` ersetzen den
 // Subjekt-Parameter durch das Ziel-Subjekt `cdc.route.<source>.<ziel>`,
-// `-count` setzt die Zahl der Events, die der Client empfängt.
+// `-count` setzt die Zahl der Events, die der Client empfängt, `-window` ein
+// Ruhefenster, in dem er danach weitere Events zählt ("RECEIVED") und mit
+// "WINDOW-END" endet.
 package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -54,10 +57,11 @@ func main() {
 	source := flag.String("source", "", "Quellkennung des Ziel-Subjekts (nur zusammen mit -target)")
 	target := flag.String("target", "", "Zustellziel: abonniert cdc.route.<source>.<ziel> statt <subject>")
 	count := flag.Int("count", 1, "Zahl der Events, die der Client empfängt")
+	window := flag.Duration("window", 0, "Ruhefenster: nach den `count` Events weitere Events zählen, bis so lange keines eintrifft (0 = aus)")
 	flag.Parse()
 	args := flag.Args()
-	if len(args) != 3 || *count < 1 || (*target == "") != (*source == "") {
-		fmt.Fprintln(os.Stderr, "usage: natsstreamsub [-source <id> -target <ziel>] [-count <n>] <nats-url> <subject> <token>")
+	if len(args) != 3 || *count < 1 || *window < 0 || (*target == "") != (*source == "") {
+		fmt.Fprintln(os.Stderr, "usage: natsstreamsub [-source <id> -target <ziel>] [-count <n>] [-window <dauer>] <nats-url> <subject> <token>")
 		os.Exit(2)
 	}
 	url, subject, token := args[0], args[1], args[2]
@@ -116,6 +120,27 @@ func main() {
 		}
 		fmt.Printf("RECEIVED change_id=%s table=%s operation=%s new_image=%s\n",
 			change.ChangeID, change.Table, change.Operation, change.NewImage)
+	}
+
+	if *window > 0 {
+		for {
+			msg, err := sub.NextMsg(*window)
+			if errors.Is(err, nats.ErrTimeout) {
+				break
+			}
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "natsstreamsub: Wartefenster auf %s: %v\n", subject, err)
+				os.Exit(1)
+			}
+			var change streamMessage
+			if err := json.Unmarshal(msg.Data, &change); err != nil {
+				fmt.Fprintf(os.Stderr, "natsstreamsub: Event nicht dekodierbar: %v (payload=%s)\n", err, msg.Data)
+				os.Exit(1)
+			}
+			fmt.Printf("RECEIVED change_id=%s table=%s operation=%s new_image=%s\n",
+				change.ChangeID, change.Table, change.Operation, change.NewImage)
+		}
+		fmt.Println("WINDOW-END")
 	}
 }
 

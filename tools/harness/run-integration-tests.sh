@@ -4659,7 +4659,7 @@ rt_grpc_read() {
   printf '%s\n' "$output"
 }
 
-abdeckung_declare "Routing-Happy-Path (fünf Zustellwege)" "LH-FA-CFG-008,LH-FA-SST-006,LH-FA-SST-008" "zwei per cdc.set_route beantragte Inhaltsregeln (Ziele eu und us) lenken eine danach eingefügte Zeile auf ihr Ziel, und jedes Ziel ist auf allen fünf Wegen auswählbar: über cdc.changes (WHERE route_target), GET /changes?target=, den ReadChanges-RPC mit target, den gRPC-Stream, den SSE-Stream und das NATS-Subjekt cdc.route.<source_id>.<ziel>; jedes über einen Weg gelesene Ziel wird gegen die persistierte Zeile derselben change_id gehalten, ein auf ein Ziel gewählter Leser sieht nur dieses Ziel, ein ungefilterter Leser sieht eine Change ohne Treffer (route_target NULL) und die gerouteten Changes" "Routing-Happy-Path (LH-FA-CFG-008) belegt"
+abdeckung_declare "Routing-Happy-Path (fünf Zustellwege)" "LH-FA-CFG-008,LH-FA-SST-006,LH-FA-SST-008" "zwei per cdc.set_route beantragte Inhaltsregeln (Ziele eu und us) lenken eine danach eingefügte Zeile auf ihr Ziel, und jedes Ziel ist auf allen fünf Wegen auswählbar: über cdc.changes (WHERE route_target), GET /changes?target=, den ReadChanges-RPC mit target, den gRPC-Stream, den SSE-Stream und das NATS-Subjekt cdc.route.<source_id>.<ziel>; jedes über einen Weg gelesene Ziel wird gegen die persistierte Zeile derselben change_id gehalten, ein auf ein Ziel gewählter Stream-Client empfängt von einer festen Menge gemischter Changes (Region NULL, asia, us, eu) genau die Changes seines Ziels und im Ruhefenster keine Change eines anderen Ziels oder ohne Ziel, die Pull-Wege liefern je Ziel genau die Kennungen der SQL-Auswahl, ein ungefilterter Leser sieht eine Change ohne Treffer (route_target NULL) und die gerouteten Changes" "Routing-Happy-Path (LH-FA-CFG-008) belegt"
 
 RT_PHASE="Routing-Happy-Path"
 RT_TABLE=feed_e2e_route
@@ -4677,15 +4677,16 @@ rt_set "$RT_TABLE" us_orders "$RT_RULE_US" "$RT_PHASE"
 # Neun Stream-Clients laufen gleichzeitig: je Weg einer auf Ziel eu, einer auf
 # Ziel us und einer ohne Ziel, der drei Changes der Tabelle empfängt.
 RT_CLIENTS="cdc-e2e-rt-grpc-eu cdc-e2e-rt-grpc-us cdc-e2e-rt-grpc-all cdc-e2e-rt-sse-eu cdc-e2e-rt-sse-us cdc-e2e-rt-sse-all cdc-e2e-rt-nats-eu cdc-e2e-rt-nats-us cdc-e2e-rt-nats-all"
-tf_client_start cdc-e2e-rt-grpc-eu ./tools/harness/grpcclient -target eu "$GRPC_ADDR" "$HTTP_TOKEN_READER"
-tf_client_start cdc-e2e-rt-grpc-us ./tools/harness/grpcclient -target us "$GRPC_ADDR" "$HTTP_TOKEN_READER"
-tf_client_start cdc-e2e-rt-grpc-all ./tools/harness/grpcclient -count 3 "$GRPC_ADDR" "$HTTP_TOKEN_READER" public "$RT_TABLE"
-tf_client_start cdc-e2e-rt-sse-eu ./tools/harness/sseclient -target eu "$HTTP_BASE_URL" "$HTTP_TOKEN_READER"
-tf_client_start cdc-e2e-rt-sse-us ./tools/harness/sseclient -target us "$HTTP_BASE_URL" "$HTTP_TOKEN_READER"
-tf_client_start cdc-e2e-rt-sse-all ./tools/harness/sseclient -count 3 "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" public "$RT_TABLE"
-tf_client_start cdc-e2e-rt-nats-eu ./tools/harness/natsstreamsub -source src-e2e -target eu "$RT_NATS_URL" - "$NATS_STREAM_TOKEN"
-tf_client_start cdc-e2e-rt-nats-us ./tools/harness/natsstreamsub -source src-e2e -target us "$RT_NATS_URL" - "$NATS_STREAM_TOKEN"
-tf_client_start cdc-e2e-rt-nats-all ./tools/harness/natsstreamsub -count 3 "$RT_NATS_URL" "cdc.stream.src-e2e.public.$RT_TABLE" "$NATS_STREAM_TOKEN"
+RT_WINDOW=15s
+tf_client_start cdc-e2e-rt-grpc-eu ./tools/harness/grpcclient -target eu -window "$RT_WINDOW" "$GRPC_ADDR" "$HTTP_TOKEN_READER"
+tf_client_start cdc-e2e-rt-grpc-us ./tools/harness/grpcclient -target us -window "$RT_WINDOW" "$GRPC_ADDR" "$HTTP_TOKEN_READER"
+tf_client_start cdc-e2e-rt-grpc-all ./tools/harness/grpcclient -count 3 -window "$RT_WINDOW" "$GRPC_ADDR" "$HTTP_TOKEN_READER" public "$RT_TABLE"
+tf_client_start cdc-e2e-rt-sse-eu ./tools/harness/sseclient -target eu -window "$RT_WINDOW" "$HTTP_BASE_URL" "$HTTP_TOKEN_READER"
+tf_client_start cdc-e2e-rt-sse-us ./tools/harness/sseclient -target us -window "$RT_WINDOW" "$HTTP_BASE_URL" "$HTTP_TOKEN_READER"
+tf_client_start cdc-e2e-rt-sse-all ./tools/harness/sseclient -count 3 -window "$RT_WINDOW" "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" public "$RT_TABLE"
+tf_client_start cdc-e2e-rt-nats-eu ./tools/harness/natsstreamsub -source src-e2e -target eu -window "$RT_WINDOW" "$RT_NATS_URL" - "$NATS_STREAM_TOKEN"
+tf_client_start cdc-e2e-rt-nats-us ./tools/harness/natsstreamsub -source src-e2e -target us -window "$RT_WINDOW" "$RT_NATS_URL" - "$NATS_STREAM_TOKEN"
+tf_client_start cdc-e2e-rt-nats-all ./tools/harness/natsstreamsub -count 3 -window "$RT_WINDOW" "$RT_NATS_URL" "cdc.stream.src-e2e.public.$RT_TABLE" "$NATS_STREAM_TOKEN"
 for rt_client in $RT_CLIENTS; do
   tf_client_await "$rt_client" READY 120 "$RT_PHASE"
 done
@@ -4732,6 +4733,44 @@ if [ "$rt_all_received" -ne 1 ]; then
   bf_fail "$RT_PHASE — nicht jeder Stream-Client empfing seine Changes nach $rt_attempts Dreiergruppen (RECEIVED-Zeilen:$rt_report)"
 fi
 
+# Jeder Client ist jetzt am Broadcaster registriert. Eine feste Menge
+# gemischter Changes (je Gruppe: Region NULL, asia, us, eu; zwei Gruppen) folgt;
+# die Clients zählen im Ruhefenster weiter. Ein Client mit Ziel empfängt von
+# dieser Menge genau die Changes seines Ziels und keine Change eines anderen
+# Ziels oder ohne Ziel, ein Client ohne Ziel alle acht.
+rt_final_rows=8
+for rt_group in 1 2; do
+  rt_row "$RT_TABLE" $((1000 + rt_group * 10 + 1)) RtNull "NULL" "$RT_PHASE"
+  rt_row "$RT_TABLE" $((1000 + rt_group * 10 + 2)) RtAsien "'asia'" "$RT_PHASE"
+  rt_row "$RT_TABLE" $((1000 + rt_group * 10 + 3)) RtUsa "'us'" "$RT_PHASE"
+  rt_row "$RT_TABLE" $((1000 + rt_group * 10 + 4)) RtEuropa "'eu'" "$RT_PHASE"
+done
+for rt_client in $RT_CLIENTS; do
+  tf_client_await "$rt_client" WINDOW-END 90 "$RT_PHASE"
+done
+
+# rt_audit_client <Container> <Ziel oder leer> <Beschreibung>: prüft jede
+# RECEIVED-Zeile des Clients gegen die persistierte Change derselben change_id.
+# Ein Client mit Ziel (<Ziel> gesetzt) empfängt keine Change mit anderem Ziel
+# und keine ohne Ziel. Setzt rt_audit_final auf die Zahl der Zeilen aus der
+# festen Menge (id >= 1000).
+rt_audit_client() {
+  local name=$1 want=$2 what=$3 line change_id row
+  rt_audit_final=0
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    change_id=$(tf_change_id_of "$line")
+    row=$(bf_sql "SELECT coalesce(route_target, 'NULL') || ' ' || (new_data->>'id') FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$change_id'")
+    [ -n "$row" ] || bf_fail "$what — keine persistierte Change zur Kennung '$change_id' (Zeile: $line)"
+    if [ -n "$want" ] && [ "${row% *}" != "$want" ]; then
+      bf_fail "$what — der Client mit Ziel $want empfing die Change $change_id mit Ziel '${row% *}' (Zeile: $line)"
+    fi
+    if [ "${row#* }" -ge 1000 ]; then
+      rt_audit_final=$((rt_audit_final + 1))
+    fi
+  done < <(rt_received_lines "$name")
+}
+
 # Ein auf ein Ziel gewählter Client empfängt als erste Change eine mit diesem
 # Ziel, obwohl vor ihr Changes anderer Ziele und ohne Ziel erfasst wurden.
 rt_lines_report=""
@@ -4740,7 +4779,11 @@ for rt_way in grpc sse nats; do
     rt_line=$(rt_received_lines "cdc-e2e-rt-$rt_way-$rt_target" | head -n1)
     rt_expect_target_line "$rt_line" "$RT_TABLE" "$rt_target" "$RT_PHASE — $rt_way, Ziel $rt_target"
     rt_lines_report="$rt_lines_report $rt_way/$rt_target: $rt_line;"
+    rt_audit_client "cdc-e2e-rt-$rt_way-$rt_target" "$rt_target" "$RT_PHASE — $rt_way, Ziel $rt_target, alle empfangenen Changes"
+    bf_expect "$rt_audit_final" "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RT_TABLE' AND route_target = '$rt_target' AND (new_data->>'id')::int >= 1000")" "$RT_PHASE — $rt_way, Ziel $rt_target, Changes der festen Menge"
   done
+  rt_audit_client "cdc-e2e-rt-$rt_way-all" "" "$RT_PHASE — $rt_way, Client ohne Ziel"
+  bf_expect "$rt_audit_final" "$rt_final_rows" "$RT_PHASE — $rt_way, Client ohne Ziel, Changes der festen Menge"
   # Ein Client ohne Ziel empfängt drei aufeinanderfolgende Changes: eine ohne
   # Ziel, eine mit us, eine mit eu.
   rt_all_targets=""
@@ -4760,8 +4803,8 @@ rt_ids_sql() {
   bf_sql "SELECT string_agg(change_id, ',' ORDER BY change_id COLLATE \"C\") FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RT_TABLE' $1"
 }
 rt_total=$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RT_TABLE'")
-bf_expect "$rt_total" $((rt_attempts * 3)) "$RT_PHASE — Changes der Tabelle"
-bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RT_TABLE' AND route_target IS NULL")" "$rt_attempts" "$RT_PHASE — Changes ohne Ziel (Region asia)"
+bf_expect "$rt_total" $((rt_attempts * 3 + rt_final_rows)) "$RT_PHASE — Changes der Tabelle"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RT_TABLE' AND route_target IS NULL")" $((rt_attempts + 4)) "$RT_PHASE — Changes ohne Ziel (Region asia oder NULL)"
 bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RT_TABLE' AND route_target = 'eu' AND new_data->>'region' <> 'eu'")" 0 "$RT_PHASE — Ziel eu auf einer Change anderer Region"
 for rt_target in eu us; do
   rt_sql_ids=$(rt_ids_sql "AND route_target = '$rt_target'")
@@ -4774,7 +4817,7 @@ bf_expect "$(bf_read_ids "$(bf_http changes "$HTTP_BASE_URL" "$HTTP_TOKEN_READER
 bf_expect "$(bf_read_ids "$(rt_grpc_read "" "$RT_TABLE" "$rt_from" "$rt_to")")" "$rt_all_ids" "$RT_PHASE — ReadChanges ohne target gegen cdc.changes"
 bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" true "$RT_PHASE — Feed-Container läuft weiter"
 
-echo "run-integration-tests: Routing-Happy-Path (LH-FA-CFG-008) belegt — auf $RT_TABLE lenkten die Regeln eu_orders und us_orders $rt_attempts Dreiergruppe(n) (asia, us, eu) auf eu, us und kein Ziel; gRPC-Stream, SSE-Stream und NATS-Subjekt cdc.route.src-e2e.<ziel> lieferten je Ziel eine Change des Ziels (persistiertes Ziel je change_id gehalten) und je Client ohne Ziel drei Changes mit den Zielen NULL, eu und us; GET /changes?target= und ReadChanges mit target lieferten je Ziel genau die Kennungen der SQL-Auswahl WHERE route_target (Bereich [$rt_from,$rt_to)), ungefiltert alle $rt_total Changes:$rt_lines_report"
+echo "run-integration-tests: Routing-Happy-Path (LH-FA-CFG-008) belegt — auf $RT_TABLE lenkten die Regeln eu_orders und us_orders $rt_attempts Dreiergruppe(n) (asia, us, eu) auf eu, us und kein Ziel; gRPC-Stream, SSE-Stream und NATS-Subjekt cdc.route.src-e2e.<ziel> lieferten je Ziel eine Change des Ziels als erste (persistiertes Ziel je change_id gehalten); danach folgten $rt_final_rows gemischte Changes (Region NULL, asia, us, eu, zweimal), und jeder Client mit Ziel empfing im Ruhefenster von $RT_WINDOW genau die Changes seines Ziels aus dieser Menge und keine mit anderem Ziel oder ohne Ziel (jede empfangene Zeile gegen die persistierte Change geprüft), jeder Client ohne Ziel alle $rt_final_rows und als erste drei Changes mit den Zielen NULL, eu und us; GET /changes?target= und ReadChanges mit target lieferten je Ziel genau die Kennungen der SQL-Auswahl WHERE route_target (Bereich [$rt_from,$rt_to)), ungefiltert alle $rt_total Changes:$rt_lines_report"
 
 abdeckung_declare "Routing-Neustart und Ausschluss-Sperre" "LH-FA-CFG-008,LH-FA-CFG-005,LH-QA-SEC-004" "nach einem realen Container-Neustart leitet der Prozessstart den Routing-Regelstand aus den applied-Zeilen ab und die danach erfasste Change trägt das Ziel; cdc.remove_route stellt für künftige Changes das Verhalten ohne die Regel wieder her; nach cdc.exclude_column auf einer Spalte ohne Bedingung trägt das Bild weder ihren Schlüssel noch ihren Wert, vor und nach einem weiteren Neustart, und der Ausschluss der Bedingungsspalte endet auch nach dem Neustart failed" "Routing-Neustart und Ausschluss-Sperre (LH-FA-CFG-008) belegt"
 

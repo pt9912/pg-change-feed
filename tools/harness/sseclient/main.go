@@ -9,7 +9,8 @@
 // über einen Exit-Code allein, weil "READY" vor der auslösenden Change
 // beobachtbar sein muss. Das Flag `-target` setzt den Query-Parameter `target`
 // (Zustellziel), `-count` die Zahl der Changes, die der Client vor dem
-// Token-Test empfängt.
+// Token-Test empfängt, `-window` ein Ruhefenster, in dem er danach weitere
+// Changes zählt ("RECEIVED") und mit "WINDOW-END" endet.
 package main
 
 import (
@@ -37,10 +38,11 @@ type sseChange struct {
 func main() {
 	target := flag.String("target", "", "Zustellziel-Filter der Query (leer = kein Filter)")
 	count := flag.Int("count", 1, "Zahl der Changes, die der Client empfängt, bevor er den Token-Test fährt")
+	window := flag.Duration("window", 0, "Ruhefenster: nach den `count` Changes weitere Changes zählen, bis so lange keine eintrifft (0 = aus)")
 	flag.Parse()
 	args := flag.Args()
-	if (len(args) != 2 && len(args) != 4) || *count < 1 {
-		fmt.Fprintln(os.Stderr, "usage: sseclient [-target <ziel>] [-count <n>] <base-url> <token> [<schema> <table>]")
+	if (len(args) != 2 && len(args) != 4) || *count < 1 || *window < 0 {
+		fmt.Fprintln(os.Stderr, "usage: sseclient [-target <ziel>] [-count <n>] [-window <dauer>] <base-url> <token> [<schema> <table>]")
 		os.Exit(2)
 	}
 	baseURL, token := args[0], args[1]
@@ -51,8 +53,11 @@ func main() {
 		schema, table = args[2], args[3]
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	// Die Frist von 60 s gilt bis zum Empfang der `count` Changes; das
+	// Wartefenster danach (`-window`) misst die Ruhezeit seit der letzten Change.
+	deadline := time.AfterFunc(60*time.Second, cancel)
 
 	streamURL := baseURL + "/changes/stream"
 	if schema != "" || table != "" || *target != "" {
@@ -104,6 +109,26 @@ func main() {
 		}
 		fmt.Printf("RECEIVED change_id=%s table=%s operation=%s new_image=%s\n",
 			change.ChangeID, change.Table, change.Operation, string(change.NewImage))
+	}
+	deadline.Stop()
+
+	if *window > 0 {
+		idle := time.AfterFunc(*window, cancel)
+		for {
+			change, err := naechstesChange(scanner)
+			if err != nil {
+				if ctx.Err() != nil {
+					break
+				}
+				fmt.Fprintf(os.Stderr, "sseclient: Wartefenster: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("RECEIVED change_id=%s table=%s operation=%s new_image=%s\n",
+				change.ChangeID, change.Table, change.Operation, string(change.NewImage))
+			idle.Reset(*window)
+		}
+		idle.Stop()
+		fmt.Println("WINDOW-END")
 	}
 
 	// Der Stream bleibt bis zum Verbindungsende offen; für den Rest des

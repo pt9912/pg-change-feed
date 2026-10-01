@@ -9,7 +9,8 @@
 // über einen Exit-Code allein, weil "READY" vor der auslösenden Change
 // beobachtbar sein muss. Das Flag `-target` wählt ein Zustellziel
 // (`StreamChangesRequest.target`), `-count` die Zahl der Changes, die der
-// Client vor dem Token-Test empfängt.
+// Client vor dem Token-Test empfängt, `-window` ein Ruhefenster, in dem er
+// danach weitere Changes zählt ("RECEIVED") und mit "WINDOW-END" endet.
 package main
 
 import (
@@ -39,10 +40,11 @@ const (
 func main() {
 	target := flag.String("target", "", "Zustellziel-Filter der Request (leer = kein Filter)")
 	count := flag.Int("count", 1, "Zahl der Changes, die der Client empfängt, bevor er den Token-Test fährt")
+	window := flag.Duration("window", 0, "Ruhefenster: nach den `count` Changes weitere Changes zählen, bis so lange keine eintrifft (0 = aus)")
 	flag.Parse()
 	args := flag.Args()
-	if (len(args) != 2 && len(args) != 4) || *count < 1 {
-		fmt.Fprintln(os.Stderr, "usage: grpcclient [-target <ziel>] [-count <n>] <addr> <token> [<schema> <table>]")
+	if (len(args) != 2 && len(args) != 4) || *count < 1 || *window < 0 {
+		fmt.Fprintln(os.Stderr, "usage: grpcclient [-target <ziel>] [-count <n>] [-window <dauer>] <addr> <token> [<schema> <table>]")
 		os.Exit(2)
 	}
 	addr, token := args[0], args[1]
@@ -62,8 +64,11 @@ func main() {
 
 	client := streamv1.NewChangeStreamClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	// Die Frist von 60 s gilt bis zum Empfang der `count` Changes; das
+	// Wartefenster danach (`-window`) misst die Ruhezeit seit der letzten Change.
+	deadline := time.AfterFunc(60*time.Second, cancel)
 	stream, err := client.StreamChanges(
 		metadata.AppendToOutgoingContext(ctx, authorizationMetadataKey, bearerPrefix+token),
 		&streamv1.StreamChangesRequest{Schema: schema, Table: table, Target: *target})
@@ -86,12 +91,41 @@ func main() {
 		fmt.Printf("RECEIVED change_id=%s table=%s operation=%s new_image=%s\n",
 			change.GetChangeId(), change.GetTable(), change.GetOperation(), change.GetNewImage())
 	}
+	deadline.Stop()
+
+	if *window > 0 {
+		if err := receiveWindow(stream, cancel, *window); err != nil {
+			fmt.Fprintf(os.Stderr, "grpcclient: Wartefenster: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("WINDOW-END")
+	}
 
 	if err := assertUnauthenticated(client); err != nil {
 		fmt.Fprintf(os.Stderr, "grpcclient: %v\n", err)
 		os.Exit(1)
 	}
 	fmt.Println("REJECTED code=Unauthenticated")
+}
+
+// receiveWindow empfängt weitere Changes und gibt jede als "RECEIVED"-Zeile
+// aus, bis `window` lang keine Change mehr eintrifft (Ruhefenster); der Ablauf
+// des Fensters ist das reguläre Ende, jeder andere Fehler wird gemeldet.
+func receiveWindow(stream streamv1.ChangeStream_StreamChangesClient, cancel context.CancelFunc, window time.Duration) error {
+	idle := time.AfterFunc(window, cancel)
+	defer idle.Stop()
+	for {
+		change, err := stream.Recv()
+		if err != nil {
+			if status.Code(err) == codes.Canceled {
+				return nil
+			}
+			return err
+		}
+		fmt.Printf("RECEIVED change_id=%s table=%s operation=%s new_image=%s\n",
+			change.GetChangeId(), change.GetTable(), change.GetOperation(), change.GetNewImage())
+		idle.Reset(window)
+	}
 }
 
 // assertUnauthenticated öffnet einen zweiten Stream ohne
