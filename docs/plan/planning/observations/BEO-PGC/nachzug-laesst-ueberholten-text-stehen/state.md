@@ -12,7 +12,11 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 15× (Dateien unter `evidence/`; die fünfzehnte,
+Zähler: 16× (Dateien unter `evidence/`; die sechzehnte,
+`evidence/slice-routing-spec-nachzug.md`, trägt F-1 (MEDIUM): ein hinzugefügter Absatz in
+`LH-FA-CAP-009.a` ließ den unberührten Nachbarabsatz „Fail-closed vor dem Commit“
+unvollständig; vor dem Merge gefunden, in der Fixrunde behoben, Ausgang unverändert
+**verkörpert**; die fünfzehnte,
 `evidence/slice-transformationen-betriebsdoku.md`, trägt F-2 (MEDIUM) und eine **neue Form**:
 keine widersprechende Nachbar-Aussage, sondern eine gegen eine im Plan explizit gezählte Liste
 (drei benannte Beispiele einer Übergabe) unvollständige Übernahme in den Zielträger (Handbuch);

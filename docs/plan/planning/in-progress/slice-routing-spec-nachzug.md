@@ -19,7 +19,7 @@ Folgepflicht 1 (Spec-Nachzug — Träger dieses Slice),
 [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) (Transformationen — nur
 abgegrenzt),
 [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
-Folgepflicht (Spec-Zeilen `SPEC-031`, `SPEC-029`/`SPEC-008` — ebenfalls Träger dieses
+Folgepflicht (Spec-Zeilen `SPEC-031`, `SPEC-008` — ebenfalls Träger dieses
 Slice).
 
 **Berührte Spec-Stellen:**
@@ -36,9 +36,11 @@ Antragsarten), eine **neue** Kennung für die Routing-Regelform (neben
 [`SPEC-024`](../../../../spec/pflichtenheft.md) (Zusatz-Subjekt),
 [`SPEC-031`](../../../../spec/pflichtenheft.md) (Zeile `ReadChanges`: Request um
 `target` ergänzt),
-[`SPEC-029`](../../../../spec/pflichtenheft.md) (Run-Fehlerklasse `schema` gilt auch
-für eine Routing-Regel), gegebenenfalls `spec/architecture.md` (Antragsart-Tabelle, Capture-Sequenz). Gelesen, nicht
-geändert: [`SPEC-017`](../../../../spec/pflichtenheft.md) (Wecksignal). Der
+gegebenenfalls `spec/architecture.md` (Antragsart-Tabelle, Capture-Sequenz). Gelesen,
+nicht geändert: [`SPEC-017`](../../../../spec/pflichtenheft.md) (Wecksignal) und
+[`SPEC-029`](../../../../spec/pflichtenheft.md) (die Run-Fehlerklasse `schema` gilt
+auch für eine Routing-Regel; die Festlegung steht in `SPEC-008` und
+`LH-FA-CAP-009.a`, `SPEC-029` verweist generisch auf `SPEC-008`). Der
 Verweis zeigt **aufwärts**: die Spec nennt diesen Slice nie.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
@@ -88,8 +90,7 @@ die Doku führt). Umfang:
   im Erfassungspfad samt Abhilfe-Weg (`cdc.remove_route`, Neustart — als Zusage,
   bis die Umsetzung sie belegt; Vorab-Bedingung V3 der Welle, offen laut
   `ADR-0138`); der Run-Satz (V2, entschieden mit `ADR-0138` Festlegung 2) steht in
-  [`SPEC-008`](../../../../spec/pflichtenheft.md) und
-  [`SPEC-029`](../../../../spec/pflichtenheft.md): eine im Run nicht anwendbare
+  [`SPEC-008`](../../../../spec/pflichtenheft.md) (`SPEC-029` bleibt unberührt): eine im Run nicht anwendbare
   Routing-Regel (`when.column` fehlt in den Spalten des Snapshots) beendet den Run
   `failed` mit Klasse `schema`, einmal je Run vor der Schreibtransaktion, run-lokal,
   ohne Change (als Zusage in Zukunfts-Form), samt der Zeile zu `LH-FA-CAP-009.a`;
@@ -130,7 +131,7 @@ die Doku führt). Umfang:
 
 ## 2. Definition of Done
 
-- [ ] [`LH-FA-CFG-008.a`](../../../../spec/pflichtenheft.md) ist beantwortet: die
+- [x] [`LH-FA-CFG-008.a`](../../../../spec/pflichtenheft.md) ist beantwortet: die
       Überschrift trägt kein „offen" mehr, der Text nennt Zielmodell,
       Mechanismus, Ausdrucksform, Auflösung, Wirkort und das Verhältnis zu
       Transformation, Ausschluss und Backfill als Zusagen in Zukunfts-Form (was die
@@ -139,15 +140,15 @@ die Doku führt). Umfang:
       nach einer nicht anwendbaren Regel steht als Zusage, nicht als Tatsache
       ([`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
       führt sie als Erwartung). *Zu belegen durch:* Lesen des Abschnitts und
-      `make docs-check`.
-- [ ] Die Datenstrukturen und Schnittstellen stehen:
+      `make docs-check`. *Beleg (Verifier):* Verifikations-Report §2 Zeile 1
+      (getragen), `make docs-check` Exit 0.
+- [x] Die Datenstrukturen und Schnittstellen stehen:
       [`SPEC-019`](../../../../spec/pflichtenheft.md) (zwei Antragsarten, Menge,
       `applied`-Bedeutung, Fehlertexte R1–R6), die Routing-Regelform samt
       Randfällen und Bildbasis, [`SPEC-001`](../../../../spec/pflichtenheft.md) und
       [`SPEC-002`](../../../../spec/pflichtenheft.md) (`route_target`), die Zeile
       `schema` in [`SPEC-008`](../../../../spec/pflichtenheft.md) (Erfassungspfad
-      und Backfill-Run), der Run-Satz in
-      [`SPEC-029`](../../../../spec/pflichtenheft.md) und `LH-FA-CAP-009.a`, der Parameter
+      und Backfill-Run), der Run-Satz in `LH-FA-CAP-009.a`, der Parameter
       `target` in [`SPEC-020`](../../../../spec/pflichtenheft.md),
       [`SPEC-021`](../../../../spec/pflichtenheft.md),
       [`SPEC-022`](../../../../spec/pflichtenheft.md) und als Feld `target` der Zeile
@@ -156,30 +157,46 @@ die Doku führt). Umfang:
       ist die nächste freie (*zu belegen durch* `git grep -h -o 'SPEC-0[0-9][0-9]'
       <Stand> -- spec/pflichtenheft.md | sort -u | tail -1` am Parent-Stand und am
       Diff-Stand); §7 Historie trägt je Änderung eine Zeile ohne ADR-/Slice-Bezug.
-- [ ] `spec/architecture.md` trägt die Antragsart-Tabelle mit den zwei weiteren
+      *Beleg (Verifier):* Verifikations-Report §2 Zeile 2 „getragen mit zwei
+      LOW“; die beiden LOW (V-1: Leeraussage und U+0000 in der Zeile Query-Parameter
+      von `SPEC-021`, V-2: „im Wertebereich“ im Fehlertext von `SPEC-019`) sind
+      mit dem Nachzug-Commit `ab4a83c7` geschlossen (Diff gelesen, `make docs-check`
+      Exit 0).
+- [x] `spec/architecture.md` trägt die Antragsart-Tabelle mit den zwei weiteren
       Arten und die Aussage zum Ziel vor der Persistierung, ohne ADR-/Slice-/Wellen-Bezug.
-      *Zu belegen durch:* `make docs-check` (`matrix`-Modul) und der Suchlauf in §3.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      *Zu belegen durch:* `make docs-check` (`matrix`-Modul) und der Suchlauf in §3. *Beleg (Verifier):*
+      Verifikations-Report §2 Zeile 3 und §1 (Bezug-Grep im Spec-Diff: 0 Treffer).
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+      Self-Review (Modul 8). *Beleg:* Report
+      `docs/reviews/review-slice-routing-spec-nachzug.md` (0 HIGH, 2 MEDIUM F-1/F-2,
+      2 LOW, 2 INFO). Die Fixrunde ist **nicht** von einem Reviewer erneut gelesen
+      worden: der Verifier hat F-1 bis F-4 am Spec-Text gegengeprüft (Verifikations-Report
+      §4, „am Text geprüft, nicht am Fixrunden-Bericht“; V-3 in §7 als Prozessbefund
+      geführt) und die Nachzüge V-1/V-2 im Commit `ab4a83c7` gelesen — V-3 ist damit
+      durch diese Gegenprüfung geschlossen, ein separates Re-Review hat es nicht
+      gegeben.
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-routing-spec-nachzug.md`
-      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: entfällt als eigener Punkt — der Slice **ist** das Doku-Update
-      der Spec; das Benutzerhandbuch bleibt unberührt (§1).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
-      Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13). *Beleg:*
+      Exit 0, „16 Zeilen stimmen“ (Verifikations-Report §1; im Closure-Lauf am
+      Stand nach `ab4a83c7` wiederholt, gleiches Ergebnis).
+- [x] Doku-Update: entfällt als eigener Punkt — der Slice **ist** das Doku-Update
+      der Spec; das Benutzerhandbuch bleibt unberührt (§1). *Beleg:* Verifikations-Report
+      §2 Zeile 7.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+      Sensor · benannte Spec-Lücke). *Beleg:* §7.
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
-      Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
-      offen).
+      Antwort und wird in §7 notiert. *Beleg:* §7, zwei weitere `evidence/`-Dateien.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+      offen). *Beleg:* §6.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
       unter *Offene Wellen*, das Ereignis kann eintreten).
@@ -193,7 +210,7 @@ die Doku führt). Umfang:
 | `spec/pflichtenheft.md` §2 (neue Kennung, nächste freie am Parent-Stand: `SPEC-032`) | neu | die Routing-Regelform als eigene Datenstruktur (Schlüssel, Bildbasis, Randfälle), Formvorbild `SPEC-030`; die Aufteilung gegenüber `SPEC-019` entscheidet der Slice (Festlegungen unten). |
 | `spec/pflichtenheft.md` §2 ([`SPEC-001`](../../../../spec/pflichtenheft.md), [`SPEC-002`](../../../../spec/pflichtenheft.md)) | update | Spalte `route_target` an `cdc.change` und `cdc.changes` (letzte Spalte der View); Format wie die Zeile zu `origin`. |
 | `spec/pflichtenheft.md` §2 ([`SPEC-020`](../../../../spec/pflichtenheft.md), [`SPEC-021`](../../../../spec/pflichtenheft.md), [`SPEC-022`](../../../../spec/pflichtenheft.md), [`SPEC-024`](../../../../spec/pflichtenheft.md)) | update | Parameter `target` bzw. Zusatz-Subjekt; die Zählwörter „zehn Felder" und „dreizehn Felder" bleiben (das Label ist nicht Teil der Nachrichten). |
-| `spec/pflichtenheft.md` §2 ([`SPEC-031`](../../../../spec/pflichtenheft.md) Zeile `ReadChanges`, [`SPEC-029`](../../../../spec/pflichtenheft.md), `LH-FA-CAP-009.a`) | update | Request-Feld `target` (siebtes, Nummer 7); Run-Klasse `schema` für eine Routing-Regel (Quelle der Entscheidungen: `ADR-0138`, in der Spec ohne ADR-Bezug formuliert). |
+| `spec/pflichtenheft.md` §2 ([`SPEC-031`](../../../../spec/pflichtenheft.md) Zeile `ReadChanges`, `LH-FA-CAP-009.a`) | update | Request-Feld `target` (siebtes, Nummer 7); Run-Klasse `schema` für eine Routing-Regel (Quelle der Entscheidungen: `ADR-0138`, in der Spec ohne ADR-Bezug formuliert). |
 | `spec/pflichtenheft.md` §4 ([`SPEC-008`](../../../../spec/pflichtenheft.md) Zeile `schema`) | update | Nichtanwendbarkeit einer Routing-Regel im Erfassungspfad und im Backfill-Run; Absatzstruktur wie „Nicht anwendbare Regel (Klasse `schema`)" der Transformationen (Zellenlänge des `structure`-Moduls). |
 | `spec/pflichtenheft.md` §1 (`LH-FA-CAP-009.a`, Absatz „Sichtbarkeit und Fehler des Runs" und neuer Punkt „Ziel der Backfill-Changes") | update | über den Plan hinaus: der Punkt „Ziel der Backfill-Changes" trägt die Aussage aus der Entscheidung, dass Backfill-Changes dieselbe Bestimmung durchlaufen; die Fail-closed-Prüfung des Routing-Regelstands vor dem Commit (Stand des Runs nach dem Öffnen des Snapshots, Klasse `configuration`) und die Definition von „Regelstand zum Run" stehen im Absatz „Fail-closed vor dem Commit" und im Punkt „Ziel der Backfill-Changes" (Quelle: [`ADR-0139`](../../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md), Fixrunde nach dem Review). |
 | `spec/pflichtenheft.md` §2 (`SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-031` Zeile `ReadChanges`) | update (Fixrunde) | Der Satz „leer, kein Fehler" für ein `target` außerhalb des Alphabets nennt U+0000 und die Prüfung im gemeinsamen Use Case; der SQL-Zugriff `cdc.changes` ist ausgenommen (Quelle: `ADR-0139`). Das NUL-Verhalten von PostgreSQL steht nicht als erprobt, die Spec macht den Satz von ihm unabhängig. |
@@ -306,35 +323,109 @@ Closure-Notiz mit Lerneintrag geschrieben.
 - **Spec-Wiedergabe in eigenen Worten driftet von der ADR ab.** Die Zusagen stehen
   in Zukunfts-Form; ein Satz, der als Tatsache formuliert ist, bevor ein
   Umsetzungs-Slice ihn belegt, ist eine ungeprüfte Aussage
-  ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B). — **Ausgang:** bei der
-  Closure einzutragen (Leser: Reviewer, Verifier).
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B). — **Ausgang: eingetreten,
+  im Slice behoben.** Review F-2 (MEDIUM, `target` außerhalb des Alphabets als
+  unbedingte Zusage auf allen Lesewegen) und F-3 (LOW, Grenzen von `order` ohne
+  Herkunft) trafen genau diese Klasse; beide sind in der Fixrunde am Text
+  geschlossen (Verifikations-Report §4). Gelesen von Reviewer und Verifier.
 - **Zählwörter und Aufzählungen bleiben stehen** (`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`,
   verkörpert, 15×): „sieben Arten", „die fünf/sechs übrigen Antragsarten". —
-  **Ausgang:** bei der Closure einzutragen (Suchlauf-Block in §3).
+  **Ausgang: entfallen für die Zählwörter, eingetreten für einen Nachbarabsatz.**
+  Die Zählwörter sind am Diff gezogen (Suchlauf-Block in §3, Verifikations-Report
+  §1: „neun“ konsistent); der Nachbarabsatz „Fail-closed vor dem Commit“ blieb
+  zunächst stehen (Review F-1, MEDIUM) und ist in der Fixrunde nachgezogen.
 - **Doppelquelle Handbuch gegen Pflichtenheft**
   (`BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft`, offen, 3×): dieselben
-  Fakten stehen später im Handbuch (`betriebsdoku`). — **Ausgang:** bei der Closure
-  einzutragen; Adresse: `slice-routing-betriebsdoku` §1 (Handbuch verweist auf die
-  führende Stelle der Spec je Sachverhalt, statt Fehlertexte zu wiederholen).
+  Fakten stehen später im Handbuch (`betriebsdoku`). — **Ausgang: weiter offen,
+  bewusst an die Adresse übergeben.** Dieser Slice berührt das Handbuch nicht
+  (Verifikations-Report §2 Zeile 7); Adresse: `slice-routing-betriebsdoku` §1
+  (Handbuch verweist auf die führende Stelle der Spec je Sachverhalt, statt
+  Fehlertexte zu wiederholen).
 - **Doc-Gate-Regeln der Spec.** `matrix` verbietet Verweise Spec → ADR/Slice,
   `ids` verlangt Links auf nackte Kennungen, `structure` misst Zellenlängen (die
-  Transformations-Fassung färbte `section-cell-oversized`). — **Ausgang:** bei der
-  Closure einzutragen (`make docs-check` Exit 0 am Diff-Stand).
+  Transformations-Fassung färbte `section-cell-oversized`). — **Ausgang: entfallen.**
+  `make docs-check` Exit 0 am Diff-Stand (Verifikations-Report §1; im Closure-Lauf
+  vor dem Inhalts-Commit wiederholt).
 - **V3 offen, V1/V2 entschieden.** `SPEC-031`, `SPEC-029` und `SPEC-008` tragen die
   Festlegungen aus `ADR-0138`; die Abhilfe-Aussage zur Nichtanwendbarkeit bleibt
-  Zusage, bis V3 gemessen ist. — **Ausgang:** bei der Closure einzutragen
-  (Spec-Zeilen gezogen; Abhilfe als Zusage gekennzeichnet).
+  Zusage, bis V3 gemessen ist. — **Ausgang: V1/V2 entfallen** (Spec-Zeilen gezogen,
+  Verifikations-Report §5), **V3 weiter offen** (Abhilfe-Aussage als Zusage
+  gekennzeichnet, Verifikations-Report §6; Messadresse `slice-routing-kern-label`
+  und `slice-routing-e2e`, `ADR-0138`).
+- **A-3: Lesart „Zustellung“ im Lastenheft.** Die Spec trägt die Lesart
+  „Zustellung = Abruf bzw. Abonnement“ als Zusage; die Klarstellung im Lastenheft
+  liegt beim Auftraggeber ([`ADR-0139`](../../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md)
+  „Offen, nicht entschieden“, Review F-5/A-3). — **Ausgang: weiter offen.** Keine
+  DoD-Zeile dieses Slice hängt von ihr ab (Verifikations-Report §6); Träger ist
+  der Auftraggeber, die Adresse die Welle [welle-routing](../welle-routing.md).
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
-
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** Das Pflichtenheft trägt den beschlossenen Routing-Stand
+  (`LH-FA-CFG-008.a` beantwortet, `SPEC-032` als eigene Regelform, `SPEC-019` mit
+  neun Antragsarten, `route_target` in `SPEC-001`/`SPEC-002`, `target` in
+  `SPEC-020`/`-021`/`-022`/`-031`, Zusatz-Subjekt in `SPEC-024`, Nichtanwendbarkeit
+  in `SPEC-008`), die Sicht trägt neun Arten und den Zustellziel-Satz ohne
+  ADR-/Slice-/Wellen-Bezug (Bezug-Grep im Spec-Diff: 0, Verifikations-Report §1).
+  Zwei Lücken, die der Text der Entscheidung ließ (Regelstand im Run, `target`
+  außerhalb des Alphabets), gingen als Architect-Fragen A-1/A-2 an `ADR-0139`,
+  bevor die Spec sie festlegte, statt vom Implementer geraten zu werden. Gemessen im
+  Verifier-Lauf: `make gates` Exit 0, `make docs-check` Exit 0, Suchlauf 16 Zeilen
+  (Verifikations-Report §1); im Closure-Lauf `make suchlauf-nachmessen` erneut Exit 0.
+- **Was ging anders als geplant:** Mehrumfang gegenüber dem Plan, im Plan §3
+  ausgewiesen: Komponentenliste, Backfill-Absatz und Fehlermodell-Zeile der Sicht,
+  `LH-FA-CAP-009.a` (Ziel der Backfill-Changes, Fail-closed). Eine Fixrunde nach dem
+  Review (F-1, F-2 MEDIUM; F-3, F-4 LOW) und ein Nachzug nach der Verifikation
+  (`ab4a83c7`: V-1, V-2). `SPEC-029` blieb unberührt (die Festlegung steht in
+  `SPEC-008` und `LH-FA-CAP-009.a`, `SPEC-029` verweist generisch); der Plan-Kopf nannte
+  sie als zu ändernd und ist angeglichen (V-4). Die Fixrunde wurde nicht von einem
+  Reviewer erneut gelesen, sondern vom Verifier am Text geprüft (DoD, Zeile Review).
+- **Steering-Loop-Eintrag:** geschärfte Regel, kein neuer Sensor. Ein
+  Fixrunden-Bericht (und eine Plan- oder Historie-Zeile), der „X ergänzt“ sagt, ist
+  eine Trägerzusage und wird gegen den **Diff** geprüft, nicht gegen den Bericht:
+  V-1 war genau das — Plan und Historie nannten `SPEC-021` als geändert, der Diff der
+  Fixrunde berührte die Zeile nicht. Der Verifier fand es, indem er den Fixrunden-Diff
+  las (Ursprung: **gemessen**, Verifikations-Report §3, §4, V-1). Zweiter Teil: eine
+  Lücke im Text der Entscheidung wird vor dem Spec-Text zur ADR (`ADR-0139`), nicht
+  vom Implementer als Setzung der Spec geraten (F-1, F-2). Träger der Regel ist die
+  Lese-Handlung des Verifiers und des Planners (`AGENTS.md` §3.12 Instanz B); ein
+  Sensor ist ausgeschlossen, weil kein Werkzeug „berichtet“ und „geändert“ vergleicht.
+- **Beobachtungs-Register (`../observations/`):**
+  - **`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`** (verkörpert) — F-1 (MEDIUM):
+    neue `evidence/slice-routing-spec-nachzug.md`, Zähler **16×**. V-2 (LOW, Rest des
+    zurückgenommenen Wertebereichs im Fehlertext) und V-4 (LOW, Plan-Kopf): vor dem
+    Merge vom Verifier gefunden, bekannter Träger-Typ, nach der Deckel-Regel keine
+    weitere Datei; sie stehen hier mit Finding-Kennung.
+  - **`BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`** (verkörpert) — F-2
+    (MEDIUM, Setzung breiter als die Entscheidung): neue
+    `evidence/slice-routing-spec-nachzug.md`, Zähler **12×**. V-1 (LOW, Bericht nennt eine
+    Zeile, die der Diff nicht berührt) und F-3 (LOW, `order`-Grenzen ohne Herkunft): vor
+    dem Merge gefunden, bekannter Träger-Typ, keine weitere Datei.
+  - **`BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft`** (offen, 3×): kein neues
+    Auftreten; das Handbuch ist nicht berührt, Adresse `slice-routing-betriebsdoku`.
+  - F-4 (LOW, Umbruch nach Teilersetzung), F-5 (INFO, Lastenheft-Lesart: bleibt als A-3
+    offen, §6) und F-6 (INFO, Use-Case-Namen in der Sicht, Bestandsmuster): **keine
+    Beobachtung** — Einzelfälle ohne Träger-Klasse oder als Risiko geführt.
+  - Kein Eintrag steht bei 3× oder mehr ohne Ausgang an, den dieser Slice neu erreichte.
+- **Folge-Slices:** keine neuen. Die Folge-Slices der Welle
+  [welle-routing](../welle-routing.md) tragen die Festlegungen: `slice-routing-kern-label`
+  (V3-Messung), `slice-routing-antragsweg` (`harness/targets/schema-rollout.md:74`,
+  Zählwort „sieben SQL-Funktionen“), `slice-routing-backfill-pfad` und
+  `slice-routing-lesewege` (Festlegungen aus `ADR-0139`), `slice-routing-betriebsdoku`
+  (Handbuch-Stellen mit „zwei optionale“ Filtern).
+- **Risiken aus §6:** je ein Ausgang am Ort: Zusagen als Tatsachen **eingetreten, im
+  Slice behoben**; Zählwörter **entfallen** (Nachbarabsatz eingetreten, behoben);
+  Doppelquelle Handbuch **weiter offen** (Adresse benannt); Doc-Gate-Regeln
+  **entfallen**; V3 **weiter offen**, V1/V2 **entfallen**; A-3 **weiter offen**
+  (Auftraggeber).
+- **Drei Paarungen:** dieser Slice gehört zu [welle-routing](../welle-routing.md) (offen)
+  — die Prüfung läuft regelkonform bei deren Closure; die DoD-Zeile bleibt deshalb
+  `[ ]`. (a) Anker: der Lerneintrag verkörpert nichts neu; (b) Folge-Slice: keiner neu,
+  die Übergaben stehen in den Plänen der Welle; (c) Register: die genannten Kennungen
+  existieren als Verzeichnis, beide fortgeschriebenen tragen ihre Datei unter `evidence/`.
+- **Validator (Modul 8):** entfällt — reiner Spec-Nachzug ohne End-Nutzer-Wert; der
+  Nutzer-Bedarf ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md)) wird erst durch die
+  Umsetzung und den Wellen-Beleg validierbar.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

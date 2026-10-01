@@ -18,7 +18,8 @@ Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Findin
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
 ab 10×). Ausgang unverändert **verkörpert**.
 
-Zähler (abgeleitet): **11×** (evidence/slice-capture-leerlauf-quellbelege.md,
+Zähler (abgeleitet): **12×** (evidence/slice-routing-spec-nachzug.md,
+evidence/slice-capture-leerlauf-quellbelege.md,
 evidence/slice-transformationen-map-value.md,
 evidence/slice-harness-guard-inplace-textwerkzeug.md,
 evidence/slice-036.md, evidence/slice-082.md,
