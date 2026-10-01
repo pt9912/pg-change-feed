@@ -348,19 +348,24 @@ func TestDecideRefusesManualActionOperationMissingFromReport(t *testing.T) {
 }
 
 // TestDecideRefusesOtherSignatureSpelling prüft die Bindung der Bekannt-Liste
-// an die Schreibweise des Reports: die Funktion `set_transformation` mit dem
-// Parametertyp `in:jsonb` (statt der gemessenen Schreibweise `in:json`) ist
-// kein bekanntes Fremdobjekt — decide bleibt leer.
+// an die Schreibweise des Reports: die Funktionen `set_transformation` und
+// `set_route` mit dem Parametertyp `in:jsonb` (statt der gemessenen
+// Schreibweise `in:json`) sind kein bekanntes Fremdobjekt — decide bleibt leer.
 func TestDecideRefusesOtherSignatureSpelling(t *testing.T) {
-	r := knownBlockedReport()
-	for i, op := range r.Operations {
-		if op.ID == "DropFunction:FUNCTION:d5:d6" {
-			r.Operations[i].Path = []string{"set_transformation(in:text,in:text,in:text,in:text,in:jsonb)"}
+	for _, tc := range []struct{ id, path string }{
+		{"DropFunction:FUNCTION:d5:d6", "set_transformation(in:text,in:text,in:text,in:text,in:jsonb)"},
+		{"DropFunction:FUNCTION:d9:da", "set_route(in:text,in:text,in:text,in:text,in:jsonb)"},
+	} {
+		r := knownBlockedReport()
+		for i, op := range r.Operations {
+			if op.ID == tc.id {
+				r.Operations[i].Path = []string{tc.path}
+			}
 		}
-	}
 
-	d := decide(r)
-	if d.allowDestructive || len(d.dropViews) != 0 {
-		t.Fatalf("decision = %+v — wollte leer, weil die Signatur nicht die gemessene Schreibweise trägt", d)
+		d := decide(r)
+		if d.allowDestructive || len(d.dropViews) != 0 {
+			t.Fatalf("%s: decision = %+v — wollte leer, weil die Signatur nicht die gemessene Schreibweise trägt", tc.path, d)
+		}
 	}
 }
