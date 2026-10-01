@@ -1,8 +1,13 @@
 # ADR-0137: Routing auf Zustellziele — ein Zustellziel ist ein benannter Kanal; das Ziel wird bei der Erfassung als Label an der Change persistiert
 
-**Status:** Proposed
+**Status:** Accepted
 
 **Datum:** 2026-10-01
+
+**Herkunft der Festlegungen:** Entscheid des Auftraggebers vom 2026-10-01
+(„Alles wie empfohlen“ auf die sechs Fragen, nach Vorlage der Konsequenzen und
+Vorschläge in der Sitzung); die Entscheidungen stehen in §Entscheidungen des
+Auftraggebers.
 
 **Autor:** pt9912 (Rolleninhaber: Architect-Lauf, 2026-10-01)
 
@@ -90,13 +95,13 @@ Kontext (nicht neu am Code gemessen):
    Change, Auswertung in definierter Reihenfolge (erster Treffer), keine Route
    führt auf das bestehende Ziel.
 
-Diese ADR schreibt der **Architect** ohne dass ein konkreter Nutzer des
+Diese ADR schreibt der **Architect**, ohne dass ein konkreter Nutzer des
 Routings benannt wäre; die Anforderung kommt aus dem Lastenheft, nicht aus
-einem beobachteten Betriebsbedarf. Darum steht sie als `Proposed` (siehe
-„Offene Fragen an den Auftraggeber"); die gewählte Form ist die kleinste, die
-alle drei Akzeptanzkriterien trägt, und lässt die teureren Lesarten
-(aktive Senken, Consumer-Bindung, Mehrfach-Ziele) als benannte Re-Evaluierung
-offen.
+einem beobachteten Betriebsbedarf. Die sechs offenen Fragen hat der
+Auftraggeber am 2026-10-01 entschieden (§Entscheidungen des Auftraggebers);
+die gewählte Form ist die kleinste, die alle drei Akzeptanzkriterien trägt,
+und lässt die teureren Lesarten (aktive Senken, Consumer-Bindung,
+Mehrfach-Ziele) als benannte Re-Evaluierung offen.
 
 ## Entscheidung
 
@@ -211,7 +216,8 @@ und verneint:
   mit `route_target IS NULL` und über jeden ungefilterten Weg sichtbar.
 
 Beide Fälle sind eine Auslegung von „Negative", die der Auftraggeber
-bestätigen soll (Frage 3, Frage 4).
+entschieden hat (Entscheidungen 3 und 4). Das Handbuch weist auf DELETE und
+Inhaltsregeln hin (Folgepflicht 8).
 
 ### Teilfrage 5 — Zustellung: ein Parameter je Weg
 
@@ -230,7 +236,7 @@ Driving-Handler; `ChangeStreamPort` und `Broadcaster` bleiben unverändert.
 Das Nachrichtenschema der Wege (zehn Felder) bleibt unverändert: das Label ist
 über die SQL-Sicht lesbar, nicht Teil der Stream-Nachrichten. Ein
 ungefilterter Leser sieht **weiterhin alle** Changes, geroutete eingeschlossen
-(Auswahl, keine Ausblendung; Frage 2).
+(Auswahl, keine Ausblendung; Entscheidung 2).
 
 **Consumer.** Positionen bleiben Log-Positionen (`ADR-0013`). Ein Consumer, der
 nur ein Ziel liest, bestätigt die höchste gesehene `change_id`; die
@@ -290,7 +296,8 @@ verworfen.
 - Negativ: Inhaltsregeln auf Nicht-Schlüsselspalten wirken bei DELETE ohne
   volle Replica-Identität nicht (Wert abwesend, Teilfrage 4); *hergeleitet*
   aus dem Abwesenheits-Vertrag von `LH-FA-DAT-005` und `ADR-0112`, die
-  Messung gegen PostgreSQL 17 und 18 gehört in den umsetzenden Slice.
+  Messung gegen PostgreSQL 17 und 18 gehört in den E2E-Slice (Folgepflicht 7);
+  vorher gilt die Aussage nicht als belegt.
 - Negativ: zweite NATS-Veröffentlichung je gerouteter Change (zusätzliche
   Last am Publisher); Kosten *nicht gemessen*.
 - Negativ: Schema-Rollout wächst (Spalte, View-Spalte, zwei Antragsarten,
@@ -300,8 +307,11 @@ verworfen.
 ## Folgepflichten
 
 Vorschlag zur Zerlegung; der Planner formt Welle und Slices. Jeder Slice ist
-für sich lauffähig. **Aussage über eine Menge:** die Zahl sieben ist ein
-Plan-Entwurf, nicht gemessen.
+für sich lauffähig. **Aussage über eine Menge:** die Zahl acht ist ein
+Plan-Entwurf, nicht gemessen. **Abhängigkeiten** (*hergeleitet*, nicht gegen
+einen Plan geprüft): 1 vor allen; 2 vor 3 bis 6; 3 vor 6 und 7, weil Regeln nur
+über den Antragsweg entstehen; 4, 5 und 6 untereinander unabhängig; 7 nach 2
+bis 6; 8 nach 7.
 
 1. **Spec-Nachzug (zuerst, eigener Commit):** `SPEC-019` um die Antragsarten
    `set_route`/`remove_route`; ein neuer SPEC-Eintrag für die Routing-Regel
@@ -333,9 +343,13 @@ Plan-Entwurf, nicht gemessen.
    alles), Boundary (zwei Regeln treffen; `order` entscheidet; R1–R6 je eine
    Verletzung `failed`), Negative (Nichtanwendbarkeit endet `schema`, Abhilfe
    über `remove_route` + Neustart), Neustart-Festigkeit, Ausschluss-Sperre
-   (R3), Replay (erneutes Lesen liefert dasselbe Label).
+   (R3), Replay (erneutes Lesen liefert dasselbe Label). Zusätzlich die
+   Messung des DELETE-Verhaltens (Inhaltsregel auf eine Nicht-Schlüsselspalte
+   ohne volle Replica-Identität) gegen PostgreSQL 17 und 18, bevor die Aussage
+   in Teilfrage 4 als belegt gilt (Entscheidung 4).
 8. **Betriebsdokumentation und SDK-/Beispiel-Parameter** `target` (eigener
-   Folge-Schritt, nicht Gegenstand dieser ADR).
+   Folge-Schritt, nicht Gegenstand dieser ADR); das Handbuch weist auf DELETE
+   und Inhaltsregeln hin (Entscheidung 4).
 
 ## Fitness Function (falls maschinell prüfbar)
 
@@ -351,35 +365,27 @@ Regeln dieser Sektion: Erwartungen an den umsetzenden Slice, **nicht erprobt**
 | a-check | Routing-Regel liegt in `internal/domain/**` und importiert aus keiner anderen Schicht | `make a-check` |
 | Realer Rundlauf (erwartet) | Regel wirkt am laufenden Prozess, nach Neustart und auf allen Lesewegen mit demselben Ergebnis | `make test-integration` |
 
-## Offene Fragen an den Auftraggeber
+## Entscheidungen des Auftraggebers
 
-Gründe für `Proposed`: diese Entscheidung hat keinen benannten Nutzer. Die
-Antworten ändern Form oder Umfang.
+Herkunft: Antwort des Auftraggebers vom 2026-10-01 („Alles wie empfohlen“) auf
+die sechs Fragen des Entwurfs, die diese ADR bis dahin als `Proposed` führte.
+Der Grund für `Proposed` war, dass die Entscheidung keinen benannten Nutzer
+hat; die Anforderung kommt aus dem Lastenheft.
 
-1. **Bedarf und Form der „Zustellung".** Reicht „Ziel = Kanal, den ein
-   Consumer abruft/abonniert" (diese ADR), oder soll das System aktiv an
-   externe Senken (Webhook, Queue) zustellen (Option D, deutlich größer), oder
-   soll ein Consumer fest an ein Ziel gebunden werden (Option B)?
-2. **Exklusivität.** Soll eine geroutete Change für ungefilterte Leser
-   sichtbar bleiben (hier: ja, Auswahl statt Ausblendung)? Das Gegenteil
-   würde `cdc.changes` und die Wege für Altclients ändern.
-3. **Kein Treffer.** `route_target = NULL` ohne Standardziel (hier), oder
-   Pflicht einer abschließenden Regel je Tabelle mit Routing, damit nichts
-   „unzugeordnet" bleibt?
-4. **Abwesender Wert** (NULL, DELETE ohne volle Replica-Identität) als
-   Nicht-Treffer (hier), oder Pflicht einer vollen Replica-Identität für
-   Tabellen mit Inhaltsregel?
-5. **Ein Ziel je Change** (hier, Leitplanke aus `ADR-0112`) genügt, oder wird
-   Fan-out auf mehrere Ziele gebraucht?
-6. **Nicht rückwirkend.** Ist ein bei der Erfassung festgeschriebenes Label
-   (kein Umetikettieren) akzeptabel? (Parallele zum Rohform-Verlust von
-   `ADR-0112`.)
+| # | Frage | Entscheidung | Konsequenz |
+|---|---|---|---|
+| 1 | Bedarf und Form der „Zustellung“ | Ziel = Kanal, den ein Consumer abruft oder abonniert (Option C) | aktive Senken (Option D) und Consumer-Bindung (Option B) bleiben Re-Evaluierung; das Label ist die Grundlage für eine spätere ADR zu aktiven Senken |
+| 2 | Exklusivität | geroutete Changes bleiben für ungefilterte Leser sichtbar | `cdc.changes` und die Wege der Altclients ändern sich nicht; Routing ist Auswahl, keine Ausblendung |
+| 3 | Kein Treffer | `route_target = NULL`, kein Standardziel | eine Regel ohne `when` mit höchster `order` bleibt als Abschlussregel möglich |
+| 4 | Abwesender Wert (NULL, TOAST, DELETE ohne volle Replica-Identität) | Nicht-Treffer | Handbuch-Hinweis zu DELETE und Inhaltsregeln; Messung gegen PostgreSQL 17 und 18 im E2E-Slice |
+| 5 | Ein Ziel je Change | ein Ziel genügt | kein Fan-out; mehrere Ziele wären eine Zielmenge statt einer Spalte |
+| 6 | Label nicht rückwirkend | bei der Erfassung festgeschrieben, kein Umetikettieren | Altbestand über einen Backfill-Run mit dem aktuellen Regelstand |
 
 ## Re-Evaluierungs-Trigger
 
-- Eine der Fragen 1, 2 oder 5 wird anders beantwortet: Folge-ADR mit
-  `Supersedes` für die betroffene Teilfrage (vor `Accepted` dieser ADR:
-  Überarbeitung in dieser Datei).
+- Eine der Entscheidungen 1, 2 oder 5 wird anders getroffen (insbesondere
+  aktive Senken, Option D): Folge-ADR mit `Supersedes` für die betroffene
+  Teilfrage.
 - Ein Operator über Gleichheit hinaus wird dreimal im Beobachtungs-Register
   verlangt: Folge-ADR zum Regelsatz.
 - Ein Bedarf an Umetikettieren bereits erfasster Changes: Folge-ADR, die den
@@ -391,6 +397,7 @@ Antworten ändern Form oder Umfang.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-10-01 | Proposed — Architect-Lauf zu `LH-FA-CFG-008.a`; sechs Fragen an den Auftraggeber | [`LH-FA-CFG-008`](../../../spec/lastenheft.md) |
+| 2026-10-01 | Accepted — sechs Entscheidungen des Auftraggebers wie im Entwurf | [`LH-FA-CFG-008`](../../../spec/lastenheft.md) |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
