@@ -188,22 +188,23 @@ Befehl druckt `0`, der Eintrag steht unter einem Deckel ohne weitere Dateien):
 (9×), `inplace-textwerkzeug-am-repo-trotz-nutzerregel` (9×),
 `vorher-nachher-sprache-in-test-harness-kommentar` (8×).
 
-**Vier Einträge bei 3× ohne Ausgang, den diese Closure zuweisen kann**, und zwei Einträge,
-die der Lese-Schritt der Vorgängerwelle schon adressiert hat. Die Ausgänge setzen
+**Sechs Einträge bei 3× oder darüber ohne Ausgang zum Zeitpunkt der Closure.** Die Ausgänge setzen
 Regel-Wortlaut in Agenten-Dateien (`.claude/commands/`, `.harness/skills/`) oder in
-[`AGENTS.md`](../../../../AGENTS.md); diese Closure schreibt dort nichts, weil das Regeländerungen sind
+[`AGENTS.md`](../../../../AGENTS.md); die Closure schrieb dort nichts, weil das Regeländerungen sind
 und ein Planner, der sie selbst setzte, dieselbe Rolle wäre, die den eigenen Schnitt prüft
-(Baseline-Regelwerk `modul-08-agentenrollen.md`). Jede Zeile trägt einen begründeten
-Ausgang-Vorschlag und die Adresse der Entscheidung.
+(Baseline-Regelwerk `modul-08-agentenrollen.md`). Die Ausgänge setzte das
+[Architect-Verdikt](../../../reviews/architect-verdict-welle-routing-lese-schritt.md) (Auflage F-2 des
+Closure-Note-Reviews); die Tabelle gibt sie wieder, die Register-`state.md` der Einträge tragen sie
+(Kennung und Anker).
 
-| Eintrag (`BEO-PGC/…`) | Zähler | Befund beim Lesen | Ausgang-Vorschlag · Adresse |
+| Eintrag (`BEO-PGC/…`) | Zähler | Ausgang (Verdikt §0 und §3) | Kennung · Anker |
 |---|---|---|---|
-| `fixrunde-ohne-reviewer-lesung` | 3 (fünf weitere Gegenbelege ohne Datei) | Die drei Auftreten: `spec-nachzug` (Fixrunde am Spec-Text; der Verifier fand danach V-1/V-2), `kern-label` (Kommentare und Skript-Kopftext), `antragsweg` (Parser; das nachgeholte Re-Review fand F-N1). Die Gegenbelege zeigen, wo ein Re-Review Befunde lieferte (Fixrunde mit geänderter Anweisung: `antragsweg`, `backfill-pfad`, `lesewege`) und wo er entbehrlich war (der Verifier hat die Fixrunde ausgeführt: `nats-subjekt`, `e2e`, `betriebsdoku`, `sdk-beispiel-target`, `sdk-realserver-e2e`). Der Kandidat-Wortlaut „sobald die Fixrunde Anweisungen ändert“ ist zu weit (ein Skript mit Exit-Code ist eine Anweisung, die ein zweiter Kontext ausführte). | **Verkörpern**, engere Fassung: *Re-Review verlangen, wenn die Fixrunde Produktionslogik oder eine Norm ändert, oder wenn nach der Fixrunde kein anderer Kontext sie ausgeführt hat.* Träger: eine Zeile im Handoff nach der Fixrunde in `.claude/commands/implement-slice.md` und der Prüfpunkt des Verifiers; kein Sensor (ob eine Fixrunde Logik ändert, ist eine Lese-Frage). Architect-Zug, danach Planner/Implementer schreibt die Zeile. |
-| `test-runner-stiller-ausschluss` | 3 | Drittes Auftreten (`nats-subjekt` F-3) ist in seinem Skript **geschlossen** (`run-notify-tests.sh` fährt das ganze Paket und endet bei `--- SKIP` mit Exit 1, der Verifier fuhr es in drei Zuständen). Für `run-integration-tests.sh` bleibt die Lücke: ein `-run`-Muster (Zeile 466 und folgende) erfasst nur die Funktionen, die es nennt; die Deklarations-Hälfte deckt `TestAbdeckungstabelleZeilen`, die Vollständigkeits-Hälfte kein Wächter. | **Bleibt offen**, Teil geschlossen. Entscheidung, die aussteht: ob ein Vollständigkeits-Sensor gebaut wird (jede `func TestE2E*` wird von mindestens einem `-run`-Muster oder einer Runner-Phase erfasst). Architect-Zug; Sensor wäre ein eigener Slice. Trigger bis dahin: das nächste Auftreten bei `run-integration-tests.sh`. |
-| `drei-sprachen-kopie-divergiert-am-randfall` | 3 | Das dritte Auftreten ist ein Satz der Python-README, enger als der Code; das Verhalten (leeres Ziel am NATS-Stream) ist eine gewollte API-Form-Differenz. Wirksam waren zwei Gegenmaßnahmen: derselbe Pflicht-Eingabesatz je Sprache im Plan und eine Fixture-Quelle für Testvorbereitung; sie stehen nicht als Regel. | **Verkörpern** als Plan-Pflicht für Drei-Sprachen-Slices: der Plan nennt die Eingabetabelle (hier `null`/`""`/`eu`/`a&b=c`) und eine README-Aussage über einen Randfall wird am Code, nicht an der Schwester-README gelesen. Träger: `.claude/commands/plan-welle.md` (Pflichtangabe) und Punkt „Form-Vorbild“ in `.harness/skills/reviewer.md`. Architect-Zug (Alternative: akzeptiertes Negativ, weil jedes Auftreten vor dem Merge gefunden wurde). |
-| `zwei-quellen-drift-handbuch-gegen-pflichtenheft` | 3 | Seit der Vorgänger-Closure kein neues Auftreten; in dieser Welle beschrieben Pflichtenheft, Handbuch und drei SDK-READMEs dieselben Parameter und Fehlertexte, und die Reviews fanden keinen Drift der Klasse (Spec-Nachzug: „kein neues Auftreten“). Was wirkte: das Handbuch wiederholt Wortlaut mit Adresse und verweist je Sachverhalt auf die führende Stelle; neun von zehn Fehlertexten hat der Verifier am System gegen den Text gehalten. | **Verkörpern** im bestehenden Punkt „Zwei-Quellen-Drift“ von `.harness/skills/reviewer.md` (Handbuch-gegen-Pflichtenheft als benanntes Beispiel samt der Gegenmaßnahme „Verweis auf die führende Stelle statt Wiederholung“). Architect-Zug oder Auftraggeber. |
-| `plan-zusage-erfuellung-ohne-committeten-anker` | 5 | Nicht Gegenstand dieser Welle (kein Auftreten in den zehn Slices); „offen, Neubewertung fällig“ seit `welle-transformationen`. | unverändert: Architect-Zug aussteht. |
-| `ein-instanz-annahme-ohne-erzwingung` | 3 | Nicht Gegenstand dieser Welle; das Architect-Verdikt der Vorgänger-Closure steht (Trigger nicht ausgelöst, Ausgang „weiter offen“). | unverändert. |
+| `fixrunde-ohne-reviewer-lesung` | 3 (fünf weitere Gegenbelege ohne Datei) | **geplant**, **bedingt auf Freigabe V1**: Regel in der engeren Fassung (*Re-Review verlangen, wenn die Fixrunde Produktionslogik oder eine Norm ändert, oder wenn nach der Fixrunde kein anderer Kontext sie ausgeführt hat*), kein Sensor. Bei Ablehnung: *gestrichen* (akzeptiertes Negativ) | `slice-harness-lese-schritt-regeln-routing` — der Slice wird erst nach der Freigabe angelegt |
+| `test-runner-stiller-ausschluss` | 3 | **geplant** (Sensor ohne Regeländerung): jede `func TestE2E*` steht in einem `-run`-Argument von `run-integration-tests.sh`; der Eintrag wird mit dem Slice *verkörpert* | `slice-harness-integration-runner-vollstaendigkeit` (Datei in `open/`) |
+| `drei-sprachen-kopie-divergiert-am-randfall` | 3 | **gestrichen** (akzeptiertes Negativ): alle drei Belege LOW und vor dem Merge gefunden, Schaden klein, die Gegenmaßnahmen stehen in Code und Plan; Wiederaufnahme bei einem Divergenz-Fund nach dem Merge oder bei Schwere ab MEDIUM | Begründung in der `state.md` (Verdikt §3.3) |
+| `zwei-quellen-drift-handbuch-gegen-pflichtenheft` | 3 | **verkörpert**, steht bereits; die Ergänzung des Beispiels wird nicht beauftragt | `.harness/skills/reviewer.md`, Punkt „Zwei-Quellen-Drift“ (Zeile 259); Anker `seit welle-routing` |
+| `plan-zusage-erfuellung-ohne-committeten-anker` | 5 | **geplant**, **bedingt auf Freigabe V2**: ein Satz in `.claude/commands/implement-slice.md` Schritt 18. Bei Ablehnung: *gestrichen* (akzeptiertes Negativ), Trigger „ein Haken ohne Anker bis in `done/`“ | `slice-harness-lese-schritt-regeln-routing` — der Slice wird erst nach der Freigabe angelegt |
+| `ein-instanz-annahme-ohne-erzwingung` | 3 | **verkörpert**, steht bereits | [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) §Re-Evaluierungs-Trigger; Anker `seit slice-backfill-run-store` |
 
 **Unter der Schwelle, in dieser Closure nicht gelesen** (Adresse: Sichtungs-Schritt der nächsten
 Slice-Planung, `plan-welle`): `suppression-ohne-linter-in-testcode` (1×, ein `# noqa` im
@@ -214,10 +215,13 @@ Python-Testcode; [`AGENTS.md`](../../../../AGENTS.md) §3.2 nennt allein `//noli
 (2×), `kein-admin-weg-schema-fehler-recovery` (2×), `implementierung-weicht-von-adr-wortlaut-ab`
 (2×, in der Welle kein Auftreten: die Abweichungen waren als Fragen geführt).
 
-**Feststellung:** Diese Closure hat die vier Einträge bei 3× gelesen und je Ausgang-Vorschlag und
-Adresse festgehalten; sie hat **keinen** der Ausgänge selbst gesetzt (kein `liegt in`-Feld,
-daher keine Anker-Paarung offen). Alle übrigen Einträge bei 3× oder darüber, die die Welle
-berührt, tragen einen Ausgang.
+**Feststellung:** Diese Closure hat die sechs Einträge gelesen und je einen Vorschlag mit Adresse
+festgehalten, aber keinem eine Kennung zugewiesen; das war die Auflage F-2 des
+Closure-Note-Reviews (Modul 6: kein Eintrag überlebt eine Closure ohne Ausgang). Die Ausgänge setzte
+anschließend das [Architect-Verdikt](../../../reviews/architect-verdict-welle-routing-lese-schritt.md)
+(Tabelle oben); zwei davon (`fixrunde-ohne-reviewer-lesung`, `plan-zusage-erfuellung-ohne-committeten-anker`)
+sind bis zur Freigabe des Auftraggebers *geplant*, nicht *verkörpert* (Offene Punkte). Alle übrigen
+Einträge bei 3× oder darüber, die die Welle berührt, tragen einen Ausgang.
 
 ## Validator-Feststellung (Modul 8)
 
@@ -260,8 +264,11 @@ Der Zähler steht in [`../observations/`](../observations/)
   (der Server filtert seit [`ADR-0133`](../../adr/0133-tabellen-granulare-filterung-grpc-sse.md)); aus
   `slice-routing-sdk-beispiel-target`.
 
-Die Entscheidungen des Lese-Schritts (Tabelle oben) sind Architect-Fragen, keine Slices; ein
-Slice entsteht erst mit einer Entscheidung.
+Die Entscheidungen des Lese-Schritts stehen im
+[Architect-Verdikt](../../../reviews/architect-verdict-welle-routing-lese-schritt.md) (§5): ein Slice
+liegt in `open/` (`slice-harness-integration-runner-vollstaendigkeit`, Ausgang für
+`test-runner-stiller-ausschluss`); `slice-harness-lese-schritt-regeln-routing` (V1, V2, V3) entsteht
+erst nach der Freigabe des Auftraggebers (Offene Punkte).
 
 ## Offene Punkte (mit Adresse)
 
@@ -272,7 +279,9 @@ Slice entsteht erst mit einer Entscheidung.
 | Abhilfe am Fall (a) „Bedingungsspalte entfernt“ | *hergeleitet* (die Spec führt sie so), nicht gefahren; allgemeiner Recovery-Weg für Schema-Fehler | `BEO-PGC/kein-admin-weg-schema-fehler-recovery` (2×), Out-of-Scope der Welle |
 | Server ohne den Parameter `target` | *hergeleitet*; die READMEs sagen es mit dem Ursprung | kein Träger (der Realserver-Slice läuft gegen den Stand des Repos); Beleg wäre ein Lauf gegen ein Release ohne den Parameter |
 | Validator-Lauf zum Bedarf (`LH-FA-CFG-008`) | **nicht gelaufen**, Feststellung im Abschnitt „Validator-Feststellung (Modul 8)“ | Auftrag an den `validator`-Agenten nach dieser Closure; Frist: vor dem Release-Entscheid |
-| Welle-Datei-Vorlage: Closure-Kriterium „Validator-Feststellung“ | **Vorschlag**, nicht umgesetzt (die Vorlage gehört zur Baseline/zum Harness, der Planner ändert sie nicht); dritte Wiederholung derselben Klasse („Validator-Schritt ohne Träger“: Backfill-Welle, Transformations-Welle, diese Welle) | Architect: Entscheidung, ob die Welle-Datei-Vorlage/`plan-welle` ein Kriterium „Validator-Feststellung liegt vor oder ist als offen mit Adresse benannt“ trägt; Quelle [`closure-note-review-welle-routing.md`](../../../reviews/closure-note-review-welle-routing.md) F-1 |
+| Regeländerung V1 (Re-Review nach einer Fixrunde): `.claude/commands/implement-slice.md` Schritt 21, neuer Absatz | **Freigabe des Auftraggebers ausstehend** (Empfehlung des Architects: zustimmen); ohne Zustimmung Ausgang von `fixrunde-ohne-reviewer-lesung` *gestrichen* | Auftraggeber; Wortlaut und Folge in §4 V1 des [Architect-Verdikts](../../../reviews/architect-verdict-welle-routing-lese-schritt.md); danach Slice `slice-harness-lese-schritt-regeln-routing` |
+| Regeländerung V2 (Zusage-Anker beim Abhaken): `.claude/commands/implement-slice.md` Schritt 18, ein Satz am Absatz „DoD-Checkbox-Nachzug im selben Lauf“ | **Freigabe des Auftraggebers ausstehend** (Empfehlung: zustimmen); ohne Zustimmung Ausgang von `plan-zusage-erfuellung-ohne-committeten-anker` *gestrichen*, Trigger „ein Haken ohne Anker bis in `done/`“ | Auftraggeber; §4 V2 des Verdikts; danach derselbe Slice |
+| Regeländerung V3 (Validator-Feststellung als Pflichtabschnitt der Results-Notiz): `.claude/commands/close-welle.md` Schritt 3, dazu ein Halbsatz in `implement-slice.md` Schritt 23; zugleich Pflege des veralteten Skill-Kopfs `.harness/skills/closure-note-reviewer.md` (F-8: nennt die fünfte `structure`-Regel „auskommentiert“, sie ist aktiv) | **Freigabe des Auftraggebers ausstehend** (Empfehlung: Variante a, kein Sensor; dritte Wiederholung derselben Klasse „Validator-Schritt ohne Träger“: Backfill-Welle, Transformations-Welle, diese Welle); ohne Zustimmung gilt im Einzelfall „akzeptiert, Review fängt es“ | Auftraggeber; §4 V3 und §6 des Verdikts; Quelle [`closure-note-review-welle-routing.md`](../../../reviews/closure-note-review-welle-routing.md) F-1 und F-8; danach derselbe Slice |
 | Release-Entscheid | offen | Auftraggeber: Server-Release, SDK-Versionen; `target` ist in C# neuer letzter Parameter, in Kotlin neuer letzter Parameter mit Default `null` — quellkompatibel, **nicht** binärkompatibel; ein Java-Aufrufer von `PgChangeFeedSseClient.streamChanges` übersetzt nicht mehr ohne Argument |
 | `AGENTS.md` §3.2 und Python-`# noqa` | Entscheidung offen | Auftraggeber (Regeländerung); Register `suppression-ohne-linter-in-testcode` (1×) |
 | Übersetzen der Integrationsprojekte | Lücke im Sensor-Satz | `BEO-PGC/integrationsprojekt-uebersetzt-nicht-unbemerkt` (1×); Aufnahme in `make gates` oder einen Workflow wäre eine Entscheidung (Netzbezug, [`AGENTS.md`](../../../../AGENTS.md) §3.10) |
@@ -341,8 +350,8 @@ Alle Zeilen am Stand `84f5b8d2`, sofern nicht anders angegeben; Gate-Exit-Codes 
     entfernte, von keiner Regel genannte Spalte den Pfad nicht beendet): in Reports und Register
     kein Hinweis darauf — **nicht belegt** durch einen Suchbefehl, Aussage des Planners nach dem
     Lesen der Reports. **0 offen.**
-- **Beobachtungs-Register:** Lese-Schritt oben — vier Einträge bei 3× ohne selbstgesetzten
-  Ausgang, je mit Vorschlag und Adresse.
+- **Beobachtungs-Register:** Lese-Schritt oben — sechs Einträge bei 3× oder darüber, Ausgänge durch
+  das Architect-Verdikt gesetzt, zwei davon bedingt auf die Freigabe des Auftraggebers.
 
 ### Schritt 4 — Archivierung
 
@@ -408,9 +417,12 @@ in dieser Notiz: F-1 (Validator-Feststellung), F-3 (Zuschreibung), F-4 (Ursprung
 (Suchbefehle im Trigger-Audit); in den zehn Slice-Plänen: F-6 (Zustandsprosa). Offen mit
 Adresse beim Architect: F-2 (Ausgänge des Lese-Schritts mit Kennung), F-7 (Zitat-Korrektur an
 [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)),
-Pflege-Regel zu F-1. F-8 (INFO) ist ein Hinweis: der Kopftext von `.harness/skills/closure-note-reviewer.md`
-nennt die fünfte `structure`-Regel noch „auskommentiert“, sie ist seit der ersten Closure aktiv; die
-Pflege liegt beim Besitzer der Skill-Datei.
+Pflege-Regel zu F-1. Das [Architect-Verdikt](../../../reviews/architect-verdict-welle-routing-lese-schritt.md)
+beantwortet sie: F-2 durch die Ausgänge im Lese-Schritt, F-7 mit „stehen lassen“ (§3.7), die
+Pflege-Regel zu F-1 als Vorlage V3 (Freigabe des Auftraggebers ausstehend). F-8 (INFO) ist ein
+Hinweis: der Kopftext von `.harness/skills/closure-note-reviewer.md` nennt die fünfte
+`structure`-Regel noch „auskommentiert“, sie ist seit der ersten Closure aktiv; die Pflege liegt beim
+Besitzer der Skill-Datei und gehört zur Freigabe V3.
 
 **Erwartbare Abweichung in den Slice-Plänen:** die `suchlauf`-Zeilen am Stand `diff` in
 `slice-routing-kern-label` (4 von 12) und `slice-routing-e2e` (1 von 14) weichen bei
