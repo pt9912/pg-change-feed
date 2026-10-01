@@ -303,7 +303,7 @@ func TestReadChangesIssuesQueryAndTranslatesRows(t *testing.T) {
 	}
 }
 
-// Die letzte Spalte der Projektion trägt die Herkunft (`SPEC-002`): ein
+// Die vorletzte Spalte der Projektion trägt die Herkunft (`SPEC-002`): ein
 // gelesener Wert erreicht den Change, ein Wert außerhalb der geschlossenen
 // Menge endet als Domänen-Fehler statt als gefälschter Change.
 func TestReadChangesCarriesOrigin(t *testing.T) {

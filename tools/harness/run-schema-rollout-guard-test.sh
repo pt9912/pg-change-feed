@@ -47,14 +47,15 @@
 #      Werte von `chk_administration_request_kind` stehen, `cdc_admin` schreibt
 #      über `cdc.set_transformation` einen `pending`-Antrag mit der Regelform
 #      in der `jsonb`-Spalte, und `cdc_reader` scheitert mit „permission
-#      denied for function“. Tag, Exit-Codes und Zählung stehen in der Ausgabe. Rot
-#      färbende Eingabeseiten-Mutationen in
-#      tools/schema/nacharbeit-administration.sql:
-#      `cdc.set_transformation(text, text, text, text, json)` aus der
-#      GRANT-Zeile, die REVOKE-Zeile oder `'set_transformation'` aus dem CHECK;
-#      in tools/schema/nacharbeit-roles.sql: `cdc.backfill_status` aus dem
-#      GRANT für `cdc_reader`; in tools/schema/schema.yaml: die Spalte
-#      `rule_spec`.
+#      denied for function“. Tag, Exit-Codes und Zählung stehen in der Ausgabe.
+#      Für die Objekte, die der Stand des Tags schon trägt (`rule_name`,
+#      `rule_spec`, `set_transformation`, `remove_transformation`,
+#      `backfill_status`), belegt der Lauf „das Upgrade erhält“, nicht „das
+#      Upgrade ergänzt“. Eine Eingabeseiten-Mutation an
+#      tools/schema/nacharbeit-administration.sql, tools/schema/nacharbeit-roles.sql
+#      oder der Spalte `rule_spec` in tools/schema/schema.yaml ist für diese
+#      Objekte nicht nachgefahren; ob sie Lauf 5 rot färbt, ist nicht belegt
+#      (das vom Tag angelegte Objekt bleibt nach dem Rollout bestehen).
 #   6. Unbekannte Blocker — der Rollout muss abbrechen (d-migrate-Exit 8,
 #      make meldet „Error 8" bzw. lokalisiert „Fehler 8"). Zwei Fälle:
 #      a) eine nicht deklarierte Funktion `cdc.zz_rolloutguard_unbekannt()`:

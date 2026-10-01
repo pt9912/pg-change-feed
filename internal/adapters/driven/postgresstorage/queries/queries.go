@@ -41,7 +41,7 @@ ON CONFLICT (change_id) DO NOTHING`
 // SELECT — gespeicherte Positionen bleiben unverändert.
 // committed_at trägt den realen Quell-Commit-Zeitpunkt der Transaktion
 // — die zeitbasierte Retention liest
-// ihr Alter dagegen. `origin` steht als letzte Spalte, `NULL` einer Zeile
+// ihr Alter dagegen. `origin` steht vor der letzten Spalte, `NULL` einer Zeile
 // ohne das Feld liest als `wal` (Boundary) — derselbe
 // `COALESCE` wie in der View `cdc.changes`. `route_target` steht danach als
 // letzte Spalte, ohne `COALESCE`: `NULL` ist „kein Ziel", dieselbe Lesart
