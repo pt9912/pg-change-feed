@@ -125,6 +125,7 @@ func (a *PostgresChangeStoreAdapter) PersistTransaction(ctx context.Context, tra
 			mapper.JSONImage(row.NewData),
 			row.SchemaVersion,
 			row.Origin,
+			row.RouteTarget,
 		); err != nil {
 			return storageFailure(ctx, a.log, err)
 		}

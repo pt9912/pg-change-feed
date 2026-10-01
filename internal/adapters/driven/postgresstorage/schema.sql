@@ -69,6 +69,9 @@ CREATE INDEX IF NOT EXISTS cdc_transaction_source_position_idx
 -- nullable, ohne DEFAULT und ohne CHECK — NULL liest
 -- als `wal`, die geschlossene Menge erzwingt die Domäne
 -- (`model.ChangeOrigin`); dieselbe Spaltenform wie `tools/schema/schema.yaml`.
+-- `route_target` trägt das Zustellziel: nullable, ohne DEFAULT und ohne
+-- CHECK — NULL ist „kein Ziel", den Zielnamen erzwingt die Domäne
+-- (`model.RouteTarget`).
 CREATE TABLE IF NOT EXISTS cdc.change (
     change_id       text PRIMARY KEY,
     transaction_id  text NOT NULL REFERENCES cdc.transaction (transaction_id),
@@ -79,6 +82,7 @@ CREATE TABLE IF NOT EXISTS cdc.change (
     new_data        jsonb,
     schema_version  text NOT NULL REFERENCES cdc.schema_version (schema_version_id),
     origin          text,
+    route_target    text,
     UNIQUE (transaction_id, sequence)
 );
 

@@ -843,3 +843,136 @@ func TestPersistRejectsUnknownChangeOrigin(t *testing.T) {
 		t.Fatalf("abgelehnte Herkunft hinterlässt %d Change-Zeilen", n)
 	}
 }
+
+// committedRoutedTransaction legt eine committed Quelltransaktion mit je einem
+// Change pro übergebenem Zustellziel an; ein leeres Ziel bleibt beim
+// Konstruktor-Default („kein Ziel").
+func committedRoutedTransaction(t *testing.T, id string, offset uint64, targets ...model.RouteTarget) *model.ChangeTransaction {
+	t.Helper()
+	tx, err := model.NewOpenTransaction(model.TransactionID(id), testSource)
+	if err != nil {
+		t.Fatalf("NewOpenTransaction: %v", err)
+	}
+	for i, target := range targets {
+		sequence := int64(i + 1)
+		change, err := model.NewChange(
+			model.ChangeID(fmt.Sprintf("%s-%d", id, sequence)),
+			model.TransactionID(id),
+			testTableMain,
+			sequence,
+			model.OperationInsert,
+			nil,
+			[]byte(fmt.Sprintf(`{"n":%d}`, sequence)),
+			testSchemaMain,
+		)
+		if err != nil {
+			t.Fatalf("NewChange %d: %v", sequence, err)
+		}
+		if target != "" {
+			if change, err = change.WithRouteTarget(target); err != nil {
+				t.Fatalf("WithRouteTarget %d: %v", sequence, err)
+			}
+		}
+		if err := tx.AppendChange(change); err != nil {
+			t.Fatalf("AppendChange %d: %v", sequence, err)
+		}
+	}
+	position, err := model.NewSourcePosition(testSource, offset)
+	if err != nil {
+		t.Fatalf("NewSourcePosition: %v", err)
+	}
+	if err := tx.Commit(position, model.NewTimePoint(1)); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	return tx
+}
+
+// TestPersistAndReadCarryRouteTarget belegt das Feld `route_target` am Store
+// (`SPEC-002`): ein gesetztes Ziel geht als Text in die Spalte und liest über
+// `ReadChanges` unverändert zurück; ein Change ohne Ziel schreibt `NULL` (kein
+// leerer Text) und liest als „kein Ziel". Rot färbende Mutationen: in
+// `queries.InsertChange` den Parameter `$10` durch `NULL` ersetzen (gesetztes
+// Ziel geht verloren), in `NewChangeRows` den leeren Wert als Zeiger auf die
+// leere Zeichenkette schreiben (die Spalte trägt Leertext statt `NULL`).
+func TestPersistAndReadCarryRouteTarget(t *testing.T) {
+	store, pool := newTestStore(t)
+	seedReference(t, pool)
+	ctx := context.Background()
+
+	persist(t, store, committedRoutedTransaction(t, "t-route", 10, "eu", "", "us-west_1"))
+
+	stored := map[string]*string{}
+	rows, err := pool.Query(ctx, "SELECT change_id, route_target FROM cdc.change WHERE transaction_id = 't-route' ORDER BY sequence")
+	if err != nil {
+		t.Fatalf("Spalten-Lesen: %v", err)
+	}
+	// Die Verbindung geht auch bei einem t.Fatalf in der Schleife zurück in
+	// den Pool — sonst blockiert pool.Close() im Cleanup den Testlauf.
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		var target *string
+		if err := rows.Scan(&id, &target); err != nil {
+			t.Fatalf("Spalten-Scan: %v", err)
+		}
+		stored[id] = target
+	}
+	rows.Close()
+	if got := stored["t-route-1"]; got == nil || *got != "eu" {
+		t.Fatalf("Spalte route_target von t-route-1 = %v, wollen eu", got)
+	}
+	if got := stored["t-route-2"]; got != nil {
+		t.Fatalf("Spalte route_target von t-route-2 = %q, wollen NULL (kein Ziel)", *got)
+	}
+	if got := stored["t-route-3"]; got == nil || *got != "us-west_1" {
+		t.Fatalf("Spalte route_target von t-route-3 = %v, wollen us-west_1", got)
+	}
+
+	records, err := store.ReadChanges(ctx, query(t, nil, nil, "", "", nil))
+	if err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+	read := map[model.ChangeID]model.RouteTarget{}
+	for _, record := range records {
+		read[record.Change.ID] = record.Change.RouteTarget
+	}
+	if read["t-route-1"] != "eu" || read["t-route-2"] != "" || read["t-route-3"] != "us-west_1" {
+		t.Fatalf("ReadChanges-Ziele = %v, wollen eu/leer/us-west_1", read)
+	}
+}
+
+// Ein Zustellziel außerhalb des Alphabets (`SPEC-032`) erreicht die Datenbank
+// nicht: der Store endet mit dem Domänen-Fehler und schreibt weder
+// Transaktion noch Change (die Spalte trägt keinen CHECK, das Alphabet
+// erzwingt die Domäne).
+func TestPersistRejectsInvalidRouteTarget(t *testing.T) {
+	store, pool := newTestStore(t)
+	seedReference(t, pool)
+
+	bad, err := model.NewChange("t-route-bad-1", "t-route-bad", testTableMain, 1, model.OperationInsert, nil, []byte(`{"n":1}`), testSchemaMain)
+	if err != nil {
+		t.Fatalf("NewChange: %v", err)
+	}
+	bad.RouteTarget = "Nicht Gültig"
+	tx, err := model.NewOpenTransaction("t-route-bad", testSource)
+	if err != nil {
+		t.Fatalf("NewOpenTransaction: %v", err)
+	}
+	if err := tx.AppendChange(bad); err != nil {
+		t.Fatalf("AppendChange: %v", err)
+	}
+	position, err := model.NewSourcePosition(testSource, 13)
+	if err != nil {
+		t.Fatalf("NewSourcePosition: %v", err)
+	}
+	if err := tx.Commit(position, model.NewTimePoint(1)); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+
+	if err := store.PersistTransaction(context.Background(), tx); !stderrors.Is(err, domainerrors.ErrInvalidRouteTarget) {
+		t.Fatalf("PersistTransaction mit ungültigem Ziel: %v, wollen %v", err, domainerrors.ErrInvalidRouteTarget)
+	}
+	if n := count(t, pool, "SELECT count(*) FROM cdc.transaction WHERE transaction_id = 't-route-bad'"); n != 0 {
+		t.Fatalf("abgelehntes Ziel hinterlässt %d Transaktions-Zeilen", n)
+	}
+}

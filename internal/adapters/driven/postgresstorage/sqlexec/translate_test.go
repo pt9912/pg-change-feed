@@ -219,14 +219,24 @@ func changeRow(id string, sequence int64, position int64) []any {
 		"sv-1",
 		time.Unix(100, 0),
 		"wal",
+		nil,
 	}
 }
 
 // changeRowWithOrigin trägt eine Ergebnis-Zeile der Change-Abfrage mit der
-// übergebenen Herkunft als letzter Spalte (`SPEC-002`, `origin`).
+// übergebenen Herkunft als vorletzter Spalte (`SPEC-002`, `origin`).
 func changeRowWithOrigin(origin string) []any {
 	row := changeRow("chg-1", 1, 42)
-	row[len(row)-1] = origin
+	row[len(row)-2] = origin
+	return row
+}
+
+// changeRowWithRouteTarget trägt eine Ergebnis-Zeile der Change-Abfrage mit
+// dem übergebenen Zustellziel als letzter Spalte (`SPEC-002`, `route_target`);
+// nil ist `NULL`.
+func changeRowWithRouteTarget(target *string) []any {
+	row := changeRow("chg-1", 1, 42)
+	row[len(row)-1] = target
 	return row
 }
 
@@ -318,6 +328,41 @@ func TestReadChangesCarriesOrigin(t *testing.T) {
 			}
 			if tc.wantErr == nil && records[0].Change.Origin != tc.want {
 				t.Fatalf("Origin = %q, wollen %q", records[0].Change.Origin, tc.want)
+			}
+		})
+	}
+}
+
+// Die Spalte `route_target` steht nach `origin` (`SPEC-002`): ein gelesener
+// Name erreicht den Change, `NULL` liest als „kein Ziel", ein Name außerhalb
+// des Alphabets endet als Domänen-Fehler statt als gefälschter Change. Rot
+// färbende Mutation: in `ReadChanges` das Scan-Ziel `&row.RouteTarget` weglassen
+// (Spaltenzahl) oder in `ToChange` die Zuweisung `change.RouteTarget`
+// entfernen.
+func TestReadChangesCarriesRouteTarget(t *testing.T) {
+	name, invalid, empty := "eu", "EU", ""
+	for _, tc := range []struct {
+		label   string
+		target  *string
+		want    model.RouteTarget
+		wantErr error
+	}{
+		{"gesetzt", &name, "eu", nil},
+		{"NULL", nil, "", nil},
+		{"außerhalb des Alphabets", &invalid, "", domainerrors.ErrInvalidRouteTarget},
+		{"leerer Name ist kein Name", &empty, "", domainerrors.ErrInvalidRouteTarget},
+	} {
+		t.Run(tc.label, func(t *testing.T) {
+			exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{changeRowWithRouteTarget(tc.target)}}}
+			records, err := sqlexec.ReadChanges(context.Background(), exec, sqlexec.Statement{
+				SQL:  "SELECT changes",
+				Fail: (&failRecorder{class: outbound.ErrStorage}).fail,
+			})
+			if !stderrors.Is(err, tc.wantErr) {
+				t.Fatalf("Fehler = %v, wollen %v", err, tc.wantErr)
+			}
+			if tc.wantErr == nil && records[0].Change.RouteTarget != tc.want {
+				t.Fatalf("RouteTarget = %q, wollen %q", records[0].Change.RouteTarget, tc.want)
 			}
 		})
 	}

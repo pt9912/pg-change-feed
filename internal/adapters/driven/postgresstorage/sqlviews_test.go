@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
@@ -274,8 +275,8 @@ func TestChangesViewCarriesRangeLimitAndFilter(t *testing.T) {
 // TestChangesViewCarriesOriginLikeReadChanges belegt das Feld `origin` an
 // der View (`SPEC-002`) und die
 // Spaltenmenge-Parität von View und `ReadChanges`
-// (`BEO-PGC/lese-doppelquelle`): `origin` ist die **letzte** Spalte von
-// `cdc.changes`; eine gespeicherte Zeile mit `wal`, mit `backfill` und eine
+// (`BEO-PGC/lese-doppelquelle`): `origin` ist die vorletzte Spalte von
+// `cdc.changes` (die letzte trägt `route_target`); eine gespeicherte Zeile mit `wal`, mit `backfill` und eine
 // Zeile ohne Wert (`NULL`) lesen über die View und über `ReadChanges` mit
 // derselben Herkunft — die Zeile ohne Wert als `wal`.
 func TestChangesViewCarriesOriginLikeReadChanges(t *testing.T) {
@@ -325,17 +326,17 @@ func TestChangesViewCarriesOriginLikeReadChanges(t *testing.T) {
 		}
 	}
 
-	// `origin` steht als letzte Spalte der View.
-	var lastColumn string
+	// `origin` steht vor der letzten Spalte der View (`route_target`).
+	var beforeLastColumn string
 	if err := pool.QueryRow(ctx,
 		`SELECT column_name FROM information_schema.columns
 		 WHERE table_schema = 'cdc' AND table_name = 'changes'
-		 ORDER BY ordinal_position DESC LIMIT 1`,
-	).Scan(&lastColumn); err != nil {
+		 ORDER BY ordinal_position DESC LIMIT 1 OFFSET 1`,
+	).Scan(&beforeLastColumn); err != nil {
 		t.Fatalf("Spalten-Prüfung: %v", err)
 	}
-	if lastColumn != "origin" {
-		t.Fatalf("letzte Spalte von cdc.changes = %q, wollen origin", lastColumn)
+	if beforeLastColumn != "origin" {
+		t.Fatalf("vorletzte Spalte von cdc.changes = %q, wollen origin", beforeLastColumn)
 	}
 
 	// Über die View gelesen: NULL liest als wal.
@@ -385,6 +386,151 @@ func TestChangesViewCarriesOriginLikeReadChanges(t *testing.T) {
 	for _, seed := range seeds {
 		if viewOrigins[seed.changeID] != seed.want {
 			t.Fatalf("%s: origin über die View = %q, wollen %q", seed.changeID, viewOrigins[seed.changeID], seed.want)
+		}
+	}
+}
+
+// TestChangesViewCarriesRouteTargetLikeReadChanges belegt das Feld
+// `route_target` an der View (`SPEC-002`) und die Spaltenmenge-Parität von
+// View und `ReadChanges` (`BEO-PGC/lese-doppelquelle`): `route_target` ist die
+// **letzte** Spalte von `cdc.changes`; eine gespeicherte Zeile mit Ziel und
+// eine ohne (`NULL`) lesen über die View und über `ReadChanges` gleich — `NULL`
+// bleibt `NULL` (kein `COALESCE`, kein Standardziel). Der Login `cdc_reader`
+// liest die Spalte über die View; `cdc_capture` und `cdc_admin` tragen kein
+// Leserecht auf der View. Rot färbende Mutationen: in der View
+// `COALESCE(c.route_target, 'wal')` einsetzen (die NULL-Zeile liest als
+// `wal`), in `queries.SelectChanges` die Projektion `c.route_target` durch
+// `NULL` ersetzen (ReadChanges weicht von der View ab).
+func TestChangesViewCarriesRouteTargetLikeReadChanges(t *testing.T) {
+	pool := newTestViews(t)
+	ctx := context.Background()
+	const table = "vt-route-table"
+
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.source_table (source_table_id, source_id, schema_name, table_name) VALUES ($1, $2, 'public', $1)",
+		table, viewsTestSource,
+	); err != nil {
+		t.Fatalf("source_table-Zeile: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.schema_version (schema_version_id, source_table_id, version) VALUES ($1, $2, 1)",
+		table+"-sv", table,
+	); err != nil {
+		t.Fatalf("schema_version-Zeile: %v", err)
+	}
+
+	type seedRow struct {
+		changeID string
+		position int
+		target   any
+		want     *string
+	}
+	eu := "eu"
+	seeds := []seedRow{
+		{"vt-route-c-eu", 2400, "eu", &eu},
+		{"vt-route-c-null", 2500, nil, nil},
+	}
+	for _, seed := range seeds {
+		txID := seed.changeID + "-tx"
+		if _, err := pool.Exec(ctx,
+			"INSERT INTO cdc.transaction (transaction_id, source_id, commit_position) VALUES ($1, $2, $3)",
+			txID, viewsTestSource, seed.position,
+		); err != nil {
+			t.Fatalf("transaction-Zeile %s: %v", txID, err)
+		}
+		if _, err := pool.Exec(ctx,
+			`INSERT INTO cdc.change
+			    (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version, route_target)
+			 VALUES ($1, $2, $3, 1, 'INSERT', NULL, '{}'::jsonb, $4, $5)`,
+			seed.changeID, txID, table, table+"-sv", seed.target,
+		); err != nil {
+			t.Fatalf("change-Zeile %s: %v", seed.changeID, err)
+		}
+	}
+
+	// `route_target` steht als letzte Spalte der View.
+	var lastColumn string
+	if err := pool.QueryRow(ctx,
+		`SELECT column_name FROM information_schema.columns
+		 WHERE table_schema = 'cdc' AND table_name = 'changes'
+		 ORDER BY ordinal_position DESC LIMIT 1`,
+	).Scan(&lastColumn); err != nil {
+		t.Fatalf("Spalten-Prüfung: %v", err)
+	}
+	if lastColumn != "route_target" {
+		t.Fatalf("letzte Spalte von cdc.changes = %q, wollen route_target", lastColumn)
+	}
+
+	readView := func(q interface {
+		Query(context.Context, string, ...any) (pgx.Rows, error)
+	}) map[string]*string {
+		t.Helper()
+		rows, err := q.Query(ctx,
+			"SELECT change_id, route_target FROM cdc.changes WHERE source_id = $1 AND table_name = $2",
+			viewsTestSource, table,
+		)
+		if err != nil {
+			t.Fatalf("View-Lesen: %v", err)
+		}
+		defer rows.Close()
+		targets := map[string]*string{}
+		for rows.Next() {
+			var id string
+			var target *string
+			if err := rows.Scan(&id, &target); err != nil {
+				t.Fatalf("View-Scan: %v", err)
+			}
+			targets[id] = target
+		}
+		if err := rows.Err(); err != nil {
+			t.Fatalf("View-Lesen (Ende): %v", err)
+		}
+		return targets
+	}
+	same := func(a, b *string) bool { return (a == nil) == (b == nil) && (a == nil || *a == *b) }
+
+	viewTargets := readView(pool)
+	for _, seed := range seeds {
+		got, found := viewTargets[seed.changeID]
+		if !found || !same(got, seed.want) {
+			t.Fatalf("%s: route_target über die View = %v, wollen %v", seed.changeID, got, seed.want)
+		}
+	}
+
+	store, err := postgresstorage.New(ctx, os.Getenv("CDC_STORE_TEST_DSN"))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	t.Cleanup(store.Close)
+	records, err := store.ReadChanges(ctx, outbound.ChangeQuery{Source: viewsTestSource, Table: table})
+	if err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+	if len(records) != len(seeds) {
+		t.Fatalf("ReadChanges = %d Records, wollen %d", len(records), len(seeds))
+	}
+	for _, record := range records {
+		id := string(record.Change.ID)
+		var viaStore *string
+		if record.Change.RouteTarget != "" {
+			target := string(record.Change.RouteTarget)
+			viaStore = &target
+		}
+		if !same(viewTargets[id], viaStore) {
+			t.Fatalf("%s: route_target View=%v ReadChanges=%v", id, viewTargets[id], viaStore)
+		}
+	}
+
+	// Die Rechte der drei Rollen auf der View: `cdc_reader` liest die Spalte,
+	// `cdc_capture` und `cdc_admin` tragen kein Leserecht.
+	reader := asRole(t, pool, "cdc_reader")
+	if got := readView(reader); !same(got["vt-route-c-eu"], &eu) || got["vt-route-c-null"] != nil {
+		t.Fatalf("cdc_reader liest route_target = %v, wollen eu/NULL", got)
+	}
+	for _, role := range []string{"cdc_capture", "cdc_admin"} {
+		conn := asRole(t, pool, role)
+		if _, err := conn.Exec(ctx, "SELECT route_target FROM cdc.changes LIMIT 1"); !permissionDenied(err) {
+			t.Fatalf("%s SELECT auf cdc.changes: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", role, err)
 		}
 	}
 }

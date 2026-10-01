@@ -123,6 +123,7 @@ func (t *backfillTransaction) AppendBlock(ctx context.Context, block *model.Chan
 			mapper.JSONImage(row.NewData),
 			row.SchemaVersion,
 			row.Origin,
+			row.RouteTarget,
 		); err != nil {
 			return t.adapter.failure(ctx, err)
 		}

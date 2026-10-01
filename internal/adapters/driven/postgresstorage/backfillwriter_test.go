@@ -467,3 +467,66 @@ func TestBackfillBlocksSortBeforeTheWALTransactionOnTheSamePosition(t *testing.T
 		t.Fatalf("Ordnung der View (datcollate %s):\n got %v\nwant %v", collation, viewOrder, want)
 	}
 }
+
+// Der Schreibweg des Backfills trägt `route_target` (`SPEC-002`): ein am
+// Change gesetztes Ziel überlebt den Insert des Blocks, ein Change ohne Ziel
+// schreibt `NULL`; beides liest über `cdc.changes`. Rot färbende Mutation: in
+// `queries.InsertBackfillChange` den Parameter `$10` durch `NULL` ersetzen.
+func TestBackfillWriterPersistsTheRouteTarget(t *testing.T) {
+	f := newBackfillFixture(t)
+	w := newWriterRun(t, f, "wr-route", 3_000_300)
+	snapshotAt := time.Date(2026, 9, 24, 18, 30, 0, 0, time.UTC)
+
+	id, err := model.BackfillTransactionID(w.run.ID, 1)
+	if err != nil {
+		t.Fatalf("BackfillTransactionID: %v", err)
+	}
+	block, err := model.NewOpenTransaction(id, w.run.Source)
+	if err != nil {
+		t.Fatalf("NewOpenTransaction: %v", err)
+	}
+	for sequence, target := range []model.RouteTarget{"eu", ""} {
+		number := int64(sequence + 1)
+		change, err := model.NewChange(model.ChangeIDFor(id, number), id, w.tableID, number, model.OperationInsert, nil,
+			[]byte(fmt.Sprintf(`{"row":%d}`, number)), w.versionID)
+		if err != nil {
+			t.Fatalf("NewChange: %v", err)
+		}
+		if change, err = change.WithOrigin(model.ChangeOriginBackfill); err != nil {
+			t.Fatalf("WithOrigin: %v", err)
+		}
+		if target != "" {
+			if change, err = change.WithRouteTarget(target); err != nil {
+				t.Fatalf("WithRouteTarget: %v", err)
+			}
+		}
+		if err := block.AppendChange(change); err != nil {
+			t.Fatalf("AppendChange: %v", err)
+		}
+	}
+	if err := block.Commit(w.run.SnapshotPosition, model.NewTimePoint(snapshotAt.UnixNano())); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+
+	tx, err := w.writer.Begin(context.Background(), w.run)
+	if err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+	t.Cleanup(func() { _ = tx.Rollback(context.Background()) })
+	if err := tx.AppendBlock(context.Background(), block); err != nil {
+		t.Fatalf("AppendBlock: %v", err)
+	}
+	if err := tx.Commit(context.Background(), w.completed(t, 2, snapshotAt)); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+
+	var routed, unrouted *string
+	f.scan("SELECT route_target FROM cdc.changes WHERE source_id = $1 AND table_name = 'wr-route' AND sequence = 1", []any{backfillTestSource}, &routed)
+	f.scan("SELECT route_target FROM cdc.changes WHERE source_id = $1 AND table_name = 'wr-route' AND sequence = 2", []any{backfillTestSource}, &unrouted)
+	if routed == nil || *routed != "eu" {
+		t.Fatalf("route_target der Change mit Ziel = %v, wollen eu", routed)
+	}
+	if unrouted != nil {
+		t.Fatalf("route_target der Change ohne Ziel = %q, wollen NULL", *unrouted)
+	}
+}

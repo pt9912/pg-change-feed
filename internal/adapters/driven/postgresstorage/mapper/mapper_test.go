@@ -1,6 +1,7 @@
 package mapper_test
 
 import (
+	stderrors "errors"
 	"math"
 	"testing"
 	"time"
@@ -223,6 +224,55 @@ func TestChangeRowRoundTripsOrigin(t *testing.T) {
 		if restored.Origin != want {
 			t.Fatalf("Change %d: Origin = %q, wollen %q", i, restored.Origin, want)
 		}
+	}
+}
+
+// Das Zustellziel eines Changes geht in die Zeile (`SPEC-002`,
+// `route_target`) und liest sich unverändert zurück; ein Change ohne Ziel
+// schreibt nil (`NULL`), nie die leere Zeichenkette, und eine `NULL`-Zeile
+// liest als „kein Ziel". Ein Name außerhalb des Alphabets endet in beiden
+// Richtungen als Domänen-Fehler. Rot färbende Mutation: in `NewChangeRows`
+// das Ziel nicht in die Zeile übernehmen, in `ToChange` die Zuweisung
+// `change.RouteTarget` entfernen.
+func TestChangeRowRoundTripsRouteTarget(t *testing.T) {
+	plain, err := model.NewChange("c-1", "t-1", "tbl-1", 1, model.OperationInsert, nil, []byte(`{"a":1}`), "sv-1")
+	if err != nil {
+		t.Fatalf("NewChange: %v", err)
+	}
+	routed, err := plain.WithRouteTarget("eu-west_1")
+	if err != nil {
+		t.Fatalf("WithRouteTarget: %v", err)
+	}
+	rows, err := mapper.NewChangeRows([]model.Change{plain, routed})
+	if err != nil {
+		t.Fatalf("NewChangeRows: %v", err)
+	}
+	if rows[0].RouteTarget != nil {
+		t.Fatalf("Change ohne Ziel schreibt %q, will nil (NULL)", *rows[0].RouteTarget)
+	}
+	if rows[1].RouteTarget == nil || *rows[1].RouteTarget != "eu-west_1" {
+		t.Fatalf("Change mit Ziel schreibt %v, will eu-west_1", rows[1].RouteTarget)
+	}
+	for i, want := range []model.RouteTarget{"", "eu-west_1"} {
+		restored, err := mapper.ToChange(rows[i])
+		if err != nil {
+			t.Fatalf("ToChange %d: %v", i, err)
+		}
+		if restored.RouteTarget != want {
+			t.Fatalf("Change %d: RouteTarget = %q, wollen %q", i, restored.RouteTarget, want)
+		}
+	}
+
+	invalid := "Nicht Gültig"
+	row := rows[0]
+	row.RouteTarget = &invalid
+	if _, err := mapper.ToChange(row); !stderrors.Is(err, domainerrors.ErrInvalidRouteTarget) {
+		t.Fatalf("ToChange(ungültiges Ziel): %v, will %v", err, domainerrors.ErrInvalidRouteTarget)
+	}
+	bad := plain
+	bad.RouteTarget = "Nicht Gültig"
+	if _, err := mapper.NewChangeRows([]model.Change{bad}); !stderrors.Is(err, domainerrors.ErrInvalidRouteTarget) {
+		t.Fatalf("NewChangeRows(ungültiges Ziel): %v, will %v", err, domainerrors.ErrInvalidRouteTarget)
 	}
 }
 

@@ -21,11 +21,12 @@ ON CONFLICT (transaction_id) DO NOTHING`
 // Primärschlüssel `change_id` (`SPEC-002`). Die Row Images gehen als Text
 // in die `jsonb`-Spalten; ein fehlendes Bild geht als NULL
 // (Abwesenheit). Die Spaltenliste ist explizit
-// und trägt `origin` als letzte Spalte.
+// und trägt `origin` und `route_target` als letzte Spalten; ein leeres
+// Zustellziel geht als NULL.
 const InsertChange = `
 INSERT INTO cdc.change
-    (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version, origin)
-VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9)
+    (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version, origin, route_target)
+VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, $10)
 ON CONFLICT (change_id) DO NOTHING`
 
 // SelectChanges liest deterministisch sortiert (`LH-FA-REA-004`):
@@ -42,7 +43,9 @@ ON CONFLICT (change_id) DO NOTHING`
 // — die zeitbasierte Retention liest
 // ihr Alter dagegen. `origin` steht als letzte Spalte, `NULL` einer Zeile
 // ohne das Feld liest als `wal` (Boundary) — derselbe
-// `COALESCE` wie in der View `cdc.changes`.
+// `COALESCE` wie in der View `cdc.changes`. `route_target` steht danach als
+// letzte Spalte, ohne `COALESCE`: `NULL` ist „kein Ziel", dieselbe Lesart
+// wie in der View.
 const SelectChanges = `
 SELECT
     t.source_id,
@@ -58,7 +61,8 @@ SELECT
     c.new_data,
     c.schema_version,
     t.committed_at,
-    COALESCE(c.origin, 'wal') AS origin
+    COALESCE(c.origin, 'wal') AS origin,
+    c.route_target
 FROM cdc.change AS c
 JOIN cdc.transaction AS t
     ON c.transaction_id = t.transaction_id
@@ -510,12 +514,12 @@ INSERT INTO cdc.transaction (transaction_id, source_id, commit_position, committ
 VALUES ($1, $2, $3, $4)`
 
 // InsertBackfillChange persistiert einen Change eines Blocks. Die Spaltenliste
-// ist explizit; `origin` steht als letzte Spalte. Kein `ON CONFLICT`-Zweig,
-// dieselbe Begründung wie `InsertBackfillTransaction`.
+// ist explizit; `origin` und `route_target` stehen als letzte Spalten. Kein
+// `ON CONFLICT`-Zweig, dieselbe Begründung wie `InsertBackfillTransaction`.
 const InsertBackfillChange = `
 INSERT INTO cdc.change
-    (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version, origin)
-VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9)`
+    (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version, origin, route_target)
+VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, $10)`
 
 // SelectDiagnosticsHeartbeat liest Alter und Fehlerzustand des letzten
 // Lebenszeichens der Quelle (`ADR-0132`, mechanisch aus dem bisherigen

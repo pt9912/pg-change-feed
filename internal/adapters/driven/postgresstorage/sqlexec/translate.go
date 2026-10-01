@@ -54,6 +54,7 @@ func ReadChanges(ctx context.Context, exec Executor, statement Statement) ([]out
 			&row.SchemaVersion,
 			&committedAt,
 			&row.Origin,
+			&row.RouteTarget,
 		); err != nil {
 			return nil, statement.fail(err)
 		}

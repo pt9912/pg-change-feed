@@ -37,9 +37,11 @@
 #      Rollen auf `cdc.administration_request`, `cdc.backfill_run` und
 #      `cdc.backfill_status`, `EXECUTE` auf `cdc.backfill_table`,
 #      `cdc.set_transformation` und `cdc.remove_transformation` allein für
-#      `cdc_admin` (nicht PUBLIC). Der Stand des Tags trägt weder die Spalten
-#      `rule_name`/`rule_spec` noch die zwei Transformations-Funktionen noch
-#      die zwei Transformations-Antragsarten (Vorbedingung); nach dem Upgrade
+#      `cdc_admin` (nicht PUBLIC), und die Rechte der drei Rollen auf
+#      `cdc.changes` (`SELECT` allein für `cdc_reader`; `DROP VIEW` verwirft
+#      die Rechteliste). Die Zeile des Tags liest über `cdc.changes` mit
+#      `route_target` NULL. Der Stand des Tags trägt die Spalte `route_target`
+#      noch nicht (Vorbedingung); nach dem Upgrade
 #      trägt die Tabelle die zwei nullable Spalten (`text`, `jsonb`), eine
 #      vor dem Upgrade geschriebene Antragszeile trägt dort NULL, die sieben
 #      Werte von `chk_administration_request_kind` stehen, `cdc_admin` schreibt
@@ -274,19 +276,11 @@ alt_privilege() { psql_q "$ALT_DB" "SELECT has_table_privilege('$1', '$2', '$3')
 ALT_FUNCTION="cdc.backfill_table(text, text, text)"
 ALT_SET_FUNCTION="cdc.set_transformation(text, text, text, text, json)"
 ALT_REMOVE_FUNCTION="cdc.remove_transformation(text, text, text, text)"
-for alt_new_function in "$ALT_SET_FUNCTION" "$ALT_REMOVE_FUNCTION"; do
-  [ "$(psql_q "$ALT_DB" "SELECT to_regprocedure('$alt_new_function') IS NULL")" = "t" ] \
-    || fail "Lauf 5: Vorbedingung fehlgeschlagen, $alt_new_function besteht im Stand von $ALT_TAG schon"
-done
-[ "$(psql_q "$ALT_DB" "SELECT count(*) FROM information_schema.columns WHERE table_schema='cdc' AND table_name='administration_request' AND column_name IN ('rule_name', 'rule_spec')")" = "0" ] \
-  || fail "Lauf 5: Vorbedingung fehlgeschlagen, cdc.administration_request trägt im Stand von $ALT_TAG schon rule_name oder rule_spec"
+[ "$(psql_q "$ALT_DB" "SELECT count(*) FROM information_schema.columns WHERE table_schema='cdc' AND table_name IN ('change', 'changes') AND column_name = 'route_target'")" = "0" ] \
+  || fail "Lauf 5: Vorbedingung fehlgeschlagen, cdc.change oder cdc.changes trägt im Stand von $ALT_TAG schon route_target"
 alt_kinds_sql="SELECT string_agg(k, ',' ORDER BY k) FROM (SELECT unnest(regexp_matches(pg_get_constraintdef(oid), '''([a-z_]+)''', 'g')) AS k FROM pg_constraint WHERE conname = 'chk_administration_request_kind' AND conrelid = 'cdc.administration_request'::regclass) s"
-alt_kinds_before=$(psql_q "$ALT_DB" "$alt_kinds_sql")
-case "$alt_kinds_before" in
-  *transformation*) fail "Lauf 5: Vorbedingung fehlgeschlagen, chk_administration_request_kind trägt im Stand von $ALT_TAG schon eine Transformations-Antragsart ($alt_kinds_before)" ;;
-esac
-# Eine Antragszeile im Stand des Tags: nach dem Upgrade trägt sie in den zwei
-# neuen Spalten NULL und bleibt lesbar.
+# Eine Antragszeile im Stand des Tags: nach dem Upgrade bleibt sie lesbar und
+# trägt in rule_name/rule_spec NULL.
 docker exec "$CONTAINER" psql -U "$USER" -d "$ALT_DB" -v ON_ERROR_STOP=1 \
   -c "INSERT INTO cdc.administration_request (administration_request_id, source_id, schema_name, table_name, column_name, request_kind, status) VALUES ('alttag-req', 'alttag-src', 'public', 't', 'a', 'exclude_column', 'applied')" >/dev/null
 run_rollout . "$ALT_TARGET"
@@ -298,6 +292,8 @@ work_exit_2=$RUN_EXIT
 [ "$work_exit_2" -eq 0 ] || fail "Lauf 5: der zweite Rollout des Arbeitsbaums endete mit Exit $work_exit_2 statt 0"
 [ "$(psql_q "$ALT_DB" "SELECT change_id FROM cdc.changes")" = "alttag-ch" ] \
   || fail "Lauf 5: die Zeile aus dem Stand von $ALT_TAG ist über cdc.changes nach dem Upgrade nicht unverändert lesbar"
+[ "$(psql_q "$ALT_DB" "SELECT route_target IS NULL FROM cdc.changes WHERE change_id = 'alttag-ch'")" = "t" ] \
+  || fail "Lauf 5: die Zeile aus dem Stand von $ALT_TAG trägt nach dem Upgrade über cdc.changes kein NULL in route_target"
 [ "$(view_signature "$ALT_DB")" = "$sig_ref" ] || fail "Lauf 5: die View trägt nach dem Upgrade nicht die Soll-Signatur"
 alt_privilege_count=0
 for expected in \
@@ -309,7 +305,8 @@ for expected in \
   "cdc_capture cdc.backfill_run SELECT t" "cdc_capture cdc.backfill_run UPDATE t" "cdc_capture cdc.backfill_run INSERT f" \
   "cdc_reader cdc.backfill_run SELECT f" "cdc_reader cdc.backfill_run UPDATE f" \
   "cdc_reader cdc.backfill_status SELECT t" \
-  "cdc_admin cdc.backfill_status SELECT f" "cdc_capture cdc.backfill_status SELECT f"; do
+  "cdc_admin cdc.backfill_status SELECT f" "cdc_capture cdc.backfill_status SELECT f" \
+  "cdc_reader cdc.changes SELECT t" "cdc_admin cdc.changes SELECT f" "cdc_capture cdc.changes SELECT f"; do
   read -r alt_role alt_object alt_right alt_want <<<"$expected"
   [ "$(alt_privilege "$alt_role" "$alt_object" "$alt_right")" = "$alt_want" ] \
     || fail "Lauf 5: $alt_role trägt nach dem Upgrade über $ALT_TAG auf $alt_object das Recht $alt_right nicht als $alt_want"

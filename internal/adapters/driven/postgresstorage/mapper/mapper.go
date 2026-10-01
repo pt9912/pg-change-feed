@@ -35,7 +35,8 @@ type TransactionRow struct {
 // Klartext-Bezeichnern der betroffenen Tabelle aus dem Join auf
 // `cdc.source_table`; die Row Images sind JSON-Bytes, NULL liest sich als
 // nil (Abwesenheit). Origin trägt die Herkunft in Text-Form (`SPEC-002`);
-// die leere Zeichenkette liest als `wal`.
+// die leere Zeichenkette liest als `wal`. RouteTarget trägt das Zustellziel;
+// nil ist `NULL` („kein Ziel").
 type ChangeRow struct {
 	ChangeID      string
 	TransactionID string
@@ -48,6 +49,7 @@ type ChangeRow struct {
 	Schema        string
 	Table         string
 	Origin        string
+	RouteTarget   *string
 }
 
 // NewTransactionRow trägt die `cdc.transaction`-Zeile einer committed
@@ -75,13 +77,23 @@ func NewTransactionRow(transaction *model.ChangeTransaction, position model.Sour
 // Bild trägt die Zeile als nil (NULL, Abwesenheit). Die Herkunft läuft
 // durch die geschlossene Menge (`model.NewChangeOrigin`): ein fehlender
 // Wert schreibt `wal`, ein Wert außerhalb von `wal`/`backfill` endet als
-// Domänen-Fehler, bevor eine Zeile die Datenbank erreicht.
+// Domänen-Fehler, bevor eine Zeile die Datenbank erreicht. Das Zustellziel
+// läuft durch das Alphabet des Zielnamens; ein leeres Ziel schreibt `NULL`.
 func NewChangeRows(changes []model.Change) ([]ChangeRow, error) {
 	rows := make([]ChangeRow, 0, len(changes))
 	for _, change := range changes {
 		origin, err := model.NewChangeOrigin(string(change.Origin))
 		if err != nil {
 			return nil, err
+		}
+		var routeTarget *string
+		if change.RouteTarget != "" {
+			checked, err := model.NewRouteTarget(string(change.RouteTarget))
+			if err != nil {
+				return nil, err
+			}
+			text := string(checked)
+			routeTarget = &text
 		}
 		rows = append(rows, ChangeRow{
 			ChangeID:      string(change.ID),
@@ -93,6 +105,7 @@ func NewChangeRows(changes []model.Change) ([]ChangeRow, error) {
 			NewData:       change.NewImage,
 			SchemaVersion: string(change.SchemaVersion),
 			Origin:        string(origin),
+			RouteTarget:   routeTarget,
 		})
 	}
 	return rows, nil
@@ -128,11 +141,20 @@ func ToPosition(source string, commitPosition int64) (model.SourcePosition, erro
 // der Lesepfad trägt sie aber in der Rückgabe.
 // Die Herkunft der Zeile läuft durch die geschlossene Menge: die leere
 // Zeichenkette (`NULL` einer Zeile ohne das Feld) liest als `wal`
-// (Boundary), ein unbekannter Wert endet als Domänen-Fehler.
+// (Boundary), ein unbekannter Wert endet als Domänen-Fehler. Das Zustellziel
+// der Zeile (`NULL` = nil) läuft durch das Alphabet des Zielnamens: ein Name
+// außerhalb davon endet als Domänen-Fehler, ein `NULL` liest als „kein Ziel".
 func ToChange(row ChangeRow) (model.Change, error) {
 	origin, err := model.NewChangeOrigin(row.Origin)
 	if err != nil {
 		return model.Change{}, err
+	}
+	var routeTarget model.RouteTarget
+	if row.RouteTarget != nil {
+		routeTarget, err = model.NewRouteTarget(*row.RouteTarget)
+		if err != nil {
+			return model.Change{}, err
+		}
 	}
 	change, err := model.NewChange(
 		model.ChangeID(row.ChangeID),
@@ -150,5 +172,6 @@ func ToChange(row ChangeRow) (model.Change, error) {
 	change.Schema = row.Schema
 	change.Table = row.Table
 	change.Origin = origin
+	change.RouteTarget = routeTarget
 	return change, nil
 }
