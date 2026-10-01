@@ -375,9 +375,12 @@ func TestAdministrationRequestSetRouteAcceptanceSet(t *testing.T) {
 // Wert zählt, nicht die Schreibweise: `10`, `10.0`, `1e1` und `1E+1` gelten
 // als die Ordnung 10; ein Bruchteil, 0, ein negativer Wert, ein Wert über der
 // Obergrenze und eine Zeichenkette enden `rule_spec ist ungültig`. Die Eingabe
-// jedes Falls ist die Verletzung. Rot färbende Mutation: `jsonRouteOrder` auf
-// die Ziffernform zurückführen (`strconv.ParseInt` des Rohtexts) — `10.0` endet
-// abgelehnt; `value.IsInt()` streichen — `1.5` wird angenommen.
+// jedes Falls ist die Verletzung. `jsonb` normalisiert `1e1` und `1E+1` zu
+// `10`; diese zwei Fälle erreichen den Parser als `10` und binden die
+// Exponent-Schreibweise nicht, sie liegt im Modell- und im Bootstrap-Test.
+// Rot färbende Mutation: `jsonRouteOrder` auf die Ziffernform zurückführen
+// (`strconv.ParseInt` des Rohtexts) — `10.0` endet abgelehnt; `value.IsInt()`
+// streichen — `1.5` wird angenommen.
 func TestAdministrationRequestSetRouteOrderLiteralsReachTheParser(t *testing.T) {
 	pool, dsn := newTestAdministrationRequestPool(t)
 	ctx := context.Background()
@@ -402,7 +405,7 @@ func TestAdministrationRequestSetRouteOrderLiteralsReachTheParser(t *testing.T) 
 		{"exponent_gross_mit_vorzeichen", `1E+1`, 10},
 		{"obergrenze", `2147483647`, 2147483647},
 		{"bruchteil", `1.5`, 0},
-		{"null", `0`, 0},
+		{"null_ist_die_zahl_null", `0`, 0},
 		{"negativ", `-1`, 0},
 		{"ueber_der_obergrenze", `2147483648`, 0},
 		{"zeichenkette", `"5"`, 0},

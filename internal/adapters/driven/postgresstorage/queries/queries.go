@@ -325,8 +325,8 @@ ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_cl
 // Fallback-Poll. Es ist dieselbe Ordnung, in der SelectAppliedColumnRequests,
 // SelectAppliedTransformationRequests und SelectAppliedRoutingRequests den
 // dauerhaften Stand ableiten, und die Verarbeitung führt damit live und beim
-// Prozessstart zum selben Stand. `requested_at` ist der Aufrufzeitpunkt der schreibenden Funktion
-// (`clock_timestamp()`): Aufrufe derselben Transaktion tragen
+// Prozessstart zum selben Stand. `requested_at` ist der Aufrufzeitpunkt der
+// schreibenden Funktion (`clock_timestamp()`): Aufrufe derselben Transaktion tragen
 // verschiedene Zeitstempel in der Reihenfolge des Aufrufs, die Kennung
 // ordnet nur bei gleichem Zeitstempel. Die neun Antragsarten teilen sich eine
 // Tabelle; die Antragsarten `enable`, `disable`, `backfill` und die vier
