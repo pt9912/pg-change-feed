@@ -58,7 +58,9 @@
   Fehlerklasse `schema` in zwei Ursachen).
 - **RTM:** `make doc-trace` druckt `80 Anforderung(en), 0 Waise(n).` —
   [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) trägt die Nachweise `E2E, SDK-E2E`
-  (Parent `30fd6cb5`: `80 Anforderung(en), 1 Waise(n)`).
+  (Parent `30fd6cb5`: `80 Anforderung(en), 1 Waise(n)`, **gemessen** am 2026-10-02 aus
+  `git archive 30fd6cb5` im Scratchpad mit `make doc-trace`, Exit `0`; die Zeile
+  `LH-FA-CFG-008 … ADR-0112, ADR-0137 | — | — | WAISE` und `80 Anforderung(en), 1 Waise(n).` wurden gedruckt).
 
 ## Was hat funktioniert?
 
@@ -173,8 +175,12 @@ sind in der Welle entstanden (jede ihrer `evidence/`-Dateien trägt einen Routin
 `integrationsprojekt-uebersetzt-nicht-unbemerkt`, `suppression-ohne-linter-in-testcode` und
 `test-strenger-als-die-zusage`.
 
-**Bereits mit zugewiesenem Ausgang (verkörpert oder gestrichen), in dieser Welle gewachsen** —
-kein Zug nötig, der Zähler steht in der Beobachtung: `arbeit-ueberholt-stehenden-traeger` (34×),
+**Bereits mit zugewiesenem Ausgang (verkörpert oder gestrichen)** — kein Zug nötig, der Zähler
+steht in der Beobachtung. Neun dieser zehn Einträge sind in dieser Welle gewachsen (je 1 bis 3
+`evidence/`-Dateien mit einem Routing-Slice-Namen, `ls <Eintrag>/evidence | grep -c slice-routing`,
+gemessen am Stand `cff48b65`); `arbeit-ueberholt-stehenden-traeger` (34×) ist es **nicht** (derselbe
+Befehl druckt `0`, der Eintrag steht unter einem Deckel ohne weitere Dateien):
+`arbeit-ueberholt-stehenden-traeger` (34×),
 `zahl-in-traeger-driftet-gegen-die-messung` (29×), `negativtest-ohne-bindung-an-seine-eingabe`
 (23×), `beleg-befehl-traegt-seinen-satz-nicht` (21×), `nachzug-laesst-ueberholten-text-stehen`
 (18×), `dod-begruendung-unzutreffende-tatsachenbehauptung` (13×),
@@ -213,6 +219,30 @@ Adresse festgehalten; sie hat **keinen** der Ausgänge selbst gesetzt (kein `lie
 daher keine Anker-Paarung offen). Alle übrigen Einträge bei 3× oder darüber, die die Welle
 berührt, tragen einen Ausgang.
 
+## Validator-Feststellung (Modul 8)
+
+Die Welle liefert Endnutzer-Wert (ein Betreiber wählt Changes nach Zustellziel,
+[`LH-FA-CFG-008`](../../../../spec/lastenheft.md)); der Validator-Schritt ist deshalb nicht „n/a“.
+Die Notizen aller zehn Slices schreiben „entfällt — der Nutzer-Bedarf wird erst durch den
+Wellen-Beleg validierbar“; dieser Abschnitt ist ihr Träger und gilt für alle zehn Slices (deren
+Notizen sind Records).
+
+- **Wer müsste validieren:** die Rolle `validator`
+  ([`.claude/agents/validator.md`](../../../../.claude/agents/validator.md)) in frischem Kontext,
+  nicht der Planner.
+- **Was ist validierbar:** der Bedarf „der Betreiber kann erfasste Changes nach Ziel auswählen“
+  gegen [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) in Lastenheft 0.14.0 — Happy Path
+  (geordnete Regel, Label, Auswahl über die Lesewege), Boundary (zwei treffende Regeln, `order`;
+  Verletzungen R1 bis R6 mit Klartext) und Negative (nicht anwendbare Regel beendet den
+  Erfassungspfad mit Klasse `schema`, Abhilfe) am laufenden Feed-Container, über Handbuch und
+  SDK-Packages als Betreiber-Oberfläche.
+- **Stand:** der Validator-Lauf hat **nicht stattgefunden** und wird hier nicht nachgeholt (der
+  Planner darf ihn nicht selbst fahren, kein Self-Review). Die Beleglage in dieser Notiz (e2e-Lauf
+  `36933941965`, Verifikations-Reports der Slices) ist eine Belegsammlung des Planners und ersetzt
+  keinen Validator; es wird kein Ergebnis behauptet.
+- **Adresse:** Auftrag an den `validator`-Agenten nach dieser Closure; Frist: vor dem
+  Release-Entscheid (Zeile „Release-Entscheid“ in „Offene Punkte“).
+
 ## Beobachtungs-Register (Zeiger)
 
 Der Zähler steht in [`../observations/`](../observations/)
@@ -241,6 +271,8 @@ Slice entsteht erst mit einer Entscheidung.
 | Last der Auswertung je Change (lineare Suche über die Regeln der Tabelle) | **nicht gemessen**, *erwartet* klein | Messträger ein Go-Benchmark im Paket `mapper` bei zehn und bei hundert Regeln; Trigger: erste beobachtete Verzögerung der Erfassung bei vielen Regeln je Tabelle oder Betriebsanforderung über zehn Regeln |
 | Abhilfe am Fall (a) „Bedingungsspalte entfernt“ | *hergeleitet* (die Spec führt sie so), nicht gefahren; allgemeiner Recovery-Weg für Schema-Fehler | `BEO-PGC/kein-admin-weg-schema-fehler-recovery` (2×), Out-of-Scope der Welle |
 | Server ohne den Parameter `target` | *hergeleitet*; die READMEs sagen es mit dem Ursprung | kein Träger (der Realserver-Slice läuft gegen den Stand des Repos); Beleg wäre ein Lauf gegen ein Release ohne den Parameter |
+| Validator-Lauf zum Bedarf (`LH-FA-CFG-008`) | **nicht gelaufen**, Feststellung im Abschnitt „Validator-Feststellung (Modul 8)“ | Auftrag an den `validator`-Agenten nach dieser Closure; Frist: vor dem Release-Entscheid |
+| Welle-Datei-Vorlage: Closure-Kriterium „Validator-Feststellung“ | **Vorschlag**, nicht umgesetzt (die Vorlage gehört zur Baseline/zum Harness, der Planner ändert sie nicht); dritte Wiederholung derselben Klasse („Validator-Schritt ohne Träger“: Backfill-Welle, Transformations-Welle, diese Welle) | Architect: Entscheidung, ob die Welle-Datei-Vorlage/`plan-welle` ein Kriterium „Validator-Feststellung liegt vor oder ist als offen mit Adresse benannt“ trägt; Quelle [`closure-note-review-welle-routing.md`](../../../reviews/closure-note-review-welle-routing.md) F-1 |
 | Release-Entscheid | offen | Auftraggeber: Server-Release, SDK-Versionen; `target` ist in C# neuer letzter Parameter, in Kotlin neuer letzter Parameter mit Default `null` — quellkompatibel, **nicht** binärkompatibel; ein Java-Aufrufer von `PgChangeFeedSseClient.streamChanges` übersetzt nicht mehr ohne Argument |
 | `AGENTS.md` §3.2 und Python-`# noqa` | Entscheidung offen | Auftraggeber (Regeländerung); Register `suppression-ohne-linter-in-testcode` (1×) |
 | Übersetzen der Integrationsprojekte | Lücke im Sensor-Satz | `BEO-PGC/integrationsprojekt-uebersetzt-nicht-unbemerkt` (1×); Aufnahme in `make gates` oder einen Workflow wäre eine Entscheidung (Netzbezug, [`AGENTS.md`](../../../../AGENTS.md) §3.10) |
@@ -263,10 +295,10 @@ Alle Zeilen am Stand `84f5b8d2`, sofern nicht anders angegeben; Gate-Exit-Codes 
 | Laufzeit gegen das 60-Minuten-Limit | Leg PostgreSQL 18: Job 22:15:51 bis 22:35:45 = 19 min 54 s, Schritt „Compose-Integrationstest“ 22:16:26 bis 22:31:32 = 15 min 6 s; Leg PostgreSQL 17: Job 22:15:47 bis 22:40:56 = 25 min 9 s, Schritt „Compose-Integrationstest“ 22:16:30 bis 22:35:32 = 19 min 2 s (Zeitstempel aus `gh run view 36933941965 --json jobs` und dem Log, Differenzen **abgeleitet**); Limit `timeout-minutes: 60` in `.github/workflows/e2e.yml`; kein neuer Workflow, kein Workflow-Zug in der Welle ([`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht) |
 | CI-Stand des Endstands | `ci` `36933941957` (Job `gates + test`), `e2e` `36933941965`, `examples` `36933942004`: alle `success` (gemessen; `gates + test` druckt `coverage-gate: OK — Coverage 82.00% erfüllt Schwelle 80%`, `generated-sync: OK`, `gesamt: 0 Befund(e)`) |
 | Reale, grüne Läufe der DB-Tiers | `e2e`-Lauf `36933941965`, beide Legs: die Schritte `make test-store`, `run-replication-tests.sh measure` und `run-replication-tests.sh tier` `success`; gedruckt `DB-Adapter-Coverage: 82.99% (gedeckt 961 von 1158 Statements; Profile gemergt: store,replication)` und `db-coverage: OK — … erfuellt Schwelle 80%` (je Leg, gemessen); `sourcekeepalive_test.go`-Zeilen nennen `PostgreSQL 17.11` und `PostgreSQL 18.6`. Die Läufe der Slices stehen in den Verifikations-Reports (`kern-label`, `antragsweg`, `backfill-pfad`, `lesewege`, **übernommen**) |
-| `make schema-rollout` zweimal und Alt-Tag-Lauf | `bash tools/harness/run-schema-rollout-guard-test.sh`, Exit `0` (gemessen in dieser Closure, Arbeitsbaum `84f5b8d2`): „Lauf 5 OK — Tag v0.4.0: Exit 0 (Rollout des Tags), Exit 0 (Arbeitsbaum, mit Vorlauf), Exit 0 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar, Soll-Signatur der View, route_target NULL (Spalte im Stand des Tags nicht vorhanden); … EXECUTE auf 5 Funktionen (… cdc.set_route(text, text, text, text, json), cdc.remove_route(text, text, text, text)) allein für cdc_admin (nicht PUBLIC)“ und „OK — alle Belege real erbracht (Idempotenz-Allow, echte Änderung bleibt wirksam, View-Signatur-Vorlauf, Alt-Tag v0.4.0, Negativ-Abbruch: unbekannte Funktion bleibt bestehen, make-Exit 2/2 mit d-migrate-Exit 8)“ |
+| `make schema-rollout` zweimal und Alt-Tag-Lauf | `bash tools/harness/run-schema-rollout-guard-test.sh`, Exit `0` (gemessen in dieser Closure, Arbeitsbaum `84f5b8d2`; im Nachzug zum Closure-Note-Review ([`closure-note-review-welle-routing.md`](../../../reviews/closure-note-review-welle-routing.md), dort reproduziert) am Stand `cff48b65` erneut gefahren: Exit `0`, dieselbe Zeile „Lauf 5 OK — Tag v0.4.0 …“ und dieselbe Schlusszeile „OK — alle Belege real erbracht“): „Lauf 5 OK — Tag v0.4.0: Exit 0 (Rollout des Tags), Exit 0 (Arbeitsbaum, mit Vorlauf), Exit 0 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar, Soll-Signatur der View, route_target NULL (Spalte im Stand des Tags nicht vorhanden); … EXECUTE auf 5 Funktionen (… cdc.set_route(text, text, text, text, json), cdc.remove_route(text, text, text, text)) allein für cdc_admin (nicht PUBLIC)“ und „OK — alle Belege real erbracht (Idempotenz-Allow, echte Änderung bleibt wirksam, View-Signatur-Vorlauf, Alt-Tag v0.4.0, Negativ-Abbruch: unbekannte Funktion bleibt bestehen, make-Exit 2/2 mit d-migrate-Exit 8)“ |
 | Typ-Satz-Parität an PostgreSQL 17 (Ausgang aus `slice-routing-e2e` §6, vorher **übernommen**) | `e2e`-Lauf, Leg PostgreSQL 17: `ok … internal/adapters/driven/postgressnapshot 6.724s` bzw. `5.664s` (nicht übersprungen: ein Überspringen ohne DSN dauert 0,004 s, dieselbe Zeile im Log); der Aufruf von `checkRouteParity` liegt in einem Test dieses Pakets (`snapshot_test.go:741`); dass der Test mit Version 17 lief, folgt aus `PG_TEST_IMAGE` des Legs — *hergeleitet*, die Zeile nennt die Version nicht |
 | Fitness-Function-Tests aus `ADR-0137` | `make test` und `make a-check`/`make generated-sync` laufen in `make gates` bzw. im `ci`-Lauf `36933941957` (`gates + test`, `success`); die Einzel-Tests (Determinismus, `ErrRoutingNotApplicable`, Eigenschaftstest R3 beide Richtungen, Store-Test) stehen in den Verifikations-Reports der Slices (**übernommen**) |
-| `make doc-trace` | Exit `0` (gemessen in dieser Closure); gedruckt `\| LH-FA-CFG-008 \| Routing von Changes auf Zustellziele \| ADR-0112, ADR-0137, ADR-0138, ADR-0139, ADR-0140, ADR-0141 \| — \| E2E, SDK-E2E \| ok \|` und `80 Anforderung(en), 0 Waise(n).` (Parent `30fd6cb5`: `80 Anforderung(en), 1 Waise(n)`) |
+| `make doc-trace` | Exit `0` (gemessen in dieser Closure, Arbeitsbaum); gedruckt `\| LH-FA-CFG-008 \| Routing von Changes auf Zustellziele \| ADR-0112, ADR-0137, ADR-0138, ADR-0139, ADR-0140, ADR-0141 \| — \| E2E, SDK-E2E \| ok \|` und `80 Anforderung(en), 0 Waise(n).`; Parent `30fd6cb5` (`git archive 30fd6cb5` im Scratchpad, dort `make doc-trace`, Exit `0`, **gemessen** im Nachzug zum Closure-Note-Review): `\| LH-FA-CFG-008 \| … \| ADR-0112, ADR-0137 \| — \| — \| WAISE \|` und `80 Anforderung(en), 1 Waise(n).` |
 | Auswertung an genau einer Stelle | `git grep -n 'EvaluateRoute(' -- 'internal/*.go' ':!*_test.go'` druckt drei Zeilen: `internal/domain/model/route.go:163` (Deklaration), `internal/adapters/driving/replication/mapper/mapper.go:325` (WAL-Pfad), `internal/application/usecase/backfill/service.go:634` (Backfill-Pfad) — keine zweite Konstruktionsstelle (gemessen am Arbeitsbaum) |
 | Handbuch-Träger | Änderungshistorie 1.84 bis 1.86; `make sdk-public-doc-check` ist Teil von `make gates` (Exit unten) |
 | Drei SDK-Realserver-Tiers | `make test-sdk-csharp-integration`, `…-kotlin-…`, `…-python-…` je Exit 0 mit zwölf Phasen und `foreign=0` in allen zwölf Routing-Phasen, Zustellung 97 bis 388 ms (Verifikations-Report `verifikation-slice-routing-sdk-realserver-e2e` §1 und §3, **übernommen**); `git diff --name-only db783913 HEAD` nennt außerhalb von `docs/` keine Datei (gemessen) — die Tiers laufen gegen unveränderten Code |
@@ -282,23 +314,33 @@ Alle Zeilen am Stand `84f5b8d2`, sofern nicht anders angegeben; Gate-Exit-Codes 
   Schwelle 80 (Endstufe), `e2e`-Lauf druckt `82.99%` je Leg. **0 offen.**
 - **ADR-Re-Evaluierungs-Trigger** (gelesen: der Abschnitt jeder der fünf ADRs):
   - [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md): Entscheidungen
-    1, 2, 5 unverändert; kein Operator über Gleichheit hinaus im Register verlangt (`BEO-PGC`
-    nennt keinen Eintrag dazu); kein Bedarf an Umetikettieren gemeldet; die Messung der zweiten
+    1, 2, 5 unverändert; kein Operator über Gleichheit hinaus im Register verlangt und kein Bedarf
+    an Umetikettieren gemeldet: `git grep -n -i 'umetikett\|relabel\|Vergleichsoperator' -- docs/plan/planning/observations`
+    druckt `0` Treffer (gemessen am Stand `cff48b65`; ein Suchbegriff-Negativbefund, keine Aussage über
+    Anliegen in anderer Wortwahl); die Messung der zweiten
     NATS-Veröffentlichung löst keinen Aufschlag am Publisher auf (Verhältnis mit/ohne 0,92 bis
     1,30 über fünf Läufe, **abgeleitet**, `slice-routing-nats-subjekt` §6 und §7; der
     Trigger „Messung zeigt Druck am Publisher“ ist nicht eingetreten). **0 offen.**
   - [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md):
     die Nichtanwendbarkeit ist am System erreichbar (Messung `slice-routing-e2e`, (b) und (c)) —
     Trigger „nie erreichbar“ nicht eingetreten; `ReadChangesRequest` trägt keinen weiteren
-    Filter. **0 offen.**
+    Filter: die Nachricht in `proto/cdc/administration/v1/administration.proto` hat sieben Felder
+    (`awk '/message ReadChangesRequest/,/^}/' … | grep -c '= [0-9]*;'` druckt `7` am Arbeitsbaum, `6` am
+    Parent `30fd6cb5`), das neue siebte ist `string target = 7;` (gemessen). **0 offen.**
   - [`ADR-0139`](../../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md),
     [`ADR-0141`](../../adr/0141-run-regelstand-lesefehler-klasse-der-ursache.md): kein Run-Fehlerbild
-    mit Konfigurationsbezug des Lesefehlers, keine neue Fehlerform für Filterwerte. **0 offen.**
+    mit Konfigurationsbezug des Lesefehlers, keine neue Fehlerform für Filterwerte. Belegt ist nur die
+    Hälfte „keine neue Klasse in `SPEC-008`“: `git grep -n -i 'nicht prüfbar' -- spec/pflichtenheft.md`
+    druckt `0` Treffer (gemessen; Suchbegriff-Negativbefund). Für „kein Run-Fehlerbild mit
+    Konfigurationsbezug“ und „keine Fehlerform für Filterwerte“ ist **kein Suchbefehl gelaufen**, der Satz
+    stützt sich auf das Lesen der Verifikations-Reports der Slices `backfill-pfad` und `lesewege`
+    (**übernommen**, **nicht belegt** als Suche). **0 offen** gilt unter diesem Vorbehalt.
   - [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md):
     Trigger 2 („Messung erzeugt weder (b) noch (c)“) ist **nicht** eingetreten — beide
     sind am System erzeugt, die Verengung greift nicht; Trigger 1 (Auftraggeber will, dass eine
     entfernte, von keiner Regel genannte Spalte den Pfad nicht beendet): in Reports und Register
-    kein Hinweis darauf. **0 offen.**
+    kein Hinweis darauf — **nicht belegt** durch einen Suchbefehl, Aussage des Planners nach dem
+    Lesen der Reports. **0 offen.**
 - **Beobachtungs-Register:** Lese-Schritt oben — vier Einträge bei 3× ohne selbstgesetzten
   Ausgang, je mit Vorschlag und Adresse.
 
@@ -358,7 +400,19 @@ der nächste startete.
 
 ### Ausgang des Closure-Note-Reviews
 
-Ein Review-Lauf dieser Closure-Notiz in frischem Kontext
-(`.harness/skills/closure-note-reviewer.md`) liegt zum Zeitpunkt dieses Schreibens **nicht**
-vor. Die Abweichung ist benannt, nicht verschwiegen: die Prüfung obliegt der nächsten Rolle im
-Workflow, nicht diesem Planner-Zug (kein Self-Review, Modul 8).
+Zum Zeitpunkt des Self-Close lag **kein** Review-Lauf dieser Closure-Notiz in frischem Kontext
+vor (kein Self-Review, Modul 8). Er ist danach gelaufen:
+[`closure-note-review-welle-routing.md`](../../../reviews/closure-note-review-welle-routing.md)
+(`.harness/skills/closure-note-reviewer.md`, kein HIGH, zwei MEDIUM, fünf LOW, ein INFO). Nachgezogen
+in dieser Notiz: F-1 (Validator-Feststellung), F-3 (Zuschreibung), F-4 (Ursprungs-Etiketten), F-5
+(Suchbefehle im Trigger-Audit); in den zehn Slice-Plänen: F-6 (Zustandsprosa). Offen mit
+Adresse beim Architect: F-2 (Ausgänge des Lese-Schritts mit Kennung), F-7 (Zitat-Korrektur an
+[`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)),
+Pflege-Regel zu F-1. F-8 (INFO) ist ein Hinweis: der Kopftext von `.harness/skills/closure-note-reviewer.md`
+nennt die fünfte `structure`-Regel noch „auskommentiert“, sie ist seit der ersten Closure aktiv; die
+Pflege liegt beim Besitzer der Skill-Datei.
+
+**Erwartbare Abweichung in den Slice-Plänen:** die `suchlauf`-Zeilen am Stand `diff` in
+`slice-routing-kern-label` (4 von 12) und `slice-routing-e2e` (1 von 14) weichen bei
+`make suchlauf-nachmessen` ab, weil spätere Slices dieselben Träger bewegten (`diff` bewegt sich
+mit jedem Commit, Sensor-Vertrag); sie bleiben unverändert, weil die Pläne geschlossene Records sind.
