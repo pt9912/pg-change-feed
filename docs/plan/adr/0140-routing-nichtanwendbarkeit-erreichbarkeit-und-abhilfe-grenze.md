@@ -200,19 +200,19 @@ inkompatiblen Schemaänderung, ohne dass eine Routing-Regel ihn verändert.**
    vorausgeht und regelunabhängig ist. `SPEC-008`, Absatz „Nicht anwendbare Regel
    (Klasse `schema`)“: „Abhilfe nur bei nicht anwendbarer Regel“ ist dort schon
    so formuliert; ein Querverweis auf die Grenze genügt.
-2. **`slice-routing-e2e`** (`docs/plan/planning/open/slice-routing-e2e.md`): das
+2. **`slice-routing-e2e`** (`docs/plan/planning/done/slice-routing-e2e.md`): das
    Kriterium „Negative (B)“ zerlegen in (i) Weg (a) mit aktiver Regel
    (Negative-Beleg, Entscheidung 4), (ii) Messung von (b)/(c) als erster Schritt,
    (iii) Abhilfe-Beleg am erzeugbaren Fall, sonst benannte Verengung im
    Closure-Bericht der Welle. Der Satz „Ist kein Fall erzeugbar: das
    Architect-Verdikt liegt vor“ wird auf dieses Verdikt (`ADR-0140`) verwiesen.
-3. **`slice-routing-kern-label`** (`docs/plan/planning/in-progress/slice-routing-kern-label.md`
+3. **`slice-routing-kern-label`** (`docs/plan/planning/done/slice-routing-kern-label.md`
    §6, V3-Absatz und §7): „Ausgang bei der Closure einzutragen“ mit dem Verweis
    auf `ADR-0140`; kein Code- oder Testwechsel (Test und Sentinel bleiben).
 4. **`slice-routing-backfill-pfad`**: Fall (d) erhält einen Unit-/Store-Beleg,
    soweit er dort ohnehin entsteht (Erwartung); kein neues Kriterium, falls der
    Slice die Prüfung der Run-Regeln bereits belegt.
-5. **`welle-routing`** (`docs/plan/planning/welle-routing.md` §5): V3 wird
+5. **`welle-routing`** (`docs/plan/planning/done/welle-routing.md` §5): V3 wird
    „beantwortet durch `ADR-0140`“; A-3 bleibt beim Auftraggeber.
 6. **Handbuch** (`slice-routing-betriebsdoku`): Fehler/Ursache/Lösung für
    Routing trennt die zwei Ursachen der Klasse `schema`; keine Aussage „Regel
@@ -247,6 +247,7 @@ gibt es nicht; sie steht als gelesen (`observeRelation`).
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-10-01 | Accepted (Kurz-ADR auf Auftrag des Hauptlaufs; Schärft ADR-0137, ADR-0138, ADR-0139) | `welle-routing` V3, `review-slice-routing-kern-label` F-3 |
+| 2026-10-02 | Zitat-Korrektur: drei Inline-Code-Pfade nach dem Lifecycle-Übergang der Slices und der Welle nach `done/` nachgezogen; Referent und Inhalt unverändert | [`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md) |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen entstehen als neue ADR mit `Supersedes ADR-0140`.
