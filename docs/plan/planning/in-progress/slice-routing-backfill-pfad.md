@@ -165,23 +165,48 @@ Quellstand) bleibt unberührt.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „ein Backfill-Run
 liefert Changes ohne Ziel", „der Regelstand des Runs besteht aus den
-Transformationsregeln"; Parent ist `30fd6cb5`; der Implementer ergänzt die
-`diff`-Zeilen und trägt Gefundenes und Nichtgefundenes ein):**
+Transformationsregeln"; Parent der Planung ist `30fd6cb5`, Parent der Umsetzung
+`9712d01a` (Stand vor dem ersten Code-Commit); `diff` ist der Arbeitsbaum nach
+dem Code-Commit `55384d2f`; gemessen am 2026-10-01 mit
+`make suchlauf-nachmessen`). Der Suchraum ist der Code unter `internal` ohne
+Tests sowie `spec` und `docs/user`; `docs/plan`, `docs/reviews/**` und
+`.harness/baseline/**` liegen außerhalb, weil sie keine Träger der bewegten
+Eigenschaft sind:**
 
 ```suchlauf
 30fd6cb5 46 -n -E 'Transformation' -- internal/application/usecase/backfill internal/bootstrap ':!*_test.go'
+9712d01a 47 -n -E 'Transformation' -- internal/application/usecase/backfill internal/bootstrap ':!*_test.go'
+diff 51 -n -E 'Transformation' -- internal/application/usecase/backfill internal/bootstrap ':!*_test.go'
 30fd6cb5 18 -n -E 'ErrTransformationColumnMissing|ErrTransformationTargetCollides' -- internal ':!*_test.go'
+9712d01a 18 -n -E 'ErrTransformationColumnMissing|ErrTransformationTargetCollides' -- internal ':!*_test.go'
+diff 18 -n -E 'ErrTransformationColumnMissing|ErrTransformationTargetCollides' -- internal ':!*_test.go'
 30fd6cb5 5 -n -E 'ErrTransformationStateChanged' -- internal ':!*_test.go'
+9712d01a 5 -n -E 'ErrTransformationStateChanged' -- internal ':!*_test.go'
+diff 5 -n -E 'ErrTransformationStateChanged' -- internal ':!*_test.go'
 30fd6cb5 5 -n -i -E 'fail-closed' -- spec docs/user
+9712d01a 6 -n -i -E 'fail-closed' -- spec docs/user
+diff 6 -n -i -E 'fail-closed' -- spec docs/user
 30fd6cb5 25 -n -E 'Regelstand' -- spec docs/user
+9712d01a 45 -n -E 'Regelstand' -- spec docs/user
+diff 45 -n -E 'Regelstand' -- spec docs/user
+9712d01a 2 -n -E 'EvaluateRoute\(' -- internal ':!*_test.go'
+diff 3 -n -E 'EvaluateRoute\(' -- internal ':!*_test.go'
+9712d01a 7 -n -E 'RoutingRules|RoutingPort' -- internal/application/usecase/backfill internal/bootstrap ':!*_test.go'
+diff 11 -n -E 'RoutingRules|RoutingPort' -- internal/application/usecase/backfill internal/bootstrap ':!*_test.go'
+9712d01a 4 -n -E 'ErrRoutingColumnMissing|ErrRoutingStateChanged' -- internal ':!*_test.go'
+diff 12 -n -E 'ErrRoutingColumnMissing|ErrRoutingStateChanged' -- internal ':!*_test.go'
+9712d01a 1 -n -E 'backfill\.Ports\{' -- internal ':!*_test.go'
+diff 1 -n -E 'backfill\.Ports\{' -- internal ':!*_test.go'
 ```
 
-| Träger | Messung am Parent (`30fd6cb5`, gemessen am 2026-10-01) | Behandlung und Befund am Diff |
+| Träger | Messung am Parent der Umsetzung (`9712d01a`) und am Diff | Behandlung und Befund am Diff |
 |---|---|---|
-| Stellen, an denen der Run den Regelstand der Transformationen führt | Zeile 1: 46 Nicht-Test-Zeilen in Backfill-Dienst und Composition Root | jede Stelle lesen: ist sie Aufzählung der Regel-Quellen des Runs (Start, Block, Abschluss, Klassifikation), die um die Routing-Regeln wachsen muss — Befund am Diff: einzutragen |
-| Klassen-Abbildung des Runs | Zeilen 2 und 3: 18 bzw. 5 Zeilen | die Abbildung der Fehler auf `schema`/`configuration` folgt `ADR-0138` Festlegung 2 (V2); Befund: einzutragen |
-| Spec-Aussagen zum Run | Zeilen 4 und 5: 5 bzw. 25 Zeilen („Fail-closed", „Regelstand") | Aussagen über „der Regelstand" im Backfill nennen heute nur Transformationen und Ausschluss; Nachzug nach dem Übergabe-Block; Befund: einzutragen |
-| Handbuch Abschnitt „Bestand als Backfill überführen" | liegt außerhalb dieses Suchraums | gemeldet an `slice-routing-betriebsdoku` (§2 dort nennt den Gegenstand), nicht mitgeändert |
+| Stellen, an denen der Run den Regelstand der Transformationen führt | Zeile `Transformation`: 47 Nicht-Test-Zeilen am Parent, 51 am Diff (gegenüber 46 am Planungs-Parent `30fd6cb5`) | alle Treffer in `service.go` gelesen: die Aufzählung der Regel-Quellen des Runs (Start `transformationRules` + `checkRulesApplicable`, Block, Abschluss, Klassifikation) ist um die Routing-Regeln gewachsen (`routingRules`, `checkRoutesApplicable`, je Block und vor dem Commit; die vier Zusatz-Treffer des Musters liegen in `service.go`). **Gefunden und nachgezogen:** `service.go` (Ports, `copyBlocks`, `classifyError`, `build`). **Nicht gefunden (kein Träger):** `internal/bootstrap` trägt Transformations-Treffer nur für den Erfassungspfad (`assemblersync.go`, `activatedTableBindings`, Administrations-Verarbeitung), die Routing-Regeln dort tragen die Antragsarten-Slices; im Backfill-Pfad der Composition Root steht allein `wiring.go` Zeile `Transformations: activation` in `backfill.Ports{` — dort um `Routing: activation` ergänzt. |
+| Klassen-Abbildung des Runs | `ErrTransformationColumnMissing|…TargetCollides`: 18 am Parent, 18 am Diff (die Routing-Sentinels stehen in den eigenen Zeilen); `ErrTransformationStateChanged`: 5, 5 | die Abbildung `schema`/`configuration` folgt `ADR-0138` Festlegung 2 und `ADR-0139` Festlegung 1; Zeile `ErrRoutingColumnMissing|ErrRoutingStateChanged`: 4 am Parent (`errors.go`, `route.go`), 12 am Diff (`classifyError`, `copyBlocks`, Fehler-Sentinel). **Nicht gefunden:** eine zweite Klassen-Abbildung des Runs außerhalb von `classifyError` (`wiring.go:1876` ist die Abbildung des Erfassungspfads für `mapper.ErrRoutingNotApplicable`, ein anderer Gegenstand). |
+| Eine Auswertungsstelle | `EvaluateRoute\(` in Nicht-Test-Code: 2 am Parent (Definition `route.go`, Aufruf im Mapper), 3 am Diff (zusätzlich der Aufruf in `blockBuilder.build`) | **Gefunden:** die Domänen-Funktion wird gerufen, nicht dupliziert; **nicht gefunden:** eine zweite Implementierung der Auswertung (`matches`/`best`-Schleife) außerhalb von `route.go`. |
+| Konstruktionsstellen des Backfill-Dienstes | `backfill\.Ports\{` in Nicht-Test-Code: 1 am Parent, 1 am Diff (`wiring.go`) | einzige Stelle um `Routing` ergänzt; die Konstruktionen in Tests (`service_test.go`, `internal/bootstrap`) tragen `Routing` ebenfalls. |
+| Spec-Aussagen zum Run | Zeilen `fail-closed` und `Regelstand`: 6 und 45 Zeilen am Parent der Umsetzung, 6 und 45 am Diff (am Planungs-Parent: 5 und 25 — der Zuwachs kam durch `slice-routing-spec-nachzug` und die ADRs, nicht durch diesen Slice) | **Gefunden:** `spec/pflichtenheft.md` Absatz „Fail-closed vor dem Commit" nennt den Routing-Regelstand, Klasse `configuration`, Stand des Runs und Anwendbarkeit `schema` (so wie umgesetzt); `spec/architecture.md` Sequenz „Bindung, Ausschluss- und Regelstand erneut prüfen" ist ohne Aufzählung der Regelarten formuliert und bleibt wahr. **Nicht gefunden:** eine Spec-Stelle, die für den Run nur Ausschluss und Transformationen nennt. |
+| Handbuch Abschnitt „Bestand als Backfill überführen" und §5 Fehlerklassen | liegt außerhalb dieses Suchraums (`docs/user/benutzerhandbuch.md` Zeile 756 „Ausgeschlossene Spalten … `configuration`", Zeile 1876 Klasse `schema`) | gemeldet an `slice-routing-betriebsdoku`; der Gegenstand steht als Übergabe-Block in dessen §2 (committeter Text), nicht mitgeändert; Frist: die Closure dieses Slice. |
 
 ## 4. Trigger
 

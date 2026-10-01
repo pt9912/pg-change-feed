@@ -91,7 +91,19 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
   negativer Wert und ein Wert über der Obergrenze `rule_spec ist ungültig` enden;
 - aus `slice-routing-backfill-pfad` — Backfill-Bestand trägt das Label des Regelstands
   zum Run; Neuerzeugung des Altbestands über einen neuen Run (Abschnitt „Bestand als
-  Backfill überführen");
+  Backfill überführen"). Übergabe-Block (Umsetzungsstand des Slice, Tests
+  `internal/application/usecase/backfill/routing_test.go`): ein `set_route` oder
+  `remove_route`, das während des Runs `applied` wird (zwischen zwei Blöcken oder vor
+  dem Commit), endet den Run `failed` mit Klasse `configuration` und dem Text
+  „Routing-Regelstand während des Backfills geändert“, vor jeder Sichtbarkeit; eine
+  Routing-Regel, deren `when.column` der Snapshot nicht trägt, endet ihn `failed` mit
+  Klasse `schema` vor der ersten Zeile (Text nennt Regelname und Spalte), Abhilfe
+  `cdc.remove_route` und neuer Antrag. Handbuch-Stellen, die bisher nur Ausschluss und
+  Transformationsregeln nennen: `benutzerhandbuch.md` Aufzählung „Ausgeschlossene
+  Spalten“ im Abschnitt „Bestand als Backfill überführen“ (Wechsel des Standes während
+  des Runs) und die Zeile `schema` der Fehlerklassen-Tabelle in §5 (Run mit nicht
+  anwendbarer Routing-Regel); Messung der Stellen:
+  `git grep -n -E "Ausgeschlossene Spalten|Transformationsregel ist auf die Relation" -- docs/user/benutzerhandbuch.md`;
 - aus `slice-routing-lesewege` — Parameter `target` je Weg, Konjunktion mit
   `schema`/`table`, das Verhalten eines Servers ohne diesen Parameter (Alt-Server
   ignoriert das Feld am gRPC-Weg, lehnt den Parameter an HTTP und SSE ab; die Aussage
