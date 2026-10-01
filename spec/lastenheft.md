@@ -1,7 +1,7 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.13.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.14.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
 **Autor:** pt9912, **Datum:** 2026-09-12
@@ -316,7 +316,9 @@ auf unterschiedliche Zustellziele geroutet werden können.
 
 - **Happy Path:** Given eine Routing-Regel ist für eine Tabelle oder einen
   Inhalt konfiguriert, when eine Change entsteht, dann wird sie dem
-  Zustellziel zugestellt, das die Regel bestimmt.
+  Zustellziel zugestellt, das die Regel bestimmt. Zustellen heißt: Die
+  Change ist über die Zugriffswege des Systems — Abruf oder Abonnement —
+  unter diesem Zustellziel auswählbar.
 - **Boundary:** Given eine Routing-Regel könnte eine Change mehreren
   Zustellzielen zuordnen, when die Regeln ausgewertet werden, dann ist die
   Auflösung bei Mehrdeutigkeit definiert (z. B. Regel-Reihenfolge oder
@@ -1370,3 +1372,4 @@ in dieser Tabelle (Decken-Regel).
 | 0.11.0 | 2026-09-19 | `LH-FA-CFG-007` (Transformationen/Routing zwischen Erfassung und Zustellung) neu ergänzt — abgegrenzt gegen eine vollständige Transformationssprache/ein Plugin-Modell (Out-of-Scope) und gegen die bereits bestehende Spaltenauswahl (`LH-FA-CFG-005`); dieselbe Draft-Regel wie bei 0.4.0–0.10.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.12.0 | 2026-09-19 | `LH-FA-SST-009` (offizielle, versionierte Client-Bibliotheken/SDKs für die bestehenden Zustellwege) neu ergänzt — abgegrenzt gegen die bereits bestehenden, unversionierten Wegwerf-Beispielprogramme unter `examples/` (erfüllen diese Anforderung nicht) und gegen eine bestimmte Sprachmatrix (Architektur-/Spezifikationsfrage); dieselbe Draft-Regel wie bei 0.4.0–0.11.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.13.0 | 2026-09-23 | `LH-FA-CFG-007` auf Transformationen begrenzt (Titel, Beschreibung, Boundary-Kriterium auf die Auflösung mehrerer Transformationen, Out-of-Scope-Verweis); das Routing auf Zustellziele als eigene Anforderung `LH-FA-CFG-008` herausgelöst — die Beschreibung von `LH-FA-CFG-007` verband beides mit „und/oder", sein Boundary-Kriterium nannte aber nur Routing-Regeln, sodass eine Abnahme nur für Transformationen nicht eindeutig war; dieselbe Draft-Regel wie bei 0.4.0–0.12.0, eigener Commit vor jedem umsetzenden Slice | — |
+| 0.14.0 | 2026-10-02 | `LH-FA-CFG-008`: das Happy-Path-Kriterium sagt, was „zugestellt“ heißt — die Change ist über die Zugriffswege des Systems (Abruf oder Abonnement) unter dem Zustellziel auswählbar; die Anforderung wird inhaltlich nicht erweitert, die Klarstellung hält die Lesart fest, auf der die Abnahme beruht; dieselbe Draft-Regel wie bei 0.4.0–0.13.0, eigener Commit vor dem E2E-Slice der Routing-Welle | — |
