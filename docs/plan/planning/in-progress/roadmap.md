@@ -38,6 +38,12 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-routing](../welle-routing.md) — Routing auf Zustellziele: erfasste
+  Changes tragen bei der Erfassung das durch geordnete Regeln bestimmte Ziel als
+  persistiertes Label, wählbar an jedem Lesezugriffsweg; neun Slices, alle in
+  `open/` ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md),
+  [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)).
+
 Nichts in Arbeit — kein Slice liegt in `in-progress/` (WIP-Limit 1 gilt je
 Slice, nicht je offener Welle-Datei; mehrere gleichzeitig eröffnete Wellen sind
 kein Verstoß).
@@ -158,6 +164,9 @@ flowchart LR
     A0130[ADR-0130 bis ADR-0133 Accepted]
     WSDKADM[welle-sdk-grpc-administration-flaeche: SDK-gRPC-Verwaltungsfläche]
 
+    A0137[ADR-0137 Accepted]
+    WRO[welle-routing: Routing auf Zustellziele]
+
     A58 --> W17
     A59 --> W18
     A6061 --> W19
@@ -193,6 +202,7 @@ flowchart LR
     WFA -.->|wiring.go, Runner| SVG
     SVG -.->|K4 Startpfad| TEA
     A0130 --> WSDKADM
+    A0137 --> WRO
 ```
 
 **Benannte Kopplung zwischen den beiden offenen Wellen**

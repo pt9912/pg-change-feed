@@ -1,0 +1,257 @@
+# Slice routing-betriebsdoku: Benutzerhandbuch — Routing-Regeln konfigurieren, Ziele lesen, Konsequenzen und Abhilfe
+
+**Lifecycle:** Der Zustand dieses Slice ist das Verzeichnis, in dem diese
+Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
+wechselt nur durch `git mv`, siehe
+Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
+Übernimmt ein anderer Slice den Gegenstand oder entfällt er, geht diese Datei
+aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
+Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
+(§Ein Slice, dessen Gegenstand ein anderer übernimmt).
+
+**Welle:** [welle-routing](../welle-routing.md).
+
+**Bezug:** [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (Routing —
+Haupt-Bezug), [`LH-FA-ADM-001`](../../../../spec/lastenheft.md) (SQL-Administration),
+[`LH-FA-SST-006`](../../../../spec/lastenheft.md) (Zugriffswege),
+[`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
+Folgepflicht 8 (Handbuch-Hälfte — Träger dieses Slice) und Entscheidung 4
+(Handbuch-Hinweis zu DELETE und Inhaltsregeln).
+
+**Berührte Spec-Stellen:** — (das Handbuch beschreibt Betreiber-Oberfläche und
+verweist für Zusagen auf die Spec; es ist selbst keine Spec-Stelle).
+
+**Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
+
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-routing](../welle-routing.md).
+**Datum:** 2026-10-01.
+
+---
+
+## 1. Ziel und Abgrenzung
+
+**Ziel:** `docs/user/benutzerhandbuch.md` beschreibt die Routing-Konfiguration für
+Betreiber und Integratoren — nur das, was `slice-routing-e2e` am laufenden System
+belegt hat. Drei Liefer-Punkte:
+
+- (A) **Abschnitt „Routing-Regel konfigurieren"** (Formvorbild: der Abschnitt
+  „Transformationsregel konfigurieren"): Voraussetzung (`cdc_admin`), Vorgehen mit
+  `cdc.set_route`/`cdc.remove_route`, die Form der `rule_spec`, ein lauffähiges
+  Beispiel (unter der genannten Rolle ausgeführt), R1–R6 mit ihrer Wirkung (führende
+  Stelle für die Fehlertexte bleibt die Spec), die **Konsequenzen** (das Label ist zum
+  Erfassungszeitpunkt fest, keine Rückwirkung; ein Change ohne Treffer hat
+  `route_target IS NULL` und erscheint nur ungefiltert und über diese Abfrage; der
+  Altbestand wird über einen neuen Backfill-Run mit dem aktuellen Regelstand
+  gekennzeichnet; eine Inhaltsregel auf eine Nicht-Schlüsselspalte wirkt bei DELETE ohne
+  volle Replica-Identität nicht — mit der Messung des E2E-Slice an PostgreSQL 17 und 18),
+  die Abhilfe (Regel entfernen, Neustart — soweit `slice-routing-e2e` sie belegt hat)
+  und der Hinweis, dass das Ziel Auswahl und kein Zugriffsschutz ist;
+- (B) **Lesewege:** der Parameter `target` je Weg (`GET /changes`, gRPC-Stream, SSE,
+  RPC `ReadChanges` nach Verdikt V1), die Konjunktion mit `schema`/`table`, das
+  Subjekt `cdc.route.<source_id>.<ziel>` mit fire-and-forget und der Lücke-schließen-
+  Hinweis über `cdc.changes`, die Spalte `route_target` in „Änderungen lesen"; die
+  Kosten-Aussage der zweiten Veröffentlichung trägt ihren Ursprung aus
+  `slice-routing-nats-subjekt`;
+- (C) **Fehlerklassen, Rollen, Grenzwerte, Historie:** die Zeile `schema` der
+  Fehlerklassen-Tabelle und der Abschnitt „Neustart nach einem Fehler" nennen die
+  nicht anwendbare Routing-Regel; die Rollen-Tabelle nennt die zwei Funktionen; die
+  Grenzwerte nennen Alphabet und Länge des Zielnamens; Version und
+  Änderungshistorie tragen die Zeile (Version 1.83 am Parent, gemessen).
+
+**Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
+
+- **Aussagen, die kein Beleg trägt** — das Handbuch nennt nur gemessene Wirkung; eine
+  Aussage, die `slice-routing-e2e` nicht belegt hat, steht als *erwartet* oder gar
+  nicht ([`AGENTS.md`](../../../../AGENTS.md) §3.12).
+- **SDK- und Beispiel-Clients** — `slice-routing-sdk-beispiel-target`: das Handbuch
+  nennt den Parameter am Roh-Weg; die Abschnitte der drei SDKs und die Flags der
+  Beispiele ziehen dort nach (§3, Suchlauf, benannte Zwischenzeit).
+- **Spezifikation und Code** — keine Änderung; eine im Schreiben gefundene Lücke ist
+  ein Befund, kein stiller Nachzug.
+- **Version und Release** — `docs/user/version.md` bleibt; die Handbuch-Version
+  (Kopfzeile) und die Änderungshistorie ändern sich.
+
+## 2. Definition of Done
+
+**Übergabe-Block: aufgeschobene Gegenstände aus den Slices der Welle**
+([welle-routing](../welle-routing.md)) — diese Gegenstände haben die Slices mit
+Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
+
+- aus `slice-routing-kern-label` — die Spalte `route_target` in der View `cdc.changes`
+  und ihre Lesesemantik im Abschnitt „Änderungen lesen" und in der Beschreibung der
+  Zugriffswege; `NULL` heißt „nicht geroutet", nicht „wal";
+- aus `slice-routing-antragsweg` — `cdc.set_route`/`cdc.remove_route` mit Parametern
+  und Rolle `cdc_admin` (Rollen-Tabelle, Abschnitt „Zugriff und Rollen"), die
+  `rule_spec`-Form, R1–R6 mit Fehlertexten (führende Stelle: die Spec), Abhilfe, und der
+  Fall R4: eine Abschlussregel ohne `when` muss die höchste `order` tragen — wer eine
+  Regel mit höherer `order` ergänzen will, entfernt die Abschlussregel und setzt sie neu;
+- aus `slice-routing-backfill-pfad` — Backfill-Bestand trägt das Label des Regelstands
+  zum Run; Neuerzeugung des Altbestands über einen neuen Run (Abschnitt „Bestand als
+  Backfill überführen");
+- aus `slice-routing-lesewege` — Parameter `target` je Weg, Konjunktion mit
+  `schema`/`table`, das Verhalten eines Servers ohne diesen Parameter (Alt-Server
+  ignoriert das Feld am gRPC-Weg, lehnt den Parameter an HTTP und SSE ab; die Aussage
+  trägt ihren Ursprung aus dem Slice), und: das Ziel ist Auswahl, kein Zugriffsschutz;
+- aus `slice-routing-nats-subjekt` — das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>`,
+  fire-and-forget und die Kosten-Aussage mit Ursprung (Abschnitt „Zugriff über den
+  NATS-Vollinhalts-Stream").
+
+- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (A): der Abschnitt „Routing-Regel
+      konfigurieren" steht im Abschnitt „Aufgaben"; jedes SQL-Beispiel ist unter der
+      genannten Rolle (`cdc_admin`) gegen die Compose-Umgebung ausgeführt worden, die
+      gedruckte Antwort steht im Bericht
+      (`BEO-PGC/handbuch-beispiel-nicht-unter-genannter-rolle-lauffaehig`); R1–R6, die
+      Konsequenzen, die Abhilfe und der DELETE-Hinweis stehen mit ihrem Ursprung (gemessen
+      von `slice-routing-e2e`, übernommen aus der Spec, oder als erwartet gekennzeichnet);
+      der DELETE-Hinweis nennt die Menge der Messung (PostgreSQL-Versionen und Fälle).
+      *Zu belegen durch:* Lesen des Abschnitts gegen den Bericht von `slice-routing-e2e`,
+      Ausführen der Beispiele, `make docs-check`.
+- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) und
+      [`LH-FA-SST-006`](../../../../spec/lastenheft.md) (B): die Abschnitte zu den
+      Zugriffswegen nennen `target` und das NATS-Subjekt, „Änderungen lesen" die Spalte
+      `route_target`; die Aussage zu Altservern und die Kosten-Aussage stehen mit ihrem
+      Ursprung; was für die SDK-Packages gilt, steht als „folgt mit den SDK-Packages"
+      oder gar nicht, bis `slice-routing-sdk-beispiel-target` es einlöst.
+      *Zu belegen durch:* Lesen, `make docs-check`, Suchlauf in §3.
+- [ ] (C): die Zeile `schema` der Fehlerklassen-Tabelle und der Abschnitt „Neustart nach
+      einem Fehler" nennen die nicht anwendbare Routing-Regel (Pfad nach Messung V3 von
+      `slice-routing-e2e`); die Rollen-Tabelle nennt die zwei Funktionen; „Grenzwerte"
+      nennt Alphabet und Länge des Zielnamens (Ursprung: die Spec) und die Zahl der Regeln,
+      soweit die Spec eine Grenze sagt; die Handbuch-Version (Kopfzeile) und die
+      Änderungshistorie tragen die nächste Zeile (Parent: Version 1.83, gemessen).
+      *Zu belegen durch:* `make docs-check`; die Historie-Zeile zeigt die Version der
+      Kopfzeile (`BEO-PGC/handbuch-versionshistorie-uebersprungen`).
+- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+      HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+      Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
+      Self-Review (Modul 8).
+- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+      Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
+      `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-routing-betriebsdoku.md`
+      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
+- [ ] Doku-Update: der Slice **ist** das Doku-Update des Handbuchs; `README.md` im
+      Repo-Wurzelverzeichnis nur, soweit der Suchlauf eine bewegte Beschreibung findet.
+- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+      Repo (Greenfield).
+- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+      Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
+      Antwort und wird in §7 notiert.
+- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+      offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
+      Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
+      unter *Offene Wellen*, das Ereignis kann eintreten).
+
+## 3. Plan (vor Code)
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `docs/user/benutzerhandbuch.md` §4 „Aufgaben" (neuer Abschnitt „Routing-Regel konfigurieren", Formvorbild „Transformationsregel konfigurieren") | neu | Liefer-Punkt A. |
+| `docs/user/benutzerhandbuch.md` §4 („Änderungen lesen", „Bestand als Backfill überführen", „Zugriff über …": HTTP, gRPC-Stream, gRPC-Verwaltungs-API, SSE, NATS-Vollinhalt) | update | Liefer-Punkt B. |
+| `docs/user/benutzerhandbuch.md` §2 „Zugriff und Rollen", §6 „Fehlerklassen" und „Neustart nach einem Fehler", §9 „Grenzwerte" und „Änderungshistorie", Kopfzeile (Version, Stand) | update | Liefer-Punkt C. |
+| `README.md` | lesen | nur, wenn der Suchlauf eine bewegte Beschreibung findet. |
+
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „das Handbuch kennt zwei
+Transformations-Funktionen und keine Routing-Funktion"; „Filter über `schema`/`table`
+sind die einzigen Auswahl-Parameter"; „Version 1.83"; Parent ist `30fd6cb5`; der
+Implementer ergänzt die `diff`-Zeilen und trägt Gefundenes und Nichtgefundenes ein):**
+
+```suchlauf
+30fd6cb5 10 -n -E 'cdc\.set_transformation|cdc\.remove_transformation' -- docs/user
+30fd6cb5 36 -n -E 'cdc\.changes' -- docs/user
+30fd6cb5 1 -n -E '^Version: ' -- docs/user/benutzerhandbuch.md
+30fd6cb5 4 -n -E '^\| 1\.8[0-9] ' -- docs/user/benutzerhandbuch.md
+30fd6cb5 17 -n -E 'nehmen den Filter|über `-schema`/`-table`|-schema' -- docs/user examples/README.md
+```
+
+| Träger | Messung am Parent (`30fd6cb5`, gemessen am 2026-10-01) | Behandlung und Befund am Diff |
+|---|---|---|
+| Stellen, an denen die Transformations-Funktionen stehen (Muster für die Routing-Funktionen) | Zeile 1: 10 Zeilen in `docs/user` | jede Stelle lesen: Rollen-Tabelle und Aufzählungen, die um die zwei Routing-Funktionen wachsen; Befund am Diff: einzutragen |
+| Beschreibungen von `cdc.changes` | Zeile 2: 36 Zeilen | jede Stelle, die die Spalten der View aufzählt, trägt `route_target`; Befund: einzutragen |
+| Version und Historie | Zeilen 3 und 4: 1 Kopfzeile, 4 Historie-Zeilen der Reihe 1.8x | die nächste Version ist 1.84 (*hergeleitet*; der Implementer misst am Start, falls ein anderer Slice die Version bewegt hat); Kopfzeile und Historie-Zeile tragen dieselbe Version; Befund: einzutragen |
+| Filter-Beschreibung der Clients (`-schema`/`-table`) | Zeile 5: 17 Zeilen, darunter `benutzerhandbuch.md:1308` („Go, C# und Kotlin nehmen den Filter über `-schema`/`-table`") | **benannte Zwischenzeit:** diese Aussage zum `target`-Flag der Clients zieht `slice-routing-sdk-beispiel-target` nach; dieser Slice schreibt dazu nichts Behauptendes (§2 B). Befund: einzutragen |
+
+## 4. Trigger
+
+**Start** (`next` → `in-progress`): `slice-routing-e2e` liegt in `done/` (das
+Handbuch beschreibt nur Gemessenes, Welle §4 Abweichung 1) und kein anderer Slice
+liegt in `in-progress/` (WIP-Limit 1). Der Übergabe-Block in §2 ist vollständig, wenn
+alle fünf Quell-Slices in `done/` liegen (sie liegen vor `slice-routing-e2e`).
+
+**Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
+
+- `in-progress` → `next` (zu groß, zurück zur Zerlegung): der Übergabe-Block und die
+  drei Liefer-Punkte sprengen den Umfang eines Doku-Zugs nicht erwartet; sprengten
+  sie ihn, trennt sich (B) ab (`slice-routing-betriebsdoku-lesewege`).
+- `in-progress` → `open` (blockiert): der Bericht von `slice-routing-e2e` trägt eine
+  Aussage nicht, die das Handbuch braucht (z. B. die Abhilfe der Negative, V3) — dann
+  steht die Aussage als erwartet oder gar nicht, und die Lücke geht als Befund an den
+  Architect; das Handbuch wartet nicht auf einen Beleg, den es nicht gibt.
+
+## 5. Closure-Trigger
+
+DoD vollständig, Review ohne offenes HIGH/MEDIUM, `make gates` grün (Exit-Code
+ungefiltert), SQL-Beispiele unter der genannten Rolle ausgeführt, Suchlauf-Block
+nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
+
+## 6. Risiken und offene Punkte
+
+- **Zwei Quellen für dieselben Fakten.** Fehlertexte, `rule_spec`-Form und Alphabet
+  stehen in der Spec und im Handbuch; die Spec ist führend
+  (`BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft`, offen, 3×; Ausgang beim
+  Lese-Schritt der Welle-Closure). — **Ausgang:** bei der Closure einzutragen (das
+  Handbuch verweist je Sachverhalt auf die führende Stelle, statt Texte zu
+  wiederholen).
+- **Beispiele unter der falschen Rolle.** Ein SQL-Beispiel, das unter `cdc_admin`
+  läuft, aber ohne Rollenangabe dasteht, scheitert beim Leser
+  (`BEO-PGC/handbuch-beispiel-nicht-unter-genannter-rolle-lauffaehig`). — **Ausgang:**
+  bei der Closure einzutragen (Beispiele gelaufen, gedruckte Zeile).
+- **Aussage ohne Messung.** Die DELETE-Aussage, die Altserver-Aussage und die
+  Kosten-Aussage sind Erwartungen, bis ihr Slice sie belegt hat
+  (`BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`, verkörpert, 11×). —
+  **Ausgang:** bei der Closure einzutragen (jede Aussage mit Ursprung: gemessen,
+  übernommen, abgeleitet, erwartet).
+- **Handbuch nicht nachgezogen / Historie übersprungen**
+  (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`, 3×;
+  `BEO-PGC/handbuch-versionshistorie-uebersprungen`, 3×; beide verkörpert). —
+  **Ausgang:** bei der Closure einzutragen.
+- **Zwischenzeit mit den SDK-Packages.** Zwischen diesem Slice und
+  `slice-routing-sdk-beispiel-target` beschreibt das Handbuch `target` am Roh-Weg, die
+  SDK-Abschnitte nicht. — **Ausgang:** bei der Closure einzutragen (Suchlauf-Zeile 5;
+  Nachzug dort).
+
+## 7. Closure-Notiz
+
+Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
+
+- **Was hat funktioniert:** —
+- **Was ging anders als geplant:** —
+- **Steering-Loop-Eintrag:** —
+- **Beobachtungs-Register (`../observations/`):** —
+- **Folge-Slices:** —
+- **Risiken aus §6:** —
+
+## 8. Sub-Area-Prüfungen und Modus-Begründung
+
+**Vorgelagert — Sub-Area-Wahl prüfen:** berührt ist die Default-Sub-Area `*`
+(`harness/conventions.md`, Modus-Deklaration: Greenfield, Kürzel `PGC`) mit dem Pfad
+`docs/user/` — eine Sub-Area.
+
+**Vorgelagert — offene Beobachtungen sichten:** das Register wurde durchgegangen
+(Zähler = Zahl der `evidence/`-Dateien, ausgezählt am 2026-10-01); die Treffer
+stehen in §6 und in der Eröffnungs-Sichtung der Welle
+[welle-routing](../welle-routing.md) §6:
+`BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft` (offen, 3×),
+`BEO-PGC/handbuch-beispiel-nicht-unter-genannter-rolle-lauffaehig`,
+`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche` (verkörpert, 3×),
+`BEO-PGC/handbuch-versionshistorie-uebersprungen` (verkörpert, 3×),
+`BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (verkörpert, 15×),
+`BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (verkörpert, 11×). Der
+offene Eintrag `zwei-quellen-drift-handbuch-gegen-pflichtenheft` steht bereits bei 3×;
+sein Ausgang gehört dem Lese-Schritt der Welle-Closure.
+
+**Modus-Begründungsblock:** alle berührten Sub-Areas GF.
+
