@@ -108,8 +108,15 @@ Konjunktion, ein ungefilterter Leser sieht weiterhin alle Changes. Drei Liefer-P
       der Use Case `ReadChangesUseCase` erhält den Filter einmal und bedient
       `GET /changes` und den RPC; die Aussage „der RPC sieht dasselbe wie
       `GET /changes`" ist am Test belegt (gleiche Eingabe, gleiche Changes); ein
-      `target` außerhalb des Alphabets liefert eine leere Liste, keinen Fehler (in
-      `ADR-0138` als Erwartung geführt, hier am Test zu belegen); `make generated-sync`
+      `target` außerhalb des Alphabets (Großbuchstabe, 64 Zeichen, U+0000) liefert auf
+      allen Lesewegen eine leere Antwort, keinen Fehler; Festlegung nach
+      [`ADR-0139`](../../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md):
+      der gemeinsame Use Case `ReadChangesUseCase` prüft das Alphabet mit der
+      Prüffunktion der Domäne und antwortet leer, ohne den Store aufzurufen; Tests:
+      Use Case mit Store-Fake, der bei einem Aufruf fehlschlägt (`make test`), `GET
+      /changes` und gRPC-`ReadChanges` mit derselben Eingabe, gRPC-Stream und SSE
+      liefern keine Nachricht; der SQL-Zugriff `cdc.changes` ist ausgenommen;
+      `make generated-sync`
       grün für beide `.proto`-Dateien, `tools/harness/grpcadminclient` trägt `target`.
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).

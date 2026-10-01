@@ -46,9 +46,12 @@ dieser Slice ändert die Spec nicht.
 **Ziel:** Ein Backfill-Run bestimmt für jede Zeile des Bestands das Ziel der
 ersten treffenden Regel (derselben Auswertung wie der WAL-Pfad, **eine**
 Auswertungsstelle) und schreibt es als `route_target` in die Backfill-Change; der
-Regelstand ist Teil der Fail-closed-Prüfung des Runs (eine Abweichung des Regelstands
-zwischen den Blöcken endet den Run `failed`, Klasse `configuration`, wie bei den
-Transformationsregeln); eine im Run nicht anwendbare Regel endet den Run `failed`,
+Regelstand ist Teil der Fail-closed-Prüfung des Runs (Festlegung nach
+[`ADR-0139`](../../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md):
+Stand des Runs ist die Lesung nach dem Öffnen des Snapshots, jeder weitere Block
+und der Zustand vor dem Commit lesen neu und vergleichen als Menge; eine Abweichung
+oder ein nicht lesbarer Stand endet den Run `failed`, Klasse `configuration`, wie
+bei den Transformationsregeln); eine im Run nicht anwendbare Regel endet den Run `failed`,
 Klasse `schema`, run-lokal, einmal je Run vor der Schreibtransaktion (`ADR-0138`
 Festlegung 2, Vorab-Bedingung V2 der Welle). Das Label gehört nicht zum
 Zeilenzustand: die Replay-Invariante (das Log ab dem Log-Anfang ergibt den
@@ -85,12 +88,20 @@ Quellstand) bleibt unberührt.
       keine zweite. *Zu belegen durch:* Use-Case-Tabellentest (`make test`), Store-
       und Snapshot-Test (`make test-store`, `make test-replication`).
 - [ ] [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Fail-closed): der Regelstand
-      der Routing-Regeln wird beim Start des Runs gelesen und vor jedem Block
-      verglichen; eine Abweichung zwischen den Blöcken endet den Run `failed` mit
-      der Klasse der Transformationsregeln für diesen Fall (`configuration`); die
+      der Routing-Regeln wird einmal nach dem Öffnen des Snapshots gelesen, auf
+      Anwendbarkeit geprüft (Klasse `schema`, vor der ersten Zeile) und ist der Stand
+      des Runs; jeder weitere Block und der Zustand vor dem Commit lesen neu und
+      vergleichen als Menge; eine Abweichung endet den Run `failed` mit der Klasse
+      `configuration` (Festlegung nach
+      [`ADR-0139`](../../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md),
+      Reihenfolge `schema` vor `configuration`); die
       Replay-Invariante bleibt belegt (die bestehende Prüfung läuft unverändert
-      grün). *Zu belegen durch:* Use-Case-Test mit wechselndem Regelstand zwischen
-      zwei Blöcken (Eingabe-Bindung: die Eingabe ist der Wechsel), `make test`,
+      grün). *Zu belegen durch:* Use-Case-Tests mit `set_route` bzw. `remove_route`
+      zwischen zwei Blöcken und vor dem Commit, je `configuration` (Eingabe-Bindung:
+      die Eingabe ist der Wechsel; ohne Wechsel läuft der Run durch), ein Test mit
+      nicht anwendbarer Regel endet `schema` vor `configuration`, Store-Test mit
+      `set_route` zwischen zwei Blöcken gegen reale PostgreSQL (`make test-store`),
+      `make test`,
       Replay-Test des bestehenden E2E (`make test-integration`, nicht Teil dieses
       Slice, hier nur nicht-brechend).
 - [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Negative im Run: eine im Run

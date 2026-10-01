@@ -277,6 +277,14 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     `slice-routing-kern-label` (Unit-Ebene) und von `slice-routing-e2e`
     (Systemebene); bei unerreichbarem Fall ein Architect-Verdikt vor dem
     Negative-Beleg.
+  - **A-1/A-2 (Review `review-slice-routing-spec-nachzug`) — geschlossen** durch
+    [`ADR-0139`](../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md):
+    der Routing-Regelstand ist im Run fail-closed (Klasse `configuration`, Stand
+    des Runs nach dem Öffnen des Snapshots; Träger `slice-routing-backfill-pfad`);
+    ein `target` außerhalb des Alphabets liefert auf allen Lesewegen leer, geprüft
+    im Use Case (Träger `slice-routing-lesewege`). **A-3** (Klarstellung der
+    Lesart „Zustellung" im Lastenheft) bleibt offen und liegt beim Auftraggeber,
+    ebenso V3.
   - **V4 — Pflichtenheft-Kennung der Regelform.** Kein Entscheidungsbedarf: die
     Regelform bekommt eine eigene Kennung neben `SPEC-030`
     ([`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)

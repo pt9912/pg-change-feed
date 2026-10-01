@@ -195,7 +195,12 @@ die Doku führt). Umfang:
 | `spec/pflichtenheft.md` §2 ([`SPEC-020`](../../../../spec/pflichtenheft.md), [`SPEC-021`](../../../../spec/pflichtenheft.md), [`SPEC-022`](../../../../spec/pflichtenheft.md), [`SPEC-024`](../../../../spec/pflichtenheft.md)) | update | Parameter `target` bzw. Zusatz-Subjekt; die Zählwörter „zehn Felder" und „dreizehn Felder" bleiben (das Label ist nicht Teil der Nachrichten). |
 | `spec/pflichtenheft.md` §2 ([`SPEC-031`](../../../../spec/pflichtenheft.md) Zeile `ReadChanges`, [`SPEC-029`](../../../../spec/pflichtenheft.md), `LH-FA-CAP-009.a`) | update | Request-Feld `target` (siebtes, Nummer 7); Run-Klasse `schema` für eine Routing-Regel (Quelle der Entscheidungen: `ADR-0138`, in der Spec ohne ADR-Bezug formuliert). |
 | `spec/pflichtenheft.md` §4 ([`SPEC-008`](../../../../spec/pflichtenheft.md) Zeile `schema`) | update | Nichtanwendbarkeit einer Routing-Regel im Erfassungspfad und im Backfill-Run; Absatzstruktur wie „Nicht anwendbare Regel (Klasse `schema`)" der Transformationen (Zellenlänge des `structure`-Moduls). |
-| `spec/pflichtenheft.md` §1 (`LH-FA-CAP-009.a`, Absatz „Sichtbarkeit und Fehler des Runs" und neuer Punkt „Ziel der Backfill-Changes") | update | über den Plan hinaus: der Punkt „Ziel der Backfill-Changes" trägt die Aussage aus der Entscheidung, dass Backfill-Changes dieselbe Bestimmung durchlaufen; eine Fail-closed-Prüfung des Routing-Regelstands vor dem Commit steht **nicht** darin (die Entscheidung nennt sie nicht, siehe Bericht, Frage 2). |
+| `spec/pflichtenheft.md` §1 (`LH-FA-CAP-009.a`, Absatz „Sichtbarkeit und Fehler des Runs" und neuer Punkt „Ziel der Backfill-Changes") | update | über den Plan hinaus: der Punkt „Ziel der Backfill-Changes" trägt die Aussage aus der Entscheidung, dass Backfill-Changes dieselbe Bestimmung durchlaufen; die Fail-closed-Prüfung des Routing-Regelstands vor dem Commit (Stand des Runs nach dem Öffnen des Snapshots, Klasse `configuration`) und die Definition von „Regelstand zum Run" stehen im Absatz „Fail-closed vor dem Commit" und im Punkt „Ziel der Backfill-Changes" (Quelle: [`ADR-0139`](../../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md), Fixrunde nach dem Review). |
+| `spec/pflichtenheft.md` §2 (`SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-031` Zeile `ReadChanges`) | update (Fixrunde) | Der Satz „leer, kein Fehler" für ein `target` außerhalb des Alphabets nennt U+0000 und die Prüfung im gemeinsamen Use Case; der SQL-Zugriff `cdc.changes` ist ausgenommen (Quelle: `ADR-0139`). Das NUL-Verhalten von PostgreSQL steht nicht als erprobt, die Spec macht den Satz von ihm unabhängig. |
+| `spec/pflichtenheft.md` §2 (`SPEC-032`, Zeile `order`) | update (Fixrunde) | Wertebereich auf den Wortlaut der Entscheidung („positive ganze Zahl") zurückgenommen; die Obergrenze 2147483647 und der Ausschluss von Bruchteil und Exponent hatten keinen Träger in den Entscheidungen und keinen genannten Grund. Eine Obergrenze ist Sache der Umsetzung, die der Folge-Slice `slice-routing-antragsweg` mit ihrer Begründung vorlegt. |
+| `spec/architecture.md`, `spec/pflichtenheft.md` (zwei Zeilen) | update (Fixrunde) | Umbruch nach Teilersetzung nachgezogen; Historie-Zeile ergänzt. |
+| `docs/plan/adr/README.md` | update (Fixrunde) | Zeile `ADR-0139`. |
+| Pläne `slice-routing-backfill-pfad`, `slice-routing-lesewege`, `welle-routing` | update (Fixrunde) | Festlegungen aus `ADR-0139` nachgezogen (Fail-closed-Tests, Use-Case-Prüfung); A-1/A-2 geschlossen, A-3 und V3 offen. |
 | `spec/pflichtenheft.md` §7 Historie | update | je Änderung eine Zeile ohne ADR-/Slice-Bezug. |
 | `spec/architecture.md` (Komponentenliste `ARC-001`, Antragsart-Tabelle bei „sieben Arten", Capture-Sequenz, Backfill-Absatz, Fehlermodell-Zeile) | update | die zwei weiteren Antragsarten; das Ziel einer Change steht vor der Persistierung; über den Plan hinaus die Komponentenliste, der Backfill-Absatz und die Fehlermodell-Zeile, weil sie „Transformationsregel" allein nannten. |
 
@@ -225,14 +230,15 @@ als Zusage an die Umsetzung gekennzeichnet):
 Ergebnis (Plan-Stand, vor dem Review): `when.column` zeichengenau gegen den
 Katalog, nicht leer, ohne U+0000; `when.equals` Zeichenkette (leer zulässig, keine
 eigene Längengrenze), zeichengenauer Vergleich ohne Normalisierung; `order` JSON-
-Ganzzahl 1 bis 2147483647 (die Obergrenze ist eine Festlegung der Spec, keine
-Vorgabe der Entscheidung); Prüfreihenfolge Formzeilen, dann R1 bis R5, `remove_route`
+positive ganze Zahl (Wortlaut der Entscheidung, keine eigene Obergrenze der Spec);
+Prüfreihenfolge Formzeilen, dann R1 bis R5, `remove_route`
 nur Regelname und R6; R4 hat drei Fehlertexte (zweite Regel ohne `when`, Regel ohne
 `when` nicht an höchster `order`, Regel mit `when` hinter der Regel ohne `when`);
 Antrag ohne laufende Bindung endet `applied` (Muster der Transformationen);
-Lesewege: ein `target`, das keine Change trägt oder das Alphabet verletzt, ist ein
-Filter ohne Treffer und kein `400`/`InvalidArgument` — in `SPEC-020`, `SPEC-022`
-und `SPEC-031` einheitlich; Aufteilung: `SPEC-032` führt Regelform, Bildbasis,
+Lesewege: ein `target`, das keine Change trägt oder das Alphabet verletzt (auch mit
+U+0000), ist ein Filter ohne Treffer und kein `400`/`InvalidArgument` — in `SPEC-020`,
+`SPEC-021`, `SPEC-022` und `SPEC-031` einheitlich, der SQL-Zugriff ausgenommen
+(`ADR-0139`); der Routing-Regelstand im Run ist fail-closed (`ADR-0139`); Aufteilung: `SPEC-032` führt Regelform, Bildbasis,
 Auswertung und Anwendbarkeit, `SPEC-019` die Antragsarten, R1 bis R6 und die
 Fehlertexte, `LH-FA-CFG-008.a` die Abhilfe. Keiner dieser Texte ist am Code
 gemessen.
