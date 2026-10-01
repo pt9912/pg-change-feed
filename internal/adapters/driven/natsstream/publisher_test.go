@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	stderrors "errors"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -287,6 +288,159 @@ func TestToStreamMessageCarriesAllTenFields(t *testing.T) {
 	}
 	if string(decoded["schema"]) != `"public"` || string(decoded["table"]) != `"orders"` {
 		t.Fatalf("schema/table = %s/%s, Erwartung \"public\"/\"orders\"", decoded["schema"], decoded["table"])
+	}
+}
+
+// recordingConn hält die Veröffentlichungen fest; `failPrefix` lässt jede
+// Veröffentlichung auf einem Subjekt mit diesem Präfix scheitern.
+type recordingConn struct {
+	mu         sync.Mutex
+	failPrefix string
+	subjects   []string
+	payloads   [][]byte
+}
+
+func (c *recordingConn) Publish(subject string, data []byte) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.subjects = append(c.subjects, subject)
+	if c.failPrefix != "" && strings.HasPrefix(subject, c.failPrefix) {
+		return stderrors.New("Publish verweigert")
+	}
+	c.payloads = append(c.payloads, data)
+	return nil
+}
+
+func (c *recordingConn) attempts() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return append([]string(nil), c.subjects...)
+}
+
+func newRecordingPublisher(conn *recordingConn, log outbound.LogPort) *Publisher {
+	return &Publisher{conn: conn, subscriber: newFakeSubscriber(), sourceID: "src-1", log: log}
+}
+
+// TestPublishCountsPublicationsPerChange trägt die Zahl und die Subjekte der
+// Veröffentlichungen je Change; die Eingabe ist das Ziel der Change.
+//
+// Rot färbende Mutation: in `publish` die Bedingung `change.RouteTarget == ""`
+// entfernen (Fall „ohne Ziel" wird rot) oder die Ziel-Veröffentlichung
+// streichen (Fälle mit Ziel werden rot).
+func TestPublishCountsPublicationsPerChange(t *testing.T) {
+	for _, testcase := range []struct {
+		name   string
+		target model.RouteTarget
+		want   []string
+	}{
+		{name: "ohne Ziel", target: "", want: []string{"cdc.stream.src-1.public.orders"}},
+		{name: "mit Ziel", target: "eu", want: []string{"cdc.stream.src-1.public.orders", "cdc.route.src-1.eu"}},
+		{name: "Ziel mit Bindestrich und Unterstrich", target: "eu-west_1", want: []string{"cdc.stream.src-1.public.orders", "cdc.route.src-1.eu-west_1"}},
+	} {
+		t.Run(testcase.name, func(t *testing.T) {
+			conn := &recordingConn{}
+			p := newRecordingPublisher(conn, outbound.NoopLog)
+			change := testChange(t)
+			change.RouteTarget = testcase.target
+
+			p.publish(context.Background(), change)
+
+			got := conn.attempts()
+			if strings.Join(got, "|") != strings.Join(testcase.want, "|") {
+				t.Fatalf("Veröffentlichungen = %q, Erwartung %q", got, testcase.want)
+			}
+			for i := 1; i < len(conn.payloads); i++ {
+				if string(conn.payloads[i]) != string(conn.payloads[0]) {
+					t.Fatalf("Payload %d = %s, Erwartung byte-gleich %s", i, conn.payloads[i], conn.payloads[0])
+				}
+			}
+		})
+	}
+}
+
+// TestRouteSubjectRootIsCdcRoute trägt den Wurzel-Token des Zusatz-Subjekts:
+// weder `cdc.stream` noch `cdc.changes`.
+//
+// Rot färbende Mutation: `routeSubjectPrefix` auf `"cdc.stream."` ändern.
+func TestRouteSubjectRootIsCdcRoute(t *testing.T) {
+	if got, want := routeSubjectFor("src-1", "eu"), "cdc.route.src-1.eu"; got != want {
+		t.Fatalf("routeSubjectFor = %q, Erwartung %q", got, want)
+	}
+}
+
+// TestPublishSkipsReservedRouteTarget trägt die Prüfung des Zielnamens: ein
+// Name mit reserviertem Zeichen oder Whitespace erzeugt keine zweite
+// Veröffentlichung, die erste bleibt unverändert.
+//
+// Rot färbende Mutation: die Prüfung in `routeSubject` streichen — jeder Fall
+// veröffentlicht dann ein aufgespaltenes oder Wildcard-Subjekt.
+func TestPublishSkipsReservedRouteTarget(t *testing.T) {
+	for _, target := range []model.RouteTarget{"eu.west", "eu*", "eu>", "eu west"} {
+		t.Run(string(target), func(t *testing.T) {
+			conn := &recordingConn{}
+			log := &recordingLog{}
+			p := newRecordingPublisher(conn, log)
+			change := testChange(t)
+			change.RouteTarget = target
+
+			p.publish(context.Background(), change)
+
+			if got := conn.attempts(); len(got) != 1 || got[0] != "cdc.stream.src-1.public.orders" {
+				t.Fatalf("Veröffentlichungen = %q, Erwartung nur das Tabellen-Subjekt", got)
+			}
+			if len(log.warns) != 1 || !strings.Contains(log.warns[0], "Zielname") {
+				t.Fatalf("Warn-Aufzeichnung: %q", log.warns)
+			}
+		})
+	}
+}
+
+// TestRouteFailureStaysLocal trägt die Isolation der zweiten Veröffentlichung:
+// verweigert die Verbindung das Ziel-Subjekt, bleibt die erste
+// Veröffentlichung unverändert und die Schleife verarbeitet die nächste Change.
+//
+// Rot färbende Mutation: `send` bei einem Publish-Fehler `panic(err)`
+// aufrufen lassen — die Schleife endet und der Test färbt rot.
+func TestRouteFailureStaysLocal(t *testing.T) {
+	conn := &recordingConn{failPrefix: "cdc.route."}
+	log := &recordingLog{}
+	sub := newFakeSubscriber()
+	p := &Publisher{conn: conn, subscriber: sub, sourceID: "src-1", log: log}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		p.Run(ctx)
+		close(done)
+	}()
+	for i := 0; i < 2; i++ {
+		change := testChange(t)
+		change.RouteTarget = "eu"
+		sub.changes <- change
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for len(conn.attempts()) < 4 && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Run kehrt nach Kontext-Ende nicht zurück")
+	}
+
+	want := "cdc.stream.src-1.public.orders|cdc.route.src-1.eu|cdc.stream.src-1.public.orders|cdc.route.src-1.eu"
+	if got := strings.Join(conn.attempts(), "|"); got != want {
+		t.Fatalf("Veröffentlichungsversuche = %q, Erwartung %q", got, want)
+	}
+	conn.mu.Lock()
+	delivered := len(conn.payloads)
+	conn.mu.Unlock()
+	if delivered != 2 {
+		t.Fatalf("angenommene Veröffentlichungen = %d, Erwartung 2 (beide Tabellen-Subjekte)", delivered)
+	}
+	if len(log.warns) != 2 {
+		t.Fatalf("Warnungen = %d, Erwartung 2 (je Change eine)", len(log.warns))
 	}
 }
 

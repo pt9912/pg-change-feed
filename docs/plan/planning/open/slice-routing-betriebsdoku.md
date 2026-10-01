@@ -121,7 +121,20 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
   Vorrang; Norm: `SPEC-022`, `SPEC-031`);
 - aus `slice-routing-nats-subjekt` — das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>`,
   fire-and-forget und die Kosten-Aussage mit Ursprung (Abschnitt „Zugriff über den
-  NATS-Vollinhalts-Stream").
+  NATS-Vollinhalts-Stream"). Übergabe-Block (Umsetzungsstand des Slice, Tests
+  `internal/adapters/driven/natsstream/publisher_nats_test.go`): ein Zielname mit `-`
+  und `_` (`eu-west_1`) ist am realen NATS-Server ein einzelnes Subjekt-Token (erprobt,
+  `make test-notify`), `cdc.route.<source_id>.*` und `.>` empfangen jedes Ziel; die
+  Wecksignal-Wurzel `cdc.changes` bekommt von der zweiten Veröffentlichung nichts. Die
+  zweite Veröffentlichung ist unabhängig von der ersten (Tabellen-Subjekt zuerst, danach
+  das Ziel-Subjekt); ihr Fehlschlag oder ihr Überspringen verändert die erste nicht.
+  Kosten-Aussage, **gemessen** in einem Lauf von `make test-notify` (Zeit für
+  `publish` samt Flush zum Server, je 10 000 Changes, Median von fünf Läufen, ohne
+  Abonnent, Testcontainer-NATS): „ohne Ziel 18.242683ms (548165 Changes/s), mit Ziel
+  21.239865ms (470813 Changes/s)“; Verhältnis mit/ohne 1,16 (**abgeleitet**). Die
+  Messung hat keine Schwelle und deckt die Verteilung an Abonnenten nicht ab; der
+  Re-Evaluierungs-Trigger der ADR bleibt „Messung der zweiten NATS-Veröffentlichung
+  zeigt Druck am Publisher“.
 
 - [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (A): der Abschnitt „Routing-Regel
       konfigurieren" steht im Abschnitt „Aufgaben"; jedes SQL-Beispiel ist unter der

@@ -61,3 +61,13 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   -e CDC_NATS_TEST_URL="$NATS_URL" \
   "$TOOLCHAIN_IMAGE" go test ./internal/adapters/driven/natsnotify/...
+
+# natsstream: Ziel-Subjekt, Wildcard-Abonnenten, Payload-Gleichheit und die
+# Kostenmessung der zweiten Veröffentlichung; -v druckt die Zeile je Fall.
+docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  -e CDC_NATS_TEST_URL="$NATS_URL" \
+  "$TOOLCHAIN_IMAGE" go test -v -count=1 -run 'TestRealServer|TestPublishCost' ./internal/adapters/driven/natsstream/...

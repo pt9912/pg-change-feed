@@ -220,7 +220,7 @@ test-store: ## Adapter-Tests gegen reale PostgreSQL (Testcontainer, gepinnt)
 test-replication: ## Replication-Stream-Tests gegen reale PostgreSQL mit Publication/Slot (wal_level=logical, gepinnt)
 	@bash tools/harness/run-replication-tests.sh
 
-test-notify: ## natsnotify-Adapter-Tests gegen einen echten NATS-Server (Testcontainer, gepinnt, ADR-0055)
+test-notify: ## natsnotify- und natsstream-Adapter-Tests gegen einen echten NATS-Server (Testcontainer, gepinnt, ADR-0055)
 	@bash tools/harness/run-notify-tests.sh
 
 test-integration: ## Compose-Integrationstest — Kern-CDC-Pfad, Rollen-DSN-Verifikation, Black-Box-CLI-Rundlauf (Compose + schema-rollout + Toolchain-Container, kein Gate)
