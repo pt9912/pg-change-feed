@@ -112,8 +112,13 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
   `target`); Handbuch-Zeilen (Stand `docs/user/benutzerhandbuch.md` am Ende von
   `slice-routing-lesewege`): `:1301` (gRPC-Stream, „zwei optionale“ Felder), `:1364`–`:1365`
   (C#-Stream, „zwei optionale Parameter“), `:1378` (Kotlin-Stream), `:1403` (Python-Stream),
-  `:1456`–`:1457` (`ReadChanges` ohne `target` in der Filter-Aufzählung) und `:1557`
-  (SSE, „Zwei optionale“ Query-Parameter);
+  `:1456`–`:1457` (`ReadChanges` ohne `target` in der Filter-Aufzählung), `:1557`
+  (SSE, „Zwei optionale“ Query-Parameter) und `:1149` (Abschnitt „Zugriff über die
+  HTTP-/JSON-API“, „optional gefiltert über `schema` und `table`“); die Aussage „ein
+  `target` außerhalb des Alphabets liefert leer, keinen Fehler“ steht im Handbuch mit dem
+  Qualifier „bei sonst gültiger Anfrage“ (Fehler des Lese-Kontrakts — leere Quelle,
+  `limit < 1`, invertierter Bereich, Start-/End-Position einer anderen Quelle — haben
+  Vorrang; Norm: `SPEC-022`, `SPEC-031`);
 - aus `slice-routing-nats-subjekt` — das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>`,
   fire-and-forget und die Kosten-Aussage mit Ursprung (Abschnitt „Zugriff über den
   NATS-Vollinhalts-Stream").
@@ -193,7 +198,7 @@ Implementer ergänzt die `diff`-Zeilen und trägt Gefundenes und Nichtgefundenes
 30fd6cb5 36 -n -E 'cdc\.changes' -- docs/user
 30fd6cb5 1 -n -E '^Version: ' -- docs/user/benutzerhandbuch.md
 30fd6cb5 4 -n -E '^\| 1\.8[0-9] ' -- docs/user/benutzerhandbuch.md
-30fd6cb5 17 -n -E 'nehmen den Filter|über `-schema`/`-table`|-schema' -- docs/user examples/README.md
+30fd6cb5 18 -n -E 'nehmen den Filter|über `-schema`/`-table`|-schema|`schema` und `table`' -- docs/user examples/README.md
 ```
 
 | Träger | Messung am Parent (`30fd6cb5`, gemessen am 2026-10-01) | Behandlung und Befund am Diff |
@@ -201,7 +206,7 @@ Implementer ergänzt die `diff`-Zeilen und trägt Gefundenes und Nichtgefundenes
 | Stellen, an denen die Transformations-Funktionen stehen (Muster für die Routing-Funktionen) | Zeile 1: 10 Zeilen in `docs/user` | jede Stelle lesen: Rollen-Tabelle und Aufzählungen, die um die zwei Routing-Funktionen wachsen; Befund am Diff: einzutragen |
 | Beschreibungen von `cdc.changes` | Zeile 2: 36 Zeilen | jede Stelle, die die Spalten der View aufzählt, trägt `route_target`; Befund: einzutragen |
 | Version und Historie | Zeilen 3 und 4: 1 Kopfzeile, 4 Historie-Zeilen der Reihe 1.8x | die nächste Version ist 1.84 (*hergeleitet*; der Implementer misst am Start, falls ein anderer Slice die Version bewegt hat); Kopfzeile und Historie-Zeile tragen dieselbe Version; Befund: einzutragen |
-| Filter-Beschreibung der Clients (`-schema`/`-table`) | Zeile 5: 17 Zeilen, darunter `benutzerhandbuch.md:1308` („Go, C# und Kotlin nehmen den Filter über `-schema`/`-table`") | **benannte Zwischenzeit:** diese Aussage zum `target`-Flag der Clients zieht `slice-routing-sdk-beispiel-target` nach; dieser Slice schreibt dazu nichts Behauptendes (§2 B). Befund: einzutragen |
+| Filter-Beschreibung der Clients (`-schema`/`-table`) und der Stream-/Lese-Wege (`schema` und `table`) | Zeile 5: 18 Zeilen (das Muster trifft auch die Schreibweise mit Backticks um beide Wörter, `benutzerhandbuch.md:1149`), darunter `benutzerhandbuch.md:1308` („Go, C# und Kotlin nehmen den Filter über `-schema`/`-table`") | **benannte Zwischenzeit:** diese Aussage zum `target`-Flag der Clients zieht `slice-routing-sdk-beispiel-target` nach; dieser Slice schreibt dazu nichts Behauptendes (§2 B). Befund: einzutragen |
 
 ## 4. Trigger
 

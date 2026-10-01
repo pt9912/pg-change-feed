@@ -6,4 +6,11 @@ Spec-Nachzug-Slices gehört, oder als Pflicht-Zeile in den Plan eines
 Spec-Nachzugs (Festlegungs-Tabelle mit Bestands-Beleg je Zeile, Vorbild:
 `slice-transformationen-spec-nachzug` §3).
 
-Zähler (abgeleitet): 1× (evidence/slice-transformationen-spec-nachzug.md).
+Zweites Auftreten (`slice-routing-lesewege`): die fehlende Festlegung war eine
+Fehlerrangfolge am Lesepfad — gewinnt ein ungültiges Ziel gegen einen Fehler des
+Lese-Kontrakts? Prüffrage, die den Fund beim Schreiben der Zeile eines neuen
+Filter-Parameters fängt: „was gewinnt bei gleichzeitigem Kontraktfehler?“ Der
+Trigger für eine Folge-ADR zur Rangfolge steht im Plan des Slice (der nächste
+Lese-Weg mit einem Filter-Parameter, der ein Alphabet prüft).
+
+Zähler (abgeleitet): 2× (evidence/slice-transformationen-spec-nachzug.md, evidence/slice-routing-lesewege.md).

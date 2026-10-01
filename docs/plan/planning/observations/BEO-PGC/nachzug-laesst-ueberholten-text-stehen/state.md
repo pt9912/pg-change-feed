@@ -12,7 +12,13 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 17× (Dateien unter `evidence/`; die siebzehnte,
+Zähler: 18× (Dateien unter `evidence/`; die achtzehnte,
+`evidence/slice-routing-lesewege.md`, trägt F-2 (MEDIUM) und F-N2 (LOW): der Godoc eines Use
+Case sagte „unverändert“ neben einer hinzugefügten Zusage, die es für ein ungültiges Ziel
+nicht trug, und der Plan hielt nach der Fixrunde „Spec unberührt“ und eine unqualifizierte
+Aussage neben der geänderten Norm stehen (Träger-Typen Go-Kommentar und Slice-Plan); vor dem
+Merge gefunden, in der Fixrunde bzw. bei der Closure behoben, Ausgang unverändert
+**verkörpert**; die siebzehnte,
 `evidence/slice-routing-kern-label.md`, trägt F-1 (MEDIUM): Godoc und Testkommentar zur
 „letzten Spalte“ von `cdc.changes` widersprachen nach dem Zufügen von `route_target` dem
 Nachbarsatz im selben Block und einer Nachbardatei (Träger-Typ Go-Kommentar); vor dem Merge

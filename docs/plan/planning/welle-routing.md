@@ -288,7 +288,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     [`ADR-0139`](../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md):
     der Routing-Regelstand ist im Run fail-closed (Klasse `configuration`, Stand
     des Runs nach dem Öffnen des Snapshots; Träger `slice-routing-backfill-pfad`);
-    ein `target` außerhalb des Alphabets liefert auf allen Lesewegen leer, geprüft
+    ein `target` außerhalb des Alphabets liefert auf allen Lesewegen leer
+    (bei sonst gültiger Anfrage; Fehler des Lese-Kontrakts haben Vorrang), geprüft
     im Use Case (Träger `slice-routing-lesewege`). **A-3** (Klarstellung der
     Lesart „Zustellung" im Lastenheft) bleibt offen und liegt beim Auftraggeber.
   - **V4 — Pflichtenheft-Kennung der Regelform.** Kein Entscheidungsbedarf: die

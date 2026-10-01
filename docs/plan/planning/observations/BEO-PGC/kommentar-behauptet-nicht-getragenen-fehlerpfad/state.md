@@ -7,7 +7,11 @@ Paket, trägt der Kommentar einen Rang-Zeiger darauf · seit welle-backfill-best
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §4.1, R6b).
 
-Zähler: 8× (Dateien unter `evidence/`; die achte,
+Zähler: 9× (Dateien unter `evidence/`; die neunte,
+`evidence/slice-routing-lesewege.md`, trägt F-4 (LOW): der Godoc eines Tests sagte die Strecke
+vom Assembler zum Stream zu, der Test fuhr von der Transaktion zum Fake des Stream-Ports
+(Ausprägung **Allaussage über einen Fall**); vor dem Merge vom Reviewer gefunden, Ausgang
+unverändert **verkörpert**; die achte,
 `evidence/slice-capture-transient-wiederholung.md`, trägt F-1 (HIGH): ein Kommentar, die ADR
 und das Handbuch sagten die Rücksetzung der Wiederholungs-Episode zu, der Code hatte keine Stelle
 dafür (Ausprägung **Zusage ohne Code**); der Reviewer fand sie durch Nachfahren, die Fixrunde trug
