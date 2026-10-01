@@ -17,6 +17,7 @@
 package administrationv1_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"testing"
@@ -24,6 +25,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	administrationv1 "github.com/pt9912/pg-change-feed/gen/cdc/administration/v1"
 )
@@ -234,21 +236,57 @@ func TestTabellenNachrichtenGetterTragenDenNullwertUndDenGesetztenWert(t *testin
 	}
 }
 
+// TestReadChangesRequestTraegtTargetAlsFeldSieben trägt den Draht-Vertrag
+// des Feldes `target` (`ADR-0138` Festlegung 1, Feldnummer 7): auf dem Draht
+// steht der Wert unter dem Tag von Feld 7 (`0x3a`, Wire-Typ 2) hinter
+// `source` (Feld 1) und `limit` (Feld 6); Bytes eines Clients ohne das Feld
+// lesen mit leerem `target`, Bytes mit einem dem Empfänger unbekannten Feld
+// (hier 9) lesen ohne Fehler — die Messung der eingesetzten
+// Protobuf-Bibliothek, nicht eines ausgelieferten Altservers.
+// Rot färbende Mutation: in der `.proto` die Feldnummer von `target` ändern.
+func TestReadChangesRequestTraegtTargetAlsFeldSieben(t *testing.T) {
+	gesetzt := &administrationv1.ReadChangesRequest{Source: "s", Limit: 5, Target: "eu"}
+	draht, err := proto.Marshal(gesetzt)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	wollen := []byte{0x0a, 0x01, 's', 0x30, 0x05, 0x3a, 0x02, 'e', 'u'}
+	if !bytes.Equal(draht, wollen) {
+		t.Fatalf("Draht-Bytes = %x (Erwartung: %x)", draht, wollen)
+	}
+
+	ohneFeld := &administrationv1.ReadChangesRequest{}
+	if err := proto.Unmarshal([]byte{0x0a, 0x01, 's', 0x30, 0x05}, ohneFeld); err != nil {
+		t.Fatalf("Unmarshal ohne Feld 7: %v", err)
+	}
+	if ohneFeld.GetSource() != "s" || ohneFeld.GetLimit() != 5 || ohneFeld.GetTarget() != "" {
+		t.Fatalf("Request ohne Feld 7 = %+v (Erwartung: target leer)", ohneFeld)
+	}
+
+	mitUnbekanntem := &administrationv1.ReadChangesRequest{}
+	if err := proto.Unmarshal([]byte{0x0a, 0x01, 's', 0x4a, 0x01, 'x'}, mitUnbekanntem); err != nil {
+		t.Fatalf("Unmarshal mit unbekanntem Feld: %v", err)
+	}
+	if mitUnbekanntem.GetSource() != "s" || mitUnbekanntem.GetTarget() != "" {
+		t.Fatalf("Request mit unbekanntem Feld = %+v", mitUnbekanntem)
+	}
+}
+
 // TestReadChangesNachrichtenGetterTragenDenNullwertUndDenGesetztenWert trägt
 // dieselbe Grenze für den zehnten RPC `ReadChanges` (`ADR-0131`): Request,
 // `ChangeRecord` und Response.
 func TestReadChangesNachrichtenGetterTragenDenNullwertUndDenGesetztenWert(t *testing.T) {
 	var req *administrationv1.ReadChangesRequest
 	if req.GetSource() != "" || req.GetSchema() != "" || req.GetTable() != "" ||
-		req.GetFrom() != 0 || req.GetTo() != 0 || req.GetLimit() != 0 {
+		req.GetFrom() != 0 || req.GetTo() != 0 || req.GetLimit() != 0 || req.GetTarget() != "" {
 		t.Fatalf("ReadChangesRequest auf dem Nullwert liefert keine Nullwerte")
 	}
 	gesetzterReq := &administrationv1.ReadChangesRequest{
-		Source: "src-1", Schema: "public", Table: "orders", From: 1, To: 10, Limit: 5,
+		Source: "src-1", Schema: "public", Table: "orders", From: 1, To: 10, Limit: 5, Target: "eu",
 	}
 	if gesetzterReq.GetSource() != "src-1" || gesetzterReq.GetSchema() != "public" ||
 		gesetzterReq.GetTable() != "orders" || gesetzterReq.GetFrom() != 1 ||
-		gesetzterReq.GetTo() != 10 || gesetzterReq.GetLimit() != 5 {
+		gesetzterReq.GetTo() != 10 || gesetzterReq.GetLimit() != 5 || gesetzterReq.GetTarget() != "eu" {
 		t.Fatalf("ReadChangesRequest trägt nicht die gesetzten Felder")
 	}
 

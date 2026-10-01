@@ -131,6 +131,10 @@ message ReadChangesRequest {
   uint64 from = 4;
   uint64 to = 5;
   int64 limit = 6;
+  // target filters on the delivery target of a change (ADR-0138): empty
+  // applies no filter, a name selects only changes routed to it, combined
+  // with schema/table as a conjunction.
+  string target = 7;
 }
 
 // ChangeRecord mirrors the HTTP API's readChangeResponse (SPEC-022): the

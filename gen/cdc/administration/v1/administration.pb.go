@@ -1148,13 +1148,17 @@ func (x *RunRetentionResponse) GetDeleted() int64 {
 }
 
 type ReadChangesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Source        string                 `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
-	Schema        string                 `protobuf:"bytes,2,opt,name=schema,proto3" json:"schema,omitempty"`
-	Table         string                 `protobuf:"bytes,3,opt,name=table,proto3" json:"table,omitempty"`
-	From          uint64                 `protobuf:"varint,4,opt,name=from,proto3" json:"from,omitempty"`
-	To            uint64                 `protobuf:"varint,5,opt,name=to,proto3" json:"to,omitempty"`
-	Limit         int64                  `protobuf:"varint,6,opt,name=limit,proto3" json:"limit,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Source string                 `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
+	Schema string                 `protobuf:"bytes,2,opt,name=schema,proto3" json:"schema,omitempty"`
+	Table  string                 `protobuf:"bytes,3,opt,name=table,proto3" json:"table,omitempty"`
+	From   uint64                 `protobuf:"varint,4,opt,name=from,proto3" json:"from,omitempty"`
+	To     uint64                 `protobuf:"varint,5,opt,name=to,proto3" json:"to,omitempty"`
+	Limit  int64                  `protobuf:"varint,6,opt,name=limit,proto3" json:"limit,omitempty"`
+	// target filters on the delivery target of a change (ADR-0138): empty
+	// applies no filter, a name selects only changes routed to it, combined
+	// with schema/table as a conjunction.
+	Target        string `protobuf:"bytes,7,opt,name=target,proto3" json:"target,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1229,6 +1233,13 @@ func (x *ReadChangesRequest) GetLimit() int64 {
 		return x.Limit
 	}
 	return 0
+}
+
+func (x *ReadChangesRequest) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
 }
 
 // ChangeRecord mirrors the HTTP API's readChangeResponse (SPEC-022): the
@@ -1955,14 +1966,15 @@ const file_cdc_administration_v1_administration_proto_rawDesc = "" +
 	"\x06source\x18\x01 \x01(\tR\x06source\x12\"\n" +
 	"\rmin_age_nanos\x18\x02 \x01(\x03R\vminAgeNanos\"0\n" +
 	"\x14RunRetentionResponse\x12\x18\n" +
-	"\adeleted\x18\x01 \x01(\x03R\adeleted\"\x94\x01\n" +
+	"\adeleted\x18\x01 \x01(\x03R\adeleted\"\xac\x01\n" +
 	"\x12ReadChangesRequest\x12\x16\n" +
 	"\x06source\x18\x01 \x01(\tR\x06source\x12\x16\n" +
 	"\x06schema\x18\x02 \x01(\tR\x06schema\x12\x14\n" +
 	"\x05table\x18\x03 \x01(\tR\x05table\x12\x12\n" +
 	"\x04from\x18\x04 \x01(\x04R\x04from\x12\x0e\n" +
 	"\x02to\x18\x05 \x01(\x04R\x02to\x12\x14\n" +
-	"\x05limit\x18\x06 \x01(\x03R\x05limit\"\xa7\x03\n" +
+	"\x05limit\x18\x06 \x01(\x03R\x05limit\x12\x16\n" +
+	"\x06target\x18\a \x01(\tR\x06target\"\xa7\x03\n" +
 	"\fChangeRecord\x12'\n" +
 	"\x0fcommit_position\x18\x01 \x01(\x03R\x0ecommitPosition\x12\x1b\n" +
 	"\tchange_id\x18\x02 \x01(\tR\bchangeId\x12%\n" +

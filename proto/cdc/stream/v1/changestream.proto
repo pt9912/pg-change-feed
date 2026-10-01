@@ -24,14 +24,17 @@ message Change {
   string table = 10;
 }
 
-// StreamChangesRequest carries an optional schema/table filter pair
-// (ADR-0133): schema and table are each optional and independent. A field
-// left empty applies no filter on that dimension; both empty (the original,
-// still valid zero-value request) delivers every change of all captured
-// tables, unchanged from the original contract.
+// StreamChangesRequest carries an optional schema/table/target filter
+// (ADR-0133): schema, table and target are each optional and
+// independent. A field left empty applies no filter on that dimension; all
+// empty (the original, still valid zero-value request) delivers every change
+// of all captured tables, unchanged from the original contract. A non-empty
+// target delivers only changes routed to that target; a name no change
+// carries delivers nothing and is no error.
 message StreamChangesRequest {
   string schema = 1;
   string table = 2;
+  string target = 3;
 }
 
 // ChangeStream offers the live change stream.

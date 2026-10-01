@@ -145,15 +145,18 @@ func (x *Change) GetTable() string {
 	return ""
 }
 
-// StreamChangesRequest carries an optional schema/table filter pair
-// (ADR-0133): schema and table are each optional and independent. A field
-// left empty applies no filter on that dimension; both empty (the original,
-// still valid zero-value request) delivers every change of all captured
-// tables, unchanged from the original contract.
+// StreamChangesRequest carries an optional schema/table/target filter
+// (ADR-0133): schema, table and target are each optional and
+// independent. A field left empty applies no filter on that dimension; all
+// empty (the original, still valid zero-value request) delivers every change
+// of all captured tables, unchanged from the original contract. A non-empty
+// target delivers only changes routed to that target; a name no change
+// carries delivers nothing and is no error.
 type StreamChangesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Schema        string                 `protobuf:"bytes,1,opt,name=schema,proto3" json:"schema,omitempty"`
 	Table         string                 `protobuf:"bytes,2,opt,name=table,proto3" json:"table,omitempty"`
+	Target        string                 `protobuf:"bytes,3,opt,name=target,proto3" json:"target,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -202,6 +205,13 @@ func (x *StreamChangesRequest) GetTable() string {
 	return ""
 }
 
+func (x *StreamChangesRequest) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
+
 var File_cdc_stream_v1_changestream_proto protoreflect.FileDescriptor
 
 const file_cdc_stream_v1_changestream_proto_rawDesc = "" +
@@ -218,10 +228,11 @@ const file_cdc_stream_v1_changestream_proto_rawDesc = "" +
 	"\x0eschema_version\x18\b \x01(\tR\rschemaVersion\x12\x16\n" +
 	"\x06schema\x18\t \x01(\tR\x06schema\x12\x14\n" +
 	"\x05table\x18\n" +
-	" \x01(\tR\x05table\"D\n" +
+	" \x01(\tR\x05table\"\\\n" +
 	"\x14StreamChangesRequest\x12\x16\n" +
 	"\x06schema\x18\x01 \x01(\tR\x06schema\x12\x14\n" +
-	"\x05table\x18\x02 \x01(\tR\x05table2]\n" +
+	"\x05table\x18\x02 \x01(\tR\x05table\x12\x16\n" +
+	"\x06target\x18\x03 \x01(\tR\x06target2]\n" +
 	"\fChangeStream\x12M\n" +
 	"\rStreamChanges\x12#.cdc.stream.v1.StreamChangesRequest\x1a\x15.cdc.stream.v1.Change0\x01B=Z;github.com/pt9912/pg-change-feed/gen/cdc/stream/v1;streamv1b\x06proto3"
 

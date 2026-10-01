@@ -13,6 +13,7 @@
 package streamv1_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"testing"
@@ -21,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/pt9912/pg-change-feed/gen/cdc/stream/v1"
 )
@@ -118,6 +120,59 @@ func TestChangeGetterTragenDenNullwertNilSicher(t *testing.T) {
 	if gesetzt.GetChangeId() != "change-1" || gesetzt.GetSequence() != 7 ||
 		gesetzt.GetSchema() != "public" || gesetzt.GetTable() != "orders" {
 		t.Fatalf("gesetzter Change trägt nicht seine Werte: %+v", gesetzt)
+	}
+}
+
+// TestStreamChangesRequestTraegtTargetAlsFeldDrei trägt den Draht-Vertrag
+// des Feldes `target` (`SPEC-020`, Feldnummer 3): der Getter liest den
+// gesetzten Wert und auf dem Nullwert leer; auf dem Draht steht der Wert
+// unter dem Tag von Feld 3 (`0x1a`, Wire-Typ 2), neben `schema` (Feld 1)
+// und `table` (Feld 2); Bytes eines Clients ohne das Feld (nur Feld 1 und 2)
+// lesen mit leerem `target` — der Filter bleibt aus.
+// Rot färbende Mutation: in der `.proto` die Feldnummer von `target` ändern
+// (dann ändert sich der erwartete Tag, die Draht-Bytes und der Getter
+// weichen von den festen Bytes ab).
+func TestStreamChangesRequestTraegtTargetAlsFeldDrei(t *testing.T) {
+	var nullwert *streamv1.StreamChangesRequest
+	if got := nullwert.GetTarget(); got != "" {
+		t.Fatalf("GetTarget auf dem Nullwert = %q (Erwartung: leer)", got)
+	}
+	gesetzt := &streamv1.StreamChangesRequest{Schema: "s", Table: "t", Target: "eu"}
+	if got := gesetzt.GetTarget(); got != "eu" {
+		t.Fatalf("GetTarget = %q (Erwartung: eu)", got)
+	}
+
+	draht, err := proto.Marshal(gesetzt)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	wollen := []byte{0x0a, 0x01, 's', 0x12, 0x01, 't', 0x1a, 0x02, 'e', 'u'}
+	if !bytes.Equal(draht, wollen) {
+		t.Fatalf("Draht-Bytes = %x (Erwartung: %x)", draht, wollen)
+	}
+
+	ohneFeld := &streamv1.StreamChangesRequest{}
+	if err := proto.Unmarshal([]byte{0x0a, 0x01, 's', 0x12, 0x01, 't'}, ohneFeld); err != nil {
+		t.Fatalf("Unmarshal ohne Feld 3: %v", err)
+	}
+	if ohneFeld.GetSchema() != "s" || ohneFeld.GetTable() != "t" || ohneFeld.GetTarget() != "" {
+		t.Fatalf("Request ohne Feld 3 = %+v (Erwartung: schema/table gesetzt, target leer)", ohneFeld)
+	}
+}
+
+// TestStreamChangesRequestIgnoriertUnbekannteFelder trägt, am Laufzeit-
+// Verhalten der eingesetzten Protobuf-Bibliothek gemessen, die
+// Voraussetzung der additiven Erweiterung: Bytes mit einem Feld, das der
+// Empfänger nicht kennt (hier Feld 9), lesen ohne Fehler, die bekannten
+// Felder bleiben erhalten. Das ist die Messung der Bibliothek, nicht eines
+// ausgelieferten Altservers.
+func TestStreamChangesRequestIgnoriertUnbekannteFelder(t *testing.T) {
+	request := &streamv1.StreamChangesRequest{}
+	if err := proto.Unmarshal([]byte{0x0a, 0x01, 's', 0x4a, 0x01, 'x'}, request); err != nil {
+		t.Fatalf("Unmarshal mit unbekanntem Feld: %v", err)
+	}
+	if request.GetSchema() != "s" || request.GetTarget() != "" {
+		t.Fatalf("Request = %+v (Erwartung: schema s, target leer)", request)
 	}
 }
 
