@@ -395,7 +395,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   `slice-routing-sdk-beispiel-target` beschreibt das Handbuch `target` am Roh-Weg, die
   SDK-Abschnitte nicht. — **Ausgang: weiter offen.** Die drei SDK-Stellen (C#, Kotlin, Python)
   tragen „zwei optionale Parameter `schema`/`table`“ und „das Feld `target` folgt mit dem
-  Package“; Nachzug: [slice-routing-sdk-beispiel-target](../open/slice-routing-sdk-beispiel-target.md)
+  Package“; Nachzug: [slice-routing-sdk-beispiel-target](../in-progress/slice-routing-sdk-beispiel-target.md)
   (Suchlauf-Zeile 5 in §3).
 
 ## 7. Closure-Notiz
@@ -460,7 +460,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
     Schlüssels, Test- und Dateinamen in Betreiber-Prosa) sind Träger-Nachzüge im Slice und
     haben keinen Eintrag.
 - **Folge-Slices:** keine neuen. Übergabe ohne neuen Slice:
-  [slice-routing-sdk-beispiel-target](../open/slice-routing-sdk-beispiel-target.md) (SDK-Abschnitte,
+  [slice-routing-sdk-beispiel-target](../in-progress/slice-routing-sdk-beispiel-target.md) (SDK-Abschnitte,
   Beispiel-Flags) und [slice-routing-sdk-realserver-e2e](../open/slice-routing-sdk-realserver-e2e.md).
 - **Risiken aus §6:** Zwei Quellen **weiter offen** (Register, Lese-Schritt der Welle-Closure);
   Beispiele unter falscher Rolle **entfallen**; Aussage ohne Messung **teils entfallen, teils

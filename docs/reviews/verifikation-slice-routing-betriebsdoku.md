@@ -237,7 +237,7 @@ F-5 sind geschlossen, mit zwei verbleibenden Formpunkten (V-1, V-3).
 
 1. V-1 im Handbuch nachziehen (Kostenabsatz: auflösbare Anker, kein „Handbuch-Zug“) oder als LOW hinnehmen und in §7 des Plans nennen.
 2. V-2 als Folge-Slice-Kandidat oder benannte Hinnahme führen (operative Abhilfe der inkompatiblen Schemaänderung im Handbuch).
-3. §6-Ausgänge eintragen: „Aussage ohne Messung“ → ausgeführt, V-3 bleibt als Hinweis; „Beispiele unter der falschen Rolle“ → Beispiele unter `adm`/`rdr` gelaufen (gedruckt in §2 und im Review); „Zwischenzeit mit den SDK-Packages“ → weiter offen bis [`slice-routing-sdk-beispiel-target`](../plan/planning/open/slice-routing-sdk-beispiel-target.md).
+3. §6-Ausgänge eintragen: „Aussage ohne Messung“ → ausgeführt, V-3 bleibt als Hinweis; „Beispiele unter der falschen Rolle“ → Beispiele unter `adm`/`rdr` gelaufen (gedruckt in §2 und im Review); „Zwischenzeit mit den SDK-Packages“ → weiter offen bis [`slice-routing-sdk-beispiel-target`](../plan/planning/in-progress/slice-routing-sdk-beispiel-target.md).
 4. Closure-Notiz mit Lerneintrag, Beobachtungs-Register (Eintrag `fixrunde-ohne-reviewer-lesung`: die enge Fassung trägt diesen Fall), drei Paarungen der Welle.
 
 **Re-Review:** nein (§8).
