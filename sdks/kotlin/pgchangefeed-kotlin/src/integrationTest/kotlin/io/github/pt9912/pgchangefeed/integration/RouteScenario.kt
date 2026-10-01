@@ -151,6 +151,19 @@ object RouteScenario {
         val foreign = targeted.filter {
             it.table != PhaseEnvironment.table || it.region != PhaseEnvironment.routeTargetA
         }
+        val ownUnfiltered = own(unfiltered)
+        targeted.forEach { println("RECEIVED_TARGETED change_id=${it.changeId} table=${it.table} region=${it.region}") }
+        ownUnfiltered.forEach {
+            println("RECEIVED_UNFILTERED change_id=${it.changeId} table=${it.table} region=${it.region}")
+        }
+        // The line carries the measured count of foreign changes before the
+        // checks below, so a foreign receipt is visible in the line itself.
+        println(
+            "ROUTE_RESULT target=${PhaseEnvironment.routeTargetA} targeted=${targeted.size} foreign=${foreign.size} " +
+                "unfiltered=${ownUnfiltered.size} quiet_seconds=$quietSeconds",
+        )
+        System.out.flush()
+
         assertTrue(
             foreign.isEmpty(),
             "der Client mit Ziel ${PhaseEnvironment.routeTargetA} empfing fremde Changes: " +
@@ -158,16 +171,5 @@ object RouteScenario {
         )
         assertTrue(own(targeted).isNotEmpty(), "der Client mit Ziel empfing keine Change dieser Phase")
         assertTrue(hasAllThree(unfiltered), "der Client ohne Ziel sah nicht alle drei Gruppen")
-
-        val ownUnfiltered = own(unfiltered)
-        targeted.forEach { println("RECEIVED_TARGETED change_id=${it.changeId} table=${it.table} region=${it.region}") }
-        ownUnfiltered.forEach {
-            println("RECEIVED_UNFILTERED change_id=${it.changeId} table=${it.table} region=${it.region}")
-        }
-        println(
-            "ROUTE_RESULT target=${PhaseEnvironment.routeTargetA} targeted=${targeted.size} foreign=0 " +
-                "unfiltered=${ownUnfiltered.size} quiet_seconds=$quietSeconds",
-        )
-        System.out.flush()
     }
 }

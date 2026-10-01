@@ -161,12 +161,6 @@ internal static class RouteScenario
         var foreign = targeted
             .Where(r => r.Table != PhaseEnvironment.Table || r.Region != PhaseEnvironment.RouteTargetA)
             .ToList();
-        Assert.True(foreign.Count == 0,
-            "der Client mit Ziel " + PhaseEnvironment.RouteTargetA + " empfing fremde Changes: " +
-            string.Join(", ", foreign.Select(r => $"{r.ChangeId}(region={r.Region})")));
-        Assert.NotEmpty(Own(targeted));
-        Assert.True(HasAllThree(unfiltered), "der Client ohne Ziel sah nicht alle drei Gruppen");
-
         var ownUnfiltered = Own(unfiltered).ToList();
         foreach (var row in targeted)
         {
@@ -176,8 +170,16 @@ internal static class RouteScenario
         {
             PhaseEnvironment.Print($"RECEIVED_UNFILTERED change_id={row.ChangeId} table={row.Table} region={row.Region}");
         }
+        // The line carries the measured count of foreign changes before the
+        // checks below, so a foreign receipt is visible in the line itself.
         PhaseEnvironment.Print(
-            $"ROUTE_RESULT target={PhaseEnvironment.RouteTargetA} targeted={targeted.Count} foreign=0 " +
+            $"ROUTE_RESULT target={PhaseEnvironment.RouteTargetA} targeted={targeted.Count} foreign={foreign.Count} " +
             $"unfiltered={ownUnfiltered.Count} quiet_seconds={quietSeconds}");
+
+        Assert.True(foreign.Count == 0,
+            "der Client mit Ziel " + PhaseEnvironment.RouteTargetA + " empfing fremde Changes: " +
+            string.Join(", ", foreign.Select(r => $"{r.ChangeId}(region={r.Region})")));
+        Assert.NotEmpty(Own(targeted));
+        Assert.True(HasAllThree(unfiltered), "der Client ohne Ziel sah nicht alle drei Gruppen");
     }
 }

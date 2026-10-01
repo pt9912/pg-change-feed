@@ -92,7 +92,9 @@ class RouteCollector:
         def run() -> None:
             try:
                 consume(emit)
-            except BaseException as exc:  # noqa: BLE001 - kept for the scenario
+            except Exception as exc:
+                # Every fault of the consumer is kept in `failure`, so the
+                # scenario reports it on the main thread instead of losing it.
                 with self._lock:
                     if not self._stopped:
                         self._failure = exc
@@ -179,20 +181,22 @@ def run_pull(read: Callable[[str | None], list[RouteRow]]) -> None:
 
 def _evaluate(targeted: list[RouteRow], unfiltered: list[RouteRow], quiet_seconds: int) -> None:
     foreign = [r for r in targeted if r.table != TABLE or r.region != ROUTE_TARGET_A]
+    own_unfiltered = _own(unfiltered)
+    for r in targeted:
+        print(f"RECEIVED_TARGETED change_id={r.change_id} table={r.table} region={r.region}", flush=True)
+    for r in own_unfiltered:
+        print(f"RECEIVED_UNFILTERED change_id={r.change_id} table={r.table} region={r.region}", flush=True)
+    # The line carries the measured count of foreign changes before the checks
+    # below, so a foreign receipt is visible in the line itself.
+    print(
+        f"ROUTE_RESULT target={ROUTE_TARGET_A} targeted={len(targeted)} foreign={len(foreign)} "
+        f"unfiltered={len(own_unfiltered)} quiet_seconds={quiet_seconds}",
+        flush=True,
+    )
+
     assert not foreign, (
         f"der Client mit Ziel {ROUTE_TARGET_A} empfing fremde Changes: "
         + ", ".join(f"{r.change_id}(region={r.region})" for r in foreign)
     )
     assert _own(targeted), "der Client mit Ziel empfing keine Change dieser Phase"
     assert _has_all_three(unfiltered), "der Client ohne Ziel sah nicht alle drei Gruppen"
-
-    own_unfiltered = _own(unfiltered)
-    for r in targeted:
-        print(f"RECEIVED_TARGETED change_id={r.change_id} table={r.table} region={r.region}", flush=True)
-    for r in own_unfiltered:
-        print(f"RECEIVED_UNFILTERED change_id={r.change_id} table={r.table} region={r.region}", flush=True)
-    print(
-        f"ROUTE_RESULT target={ROUTE_TARGET_A} targeted={len(targeted)} foreign=0 "
-        f"unfiltered={len(own_unfiltered)} quiet_seconds={quiet_seconds}",
-        flush=True,
-    )

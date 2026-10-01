@@ -81,7 +81,8 @@ sdk_route_psql() {
 # `RECEIVED_TARGETED change_id=<id>` (Client mit Ziel) bzw.
 # `RECEIVED_UNFILTERED change_id=<id>` (Client ohne Ziel, nur Zeilen dieser
 # Phase) und eine Abschlusszeile `ROUTE_RESULT target=<Ziel> targeted=<n>
-# foreign=0 unfiltered=<m> quiet_seconds=<s>`. Der Runner hält jede Kennung
+# foreign=<k> unfiltered=<m> quiet_seconds=<s>` (<k> ist die gezählte Zahl
+# fremder Changes am Client mit Ziel; der Runner verlangt 0). Der Runner hält jede Kennung
 # gegen cdc.changes (route_target) und setzt SDK_ROUTE_REPORT fort. Das
 # Ruhefenster 0 kennzeichnet eine Pull-Fläche (der Test vergleicht dort die
 # Lesung mit Ziel mit zwei ungefilterten Lesungen und wartet nicht).
@@ -173,11 +174,16 @@ SQL
 
   local result_line
   result_line=$(printf '%s\n' "$test_output" | grep -E '^[[:space:]]*ROUTE_RESULT ' | sed -E 's/^[[:space:]]+//' | head -n1 || true)
-  if ! printf '%s' "$result_line" | grep -qE "^ROUTE_RESULT target=$SDK_ROUTE_TARGET_A targeted=[0-9]+ foreign=0 unfiltered=[0-9]+ quiet_seconds=$quiet([^0-9]|\$)"; then
-    echo "$prefix: $phase_name — die Abschlusszeile ROUTE_RESULT fehlt oder trägt nicht die erwartete Form (foreign=0, quiet_seconds=$quiet): ${result_line:-leer}" >&2
+  if ! printf '%s' "$result_line" | grep -qE "^ROUTE_RESULT target=$SDK_ROUTE_TARGET_A targeted=[0-9]+ foreign=[0-9]+ unfiltered=[0-9]+ quiet_seconds=$quiet([^0-9]|\$)"; then
+    echo "$prefix: $phase_name — die Abschlusszeile ROUTE_RESULT fehlt oder trägt nicht die erwartete Form (foreign=<n>, quiet_seconds=$quiet): ${result_line:-leer}" >&2
     exit 1
   fi
-  local targeted_count unfiltered_count
+  local targeted_count unfiltered_count foreign_count
+  foreign_count=$(printf '%s' "$result_line" | sed -E 's/.* foreign=([0-9]+) .*/\1/')
+  if [ "$foreign_count" != "0" ]; then
+    echo "$prefix: $phase_name — der Client mit Ziel $SDK_ROUTE_TARGET_A zählte $foreign_count fremde Change(s) (ROUTE_RESULT foreign=$foreign_count): $result_line" >&2
+    exit 1
+  fi
   targeted_count=$(printf '%s' "$result_line" | sed -E 's/.* targeted=([0-9]+) .*/\1/')
   unfiltered_count=$(printf '%s' "$result_line" | sed -E 's/.* unfiltered=([0-9]+) .*/\1/')
 
@@ -242,5 +248,11 @@ SQL
   if [ "$quiet" -eq 0 ]; then
     window_text="keine fremde (Lesung mit Ziel = Ziel-Teilmenge der ungefilterten Lesung davor und danach)"
   fi
-  SDK_ROUTE_REPORT="$SDK_ROUTE_REPORT; $phase_name: Ziel $SDK_ROUTE_TARGET_A, $targeted_count Change(s) mit Ziel $SDK_ROUTE_TARGET_A und $window_text, $unfiltered_count Change(s) dieser Phase am Client ohne Ziel (alle Gruppen $SDK_ROUTE_TARGET_A/$SDK_ROUTE_TARGET_B/ohne Ziel), SEEN nach ${seen_after_ms}ms ab dem letzten Commit (Versuch $attempt)"
+  # Die Lesung der Pull-Fläche ist nicht auf den Sentinel begrenzt: ihre Zahl
+  # zählt die Changes mit Ziel aller Routing-Phasen derselben Tabelle.
+  local targeted_scope="$targeted_count Change(s) mit Ziel $SDK_ROUTE_TARGET_A"
+  if [ "$quiet" -eq 0 ]; then
+    targeted_scope="$targeted_count $SDK_ROUTE_TARGET_A-Change(s) aller Routing-Phasen derselben Tabelle"
+  fi
+  SDK_ROUTE_REPORT="$SDK_ROUTE_REPORT; $phase_name: Ziel $SDK_ROUTE_TARGET_A, $targeted_scope und $window_text, gemessen foreign=$foreign_count, $unfiltered_count Change(s) dieser Phase am Client ohne Ziel (alle Gruppen $SDK_ROUTE_TARGET_A/$SDK_ROUTE_TARGET_B/ohne Ziel), SEEN nach ${seen_after_ms}ms ab dem letzten Commit (Versuch $attempt)"
 }
