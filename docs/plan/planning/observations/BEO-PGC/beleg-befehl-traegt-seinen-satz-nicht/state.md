@@ -22,8 +22,15 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **17×**
-(evidence/slice-transformationen-betriebsdoku.md — Form **Zitat/Befehl**, F-1 (HIGH, daher
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **19×** (der Text führte
+zuvor 17×, ausgezählt waren 18 Dateien; die neue Datei ist die neunzehnte:
+evidence/slice-routing-kern-label.md — Form **Skript-Kommentar/Mutationsliste**, F-2 (MEDIUM,
+daher Datei trotz Deckel): der Kopfkommentar des Alt-Tag-Laufs führte nach dem Entfernen
+der Vorbedingungen zu den Transformations-Objekten das Upgrade als ergänzend und die
+Eingabeseiten-Mutationen als wirksam weiter, ohne dass sie nachgefahren waren; vor dem Merge
+vom Reviewer gefunden, in der Fixrunde auf „erhält, nicht ergänzt“ und „nicht nachgefahren“
+gestellt, Ausgang unverändert **verkörpert**;
+evidence/slice-transformationen-betriebsdoku.md — Form **Zitat/Befehl**, F-1 (HIGH, daher
 Datei trotz Deckel): der neue Handbuch-Abschnitt zitierte einen PostgreSQL-Fehlertext mit
 `text` als Parametertyp und nannte den Review-Report von `antragsweg-schema` als Messung;
 der Report misst dort tatsächlich `unknown` als Parametertyp — die Herkunfts-Kennzeichnung

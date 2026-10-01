@@ -12,7 +12,11 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 16× (Dateien unter `evidence/`; die sechzehnte,
+Zähler: 17× (Dateien unter `evidence/`; die siebzehnte,
+`evidence/slice-routing-kern-label.md`, trägt F-1 (MEDIUM): Godoc und Testkommentar zur
+„letzten Spalte“ von `cdc.changes` widersprachen nach dem Zufügen von `route_target` dem
+Nachbarsatz im selben Block und einer Nachbardatei (Träger-Typ Go-Kommentar); vor dem Merge
+vom Reviewer gefunden, in der Fixrunde behoben, Ausgang unverändert **verkörpert**; die sechzehnte,
 `evidence/slice-routing-spec-nachzug.md`, trägt F-1 (MEDIUM): ein hinzugefügter Absatz in
 `LH-FA-CAP-009.a` ließ den unberührten Nachbarabsatz „Fail-closed vor dem Commit“
 unvollständig; vor dem Merge gefunden, in der Fixrunde behoben, Ausgang unverändert

@@ -1,0 +1,8 @@
+**Vorgang:** slice-routing-kern-label (Review F-2, MEDIUM; Verifikation §5 Zeile F-2)
+
+**Fund:** Der Slice entfernte aus Lauf 5 von `tools/harness/run-schema-rollout-guard-test.sh` (Alt-Tag-Lauf) die Vorbedingungen zu `rule_name`/`rule_spec`, den zwei Transformations-Funktionen und den Antragsarten, weil der jüngste Tag `v0.4.0` sie bereits trägt (der Reviewer las `git show v0.4.0:tools/schema/schema.yaml`; die Entfernung war richtig). Der Kopfkommentar des Laufs sagte aber weiter, das Upgrade ergänze diese Objekte (eine vor dem Upgrade geschriebene Antragszeile trage dort `NULL`), und führte die „rot färbenden Eingabeseiten-Mutationen“ der Transformations-Objekte weiter, ohne dass sie nach der Änderung nachgefahren waren; `harness/targets/schema-rollout.md` Punkt 5 trug dieselbe Aussage. Die Belegkraft des Laufs sank für diese Objekte von „Upgrade ergänzt“ auf „Upgrade erhält“, der Text sagte es nicht. Die Fixrunde (`2629d544`) kennzeichnete im Kopf „erhält, nicht ergänzt“ und die Eingabeseiten-Mutationen als nicht nachgefahren; der Verifier schloss F-2 am Text. Die Mutationen sind weiterhin nicht gefahren.
+
+**Form (Ausprägung):** Form **Skript-Kommentar/Mutationsliste**: ein Beleg (Lauf, Mutationsliste) nennt Mutationen als wirksam, die nach der Änderung am Lauf nicht mehr nachgefahren wurden; der Satz des Belegs reicht über das hinaus, was der geänderte Lauf trägt. Schwere MEDIUM, daher eine Datei trotz Deckel; vor dem Merge vom Reviewer gefunden.
+
+Quelle: `docs/reviews/review-slice-routing-kern-label.md` (F-2) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-routing-kern-label.md` (§5 Zeile F-2). <!-- d-check:status-provenance -->

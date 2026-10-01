@@ -30,7 +30,14 @@ Domänenlogik in SQL).
 [`SPEC-008`](../../../../spec/pflichtenheft.md) (Zeile `schema`), die
 Routing-Regelform (neue Kennung aus `slice-routing-spec-nachzug`),
 [`ARC-003`](../../../../spec/architecture.md) (Capture-Pfad). Die Spec führt: der
-Slice setzt `slice-routing-spec-nachzug` voraus und ändert sie nicht.
+Slice setzt `slice-routing-spec-nachzug` voraus und plant keine Spec-Änderung. Eine
+einzige Änderung an [`spec/pflichtenheft.md`](../../../../spec/pflichtenheft.md)
+(Abhilfe-Grenze zu [`LH-FA-CFG-008.a`](../../../../spec/pflichtenheft.md),
+[`SPEC-032`](../../../../spec/pflichtenheft.md) und
+[`SPEC-008`](../../../../spec/pflichtenheft.md), dazu eine Historie-Zeile) entstand
+im Lauf als Folge des Architect-Verdikts
+[`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
+zu V3 (Commit `f98bdbc0`); `spec/lastenheft.md` blieb unberührt.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
@@ -88,7 +95,7 @@ Liefer-Punkte:
 
 ## 2. Definition of Done
 
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (A, B): die Auswertung ist
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (A, B): die Auswertung ist
       deterministisch und geordnet — zwei treffende Regeln: die kleinere `order`
       gewinnt; keine treffende Regel: leeres Ziel; ein abwesender Wert (NULL,
       unverändertes TOAST, bei DELETE ohne volle Replica-Identität jede
@@ -98,13 +105,17 @@ Liefer-Punkte:
       `ErrRoutingNotApplicable`, `classifyRunError` bildet auf `schema` ab, die
       Transaktion wird weder persistiert noch bestätigt. *Zu belegen durch:*
       Domänen-Tabellentest (Happy/Boundary/Negative), `mapper`-Test mit hand-gebauter
-      Bindung, `classifyRunError`-Test, `make test`.
-- [ ] [`LH-FA-ADM-003`](../../../../spec/lastenheft.md) (B): ein Test unter `-race`
+      Bindung, `classifyRunError`-Test, `make test`. *Beleg (Verifier):*
+      Verifikations-Report §2 Zeile 1 (`make test` Exit 0, Mutationen M-1 und M-2 rot).
+- [x] [`LH-FA-ADM-003`](../../../../spec/lastenheft.md) (B): ein Test unter `-race`
       belegt den gleichzeitigen Zugriff auf die Regelliste aus zwei Goroutinen
       (Schnappschuss-Semantik wie `Assembler.SetTransformation`); `make a-check`
       zeigt die Routing-Regel in `internal/domain/**` ohne Import aus einer anderen
-      Schicht. *Zu belegen durch:* `make test`, `make a-check`.
-- [ ] [`LH-FA-DAT-006`](../../../../spec/lastenheft.md) (C): `route_target` überlebt
+      Schicht. *Zu belegen durch:* `make test`, `make a-check`. *Beleg (Verifier):*
+      Verifikations-Report §2 Zeile 2 (`TestAssemblerRoutesAreRaceFree`, `make gates`
+      mit `a-check`: 0 Befunde; der Lock-Entzug in `SetRoute` ist vom Verifier nicht
+      nachgefahren, die Mutation M4 des Reviews ist übernommen).
+- [x] [`LH-FA-DAT-006`](../../../../spec/lastenheft.md) (C): `route_target` überlebt
       die Persistierung beider Insert-Wege (WAL, Backfill) und das Lesen über
       `cdc.changes`; `NULL` liest als „nicht geroutet" (nicht als `wal`-artiger
       Default: die View führt `route_target` ohne `COALESCE`); `make schema-rollout`
@@ -117,31 +128,46 @@ Liefer-Punkte:
       lesbar; die Rechte der drei Rollen auf der View stehen nach dem Rollout
       (`nacharbeit-roles.sql` läuft nach dem Vorlauf). *Zu belegen durch:*
       `make test-store`, `make test-replication`, `make schema-rollout` (zweimal),
-      Alt-Tag-Lauf.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
-      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+      Alt-Tag-Lauf. *Beleg (Verifier):* Verifikations-Report §1 und §2 Zeile 3
+      (`make test-store` Exit 0, `make test-replication` Exit 0, Rollout zweimal Exit 0
+      mit View ohne `COALESCE`, Alt-Tag-Lauf Exit 0 mit Vorlauf
+      `DROP VIEW cdc.changes`, Rechte `cdc_reader` ja, `cdc_admin` und `cdc_capture` nein;
+      Mutationen M-3 und M-4 rot). Die gedruckte Abschlusszeile von Lauf 5 nennt weder
+      `cdc.changes` noch `route_target` (V-1, LOW, Entscheidung in §6).
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9). *Beleg:*
+      Verifikations-Report §1 (Exit 0).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+      Self-Review (Modul 8). *Beleg:* Report
+      `docs/reviews/review-slice-routing-kern-label.md` (0 HIGH, 3 MEDIUM F-1 bis F-3,
+      3 INFO). Die Fixrunde (`2629d544`: Kommentare, Kopfkommentar des Skripts) und der
+      Nachzug zu [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
+      (`f98bdbc0`) sind **nicht** von einem Reviewer erneut gelesen
+      worden: der Verifier hat F-1 bis F-3 am Text und am Diff geschlossen
+      (Verifikations-Report §5, V-3 in §7 als Prozessbefund geführt). Ein separates
+      Re-Review hat es nicht gegeben; die Fixrunde änderte nur Kommentare, keine Anweisung.
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-routing-kern-label.md`
-      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `harness/targets/schema-rollout.md` und
+      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13). *Beleg:*
+      Verifikations-Report §1 und §2 Zeile 6 (12 Zeilen stimmen).
+- [x] Doku-Update: `harness/targets/schema-rollout.md` und
       `harness/README.md` nur, soweit der Suchlauf eine bewegte Beschreibung findet
       (Schema-Rollout-Beschreibung); das Benutzerhandbuch bleibt unberührt
       (Aufschub-Adresse: `slice-routing-betriebsdoku` §2, Gegenstand: die Spalte
       `route_target` in der View `cdc.changes` und ihre Lesesemantik im
       Handbuch-Abschnitt „Änderungen lesen" und in der Beschreibung der
-      Zugriffswege; `NULL` heißt „nicht geroutet", nicht „wal").
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+      Zugriffswege; `NULL` heißt „nicht geroutet", nicht „wal"). *Beleg (Verifier):*
+      Verifikations-Report §2 Zeile 7.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
-      Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+      Antwort und wird in §7 notiert (§7: drei neue `evidence/`-Dateien).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
@@ -165,6 +191,7 @@ Liefer-Punkte:
 | `tools/schema/plan.yaml`, `tools/schema/down.sql` | update (Erzeugnis, geliefert) | Pflicht-Report und Rollback-Artefakt des echten `--execute`-Laufs gegen ein frisches Ziel (erster von zwei Läufen, Ziel-Host `cdc-test-postgres` wie im Bestand); `tools/schema/rollout-restore.sh` stellt sie nach Test-Läufen wieder her. |
 | `tools/harness/run-schema-rollout-guard-test.sh` | update (geliefert) | der Alt-Tag-Lauf (Lauf 5): belegt den Vorlauf über einen Alt-Bestand, prüft zusätzlich die Rechte der drei Rollen auf `cdc.changes` und `route_target` NULL der Alt-Zeile. Die Vorbedingungen zu den Transformations-Funktionen, den Spalten `rule_name`/`rule_spec` und den Antragsarten sind entfernt: der jüngste Tag `v0.4.0` (2026-09-30) trägt sie bereits, der Lauf endete am Arbeitsbaum dieser Änderung an der ersten davon (gemessen; die Vorbedingung prüft den Stand des Tags, nicht die Änderung); Vorbedingung bleibt „der Tag trägt `route_target` noch nicht". `grep` auf die Namen der fünf Views im Skript: 0 Treffer, eine feste View-Liste trägt es nicht. |
 | `harness/targets/schema-rollout.md` | update (geliefert) | Beschreibung des Alt-Tag-Laufs (Belege, Punkt 5) um die Rechte auf `cdc.changes`, `route_target` und die geänderte Vorbedingung nachgezogen. |
+| `docs/plan/adr/0140-…`, `docs/plan/adr/README.md`, `spec/pflichtenheft.md`, `welle-routing.md` und drei Pläne unter `open/` (nicht im Start-Plan, entstanden im Lauf) | neu bzw. update (geliefert, Commit `f98bdbc0`) | Folge des Architect-Verdikts zu V3 (Review F-3): `ADR-0140` samt Index, Schärfung der Abhilfe-Grenze im Pflichtenheft (`LH-FA-CFG-008.a`, `SPEC-032`, `SPEC-008`, Historie-Zeile), V3 in `welle-routing.md` als beantwortet, Anpassung der Folge-Pläne. Der Plan-Kopf nannte die Spec als unberührt (Verifikation V-4); Kopf und diese Zeile sind angeglichen. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „`cdc.change` und
 `cdc.changes` tragen eine Spalte mehr; `model.Change` trägt ein Feld mehr; eine
@@ -228,8 +255,27 @@ geschrieben.
   neu an, `nacharbeit-roles.sql` vergibt die Rechte danach neu (*hergeleitet* aus
   `harness/targets/schema-rollout.md` Ablauf Schritt 4–6, an der geänderten View nicht
   geprüft). Die Transformations-Welle änderte keine bestehende View; dies ist der
-  erste Rollout dieser Art seit `ADR-0114`. — **Ausgang:** bei der Closure
-  einzutragen (Alt-Tag-Lauf, gedruckte Zeile, Rollen-Lesetest).
+  erste Rollout dieser Art seit `ADR-0114`. — **Ausgang:** entfallen. Der Alt-Tag-Lauf
+  endet mit Exit 0 über den Vorlauf `DROP VIEW cdc.changes` (gedruckt: `Lauf 5 OK — Tag
+  v0.4.0: Exit 0 (Rollout des Tags), Exit 0 (Arbeitsbaum, mit Vorlauf), Exit 0
+  (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar`), die Rechte
+  stehen danach (`cdc_reader` ja, `cdc_admin` und `cdc_capture` nein, vom Verifier an
+  einer Wegwerf-DB gegengemessen); Verifikations-Report §1 und §2 Zeile 3. Neues Risiko
+  daraus: **Vorbedingung des Alt-Tag-Laufs** (nächster Punkt).
+- **Vorbedingung des Alt-Tag-Laufs (Tag trägt `route_target` noch nicht) kippt mit dem
+  nächsten `v*`-Tag, der diesen Slice enthält** (Review F-5, Verifikation V-2; neu in
+  §6 aufgenommen bei der Closure). Dann bricht Lauf 5 in
+  `tools/harness/run-schema-rollout-guard-test.sh` (Vorbedingung am Tag-Stand,
+  Zeile 279 am Stand der Verifikation) laut an dieser Stelle, wie er an den alten
+  Vorbedingungen gebrochen wäre. Das ist das zweite Auftreten des Musters „Tag holt die
+  Vorbedingung ein“. — **Ausgang:** weiter offen. Adresse: der Release-Zug, der den
+  nächsten `v*`-Tag mit diesem Slice setzt, und der Planner des ersten Schema-Slice
+  danach, der das Delta gegen den dann jüngsten Tag neu bestimmt (Muster des
+  Registereintrags; `slice-routing-antragsweg` plant eine Änderung am Lauf 5 und ist der
+  nächste Slice, der das Skript berührt). Wächter: Lauf 5 scheitert laut („Vorbedingung fehlgeschlagen“), kein stilles Grün; kein
+  Gate fährt das Skript. Register: `BEO-PGC/alt-tag-lauf-vorbedingung-am-juengsten-tag`,
+  jetzt 2× (neue `evidence/slice-routing-kern-label.md`), Stand `offen`, Trigger auf
+  diesen Slice umgeschrieben.
 - **Erreichbarkeit der Nichtanwendbarkeit auf Unit-Ebene (V3 der Welle, offen laut
   [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md),
   beantwortet durch
@@ -262,44 +308,128 @@ geschrieben.
   39 Aufrufstellen (gemessen, `git grep -n 'NewChange(' 30fd6cb5 -- internal test tools`).
   Der Plan ändert die Signatur nicht (Muster `WithOrigin`); ein Test, der
   Gleichheit auf `model.Change` prüft, kann am neuen Feld brechen. — **Ausgang:**
-  bei der Closure einzutragen.
+  entfallen: `make test` Exit 0 (Verifikations-Report §1), `NewChange` unverändert.
 - **Zwei Schema-Beschreibungen.** `tools/schema/schema.yaml` (Rollout) und
   `internal/adapters/driven/postgresstorage/schema.sql` (Store-Tier) beschreiben
   `cdc.change`; wird nur eine bewegt, läuft ein Tier gegen eine andere Spalte als der
   Betrieb. Dieselbe Lese-Semantik von `NULL` steht zudem zweimal — in der View und im
   Go-Lesepfad des Store-Adapters (`BEO-PGC/lese-doppelquelle`, verkörpert, 3×). —
-  **Ausgang:** bei der Closure einzutragen (Suchlauf Zeile 1; Vertragstest
-  View gegen Go-Lesepfad).
+  **Ausgang:** entfallen. Beide Beschreibungen tragen die Spalte (Suchlauf Zeile 1,
+  Befund im Feld von §3); der Vertragstest `TestChangesViewCarriesRouteTargetLikeReadChanges`
+  hält View und Go-Lesepfad gegeneinander, die Mutation M-3 (`COALESCE` in der View) färbt
+  ihn rot (Verifikations-Report §4).
 - **`plan.yaml` und `down.sql` als committete Erzeugnisse.** Ein Test- oder
   Beispiel-Lauf, der `make schema-rollout` aufruft, überschreibt sie
   (`BEO-PGC/test-schreibt-in-committete-datei`, verkörpert, 4×;
-  `tools/schema/rollout-restore.sh`). — **Ausgang:** bei der Closure einzutragen
-  (`make test-rollout-restore` grün, `git status` nach den Läufen sauber bis auf den
-  beabsichtigten Diff).
+  `tools/schema/rollout-restore.sh`). — **Ausgang:** entfallen: `make
+  test-rollout-restore` Exit 0, `git status --short` nach allen Läufen des Verifiers leer
+  (Verifikations-Report §1).
 - **Last der Auswertung je Change.** Lineare Suche über die Regeln der Tabelle je
   Change; *erwartet* klein, nicht gemessen
   ([`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
-  nennt für die Auswertung keine Kosten). — **Ausgang:** bei der Closure
-  einzutragen (gemessen mit einem Go-Benchmark, oder als nicht gemessen
-  gekennzeichnet).
+  nennt für die Auswertung keine Kosten). — **Ausgang:** weiter offen, nicht gemessen
+  (Review F-6, Verifikations-Report §6: „erwartet klein, nicht gemessen“). Adresse:
+  [`slice-routing-e2e`](../open/slice-routing-e2e.md) §6 (bei dieser Closure als eigener
+  Punkt dort aufgenommen: gedruckte Messung bei zehn und bei hundert Regeln, oder neue
+  Adresse).
 - **Coverage-Messgegenstand.** Neuer Code in der Domäne und im `mapper` liegt in der
   netzlos geprüften Fläche; die Spalten-Zugriffe im Store liegen im DB-Gegenstand
   (`BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code`, verkörpert, 3×;
-  `make coverage-gate`). — **Ausgang:** bei der Closure einzutragen.
+  `make coverage-gate`). — **Ausgang:** entfallen: `make gates` Exit 0 (enthält
+  `coverage-gate`), der DB-Teil im `make test-store`-Lauf des Verifiers gedruckt
+  `db-coverage: OK — DB-Adapter-Coverage 83.04% erfuellt Schwelle 80%` (Verifikations-Report
+  §1; der Wert ist lauf-gebunden, keine Zustandsgröße).
+- **Fixrunde ohne erneuten Review (Verifikation V-3).** DoD-Zeile 5 hängt an einem
+  Verifier-Befund über Text und Diff, nicht an einem zweiten Reviewer-Lauf. —
+  **Ausgang:** eingetreten, getragen durch die Lese-Handlung des Verifiers (§7).
+- **LOW V-1: die gedruckte Abschlusszeile von Lauf 5 nennt `cdc.changes` und
+  `route_target` nicht** (`tools/harness/run-schema-rollout-guard-test.sh:353`). —
+  **Ausgang:** akzeptiert, kein Aufschub-Träger. Der Beleg liegt an der Assertion des
+  Skripts (Rechte auf `cdc.changes`, `route_target IS NULL` der Alt-Zeile), die der
+  Verifier an einer Wegwerf-DB gegengemessen hat; die Zeile zählt die Rechte, ohne die
+  View zu nennen. Wer das Skript ohnehin anfasst (Adresse: `slice-routing-antragsweg`,
+  das Lauf 5 ändert), darf die Zeile ergänzen; eine eigene Arbeit ist es nicht wert.
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
-
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** V3 (Erreichbarkeit der Nichtanwendbarkeit): Ausgang eingetragen,
-  beantwortet durch
-  [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md);
-  die übrigen Punkte bei der Closure.
+- **Was hat funktioniert:** Der Kern trägt die drei Liefer-Punkte: reine Auswertung in
+  der Domäne, Auswertung im `Assembler` vor der Transformation mit dem Persist-before-ACK-Pfad
+  bei `ErrRoutingNotApplicable`, Spalte `route_target` über beide Insert-Wege und die View ohne
+  `COALESCE`. Gemessen im Verifier-Lauf: `make test`, `make test-store`,
+  `make test-replication`, zweimal `make schema-rollout`, Alt-Tag-Lauf, `make gates`,
+  `make docs-check`, Suchlauf (12 Zeilen) alle Exit 0 (Verifikations-Report §1). Die vorab
+  benannte Messung zu V3 (erste Aufgabe des Slice, Unit-Ebene) hat die Architect-Frage
+  rechtzeitig ausgelöst; `ADR-0140` beantwortet sie, bevor `slice-routing-e2e` den
+  Negative-Beleg schneidet.
+- **Was ging anders als geplant:** Eine Fixrunde (F-1, F-2 MEDIUM; nur Kommentare und
+  Skript-Kopftext) und ein Architect-Zug (F-3, V3 → `ADR-0140` samt Schärfung der
+  Pflichtenheft-Stellen, Commit `f98bdbc0`); die Spec-Änderung stand im Plan-Kopf als
+  „unberührt“ (V-4, angeglichen). Das Alt-Tag-Skript verlor seine Vorbedingungen zu den
+  Transformations-Objekten, weil der Tag `v0.4.0` sie bereits trägt; die Belegkraft für diese
+  Objekte sank von „Upgrade ergänzt“ auf „Upgrade erhält“, der Skript-Text sagt es seit der
+  Fixrunde. Die Fixrunde und der Nachzug zu `ADR-0140` (Link in §2) wurden nicht von einem Reviewer erneut
+  gelesen; der Verifier schloss F-1 bis F-3 am Text und am Diff (V-3), ein Re-Review hat es
+  nicht gegeben.
+- **Steering-Loop-Eintrag:** geschärfte Regel plus Risiko-Adresse, kein neuer Sensor.
+  Ein Skript-Beleg mit einer Vorbedingung am jüngsten Tag (Alt-Tag-Lauf) altert mit jedem
+  Release: die Vorbedingung beschreibt das Delta des Slice gegen einen beweglichen Bezug, und
+  der nächste `v*`-Tag macht sie falsch (zweites Auftreten; gemessen: der Lauf scheiterte am
+  Arbeitsbaum an der ersten alten Vorbedingung, Plan §3). Die Regel für Planner und
+  Implementer: eine solche Vorbedingung wird an eine **feste Referenz** gebunden (ein benannter
+  Tag-Stand, nicht „der jüngste“) oder als Risiko mit Adresse und Wächter in §6 geführt; dieser
+  Slice führt sie als Risiko (§6, Punkt „Vorbedingung des Alt-Tag-Laufs“). Träger ist das
+  Register (`BEO-PGC/alt-tag-lauf-vorbedingung-am-juengsten-tag`, 2×, unter der Schwelle) und
+  die Lese-Handlung des Planners beim Start des nächsten Schema-Slice; ein Sensor ist
+  ausgeschlossen, weil kein Gate das Skript fährt. Zweiter Teil, §3.12 Instanz A: die Zahl der
+  Mutationen trägt ihren Ursprung. Die „22 Mutationen“ des Implementers sind **übernommen**
+  (der Implementer-Bericht ist der Ursprung, nicht nachgemessen); der Review führt neun als
+  gefahren (M1 bis M8, D1; vom Verifier **übernommen**, nicht nachgemessen), der Verifier hat
+  vier selbst gefahren (M-1 bis M-4, **gemessen**, Verifikations-Report §4). Die Belegkraft
+  einer Mutations-Zahl ist die Zahl der Läufe eines unabhängigen Lesers, nicht die Zahl, die
+  der Autor nennt.
+- **Beobachtungs-Register (`../observations/`):**
+  - **`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`** (verkörpert) — F-1 (MEDIUM, Nachzug
+    widerspricht dem Nachbarn im Go-Kommentar): neue `evidence/slice-routing-kern-label.md`,
+    Zähler **17×**. V-4 (LOW, Plan-Kopf „Spec unberührt“ gegen die Änderung durch das
+    Verdikt): vor dem Merge vom Verifier gefunden, bekannter Träger-Typ, nach der Deckel-Regel
+    keine weitere Datei.
+  - **`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`** (verkörpert) — F-2 (MEDIUM,
+    Skript-Kopfkommentar und Mutationsliste tragen den Beleg nach der Änderung nicht mehr):
+    neue `evidence/slice-routing-kern-label.md`, Zähler **19×** (real ausgezählt; der Text
+    führte zuvor 17×, ausgezählt waren 18 Dateien). V-1 (LOW, Abschlusszeile von Lauf 5
+    nennt `cdc.changes`/`route_target` nicht): vor dem Merge vom Verifier gefunden, keine
+    weitere Datei, Entscheidung in §6 (akzeptiert).
+  - **`BEO-PGC/alt-tag-lauf-vorbedingung-am-juengsten-tag`** (offen) — F-5 / V-2: neue
+    `evidence/slice-routing-kern-label.md`, Zähler **2×**, unter der Schwelle; Trigger auf
+    den Tag mit `route_target` umgeschrieben.
+  - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (neu, offen) — V-3 in diesem Slice und V-3 in
+    `slice-routing-spec-nachzug`: zwei `evidence/`-Dateien, Zähler **2×**, unter der Schwelle.
+  - F-3 (MEDIUM, V3 ohne Verdikt): **keine Beobachtung** — die Vorab-Bedingung war im Plan und
+    in der Welle vorab benannt und wurde wie vorgesehen über den Architect beantwortet
+    (`ADR-0140`). F-4 (Handbuch „letzte Spalte“, Adresse `slice-routing-betriebsdoku`) und
+    F-6 (Last ungemessen, §6): Einzelfälle mit Adresse, keine Beobachtung.
+  - Kein Eintrag steht bei 3× oder mehr ohne Ausgang an, den dieser Slice neu erreichte.
+- **Folge-Slices:** keine neuen. Übergaben: `slice-routing-betriebsdoku` (Handbuch: Spalte
+  `route_target`, Satz „`origin` ist die letzte Spalte“, F-4), `slice-routing-e2e` (Last der
+  Auswertung in §6 aufgenommen; Systemmessung der Nichtanwendbarkeit nach `ADR-0140`),
+  `slice-routing-antragsweg` (berührt Lauf 5 des Alt-Tag-Skripts; V-1 darf dort mitgezogen
+  werden).
+- **Risiken aus §6:** View-Signaturänderung **entfallen**; V3 **beantwortet**
+  ([`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)),
+  Systemmessung bei `slice-routing-e2e`; Konstruktor-Ripple **entfallen**; zwei
+  Schema-Beschreibungen **entfallen**; `plan.yaml`/`down.sql` **entfallen**; Last der
+  Auswertung **weiter offen** (Adresse `slice-routing-e2e` §6); Coverage-Messgegenstand
+  **entfallen**; Vorbedingung des Alt-Tag-Laufs **weiter offen** (Adresse: Release-Zug und
+  Planner des ersten Schema-Slice danach); Fixrunde ohne erneuten Review **eingetreten**;
+  V-1 **akzeptiert**.
+- **Drei Paarungen:** dieser Slice gehört zu [welle-routing](../welle-routing.md) (offen) —
+  die Prüfung läuft regelkonform bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`.
+  (a) Anker: der Lerneintrag verkörpert nichts neu (Risiko mit Adresse, Register 2×);
+  (b) Folge-Slice: keiner neu, die genannten Pläne liegen unter `open/`; (c) Register: die
+  genannten Kennungen existieren als Verzeichnis, jede trägt ein nicht leeres `evidence/`.
+- **Validator (Modul 8):** entfällt — der Kern ohne Antragsweg ist für Betreiber noch nicht
+  nutzbar; der Nutzer-Bedarf ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md)) wird erst durch
+  den Wellen-Beleg validierbar.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

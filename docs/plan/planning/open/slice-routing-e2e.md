@@ -251,6 +251,11 @@ geschrieben.
   ist *hergeleitet* aus dem Abwesenheits-Vertrag von `LH-FA-DAT-005` und der
   Transformations-ADR, an PostgreSQL 17 und 18 nicht gemessen. — **Ausgang:** bei der
   Closure einzutragen (Messung, gedruckte Zeilen je Version).
+- **Last der Auswertung je Change (übernommen aus `slice-routing-kern-label` §6).** Die
+  Auswertung ist eine lineare Suche über die Regeln der Tabelle je Change; *erwartet*
+  klein, nicht gemessen. — **Ausgang:** bei der Closure einzutragen (eine gedruckte
+  Messung der Auswertung bei zehn und bei hundert Regeln, etwa als Go-Benchmark im
+  Paket `mapper`, oder die Kennzeichnung als nicht gemessen mit neuer Adresse).
 - **Laufzeit des Testpakets gegen das 60-Minuten-Limit von `e2e.yml`.** Jede Phase
   verlängert den Lauf; ob das Limit reicht, ist bis zum Lauf auf dem gehosteten Runner
   offen (`BEO-PGC/github-actions-unverifizierbar-lokal`, verkörpert, 8×; kein

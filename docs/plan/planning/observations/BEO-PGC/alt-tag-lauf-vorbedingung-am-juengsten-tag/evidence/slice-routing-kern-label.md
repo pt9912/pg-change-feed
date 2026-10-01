@@ -1,0 +1,8 @@
+**Vorgang:** slice-routing-kern-label (Plan §3 Zeile `run-schema-rollout-guard-test.sh`, Review F-2 und F-5, Verifikation V-2)
+
+**Fund:** Am Start des Slice trug Lauf 5 noch die Vorbedingungen des Deltas von `slice-transformationen-antragsweg-schema` (Spalten `rule_name`/`rule_spec`, die zwei Transformations-Funktionen, die zwei Antragsarten). Der jüngste `v*`-Tag ist inzwischen `v0.4.0` (2026-09-30) und trägt sie (`git show v0.4.0:tools/schema/schema.yaml`); der Lauf endete am Arbeitsbaum des Slice an der ersten dieser Vorbedingungen (Plan §3, gemessen). Der Slice entfernte sie und legte die Vorbedingung auf sein Delta: der Tag trägt `route_target` noch nicht. Lauf 5 lief real: Exit 0 (Rollout des Tags), Exit 0 (Arbeitsbaum, mit Vorlauf), Exit 0 (Arbeitsbaum, zweiter Lauf); Reviewer (F-5) und Verifier (V-2) halten fest, dass die neue Vorbedingung mit dem nächsten `v*`-Tag, der diesen Slice enthält, in derselben Weise kippt.
+
+**Form (Ausprägung):** dieselbe Ursache wie im ersten Beleg (Vorbedingung am Delta eines Slice, gebunden an den jüngsten Tag, den ein Release einholt). Neu gegenüber dem ersten Beleg: das Einholen war hier bereits eingetreten (Tag `v0.4.0` nach dem letzten Delta), die Vorbedingungen mussten im Slice auf das neue Delta gelegt werden, und das nächste Einholen ist absehbar (Plan §6, Adresse genannt). Schwere INFO, vor dem Merge von Reviewer und Verifier benannt.
+
+Quelle: `docs/reviews/review-slice-routing-kern-label.md` (F-2, F-5) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-routing-kern-label.md` (§5, V-2). <!-- d-check:status-provenance -->
