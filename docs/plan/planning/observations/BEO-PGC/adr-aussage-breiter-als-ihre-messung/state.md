@@ -88,6 +88,13 @@ liefert zwei Treffer.
   den Trägern (`harness/README.md`, Handbuch), nicht in der ADR; ein Leser der ADR sieht weiterhin
   den breiteren Satz ohne Zeiger dorthin (Träger-Slice `slice-leerlauf-phase-last-in-stuecken`).
 
+- `ADR-0139` Festlegung 1 („derselbe Mechanismus wie für Ausschluss- und Transformationsstand“
+  und ein nicht lesbarer Stand endet `configuration`; am Bestand gelesen: die Lesefehler der
+  zwei Nachbarstände enden mit der Klasse der Ursache, ihre Tests binden es): berichtigt mit
+  `ADR-0141` (Teil-Berichtigung eines Halbsatzes). Die Aussage nannte die Menge der drei Stände
+  nicht, an der sie geprüft war; sie löste im Review `slice-routing-backfill-pfad` ein HIGH aus
+  (F-1) und im Re-Review ein MEDIUM (F-N1), eine Fixrunde wurde zurückgenommen.
+
 Verwandt, nicht doppelt gezählt: `BEO-PGC/architect-verdikt-rollen-scope-luecke`.
 
 **Deckel bei 10× (seit welle-backfill-bestand):** weitere Auftreten, die vor dem Merge vom
@@ -96,4 +103,4 @@ Träger-Typ (ADR-Fitness-Function-Zeile, ADR-Prosa-Aussage) treffen, bekommen ke
 `evidence/`-Datei, sondern stehen mit Finding-Kennung in der Closure-Notiz des Slice
 (`../../README.md`). Ausgang unverändert **verkörpert**.
 
-Zähler: 10× (Dateien unter `evidence/`, gemessen mit `ls evidence | wc -l`).
+Zähler: 11× (Dateien unter `evidence/`, gemessen mit `ls evidence | wc -l`).

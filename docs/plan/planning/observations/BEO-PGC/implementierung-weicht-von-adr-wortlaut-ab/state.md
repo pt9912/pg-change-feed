@@ -33,5 +33,12 @@ Zuschnitts-Abweichung ist als Frage an den Auftraggeber in `welle-transformation
 (Abweichung 2) geführt und weder als Entscheidung dargestellt noch von Reviewer oder Verifier
 beanstandet. Der Vorgang zählt nicht; die Frage bleibt bei der Closure der Welle.
 
+Kein Auftreten: `slice-routing-backfill-pfad` setzte den Lesefehler eines Regelstands im Run
+auf die Klasse der Ursache und wich damit vom Wortlaut von `ADR-0139` Festlegung 1
+(`configuration`) ab. Die Abweichung folgte dem Bestand der zwei anderen Stände; falsch war die
+ADR-Aussage („derselbe Mechanismus“), nicht die Umsetzung — der Architect berichtigte sie mit
+`ADR-0141`. Die Gegenrichtung, eine Fixrunde, die dem Wortlaut folgte, wurde zurückgenommen.
+Der Vorgang zählt unter `BEO-PGC/adr-aussage-breiter-als-ihre-messung`, nicht hier.
+
 Zähler (abgeleitet): 2× (`evidence/slice-sdk-kotlin-publish-workflow.md`,
 `evidence/slice-transformationen-kern-rename.md`).

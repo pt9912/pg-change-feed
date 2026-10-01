@@ -78,7 +78,7 @@ Quellstand) bleibt unberührt.
 
 ## 2. Definition of Done
 
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) und
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) und
       [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Auswertung): eine
       Backfill-Change trägt das Ziel, das die Auswertung für den Quellwert der Zeile
       bestimmt (Herkunfts- und Inhaltsregel; Reihenfolge `order`; abwesender Wert ist
@@ -87,8 +87,11 @@ Quellstand) bleibt unberührt.
       dieselbe Regelliste bestimmte (Vertragstest über die gemeinsame
       Domänen-Funktion); die Auswertungsstelle ist eine — der Suchlauf in §3 findet
       keine zweite. *Zu belegen durch:* Use-Case-Tabellentest (`make test`), Store-
-      und Snapshot-Test (`make test-store`, `make test-replication`).
-- [ ] [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Fail-closed): der Regelstand
+      und Snapshot-Test (`make test-store`, `make test-replication`). *Beleg
+      (Verifier):* Verifikations-Report §2 Zeile 1 (`make test`, `make test-store`,
+      `make test-replication` Exit 0; Parität `TestBackfillAndWALRouteTargetsAreEqual`;
+      Mutationen M5 und S1 rot).
+- [x] [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Fail-closed): der Regelstand
       der Routing-Regeln wird einmal nach dem Öffnen des Snapshots gelesen, auf
       Anwendbarkeit geprüft (Klasse `schema`, vor der ersten Zeile) und ist der Stand
       des Runs; jeder weitere Block und der Zustand vor dem Commit lesen neu und
@@ -104,8 +107,17 @@ Quellstand) bleibt unberührt.
       `set_route` zwischen zwei Blöcken gegen reale PostgreSQL (`make test-store`),
       `make test`,
       Replay-Test des bestehenden E2E (`make test-integration`, nicht Teil dieses
-      Slice, hier nur nicht-brechend).
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Negative im Run: eine im Run
+      Slice, hier nur nicht-brechend). *Beleg (Verifier):* Verifikations-Report §2
+      Zeile 2 (acht Wechsel-Fälle, `TestExecuteOnlyRoutingStateChangesEndsRunAsConfiguration`,
+      `TestExecuteInapplicabilityPrecedesStateChange`, Store-Test; Mutationen M2, M3, M3b
+      rot). Der Lesefehler eines Standes endet mit der Klasse der Ursache
+      ([`ADR-0141`](../../adr/0141-run-regelstand-lesefehler-klasse-der-ursache.md)),
+      `TestExecuteRoutingReadFailureEndsRun` erwartet `storage: `. **Rest:** die
+      Replay-Invariante (`TestE2EBackfillReplayInvariant`) ist in diesem Slice nicht
+      gefahren (nicht-brechend *hergeleitet*), die Gesamtkette Snapshot → Run →
+      `route_target` ist bei [`slice-routing-e2e`](../open/slice-routing-e2e.md) §2
+      (Backfill-Bestand mit Label, `make test-integration`) belegt.
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Negative im Run: eine im Run
       nicht anwendbare Regel (`when.column` fehlt in `TableSnapshot.Columns()`)
       endet nach
       [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
@@ -116,31 +128,55 @@ Quellstand) bleibt unberührt.
       Heartbeat-Zustand, kein Halt des Erfassungspfads); dieselbe Prüffunktion der
       Domäne wie im Erfassungspfad, keine zweite Implementierung. *Zu belegen
       durch:* Use-Case-Test mit einem Snapshot, dem die Spalte fehlt; der Testname
-      nennt die Eingabe (`make test`, `make test-store`).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
-      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+      nennt die Eingabe (`make test`, `make test-store`). *Beleg (Verifier):*
+      Verifikations-Report §2 Zeile 3 (`TestExecuteInapplicableRoutingRuleEndsRunAsSchema`,
+      Store-Fall „Spalte fehlt“; Mutationen M2 und M6 rot).
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9). *Beleg
+      (Verifier):* Verifikations-Report §1 (Exit 0, `coverage-gate` 81,30 %, `a-check`
+      0 Befunde).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+      Self-Review (Modul 8). *Beleg:* Review
+      [`review-slice-routing-backfill-pfad`](../../../reviews/review-slice-routing-backfill-pfad.md)
+      (1 HIGH F-1, 2 LOW F-2 und F-3, 2 INFO F-4 und F-5) **und** Re-Review der Fixrunde 1
+      (`1487be88`)
+      [`review-slice-routing-backfill-pfad-fixrunde-1`](../../../reviews/review-slice-routing-backfill-pfad-fixrunde-1.md)
+      (0 HIGH, 1 MEDIUM F-N1, 1 LOW F-N2, 1 INFO F-N3). F-1 und F-N1 sind durch
+      [`ADR-0141`](../../adr/0141-run-regelstand-lesefehler-klasse-der-ursache.md) geschlossen
+      (Verifikations-Befund V-2 ebenso), F-N2 (Grenze PostgreSQL 18) steht in §6, F-N3 (INFO)
+      ist akzeptiert. Die Fixrunde 2 (`701c7e96`) nahm die Fehlerabbildung auf den gelesenen
+      Stand zurück: `git diff 55384d2f HEAD -- internal/application/usecase/backfill/service.go
+      internal/application/usecase/backfill/routing_test.go` ändert allein den Godoc von
+      `sameSet` in `service.go` (5 Zeilen, +3/−2; `routing_test.go` byte-gleich zu
+      `55384d2f`, gemessen bei der Closure). Ein weiteres Re-Review ist deshalb nicht
+      nötig. Kein offenes HIGH/MEDIUM.
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-routing-backfill-pfad.md`
-      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `spec/pflichtenheft.md` entfällt — `SPEC-029` (Run-Klasse
+      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13). *Beleg
+      (Verifier):* Verifikations-Report §1 und §2 Zeile 6 (25 Zeilen stimmen).
+- [x] Doku-Update: `spec/pflichtenheft.md` entfällt — `SPEC-029` (Run-Klasse
       `schema` auch für eine Routing-Regel), `SPEC-008` (Zeile `schema`, Absatz zur
       Nichtanwendbarkeit) und `LH-FA-CAP-009.a` trägt `slice-routing-spec-nachzug`
       (`ADR-0138` Folgepflicht); das Benutzerhandbuch (Abschnitt
       „Bestand als Backfill überführen") bleibt unberührt — Adresse:
       `slice-routing-betriebsdoku` §2 (Backfill-Bestand trägt das Label des
-      Regelstands zum Run; Altbestand-Neuerzeugung über einen neuen Run).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+      Regelstands zum Run; Altbestand-Neuerzeugung über einen neuen Run). Der Satz zum
+      nicht lesbaren Stand im Absatz „Fail-closed vor dem Commit“ ist mit
+      [`ADR-0141`](../../adr/0141-run-regelstand-lesefehler-klasse-der-ursache.md) im
+      Pflichtenheft nachgezogen (Commit `2e6b1432`); der Übergabe-Block in
+      `slice-routing-betriebsdoku` §2 bleibt gültig (§7). *Beleg (Verifier):*
+      Verifikations-Report §2 Zeile 7.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
-      Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+      Antwort und wird in §7 notiert (§7: eine neue `evidence/`-Datei, zwei
+      `state.md` fortgeschrieben).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
@@ -253,14 +289,23 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   (§3, synthetisch: bis rund 10 000 Zeilen der Queue etwa 8 % einer Blockdauer, bei
   100 000 Zeilen etwa 70 %, **übernommen**) gilt für **einen** Port; der zweite Port
   des Routings verdoppelt die Lesungen je Block (*hergeleitet*, nicht gemessen). —
-  **Ausgang:** bei der Closure einzutragen (Trigger des Verdikts: mehr als 10 000
-  Zeilen in der Queue einer Quelle; der Slice nennt die Verdopplung dort als
-  Konsequenz oder liest beide Zustände in einem Aufruf).
+  **Ausgang:** weiter offen. Der Slice liest beide Stände in getrennten Aufrufen (zwei
+  Lesungen je Block, zwei je Run außerhalb der Blöcke); die Verdopplung ist *hergeleitet*
+  aus dem Code, die Prozentzahlen des Verdikts sind *übernommen*, eine Messung der
+  Lesekosten mit zwei Ports liegt nicht vor (Verifikations-Report §3, §8). Adresse:
+  [`slice-routing-e2e`](../open/slice-routing-e2e.md) §6, Punkt „Lesekosten der Regelstände
+  im Backfill-Run“ (Messung oder Kennzeichnung als nicht gemessen mit neuer Adresse; Trigger des
+  Verdikts: mehr als 10 000 Zeilen in der Queue einer Quelle).
 - **Zwei Regelstände, ein Fail-closed.** Transformations- und Routing-Regeln ändern
   sich unabhängig voneinander; die Prüfung vergleicht beide. Ein Lesefehler endet
   bei allen drei Ständen mit der Klasse der Ursache, `configuration` gilt dem
-  Wechsel ([`ADR-0141`](../../adr/0141-run-regelstand-lesefehler-klasse-der-ursache.md)). — **Ausgang:** bei der
-  Closure einzutragen (Testfall: nur der Routing-Stand wechselt).
+  Wechsel ([`ADR-0141`](../../adr/0141-run-regelstand-lesefehler-klasse-der-ursache.md)). — **Ausgang:**
+  entfallen. Testfall `TestExecuteOnlyRoutingStateChangesEndsRunAsConfiguration` (nur der
+  Routing-Stand wechselt, Run `failed`/`configuration`); die Mutation „beide Routing-Vergleiche
+  entfernt bei bleibendem Transformationsvergleich“ färbt ihn rot (Review (g) M6, selbst gefahren);
+  der Lesefehler jedes der drei Stände endet mit der Klasse der Ursache
+  (`TestExecuteRoutingReadFailureEndsRun`, `TestExecuteExclusionReadFailure`,
+  `TestExecuteRuleReadFailure`).
 - **Nichtanwendbarkeit im Run (V2, entschieden).** Klasse `schema`, run-lokal, einmal
   je Run vor der Schreibtransaktion nach `ADR-0138` Festlegung 2; die Erreichbarkeit
   am System ist V3 (beantwortet durch `ADR-0140`, Messung in `slice-routing-e2e`), die
@@ -268,33 +313,124 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   Dieser Fall ist Fall (d) von `ADR-0140` Entscheidung 3 (entfernte Spalte bei weiter
   geführter Regel: Run `failed`/`schema`, Abhilfe neuer Antrag nach `cdc.remove_route`);
   der Unit-/Store-Beleg dort entsteht mit dieser Prüfung, ein neues Kriterium
-  folgt daraus nicht. — **Ausgang:** bei der Closure einzutragen
-  (Test-Verweis).
+  folgt daraus nicht. — **Ausgang:** entfallen. Test
+  `TestExecuteInapplicableRoutingRuleEndsRunAsSchema` (Name nennt die Eingabe: Spalte fehlt)
+  und der Store-Fall „Spalte fehlt“ in `backfill_routing_store_internal_test.go`; die
+  Mutationen „Anwendbarkeitsprüfung entfernt“ und „`ErrRoutingColumnMissing` auf
+  `configuration`“ färben sie rot (Verifikations-Report §4 M2 und M6).
 - **Bild-Parität.** Die Bedingung liest den Textwert wie das Row Image ihn trägt
   (`ADR-0115`); der Backfill-Pfad liest über das Text-Ergebnisformat des Snapshots,
   der WAL-Pfad über `pgoutput`-Text — gleiche Textform für den Typ-Satz ist
   *erwartet*, belegt für das Row Image, nicht für die Auswertung. — **Ausgang:** bei
-  der Closure einzutragen (Typ-Satz-Test: dieselbe Zeile, beide Pfade, dasselbe Ziel).
-  **Grenze:** der Paritätstest (`make test-replication`) ist nur gegen
-  PostgreSQL 18 gefahren, PostgreSQL 17 (`PG_TEST_IMAGE` übersteuert) nicht.
+  der Closure einzutragen (Typ-Satz-Test: dieselbe Zeile, beide Pfade, dasselbe Ziel). —
+  **Ausgang:** entfallen für PostgreSQL 18, **weiter offen** für 17. `checkRouteParity` im
+  Typ-Satz-Test (`snapshot_test.go`) liefert über beide Pfade dasselbe Ziel; gemessen im Lauf
+  des Verifiers: `make test-replication` Exit 0, `PostgreSQL 18.6` (Verifikations-Report §1);
+  Mutationen am Paritätstest (Review (g) M10 bis M13) rot, vom Verifier **übernommen**.
+  **Grenze:** der Paritätstest (`make test-replication`) ist nur gegen PostgreSQL 18 gefahren,
+  PostgreSQL 17 (`PG_TEST_IMAGE` übersteuert) nicht. Adresse für 17: [`slice-routing-e2e`](../open/slice-routing-e2e.md)
+  §6, Punkt „Lesekosten der Regelstände im Backfill-Run“ (derselbe Punkt trägt den Lauf des
+  Typ-Satz-Tests an PostgreSQL 17); dessen Legs fahren PostgreSQL 17 und 18 für die Kette
+  Snapshot → Run → `route_target` am laufenden System, nicht für den Typ-Satz.
 - **Persistenz des Labels im Backfill-Insert.** Wird in `slice-routing-kern-label`
   gebaut; wenn der Writer das Feld dort nicht schreibt, fiele das Label hier
-  unbemerkt weg. — **Ausgang:** bei der Closure einzutragen (Store-Test mit gesetztem
-  Feld).
+  unbemerkt weg. — **Ausgang:** entfallen. Store-Test
+  `TestBackfillRunAgainstPostgreSQLCarriesRoutingStateAndLabel/ohne_Wechsel_trägt_jede_Change_das_Ziel`
+  liest `route_target` aus `cdc.changes`; die Mutation „Writer schreibt `route_target` nicht“
+  färbt ihn rot (`route_target in cdc.changes = [- - - -], will [eu_ziel - eu_ziel -]`,
+  Verifikations-Report §4 S1). **Grenze:** der Snapshot ist im Store-Test ein Test-Port; die
+  Gesamtkette Snapshot-Adapter → Run → `route_target` trägt [`slice-routing-e2e`](../open/slice-routing-e2e.md)
+  §2 (Backfill-Bestand mit Label).
 - **Coverage-Messgegenstand.** Der Backfill-Dienst liegt in der netzlos gemessenen
-  Fläche, der Snapshot im DB-Gegenstand. — **Ausgang:** bei der Closure einzutragen
-  (`make coverage-gate`, `make test-replication`).
+  Fläche, der Snapshot im DB-Gegenstand. — **Ausgang:** entfallen. `make gates` Exit 0 mit
+  `coverage-gate: OK — Coverage 81.30% erfüllt Schwelle 80%` und `make test-replication` Exit 0
+  (Verifikations-Report §1; die Prozentzahl ist die Zahl dieses Laufs, keine Zustandsgröße).
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
-
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** Die drei Liefer-Punkte tragen: das Ziel je Zeile über die eine
+  Domänen-Funktion `EvaluateRoute` (gerufen, nicht nachgebaut), der Regelstand des Runs mit
+  Anwendbarkeit (`schema`, vor der Schreibtransaktion) und Mengenvergleich je Block und vor dem
+  Commit (`configuration`), die Nichtanwendbarkeit run-lokal. Gemessen im Lauf des Verifiers:
+  `make test`, `make test-store`, `make test-replication`, `make gates`, `make docs-check`,
+  Suchlauf (25 Zeilen) alle Exit 0 (Verifikations-Report §1). Das Muster der
+  Transformations-Regelstände (Sentinel, Mengenvergleich, Klassen-Abbildung) trug den Schnitt ohne
+  Rückführung nach §4.
+- **Was ging anders als geplant:** Zwei Fixrunden. Das HIGH F-1 stützte sich auf den Wortlaut von
+  [`ADR-0139`](../../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md)
+  Festlegung 1 („derselbe Mechanismus wie für Ausschluss- und Transformationsstand“, ein nicht
+  lesbarer Stand endet `configuration`). Die Fixrunde 1 (`1487be88`) richtete den Routing-Stand
+  nach dem Wortlaut aus; das Re-Review fand am Bestand, dass die beiden anderen Stände den
+  Lesefehler mit der Klasse der Ursache beenden, ihre Tests es binden und die Aussage der ADR
+  damit nicht zutrifft (F-N1, MEDIUM, Architect-Frage). Der Architect entschied mit
+  [`ADR-0141`](../../adr/0141-run-regelstand-lesefehler-klasse-der-ursache.md): Klasse der
+  Ursache für alle drei Stände, `configuration` dem Wechsel vorbehalten. Die Fixrunde 2
+  (`701c7e96`) nahm die Fehlerabbildung zurück: `git diff 55384d2f HEAD --
+  internal/application/usecase/backfill/service.go internal/application/usecase/backfill/routing_test.go`
+  ändert allein den Godoc von `sameSet` (`service.go`, +3/−2), `routing_test.go` ist byte-gleich zu
+  `55384d2f`, dem Stand, den der Reviewer gelesen hat (gemessen bei der Closure). Deshalb ist kein
+  weiteres Re-Review nötig. Die Mutationszahlen tragen ihren Ursprung (Instanz A von
+  [`AGENTS.md`](../../../../AGENTS.md) §3.12): Implementer rund 20, **übernommen** (Bericht und
+  Test-Godocs, nicht nachgefahren); Reviewer 18 selbst gefahren, **gemessen** (alle rot);
+  Verifier 7 selbst gefahren, **gemessen** (alle rot; die 18 des Reviews übernahm er);
+  Re-Review 2 selbst gefahren, **gemessen** (beide rot). Wer die Zahl liest, liest die Läufe
+  unabhängiger Leser, nicht die des Autors. Der Übergabe-Block in
+  `slice-routing-betriebsdoku` §2 ist unverändert gültig (Prüfung bei der Closure:
+  `git grep -n -E 'nicht lesbar' -- docs/plan/planning/open/slice-routing-betriebsdoku.md
+  docs/plan/planning/open/slice-routing-e2e.md` druckt keine Zeile, der Block nennt allein den
+  Wechsel mit `configuration` und die Nichtanwendbarkeit mit `schema`; die Handbuch-Zeilen 1874 und 1877
+  brauchen nach `ADR-0141` keinen Nachzug).
+- **Steering-Loop-Eintrag:** geschärfte Regel, kein neuer Sensor. Stützt ein Reviewer einen
+  Implementierungs-Befund auf den Wortlaut einer `Accepted`-ADR und erweist sich die ADR-Aussage
+  am Bestand als unzutreffend, ist die Klärung ein **Architect-Verdikt** (hier `ADR-0141`), nicht
+  die Anpassung des Codes an den Wortlaut: die Fixrunde 1 lief in die falsche Richtung und wurde
+  zurückgenommen. Ein ADR-Satz der Form „derselbe Mechanismus wie X“ ist eine Tatsachenbehauptung
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B) und gehört vor dem Schreiben am Bestand
+  gemessen; `ADR-0139` nannte die Menge nicht, an der der Satz geprüft war (der Lesefehler der
+  zwei Nachbarstände). Die Handlung vor einer Fixrunde, die dem Wortlaut folgt: die Nachbarstände
+  lesen und ihre Tests mitlesen — dort stand die Antwort (`TestExecuteExclusionReadFailure`,
+  `TestExecuteRuleReadFailure`). Der Reviewer hat den Widerspruch im Re-Review gefunden, weil er
+  die Nachbarstände las; ein Re-Review nach einer Fixrunde, die Anweisungen ändert, hat sich damit
+  zum zweiten Mal bewährt (nach `slice-routing-antragsweg`). Träger: die Lese-Handlung von
+  Reviewer und Planner und der verkörperte Satz „Verfasser einer ADR“ in
+  [`AGENTS.md`](../../../../AGENTS.md) §3.12; keine neue Regel im Text von `AGENTS.md`.
+- **Beobachtungs-Register (`../observations/`):**
+  - **`BEO-PGC/adr-aussage-breiter-als-ihre-messung`** (verkörpert): F-1 (HIGH) und F-N1
+    (MEDIUM) sind dieselbe Aussage — `ADR-0139` Festlegung 1 „derselbe Mechanismus“ ohne die
+    Menge der drei Stände —, berichtigt mit `ADR-0141`. Eine neue `evidence/`-Datei (Schwere
+    ≥ MEDIUM, daher trotz Deckel); Zähler **10×** → **11×** (`ls evidence | wc -l`).
+  - **`BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab`** (offen, 2×): **kein Auftreten**.
+    Die Umsetzung (Lesefehler → Klasse der Ursache) folgte dem Bestand; falsch war der
+    ADR-Wortlaut, nicht die Umsetzung. Die Fixrunde 1, die dem Wortlaut folgte, war der Fehler.
+    Die Begründung steht im `state.md` des Eintrags; der Zähler bleibt 2×.
+  - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×, Ausgang beim Lese-Schritt der
+    Closure von [welle-routing](../welle-routing.md)): **Gegenbeleg, keine Datei**. Die
+    Fixrunde 1 änderte eine Anweisung; der Verifier empfahl ein Re-Review, es wurde gefahren
+    (zwei Mutationen, F-N1 gefunden). Die Fixrunde 2 ist eine Rücknahme auf den gelesenen Stand
+    (Diff-Beleg oben), keine ungelesene Änderung von Anweisungen. Im `state.md` vermerkt.
+  - Ohne eigene Datei (Deckel, ≤ LOW, vor dem Merge gefunden): F-2 (LOW, falscher Abschnittsverweis
+    „§5“ statt „§6“), F-3 (LOW, Godoc von `sameSet` nennt nur eine Regelart; der
+    Suchlauf-Zeile `sameSet|vergleichbar` hat ihn danach getragen), F-N2 (LOW, Grenze nicht
+    im Träger, in §6 nachgezogen), F-N3 (INFO, „wieder“ im Test-Godoc, akzeptiert, keine Aktion).
+  - Kein Eintrag steht bei 3× oder mehr ohne Ausgang an, den dieser Slice neu erreichte; das
+    Muster aus F-4 (Gesamtkette nicht zusammen belegt) ist als Grenze geführt und liegt bei
+    `slice-routing-e2e`.
+- **Folge-Slices:** keine neuen. Übergaben: `slice-routing-e2e` (Gesamtkette Snapshot → Run →
+  `route_target`, Replay-Invariante des bestehenden E2E, Lesekosten der Regelstände, Typ-Satz-Test
+  an PostgreSQL 17), `slice-routing-betriebsdoku` (Handbuch-Stellen des Übergabe-Blocks).
+- **Risiken aus §6:** Lesekosten **weiter offen** (Adresse `slice-routing-e2e` §6); zwei
+  Regelstände **entfallen**; Nichtanwendbarkeit im Run **entfallen**; Bild-Parität **entfallen**
+  für PostgreSQL 18, **weiter offen** für 17 (Adresse `slice-routing-e2e` §6); Persistenz des Labels
+  **entfallen**; Coverage **entfallen**. Befunde ohne Risiko-Eintrag: V-4 (Replay-Invariante nicht
+  gefahren, bei `slice-routing-e2e`), V-5 (Lesehinweis zu M3/M3b).
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+  Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der Lerneintrag
+  verkörpert nichts neu (Ausprägung unter §3.12 Instanz B, Register); (b) Folge-Slice: keiner neu,
+  die genannten Pläne liegen unter `open/`; (c) Register: die genannten Kennungen existieren als
+  Verzeichnis, jede trägt ein nicht leeres `evidence/`.
+- **Validator (Modul 8):** entfällt — Backfill-Label ohne Lesewege und ohne E2E ist für Betreiber
+  noch nicht als Ganzes nutzbar; der Nutzer-Bedarf ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md))
+  wird erst durch den Wellen-Beleg validierbar.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

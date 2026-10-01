@@ -259,6 +259,15 @@ geschrieben.
   ist *hergeleitet* aus dem Abwesenheits-Vertrag von `LH-FA-DAT-005` und der
   Transformations-ADR, an PostgreSQL 17 und 18 nicht gemessen. — **Ausgang:** bei der
   Closure einzutragen (Messung, gedruckte Zeilen je Version).
+- **Lesekosten der Regelstände im Backfill-Run (übernommen aus `slice-routing-backfill-pfad`
+  §6).** Der Run liest den Routing-Stand zusätzlich zum Transformationsstand, je Block und vor
+  dem Commit; die Verdopplung der Lesungen ist *hergeleitet*, die Prozentzahlen des
+  Architect-Verdikts zu einem Port sind *übernommen*, nicht gemessen. Der Typ-Satz-Test
+  `checkRouteParity` (`make test-replication`) ist nur an PostgreSQL 18 gefahren; ein Lauf mit
+  `PG_TEST_IMAGE` auf PostgreSQL 17 steht aus. — **Ausgang:** bei der Closure einzutragen (eine
+  gedruckte Messung der Blockdauer mit zwei Regelständen bei mehr als 10 000 Zeilen in der Queue,
+  oder die Kennzeichnung als nicht gemessen mit neuer Adresse; ein Lauf von `make test-replication`
+  mit `PG_TEST_IMAGE` auf PostgreSQL 17, gedruckte Version im Bericht).
 - **Last der Auswertung je Change (übernommen aus `slice-routing-kern-label` §6).** Die
   Auswertung ist eine lineare Suche über die Regeln der Tabelle je Change; *erwartet*
   klein, nicht gemessen. — **Ausgang:** bei der Closure einzutragen (eine gedruckte

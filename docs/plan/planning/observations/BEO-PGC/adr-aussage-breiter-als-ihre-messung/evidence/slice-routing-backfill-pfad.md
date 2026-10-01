@@ -1,0 +1,9 @@
+**Vorgang:** slice-routing-backfill-pfad (Review F-1, HIGH; Re-Review der Fixrunde 1 F-N1, MEDIUM; Verifikation V-2)
+
+**Fund:** `ADR-0139` Festlegung 1 (`Accepted`) sagt für den Routing-Regelstand im Backfill-Run, „derselbe Mechanismus wie für Ausschluss- und Transformationsstand“, und ein nicht lesbarer Stand ende `failed` mit der Klasse `configuration`. Der erste Entwurf folgte dem Bestand (Lesefehler endet mit der Klasse der Ursache, `storage`); der Reviewer stützte F-1 (HIGH) auf den Wortlaut der ADR, die Fixrunde 1 (`1487be88`) bildete den Lesefehler des Routing-Standes auf `configuration` ab. Das Re-Review las die Nachbarstände (`excludedColumns`, `transformationRules` und ihre Tests `TestExecuteExclusionReadFailure`, `TestExecuteRuleReadFailure`): dort endet der Lesefehler mit der Klasse der Ursache, der Satz „derselbe Mechanismus“ traf am Bestand nicht zu (F-N1, MEDIUM, Architect-Frage). `ADR-0141` berichtigte den Halbsatz (Klasse der Ursache für alle drei Stände, `configuration` dem Wechsel des Standes vorbehalten); die Fixrunde 2 (`701c7e96`) nahm die Fehlerabbildung auf den gelesenen Stand zurück.
+
+**Form (Ausprägung):** Prosa-Aussage einer ADR über eine Menge („derselbe Mechanismus wie für X und Y“) ohne die Menge, an der sie geprüft ist; neu gegenüber den bisherigen Fällen: die zu breite Aussage wurde vom Reviewer als **Wortlaut-Maßstab** für den Code benutzt und lenkte eine Fixrunde in die falsche Richtung, bevor ein Leser den Bestand gegen den Satz hielt. Gefunden vor dem Merge, Schwere MEDIUM bis HIGH, daher trotz Deckel eine Datei.
+
+Quelle: `docs/reviews/review-slice-routing-backfill-pfad.md` (F-1) <!-- d-check:status-provenance -->
+· `docs/reviews/review-slice-routing-backfill-pfad-fixrunde-1.md` (F-N1) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-routing-backfill-pfad.md` (V-2). <!-- d-check:status-provenance -->
