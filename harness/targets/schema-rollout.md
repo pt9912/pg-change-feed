@@ -71,7 +71,7 @@ anderen Schritts tut es.
    | 1 | `tools/schema/nacharbeit-roles.sql` | die Rollen `cdc_capture`, `cdc_admin`, `cdc_reader` und ihre Rechte auf Tabellen und die fünf deklarierten Views (Least-Privilege-Schnitt) |
    | 2 | `tools/schema/nacharbeit-observability.sql` | View `cdc.metrics`, Recht `SELECT` für `cdc_reader` |
    | 3 | `tools/schema/nacharbeit-heartbeat.sql` | View `cdc.heartbeat`, Recht `SELECT` für `cdc_reader` |
-   | 4 | `tools/schema/nacharbeit-administration.sql` | die sieben SQL-Funktionen `cdc.enable_table`, `cdc.disable_table`, `cdc.exclude_column`, `cdc.include_column`, `cdc.backfill_table`, `cdc.set_transformation`, `cdc.remove_transformation` mit `EXECUTE` für `cdc_admin` (kein Recht für `PUBLIC`), und der CHECK `chk_administration_request_kind` (sieben Antragsarten) |
+   | 4 | `tools/schema/nacharbeit-administration.sql` | die neun SQL-Funktionen `cdc.enable_table`, `cdc.disable_table`, `cdc.exclude_column`, `cdc.include_column`, `cdc.backfill_table`, `cdc.set_transformation`, `cdc.remove_transformation`, `cdc.set_route`, `cdc.remove_route` mit `EXECUTE` für `cdc_admin` (kein Recht für `PUBLIC`), und der CHECK `chk_administration_request_kind` (neun Antragsarten) |
 
    Die Rollen-Datei läuft zuerst, weil die drei Folge-Dateien ihre Rechte an
    Rollen vergeben, die sie voraussetzen. Rollen sind kein Tabellen- oder
@@ -86,8 +86,8 @@ anderen Schritts tut es.
 Blocker des Precheck-Reports zu einer von zwei bekannten Klassen gehört:
 
 - **Bekanntes Fremdobjekt** — Blocker `DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION`
-  mit ausschließlich Operationen auf die neun Objekte der Nacharbeit-Dateien
-  (sieben Funktionen, die Views `metrics` und `heartbeat`; sie liegen außerhalb
+  mit ausschließlich Operationen auf die elf Objekte der Nacharbeit-Dateien
+  (neun Funktionen, die Views `metrics` und `heartbeat`; sie liegen außerhalb
   des neutralen Modells, d-migrate plant deshalb bei jedem Lauf gegen ein
   migriertes Ziel ihren Abbau). Folge: `--allow-destructive`. Die Bekannt-Liste
   (`knownForeignObjects` in `guard.go`) trägt einen Eintrag im selben Commit wie
@@ -96,7 +96,8 @@ Blocker des Precheck-Reports zu einer von zwei bekannten Klassen gehört:
   ein `json`- wie ein `jsonb`-Parameter erscheint dort als `in:json`, und
   d-migrate rendert den Abbau als `DROP FUNCTION … (…, json)` — bei einer
   Funktion mit `jsonb`-Parameter scheitert er, und der zweite Rollout endet mit
-  d-migrate-Exit 5; deshalb trägt `set_transformation` einen `json`-Parameter,
+  d-migrate-Exit 5; deshalb tragen `set_transformation` und `set_route` einen
+  `json`-Parameter,
   [`ADR-0125`](../../docs/plan/adr/0125-transformationen-parametertyp-regelform-json.md)).
 - **View-Signatur** — Blocker `MANUAL_ACTION_REQUIRED` für eine Operation
   `ReplaceView` (Objekttyp `VIEW`) mit der Diagnose
@@ -177,10 +178,10 @@ sie nicht.
 - `bash tools/harness/run-schema-rollout-guard-test.sh` — sechs Läufe gegen eine
   Wegwerf-PostgreSQL (kein Gate, braucht DB-Zugang): (1) frischer Rollout,
   (2) Idempotenz über den `--allow-destructive`-Pfad ohne Vorlauf, (3) eine
-  echte anstehende Änderung neben den neun bekannten Blockern bleibt wirksam,
+  echte anstehende Änderung neben den elf bekannten Blockern bleibt wirksam,
   (4) View-Signatur-Vorlauf samt Soll-Signatur, Recht und lesbarer Zeile,
   Folgelauf ohne Vorlauf, abhängiges Objekt scheitert laut ohne Kaskade,
-  (5) Alt-Tag-Lauf vom Schema des jüngsten `v*`-Tags über den Arbeitsbaum mit den Rechten der drei Rollen auf `cdc.administration_request`, `cdc.backfill_run`, `cdc.backfill_status` und `cdc.changes` (`SELECT` allein für `cdc_reader`; die View trägt nach dem Upgrade die Spalte `route_target`, die Alt-Zeile liest dort NULL), den Funktionen `cdc.backfill_table`, `cdc.set_transformation` und `cdc.remove_transformation` (`EXECUTE` allein für `cdc_admin`), den zwei nullable Spalten `rule_name`/`rule_spec` (eine Antragszeile des Alt-Bestands trägt dort NULL), der `request_kind`-Menge nach dem Upgrade und dem Aufruf beider Funktionen unter `cdc_admin` (`pending`-Antrag) und `cdc_reader` („permission denied for function“); die Vorbedingung ist, dass der Stand des Tags die Spalte `route_target` noch nicht trägt,
+  (5) Alt-Tag-Lauf vom Schema des jüngsten `v*`-Tags über den Arbeitsbaum mit den Rechten der drei Rollen auf `cdc.administration_request`, `cdc.backfill_run`, `cdc.backfill_status` und `cdc.changes` (`SELECT` allein für `cdc_reader`; die View trägt nach dem Upgrade die Spalte `route_target`, die Alt-Zeile liest dort NULL), den Funktionen `cdc.backfill_table`, `cdc.set_transformation`, `cdc.remove_transformation`, `cdc.set_route` und `cdc.remove_route` (`EXECUTE` allein für `cdc_admin`), den zwei nullable Spalten `rule_name`/`rule_spec` (eine Antragszeile des Alt-Bestands trägt dort NULL), der `request_kind`-Menge (neun Werte) nach dem Upgrade und dem Aufruf der Transformations- und der Routing-Funktionen unter `cdc_admin` (`pending`-Antrag) und unter `cdc_reader` (bei den Routing-Funktionen auch unter `cdc_capture`: „permission denied for function“); die Vorbedingungen sind, dass der Stand des Tags die Spalte `route_target` und die Funktionen `cdc.set_route`/`cdc.remove_route` noch nicht trägt,
   (6) unbekannte Blocker brechen mit Exit 8 ab: (6a) eine nicht deklarierte
   Funktion bleibt bestehen und bindet die Bekannt-Liste end-to-end, (6b) eine
   nicht deklarierte Spalte belegt den Abbruch gegen einen real gemeldeten

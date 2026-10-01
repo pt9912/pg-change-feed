@@ -6,10 +6,10 @@ import (
 )
 
 // knownBlockedReport spiegelt real gemessene Report-Felder (--plan-only
-// gegen ein bereits vollständig migriertes Ziel): genau die neun
+// gegen ein bereits vollständig migriertes Ziel): genau die elf
 // bekannten Fremdobjekt-Blocker, sonst nichts. Die Signatur von
-// `set_transformation` trägt die Schreibweise des Reports (`in:json` für den
-// `json`-Parameter).
+// `set_transformation` und `set_route` trägt die Schreibweise des Reports
+// (`in:json` für den `json`-Parameter).
 func knownBlockedReport() report {
 	return report{
 		Status: "blocked",
@@ -22,6 +22,8 @@ func knownBlockedReport() report {
 				"DropFunction:FUNCTION:d3:d4",
 				"DropFunction:FUNCTION:d5:d6",
 				"DropFunction:FUNCTION:d7:d8",
+				"DropFunction:FUNCTION:d9:da",
+				"DropFunction:FUNCTION:db:dc",
 				"DropView:VIEW:e1:e2",
 				"DropView:VIEW:f1:f2",
 			}},
@@ -34,6 +36,8 @@ func knownBlockedReport() report {
 			{ID: "DropFunction:FUNCTION:d3:d4", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"backfill_table(in:text,in:text,in:text)"}},
 			{ID: "DropFunction:FUNCTION:d5:d6", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"set_transformation(in:text,in:text,in:text,in:text,in:json)"}},
 			{ID: "DropFunction:FUNCTION:d7:d8", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"remove_transformation(in:text,in:text,in:text,in:text)"}},
+			{ID: "DropFunction:FUNCTION:d9:da", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"set_route(in:text,in:text,in:text,in:text,in:json)"}},
+			{ID: "DropFunction:FUNCTION:db:dc", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"remove_route(in:text,in:text,in:text,in:text)"}},
 			{ID: "DropView:VIEW:e1:e2", Kind: "DropView", ObjectType: "VIEW", Path: []string{"heartbeat"}},
 			{ID: "DropView:VIEW:f1:f2", Kind: "DropView", ObjectType: "VIEW", Path: []string{"metrics"}},
 		},
@@ -59,7 +63,7 @@ func viewSignatureOnlyReport(name string) report {
 
 // TestDecideAllowsDestructiveWhenAllBlockersKnown prüft den Regelfall: ein
 // zweiter Lauf gegen ein bereits vollständig migriertes Ziel trägt
-// ausschließlich die neun bekannten Fremdobjekt-Blocker — decide erlaubt
+// ausschließlich die elf bekannten Fremdobjekt-Blocker — decide erlaubt
 // --allow-destructive und verlangt keinen Vorlauf.
 func TestDecideAllowsDestructiveWhenAllBlockersKnown(t *testing.T) {
 	d := decide(knownBlockedReport())
@@ -74,7 +78,7 @@ func TestDecideAllowsDestructiveWhenAllBlockersKnown(t *testing.T) {
 // TestDecideRefusesUnknownDestructiveBlocker prüft den Negativfall: eine
 // künstlich per ALTER TABLE … ADD COLUMN hinzugefügte, nicht deklarierte
 // Spalte erzeugt real einen zusätzlichen, unbekannten DropColumn-Blocker
-// neben den neun bekannten — decide bleibt leer, auch im Mischfall.
+// neben den elf bekannten — decide bleibt leer, auch im Mischfall.
 func TestDecideRefusesUnknownDestructiveBlocker(t *testing.T) {
 	r := knownBlockedReport()
 	r.Blockers[0].OperationIDs = append(r.Blockers[0].OperationIDs, "DropColumn:COLUMN:g1:g2")
@@ -127,7 +131,7 @@ func TestDecideRefusesEmptyBlockers(t *testing.T) {
 
 // TestDecideViewSignatureWithKnownForeignObjects prüft den real
 // gemessenen Fall des Upgrades über die View-Signaturänderung: die Klasse
-// „View-Signatur" neben den neun bekannten Fremdobjekten — decide erlaubt
+// „View-Signatur" neben den elf bekannten Fremdobjekten — decide erlaubt
 // --allow-destructive UND meldet die View für den Vorlauf.
 func TestDecideViewSignatureWithKnownForeignObjects(t *testing.T) {
 	d := decide(withViewSignature(knownBlockedReport(), "changes"))

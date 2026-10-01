@@ -7,15 +7,16 @@ import (
 	"strings"
 )
 
-// knownForeignObjects trägt die aktuell neun Objekte, die außerhalb des
+// knownForeignObjects trägt die aktuell elf Objekte, die außerhalb des
 // neutralen Modells (tools/schema/schema.yaml) über
 // tools/schema/nacharbeit-*.sql angelegt werden und deshalb bei jedem
 // zweiten `schema migrate`-Lauf gegen ein bereits migriertes Ziel als
 // destruktive Blocker erscheinen (real gemessen, --plan-only-Report gegen
 // eine frisch migrierte Ziel-DB). Die Schreibweise der Signatur ist die des
 // Reports: ein `json`- wie ein `jsonb`-Parameter erscheint dort als
-// `in:json`; die Funktion `set_transformation` trägt einen `json`-Parameter
-// (ADR-0125, Begründung in tools/schema/nacharbeit-administration.sql). Ein neues
+// `in:json`; die Funktionen `set_transformation` und `set_route` tragen einen
+// `json`-Parameter (ADR-0125, Begründung in
+// tools/schema/nacharbeit-administration.sql). Ein neues
 // nacharbeit-*.sql-Skript trägt seinen Eintrag hier im selben Commit wie
 // seine Aufrufzeile im Makefile-Target `schema-rollout` — dieselbe
 // Kolokation.
@@ -27,6 +28,8 @@ var knownForeignObjects = map[foreignObject]bool{
 	{kind: "DropFunction", objectType: "FUNCTION", path: "backfill_table(in:text,in:text,in:text)"}:                     true,
 	{kind: "DropFunction", objectType: "FUNCTION", path: "set_transformation(in:text,in:text,in:text,in:text,in:json)"}: true,
 	{kind: "DropFunction", objectType: "FUNCTION", path: "remove_transformation(in:text,in:text,in:text,in:text)"}:      true,
+	{kind: "DropFunction", objectType: "FUNCTION", path: "set_route(in:text,in:text,in:text,in:text,in:json)"}:          true,
+	{kind: "DropFunction", objectType: "FUNCTION", path: "remove_route(in:text,in:text,in:text,in:text)"}:               true,
 	{kind: "DropView", objectType: "VIEW", path: "heartbeat"}:                                                           true,
 	{kind: "DropView", objectType: "VIEW", path: "metrics"}:                                                             true,
 }

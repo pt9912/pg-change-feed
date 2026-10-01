@@ -6,12 +6,12 @@
 #
 #   1. Frischer Rollout (kein Blocker) — muss durchlaufen.
 #   2. Zweiter Lauf gegen dasselbe, jetzt vollständig migrierte Ziel — trägt
-#      ausschließlich die neun bekannten Fremdobjekt-Blocker — muss erneut
+#      ausschließlich die elf bekannten Fremdobjekt-Blocker — muss erneut
 #      Exit 0 liefern UND den --allow-destructive-Pfad des Guards nehmen
 #      (stdout trägt die Meldung), nicht nur zufällig Exit 0 aus anderem
 #      Grund; ein Vorlauf (ADR-0114) findet nicht statt.
 #   3. Eine echte, gleichzeitig anstehende, NICHT-destruktive Schema-Änderung
-#      neben den neun bekannten Blockern: eine von schema.yaml weiterhin
+#      neben den elf bekannten Blockern: eine von schema.yaml weiterhin
 #      deklarierte, nullable Spalte (administration_request.error_message —
 #      trägt keine View-/Funktions-Abhängigkeit, anders als
 #      process_heartbeat.error_class, das die Sicht cdc.heartbeat trägt) wird
@@ -36,22 +36,28 @@
 #      Soll-Signatur der View, und der Rollen-Schnitt: die Rechte der drei
 #      Rollen auf `cdc.administration_request`, `cdc.backfill_run` und
 #      `cdc.backfill_status`, `EXECUTE` auf `cdc.backfill_table`,
-#      `cdc.set_transformation` und `cdc.remove_transformation` allein für
-#      `cdc_admin` (nicht PUBLIC), und die Rechte der drei Rollen auf
+#      `cdc.set_transformation`, `cdc.remove_transformation`, `cdc.set_route`
+#      und `cdc.remove_route` allein für `cdc_admin` (nicht PUBLIC), und die
+#      Rechte der drei Rollen auf
 #      `cdc.changes` (`SELECT` allein für `cdc_reader`; `DROP VIEW` verwirft
 #      die Rechteliste). Die Zeile des Tags liest über `cdc.changes` mit
 #      `route_target` NULL. Der Stand des Tags trägt die Spalte `route_target`
 #      noch nicht (Vorbedingung); nach dem Upgrade
 #      trägt die Tabelle die zwei nullable Spalten (`text`, `jsonb`), eine
-#      vor dem Upgrade geschriebene Antragszeile trägt dort NULL, die sieben
+#      vor dem Upgrade geschriebene Antragszeile trägt dort NULL, die neun
 #      Werte von `chk_administration_request_kind` stehen, `cdc_admin` schreibt
-#      über `cdc.set_transformation` einen `pending`-Antrag mit der Regelform
-#      in der `jsonb`-Spalte, und `cdc_reader` scheitert mit „permission
-#      denied for function“. Tag, Exit-Codes und Zählung stehen in der Ausgabe.
-#      Für die Objekte, die der Stand des Tags schon trägt (`rule_name`,
-#      `rule_spec`, `set_transformation`, `remove_transformation`,
-#      `backfill_status`), belegt der Lauf „das Upgrade erhält“, nicht „das
-#      Upgrade ergänzt“. Eine Eingabeseiten-Mutation an
+#      über `cdc.set_transformation` und `cdc.set_route` je einen
+#      `pending`-Antrag mit der Regelform in der `jsonb`-Spalte, über
+#      `cdc.remove_transformation` und `cdc.remove_route` je einen ohne
+#      Regelform, und `cdc_reader` scheitert an beiden `set_*`-Funktionen mit
+#      „permission denied for function“. Tag, Exit-Codes und Zählung stehen in
+#      der Ausgabe. Für die Objekte, die der Stand des Tags schon trägt
+#      (`rule_name`, `rule_spec`, `set_transformation`,
+#      `remove_transformation`, `backfill_status`), belegt der Lauf „das
+#      Upgrade erhält“, nicht „das Upgrade ergänzt“; für `set_route`,
+#      `remove_route`, die zwei Werte `set_route`/`remove_route` der CHECK-Menge
+#      und die Spalte `route_target` (Vorbedingung: im Stand des Tags nicht
+#      vorhanden) belegt er „das Upgrade ergänzt“. Eine Eingabeseiten-Mutation an
 #      tools/schema/nacharbeit-administration.sql, tools/schema/nacharbeit-roles.sql
 #      oder der Spalte `rule_spec` in tools/schema/schema.yaml ist für diese
 #      Objekte nicht nachgefahren; ob sie Lauf 5 rot färbt, ist nicht belegt
@@ -59,7 +65,7 @@
 #   6. Unbekannte Blocker — der Rollout muss abbrechen (d-migrate-Exit 8,
 #      make meldet „Error 8" bzw. lokalisiert „Fehler 8"). Zwei Fälle:
 #      a) eine nicht deklarierte Funktion `cdc.zz_rolloutguard_unbekannt()`:
-#         dieselbe Klasse wie die neun bekannten Fremdobjekte (Blocker
+#         dieselbe Klasse wie die elf bekannten Fremdobjekte (Blocker
 #         DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION), aber nicht auf der
 #         Bekannt-Liste. Ließe die Wache den Blocker durch, riefe das Target
 #         `--execute` mit `--allow-destructive` auf und d-migrate löschte die
@@ -195,7 +201,7 @@ if grep -q "Vorlauf" <<<"$out"; then
   fail "Lauf 2 meldet einen Vorlauf, obwohl keine View ihre Signatur ändert (ADR-0114 Entscheidung 4)"
 fi
 
-echo "run-schema-rollout-guard-test: Lauf 3/6 (echte anstehende Änderung neben den neun bekannten Blockern — muss real zurückkommen, ohne Vorlauf)"
+echo "run-schema-rollout-guard-test: Lauf 3/6 (echte anstehende Änderung neben den elf bekannten Blockern — muss real zurückkommen, ohne Vorlauf)"
 docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "ALTER TABLE cdc.administration_request DROP COLUMN error_message"
 still_missing=$(docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -tAc \
@@ -277,6 +283,15 @@ alt_privilege() { psql_q "$ALT_DB" "SELECT has_table_privilege('$1', '$2', '$3')
 ALT_FUNCTION="cdc.backfill_table(text, text, text)"
 ALT_SET_FUNCTION="cdc.set_transformation(text, text, text, text, json)"
 ALT_REMOVE_FUNCTION="cdc.remove_transformation(text, text, text, text)"
+ALT_SET_ROUTE_FUNCTION="cdc.set_route(text, text, text, text, json)"
+ALT_REMOVE_ROUTE_FUNCTION="cdc.remove_route(text, text, text, text)"
+# Die zwei Routing-Funktionen entstehen erst mit dem Arbeitsbaum: im Stand des
+# Tags fehlen sie (Vorbedingung), nach dem Upgrade tragen sie dieselben Rechte
+# wie die übrigen Antrags-Funktionen.
+for alt_missing in "$ALT_SET_ROUTE_FUNCTION" "$ALT_REMOVE_ROUTE_FUNCTION"; do
+  [ "$(psql_q "$ALT_DB" "SELECT to_regprocedure('$alt_missing') IS NULL")" = "t" ] \
+    || fail "Lauf 5: Vorbedingung fehlgeschlagen, $alt_missing besteht schon im Stand von $ALT_TAG"
+done
 [ "$(psql_q "$ALT_DB" "SELECT count(*) FROM information_schema.columns WHERE table_schema='cdc' AND table_name IN ('change', 'changes') AND column_name = 'route_target'")" = "0" ] \
   || fail "Lauf 5: Vorbedingung fehlgeschlagen, cdc.change oder cdc.changes trägt im Stand von $ALT_TAG schon route_target"
 alt_kinds_sql="SELECT string_agg(k, ',' ORDER BY k) FROM (SELECT unnest(regexp_matches(pg_get_constraintdef(oid), '''([a-z_]+)''', 'g')) AS k FROM pg_constraint WHERE conname = 'chk_administration_request_kind' AND conrelid = 'cdc.administration_request'::regclass) s"
@@ -314,7 +329,7 @@ for expected in \
   alt_privilege_count=$((alt_privilege_count + 1))
 done
 alt_function_count=0
-for alt_function in "$ALT_FUNCTION" "$ALT_SET_FUNCTION" "$ALT_REMOVE_FUNCTION"; do
+for alt_function in "$ALT_FUNCTION" "$ALT_SET_FUNCTION" "$ALT_REMOVE_FUNCTION" "$ALT_SET_ROUTE_FUNCTION" "$ALT_REMOVE_ROUTE_FUNCTION"; do
   for expected in "cdc_admin t" "cdc_capture f" "cdc_reader f"; do
     read -r alt_role alt_want <<<"$expected"
     [ "$(psql_q "$ALT_DB" "SELECT has_function_privilege('$alt_role', '$alt_function', 'EXECUTE')")" = "$alt_want" ] \
@@ -325,8 +340,8 @@ for alt_function in "$ALT_FUNCTION" "$ALT_SET_FUNCTION" "$ALT_REMOVE_FUNCTION"; 
   alt_function_count=$((alt_function_count + 1))
 done
 alt_kinds_after=$(psql_q "$ALT_DB" "$alt_kinds_sql")
-[ "$alt_kinds_after" = "backfill,disable,enable,exclude_column,include_column,remove_transformation,set_transformation" ] \
-  || fail "Lauf 5: chk_administration_request_kind trägt nach dem Upgrade über $ALT_TAG die Menge '$alt_kinds_after' statt der sieben Antragsarten"
+[ "$alt_kinds_after" = "backfill,disable,enable,exclude_column,include_column,remove_route,remove_transformation,set_route,set_transformation" ] \
+  || fail "Lauf 5: chk_administration_request_kind trägt nach dem Upgrade über $ALT_TAG die Menge '$alt_kinds_after' statt der neun Antragsarten"
 alt_rule_columns=$(psql_q "$ALT_DB" "SELECT string_agg(column_name || ':' || data_type || ':' || is_nullable, ',' ORDER BY column_name) FROM information_schema.columns WHERE table_schema='cdc' AND table_name='administration_request' AND column_name IN ('rule_name', 'rule_spec')")
 [ "$alt_rule_columns" = "rule_name:text:YES,rule_spec:jsonb:YES" ] \
   || fail "Lauf 5: cdc.administration_request trägt nach dem Upgrade über $ALT_TAG die Spalten '$alt_rule_columns' statt rule_name:text:YES,rule_spec:jsonb:YES"
@@ -345,12 +360,31 @@ if alt_denied=$(psql_as "$ALT_DB" cdc_reader "SELECT cdc.set_transformation('alt
 fi
 grep -q "permission denied for function" <<<"$alt_denied" \
   || fail "Lauf 5: der Aufruf unter cdc_reader scheitert nicht mit „permission denied for function“ ($alt_denied)"
+# Die Routing-Funktionen schreiben unter cdc_admin je einen pending-Antrag der
+# eigenen Art; ein Login ohne cdc_admin scheitert an EXECUTE.
+alt_route_id=$(psql_as "$ALT_DB" cdc_admin "SELECT cdc.set_route('alttag-src', 'public', 't', 'eu_orders', '{\"target\": \"eu\", \"order\": 10}'::json)")
+[ "$(psql_q "$ALT_DB" "SELECT request_kind || '|' || status || '|' || rule_name || '|' || (rule_spec->>'target') || '|' || COALESCE(column_name, '<NULL>') FROM cdc.administration_request WHERE administration_request_id = '$alt_route_id'")" = "set_route|pending|eu_orders|eu|<NULL>" ] \
+  || fail "Lauf 5: cdc.set_route schreibt unter cdc_admin nach dem Upgrade über $ALT_TAG nicht den erwarteten pending-Antrag"
+alt_unroute_id=$(psql_as "$ALT_DB" cdc_admin "SELECT cdc.remove_route('alttag-src', 'public', 't', 'eu_orders')")
+[ "$(psql_q "$ALT_DB" "SELECT request_kind || '|' || status || '|' || rule_name || '|' || COALESCE(rule_spec::text, '<NULL>') FROM cdc.administration_request WHERE administration_request_id = '$alt_unroute_id'")" = "remove_route|pending|eu_orders|<NULL>" ] \
+  || fail "Lauf 5: cdc.remove_route schreibt unter cdc_admin nach dem Upgrade über $ALT_TAG nicht den erwarteten pending-Antrag"
+for alt_denied_call in \
+  "SELECT cdc.set_route('alttag-src', 'public', 't', 'verboten', '{}'::json)" \
+  "SELECT cdc.remove_route('alttag-src', 'public', 't', 'verboten')"; do
+  for alt_denied_role in cdc_reader cdc_capture; do
+    if alt_denied=$(psql_as "$ALT_DB" "$alt_denied_role" "$alt_denied_call" 2>&1); then
+      fail "Lauf 5: $alt_denied_role ruft '$alt_denied_call' nach dem Upgrade über $ALT_TAG auf, ohne dass es scheitert"
+    fi
+    grep -q "permission denied for function" <<<"$alt_denied" \
+      || fail "Lauf 5: der Aufruf '$alt_denied_call' unter $alt_denied_role scheitert nicht mit „permission denied for function“ ($alt_denied)"
+  done
+done
 if grep -q "Vorlauf" <<<"$work_out_1"; then
   alt_vorlauf="mit Vorlauf"
 else
   alt_vorlauf="ohne Vorlauf"
 fi
-echo "run-schema-rollout-guard-test: Lauf 5 OK — Tag $ALT_TAG: Exit $alt_exit (Rollout des Tags), Exit $work_exit_1 (Arbeitsbaum, $alt_vorlauf), Exit $work_exit_2 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar; $alt_privilege_count Tabellen-/View-Rechte der drei Rollen auf administration_request, backfill_run und backfill_status, EXECUTE auf $alt_function_count Funktionen ($ALT_FUNCTION, $ALT_SET_FUNCTION, $ALT_REMOVE_FUNCTION) allein für cdc_admin (nicht PUBLIC), Spalten $alt_rule_columns (Alt-Zeile alttag-req: NULL), request_kind-Menge $alt_kinds_after, cdc.set_transformation/cdc.remove_transformation unter cdc_admin schreiben pending-Anträge, cdc_reader: permission denied for function"
+echo "run-schema-rollout-guard-test: Lauf 5 OK — Tag $ALT_TAG: Exit $alt_exit (Rollout des Tags), Exit $work_exit_1 (Arbeitsbaum, $alt_vorlauf), Exit $work_exit_2 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar, Soll-Signatur der View, route_target NULL (Spalte im Stand des Tags nicht vorhanden); $alt_privilege_count Tabellen-/View-Rechte der drei Rollen auf administration_request, backfill_run, backfill_status und cdc.changes, EXECUTE auf $alt_function_count Funktionen ($ALT_FUNCTION, $ALT_SET_FUNCTION, $ALT_REMOVE_FUNCTION, $ALT_SET_ROUTE_FUNCTION, $ALT_REMOVE_ROUTE_FUNCTION) allein für cdc_admin (nicht PUBLIC), Spalten $alt_rule_columns (Alt-Zeile alttag-req: NULL), request_kind-Menge $alt_kinds_after, cdc.set_transformation/cdc.remove_transformation/cdc.set_route/cdc.remove_route unter cdc_admin schreiben pending-Anträge, cdc_reader an cdc.set_transformation sowie cdc_reader und cdc_capture an cdc.set_route/cdc.remove_route: permission denied for function"
 
 echo "run-schema-rollout-guard-test: Lauf 6/6 (unbekannte Blocker, müssen mit Exit 8 abbrechen)"
 echo "run-schema-rollout-guard-test: Lauf 6a (nicht deklarierte Funktion — die Wache lässt sie nicht unter --allow-destructive löschen)"
