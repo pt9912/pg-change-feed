@@ -192,6 +192,10 @@ public sealed class PgChangeFeedAdministrationClient : IDisposable
     /// token) — the same filter and range semantics as
     /// <see cref="PgChangeFeed.Client.Http.PgChangeFeedHttpClient.ReadChangesAsync"/>:
     /// an unset <c>From</c>/<c>To</c>/<c>Limit</c> carries <c>0</c> (not set).
+    /// The request's <c>Target</c> selects the delivery target: empty (the
+    /// default) is no filter, a set value returns only changes routed to that
+    /// target, combined with <c>Schema</c>/<c>Table</c> as a conjunction; a
+    /// target no change carries returns an empty list.
     /// </summary>
     public Task<ReadChangesResponse> ReadChangesAsync(
         ReadChangesRequest request, CancellationToken cancellationToken = default)

@@ -106,6 +106,31 @@ def test_missing_image_is_none_and_update_carries_both_images() -> None:
     assert events[0].new_image == {"id": 1, "name": "second"}
 
 
+# --- Target: a query parameter only when set ---
+
+
+def _query_of_stream(**kwargs) -> str:
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url.query.decode())
+        return httpx.Response(200, headers={"Content-Type": "text/event-stream"}, content=b"")
+
+    list(_make_client(handler).stream_changes(**kwargs))
+    return seen[0]
+
+
+def test_stream_changes_without_target_requests_the_bare_path() -> None:
+    assert _query_of_stream() == ""
+    assert _query_of_stream(target=None) == ""
+
+
+def test_stream_changes_sends_target_as_an_escaped_query_parameter() -> None:
+    assert _query_of_stream(target="") == "target="
+    assert _query_of_stream(target="eu") == "target=eu"
+    assert _query_of_stream(target="a&b=c") == "target=a%26b%3Dc"
+
+
 # --- Frame parser (chunk boundaries, incomplete frames, non-change names) ---
 
 

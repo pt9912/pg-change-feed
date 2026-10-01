@@ -61,6 +61,7 @@ class PgChangeFeedGrpcClient:
         timeout: float | None = None,
         schema: str | None = None,
         table: str | None = None,
+        target: str | None = None,
     ) -> Iterator[_Change]:
         """Opens the server stream and yields every ``Change`` the server sends
         from connection time onward: fire-and-forget, no replay, one message
@@ -72,7 +73,11 @@ class PgChangeFeedGrpcClient:
         default); the iterator raises ``DEADLINE_EXCEEDED`` once it lapses.
         ``schema``/``table`` filter the stream (see the module docstring);
         left out, the request carries no filter, unchanged from the original
-        contract.
+        contract. ``target`` selects the delivery target of a change: a set
+        value delivers only changes routed to that target, combined with
+        ``schema``/``table`` as a conjunction; left ``None`` (or empty) the
+        request carries no target. A target no change carries delivers nothing
+        and raises no error.
         """
         metadata = ((_AUTHORIZATION_METADATA_KEY, f"{_BEARER_PREFIX}{self._options.api_token}"),)
         request = _StreamChangesRequest()
@@ -80,4 +85,6 @@ class PgChangeFeedGrpcClient:
             request.schema = schema
         if table is not None:
             request.table = table
+        if target is not None:
+            request.target = target
         return self._client.StreamChanges(request, metadata=metadata, timeout=timeout)

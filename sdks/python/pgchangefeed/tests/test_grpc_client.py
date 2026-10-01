@@ -218,6 +218,33 @@ def test_stream_changes_sets_both_schema_and_table_when_both_are_given() -> None
     assert request.table == "orders"
 
 
+# --- Filter: target is optional and travels in the request ---
+
+
+def test_stream_changes_without_target_keeps_the_request_empty() -> None:
+    client, channel = _make_client()
+    list(client.stream_changes(target=None))
+    _metadata, request, _timeout = channel.invocations[0]
+    assert request.SerializeToString() == b""
+
+
+def test_stream_changes_carries_the_target_in_the_request() -> None:
+    for target, expected in ((None, ""), ("", ""), ("eu", "eu")):
+        client, channel = _make_client()
+        list(client.stream_changes(target=target))
+        _metadata, request, _timeout = channel.invocations[0]
+        assert request.target == expected
+
+
+def test_stream_changes_sets_schema_table_and_target_together() -> None:
+    client, channel = _make_client()
+    list(client.stream_changes(schema="public", table="orders", target="eu"))
+    _metadata, request, _timeout = channel.invocations[0]
+    assert request.schema == "public"
+    assert request.table == "orders"
+    assert request.target == "eu"
+
+
 # --- Auth boundary: UNAUTHENTICATED surfaces, the stream is not silently
 # --- empty ---
 

@@ -162,6 +162,27 @@ class PgChangeFeedNatsStreamClient private constructor(
             return "cdc.stream.$sourceId.>"
         }
 
+        /**
+         * Builds the subject of one delivery target of a source:
+         * `cdc.route.<sourceId>.<target>`. Every change with a delivery target
+         * is published there in addition to its table subject, with the same
+         * payload. Both tokens are validated like in [buildSubject].
+         */
+        fun buildTargetSubject(sourceId: String, target: String): String {
+            validateToken(sourceId, "sourceId")
+            validateToken(target, "target")
+            return "cdc.route.$sourceId.$target"
+        }
+
+        /**
+         * Builds the wildcard subject for every delivery target of one
+         * source: `cdc.route.<sourceId>.>`.
+         */
+        fun buildSourceTargetsSubject(sourceId: String): String {
+            validateToken(sourceId, "sourceId")
+            return "cdc.route.$sourceId.>"
+        }
+
         private fun validateToken(value: String, paramName: String) {
             require(value.isNotBlank()) { "$paramName must not be blank." }
             require(value.none { it in invalidTokenChars }) {

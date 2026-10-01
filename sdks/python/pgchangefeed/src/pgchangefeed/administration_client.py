@@ -148,7 +148,10 @@ class PgChangeFeedAdministrationClient:
         """Reads a bounded range of stored changes of a source (reader or
         admin token) -- the same filter and range semantics as
         ``PgChangeFeedHttpClient.read_changes``: an unset ``from``/``to``/
-        ``limit`` carries ``0`` (not set)."""
+        ``limit`` carries ``0`` (not set). The request's ``target`` selects the
+        delivery target: empty (the default) is no filter, a set value returns
+        only changes routed to that target, combined with ``schema``/``table``
+        as a conjunction; a target no change carries returns an empty list."""
         return self._call(self._client.ReadChanges, request)
 
     def diagnose(

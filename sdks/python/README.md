@@ -76,9 +76,9 @@ with grpc.insecure_channel(options.address) as channel:
         print(change.operation, change.schema, change.table, change.new_image.decode())
 ```
 
-`schema`/`table` are each optional and independent: a set `schema` without `table` delivers every table of that schema, a set `table` without `schema` delivers every table of that name regardless of schema, both set delivers exactly one table, and leaving both out (the original, still valid call) delivers every change of every captured table.
+`schema`/`table`/`target` are each optional and independent: a set `schema` without `table` delivers every table of that schema, a set `table` without `schema` delivers every table of that name regardless of schema, both set delivers exactly one table, and leaving all out (the original, still valid call) delivers every change of every captured table. `target` selects the delivery target a change is routed to: a set value delivers only the changes routed to that target, combined with `schema`/`table` as a conjunction, and a target no change carries delivers nothing and raises no error: `client.stream_changes(target="eu")`. A server release that predates the parameter is expected to ignore it on the gRPC stream, which then stays unfiltered, and to answer `400` on the HTTP read path and the SSE stream; this follows from how the server reads its parameters and has not been run against such a release.
 
-Server-Sent Events (`address` is the HTTP base URL; the read timeout must be off for a long-lived stream):
+Server-Sent Events (`address` is the HTTP base URL; the read timeout must be off for a long-lived stream). `stream_changes(target="eu")` delivers only the changes routed to that target, and leaving `target` out delivers every change; the SSE client has no `schema`/`table` filter:
 
 ```python
 import httpx
@@ -93,7 +93,7 @@ for change in client.stream_changes():
     print(change.operation, change.schema, change.table, change.new_image)
 ```
 
-NATS (`address` is the NATS URL, the token is the NATS stream token checked when the connection is opened; the stream covers all tables of one source):
+NATS (`address` is the NATS URL, the token is the NATS stream token checked when the connection is opened; the stream covers all tables of one source). `stream_changes(target="eu")` subscribes to the subject of one delivery target of the source (`cdc.route.<source>.<target>`) instead: a change routed to a target arrives on its table subject and, with the same payload, on the target subject, a change without a target on the table subject only. A target that is blank or contains `.`, `*`, `>` or whitespace raises `ValueError`:
 
 ```python
 from pgchangefeed import ClientOptions, PgChangeFeedNatsStreamClient
@@ -145,7 +145,7 @@ with grpc.insecure_channel(options.address) as channel:
 | `get_table_status(request)` | Tells whether a table is captured (`enabled`) or no longer captured with stored changes remaining (`retained`). | reader |
 | `list_tables(request)` | Lists the captured tables (`tables`) and the tables whose stored changes remain (`retained`), each a `SourceTable`. | reader |
 | `run_retention(request)` | Deletes stored changes older than `min_age_nanos` that every consumer with a stored position has passed; returns the number deleted (`deleted`). A `min_age_nanos` of `0` means no minimum age and is valid. | admin |
-| `read_changes(request)` | Reads stored changes of a source, optionally for one schema and table and for the range `[from, to)` of commit positions; `changes` is a list of `ChangeRecord`. An unset `from`/`to`/`limit` carries `0` (not set); `from` is a Python keyword, reach the field with `getattr(request, "from")`. | reader |
+| `read_changes(request)` | Reads stored changes of a source, optionally for one schema and table, for the range `[from, to)` of commit positions and for one delivery target (`target`, empty is no filter); `changes` is a list of `ChangeRecord`. An unset `from`/`to`/`limit` carries `0` (not set); `from` is a Python keyword, reach the field with `getattr(request, "from")`. | reader |
 | `diagnose(request)` | Reads the operational diagnose report (heartbeat, capture lag, per-consumer lag, retention blocker, storage, backfill status). A `known`/`present`/`*_known` field of `false` carries the respective absence case. | reader |
 
 A call that the server answers with a non-`OK` gRPC status raises a subclass of `PgChangeFeedGrpcError` instead of a raw `grpc.RpcError`; the original `grpc.RpcError` is always `__cause__` (see [Error handling](#error-handling) for the HTTP-side exceptions):
@@ -174,7 +174,7 @@ A call that the server answers with a non-`OK` gRPC status raises a subclass of 
 | `get_status(source, schema, table, publication)` | Tells whether a table is captured (`enabled`) or no longer captured with stored changes remaining (`retained`). | reader |
 | `list_tables(source, publication)` | Lists the captured tables and the tables whose stored changes remain. | reader |
 | `run_retention(request)` | Deletes stored changes older than `min_age_nanos` that every consumer with a stored position has passed; returns the number deleted. | admin |
-| `read_changes(source, schema, table, from_, to, limit)` | Reads stored changes of a source, optionally for one schema and table and for the range `[from_, to)` of commit positions. Only `source` is required. | reader |
+| `read_changes(source, schema, table, from_, to, limit, target)` | Reads stored changes of a source, optionally for one schema and table, for the range `[from_, to)` of commit positions and for one delivery target (`target`, combined with `schema`/`table` as a conjunction; a target no change carries returns an empty list). Only `source` is required. | reader |
 
 Request and response classes live in `pgchangefeed.models`.
 
@@ -184,9 +184,9 @@ The live streams each have one method:
 
 | Class | Method | What it does |
 |---|---|---|
-| `PgChangeFeedGrpcClient(channel, options)` | `stream_changes(timeout=None, schema=None, table=None)` | Opens the gRPC stream and yields generated `Change` messages. `timeout` is the deadline of the whole call in seconds; `schema`/`table` filter the stream, each optional and independent. |
-| `PgChangeFeedSseClient(client, options)` | `stream_changes()` | Opens `GET /changes/stream` and yields `StreamChange` objects. |
-| `PgChangeFeedNatsStreamClient(options, source_id)` | `stream_changes(timeout=None)` | Subscribes to all tables of one source and yields `StreamChange` objects. `timeout` bounds the total consumption in seconds. |
+| `PgChangeFeedGrpcClient(channel, options)` | `stream_changes(timeout=None, schema=None, table=None, target=None)` | Opens the gRPC stream and yields generated `Change` messages. `timeout` is the deadline of the whole call in seconds; `schema`/`table`/`target` filter the stream, each optional and independent. |
+| `PgChangeFeedSseClient(client, options)` | `stream_changes(target=None)` | Opens `GET /changes/stream` and yields `StreamChange` objects. `target` is optional, left out delivers every change. |
+| `PgChangeFeedNatsStreamClient(options, source_id)` | `stream_changes(timeout=None, target=None)` | Subscribes to all tables of one source, or to one delivery target of it when `target` is set, and yields `StreamChange` objects. `timeout` bounds the total consumption in seconds. |
 
 ## The change object
 
@@ -244,7 +244,7 @@ The gRPC stream reports a missing or unknown token as `grpc.RpcError` with statu
 
 - **Reading over HTTP** (`read_changes`) is asking: you name a range, the server answers from the changes it has stored. You can read the same range again, and with a registered consumer you can carry on after a restart exactly where you stopped. Changes stay readable until the retention removes them.
 - **The live streams** (gRPC, SSE, NATS) are pushing: you get every change committed after you connected, in commit order, with the full row content. There is no delivery guarantee and no replay. A change committed while you were disconnected, or while you read too slowly, does not arrive on the stream. Use the stream to react quickly and `read_changes` to catch up on what it missed.
-- The gRPC and SSE streams cannot be filtered by table; the NATS stream of this package covers all tables of one source.
+- The gRPC stream can be filtered by schema, table and delivery target; the SSE stream and the NATS stream can be filtered by delivery target only (`stream_changes(target=...)`); without a target the NATS stream covers all tables of one source.
 
 ## More
 

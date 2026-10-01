@@ -211,10 +211,15 @@ class PgChangeFeedHttpClient:
         from_: int | None = None,
         to: int | None = None,
         limit: int | None = None,
+        target: str | None = None,
     ) -> ReadChangesResponse:
         """Reads stored changes of a source.
 
         ``schema`` and ``table`` each narrow the result independently.
+        ``target`` selects the delivery target of a change: left ``None`` (the
+        default) the request carries no target, a set value returns only
+        changes routed to that target, combined with ``schema``/``table`` as a
+        conjunction; a target no change carries returns an empty list.
         ``from_`` and ``to`` are ``commit_position`` values: ``from_`` is
         inclusive, ``to`` is exclusive. ``from_`` is spelled with a trailing
         underscore because ``from`` is a Python keyword; it is sent as the
@@ -227,6 +232,7 @@ class PgChangeFeedHttpClient:
                 "source": source,
                 "schema": schema,
                 "table": table,
+                "target": target,
                 "from": from_,
                 "to": to,
                 "limit": limit,

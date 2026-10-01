@@ -113,6 +113,30 @@ public sealed class PgChangeFeedNatsStreamClient : IAsyncDisposable
         return $"cdc.stream.{sourceId}.>";
     }
 
+    /// <summary>
+    /// Builds the subject of one delivery target of a source:
+    /// <c>cdc.route.&lt;sourceId&gt;.&lt;target&gt;</c>. Every change with a
+    /// delivery target is published there in addition to its table subject,
+    /// with the same payload. Both tokens are validated like in
+    /// <see cref="BuildSubject"/>.
+    /// </summary>
+    public static string BuildTargetSubject(string sourceId, string target)
+    {
+        ValidateToken(sourceId, nameof(sourceId));
+        ValidateToken(target, nameof(target));
+        return $"cdc.route.{sourceId}.{target}";
+    }
+
+    /// <summary>
+    /// Builds the wildcard subject for every delivery target of one source:
+    /// <c>cdc.route.&lt;sourceId&gt;.&gt;</c>.
+    /// </summary>
+    public static string BuildSourceTargetsSubject(string sourceId)
+    {
+        ValidateToken(sourceId, nameof(sourceId));
+        return $"cdc.route.{sourceId}.>";
+    }
+
     private static void ValidateToken(string value, string paramName)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -133,7 +157,9 @@ public sealed class PgChangeFeedNatsStreamClient : IAsyncDisposable
     /// server delivers from subscription time onward (fire-and-forget, no
     /// replay, one message per row change in commit order). Use
     /// <see cref="BuildSubject"/>/<see cref="BuildSourceSubject"/> to narrow
-    /// the subject to one table or one source.
+    /// the subject to one table or one source, and
+    /// <see cref="BuildTargetSubject"/>/<see cref="BuildSourceTargetsSubject"/>
+    /// to subscribe to one delivery target or all targets of a source.
     ///
     /// A connection rejected by the NATS server (missing/wrong token) ends the
     /// enumeration with a NATS exception — see the class-level boundary note.

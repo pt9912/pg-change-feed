@@ -146,6 +146,46 @@ def test_stream_changes_subscribes_the_namespace_with_the_connection_token(monke
     assert yielded.change_id == "chg-1"
 
 
+def test_target_subject_is_the_route_subject_of_the_source_and_target() -> None:
+    assert nats_stream_client._target_subject(SOURCE_ID, "eu") == f"cdc.route.{SOURCE_ID}.eu"
+
+
+def test_target_subject_rejects_blank_separator_wildcard_and_whitespace() -> None:
+    for invalid in ("", "   ", ".", "*", ">", "has.dot", "has space"):
+        with pytest.raises(ValueError):
+            nats_stream_client._target_subject(SOURCE_ID, invalid)
+
+
+def test_stream_changes_with_target_subscribes_the_route_subject(monkeypatch) -> None:
+    connection = _FakeNatsConnection(on_subscribe_payload=_FULL_MESSAGE_BYTES)
+    _install_fake_connect(monkeypatch, connection, None)
+    client = _make_client()
+
+    yielded = next(client.stream_changes(timeout=3.0, target="eu"))
+
+    assert connection.subscribe_subjects == [f"cdc.route.{SOURCE_ID}.eu"]
+    assert yielded.change_id == "chg-1"
+
+
+def test_stream_changes_with_empty_or_no_target_keeps_the_source_namespace(monkeypatch) -> None:
+    for kwargs in ({}, {"target": None}, {"target": ""}):
+        connection = _FakeNatsConnection(on_subscribe_payload=_FULL_MESSAGE_BYTES)
+        _install_fake_connect(monkeypatch, connection, None)
+
+        next(_make_client().stream_changes(timeout=3.0, **kwargs))
+
+        assert connection.subscribe_subjects == [f"cdc.stream.{SOURCE_ID}.>"]
+
+
+def test_stream_changes_with_an_invalid_target_raises_before_connecting(monkeypatch) -> None:
+    connect_calls = _install_fake_connect(monkeypatch, _FakeNatsConnection(), None)
+
+    with pytest.raises(ValueError):
+        next(_make_client().stream_changes(timeout=1.0, target="a.b"))
+
+    assert connect_calls == []
+
+
 # --- Connection error path: rejection happens when the connection is opened ---
 
 

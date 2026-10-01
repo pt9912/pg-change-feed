@@ -13,7 +13,8 @@ message. ``ClientOptions.address`` is the NATS URL (``nats://host:4222``),
 
 The stream is fire-and-forget: a change committed while the client is not
 subscribed is not delivered later. ``PgChangeFeedHttpClient.read_changes`` is
-the way to catch up; the stream itself carries no filter.
+the way to catch up; ``stream_changes(target=...)`` narrows the stream to one
+delivery target of the source.
 
 The client uses ``nats-py``, the asyncio client of the NATS project, behind a
 synchronous iterator like the other clients of this package: connecting and
@@ -37,6 +38,8 @@ from pgchangefeed.models import StreamChange
 from pgchangefeed.options import ClientOptions
 
 _SUBJECT_PREFIX = "cdc.stream."
+_ROUTE_PREFIX = "cdc.route."
+_INVALID_TOKEN_CHARS = frozenset(".*> \t\n\r")
 
 _SUBSCRIPTION_READY_TIMEOUT_SECONDS = 15.0
 _STREAM_POLL_INTERVAL_SECONDS = 0.1
@@ -55,16 +58,31 @@ class PgChangeFeedNatsStreamClient:
         self._options = options
         self._source_id = source_id.strip()
 
-    def stream_changes(self, timeout: float | None = None) -> Iterator[StreamChange]:
+    def stream_changes(
+        self, timeout: float | None = None, target: str | None = None
+    ) -> Iterator[StreamChange]:
         """Subscribes to all tables of the source and yields one ``StreamChange``
         per committed change, from the moment the subscription is ready
         onward: fire-and-forget, no replay, one message per row change.
+
+        ``target`` selects the delivery target of a change: a set value
+        subscribes to the subject of that target of the source,
+        ``cdc.route.<source_id>.<target>``, which carries the changes routed to
+        it with the same payload; left ``None`` or empty the subscription
+        covers all tables of the source. A target containing ``.``, ``*``, ``>``
+        or whitespace raises ``ValueError``, because such a name would change
+        which subjects the subscription matches.
 
         The token is sent when the connection is opened. If the server rejects
         it, the connect error of the NATS client library is raised (the stream
         is never silently empty). ``timeout`` bounds the total consumption in
         seconds (``None`` = unbounded); past it the generator stops.
         """
+        subject = (
+            _target_subject(self._source_id, target)
+            if target
+            else _subject_namespace(self._source_id)
+        )
         events: queue.Queue[bytes] = queue.Queue()
         ready = threading.Event()
         connection_error: list[BaseException] = []
@@ -87,7 +105,7 @@ class PgChangeFeedNatsStreamClient:
                 async def callback(message) -> None:
                     events.put(message.data)
 
-                await nc.subscribe(_subject_namespace(self._source_id), cb=callback)
+                await nc.subscribe(subject, cb=callback)
                 ready.set()
                 while not stop.is_set():
                     await asyncio.sleep(_STREAM_POLL_INTERVAL_SECONDS)
@@ -122,6 +140,18 @@ def _subject_namespace(source_id: str) -> str:
     ``cdc.stream.<source_id>.>``, which matches every ``<schema>.<table>`` of
     the source."""
     return f"{_SUBJECT_PREFIX}{source_id}.>"
+
+
+def _target_subject(source_id: str, target: str) -> str:
+    """Builds the subscription subject of one delivery target of a source,
+    ``cdc.route.<source_id>.<target>``. A target that is blank or contains a
+    subject separator, a wildcard or whitespace raises ``ValueError``."""
+    if not target.strip() or any(ch in _INVALID_TOKEN_CHARS for ch in target):
+        raise ValueError(
+            "target must not be blank or contain '.', '*', '>' or whitespace: "
+            "these are NATS subject separators and wildcards"
+        )
+    return f"{_ROUTE_PREFIX}{source_id}.{target}"
 
 
 def _parse_stream_change(payload: bytes) -> StreamChange:

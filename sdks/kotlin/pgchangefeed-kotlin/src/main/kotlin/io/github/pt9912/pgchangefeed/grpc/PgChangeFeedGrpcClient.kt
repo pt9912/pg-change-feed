@@ -91,17 +91,23 @@ class PgChangeFeedGrpcClient private constructor(
      * change of every captured table, unchanged from the original,
      * filter-less contract.
      *
+     * [target] selects the delivery target of a change: a set value delivers
+     * only changes routed to that target, combined with [schema]/[table] as a
+     * conjunction; left `null` (or empty) the request carries no target. A
+     * target no change carries delivers nothing and raises no error.
+     *
      * A missing or invalid bearer token ends the call with gRPC status
      * `UNAUTHENTICATED` — this surfaces as an `io.grpc.StatusException` from
      * the returned [Flow] once collected, not as a silently empty stream.
      */
-    fun streamChanges(schema: String? = null, table: String? = null): Flow<Change> {
+    fun streamChanges(schema: String? = null, table: String? = null, target: String? = null): Flow<Change> {
         val headers = Metadata().apply {
             put(AUTHORIZATION_METADATA_ENTRY, BEARER_PREFIX + options.apiToken)
         }
         val request = StreamChangesRequest.newBuilder().apply {
             if (schema != null) setSchema(schema)
             if (table != null) setTable(table)
+            if (target != null) setTarget(target)
         }.build()
         return transport.streamChanges(request, headers)
     }

@@ -80,6 +80,13 @@ public sealed class PgChangeFeedGrpcClient : IDisposable
     /// delivers every change of every captured table, unchanged from the
     /// original, filter-less contract.
     ///
+    /// <paramref name="target"/> selects the delivery target of a change: a
+    /// set value delivers only changes routed to that target, combined with
+    /// <paramref name="schema"/>/<paramref name="table"/> as a conjunction; left
+    /// <c>null</c> (or empty) the request carries no target. A target no change
+    /// carries delivers nothing and raises no error. Pass it by name: it is the
+    /// last parameter, after <paramref name="cancellationToken"/>.
+    ///
     /// A missing or invalid bearer token ends the call with gRPC status
     /// <see cref="StatusCode.Unauthenticated"/> — this surfaces as an
     /// <see cref="RpcException"/> from the enumeration itself, not as a
@@ -88,10 +95,15 @@ public sealed class PgChangeFeedGrpcClient : IDisposable
     public async IAsyncEnumerable<Change> StreamChangesAsync(
         string? schema = null,
         string? table = null,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default,
+        string? target = null)
     {
         var headers = new Metadata { { AuthorizationMetadataKey, BearerPrefix + _options.ApiToken } };
         var request = new StreamChangesRequest();
+        if (target is not null)
+        {
+            request.Target = target;
+        }
         if (schema is not null)
         {
             request.Schema = schema;

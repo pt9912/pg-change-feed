@@ -51,6 +51,47 @@ class PgChangeFeedNatsStreamClientSubjectTest {
     }
 
     @Test
+    fun `buildTargetSubject formats the route subject of one target`() {
+        assertEquals(
+            "cdc.route.source-1.eu",
+            PgChangeFeedNatsStreamClient.buildTargetSubject("source-1", "eu"),
+        )
+    }
+
+    @Test
+    fun `buildSourceTargetsSubject formats the route wildcard subject`() {
+        assertEquals(
+            "cdc.route.source-1.>",
+            PgChangeFeedNatsStreamClient.buildSourceTargetsSubject("source-1"),
+        )
+    }
+
+    @Test
+    fun `target subject builders reject blank tokens separators and wildcards`() {
+        for (invalid in listOf("", "   ", ".", "*", ">", "has.dot", "has space")) {
+            assertFailsWith<IllegalArgumentException> {
+                PgChangeFeedNatsStreamClient.buildTargetSubject("source-1", invalid)
+            }
+            assertFailsWith<IllegalArgumentException> {
+                PgChangeFeedNatsStreamClient.buildTargetSubject(invalid, "eu")
+            }
+            assertFailsWith<IllegalArgumentException> {
+                PgChangeFeedNatsStreamClient.buildSourceTargetsSubject(invalid)
+            }
+        }
+    }
+
+    @Test
+    fun `streamChanges subscribes to the target subject`() {
+        val transport = FakeNatsStreamTransport.withPayloads()
+        val client = PgChangeFeedNatsStreamClient(transport)
+
+        client.streamChanges(PgChangeFeedNatsStreamClient.buildTargetSubject("source-1", "eu")).toList()
+
+        assertEquals("cdc.route.source-1.eu", transport.lastSubject)
+    }
+
+    @Test
     fun `streamChanges defaults to the all-sources wildcard subject`() {
         val transport = FakeNatsStreamTransport.withPayloads()
         val client = PgChangeFeedNatsStreamClient(transport)

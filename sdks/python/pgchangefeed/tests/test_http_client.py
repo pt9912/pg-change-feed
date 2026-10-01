@@ -237,6 +237,35 @@ def test_read_changes_happy_path() -> None:
     assert change.old_image is None
 
 
+def _query_of_read_changes(**kwargs) -> str:
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url.query.decode())
+        return httpx.Response(200, json={"changes": []})
+
+    _make_client(handler).read_changes(source="src", **kwargs)
+    return seen[0]
+
+
+def test_read_changes_without_target_carries_no_target() -> None:
+    assert _query_of_read_changes() == "source=src"
+
+
+def test_read_changes_sends_target_only_when_set_and_escapes_it() -> None:
+    assert _query_of_read_changes(target=None) == "source=src"
+    assert _query_of_read_changes(target="") == "source=src&target="
+    assert _query_of_read_changes(target="eu") == "source=src&target=eu"
+    assert _query_of_read_changes(target="a&b=c") == "source=src&target=a%26b%3Dc"
+
+
+def test_read_changes_target_with_schema_table_and_range_is_a_conjunction() -> None:
+    query = _query_of_read_changes(
+        schema="public", table="orders", from_=1, to=10, limit=5, target="eu"
+    )
+    assert query == "source=src&schema=public&table=orders&target=eu&from=1&to=10&limit=5"
+
+
 # Body shape: the output of the server's GET /changes handler, where `origin`
 # is the last field of each change (Go test TestReadChangesTraegtOriginAlsLetztesFeld,
 # internal/adapters/driving/http/readchanges_test.go). Not captured from a

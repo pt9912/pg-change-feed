@@ -385,6 +385,18 @@ def test_read_changes_boundary_unset_range_fields_carry_zero() -> None:
     assert request.limit == 0
 
 
+def test_read_changes_target_reaches_the_server_request_unchanged() -> None:
+    response = administration_pb2.ReadChangesResponse(changes=[])
+    for target in ("", "eu"):
+        client, channel = _make_client(result=response)
+        client.read_changes(
+            administration_pb2.ReadChangesRequest(source="my-source", schema="public", target=target)
+        )
+        _method, _metadata, request = channel.invocations[0]
+        assert request.target == target
+        assert request.schema == "public"
+
+
 def test_read_changes_negative_invalid_argument_raises_typed_error() -> None:
     client, _channel = _make_client(error=_UnaryRpcError(grpc.StatusCode.INVALID_ARGUMENT))
     with pytest.raises(PgChangeFeedGrpcInvalidArgumentError):

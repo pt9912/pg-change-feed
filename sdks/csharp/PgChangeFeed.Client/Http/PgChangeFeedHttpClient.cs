@@ -182,7 +182,12 @@ public sealed class PgChangeFeedHttpClient
     /// <paramref name="from"/> is inclusive, <paramref name="to"/> exclusive
     /// (both <c>commit_position</c> values). <paramref name="limit"/> cuts rows,
     /// not positions, and there is no default limit. A range without changes
-    /// returns an empty list.
+    /// returns an empty list. <paramref name="target"/> selects the delivery
+    /// target of a change: left <c>null</c> (the default) the request carries
+    /// no target, a set value returns only changes routed to that target, and
+    /// it combines with <paramref name="schema"/>/<paramref name="table"/> as a
+    /// conjunction. A target no change carries returns an empty list. Pass it
+    /// by name: it is the last parameter, after <paramref name="cancellationToken"/>.
     /// </summary>
     public Task<ReadChangesResponse> ReadChangesAsync(
         string source,
@@ -191,13 +196,15 @@ public sealed class PgChangeFeedHttpClient
         long? from = null,
         long? to = null,
         int? limit = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? target = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(source);
         var query = BuildQuery(
             ("source", source),
             ("schema", schema),
             ("table", table),
+            ("target", target),
             ("from", from?.ToString()),
             ("to", to?.ToString()),
             ("limit", limit?.ToString()));

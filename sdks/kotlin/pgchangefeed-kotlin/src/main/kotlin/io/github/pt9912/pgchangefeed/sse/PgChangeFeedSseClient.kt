@@ -13,6 +13,7 @@ import io.github.pt9912.pgchangefeed.http.PgChangeFeedUnauthorizedException
 import io.github.pt9912.pgchangefeed.http.PgChangeFeedUnexpectedStatusException
 import io.github.pt9912.pgchangefeed.http.TransportRequest
 import io.github.pt9912.pgchangefeed.http.model.ErrorResponse
+import io.github.pt9912.pgchangefeed.http.percentEncode
 import io.github.pt9912.pgchangefeed.sse.model.Change
 import java.net.http.HttpClient
 
@@ -76,11 +77,18 @@ class PgChangeFeedSseClient internal constructor(
      * a frame whose `data:` payload cannot be read still throws
      * [PgChangeFeedMalformedResponseException], because that is not a stream
      * end.
+     *
+     * [target] selects the delivery target of a change: a set value (sent as
+     * the query parameter `target`) delivers only changes routed to that
+     * target; left `null` (the default) the request carries no query and
+     * delivers every change. A target no change carries delivers nothing and
+     * raises no error.
      */
-    fun streamChanges(): Sequence<Change> = sequence {
+    fun streamChanges(target: String? = null): Sequence<Change> = sequence {
+        val query = if (target == null) "" else "?target=" + percentEncode(target)
         val request = TransportRequest(
             method = "GET",
-            url = options.address.toString().trimEnd('/') + "/changes/stream",
+            url = options.address.toString().trimEnd('/') + "/changes/stream" + query,
             headers = mapOf("Authorization" to "Bearer ${options.apiToken}"),
             body = null,
         )

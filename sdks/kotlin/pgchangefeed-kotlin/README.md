@@ -131,7 +131,7 @@ fun main() = runBlocking {
 }
 ```
 
-`streamChanges` takes two optional parameters, `schema` and `table`, each independent: a schema without a table matches every table of that schema, a table without a schema matches every table of that name across schemas, both set matches exactly one table, and both left `null` (the default) delivers every change of every captured table — the same filter form as `readChanges` below.
+`streamChanges` takes three optional parameters, `schema`, `table` and `target`, each independent: a schema without a table matches every table of that schema, a table without a schema matches every table of that name across schemas, both set matches exactly one table, and all left `null` (the default) delivers every change of every captured table — the same filter form as `readChanges` below. `target` selects the delivery target a change is routed to: a set value delivers only the changes routed to that target, combined with `schema`/`table` as a conjunction, and a target no change carries delivers nothing and raises no error: `streamChanges(target = "eu")`. A server release that predates the parameter is expected to ignore it on the gRPC stream, which then stays unfiltered, and to answer `400` on the HTTP read path and the SSE stream; this follows from how the server reads its parameters and has not been run against such a release.
 
 Server-Sent Events (the address is the HTTP base URL; `streamChanges()` returns a `Sequence` that blocks while it waits for the next change):
 
@@ -150,7 +150,9 @@ fun main() {
 }
 ```
 
-NATS (the address is the NATS URL, the token is the NATS stream token checked when the connection is opened, so a rejected token fails in the constructor). The subject selects what you receive: `buildSourceSubject` covers all tables of one source, `buildSubject` one table, and without a subject you receive every source:
+The SSE stream takes one optional parameter, `target`: `client.streamChanges(target = "eu")` delivers only the changes routed to that target, and leaving it out delivers every change. The SSE client has no `schema`/`table` filter.
+
+NATS (the address is the NATS URL, the token is the NATS stream token checked when the connection is opened, so a rejected token fails in the constructor). The subject selects what you receive: `buildSourceSubject` covers all tables of one source, `buildSubject` one table, `buildTargetSubject` one delivery target of a source (`cdc.route.<source>.<target>`), `buildSourceTargetsSubject` every delivery target of a source, and without a subject you receive every source. A change routed to a target arrives on its table subject and, with the same payload, on the target subject; a change without a target arrives on the table subject only. The tokens are validated like those of `buildSubject`:
 
 ```kotlin
 import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions
@@ -213,7 +215,7 @@ fun main() = runBlocking {
 | `getStatus(source, schema, table, publication)` | Tells whether a table is captured (`enabled`) or no longer captured with stored changes remaining (`retained`). | reader |
 | `listTables(source, publication)` | Lists the captured tables and the tables whose stored changes remain. | reader |
 | `runRetention(request)` | Deletes stored changes older than `minAgeNanos` that every consumer with a stored position has passed; returns the number deleted. | admin |
-| `readChanges(source, schema, table, from, to, limit)` | Reads stored changes of a source, optionally for one schema and table and for the range `[from, to)` of commit positions. Only `source` is required. | reader |
+| `readChanges(source, schema, table, from, to, limit, target)` | Reads stored changes of a source, optionally for one schema and table, for the range `[from, to)` of commit positions and for one delivery target (`target`, combined with `schema`/`table` as a conjunction; a target no change carries returns an empty list). Only `source` is required. | reader |
 
 Request and response classes live in `io.github.pt9912.pgchangefeed.http.model`.
 
@@ -223,8 +225,8 @@ The live streams each have one method:
 
 | Class | Method | What it does |
 |---|---|---|
-| `PgChangeFeedGrpcClient(options)` | `streamChanges(schema, table)` | Opens the gRPC stream and returns a `Flow` of the generated `Change` messages. `schema`/`table` are optional and independent, both left `null` delivers every change. `close()` shuts down the channel the client owns. |
-| `PgChangeFeedSseClient(httpClient, options)` | `streamChanges()` | Opens `GET /changes/stream` and returns a `Sequence` of `io.github.pt9912.pgchangefeed.sse.model.Change` objects. |
+| `PgChangeFeedGrpcClient(options)` | `streamChanges(schema, table, target)` | Opens the gRPC stream and returns a `Flow` of the generated `Change` messages. `schema`/`table`/`target` are optional and independent, all left `null` delivers every change. `close()` shuts down the channel the client owns. |
+| `PgChangeFeedSseClient(httpClient, options)` | `streamChanges(target)` | Opens `GET /changes/stream` and returns a `Sequence` of `io.github.pt9912.pgchangefeed.sse.model.Change` objects. `target` is optional, left `null` delivers every change. |
 | `PgChangeFeedNatsStreamClient(options)` | `streamChanges(subject)` | Subscribes to a subject and returns a `Sequence` of `io.github.pt9912.pgchangefeed.nats.model.Change` objects. `close()` closes the connection the client owns. |
 
 `PgChangeFeedAdministrationClient(options)` wraps the eleven RPCs of the `Administration` gRPC service — the same capabilities as the HTTP table above, over gRPC. Requests and responses are the generated `cdc.administration.v1` protobuf messages, used directly (no separate model type):
@@ -240,7 +242,7 @@ The live streams each have one method:
 | `getTableStatus(request)` | Tells whether a table is captured (`enabled`) or no longer captured with stored changes remaining (`retained`). | reader |
 | `listTables(request)` | Lists the captured tables (`tablesList`) and the tables whose stored changes remain (`retainedList`), each a `SourceTable`. | reader |
 | `runRetention(request)` | Deletes stored changes older than `minAgeNanos` that every consumer with a stored position has passed; returns the number deleted (`deleted`). | admin |
-| `readChanges(request)` | Reads stored changes of a source, optionally for one schema and table and for the range `[from, to)` of commit positions; `changesList` is a list of `ChangeRecord`. | reader |
+| `readChanges(request)` | Reads stored changes of a source, optionally for one schema and table, for the range `[from, to)` of commit positions and for one delivery target (`target`, empty is no filter); `changesList` is a list of `ChangeRecord`. | reader |
 | `diagnose(request)` | Reads the operational diagnose report (heartbeat, capture lag, per-consumer lag, retention blocker, storage, backfill status). | reader |
 
 ## The change object
@@ -314,7 +316,7 @@ A `PgChangeFeedAdministrationClient` call that the server answers with a non-`OK
 
 - **Reading over HTTP** (`readChanges`) is asking: you name a range, the server answers from the changes it has stored. You can read the same range again, and with a registered consumer you can carry on after a restart exactly where you stopped. Changes stay readable until the retention removes them.
 - **The live streams** (gRPC, SSE, NATS) are pushing: you get every change committed after you connected, in commit order, with the full row content. There is no delivery guarantee and no replay. A change committed while you were disconnected, or while you read too slowly, does not arrive on the stream. Use the stream to react quickly and `readChanges` to catch up on what it missed.
-- The gRPC stream can be filtered by schema/table (`streamChanges(schema, table)`); the SSE stream cannot yet; on the NATS stream the subject chooses the source or the table.
+- The gRPC stream can be filtered by schema, table and delivery target (`streamChanges(schema, table, target)`); the SSE stream can be filtered by delivery target (`streamChanges(target)`); on the NATS stream the subject chooses the source, the table or the delivery target.
 
 ## More
 

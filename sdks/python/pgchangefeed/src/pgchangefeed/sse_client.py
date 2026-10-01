@@ -14,7 +14,8 @@ There is no module-level or global state, so a process can hold several
 independently configured instances at once.
 
 The stream is fire-and-forget and has no replay: the ``Last-Event-ID`` header
-is neither sent nor evaluated, and the stream cannot be filtered by table.
+is neither sent nor evaluated, and the stream can be filtered by delivery
+target only (``stream_changes(target=...)``), not by table.
 ``PgChangeFeedHttpClient.read_changes`` is the way to catch up.
 
 Each event is a frame: an ``event: change`` line, one ``data:`` line with the
@@ -53,10 +54,16 @@ class PgChangeFeedSseClient:
         self._client = client
         self._options = options
 
-    def stream_changes(self) -> Iterator[StreamChange]:
+    def stream_changes(self, target: str | None = None) -> Iterator[StreamChange]:
         """Opens the SSE stream and yields one ``StreamChange`` per committed
         change, from connection time onward: fire-and-forget, no replay, one
-        message per row change in commit order. The request carries no filter.
+        message per row change in commit order.
+
+        ``target`` selects the delivery target of a change: a set value (sent
+        as the query parameter ``target``) delivers only changes routed to that
+        target; left ``None`` (the default) the request carries no query and
+        delivers every change. A target no change carries delivers nothing and
+        raises no error.
 
         A missing or invalid bearer token, or any other non-success response,
         raises the same typed status-code error as the HTTP client (``401`` for
@@ -64,7 +71,8 @@ class PgChangeFeedSseClient:
         """
         url = f"{self._options.address.rstrip('/')}{_STREAM_PATH}"
         headers = {"Authorization": f"Bearer {self._options.api_token}"}
-        with self._client.stream("GET", url, headers=headers) as response:
+        params = None if target is None else {"target": target}
+        with self._client.stream("GET", url, headers=headers, params=params) as response:
             if not 200 <= response.status_code < 300:
                 response.read()
                 raise _build_error(response)

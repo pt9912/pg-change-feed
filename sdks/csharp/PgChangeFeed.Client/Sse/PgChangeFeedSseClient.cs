@@ -65,11 +65,22 @@ public sealed class PgChangeFeedSseClient
     /// a frame whose <c>data:</c> payload cannot be read still throws
     /// <see cref="PgChangeFeedMalformedResponseException"/>, because that is
     /// not a stream end.
+    ///
+    /// <paramref name="target"/> selects the delivery target of a change: a
+    /// set value (sent as the query parameter <c>target</c>) delivers only
+    /// changes routed to that target; left <c>null</c> (the default) the
+    /// request carries no query and delivers every change. A target no change
+    /// carries delivers nothing and raises no error. Pass it by name: it is
+    /// the last parameter, after <paramref name="cancellationToken"/>.
     /// </summary>
     public async IAsyncEnumerable<Change> StreamChangesAsync(
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default,
+        string? target = null)
     {
-        var uri = new Uri(_options.Address, "/changes/stream");
+        var path = target is null
+            ? "/changes/stream"
+            : $"/changes/stream?target={Uri.EscapeDataString(target)}";
+        var uri = new Uri(_options.Address, path);
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiToken);
 

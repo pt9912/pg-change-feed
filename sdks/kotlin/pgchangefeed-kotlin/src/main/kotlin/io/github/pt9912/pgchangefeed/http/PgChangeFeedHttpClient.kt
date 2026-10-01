@@ -140,7 +140,11 @@ class PgChangeFeedHttpClient internal constructor(
      * token). [source] is mandatory; [schema]/[table] are optional and
      * independent; [from] is inclusive, [to] exclusive (both `commit_position`
      * values). [limit] cuts rows, not positions, and there is no default
-     * limit. A range without changes returns an empty list.
+     * limit. A range without changes returns an empty list. [target] selects
+     * the delivery target of a change: left `null` (the default) the request
+     * carries no target, a set value returns only changes routed to that
+     * target, combined with [schema]/[table] as a conjunction; a target no
+     * change carries returns an empty list.
      */
     fun readChanges(
         source: String,
@@ -149,11 +153,13 @@ class PgChangeFeedHttpClient internal constructor(
         from: Long? = null,
         to: Long? = null,
         limit: Int? = null,
+        target: String? = null,
     ): ReadChangesResponse {
         val query = buildQuery(
             "source" to source,
             "schema" to schema,
             "table" to table,
+            "target" to target,
             "from" to from?.toString(),
             "to" to to?.toString(),
             "limit" to limit?.toString(),
@@ -230,29 +236,31 @@ class PgChangeFeedHttpClient internal constructor(
             body
         }
 
-    /**
-     * RFC 3986 percent-encoding (unreserved: `A-Za-z0-9-_.~`) — not
-     * `java.net.URLEncoder`'s form-encoding (which encodes a space as `+`
-     * instead of `%20`).
-     */
-    private fun encode(value: String): String {
-        val builder = StringBuilder()
-        for (byte in value.toByteArray(StandardCharsets.UTF_8)) {
-            val unsigned = byte.toInt() and 0xFF
-            val c = unsigned.toChar()
-            val isUnreserved = c in 'A'..'Z' || c in 'a'..'z' || c in '0'..'9' ||
-                c == '-' || c == '_' || c == '.' || c == '~'
-            if (isUnreserved) {
-                builder.append(c)
-            } else {
-                builder.append('%')
-                builder.append(String.format("%02X", unsigned))
-            }
-        }
-        return builder.toString()
-    }
+    private fun encode(value: String): String = percentEncode(value)
 
     private companion object {
         val gson = Gson()
     }
+}
+
+/**
+ * RFC 3986 percent-encoding (unreserved: `A-Za-z0-9-_.~`) — not
+ * `java.net.URLEncoder`'s form-encoding (which encodes a space as `+`
+ * instead of `%20`). Shared by the HTTP and SSE clients for query values.
+ */
+internal fun percentEncode(value: String): String {
+    val builder = StringBuilder()
+    for (byte in value.toByteArray(StandardCharsets.UTF_8)) {
+        val unsigned = byte.toInt() and 0xFF
+        val c = unsigned.toChar()
+        val isUnreserved = c in 'A'..'Z' || c in 'a'..'z' || c in '0'..'9' ||
+            c == '-' || c == '_' || c == '.' || c == '~'
+        if (isUnreserved) {
+            builder.append(c)
+        } else {
+            builder.append('%')
+            builder.append(String.format("%02X", unsigned))
+        }
+    }
+    return builder.toString()
 }
