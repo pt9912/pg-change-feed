@@ -8,7 +8,7 @@ Teilfrage 5, [`ADR-0100`](../plan/adr/0100-nats-dritter-vollinhalts-zustellweg.m
 Review-Artefakt: [`review-slice-routing-nats-subjekt.md`](review-slice-routing-nats-subjekt.md).
 Formvorbild: [`verifikation-slice-routing-lesewege.md`](verifikation-slice-routing-lesewege.md).
 
-**Gegenstand:** Slice-Plan [`slice-routing-nats-subjekt`](../plan/planning/in-progress/slice-routing-nats-subjekt.md)
+**Gegenstand:** Slice-Plan [`slice-routing-nats-subjekt`](../plan/planning/done/slice-routing-nats-subjekt.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter
 [`LH-FA-SST-008`](../../spec/lastenheft.md), [`LH-FA-SST-006`](../../spec/lastenheft.md); Spec-Zeile
 [`SPEC-024`](../../spec/pflichtenheft.md); Welle [`welle-routing`](../plan/planning/welle-routing.md)).
