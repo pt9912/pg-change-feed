@@ -11,7 +11,7 @@ Folgepflicht 8 und Entscheidung 4,
 Review-Artefakt: [`review-slice-routing-betriebsdoku.md`](review-slice-routing-betriebsdoku.md).
 Formvorbild: [`verifikation-slice-routing-e2e.md`](verifikation-slice-routing-e2e.md).
 
-**Gegenstand:** Slice-Plan [`slice-routing-betriebsdoku`](../plan/planning/in-progress/slice-routing-betriebsdoku.md)
+**Gegenstand:** Slice-Plan [`slice-routing-betriebsdoku`](../plan/planning/done/slice-routing-betriebsdoku.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter
 [`LH-FA-SST-006`](../../spec/lastenheft.md), [`LH-FA-ADM-001`](../../spec/lastenheft.md); Welle
 [`welle-routing`](../plan/planning/welle-routing.md)). Diff `2e68966f~1..HEAD` (`e465ca1c`):

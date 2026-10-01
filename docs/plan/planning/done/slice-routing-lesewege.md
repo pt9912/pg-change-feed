@@ -293,7 +293,7 @@ Block nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   ausgelieferten Altserver: gemessen ist das Verhalten der Protobuf-Bibliothek dieses
   Repos (die zwei Tests oben, im Verifier-Lauf `make test` Exit 0), am ausgelieferten
   Altserver ist die Aussage *hergeleitet*; eine Messung ist nirgends eingeplant. Adresse:
-  [`slice-routing-betriebsdoku`](../in-progress/slice-routing-betriebsdoku.md) §2 (die Aussage im
+  [`slice-routing-betriebsdoku`](slice-routing-betriebsdoku.md) §2 (die Aussage im
   Handbuch trägt den Ursprung *hergeleitet*).
 - **Das Ziel ist Auswahl, kein Zugriffsschutz.** Jeder Leser mit `reader`-Token kann
   jedes Ziel wählen oder gar nicht filtern
@@ -302,7 +302,7 @@ Block nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   als Berechtigung ist falsch. — **Ausgang:** entfallen für diesen Slice (er ändert kein
   Handbuch; die Aussage ist Norm der ADR, im Code gilt: ohne `target` liefert jeder Weg
   alle Changes, `TestChangeMatchesFilterTarget`, `TestReadChangesFiltersByRouteTarget`).
-  Die Handbuch-Aussage trägt [`slice-routing-betriebsdoku`](../in-progress/slice-routing-betriebsdoku.md)
+  Die Handbuch-Aussage trägt [`slice-routing-betriebsdoku`](slice-routing-betriebsdoku.md)
   §2.
 - **Kommt das Label an den Handler?** Der Handler filtert auf `model.Change`; ob der
   Broadcaster dieselbe Change mit gesetztem `RouteTarget` liefert, die persistiert

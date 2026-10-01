@@ -5,7 +5,7 @@ Schwerpunkt auf [`AGENTS.md`](../../AGENTS.md) §3.12 Instanz A und B. Kein DoD-
 
 **Gegenstand:** Slice `routing-betriebsdoku` der Welle [welle-routing](../plan/planning/welle-routing.md), Diff-Range
 `2e68966f~1..HEAD` (`HEAD` = `be178eb6`), begrenzt auf `docs/user/benutzerhandbuch.md` und den Slice-Plan
-[`slice-routing-betriebsdoku`](../plan/planning/in-progress/slice-routing-betriebsdoku.md); Commits `758ae7a3` (Plan,
+[`slice-routing-betriebsdoku`](../plan/planning/done/slice-routing-betriebsdoku.md); Commits `758ae7a3` (Plan,
 Konkretisierung und Suchlauf-Feld) und `be178eb6` (Handbuch 1.84). Reine Dokumentation, kein Code.
 
 **Skill:** `.harness/skills/reviewer.md` @ Fassung „geschärft 2026-09-09“ (seither um weitere Klassen ergänzt).
