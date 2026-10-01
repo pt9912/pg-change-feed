@@ -22,7 +22,13 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **20×** (die zwanzigste Datei:
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **21×** (die einundzwanzigste Datei:
+evidence/slice-routing-e2e.md — Form **Assertion**, F-1 (MEDIUM, daher Datei trotz Deckel): „ein
+auf ein Ziel gewählter Stream-Leser sieht nur dieses Ziel“ war an den Stream-Wegen nur über die
+erste empfangene Change belegt; gebunden in der Fixrunde durch ein Ruhefenster, eine feste Menge
+gemischter Changes und die Prüfung jeder empfangenen Zeile gegen die persistierte Change, vom
+Verifier mutiert (rot), Ausgang unverändert **verkörpert**;
+die zwanzigste Datei:
 evidence/slice-routing-antragsweg.md — Form **Plan-Satz und Testfall**, F-1 (HIGH, daher
 Datei trotz Deckel): der Plan stützte eine Ablehnung auf „`jsonb` bewahrt die Schreibweise“,
 gemessen normalisiert `jsonb` den Exponenten, und der Testfall rief den Parser mit Text

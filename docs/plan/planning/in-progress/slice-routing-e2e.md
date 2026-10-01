@@ -24,9 +24,21 @@ Folgepflicht 7 (E2E-Belege — Träger dieses Slice) und Entscheidung 4 (DELETE)
 [`ADR-0058`](../../adr/0058-testansatz-fuenf-luecken.md) (Testansatz, zwei
 PostgreSQL-Versionen).
 
-**Berührte Spec-Stellen:** — (kein SPEC-/ARC-Eintrag; der Slice belegt die Zusagen
-von `slice-routing-spec-nachzug`, er ändert sie nicht; eine Abweichung der Messung
-von einer Zusage ist ein Befund an die Spec, kein stiller Nachzug).
+**Berührte Spec-Stellen:** der Slice belegt die Zusagen von
+`slice-routing-spec-nachzug` und ändert sie nicht; berührt hat die Fixrunde zum Review
+(`3b97efb7`) nur den Messstand und die Adressform:
+[`LH-FA-CFG-008.a`](../../../../spec/pflichtenheft.md) (Bildbasis und Abhilfe) und
+[`SPEC-032`](../../../../spec/pflichtenheft.md) (Abwesenheit, Beispiel „Nicht anwendbare Regel“) —
+vier Stellen von „nicht gemessen“ auf den gemessenen Stand (DELETE ohne volle
+Replica-Identität Nicht-Treffer, unter FULL Treffer; Nichtanwendbarkeit in (b) und (c)
+erzeugbar, Abhilfe belegt) — sowie in [`SPEC-019`](../../../../spec/pflichtenheft.md) die
+Adresszellen „Regelname“ und „Zielname“ der Routing-Tabelle (angeglichen an die Adressform der
+Prosa; die Prosa trägt dort den Satzteil „ein Name steht zeichengenau, wie beantragt“, der das
+bisherige Zellen-Qualifikat „wie beantragt“ in die Prosa hebt und keine Zusage erweitert).
+Dazu hat der Hauptlauf [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) vor den Tests auf
+0.14.0 gezogen (Happy Path nennt, was zugestellt heißt). Eine Abweichung der Messung von
+einer Zusage wäre ein Befund an die Spec gewesen, kein stiller Nachzug; sie ist nicht
+eingetreten.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
@@ -79,7 +91,7 @@ Waise ist. Drei Liefer-Punkte:
 
 ## 2. Definition of Done
 
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Happy Path und Boundary (A):
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Happy Path und Boundary (A):
       ein realer, grüner `make test-integration`-Lauf trägt (1) eine Herkunftsregel
       (ohne `when`) und eine Inhaltsregel (`when`), beide per
       `SELECT cdc.set_route(...)` beantragt und per Poll auf `applied` bestätigt; die
@@ -112,7 +124,12 @@ Waise ist. Drei Liefer-Punkte:
       Bericht). Die Wegwerf-Clients unter `tools/harness/` (`httpclient`, `grpcclient`,
       `sseclient`, `natsstreamsub`; für den RPC `ReadChanges` nach `ADR-0138`
       Festlegung 1 der Client `grpcadminclient`) erhalten die Auswahl des Ziels als Flag.
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) API-Aktivierung (aus
+      *Beleg (Verifier):* Verifikations-Report
+      [`verifikation-slice-routing-e2e`](../../../reviews/verifikation-slice-routing-e2e.md) §1
+      (eigener `make test-integration`-Lauf an PostgreSQL 17.11, Exit 0, die vier
+      `TestE2ERouting*` `--- PASS` und die gedruckten Phasenzeilen) und §2 Zeile 1; die
+      Negativ-Zählung an den Stream-Wegen färbt unter den Mutationen M1 und M2 rot (§4).
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) API-Aktivierung (aus
       `slice-routing-antragsweg`, Review-Frage A-2): die Aktivierung einer Tabelle über
       HTTP bzw. gRPC (`EnableTable`) trägt den abgeleiteten Regelstand mit — eine Tabelle
       mit `applied`-Routing-Regel wird per API (nicht per `cdc.enable_table` und nicht per
@@ -120,7 +137,9 @@ Waise ist. Drei Liefer-Punkte:
       Gegenprobe: eine Tabelle ohne Regel trägt kein Ziel. *Zu belegen durch:* `make
       test-integration`, gedruckte Zeile je Weg im Bericht (der Dekorator-Test in
       `internal/bootstrap/assemblersync_internal_test.go` bindet nur die Weitergabe).
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Negative (B), zerlegt nach
+      *Beleg (Verifier):* Verifikations-Report §1 (gedruckte Zeile „Routing-Aktivierung
+      über die API“: je Weg Tabelle mit Regel `api`, Tabelle ohne Regel `NULL`) und §2 Zeile 2.
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Negative (B), zerlegt nach
       [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
       Entscheidung 4 (V3 der Welle ist dort beantwortet):
       (i) **Weg (a) mit Regel** (Negative-Beleg, *Erwartung*): eine eigene Tabelle trägt
@@ -146,8 +165,13 @@ Waise ist. Drei Liefer-Punkte:
       (§3, Abweichung vom ursprünglichen Wortlaut „vor der Container-Ende-Grenze“); sie
       beendet den Feed-Container dreimal und lässt ihn nach Fall (a) stehen. *Zu belegen durch:*
       `make test-integration`; `TestE2E…`-Funktion mit den Kennungen im Godoc
-      (Erzeugnis-Eingabe der E2E-Abdeckung).
-- [ ] [`LH-QA-POR-001`](../../../../spec/lastenheft.md) und RTM (C): die Aussage zu
+      (Erzeugnis-Eingabe der E2E-Abdeckung). *Beleg (Verifier):* Verifikations-Report §1
+      (gedruckte Zeile „Routing-Nichtanwendbarkeit und Abhilfe“: (b) und (c) beendeten den
+      Erfassungspfad real mit Klasse `schema`, `cdc.remove_route` `pending`, nach dem Neustart
+      `applied`; (a) mit der Sentinel-Zeile und ohne Zeile in `cdc.changes`) und §2 Zeile 3.
+      Die Abhilfe an (a) ist nicht gefahren (*hergeleitet*); die Reihenfolge „bevor die erste
+      Transaktion assembliert wird“ ist am Ausgang belegt, nicht an einem Zeitpunkt (V-5).
+- [x] [`LH-QA-POR-001`](../../../../spec/lastenheft.md) und RTM (C): die Aussage zu
       DELETE ist gemessen — eine Inhaltsregel auf eine Nicht-Schlüsselspalte, DELETE einer
       Zeile ohne volle Replica-Identität: das Verhalten (erwartet: Wert abwesend, Regel
       Nicht-Treffer, nächste Regel bzw. `NULL`) mit der Gegenprobe unter voller
@@ -158,28 +182,55 @@ Waise ist. Drei Liefer-Punkte:
       ist Gegenstand eines Architect-Zugs vor dem Handbuch. `make doc-trace` führt
       [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) nicht mehr unter den Waisen: die
       gedruckte Zeile am Arbeitsbaum nennt `0 Waise(n)`; der Parent-Stand (`30fd6cb5`,
-      gemessen, Exit 0) lautet `80 Anforderung(en), 1 Waise(n)`.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
-      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+      gemessen, Exit 0) lautet `80 Anforderung(en), 1 Waise(n)`. *Beleg:* die Messung
+      bestätigt die Erwartung — ohne volle Replica-Identität trägt das Alt-Bild des DELETE nur
+      den Schlüssel, die Inhaltsregel trifft nicht (mit Abschlussregel deren Ziel `sonstige`,
+      ohne sie kein Ziel), unter `FULL` trifft sie (`eu`); gedruckte Zeilen
+      `ROUTING-DELETE-MESSUNG PostgreSQL 17.11 …` (Verifier, eigener Lauf, Verifikations-Report
+      §1) und `ROUTING-DELETE-MESSUNG PostgreSQL 18.6 …` (Reviewer, eigener Lauf, Review-Report;
+      Verifier: unmutierter Teil des Mutationslaufs M2, identische Ziele und Alt-Bilder);
+      `make doc-trace` `80 Anforderung(en), 0 Waise(n).` (Verifier, Exit 0). Kein Befund an
+      die ADR. *Offen (V-2):* der **vollständige** grüne `make test-integration`-Lauf an
+      PostgreSQL 18 **nach** der Fixrunde ist vom Implementer gefahren (Exit 0, gedruckte
+      Zeilen im Implementer-Bericht) und vom Verifier **übernommen**, nicht nachgemessen; der
+      vollständige 18-Lauf **vor** der Fixrunde ist im Review gemessen (10 min 5 s, grün). Der
+      unabhängige Beleg an beiden Versionen sind die beiden Legs von `e2e.yml` nach dem Push
+      (Closure-Kriterium der Welle, §6).
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9). *Beleg:*
+      Verifikations-Report §1 (Exit 0, `coverage-gate` 82,00 %, `a-check` 0 Befunde) und der
+      Lauf der Closure (Exit-Code gesondert gesichert, Bericht des Planners).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+      Self-Review (Modul 8). *Beleg:* Review
+      [`review-slice-routing-e2e`](../../../reviews/review-slice-routing-e2e.md) (0 HIGH,
+      2 MEDIUM F-1 und F-2, 3 LOW F-3 bis F-5, 4 INFO F-6 bis F-9) und die
+      **Gegenprüfung der Fixrunde (`3df6db30`, `3b97efb7`) durch den Verifier**
+      ([`verifikation-slice-routing-e2e`](../../../reviews/verifikation-slice-routing-e2e.md)
+      §5 und §7). Es gibt **kein separates Re-Review**; das ist die engere Fassung des
+      Registers ([`fixrunde-ohne-reviewer-lesung`](../observations/BEO-PGC/fixrunde-ohne-reviewer-lesung/state.md)):
+      die Fixrunde ändert weder Produktionslogik noch erweitert sie eine Norm, und der
+      Verifier — ein anderer Kontext — hat Runner und Wegwerf-Clients ausgeführt (vollständiger
+      Lauf an PostgreSQL 17 grün) und mutiert (drei Mutationen rot). F-1 ist geschlossen
+      (Verifier §5), F-2 liegt in einem anderen Tier und ist als Folge-Slice
+      [`slice-capture-retry-realtest-lieferzahl-lockern`](../open/slice-capture-retry-realtest-lieferzahl-lockern.md)
+      geführt (kein Befund am Slice-Diff, `internal/bootstrap` ist im Diff unberührt).
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-routing-e2e.md`
       endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `harness/README.md` (Zeile `make doc-trace`: die Aussage über die
+- [x] Doku-Update: `harness/README.md` (Zeile `make doc-trace`: die Aussage über die
       Waisen-Zahl und `LH-FA-CFG-008`; Zeile `make test-integration`: die Routing-Belege)
       und `docs/user/e2e-abdeckung.md` (Erzeugnis des Runners, nicht von Hand); das
       Benutzerhandbuch bleibt unberührt (Adresse: `slice-routing-betriebsdoku`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
       Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
@@ -274,19 +325,42 @@ geschrieben.
   Messung hier).** Entfernt der Betreiber die Bedingungsspalte, endet der Prozess nach
   dem Bestand im Pfad der inkompatiblen Schemaänderung, bevor die Regel zählt
   (*hergeleitet*); die Abhilfe `cdc.remove_route` + Neustart ist dann nicht der Weg aus
-  diesem Zustand. — **Ausgang:** bei der Closure einzutragen (gemessene Ursache von
-  (b)/(c) oder die Verengung nach `ADR-0140`; Welle-Closure-Bericht).
+  diesem Zustand. — **Ausgang:** *entfallen* (gemessen). (b) Erstaktivierung ohne
+  Spaltenform und (c) Publication mit Spaltenliste, die die Bedingungsspalte nicht trägt, sind
+  am System erzeugbar: je 0 Zeilen in `cdc.table_schema` nach der Aktivierung, der
+  Erfassungspfad endet real mit Klasse `schema` und der Sentinel-Zeile „Routing-Regel auf die
+  Änderung nicht anwendbar“, ohne persistierte Change; die Abhilfe `cdc.remove_route` +
+  Neustart ist an (b) und (c) belegt (Antrag `pending` bei stehendem Prozess, nach dem
+  Neustart `applied`, die Zeile ohne Ziel, kein zweiter `schema`-Fehler); gedruckte Zeile
+  „Routing-Nichtanwendbarkeit und Abhilfe“ (Verifikations-Report §1, PostgreSQL 17.11). Die
+  Verengung nach [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
+  Entscheidung 4 greift **nicht**, ihr Re-Evaluierungs-Trigger tritt nicht ein. An (a)
+  (Bedingungsspalte entfernt) endet der Prozess als inkompatible Schemaänderung ohne Zeile
+  in `cdc.changes` (gemessen, drei Spaltenform-Zeilen); die Abhilfe an (a) ist nicht gefahren
+  (*hergeleitet*, Spec führt sie so).
 - **Die DELETE-Erwartung kann falsch sein.** „Wert abwesend, Regel Nicht-Treffer"
   ist *hergeleitet* aus dem Abwesenheits-Vertrag von `LH-FA-DAT-005` und der
-  Transformations-ADR, an PostgreSQL 17 und 18 nicht gemessen. — **Ausgang:** bei der
-  Closure einzutragen (Messung, gedruckte Zeilen je Version).
+  Transformations-ADR, an PostgreSQL 17 und 18 nicht gemessen. — **Ausgang:** *entfallen*
+  (gemessen, Erwartung bestätigt). Ohne volle Replica-Identität trägt das Alt-Bild des DELETE
+  nur den Schlüssel `{"id": "1"}`, die Inhaltsregel trifft nicht (mit Abschlussregel deren Ziel
+  `sonstige`, ohne sie kein Ziel), unter `FULL` trifft sie; gedruckte Zeilen
+  `ROUTING-DELETE-MESSUNG PostgreSQL 17.11, Replica-Identität DEFAULT …`, `… DEFAULT …`,
+  `… FULL, Regeln eu+rest: … DELETE="eu"` (Verifier, Verifikations-Report §1) und dieselben drei
+  Zeilen mit `PostgreSQL 18.6` (Reviewer, Review-Report; Verifier: unmutierter Teil von
+  `mut2.log`). Beide Versionen liefern dieselben Ziele: kein Befund an
+  [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Entscheidung 4.
 - **Grenze des Belegs „Ziel A sieht nur A“ an den Stream-Wegen.** Die Negativ-Zählung
   beobachtet ein Ruhefenster von 15 s und eine feste Menge von acht Changes; eine fremde
   Change, die später als 15 s Ruhe nach der letzten Change einträfe, bleibt unbeobachtet,
   und ein Leck, das nur bei anderen Regionen als NULL, asia, us und eu entstünde, ebenso.
   Der Filter ist je Change zustandslos (Review F-1); die Fixrunde belegt die Zusage über
   die Menge dieses Laufs, nicht über alle Eingaben. — **Ausgang:** *weiter offen* als
-  benannte Grenze, kein Beobachtungs-Eintrag.
+  benannte Grenze, kein Beobachtungs-Eintrag. Die Wirkung der Zählung ist am `grpcclient`
+  mutiert (Mutation M1: der erste Treffer stimmt, alles danach ungefiltert: rot; Mutation M2:
+  Audit-Bedingung invertiert: rot; Verifikations-Report §4); dass `sseclient` und
+  `natsstreamsub` mit ihrem `-window` ebenso rot färben, ist *hergeleitet* (derselbe
+  Audit-Pfad im Runner, gleiche Zeilenform), nicht gefahren. Die Abdeckungszeile verspricht
+  „im Ruhefenster“, nicht „nie“.
 - **Erreichbarkeit (b) und (c) teilen die Vorbedingung „keine Spaltenform nach der
   Aktivierung“ (Review F-7 und Architect-Frage 3).** Gemessen ist (c) bei Erstaktivierung;
   der Fall einer Publication-Spaltenliste bei bereits bekannter Spaltenform bleibt
@@ -297,54 +371,180 @@ geschrieben.
 - **Flake `TestRunStreamWithRetrySlotStillActive` (Review F-2, Architect-Frage 1).** Kein
   Gegenstand dieses Slice (anderer Tier, `make test-replication`, im Diff unverändert);
   der Test bindet „genau eine Lieferung im zweiten Versuch“ strenger als die
-  At-least-once-Zusage. — **Ausgang:** *eingetreten* als Folge-Slice-Kandidat des Planners
-  bei der Closure (Adresse offen: der Planner legt ihn an).
+  At-least-once-Zusage. — **Ausgang:** *eingetreten*: der Flake ist auf PostgreSQL 17 im
+  ersten Lauf von `make test-replication` aufgetreten (Lieferpositionen `[94993648 95321768]`,
+  vom Implementer **übernommen**), die Wiederholung war grün; die Ursache ist *hergeleitet*
+  (Review F-2), von Reviewer und Verifier nicht reproduziert. Adresse:
+  [`slice-capture-retry-realtest-lieferzahl-lockern`](../open/slice-capture-retry-realtest-lieferzahl-lockern.md)
+  (Reproduktion, Lockerung auf „Retry-Change genau einmal persistiert“, Mutation der
+  Eingabeseite); Register:
+  [`test-strenger-als-die-zusage`](../observations/BEO-PGC/test-strenger-als-die-zusage/observation.md).
 - **Lesekosten der Regelstände im Backfill-Run (übernommen aus `slice-routing-backfill-pfad`
   §6).** Der Run liest den Routing-Stand zusätzlich zum Transformationsstand, je Block und vor
   dem Commit; die Verdopplung der Lesungen ist *hergeleitet*, die Prozentzahlen des
   Architect-Verdikts zu einem Port sind *übernommen*, nicht gemessen. Der Typ-Satz-Test
   `checkRouteParity` (`make test-replication`) ist nur an PostgreSQL 18 gefahren; ein Lauf mit
-  `PG_TEST_IMAGE` auf PostgreSQL 17 steht aus. — **Ausgang:** bei der Closure einzutragen (eine
-  gedruckte Messung der Blockdauer mit zwei Regelständen bei mehr als 10 000 Zeilen in der Queue,
-  oder die Kennzeichnung als nicht gemessen mit neuer Adresse; ein Lauf von `make test-replication`
-  mit `PG_TEST_IMAGE` auf PostgreSQL 17, gedruckte Version im Bericht).
+  `PG_TEST_IMAGE` auf PostgreSQL 17 steht aus. — **Ausgang, zwei Teile.** (1) Lesekosten:
+  *weiter offen*, **nicht gemessen** — die Verdopplung der Lesungen bleibt *hergeleitet*, die
+  Prozentzahlen des Architect-Verdikts *übernommen*; dieser Slice fährt keine Blockdauer-Messung.
+  Adresse: die Results-Notiz von [welle-routing](../welle-routing.md) (nennt die Aussage als
+  nicht gemessen); Träger einer Messung: `make bench` (`tools/bench-backfill.sh`,
+  [`harness/targets/bench-backfill.md`](../../../../harness/targets/bench-backfill.md)); Trigger:
+  der Re-Evaluierungs-Trigger des Architect-Verdikts (Druck an der Blockdauer des Backfill-Runs
+  bei aktiver Routing-Regel) oder die erste Backfill-Messung nach einer Routing-Regel-Last.
+  (2) Typ-Satz-Parität an PostgreSQL 17: *entfallen*, Beleg **übernommen** — der Implementer
+  fuhr `make test-replication` mit `PG_TEST_IMAGE` auf PostgreSQL 17 (der erste Lauf endete
+  rot allein am Flake `TestRunStreamWithRetrySlotStillActive`, die Wiederholung war grün,
+  Exit 0); gedruckte Version und Zeilen stehen im Implementer-Bericht, von Reviewer und
+  Verifier nicht nachgemessen.
 - **Last der Auswertung je Change (übernommen aus `slice-routing-kern-label` §6).** Die
   Auswertung ist eine lineare Suche über die Regeln der Tabelle je Change; *erwartet*
-  klein, nicht gemessen. — **Ausgang:** bei der Closure einzutragen (eine gedruckte
-  Messung der Auswertung bei zehn und bei hundert Regeln, etwa als Go-Benchmark im
-  Paket `mapper`, oder die Kennzeichnung als nicht gemessen mit neuer Adresse).
+  klein, nicht gemessen. — **Ausgang:** *weiter offen*, **nicht gemessen**: dieser Slice
+  liefert Belege am laufenden System, keine Auswertungs-Messung (Produktivcode und
+  Benchmark liegen außerhalb von §1). Adresse: die Results-Notiz von
+  [welle-routing](../welle-routing.md); Träger einer Messung: ein Go-Benchmark im Paket
+  `mapper` bei zehn und bei hundert Regeln; Trigger: die erste beobachtete Verzögerung der
+  Erfassung bei vielen Regeln je Tabelle oder die erste Betriebsanforderung an Regelzahlen
+  über zehn.
 - **Laufzeit des Testpakets gegen das 60-Minuten-Limit von `e2e.yml`.** Jede Phase
   verlängert den Lauf; ob das Limit reicht, ist bis zum Lauf auf dem gehosteten Runner
   offen (`BEO-PGC/github-actions-unverifizierbar-lokal`, verkörpert, 8×; kein
   Workflow-Zug in dieser Welle, [`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht,
-  das Laufzeit-Risiko bleibt). — **Ausgang:** bei der Closure einzutragen (gemessene
-  lokale Laufzeit vor und nach; Lauf-ID der Legs, sobald vorhanden).
+  das Laufzeit-Risiko bleibt). — **Ausgang:** *weiter offen* bis zum Lauf der beiden Legs
+  von `e2e.yml` nach dem Push (Closure-Kriterium der Welle). Lokal gemessen: `make
+  test-integration` 10 min 5 s an PostgreSQL 18.6 (Reviewer, Differenz der Zeitstempel) und
+  etwa 10,5 min an PostgreSQL 17.11 (Verifier, **abgeleitet** aus der Differenz der
+  Zeitstempel von `image.log` und `int17.exit`) — etwa zehn Minuten je Lauf; ein Wert „vor“
+  dem Slice ist nicht gemessen. Die Lauf-ID der Legs steht aus; das Limit von 60 Minuten ist
+  an gehosteten Runnern unbewiesen.
 - **Isolation und stiller Ausschluss.** Neue Phasen teilen Replikationsslot, Queue und
   Container mit den bestehenden (`BEO-PGC/test-isolation-geteilter-zustand`, offen,
-  2×; `BEO-PGC/test-runner-stiller-ausschluss`, offen, 2×). — **Ausgang:** bei der
-  Closure einzutragen (gedruckte Zeile je Phase; Phasen mit eigenen Tabellen).
+  2×; `BEO-PGC/test-runner-stiller-ausschluss`, offen, 2×). — **Ausgang:** *entfallen*. Jede der vier Phasen deklariert sich
+  (`abdeckung_declare`, 56 Aufrufe am Diff, Suchlauf-Feld) und druckt eine Zeile „belegt“
+  (Verifikations-Report §1); die Phasen arbeiten mit eigenen, wegwerfbaren Tabellen. Eine
+  Folge ohne Anfall: nach einem roten Lauf (Mutation M2) blieben neun gestoppte Container
+  `cdc-e2e-rt-*` stehen, weil der Runner bei `bf_fail` nicht abräumt (V-4; vom Verifier
+  entfernt, die Folge für den nächsten Lauf ist nicht geprüft). Das ist weder ein
+  `-run`-Ausschluss noch eine fehlende Deklaration (kein Anfall für
+  `test-runner-stiller-ausschluss`) und ohne beobachtete Wirkung auf einen Folgelauf (kein
+  Anfall für `test-isolation-geteilter-zustand`); es steht hier als Befund ohne Register-Eintrag.
 - **Ein Beleg, der nur den Reviewer überzeugt.** Eine Boundary-Aussage, die allein
   der Reviewer an der Zahl gemessen hat (`BEO-PGC/e2e-metrik-boundary-nur-reviewer-belegt`,
-  offen, 1×). — **Ausgang:** bei der Closure einzutragen.
+  offen, 1×). — **Ausgang:** *entfallen*. Die Aussagen, die der Slice als Boundary führt,
+  hat der Verifier selbst belegt: die Negativ-Zählung am Runner mit den Mutationen M1 und M2
+  (rot), die DELETE-Messung an PostgreSQL 17.11 im eigenen Lauf, an 18.6 im unmutierten Teil
+  des Mutationslaufs M2 und mit der Mutation M3 (rot). Die Mutationen des Reviewers sind
+  **übernommen**, nicht wiederholt.
 - **Timing-Flake der Phase „Leerlauf-Bestätigung".** Ein Rot dort lässt alle Phasen
   dahinter ungelaufen (`BEO-PGC/test-integration-retention-timing-flake`, verkörpert,
-  5×); ein Rot dieser Signatur ist weder Beleg noch Widerlegung. — **Ausgang:** bei der
-  Closure einzutragen.
+  5×); ein Rot dieser Signatur ist weder Beleg noch Widerlegung. — **Ausgang:**
+  *entfallen*: die Phase lief in den gemessenen Läufen durch (Reviewer an PostgreSQL 18.6,
+  Verifier an 17.11, beide Exit 0); das Rot dieser Signatur ist nicht eingetreten.
 - **Erzeugnis `docs/user/e2e-abdeckung.md`.** Der Runner schreibt die Datei; eine
   Hand-Änderung geht beim nächsten Lauf verloren
-  (`BEO-PGC/test-schreibt-in-committete-datei`, verkörpert, 4×). — **Ausgang:** bei der
-  Closure einzutragen (Datei kommt aus dem Lauf, `git diff` zeigt nur Routing-Zeilen).
+  (`BEO-PGC/test-schreibt-in-committete-datei`, verkörpert, 4×). — **Ausgang:**
+  *entfallen*. Die Datei kommt aus dem Lauf; der Verifier-Lauf an PostgreSQL 17 ließ den
+  Arbeitsbaum unverändert (die Datei ist byte-gleich dem committeten Erzeugnis). Der Diff
+  gegen den Parent (`30fd6cb5`) trägt neben den Routing-Zeilen die verschobene Spalte „Ort“
+  der Runner-Zeilen (gemessen: 57 Zeilen hinzugefügt, 49 entfernt, `git diff --numstat`), wie
+  in §3 angekündigt — „nur Routing-Zeilen“ war zu eng formuliert.
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
-
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** Die drei Liefer-Punkte tragen. Am laufenden Feed-Container
+  wählt eine per SQL beantragte Routing-Regel die danach erfasste Change auf allen fünf
+  Lesewegen aus (`cdc.changes`, `GET /changes`, `ReadChanges`, gRPC, SSE, NATS-Subjekt);
+  zwei treffende Regeln löst die kleinere `order`; R1 bis R6 enden `failed` mit dem Klartext
+  der Spec; Neustart, Ausschluss-Sperre in beide Richtungen, Replay und Backfill-Bestand mit
+  Label sowie die API-Aktivierung (gRPC und HTTP) sind belegt. Die Nichtanwendbarkeit ist an
+  (b) und (c) am System erzeugbar, die Abhilfe dort belegt; die DELETE-Erwartung von
+  [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Entscheidung 4
+  hat sich an PostgreSQL 17.11 und 18.6 bestätigt; `make doc-trace` meldet
+  `80 Anforderung(en), 0 Waise(n).` Gemessen im Lauf des Verifiers (Verifikations-Report §1):
+  `make test`, `make fmt-check`, `make doc-trace`, `make docs-check`,
+  `make suchlauf-nachmessen` (14 Zeilen), `make gates` und der volle `make test-integration`-Lauf
+  an PostgreSQL 17.11 alle Exit 0. **Mutationen, Ursprung je Quelle (Instanz A von
+  [`AGENTS.md`](../../../../AGENTS.md) §3.12):** Implementer sieben selbst plus eine in der
+  Fixrunde, **übernommen** (Bericht, nicht nachgefahren; der Review nennt keine Zahl);
+  Reviewer drei, **gemessen** (G1, G4, M1 des Reviews, alle rot; ein erster Versuch von M1
+  scheiterte am Compiler und zählt nicht); Verifier drei, **gemessen** (M1 bis M3 des Verifikations-Reports,
+  alle rot; ein Versuch V0 scheiterte am Compiler und zählt nicht), die Mutationen des Reviewers
+  übernahm er. Zahlen aus den Reports.
+- **Was ging anders als geplant:** Eine Fixrunde (`3df6db30`, `3b97efb7`) zu zwei MEDIUM-Funden.
+  F-1: „Ziel A sieht nur A“ war an den Stream-Wegen nur über die erste empfangene Change
+  belegt; die Fixrunde ließ alle neun Stream-Clients mit einem Ruhefenster weiterzählen, setzte
+  eine feste Menge gemischter Changes dahinter und hielt jede empfangene Zeile gegen die
+  persistierte Change. F-2 (`TestRunStreamWithRetrySlotStillActive` bindet strenger als
+  At-least-once) liegt in einem anderen Tier und ist ein Folge-Slice. Die Negative-Phase steht
+  als letzter Rundlauf des Runners statt vor der Container-Ende-Grenze (§3, Abweichung); die
+  Rückführung „(B) abtrennen“ ist nicht eingetreten. Die Fixrunde zog vier Spec-Aussagen von
+  „nicht gemessen“ auf den gemessenen Stand und glich zwei Adresszellen von
+  [`SPEC-019`](../../../../spec/pflichtenheft.md) an. **Kein separates Re-Review:** der
+  Verifier, ein anderer Kontext, hat Runner und Clients ausgeführt und mutiert (engere Fassung
+  des Registers, siehe DoD). **Offen aus der Verifikation (V-2):** der vollständige grüne Lauf
+  an PostgreSQL 18 nach der Fixrunde ist vom Implementer gefahren und vom Verifier
+  **übernommen**; der unabhängige Beleg an beiden Versionen sind die Legs von `e2e.yml` nach
+  dem Push, Closure-Kriterium der Welle. V-1 (nur `grpcclient` mutiert) und V-5 (Reihenfolge
+  der Abhilfe am Ausgang, nicht am Zeitpunkt belegt) stehen als Grenzen in §6 und in der DoD.
+- **Steering-Loop-Eintrag:** geschärfte Regel, kein neuer Sensor. Ein „nur“-Satz an einem
+  Fire-and-forget-Weg (Stream) ist erst belegt, wenn der Client **nach dem ersten Treffer
+  weiterzählt** und jede fremde Change den Lauf rot färbt: die Prüfung der ersten empfangenen
+  Zeile trägt „sieht nur A“ nicht, weil ein Filter, der erst hinter der ersten Treffer-Change
+  leckt, sie nicht verletzt. Die Handlung vor dem Reviewer-Handoff: bei jeder Aussage der Form
+  „sieht nur X“ an einem Weg ohne Abschluss die Eingabe der Gegenseite (eine fremde Change
+  **hinter** der ersten Treffer-Change) in die feste Menge aufnehmen und den Filter an dieser
+  Stelle mutieren (hier Verifier-Mutation M1); ein Ruhefenster und eine feste Menge benennen
+  zugleich die Grenze des Belegs (Menge NULL/asia/us/eu, 15 s Ruhe), die als Risiko in §6
+  steht. Zweitens: ein Test, der mehr behauptet als die Zusage trägt (genau eine Lieferung
+  gegen At-least-once), färbt rot ohne Verletzung und entwertet das nächste Rot; die Erwartung
+  folgt der Zusage, nicht dem beobachteten Normalfall. Träger: die Lese-Handlung des Reviewers
+  (HIGH-Punkt „Beleg trägt seinen Satz nicht“, geltend) und der Runner für diesen Gegenstand;
+  keine neue Regel im Text von `AGENTS.md`, nichts neu verkörpert.
+- **Beobachtungs-Register (`../observations/`):** drei Dateien, zwei Vermerke:
+  - **`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`** (verkörpert, Deckel bei 14×): F-1
+    (MEDIUM, daher Datei trotz Deckel), `evidence/slice-routing-e2e.md`; Zähler **20×** →
+    **21×** (`ls evidence | wc -l`). Der Reviewer fand es vor dem Merge, die Regel hat gewirkt.
+  - **`BEO-PGC/test-strenger-als-die-zusage`** (neu, offen, **1×**): F-2 (MEDIUM),
+    `evidence/slice-routing-e2e.md`. Neue Klasse, nicht
+    `negativtest-ohne-bindung-an-seine-eingabe` (dort ist der Test **zu schwach**, hier **zu
+    stark**: rot ohne Verletzung) und nicht `nicht-reproduzierbarer-test-ausfall` (dort fehlt
+    jede Ursache, hier liegt eine Herleitung vor, die die Erwartung trifft, nicht den
+    Produktivcode). Unter der Schwelle, kein Ausgang; Adresse
+    [`slice-capture-retry-realtest-lieferzahl-lockern`](../open/slice-capture-retry-realtest-lieferzahl-lockern.md).
+  - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×): **fünfter Gegenbeleg, keine
+    Datei.** Die Fixrunde änderte Anweisungen und den Messstand von Spec-Aussagen, ein
+    Re-Review blieb aus, weil der Verifier sie ausgeführt und mutiert hat; die engere Fassung
+    (Produktionslogik oder Norm geändert, oder kein anderer Kontext hat sie ausgeführt) trägt
+    auch diesen Fall. Im `state.md` vermerkt, der Ausgang bleibt beim Lese-Schritt der
+    Closure von [welle-routing](../welle-routing.md).
+  - **Keine Beobachtung** (Begründung): V-4 (neun gestoppte Container nach rotem Lauf) ist
+    weder ein `-run`-Ausschluss noch eine fehlende Deklaration
+    (`test-runner-stiller-ausschluss`) und hat keine beobachtete Wirkung auf einen Folgelauf
+    (`test-isolation-geteilter-zustand`); als Befund in §6 geführt, ohne Eintrag. F-3 bis F-5
+    (LOW) sind Träger-Nachzüge nach [`AGENTS.md`](../../../../AGENTS.md) §3.13 und im Slice
+    gezogen; F-6 bis F-9 (INFO) sind Bestätigungen oder Grenzen in §6.
+- **Folge-Slices:**
+  [`slice-capture-retry-realtest-lieferzahl-lockern`](../open/slice-capture-retry-realtest-lieferzahl-lockern.md)
+  — ist eine Datei in `open/`, ohne Welle. Übergaben ohne neuen Slice:
+  `slice-routing-betriebsdoku` (DELETE- und Erreichbarkeits-Messung samt Version und Lauf im
+  Übergabe-Block der Datei), `slice-routing-sdk-realserver-e2e` (Realserver-Beleg der SDKs).
+- **Risiken aus §6:** (a)-(c)-Erreichbarkeit **entfallen** (gemessen, Verengung greift nicht);
+  DELETE-Erwartung **entfallen** (bestätigt an 17.11 und 18.6); Grenze der Negativ-Zählung
+  **weiter offen** (benannte Grenze); Erreichbarkeit (b)/(c) bei bekannter Spaltenform mit
+  Spaltenliste **weiter offen** (hergeleitet); Flake **eingetreten** (Folge-Slice); Lesekosten
+  **weiter offen** (nicht gemessen, Adresse Results-Notiz der Welle), Typ-Satz-Parität an 17
+  **entfallen** (Beleg übernommen); Last der Auswertung **weiter offen** (nicht gemessen);
+  Laufzeit **weiter offen** bis zum Lauf der Legs von `e2e.yml`; Isolation **entfallen**; Beleg
+  nur vom Reviewer **entfallen**; Timing-Flake **entfallen**; Erzeugnis **entfallen**.
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+  Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der
+  Lerneintrag verkörpert nichts neu (kein Feld `liegt in`); (b) Folge-Slice: der genannte Plan
+  liegt als Datei in `open/`; (c) Register: die genannten Kennungen existieren als Verzeichnis,
+  jede trägt ein nicht leeres `evidence/`.
+- **Validator (Modul 8):** entfällt — die Wirkung des Routings ist ohne Handbuch und SDK-Belege
+  für Betreiber noch nicht als Ganzes nutzbar; der Nutzer-Bedarf
+  ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md)) wird erst durch den Wellen-Beleg
+  validierbar.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
