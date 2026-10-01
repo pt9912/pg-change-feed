@@ -130,7 +130,7 @@ Ein Re-Review würde zwei Leseschritte kaufen, die dieser Lauf schon ausgeführt
 |---|---|
 | Wecksignal nur negativ | Block ehrlich, README-Zeile nicht (V-4) |
 | Kosten ohne Abonnent, ohne Schwelle, ein Testcontainer, feste Reihenfolge „ohne“ dann „mit“, kein Aufwärmen | im Test-Godoc und im Block benannt; die Spanne 0,92 bis 1,30 zeigt, dass das Verhältnis im Rauschen des Messaufbaus liegt (V-3) |
-| Beleg am laufenden System (Feed-Container) | gehört [`slice-routing-e2e`](../plan/planning/open/slice-routing-e2e.md) (Plan §1); `make test-integration` nicht gefahren |
+| Beleg am laufenden System (Feed-Container) | gehört [`slice-routing-e2e`](../plan/planning/in-progress/slice-routing-e2e.md) (Plan §1); `make test-integration` nicht gefahren |
 | Fire-and-forget, Lücke beim Abonnenten | Plan §6, Ausgang bei der Closure; Handbuch-Adresse benannt |
 | Überspringen aus anderem Grund färbt rot | nur im Report benannt (V-2) |
 | `natsnotify`-Lauf im Skript ohne `-v` und ohne SKIP-Zweig | vor dem Slice vorhanden, nicht im Diff; ein Wecksignal-Test ohne Server würde dort still `ok` melden (INFO, kein Befund dieses Slice) |
