@@ -1,6 +1,8 @@
-Zustand: **offen — Neubewertung fällig, Architect-Zug aussteht** (vormals **gestrichen**,
+Zustand: **offen — Ausgang zugewiesen, bedingt auf Freigabe** (vormals **gestrichen**,
 akzeptiertes Negativ, seit welle-transformationen; Architect-Verdikt
-`architect-verdict-welle-transformationen-offene-fragen` §8). Zähler
+`architect-verdict-welle-transformationen-offene-fragen` §8).
+
+**Ausgang (Architect-Verdikt zur Closure von `welle-routing`, 2026-10-02): geplant: `slice-harness-lese-schritt-regeln-routing`, bedingt: Freigabe des Auftraggebers zu V2 steht aus; bei Ablehnung gestrichen (akzeptiertes Negativ) mit dem Trigger der Vorlage („ein Haken ohne Anker bis in `done/`“).** Ein Satz in `.claude/commands/implement-slice.md` Schritt 18 am Absatz „DoD-Checkbox-Nachzug im selben Lauf“ (Wortlaut: Verdikt `architect-verdict-welle-routing-lese-schritt` §4 V2). Begründung: die frühere Gegenrede (der Anker entstehe erst durch den Verifier) trifft für das fünfte Auftreten nicht zu; der fehlende Anker war der grüne Volllauf des Implementers selbst. Kein Sensor (Lese-Frage). Der Slice wird erst nach der Freigabe angelegt. Zähler
 (abgeleitet): **5×** (evidence/slice-backfill-e2e.md, evidence/slice-transformationen-e2e-wirkung.md,
 evidence/slice-transformationen-start-reihenfolge.md, evidence/slice-capture-leerlauf-quellbelege.md,
 evidence/slice-leerlauf-phase-last-in-stuecken.md).

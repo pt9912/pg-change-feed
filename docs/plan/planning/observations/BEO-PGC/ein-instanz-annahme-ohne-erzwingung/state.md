@@ -1,4 +1,13 @@
-Zustand: offen — Ausgang: **weiter offen**, adressiert. Die Annahme steht im Godoc von
+Zustand: verkörpert — Ausgang (Architect-Verdikt zur Closure von `welle-routing`, 2026-10-02):
+**verkörpert**, Zielort [`ADR-0113`](../../../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
+§Re-Evaluierungs-Trigger (Zeilen 398 bis 400, „Mehr als eine Instanz je Quelle nimmt Anträge an …
+Aufnahme und Annahme-Prüfung neu entscheiden“, am Stand `cff48b65` gemessen mit
+`grep -n "Mehr als eine Instanz" docs/plan/adr/0113-*.md`), Herkunfts-Anker
+`seit slice-backfill-run-store`. Die ADR bleibt unverändert (immutabel); eine Sperre oder Unique-Kante
+wäre eine Designänderung ohne Betrieb, der sie braucht (Verdikt `architect-verdict-welle-routing-lese-schritt`
+§3.6). Der Wiederaufnahme-Trigger des Transformations-Verdikts (ein committeter
+Zwei-Instanzen-Wettlauf um dieselbe `queued`-Zeile) gilt weiter. Die frühere Einstufung
+„weiter offen“ (unten) ist durch diesen Ausgang überholt. Die Annahme steht im Godoc von
 `NewBackfillAdmission` und im Plan von `slice-backfill-run-store` (§6); Adresse ist der
 Re-Evaluierungs-Trigger in `ADR-0113` §Re-Evaluierungs-Trigger („Mehr als eine Instanz
 je Quelle nimmt Anträge an"). Der sequenzielle Fall trägt der DoD „Verarbeitung" in
