@@ -10,6 +10,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
 // ReadChangesQuery, ReadChange und ReadChangesResult sind die
@@ -25,7 +26,7 @@ type (
 
 // ReadChangesService implementiert `inbound.ReadChangesUseCase` und liest
 // die Changes über den `ChangeStorePort`. Die Filterachse
-// (Quelle/Schema/Tabelle), der Positionsbereich und das Limit gehen in die
+// (Quelle/Schema/Tabelle/Ziel), der Positionsbereich und das Limit gehen in die
 // Abfrage des Ports; die Ordnung trägt der bestehende Lesepfad
 // (`LH-FA-REA-004`).
 type ReadChangesService struct {
@@ -42,19 +43,26 @@ var _ inbound.ReadChangesUseCase = (*ReadChangesService)(nil)
 // ReadChanges bildet `ReadChangesQuery` auf `outbound.ChangeQuery` ab und
 // ruft `ChangeStorePort.ReadChanges`. Der Bereichs- und Limit-Kontrakt des
 // Ports (`outbound.ErrRangeInverted`/`outbound.ErrNonPositiveLimit`) kommt
-// unverändert zurück — der Use Case normiert nichts und entscheidet nichts
-// (`LH-FA-REA-001`). Eine leere Quellen-Kennung ist eine
+// unverändert zurück — der Use Case normiert nichts und entscheidet nichts.
+// Eine leere Quellen-Kennung ist eine
 // ungültige Eingabe und endet über den bestehenden Fehlerpfad, keine stille
 // Übernahme über alle Quellen. Eine leere Rückgabe trägt eine leere,
-// gesetzte Liste.
+// gesetzte Liste. Ein gesetztes `Target` außerhalb des Alphabets des
+// Zielnamens (`model.IsValidRouteTarget`) trifft nie ein vergebenes Ziel:
+// die Antwort ist die leere, gesetzte Liste, ohne Fehler und ohne den Port
+// anzufragen (`ADR-0139`).
 func (s *ReadChangesService) ReadChanges(ctx context.Context, query ReadChangesQuery) (ReadChangesResult, error) {
 	if query.Source == "" {
 		return ReadChangesResult{}, domainerrors.ErrEmptyIdentifier
+	}
+	if query.Target != "" && !model.IsValidRouteTarget(query.Target) {
+		return ReadChangesResult{Changes: []ReadChange{}}, nil
 	}
 	records, err := s.store.ReadChanges(ctx, outbound.ChangeQuery{
 		Source: query.Source,
 		Schema: query.Schema,
 		Table:  query.Table,
+		Target: query.Target,
 		Start:  query.Start,
 		End:    query.End,
 		Limit:  query.Limit,

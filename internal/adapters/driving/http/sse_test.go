@@ -329,6 +329,179 @@ func TestStreamOhneFilterLiefertAlle(t *testing.T) {
 	}
 }
 
+// streamTestChange baut einen Change mit Identität, Tabelle und Ziel für die
+// Tests des Ziel-Filters; ein leeres Ziel trägt „kein Ziel".
+func streamTestChange(t *testing.T, id, schema, table string, target model.RouteTarget) *model.Change {
+	t.Helper()
+	change, err := model.NewChange(model.ChangeID(id), "tx-1", "table-1", 1, model.OperationInsert, nil, []byte(`{}`), "table-1-v1")
+	if err != nil {
+		t.Fatalf("Change bauen: %v", err)
+	}
+	change.Schema = schema
+	change.Table = table
+	change.RouteTarget = target
+	return &change
+}
+
+// oeffneStreamMitQuery öffnet den Stream mit der Query und wartet auf die
+// Registrierung am Broadcaster; der Aufrufer liest aus der Antwort.
+func oeffneStreamMitQuery(t *testing.T, subscriber *fakeChangeSubscriber, query string) *http.Response {
+	t.Helper()
+	ts := newTestSSEServer(t, subscriber)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	resp := streamMitTokenUndQuery(t, ts, ctx, testReaderToken, query)
+	t.Cleanup(func() { resp.Body.Close() })
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Status: %d (Erwartung: 200)", resp.StatusCode)
+	}
+	select {
+	case <-subscriber.ready:
+	case <-time.After(3 * time.Second):
+		t.Fatal("der Stream hat sich nicht am Broadcaster registriert")
+	}
+	return resp
+}
+
+// TestStreamTargetFilterLaesstNurDasZiel trägt den Parameter `target`
+// (`ADR-0137` Teilfrage 5) für den SSE-Weg: nur Changes mit genau diesem
+// Ziel erreichen den Client, auch eine Change ohne Ziel und eine mit
+// anderem Ziel werden verworfen; als Konjunktion mit `schema`/`table` trifft
+// nur die Change, die alle gesetzten Dimensionen erfüllt. Die Eingabeseite
+// ist das Ziel der zugestellten Change.
+// Rot färbende Mutation: in `MatchesFilter` die `target`-Bedingung streichen
+// (dann erreicht die erste verworfene Change den Client) oder den Aufruf in
+// `streamChangesHandler` auf `target = ""` zwingen.
+func TestStreamTargetFilterLaesstNurDasZiel(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		query   string
+		skipped []*model.Change
+		match   *model.Change
+	}{
+		{
+			name:  "nur Ziel",
+			query: "target=eu",
+			skipped: []*model.Change{
+				streamTestChange(t, "skip-ohne", "public", "orders", ""),
+				streamTestChange(t, "skip-us", "public", "orders", "us"),
+			},
+			match: streamTestChange(t, "match", "public", "orders", "eu"),
+		},
+		{
+			name:  "Konjunktion mit Schema und Tabelle",
+			query: "schema=public&table=orders&target=eu",
+			skipped: []*model.Change{
+				streamTestChange(t, "skip-andere-tabelle", "public", "customers", "eu"),
+				streamTestChange(t, "skip-anderes-ziel", "public", "orders", "us"),
+			},
+			match: streamTestChange(t, "match", "public", "orders", "eu"),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			subscriber := newFakeChangeSubscriber(4)
+			resp := oeffneStreamMitQuery(t, subscriber, tc.query)
+			for _, change := range tc.skipped {
+				subscriber.changes <- change
+			}
+			subscriber.changes <- tc.match
+
+			_, data := readSSEEvent(t, bufio.NewReader(resp.Body))
+			var got map[string]any
+			if err := json.Unmarshal([]byte(data), &got); err != nil {
+				t.Fatalf("Event-Daten sind kein JSON: %v (%q)", err, data)
+			}
+			if got["change_id"] != "match" {
+				t.Fatalf("erhaltener Change: %v (Erwartung: nur der Treffer, die übrigen wurden verworfen)", got["change_id"])
+			}
+		})
+	}
+}
+
+// TestStreamTargetOhneTrefferLiefertKeinEvent trägt „leer, kein Fehler"
+// (`ADR-0139` Festlegung 2): ein Ziel, das keine zugestellte Change trägt
+// — nie vergeben, außerhalb des Alphabets (Großbuchstabe, 64 Zeichen) oder
+// mit U+0000 —, liefert `200` und kein Event, obwohl geroutete und
+// ungeroutete Changes eintreffen.
+// Rot färbende Mutation: in `MatchesFilter` die `target`-Bedingung streichen
+// — die eintreffenden Changes erreichen den Client.
+func TestStreamTargetOhneTrefferLiefertKeinEvent(t *testing.T) {
+	for _, target := range []string{"zz", "EU", strings.Repeat("a", 64), "eu%00"} {
+		t.Run(target, func(t *testing.T) {
+			subscriber := newFakeChangeSubscriber(4)
+			resp := oeffneStreamMitQuery(t, subscriber, "target="+target)
+			subscriber.changes <- streamTestChange(t, "geroutet", "public", "orders", "eu")
+			subscriber.changes <- streamTestChange(t, "ungeroutet", "public", "orders", "")
+
+			// Eine gelesene Zeile ist die `event:`-Zeile eines Events; ein
+			// Lesefehler (Verbindungsende beim Aufräumen) ist keine.
+			gelesen := make(chan string, 1)
+			go func() {
+				line, err := bufio.NewReader(resp.Body).ReadString('\n')
+				if err != nil {
+					line = ""
+				}
+				gelesen <- line
+			}()
+			select {
+			case line := <-gelesen:
+				if line != "" {
+					t.Fatalf("Zeile trotz Ziel ohne Treffer: %q", line)
+				}
+			case <-time.After(400 * time.Millisecond):
+			}
+		})
+	}
+}
+
+// TestStreamOhneTargetLiefertGeroutetEbenfalls trägt die Regression ohne
+// Parameter: eine geroutete Change erreicht den ungefilterten Client, und
+// das Ziel steht nicht im Nachrichtenschema (die zehn Felder bleiben).
+func TestStreamOhneTargetLiefertGeroutetEbenfalls(t *testing.T) {
+	subscriber := newFakeChangeSubscriber(4)
+	resp := oeffneStreamMitQuery(t, subscriber, "")
+	subscriber.changes <- streamTestChange(t, "geroutet", "public", "orders", "eu")
+
+	_, data := readSSEEvent(t, bufio.NewReader(resp.Body))
+	var got map[string]any
+	if err := json.Unmarshal([]byte(data), &got); err != nil {
+		t.Fatalf("Event-Daten sind kein JSON: %v (%q)", err, data)
+	}
+	if got["change_id"] != "geroutet" {
+		t.Fatalf("erhaltener Change: %v (Erwartung: geroutet, ungefiltert)", got["change_id"])
+	}
+	if len(got) != 10 {
+		t.Fatalf("Nachrichtenschema trägt %d Felder, wollen zehn: %v", len(got), got)
+	}
+	if _, present := got["route_target"]; present {
+		t.Fatalf("das Ziel steht im Nachrichtenschema: %v", got)
+	}
+}
+
+// TestStreamTargetParameterNameBleibtStrengeMenge trägt die Grenze der
+// geschlossenen Parameter-Menge nach der Erweiterung um `target`
+// (`ADR-0133` Teilfrage 4): ein verwandter, nicht vergebener Name endet mit
+// `400`, vor jedem Event und ohne Registrierung am Broadcaster.
+func TestStreamTargetParameterNameBleibtStrengeMenge(t *testing.T) {
+	for _, query := range []string{"targets=eu", "route_target=eu", "Target=eu"} {
+		subscriber := newFakeChangeSubscriber(1)
+		ts := newTestSSEServer(t, subscriber)
+		ctx, cancel := context.WithCancel(context.Background())
+		resp := streamMitTokenUndQuery(t, ts, ctx, testReaderToken, query)
+		status := resp.StatusCode
+		resp.Body.Close()
+		cancel()
+		if status != http.StatusBadRequest {
+			t.Fatalf("%s: Status %d (Erwartung: 400)", query, status)
+		}
+		select {
+		case <-subscriber.ready:
+			t.Fatalf("%s: der Handler registrierte trotz 400 eine Subskription", query)
+		default:
+		}
+	}
+}
+
 // TestStreamUnbekannterQueryParameterEndetMit400 trägt die zweite Hälfte der
 // Fitness Function: ein Query-Parameter außerhalb der geschlossenen Menge
 // (`schema`/`table`) endet mit `400`, vor jedem SSE-Event (`ADR-0133`

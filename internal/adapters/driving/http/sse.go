@@ -16,11 +16,12 @@ import (
 const sseEventChange = "change"
 
 // Die Query-Parameter des SSE-Endpunkts `GET /changes/stream` (`ADR-0133`
-// Teilfrage 4): `schema`/`table`, dieselben Feldnamen wie beim gRPC-Stream
-// und bei `GET /changes`, je optional und unabhängig.
+// Teilfrage 4): `schema`/`table`/`target`, dieselben Feldnamen wie beim
+// gRPC-Stream und bei `GET /changes`, je optional und unabhängig.
 const (
 	streamChangesParamSchema = "schema"
 	streamChangesParamTable  = "table"
+	streamChangesParamTarget = "target"
 )
 
 // streamChangesParams trägt die geschlossene Parameter-Menge dieses
@@ -30,18 +31,21 @@ const (
 var streamChangesParams = map[string]bool{
 	streamChangesParamSchema: true,
 	streamChangesParamTable:  true,
+	streamChangesParamTarget: true,
 }
 
-// parseStreamChangesFilter liest das optionale `schema`/`table`-Filterpaar
-// aus den Query-Parametern; ein Parameter außerhalb der geschlossenen Menge
-// endet sichtbar (`ADR-0133` Teilfrage 4).
-func parseStreamChangesFilter(values url.Values) (schema, table string, err error) {
+// parseStreamChangesFilter liest den optionalen
+// `schema`/`table`/`target`-Filter aus den Query-Parametern; ein Parameter
+// außerhalb der geschlossenen Menge endet sichtbar (`ADR-0133` Teilfrage 4).
+// Ein `target` wird nicht geprüft: der Vergleich im Speicher trifft einen
+// Namen außerhalb des Alphabets nie, der Stream bleibt dann leer.
+func parseStreamChangesFilter(values url.Values) (schema, table, target string, err error) {
 	for name := range values {
 		if !streamChangesParams[name] {
-			return "", "", fmt.Errorf("unbekannter Query-Parameter %q", name)
+			return "", "", "", fmt.Errorf("unbekannter Query-Parameter %q", name)
 		}
 	}
-	return values.Get(streamChangesParamSchema), values.Get(streamChangesParamTable), nil
+	return values.Get(streamChangesParamSchema), values.Get(streamChangesParamTable), values.Get(streamChangesParamTarget), nil
 }
 
 // changeSubscriber trägt die eine Fähigkeit, die dieser Adapter vom
@@ -121,7 +125,7 @@ func streamChangesHandler(subscriber changeSubscriber, log outbound.LogPort) htt
 			writeError(w, http.StatusServiceUnavailable, "ChangeStream ohne Broadcaster verdrahtet")
 			return
 		}
-		schema, table, err := parseStreamChangesFilter(r.URL.Query())
+		schema, table, target, err := parseStreamChangesFilter(r.URL.Query())
 		if err != nil {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
@@ -147,10 +151,10 @@ func streamChangesHandler(subscriber changeSubscriber, log outbound.LogPort) htt
 			case <-r.Context().Done():
 				return
 			case change := <-changes:
-				// Dasselbe Filterpaar wie beim gRPC-Stream, geprüft nach dem
+				// Derselbe Filter wie beim gRPC-Stream, geprüft nach dem
 				// `Subscribe()`-Aufruf (`ADR-0133`): der Broadcaster bleibt
 				// unverändert ungefiltert.
-				if !change.MatchesFilter(schema, table) {
+				if !change.MatchesFilter(schema, table, target) {
 					continue
 				}
 				payload, err := json.Marshal(toStreamChange(change))

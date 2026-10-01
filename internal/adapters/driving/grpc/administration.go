@@ -306,6 +306,7 @@ func (s *administrationService) ReadChanges(ctx context.Context, req *administra
 		Source: source,
 		Schema: req.GetSchema(),
 		Table:  req.GetTable(),
+		Target: req.GetTarget(),
 		Start:  start,
 		End:    end,
 		Limit:  limit,

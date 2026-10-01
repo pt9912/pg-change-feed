@@ -15,14 +15,15 @@ import (
 )
 
 // Die Query-Parameter des lesenden Endpunkts `GET /changes` (`SPEC-022`):
-// `source` Pflicht, `schema`/`table`/`from`/`to`/`limit` optional und
-// unabhängig. Die Namen folgen dem API-Vokabular,
+// `source` Pflicht, `schema`/`table`/`target`/`from`/`to`/`limit` optional
+// und unabhängig. Die Namen folgen dem API-Vokabular,
 // nicht dem Spaltenvokabular der View (`schema`/`table`, nicht
 // `schema_name`/`table_name`) — dieselbe Form wie `listTablesResponse`.
 const (
 	readChangesParamSource = "source"
 	readChangesParamSchema = "schema"
 	readChangesParamTable  = "table"
+	readChangesParamTarget = "target"
 	readChangesParamFrom   = "from"
 	readChangesParamTo     = "to"
 	readChangesParamLimit  = "limit"
@@ -37,6 +38,7 @@ var readChangesParams = map[string]bool{
 	readChangesParamSource: true,
 	readChangesParamSchema: true,
 	readChangesParamTable:  true,
+	readChangesParamTarget: true,
 	readChangesParamFrom:   true,
 	readChangesParamTo:     true,
 	readChangesParamLimit:  true,
@@ -159,6 +161,7 @@ func parseReadChangesQuery(values url.Values) (inbound.ReadChangesQuery, error) 
 		Source: model.SourceID(source),
 		Schema: values.Get(readChangesParamSchema),
 		Table:  values.Get(readChangesParamTable),
+		Target: values.Get(readChangesParamTarget),
 		Start:  start,
 		End:    end,
 		Limit:  limit,

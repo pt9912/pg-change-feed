@@ -11,8 +11,9 @@ import (
 )
 
 // ReadChangesQuery trägt die Eingabe des Changes-Lesens (`LH-FA-REA-001`):
-// die Quelle (**Pflicht**), die Klartext-Filter `Schema`/`Table` (je
-// optional und **unabhängig**), den Positionsbereich `Start`/`End`
+// die Quelle (**Pflicht**), die Klartext-Filter `Schema`/`Table`/`Target`
+// (je optional und **unabhängig**; `Target` wählt das Zustellziel, leer
+// wählt nicht aus), den Positionsbereich `Start`/`End`
 // (optional, Start **inklusiv**, End **exklusiv**) und
 // `Limit` (optional, gesetzt ≥ 1). Ein nicht gesetztes
 // Limit liest unbegrenzt — es gibt **kein** Default-Limit: die Antwort
@@ -22,6 +23,7 @@ type ReadChangesQuery struct {
 	Source model.SourceID
 	Schema string
 	Table  string
+	Target string
 	Start  *model.SourcePosition
 	End    *model.SourcePosition
 	Limit  *int

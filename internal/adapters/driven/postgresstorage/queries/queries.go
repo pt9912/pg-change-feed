@@ -35,7 +35,9 @@ ON CONFLICT (change_id) DO NOTHING`
 // exklusiv; NULL-Grenzen grenzen nicht ein, LIMIT NULL
 // liest unbegrenzt. Der Tabellenfilter läuft über die Klartext-Bezeichner
 // der Bindungs-Zeile (`st.schema_name`/`st.table_name`), je optional und
-// unabhängig; der Join auf `cdc.source_table` trägt dieselben Bezeichner
+// unabhängig; `route_target = $6` wählt das Zustellziel als Gleichheit aus
+// (kein Muster-Vergleich), `NULL` grenzt nicht ein und eine Zeile ohne Ziel
+// trifft nie ein gesetztes `$6`; der Join auf `cdc.source_table` trägt dieselben Bezeichner
 // in die Projektion, damit die Rückgabe die Tabellen-Identität in Klartext
 // führt — dieselbe Projektion wie die View `cdc.changes`. Lesen trägt nur
 // SELECT — gespeicherte Positionen bleiben unverändert.
@@ -73,8 +75,9 @@ WHERE t.source_id = $1
   AND ($3::bigint IS NULL OR t.commit_position < $3)
   AND ($4::text IS NULL OR st.schema_name = $4)
   AND ($5::text IS NULL OR st.table_name = $5)
+  AND ($6::text IS NULL OR c.route_target = $6)
 ORDER BY t.commit_position, c.transaction_id, c.sequence
-LIMIT $6`
+LIMIT $7`
 
 // SelectRetentionCandidates liest eine Seite von Bereinigungs-Kandidaten
 // einer Quelle (`ADR-0124`): Kennung, Commit-Position und Commit-Zeitpunkt

@@ -157,6 +157,7 @@ func (a *PostgresChangeStoreAdapter) ReadChanges(ctx context.Context, query outb
 			positionArgument(query.End),
 			textArgument(query.Schema),
 			textArgument(query.Table),
+			textArgument(query.Target),
 			query.Limit,
 		},
 		Fail: func(cause error) error { return storageFailure(ctx, a.log, cause) },

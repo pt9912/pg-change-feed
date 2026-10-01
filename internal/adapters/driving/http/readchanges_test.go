@@ -370,8 +370,90 @@ func TestReadChangesLeererParameterBestandIstGueltig(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Status: %d (Erwartung: 200)", resp.StatusCode)
 	}
-	if got := useCase.queries[0]; got.Schema != "" || got.Table != "" || got.Start != nil || got.End != nil || got.Limit != nil {
+	if got := useCase.queries[0]; got.Schema != "" || got.Table != "" || got.Target != "" || got.Start != nil || got.End != nil || got.Limit != nil {
 		t.Fatalf("Abfrage = %+v, wollen leere, ungesetzte Filter", got)
+	}
+}
+
+// TestReadChangesTargetGehtAlsFilterAnDenUseCase trägt den Parameter
+// `target` (`ADR-0137` Teilfrage 5): er geht unverändert in die Abfrage,
+// neben `schema`/`table` als Konjunktion; ein leerer Wert (`target=`)
+// trägt keinen Filter, der Wert wird nicht gefaltet und nicht geprüft
+// (die Alphabet-Prüfung trägt der Use Case).
+// Rot färbende Mutation: `Target: values.Get(readChangesParamTarget)` aus
+// `parseReadChangesQuery` streichen, oder den Parameter-Namen ändern.
+func TestReadChangesTargetGehtAlsFilterAnDenUseCase(t *testing.T) {
+	for _, tc := range []struct {
+		path   string
+		schema string
+		table  string
+		target string
+	}{
+		{"/changes?source=src-1&target=eu", "", "", "eu"},
+		{"/changes?source=src-1&schema=public&table=orders&target=eu", "public", "orders", "eu"},
+		{"/changes?source=src-1&target=", "", "", ""},
+		{"/changes?source=src-1&target=EU", "", "", "EU"},
+		{"/changes?source=src-1&target=eu%00", "", "", "eu\x00"},
+	} {
+		useCase := &fakeReadChangesUseCase{}
+		ts := newReadChangesServer(t, useCase)
+		resp := getChanges(t, ts, testReaderToken, tc.path)
+		status := resp.StatusCode
+		resp.Body.Close()
+		if status != http.StatusOK {
+			t.Fatalf("%s: Status %d (Erwartung: 200)", tc.path, status)
+		}
+		if len(useCase.queries) != 1 {
+			t.Fatalf("%s: Use-Case-Aufrufe = %d, wollen 1", tc.path, len(useCase.queries))
+		}
+		if got := useCase.queries[0]; got.Target != tc.target || got.Schema != tc.schema || got.Table != tc.table {
+			t.Fatalf("%s: Abfrage = %+v, wollen schema=%q table=%q target=%q", tc.path, got, tc.schema, tc.table, tc.target)
+		}
+	}
+}
+
+// TestReadChangesTargetNameBleibtStrengeParameterMenge trägt die Grenze der
+// geschlossenen Parameter-Menge nach der Erweiterung um `target`
+// (`ADR-0081` Teilfrage 4): ein verwandter, nicht vergebener Name
+// (`targets`, `route_target`, `ziel`) endet weiter mit `400`, ohne den Use
+// Case zu rufen.
+// Rot färbende Mutation: `readChangesParams` auf ein Präfix-/Teilstring-
+// Match umstellen.
+func TestReadChangesTargetNameBleibtStrengeParameterMenge(t *testing.T) {
+	for _, path := range []string{
+		"/changes?source=src-1&targets=eu",
+		"/changes?source=src-1&route_target=eu",
+		"/changes?source=src-1&ziel=eu",
+		"/changes?source=src-1&Target=eu",
+	} {
+		useCase := &fakeReadChangesUseCase{}
+		ts := newReadChangesServer(t, useCase)
+		resp := getChanges(t, ts, testReaderToken, path)
+		status := resp.StatusCode
+		resp.Body.Close()
+		if status != http.StatusBadRequest {
+			t.Fatalf("%s: Status %d (Erwartung: 400)", path, status)
+		}
+		if len(useCase.queries) != 0 {
+			t.Fatalf("%s: Use-Case-Aufrufe = %d, wollen 0", path, len(useCase.queries))
+		}
+	}
+}
+
+// TestReadChangesLeereAntwortDesUseCaseBleibtGesetzteListe trägt die
+// Antwortform für ein Ziel ohne Treffer, auch außerhalb des Alphabets
+// (`ADR-0139` Festlegung 2): der Use Case antwortet leer, der Handler
+// antwortet `200` mit `{"changes":[]}`, kein `400`.
+func TestReadChangesLeereAntwortDesUseCaseBleibtGesetzteListe(t *testing.T) {
+	for _, target := range []string{"zz", "EU", "eu%00"} {
+		ts := newReadChangesServer(t, &fakeReadChangesUseCase{result: inbound.ReadChangesResult{Changes: []inbound.ReadChange{}}})
+		resp := getChanges(t, ts, testReaderToken, "/changes?source=src-1&target="+target)
+		status := resp.StatusCode
+		raw := body(t, resp)
+		resp.Body.Close()
+		if status != http.StatusOK || raw != "{\"changes\":[]}\n" {
+			t.Fatalf("target=%s: Status %d, Body %q (Erwartung: 200 mit leerer, gesetzter Liste)", target, status, raw)
+		}
 	}
 }
 

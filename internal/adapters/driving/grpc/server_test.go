@@ -3,7 +3,9 @@ package grpc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -86,20 +88,20 @@ func startTestServerMitTokenKonfiguration(t *testing.T, subscriber changeSubscri
 // leerer Wert lässt die Metadata weg.
 func streamMitToken(t *testing.T, client streamv1.ChangeStreamClient, authorization string) grpc.ServerStreamingClient[streamv1.Change] {
 	t.Helper()
-	return streamMitTokenUndFilter(t, client, authorization, "", "")
+	return streamMitTokenUndFilter(t, client, authorization, "", "", "")
 }
 
 // streamMitTokenUndFilter öffnet den Stream mit dem übergebenen
-// Metadata-Wert und dem übergebenen `schema`/`table`-Filterpaar
+// Metadata-Wert und dem übergebenen `schema`/`table`/`target`-Filter
 // (`ADR-0133`); ein leeres Feld trägt kein Filterfeld in der Request.
-func streamMitTokenUndFilter(t *testing.T, client streamv1.ChangeStreamClient, authorization, schema, table string) grpc.ServerStreamingClient[streamv1.Change] {
+func streamMitTokenUndFilter(t *testing.T, client streamv1.ChangeStreamClient, authorization, schema, table, target string) grpc.ServerStreamingClient[streamv1.Change] {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	if authorization != "" {
 		ctx = metadata.AppendToOutgoingContext(ctx, authorizationMetadataKey, authorization)
 	}
-	stream, err := client.StreamChanges(ctx, &streamv1.StreamChangesRequest{Schema: schema, Table: table})
+	stream, err := client.StreamChanges(ctx, &streamv1.StreamChangesRequest{Schema: schema, Table: table, Target: target})
 	if err != nil {
 		t.Fatalf("Stream öffnen: %v", err)
 	}
@@ -227,7 +229,7 @@ func traegtTokenOeffnetStreamUndTraegtChange(t *testing.T, token string) {
 func TestStreamChangesFilterLaesstNurTreffer(t *testing.T) {
 	subscriber := newFakeSubscriber()
 	client := startTestServer(t, subscriber)
-	stream := streamMitTokenUndFilter(t, client, bearerPrefix+testReaderToken, "public", "orders")
+	stream := streamMitTokenUndFilter(t, client, bearerPrefix+testReaderToken, "public", "orders", "")
 
 	select {
 	case <-subscriber.ready:
@@ -289,6 +291,141 @@ func TestStreamChangesOhneFilterLiefertAlle(t *testing.T) {
 	}
 	if msg.GetChangeId() != "change-1" {
 		t.Fatalf("erhaltener Change: %q (Erwartung: change-1, ungefiltert)", msg.GetChangeId())
+	}
+}
+
+// streamTestChange baut einen Change mit Identität, Tabelle und Ziel für die
+// Tests des Ziel-Filters; ein leeres Ziel trägt „kein Ziel".
+func streamTestChange(t *testing.T, id, schema, table string, target model.RouteTarget) *model.Change {
+	t.Helper()
+	change, err := model.NewChange(model.ChangeID(id), "tx-1", "table-1", 1, model.OperationInsert, nil, []byte(`{}`), "table-1-v1")
+	if err != nil {
+		t.Fatalf("Change bauen: %v", err)
+	}
+	change.Schema = schema
+	change.Table = table
+	change.RouteTarget = target
+	return &change
+}
+
+// TestStreamChangesTargetFilterLaesstNurDasZiel trägt das Feld `target`
+// (`ADR-0137` Teilfrage 5, Feld 3): nur Changes mit genau diesem Ziel
+// erreichen den Client; eine Change ohne Ziel und eine mit anderem Ziel
+// werden verworfen; als Konjunktion mit `schema`/`table` trifft nur die
+// Change, die alle gesetzten Dimensionen erfüllt. Die Eingabeseite ist das
+// Ziel der zugestellten Change.
+// Rot färbende Mutation: in `MatchesFilter` die `target`-Bedingung streichen
+// (die erste verworfene Change erreicht den Client) oder `req.GetTarget()`
+// im Handler durch `""` ersetzen.
+func TestStreamChangesTargetFilterLaesstNurDasZiel(t *testing.T) {
+	for _, tc := range []struct {
+		name                  string
+		schema, table, target string
+		skipped               []*model.Change
+		match                 *model.Change
+	}{
+		{
+			name:   "nur Ziel",
+			target: "eu",
+			skipped: []*model.Change{
+				streamTestChange(t, "skip-ohne", "public", "orders", ""),
+				streamTestChange(t, "skip-us", "public", "orders", "us"),
+			},
+			match: streamTestChange(t, "match", "public", "orders", "eu"),
+		},
+		{
+			name:   "Konjunktion mit Schema und Tabelle",
+			schema: "public", table: "orders", target: "eu",
+			skipped: []*model.Change{
+				streamTestChange(t, "skip-andere-tabelle", "public", "customers", "eu"),
+				streamTestChange(t, "skip-anderes-ziel", "public", "orders", "us"),
+			},
+			match: streamTestChange(t, "match", "public", "orders", "eu"),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			subscriber := newFakeSubscriber()
+			client := startTestServer(t, subscriber)
+			stream := streamMitTokenUndFilter(t, client, bearerPrefix+testReaderToken, tc.schema, tc.table, tc.target)
+			select {
+			case <-subscriber.ready:
+			case <-time.After(3 * time.Second):
+				t.Fatal("der Stream hat sich nicht am Broadcaster registriert")
+			}
+			for _, change := range tc.skipped {
+				subscriber.changes <- change
+			}
+			subscriber.changes <- tc.match
+
+			msg, err := recvChange(t, stream)
+			if err != nil {
+				t.Fatalf("Recv: %v", err)
+			}
+			if msg.GetChangeId() != "match" {
+				t.Fatalf("erhaltener Change: %q (Erwartung: nur der Treffer, die übrigen wurden verworfen)", msg.GetChangeId())
+			}
+		})
+	}
+}
+
+// TestStreamChangesTargetOhneTrefferLiefertKeineNachricht trägt „leer, kein
+// Fehler" (`ADR-0139` Festlegung 2): ein Ziel, das keine zugestellte Change
+// trägt — nie vergeben, außerhalb des Alphabets (Großbuchstabe, 64 Zeichen)
+// oder mit U+0000 —, öffnet den Stream ohne Fehler und liefert keine
+// Nachricht, obwohl geroutete und ungeroutete Changes eintreffen.
+// Rot färbende Mutation: in `MatchesFilter` die `target`-Bedingung streichen
+// — die eintreffenden Changes erreichen den Client.
+func TestStreamChangesTargetOhneTrefferLiefertKeineNachricht(t *testing.T) {
+	for _, target := range []string{"zz", "EU", strings.Repeat("a", 64), "eu\x00"} {
+		t.Run(fmt.Sprintf("%q", target), func(t *testing.T) {
+			subscriber := newFakeSubscriber()
+			client := startTestServer(t, subscriber)
+			stream := streamMitTokenUndFilter(t, client, bearerPrefix+testReaderToken, "", "", target)
+			select {
+			case <-subscriber.ready:
+			case <-time.After(3 * time.Second):
+				t.Fatal("der Stream hat sich nicht am Broadcaster registriert")
+			}
+			subscriber.changes <- streamTestChange(t, "geroutet", "public", "orders", "eu")
+			subscriber.changes <- streamTestChange(t, "ungeroutet", "public", "orders", "")
+
+			type ergebnis struct {
+				msg *streamv1.Change
+				err error
+			}
+			out := make(chan ergebnis, 1)
+			go func() {
+				msg, err := stream.Recv()
+				out <- ergebnis{msg, err}
+			}()
+			select {
+			case r := <-out:
+				t.Fatalf("Ergebnis trotz Ziel ohne Treffer: msg=%v err=%v", r.msg, r.err)
+			case <-time.After(400 * time.Millisecond):
+			}
+		})
+	}
+}
+
+// TestStreamChangesOhneTargetLiefertGeroutetEbenfalls trägt die Regression
+// ohne Filter: eine geroutete Change erreicht den ungefilterten Client.
+func TestStreamChangesOhneTargetLiefertGeroutetEbenfalls(t *testing.T) {
+	subscriber := newFakeSubscriber()
+	client := startTestServer(t, subscriber)
+	stream := streamMitToken(t, client, bearerPrefix+testReaderToken)
+	select {
+	case <-subscriber.ready:
+	case <-time.After(3 * time.Second):
+		t.Fatal("der Stream hat sich nicht am Broadcaster registriert")
+	}
+	subscriber.changes <- streamTestChange(t, "geroutet", "public", "orders", "eu")
+
+	msg, err := recvChange(t, stream)
+	if err != nil {
+		t.Fatalf("Recv: %v", err)
+	}
+	if msg.GetChangeId() != "geroutet" {
+		t.Fatalf("erhaltener Change: %q (Erwartung: geroutet, ungefiltert)", msg.GetChangeId())
 	}
 }
 

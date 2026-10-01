@@ -12,6 +12,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"strconv"
@@ -34,12 +35,15 @@ const (
 )
 
 func main() {
-	if len(os.Args) != 12 {
-		fmt.Fprintln(os.Stderr, "usage: grpcadminclient <addr> <reader-token> <admin-token> <consumer-id> <source> <publication> <read-schema> <read-table> <read-from> <read-to> <read-limit>")
+	target := flag.String("target", "", "Zustellziel-Filter des RPC ReadChanges (leer = kein Filter)")
+	flag.Parse()
+	args := flag.Args()
+	if len(args) != 11 {
+		fmt.Fprintln(os.Stderr, "usage: grpcadminclient [-target <ziel>] <addr> <reader-token> <admin-token> <consumer-id> <source> <publication> <read-schema> <read-table> <read-from> <read-to> <read-limit>")
 		os.Exit(2)
 	}
-	addr, readerToken, adminToken, consumerID, source, publication := os.Args[1], os.Args[2], os.Args[3], os.Args[4], os.Args[5], os.Args[6]
-	readSchema, readTable, readFrom, readTo, readLimit := os.Args[7], os.Args[8], os.Args[9], os.Args[10], os.Args[11]
+	addr, readerToken, adminToken, consumerID, source, publication := args[0], args[1], args[2], args[3], args[4], args[5]
+	readSchema, readTable, readFrom, readTo, readLimit := args[6], args[7], args[8], args[9], args[10]
 
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -58,7 +62,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "grpcadminclient: %v\n", err)
 		os.Exit(1)
 	}
-	if err := readChanges(client, readerToken, source, readSchema, readTable, readFrom, readTo, readLimit); err != nil {
+	if err := readChanges(client, readerToken, source, readSchema, readTable, *target, readFrom, readTo, readLimit); err != nil {
 		fmt.Fprintf(os.Stderr, "grpcadminclient: %v\n", err)
 		os.Exit(1)
 	}
@@ -115,12 +119,13 @@ func registerConsumer(client administrationv1.AdministrationClient, adminToken, 
 }
 
 // readChanges ruft die reader-RPC `ReadChanges` auf und prüft die Antwort
-// inhaltlich (`ADR-0131`): eine gesetzte, nicht leere Changes-Liste; je
-// Eintrag eine nicht leere Kennung, ein bekannter Operationswert, eine
+// inhaltlich (`ADR-0131`): eine gesetzte, nicht leere Changes-Liste (ein
+// gesetztes `target` filtert nach Zustellziel, `ChangeRecord` trägt es nicht);
+// je Eintrag eine nicht leere Kennung, ein bekannter Operationswert, eine
 // Position ≥ 1 und die zum Filter passende Klartext-Identität. Ein leerer
 // Bereichs-/Limit-Parameter trägt `0` (nicht gesetzt) — dieselbe Semantik
 // wie bei `httpclient`s `GET /changes`.
-func readChanges(client administrationv1.AdministrationClient, readerToken, source, schema, table, from, to, limit string) error {
+func readChanges(client administrationv1.AdministrationClient, readerToken, source, schema, table, target, from, to, limit string) error {
 	fromVal, err := parseUint64(from)
 	if err != nil {
 		return fmt.Errorf("from %q ist keine Ganzzahl: %w", from, err)
@@ -137,7 +142,7 @@ func readChanges(client administrationv1.AdministrationClient, readerToken, sour
 	ctx, cancel := callCtx(readerToken)
 	defer cancel()
 	resp, err := client.ReadChanges(ctx, &administrationv1.ReadChangesRequest{
-		Source: source, Schema: schema, Table: table, From: fromVal, To: toVal, Limit: limitVal,
+		Source: source, Schema: schema, Table: table, Target: target, From: fromVal, To: toVal, Limit: limitVal,
 	})
 	if err != nil {
 		return fmt.Errorf("ReadChanges (reader) fehlgeschlagen: %w", err)

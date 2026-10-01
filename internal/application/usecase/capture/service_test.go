@@ -457,11 +457,13 @@ type fakeStream struct {
 	events                  *[]string
 	publishErr              error
 	published               []model.ChangeID
+	routeTargets            []model.RouteTarget
 	nichtLesenderEmpfaenger chan *model.Change
 }
 
 func (f *fakeStream) Publish(ctx context.Context, change *model.Change) error {
 	*f.events = append(*f.events, "stream:"+string(change.ID))
+	f.routeTargets = append(f.routeTargets, change.RouteTarget)
 	if f.nichtLesenderEmpfaenger != nil {
 		select {
 		case f.nichtLesenderEmpfaenger <- change:
@@ -522,6 +524,65 @@ func TestCapturePublishesEachChangeOnceAfterAckAndNotify(t *testing.T) {
 	}
 	if result.Acknowledged.Offset != 100 {
 		t.Fatalf("Ergebnis trägt Offset %d, wollen 100", result.Acknowledged.Offset)
+	}
+}
+
+// TestCapturePublishesTheRouteTargetOfEachChange trägt die Strecke des
+// Zustellziels vom Assembler zum Stream: die Change, die der Store
+// persistiert, und die Change, die der Stream-Port erhält, sind dieselbe
+// Change mit demselben `RouteTarget` — die Handler der Live-Wege filtern auf
+// diesem Feld. Eine Change ohne Ziel bleibt ohne Ziel.
+// Rot färbende Mutation: in `changesOfCommittedTransaction` die Changes ohne
+// ihr Ziel kopieren (`RouteTarget` zurücksetzen) — der Stream-Port erhält
+// leere Ziele.
+func TestCapturePublishesTheRouteTargetOfEachChange(t *testing.T) {
+	events := []string{}
+	store := &fakeStore{events: &events}
+	ack := &fakeAck{events: &events}
+	stream := &fakeStream{events: &events}
+	service := capture.NewCaptureService(store, ack, capture.WithChangeStream(stream))
+
+	tx, err := model.NewOpenTransaction("t-1", "src-1")
+	if err != nil {
+		t.Fatalf("NewOpenTransaction: %v", err)
+	}
+	for i, target := range []model.RouteTarget{"eu", ""} {
+		sequence := int64(i + 1)
+		change, err := model.NewChange(
+			model.ChangeID(fmt.Sprintf("t-1-%d", sequence)), "t-1", "public.tbl-1", sequence,
+			model.OperationInsert, nil, []byte(`{"x":1}`), "sv-1",
+		)
+		if err != nil {
+			t.Fatalf("NewChange %d: %v", sequence, err)
+		}
+		change.Schema = "public"
+		change.Table = "tbl-1"
+		if target != "" {
+			if change, err = change.WithRouteTarget(target); err != nil {
+				t.Fatalf("WithRouteTarget: %v", err)
+			}
+		}
+		if err := tx.AppendChange(change); err != nil {
+			t.Fatalf("AppendChange %d: %v", sequence, err)
+		}
+	}
+	position, err := model.NewSourcePosition("src-1", 100)
+	if err != nil {
+		t.Fatalf("NewSourcePosition: %v", err)
+	}
+	if err := tx.Commit(position, model.NewTimePoint(1)); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+
+	if _, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx}); err != nil {
+		t.Fatalf("Capture: %v", err)
+	}
+	if got, want := stream.routeTargets, []model.RouteTarget{"eu", ""}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("Stream erhält die Ziele %q, wollen %q", got, want)
+	}
+	persisted, _ := store.persisted[0].Changes()
+	if persisted[0].RouteTarget != "eu" || persisted[1].RouteTarget != "" {
+		t.Fatalf("persistierte Ziele = %q/%q, wollen eu/leer", persisted[0].RouteTarget, persisted[1].RouteTarget)
 	}
 }
 

@@ -169,8 +169,9 @@ func TestChangeOriginOrDefault(t *testing.T) {
 }
 
 // TestChangeMatchesFilter trägt die Kombinatorik aus `ADR-0133` Teilfrage 1:
-// beide Felder unabhängig optional, beide leer lässt jeden Change passieren.
-// Rot färbende Mutation: eine der beiden `if`-Bedingungen streichen — dann
+// die Dimensionen sind unabhängig optional, alle leer lässt jeden Change
+// passieren, gesetzte Dimensionen verknüpfen sich als Konjunktion.
+// Rot färbende Mutation: eine der drei `if`-Bedingungen streichen — dann
 // passiert ein nicht passender Change trotz gesetztem Filter auf dieser
 // Dimension.
 func TestChangeMatchesFilter(t *testing.T) {
@@ -195,8 +196,52 @@ func TestChangeMatchesFilter(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := change.MatchesFilter(tc.filterSchema, tc.filterTable); got != tc.want {
-				t.Fatalf("MatchesFilter(%q, %q) = %v, wollen %v", tc.filterSchema, tc.filterTable, got, tc.want)
+			if got := change.MatchesFilter(tc.filterSchema, tc.filterTable, ""); got != tc.want {
+				t.Fatalf("MatchesFilter(%q, %q, \"\") = %v, wollen %v", tc.filterSchema, tc.filterTable, got, tc.want)
+			}
+		})
+	}
+}
+
+// TestChangeMatchesFilterTarget trägt die Zieldimension (`ADR-0137`
+// Teilfrage 5): ein leeres `target` wählt nicht aus (auch eine geroutete
+// Change passiert), ein gesetztes trifft genau das Ziel der Change; eine
+// Change ohne Ziel trifft nie ein gesetztes `target`; die Dimension
+// verknüpft sich als Konjunktion mit `schema`/`table`.
+// Rot färbende Mutation: die `target`-Bedingung streichen (Fälle „anderes
+// Ziel", „kein Ziel") oder `!=` zu `==` kehren (alle Fälle).
+func TestChangeMatchesFilterTarget(t *testing.T) {
+	routed := buildChange(t, validChangeArgs())
+	routed.Schema = "public"
+	routed.Table = "orders"
+	routed.RouteTarget = "eu"
+	unrouted := routed
+	unrouted.RouteTarget = ""
+
+	cases := []struct {
+		name   string
+		change Change
+		schema string
+		table  string
+		target string
+		want   bool
+	}{
+		{"geroutet, kein Filter", routed, "", "", "", true},
+		{"ungeroutet, kein Filter", unrouted, "", "", "", true},
+		{"Ziel passt", routed, "", "", "eu", true},
+		{"anderes Ziel", routed, "", "", "us", false},
+		{"Präfix des Ziels ist kein Treffer", routed, "", "", "e", false},
+		{"kein Ziel an der Change", unrouted, "", "", "eu", false},
+		{"Ziel passt, Tabelle passt", routed, "public", "orders", "eu", true},
+		{"Ziel passt, Tabelle passt nicht", routed, "public", "customers", "eu", false},
+		{"Ziel passt nicht, Tabelle passt", routed, "public", "orders", "us", false},
+		{"Name außerhalb des Alphabets", routed, "", "", "EU", false},
+		{"Name mit U+0000", routed, "", "", "eu\x00", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.change.MatchesFilter(tc.schema, tc.table, tc.target); got != tc.want {
+				t.Fatalf("MatchesFilter(%q, %q, %q) = %v, wollen %v", tc.schema, tc.table, tc.target, got, tc.want)
 			}
 		})
 	}

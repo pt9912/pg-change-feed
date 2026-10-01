@@ -3,6 +3,7 @@ package readchanges_test
 import (
 	"context"
 	stderrors "errors"
+	"strings"
 	"testing"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
@@ -212,5 +213,115 @@ func TestReadChangesCarriesPortFailure(t *testing.T) {
 	_, err := readchanges.NewReadChangesService(store).ReadChanges(context.Background(), inbound.ReadChangesQuery{Source: "src-1"})
 	if !stderrors.Is(err, cause) {
 		t.Fatalf("Fehler = %v, wollen die Ursache", err)
+	}
+}
+
+// Das Ziel geht unverändert in die Abfrage des Ports (`ADR-0138`
+// Festlegung 1): der Use Case reicht den Filter einmal an den Store, neben
+// Schema und Tabelle.
+// Rot färbende Mutation: `Target: query.Target` aus der Abbildung streichen
+// oder durch eine feste Zeichenkette ersetzen.
+func TestReadChangesTranslatesTarget(t *testing.T) {
+	store := &fakeChangeStore{}
+
+	if _, err := readchanges.NewReadChangesService(store).ReadChanges(context.Background(), inbound.ReadChangesQuery{
+		Source: "src-1", Schema: "public", Table: "orders", Target: "eu",
+	}); err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+	if len(store.queries) != 1 {
+		t.Fatalf("Port-Aufrufe = %d, wollen 1", len(store.queries))
+	}
+	if got := store.queries[0]; got.Target != "eu" || got.Schema != "public" || got.Table != "orders" {
+		t.Fatalf("Abfrage = %+v, wollen Ziel eu neben public/orders", got)
+	}
+}
+
+// Ohne Ziel bleibt die Filterachse des Ziels leer (Regression).
+func TestReadChangesLeavesTargetUnset(t *testing.T) {
+	store := &fakeChangeStore{}
+
+	if _, err := readchanges.NewReadChangesService(store).ReadChanges(context.Background(), inbound.ReadChangesQuery{Source: "src-1"}); err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+	if got := store.queries[0].Target; got != "" {
+		t.Fatalf("Ziel = %q, wollen leer", got)
+	}
+}
+
+// failingStore schlägt bei jedem Aufruf von `ReadChanges` fehl und zählt
+// ihn: ein Aufruf des Ports ist in den Tests der Alphabet-Prüfung der Fehler.
+type failingStore struct {
+	fakeChangeStore
+	calls int
+}
+
+func (f *failingStore) ReadChanges(context.Context, outbound.ChangeQuery) ([]outbound.ChangeRecord, error) {
+	f.calls++
+	return nil, stderrors.New("der Store darf nicht angefragt werden")
+}
+
+// Ein gesetztes Ziel außerhalb des Alphabets des Zielnamens (`ADR-0139`
+// Festlegung 2) liefert die leere, gesetzte Liste ohne Fehler, und der Port
+// wird nicht angefragt (der Store-Fake endet bei jedem Aufruf mit einem
+// Fehler und zählt ihn). Die Eingabe ist das Ziel: Großbuchstabe, 64 Zeichen, U+0000, Trennzeichen am
+// Anfang, Leerzeichen, Punkt.
+// Rot färbende Mutation: die Alphabet-Prüfung streichen (der Store-Fehler
+// kommt zurück, der Port-Zähler steigt) oder `!model.IsValidRouteTarget`
+// zu `model.IsValidRouteTarget` kehren (die Fälle laufen in den Store).
+func TestReadChangesTargetOutsideAlphabetAnswersEmptyWithoutStore(t *testing.T) {
+	cases := []struct {
+		name   string
+		target string
+	}{
+		{"Großbuchstabe", "Eu"},
+		{"64 Zeichen", strings.Repeat("a", 64)},
+		{"U+0000 am Ende", "eu\x00"},
+		{"nur U+0000", "\x00"},
+		{"Bindestrich am Anfang", "-eu"},
+		{"Leerzeichen", "e u"},
+		{"Punkt", "eu.de"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			store := &failingStore{}
+
+			result, err := readchanges.NewReadChangesService(store).ReadChanges(context.Background(), inbound.ReadChangesQuery{
+				Source: "src-1", Target: tc.target,
+			})
+			if err != nil {
+				t.Fatalf("Fehler = %v, wollen keinen", err)
+			}
+			if result.Changes == nil || len(result.Changes) != 0 {
+				t.Fatalf("Changes = %v, wollen leere, gesetzte Liste", result.Changes)
+			}
+			if store.calls != 0 {
+				t.Fatalf("Port-Aufrufe = %d, wollen 0", store.calls)
+			}
+		})
+	}
+}
+
+// Gegenprobe zur Alphabet-Prüfung: ein Ziel im Alphabet (auch an der Grenze
+// von 63 Zeichen) erreicht den Port — die Prüfung weist nicht jedes Ziel ab.
+func TestReadChangesTargetInsideAlphabetReachesStore(t *testing.T) {
+	for _, target := range []string{"eu", "a", "0-9_z", strings.Repeat("a", 63)} {
+		store := &failingStore{}
+
+		_, err := readchanges.NewReadChangesService(store).ReadChanges(context.Background(), inbound.ReadChangesQuery{
+			Source: "src-1", Target: target,
+		})
+		if err == nil || store.calls != 1 {
+			t.Fatalf("Ziel %q: Fehler = %v, Port-Aufrufe = %d, wollen den Store-Fehler nach einem Aufruf", target, err, store.calls)
+		}
+	}
+}
+
+// Eine leere Quelle endet vor der Alphabet-Prüfung als ungültige Eingabe:
+// ein ungültiges Ziel verdeckt den Pflichtfeld-Fehler nicht.
+func TestReadChangesMissingSourceWinsOverInvalidTarget(t *testing.T) {
+	_, err := readchanges.NewReadChangesService(&failingStore{}).ReadChanges(context.Background(), inbound.ReadChangesQuery{Target: "EU"})
+	if !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
+		t.Fatalf("Fehler = %v, wollen %v", err, domainerrors.ErrEmptyIdentifier)
 	}
 }

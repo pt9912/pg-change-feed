@@ -172,17 +172,23 @@ func (c Change) WithRouteTarget(target RouteTarget) (Change, error) {
 	return c, nil
 }
 
-// MatchesFilter prüft den Change gegen ein optionales, unabhängig
-// setzbares `schema`/`table`-Filterpaar (`ADR-0133`): ein leeres Feld
-// trägt keinen Filter auf dieser Dimension, beide leer lässt jeden Change
-// passieren. Der gRPC- und der SSE-Stream-Handler rufen diese eine
-// Funktion, damit ein gefilterter Change nie zwischen den beiden
-// Zugriffswegen auseinanderläuft.
-func (c Change) MatchesFilter(schema, table string) bool {
+// MatchesFilter prüft den Change gegen einen optionalen, je Dimension
+// unabhängig setzbaren Filter aus `schema`, `table` und Zustellziel
+// `target` (`ADR-0133`): ein leeres Feld trägt keinen Filter auf dieser
+// Dimension, alle leer lässt jeden Change passieren, gesetzte Felder
+// verknüpfen sich als Konjunktion. Ein gesetztes `target` trifft nur einen
+// Change, dessen `RouteTarget` genau dieser Name ist; ein Change ohne Ziel
+// und ein Name außerhalb des Alphabets treffen nie. Der gRPC- und der
+// SSE-Stream-Handler rufen diese eine Funktion, damit ein gefilterter
+// Change nie zwischen den beiden Zugriffswegen auseinanderläuft.
+func (c Change) MatchesFilter(schema, table, target string) bool {
 	if schema != "" && c.Schema != schema {
 		return false
 	}
 	if table != "" && c.Table != table {
+		return false
+	}
+	if target != "" && string(c.RouteTarget) != target {
 		return false
 	}
 	return true

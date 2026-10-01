@@ -941,6 +941,57 @@ func TestPersistAndReadCarryRouteTarget(t *testing.T) {
 	}
 }
 
+// TestReadChangesFiltersByRouteTarget belegt die Lese-Anweisung mit der
+// Auswahl `route_target = $6` (`ADR-0137` Teilfrage 5) gegen die reale
+// Datenbank: ein gesetztes Ziel liefert genau die Changes mit diesem Ziel
+// (Gleichheit — ein Präfix und ein Muster mit `%` treffen nicht), ein
+// leeres Ziel wählt nicht aus (geroutete, ungeroutete Changes), eine Change
+// ohne Ziel trifft nie ein gesetztes, die Auswahl verknüpft sich als
+// Konjunktion mit dem Tabellenfilter und dem Limit, und die Ordnung bleibt
+// die des Lesepfads. Eingabeseite: der Wert des gesetzten Ziels an der
+// Abfrage. Rot färbende Mutation: in `queries.SelectChanges` die Zeile
+// `route_target = $6` streichen (jedes gesetzte Ziel liefert alle Changes),
+// durch `LIKE $6 || '%'` ersetzen (Präfix-Fall rot) oder `$6` an `$5`
+// binden.
+func TestReadChangesFiltersByRouteTarget(t *testing.T) {
+	store, pool := newTestStore(t)
+	seedReference(t, pool)
+
+	persist(t, store,
+		committedRoutedTransaction(t, "t-sel-a", 10, "eu", "", "us"),
+		committedRoutedTransaction(t, "t-sel-b", 20, "eu", "eu-west"),
+	)
+
+	cases := []struct {
+		name  string
+		query outbound.ChangeQuery
+		want  []string
+	}{
+		{"Ziel eu", outbound.ChangeQuery{Target: "eu"}, []string{"t-sel-a-1@10:INSERT#1", "t-sel-b-1@20:INSERT#1"}},
+		{"Ziel us", outbound.ChangeQuery{Target: "us"}, []string{"t-sel-a-3@10:INSERT#3"}},
+		{"Ziel eu-west", outbound.ChangeQuery{Target: "eu-west"}, []string{"t-sel-b-2@20:INSERT#2"}},
+		{"kein Ziel wählt nicht aus", outbound.ChangeQuery{}, []string{
+			"t-sel-a-1@10:INSERT#1", "t-sel-a-2@10:INSERT#2", "t-sel-a-3@10:INSERT#3",
+			"t-sel-b-1@20:INSERT#1", "t-sel-b-2@20:INSERT#2",
+		}},
+		{"Ziel ohne Treffer", outbound.ChangeQuery{Target: "zz"}, []string{}},
+		{"Präfix trifft nicht", outbound.ChangeQuery{Target: "e"}, []string{}},
+		{"Muster trifft nicht", outbound.ChangeQuery{Target: "e%"}, []string{}},
+		{"Konjunktion mit Tabelle (Treffer)", outbound.ChangeQuery{Target: "eu", Table: "a"}, []string{"t-sel-a-1@10:INSERT#1", "t-sel-b-1@20:INSERT#1"}},
+		{"Konjunktion mit Tabelle (andere Tabelle)", outbound.ChangeQuery{Target: "eu", Table: "b"}, []string{}},
+		{"Konjunktion mit Limit", outbound.ChangeQuery{Target: "eu", Limit: limit(t, 1)}, []string{"t-sel-a-1@10:INSERT#1"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.query.Source = testSource
+			got := readRecords(t, store, tc.query)
+			if strings.Join(got, "|") != strings.Join(tc.want, "|") {
+				t.Fatalf("ReadChanges(%+v) = %v, wollen %v", tc.query, got, tc.want)
+			}
+		})
+	}
+}
+
 // Ein Zustellziel außerhalb des Alphabets (`SPEC-032`) erreicht die Datenbank
 // nicht: der Store endet mit dem Domänen-Fehler und schreibt weder
 // Transaktion noch Change (die Spalte trägt keinen CHECK, das Alphabet

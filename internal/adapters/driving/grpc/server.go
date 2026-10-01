@@ -164,17 +164,17 @@ func (s *changeStreamService) StreamChanges(req *streamv1.StreamChangesRequest, 
 	defer cancel()
 	s.log.Info(stream.Context(), "grpc: Stream geöffnet")
 	defer s.log.Info(context.Background(), "grpc: Stream beendet")
-	// Das optionale `schema`/`table`-Filterpaar (`ADR-0133`) wird hier, nach
-	// dem `Subscribe()`-Aufruf, geprüft — der Broadcaster bleibt unverändert
-	// ungefiltert, ein nicht passender Change wird verworfen, bevor er über
-	// das Netz geht.
-	schema, table := req.GetSchema(), req.GetTable()
+	// Der optionale `schema`/`table`/`target`-Filter (`ADR-0133`) wird hier,
+	// nach dem `Subscribe()`-Aufruf, geprüft — der Broadcaster bleibt
+	// unverändert ungefiltert, ein nicht passender Change wird verworfen,
+	// bevor er über das Netz geht.
+	schema, table, target := req.GetSchema(), req.GetTable(), req.GetTarget()
 	for {
 		select {
 		case <-stream.Context().Done():
 			return stream.Context().Err()
 		case change := <-changes:
-			if !change.MatchesFilter(schema, table) {
+			if !change.MatchesFilter(schema, table, target) {
 				continue
 			}
 			if err := stream.Send(toProtoChange(change)); err != nil {

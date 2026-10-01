@@ -39,17 +39,19 @@ type RetentionCandidate struct {
 // inklusive, das Ende exklusiv (Happy Path: Bereich
 // `[p1, p2)` trägt den Change an `p1`, nicht den an `p2`).
 //
-// Die Filterachse ist **eine** Form: `Schema` und `Table` als Klartext,
-// je optional und **unabhängig** — dieselbe Filter-Grammatik wie die
-// `WHERE`-Klausel des View-Zugriffs auf `cdc.changes`. Klartext ist die
+// Die Filterachse ist **eine** Form: `Schema`, `Table` und `Target` als
+// Klartext, je optional und **unabhängig** — dieselbe Filter-Grammatik wie
+// die `WHERE`-Klausel des View-Zugriffs auf `cdc.changes`. Klartext ist die
 // Draht-Form: die opake `SourceTableID` ist kein Bezeichner, über den ein
-// Consumer dieselbe Tabelle stabil adressiert.
+// Consumer dieselbe Tabelle stabil adressiert. `Target` wählt das
+// Zustellziel (`route_target`) als Gleichheit; leer wählt nicht aus.
 type ChangeQuery struct {
 	Source model.SourceID
 	Start  *model.SourcePosition
 	End    *model.SourcePosition
 	Schema string
 	Table  string
+	Target string
 	Limit  *int
 }
 

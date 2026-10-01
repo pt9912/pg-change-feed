@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	stderrors "errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -482,7 +483,7 @@ func TestReadChangesRuftUseCaseMitUebersetzterQueryAuf(t *testing.T) {
 	svc := &administrationService{readChanges: fake, log: outbound.NoopLog}
 
 	resp, err := svc.ReadChanges(context.Background(), &administrationv1.ReadChangesRequest{
-		Source: "src-1", Schema: "public", Table: "orders", From: 100, To: 500, Limit: 10,
+		Source: "src-1", Schema: "public", Table: "orders", From: 100, To: 500, Limit: 10, Target: "eu",
 	})
 	if err != nil {
 		t.Fatalf("ReadChanges: %v", err)
@@ -490,8 +491,8 @@ func TestReadChangesRuftUseCaseMitUebersetzterQueryAuf(t *testing.T) {
 	if !fake.called {
 		t.Fatalf("der Use Case wurde nicht aufgerufen")
 	}
-	if fake.gotQuery.Source != "src-1" || fake.gotQuery.Schema != "public" || fake.gotQuery.Table != "orders" {
-		t.Fatalf("Abfrage = %+v, wollen Quelle/schema/table übersetzt", fake.gotQuery)
+	if fake.gotQuery.Source != "src-1" || fake.gotQuery.Schema != "public" || fake.gotQuery.Table != "orders" || fake.gotQuery.Target != "eu" {
+		t.Fatalf("Abfrage = %+v, wollen Quelle/schema/table/target übersetzt", fake.gotQuery)
 	}
 	if fake.gotQuery.Start == nil || fake.gotQuery.Start.Offset != 100 ||
 		fake.gotQuery.End == nil || fake.gotQuery.End.Offset != 500 {
@@ -529,6 +530,33 @@ func TestReadChangesOhneBereichTraegtKeineGrenze(t *testing.T) {
 	}
 	if fake.gotQuery.Start != nil || fake.gotQuery.End != nil || fake.gotQuery.Limit != nil {
 		t.Fatalf("Abfrage trägt eine Grenze trotz unbegrenzter Anfrage: %+v", fake.gotQuery)
+	}
+	if fake.gotQuery.Target != "" {
+		t.Fatalf("Abfrage trägt ein Ziel trotz leerem Feld: %+v", fake.gotQuery)
+	}
+}
+
+// TestReadChangesTargetWirdUnveraendertUebergeben trägt die Eingabeseite
+// des Feldes `target` (`ADR-0138` Festlegung 1): jeder Wert — im Alphabet,
+// außerhalb, mit U+0000 — erreicht den Use Case unverändert; der Adapter
+// faltet und prüft nicht (die Alphabet-Prüfung trägt der Use Case), und die
+// Antwort ist keine Fehlerantwort.
+// Rot färbende Mutation: `Target: req.GetTarget()` aus der Abbildung
+// streichen oder den Wert normieren (`strings.ToLower`).
+func TestReadChangesTargetWirdUnveraendertUebergeben(t *testing.T) {
+	for _, target := range []string{"eu", "EU", strings.Repeat("a", 64), "eu\x00"} {
+		fake := &fakeReadChanges{}
+		svc := &administrationService{readChanges: fake, log: outbound.NoopLog}
+		resp, err := svc.ReadChanges(context.Background(), &administrationv1.ReadChangesRequest{Source: "src-1", Target: target})
+		if err != nil {
+			t.Fatalf("target %q: ReadChanges: %v", target, err)
+		}
+		if fake.gotQuery.Target != target {
+			t.Fatalf("target %q: Abfrage trägt %q", target, fake.gotQuery.Target)
+		}
+		if resp.GetChanges() == nil || len(resp.GetChanges()) != 0 {
+			t.Fatalf("target %q: Changes = %v, wollen leere, gesetzte Liste", target, resp.GetChanges())
+		}
 	}
 }
 
