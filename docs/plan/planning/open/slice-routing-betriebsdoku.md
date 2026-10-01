@@ -150,8 +150,12 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
   Re-Evaluierungs-Trigger der ADR bleibt „Messung der zweiten NATS-Veröffentlichung
   zeigt Druck am Publisher“.
 - aus `slice-routing-e2e` — Übergabe-Block, **gemessen** in `make test-integration`
-  (Lauf vom 2026-10-01 am Arbeitsbaum von `slice-routing-e2e`, je einmal mit
-  `postgres:18-alpine` = PostgreSQL 18.6 und `postgres:17-alpine` = PostgreSQL 17.11,
+  (Läufe vom 2026-10-01 am Arbeitsbaum von `slice-routing-e2e` nach der Fixrunde, je
+  einmal mit dem Image des 18-Legs aus `.github/workflows/e2e.yml`
+  (`postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8`
+  = PostgreSQL 18.6) und des 17-Legs
+  (`postgres:17-alpine@sha256:7456ef82e5f5bc43d997f4781bbd7c0d6389bff397564649a356e206ba473aee`
+  = PostgreSQL 17.11),
   die Versionen stehen in der gedruckten Zeile `ROUTING-DELETE-MESSUNG` der Testfunktion
   `TestE2ERoutingDeleteWithoutFullReplicaIdentity`):
   DELETE einer Zeile ohne volle Replica-Identität trägt im Alt-Bild nur den Schlüssel

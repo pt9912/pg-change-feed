@@ -403,9 +403,11 @@ belegt, sind sie keine geprüften Tatsachen.
   Leser, der nur ein Ziel abruft, ist sie unsichtbar. Ein abwesender Wert im
   Bild (`NULL`, unverändertes TOAST, bei `DELETE` ohne volle Replica-Identität
   jede Nicht-Schlüsselspalte) ist ein Nicht-Treffer der Bedingung, keine
-  Nichtanwendbarkeit; die nächste Regel wird geprüft. Die Aussage zu `DELETE`
-  ist aus dem Abwesenheits-Vertrag von [`LH-FA-DAT-005`](lastenheft.md)
-  hergeleitet und nicht gegen PostgreSQL 17 und 18 gemessen.
+  Nichtanwendbarkeit; die nächste Regel wird geprüft. Gemessen (PostgreSQL 17 und
+  18, E2E-Messung): ein `DELETE` ohne volle Replica-Identität ist für eine
+  Bedingung auf eine Nicht-Schlüsselspalte ein Nicht-Treffer (das Alt-Bild trägt
+  nur den Schlüssel; ohne weitere Regel ist `route_target` `NULL`, mit einer
+  Regel ohne `when` deren Ziel), unter voller Replica-Identität ein Treffer.
 - **Verhältnis zu Transformationen** ([`LH-FA-CFG-007`](lastenheft.md)). Die
   Bedingung liest den Quellwert vor jeder Transformation; das Ziel ist ein
   Metadatum der Change und ändert das Row Image nicht, eine Transformation
@@ -452,12 +454,15 @@ belegt, sind sie keine geprüften Tatsachen.
   der Change vorausgeht und keine Regel liest (hergeleitet, nicht am laufenden
   System gemessen); dort genügt das Entfernen der Regel nicht, die Abhilfe ist die
   der inkompatiblen Schemaänderung, und die Regel auf die entfernte Spalte ist
-  zusätzlich zu entfernen (hergeleitet). Offen und nicht gemessen: ob die
-  Nichtanwendbarkeit der Regel am laufenden System entsteht (erwartet bei
+  zusätzlich zu entfernen (hergeleitet). Gemessen (PostgreSQL 17 und 18,
+  E2E-Messung): die Nichtanwendbarkeit der Regel entsteht am laufenden System bei
   Erstaktivierung ohne bekannte Spaltenform und bei einer Publication mit
-  Spaltenliste, die die Bedingungsspalte nicht trägt) und ob die Abfolge für
-  diese Antragsart greift; erst der Beleg am laufenden System macht sie zur
-  Tatsache.
+  Spaltenliste, die die Bedingungsspalte nicht trägt, erzeugt auf einer Tabelle
+  ohne bekannte Spaltenform; der Erfassungspfad endet dort mit der Fehlerklasse
+  `schema`, und die Abfolge (Entfernen der Regel beantragen, Neustart) nimmt die
+  zuvor nicht bestätigte Transaktion ohne Ziel auf. Hergeleitet bleibt der Fall
+  einer Publication mit Spaltenliste bei bereits bekannter Spaltenform (dort ist
+  der erste Halt die inkompatible Schemaänderung).
 - **Abgrenzung.** Die Routing-Regeln bestimmen das Ziel einer Change, nicht ihre
   Form; die Form bleibt bei `LH-FA-CFG-007.a`.
 
@@ -920,7 +925,8 @@ Der Fehlertext ist der Klartext der Zeile, gefolgt von einem Doppelpunkt, einem
 Leerzeichen und der Adresse; die Adresse eines Regelnamens ist
 `schema.table.rule_name`, die einer Spalte `schema.table.column`, die eines
 Zielnamens `schema.table.zielname`, die einer `order` `schema.table.<Wert>` in
-Dezimalschreibweise, die eines Schlüssels der Schlüsselname. Die erste verletzte
+Dezimalschreibweise, die eines Schlüssels der Schlüsselname; ein Name steht
+zeichengenau, wie beantragt. Die erste verletzte
 Prüfung bestimmt den Text, in der Reihenfolge der Tabelle von oben nach unten:
 erst die Formzeilen, dann R1 bis R5; `remove_route` durchläuft nur die Zeile zum
 Regelnamen und R6. Die letzte Zeile gilt für `exclude_column` zusätzlich zu
@@ -928,11 +934,11 @@ den Prüfungen der Spalten-Antragsarten.
 
 | Verletzung | Klartext | Adresse |
 |---|---|---|
-| `rule_name` ist leer oder NULL oder liegt außerhalb des Alphabets (`SPEC-030`, Bezeichner) | `Regelname ist ungültig` | Regelname, wie beantragt |
+| `rule_name` ist leer oder NULL oder liegt außerhalb des Alphabets (`SPEC-030`, Bezeichner) | `Regelname ist ungültig` | Regelname |
 | `set_route` mit `rule_spec` NULL (SQL oder JSON) oder ohne JSON-Objekt | `rule_spec ist ungültig` | Regelname |
 | `rule_spec` oder `when` trägt einen Schlüssel, den die Regelform nicht kennt (`SPEC-032`) | `unbekannter Schlüssel in rule_spec` | der Schlüsselname |
 | `target` fehlt oder ist keine Zeichenkette, `order` fehlt oder ist keine positive Ganzzahl, `when` ist kein Objekt oder trägt nicht beide Schlüssel, `column` oder `equals` hat die falsche Form (`SPEC-032`) | `rule_spec ist ungültig` | Regelname |
-| `target` liegt außerhalb des Alphabets des Zielnamens (`SPEC-032`) | `Zielname ist ungültig` | Zielname, wie beantragt |
+| `target` liegt außerhalb des Alphabets des Zielnamens (`SPEC-032`) | `Zielname ist ungültig` | Zielname |
 | R1 | `Regelname bereits vergeben` | Regelname |
 | R2 | `order bereits vergeben` | order |
 | R3, `when.column` fehlt an der Quelle | `Spalte existiert nicht an der Quelle` | Spalte |
@@ -1373,9 +1379,10 @@ anderer Schlüssel, auch innerhalb von `when`, endet den Antrag `failed`
 - **Abwesenheit.** Fehlt der Wert der Spalte im gelesenen Bild (`NULL`,
   unverändertes TOAST, bei `DELETE` ohne volle Replica-Identität jede
   Nicht-Schlüsselspalte, generierte Spalte), trifft die Bedingung nicht; die
-  nächste Regel wird geprüft. Das ist keine Nichtanwendbarkeit. Die Aussage zu
-  `DELETE` ist hergeleitet aus dem Abwesenheits-Vertrag von
-  [`LH-FA-DAT-005`](lastenheft.md), nicht gegen PostgreSQL 17 und 18 gemessen.
+  nächste Regel wird geprüft. Das ist keine Nichtanwendbarkeit. Gemessen
+  (PostgreSQL 17 und 18, E2E-Messung): ein `DELETE` ohne volle Replica-Identität
+  trifft für eine Nicht-Schlüsselspalte nicht, unter voller Replica-Identität
+  trifft er (Alt-Bild nach [`LH-FA-DAT-005`](lastenheft.md)).
 - **Auswertung.** Die Regeln der Tabelle werden in aufsteigender `order`
   geprüft; der erste Treffer bestimmt `route_target`, keine weitere Regel wird
   geprüft. Trifft keine Regel, ist `route_target` `NULL`. R2 macht die
@@ -1413,9 +1420,11 @@ und Regel `rest` mit `rule_spec` `{"target": "sonstige", "order": 100}`):
 - Nicht anwendbare Regel: Fehlt `region` in der Relation einer Change der
   Tabelle, ist `eu_orders` nicht anwendbar; die Change endet im Erfassungspfad
   mit der Fehlerklasse `schema`, bis die Regel entfernt ist
-  (`LH-FA-CFG-008.a`, Abhilfe). Ob dieser Fall am laufenden System entstehen
-  kann, ist nicht gemessen (`LH-FA-CFG-008.a`); wird `region` aus der Tabelle
-  entfernt, endet der Pfad zuerst als inkompatible Schemaänderung.
+  (`LH-FA-CFG-008.a`, Abhilfe). Dieser Fall entsteht am laufenden System bei
+  Erstaktivierung ohne bekannte Spaltenform und bei einer Publication mit
+  Spaltenliste ohne `region` (gemessen, PostgreSQL 17 und 18, E2E-Messung);
+  wird `region` aus der Tabelle entfernt, endet der Pfad zuerst als
+  inkompatible Schemaänderung, und es entsteht keine Zeile.
 
 ---
 
@@ -1591,3 +1600,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-01 | `LH-FA-CAP-009.a`: Fail-closed-Prüfung vor dem Commit um den Routing-Regelstand ergänzt (Stand des Runs, Klasse `configuration`), „Regelstand zum Run" definiert; `SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-031`: ein `target` außerhalb des Alphabets, auch mit U+0000, liefert auf den Lesewegen eine leere Antwort, der SQL-Zugriff ist ausgenommen; `SPEC-032`: Wertebereich von `order` auf „positive ganze Zahl" zurückgenommen |
 | 2026-10-01 | `LH-FA-CFG-008.a` Absatz „Abhilfe (Zusage)": Geltung auf den Fall der nicht anwendbaren Regel geschärft, die entfernte Spalte endet zuerst als inkompatible Schemaänderung (hergeleitet), Erreichbarkeit am System weiter offen; `SPEC-032` (Anwendbarkeit): Relation-Prüfung geht der Change-Prüfung voraus und ist regelunabhängig, Beispiel „Nicht anwendbare Regel" nachgezogen; `SPEC-008` Absatz „Nicht anwendbare Regel": Grenze der Abhilfe |
 | 2026-10-01 | `SPEC-024` (Zusatz-Subjekt): Aussage zur Last der zweiten Veröffentlichung von „nicht gemessen" auf den gemessenen Umfang (Testcontainer, ohne Abonnent, ohne Schwelle) gezogen, ohne Zahl und ohne Last-Zusage |
+| 2026-10-01 | `LH-FA-CFG-008.a`, `SPEC-032`: die Aussagen zu `DELETE` ohne volle Replica-Identität und zur Erreichbarkeit der Nichtanwendbarkeit von „nicht gemessen" auf den gemessenen Stand gezogen (PostgreSQL 17 und 18, E2E-Messung); `SPEC-019`: Adressspalte der Zeilen `Regelname ist ungültig` und `Zielname ist ungültig` der Routing-Tabelle auf die Adressform der Prosa angeglichen |

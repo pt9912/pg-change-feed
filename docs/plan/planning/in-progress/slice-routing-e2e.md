@@ -88,7 +88,14 @@ Waise ist. Drei Liefer-Punkte:
       und dem NATS-Subjekt `cdc.route.<source_id>.<ziel>` auswählbar — jedes gelesene
       Ziel gegen die persistierte Zeile derselben `change_id` gehalten; Ziel A sieht nur A,
       ein ungefilterter Leser sieht jede Change (geroutete eingeschlossen), eine Change ohne
-      Treffer hat `route_target IS NULL` und erscheint nur ungefiltert; (2) zwei treffende
+      Treffer hat `route_target IS NULL` und erscheint nur ungefiltert. „Ziel A sieht nur A“
+      ist an den Pull-Wegen die Gleichheit der Kennungsmengen mit der SQL-Auswahl und an den
+      drei Stream-Wegen eine Zählung: nach dem Empfang der ersten Treffer-Change folgt eine
+      feste Menge gemischter Changes (Region NULL, asia, us, eu, zweimal), jeder Client mit
+      Ziel zählt im Ruhefenster weiter, und der Lauf ist rot, sobald eine Change mit fremdem
+      Ziel oder ohne Ziel ankommt oder die Zahl der Changes des eigenen Ziels aus dieser Menge
+      abweicht — jede empfangene Zeile gegen die persistierte Change derselben `change_id`
+      gehalten; (2) zwei treffende
       Regeln: die kleinere `order` gewinnt; (3) je eine Verletzung von R1 bis R6 endet
       `failed` mit dem Klartext der Spec, der Regelstand bleibt, die Gegenprobe ohne die
       Verletzung endet `applied`; (4) nach einem realen `docker restart` leitet der
@@ -135,7 +142,9 @@ Waise ist. Drei Liefer-Punkte:
       Erfassungspfad bleibt Erwartung ohne Systembeleg, und der Closure-Bericht der Welle
       nennt diese Verengung mit Namen (Unit plus Run-Fall (d) tragen sie), nicht
       stillschweigend; `ADR-0140` Re-Evaluierungs-Trigger greift dann (Spec-Slice). Die
-      Phase läuft als letzte vor der Container-Ende-Grenze des Runners. *Zu belegen durch:*
+      Phase läuft als letzter Rundlauf des Runners, hinter der Transformations-Abhilfe
+      (§3, Abweichung vom ursprünglichen Wortlaut „vor der Container-Ende-Grenze“); sie
+      beendet den Feed-Container dreimal und lässt ihn nach Fall (a) stehen. *Zu belegen durch:*
       `make test-integration`; `TestE2E…`-Funktion mit den Kennungen im Godoc
       (Erzeugnis-Eingabe der E2E-Abdeckung).
 - [ ] [`LH-QA-POR-001`](../../../../spec/lastenheft.md) und RTM (C): die Aussage zu
@@ -181,10 +190,11 @@ Waise ist. Drei Liefer-Punkte:
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `test/integration/routing_e2e_test.go` (neu) | neu | vier Testfunktionen mit den Kennungen im Godoc — die Godocs sind Erzeugnis-Eingabe der E2E-Abdeckungstabelle ([`AGENTS.md`](../../../../AGENTS.md) §3.7, Ausnahme): `TestE2ERoutingSelectsTargetsOverChangesView` (Herkunfts- und Inhaltsregeln über `WHERE route_target`, Ziel ohne Treffer `NULL`, ungefilterte Lesung, Auflösung bei zwei treffenden Regeln), `TestE2ERoutingConflictsFailWithSpecText` (R1 bis R6, Formzeilen, R3 in beide Richtungen, Wert der ausgeschlossenen Spalte, Gegenprobe), `TestE2ERoutingReplayKeepsLabelAndBackfillCarriesIt` (Label stabil nach Regeländerung über `cdc.changes` und `GET /changes`, keine Rückwirkung, Backfill-Run mit Label), `TestE2ERoutingDeleteWithoutFullReplicaIdentity` (DELETE-Messung, druckt die PostgreSQL-Version). Formvorbild `test/integration/transformation_e2e_test.go` (Stand `30fd6cb5`: drei Dateien, 22 `func TestE2E*`). |
-| `tools/harness/run-integration-tests.sh` | update | das `-run`-Muster des ersten `go test`-Aufrufs trägt die vier Testfunktionen, der Aufruf erhält `CDC_INTEGRATION_HTTP_URL` und `CDC_INTEGRATION_HTTP_READER_TOKEN` (die Replay-Funktion liest `GET /changes`); vier neue Bash-Phasen mit je einem `abdeckung_declare` (Parent: 52 Aufrufe): „Routing-Happy-Path (fünf Zustellwege)“, „Routing-Neustart und Ausschluss-Sperre“ und „Routing-Aktivierung über die API“ vor „Prozessstart-Vorlauf-Frist“, „Routing-Nichtanwendbarkeit und Abhilfe“ als letzter Rundlauf hinter der Transformations-Abhilfe. **Abweichung vom Plan-Wortlaut:** die Negative-Phase steht nicht „vor der Container-Ende-Grenze“, sondern als letzter Rundlauf des Runners — sie beendet den Feed-Container dreimal und braucht danach keinen laufenden Container mehr; vor der Grenze stünden alle Phasen dahinter ohne Container. Die Rückführung „(B) abtrennen“ (§4) ist nicht eingetreten. |
-| `tools/harness/httpclient/`, `tools/harness/grpcclient/`, `tools/harness/sseclient/`, `tools/harness/natsstreamsub/` | update | Flag für die Auswahl des Ziels: `httpclient changes -target`, `grpcclient -target`, `sseclient -target`, `natsstreamsub -source -target` (Abonnement des Ziel-Subjekts `cdc.route.<source_id>.<ziel>`); `grpcclient`, `sseclient` und `natsstreamsub` erhalten zusätzlich `-count` (Zahl der empfangenen Changes), damit ein Client ohne Ziel mehrere Changes verschiedener Ziele zeigt; Wegwerf-Clients des E2E-Tiers, keine SDK-Pakete. `tools/harness/grpcadminclient` trägt `-target` seit `slice-routing-lesewege` und bleibt unverändert. |
+| `tools/harness/run-integration-tests.sh` | update | das `-run`-Muster des ersten `go test`-Aufrufs trägt die vier Testfunktionen, der Aufruf erhält `CDC_INTEGRATION_HTTP_URL` und `CDC_INTEGRATION_HTTP_READER_TOKEN` (die Replay-Funktion liest `GET /changes`); vier neue Bash-Phasen mit je einem `abdeckung_declare` (Parent: 52 Aufrufe): „Routing-Happy-Path (fünf Zustellwege)“, „Routing-Neustart und Ausschluss-Sperre“ und „Routing-Aktivierung über die API“ vor „Prozessstart-Vorlauf-Frist“, „Routing-Nichtanwendbarkeit und Abhilfe“ als letzter Rundlauf hinter der Transformations-Abhilfe. **Fixrunde zu F-1 (Negativ-Zählung, Entscheidung des Hauptlaufs, kein Architect-Verdikt):** die Phase „Routing-Happy-Path“ startet alle neun Stream-Clients mit `-window 15s`; nach der Registrierungsschleife (jeder Client hat seine erste Treffer-Change) folgen zwei Gruppen zu je vier Zeilen (Region NULL, asia, us, eu; Ids ab 1011) als feste Menge; jede RECEIVED-Zeile jedes Clients wird gegen die persistierte Change derselben `change_id` gehalten (Client mit Ziel: Ziel muss gleich dem Ziel sein, sonst rot), und die Zahl der Zeilen aus der festen Menge ist je Client mit Ziel gleich der SQL-Zählung dieses Ziels und je Client ohne Ziel gleich acht. **Abweichung vom Plan-Wortlaut:** die Negative-Phase steht nicht „vor der Container-Ende-Grenze“, sondern als letzter Rundlauf des Runners — sie beendet den Feed-Container dreimal und braucht danach keinen laufenden Container mehr; vor der Grenze stünden alle Phasen dahinter ohne Container. Die Rückführung „(B) abtrennen“ (§4) ist nicht eingetreten. |
+| `tools/harness/httpclient/`, `tools/harness/grpcclient/`, `tools/harness/sseclient/`, `tools/harness/natsstreamsub/` | update | Flag für die Auswahl des Ziels: `httpclient changes -target`, `grpcclient -target`, `sseclient -target`, `natsstreamsub -source -target` (Abonnement des Ziel-Subjekts `cdc.route.<source_id>.<ziel>`); `grpcclient`, `sseclient` und `natsstreamsub` erhalten zusätzlich `-count` (Zahl der empfangenen Changes), damit ein Client ohne Ziel mehrere Changes verschiedener Ziele zeigt, und (Fixrunde zu Review-Finding F-1) `-window <Dauer>`: ein Ruhefenster, in dem der Client nach den `count` Changes weitere Changes als `RECEIVED` zählt, bis so lange keine eintrifft, und dann `WINDOW-END` druckt; ohne das Flag (Default 0) bleibt das Verhalten der übrigen Phasen unverändert; Wegwerf-Clients des E2E-Tiers, keine SDK-Pakete. `tools/harness/grpcadminclient` trägt `-target` seit `slice-routing-lesewege` und bleibt unverändert. |
 | `tools/harness/lib-sdk-rule-fixture.sh` | lesen | Formvorbild der Regel-Vorbereitung per SQL (`cdc.set_transformation`), nicht Teil. |
 | `docs/user/e2e-abdeckung.md` | update (Erzeugnis des Runners) | die Zeilen für `LH-FA-CFG-008`; wird vom Lauf geschrieben und committet, nicht von Hand. |
+| `spec/pflichtenheft.md` | update (Fixrunde zu F-4/F-5, Anweisung des Hauptlaufs) | die vier Stellen „nicht gemessen“ (`LH-FA-CFG-008.a` Bildbasis und Abhilfe, `SPEC-032` Abwesenheit und Beispiel „Nicht anwendbare Regel“) auf den gemessenen Stand gezogen — DELETE ohne volle Replica-Identität Nicht-Treffer, unter FULL Treffer; Nichtanwendbarkeit in (b) und (c) erzeugbar, Abhilfe belegt; bei bekannter Spaltenform mit Spaltenliste bleibt hergeleitet —, mit Ursprung „PostgreSQL 17 und 18 (E2E-Messung)“ ohne Lauf-Kennung (Version, Lauf und gedruckte Zeile stehen im Übergabe-Block von `slice-routing-betriebsdoku`); zwei Adresszellen der Routing-Tabelle in `SPEC-019` („Regelname“, „Zielname“) an die Adressform der Prosa angeglichen, Historienzeile ohne ADR-Bezug. Kein neuer Inhalt: nur der Messstand und die Adressform, die die Tests binden. |
 | `harness/README.md` | update | Zeile `make doc-trace` (Waisen-Aussage) und Zeile `make test-integration` (Beschreibung der Belege). |
 | `docs/plan/planning/open/slice-routing-betriebsdoku.md` | update (fremde Datei, minimaler Eingriff) | ein Übergabe-Block in §2 mit der DELETE-Messung und der Erreichbarkeits-Messung samt Ursprung, Version und Lauf; das Handbuch selbst bleibt unberührt (Adresse: dieser Slice). Der Gegenstand steht als committeter Text im Plan der Adresse, nicht nur im Bericht. |
 | `compose.yaml`, `.github/workflows/e2e.yml`, `.d-check.yml` | lesen | erwartet unverändert: `trace.coverage` liest `docs/user/e2e-abdeckung.md` bereits (Stand `30fd6cb5`). |
@@ -213,6 +223,10 @@ diff 10 -n -E 'CFG-008' -- harness docs/user README.md .d-check.yml
 diff 14 -n -E 'CFG-007' -- docs/user
 diff 56 -n -E 'abdeckung_declare' -- tools/harness
 diff 7 -n -E 'PG_TEST_IMAGE' -- compose.yaml .github/workflows/e2e.yml tools/harness/run-integration-tests.sh
+5535f6b2 5 -n -E 'nicht gemessen|nicht gegen PostgreSQL 17 und 18 gemessen' -- spec
+diff 2 -n -E 'nicht gemessen|nicht gegen PostgreSQL 17 und 18 gemessen' -- spec
+5535f6b2 13 -n -E 'nicht gemessen|nicht gegen PostgreSQL 17 und 18 gemessen' -- spec harness docs/user README.md
+diff 10 -n -E 'nicht gemessen|nicht gegen PostgreSQL 17 und 18 gemessen' -- spec harness docs/user README.md
 ```
 
 | Träger | Messung am Parent (`30fd6cb5`, gemessen am 2026-10-01) | Behandlung und Befund am Diff |
@@ -221,6 +235,7 @@ diff 7 -n -E 'PG_TEST_IMAGE' -- compose.yaml .github/workflows/e2e.yml tools/har
 | Nennung von `LH-FA-CFG-008` außerhalb von Spec und Records | Zeile 2: 1 Zeile (dieselbe, `harness/README.md:135`) | im Diff trägt `docs/user/e2e-abdeckung.md` die neuen Zeilen (Befund am Diff, Zeile 7: 10 Zeilen — 8 in `docs/user/e2e-abdeckung.md` (vier Go-Funktionen, vier Runner-Phasen), 2 in `harness/README.md` (Zeile `make doc-trace` und Zeile `make test-integration`)); nicht gefunden: eine Nennung in `.d-check.yml` oder `README.md` |
 | Zeilen der Transformationen im Abdeckungs-Träger als Formvorbild | Zeile 3: 14 Zeilen mit `CFG-007` in `docs/user` | die Routing-Zeilen folgen derselben Form (Kennungsspalte, Kurzbeschreibung, Nachweis, Ort); Befund am Diff (Zeile 8): 14 Zeilen, unverändert — kein Routing-Nachzug an den Transformations-Zeilen nötig; die Spalte `Ort` aller Runner-Zeilen hinter dem `-run`-Muster des ersten `go test`-Aufrufs verschiebt sich um zwei Zeilen (Erzeugnis, nicht von Hand) |
 | Phasen-Deklarationen des Runners | Zeile 4: 52 Aufrufe | jede neue Phase deklariert sich; kein stiller Ausschluss (`BEO-PGC/test-runner-stiller-ausschluss`); Befund am Diff (Zeile 9): 56 Treffer, also vier mehr — je Phase ein Aufruf („Routing-Happy-Path (fünf Zustellwege)", „Routing-Neustart und Ausschluss-Sperre", „Routing-Aktivierung über die API", „Routing-Nichtanwendbarkeit und Abhilfe"); die vier Go-Funktionen erscheinen über das AST-Erzeugnis, nicht über `abdeckung_declare` |
+| Hedge „nicht gemessen“ über den ganzen Suchraum (Fixrunde zu Review F-4; bewegte Eigenschaft: „DELETE und Erreichbarkeit der Nichtanwendbarkeit sind nicht gemessen“) | am Stand vor der Fixrunde (`5535f6b2`, gemessen am 2026-10-01): Zeile 11: 5 Treffer in `spec` (`spec/pflichtenheft.md` 408, 455, 1378, 1417 — die vier Aussagen — und die Historienzeile 1593 zu `SPEC-024`, anderer Gegenstand); Zeile 13: 13 Treffer über `spec harness docs/user README.md` (acht weitere: drei in `docs/user/benutzerhandbuch.md`, zwei in `harness/sensors/coverage-gate.md`, einer in `harness/sensors/fmt-check.md`, zwei in `harness/targets/bench-backfill.md`, alle anderer Gegenstand) | die vier Aussagen sind auf den gemessenen Stand gezogen; Befund am Diff: Zeile 12: 2 Treffer in `spec` (Historienzeilen zu `SPEC-024` und zur Fixrunde, beide nennen das Wort als Zitat der alten Fassung), Zeile 14: 10 Treffer über den ganzen Suchraum (die acht fremden unverändert, plus die beiden Historienzeilen); nicht gefunden: eine weitere Beschreibung von DELETE oder der Erreichbarkeit als „nicht gemessen“ in `docs/user` oder `harness`; das Benutzerhandbuch trägt die DELETE-Aussage noch nicht (Adresse `slice-routing-betriebsdoku`) |
 | PostgreSQL-Image des Tiers | Zeile 5: 7 Zeilen (`compose.yaml`, `e2e.yml`, Runner) | die lokale Übersteuerung auf PostgreSQL 17 läuft über `PG_TEST_IMAGE`; Befund am Diff (Zeile 10): 7 Zeilen, unverändert — der Runner liest die Variable nicht selbst, `compose.yaml` interpoliert sie; die Läufe unten setzen `PG_TEST_IMAGE` in der Umgebung von `make` |
 
 ## 4. Trigger
@@ -265,6 +280,25 @@ geschrieben.
   ist *hergeleitet* aus dem Abwesenheits-Vertrag von `LH-FA-DAT-005` und der
   Transformations-ADR, an PostgreSQL 17 und 18 nicht gemessen. — **Ausgang:** bei der
   Closure einzutragen (Messung, gedruckte Zeilen je Version).
+- **Grenze des Belegs „Ziel A sieht nur A“ an den Stream-Wegen.** Die Negativ-Zählung
+  beobachtet ein Ruhefenster von 15 s und eine feste Menge von acht Changes; eine fremde
+  Change, die später als 15 s Ruhe nach der letzten Change einträfe, bleibt unbeobachtet,
+  und ein Leck, das nur bei anderen Regionen als NULL, asia, us und eu entstünde, ebenso.
+  Der Filter ist je Change zustandslos (Review F-1); die Fixrunde belegt die Zusage über
+  die Menge dieses Laufs, nicht über alle Eingaben. — **Ausgang:** *weiter offen* als
+  benannte Grenze, kein Beobachtungs-Eintrag.
+- **Erreichbarkeit (b) und (c) teilen die Vorbedingung „keine Spaltenform nach der
+  Aktivierung“ (Review F-7 und Architect-Frage 3).** Gemessen ist (c) bei Erstaktivierung;
+  der Fall einer Publication-Spaltenliste bei bereits bekannter Spaltenform bleibt
+  *hergeleitet* nach [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
+  (erster Halt: inkompatible Schemaänderung, vgl. Fall (a)); Entscheidung des Hauptlaufs,
+  kein Architect-Verdikt, kein weiterer Runner-Fall. — **Ausgang:** *weiter offen* als
+  benannte Grenze.
+- **Flake `TestRunStreamWithRetrySlotStillActive` (Review F-2, Architect-Frage 1).** Kein
+  Gegenstand dieses Slice (anderer Tier, `make test-replication`, im Diff unverändert);
+  der Test bindet „genau eine Lieferung im zweiten Versuch“ strenger als die
+  At-least-once-Zusage. — **Ausgang:** *eingetreten* als Folge-Slice-Kandidat des Planners
+  bei der Closure (Adresse offen: der Planner legt ihn an).
 - **Lesekosten der Regelstände im Backfill-Run (übernommen aus `slice-routing-backfill-pfad`
   §6).** Der Run liest den Routing-Stand zusätzlich zum Transformationsstand, je Block und vor
   dem Commit; die Verdopplung der Lesungen ist *hergeleitet*, die Prozentzahlen des
