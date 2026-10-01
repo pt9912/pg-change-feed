@@ -147,7 +147,7 @@ unverändert. Drei Liefer-Punkte:
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
-      unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
+      unter *Abgeschlossene Wellen*, die Closure erfolgte am 2026-10-02). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
 ## 3. Plan (vor Code)
@@ -351,10 +351,10 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Testcontainer **entfallen**; Überspringen aus anderem Grund **entfallen** als Gefahr, als
   Grenze benannt; feste Wartezeiten **weiter offen** (Adresse `publisher_nats_test.go`,
   Trigger: erste beobachtete Intermittenz).
-- **Drei Paarungen:** der Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
-  Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der
+- **Drei Paarungen:** der Slice gehörte zu [welle-routing](welle-routing.md) — die
+  Prüfung lief bei deren Closure (2026-10-02), die DoD-Zeile ist abgehakt. (a) Anker: der
   Lerneintrag verkörpert nichts neu (Ausprägung unter Register und Reviewer-Skill); (b)
-  Folge-Slice: keiner neu, die genannten Pläne liegen unter `open/`; (c) Register: die
+  Folge-Slice: keiner neu, die genannten Pläne der Welle liegen in `done/`; (c) Register: die
   genannten Kennungen existieren als Verzeichnis, jede trägt ein nicht leeres `evidence/`.
 - **Validator (Modul 8):** entfällt — das Zusatz-Subjekt ohne Handbuch, SDK-Clients und E2E ist
   für Betreiber noch nicht als Ganzes nutzbar; der Nutzer-Bedarf

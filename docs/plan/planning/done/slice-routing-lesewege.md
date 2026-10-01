@@ -187,7 +187,7 @@ Konjunktion, ein ungefilterter Leser sieht weiterhin alle Changes. Drei Liefer-P
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
-      unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
+      unter *Abgeschlossene Wellen*, die Closure erfolgte am 2026-10-02). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
 ## 3. Plan (vor Code)
@@ -443,10 +443,10 @@ Block nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   **entfallen**; V1/Wire-Kompatibilität **entfallen** für die Gleichwertigkeit, Altserver siehe
   oben; Beleg am laufenden System **weiter offen** (Adresse `slice-routing-e2e` §2); Port-Wahl im
   Paritätstest **weiter offen** (benannter Rest); Validate-Aufruf im Store **entfallen**.
-- **Drei Paarungen:** der Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
-  Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der Lerneintrag
+- **Drei Paarungen:** der Slice gehörte zu [welle-routing](welle-routing.md) — die
+  Prüfung lief bei deren Closure (2026-10-02), die DoD-Zeile ist abgehakt. (a) Anker: der Lerneintrag
   verkörpert nichts neu in `AGENTS.md` (Prüffrage als Lese-Handlung im Register, zweites Auftreten);
-  (b) Folge-Slice: keiner neu, die genannten Pläne liegen unter `open/`; (c) Register: die
+  (b) Folge-Slice: keiner neu, die genannten Pläne der Welle liegen in `done/`; (c) Register: die
   genannten Kennungen existieren als Verzeichnis, jede trägt ein nicht leeres `evidence/`.
 - **Validator (Modul 8):** entfällt — der Filter `target` an den Lesewegen ist ohne Backfill-Beleg am
   System und ohne Handbuch für Betreiber noch nicht als Ganzes nutzbar; der Nutzer-Bedarf

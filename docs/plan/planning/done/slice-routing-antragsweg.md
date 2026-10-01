@@ -180,7 +180,7 @@ Liefer-Punkte:
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
-      unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
+      unter *Abgeschlossene Wellen*, die Closure erfolgte am 2026-10-02). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
 ## 3. Plan (vor Code)
@@ -480,10 +480,10 @@ geschrieben.
   offen** (übernommen, nicht gemessen). Befunde ohne Risiko-Eintrag: V-3 (nicht reproduzierbare
   Aussage zu `run-store-tests.sh`, `make test-store` Exit 0), V-4 (durch F-N2 im Nachzug behoben),
   V-5 (Testebenen-Schnitt), V-6 (Adresse `slice-routing-e2e`).
-- **Drei Paarungen:** dieser Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
-  Prüfung läuft regelkonform bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der
+- **Drei Paarungen:** dieser Slice gehörte zu [welle-routing](welle-routing.md) — die
+  Prüfung lief bei deren Closure (2026-10-02), die DoD-Zeile ist abgehakt. (a) Anker: der
   Lerneintrag verkörpert nichts neu (Ausprägung unter §3.12 Instanz B, Register); (b) Folge-Slice:
-  keiner neu, die genannten Pläne liegen unter `open/`; (c) Register: die genannten Kennungen
+  keiner neu, die genannten Pläne der Welle liegen in `done/`; (c) Register: die genannten Kennungen
   existieren als Verzeichnis, jede trägt ein nicht leeres `evidence/`.
 - **Validator (Modul 8):** entfällt — der Antragsweg ohne Lesewege und ohne Backfill-Label ist
   für Betreiber noch nicht als Ganzes nutzbar; der Nutzer-Bedarf

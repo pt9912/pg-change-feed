@@ -171,7 +171,7 @@ Liefer-Punkte:
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
-      unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
+      unter *Abgeschlossene Wellen*, die Closure erfolgte am 2026-10-02). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
 ## 3. Plan (vor Code)
@@ -423,10 +423,10 @@ geschrieben.
   **entfallen**; Vorbedingung des Alt-Tag-Laufs **weiter offen** (Adresse: Release-Zug und
   Planner des ersten Schema-Slice danach); Fixrunde ohne erneuten Review **eingetreten**;
   V-1 **akzeptiert**.
-- **Drei Paarungen:** dieser Slice gehört zu [welle-routing](welle-routing.md) (offen) —
-  die Prüfung läuft regelkonform bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`.
+- **Drei Paarungen:** dieser Slice gehörte zu [welle-routing](welle-routing.md) —
+  die Prüfung lief bei deren Closure (2026-10-02), die DoD-Zeile ist abgehakt.
   (a) Anker: der Lerneintrag verkörpert nichts neu (Risiko mit Adresse, Register 2×);
-  (b) Folge-Slice: keiner neu, die genannten Pläne liegen unter `open/`; (c) Register: die
+  (b) Folge-Slice: keiner neu, die genannten Pläne der Welle liegen in `done/`; (c) Register: die
   genannten Kennungen existieren als Verzeichnis, jede trägt ein nicht leeres `evidence/`.
 - **Validator (Modul 8):** entfällt — der Kern ohne Antragsweg ist für Betreiber noch nicht
   nutzbar; der Nutzer-Bedarf ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md)) wird erst durch

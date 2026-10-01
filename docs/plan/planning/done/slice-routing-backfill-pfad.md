@@ -180,7 +180,7 @@ Quellstand) bleibt unberührt.
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
-      unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
+      unter *Abgeschlossene Wellen*, die Closure erfolgte am 2026-10-02). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
 ## 3. Plan (vor Code)
@@ -424,10 +424,10 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   für PostgreSQL 18, **weiter offen** für 17 (Adresse `slice-routing-e2e` §6); Persistenz des Labels
   **entfallen**; Coverage **entfallen**. Befunde ohne Risiko-Eintrag: V-4 (Replay-Invariante nicht
   gefahren, bei `slice-routing-e2e`), V-5 (Lesehinweis zu M3/M3b).
-- **Drei Paarungen:** der Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
-  Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der Lerneintrag
+- **Drei Paarungen:** der Slice gehörte zu [welle-routing](welle-routing.md) — die
+  Prüfung lief bei deren Closure (2026-10-02), die DoD-Zeile ist abgehakt. (a) Anker: der Lerneintrag
   verkörpert nichts neu (Ausprägung unter §3.12 Instanz B, Register); (b) Folge-Slice: keiner neu,
-  die genannten Pläne liegen unter `open/`; (c) Register: die genannten Kennungen existieren als
+  die genannten Pläne der Welle liegen in `done/`; (c) Register: die genannten Kennungen existieren als
   Verzeichnis, jede trägt ein nicht leeres `evidence/`.
 - **Validator (Modul 8):** entfällt — Backfill-Label ohne Lesewege und ohne E2E ist für Betreiber
   noch nicht als Ganzes nutzbar; der Nutzer-Bedarf ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md))

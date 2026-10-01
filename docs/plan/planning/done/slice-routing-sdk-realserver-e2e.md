@@ -176,7 +176,7 @@ sieht beide. Dieselbe Change ist unabhängig über `cdc.changes` gegengelesen
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
-      unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
+      unter *Abgeschlossene Wellen*, die Closure erfolgte am 2026-10-02). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
 **Umfang:** M bis L — Schätzung, nicht gemessen: drei Runner, eine Hilfsdatei, zwölf
@@ -400,8 +400,8 @@ geschrieben.
   **entfallen**; NATS-Kopplung **entfallen**; Übersetzungs-Sensor **weiter offen**
   (`BEO-PGC/integrationsprojekt-uebersetzt-nicht-unbemerkt`); Rohzeilen im Log **weiter offen,
   hingenommen**; Tag-Images **entfallen**.
-- **Drei Paarungen:** der Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
-  Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der Lerneintrag
+- **Drei Paarungen:** der Slice gehörte zu [welle-routing](welle-routing.md) — die
+  Prüfung lief bei deren Closure (2026-10-02), die DoD-Zeile ist abgehakt. (a) Anker: der Lerneintrag
   verkörpert nichts neu (kein Feld `liegt in`); (b) Folge-Slice: keiner genannt; (c) Register: die
   genannten Kennungen existieren als Verzeichnis, jede trägt ein nicht leeres `evidence/`.
 - **Validator (Modul 8):** entfällt — der Nutzer-Bedarf

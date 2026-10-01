@@ -259,7 +259,7 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
       offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
-      unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
+      unter *Abgeschlossene Wellen*, die Closure erfolgte am 2026-10-02). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
 ## 3. Plan (vor Code)
@@ -470,10 +470,10 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   Ursprung nicht auflösbar **eingetreten und behoben**; Handbuch nicht nachgezogen/Historie
   **entfallen**; Zwischenzeit mit den SDK-Packages **weiter offen** (Adresse
   `slice-routing-sdk-beispiel-target`).
-- **Drei Paarungen:** der Slice gehört zu [welle-routing](welle-routing.md) (offen) — die
-  Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der
-  Lerneintrag verkörpert nichts neu; (b) Folge-Slice: der genannte Plan liegt als Datei in
-  `open/`; (c) Register: die genannten Kennungen existieren als Verzeichnis, jede trägt ein
+- **Drei Paarungen:** der Slice gehörte zu [welle-routing](welle-routing.md) — die
+  Prüfung lief bei deren Closure (2026-10-02), die DoD-Zeile ist abgehakt. (a) Anker: der
+  Lerneintrag verkörpert nichts neu; (b) Folge-Slice: die genannten Pläne
+  (`sdk-beispiel-target`, `sdk-realserver-e2e`) liegen als Dateien in `done/`; (c) Register: die genannten Kennungen existieren als Verzeichnis, jede trägt ein
   nicht leeres `evidence/`.
 - **Validator (Modul 8):** entfällt — die SDK-Abschnitte stehen noch aus, das Routing ist für
   Betreiber erst mit ihnen als Ganzes nutzbar; der Nutzer-Bedarf

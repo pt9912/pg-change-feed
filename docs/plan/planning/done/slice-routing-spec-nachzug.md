@@ -199,7 +199,7 @@ die Doku führt). Umfang:
       offen). *Beleg:* §6.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](welle-routing.md) (die Roadmap führt sie
-      unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
+      unter *Abgeschlossene Wellen*, die Closure erfolgte am 2026-10-02). *Beleg:*
       `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
 ## 3. Plan (vor Code)
@@ -419,9 +419,9 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Doppelquelle Handbuch **weiter offen** (Adresse benannt); Doc-Gate-Regeln
   **entfallen**; V3 **weiter offen**, V1/V2 **entfallen**; A-3 **weiter offen**
   (Auftraggeber).
-- **Drei Paarungen:** dieser Slice gehört zu [welle-routing](welle-routing.md) (offen)
-  — die Prüfung läuft regelkonform bei deren Closure; die DoD-Zeile bleibt deshalb
-  `[ ]`. (a) Anker: der Lerneintrag verkörpert nichts neu; (b) Folge-Slice: keiner neu,
+- **Drei Paarungen:** dieser Slice gehörte zu [welle-routing](welle-routing.md)
+  — die Prüfung lief bei deren Closure (2026-10-02), die DoD-Zeile ist abgehakt.
+  (a) Anker: der Lerneintrag verkörpert nichts neu; (b) Folge-Slice: keiner neu,
   die Übergaben stehen in den Plänen der Welle; (c) Register: die genannten Kennungen
   existieren als Verzeichnis, beide fortgeschriebenen tragen ihre Datei unter `evidence/`.
 - **Validator (Modul 8):** entfällt — reiner Spec-Nachzug ohne End-Nutzer-Wert; der
