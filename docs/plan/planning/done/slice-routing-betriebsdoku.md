@@ -461,7 +461,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
     haben keinen Eintrag.
 - **Folge-Slices:** keine neuen. Übergabe ohne neuen Slice:
   [slice-routing-sdk-beispiel-target](slice-routing-sdk-beispiel-target.md) (SDK-Abschnitte,
-  Beispiel-Flags) und [slice-routing-sdk-realserver-e2e](../open/slice-routing-sdk-realserver-e2e.md).
+  Beispiel-Flags) und [slice-routing-sdk-realserver-e2e](../in-progress/slice-routing-sdk-realserver-e2e.md).
 - **Risiken aus §6:** Zwei Quellen **weiter offen** (Register, Lese-Schritt der Welle-Closure);
   Beispiele unter falscher Rolle **entfallen**; Aussage ohne Messung **teils entfallen, teils
   weiter offen** (R4 „höchste `order`“ nicht gefahren; Altserver, Schlüsselspalte bei `DELETE` und

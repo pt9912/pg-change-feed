@@ -274,7 +274,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
 - **Kein Realserver-Beleg.** Die Unit-Ebene beweist den Draht gegen Fakes, nicht gegen
   den laufenden Server (Abgrenzung §1; der Realserver-Beleg liegt bei
   `slice-routing-sdk-realserver-e2e`). — **Ausgang: weiter offen**, Adresse
-  [slice-routing-sdk-realserver-e2e](../open/slice-routing-sdk-realserver-e2e.md); alle Aussagen dieses
+  [slice-routing-sdk-realserver-e2e](../in-progress/slice-routing-sdk-realserver-e2e.md); alle Aussagen dieses
   Slice gelten für die Menge „Unit-Ebene, Fake-Transport, Fake-Invoker“ (Verifikations-Report §6).
 - **Netzbezug der Bauten.** `make sdk-pack-*` und `make examples-*` brauchen Netz
   (Paketquellen) und Zeit; ein Netzausfall ist Umgebung, kein Befund. — **Ausgang: entfallen.**
@@ -382,7 +382,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
     (Gate Exit 0); `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme`: kein Fund in den READMEs.
 - **Folge-Slices:** [slice-sdk-sse-client-schema-table-filter](../open/slice-sdk-sse-client-schema-table-filter.md)
   (SSE-Client der drei Packages und SSE-Beispiele: `schema`/`table`; ist eine Datei in `open/`, ohne Welle) und
-  [slice-routing-sdk-realserver-e2e](../open/slice-routing-sdk-realserver-e2e.md) (Realserver-Beleg, Welle §4
+  [slice-routing-sdk-realserver-e2e](../in-progress/slice-routing-sdk-realserver-e2e.md) (Realserver-Beleg, Welle §4
   Abweichung 4).
 - **Risiken aus §6:** Randfall in drei Sprachen **teils entfallen, teils eingetreten** (Satz der Python-README, 3×);
   Interne Kennung **entfallen**; Altserver **weiter offen, hergeleitet**; Realserver **weiter offen**
