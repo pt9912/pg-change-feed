@@ -99,13 +99,18 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   Fall belegt; kann die Nichtanwendbarkeit am komponierten System nicht erzeugt
   werden, steht die Verengung mit Namen im Closure-Bericht, nicht
   stillschweigend auf einen Unit-Beleg. Kein Gate, aber Pflichtbeleg dieser Welle.
+  Beleg: `e2e`-Lauf `36933941965` am Commit `84f5b8d2`, beide Legs (PostgreSQL 17 und 18)
+  `success` mit allen Routing-Phasen, Laufzeit 25 min 9 s (17) und 19 min 54 s (18) gegen das
+  Limit von 60 Minuten (`welle-routing-results.md`, Verifikation).
 - **Die Messung des DELETE-Verhaltens an beiden PostgreSQL-Versionen**
   ([`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
   Entscheidung 4, Folgepflicht 7): eine Inhaltsregel auf eine Nicht-Schlüsselspalte
   ohne volle Replica-Identität wirkt bei DELETE nicht; die Aussage gilt erst als
   belegt, wenn ein Lauf gegen PostgreSQL 17 **und** 18 sie trägt
   (`e2e.yml`-Matrix, beide Legs `success`; die Lauf-ID steht im Closure-Bericht).
-  Bis dahin steht sie im Handbuch nur als erwartet.
+  Beleg: `e2e`-Lauf `36933941965` am Commit `84f5b8d2`, beide Legs `success`; die
+  Zeilen `ROUTING-DELETE-MESSUNG` nennen PostgreSQL 17.11 und 18.6 und liefern dieselben
+  Ziele (`welle-routing-results.md`, Verifikation).
 - **Reale, grüne Läufe der DB-Tiers:** `make test-store` (Persistenz und Lesen
   von `route_target`, Antrags-Funktionen, Grants, Regelstand-Ableitung),
   `make test-replication` (der `Assembler` am realen Stream; die DB-Adapter-Coverage
@@ -136,11 +141,14 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   `make test-integration` schreibt (die Datei ist ein Erzeugnis, kein
   Lauf-Beleg); mit der Deckung zieht `slice-routing-e2e` die Aussage über die
   Waisen in [`harness/README.md`](../../../harness/README.md) (Zeile
-  `make doc-trace`) nach.
+  `make doc-trace`) nach. Beleg: `make doc-trace` am Arbeitsbaum der Closure, Exit 0,
+  gedruckt `80 Anforderung(en), 0 Waise(n).` und für `LH-FA-CFG-008` der Nachweis
+  `E2E, SDK-E2E`.
 - Die Auswertung liegt an genau einer Stelle: der Suchlauf über `internal/**`
   nach den Aufrufern der Routing-Auswertung findet eine Auswertungsstelle, die
   WAL-Pfad und Backfill-Pfad gemeinsam aufrufen (Befehl und Fundstellen im
-  Closure-Bericht).
+  Closure-Bericht). Beleg: `model.EvaluateRoute` (eine Deklaration), zwei Aufrufer
+  (`mapper.go`, `usecase/backfill/service.go`), `welle-routing-results.md`, Verifikation.
 - Das Benutzerhandbuch trägt den Abschnitt zur Routing-Konfiguration samt der
   Konsequenzen (Label fest zum Erfassungszeitpunkt, keine Rückwirkung, Change
   ohne Treffer nur ungefiltert und über `route_target IS NULL` sichtbar,
@@ -270,20 +278,24 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     [`ADR-0140`](../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md):
     die Abhilfe-Zusage gilt für den Fall `ErrRoutingNotApplicable`, der Weg
     „Spalte entfernt“ bleibt der Pfad der inkompatiblen Schemaänderung; die
-    Systemmessung von (b)/(c) trägt `slice-routing-e2e`; Ausgangsstand laut
-    [`ADR-0138`](../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md) offen).** Eine Routing-Regel ist nicht
+    Systemmessung von (b)/(c) hat `slice-routing-e2e` gefahren — Ausgang: gemessen,
+    die Verengung greift nicht).** Eine Routing-Regel ist nicht
     anwendbar, wenn `when.column` in der Relation der Change fehlt
     ([`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
-    Teilfrage 4). Die naheliegende Ursache — Spalte entfernt — endet nach dem
+    Teilfrage 4). Die naheliegende Ursache — Spalte entfernt (a) — endet nach dem
     Bestand im Pfad der inkompatiblen Schemaänderung (`ErrIncompatibleSchemaChange`,
     Fehlerklasse `schema`, `LH-FA-SCH-003`), **bevor** eine Change assembliert wird
-    (*hergeleitet* aus dem Aufbau von `Assembler.observeRelation`, am Code nicht für
-    diesen Fall geprüft). Welche Ursache `ErrRoutingNotApplicable` am laufenden
-    System erzeugt — und ob der Abhilfe-Weg „`cdc.remove_route` und Neustart"
-    dann greift — ist offen. Adresse: Messung im ersten Schritt von
-    `slice-routing-kern-label` (Unit-Ebene) und von `slice-routing-e2e`
-    (Systemebene). Ausgang: `ADR-0140` (Verdikt liegt vor; erzeugt die Messung
-    von (b)/(c) keinen Fall, steht die Verengung mit Namen im Closure-Bericht).
+    (gemessen in `slice-routing-e2e`: drei Spaltenform-Zeilen, keine Zeile in
+    `cdc.changes`). Am System erzeugbar sind (b) Erstaktivierung ohne Spaltenform und (c)
+    Publication mit einer Spaltenliste, die die Bedingungsspalte nicht trägt: der
+    Erfassungspfad endet mit Klasse `schema` und dem Sentinel „Routing-Regel auf die Änderung
+    nicht anwendbar“ ohne persistierte Change, und der Abhilfe-Weg „`cdc.remove_route` und
+    Neustart“ greift (Antrag `pending` bei stehendem Prozess, nach dem Neustart `applied`).
+    Beleg: Zeile „Routing-Nichtanwendbarkeit und Abhilfe“ der beiden Legs des `e2e`-Laufs
+    `36933941965`. Offen bleibt die Abhilfe am Fall (a), die nicht gefahren, sondern aus der
+    Spec *hergeleitet* ist (`welle-routing-results.md`, Offene Punkte). Ausgang: `ADR-0140`
+    (die Verengung nach Entscheidung 4 greift nicht, ihr Re-Evaluierungs-Trigger ist nicht
+    eingetreten).
   - **A-1/A-2 (Review `review-slice-routing-spec-nachzug`) — geschlossen** durch
     [`ADR-0139`](../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md):
     der Routing-Regelstand ist im Run fail-closed (Klasse `configuration`, Stand
@@ -393,8 +405,8 @@ der sie als Risiko trägt (Detail je Slice in §8):
 - `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` (offen, 2×) —
   **einschlägig:** V1 bis V3 sind Stellen, an denen der Wortlaut von
   `ADR-0137` die Umsetzung nicht trägt; V1 und V2 sind mit `ADR-0138`
-  entschieden, V3 ist mit `ADR-0140` beantwortet (die Systemmessung von (b)/(c)
-  bleibt offen), nicht als stille Abweichung geführt.
+  entschieden, V3 ist mit `ADR-0140` beantwortet und in `slice-routing-e2e` am System
+  gemessen, nicht als stille Abweichung geführt.
 - `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` (verkörpert, 5×) und
   `BEO-PGC/aufschub-adresse-verfaellt` (verkörpert, 3×) — jeder Aufschub in den
   Plänen dieser Welle trägt eine Adresse, deren §2 den Gegenstand deckt;
@@ -450,5 +462,5 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/` auflösen,
 nicht vom Schreibort.
 
-Ergebnis: `welle-routing-results.md`
+Ergebnis: `welle-routing-results.md` (Closure 2026-10-02)
 Zähler: `../observations/` (Beobachtungs-Register)

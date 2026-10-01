@@ -145,9 +145,10 @@ unverändert. Drei Liefer-Punkte:
       `state.md` mit Vermerk).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
-      unter *Offene Wellen*, das Ereignis kann eintreten).
+      unter *Offene Wellen*, das Ereignis kann eintreten). *Beleg:*
+      `welle-routing-results.md`, Abschnitt „Drei Paarungen“ (Closure 2026-10-02).
 
 ## 3. Plan (vor Code)
 

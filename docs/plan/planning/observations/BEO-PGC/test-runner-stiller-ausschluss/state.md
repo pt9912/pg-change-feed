@@ -11,3 +11,5 @@ neue Runner-Phase, die niemand deklariert, fehlt still in der Tabelle. Der dritt
 einem `-run`-Namenspräfix: dort ist die Lücke geschlossen (das Skript fährt das ganze Paket und
 endet bei `--- SKIP` mit Exit 1, vom Verifier in drei Zuständen ausgeführt). Für
 `run-integration-tests.sh` bleibt sie offen.
+
+**Lese-Schritt der Closure von `welle-routing` (2026-10-02): gelesen, Ausgang bleibt `weiter offen`, Teil geschlossen.** Für `tools/harness/run-notify-tests.sh` ist die Lücke geschlossen (ganzes Paket, Exit 1 bei `--- SKIP`); für `tools/harness/run-integration-tests.sh` (`go test -run '^(…)$'`-Muster, ab Zeile 466) bleibt sie: die Deklarations-Hälfte deckt `TestAbdeckungstabelleZeilen`, die Vollständigkeits-Hälfte (jede `func TestE2E*` wird von einem Muster oder einer Phase erfasst) trägt kein Wächter. Die Entscheidung, ob ein Vollständigkeits-Sensor gebaut wird, steht beim Architect (ein Sensor wäre ein eigener Slice); bis dahin ist der Trigger das nächste Auftreten bei `run-integration-tests.sh`. Adresse: `welle-routing-results.md`, Lese-Schritt.
