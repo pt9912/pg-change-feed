@@ -149,6 +149,37 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
   Messung hat keine Schwelle und deckt die Verteilung an Abonnenten nicht ab; der
   Re-Evaluierungs-Trigger der ADR bleibt „Messung der zweiten NATS-Veröffentlichung
   zeigt Druck am Publisher“.
+- aus `slice-routing-e2e` — Übergabe-Block, **gemessen** in `make test-integration`
+  (Lauf vom 2026-10-01 am Arbeitsbaum von `slice-routing-e2e`, je einmal mit
+  `postgres:18-alpine` = PostgreSQL 18.6 und `postgres:17-alpine` = PostgreSQL 17.11,
+  die Versionen stehen in der gedruckten Zeile `ROUTING-DELETE-MESSUNG` der Testfunktion
+  `TestE2ERoutingDeleteWithoutFullReplicaIdentity`):
+  DELETE einer Zeile ohne volle Replica-Identität trägt im Alt-Bild nur den Schlüssel
+  (`{"id": "1"}`); eine Inhaltsregel auf eine Nicht-Schlüsselspalte trifft dort nicht —
+  mit einer Abschlussregel ohne `when` bestimmt diese das Ziel (gedruckt `DELETE="sonstige"`),
+  ohne sie bleibt `route_target` NULL (`DELETE=""`, nicht gesetzt); unter
+  `REPLICA IDENTITY FULL` trifft die Inhaltsregel (`DELETE="eu"`, Alt-Bild mit allen
+  Spalten); INSERT und UPDATE derselben Tabellen tragen das Ziel der Inhaltsregel (`eu`).
+  Beide Versionen ergaben dieselben Ziele; die Erwartung von `ADR-0137` Entscheidung 4 ist
+  bestätigt, es gibt keinen Befund. Dieselbe Phase `Routing-Nichtanwendbarkeit und
+  Abhilfe` (gleicher Lauf, beide Versionen) misst die Erreichbarkeit nach
+  [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md):
+  die nicht anwendbare Regel entsteht am System in (b) Erstaktivierung ohne Spaltenform
+  (null Zeilen in `cdc.table_schema` nach der Aktivierung; Regel auf `region`, Spalte
+  entfernt, erste Change der Tabelle) und in (c) Publication mit Spaltenliste `id,name`;
+  der Erfassungspfad endet mit der Klasse `schema` und dem Log-Text „Routing-Regel auf
+  die Änderung nicht anwendbar“, keine Change der Tabelle ist persistiert; die Abhilfe
+  (`cdc.remove_route` bei stehendem Prozess, Antrag `pending`; Neustart; Antrag `applied`)
+  legt die zuvor nicht bestätigte Zeile ohne Ziel und ohne zweiten `schema`-Fehler vor.
+  In (a) — Spalte entfernt, nachdem eine Change der Tabelle die Spaltenform angelegt hat —
+  endet der Pfad als inkompatible Schemaänderung (Log-Text „Relation-Änderung nicht sicher
+  als Obermenge interpretierbar“), die Change nach der Entfernung hat keine Zeile in
+  `cdc.changes`; dass das Entfernen der Regel dort nicht genügt, ist **hergeleitet**
+  (`ADR-0140` Entscheidung 2), der Neustart nach (a) ist nicht gefahren. Replay und
+  Backfill (gemessen): dieselbe `change_id` liefert nach einer Regeländerung dasselbe Ziel
+  über `cdc.changes` und `GET /changes?target=`, eine vor der Regel erfasste Change bleibt
+  ohne Ziel, ein Backfill-Run trägt das Ziel des Regelstands zum Run (`origin = 'backfill'`).
+  Messbare Stelle im Test: `git grep -n "ROUTING-" -- test/integration/routing_e2e_test.go`.
 
 - [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (A): der Abschnitt „Routing-Regel
       konfigurieren" steht im Abschnitt „Aufgaben"; jedes SQL-Beispiel ist unter der
