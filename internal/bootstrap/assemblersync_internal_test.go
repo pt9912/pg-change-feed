@@ -52,6 +52,7 @@ func TestEnableTableWithAssemblerSyncAddsBindingOnSuccess(t *testing.T) {
 		schemaStore:        schemaStore,
 		columnExclusion:    columnExclusion,
 		transformations:    transformations,
+		routing:            &fakeRoutingPort{},
 	}
 
 	result, err := decorator.Enable(ctx, inbound.EnableTableCommand{
@@ -96,6 +97,7 @@ func TestEnableTableWithAssemblerSyncSkipsBindingWhenInnerEnableFails(t *testing
 		schemaStore:        &fakeSchemaStorePort{},
 		columnExclusion:    &fakeColumnExclusionPort{},
 		transformations:    &fakeTransformationPort{},
+		routing:            &fakeRoutingPort{},
 	}
 
 	_, err = decorator.Enable(ctx, inbound.EnableTableCommand{
@@ -129,6 +131,7 @@ func TestEnableTableWithAssemblerSyncFailsWhenSyncLookupFails(t *testing.T) {
 		schemaStore:        &fakeSchemaStorePort{},
 		columnExclusion:    &fakeColumnExclusionPort{},
 		transformations:    &fakeTransformationPort{},
+		routing:            &fakeRoutingPort{},
 	}
 
 	_, err = decorator.Enable(ctx, inbound.EnableTableCommand{

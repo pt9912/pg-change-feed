@@ -68,6 +68,39 @@ func TestNewAdministrationRequestAcceptsTransformationsAntragsarten(t *testing.T
 	}
 }
 
+// Die beiden Routing-Antragsarten tragen Regelname und — nur `set_route` — die
+// Regelform, ohne Spalte (`LH-FA-CFG-008`); ein leerer Regelname und eine
+// leere Regelform verwirft der Konstruktor nicht, den `failed`-Ausgang mit dem
+// Fehlertext der Spec bestimmt der Use Case. Rot färbende Mutation:
+// `AdministrationRequestSetRoute` bzw. `AdministrationRequestRemoveRoute` aus
+// dem `switch` des Konstruktors streichen — die Art endet als
+// `ErrInvalidAdministrationRequestKind`.
+func TestNewAdministrationRequestAcceptsRoutingAntragsarten(t *testing.T) {
+	set, err := NewAdministrationRequest("req-1", "src-1", "public", "orders", "", "eu_orders", `{"target": "eu", "order": 10}`, AdministrationRequestSetRoute)
+	if err != nil {
+		t.Fatalf("NewAdministrationRequest(set_route): %v", err)
+	}
+	if set.Kind != AdministrationRequestSetRoute || set.RuleName != "eu_orders" || set.RuleSpec != `{"target": "eu", "order": 10}` || set.Column != "" {
+		t.Fatalf("Antrag = %+v, wollen set_route mit Regelname und Regelform, ohne Spalte", set)
+	}
+	remove, err := NewAdministrationRequest("req-2", "src-1", "public", "orders", "", "eu_orders", "", AdministrationRequestRemoveRoute)
+	if err != nil {
+		t.Fatalf("NewAdministrationRequest(remove_route): %v", err)
+	}
+	if remove.Kind != AdministrationRequestRemoveRoute || remove.RuleName != "eu_orders" || remove.RuleSpec != "" {
+		t.Fatalf("Antrag = %+v, wollen remove_route mit Regelname, ohne Regelform", remove)
+	}
+	for _, kind := range []AdministrationRequestKind{AdministrationRequestSetRoute, AdministrationRequestRemoveRoute} {
+		request, err := NewAdministrationRequest("req-3", "src-1", "public", "orders", "", "", "", kind)
+		if err != nil {
+			t.Fatalf("%s mit leerem Regelnamen und leerer Regelform: Fehler = %v, wollen nil", kind, err)
+		}
+		if request.Kind != kind || request.RuleName != "" || request.RuleSpec != "" {
+			t.Fatalf("Antrag = %+v, wollen Art %q mit leeren Regelfeldern unverändert", request, kind)
+		}
+	}
+}
+
 // Die Ablehnungszweige des Konstruktors (`LH-FA-ADM-001`):
 // leere Kennungen, die Spalten-Antragsart ohne Spalte und eine
 // Antragsart außerhalb der geschlossenen Menge.
@@ -140,13 +173,13 @@ func TestNewAdministrationRequestCarriesEmptyRuleFields(t *testing.T) {
 // AdministrationRequestKinds zählt die geschlossene Menge auf: der
 // Konstruktor nimmt jede aufgezählte Art an und lehnt eine Art außerhalb ab;
 // die Aufzählung nennt jede Art genau einmal. Rot färbende Mutation: eine
-// Konstante aus der Aufzählung streichen — der Test „sieben Arten" färbt rot;
+// Konstante aus der Aufzählung streichen — der Test „neun Arten" färbt rot;
 // eine Art aus der Aufzählung durch eine fremde ersetzen — der Konstruktor
 // lehnt sie ab.
 func TestAdministrationRequestKindsEnumeratesTheClosedSet(t *testing.T) {
 	kinds := AdministrationRequestKinds()
-	if len(kinds) != 7 {
-		t.Fatalf("Antragsarten = %v, wollen sieben", kinds)
+	if len(kinds) != 9 {
+		t.Fatalf("Antragsarten = %v, wollen neun", kinds)
 	}
 	seen := map[AdministrationRequestKind]bool{}
 	for _, kind := range kinds {

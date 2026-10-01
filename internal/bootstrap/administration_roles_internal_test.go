@@ -19,7 +19,9 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/excludecolumn"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/includecolumn"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/removeroute"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/removetransformation"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/setroute"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/settransformation"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
@@ -57,7 +59,7 @@ func adminPathLoginDSN(t *testing.T, admin *pgxpool.Pool, baseDSN, login, group 
 // und die Aktivierung über eine `cdc_admin`-Login-Identität, der
 // Schema-Speicher über eine `cdc_capture`-Login-Identität — beide ohne
 // Superuser-Recht und ohne Eigentum an einem `cdc`-Objekt. Der Lauf zieht je
-// einen Antrag jeder der sieben Antragsarten durch `ListPending`, den Use Case,
+// einen Antrag jeder der neun Antragsarten durch `ListPending`, den Use Case,
 // die laufende `Assembler`-Bindung und den Vermerk `applied`; ein Antrag
 // (`include_column` auf eine fehlende Spalte) endet im Vermerk `failed` samt
 // Fehlertext. Die beiden Transformations-Antragsarten laufen
@@ -186,7 +188,7 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 		activation:     activation,
 		enableTables:   enable.NewEnableTableService(activation),
 		disableTables:  disable.NewDisableTableService(activation),
-		excludeColumns: excludecolumn.NewExcludeColumnService(activation),
+		excludeColumns: excludecolumn.NewExcludeColumnService(activation, activation),
 		includeColumns: includecolumn.NewIncludeColumnService(activation),
 		backfill: backfill.NewBackfillTableService(backfill.Ports{
 			Activation:      activation,
@@ -203,6 +205,7 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 		schemaStore:     schemaStore,
 		columnExclusion: activation,
 		transformations: activation,
+		routing:         activation,
 		assembler:       assembler,
 		source:          sourceID,
 		publication:     publication,
@@ -210,6 +213,8 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 
 		setTransformations:    settransformation.NewSetTransformationService(activation),
 		removeTransformations: removetransformation.NewRemoveTransformationService(activation),
+		setRoutes:             setroute.NewSetRouteService(activation, activation),
+		removeRoutes:          removeroute.NewRemoveRouteService(activation),
 	}
 
 	// request legt den Antrag über die SQL-Administration an, lässt die
@@ -389,6 +394,61 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	expectRule("remove_transformation K4", "failed", "Regelname nicht geführt: "+table+".roles_rule", removeRule, string(sourceID), testTable, "roles_rule")
 	if state, err := activation.TransformationRules(ctx, sourceID); err != nil || len(state[table]) != 0 {
 		t.Fatalf("abgeleiteter Regelstand nach dem Herausnehmen = %v (%v), erwartet leer", state[table], err)
+	}
+
+	// Die Routing-Antragsarten (`LH-FA-CFG-008`) laufen unter denselben Rollen:
+	// Regelstand, Spaltenexistenz und Ausschlussstand liest der
+	// `cdc_admin`-Login (`SELECT` auf der Antrags-Tabelle, Katalog der eigenen
+	// Quelltabelle), die Prüfung R1 bis R6 und der Nachtrag in die laufende
+	// Bindung folgen; `exclude_column` prüft gegen den Routing-Regelstand.
+	const (
+		setRoute    = "SELECT cdc.set_route($1, 'public', $2, $3, $4::json)"
+		removeRoute = "SELECT cdc.remove_route($1, 'public', $2, $3)"
+		secretRoute = `{"target": "geheim_ziel", "order": 10, "when": {"column": "secret", "equals": "geheim"}}`
+	)
+	targetOf := func(xid uint32) model.RouteTarget {
+		t.Helper()
+		return routedTargetIn(t, assembler, xid, testTable, "secret", "geheim")
+	}
+	if got := targetOf(100); got != "" {
+		t.Fatalf("Ziel vor den Routing-Anträgen = %q, erwartet keines", got)
+	}
+	expectRule("set_route R3 (Spalte fehlt)", "failed", "Spalte existiert nicht an der Quelle: "+table+".does_not_exist",
+		setRoute, string(sourceID), testTable, "roles_route_missing", `{"target": "x", "order": 5, "when": {"column": "does_not_exist", "equals": "v"}}`)
+	expectRule("set_route", "applied", "", setRoute, string(sourceID), testTable, "roles_route", secretRoute)
+	if got := targetOf(101); got != "geheim_ziel" {
+		t.Fatalf("Ziel nach set_route = %q, erwartet geheim_ziel ohne Neustart", got)
+	}
+	expectRule("set_route R1", "failed", "Regelname bereits vergeben: "+table+".roles_route",
+		setRoute, string(sourceID), testTable, "roles_route", `{"target": "x", "order": 11}`)
+	expectRule("set_route R2", "failed", "order bereits vergeben: "+table+".10",
+		setRoute, string(sourceID), testTable, "roles_route_two", `{"target": "x", "order": 10}`)
+	expectRule("set_route R5", "failed", "Bedingung bereits vergeben: "+table+".secret",
+		setRoute, string(sourceID), testTable, "roles_route_pair", `{"target": "x", "order": 12, "when": {"column": "secret", "equals": "geheim"}}`)
+	expectRule("exclude_column gegen die Routing-Spalte (R3)", "failed", "Spalte trägt eine Routing-Bedingung: "+table+".secret",
+		"SELECT cdc.exclude_column($1, 'public', $2, $3)", string(sourceID), testTable, "secret")
+	if got := targetOf(102); got != "geheim_ziel" {
+		t.Fatalf("Ziel nach den abgelehnten Routing-Anträgen = %q, erwartet unverändert", got)
+	}
+	routeState, err := activation.RoutingRules(ctx, sourceID)
+	if err != nil {
+		t.Fatalf("RoutingRules unter cdc_admin-Login: %v", err)
+	}
+	if rules := routeState[table]; len(rules) != 1 || rules[0].Name() != "roles_route" || rules[0].Target() != "geheim_ziel" {
+		t.Fatalf("abgeleiteter Routing-Regelstand von %s = %v, erwartet die Regel roles_route", table, rules)
+	}
+	expectRule("remove_route", "applied", "", removeRoute, string(sourceID), testTable, "roles_route")
+	if got := targetOf(103); got != "" {
+		t.Fatalf("Ziel nach remove_route = %q, erwartet keines", got)
+	}
+	expectRule("remove_route R6", "failed", "Regelname nicht geführt: "+table+".roles_route", removeRoute, string(sourceID), testTable, "roles_route")
+	// Die Gegenrichtung von R3: nach dem Ausschluss lehnt `set_route` die Spalte ab.
+	expectRule("exclude_column ohne Routing-Regel", "applied", "", "SELECT cdc.exclude_column($1, 'public', $2, $3)", string(sourceID), testTable, "secret")
+	expectRule("set_route R3 (Spalte ausgeschlossen)", "failed", "Spalte ist ausgeschlossen: "+table+".secret",
+		setRoute, string(sourceID), testTable, "roles_route_excluded", secretRoute)
+	expectRule("include_column", "applied", "", "SELECT cdc.include_column($1, 'public', $2, $3)", string(sourceID), testTable, "secret")
+	if state, err := activation.RoutingRules(ctx, sourceID); err != nil || len(state[table]) != 0 {
+		t.Fatalf("abgeleiteter Routing-Regelstand nach dem Herausnehmen = %v (%v), erwartet leer", state[table], err)
 	}
 
 	// Der Backfill-Antrag (`LH-FA-CAP-009`): die Annahme legt unter dem

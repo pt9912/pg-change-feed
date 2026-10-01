@@ -28,13 +28,14 @@ var ErrActivationConfiguration = fmt.Errorf("Fehlerklasse configuration: Aktivie
 var identifierShape = regexp.MustCompile(`^[a-z0-9_]{1,63}$`)
 
 // TableActivationAdapter implementiert den `TableActivationPort`, den
-// `ColumnExclusionPort` und den `TransformationPort` (`outbound`, `ARC-004`)
+// `ColumnExclusionPort`, den `TransformationPort` und den `RoutingPort`
+// (`outbound`, `ARC-004`)
 // gegen dieselbe Instanz: im MVP trägt eine Instanz die Quelle und den
 // CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft) — die Bindungs-Zeilen
 // der CDC-Referenztabellen, die Publication der Quelle und die
 // Katalog-Prüfungen ihrer Objekte laufen über denselben Verbindungspool.
 // Die Ports bleiben getrennt: der Spaltenausschluss
-// und die Transformationsregeln hängen
+// und die Transformations- und Routing-Regeln hängen
 // an der Spalten-Prüfung und den Antrags-Zeilen, nicht an Bindungs-Zeilen
 // oder Publication. `log` trägt die strukturierte Protokollierung über den
 // injizierten `LogPort` (`WithLog`) — Default
@@ -72,6 +73,8 @@ var _ outbound.TableActivationPort = (*TableActivationAdapter)(nil)
 var _ outbound.ColumnExclusionPort = (*TableActivationAdapter)(nil)
 
 var _ outbound.TransformationPort = (*TableActivationAdapter)(nil)
+
+var _ outbound.RoutingPort = (*TableActivationAdapter)(nil)
 
 // ColumnExists prüft die physische Spalte über den Katalog; der
 // Negative-Pfad von Spaltenausschluss und -einschluss endet über die
@@ -125,6 +128,21 @@ func (a *TableActivationAdapter) ExcludedColumns(ctx context.Context, source mod
 func (a *TableActivationAdapter) TransformationRules(ctx context.Context, source model.SourceID) (map[string][]model.Transformation, error) {
 	return sqlexec.ReadTransformationRules(ctx, a.db, sqlexec.Statement{
 		SQL:  queries.SelectAppliedTransformationRequests,
+		Args: []any{string(source)},
+		Fail: func(cause error) error { return storageFailure(ctx, a.log, cause) },
+	})
+}
+
+// RoutingRules liest den dauerhaften Routing-Regelstand je Tabelle einer
+// Quelle (`LH-FA-CFG-008`): die `applied`-Zeilen der beiden
+// Routing-Antragsarten in `cdc.administration_request`, in
+// `requested_at`-Ordnung mit der Antrags-ID als deterministischem
+// Zweitschlüssel (Query-Kommentar), je Tabelle zum Stand gefaltet. Dasselbe
+// Recht wie `ExcludedColumns` trägt das Lesen: `SELECT` der Rolle `cdc_admin`
+// auf der Antrags-Tabelle (Grants).
+func (a *TableActivationAdapter) RoutingRules(ctx context.Context, source model.SourceID) (map[string][]model.RouteRule, error) {
+	return sqlexec.ReadRoutingRules(ctx, a.db, sqlexec.Statement{
+		SQL:  queries.SelectAppliedRoutingRequests,
 		Args: []any{string(source)},
 		Fail: func(cause error) error { return storageFailure(ctx, a.log, cause) },
 	})

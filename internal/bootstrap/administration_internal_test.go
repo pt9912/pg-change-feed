@@ -14,7 +14,9 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/removeroute"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/removetransformation"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/setroute"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/settransformation"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
@@ -382,6 +384,7 @@ func TestProcessAdministrationRequestsEnableAppliesAndBindsAssembler(t *testing.
 		schemaStore:     schemaStore,
 		columnExclusion: &fakeColumnExclusionPort{},
 		transformations: &fakeTransformationPort{},
+		routing:         &fakeRoutingPort{},
 		assembler:       assembler,
 		publication:     "cdc_pub",
 		log:             &recordingLog{},
@@ -779,6 +782,7 @@ func ruleFixture(t *testing.T, requests ...model.AdministrationRequest) (adminis
 	t.Helper()
 	queue := &fakeAdministrationRequestPort{pending: append([]model.AdministrationRequest(nil), requests...)}
 	port := &fakeTransformationPort{derivedFrom: queue, history: requests, columns: ruleColumns}
+	routing := &fakeRoutingPort{}
 	assembler, err := mapper.NewAssembler("src-admin", map[string]mapper.TableBinding{
 		"public." + ruleTable: {TableID: "tbl-rules", SchemaVersion: "sv-rules"},
 	}, nil)
@@ -793,8 +797,11 @@ func ruleFixture(t *testing.T, requests ...model.AdministrationRequest) (adminis
 		schemaStore:           &fakeSchemaStorePort{},
 		columnExclusion:       &fakeColumnExclusionPort{},
 		transformations:       port,
+		routing:               routing,
 		setTransformations:    settransformation.NewSetTransformationService(port),
 		removeTransformations: removetransformation.NewRemoveTransformationService(port),
+		setRoutes:             setroute.NewSetRouteService(routing, &fakeColumnExclusionPort{}),
+		removeRoutes:          removeroute.NewRemoveRouteService(routing),
 		assembler:             assembler,
 		source:                "src-admin",
 		publication:           "cdc_pub",
@@ -826,14 +833,14 @@ const rawImage = `{"id":"1","secret":"geheim"}`
 // TestApplyAdministrationRequestRejectsKindOutsideTheClosedSet trägt den
 // `default`-Zweig: eine Antragsart außerhalb der geschlossenen Menge der
 // Domäne endet über einen sichtbaren Fehler, statt still übersprungen zu
-// werden. Der Fehlertext nennt die Antragsart des Antrags und alle sieben
+// werden. Der Fehlertext nennt die Antragsart des Antrags und alle neun
 // verarbeiteten Antragsarten.
 func TestApplyAdministrationRequestRejectsKindOutsideTheClosedSet(t *testing.T) {
 	deps, _, _ := ruleFixture(t)
 	err := applyAdministrationRequest(context.Background(), deps, model.AdministrationRequest{
 		ID: "req-unprocessed", Source: "src-admin", Schema: "public", Table: ruleTable, Kind: "truncate",
 	})
-	const want = `Antragsart "truncate" gehört nicht zu den verarbeiteten Antragsarten enable/disable/exclude_column/include_column/backfill/set_transformation/remove_transformation`
+	const want = `Antragsart "truncate" gehört nicht zu den verarbeiteten Antragsarten enable/disable/exclude_column/include_column/backfill/set_transformation/remove_transformation/set_route/remove_route`
 	if err == nil || err.Error() != want {
 		t.Fatalf("Fehler = %v, wollen %q", err, want)
 	}
@@ -1326,7 +1333,7 @@ func TestActivatedTableBindingsCarriesTransformations(t *testing.T) {
 		"public.orders_restart": {mustRenameRule(t, "geheimname", "secret", "renamed_secret")},
 	}}
 
-	tables, err := activatedTableBindings(ctx, activation, schemaStore, &fakeColumnExclusionPort{}, rules, source)
+	tables, err := activatedTableBindings(ctx, activation, schemaStore, &fakeColumnExclusionPort{}, rules, &fakeRoutingPort{}, source)
 	if err != nil {
 		t.Fatalf("activatedTableBindings = %v, wollen nil", err)
 	}
@@ -1499,6 +1506,7 @@ func TestRunAdministrationLogsWarnOnListenerErrorAndKeepsPolling(t *testing.T) {
 		schemaStore:     schemaStore,
 		columnExclusion: &fakeColumnExclusionPort{},
 		transformations: &fakeTransformationPort{},
+		routing:         &fakeRoutingPort{},
 		assembler:       assembler,
 		publication:     "cdc_pub",
 		pollInterval:    time.Millisecond,
@@ -1561,7 +1569,7 @@ func TestActivatedTableBindingsCarriesExcludedColumns(t *testing.T) {
 		"public.orders_restart": {"secret"},
 	}}
 
-	tables, err := activatedTableBindings(ctx, activation, schemaStore, exclusions, &fakeTransformationPort{}, source)
+	tables, err := activatedTableBindings(ctx, activation, schemaStore, exclusions, &fakeTransformationPort{}, &fakeRoutingPort{}, source)
 	if err != nil {
 		t.Fatalf("activatedTableBindings = %v, wollen nil", err)
 	}
@@ -1617,6 +1625,7 @@ func TestProcessAdministrationRequestsDisableEnableCycleRestoresExclusion(t *tes
 		schemaStore:     schemaStore,
 		columnExclusion: &fakeColumnExclusionPort{excluded: map[string][]string{"public." + table: {"secret"}}},
 		transformations: &fakeTransformationPort{},
+		routing:         &fakeRoutingPort{},
 		assembler:       assembler,
 		publication:     "cdc_pub",
 		log:             &recordingLog{},
@@ -1673,6 +1682,7 @@ func TestProcessAdministrationRequestsMarksFailedWhenExclusionReadFails(t *testi
 		schemaStore:     schemaStore,
 		columnExclusion: &fakeColumnExclusionPort{err: wantErr},
 		transformations: &fakeTransformationPort{},
+		routing:         &fakeRoutingPort{},
 		assembler:       assembler,
 		publication:     "cdc_pub",
 		log:             &recordingLog{},

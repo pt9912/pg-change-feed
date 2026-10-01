@@ -323,16 +323,18 @@ ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_cl
 // `administration_request_id`) — die Administrations-Goroutine verarbeitet
 // sie in dieser Ordnung, sowohl nach `NOTIFY` als auch periodisch als
 // Fallback-Poll. Es ist dieselbe Ordnung, in der SelectAppliedColumnRequests
-// und SelectAppliedTransformationRequests den dauerhaften Stand ableiten,
+// SelectAppliedTransformationRequests und SelectAppliedRoutingRequests den
+// dauerhaften Stand ableiten,
 // und die Verarbeitung führt damit live und beim Prozessstart zum selben
 // Stand. `requested_at` ist der Aufrufzeitpunkt der schreibenden Funktion
 // (`clock_timestamp()`): Aufrufe derselben Transaktion tragen
 // verschiedene Zeitstempel in der Reihenfolge des Aufrufs, die Kennung
-// ordnet nur bei gleichem Zeitstempel. Die sieben Antragsarten teilen sich eine
-// Tabelle; die Antragsarten `enable`, `disable`, `backfill` und die beiden
-// Transformations-Antragsarten tragen keine Spalte (`column_name` NULL), alle
-// außer den beiden Transformations-Antragsarten keinen Regelnamen
-// (`rule_name` NULL), alle außer `set_transformation` keine Regelform
+// ordnet nur bei gleichem Zeitstempel. Die neun Antragsarten teilen sich eine
+// Tabelle; die Antragsarten `enable`, `disable`, `backfill` und die vier
+// Regel-Antragsarten tragen keine Spalte (`column_name` NULL), alle
+// außer den vier Regel-Antragsarten keinen Regelnamen
+// (`rule_name` NULL), alle außer `set_transformation` und `set_route` keine
+// Regelform
 // (`rule_spec` NULL) — `COALESCE` normalisiert jedes NULL auf den leeren
 // Wert; die Regelform steht als JSON-Text (`jsonb` nach `text`, ein
 // SQL-NULL ist dort der leere Wert, ein JSON-`null` der Text `null`).
@@ -349,9 +351,9 @@ ORDER BY requested_at, administration_request_id`
 // Funktion (`clock_timestamp()`); der Zweitschlüssel
 // `administration_request_id` ordnet Zeilen mit gleichem Zeitstempel
 // deterministisch, dieselbe Antrags-Menge trägt damit genau eine
-// Reihenfolge. Die fünf übrigen Antragsarten (`enable`,
-// `disable`, `backfill`, `set_transformation`, `remove_transformation`)
-// bleiben außen vor; `COALESCE` normalisiert das NULL-bare `column_name` wie
+// Reihenfolge. Die sieben übrigen Antragsarten (`enable`,
+// `disable`, `backfill`, `set_transformation`, `remove_transformation`,
+// `set_route`, `remove_route`) bleiben außen vor; `COALESCE` normalisiert das NULL-bare `column_name` wie
 // in SelectPendingAdministrationRequests.
 const SelectAppliedColumnRequests = `
 SELECT schema_name, table_name, request_kind, COALESCE(column_name, '')
@@ -376,6 +378,23 @@ FROM cdc.administration_request
 WHERE source_id = $1
   AND status = 'applied'
   AND request_kind IN ('set_transformation', 'remove_transformation')
+ORDER BY requested_at, administration_request_id`
+
+// SelectAppliedRoutingRequests liest die `applied`-Zeilen der beiden
+// Routing-Antragsarten einer Quelle (`LH-FA-CFG-008`): der Adapter faltet sie
+// zum Routing-Regelstand je Tabelle (`model.FoldRoutes`). Ordnung und
+// Zweitschlüssel wie in SelectAppliedTransformationRequests: `requested_at`
+// ist der Aufrufzeitpunkt der schreibenden Funktion,
+// `administration_request_id` macht die Reihenfolge bei gleichem Zeitstempel
+// deterministisch. `COALESCE` normalisiert das NULL-bare `rule_spec` (bei
+// `remove_route` leer) auf den leeren Text; die Regelform steht als JSON-Text
+// (`jsonb` nach `text`).
+const SelectAppliedRoutingRequests = `
+SELECT schema_name, table_name, request_kind, COALESCE(rule_name, ''), COALESCE(rule_spec::text, '')
+FROM cdc.administration_request
+WHERE source_id = $1
+  AND status = 'applied'
+  AND request_kind IN ('set_route', 'remove_route')
 ORDER BY requested_at, administration_request_id`
 
 // SelectTableColumns liest die Spaltennamen einer Tabelle über den Katalog

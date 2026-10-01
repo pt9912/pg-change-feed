@@ -17,7 +17,8 @@ type AdministrationRequestID string
 // Spalten-Antragsarten `exclude_column`/`include_column`, die
 // Bestands-Antragsart `backfill`
 // (`LH-FA-CAP-009`) und die beiden Transformations-Antragsarten
-// `set_transformation`/`remove_transformation`. Bei `backfill` heißt der
+// `set_transformation`/`remove_transformation` und die beiden
+// Routing-Antragsarten `set_route`/`remove_route`. Bei `backfill` heißt der
 // Status `applied` „angenommen": die
 // Ausführung steht in `cdc.backfill_run`.
 type AdministrationRequestKind string
@@ -30,6 +31,8 @@ const (
 	AdministrationRequestBackfill             AdministrationRequestKind = "backfill"
 	AdministrationRequestSetTransformation    AdministrationRequestKind = "set_transformation"
 	AdministrationRequestRemoveTransformation AdministrationRequestKind = "remove_transformation"
+	AdministrationRequestSetRoute             AdministrationRequestKind = "set_route"
+	AdministrationRequestRemoveRoute          AdministrationRequestKind = "remove_route"
 )
 
 // AdministrationRequestKinds liefert die Antragsarten als geschlossene Menge
@@ -44,6 +47,8 @@ func AdministrationRequestKinds() []AdministrationRequestKind {
 		AdministrationRequestBackfill,
 		AdministrationRequestSetTransformation,
 		AdministrationRequestRemoveTransformation,
+		AdministrationRequestSetRoute,
+		AdministrationRequestRemoveRoute,
 	}
 }
 
@@ -56,8 +61,9 @@ func AdministrationRequestKinds() []AdministrationRequestKind {
 // übrigen Antragsarten tragen dort den leeren Wert. `RuleName` trägt den
 // Regelnamen der beiden Transformations-Antragsarten, `RuleSpec` die
 // Regelform der Antragsart `set_transformation` als JSON-Text; die übrigen
-// Antragsarten tragen beide als leeren Wert. Die Regelform prüft der Use
-// Case, nicht dieser Typ.
+// Antragsarten tragen beide als leeren Wert. Regelname und Regelform tragen
+// ebenso die beiden Routing-Antragsarten (die Regelform nur `set_route`). Die
+// Regelform prüft der Use Case, nicht dieser Typ.
 type AdministrationRequest struct {
 	ID       AdministrationRequestID
 	Source   SourceID
@@ -72,13 +78,15 @@ type AdministrationRequest struct {
 // NewAdministrationRequest legt einen Antrags-Datensatz an und verlangt
 // nichtleere Kennungen (ID, Quelle, Schema, Tabelle) sowie eine Antragsart
 // aus der geschlossenen Menge `enable`/`disable`/`exclude_column`/
-// `include_column`/`backfill`/`set_transformation`/`remove_transformation` —
+// `include_column`/`backfill`/`set_transformation`/`remove_transformation`/
+// `set_route`/`remove_route` —
 // dasselbe Konstruktor-Muster wie die übrigen zehn Domänentypen in diesem
 // Paket (z. B. `NewSchemaVersion`); die Prüfung der geschlossenen Menge liegt
 // am Domain-Core-Rand, wie es die Architektur-Sicht für Domänenobjekte und
 // ihre Invarianten vorsieht.
 // Die beiden Spalten-Antragsarten tragen eine nichtleere Spalte — ohne sie
-// adressiert der Antrag kein Ziel. Die beiden Transformations-Antragsarten
+// adressiert der Antrag kein Ziel. Die vier Regel-Antragsarten
+// (Transformation und Routing)
 // tragen Regelname und Regelform, wie die Zeile sie hält, auch leer: ein
 // leerer oder fehlender Regelname und eine fehlende Regelform sind ein
 // `failed`-Ausgang des Antrags mit dem Fehlertext der Spec (`SPEC-019`),
@@ -91,7 +99,8 @@ func NewAdministrationRequest(id AdministrationRequestID, source SourceID, schem
 	}
 	switch kind {
 	case AdministrationRequestEnable, AdministrationRequestDisable, AdministrationRequestBackfill,
-		AdministrationRequestSetTransformation, AdministrationRequestRemoveTransformation:
+		AdministrationRequestSetTransformation, AdministrationRequestRemoveTransformation,
+		AdministrationRequestSetRoute, AdministrationRequestRemoveRoute:
 	case AdministrationRequestExcludeColumn, AdministrationRequestIncludeColumn:
 		if column == "" {
 			return AdministrationRequest{}, domainerrors.ErrEmptyIdentifier

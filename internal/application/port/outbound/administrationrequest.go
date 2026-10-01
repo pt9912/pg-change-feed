@@ -38,7 +38,8 @@ type RejectedAdministrationRequest struct {
 // AdministrationRequestPort trägt die Lese- und Ergebnis-Fähigkeit der
 // Antrags-Queue (`ARC-004`): `cdc.enable_table`/
 // `cdc.disable_table`/`cdc.exclude_column`/`cdc.include_column`/
-// `cdc.backfill_table`/`cdc.set_transformation`/`cdc.remove_transformation`
+// `cdc.backfill_table`/`cdc.set_transformation`/`cdc.remove_transformation`/
+// `cdc.set_route`/`cdc.remove_route`
 // schreiben den Antrags-Datensatz direkt über SQL
 // (kein Go-Aufrufpfad, Fähigkeits-Trennung); dieser Port trägt ausschließlich
 // die Gegenrichtung — die Administrations-Goroutine liest offene Anträge

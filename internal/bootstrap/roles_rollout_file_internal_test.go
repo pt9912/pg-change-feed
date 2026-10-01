@@ -491,8 +491,8 @@ func parameterTypen(parameter string) []string {
 // `GRANT EXECUTE … TO cdc_admin`-Anweisung, und **keine andere Rolle** trägt
 // `EXECUTE` auf eine von ihnen. Die Regel leitet den Umfang aus den
 // `CREATE FUNCTION`-Zeilen der Datei ab, nicht aus einer Namensliste — eine
-// achte Funktion ohne Rechte-Zeile färbt sie rot. Zusätzlich sind die beiden
-// Transformations-Funktionen mit
+// zehnte Funktion ohne Rechte-Zeile färbt sie rot. Zusätzlich sind die
+// Transformations- und die Routing-Funktionen mit
 // ihren Signaturen benannt: die Datei trägt sie.
 //
 // Jede `GRANT`-Anweisung der Datei ist von der Form `GRANT EXECUTE ON FUNCTION
@@ -511,7 +511,9 @@ func parameterTypen(parameter string) []string {
 // Rot färbende Mutationen: `cdc.set_transformation(text, text, text, text,
 // json)` aus der `GRANT`-Liste streichen · dieselbe Signatur aus der
 // `REVOKE`-Liste streichen · `cdc.remove_transformation(...)` aus der
-// `GRANT`-Liste streichen · eine zweite `GRANT EXECUTE … TO cdc_reader`-Zeile
+// `GRANT`-Liste streichen · `cdc.set_route(text, text, text, text, json)` bzw.
+// `cdc.remove_route(...)` aus der `REVOKE`-Liste streichen · eine zweite
+// `GRANT EXECUTE … TO cdc_reader`-Zeile
 // anhängen · `GRANT ALL ON FUNCTION cdc.set_transformation(…) TO cdc_reader` ·
 // `GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA cdc TO PUBLIC` · `GRANT ALL
 // PRIVILEGES ON ALL FUNCTIONS IN SCHEMA cdc TO cdc_reader` · eine Funktion
@@ -537,9 +539,11 @@ func TestAdministrationDateiTraegtDieFunktionsRechte(t *testing.T) {
 	for _, erwartet := range []string{
 		"cdc.set_transformation(text,text,text,text,json)",
 		"cdc.remove_transformation(text,text,text,text)",
+		"cdc.set_route(text,text,text,text,json)",
+		"cdc.remove_route(text,text,text,text)",
 	} {
 		if !definiert[erwartet] {
-			t.Fatalf("die Datei definiert %s nicht — die Antragsarten set_transformation/remove_transformation haben keine schreibende SQL-Funktion (LH-FA-CFG-007)", erwartet)
+			t.Fatalf("die Datei definiert %s nicht — die Antragsarten set_transformation/remove_transformation/set_route/remove_route haben keine schreibende SQL-Funktion (LH-FA-CFG-007)", erwartet)
 		}
 	}
 

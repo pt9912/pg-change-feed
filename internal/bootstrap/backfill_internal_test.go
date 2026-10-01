@@ -661,6 +661,7 @@ func TestBackfillRunDoesNotBlockTheAdministrationGoroutine(t *testing.T) {
 		}},
 		columnExclusion: &fakeColumnExclusionPort{},
 		transformations: &fakeTransformationPort{},
+		routing:         &fakeRoutingPort{},
 		assembler:       assembler,
 		backfill:        useCase,
 		backfillWake:    newBackfillWake(),

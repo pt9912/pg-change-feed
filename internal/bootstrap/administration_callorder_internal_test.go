@@ -97,6 +97,7 @@ func TestAdministrationSameTransactionRemoveThenSetLeavesTheNewRuleLiveAndDerive
 	deps := administrationDeps{
 		requests:              requests,
 		transformations:       activation,
+		routing:               activation,
 		setTransformations:    settransformation.NewSetTransformationService(activation),
 		removeTransformations: removetransformation.NewRemoveTransformationService(activation),
 		assembler:             assembler,

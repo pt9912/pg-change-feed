@@ -77,7 +77,7 @@ var (
 	// ErrInvalidAdministrationRequestKind: die Antragsart eines
 	// Administrations-Antrags ist eine der geschlossenen Menge
 	// `enable`/`disable`/`exclude_column`/`include_column`/`backfill`/
-	// `set_transformation`/`remove_transformation`
+	// `set_transformation`/`remove_transformation`/`set_route`/`remove_route`
 	// (`chk_administration_request_kind`, `ADR-0050`).
 	ErrInvalidAdministrationRequestKind = stderrors.New("unbekannte Antragsart")
 
@@ -199,8 +199,8 @@ var (
 	// Regeltyp nicht kennt (`SPEC-030`).
 	ErrUnknownRuleSpecKey = stderrors.New("unbekannter Schlüssel in rule_spec")
 
-	// ErrRuleNameTaken (K1): der Regelname ist je Tabelle vergeben
-	// (`SPEC-019`).
+	// ErrRuleNameTaken (K1, bei den Routing-Regeln R1): der Regelname ist je
+	// Tabelle vergeben (`SPEC-019`).
 	ErrRuleNameTaken = stderrors.New("Regelname bereits vergeben")
 
 	// ErrColumnHasRule (K2): die Quellspalte trägt bereits eine
@@ -216,7 +216,37 @@ var (
 	// eingeschlossen (`SPEC-019`).
 	ErrTargetCollidesWithColumn = stderrors.New("Zielname kollidiert mit einer Spalte der Tabelle")
 
-	// ErrRuleNotKept (K4): ein `remove_transformation` nennt einen
-	// Regelnamen, den die Tabelle nicht führt (`SPEC-019`).
+	// ErrRuleNotKept (K4, bei den Routing-Regeln R6): ein
+	// `remove_transformation` bzw. `remove_route` nennt einen Regelnamen, den
+	// die Tabelle nicht führt (`SPEC-019`).
 	ErrRuleNotKept = stderrors.New("Regelname nicht geführt")
+
+	// Die folgenden Sentinels tragen die Ablehnungsgründe eines
+	// Routing-Antrags, soweit sie nicht zugleich ein Grund der
+	// Transformations-Antragsarten sind (`SPEC-019`, Fehlertext-Tabelle): R1
+	// trägt `ErrRuleNameTaken`, R6 `ErrRuleNotKept`, R3 `ErrRoutingColumnExcluded`
+	// und `inbound.ErrSourceColumnMissing`.
+
+	// ErrRouteOrderTaken (R2): die `order` ist je Tabelle vergeben.
+	ErrRouteOrderTaken = stderrors.New("order bereits vergeben")
+
+	// ErrRouteConditionTaken (R5): das Paar (`when.column`, `when.equals`)
+	// kommt je Tabelle bereits vor.
+	ErrRouteConditionTaken = stderrors.New("Bedingung bereits vergeben")
+
+	// ErrRouteWithoutWhenTaken (R4): die Tabelle führt bereits eine Regel
+	// ohne `when`.
+	ErrRouteWithoutWhenTaken = stderrors.New("Regel ohne when bereits vorhanden")
+
+	// ErrRouteWithoutWhenNotLast (R4): die Regel ohne `when` trägt nicht die
+	// höchste `order` der Tabelle.
+	ErrRouteWithoutWhenNotLast = stderrors.New("Regel ohne when trägt nicht die höchste order")
+
+	// ErrRouteBehindWithoutWhen (R4): die Regel mit `when` trägt eine höhere
+	// `order` als die geführte Regel ohne `when`.
+	ErrRouteBehindWithoutWhen = stderrors.New("order liegt hinter der Regel ohne when")
+
+	// ErrColumnHasRouteCondition (R3, Gegenrichtung): `exclude_column` nennt
+	// eine Spalte, die eine Routing-Bedingung des Regelstands trägt.
+	ErrColumnHasRouteCondition = stderrors.New("Spalte trägt eine Routing-Bedingung")
 )

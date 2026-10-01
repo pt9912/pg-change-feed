@@ -60,8 +60,10 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/readchanges"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/register"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/remove"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/removeroute"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/removetransformation"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/retention"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/setroute"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/settransformation"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/status"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
@@ -423,7 +425,8 @@ func parseTables(raw string) (map[string]mapper.TableBinding, error) {
 // bestehenden Pfads (`storage`).
 //
 // Der Regelstand kommt aus seiner dauerhaften Herkunft
-// (`TransformationPort.TransformationRules`) und
+// (`TransformationPort.TransformationRules`, für die Routing-Regeln
+// `RoutingPort.RoutingRules`) und
 // geht wie der Ausschlussstand je Tabelle in die Bindung ein; eine Tabelle
 // ohne Regel trägt eine Bindung ohne Regelstand. Die Lesung baut je Aufruf
 // frische Listen, die die Bindung behält und die niemand mehr schreibt
@@ -431,7 +434,7 @@ func parseTables(raw string) (map[string]mapper.TableBinding, error) {
 // eine Regel führt, endet den Start vor dem Stream-Start als Fehler der
 // Klasse `internal` (`classifyRunError`); ein Lesefehler des Bestands endet
 // dagegen in `storage`.
-func activatedTableBindings(ctx context.Context, activation outbound.TableActivationPort, schemaStore outbound.SchemaStorePort, columnExclusion outbound.ColumnExclusionPort, transformations outbound.TransformationPort, source model.SourceID) (map[string]mapper.TableBinding, error) {
+func activatedTableBindings(ctx context.Context, activation outbound.TableActivationPort, schemaStore outbound.SchemaStorePort, columnExclusion outbound.ColumnExclusionPort, transformations outbound.TransformationPort, routing outbound.RoutingPort, source model.SourceID) (map[string]mapper.TableBinding, error) {
 	registered, err := activation.List(ctx, source)
 	if err != nil {
 		return nil, err
@@ -441,6 +444,10 @@ func activatedTableBindings(ctx context.Context, activation outbound.TableActiva
 		return nil, err
 	}
 	rules, err := transformations.TransformationRules(ctx, source)
+	if err != nil {
+		return nil, err
+	}
+	routes, err := routing.RoutingRules(ctx, source)
 	if err != nil {
 		return nil, err
 	}
@@ -458,6 +465,7 @@ func activatedTableBindings(ctx context.Context, activation outbound.TableActiva
 			SchemaVersion:   current.ID,
 			ExcludedColumns: excluded[table.QualifiedName()],
 			Transformations: rules[table.QualifiedName()],
+			Routes:          routes[table.QualifiedName()],
 		}
 	}
 	return tables, nil
@@ -613,10 +621,12 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	retentionUseCase := retention.NewRunRetentionService(retentionStore, retentionConsumerState, systemclock.New())
 	enableTables := enable.NewEnableTableService(activation)
 	disableTables := disable.NewDisableTableService(activation)
-	excludeColumns := excludecolumn.NewExcludeColumnService(activation)
+	excludeColumns := excludecolumn.NewExcludeColumnService(activation, activation)
 	includeColumns := includecolumn.NewIncludeColumnService(activation)
 	setTransformations := settransformation.NewSetTransformationService(activation)
 	removeTransformations := removetransformation.NewRemoveTransformationService(activation)
+	setRoutes := setroute.NewSetRouteService(activation, activation)
+	removeRoutes := removeroute.NewRemoveRouteService(activation)
 	for qualified, binding := range cfg.Tables {
 		schema, table, err := splitQualifiedName(qualified)
 		if err != nil {
@@ -652,7 +662,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// Kennung `CDC_TABLES` nicht trägt, noch einen dauerhaft vermerkten
 	// Spaltenausschluss oder eine Transformationsregel. Die
 	// Aktivierungs-Instanz trägt die Lese-Fähigkeiten.
-	assemblerTables, err := activatedTableBindings(ctx, activation, schemaStore, activation, activation, cfg.Source)
+	assemblerTables, err := activatedTableBindings(ctx, activation, schemaStore, activation, activation, activation, cfg.Source)
 	if err != nil {
 		return err
 	}
@@ -877,9 +887,12 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		schemaStore:           schemaStore,
 		columnExclusion:       activation,
 		transformations:       activation,
+		routing:               activation,
 		assembler:             assembler,
 		setTransformations:    setTransformations,
 		removeTransformations: removeTransformations,
+		setRoutes:             setRoutes,
+		removeRoutes:          removeRoutes,
 		backfill:              backfillTables,
 		backfillWake:          backfillWake,
 		source:                cfg.Source,
@@ -976,6 +989,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		schemaStore:        schemaStore,
 		columnExclusion:    activation,
 		transformations:    activation,
+		routing:            activation,
 	}
 	disableTableAPI := disableTableWithAssemblerSync{
 		DisableTableUseCase: disableTables,
@@ -1416,12 +1430,22 @@ type administrationDeps struct {
 	// sie in die neu angelegte `Assembler`-Bindung — derselbe Mechanismus
 	// wie der Prozessstart (`activatedTableBindings`).
 	transformations outbound.TransformationPort
-	assembler       *mapper.Assembler
+	// routing trägt die dauerhafte Herkunft des Routing-Regelstandes
+	// (`SPEC-019`): der Aktivierungs-Zweig liest sie und trägt sie in die neu
+	// angelegte `Assembler`-Bindung — derselbe Mechanismus wie der
+	// Prozessstart (`activatedTableBindings`).
+	routing   outbound.RoutingPort
+	assembler *mapper.Assembler
 	// setTransformations und removeTransformations prüfen die beiden
 	// Transformations-Antragsarten (`LH-FA-CFG-007`); die Verarbeitung trägt
 	// danach die Regel in die laufende `Assembler`-Bindung nach.
 	setTransformations    inbound.SetTransformationUseCase
 	removeTransformations inbound.RemoveTransformationUseCase
+	// setRoutes und removeRoutes prüfen die beiden Routing-Antragsarten
+	// (`LH-FA-CFG-008`); die Verarbeitung trägt danach die Regel in die
+	// laufende `Assembler`-Bindung nach.
+	setRoutes    inbound.SetRouteUseCase
+	removeRoutes inbound.RemoveRouteUseCase
 	// backfill nimmt einen Antrag der Art `backfill` an (`Request`) und
 	// weckt danach den Backfill-Worker über `backfillWake`; die Ausführung
 	// des Runs trägt der Worker, nicht diese Goroutine (`ADR-0111`
@@ -1646,6 +1670,14 @@ func processedAdministrationKinds() string {
 // (`model.NewAdministrationRequest`) und endet im Use Case als Fehler mit dem
 // Fehlertext der Spec, ohne die Queue anzuhalten.
 //
+// Die Antragsarten `set_route`/`remove_route` gehen denselben Weg mit eigenem
+// Regelstand: ihr Use Case prüft Form und R1 bis R6, danach trägt die
+// Verarbeitung die Regel bzw. das Herausnehmen in den Routing-Regelstand der
+// laufenden `Assembler`-Bindung nach. Eine Tabelle ohne laufende Bindung
+// endet `applied`, der Regelstand entsteht beim Anlegen der
+// Bindung aus der dauerhaften Herkunft (`activatedTableBindings`,
+// Aktivierungs-Zweig).
+//
 // Der `default`-Zweig endet als Fehler und damit im `failed`-Vermerk, dessen
 // Text die verarbeiteten Antragsarten nennt; er trifft nur eine Antragsart
 // außerhalb der geschlossenen Menge der Domäne.
@@ -1665,7 +1697,7 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 		}); err != nil {
 			return err
 		}
-		return syncAssemblerAddBinding(ctx, deps.assembler, deps.activation, deps.schemaStore, deps.columnExclusion, deps.transformations, request.Source, request.Schema, request.Table)
+		return syncAssemblerAddBinding(ctx, deps.assembler, deps.activation, deps.schemaStore, deps.columnExclusion, deps.transformations, deps.routing, request.Source, request.Schema, request.Table)
 	case model.AdministrationRequestDisable:
 		if _, err := deps.disableTables.Disable(ctx, inbound.DisableTableCommand{
 			Source:      request.Source,
@@ -1750,6 +1782,40 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 			return err
 		}
 		deps.assembler.RemoveTransformation(qualified, request.RuleName)
+		return nil
+	case model.AdministrationRequestSetRoute:
+		// R3 hat gegen den Katalog und den Ausschlussstand zum Antragszeitpunkt
+		// geprüft; der Nachtrag steht vor dem Vermerk `applied` — scheitert der
+		// Vermerk, trägt die laufende Bindung die Regel weiter, und der nächste
+		// Durchlauf verarbeitet denselben Antrag erneut (der Ersatz nach Namen
+		// macht den Nachtrag folgenlos; R1 prüft nur gegen `applied`-Zeilen).
+		// Grenze wie bei `set_transformation`: verarbeitet ein Durchlauf
+		// dazwischen einen Antrag, der zum noch nicht vermerkten in R2, R4 oder
+		// R5 steht, prüft er gegen einen Regelstand ohne den ersten und wird
+		// `applied`; die Wiederholung des ersten endet danach `failed`, und die
+		// laufende Bindung trägt bis zum Neustart beide Regeln.
+		rule, err := deps.setRoutes.Set(ctx, inbound.SetRouteCommand{
+			Source:   request.Source,
+			Schema:   request.Schema,
+			Table:    request.Table,
+			RuleName: request.RuleName,
+			RuleSpec: request.RuleSpec,
+		})
+		if err != nil {
+			return err
+		}
+		deps.assembler.SetRoute(qualified, rule)
+		return nil
+	case model.AdministrationRequestRemoveRoute:
+		if err := deps.removeRoutes.Remove(ctx, inbound.RemoveRouteCommand{
+			Source:   request.Source,
+			Schema:   request.Schema,
+			Table:    request.Table,
+			RuleName: request.RuleName,
+		}); err != nil {
+			return err
+		}
+		deps.assembler.RemoveRoute(qualified, request.RuleName)
 		return nil
 	default:
 		return fmt.Errorf("Antragsart %q gehört nicht zu den verarbeiteten Antragsarten %s", request.Kind, processedAdministrationKinds())

@@ -51,9 +51,9 @@ func TestSplitQualifiedNameTrenntSchemaUndTabelle(t *testing.T) {
 
 // TestActivatedTableBindingsFehlerpfade trägt den Bindungs-Neuaufbau am
 // Prozessstart (`ADR-0050`): der committed Stand ist die
-// Grundlage des Stream-Starts — ein Lesefehler einer der vier Quellen
+// Grundlage des Stream-Starts — ein Lesefehler einer der fünf Quellen
 // (`TableActivationPort.List`, `ColumnExclusionPort.ExcludedColumns`,
-// `TransformationPort.TransformationRules`,
+// `TransformationPort.TransformationRules`, `RoutingPort.RoutingRules`,
 // `SchemaStorePort.CurrentVersion`) bricht den Aufbau ab, statt eine
 // unvollständige Bindung zu tragen; eine aktivierte Tabelle **ohne**
 // registrierte Schema-Version bleibt ohne Bindung (keine Erfassung ohne
@@ -76,6 +76,7 @@ func TestActivatedTableBindingsFehlerpfade(t *testing.T) {
 		schemaStore   *fakeSchemaStorePort
 		columns       *fakeColumnExclusionPort
 		rules         *fakeTransformationPort
+		routes        *fakeRoutingPort // nil: leerer Routing-Regelstand
 		wantErr       error
 		wantBoundKeys []string
 	}{
@@ -104,6 +105,15 @@ func TestActivatedTableBindingsFehlerpfade(t *testing.T) {
 			wantErr:     readErr,
 		},
 		{
+			name:        "RoutingRules-Fehler",
+			activation:  &fakeTableActivationPort{listed: listed},
+			schemaStore: &fakeSchemaStorePort{},
+			columns:     &fakeColumnExclusionPort{},
+			rules:       &fakeTransformationPort{},
+			routes:      &fakeRoutingPort{err: readErr},
+			wantErr:     readErr,
+		},
+		{
 			name:        "CurrentVersion-Fehler",
 			activation:  &fakeTableActivationPort{listed: listed},
 			schemaStore: &fakeSchemaStorePort{err: readErr},
@@ -123,7 +133,11 @@ func TestActivatedTableBindingsFehlerpfade(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			tables, err := activatedTableBindings(ctx, c.activation, c.schemaStore, c.columns, c.rules, source)
+			routes := c.routes
+			if routes == nil {
+				routes = &fakeRoutingPort{}
+			}
+			tables, err := activatedTableBindings(ctx, c.activation, c.schemaStore, c.columns, c.rules, routes, source)
 			if !errors.Is(err, c.wantErr) {
 				t.Fatalf("activatedTableBindings: Fehler %v, wollen %v", err, c.wantErr)
 			}
@@ -350,6 +364,7 @@ func TestApplyAdministrationRequestFehlerpfade(t *testing.T) {
 				schemaStore:     c.schemaStore,
 				columnExclusion: &fakeColumnExclusionPort{},
 				transformations: &fakeTransformationPort{},
+				routing:         &fakeRoutingPort{},
 				assembler:       assembler,
 				publication:     "cdc_pub",
 				log:             &recordingLog{},
@@ -457,6 +472,7 @@ func neueAdministrationsDeps(
 		schemaStore:     schemaStore,
 		columnExclusion: columnExclusion,
 		transformations: &fakeTransformationPort{},
+		routing:         &fakeRoutingPort{},
 		assembler:       assembler,
 		publication:     "cdc_pub",
 		log:             &recordingLog{},

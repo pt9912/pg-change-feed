@@ -14,13 +14,14 @@ import (
 // laufende `Assembler`-Bindung nach — dieselbe Lese-Folge wie
 // `activatedTableBindings` beim Prozessstart, auf eine einzelne Tabelle
 // zugeschnitten: die registrierte Bindungs-Zeile, ihre aktuelle
-// Schema-Version, der dauerhafte Ausschluss- und Regelstand der Quelle. Dies
+// Schema-Version, der dauerhafte Ausschluss- und Regelstand (Transformation
+// und Routing) der Quelle. Dies
 // ist der eine Mechanismus, den sowohl `applyAdministrationRequest`s
 // Enable-Zweig (SQL-Antragsqueue) als auch `enableTableWithAssemblerSync`
 // (direkter HTTP-/gRPC-Zugriffsweg) aufrufen — beide Pfade tragen dieselbe
 // Aktivierung unabhängig vom Auslöser in den laufenden Prozess nach
 // (`LH-FA-CFG-001`).
-func syncAssemblerAddBinding(ctx context.Context, assembler *mapper.Assembler, activation outbound.TableActivationPort, schemaStore outbound.SchemaStorePort, columnExclusion outbound.ColumnExclusionPort, transformations outbound.TransformationPort, source model.SourceID, schema, table string) error {
+func syncAssemblerAddBinding(ctx context.Context, assembler *mapper.Assembler, activation outbound.TableActivationPort, schemaStore outbound.SchemaStorePort, columnExclusion outbound.ColumnExclusionPort, transformations outbound.TransformationPort, routing outbound.RoutingPort, source model.SourceID, schema, table string) error {
 	qualified := schema + "." + table
 	registered, found, err := activation.Registered(ctx, source, schema, table)
 	if err != nil {
@@ -44,11 +45,16 @@ func syncAssemblerAddBinding(ctx context.Context, assembler *mapper.Assembler, a
 	if err != nil {
 		return err
 	}
+	routes, err := routing.RoutingRules(ctx, source)
+	if err != nil {
+		return err
+	}
 	assembler.AddBinding(qualified, mapper.TableBinding{
 		TableID:         registered.ID,
 		SchemaVersion:   current.ID,
 		ExcludedColumns: excluded[qualified],
 		Transformations: rules[qualified],
+		Routes:          routes[qualified],
 	})
 	return nil
 }
@@ -75,6 +81,7 @@ type enableTableWithAssemblerSync struct {
 	schemaStore     outbound.SchemaStorePort
 	columnExclusion outbound.ColumnExclusionPort
 	transformations outbound.TransformationPort
+	routing         outbound.RoutingPort
 }
 
 var _ inbound.EnableTableUseCase = enableTableWithAssemblerSync{}
@@ -87,7 +94,7 @@ func (e enableTableWithAssemblerSync) Enable(ctx context.Context, command inboun
 	if err != nil {
 		return result, err
 	}
-	if err := syncAssemblerAddBinding(ctx, e.assembler, e.activation, e.schemaStore, e.columnExclusion, e.transformations, command.Source, command.Schema, command.Table); err != nil {
+	if err := syncAssemblerAddBinding(ctx, e.assembler, e.activation, e.schemaStore, e.columnExclusion, e.transformations, e.routing, command.Source, command.Schema, command.Table); err != nil {
 		return inbound.EnableTableResult{}, err
 	}
 	return result, nil

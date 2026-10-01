@@ -57,12 +57,12 @@ func newTestAdministrationRequestPool(t *testing.T) (*pgxpool.Pool, string) {
 
 	var functions int
 	if err := pool.QueryRow(ctx,
-		"SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'cdc' AND p.proname IN ('enable_table', 'disable_table', 'exclude_column', 'include_column', 'backfill_table', 'set_transformation', 'remove_transformation')",
+		"SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'cdc' AND p.proname IN ('enable_table', 'disable_table', 'exclude_column', 'include_column', 'backfill_table', 'set_transformation', 'remove_transformation', 'set_route', 'remove_route')",
 	).Scan(&functions); err != nil {
 		t.Fatalf("Funktions-Prüfung: %v", err)
 	}
-	if functions != 7 {
-		t.Fatalf("cdc.enable_table/cdc.disable_table/cdc.exclude_column/cdc.include_column/cdc.backfill_table/cdc.set_transformation/cdc.remove_transformation fehlen — der Schema-Rollout über make schema-rollout trägt sie (ADR-0050, LH-FA-CFG-005, LH-FA-CAP-009, LH-FA-CFG-007, tools/schema/nacharbeit-administration.sql); der test-store-Lauf rollt sie vor dem Testlauf aus")
+	if functions != 9 {
+		t.Fatalf("cdc.enable_table/cdc.disable_table/cdc.exclude_column/cdc.include_column/cdc.backfill_table/cdc.set_transformation/cdc.remove_transformation/cdc.set_route/cdc.remove_route fehlen — der Schema-Rollout über make schema-rollout trägt sie (ADR-0050, LH-FA-CFG-005, LH-FA-CAP-009, LH-FA-CFG-007, LH-FA-CFG-008, tools/schema/nacharbeit-administration.sql); der test-store-Lauf rollt sie vor dem Testlauf aus")
 	}
 
 	if _, err := pool.Exec(ctx,
@@ -712,14 +712,14 @@ func TestAdministrationRequestBackfillTableRequiresCdcAdminMembership(t *testing
 	}
 }
 
-// TestAdministrationRequestKindCheckCarriesExactlyTheSevenKinds belegt die
+// TestAdministrationRequestKindCheckCarriesExactlyTheNineKinds belegt die
 // geschlossene `request_kind`-Menge (`chk_administration_request_kind`,
-// `tools/schema/nacharbeit-administration.sql`): jede der sieben Arten wird
-// angenommen, eine achte endet mit SQLSTATE 23514. Rot färbende Mutationen
-// (je eine): `'set_transformation'` aus der CHECK-Klausel streichen — die Art
-// `set_transformation` endet mit 23514; `'truncate'` in die Klausel
-// aufnehmen — die achte Art wird angenommen.
-func TestAdministrationRequestKindCheckCarriesExactlyTheSevenKinds(t *testing.T) {
+// `tools/schema/nacharbeit-administration.sql`): jede der neun Arten wird
+// angenommen, eine zehnte endet mit SQLSTATE 23514. Rot färbende Mutationen
+// (je eine): `'set_route'` bzw. `'remove_route'` aus der CHECK-Klausel
+// streichen — die Art endet mit 23514; `'truncate'` in die Klausel
+// aufnehmen — die zehnte Art wird angenommen.
+func TestAdministrationRequestKindCheckCarriesExactlyTheNineKinds(t *testing.T) {
 	pool, _ := newTestAdministrationRequestPool(t)
 	ctx := context.Background()
 	const requestID = "kind-check-request"
@@ -733,7 +733,7 @@ func TestAdministrationRequestKindCheckCarriesExactlyTheSevenKinds(t *testing.T)
 			 VALUES ($1, $2, 'public', 'kind_check', $3, 'pending')`, requestID, administrationRequestSource, kind)
 		return err
 	}
-	for _, kind := range []string{"enable", "disable", "exclude_column", "include_column", "backfill", "set_transformation", "remove_transformation"} {
+	for _, kind := range []string{"enable", "disable", "exclude_column", "include_column", "backfill", "set_transformation", "remove_transformation", "set_route", "remove_route"} {
 		if err := insert(kind); err != nil {
 			t.Fatalf("Art %q: erwartet angenommen, %v", kind, err)
 		}
@@ -1028,7 +1028,7 @@ func TestAdministrationRequestSetTransformationAcceptanceSet(t *testing.T) {
 
 // TestAdministrationFunctionsPinSecurityDefinerAndSearchPath bindet die Zusage
 // „`SECURITY DEFINER` mit gepinntem `search_path`“ an den Katalog der realen
-// Instanz: jede der sieben schreibenden Funktionen trägt `prosecdef` und
+// Instanz: jede der neun schreibenden Funktionen trägt `prosecdef` und
 // `proconfig = {search_path=cdc, pg_temp}` (`ADR-0050`).
 // Rot färbende Mutation (Eingabeseite): die Zeile `SET search_path = cdc,
 // pg_temp` einer Funktion in `tools/schema/nacharbeit-administration.sql`
@@ -1041,7 +1041,7 @@ func TestAdministrationFunctionsPinSecurityDefinerAndSearchPath(t *testing.T) {
 		`SELECT coalesce(array_agg(p.proname::text ORDER BY p.proname), '{}')
 		 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
 		 WHERE n.nspname = 'cdc'
-		   AND p.proname IN ('enable_table', 'disable_table', 'exclude_column', 'include_column', 'backfill_table', 'set_transformation', 'remove_transformation')
+		   AND p.proname IN ('enable_table', 'disable_table', 'exclude_column', 'include_column', 'backfill_table', 'set_transformation', 'remove_transformation', 'set_route', 'remove_route')
 		   AND (NOT p.prosecdef OR p.proconfig IS DISTINCT FROM ARRAY['search_path=cdc, pg_temp'])`,
 	).Scan(&unpinned); err != nil {
 		t.Fatalf("Katalog lesen: %v", err)

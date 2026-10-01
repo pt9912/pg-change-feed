@@ -93,7 +93,7 @@ func TestAdministrationRequestColumnEndToEndAgainstPostgreSQL(t *testing.T) {
 
 	deps := administrationDeps{
 		requests:       requests,
-		excludeColumns: excludecolumn.NewExcludeColumnService(columns),
+		excludeColumns: excludecolumn.NewExcludeColumnService(columns, columns),
 		includeColumns: includecolumn.NewIncludeColumnService(columns),
 		assembler:      assembler,
 		log:            &recordingLog{},

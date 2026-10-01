@@ -291,6 +291,54 @@ func ReadTransformationRules(ctx context.Context, exec Executor, statement State
 	return state, nil
 }
 
+// ReadRoutingRules liest den dauerhaften Routing-Regelstand je Tabelle einer
+// Quelle (`LH-FA-CFG-008`): die `applied`-Zeilen der beiden
+// Routing-Antragsarten in der Ordnung der Abfrage (Antrags-Zeitpunkt mit der
+// Antrags-ID als Zweitschlüssel), je Tabelle in `model.FoldRoutes` zum Stand
+// gefaltet — dieselbe Ableitung für den Prozessstart, den Aktivierungs-Zweig
+// und die Konfliktprüfung. Eine Tabelle, deren Regeln alle wieder
+// herausgenommen sind, trägt keinen Eintrag; eine Quelle ohne Routing-Anträge
+// liefert eine leere Map. Jede Tabelle erhält eine eigene, frisch gefaltete
+// Liste. Eine Zeile, deren Regelform nicht mehr zu einer Regel führt, endet
+// als Fehler.
+func ReadRoutingRules(ctx context.Context, exec Executor, statement Statement) (map[string][]model.RouteRule, error) {
+	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)
+	if err != nil {
+		return nil, statement.fail(err)
+	}
+	defer rows.Close()
+
+	byTable := make(map[string][]model.RouteRecord)
+	order := make([]string, 0)
+	for rows.Next() {
+		var schema, table, kind, name, spec string
+		if err := rows.Scan(&schema, &table, &kind, &name, &spec); err != nil {
+			return nil, statement.fail(err)
+		}
+		qualified := schema + "." + table
+		if _, seen := byTable[qualified]; !seen {
+			order = append(order, qualified)
+		}
+		byTable[qualified] = append(byTable[qualified], model.RouteRecord{
+			Kind: model.AdministrationRequestKind(kind), Name: name, Spec: spec,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, statement.fail(err)
+	}
+	state := make(map[string][]model.RouteRule, len(order))
+	for _, qualified := range order {
+		rules, err := model.FoldRoutes(byTable[qualified])
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", qualified, err)
+		}
+		if len(rules) > 0 {
+			state[qualified] = rules
+		}
+	}
+	return state, nil
+}
+
 // ReadSourceColumns liest die Spaltennamen einer Tabelle in der Ordnung der
 // Abfrage (Reihenfolge der Tabelle); eine Tabelle ohne Spalten im Katalog
 // liefert die leere Liste.
@@ -374,8 +422,8 @@ func ReadTableSchema(ctx context.Context, exec Executor, versionID model.SchemaV
 // eine Zeile außerhalb der Antrags-Invarianten steht als `Rejected` mit ihrer
 // Kennung und dem Fehlertext der Spec (`SPEC-019`) an ihrer Stelle der
 // Ordnung. Die Lesung endet nur bei einem Fehler der Anfrage, des Scans oder
-// der Iteration. Regelname und Regelform der beiden
-// Transformations-Antragsarten gehören nicht zu den Invarianten des
+// der Iteration. Regelname und Regelform der vier Regel-Antragsarten
+// (Transformation und Routing) gehören nicht zu den Invarianten des
 // Konstruktors: eine Zeile mit leerem Regelnamen oder leerer Regelform ist
 // ein Antrag, den der Use Case mit dem Fehlertext der Spec ablehnt.
 func ReadPendingRequests(ctx context.Context, exec Executor, statement Statement) ([]outbound.PendingAdministrationRequest, error) {
