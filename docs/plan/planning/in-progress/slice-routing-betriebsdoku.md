@@ -185,7 +185,7 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
   ohne Ziel, ein Backfill-Run trägt das Ziel des Regelstands zum Run (`origin = 'backfill'`).
   Messbare Stelle im Test: `git grep -n "ROUTING-" -- test/integration/routing_e2e_test.go`.
 
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (A): der Abschnitt „Routing-Regel
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (A): der Abschnitt „Routing-Regel
       konfigurieren" steht im Abschnitt „Aufgaben"; jedes SQL-Beispiel ist unter der
       genannten Rolle (`cdc_admin`) gegen die Compose-Umgebung ausgeführt worden, die
       gedruckte Antwort steht im Bericht
@@ -194,15 +194,25 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
       von `slice-routing-e2e`, übernommen aus der Spec, oder als erwartet gekennzeichnet);
       der DELETE-Hinweis nennt die Menge der Messung (PostgreSQL-Versionen und Fälle).
       *Zu belegen durch:* Lesen des Abschnitts gegen den Bericht von `slice-routing-e2e`,
-      Ausführen der Beispiele, `make docs-check`.
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) und
+      Ausführen der Beispiele, `make docs-check`. *Beleg:* Beispiel, `GET /changes?target=`,
+      R-Tabelle (neun von zehn Zeilen), Formprüfungen, `order`-Grenze, DELETE und Backfill
+      vom Verifier am System gefahren, gedruckte Ausgabe im
+      [Verifikations-Report](../../../reviews/verifikation-slice-routing-betriebsdoku.md) §2
+      (Implementer und Reviewer fuhren das Beispiel unter `cdc_admin`/`cdc_reader` ebenfalls);
+      die R4-Zeile „höchste `order`“ ist nicht gefahren und im Handbuch als Text der Spec
+      gekennzeichnet; Ursprung je Aussage im Handbuch (übernommen aus dem E2E-Lauf mit
+      Verweis auf dessen Verifikations-Report; die Phase „Routing-Nichtanwendbarkeit“ ist
+      dort nur an PostgreSQL 17.11 vom Verifier gedruckt, 18.6 übernommen).
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) und
       [`LH-FA-SST-006`](../../../../spec/lastenheft.md) (B): die Abschnitte zu den
       Zugriffswegen nennen `target` und das NATS-Subjekt, „Änderungen lesen" die Spalte
       `route_target`; die Aussage zu Altservern und die Kosten-Aussage stehen mit ihrem
       Ursprung; was für die SDK-Packages gilt, steht als „folgt mit den SDK-Packages"
       oder gar nicht, bis `slice-routing-sdk-beispiel-target` es einlöst.
-      *Zu belegen durch:* Lesen, `make docs-check`, Suchlauf in §3.
-- [ ] (C): die Zeile `schema` der Fehlerklassen-Tabelle und der Abschnitt „Neustart nach
+      *Zu belegen durch:* Lesen, `make docs-check`, Suchlauf in §3. *Beleg:* Verifikations-Report
+      §3 Zeilen 2 bis 4 und §4; die SDK-Abschnitte tragen „folgt mit dem Package“; die Kosten-Spanne
+      nennt nur Einzelwerte aus verlinkten Berichten (V-1 nachgezogen).
+- [x] (C): die Zeile `schema` der Fehlerklassen-Tabelle und der Abschnitt „Neustart nach
       einem Fehler" nennen die nicht anwendbare Routing-Regel (Pfad nach Messung von
       `slice-routing-e2e`); der Routing-Fehlerblock trennt nach
       [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
@@ -214,26 +224,38 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
       soweit die Spec eine Grenze sagt; die Handbuch-Version (Kopfzeile) und die
       Änderungshistorie tragen die nächste Zeile (Parent: Version 1.83, gemessen).
       *Zu belegen durch:* `make docs-check`; die Historie-Zeile zeigt die Version der
-      Kopfzeile (`BEO-PGC/handbuch-versionshistorie-uebersprungen`).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      Kopfzeile (`BEO-PGC/handbuch-versionshistorie-uebersprungen`). *Beleg:* Verifikations-Report
+      §3 Zeilen 5 und 6 (Kopfzeile `Version: 1.84`, Historienzeile 1.84 als letzte Zeile hinter 1.83).
+      Eine Anleitung zur Abhilfe der inkompatiblen Schemaänderung (Ursache 2) steht nicht im Handbuch
+      und wird nicht versprochen; benannte Hinnahme, Adresse
+      `BEO-PGC/kein-admin-weg-schema-fehler-recovery` (§6).
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+      Self-Review (Modul 8). *Beleg:* Review
+      [`review-slice-routing-betriebsdoku`](../../../reviews/review-slice-routing-betriebsdoku.md)
+      (3 LOW, 2 INFO, kein HIGH/MEDIUM) und Verifier-Gegenprüfung der Fixrunde
+      [`verifikation-slice-routing-betriebsdoku`](../../../reviews/verifikation-slice-routing-betriebsdoku.md)
+      (Wahrheitsprobe am System ausgeführt, einschließlich „beide Regeln entfernen, Neustart: Fehler
+      bleibt“). Es gab **kein separates Re-Review** der Fixrunde: die Fixrunde änderte nur
+      Handbuchtext, und ein anderer Kontext hat ihre neue Tatsachenaussage ausgeführt — engere Fassung
+      von `BEO-PGC/fixrunde-ohne-reviewer-lesung`.
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-routing-betriebsdoku.md`
       endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: der Slice **ist** das Doku-Update des Handbuchs; `README.md` im
-      Repo-Wurzelverzeichnis nur, soweit der Suchlauf eine bewegte Beschreibung findet.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Doku-Update: der Slice **ist** das Doku-Update des Handbuchs; `README.md` im
+      Repo-Wurzelverzeichnis nur, soweit der Suchlauf eine bewegte Beschreibung findet
+      (der Suchlauf fand keine, siehe Feld in §3).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
-      Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+      Antwort und wird in §7 notiert (§7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
@@ -323,35 +345,138 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   (`BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft`, offen, 3×; Ausgang beim
   Lese-Schritt der Welle-Closure). — **Ausgang:** bei der Closure einzutragen (das
   Handbuch verweist je Sachverhalt auf die führende Stelle, statt Texte zu
-  wiederholen).
+  wiederholen). — **Ausgang: weiter offen.** Das Handbuch wiederholt die zehn Fehlertexte der
+  R-Tabelle mit ihrer Adresse und verweist für Wortlaut und Reihenfolge auf `SPEC-019`; neun der
+  zehn Zeilen sind vom Verifier am System gegen den Text gehalten (Verifikations-Report §2), die
+  zehnte (R4 „höchste `order`“) ist als nicht gefahren gekennzeichnet. Die Drift-Klasse selbst
+  bleibt beim Register (`BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft`, offen, 3×);
+  Adresse: Lese-Schritt der Closure von [welle-routing](../welle-routing.md).
 - **Beispiele unter der falschen Rolle.** Ein SQL-Beispiel, das unter `cdc_admin`
   läuft, aber ohne Rollenangabe dasteht, scheitert beim Leser
   (`BEO-PGC/handbuch-beispiel-nicht-unter-genannter-rolle-lauffaehig`). — **Ausgang:**
-  bei der Closure einzutragen (Beispiele gelaufen, gedruckte Zeile).
+  bei der Closure einzutragen (Beispiele gelaufen, gedruckte Zeile). — **Ausgang: entfallen.**
+  Das Beispiel lief unter einer Login-Identität mit `cdc_admin` (Anträge) und einer mit
+  `cdc_reader` (Lesen); der Verifier wiederholte es in einer eigenen Wegwerf-Umgebung mit
+  gedruckter Tabelle der Zeilen 1 bis 6, identisch mit dem Handbuch (Verifikations-Report §2).
 - **Aussage ohne Messung.** Die DELETE-Aussage, die Altserver-Aussage und die
   Kosten-Aussage sind Erwartungen, bis ihr Slice sie belegt hat
   (`BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`, verkörpert, 11×). —
   **Ausgang:** bei der Closure einzutragen (jede Aussage mit Ursprung: gemessen,
-  übernommen, abgeleitet, erwartet).
+  übernommen, abgeleitet, erwartet). — **Ausgang: teils entfallen, teils weiter offen, je
+  Aussage mit Beleg-Anker.** *Entfallen (gemessen von Reviewer und Verifier selbst):* Beispiel,
+  `GET /changes?target=`, neun R-Zeilen, Formprüfungen, `order`-Grenze, DELETE ohne volle
+  Replica-Identität und Backfill-Label, Ursache 2 samt „beide Regeln entfernen, Neustart: Fehler
+  bleibt“ (Verifikations-Report §2). *Übernommen, im Handbuch so gekennzeichnet:* die
+  E2E-Phase „Routing-Nichtanwendbarkeit und Abhilfe“ ist im Verifikations-Report von
+  `slice-routing-e2e` nur an PostgreSQL 17.11 vom Verifier gedruckt; PostgreSQL 18.6 ist Lauf des
+  Implementers und der `e2e.yml`-Legs (V-3, Handbuch auf diese Aussage berichtigt); gRPC-/SSE-/
+  NATS-Zielauswahl aus dem E2E-Verifikations-Report. *Durch Unit-Tests belegt, am System nicht
+  gefahren:* die Backfill-Run-Fälle (Wechsel des Standes, nicht anwendbare Regel). *Weiter offen
+  (nicht gefahren):* R4 „höchste `order`“ (V-4, Text der Spec; Adresse: ein Lauf, der diese
+  Zeile am System erzeugt, wenn ein Folge-Zug das Handbuch berührt). *Hergeleitet, weiter
+  hergeleitet:* Altserver-Verhalten der Lesewege, Schlüsselspalten-Bedingung bei `DELETE`,
+  „Regel zusätzlich entfernen“ bei Ursache 2, die Abhilfe (a) nach `ADR-0140` Entscheidung 2.
+  *Weiter offen (Lücke, benannte Hinnahme, V-2):* die Abhilfe der inkompatiblen Schemaänderung
+  ist im Handbuch nicht beschrieben (das Handbuch sagt es, ohne Versprechen); Adresse:
+  `BEO-PGC/kein-admin-weg-schema-fehler-recovery` (offen, jetzt 2×).
+- **Ursprung nicht auflösbar (V-1, Review F-1).** Die Kosten-Spanne trug ihren Ursprung als
+  „gemessen und abgeleitet in diesem Handbuch-Zug“ und „Berichte der Umsetzung“. — **Ausgang:
+  eingetreten und behoben:** das Handbuch nennt die Spanne als Spanne mehrerer Läufe ohne
+  Schwelle und führt nur die Einzelwerte, die in den verlinkten, committeten Berichten des
+  Quell-Slice stehen; alle anderen Einzelzahlen sind entfernt. Register:
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (neue Form, siehe §7).
 - **Handbuch nicht nachgezogen / Historie übersprungen**
   (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`, 3×;
   `BEO-PGC/handbuch-versionshistorie-uebersprungen`, 3×; beide verkörpert). —
-  **Ausgang:** bei der Closure einzutragen.
+  **Ausgang: entfallen.** Version 1.84 in Kopfzeile und als letzte Historienzeile hinter
+  1.83; der Suchlauf-Block ist nachgemessen (`make suchlauf-nachmessen`, Exit 0) und trägt
+  Gefundenes wie Nichtgefundenes je Träger.
 - **Zwischenzeit mit den SDK-Packages.** Zwischen diesem Slice und
   `slice-routing-sdk-beispiel-target` beschreibt das Handbuch `target` am Roh-Weg, die
-  SDK-Abschnitte nicht. — **Ausgang:** bei der Closure einzutragen (Suchlauf-Zeile 5;
-  Nachzug dort).
+  SDK-Abschnitte nicht. — **Ausgang: weiter offen.** Die drei SDK-Stellen (C#, Kotlin, Python)
+  tragen „zwei optionale Parameter `schema`/`table`“ und „das Feld `target` folgt mit dem
+  Package“; Nachzug: [slice-routing-sdk-beispiel-target](../open/slice-routing-sdk-beispiel-target.md)
+  (Suchlauf-Zeile 5 in §3).
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
-
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** Das Handbuch 1.84 beschreibt die Routing-Konfiguration für
+  Betreiber: Abschnitt „Routing-Regel konfigurieren“, `target` an den Roh-Wegen, das
+  Zusatz-Subjekt, die Spalte `route_target`, die Fehlerklasse `schema` in zwei Ursachen. Die
+  Wahrheitsproben sind von Reviewer und Verifier **selbst** gefahren (Wegwerf-Umgebung, Beispiel
+  unter `cdc_admin`/`cdc_reader`, neun R-Zeilen, `GET /changes?target=`, Ursache 2 einschließlich
+  „beide Regeln entfernen, Neustart: Fehler bleibt“); die Implementer-Beispiele sind in dieser
+  Form **übernommen**, der Verifier hat sie wiederholt (Verifikations-Report §2). Der
+  Verifier-Lauf ergab: DoD getragen, kein HIGH/MEDIUM.
+- **Was ging anders als geplant:** Eine Fixrunde (`e465ca1c`) zu drei LOW und zwei INFO des
+  Reviews (Ursache-Zuordnung bei der Publication mit Spaltenliste, Ursprungs-Anker, Adressliste,
+  Test- und Dateinamen in Betreiber-Prosa). Ein separates Re-Review gab es nicht: die Fixrunde
+  änderte nur Handbuchtext, ein anderer Kontext (der Verifier) hat ihre neue Tatsachenaussage am
+  System ausgeführt (engere Fassung von `BEO-PGC/fixrunde-ohne-reviewer-lesung`). Nach der
+  Verifikation blieben zwei Formpunkte, in dieser Closure gezogen: **V-1** (Ursprung der
+  Kosten-Spanne nicht auflösbar: nur noch Einzelwerte mit verlinktem Bericht, „Handbuch-Zug“
+  und „Berichte der Umsetzung“ entfernt), **V-3** (Ursache 1 nannte „17.11 und 18.6“ als
+  gemessen; der E2E-Verifikations-Report druckt die Phase nur für 17.11, 18.6 steht als
+  Lauf des Implementers und der `e2e.yml`-Legs, übernommen). **V-2** (Abhilfe der inkompatiblen
+  Schemaänderung fehlt im Handbuch) ist eine Vorbestands-Lücke und als benannte Hinnahme geführt
+  (§6); das Handbuch sagt sie ausdrücklich. **V-4** (R4-Zeile nicht gefahren) steht im Handbuch
+  als „Text der Spec, am System nicht gefahren“. V-5 war der Stand der Platzhalter dieser Notiz.
+  Die Handbuch-Version bleibt 1.84; die Historienzeile trägt die Nachzüge.
+- **Steering-Loop-Eintrag:** geschärfte Regel, kein neuer Sensor (`AGENTS.md` §3.12, Ursprung
+  als Anker): **In einem Betreiber-Handbuch ist ein Ursprung nur so viel wert, wie der Leser ihn
+  auflösen kann.** „Gemessen in diesem Handbuch-Zug“ oder „aus den Berichten der Umsetzung“
+  ist kein Anker, weil der Leser den Zug nicht kennt und die gedruckte Zeile in keinem
+  committeten Report steht. Die Handlung des Planners beim Schreiben: pro Zahl den
+  **committeten, verlinkten** Report nennen, in dem die gedruckte Zeile steht, oder keine
+  Einzelzahl nennen und die Spanne als Spanne führen. Zweitens: Wahrheitsproben (Reviewer,
+  Verifier) fuhren die Aussagen selbst, die Implementer-Beispiele sind **übernommen**; ein
+  Handbuch darf eine Messung des Quell-Slice nur so weit zusammenfassen („beide Versionen“),
+  wie dessen Report sie trägt (V-3). §3.7: keine Chronik-Sprache im Handbuch; „Handbuch-Zug“ und
+  „Review, Fixrunde, Verifikation“ waren Prozess-Vokabular und sind entfernt. Träger: die
+  Lese-Handlung des Reviewers (HIGH-Punkt „Zahl im Träger ohne Ursprung“) und der Verifier;
+  keine neue Regel im Text von `AGENTS.md`, nichts neu verkörpert.
+- **Beobachtungs-Register (`../observations/`):** zwei Dateien, ein Vermerk, zwei
+  Deckel-Entscheidungen:
+  - **`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`** (verkörpert, Deckel bei 23×):
+    `evidence/slice-routing-betriebsdoku.md`, Zähler **28×** → **29×** (`ls evidence | wc -l`).
+    Datei trotz Deckel und trotz Schwere LOW, weil es eine **neue Form** ist: der Ursprung ist
+    genannt, aber für den Leser nicht auflösbar (V-1, Review F-1); die bisherigen Formen
+    sind Zahl ohne Ursprung und Zahl gegen die Messung. Gefunden von Reviewer und Verifier
+    vor dem Merge.
+  - **`BEO-PGC/kein-admin-weg-schema-fehler-recovery`** (offen, Ausgang weiter offen):
+    `evidence/slice-routing-betriebsdoku.md`, Zähler **1×** → **2×** (V-2: die Abhilfe der
+    inkompatiblen Schemaänderung fehlt im Handbuch, am System nur durch Verwerfen des Slots
+    erholt); die benannte Hinnahme dieses Slice hat hier ihre Adresse.
+  - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×): **sechster Gegenbeleg, keine
+    Datei.** Der Verifier hat die Fixrunde ausgeführt (Wahrheitsprobe am System); die engere
+    Fassung trägt auch diesen Fall. Im `state.md` vermerkt, der Ausgang bleibt beim Lese-Schritt
+    der Closure von [welle-routing](../welle-routing.md).
+  - **Deckel, keine Datei:** Review F-2 (LOW; das Handbuch ordnete den Fall „Publication mit
+    Spaltenliste bei bekannter Spaltenform“ der falschen Ursache zu, am System vom Reviewer
+    gefahren) trifft `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (verkörpert,
+    Deckel bei 10×): vor dem Merge von einem Leser gefunden, ≤ LOW, bekannter Träger-Typ
+    (Aussage über den Gegenstand breiter als ihre Messung); steht hier mit Finding-Kennung.
+    Review F-3 bis F-5 (LOW, INFO: Transformations-Fehlerblock, Adresse des unbekannten
+    Schlüssels, Test- und Dateinamen in Betreiber-Prosa) sind Träger-Nachzüge im Slice und
+    haben keinen Eintrag.
+- **Folge-Slices:** keine neuen. Übergabe ohne neuen Slice:
+  [slice-routing-sdk-beispiel-target](../open/slice-routing-sdk-beispiel-target.md) (SDK-Abschnitte,
+  Beispiel-Flags) und [slice-routing-sdk-realserver-e2e](../open/slice-routing-sdk-realserver-e2e.md).
+- **Risiken aus §6:** Zwei Quellen **weiter offen** (Register, Lese-Schritt der Welle-Closure);
+  Beispiele unter falscher Rolle **entfallen**; Aussage ohne Messung **teils entfallen, teils
+  weiter offen** (R4 „höchste `order`“ nicht gefahren; Altserver, Schlüsselspalte bei `DELETE` und
+  Abhilfe (a) hergeleitet; Abhilfe der inkompatiblen Schemaänderung nicht beschrieben, V-2);
+  Ursprung nicht auflösbar **eingetreten und behoben**; Handbuch nicht nachgezogen/Historie
+  **entfallen**; Zwischenzeit mit den SDK-Packages **weiter offen** (Adresse
+  `slice-routing-sdk-beispiel-target`).
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+  Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der
+  Lerneintrag verkörpert nichts neu; (b) Folge-Slice: der genannte Plan liegt als Datei in
+  `open/`; (c) Register: die genannten Kennungen existieren als Verzeichnis, jede trägt ein
+  nicht leeres `evidence/`.
+- **Validator (Modul 8):** entfällt — die SDK-Abschnitte stehen noch aus, das Routing ist für
+  Betreiber erst mit ihnen als Ganzes nutzbar; der Nutzer-Bedarf
+  ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md)) wird erst durch den Wellen-Beleg validierbar.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

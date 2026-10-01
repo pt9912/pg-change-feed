@@ -37,7 +37,13 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **28×** (evidence/slice-harness-baseline-v6-13-0.md —
+Zähler (abgeleitet): **29×** (evidence/slice-routing-betriebsdoku.md —
+neue Form, LOW (Verifikation V-1, Review F-1): der Ursprung ist genannt, aber für
+den Leser des Handbuchs nicht auflösbar („gemessen und abgeleitet in diesem
+Handbuch-Zug“, Berichte ohne Link, eine gedruckte Zeile in keinem committeten
+Report); das Handbuch nennt jetzt nur Werte mit verlinktem Bericht, Datei trotz
+Deckel wegen der neuen Form;
+evidence/slice-harness-baseline-v6-13-0.md —
 Diff-Umfang „36/9/19" gegen gemessen 35/8/20 im selben Bericht, dessen
 Fundtabelle 8 geänderte Templates nannte; korrigiert durch `9f1eb320`, HIGH;
 evidence/slice-sdk-public-doc-check-gate.md —

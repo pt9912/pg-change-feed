@@ -574,7 +574,7 @@ schließt Mehrdeutigkeit aus, statt sie aufzulösen:
 | R3 — `when.column` ist keine ausgeschlossene Spalte | `Spalte ist ausgeschlossen: public.orders.name` |
 | R3 — umgekehrt: `cdc.exclude_column` gegen eine Spalte mit Routing-Bedingung | `Spalte trägt eine Routing-Bedingung: public.orders.region` |
 | R4 — höchstens eine Abschlussregel (ohne `when`) | `Regel ohne when bereits vorhanden: public.orders.rest` |
-| R4 — die Abschlussregel trägt die höchste `order` | `Regel ohne when trägt nicht die höchste order: public.orders.rest` |
+| R4 — die Abschlussregel trägt die höchste `order` | `Regel ohne when trägt nicht die höchste order: public.orders.rest` (Text der Spec, am System nicht gefahren) |
 | R4 — eine Regel mit `when` trägt keine höhere `order` als die Abschlussregel | `order liegt hinter der Regel ohne when: public.orders.rest` |
 | R5 — das Paar (`when.column`, `when.equals`) kommt je Tabelle einmal vor | `Bedingung bereits vergeben: public.orders.region` |
 | R6 — `cdc.remove_route` gegen einen unbekannten Regelnamen | `Regelname nicht geführt: public.orders.nope` |
@@ -604,9 +604,10 @@ bekannte Spaltenform der Tabelle eine Entfernung zeigt. Das entsteht bei der
 Erstaktivierung einer Tabelle ohne bekannte Spaltenform (die Version der Tabelle
 trägt noch keine Spaltenzeilen), etwa mit einer Publication mit Spaltenliste, die
 die Bedingungsspalte nicht enthält (*Ursprung:* übernommen aus dem E2E-Lauf von
-`make test-integration` (Verifikations-Report
-[`verifikation-slice-routing-e2e`](../reviews/verifikation-slice-routing-e2e.md)),
-Phase „Routing-Nichtanwendbarkeit und Abhilfe", PostgreSQL 17.11 und 18.6). Eine
+`make test-integration`, Phase „Routing-Nichtanwendbarkeit und Abhilfe";
+gemessen an PostgreSQL 17.11 im Verifikations-Report
+[`verifikation-slice-routing-e2e`](../reviews/verifikation-slice-routing-e2e.md);
+PostgreSQL 18.6: Lauf des Implementers und der `e2e.yml`-Legs, dort übernommen). Eine
 Publication mit Spaltenliste an einer Tabelle **mit** bekannter Spaltenform
 gehört nicht hierher, sondern zu Ursache 2. Die Erfassung der **gesamten Quelle** endet sichtbar
 mit der Klasse `schema` (siehe [Fehlerklassen](#fehlerklassen)): der Log nennt
@@ -653,7 +654,8 @@ dort am System gefahren). Die Abhilfe dieser
 Ursache ist die der inkompatiblen Schemaänderung (`LH-FA-SCH-003`,
 `LH-FA-SCH-004`); zusätzlich ist die Regel auf die entfernte oder nicht mehr
 gelieferte Spalte zu entfernen, sonst endet die Erfassung danach an der fehlenden
-Bedingungsspalte (*hergeleitet*).
+Bedingungsspalte (*hergeleitet*). Eine Anleitung zur Abhilfe der inkompatiblen
+Schemaänderung ist in diesem Handbuch nicht beschrieben.
 
 **Im Backfill:** Ein Run (siehe [Bestand als Backfill
 überführen](#bestand-als-backfill-überführen)) prüft dieselbe Anwendbarkeit gegen
@@ -2135,16 +2137,17 @@ die andere nicht. Backfill-Changes gehen auf keines der beiden Subjekte (siehe
 **Kosten der zweiten Veröffentlichung:** Die Zeit für `publish` samt Flush zum
 Server (je 10.000 Changes, Median von fünf Durchgängen, ohne Abonnent,
 Testcontainer-NATS, `make test-notify`) lag mit Ziel-Veröffentlichung beim
-0,92- bis 1,30-fachen der Zeit ohne. *Ursprung:* sechs Läufe; gemessen und
-abgeleitet in diesem Handbuch-Zug: gedruckte Zeile „ohne Ziel 19.656453ms
-(508739 Changes/s), mit Ziel 20.129363ms (496787 Changes/s)", Verhältnis 1,02
-(abgeleitet); übernommen aus den Berichten der Umsetzung und ihrer Prüfung: 1,16
-und 1,30 (zwei Läufe der Umsetzung, abgeleitet aus „ohne Ziel 18.242683ms, mit
-Ziel 21.239865ms" bzw. „ohne Ziel 17.479304ms, mit Ziel 22.739539ms"), 1,05,
-1,14 und 0,92 (Review, Fixrunde, Verifikation). Ein Aufschlag ist an diesem
-Messaufbau nicht auflösbar — die Verhältnisse liegen im Rauschen. Die Messung
-hat keine Schwelle und deckt die Verteilung an Abonnenten nicht ab; eine
-Last-Zusage folgt daraus nicht.
+0,92- bis 1,30-fachen der Zeit ohne (Spanne mehrerer Läufe am Testcontainer,
+ohne Schwelle; das Verhältnis ist aus den gedruckten Zeiten *abgeleitet*).
+*Ursprung:* übernommen; auflösbar sind die Einzelwerte im
+[Review-Bericht](../reviews/review-slice-routing-nats-subjekt.md) (1,05; dort
+auch die Werte 1,16 und 1,30 genannt) und im
+[Verifikations-Bericht](../reviews/verifikation-slice-routing-nats-subjekt.md)
+(gedruckte Zeile „ohne Ziel 20.856066ms (479477 Changes/s), mit Ziel 19.271615ms
+(518898 Changes/s)", Verhältnis 0,92). Weitere Läufe nennt dieses Handbuch nicht
+einzeln. Ein Aufschlag der zweiten Veröffentlichung ist an diesem
+Messaufbau nicht auflösbar. Die Messung hat keine Schwelle und deckt die
+Verteilung an Abonnenten nicht ab; eine Last-Zusage folgt daraus nicht.
 
 **Zustellsemantik:** Core NATS, Fire-and-Forget, kein Replay — dieselbe
 Zusicherung wie gRPC und SSE, auch für das Zusatz-Subjekt: ein nicht
@@ -2754,4 +2757,4 @@ MIT — siehe `LICENSE`.
 | 1.81 | 2026-09-28 | Kotlin-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-kotlin-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene `suspend fun`-Methode, `PgChangeFeedGrpcClient.streamChanges()` nimmt die optionalen `schema`/`table`-Parameter jetzt entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `pgchangefeed-kotlin` jetzt namentlich statt als offenen Folge-Schritt — mit dieser Zeile ist die Drei-Sprachen-SDK-Matrix für die gRPC-Verwaltungs-API vollständig |
 | 1.82 | 2026-09-30 | „Neustart nach einem Fehler": begrenzte Wiederholung der Klasse `transient` im Capture-Pfad (`ADR-0135`) ergänzt — Rücksetzung der Episode nach einem Zyklus von mindestens 30 s, WARN mit Versuchszähler und INFO bei Fortsetzung, keine Wiederholung bei Berechtigungsfehlern und Server-Abweisungen; Fehlerklassen-Tabelle nennt `transient` und `permission` als im Erfassungspfad beobachtbar |
 | 1.83 | 2026-09-30 | „Neustart nach einem Fehler“ (`ADR-0136`): „gestreamt“ heißt ab Bestätigung von `START_REPLICATION` (Rücksetzung nach mindestens 30 s Streaming, der Aufbau zählt nie), der Aufbau eines Zyklus hat eine Frist von 30 s, das INFO der Fortsetzung folgt dem Streaming-Beginn, die wiederholte Fehlermenge steht als SQLSTATE-Auswahl (Klassen 08, 40, 53, 55, 57, 58 und 25006), jede andere Server-Abweisung endet sofort |
-| 1.84 | 2026-10-01 | Routing von Changes auf Zustellziele dokumentiert (`LH-FA-CFG-008`, `LH-FA-SST-006`, `ADR-0137`, `ADR-0138`, `ADR-0139`, `ADR-0140`, `ADR-0141`, slice-routing-betriebsdoku): §4 neuer Abschnitt „Routing-Regel konfigurieren“ (Voraussetzung `cdc_admin`, `cdc.set_route`/`cdc.remove_route`, Form der `rule_spec`, ausgeführtes Beispiel, R1–R6 mit Fehlertexten, die Fehlerklasse `schema` mit zwei Ursachen und der Abhilfe, „Ziel lesen“, Hinweise zu festem Label, Change ohne Treffer, abwesendem Wert, `DELETE` ohne volle Replica-Identität, Auswahl statt Zugriffsschutz); die Zugriffswege (HTTP, gRPC-Stream, gRPC-Verwaltungs-API `ReadChanges`, SSE) nennen den Filter `target`, der NATS-Vollinhalts-Stream das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>` samt Kosten-Messung, „Änderungen lesen“ die Spalte `route_target`; Fehlerklassen-Zeile `schema`, „Neustart nach einem Fehler“, Rollen-Tabelle, Glossar, „Grenzwerte“ und „Schema aktualisieren“ nachgezogen; der Fehlerblock der Transformationsregeln trennt die entfernte Spalte von der nicht anwendbaren Regel; die Fehlerklasse `schema` ordnet eine Publication mit Spaltenliste an einer Tabelle mit bekannter Spaltenform der Ursache 2 zu, und übernommene Messungen nennen ihren Bericht |
+| 1.84 | 2026-10-01 | Routing von Changes auf Zustellziele dokumentiert (`LH-FA-CFG-008`, `LH-FA-SST-006`, `ADR-0137`, `ADR-0138`, `ADR-0139`, `ADR-0140`, `ADR-0141`, slice-routing-betriebsdoku): §4 neuer Abschnitt „Routing-Regel konfigurieren“ (Voraussetzung `cdc_admin`, `cdc.set_route`/`cdc.remove_route`, Form der `rule_spec`, ausgeführtes Beispiel, R1–R6 mit Fehlertexten, die Fehlerklasse `schema` mit zwei Ursachen und der Abhilfe, „Ziel lesen“, Hinweise zu festem Label, Change ohne Treffer, abwesendem Wert, `DELETE` ohne volle Replica-Identität, Auswahl statt Zugriffsschutz); die Zugriffswege (HTTP, gRPC-Stream, gRPC-Verwaltungs-API `ReadChanges`, SSE) nennen den Filter `target`, der NATS-Vollinhalts-Stream das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>` samt Kosten-Messung, „Änderungen lesen“ die Spalte `route_target`; Fehlerklassen-Zeile `schema`, „Neustart nach einem Fehler“, Rollen-Tabelle, Glossar, „Grenzwerte“ und „Schema aktualisieren“ nachgezogen; der Fehlerblock der Transformationsregeln trennt die entfernte Spalte von der nicht anwendbaren Regel; die Fehlerklasse `schema` ordnet eine Publication mit Spaltenliste an einer Tabelle mit bekannter Spaltenform der Ursache 2 zu, und übernommene Messungen nennen ihren Bericht; die Kosten-Spanne der zweiten Veröffentlichung nennt nur Einzelwerte mit verlinktem Bericht, die R4-Zeile „höchste `order`“ ist als am System nicht gefahren gekennzeichnet, und die Abhilfe der inkompatiblen Schemaänderung ist als im Handbuch nicht beschrieben benannt |
