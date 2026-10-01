@@ -162,6 +162,19 @@ Konjunktion, ein ungefilterter Leser sieht weiterhin alle Changes. Drei Liefer-P
 | `proto/cdc/stream/v1/changestream.proto` und `proto/cdc/administration/v1/administration.proto` (`string target = 7`), `gen/cdc/**` | update (Erzeugnis) | additive Felder; `make proto-generate`, Prüfung `make generated-sync`. |
 | `internal/adapters/driving/http/*_test.go`, `internal/adapters/driving/grpc/*_test.go`, `internal/domain/model/change_test.go`, `internal/adapters/driven/postgresstorage/*_test.go` | update | Happy/Boundary/Negative je Weg, Konjunktion, Regression ohne Parameter. |
 
+Festlegungen der Umsetzung (nicht im ursprünglichen Plan; hier vor dem Sensor-Lauf nachgezogen):
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `MatchesFilter(schema, table, target string)` | Form | eine Funktion, drei Textargumente (kein Filter-Wert-Typ): beide Stream-Handler rufen sie mit dem Ziel; ein leeres Ziel wählt nicht aus, ein gesetztes vergleicht gleich mit `RouteTarget`. |
+| `outbound.ChangeQuery.Target`, `inbound.ReadChangesQuery.Target` | update | das Ziel als Textfeld an beiden Typen (Port-Typ und Query-Typ); der Store reicht es als `$6` (`textArgument`), `LIMIT` wandert auf `$7`. |
+| `internal/application/usecase/readchanges/service.go` | update | die Alphabet-Prüfung (`model.IsValidRouteTarget`) steht **nach** der Prüfung der Quelle und **vor** dem Port-Aufruf: ein ungültiges Ziel antwortet mit der leeren, gesetzten Liste, ein leeres `Source` bleibt ein Fehler. Folge: ein ungültiges Ziel zusammen mit einem invertierten Bereich oder einem Limit unter 1 liefert leer statt `ErrRangeInverted`/`ErrNonPositiveLimit` (der Port-Kontrakt läuft nicht) — gemeldet im Bericht, nicht entschieden. |
+| `internal/bootstrap/readchanges_paritaet_test.go` | neu | die Aussage „der RPC sieht dasselbe wie `GET /changes`" braucht den echten Use Case und beide Adapter in einem Test; ein Adapter-Paket darf den Use Case nicht importieren (`.a-check.yml`), die Composition Root darf es. Der Store ist ein Fake mit der Gleichheits-Auswahl der Lese-Anweisung und einem Aufruf-Zähler. Der gRPC-Server läuft auf einer Loopback-Adresse (`--network none` trägt Loopback). |
+| `gen/cdc/stream/v1/changestream_test.go`, `gen/cdc/administration/v1/administration_test.go` | update | Getter `GetTarget` auf dem Nullwert und gesetzt; Draht-Bytes der Felder 3 bzw. 7 (feste Bytes), Lesen ohne das Feld, Lesen mit einem dem Empfänger unbekannten Feld — gemessen an der Protobuf-Bibliothek dieses Repos, nicht an einem ausgelieferten Altserver. |
+| `internal/application/usecase/capture/service_test.go` | update | Lesen der Strecke vom Assembler (`WithRouteTarget` am Change, `replication/mapper/mapper.go`) über `CaptureService` (`tx.Changes()`) zum `ChangeStreamPort`: dieselbe Change mit demselben `RouteTarget` (Risiko „Kommt das Label an den Handler?" in §6); Test mit gesetztem und leerem Label. |
+| `tools/harness/grpcadminclient/main.go` | update | das Ziel ist ein **Flag** `-target` vor den elf Positionsargumenten (leer = kein Filter): der Aufrufer `tools/harness/run-integration-tests.sh` bleibt unverändert; die Nutzung im E2E-Lauf trägt `slice-routing-e2e`. |
+| `tools/harness/grpcclient`, `tools/harness/sseclient` | nicht geändert | die Wegwerf-Clients der Streams tragen nur `schema`/`table`; das Ziel am Stream-Beleg am laufenden System gehört `slice-routing-e2e` (gemeldet). |
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Stream- und
 Lese-Anfragen tragen `schema` und `table` als einzige Filter"; Parent ist `30fd6cb5`;
 der Implementer ergänzt die `diff`-Zeilen und trägt Gefundenes und Nichtgefundenes ein):**
@@ -173,13 +186,23 @@ der Implementer ergänzt die `diff`-Zeilen und trägt Gefundenes und Nichtgefund
 30fd6cb5 3 -n -E 'ReadChangesRequest' -- internal proto spec ':!gen' ':!*_test.go'
 30fd6cb5 10 -n -E 'Query-Parameter' -- spec docs/user
 30fd6cb5 17 -n -E '`schema`/`table`|schema/table|schema und table' -- spec docs/user
+57e4bffe 20 -n -E '`schema`/`table`|schema/table|schema und table' -- spec docs/user
+57e4bffe 3 -n -E 'MatchesFilter\([a-zA-Z.]*, [a-zA-Z.]*\)' -- internal
+diff 4 -n MatchesFilter -- internal ':!*_test.go'
+diff 18 -n MatchesFilter -- internal
+diff 2 -n -F 'MatchesFilter(schema, table, target)' -- internal ':!*_test.go'
+diff 0 -n -E 'MatchesFilter\([a-zA-Z.]*, [a-zA-Z.]*\)' -- internal
+diff 8 -n -E 'StreamChangesRequest' -- internal proto spec docs/user ':!*_test.go' ':!gen'
+diff 3 -n -E 'ReadChangesRequest' -- internal proto spec ':!gen' ':!*_test.go'
+diff 10 -n -E 'Query-Parameter' -- spec docs/user
+diff 20 -n -E '`schema`/`table`|schema/table|schema und table' -- spec docs/user
 ```
 
 | Träger | Messung am Parent (`30fd6cb5`, gemessen am 2026-10-01) | Behandlung und Befund am Diff |
 |---|---|---|
-| Aufrufer der Filterfunktion | Zeilen 1 und 2: 4 Nicht-Test-Zeilen, 10 mit Tests | jeder Aufrufer trägt das Ziel durchgängig; Befund am Diff: einzutragen |
-| Definitionen und Aufrufer der Anfrage-Typen | Zeilen 3 und 4: 8 bzw. 3 Zeilen | jede Stelle lesen: Aufzählung der Felder, die das Ziel braucht — oder eine begründete Auslassung; Befund: einzutragen |
-| Beschreibungen der Parameter in Spec und Handbuch | Zeilen 5 und 6: 10 bzw. 17 Zeilen („Query-Parameter", „`schema`/`table`") | Spec-Zeilen zieht `slice-routing-spec-nachzug` (bereits geändert, wenn dieser Slice startet); Handbuch gemeldet an `slice-routing-betriebsdoku`, Client-Beispiele an `slice-routing-sdk-beispiel-target`; Befund: einzutragen |
+| Aufrufer der Filterfunktion | Zeilen 1 und 2: 4 Nicht-Test-Zeilen, 10 mit Tests | jeder Aufrufer trägt das Ziel durchgängig; Befund am Diff (Zeilen 8 bis 12): gefunden — die zwei Aufrufer (`grpc/server.go`, `http/sse.go`) rufen mit drei Argumenten, die Definition (`change.go`) trägt `target`, die Tests rufen mit drei Argumenten; nicht gefunden — ein Aufruf mit zwei Argumenten (Zeile 12: 0; am Parent Zeile 8: 3, davon einer im Test). Der Parent `57e4bffe` der Umsetzung liefert dieselben Zahlen wie `30fd6cb5` (4 und 10). |
+| Definitionen und Aufrufer der Anfrage-Typen | Zeilen 3 und 4: 8 bzw. 3 Zeilen | jede Stelle gelesen; Befund am Diff (Zeilen 13 und 14: 8 und 3, unverändert): die Zahlen bleiben, weil die Felder in vorhandene Zeilen gelangen (`target` als Feld in `StreamChangesRequest`/`ReadChangesRequest` in den `.proto`-Dateien und in den Aufrufstellen `req.GetTarget()`/`Target:`); die Aufrufer `grpc/server.go` (Stream) und `grpc/administration.go` (RPC) tragen das Ziel; nicht gefunden — eine Aufzählung der Request-Felder, die `target` auslässt. Die erzeugten Dateien unter `gen/` stehen außerhalb dieser Zählung (`generated-sync`). |
+| Beschreibungen der Parameter in Spec und Handbuch | Zeilen 5 und 6: 10 bzw. 17 Zeilen („Query-Parameter", „`schema`/`table`") | Spec-Zeilen zieht `slice-routing-spec-nachzug` (bereits geändert, wenn dieser Slice startet); Handbuch gemeldet an `slice-routing-betriebsdoku`, Client-Beispiele an `slice-routing-sdk-beispiel-target`; Befund am Diff (Zeilen 15 und 16: 10 und 20): „Query-Parameter" unverändert 10; „`schema`/`table`" 17 → 20 am Parent `57e4bffe` (Zeile 7) und am Diff gleich 20 — der Zuwachs von drei stammt aus dem Spec-Nachzug (`spec/pflichtenheft.md`, Zeilen mit `schema`/`table`/`target`), nicht aus diesem Diff. Gefunden und gemeldet, nicht mitgeändert: `docs/user/benutzerhandbuch.md` an den Zeilen 1302, 1365, 1378, 1403, 1456, 1558 (Adresse `slice-routing-betriebsdoku` §2), `docs/user/e2e-abdeckung.md` an den Zeilen 60 und 67 (Erzeugnis des Integrationslaufs, beschreibt vorhandene Belege des `schema`/`table`-Filters; das Ziel am Stream belegt `slice-routing-e2e`). Nicht gefunden — eine Spec-Zeile, die `schema`/`table` als einzigen Filter ausgibt. |
 | Aussagen „gRPC und SSE filtern über `schema`/`table`" in `examples/` und `sdks/` | liegen außerhalb dieses Suchraums | gemeldet an `slice-routing-sdk-beispiel-target` (§2 dort nennt den Gegenstand), nicht mitgeändert |
 
 ## 4. Trigger
@@ -212,7 +235,8 @@ Block nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
 - **Altserver ignoriert das neue Feld still.** `target` ist ein additives Proto-Feld
   und ein zusätzlicher Query-Parameter; ein neuer Client gegen einen Server ohne
   diesen Slice bekommt am gRPC-Weg ungefilterte Changes (proto3 verwirft unbekannte
-  Felder — *hergeleitet*, nicht gemessen) und am HTTP-/SSE-Weg `400` (die Parameter-
+  Felder — an der Protobuf-Bibliothek dieses Repos gemessen, `TestStreamChangesRequestIgnoriertUnbekannteFelder` und
+  `TestReadChangesRequestTraegtTargetAlsFeldSieben`; an einem ausgelieferten Altserver *hergeleitet*, nicht gemessen) und am HTTP-/SSE-Weg `400` (die Parameter-
   Menge ist streng, Bestand: `SPEC-021`/`SPEC-022`). — **Ausgang:** bei der Closure
   einzutragen (Aussage im Handbuch mit Ursprung; Adresse `slice-routing-betriebsdoku`).
 - **Das Ziel ist Auswahl, kein Zugriffsschutz.** Jeder Leser mit `reader`-Token kann
