@@ -9,7 +9,7 @@ Festlegung 1, [`ADR-0044`](../plan/adr/0044-image-beleg-semantik.md),
 Review-Artefakt: [`review-slice-routing-sdk-realserver-e2e.md`](review-slice-routing-sdk-realserver-e2e.md).
 Formvorbild: [`verifikation-slice-routing-sdk-beispiel-target.md`](verifikation-slice-routing-sdk-beispiel-target.md).
 
-**Gegenstand:** Slice-Plan [`slice-routing-sdk-realserver-e2e`](../plan/planning/in-progress/slice-routing-sdk-realserver-e2e.md)
+**Gegenstand:** Slice-Plan [`slice-routing-sdk-realserver-e2e`](../plan/planning/done/slice-routing-sdk-realserver-e2e.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter
 [`LH-FA-SST-009`](../../spec/lastenheft.md), [`LH-FA-SST-008`](../../spec/lastenheft.md),
 [`LH-FA-SST-006`](../../spec/lastenheft.md); Welle [`welle-routing`](../plan/planning/welle-routing.md)).
