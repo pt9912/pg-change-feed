@@ -115,7 +115,7 @@ Quellstand) bleibt unberührt.
       `TestExecuteRoutingReadFailureEndsRun` erwartet `storage: `. **Rest:** die
       Replay-Invariante (`TestE2EBackfillReplayInvariant`) ist in diesem Slice nicht
       gefahren (nicht-brechend *hergeleitet*), die Gesamtkette Snapshot → Run →
-      `route_target` ist bei [`slice-routing-e2e`](../in-progress/slice-routing-e2e.md) §2
+      `route_target` ist bei [`slice-routing-e2e`](slice-routing-e2e.md) §2
       (Backfill-Bestand mit Label, `make test-integration`) belegt.
 - [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Negative im Run: eine im Run
       nicht anwendbare Regel (`when.column` fehlt in `TableSnapshot.Columns()`)
@@ -293,7 +293,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   Lesungen je Block, zwei je Run außerhalb der Blöcke); die Verdopplung ist *hergeleitet*
   aus dem Code, die Prozentzahlen des Verdikts sind *übernommen*, eine Messung der
   Lesekosten mit zwei Ports liegt nicht vor (Verifikations-Report §3, §8). Adresse:
-  [`slice-routing-e2e`](../in-progress/slice-routing-e2e.md) §6, Punkt „Lesekosten der Regelstände
+  [`slice-routing-e2e`](slice-routing-e2e.md) §6, Punkt „Lesekosten der Regelstände
   im Backfill-Run“ (Messung oder Kennzeichnung als nicht gemessen mit neuer Adresse; Trigger des
   Verdikts: mehr als 10 000 Zeilen in der Queue einer Quelle).
 - **Zwei Regelstände, ein Fail-closed.** Transformations- und Routing-Regeln ändern
@@ -328,7 +328,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   des Verifiers: `make test-replication` Exit 0, `PostgreSQL 18.6` (Verifikations-Report §1);
   Mutationen am Paritätstest (Review (g) M10 bis M13) rot, vom Verifier **übernommen**.
   **Grenze:** der Paritätstest (`make test-replication`) ist nur gegen PostgreSQL 18 gefahren,
-  PostgreSQL 17 (`PG_TEST_IMAGE` übersteuert) nicht. Adresse für 17: [`slice-routing-e2e`](../in-progress/slice-routing-e2e.md)
+  PostgreSQL 17 (`PG_TEST_IMAGE` übersteuert) nicht. Adresse für 17: [`slice-routing-e2e`](slice-routing-e2e.md)
   §6, Punkt „Lesekosten der Regelstände im Backfill-Run“ (derselbe Punkt trägt den Lauf des
   Typ-Satz-Tests an PostgreSQL 17); dessen Legs fahren PostgreSQL 17 und 18 für die Kette
   Snapshot → Run → `route_target` am laufenden System, nicht für den Typ-Satz.
@@ -339,7 +339,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   liest `route_target` aus `cdc.changes`; die Mutation „Writer schreibt `route_target` nicht“
   färbt ihn rot (`route_target in cdc.changes = [- - - -], will [eu_ziel - eu_ziel -]`,
   Verifikations-Report §4 S1). **Grenze:** der Snapshot ist im Store-Test ein Test-Port; die
-  Gesamtkette Snapshot-Adapter → Run → `route_target` trägt [`slice-routing-e2e`](../in-progress/slice-routing-e2e.md)
+  Gesamtkette Snapshot-Adapter → Run → `route_target` trägt [`slice-routing-e2e`](slice-routing-e2e.md)
   §2 (Backfill-Bestand mit Label).
 - **Coverage-Messgegenstand.** Der Backfill-Dienst liegt in der netzlos gemessenen
   Fläche, der Snapshot im DB-Gegenstand. — **Ausgang:** entfallen. `make gates` Exit 0 mit

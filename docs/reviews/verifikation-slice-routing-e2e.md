@@ -10,7 +10,7 @@ Entscheidung 4 und Folgepflicht 7,
 Review-Artefakt: [`review-slice-routing-e2e.md`](review-slice-routing-e2e.md).
 Formvorbild: [`verifikation-slice-routing-nats-subjekt.md`](verifikation-slice-routing-nats-subjekt.md).
 
-**Gegenstand:** Slice-Plan [`slice-routing-e2e`](../plan/planning/in-progress/slice-routing-e2e.md)
+**Gegenstand:** Slice-Plan [`slice-routing-e2e`](../plan/planning/done/slice-routing-e2e.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter
 [`LH-QA-POR-001`](../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../spec/lastenheft.md),
 [`LH-FA-ADM-003`](../../spec/lastenheft.md), [`LH-FA-REA-005`](../../spec/lastenheft.md),

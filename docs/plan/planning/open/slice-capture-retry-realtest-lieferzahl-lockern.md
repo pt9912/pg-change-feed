@@ -19,7 +19,7 @@ verschieden wäre.
 **Verantwortlich:** — (noch nicht priorisiert).
 
 **Autor:** Planner-Agent, Closure von
-[slice-routing-e2e](../in-progress/slice-routing-e2e.md) (Review F-2).
+[slice-routing-e2e](../done/slice-routing-e2e.md) (Review F-2).
 **Datum:** 2026-10-01.
 
 ---

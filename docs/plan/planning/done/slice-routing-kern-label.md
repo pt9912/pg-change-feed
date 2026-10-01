@@ -329,7 +329,7 @@ geschrieben.
   ([`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
   nennt für die Auswertung keine Kosten). — **Ausgang:** weiter offen, nicht gemessen
   (Review F-6, Verifikations-Report §6: „erwartet klein, nicht gemessen“). Adresse:
-  [`slice-routing-e2e`](../in-progress/slice-routing-e2e.md) §6 (bei dieser Closure als eigener
+  [`slice-routing-e2e`](slice-routing-e2e.md) §6 (bei dieser Closure als eigener
   Punkt dort aufgenommen: gedruckte Messung bei zehn und bei hundert Regeln, oder neue
   Adresse).
 - **Coverage-Messgegenstand.** Neuer Code in der Domäne und im `mapper` liegt in der

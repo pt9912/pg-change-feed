@@ -137,7 +137,7 @@ Konjunktion, ein ungefilterter Leser sieht weiterhin alle Changes. Drei Liefer-P
       `TestReadChangesWegeLiefernFuerDieselbeEingabeDieselbenChanges`,
       `TestReadChangesRequestTraegtTargetAlsFeldSieben`; Mutationen M1, M2, M11b, P2 rot).
       **Rest:** der Flag `-target` des `grpcadminclient` ist übersetzt, ein Aufruf-Test
-      fehlt bis zum E2E ([`slice-routing-e2e`](../in-progress/slice-routing-e2e.md), Review F-6).
+      fehlt bis zum E2E ([`slice-routing-e2e`](slice-routing-e2e.md), Review F-6).
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9). *Beleg
       (Verifier):* Verifikations-Report §1 (Exit 0, `coverage-gate` 81,90 %, `a-check`
@@ -312,7 +312,7 @@ Block nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   Label (`TestCapturePublishesTheRouteTargetOfEachChange`, Verifier-Lauf `make test`
   Exit 0); `Broadcaster` und der Assembler-Schritt sind gelesen, nicht gefahren. Die
   Gesamtkette bis zum Handler am laufenden System steht aus. Adresse:
-  [`slice-routing-e2e`](../in-progress/slice-routing-e2e.md) §2 (Ziel an den Stream-Wegen, die
+  [`slice-routing-e2e`](slice-routing-e2e.md) §2 (Ziel an den Stream-Wegen, die
   Wegwerf-Clients `grpcclient`/`sseclient` erhalten die Auswahl des Ziels als Flag).
 - **Signatur-Ripple.** `MatchesFilter` hat zehn Aufrufstellen (vier ohne Tests); eine
   neue Signatur bricht Tests des Bestands. — **Ausgang:** entfallen. Die Signatur ist
@@ -344,7 +344,7 @@ Block nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   Risiko (weiter offen, *hergeleitet*).
 - **Beleg am laufenden System (aus §1).** Dieser Slice belegt auf Unit-, Handler- und
   Store-Ebene. — **Ausgang:** weiter offen. Adresse
-  [`slice-routing-e2e`](../in-progress/slice-routing-e2e.md) §2: das Ziel an den Stream-Wegen und
+  [`slice-routing-e2e`](slice-routing-e2e.md) §2: das Ziel an den Stream-Wegen und
   an `GET /changes` am laufenden Feed-Container, ein Aufruf-Test für den Flag `-target`
   des `grpcadminclient` (Review F-6).
 - **Port-Wahl im Paritätstest (Review F-3).** `freeLoopbackAddr` wählt den Loopback-Port
