@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.84
+Version: 1.85
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-10-01
 
@@ -1524,9 +1524,13 @@ der Klasse `reader`): `?target=eu` lieferte die eine `eu`-Change, `?target=Gross
 `200` mit leerer Liste (Konjunktion). Ein Server ohne diese Funktion lehnt den
 unbekannten Parameter an `GET /changes` und `GET /changes/stream` mit `400` ab
 (*hergeleitet* aus der strengen Parameter-Menge, an einem ausgelieferten
-Alt-Server nicht gefahren). Die Beispiel-Clients und die drei SDK-Packages
-nehmen `target` nicht als Aufrufparameter entgegen; das folgt mit den
-SDK-Packages.
+Alt-Server nicht gefahren). Die Beispiel-Clients (Go, C#, Kotlin) nehmen
+`target` über das Flag `-target` bzw. `--target` des Verbs `changes` entgegen
+(`ARGS="-verb=changes -source=<quelle> -target=<ziel>"`), und die drei
+SDK-Packages tragen den Parameter `target` an `ReadChangesAsync`
+(`PgChangeFeed.Client`, als letzter Parameter, per Name übergeben),
+`readChanges` (`pgchangefeed-kotlin`) und `read_changes` (`pgchangefeed`);
+ohne Angabe bleibt der Aufruf unverändert.
 
 **Diagnose lesen:** `GET /diagnose?source=<quelle-id>` liefert denselben
 Bericht wie [Diagnose ausführen](#diagnose-ausführen) — Betriebsstatus und
@@ -1677,15 +1681,16 @@ test-integration` (Verifikations-Report
 Phase „Routing-Happy-Path (fünf Zustellwege)": ein gRPC-Client
 mit Ziel empfing von einer festen Menge gemischter Changes genau die Changes
 seines Ziels und im Ruhefenster von 15 s keine Change eines anderen Ziels oder
-ohne Ziel. Go, C# und Kotlin nehmen den Filter über `-schema`/`-table`
-bzw. `--schema`/`--table` entgegen; das NuGet-Package `PgChangeFeed.Client`
-nimmt ihn jetzt ebenfalls entgegen (`StreamChangesAsync(schema, table,
-cancellationToken)`, beide Parameter optional), ebenso das PyPI-Package
-`pgchangefeed` (`stream_changes(timeout, schema, table)`, beide Parameter
+ohne Ziel. Go, C# und Kotlin nehmen den Filter über `-schema`/`-table`/`-target`
+bzw. `--schema`/`--table`/`--target` entgegen; das NuGet-Package
+`PgChangeFeed.Client` nimmt ihn ebenfalls entgegen (`StreamChangesAsync(schema,
+table, cancellationToken, target)`, alle drei Parameter optional, `target` als
+letzter Parameter per Name übergeben), ebenso das PyPI-Package `pgchangefeed`
+(`stream_changes(timeout, schema, table, target)`, alle drei Parameter
 optional) und das Gradle-/Maven-Package `pgchangefeed-kotlin`
-(`streamChanges(schema, table)`, beide Parameter optional, Default `null`). Die
-Beispiele und die drei Packages tragen kein `target` als Aufrufparameter; das
-folgt mit den SDK-Packages.
+(`streamChanges(schema, table, target)`, alle drei Parameter optional, Default
+`null`). Der RPC `ReadChanges` der Verwaltungs-API trägt `target` als Feld des
+Requests (siehe [Zugriff über die gRPC-Verwaltungs-API](#zugriff-über-die-grpc-verwaltungs-api)).
 
 **Zustellsemantik:** Es gibt **keine** Zustellgarantie (Fire-and-Forget,
 verlustbehaftet). Je Abonnent trägt der Server eine begrenzte
@@ -1710,8 +1715,9 @@ und lässt sich per Flag übersteuern.
   `make example-run-go SURFACE=grpc` (baut bei Bedarf
   `pg-change-feed-examples:go-grpc` aus `examples/Dockerfile`); das
   Default-Verb `stream` nimmt den optionalen Filter über
-  `ARGS="-schema=<schema> -table=<tabelle>"` entgegen (beide leer liefert wie
-  zuvor jeden Change aller aktivierten Tabellen); dasselbe Programm deckt
+  `ARGS="-schema=<schema> -table=<tabelle> -target=<ziel>"` entgegen (alle drei
+  leer liefert wie zuvor jeden Change aller aktivierten Tabellen); dasselbe
+  Programm deckt
   über `-verb` zusätzlich die elf RPCs der [gRPC-Verwaltungs-API](#zugriff-über-die-grpc-verwaltungs-api)
   ab
 - **C#:** `examples/csharp/grpc-client` — Container-Aufruf über
@@ -1719,15 +1725,16 @@ und lässt sich per Flag übersteuern.
   `make examples-csharp` gebaute Image; die beiden Stubs entstehen im Bau aus
   den `.proto`-Dateien, über einen zusätzlichen, benannten Bau-Kontext gelesen
   — `ADR-0090`); das Default-Verb `stream` nimmt den optionalen
-  `--schema`/`--table`-Filter entgegen (`ADR-0133`); dasselbe Programm deckt
+  `--schema`/`--table`/`--target`-Filter entgegen (`ADR-0133`); dasselbe Programm deckt
   über `--verb` zusätzlich die elf RPCs der
   [gRPC-Verwaltungs-API](#zugriff-über-die-grpc-verwaltungs-api) ab
 - **Kotlin:** `examples/kotlin/grpc-client` — Container-Aufruf über
   `make example-run-kotlin SURFACE=grpc` (startet das mit
   `make examples-kotlin` gebaute Image; derselbe Stub-im-Bau-Mechanismus wie
   beim C#-Client, übertragen auf die Kotlin-Werkzeugkette — `ADR-0090`); das
-  Default-Verb `stream` nimmt den optionalen `--schema`/`--table`-Filter
-  entgegen (`ADR-0133`); dasselbe Programm deckt über `--verb` zusätzlich die
+  Default-Verb `stream` nimmt den optionalen
+  `--schema`/`--table`/`--target`-Filter entgegen (`ADR-0133`); dasselbe
+  Programm deckt über `--verb` zusätzlich die
   elf RPCs der [gRPC-Verwaltungs-API](#zugriff-über-die-grpc-verwaltungs-api)
   ab
 
@@ -1735,10 +1742,11 @@ und lässt sich per Flag übersteuern.
 NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
 `dotnet add package PgChangeFeed.Client`) — `PgChangeFeedGrpcClient.StreamChangesAsync`
 öffnet den `ChangeStream/StreamChanges`-RPC und liefert ein
-`IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben; zwei
-optionale Parameter `schema`/`table` tragen den Filter über Schema und Tabelle
-wie oben beschrieben (`ADR-0133`), beide `null` (der Default) liefert wie zuvor
-jeden Change; das Feld `target` folgt mit dem Package. Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
+`IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben; drei
+optionale Parameter `schema`/`table`/`target` tragen den Filter über Schema,
+Tabelle und Zustellziel wie oben beschrieben (`ADR-0133`), alle `null` (der
+Default) liefert wie zuvor jeden Change (`target` ist der letzte Parameter und
+wird per Name übergeben). Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
 fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 `Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren; siehe
 `sdks/csharp/README.md`.
@@ -1749,9 +1757,9 @@ Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
 `PgChangeFeedGrpcClient.streamChanges()` öffnet denselben
 `ChangeStream/StreamChanges`-RPC und liefert ein
 `kotlinx.coroutines.flow.Flow<Change>` mit allen zehn Feldern der Tabelle
-oben; zwei optionale Parameter `schema`/`table` tragen den Filter über Schema
-und Tabelle wie oben beschrieben (`ADR-0133`), beide `null` (der Default) liefert
-wie zuvor jeden Change; das Feld `target` folgt mit dem Package. Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
+oben; drei optionale Parameter `schema`/`table`/`target` tragen den Filter über
+Schema, Tabelle und Zustellziel wie oben beschrieben (`ADR-0133`), alle `null`
+(der Default) liefert wie zuvor jeden Change. Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
 fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 `Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren. Derselbe
 Package trägt außerdem den SSE-Stream (siehe „Zugriff über
@@ -1774,9 +1782,9 @@ der Tabelle oben; das Bearer-Token landet im `authorization`-Metadata-Eintrag,
 ein fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 `Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren
 (`timeout` ist der Gesamtfriestempel des Aufrufs in Sekunden, `None` =
-unbegrenzt); zwei optionale Parameter `schema`/`table` tragen den Filter über
-Schema und Tabelle wie oben beschrieben (`ADR-0133`), beide `None` (der Default)
-liefert wie zuvor jeden Change; das Feld `target` folgt mit dem Package. Siehe
+unbegrenzt); drei optionale Parameter `schema`/`table`/`target` tragen den
+Filter über Schema, Tabelle und Zustellziel wie oben beschrieben (`ADR-0133`),
+alle `None` (der Default) liefert wie zuvor jeden Change. Siehe
 `sdks/python/README.md`.
 
 ### Zugriff über die gRPC-Verwaltungs-API
@@ -1889,6 +1897,8 @@ sich per Flag übersteuern, z. B.
 `make example-run-csharp SURFACE=grpc ARGS="--verb=list-tables --source=<quelle> --publication=<publication>"`
 bzw.
 `make example-run-kotlin SURFACE=grpc ARGS="--verb=list-tables --source=<quelle> --publication=<publication>"`.
+Das Verb `read-changes` nimmt zusätzlich `-target`/`--target` entgegen (leer
+ist kein Filter).
 
 **SDK:** .NET-Anwendungen können statt der Beispiele das offizielle
 NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`,
@@ -1965,11 +1975,12 @@ Alt-Server nicht gefahren). Das Event trägt das Ziel nicht. *Ursprung:*
 Phase „Routing-Happy-Path (fünf
 Zustellwege)": ein SSE-Client mit Ziel empfing von einer festen Menge gemischter
 Changes genau die Changes seines Ziels und im Ruhefenster von 15 s keine Change
-eines anderen Ziels oder ohne Ziel. Die Beispiel-Clients (Go/C#/Kotlin)
-und die drei SDK-Packages nehmen den SSE-Filter noch nicht als eigenen
-Aufrufparameter entgegen — offener Folge-Schritt (anders inzwischen der
-gRPC-Stream oben, dessen Filter das NuGet-Package `PgChangeFeed.Client`
-bereits als Parameter entgegennimmt).
+eines anderen Ziels oder ohne Ziel. Die Beispiel-Clients (Go/C#/Kotlin) und
+die drei SDK-Packages nehmen von den Query-Parametern nur `target` als eigenen
+Aufrufparameter entgegen (`-target`/`--target`, `StreamChangesAsync(target: …)`,
+`streamChanges(target)`, `stream_changes(target)`); `schema` und `table` setzen
+sie am SSE-Stream nicht — offener Folge-Schritt (anders der gRPC-Stream oben,
+dessen drei Filter die Packages als Parameter entgegennehmen).
 
 **Zustellsemantik:** keine Zustellgarantie (Fire-and-Forget): Ein nicht
 verbundener oder langsamer lesender Client verpasst die betroffenen
@@ -1987,13 +1998,16 @@ aus; Adresse und Token liest jedes Beispiel aus `CDC_HTTP_ADDR` und
 
 - **Go:** `examples/sse-client` — Container-Aufruf über
   `make example-run-go SURFACE=sse` (baut bei Bedarf
-  `pg-change-feed-examples:go-sse` aus `examples/Dockerfile`)
+  `pg-change-feed-examples:go-sse` aus `examples/Dockerfile`); das optionale
+  Flag `ARGS="-target=<ziel>"` wählt das Zustellziel
 - **C#:** `examples/csharp/sse-client` — Container-Aufruf über
   `make example-run-csharp SURFACE=sse` (startet das mit
-  `make examples-csharp` gebaute Image)
+  `make examples-csharp` gebaute Image); das optionale Flag
+  `ARGS="--target=<ziel>"` wählt das Zustellziel
 - **Kotlin:** `examples/kotlin/sse-client` — Container-Aufruf über
   `make example-run-kotlin SURFACE=sse` (startet das mit
-  `make examples-kotlin` gebaute Image)
+  `make examples-kotlin` gebaute Image); das optionale Flag
+  `ARGS="--target=<ziel>"` wählt das Zustellziel
 
 **SDK:** .NET-Anwendungen können statt des Beispiels dasselbe offizielle
 NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
@@ -2002,7 +2016,8 @@ NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
 allen zehn Feldern der Tabelle oben; das Bearer-Token landet im
 `Authorization`-Header, ein fehlender oder unbekannter Token endet den
 Aufruf mit `PgChangeFeedUnauthorizedException` (HTTP-Status `401`), statt
-den Draht-Vertrag selbst zu implementieren; siehe `sdks/csharp/README.md`.
+den Draht-Vertrag selbst zu implementieren; der optionale Parameter `target`
+(per Name übergeben) wählt das Zustellziel; siehe `sdks/csharp/README.md`.
 
 Kotlin/JVM-Anwendungen können statt des Beispiels dasselbe offizielle
 Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
@@ -2011,7 +2026,8 @@ Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
 liefert eine `Sequence<Change>` mit allen zehn Feldern der Tabelle oben; das
 Bearer-Token landet im `Authorization`-Header, ein fehlender oder
 unbekannter Token endet den Aufruf mit `PgChangeFeedUnauthorizedException`
-(HTTP-Status `401`), statt den Draht-Vertrag selbst zu implementieren. Wie
+(HTTP-Status `401`), statt den Draht-Vertrag selbst zu implementieren; der
+optionale Parameter `target` wählt das Zustellziel. Wie
 beim HTTP-API-Zugriff oben ist der Bezug über Cloudsmith ohne Konto und
 ohne Token möglich (`ADR-0123`); der Bezug über **GitHub Packages** verlangt
 dagegen immer eine Authentifizierung (`ADR-0109` Festlegung 2). Siehe
@@ -2024,8 +2040,9 @@ PyPI-Package `pgchangefeed` einbinden (`LH-FA-SST-009`, `ADR-0110`,
 über die getypten `StreamChange`-Events mit allen zehn Feldern der Tabelle
 oben; das Bearer-Token landet im `Authorization`-Header, ein fehlender oder
 unbekannter Token endet den Aufruf mit `PgChangeFeedUnauthorizedError`
-(HTTP-Status `401`), statt den Draht-Vertrag selbst zu implementieren.
-Siehe `sdks/python/README.md`.
+(HTTP-Status `401`), statt den Draht-Vertrag selbst zu implementieren; der
+optionale Parameter `target` wählt das Zustellziel. Siehe
+`sdks/python/README.md`.
 
 ### Zugriff über das NATS-Wecksignal
 
@@ -2170,13 +2187,20 @@ per Flag übersteuern.
 
 - **Go:** `examples/nats-stream-client` — Container-Aufruf über
   `make example-run-go SURFACE=nats-stream` (baut bei Bedarf
-  `pg-change-feed-examples:go-nats-stream` aus `examples/Dockerfile`)
+  `pg-change-feed-examples:go-nats-stream` aus `examples/Dockerfile`); mit
+  `ARGS="-source=<quelle> -target=<ziel>"` abonniert es das Zusatz-Subjekt
+  `cdc.route.<source_id>.<ziel>` statt `cdc.stream.>`
 - **C#:** `examples/csharp/nats-stream-client` — Container-Aufruf über
   `make example-run-csharp SURFACE=nats-stream` (startet das mit
-  `make examples-csharp` gebaute Image)
+  `make examples-csharp` gebaute Image); mit
+  `ARGS="--source=<quelle> --target=<ziel>"` das Zusatz-Subjekt
 - **Kotlin:** `examples/kotlin/nats-stream-client` — Container-Aufruf über
   `make example-run-kotlin SURFACE=nats-stream` (startet das mit
-  `make examples-kotlin` gebaute Image)
+  `make examples-kotlin` gebaute Image); mit
+  `ARGS="--source=<quelle> --target=<ziel>"` das Zusatz-Subjekt
+
+`-source` und `-target` gelten nur zusammen; ein Wert mit Punkt, `*`, `>` oder
+Leerraum wird mit Exit 2 abgelehnt, bevor ein Abonnement entsteht.
 
 Die Beispiele sind zum Lesen und Nachbauen gedacht; die E2E-Testclients des
 Harness liegen unter `tools/harness/` (`natsstreamsub`) und sind kein
@@ -2186,7 +2210,9 @@ Vorbild.
 NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
 `dotnet add package PgChangeFeed.Client`) — `PgChangeFeedNatsStreamClient.StreamChangesAsync`
 abonniert den Vollinhalts-Namensraum (Default `cdc.stream.>`, oder ein über
-`BuildSubject`/`BuildSourceSubject` eingeschränktes Subjekt) und liefert ein
+`BuildSubject`/`BuildSourceSubject` eingeschränktes Subjekt; `BuildTargetSubject`
+und `BuildSourceTargetsSubject` bauen das Zusatz-Subjekt eines Zustellziels bzw.
+aller Ziele einer Quelle) und liefert ein
 `IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben; die
 Authentifizierung ist verbindungsseitig (derselbe `CDC_NATS_STREAM_TOKEN`
 wie oben), ein abgelehnter Verbindungsversuch endet die Aufzählung mit einer
@@ -2198,7 +2224,9 @@ Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
 `ADR-0109`, Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
 `PgChangeFeedNatsStreamClient.streamChanges()` abonniert den
 Vollinhalts-Namensraum (Default `cdc.stream.>`, oder ein über `buildSubject`/
-`buildSourceSubject` eingeschränktes Subjekt) und liefert eine
+`buildSourceSubject` eingeschränktes Subjekt; `buildTargetSubject` und
+`buildSourceTargetsSubject` bauen das Zusatz-Subjekt eines Zustellziels bzw.
+aller Ziele einer Quelle) und liefert eine
 `Sequence<Change>` mit allen zehn Feldern der Tabelle oben; die
 Authentifizierung ist verbindungsseitig (derselbe `CDC_NATS_STREAM_TOKEN`
 wie oben), ein abgelehnter Verbindungsversuch endet die Sequenz mit der
@@ -2213,7 +2241,9 @@ Python-Anwendungen können statt des Beispiels das offizielle
 PyPI-Package `pgchangefeed` einbinden (`LH-FA-SST-009`, `ADR-0110`,
 `pip install pgchangefeed`) — `PgChangeFeedNatsStreamClient.stream_changes()`
 abonniert den Vollinhalts-Namensraum `cdc.stream.<source_id>.>` (alle
-Tabellen einer Quelle; `source_id` ist Konstruktor-Argument) und liefert
+Tabellen einer Quelle; `source_id` ist Konstruktor-Argument; der optionale
+Parameter `target` abonniert stattdessen das Zusatz-Subjekt
+`cdc.route.<source_id>.<ziel>`) und liefert
 einen Iterator über die getypten `StreamChange`-Events mit allen zehn
 Feldern der Tabelle oben; die Authentifizierung ist verbindungsseitig
 (derselbe `CDC_NATS_STREAM_TOKEN` wie oben), ein abgelehnter
@@ -2758,3 +2788,4 @@ MIT — siehe `LICENSE`.
 | 1.82 | 2026-09-30 | „Neustart nach einem Fehler": begrenzte Wiederholung der Klasse `transient` im Capture-Pfad (`ADR-0135`) ergänzt — Rücksetzung der Episode nach einem Zyklus von mindestens 30 s, WARN mit Versuchszähler und INFO bei Fortsetzung, keine Wiederholung bei Berechtigungsfehlern und Server-Abweisungen; Fehlerklassen-Tabelle nennt `transient` und `permission` als im Erfassungspfad beobachtbar |
 | 1.83 | 2026-09-30 | „Neustart nach einem Fehler“ (`ADR-0136`): „gestreamt“ heißt ab Bestätigung von `START_REPLICATION` (Rücksetzung nach mindestens 30 s Streaming, der Aufbau zählt nie), der Aufbau eines Zyklus hat eine Frist von 30 s, das INFO der Fortsetzung folgt dem Streaming-Beginn, die wiederholte Fehlermenge steht als SQLSTATE-Auswahl (Klassen 08, 40, 53, 55, 57, 58 und 25006), jede andere Server-Abweisung endet sofort |
 | 1.84 | 2026-10-01 | Routing von Changes auf Zustellziele dokumentiert (`LH-FA-CFG-008`, `LH-FA-SST-006`, `ADR-0137`, `ADR-0138`, `ADR-0139`, `ADR-0140`, `ADR-0141`, slice-routing-betriebsdoku): §4 neuer Abschnitt „Routing-Regel konfigurieren“ (Voraussetzung `cdc_admin`, `cdc.set_route`/`cdc.remove_route`, Form der `rule_spec`, ausgeführtes Beispiel, R1–R6 mit Fehlertexten, die Fehlerklasse `schema` mit zwei Ursachen und der Abhilfe, „Ziel lesen“, Hinweise zu festem Label, Change ohne Treffer, abwesendem Wert, `DELETE` ohne volle Replica-Identität, Auswahl statt Zugriffsschutz); die Zugriffswege (HTTP, gRPC-Stream, gRPC-Verwaltungs-API `ReadChanges`, SSE) nennen den Filter `target`, der NATS-Vollinhalts-Stream das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>` samt Kosten-Messung, „Änderungen lesen“ die Spalte `route_target`; Fehlerklassen-Zeile `schema`, „Neustart nach einem Fehler“, Rollen-Tabelle, Glossar, „Grenzwerte“ und „Schema aktualisieren“ nachgezogen; der Fehlerblock der Transformationsregeln trennt die entfernte Spalte von der nicht anwendbaren Regel; die Fehlerklasse `schema` ordnet eine Publication mit Spaltenliste an einer Tabelle mit bekannter Spaltenform der Ursache 2 zu, und übernommene Messungen nennen ihren Bericht; die Kosten-Spanne der zweiten Veröffentlichung nennt nur Einzelwerte mit verlinktem Bericht, die R4-Zeile „höchste `order`“ ist als am System nicht gefahren gekennzeichnet, und die Abhilfe der inkompatiblen Schemaänderung ist als im Handbuch nicht beschrieben benannt |
+| 1.85 | 2026-10-01 | Parameter `target` in den SDK-Packages und den Beispiel-Clients dokumentiert (`LH-FA-CFG-008`, `LH-FA-SST-009`, `ADR-0137`, slice-routing-sdk-beispiel-target): `PgChangeFeed.Client`, `pgchangefeed` und `pgchangefeed-kotlin` tragen `target` am HTTP-Lesezugriff, am gRPC-Stream, am SSE-Stream (dort als einziger Filter-Parameter) und als Feld des `ReadChanges`-Requests, der NATS-Vollinhalts-Client baut das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>`; die Beispiele in Go, C# und Kotlin nehmen `-target`/`--target` an `changes`, `stream`, `read-changes` und dem SSE-Beispiel entgegen, das NATS-Vollinhalts-Beispiel `-source` mit `-target` |
