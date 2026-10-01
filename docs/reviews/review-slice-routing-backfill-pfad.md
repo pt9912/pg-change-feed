@@ -7,7 +7,7 @@
 [`SPEC-008`](../../spec/pflichtenheft.md), [`SPEC-032`](../../spec/pflichtenheft.md) und `AGENTS.md` Hard Rules
 (Modul 10). Kein DoD-Abgleich (Verifier).
 
-**Gegenstand:** Slice [`slice-routing-backfill-pfad`](../plan/planning/in-progress/slice-routing-backfill-pfad.md)
+**Gegenstand:** Slice [`slice-routing-backfill-pfad`](../plan/planning/done/slice-routing-backfill-pfad.md)
 ([`welle-routing`](../plan/planning/welle-routing.md)), Diff-Range `177bbac5~1..HEAD`: `d8c7cf4f` (Plan), `55384d2f`
 (Code und Tests), `d459ba3a` (Suchlauf-Feld, Übergabe-Block); `013ece33` (Linkkorrektur) liegt in der Range und ist
 reiner Link. 14 Dateien, +1019/−44 (`git diff --stat 177bbac5~1 HEAD`).

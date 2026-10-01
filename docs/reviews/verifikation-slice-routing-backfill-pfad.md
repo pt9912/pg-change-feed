@@ -9,7 +9,7 @@ Entscheidungs-Konformität ([`ADR-0137`](../plan/adr/0137-routing-zustellziele-p
 Review-Artefakt: [`review-slice-routing-backfill-pfad.md`](review-slice-routing-backfill-pfad.md).
 Formvorbild: [`verifikation-slice-routing-antragsweg.md`](verifikation-slice-routing-antragsweg.md).
 
-**Gegenstand:** Slice-Plan [`slice-routing-backfill-pfad`](../plan/planning/in-progress/slice-routing-backfill-pfad.md)
+**Gegenstand:** Slice-Plan [`slice-routing-backfill-pfad`](../plan/planning/done/slice-routing-backfill-pfad.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter [`LH-FA-CAP-009`](../../spec/lastenheft.md); Welle
 [`welle-routing`](../plan/planning/welle-routing.md)), Diff `177bbac5~1..HEAD` (`1487be88`, Fixrunde): acht Commits,
 15 Dateien (`git diff --stat 177bbac5~1 HEAD`: +1180/−49). Dieser Lauf ändert weder Code noch Plan noch Spec

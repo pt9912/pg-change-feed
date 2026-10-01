@@ -10,7 +10,7 @@ Kein DoD-Abgleich (Verifier-Aufgabe, Modul 11).
 **Gegenstand:** `git diff 1487be88~1 1487be88` (4 Dateien, +36/−19): `routingRules` und die
 Kommentare von `classifyError`/`sameSet` in `internal/application/usecase/backfill/service.go`,
 der Test `TestExecuteRoutingReadFailureEndsRun` in `routing_test.go`, der Slice-Plan
-[`slice-routing-backfill-pfad.md`](../plan/planning/in-progress/slice-routing-backfill-pfad.md) und
+[`slice-routing-backfill-pfad.md`](../plan/planning/done/slice-routing-backfill-pfad.md) und
 ein Verweis in [`slice-routing-betriebsdoku.md`](../plan/planning/open/slice-routing-betriebsdoku.md).
 
 **Skill:** `.harness/skills/reviewer.md` @ Fassung „geschärft 2026-09-09“ (seither um weitere

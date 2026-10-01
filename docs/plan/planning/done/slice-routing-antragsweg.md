@@ -314,7 +314,7 @@ geschrieben.
   Tabelle hat zwei Formen, bis `slice-routing-backfill-pfad` (unmittelbar danach)
   liegt. — **Ausgang:** weiter offen. Das Fenster ist das benannte Fenster der Welle
   ([`welle-routing`](../welle-routing.md) §5), nicht gemessen; Adresse:
-  [`slice-routing-backfill-pfad`](../in-progress/slice-routing-backfill-pfad.md), dessen Start-Trigger
+  [`slice-routing-backfill-pfad`](slice-routing-backfill-pfad.md), dessen Start-Trigger
   diesen Slice in `done/` voraussetzt.
 - **Parametertyp `json` gegen `jsonb`.** Die ADR nennt `rule_spec jsonb`;
   `cdc.set_transformation` trägt `json`, und die Wache `rolloutguard` kennt die
