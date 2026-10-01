@@ -923,7 +923,7 @@ den Prüfungen der Spalten-Antragsarten.
 | `rule_name` ist leer oder NULL oder liegt außerhalb des Alphabets (`SPEC-030`, Bezeichner) | `Regelname ist ungültig` | Regelname, wie beantragt |
 | `set_route` mit `rule_spec` NULL (SQL oder JSON) oder ohne JSON-Objekt | `rule_spec ist ungültig` | Regelname |
 | `rule_spec` oder `when` trägt einen Schlüssel, den die Regelform nicht kennt (`SPEC-032`) | `unbekannter Schlüssel in rule_spec` | der Schlüsselname |
-| `target` fehlt oder ist keine Zeichenkette, `order` fehlt oder ist keine positive Ganzzahl im Wertebereich, `when` ist kein Objekt oder trägt nicht beide Schlüssel, `column` oder `equals` hat die falsche Form (`SPEC-032`) | `rule_spec ist ungültig` | Regelname |
+| `target` fehlt oder ist keine Zeichenkette, `order` fehlt oder ist keine positive Ganzzahl, `when` ist kein Objekt oder trägt nicht beide Schlüssel, `column` oder `equals` hat die falsche Form (`SPEC-032`) | `rule_spec ist ungültig` | Regelname |
 | `target` liegt außerhalb des Alphabets des Zielnamens (`SPEC-032`) | `Zielname ist ungültig` | Zielname, wie beantragt |
 | R1 | `Regelname bereits vergeben` | Regelname |
 | R2 | `order bereits vergeben` | order |
@@ -997,7 +997,7 @@ Technische Ausgestaltung von [`LH-FA-SST-008`](lastenheft.md), zweiter Zustellwe
 |---|---|
 | Endpunkt / Methode | `GET /changes/stream` |
 | Rechtsklasse | `reader` oder `admin` — Streaming ist rein lesend |
-| Query-Parameter | `schema`, `table`, `target` (je optional und unabhängig, dieselben Feldnamen und dieselbe Kombinatorik wie `SPEC-020`s gRPC-Request und `GET /changes`, `SPEC-022`; `target` wählt das Zustellziel, `SPEC-020`); ohne Parameter liefert der Endpunkt wie zuvor jeden Change ungefiltert. Ein Parameter außerhalb dieser Menge endet mit `400`, vor jedem SSE-Event |
+| Query-Parameter | `schema`, `table`, `target` (je optional und unabhängig, dieselben Feldnamen und dieselbe Kombinatorik wie `SPEC-020`s gRPC-Request und `GET /changes`, `SPEC-022`; `target` wählt das Zustellziel, `SPEC-020`; ein `target`, das keine Change trägt, auch eines außerhalb des Alphabets des Zielnamens oder mit dem Zeichen U+0000, liefert keinen Event und keinen Fehler); ohne Parameter liefert der Endpunkt wie zuvor jeden Change ungefiltert. Ein Parameter außerhalb dieser Menge endet mit `400`, vor jedem SSE-Event |
 | Response-Form | `Content-Type: text/event-stream`; je Change ein Event, sofort über `http.Flusher` ausgeliefert |
 | Event-Typ | `event: change` |
 | Event-Daten | `data:` trägt ein JSON-Objekt mit denselben zehn Feldern wie der Domain-Typ `model.Change`, ohne die Felder `origin` und `route_target` (`SPEC-002`): `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, `INSERT`/`UPDATE`/`DELETE`), `old_image`, `new_image`, `schema_version` (string), `schema` (string), `table` (string). Die Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild ist `null` |
