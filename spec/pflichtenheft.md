@@ -254,7 +254,8 @@ Umsetzung, keine Messergebnisse.
   nach dem Öffnen des Snapshots gelesen und auf Anwendbarkeit geprüft (Klasse
   `schema`, siehe unten); jeder weitere Block und der Zustand unmittelbar vor
   dem Commit lesen ihn neu und vergleichen ihn als Menge mit diesem Stand. Ein
-  nicht lesbarer Stand gilt als Abweichung. Eine Regel, die zwischen zwei
+  nicht lesbarer Stand beendet den Run (`failed`, kein Commit) mit der Klasse
+  der Ursache; die Klasse `configuration` gilt dem Wechsel des Standes. Eine Regel, die zwischen zwei
   Lesungen gesetzt und wieder entfernt wird, bleibt unsichtbar, weil der Stand
   keinen Verlauf trägt. Ein ausgeschlossener Wert wird nie serialisiert.
 - **Sichtbarkeit und Fehler des Runs.** Die View `cdc.backfill_status` und die
