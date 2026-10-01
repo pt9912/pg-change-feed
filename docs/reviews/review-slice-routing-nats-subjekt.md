@@ -8,7 +8,7 @@
 davor die zwei Lifecycle-Commits `37825f29`, `62cdca2c`). Berührt: `internal/adapters/driven/natsstream/publisher.go`,
 `publisher_test.go`, neu `publisher_nats_test.go`, `tools/harness/run-notify-tests.sh`, `Makefile` (Hilfetext),
 `harness/README.md` (Zeile `make test-notify`), der Plan, und die fremde Datei
-[`slice-routing-betriebsdoku`](../plan/planning/open/slice-routing-betriebsdoku.md) (Übergabe-Block).
+[`slice-routing-betriebsdoku`](../plan/planning/in-progress/slice-routing-betriebsdoku.md) (Übergabe-Block).
 
 **Skill:** `.harness/skills/reviewer.md` @ Fassung „geschärft 2026-09-09“ (seither um weitere Klassen ergänzt).
 **Modell:** claude-sonnet-5-5 · **Datum:** 2026-10-01.

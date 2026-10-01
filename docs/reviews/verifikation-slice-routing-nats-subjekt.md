@@ -154,5 +154,5 @@ Kein HIGH, kein MEDIUM. Kein Befund am Produktionsverhalten.
 
 1. **Planner:** Kopf und DoD-Zeile „Doku-Update“ des Plans an die Spec-Änderung der Fixrunde anpassen (V-1); §6-Ausgänge eintragen (Kosten: gemessen mit Spanne 0,92 bis 1,30, Token-Syntax: erprobt, Fire-and-forget, eine Quelle je Publisher, Testcontainer), Closure-Notiz mit Lerneintrag, Register-Vermerk zu [`fixrunde-ohne-reviewer-lesung`](../plan/planning/observations/BEO-PGC/fixrunde-ohne-reviewer-lesung/observation.md) mit der in §7 beschriebenen Gegenprobe (Skript-Anweisung, ausgeführt in drei Zuständen, kein Produktionsdiff).
 2. **Implementer, optional (V-2, V-4):** einen Satz im Skript-Kommentar zur Grenze des SKIP-Zweigs; die README-Zeile für die Wecksignal-Wurzel auf „empfängt nichts von der zweiten Veröffentlichung“ umstellen. Beide ohne Wirkung auf das Verhalten.
-3. **Folge-Slice [`slice-routing-betriebsdoku`](../plan/planning/open/slice-routing-betriebsdoku.md):** die Spanne 0,92 bis 1,30 statt „1,05 bis 1,30“ in die Kosten-Aussage übernehmen (V-3), das Wecksignal bleibt „nur negativ belegt“.
+3. **Folge-Slice [`slice-routing-betriebsdoku`](../plan/planning/in-progress/slice-routing-betriebsdoku.md):** die Spanne 0,92 bis 1,30 statt „1,05 bis 1,30“ in die Kosten-Aussage übernehmen (V-3), das Wecksignal bleibt „nur negativ belegt“.
 4. **Re-Review:** nein (§7).

@@ -341,7 +341,7 @@ geschrieben.
   `failed`, auch wenn er ein anderer Zweck wäre. Der Betreiber löst es über
   `cdc.remove_route` und ein neues Setzen. — **Ausgang:** weiter offen (Aufschub
   mit Adresse). Das Verhalten ist durch R4 gebunden (Verifikations-Report §2 Zeile 2); die
-  Abhilfe beschreibt das Handbuch: Adresse [`slice-routing-betriebsdoku`](../open/slice-routing-betriebsdoku.md)
+  Abhilfe beschreibt das Handbuch: Adresse [`slice-routing-betriebsdoku`](../in-progress/slice-routing-betriebsdoku.md)
   §2 (Fall R4 steht dort als committeter Text, `git grep -n -E 'R4|höchste'` im Plan der
   Adresse: Zeile 86).
 - **Aufschub mit Adresse** (Handbuch-Beschreibung, §2). — **Ausgang:** weiter offen;

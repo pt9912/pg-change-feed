@@ -11,7 +11,7 @@ Kein DoD-Abgleich (Verifier-Aufgabe, Modul 11).
 Kommentare von `classifyError`/`sameSet` in `internal/application/usecase/backfill/service.go`,
 der Test `TestExecuteRoutingReadFailureEndsRun` in `routing_test.go`, der Slice-Plan
 [`slice-routing-backfill-pfad.md`](../plan/planning/done/slice-routing-backfill-pfad.md) und
-ein Verweis in [`slice-routing-betriebsdoku.md`](../plan/planning/open/slice-routing-betriebsdoku.md).
+ein Verweis in [`slice-routing-betriebsdoku.md`](../plan/planning/in-progress/slice-routing-betriebsdoku.md).
 
 **Skill:** `.harness/skills/reviewer.md` @ Fassung „geschärft 2026-09-09“ (seither um weitere
 HIGH-Klassen ergänzt). **Modell:** claude-sonnet-5-5 · **Datum:** 2026-10-01.

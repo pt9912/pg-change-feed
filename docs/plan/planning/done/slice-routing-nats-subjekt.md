@@ -164,7 +164,7 @@ unverändert. Drei Liefer-Punkte:
 | `internal/adapters/driven/natsstream/publisher_test.go` (Fixrunde) | update | `TestRouteSubjectSurvivesSkippedTableSubject`: die Gegenrichtung der Unabhängigkeit (Tabellen-Subjekt nicht bildbar, Ziel-Subjekt erscheint); der `publish`-Godoc ist im Indikativ neu gefasst (Review F-1, F-2). |
 | `spec/pflichtenheft.md` (Fixrunde) | update (fremde Datei, minimal) | `SPEC-024` Zeile Zusatz-Subjekt: „Last nicht gemessen" auf den gemessenen Umfang gezogen, ohne Zahl; Historienzeile (Review F-4). |
 | `Makefile` (Hilfetext `test-notify`) | update | der Text nennt `natsstream` neben `natsnotify`. |
-| `docs/plan/planning/open/slice-routing-betriebsdoku.md` | update (fremde Datei, minimal) | Übergabe-Block: Zusatz-Subjekt, erprobte Token-Aussage, gemessene Kosten-Aussage mit Ursprung (Punkt C: **gemessen**). |
+| `docs/plan/planning/in-progress/slice-routing-betriebsdoku.md` | update (fremde Datei, minimal) | Übergabe-Block: Zusatz-Subjekt, erprobte Token-Aussage, gemessene Kosten-Aussage mit Ursprung (Punkt C: **gemessen**). |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „der NATS-Vollinhalts-Weg
 veröffentlicht jede Change auf genau einem Subjekt `cdc.stream…`"; Parent ist

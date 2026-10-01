@@ -376,7 +376,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   Re-Review 2 selbst gefahren, **gemessen** (beide rot). Wer die Zahl liest, liest die Läufe
   unabhängiger Leser, nicht die des Autors. Der Übergabe-Block in
   `slice-routing-betriebsdoku` §2 ist unverändert gültig (Prüfung bei der Closure:
-  `git grep -n -E 'nicht lesbar' -- docs/plan/planning/open/slice-routing-betriebsdoku.md
+  `git grep -n -E 'nicht lesbar' -- docs/plan/planning/in-progress/slice-routing-betriebsdoku.md
   docs/plan/planning/in-progress/slice-routing-e2e.md` druckt keine Zeile, der Block nennt allein den
   Wechsel mit `configuration` und die Nichtanwendbarkeit mit `schema`; die Handbuch-Zeilen 1874 und 1877
   brauchen nach `ADR-0141` keinen Nachzug).

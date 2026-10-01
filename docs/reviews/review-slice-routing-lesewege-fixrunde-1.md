@@ -106,7 +106,7 @@ Start-/End-Quelle prüft nur der Use-Case-Test.
   Eigenschaft ([`AGENTS.md`](../../AGENTS.md) §3.13).
 - V-5: selbst nachgelesen — Handbuch-Zeile 1149 („optional gefiltert über `schema` und `table`“)
   steht **nicht** in der Adressliste von
-  [`slice-routing-betriebsdoku.md`](../plan/planning/open/slice-routing-betriebsdoku.md) (nur 1301,
+  [`slice-routing-betriebsdoku.md`](../plan/planning/in-progress/slice-routing-betriebsdoku.md) (nur 1301,
   1364–1365, 1378, 1403, 1456–1457, 1557); die Zeile ist aufzunehmen.
 
 **(7) Kommentare ([`AGENTS.md`](../../AGENTS.md) §3.7/§3.12).** Alle neuen oder geänderten Kommentare
@@ -148,7 +148,7 @@ Entscheidung treffe ich nicht.
   Meldung (V-1/V-2) bereits beim Planner liegt und der Plan noch in `in-progress` steht)
 - `quelle`: Maintainability; Verifier V-1, V-2, V-5
 - `pfad`: Plan Zeilen 34, 112, 131; [`welle-routing.md`](../plan/planning/welle-routing.md) Zeile 291;
-  [`slice-routing-betriebsdoku.md`](../plan/planning/open/slice-routing-betriebsdoku.md) (Adressliste ohne Zeile 1149)
+  [`slice-routing-betriebsdoku.md`](../plan/planning/in-progress/slice-routing-betriebsdoku.md) (Adressliste ohne Zeile 1149)
 - `befund`: siehe (5); der Plan sagt „Spec unberührt“ und führt die Aussage ohne Qualifier, der Diff
   ändert zwei Spec-Zeilen.
 - `verifizierbar`: ja — `git grep` auf die genannten Zeilen.

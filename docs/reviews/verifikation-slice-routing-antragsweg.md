@@ -52,7 +52,7 @@ die Phase `internal/bootstrap` ist `ok`, `postgresstorage` läuft danach durch.
 | 4 | `make gates` grün, Exit-Code ungefiltert | **getragen** | §1, eigener Lauf, Exit 0 |
 | 5 | Review durchgeführt, Report liegt vor, kein offenes HIGH/MEDIUM | **teilweise — Prozessbefund V-1** | Report liegt vor (1 HIGH F-1, 2 MEDIUM F-2/F-4, 4 LOW, 3 INFO); alle sieben Findings sind am Text und Code geschlossen (§5), aber kein Reviewer hat die Fixrunde `cc653a85` gelesen, die den Parser, mehrere Tests und den Dekorator-Test ändert |
 | 6 | §3.13-Suchlauf: Feld trägt Gefundenes und Nichtgefundenes, beide Stände; Nachmessen Exit 0 | **getragen** | Exit 0, 22 Zeilen; die Befund-Spalte nennt je Träger Treffer und begründete Auslassungen; eigene Gegenprobe `git grep` nach „sieben Antragsarten/Funktionen/Werte“ außerhalb Records: nur Plan-Zitate und die datierte Chronik-Zeile in `spec/pflichtenheft.md` (im Plan als „nicht nachgezogen“ benannt) |
-| 7 | Doku-Update: `harness/targets/schema-rollout.md`, `harness/README.md` nur soweit bewegt; Handbuch mit Aufschub-Adresse | **getragen** | `harness/targets/schema-rollout.md` (neun Funktionen, neun Arten, elf Fremdobjekte, Alt-Tag-Lauf-Beschreibung) und `harness/README.md` (Zählwort „elf“) im Diff gelesen und gegen die gemessenen Zahlen gehalten (§1: 9 Funktionen, 9 Arten); Handbuch unberührt, Adresse [`slice-routing-betriebsdoku`](../plan/planning/open/slice-routing-betriebsdoku.md) trägt jetzt `order`-Obergrenze und Annahme jeder Zahl mit ganzzahligem positivem Wert (Diff `cc653a85`, gelesen) |
+| 7 | Doku-Update: `harness/targets/schema-rollout.md`, `harness/README.md` nur soweit bewegt; Handbuch mit Aufschub-Adresse | **getragen** | `harness/targets/schema-rollout.md` (neun Funktionen, neun Arten, elf Fremdobjekte, Alt-Tag-Lauf-Beschreibung) und `harness/README.md` (Zählwort „elf“) im Diff gelesen und gegen die gemessenen Zahlen gehalten (§1: 9 Funktionen, 9 Arten); Handbuch unberührt, Adresse [`slice-routing-betriebsdoku`](../plan/planning/in-progress/slice-routing-betriebsdoku.md) trägt jetzt `order`-Obergrenze und Annahme jeder Zahl mit ganzzahligem positivem Wert (Diff `cc653a85`, gelesen) |
 | 8–12 | Closure-Notiz, Reconciliation (entfällt), Beobachtungs-Register, Risiko-Ausgänge §6, drei Paarungen | **offen, gehört dem Planner** | §7 des Plans trägt Platzhalter, §6 alle Ausgänge „bei der Closure einzutragen“ (erwartet vor `done/`) |
 
 Die DoD-Häkchen im Plan stehen unverändert alle auf `[ ]`; ich setze keine.
@@ -71,7 +71,7 @@ Plan-Tabelle §3 (Ursprungs- und Konkretisierungs-Tabelle) gegen `git diff --sta
   `tools/schema/plan.yaml`, `tools/schema/down.sql` (nicht im Diff; `git status` nach allen Rollout-Läufen leer).
 - **Im Diff, nicht in der Plan-Tabelle:** `tools/schema/schema.yaml` (Kommentar/Beschreibung, vier Zeilen),
   `tools/harness/run-integration-tests.sh` (Zählwort im Kommentar; der Plan nennt die Datei in der letzten
-  Konkretisierungs-Zeile), `internal/domain/errors/errors.go` (Konkretisierungs-Zeile), `docs/plan/planning/open/slice-routing-betriebsdoku.md`
+  Konkretisierungs-Zeile), `internal/domain/errors/errors.go` (Konkretisierungs-Zeile), `docs/plan/planning/in-progress/slice-routing-betriebsdoku.md`
   und `…/slice-routing-e2e.md` (Übergabe-Einträge, in §3 als Meldung geführt), der Review-Report. Die Plan-Datei selbst
   trägt die Fixrunde. Keine Spec-Änderung im Diff (`spec/` unberührt, anders als im Vorgänger-Slice) — passend zum
   Kopf („ändert sie nicht“).
