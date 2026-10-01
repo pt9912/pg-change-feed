@@ -24,6 +24,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -76,7 +77,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "usage: httpclient <base-url> <admin-token> <reader-token> <consumer-id> <consumer-name> <source> <publication> <schema> <table> <from> <to> <limit>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient acknowledge <base-url> <admin-token> <consumer-id> <source-id> <offset>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient remove <base-url> <admin-token> <consumer-id>")
-		fmt.Fprintln(os.Stderr, "   or: httpclient changes <base-url> <reader-token> <source> <schema> <table> <from> <to>")
+		fmt.Fprintln(os.Stderr, "   or: httpclient changes [-target <ziel>] <base-url> <reader-token> <source> <schema> <table> <from> <to>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient position <base-url> <reader-token> <consumer-id>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient enable-table <base-url> <admin-token> <source> <schema> <table> <table-id> <schema-version-id> <publication>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient disable-table <base-url> <admin-token> <source> <schema> <table> <publication>")
@@ -113,7 +114,7 @@ func main() {
 	}
 	fmt.Printf("LISTED body=%s\n", listBody)
 
-	if err := readChanges(client, baseURL, readerToken, source, readSchema, readTable, readFrom, readTo, readLimit); err != nil {
+	if err := readChanges(client, baseURL, readerToken, source, readSchema, readTable, "", readFrom, readTo, readLimit); err != nil {
 		fmt.Fprintf(os.Stderr, "httpclient: GET /changes (reader) fehlgeschlagen: %v\n", err)
 		os.Exit(1)
 	}
@@ -134,7 +135,7 @@ func main() {
 // Commit-Position (die deterministische Ordnung des Endpunkts)
 // und eine Herkunft `wal` oder `backfill`. Ein leerer
 // Parameter lässt den jeweiligen Query-Wert weg — `source` bleibt Pflicht.
-func readChanges(client *http.Client, baseURL, token, source, schema, table, from, to, limit string) error {
+func readChanges(client *http.Client, baseURL, token, source, schema, table, target, from, to, limit string) error {
 	query := url.Values{}
 	query.Set("source", source)
 	if schema != "" {
@@ -142,6 +143,9 @@ func readChanges(client *http.Client, baseURL, token, source, schema, table, fro
 	}
 	if table != "" {
 		query.Set("table", table)
+	}
+	if target != "" {
+		query.Set("target", target)
 	}
 	if from != "" {
 		query.Set("from", from)
@@ -206,12 +210,18 @@ func readChanges(client *http.Client, baseURL, token, source, schema, table, fro
 // (LH-FA-CAP-009): dieselbe inhaltliche Auswertung wie im
 // Hauptmodus, ohne einen Consumer anzulegen.
 func runChangesFlow(args []string) {
+	flags := flag.NewFlagSet("changes", flag.ContinueOnError)
+	target := flags.String("target", "", "Zustellziel-Filter (Query-Parameter target, leer = kein Filter)")
+	if err := flags.Parse(args); err != nil {
+		os.Exit(2)
+	}
+	args = flags.Args()
 	if len(args) != 7 {
-		fmt.Fprintln(os.Stderr, "usage: httpclient changes <base-url> <reader-token> <source> <schema> <table> <from> <to>")
+		fmt.Fprintln(os.Stderr, "usage: httpclient changes [-target <ziel>] <base-url> <reader-token> <source> <schema> <table> <from> <to>")
 		os.Exit(2)
 	}
 	client := &http.Client{Timeout: 30 * time.Second}
-	if err := readChanges(client, args[0], args[1], args[2], args[3], args[4], args[5], args[6], ""); err != nil {
+	if err := readChanges(client, args[0], args[1], args[2], args[3], args[4], *target, args[5], args[6], ""); err != nil {
 		fmt.Fprintf(os.Stderr, "httpclient: GET /changes (reader) fehlgeschlagen: %v\n", err)
 		os.Exit(1)
 	}

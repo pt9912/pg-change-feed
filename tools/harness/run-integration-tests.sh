@@ -460,8 +460,10 @@ docker run --rm --network "$NETWORK" \
   -w /src \
   -e GOCACHE=/tmp/gocache \
   -e CDC_INTEGRATION_DSN="$DSN" \
+  -e CDC_INTEGRATION_HTTP_URL="$HTTP_BASE_URL" \
+  -e CDC_INTEGRATION_HTTP_READER_TOKEN="$HTTP_TOKEN_READER" \
   "$TOOLCHAIN_IMAGE" go test -v \
-  -run '^(TestE2ECaptureFlow|TestE2EUpdateOldImageWithFullReplicaIdentity|TestE2EChangesViewMatchesReadChanges|TestE2ERetentionBlockersViewShowsFurthestBehindConsumer|TestE2EMetricsCarriesStorageBytes|TestE2EActivationState|TestE2EActiveTablesViewMatchesActivationState|TestE2EDisableRetainedState|TestE2ESchemaChangeAddColumn|TestE2EChangeTableMetadataExtensibility|TestE2EHeartbeatHealthy|TestE2ETransformationRulesShapeBothImages|TestE2ETransformationConflictsFailWithSpecText)$' \
+  -run '^(TestE2ECaptureFlow|TestE2EUpdateOldImageWithFullReplicaIdentity|TestE2EChangesViewMatchesReadChanges|TestE2ERetentionBlockersViewShowsFurthestBehindConsumer|TestE2EMetricsCarriesStorageBytes|TestE2EActivationState|TestE2EActiveTablesViewMatchesActivationState|TestE2EDisableRetainedState|TestE2ESchemaChangeAddColumn|TestE2EChangeTableMetadataExtensibility|TestE2EHeartbeatHealthy|TestE2ETransformationRulesShapeBothImages|TestE2ETransformationConflictsFailWithSpecText|TestE2ERoutingSelectsTargetsOverChangesView|TestE2ERoutingConflictsFailWithSpecText|TestE2ERoutingReplayKeepsLabelAndBackfillCarriesIt|TestE2ERoutingDeleteWithoutFullReplicaIdentity)$' \
   ./test/integration/...
 
 # Go-Hälfte der E2E-Abdeckungstabelle: derselbe Testlauf führt den Erzeuger
@@ -4557,6 +4559,336 @@ tf_no_value "$TF_RESTART_TABLE" 7 TfSecretOhneRegeln "$TF_PHASE — Wert der aus
 
 echo "run-integration-tests: Transformationen-Neustart und Ausschluss (LH-FA-CFG-007) belegt — auf $TF_RESTART_TABLE trug die Change nach einem realen docker restart (Startzeit $tf_first_restart_before, danach $tf_first_restart_after) die Form beider Regeln; nach dem Entfernen trug die nächste Change die Rohform; nach exclude_column auf name trug das Bild vor und nach dem zweiten docker restart (Startzeit $tf_started_before, danach $tf_started_after) weder name noch customer_name noch den Wert, die Spalte status blieb (mit Regel offen, ohne Regel roh)"
 
+# --- Routing-Rundläufe (LH-FA-CFG-008) ---------------------------------------
+# Drei Phasen am laufenden Feed-Container, ausschließlich über externe Wege:
+# SQL-Funktionen und Views, HTTP, gRPC, die Wegwerf-Clients und `docker
+# restart`; die Nichtanwendbarkeit und ihre Abhilfe laufen als letzter Rundlauf
+# dieses Runners. Jede Phase legt eigene Tabellen an. Das Ziel einer Change
+# trägt die Spalte route_target der Sicht cdc.changes; die Nachrichten der
+# Stream-Wege tragen es nicht, deshalb hält jede Phase das über einen Weg
+# gelesene Ziel gegen die persistierte Zeile derselben change_id. Auflösung bei
+# zwei treffenden Regeln, R1 bis R6, Replay, Backfill-Label und die
+# DELETE-Messung tragen die vier Testfunktionen in
+# test/integration/routing_e2e_test.go, die der erste `go test`-Aufruf dieser
+# Datei fährt.
+
+# rt_set <Tabelle> <Regelname> <Regelform> <Phase>: setzt eine Routing-Regel
+# und wartet auf den Vermerk.
+rt_set() {
+  local request_id
+  request_id=$(bf_sql "SELECT cdc.set_route('src-e2e', 'public', '$1', '$2', '$3')")
+  [ -n "$request_id" ] || bf_fail "$4 — cdc.set_route($1, $2) lieferte keine Antrags-ID"
+  bf_await_applied "$request_id" "$4"
+}
+
+# rt_remove <Tabelle> <Regelname> <Phase>
+rt_remove() {
+  local request_id
+  request_id=$(bf_sql "SELECT cdc.remove_route('src-e2e', 'public', '$1', '$2')")
+  [ -n "$request_id" ] || bf_fail "$3 — cdc.remove_route($1, $2) lieferte keine Antrags-ID"
+  bf_await_applied "$request_id" "$3"
+}
+
+# rt_target_of_change <change_id>: das persistierte Ziel einer Change, NULL als
+# Text NULL.
+rt_target_of_change() {
+  bf_sql "SELECT coalesce(route_target, 'NULL') FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$1'"
+}
+
+# rt_target_of_row <Tabelle> <id>: das persistierte Ziel der Change einer Zeile.
+rt_target_of_row() {
+  bf_sql "SELECT coalesce(route_target, 'NULL') FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$1' AND new_data->>'id' = '$2'"
+}
+
+# rt_row <Tabelle> <id> <name> <region als SQL-Literal> <Phase>: fügt eine Zeile
+# ein und wartet, bis ihre Change über cdc.changes lesbar ist.
+rt_row() {
+  bf_sql "INSERT INTO public.$1 (id, name, region) VALUES ($2, '$3', $4)" >/dev/null
+  bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$1' AND new_data->>'id' = '$2'" 1 30 "$5 — Change der Zeile $2"
+}
+
+# rt_received_count <Container>: die Zahl der RECEIVED-Zeilen eines Clients.
+rt_received_count() {
+  local logs
+  logs=$(docker logs "$1" 2>&1 || true)
+  printf '%s\n' "$logs" | grep -c '^RECEIVED ' || true
+}
+
+# rt_received_lines <Container>: alle RECEIVED-Zeilen eines Clients.
+rt_received_lines() {
+  local logs
+  logs=$(docker logs "$1" 2>&1 || true)
+  printf '%s\n' "$logs" | grep '^RECEIVED ' || true
+}
+
+# rt_expect_target_line <Zeile> <Tabelle> <erwartetes Ziel> <Beschreibung>: die
+# RECEIVED-Zeile eines auf ein Ziel gewählten Stream-Clients nennt die Tabelle,
+# ein INSERT, und die persistierte Change derselben change_id trägt das Ziel.
+rt_expect_target_line() {
+  local line=$1 table=$2 target=$3 what=$4 change_id
+  [[ "$line" == *" table=$table "* ]] || bf_fail "$what — die RECEIVED-Zeile nennt nicht die Tabelle $table: $line"
+  [[ "$line" == *" operation=INSERT "* ]] || bf_fail "$what — die RECEIVED-Zeile nennt nicht die Operation INSERT: $line"
+  change_id=$(tf_change_id_of "$line")
+  [ -n "$change_id" ] || bf_fail "$what — die RECEIVED-Zeile trägt keine change_id: $line"
+  bf_expect "$(rt_target_of_change "$change_id")" "$target" "$what — persistiertes Ziel der Change $change_id"
+  bf_expect "$(bf_sql "SELECT new_data->>'region' FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$change_id'")" "$target" "$what — Region der Change $change_id"
+}
+
+# rt_grpc_read <Ziel oder leer> <Tabelle> <from> <to>: der RPC ReadChanges im
+# Toolchain-Container über tools/harness/grpcadminclient, je Aufruf mit einem
+# eigenen Consumer; ein Fehlschlag des Clients endet die Phase.
+rt_grpc_read() {
+  local output status consumer flags=()
+  if [ -n "$1" ]; then
+    flags=(-target "$1")
+  fi
+  consumer="rt-e2e-consumer-$(date +%s%N)"
+  set +e
+  output=$(docker run --rm --network "$NETWORK" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -w /src \
+    -e GOCACHE=/tmp/gocache \
+    "$TOOLCHAIN_IMAGE" go run ./tools/harness/grpcadminclient ${flags[@]+"${flags[@]}"} \
+    "$GRPC_ADDR" "$HTTP_TOKEN_READER" "$HTTP_TOKEN_ADMIN" "$consumer" src-e2e pub_pgc_e2e public "$2" "$3" "$4" 500 2>&1)
+  status=$?
+  set -e
+  if [ "$status" -ne 0 ]; then
+    bf_fail "grpcadminclient endete mit Ausgang $status: $output"
+  fi
+  printf '%s\n' "$output"
+}
+
+abdeckung_declare "Routing-Happy-Path (fünf Zustellwege)" "LH-FA-CFG-008,LH-FA-SST-006,LH-FA-SST-008" "zwei per cdc.set_route beantragte Inhaltsregeln (Ziele eu und us) lenken eine danach eingefügte Zeile auf ihr Ziel, und jedes Ziel ist auf allen fünf Wegen auswählbar: über cdc.changes (WHERE route_target), GET /changes?target=, den ReadChanges-RPC mit target, den gRPC-Stream, den SSE-Stream und das NATS-Subjekt cdc.route.<source_id>.<ziel>; jedes über einen Weg gelesene Ziel wird gegen die persistierte Zeile derselben change_id gehalten, ein auf ein Ziel gewählter Leser sieht nur dieses Ziel, ein ungefilterter Leser sieht eine Change ohne Treffer (route_target NULL) und die gerouteten Changes" "Routing-Happy-Path (LH-FA-CFG-008) belegt"
+
+RT_PHASE="Routing-Happy-Path"
+RT_TABLE=feed_e2e_route
+RT_RULE_EU='{"target":"eu","order":10,"when":{"column":"region","equals":"eu"}}'
+RT_RULE_US='{"target":"us","order":20,"when":{"column":"region","equals":"us"}}'
+RT_NATS_URL="nats://nats:4222"
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$RT_TABLE (id int PRIMARY KEY, name text, region text);
+SQL
+bf_enable "$RT_TABLE" "$RT_PHASE"
+rt_set "$RT_TABLE" eu_orders "$RT_RULE_EU" "$RT_PHASE"
+rt_set "$RT_TABLE" us_orders "$RT_RULE_US" "$RT_PHASE"
+
+# Neun Stream-Clients laufen gleichzeitig: je Weg einer auf Ziel eu, einer auf
+# Ziel us und einer ohne Ziel, der drei Changes der Tabelle empfängt.
+RT_CLIENTS="cdc-e2e-rt-grpc-eu cdc-e2e-rt-grpc-us cdc-e2e-rt-grpc-all cdc-e2e-rt-sse-eu cdc-e2e-rt-sse-us cdc-e2e-rt-sse-all cdc-e2e-rt-nats-eu cdc-e2e-rt-nats-us cdc-e2e-rt-nats-all"
+tf_client_start cdc-e2e-rt-grpc-eu ./tools/harness/grpcclient -target eu "$GRPC_ADDR" "$HTTP_TOKEN_READER"
+tf_client_start cdc-e2e-rt-grpc-us ./tools/harness/grpcclient -target us "$GRPC_ADDR" "$HTTP_TOKEN_READER"
+tf_client_start cdc-e2e-rt-grpc-all ./tools/harness/grpcclient -count 3 "$GRPC_ADDR" "$HTTP_TOKEN_READER" public "$RT_TABLE"
+tf_client_start cdc-e2e-rt-sse-eu ./tools/harness/sseclient -target eu "$HTTP_BASE_URL" "$HTTP_TOKEN_READER"
+tf_client_start cdc-e2e-rt-sse-us ./tools/harness/sseclient -target us "$HTTP_BASE_URL" "$HTTP_TOKEN_READER"
+tf_client_start cdc-e2e-rt-sse-all ./tools/harness/sseclient -count 3 "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" public "$RT_TABLE"
+tf_client_start cdc-e2e-rt-nats-eu ./tools/harness/natsstreamsub -source src-e2e -target eu "$RT_NATS_URL" - "$NATS_STREAM_TOKEN"
+tf_client_start cdc-e2e-rt-nats-us ./tools/harness/natsstreamsub -source src-e2e -target us "$RT_NATS_URL" - "$NATS_STREAM_TOKEN"
+tf_client_start cdc-e2e-rt-nats-all ./tools/harness/natsstreamsub -count 3 "$RT_NATS_URL" "cdc.stream.src-e2e.public.$RT_TABLE" "$NATS_STREAM_TOKEN"
+for rt_client in $RT_CLIENTS; do
+  tf_client_await "$rt_client" READY 120 "$RT_PHASE"
+done
+
+# Die Zustellung über die Streams trägt kein Replay: zwischen „Client ist
+# bereit“ und „Empfänger ist am Broadcaster registriert“ liegt ein kurzes
+# Fenster. Der Lauf fügt deshalb Dreiergruppen ein (Region asia ohne Treffer,
+# us, eu), bis die sechs Clients mit Ziel eine Change und die drei Clients ohne
+# Ziel drei Changes empfangen haben; drei aufeinanderfolgende Zeilen dieser
+# Folge tragen je eine Region.
+rt_attempts=0
+rt_all_received=0
+for rt_attempt in $(seq 1 6); do
+  rt_attempts=$rt_attempt
+  rt_row "$RT_TABLE" $((rt_attempt * 100 + 1)) RtAsien "'asia'" "$RT_PHASE"
+  rt_row "$RT_TABLE" $((rt_attempt * 100 + 2)) RtUsa "'us'" "$RT_PHASE"
+  rt_row "$RT_TABLE" $((rt_attempt * 100 + 3)) RtEuropa "'eu'" "$RT_PHASE"
+  for _ in $(seq 1 20); do
+    rt_ready=1
+    for rt_client in $RT_CLIENTS; do
+      case "$rt_client" in
+        *-all) rt_need=3 ;;
+        *) rt_need=1 ;;
+      esac
+      if [ "$(rt_received_count "$rt_client")" -lt "$rt_need" ]; then
+        rt_ready=0
+      fi
+    done
+    if [ "$rt_ready" -eq 1 ]; then
+      rt_all_received=1
+      break
+    fi
+    sleep 0.5
+  done
+  if [ "$rt_all_received" -eq 1 ]; then
+    break
+  fi
+done
+if [ "$rt_all_received" -ne 1 ]; then
+  rt_report=""
+  for rt_client in $RT_CLIENTS; do
+    rt_report="$rt_report $rt_client=$(rt_received_count "$rt_client")"
+  done
+  bf_fail "$RT_PHASE — nicht jeder Stream-Client empfing seine Changes nach $rt_attempts Dreiergruppen (RECEIVED-Zeilen:$rt_report)"
+fi
+
+# Ein auf ein Ziel gewählter Client empfängt als erste Change eine mit diesem
+# Ziel, obwohl vor ihr Changes anderer Ziele und ohne Ziel erfasst wurden.
+rt_lines_report=""
+for rt_way in grpc sse nats; do
+  for rt_target in eu us; do
+    rt_line=$(rt_received_lines "cdc-e2e-rt-$rt_way-$rt_target" | head -n1)
+    rt_expect_target_line "$rt_line" "$RT_TABLE" "$rt_target" "$RT_PHASE — $rt_way, Ziel $rt_target"
+    rt_lines_report="$rt_lines_report $rt_way/$rt_target: $rt_line;"
+  done
+  # Ein Client ohne Ziel empfängt drei aufeinanderfolgende Changes: eine ohne
+  # Ziel, eine mit us, eine mit eu.
+  rt_all_targets=""
+  while IFS= read -r rt_line; do
+    rt_all_targets="$rt_all_targets$(rt_target_of_change "$(tf_change_id_of "$rt_line")"),"
+  done < <(rt_received_lines "cdc-e2e-rt-$rt_way-all" | head -n3)
+  rt_all_sorted=$(printf '%s' "$rt_all_targets" | tr ',' '\n' | grep -v '^$' | LC_ALL=C sort | paste -sd,)
+  bf_expect "$rt_all_sorted" "NULL,eu,us" "$RT_PHASE — $rt_way, Client ohne Ziel: Ziele seiner drei Changes"
+done
+docker rm -fv $RT_CLIENTS >/dev/null 2>&1 || true
+
+# cdc.changes, GET /changes und ReadChanges: dieselben Kennungen wie die SQL-
+# Auswahl; ein ungefilterter Lesezugriff liefert jede Change.
+rt_range=$(bf_sql "SELECT min(commit_position) || ' ' || (max(commit_position) + 1) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RT_TABLE'")
+read -r rt_from rt_to <<<"$rt_range"
+rt_ids_sql() {
+  bf_sql "SELECT string_agg(change_id, ',' ORDER BY change_id COLLATE \"C\") FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RT_TABLE' $1"
+}
+rt_total=$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RT_TABLE'")
+bf_expect "$rt_total" $((rt_attempts * 3)) "$RT_PHASE — Changes der Tabelle"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RT_TABLE' AND route_target IS NULL")" "$rt_attempts" "$RT_PHASE — Changes ohne Ziel (Region asia)"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RT_TABLE' AND route_target = 'eu' AND new_data->>'region' <> 'eu'")" 0 "$RT_PHASE — Ziel eu auf einer Change anderer Region"
+for rt_target in eu us; do
+  rt_sql_ids=$(rt_ids_sql "AND route_target = '$rt_target'")
+  [ -n "$rt_sql_ids" ] || bf_fail "$RT_PHASE — keine Change mit Ziel $rt_target in der Sicht"
+  bf_expect "$(bf_read_ids "$(bf_http changes -target "$rt_target" "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" src-e2e public "$RT_TABLE" "$rt_from" "$rt_to")")" "$rt_sql_ids" "$RT_PHASE — GET /changes?target=$rt_target gegen cdc.changes"
+  bf_expect "$(bf_read_ids "$(rt_grpc_read "$rt_target" "$RT_TABLE" "$rt_from" "$rt_to")")" "$rt_sql_ids" "$RT_PHASE — ReadChanges mit target $rt_target gegen cdc.changes"
+done
+rt_all_ids=$(rt_ids_sql "")
+bf_expect "$(bf_read_ids "$(bf_http changes "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" src-e2e public "$RT_TABLE" "$rt_from" "$rt_to")")" "$rt_all_ids" "$RT_PHASE — GET /changes ohne target gegen cdc.changes"
+bf_expect "$(bf_read_ids "$(rt_grpc_read "" "$RT_TABLE" "$rt_from" "$rt_to")")" "$rt_all_ids" "$RT_PHASE — ReadChanges ohne target gegen cdc.changes"
+bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" true "$RT_PHASE — Feed-Container läuft weiter"
+
+echo "run-integration-tests: Routing-Happy-Path (LH-FA-CFG-008) belegt — auf $RT_TABLE lenkten die Regeln eu_orders und us_orders $rt_attempts Dreiergruppe(n) (asia, us, eu) auf eu, us und kein Ziel; gRPC-Stream, SSE-Stream und NATS-Subjekt cdc.route.src-e2e.<ziel> lieferten je Ziel eine Change des Ziels (persistiertes Ziel je change_id gehalten) und je Client ohne Ziel drei Changes mit den Zielen NULL, eu und us; GET /changes?target= und ReadChanges mit target lieferten je Ziel genau die Kennungen der SQL-Auswahl WHERE route_target (Bereich [$rt_from,$rt_to)), ungefiltert alle $rt_total Changes:$rt_lines_report"
+
+abdeckung_declare "Routing-Neustart und Ausschluss-Sperre" "LH-FA-CFG-008,LH-FA-CFG-005,LH-QA-SEC-004" "nach einem realen Container-Neustart leitet der Prozessstart den Routing-Regelstand aus den applied-Zeilen ab und die danach erfasste Change trägt das Ziel; cdc.remove_route stellt für künftige Changes das Verhalten ohne die Regel wieder her; nach cdc.exclude_column auf einer Spalte ohne Bedingung trägt das Bild weder ihren Schlüssel noch ihren Wert, vor und nach einem weiteren Neustart, und der Ausschluss der Bedingungsspalte endet auch nach dem Neustart failed" "Routing-Neustart und Ausschluss-Sperre (LH-FA-CFG-008) belegt"
+
+RS_PHASE="Routing-Neustart und Ausschluss-Sperre"
+RS_TABLE=feed_e2e_route_restart
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$RS_TABLE (id int PRIMARY KEY, name text, region text, secret text);
+SQL
+bf_enable "$RS_TABLE" "$RS_PHASE"
+rt_set "$RS_TABLE" eu_orders "$RT_RULE_EU" "$RS_PHASE"
+rt_set "$RS_TABLE" rest '{"target":"sonstige","order":100}' "$RS_PHASE"
+
+# rs_row <id> <region als SQL-Literal> <Geheimwert>: eine Zeile samt Spalte
+# secret und das Warten auf ihre Change.
+rs_row() {
+  bf_sql "INSERT INTO public.$RS_TABLE (id, name, region, secret) VALUES ($1, 'Rs$1', $2, '$3')" >/dev/null
+  bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RS_TABLE' AND new_data->>'id' = '$1'" 1 30 "$RS_PHASE — Change der Zeile $1"
+}
+
+rs_row 1 "'eu'" RsGeheim1
+bf_expect "$(rt_target_of_row "$RS_TABLE" 1)" eu "$RS_PHASE — Ziel vor dem Neustart"
+
+# Der Neustart ist ein echter Prozess-Neustart desselben Containers: der
+# Prozessstart leitet den Regelstand aus den applied-Zeilen ab, und das Ziel der
+# nächsten Change ist der Beleg dieser Ableitung (Beleg des Neustarts selbst ist
+# die Startzeit, tf_restart_feed).
+tf_restart_feed "$RS_PHASE"
+rs_first_before=$tf_started_before
+rs_first_after=$tf_started_after
+rs_row 2 "'eu'" RsGeheim2
+rs_row 3 "'us'" RsGeheim3
+bf_expect "$(rt_target_of_row "$RS_TABLE" 2)" eu "$RS_PHASE — Ziel der Inhaltsregel nach dem Neustart"
+bf_expect "$(rt_target_of_row "$RS_TABLE" 3)" sonstige "$RS_PHASE — Ziel der Abschlussregel nach dem Neustart"
+
+# Rücknahme: ohne die Inhaltsregel trifft die Abschlussregel, danach wirkt die
+# neu gesetzte Regel wieder.
+rt_remove "$RS_TABLE" eu_orders "$RS_PHASE"
+rs_row 4 "'eu'" RsGeheim4
+bf_expect "$(rt_target_of_row "$RS_TABLE" 4)" sonstige "$RS_PHASE — Ziel nach cdc.remove_route"
+bf_expect "$(rt_target_of_row "$RS_TABLE" 2)" eu "$RS_PHASE — frühere Change nach cdc.remove_route unverändert"
+rt_set "$RS_TABLE" eu_orders "$RT_RULE_EU" "$RS_PHASE"
+rs_row 5 "'eu'" RsGeheim5
+bf_expect "$(rt_target_of_row "$RS_TABLE" 5)" eu "$RS_PHASE — Ziel nach dem erneuten Setzen"
+
+# Ausschluss der Spalte secret (keine Bedingung): kein Schlüssel und kein Wert im
+# Bild, das Ziel bleibt, vor und nach einem weiteren Neustart.
+tf_exclude "$RS_TABLE" secret "$RS_PHASE"
+rs_row 6 "'eu'" RsGeheimVorNeustart
+tf_form "$RS_TABLE" 6 '{"name":"Rs6","region":"eu"}' "$RS_PHASE — Bild mit Ausschluss vor dem Neustart"
+tf_no_value "$RS_TABLE" 6 RsGeheimVorNeustart "$RS_PHASE — Wert der ausgeschlossenen Spalte vor dem Neustart"
+bf_expect "$(rt_target_of_row "$RS_TABLE" 6)" eu "$RS_PHASE — Ziel mit Ausschluss vor dem Neustart"
+tf_restart_feed "$RS_PHASE"
+rs_row 7 "'eu'" RsGeheimNachNeustart
+tf_form "$RS_TABLE" 7 '{"name":"Rs7","region":"eu"}' "$RS_PHASE — Bild mit Ausschluss nach dem Neustart"
+tf_no_value "$RS_TABLE" 7 RsGeheimNachNeustart "$RS_PHASE — Wert der ausgeschlossenen Spalte nach dem Neustart"
+bf_expect "$(rt_target_of_row "$RS_TABLE" 7)" eu "$RS_PHASE — Ziel mit Ausschluss nach dem Neustart"
+
+# R3 in die andere Richtung, nach dem Neustart: der Ausschluss der Spalte mit
+# Bedingung endet failed, die Spalte region bleibt im Bild.
+rs_exclude_request=$(bf_sql "SELECT cdc.exclude_column('src-e2e', 'public', '$RS_TABLE', 'region')")
+[ -n "$rs_exclude_request" ] || bf_fail "$RS_PHASE — cdc.exclude_column(region) lieferte keine Antrags-ID"
+bf_await_sql "SELECT status FROM cdc.administration_request WHERE administration_request_id = '$rs_exclude_request'" failed 30 "$RS_PHASE — Ausschluss der Bedingungsspalte"
+bf_expect "$(bf_sql "SELECT error_message FROM cdc.administration_request WHERE administration_request_id = '$rs_exclude_request'")" "Spalte trägt eine Routing-Bedingung: public.$RS_TABLE.region" "$RS_PHASE — Fehlertext des Ausschlusses der Bedingungsspalte"
+rs_row 8 "'eu'" RsGeheimNachAblehnung
+tf_form "$RS_TABLE" 8 '{"name":"Rs8","region":"eu"}' "$RS_PHASE — Bild nach dem abgelehnten Ausschluss"
+bf_expect "$(rt_target_of_row "$RS_TABLE" 8)" eu "$RS_PHASE — Ziel nach dem abgelehnten Ausschluss"
+
+echo "run-integration-tests: Routing-Neustart und Ausschluss-Sperre (LH-FA-CFG-008) belegt — auf $RS_TABLE trug die Change nach einem realen docker restart (Startzeit $rs_first_before, danach $rs_first_after) das Ziel der abgeleiteten Regeln (eu, Abschlussregel sonstige); nach cdc.remove_route traf die Abschlussregel, nach dem erneuten Setzen wieder die Inhaltsregel; nach cdc.exclude_column auf secret trug das Bild vor und nach dem zweiten docker restart (Startzeit $tf_started_before, danach $tf_started_after) weder secret noch den Wert und weiter das Ziel eu; der Ausschluss der Bedingungsspalte region endete nach dem Neustart failed (Spalte trägt eine Routing-Bedingung)"
+
+abdeckung_declare "Routing-Aktivierung über die API" "LH-FA-CFG-008,LH-FA-CFG-001,LH-FA-SST-006" "eine Tabelle mit applied-Routing-Regel, die weder per cdc.enable_table noch per Prozessstart, sondern über EnableTable des gRPC- bzw. HTTP-Zugriffswegs aktiviert wird, trägt den abgeleiteten Regelstand: die danach erfasste Change trägt das Ziel der Regel; eine auf demselben Weg aktivierte Tabelle ohne Regel trägt kein Ziel" "Routing-Aktivierung über die API (LH-FA-CFG-008) belegt"
+
+RA_PHASE="Routing-Aktivierung über die API"
+RA_RULE='{"target":"api","order":10,"when":{"column":"region","equals":"eu"}}'
+ra_report=""
+for ra_way in grpc http; do
+  for ra_kind in rule plain; do
+    ra_table="feed_e2e_route_api_${ra_way}_${ra_kind}"
+    ra_id="tbl-e2e-route-api-${ra_way}-${ra_kind}"
+    docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$ra_table (id int PRIMARY KEY, name text, region text);
+SQL
+    if [ "$ra_kind" = rule ]; then
+      rt_set "$ra_table" api_orders "$RA_RULE" "$RA_PHASE"
+    fi
+    if [ "$ra_way" = grpc ]; then
+      set +e
+      ra_output=$(docker run --rm --network "$NETWORK" \
+        -v "$(pwd)":/src:ro \
+        -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+        -w /src \
+        -e GOCACHE=/tmp/gocache \
+        "$TOOLCHAIN_IMAGE" go run ./tools/harness/grpcenabletableclient "$GRPC_ADDR" enable-table \
+        "$HTTP_TOKEN_ADMIN" src-e2e public "$ra_table" "$ra_id" "$ra_id-v1" pub_pgc_e2e 2>&1)
+      ra_status=$?
+      set -e
+    else
+      ra_output=$(bf_http enable-table "$HTTP_BASE_URL" "$HTTP_TOKEN_ADMIN" src-e2e public "$ra_table" "$ra_id" "$ra_id-v1" pub_pgc_e2e) && ra_status=0 || ra_status=$?
+    fi
+    [ "$ra_status" -eq 0 ] || bf_fail "$RA_PHASE — EnableTable($ra_table) über $ra_way endete mit Ausgang $ra_status: $ra_output"
+    [[ "$ra_output" == *ENABLED* ]] || bf_fail "$RA_PHASE — keine ENABLED-Zeile über $ra_way: $ra_output"
+    rt_row "$ra_table" 1 RaEins "'eu'" "$RA_PHASE"
+    if [ "$ra_kind" = rule ]; then
+      bf_expect "$(rt_target_of_row "$ra_table" 1)" api "$RA_PHASE — Ziel auf $ra_table (EnableTable über $ra_way)"
+    else
+      bf_expect "$(rt_target_of_row "$ra_table" 1)" NULL "$RA_PHASE — Ziel auf $ra_table ohne Regel (EnableTable über $ra_way)"
+    fi
+    ra_report="$ra_report $ra_table: $(rt_target_of_row "$ra_table" 1);"
+  done
+done
+bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" true "$RA_PHASE — Feed-Container läuft weiter"
+
+echo "run-integration-tests: Routing-Aktivierung über die API (LH-FA-CFG-008) belegt — Tabellen mit applied-Regel api_orders (Region eu führt auf api), über EnableTable des gRPC- und des HTTP-Wegs ohne cdc.enable_table und ohne Neustart aktiviert, trugen das Ziel der Regel; je eine auf demselben Weg aktivierte Tabelle ohne Regel trug kein Ziel (Ziel je Tabelle:$ra_report)"
+
 abdeckung_declare "Prozessstart-Vorlauf-Frist" "LH-FA-CFG-007,LH-QA-REL-001" "eine Sperre auf einer eigenen, bislang nicht aktivierten Tabelle hält den enable-Antrag über die Frist des Vorlaufs (30s, \`ADR-0128\`) hinaus fest; ein realer Neustart des Feed-Containers startet Stream und Administrations-Goroutine trotzdem — der Healthcheck bleibt während der Wartezeit gesund, eine auf einer bereits aktivierten Tabelle committete Änderung wird binnen Frist plus Toleranz über cdc.changes sichtbar, der Prozess endet nicht mit einer Fehlerklasse, und der Antrag wird erst nach Freigabe der Sperre applied" "Prozessstart-Vorlauf-Frist (ADR-0128) belegt"
 
 # Prozessstart-Vorlauf-Frist (ADR-0128): eine zweite Sitzung sperrt die
@@ -4896,6 +5228,130 @@ bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND t
 tf_form "$TA_TABLE" 3 '{"name":"Betroffen"}' "$TA_PHASE — Rohform nach der Abhilfe (Regel entfernt)"
 
 echo "run-integration-tests: Transformationen-Nichtanwendbarkeit und Abhilfe (ADR-0112 Folgepflicht 5) belegt — Kollision auf $TA_TABLE beendete den Erfassungspfad real (error_class=schema, Sentinel im Log), cdc.remove_transformation ($ta_remove_request) während des Stillstands beantragt (pending), nach dem Neustart applied vor der ersten Transaktion der Tabelle, die zuvor nicht bestätigte Zeile (id=3) erscheint über cdc.changes in Rohform ohne zweiten schema-Fehler"
+
+abdeckung_declare "Routing-Nichtanwendbarkeit und Abhilfe" "LH-FA-CFG-008,LH-FA-ADM-003,LH-FA-SCH-004" "eine auf eine Change nicht anwendbare Routing-Regel beendet den Erfassungspfad sichtbar mit der Fehlerklasse schema, ohne dass eine Change der Tabelle persistiert wird; die Erstaktivierung ohne Spaltenform und die Publication mit Spaltenliste erzeugen die Nichtanwendbarkeit am System, cdc.remove_route wird beantragt, während der Prozess steht, nach dem Neustart ist der Antrag applied und die zuvor nicht bestätigte Transaktion erscheint über cdc.changes ohne Ziel und ohne zweiten schema-Fehler; ein Spaltenentfernen mit bekannter Spaltenform endet als inkompatible Schemaänderung ohne Zeile für die Change in cdc.changes" "Routing-Nichtanwendbarkeit und Abhilfe (LH-FA-CFG-008) belegt"
+
+# Routing-Nichtanwendbarkeit und Abhilfe: läuft als letzter Rundlauf dieses
+# Runners, nach der Container-Ende-Grenze der Transformations-Abhilfe oben, auf
+# eigenen Tabellen. Drei Fälle, jeder beendet den Feed-Container:
+#
+# (b) Erstaktivierung ohne Spaltenform: die Aktivierung legt die Versionszeile
+#     ohne Spaltenform an; die Regel auf region wird beantragt, die Spalte
+#     entfernt, bevor eine Change der Tabelle die Spaltenform anlegt. Die
+#     erste Relation der Tabelle trägt region nicht mehr, die Change endet als
+#     nicht anwendbare Regel.
+# (c) Publication mit Spaltenliste, die region nicht trägt: die Spalte besteht
+#     an der Quelle, die Relation trägt sie nicht.
+#     Beide Fälle tragen die Abhilfe: cdc.remove_route, während der Prozess
+#     steht, und ein Neustart ohne Slot-Eingriff legen die zuvor nicht
+#     bestätigte Transaktion vor.
+# (a) Spaltenform bekannt, Spalte entfernt: der Pfad endet an der inkompatiblen
+#     Schemaänderung, vor der Regel; keine Zeile für diese Change. Dieser Fall
+#     bleibt am Ende stehen, ohne Wiederanlauf.
+RN_PHASE="Routing-Nichtanwendbarkeit und Abhilfe"
+RN_RULE='{"target":"eu","order":10,"when":{"column":"region","equals":"eu"}}'
+RN_SENTINEL_NOT_APPLICABLE="Routing-Regel auf die Änderung nicht anwendbar"
+RN_SENTINEL_INCOMPATIBLE="Relation-Änderung nicht sicher als Obermenge interpretierbar"
+
+# rn_shape_rows <Tabelle>: die Zahl der Spaltenform-Zeilen der Versionen einer
+# Tabelle in cdc.table_schema.
+rn_shape_rows() {
+  bf_sql "SELECT count(*) FROM cdc.table_schema ts JOIN cdc.schema_version sv ON sv.schema_version_id = ts.schema_version_id JOIN cdc.source_table st ON st.source_table_id = sv.source_table_id WHERE st.source_id = 'src-e2e' AND st.schema_name = 'public' AND st.table_name = '$1'"
+}
+
+# rn_await_end <Phase>: wartet, bis der Feed-Container beendet ist.
+rn_await_end() {
+  local i
+  for ((i = 0; i < 90; i++)); do
+    if [ "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" = false ]; then
+      return 0
+    fi
+    sleep 1
+  done
+  bf_fail "$1 — der Feed-Container lief 90 s nach der auslösenden Änderung weiter"
+}
+
+# rn_expect_end <Phase> <Seit-Zeitpunkt> <Log-Sentinel>: der Prozess ist
+# beendet, sein Log seit dem Zeitpunkt trägt den Sentinel, und
+# cdc.process_heartbeat trägt die Klasse schema.
+rn_expect_end() {
+  local phase=$1 since=$2 sentinel=$3 log
+  rn_await_end "$phase"
+  log=$(docker logs --since "$since" "$FEED_CONTAINER" 2>&1 || true)
+  [[ "$log" == *"$sentinel"* ]] || bf_fail "$phase — das Log des Feed-Containers seit $since trägt den Sentinel '$sentinel' nicht: $log"
+  bf_expect "$(bf_sql "SELECT coalesce(error_class, '') FROM cdc.process_heartbeat WHERE source_id = 'src-e2e'")" schema "$phase — Fehlerklasse in cdc.process_heartbeat"
+}
+
+# rn_abhilfe <Tabelle> <Phase>: cdc.remove_route wird beantragt, während der
+# Prozess steht (Antrag pending); der Neustart verarbeitet ihn vor der ersten
+# Transaktion der Tabelle, und die zuvor nicht bestätigte Zeile (id=1) erscheint
+# über cdc.changes ohne Ziel und ohne zweiten schema-Fehler.
+rn_abhilfe() {
+  local table=$1 phase=$2 request_id fault
+  request_id=$(bf_sql "SELECT cdc.remove_route('src-e2e', 'public', '$table', 'eu_orders')")
+  [ -n "$request_id" ] || bf_fail "$phase — cdc.remove_route($table) lieferte keine Antrags-ID"
+  bf_expect "$(bf_sql "SELECT status FROM cdc.administration_request WHERE administration_request_id = '$request_id'")" pending "$phase — Antrag $request_id während des Prozess-Stillstands"
+  docker start "$FEED_CONTAINER" >/dev/null
+  bf_await_healthy "$phase — Neustart nach der Abhilfe"
+  bf_await_applied "$request_id" "$phase"
+  fault=$(bf_sql "SELECT coalesce(error_class, '') FROM cdc.heartbeat WHERE source_id = 'src-e2e'")
+  [ "$fault" != "schema" ] || bf_fail "$phase — ein zweiter schema-Fehler nach der Abhilfe (error_class=$fault)"
+  bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$table' AND new_data->>'id' = '1'" 1 30 "$phase — zuvor nicht bestätigte Transaktion (id=1)"
+  bf_expect "$(rt_target_of_row "$table" 1)" NULL "$phase — Ziel der Change nach der Abhilfe (Regel entfernt)"
+}
+
+RN_B_TABLE=feed_e2e_route_nb
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$RN_B_TABLE (id int PRIMARY KEY, name text, region text);
+SQL
+bf_enable "$RN_B_TABLE" "$RN_PHASE"
+rn_b_shape=$(rn_shape_rows "$RN_B_TABLE")
+bf_expect "$rn_b_shape" 0 "$RN_PHASE (b) — Spaltenform-Zeilen der Erstaktivierung"
+rt_set "$RN_B_TABLE" eu_orders "$RN_RULE" "$RN_PHASE (b)"
+bf_sql "ALTER TABLE public.$RN_B_TABLE DROP COLUMN region" >/dev/null
+rn_b_since=$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)
+bf_sql "INSERT INTO public.$RN_B_TABLE (id, name) VALUES (1, 'Betroffen')" >/dev/null
+rn_expect_end "$RN_PHASE (b)" "$rn_b_since" "$RN_SENTINEL_NOT_APPLICABLE"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RN_B_TABLE'")" 0 "$RN_PHASE (b) — Changes der Tabelle bei beendetem Prozess"
+rn_abhilfe "$RN_B_TABLE" "$RN_PHASE (b)"
+tf_form "$RN_B_TABLE" 1 '{"name":"Betroffen"}' "$RN_PHASE (b) — Bild nach der Abhilfe"
+
+RN_C_TABLE=feed_e2e_route_pub
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$RN_C_TABLE (id int PRIMARY KEY, name text, region text);
+SQL
+bf_enable "$RN_C_TABLE" "$RN_PHASE"
+rn_c_shape=$(rn_shape_rows "$RN_C_TABLE")
+bf_expect "$rn_c_shape" 0 "$RN_PHASE (c) — Spaltenform-Zeilen der Erstaktivierung"
+rt_set "$RN_C_TABLE" eu_orders "$RN_RULE" "$RN_PHASE (c)"
+bf_sql "ALTER PUBLICATION pub_pgc_e2e DROP TABLE public.$RN_C_TABLE" >/dev/null
+bf_sql "ALTER PUBLICATION pub_pgc_e2e ADD TABLE public.$RN_C_TABLE (id, name)" >/dev/null
+bf_expect "$(bf_sql "SELECT array_to_string(attnames, ',') FROM pg_publication_tables WHERE pubname = 'pub_pgc_e2e' AND tablename = '$RN_C_TABLE'")" "id,name" "$RN_PHASE (c) — Spaltenliste der Publication"
+rn_c_since=$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)
+bf_sql "INSERT INTO public.$RN_C_TABLE (id, name, region) VALUES (1, 'Betroffen', 'eu')" >/dev/null
+rn_expect_end "$RN_PHASE (c)" "$rn_c_since" "$RN_SENTINEL_NOT_APPLICABLE"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RN_C_TABLE'")" 0 "$RN_PHASE (c) — Changes der Tabelle bei beendetem Prozess"
+rn_abhilfe "$RN_C_TABLE" "$RN_PHASE (c)"
+
+RN_A_TABLE=feed_e2e_route_drop
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$RN_A_TABLE (id int PRIMARY KEY, name text, region text);
+SQL
+bf_enable "$RN_A_TABLE" "$RN_PHASE"
+rt_set "$RN_A_TABLE" eu_orders "$RN_RULE" "$RN_PHASE (a)"
+rt_row "$RN_A_TABLE" 1 RnEins "'eu'" "$RN_PHASE (a)"
+bf_expect "$(rt_target_of_row "$RN_A_TABLE" 1)" eu "$RN_PHASE (a) — Ziel der Change vor der Spaltenentfernung"
+rn_a_shape=$(rn_shape_rows "$RN_A_TABLE")
+[ "$rn_a_shape" -gt 0 ] || bf_fail "$RN_PHASE (a) — die erste Change legte keine Spaltenform an"
+bf_sql "ALTER TABLE public.$RN_A_TABLE DROP COLUMN region" >/dev/null
+rn_a_since=$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)
+bf_sql "INSERT INTO public.$RN_A_TABLE (id, name) VALUES (2, 'Betroffen')" >/dev/null
+rn_expect_end "$RN_PHASE (a)" "$rn_a_since" "$RN_SENTINEL_INCOMPATIBLE"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RN_A_TABLE' AND new_data->>'id' = '2'")" 0 "$RN_PHASE (a) — Zeilen für die Change nach der Spaltenentfernung (weder NULL noch ein Ziel)"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RN_A_TABLE'")" 1 "$RN_PHASE (a) — Changes der Tabelle insgesamt"
+bf_expect "$(rt_target_of_row "$RN_A_TABLE" 1)" eu "$RN_PHASE (a) — Ziel der früheren Change unverändert"
+
+echo "run-integration-tests: Routing-Nichtanwendbarkeit und Abhilfe (LH-FA-CFG-008) belegt — (b) Erstaktivierung ohne Spaltenform ($rn_b_shape Spaltenform-Zeilen nach der Aktivierung) und (c) Publication-Spaltenliste id,name ($rn_c_shape Spaltenform-Zeilen) beendeten den Erfassungspfad real mit Klasse schema und dem Sentinel '$RN_SENTINEL_NOT_APPLICABLE' ohne persistierte Change; cdc.remove_route wurde bei stehendem Prozess beantragt (pending), nach dem Neustart applied, die nicht bestätigte Zeile erschien über cdc.changes ohne Ziel und ohne zweiten schema-Fehler; (a) Spaltenentfernung bei bekannter Spaltenform ($rn_a_shape Spaltenform-Zeilen) beendete den Pfad mit Klasse schema und dem Sentinel '$RN_SENTINEL_INCOMPATIBLE', die Change nach der Entfernung hat keine Zeile in cdc.changes"
 
 # Zusammensetzung der E2E-Abdeckungstabelle: erst Go-Zeilen nach Quelldatei
 # und Quellzeile, dann die Bash-Zeilen der deklarierten Phasen nach

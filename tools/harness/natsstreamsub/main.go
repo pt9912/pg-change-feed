@@ -14,11 +14,14 @@
 // wiederverwenden kann. Träger ist run-integration-tests.sh — der Aufrufer
 // liest die stdout-Zeilen dieses Prozesses über `docker logs`, nicht über
 // einen Exit-Code allein, weil "READY" vor der auslösenden Change
-// beobachtbar sein muss.
+// beobachtbar sein muss. Die Flags `-source` und `-target` ersetzen den
+// Subjekt-Parameter durch das Ziel-Subjekt `cdc.route.<source>.<ziel>`,
+// `-count` setzt die Zahl der Events, die der Client empfängt.
 package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"time"
@@ -48,11 +51,19 @@ type streamMessage struct {
 const wrongToken = "natsstreamsub-wrong-token"
 
 func main() {
-	if len(os.Args) != 4 {
-		fmt.Fprintln(os.Stderr, "usage: natsstreamsub <nats-url> <subject> <token>")
+	source := flag.String("source", "", "Quellkennung des Ziel-Subjekts (nur zusammen mit -target)")
+	target := flag.String("target", "", "Zustellziel: abonniert cdc.route.<source>.<ziel> statt <subject>")
+	count := flag.Int("count", 1, "Zahl der Events, die der Client empfängt")
+	flag.Parse()
+	args := flag.Args()
+	if len(args) != 3 || *count < 1 || (*target == "") != (*source == "") {
+		fmt.Fprintln(os.Stderr, "usage: natsstreamsub [-source <id> -target <ziel>] [-count <n>] <nats-url> <subject> <token>")
 		os.Exit(2)
 	}
-	url, subject, token := os.Args[1], os.Args[2], os.Args[3]
+	url, subject, token := args[0], args[1], args[2]
+	if *target != "" {
+		subject = fmt.Sprintf("cdc.route.%s.%s", *source, *target)
+	}
 
 	if err := assertConnectRejected(url); err != nil {
 		fmt.Fprintf(os.Stderr, "natsstreamsub: Verbindung ohne Token: %v\n", err)
@@ -90,20 +101,22 @@ func main() {
 	// Wecksignal-Testclient natssub).
 	fmt.Println("READY")
 
-	msg, err := sub.NextMsg(30 * time.Second)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "natsstreamsub: kein Event auf %s innerhalb der Frist: %v\n", subject, err)
-		fmt.Println("TIMEOUT")
-		os.Exit(1)
-	}
+	for i := 0; i < *count; i++ {
+		msg, err := sub.NextMsg(30 * time.Second)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "natsstreamsub: kein Event auf %s innerhalb der Frist: %v\n", subject, err)
+			fmt.Println("TIMEOUT")
+			os.Exit(1)
+		}
 
-	var change streamMessage
-	if err := json.Unmarshal(msg.Data, &change); err != nil {
-		fmt.Fprintf(os.Stderr, "natsstreamsub: Event nicht dekodierbar: %v (payload=%s)\n", err, msg.Data)
-		os.Exit(1)
+		var change streamMessage
+		if err := json.Unmarshal(msg.Data, &change); err != nil {
+			fmt.Fprintf(os.Stderr, "natsstreamsub: Event nicht dekodierbar: %v (payload=%s)\n", err, msg.Data)
+			os.Exit(1)
+		}
+		fmt.Printf("RECEIVED change_id=%s table=%s operation=%s new_image=%s\n",
+			change.ChangeID, change.Table, change.Operation, change.NewImage)
 	}
-	fmt.Printf("RECEIVED change_id=%s table=%s operation=%s new_image=%s\n",
-		change.ChangeID, change.Table, change.Operation, change.NewImage)
 }
 
 // assertConnectRejected versucht real eine NATS-Verbindung mit den

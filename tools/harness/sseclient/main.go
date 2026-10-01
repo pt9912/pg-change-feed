@@ -7,15 +7,17 @@
 // ("REJECTED"). Träger ist tools/harness/run-integration-tests.sh — der
 // Aufrufer liest die stdout-Zeilen dieses Prozesses über `docker logs`, nicht
 // über einen Exit-Code allein, weil "READY" vor der auslösenden Change
-// beobachtbar sein muss.
+// beobachtbar sein muss. Das Flag `-target` setzt den Query-Parameter `target`
+// (Zustellziel), `-count` die Zahl der Changes, die der Client vor dem
+// Token-Test empfängt.
 package main
 
 import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -33,29 +35,36 @@ type sseChange struct {
 }
 
 func main() {
-	if len(os.Args) != 3 && len(os.Args) != 5 {
-		fmt.Fprintln(os.Stderr, "usage: sseclient <base-url> <token> [<schema> <table>]")
+	target := flag.String("target", "", "Zustellziel-Filter der Query (leer = kein Filter)")
+	count := flag.Int("count", 1, "Zahl der Changes, die der Client empfängt, bevor er den Token-Test fährt")
+	flag.Parse()
+	args := flag.Args()
+	if (len(args) != 2 && len(args) != 4) || *count < 1 {
+		fmt.Fprintln(os.Stderr, "usage: sseclient [-target <ziel>] [-count <n>] <base-url> <token> [<schema> <table>]")
 		os.Exit(2)
 	}
-	baseURL, token := os.Args[1], os.Args[2]
+	baseURL, token := args[0], args[1]
 	// Zwei optionale, nachgestellte Argumente tragen das Filterpaar der
 	// Query (`ADR-0133`); ohne sie bleibt die Query unverändert leer.
 	var schema, table string
-	if len(os.Args) == 5 {
-		schema, table = os.Args[3], os.Args[4]
+	if len(args) == 4 {
+		schema, table = args[2], args[3]
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	streamURL := baseURL + "/changes/stream"
-	if schema != "" || table != "" {
+	if schema != "" || table != "" || *target != "" {
 		query := url.Values{}
 		if schema != "" {
 			query.Set("schema", schema)
 		}
 		if table != "" {
 			query.Set("table", table)
+		}
+		if *target != "" {
+			query.Set("target", *target)
 		}
 		streamURL += "?" + query.Encode()
 	}
@@ -82,14 +91,20 @@ func main() {
 	// committeter Change hat damit einen registrierten Empfänger.
 	fmt.Println("READY")
 
-	change, err := naechstesChange(resp.Body)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "sseclient: kein Change auf dem Stream innerhalb der Frist: %v\n", err)
-		fmt.Println("TIMEOUT")
-		os.Exit(1)
+	// Ein Scanner über den ganzen Stream: gepufferte Bytes hinter dem ersten
+	// Event gehen beim nächsten Lesen nicht verloren.
+	scanner := bufio.NewScanner(resp.Body)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	for i := 0; i < *count; i++ {
+		change, err := naechstesChange(scanner)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "sseclient: kein Change auf dem Stream innerhalb der Frist: %v\n", err)
+			fmt.Println("TIMEOUT")
+			os.Exit(1)
+		}
+		fmt.Printf("RECEIVED change_id=%s table=%s operation=%s new_image=%s\n",
+			change.ChangeID, change.Table, change.Operation, string(change.NewImage))
 	}
-	fmt.Printf("RECEIVED change_id=%s table=%s operation=%s new_image=%s\n",
-		change.ChangeID, change.Table, change.Operation, string(change.NewImage))
 
 	// Der Stream bleibt bis zum Verbindungsende offen; für den Rest des
 	// Prozesses wird die Verbindung geschlossen.
@@ -104,9 +119,7 @@ func main() {
 
 // naechstesChange liest SSE-Events, bis die data-Zeile eines Events einen
 // Change trägt, und liefert ihn zurück.
-func naechstesChange(body io.Reader) (sseChange, error) {
-	scanner := bufio.NewScanner(body)
-	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+func naechstesChange(scanner *bufio.Scanner) (sseChange, error) {
 	var data string
 	for scanner.Scan() {
 		line := scanner.Text()

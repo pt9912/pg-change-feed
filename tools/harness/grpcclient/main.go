@@ -7,11 +7,14 @@
 // ("REJECTED"). Träger ist tools/harness/run-integration-tests.sh — der
 // Aufrufer liest die stdout-Zeilen dieses Prozesses über `docker logs`, nicht
 // über einen Exit-Code allein, weil "READY" vor der auslösenden Change
-// beobachtbar sein muss.
+// beobachtbar sein muss. Das Flag `-target` wählt ein Zustellziel
+// (`StreamChangesRequest.target`), `-count` die Zahl der Changes, die der
+// Client vor dem Token-Test empfängt.
 package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"time"
@@ -34,16 +37,20 @@ const (
 )
 
 func main() {
-	if len(os.Args) != 3 && len(os.Args) != 5 {
-		fmt.Fprintln(os.Stderr, "usage: grpcclient <addr> <token> [<schema> <table>]")
+	target := flag.String("target", "", "Zustellziel-Filter der Request (leer = kein Filter)")
+	count := flag.Int("count", 1, "Zahl der Changes, die der Client empfängt, bevor er den Token-Test fährt")
+	flag.Parse()
+	args := flag.Args()
+	if (len(args) != 2 && len(args) != 4) || *count < 1 {
+		fmt.Fprintln(os.Stderr, "usage: grpcclient [-target <ziel>] [-count <n>] <addr> <token> [<schema> <table>]")
 		os.Exit(2)
 	}
-	addr, token := os.Args[1], os.Args[2]
+	addr, token := args[0], args[1]
 	// Zwei optionale, nachgestellte Argumente tragen das Filterpaar der
 	// Request (`ADR-0133`); ohne sie bleibt die Request unverändert leer.
 	var schema, table string
-	if len(os.Args) == 5 {
-		schema, table = os.Args[3], os.Args[4]
+	if len(args) == 4 {
+		schema, table = args[2], args[3]
 	}
 
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -59,7 +66,7 @@ func main() {
 	defer cancel()
 	stream, err := client.StreamChanges(
 		metadata.AppendToOutgoingContext(ctx, authorizationMetadataKey, bearerPrefix+token),
-		&streamv1.StreamChangesRequest{Schema: schema, Table: table})
+		&streamv1.StreamChangesRequest{Schema: schema, Table: table, Target: *target})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "grpcclient: StreamChanges (authentifiziert) fehlgeschlagen: %v\n", err)
 		os.Exit(1)
@@ -69,14 +76,16 @@ func main() {
 	// Server registriert den Empfänger am Broadcaster asynchron dazu.
 	fmt.Println("READY")
 
-	change, err := stream.Recv()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "grpcclient: kein Change auf dem Stream innerhalb der Frist: %v\n", err)
-		fmt.Println("TIMEOUT")
-		os.Exit(1)
+	for i := 0; i < *count; i++ {
+		change, err := stream.Recv()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "grpcclient: kein Change auf dem Stream innerhalb der Frist: %v\n", err)
+			fmt.Println("TIMEOUT")
+			os.Exit(1)
+		}
+		fmt.Printf("RECEIVED change_id=%s table=%s operation=%s new_image=%s\n",
+			change.GetChangeId(), change.GetTable(), change.GetOperation(), change.GetNewImage())
 	}
-	fmt.Printf("RECEIVED change_id=%s table=%s operation=%s new_image=%s\n",
-		change.GetChangeId(), change.GetTable(), change.GetOperation(), change.GetNewImage())
 
 	if err := assertUnauthenticated(client); err != nil {
 		fmt.Fprintf(os.Stderr, "grpcclient: %v\n", err)
