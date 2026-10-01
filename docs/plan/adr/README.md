@@ -149,3 +149,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0134 | `sdk-public-doc-check` wird Gate in `make gates` | Accepted | 2026-09-29 | [0134-sdk-public-doc-check-gate-make-gates.md](0134-sdk-public-doc-check-gate-make-gates.md) |
 | ADR-0135 | Capture — `transient`-Wiederholung am Stream-Zyklus (→ ADR-0136, teilw.) | Accepted | 2026-09-29 | [0135-capture-transient-wiederholung-stream-zyklus.md](0135-capture-transient-wiederholung-stream-zyklus.md) |
 | ADR-0136 | Capture-Wiederholung — Stabilitätsmaß, SQLSTATE (Supers. ADR-0135, teilw.) | Accepted | 2026-09-30 | [0136-capture-wiederholung-stabilitaetsmass-und-sqlstate-auswahl.md](0136-capture-wiederholung-stabilitaetsmass-und-sqlstate-auswahl.md) |
+| ADR-0137 | Routing auf Zustellziele — Kanal-Label bei Erfassung | Proposed | 2026-10-01 | [0137-routing-zustellziele-persistiertes-ziel-label.md](0137-routing-zustellziele-persistiertes-ziel-label.md) |
