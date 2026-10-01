@@ -195,13 +195,15 @@ die Doku führt). Umfang:
 | `spec/pflichtenheft.md` §2 ([`SPEC-020`](../../../../spec/pflichtenheft.md), [`SPEC-021`](../../../../spec/pflichtenheft.md), [`SPEC-022`](../../../../spec/pflichtenheft.md), [`SPEC-024`](../../../../spec/pflichtenheft.md)) | update | Parameter `target` bzw. Zusatz-Subjekt; die Zählwörter „zehn Felder" und „dreizehn Felder" bleiben (das Label ist nicht Teil der Nachrichten). |
 | `spec/pflichtenheft.md` §2 ([`SPEC-031`](../../../../spec/pflichtenheft.md) Zeile `ReadChanges`, [`SPEC-029`](../../../../spec/pflichtenheft.md), `LH-FA-CAP-009.a`) | update | Request-Feld `target` (siebtes, Nummer 7); Run-Klasse `schema` für eine Routing-Regel (Quelle der Entscheidungen: `ADR-0138`, in der Spec ohne ADR-Bezug formuliert). |
 | `spec/pflichtenheft.md` §4 ([`SPEC-008`](../../../../spec/pflichtenheft.md) Zeile `schema`) | update | Nichtanwendbarkeit einer Routing-Regel im Erfassungspfad und im Backfill-Run; Absatzstruktur wie „Nicht anwendbare Regel (Klasse `schema`)" der Transformationen (Zellenlänge des `structure`-Moduls). |
+| `spec/pflichtenheft.md` §1 (`LH-FA-CAP-009.a`, Absatz „Sichtbarkeit und Fehler des Runs" und neuer Punkt „Ziel der Backfill-Changes") | update | über den Plan hinaus: der Punkt „Ziel der Backfill-Changes" trägt die Aussage aus der Entscheidung, dass Backfill-Changes dieselbe Bestimmung durchlaufen; eine Fail-closed-Prüfung des Routing-Regelstands vor dem Commit steht **nicht** darin (die Entscheidung nennt sie nicht, siehe Bericht, Frage 2). |
 | `spec/pflichtenheft.md` §7 Historie | update | je Änderung eine Zeile ohne ADR-/Slice-Bezug. |
-| `spec/architecture.md` (Antragsart-Tabelle bei „sieben Arten", Capture-Sequenz) | update | die zwei weiteren Antragsarten; das Ziel einer Change steht vor der Persistierung. |
+| `spec/architecture.md` (Komponentenliste `ARC-001`, Antragsart-Tabelle bei „sieben Arten", Capture-Sequenz, Backfill-Absatz, Fehlermodell-Zeile) | update | die zwei weiteren Antragsarten; das Ziel einer Change steht vor der Persistierung; über den Plan hinaus die Komponentenliste, der Backfill-Absatz und die Fehlermodell-Zeile, weil sie „Transformationsregel" allein nannten. |
 
-**Festzulegen im Slice** (Lücken im Text von
+**Festgelegt im Slice** (Lücken im Text von
 [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md), die
-die Spec schließen muss; Plan-Stand: offen, jede Festlegung bekommt im Slice einen
-Bestands-Beleg wie in `slice-transformationen-spec-nachzug`):
+die Spec schließt; Ergebnis je Punkt unter der Liste, Beleg ist der Spec-Text selbst —
+es ist Spec-Festlegung, kein Messergebnis, und als solche in `SPEC-032`/`SPEC-019`
+als Zusage an die Umsetzung gekennzeichnet):
 
 - Vergleich von `when.column` (zeichengenau gegen den Katalog wie bei
   `SPEC-030`? ohne U+0000?) und von `when.equals` (Länge, Zeichen, leere Zeichenkette
@@ -220,6 +222,21 @@ Bestands-Beleg wie in `slice-transformationen-spec-nachzug`):
   `slice-transformationen-spec-nachzug` (Anwendbarkeit und Reihenfolge, Fehlertexte,
   Abhilfe — je an genau einer Stelle).
 
+Ergebnis (Plan-Stand, vor dem Review): `when.column` zeichengenau gegen den
+Katalog, nicht leer, ohne U+0000; `when.equals` Zeichenkette (leer zulässig, keine
+eigene Längengrenze), zeichengenauer Vergleich ohne Normalisierung; `order` JSON-
+Ganzzahl 1 bis 2147483647 (die Obergrenze ist eine Festlegung der Spec, keine
+Vorgabe der Entscheidung); Prüfreihenfolge Formzeilen, dann R1 bis R5, `remove_route`
+nur Regelname und R6; R4 hat drei Fehlertexte (zweite Regel ohne `when`, Regel ohne
+`when` nicht an höchster `order`, Regel mit `when` hinter der Regel ohne `when`);
+Antrag ohne laufende Bindung endet `applied` (Muster der Transformationen);
+Lesewege: ein `target`, das keine Change trägt oder das Alphabet verletzt, ist ein
+Filter ohne Treffer und kein `400`/`InvalidArgument` — in `SPEC-020`, `SPEC-022`
+und `SPEC-031` einheitlich; Aufteilung: `SPEC-032` führt Regelform, Bildbasis,
+Auswertung und Anwendbarkeit, `SPEC-019` die Antragsarten, R1 bis R6 und die
+Fehlertexte, `LH-FA-CFG-008.a` die Abhilfe. Keiner dieser Texte ist am Code
+gemessen.
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „`LH-FA-CFG-008.a` ist
 beantwortet; die Antragsarten-Menge trägt zwei weitere Werte; `cdc.changes` trägt
 eine Spalte mehr; Stream-Anfragen tragen einen Parameter mehr"; Parent ist
@@ -234,15 +251,25 @@ in Zellen):**
 30fd6cb5 11 -n -w origin -- spec
 30fd6cb5 0 -n -w origin -- spec/architecture.md
 30fd6cb5 0 -n -E 'Routing|Zustellziel' -- spec/architecture.md
+30fd6cb5 1 -n -E 'sieben SQL-Funktionen' -- spec
+30fd6cb5 0 -n -w route_target -- spec
+diff 14 -n -E 'Routingform|LH-FA-CFG-008\.a' -- spec docs/user harness README.md
+diff 3 -n -E 'sieben (Arten|Werte|Antragsarten)|fünf übrigen|sechs übrigen' -- spec docs/user harness
+diff 22 -n -E 'zehn Felder|dreizehn Felder' -- spec docs/user
+diff 12 -n -w origin -- spec
+diff 0 -n -w origin -- spec/architecture.md
+diff 9 -n -E 'Routing|Zustellziel' -- spec/architecture.md
+diff 0 -n -E 'sieben SQL-Funktionen' -- spec
+diff 22 -n -w route_target -- spec
 ```
 
 | Träger | Messung am Parent (`30fd6cb5`, gemessen am 2026-10-01) | Behandlung und Befund am Diff |
 |---|---|---|
-| Anker und Überschrift „Routingform" | Zeile 1 des Blocks: 5 Zeilen, alle in `spec/pflichtenheft.md` (der Verweis in `LH-FA-CFG-007.a` `:347`, die Überschrift `:349`, drei Historie-Zeilen `:1265`, `:1287`, `:1298`); `docs/user`, `harness` und `README.md`: 0 | Verweis und Überschrift ziehen, Historie-Zeilen bleiben (Protokoll); Anker prüft `make docs-check` (Modul `anchors`). Die Zeile `make doc-trace` in `harness/README.md` nennt `LH-FA-CFG-008` ohne `.a` (nicht in diesem Suchraum) und bewegt sich erst mit `slice-routing-e2e` — Befund am Diff: einzutragen |
-| Zählwörter zu Antragsarten und Werten | Zeile 2: 6 Zeilen (`spec/architecture.md:258` „sieben Arten", `spec/pflichtenheft.md:620`–`622`, Historie `:1288`, `harness/targets/schema-rollout.md:74` „die sieben SQL-Funktionen") | Spec-Zeilen ziehen; `harness/targets/schema-rollout.md` gemeldet an `slice-routing-antragsweg` (es beschreibt den Stand des Rollouts); die Historie-Zeile bleibt (Protokoll) — Befund am Diff: einzutragen |
-| Nachrichtenschema-Zählwörter | Zeile 3: 22 Zeilen — erwartet unverändert am Diff (das Label ist nicht Teil der Nachrichten) | bei Abweichung ist der Zug falsch, nicht der Zähler — Befund am Diff: einzutragen |
-| Schwesterfeld `origin` als Muster für Aufzählungen von Change-Feldern | Zeilen 4 und 5: 11 Zeilen in der Spec, davon 0 in der Architektur-Sicht | die Sicht zählt keine Change-Felder auf; ob sie eine andere Aufzählung trägt, die `route_target` brauchte, klärt das Lesen der Sequenz „Capture" am Diff — Befund: einzutragen |
-| Routing in der Architektur-Sicht | Zeile 6: 0 Zeilen | die Sicht sagt zum Routing heute nichts; der Zug fügt höchstens einen Satz in der Capture-Sequenz und die zwei Tabellenzeilen ein |
+| Anker und Überschrift „Routingform" | Zeile 1 des Blocks: 5 Zeilen, alle in `spec/pflichtenheft.md` (der Verweis in `LH-FA-CFG-007.a` `:347`, die Überschrift `:349`, drei Historie-Zeilen `:1265`, `:1287`, `:1298`); `docs/user`, `harness` und `README.md`: 0 | Verweis und Überschrift ziehen, Historie-Zeilen bleiben (Protokoll); Anker prüft `make docs-check` (Modul `anchors`). Die Zeile `make doc-trace` in `harness/README.md` nennt `LH-FA-CFG-008` ohne `.a` (nicht in diesem Suchraum) und bewegt sich erst mit `slice-routing-e2e`. **Befund am Diff:** 14 Zeilen, alle in `spec/pflichtenheft.md` — die Überschrift trägt kein „offen" mehr (Anker `#lh-fa-cfg-008a--routingform`, `make docs-check` Exit 0); neu hinzu kommen die Verweise in `LH-FA-CAP-009.a`, `SPEC-002`, `SPEC-032`, `SPEC-008`-Absatz und die Historie-Zeile. Nicht gefunden: ein weiterer Träger in `docs/user`, `harness` oder `README.md` (0). |
+| Zählwörter zu Antragsarten und Werten | Zeile 2: 6 Zeilen (`spec/architecture.md:258` „sieben Arten", `spec/pflichtenheft.md:620`–`622`, Historie `:1288`, `harness/targets/schema-rollout.md:74` „die sieben SQL-Funktionen") | Spec-Zeilen ziehen; `harness/targets/schema-rollout.md` gemeldet an `slice-routing-antragsweg` (es beschreibt den Stand des Rollouts); die Historie-Zeile bleibt (Protokoll). **Befund am Diff:** Zeile 2 des Blocks 3 Zeilen — `spec/pflichtenheft.md` Spalte `rule_name` („die fünf übrigen Antragsarten": gezählt neu, `enable`/`disable`/`exclude_column`/`include_column`/`backfill` — richtig stehen gelassen), die Historie-Zeile vom 2026-09-26 und `harness/targets/schema-rollout.md:74` (gemeldet an `slice-routing-antragsweg`, dessen Suchlauf dieselbe Zeile führt). Die Zeile `Die sieben SQL-Funktionen` (`SPEC-019`, Ordnung der Verarbeitung) deckt das Muster der Parent-Zeile nicht; sie ist eigens gemessen (Parent 1, Diff 0) und auf „neun" gezogen. `spec/architecture.md` „sieben Arten" ist „neun Arten". Nicht gefunden: eine weitere Zählung der Antragsarten oder Werte in `docs/user` oder `harness` außer der gemeldeten (Muster der Zeile 2) |
+| Nachrichtenschema-Zählwörter | Zeile 3: 22 Zeilen — erwartet unverändert am Diff (das Label ist nicht Teil der Nachrichten) | bei Abweichung ist der Zug falsch, nicht der Zähler. **Befund am Diff:** 22 Zeilen, unverändert; die Zeilen in `SPEC-021`, `SPEC-020` und `SPEC-031` ergänzen nur „ohne die Felder `origin` und `route_target`". Gefunden, nicht im Suchmuster: `docs/user/benutzerhandbuch.md` beschreibt den Filter `schema`/`table` der Wege mit „zwei optionale" (am Parent `:1301`, `:1378`, `:1403`) — bleibt bis zur Umsetzung wahr, das Handbuch zieht `slice-routing-betriebsdoku` (dessen Suchlauf führt diese Stellen); in dieser Spec-Datei trägt `SPEC-020`/`SPEC-021`/`SPEC-022` jetzt `target` neben `schema`/`table`. |
+| Schwesterfeld `origin` als Muster für Aufzählungen von Change-Feldern | Zeilen 4 und 5: 11 Zeilen in der Spec, davon 0 in der Architektur-Sicht | die Sicht zählt keine Change-Felder auf; ob sie eine andere Aufzählung trägt, die `route_target` brauchte, klärt das Lesen der Sequenz „Capture" am Diff. **Befund am Diff:** Zeile 4 des Blocks 12 Zeilen (11 am Parent plus `route_target`-Absatz in `SPEC-002`), Zeile 5: 0 in der Architektur-Sicht; die Sequenz „Capture" und der Absatz „Form der Row Images" zählen keine Change-Felder auf, ein Ziel braucht dort keine Aufzählung. Nicht gefunden: eine Aufzählung der Change-Felder in `spec/architecture.md` (0 Treffer für `origin`). Der Sicht fehlte der Zustellziel-Satz; er steht jetzt als Absatz „Zustellziel der Change" |
+| Routing in der Architektur-Sicht | Zeile 6: 0 Zeilen | die Sicht sagt zum Routing heute nichts; der Zug fügt höchstens einen Satz in der Capture-Sequenz und die zwei Tabellenzeilen ein. **Befund am Diff:** 9 Zeilen (Zeile 6 des Blocks, `diff`): Komponentenliste `ARC-001` (1), Absatz „Zustellziel der Change" (3 Zeilen), Absatz zu den Routing-Antragsarten (3 Zeilen), Backfill-Absatz (1), Fehlermodell-Zeile (1); die zwei Tabellenzeilen `set_route`/`remove_route` tragen die Wörter nicht. `make docs-check` (`matrix`) Exit 0: kein ADR-/Slice-/Wellen-Bezug in der Sicht |
 
 ## 4. Trigger
 
