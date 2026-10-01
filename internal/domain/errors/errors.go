@@ -153,6 +153,26 @@ var (
 	// trüge zwei gleichnamige Schlüssel (`SPEC-030`, Anwendbarkeit).
 	ErrTransformationTargetCollides = stderrors.New("Zielname kollidiert mit einer Spalte der Änderung")
 
+	// ErrInvalidRouteTarget: der Name eines Zustellziels liegt außerhalb des
+	// Alphabets `[a-z0-9][a-z0-9_-]{0,62}` (`SPEC-032`, Zielname); der Text
+	// ist der Klartext des Antrags-Fehlers.
+	ErrInvalidRouteTarget = stderrors.New("Zielname ist ungültig")
+
+	// ErrInvalidRoute: eine Routing-Regel verletzt die Invarianten ihrer
+	// Form — `order` nicht positiv, `when.column` leer oder mit dem Zeichen
+	// U+0000 (`SPEC-032`).
+	ErrInvalidRoute = stderrors.New("ungültige Routing-Regel")
+
+	// ErrRoutingColumnMissing: `when.column` einer Routing-Regel kommt in den
+	// Spalten der Änderung nicht vor — die Regel ist nicht anwendbar
+	// (`SPEC-032`, Anwendbarkeit).
+	ErrRoutingColumnMissing = stderrors.New("Spalte der Routing-Regel fehlt in den Spalten der Änderung")
+
+	// ErrRoutingColumnExcluded: `when.column` einer Routing-Regel nennt eine
+	// ausgeschlossene Spalte (R3, `SPEC-019`); der Text ist der Klartext der
+	// Zeile.
+	ErrRoutingColumnExcluded = stderrors.New("Spalte ist ausgeschlossen")
+
 	// Die folgenden Sentinels tragen die Ablehnungsgründe eines
 	// Regel-Antrags (`SPEC-019`, Fehlertext-Tabelle): ihr Text ist der
 	// Klartext der Zeile; der Use Case hängt die Adresse an. Die fünf ersten

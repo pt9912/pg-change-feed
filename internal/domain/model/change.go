@@ -86,6 +86,11 @@ func (o ChangeOrigin) OrDefault() ChangeOrigin {
 // Live-Wege (gRPC, SSE, NATS-Vollinhalt) bilden weiter zehn Felder ab und
 // lassen es aus.
 //
+// RouteTarget trägt das Zustellziel (`RouteTarget`); die leere Zeichenkette
+// ist „kein Ziel" (in der Datenbank `NULL`). `NewChange` lässt es leer,
+// `WithRouteTarget` setzt es. Das Ziel ist nicht Teil der Nachrichten der
+// Live-Wege; gelesen wird es über die View `cdc.changes`.
+//
 // Schema und Table tragen die Klartext-Bezeichner der betroffenen Tabelle
 // zusätzlich zur opaken SourceTableID: das tabellen-granulare Subjekt des
 // NATS-Wecksignals (`ChangeNotificationPort`) und die Antwort
@@ -107,6 +112,7 @@ type Change struct {
 	Schema        string
 	Table         string
 	Origin        ChangeOrigin
+	RouteTarget   RouteTarget
 }
 
 // NewChange legt einen Change an und erzwingt die Change-Invarianten:
@@ -147,6 +153,22 @@ func (c Change) WithOrigin(origin ChangeOrigin) (Change, error) {
 		return c, err
 	}
 	c.Origin = checked
+	return c, nil
+}
+
+// WithRouteTarget liefert den Change mit dem übergebenen Zustellziel; die
+// leere Zeichenkette ist „kein Ziel", jeder andere Wert außerhalb des
+// Alphabets (`IsValidRouteTarget`) wird abgelehnt, der Change bleibt dann
+// unverändert.
+func (c Change) WithRouteTarget(target RouteTarget) (Change, error) {
+	if target != "" {
+		checked, err := NewRouteTarget(string(target))
+		if err != nil {
+			return c, err
+		}
+		target = checked
+	}
+	c.RouteTarget = target
 	return c, nil
 }
 

@@ -68,6 +68,15 @@ var ErrIncompatibleSchemaChange = errors.New("Fehlerklasse schema: Relation-Änd
 // Norm der Anwendbarkeit: `SPEC-030`).
 var ErrTransformationNotApplicable = errors.New("Fehlerklasse schema: Transformationsregel auf die Änderung nicht anwendbar")
 
+// ErrRoutingNotApplicable trägt eine Routing-Regel der Bindung, die auf die
+// Relation einer Änderung nicht anwendbar ist: ihre Bedingungsspalte fehlt in
+// der Relation (`model.RouteRule.CheckApplicable` nennt den Grund). `Consume`
+// meldet den Fehler statt eines Changes, vor jeder Serialisierung;
+// `receive.Stream` beendet damit den Lauf, die Transaktion erreicht `Capture`
+// nicht und wird nicht bestätigt (Fehlerklasse `schema`; Norm der
+// Anwendbarkeit: `SPEC-032`).
+var ErrRoutingNotApplicable = errors.New("Fehlerklasse schema: Routing-Regel auf die Änderung nicht anwendbar")
+
 // TableBinding trägt die am Port getragenen Kennungen einer aktivierten
 // Tabelle: die Tabelle und die Schema-Version, die die
 // Changes dieser Tabelle referenzieren (`LH-FA-SCH-005`). Die
@@ -93,11 +102,19 @@ var ErrTransformationNotApplicable = errors.New("Fehlerklasse schema: Transforma
 // seinen Schnappschuss ohne eigene Sperre. Regelstand und Ausschlussstand
 // überleben `AddBinding` bei getragener Bindung und den Nachtrag der
 // Schema-Version.
+//
+// `Routes` trägt den Routing-Regelstand der Tabelle: die Regeln, deren
+// Auswertung das Zustellziel jeder Change bestimmt. Die Liste hat denselben
+// Vertrag wie `Transformations` — ab dem Schreiben unverändert, jeder Nachtrag
+// ersetzt sie unter `tablesMu` (`Assembler.SetRoute`/`RemoveRoute`), ein Leser
+// hält seinen Schnappschuss ohne eigene Sperre; sie überlebt `AddBinding` bei
+// getragener Bindung und den Nachtrag der Schema-Version.
 type TableBinding struct {
 	TableID         model.SourceTableID
 	SchemaVersion   model.SchemaVersionID
 	ExcludedColumns []string
 	Transformations []model.Transformation
+	Routes          []model.RouteRule
 }
 
 // Assembler baut aus den dekodierten Ereignissen committed
@@ -244,7 +261,10 @@ func (a *Assembler) TransactionOpen() bool {
 // anwendbare Regel endet als `ErrTransformationNotApplicable`, ohne dass ein
 // Bild entsteht oder die Sequenz vorrückt. Die Kollision zweier Regeln auf
 // denselben Zielnamen meldet erst die Bild-Konstruktion, nach dem Vorrücken
-// der Sequenz; auch sie endet als `ErrTransformationNotApplicable`.
+// der Sequenz; auch sie endet als `ErrTransformationNotApplicable`. Ebenso
+// wird der Routing-Regelstand vor jeder Serialisierung gegen die Relation
+// geprüft (`ErrRoutingNotApplicable`); danach bestimmt seine Auswertung
+// `RouteTarget` der Change.
 func (a *Assembler) change(event decode.Change) (*model.Change, error) {
 	binding, activated := a.lookupBinding(event.Relation.QualifiedName())
 	if !activated {
@@ -252,6 +272,9 @@ func (a *Assembler) change(event decode.Change) (*model.Change, error) {
 	}
 	columns := columnNames(event.Relation)
 	if err := checkTransformations(binding.Transformations, columns, event.Relation); err != nil {
+		return nil, err
+	}
+	if err := checkRoutes(binding.Routes, columns, event.Relation); err != nil {
 		return nil, err
 	}
 	a.open.sequence++
@@ -293,6 +316,16 @@ func (a *Assembler) change(event decode.Change) (*model.Change, error) {
 	}
 	change.Schema = event.Relation.Schema
 	change.Table = event.Relation.Name
+	// Die Bildbasis der Bedingung ist das Neu-Bild, bei DELETE das Alt-Bild,
+	// als Quellwerte vor jeder Transformation.
+	routeValues := event.New
+	if operation == model.OperationDelete {
+		routeValues = event.Old
+	}
+	change, err = change.WithRouteTarget(model.EvaluateRoute(binding.Routes, columns, routeValues))
+	if err != nil {
+		return nil, err
+	}
 	return &change, nil
 }
 
@@ -440,8 +473,8 @@ func (a *Assembler) lookupBinding(qualified string) (TableBinding, bool) {
 // aktivierte Tabelle: im Dauerbetrieb die Administrations-Goroutine (SQL-
 // Antragsqueue) oder der direkte HTTP-/gRPC-Zugriffsweg aus einer zweiten
 // Goroutine, beim Prozessstart der Vorlauf vor dem Stream-Lauf. Trägt die
-// Tabelle bereits eine Bindung, bleiben deren `ExcludedColumns` und
-// `Transformations` stehen: der Aufruf setzt `TableID`/`SchemaVersion` neu
+// Tabelle bereits eine Bindung, bleiben deren `ExcludedColumns`,
+// `Transformations` und `Routes` stehen: der Aufruf setzt `TableID`/`SchemaVersion` neu
 // und übernimmt alle übrigen Felder der getragenen Bindung (`ADR-0112`).
 func (a *Assembler) AddBinding(qualified string, binding TableBinding) {
 	a.tablesMu.Lock()
@@ -449,6 +482,7 @@ func (a *Assembler) AddBinding(qualified string, binding TableBinding) {
 	if existing, activated := a.tables[qualified]; activated {
 		binding.ExcludedColumns = existing.ExcludedColumns
 		binding.Transformations = existing.Transformations
+		binding.Routes = existing.Routes
 	}
 	a.tables[qualified] = binding
 }
@@ -542,6 +576,86 @@ func (a *Assembler) RemoveTransformation(qualified, name string) {
 	}
 	binding.Transformations = withoutTransformation(binding.Transformations, name)
 	a.tables[qualified] = binding
+}
+
+// SetRoute trägt eine Routing-Regel synchronisiert in den Regelstand einer
+// getragenen Bindung nach (`LH-FA-CFG-008`): ab dem Aufruf bestimmt die
+// Auswertung der Tabelle mit ihr das Zustellziel. Trägt die Bindung bereits
+// eine Regel unter demselben Namen, ersetzt die neue sie an ihrer Stelle; die
+// Konfliktfreiheit der Regelmenge (R1 bis R5) prüft der Aufrufer, dieser
+// Aufruf prüft sie nicht. Eine nicht getragene Bindung bleibt ohne Wirkung —
+// derselbe idempotente Vertrag wie `SetTransformation`. Die Liste wird neu
+// aufgebaut, ein Leser-Schnappschuss bleibt gültig.
+func (a *Assembler) SetRoute(qualified string, rule model.RouteRule) {
+	a.tablesMu.Lock()
+	defer a.tablesMu.Unlock()
+	binding, activated := a.tables[qualified]
+	if !activated {
+		return
+	}
+	binding.Routes = withRoute(binding.Routes, rule)
+	a.tables[qualified] = binding
+}
+
+// RemoveRoute nimmt die Routing-Regel unter dem Namen synchronisiert aus dem
+// Regelstand einer getragenen Bindung — das Gegenstück zu `SetRoute`. Eine
+// nicht getragene Bindung und ein nicht geführter Name bleiben ohne Wirkung;
+// die Liste wird auch ohne Treffer neu aufgebaut, damit kein
+// Leser-Schnappschuss auf ihrem Speicher liegt.
+func (a *Assembler) RemoveRoute(qualified, name string) {
+	a.tablesMu.Lock()
+	defer a.tablesMu.Unlock()
+	binding, activated := a.tables[qualified]
+	if !activated {
+		return
+	}
+	binding.Routes = withoutRoute(binding.Routes, name)
+	a.tables[qualified] = binding
+}
+
+// withRoute liefert eine neue Regelliste mit der Regel: eine Regel gleichen
+// Namens wird an ihrer Stelle ersetzt, sonst hinten angehängt. Der
+// Rückgabewert teilt keinen Speicher mit der übergebenen Liste.
+func withRoute(rules []model.RouteRule, rule model.RouteRule) []model.RouteRule {
+	next := make([]model.RouteRule, 0, len(rules)+1)
+	replaced := false
+	for _, existing := range rules {
+		if existing.Name() == rule.Name() {
+			next = append(next, rule)
+			replaced = true
+			continue
+		}
+		next = append(next, existing)
+	}
+	if !replaced {
+		next = append(next, rule)
+	}
+	return next
+}
+
+// withoutRoute liefert eine neue Regelliste ohne die Regel unter dem Namen;
+// der Rückgabewert teilt keinen Speicher mit der übergebenen Liste.
+func withoutRoute(rules []model.RouteRule, name string) []model.RouteRule {
+	next := make([]model.RouteRule, 0, len(rules))
+	for _, rule := range rules {
+		if rule.Name() != name {
+			next = append(next, rule)
+		}
+	}
+	return next
+}
+
+// checkRoutes prüft jede Routing-Regel gegen die Spalten der Relation
+// (`model.RouteRule.CheckApplicable`) und meldet die erste nicht anwendbare
+// als `ErrRoutingNotApplicable`, mit Regelname, Tabelle und Grund. Ohne Regeln
+// kostet der Aufruf nichts.
+func checkRoutes(rules []model.RouteRule, columns []string, relation *decode.Relation) error {
+	for _, rule := range rules {
+		if err := rule.CheckApplicable(columns); err != nil {
+			return fmt.Errorf("%w: Regel %q an %s: %w", ErrRoutingNotApplicable, rule.Name(), relation.QualifiedName(), err)
+		}
+	}
+	return nil
 }
 
 // withTransformation liefert eine neue Regelliste mit der Regel: eine Regel

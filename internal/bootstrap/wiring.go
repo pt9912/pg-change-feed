@@ -1810,7 +1810,8 @@ func classifyRunError(err error) model.ErrorClass {
 	case errors.Is(err, decode.ErrSchema),
 		errors.Is(err, mapper.ErrTruncateUnsupported),
 		errors.Is(err, mapper.ErrIncompatibleSchemaChange),
-		errors.Is(err, mapper.ErrTransformationNotApplicable):
+		errors.Is(err, mapper.ErrTransformationNotApplicable),
+		errors.Is(err, mapper.ErrRoutingNotApplicable):
 		return model.ErrorClassSchema
 	case errors.Is(err, receive.ErrPermission):
 		return model.ErrorClassPermission

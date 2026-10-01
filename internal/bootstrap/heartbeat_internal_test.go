@@ -207,6 +207,8 @@ func TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes(t *testing.T) {
 		{"nicht sicher interpretierbare Relation-Änderung", mapper.ErrIncompatibleSchemaChange, model.ErrorClassSchema},
 		{"nicht anwendbare Transformationsregel", mapper.ErrTransformationNotApplicable, model.ErrorClassSchema},
 		{"nicht anwendbare Transformationsregel, gewrappt mit Grund", fmt.Errorf("%w: Regel %q an %s: %w", mapper.ErrTransformationNotApplicable, "r", "public.feed", stderrors.New("Grund")), model.ErrorClassSchema},
+		{"nicht anwendbare Routing-Regel", mapper.ErrRoutingNotApplicable, model.ErrorClassSchema},
+		{"nicht anwendbare Routing-Regel, gewrappt mit Grund", fmt.Errorf("%w: Regel %q an %s: %w", mapper.ErrRoutingNotApplicable, "r", "public.feed", stderrors.New("Grund")), model.ErrorClassSchema},
 		{"Replication-Stream-Störung", receive.ErrReplication, model.ErrorClassReplication},
 		{"ACK fehlgeschlagen", outbound.ErrReplication, model.ErrorClassReplication},
 		{"Change ohne Begin", mapper.ErrChangeWithoutBegin, model.ErrorClassReplication},
