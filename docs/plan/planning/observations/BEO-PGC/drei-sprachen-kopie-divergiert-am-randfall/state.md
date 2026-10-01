@@ -42,3 +42,12 @@ Aufrufform genau einmal — der Suchlauf des Slice fand sie ausschließlich dort
 JSON-Randwerte liest) bleibt unabhängig und divergenzfähig — hier war der
 Gegenstand eine **Testvorbereitung**, kein Lesemodell. Zähler bleibt bei 2×;
 kein neuer `evidence/`-Eintrag, weil kein Divergenz-Fund vorliegt.
+
+**Vermerk, kein neuer Anfall (slice-routing-sdk-realserver-e2e, Review F-6):** die Sammler der
+Routing-Phasen enden in den drei Tiers verschieden — C# beendet die Verbraucher vor der Auswertung,
+Kotlin und Python werten einen Schnappschuss, während die Daemon-Threads weiterlesen. Das ist eine
+Divergenz der **Testhilfe**, kein Divergenz-Fund am Randwert: eine Change nach dem Schnappschuss
+liegt außerhalb des geprüften Fensters, kein Ergebnis ändert sich, Schwellen, Prüfreihenfolge und
+Meldetexte sind gleich gelesen (Review „Negativbefunde“). Die Gegenmaßnahme „eine Fixture-Quelle“
+hat wieder gewirkt (`tools/harness/lib-sdk-route-fixture.sh` trägt Vorbereitung und Phasenablauf
+einmal). Zähler bleibt bei **3×**, keine neue Datei.

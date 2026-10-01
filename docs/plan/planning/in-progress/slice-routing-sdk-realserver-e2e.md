@@ -78,7 +78,7 @@ sieht beide. Dieselbe Change ist unabhängig über `cdc.changes` gegengelesen
 
 ## 2. Definition of Done
 
-- [ ] **Liefer-Punkt 1 — gemeinsame Vorbereitung und C#-Tier.** Die Hilfsdatei
+- [x] **Liefer-Punkt 1 — gemeinsame Vorbereitung und C#-Tier.** Die Hilfsdatei
       `tools/harness/lib-sdk-rule-fixture.sh` oder eine Schwester-Datei daneben (die
       Wahl trifft der Implementer; eine Kopie der Aufrufform, nicht drei) legt eine
       eigene Tabelle an, aktiviert sie (`cdc.enable_table`) und setzt zwei Regeln
@@ -97,29 +97,40 @@ sieht beide. Dieselbe Change ist unabhängig über `cdc.changes` gegengelesen
       [`ADR-0044`](../../adr/0044-image-beleg-semantik.md)); die acht bestehenden
       Phasen laufen mit unveränderter Erwartung grün; je Zusage eine Mutation der
       Eingabeseite, rot gesehen — der `set_route`-Aufruf entfällt (kein Ziel am
-      Change), `target` wird nicht übergeben (der Client sieht beide), die Regel des
-      Ziels A trifft beide Changes. Die Stellen und die Instanz jeder Mutation und die
+      Change), `target` wird nicht übergeben (der Client sieht beide), das Ziel der
+      Regel A ist falsch. Die Stellen und die Instanz jeder Mutation und die
       gesehene Farbe stehen im Bericht ([`AGENTS.md`](../../../../AGENTS.md) §3.12).
-- [ ] **Liefer-Punkt 2 — Kotlin-Tier.** Dieselbe Form im Runner
+      *Berichtigung des Wortlauts (Verifier V-1):* die ursprüngliche Mutation „die Regel
+      des Ziels A trifft beide Changes“ ist mit disjunkten Inhaltsregeln nicht darstellbar —
+      der Server lehnt zwei Regeln mit derselben Bedingung ab (Antrag `failed`, „Bedingung
+      bereits vergeben“, gedruckt im Verifikations-Lauf); der Ersatz „Ziel der Regel A falsch“
+      (Fixture, Verifier M7) ist rot gesehen. *Beleg:* grüne Läufe aller drei Tiers im
+      [Verifikations-Report](../../../reviews/verifikation-slice-routing-sdk-realserver-e2e.md)
+      §3, Mutationen dort §4 (M1/M2 C#, M3/M4 Kotlin, M5/M6/M7 Python bzw. alle Tiers) und im
+      [Review](../../../reviews/review-slice-routing-sdk-realserver-e2e.md) (C# SSE, Kotlin gRPC,
+      Python NATS, je rot); „der `set_route`-Aufruf entfällt“ und „`target` entfällt“ an den
+      übrigen Flächen sind Angaben des Implementers, **übernommen**, nicht nachgefahren.
+- [x] **Liefer-Punkt 2 — Kotlin-Tier.** Dieselbe Form im Runner
       `tools/harness/run-sdk-kotlin-integration-tests.sh` (Testklassen unter
       `sdks/kotlin/pgchangefeed-kotlin/src/integrationTest`, Gradle-Aufgabe
       `integrationTest`, je Klasse `--tests`); die Hilfsdatei aus Liefer-Punkt 1 ist
       eingebunden. *Zu belegen durch:* ein realer, grüner
       `make test-sdk-kotlin-integration`-Lauf nach `make image`; die acht
-      bestehenden Phasen unverändert grün; dieselben drei Mutationen, rot gesehen.
-- [ ] **Liefer-Punkt 3 — Python-Tier.** Dieselbe Form im Runner
+      bestehenden Phasen unverändert grün; dieselben drei Mutationen (Wortlaut wie in
+      Liefer-Punkt 1 berichtigt), rot gesehen.
+- [x] **Liefer-Punkt 3 — Python-Tier.** Dieselbe Form im Runner
       `tools/harness/run-sdk-python-integration-tests.sh` (Testdateien unter
       `sdks/python/pgchangefeed/integration`, je Phase `PGCHANGEFEED_TEST_FILE`).
       *Zu belegen durch:* ein realer, grüner `make test-sdk-python-integration`-Lauf
       nach `make image`; die acht bestehenden Phasen unverändert grün; dieselben drei
-      Mutationen, rot gesehen.
-- [ ] **Nur Test-Code und Runner.** `git diff --name-only <Parent> -- sdks` nennt
+      Mutationen (Wortlaut wie in Liefer-Punkt 1 berichtigt), rot gesehen.
+- [x] **Nur Test-Code und Runner.** `git diff --name-only <Parent> -- sdks` nennt
       ausschließlich Pfade unter den drei Test-Verzeichnissen
       (`PgChangeFeed.Client.Integration/`, `src/integrationTest/`, `integration/`),
       keine Versionsdateien (`.csproj`, `pyproject.toml`, `build.gradle.kts`);
       `make sdk-public-doc-check` endet mit Exit 0. *Zu belegen durch:* der
       Diff-Befehl und der Suchlauf in §3, beide Stände.
-- [ ] **Die Abdeckung ist getragen.** Jeder der drei Runner schreibt in seinen
+- [x] **Die Abdeckung ist getragen.** Jeder der drei Runner schreibt in seinen
       marker-gegrenzten Abschnitt von
       [`docs/user/sdk-e2e-abdeckung.md`](../../../user/sdk-e2e-abdeckung.md) eine
       Routing-Zeile je SDK (Kennungen
@@ -129,28 +140,39 @@ sieht beide. Dieselbe Change ist unabhängig über `cdc.changes` gegengelesen
       zweiter Lauf je Tier schreibt nichts, fremde Abschnitte bleiben; `make doc-trace`
       (Ausgabe im Bericht, Zahl mit Ursprung, [`AGENTS.md`](../../../../AGENTS.md)
       §3.12 Instanz A); `make docs-check`.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
-      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9). *Beleg:*
+      Verifikations-Report §1 (Exit 0) und der Lauf der Closure (§7).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+      Self-Review (Modul 8). *Beleg:* Review
+      [`review-slice-routing-sdk-realserver-e2e`](../../../reviews/review-slice-routing-sdk-realserver-e2e.md)
+      (0 HIGH, 2 MEDIUM, 1 LOW, 3 INFO; F-1 durch die Fixrunde `03a1a20a` geschlossen, F-2 liegt
+      außerhalb des Diffs und ist Register-Eintrag, F-3 und F-4 in der Fixrunde geschlossen) und
+      Verifier-Gegenprüfung der Fixrunde
+      [`verifikation-slice-routing-sdk-realserver-e2e`](../../../reviews/verifikation-slice-routing-sdk-realserver-e2e.md)
+      (alle drei Tiers ausgeführt, sieben Mutationen rot). Es gab **kein separates Re-Review**
+      der Fixrunde: engere Fassung von `BEO-PGC/fixrunde-ohne-reviewer-lesung` (Produktionslogik
+      oder Norm geändert, oder kein anderer Kontext hat sie ausgeführt) — die Fixrunde änderte
+      nur Test-Code, die Runner-Lib und den Plan, und der Verifier hat sie ausgeführt
+      (Verifikations-Report §9).
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-routing-sdk-realserver-e2e.md`
       endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `harness/README.md` §Sensors (die drei Zeilen
+- [x] Doku-Update: `harness/README.md` §Sensors (die drei Zeilen
       `make test-sdk-*-integration` nennen die Routing-Phasen), die Hilfetexte in
       `harness/mk/sdk.mk` (Phasenzahl an zwei Zielen) und die Kopf-Kommentare der drei
       Runner tragen den Ist-Umfang; das Benutzerhandbuch bleibt unberührt
       (`slice-routing-betriebsdoku`, `slice-routing-sdk-beispiel-target`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7) — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
       Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
@@ -245,37 +267,144 @@ geschrieben.
 
 - **Negativ-Beleg über Abwesenheit.** „Der Client sieht B nicht" ist ein Beleg durch
   Ausbleiben; ein zu kurzes Fenster belegt nichts
-  (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert). — **Ausgang:** bei
-  der Closure einzutragen (Fenster mit Ursprung, Mutation „`target` entfällt" rot).
+  (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert). — **Ausgang:
+  entfallen, mit benannter Grenze.** Die Mutation „`target` entfällt“ färbt jede
+  gefahrene Fläche rot und druckt den gezählten Wert (`foreign=2`): Verifier M1 (C# NATS),
+  M3 (Kotlin NATS), M5 (Python gRPC), M6 (Python SSE), Reviewer C# SSE, Kotlin gRPC,
+  Python NATS (Verifikations-Report §4, Review „Mutationen“). Das Fenster von 15 s ist
+  **übernommen** (`RT_WINDOW`), die Zustellung ist gemessen (97 bis 388 ms, Verifikations-
+  Report §3). Die Grenze bleibt: der Beleg gilt für die Menge „eine Tabelle, zwei
+  Inhaltsregeln, Ziele `eu`/`us`, Region `asia` ohne Regel, Versuch 1“ und ist ein Beleg
+  durch Ausbleiben im Fenster.
 - **Drei Sprachen, ein Randfall, drei Lesarten.**
-  (`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`, offen, 2×.) — **Ausgang:** bei
-  der Closure einzutragen (eine Fixture-Quelle, dieselbe Eingabetabelle je Sprache).
+  (`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`, offen, 3×.) — **Ausgang: teils
+  entfallen, teils eingetreten.** *Entfallen:* Vorbereitung und Phasenablauf stehen einmal
+  in `tools/harness/lib-sdk-route-fixture.sh`, dieselbe Eingabetabelle je Sprache; die
+  Schlusszeilen der drei Tiers sind in Schwellen, Reihenfolge der Prüfungen und Meldetexten
+  gleich gelesen (Review „Negativbefunde“). *Eingetreten:* die Sammler enden verschieden
+  (F-6, nächster Punkt).
 - **Bezugspunkt des Ruhefensters.** Das Fenster beginnt nach `SEEN` (am Client), im
   Server-Rundlauf (`RT_WINDOW`) an einem anderen Bezugspunkt; der Wert 15 s ist
-  **übernommen**, nicht der Beginn. Die Zustelldauer „99–386 ms“ ist **übernommen**
-  (Implementer-Angabe); die Reviewer-Messung im Python-Lauf liegt bei 320–374 ms
-  (Review F-5, gemessen).
+  **übernommen**, nicht der Beginn. — **Ausgang: weiter offen, übernommen.** Adresse:
+  `SDK_ROUTE_QUIET_SECONDS` mit Kommentar in `tools/harness/lib-sdk-route-fixture.sh`
+  (`git grep -n 'SDK_ROUTE_QUIET_SECONDS' -- tools/harness`). Gemessen ist die Zustellung:
+  97 bis 388 ms über zwölf Phasen (Verifikations-Report §3, Obergrenze mit Abfrage-
+  Granularität 0,2 s, enthält die Latenz von `docker logs`); die Angabe „99–386 ms“ des
+  Implementers ist **übernommen**, die Reviewer-Messung im Python-Lauf liegt bei 320 bis
+  374 ms (Review F-5). Das Fenster liegt damit mindestens rund 38-fach (**abgeleitet**:
+  15 000 ms / 388 ms) über der gemessenen Obergrenze.
 - **Randfall-Divergenz der drei Kopien (bekannt, ohne Wirkung).** C# beendet die
   Verbraucher vor der Auswertung, Kotlin und Python werten einen Schnappschuss, während
   die Daemon-Threads weiterlesen. Eine Change nach dem Schnappschuss liegt außerhalb des
-  geprüften Fensters; kein Ergebnis ändert sich (Review F-6). Die Register-Einordnung
-  trifft der Planner.
+  geprüften Fensters; kein Ergebnis ändert sich (Review F-6). — **Ausgang: eingetreten,
+  hingenommen, im Register vermerkt** (kein neuer Beleg: kein Divergenz-Fund im Ergebnis,
+  Zähler bleibt 3×; Begründung im `state.md` von
+  `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`).
 - **Kosten und Zeit der Läufe.** Drei Tiers, je Compose-Bring-up; ein Netzausfall ist
-  Umgebung, kein Befund. — **Ausgang:** bei der Closure einzutragen.
+  Umgebung, kein Befund. — **Ausgang: entfallen.** Alle Läufe von Reviewer und Verifier
+  endeten mit Exit 0 bzw. dem erwarteten Exit 2 der Mutation, kein Netzausfall trat auf;
+  der volle Python-Lauf dauerte real 1 min 36 s (Review, gemessen).
 - **Zeitliche Kopplung des NATS-Zusatz-Subjekts.** Die Phase hängt an
   `slice-routing-nats-subjekt` (Veröffentlichung auf `cdc.route.…`) und an der
-  SDK-Fläche aus `sdk-beispiel-target`. — **Ausgang:** bei der Closure einzutragen.
+  SDK-Fläche aus `sdk-beispiel-target`. — **Ausgang: entfallen.** Die NATS-Phase ist in
+  allen drei Tiers grün (Verifikations-Report §3: SEEN 331 ms C#, 327 ms Kotlin, 103 ms
+  Python).
+- **Kein Sensor übersetzt die Integrationsprojekte (Review F-2).** Das C#-Integrationsprojekt
+  übersetzte seit dem Stream-Filter nicht (`CS1503`), unbemerkt, weil kein regelmäßiger Lauf
+  die Stufe `integration` bzw. `integrationTest` baut. Der Fix der drei Aufrufe liegt im
+  Diff; die Lücke liegt im Sensor-Satz. — **Ausgang: weiter offen.** Adresse:
+  `BEO-PGC/integrationsprojekt-uebersetzt-nicht-unbemerkt` (Anfall 1). Eine Aufnahme in
+  `make gates` oder einen Workflow wäre eine eigene Entscheidung (Netzbezug; ein neuer
+  Workflow trüge [`AGENTS.md`](../../../../AGENTS.md) §3.10), nicht Teil dieses Slice.
+- **Rohzeilen im Runner-Log (Verifier V-3).** Der Runner liest die `RECEIVED_*`-Zeilen aus
+  `docker logs` und druckt die geprüfte Zusammenfassung; die Rohzeilen stehen nicht im Log
+  des Laufs. — **Ausgang: weiter offen, hingenommen.** Die Zusage „gedruckte
+  `RECEIVED`-Zeilen“ des DoD ist durch die Schlusszeile (`foreign=`, Zähler, `SEEN`) und
+  die Gegenlesung gegen `cdc.changes` getragen; Adresse: die Prüfstellen in
+  `tools/harness/lib-sdk-route-fixture.sh` (`git grep -n 'RECEIVED_' -- tools/harness`).
+- **Tag-Images der Mutationsläufe (Hinweis).** Die Mutationsläufe des Verifiers haben die
+  Images `pg-change-feed:sdk-<sprache>-integration` überschrieben (Tag der Tier-Bauten, nicht
+  `:dev`; `harness/image-hash.txt` unberührt). — **Ausgang: entfallen.** Der nächste
+  reguläre Tier-Lauf baut sie neu; ein Cache-Treffer der Stufe `integration` ohne
+  Quelländerung wäre der Fall von `BEO-PGC/docker-cache-ueberspringt-tests-still`
+  (hergeleitet, in diesem Slice nicht gemessen; dort als Hinweis vermerkt).
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
-
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** Die drei SDK-Realserver-Tiers (C#, Kotlin, Python) fahren je vier
+  Routing-Phasen (gRPC-Stream, SSE, NATS-Zusatz-Subjekt, HTTP-Lesezugriff) gegen den Server des
+  Arbeitsbaums: der Client mit `target = eu` empfängt die Change der Region `eu` und im
+  Ruhefenster keine fremde, der Client ohne `target` alle drei Gruppen; jede empfangene Kennung
+  ist gegen `cdc.changes` (`route_target`, Region, Sentinel) gehalten. Vorbereitung und
+  Phasenablauf stehen einmal in `tools/harness/lib-sdk-route-fixture.sh`, nicht dreimal. Gemessen
+  im Lauf des Verifiers (Verifikations-Report §1 und §3): die drei Tier-Läufe Exit 0 mit je zwölf
+  Phasen, `foreign=0` in allen zwölf Routing-Phasen, Zustellung 97 bis 388 ms, `make doc-trace`
+  `80 Anforderung(en), 0 Waise(n).`, `make gates` Exit 0. **Ursprung der Mutationszahlen (§3.12
+  Instanz A, Zahlen aus den Reports):** Implementer fünf Mutationen plus eine in der Fixrunde,
+  **übernommen** (Bericht, nicht nachgefahren); Reviewer drei, **gemessen** (C# SSE, Kotlin gRPC,
+  Python NATS, alle rot); Verifier sieben, **gemessen** (M1 bis M7, alle rot; ein achter Versuch
+  scheiterte am Server und zählt nicht).
+- **Was ging anders als geplant:** (1) Das C#-Integrationsprojekt übersetzte am Parent nicht
+  (`CS1503`, drei Aufrufe seit dem Stream-Filter); der Plan-Nachzug in §3 behob es im Test-Code.
+  (2) Eine Fixrunde (`03a1a20a`) zu F-1 (`# noqa` ohne Linter, `AGENTS.md` §3.2 sinngemäß),
+  F-3 (Zählwert statt Literal) und F-4 (Bezugsmenge im Meldetext). **Kein separates Re-Review:**
+  engere Fassung von `BEO-PGC/fixrunde-ohne-reviewer-lesung` (keine Produktionslogik, keine Norm;
+  der Verifier hat alle drei Tiers ausgeführt und mutiert). (3) Die DoD-Mutation „die Regel des
+  Ziels A trifft beide Changes“ ist mit disjunkten Inhaltsregeln nicht darstellbar (der Server
+  lehnt „Bedingung bereits vergeben“ ab); der Ersatz „Ziel der Regel A falsch“ ist rot gesehen
+  (Verifier M7), der Wortlaut in §2 ist berichtigt (V-1). (4) Die Rohzeilen `RECEIVED_*` stehen
+  nicht im Runner-Log (V-3, §6).
+- **Steering-Loop-Eintrag:** geschärfte Handlung, kein neuer Sensor, nicht verkörpert: **Ein
+  Literal im Ergebnisfeld einer Belegzeile ist kein Messwert.** Die Zeile `foreign=0`, erst nach
+  der Assertion gedruckt und vom Runner als Zeichenfolge geprüft, belegte nur, dass der Test
+  durchgelaufen war; die Fixrunde zählt `foreign` am Empfang, druckt die Zeile vor den Assertions
+  und der Runner verlangt am gemessenen Feld den Wert 0 — erst dann druckt eine Mutation
+  `foreign=2`. Die Handlung des Implementers vor dem Handoff: jedes Ergebnisfeld einer Belegzeile
+  stammt aus einer Zählung und wird vor der Assertion gedruckt; der Reviewer prüft das mit der
+  Mutation, die das Feld ändern müsste (Träger: HIGH-Punkt „Beleg trägt seinen Satz nicht“,
+  geltend; der Fall war LOW und wurde vor dem Merge gefunden, Deckel von
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`). Zweitens: eine DoD-Mutation, die der Server
+  ablehnt, ist keine Eingabeseiten-Mutation; der Plan benennt dann den Ersatz, statt die
+  Mutation still durch eine andere zu ersetzen. Ohne `liegt in`, weil nichts verkörpert wurde.
+- **Beobachtungs-Register (`../observations/`):** zwei neue Verzeichnisse, drei Vermerke, ein
+  Deckel-Auftreten.
+  - **`BEO-PGC/suppression-ohne-linter-in-testcode`** (neu, offen, **1×**): F-1 (MEDIUM),
+    `evidence/slice-routing-sdk-realserver-e2e.md`; die Regel [`AGENTS.md`](../../../../AGENTS.md)
+    §3.2 nennt `//nolint`, die Begründung „kein Linter“ gilt für `# noqa` gleich. Unter der Schwelle.
+  - **`BEO-PGC/integrationsprojekt-uebersetzt-nicht-unbemerkt`** (neu, offen, **1×**): F-2
+    (MEDIUM), `evidence/slice-routing-sdk-realserver-e2e.md`; Begründung in der `observation.md`
+    (die Klasse ist weder ein Test, der still ausfällt, noch ein Docker-Cache: das Projekt
+    übersetzt nicht, und kein Lauf sieht es). Unter der Schwelle, Adresse §6.
+  - **`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`** (verkörpert, Deckel bei 14×): F-3 (LOW,
+    vor dem Merge vom Reviewer gefunden, Träger-Typ bekannt: Belegzeile) — nach dem Deckel
+    **keine Datei**, das Auftreten steht hier mit der Finding-Kennung F-3
+    (`docs/reviews/review-slice-routing-sdk-realserver-e2e.md`).
+  - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×): **achter Gegenbeleg, keine Datei**
+    (Verifier hat die Fixrunde ausgeführt und mutiert); im `state.md` vermerkt, der Ausgang bleibt
+    beim Lese-Schritt der Closure von [welle-routing](../welle-routing.md).
+  - **`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`** (offen, 3×): F-6 als Vermerk, **keine
+    Datei** — die Sammler enden verschieden, kein Ergebnis ändert sich; gezählt wird der Satz oder
+    das divergierende Ergebnis, nicht die Form der Testhilfe. Die Gegenmaßnahme „eine Fixture-Quelle“
+    hat wieder gewirkt (`state.md`).
+  - **`BEO-PGC/docker-cache-ueberspringt-tests-still`** (offen, 1×): Hinweis im `state.md`, kein
+    Auftreten (die Mutationsläufe des Verifiers überschrieben die Tag-Images der Tier-Bauten).
+  - **Kein Eintrag:** `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` — die Negativ-Aussage
+    ist an die Eingabeseite gebunden (Mutation „`target` entfällt“ rot), kein Auftreten. F-4 und F-5
+    sind Träger-Nachzüge bzw. INFO im Slice.
+- **Folge-Slices:** keine. Die Lücke aus F-2 hat ihre Adresse im Register (§6); eine
+  Sensor-Entscheidung ist kein Slice, solange sie niemand trifft.
+- **Risiken aus §6:** Negativ-Beleg **entfallen, mit benannter Grenze**; drei Sprachen **teils
+  entfallen, teils eingetreten**; Bezugspunkt des Fensters **weiter offen, übernommen**
+  (Adresse `SDK_ROUTE_QUIET_SECONDS`); Randfall-Divergenz **eingetreten, hingenommen**; Kosten
+  **entfallen**; NATS-Kopplung **entfallen**; Übersetzungs-Sensor **weiter offen**
+  (`BEO-PGC/integrationsprojekt-uebersetzt-nicht-unbemerkt`); Rohzeilen im Log **weiter offen,
+  hingenommen**; Tag-Images **entfallen**.
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+  Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der Lerneintrag
+  verkörpert nichts neu (kein Feld `liegt in`); (b) Folge-Slice: keiner genannt; (c) Register: die
+  genannten Kennungen existieren als Verzeichnis, jede trägt ein nicht leeres `evidence/`.
+- **Validator (Modul 8):** entfällt — der Nutzer-Bedarf
+  ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md)) wird erst durch den Wellen-Beleg validierbar.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
