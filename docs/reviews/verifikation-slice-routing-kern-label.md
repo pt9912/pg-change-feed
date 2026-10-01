@@ -9,7 +9,7 @@ Entscheidungs-Konformität ([`ADR-0137`](../plan/adr/0137-routing-zustellziele-p
 Review-Artefakt: [`review-slice-routing-kern-label.md`](review-slice-routing-kern-label.md).
 Formvorbild: [`verifikation-slice-routing-spec-nachzug.md`](verifikation-slice-routing-spec-nachzug.md).
 
-**Gegenstand:** Slice-Plan [`slice-routing-kern-label`](../plan/planning/in-progress/slice-routing-kern-label.md)
+**Gegenstand:** Slice-Plan [`slice-routing-kern-label`](../plan/planning/done/slice-routing-kern-label.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter
 [`LH-FA-DAT-006`](../../spec/lastenheft.md), [`LH-FA-ADM-003`](../../spec/lastenheft.md); Welle
 [`welle-routing`](../plan/planning/welle-routing.md)), Diff `41fbd0ca..HEAD` (`f98bdbc0`): sechs Commits,
