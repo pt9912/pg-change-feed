@@ -48,7 +48,7 @@ Zwei frühere Lauf-Versuche (eine Kette, deren Subshell mit dem Aufruf endete, u
 zweite parallele Kette) habe ich abgebrochen und verworfen; die Tabelle gibt ausschließlich Läufe einer
 einzigen, sauber gefahrenen Kette wieder (Zeitstempel der Logs). `make test-integration` und `make
 test-replication` habe ich nicht gefahren (laut Plan §1 gehört der Beleg am laufenden System
-[`slice-routing-e2e`](../plan/planning/open/slice-routing-e2e.md)).
+[`slice-routing-e2e`](../plan/planning/in-progress/slice-routing-e2e.md)).
 
 ## 2. DoD — Verdikt je Zeile
 
@@ -110,7 +110,7 @@ Verallgemeinerung auf andere Stellen (etwa die Konjunktion mit `schema` am Strea
 | F-3 (LOW) Paritätstest: Port per Listen/Close, Start-Fehler verworfen | **geschlossen für die Sichtbarkeit, das Zeitfenster bleibt** | `startGRPC` liefert den Start-Ergebnis-Kanal, `failWithStartError` nennt den Start-Fehler in der Meldung; `freeLoopbackAddr` wählt den Port weiter per Listen/Close (Godoc nennt es ehrlich). Ein belegter Port zeigt sich jetzt benannt, nicht als Zeitüberschreitung |
 | F-4 (LOW) Godoc des Capture-Tests breiter als die Strecke | **geschlossen** | Godoc und Plan-Zeile nennen „von der Transaktion … zum Stream-Port-Fake“, der Assembler-Schritt ist ausdrücklich ausgenommen; das Risiko „Kommt das Label an den Handler?“ in §6 bleibt als „bei der Closure einzutragen“ (Planner), der Teilbeleg ist als solcher benannt |
 | F-5 (LOW) Handbuch-Zählwort „zwei“, Adresse ohne Zählwort | **geschlossen, mit Rest (V-5)** | Adresse in [`slice-routing-betriebsdoku`](../plan/planning/open/slice-routing-betriebsdoku.md) nennt Zählwort und Lokatoren; im Handbuch nachgelesen: Zeile 1301 („trägt zwei optionale, unabhängig setzbare Felder“), 1364–1365 („zwei“ am Ende von 1364, „optionale Parameter“ in 1365, C#), 1378 (Kotlin), 1403 (Python), 1456–1457 (`ReadChanges`-Filterliste ohne `target`), 1557 („Zwei optionale“, SSE) stimmen. Rest: Zeile 1149 (Abschnitt HTTP-/JSON-API, „optional gefiltert über `schema` und `table`“) steht nicht in der Liste |
-| F-6 (INFO) `grpcadminclient -target` ungetestet | **als Grenze geführt** | Plan §3 trägt die Zeile, der E2E-Lauf ist die Adresse ([`slice-routing-e2e`](../plan/planning/open/slice-routing-e2e.md)) |
+| F-6 (INFO) `grpcadminclient -target` ungetestet | **als Grenze geführt** | Plan §3 trägt die Zeile, der E2E-Lauf ist die Adresse ([`slice-routing-e2e`](../plan/planning/in-progress/slice-routing-e2e.md)) |
 | F-7 (INFO) Paritätstest: Fake bildet die Auswahl nach | **geschlossen, Lesehinweis (siehe §6)** | Der Testname trägt „Wege liefern für dieselbe Eingabe dieselben Changes“, nicht „die SQL-Auswahl ist gleich“; die reale Auswahl trägt der Store-Test (S1, S2 rot). Der Fake ruft seit der Fixrunde `ChangeQuery.Validate` wie der reale Store |
 | F-8 (LOW) Umbruchrest im Kommentar von `SelectChanges` | **geschlossen** | Absatz in `queries.go` neu gelesen: „…trifft nie ein gesetztes `$6`.“ / „Der Join auf …“ steht in eigenen Sätzen |
 
@@ -150,7 +150,7 @@ Umfang des Re-Reviews: `git diff 11cff8d6 8c3d6e2e` (acht Dateien, +174/−31). 
 | Grenze | Befund |
 |---|---|
 | Altserver ignoriert das Feld | **ehrlich geführt:** gemessen an der Protobuf-Bibliothek dieses Repos (`TestStreamChangesRequestIgnoriertUnbekannteFelder`, beide existieren), am ausgelieferten Altserver *hergeleitet* (Plan §6) |
-| Beleg am laufenden System | Gehört [`slice-routing-e2e`](../plan/planning/open/slice-routing-e2e.md); ich habe `make test-integration` nicht gefahren. Die Gesamtkette vom Assembler über den Broadcaster bis zum Handler ist nicht gefahren (der Capture-Test endet am Stream-Port-Fake; Plan benennt es) |
+| Beleg am laufenden System | Gehört [`slice-routing-e2e`](../plan/planning/in-progress/slice-routing-e2e.md); ich habe `make test-integration` nicht gefahren. Die Gesamtkette vom Assembler über den Broadcaster bis zum Handler ist nicht gefahren (der Capture-Test endet am Stream-Port-Fake; Plan benennt es) |
 | `grpcadminclient -target` | benannt, bis zum E2E ungetestet (F-6) |
 | Konjunktion mit `schema` am Stream-Handler | trägt allein der Domänentest (Bestand von [`ADR-0133`](../plan/adr/0133-tabellen-granulare-filterung-grpc-sse.md)), von mir nicht an den Handlern mutiert — *hergeleitet* aus dem Review |
 | Port-Wahl im Paritätstest | Zeitfenster bleibt (Listen/Close), Start-Fehler sichtbar (F-3) |

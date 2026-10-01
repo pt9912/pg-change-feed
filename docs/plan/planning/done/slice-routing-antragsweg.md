@@ -133,7 +133,7 @@ Liefer-Punkte:
       Feldbelegung `routing: activation` des HTTP-/gRPC-Aktivierungs-Pfads in
       `internal/bootstrap/wiring.go` bindet kein Unit-Test (M9b grün, Verifikations-Report
       §4); der Rest ist durch den DoD-Punkt „API-Aktivierung“ von
-      [`slice-routing-e2e`](../open/slice-routing-e2e.md) §2 getragen (Aktivierung per
+      [`slice-routing-e2e`](../in-progress/slice-routing-e2e.md) §2 getragen (Aktivierung per
       HTTP bzw. gRPC mit `applied`-Routing-Regel, Gegenprobe ohne Regel,
       `make test-integration`, gedruckte Zeile je Weg), bis dahin trägt die Zeile an diesem
       Pfad die Weitergabe im Dekorator (M9a), nicht die Belegung.
@@ -369,7 +369,7 @@ geschrieben.
   gebunden (M9a rot, über Panik), die Belegung in `internal/bootstrap/wiring.go` nicht (M9b
   grün). Ein `nil`-Port wäre im Betrieb ein lauter Fehler beim ersten API-Aktivieren, kein
   stilles Ausbleiben (*hergeleitet*). — **Ausgang:** weiter offen. Adresse:
-  [`slice-routing-e2e`](../open/slice-routing-e2e.md) §2, DoD-Punkt „API-Aktivierung“ (im Plan
+  [`slice-routing-e2e`](../in-progress/slice-routing-e2e.md) §2, DoD-Punkt „API-Aktivierung“ (im Plan
   der Adresse gelesen, Verifikations-Report §5 Zeile F-4; `git grep -n 'API-Aktivierung'` im Plan
   der Adresse: Zeile 108).
 - **Wiederholungs-Grenze der Queue (Review F-5).** Der Kommentar in `applyAdministrationRequest`
@@ -381,7 +381,7 @@ geschrieben.
   offen. Adresse: der Kommentar an dieser Stelle (der Marker „Hergeleitet aus dem Code, ohne
   Wiederholungs-Test“ ist der Wächter); die Entscheidung gegen einen Test ist offen benannt,
   ein Träger-Slice ist nicht angelegt. Der Planner von
-  [`slice-routing-e2e`](../open/slice-routing-e2e.md) liest diesen Punkt beim Start und
+  [`slice-routing-e2e`](../in-progress/slice-routing-e2e.md) liest diesen Punkt beim Start und
   entscheidet, ob der Neustart-Lauf dort ihn belegen kann.
 - **Heredoc-Selbstauskunft des Implementers (Verifikation V-7).** Der Implementer meldete
   einen früheren Heredoc-Schreibvorgang auf `internal/application/usecase/excludecolumn/service.go`
