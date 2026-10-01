@@ -125,15 +125,22 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
   `internal/adapters/driven/natsstream/publisher_nats_test.go`): ein Zielname mit `-`
   und `_` (`eu-west_1`) ist am realen NATS-Server ein einzelnes Subjekt-Token (erprobt,
   `make test-notify`), `cdc.route.<source_id>.*` und `.>` empfangen jedes Ziel; die
-  Wecksignal-Wurzel `cdc.changes` bekommt von der zweiten Veröffentlichung nichts. Die
-  zweite Veröffentlichung ist unabhängig von der ersten (Tabellen-Subjekt zuerst, danach
-  das Ziel-Subjekt); ihr Fehlschlag oder ihr Überspringen verändert die erste nicht.
+  Wecksignal-Wurzel `cdc.changes` bekommt von der zweiten Veröffentlichung nichts (nur
+  negativ belegt: der Test läuft ohne Wecksignal-Sender, er zeigt null Nachrichten; das
+  Wecksignal selbst trägt der unberührte `natsnotify`-Adapter mit seinem Test im selben
+  Lauf). Die zweite Veröffentlichung ist von der ersten in der Prüfung unabhängig
+  (Tabellen-Subjekt zuerst, danach das Ziel-Subjekt): ein Fehlschlag oder Überspringen der
+  Ziel-Veröffentlichung verändert die erste nicht, ein übersprungenes Tabellen-Subjekt
+  (leerer oder reservierter Name) lässt das Ziel-Subjekt bestehen (Adapter-Test).
   Kosten-Aussage, **gemessen** in einem Lauf von `make test-notify` (Zeit für
   `publish` samt Flush zum Server, je 10 000 Changes, Median von fünf Läufen, ohne
-  Abonnent, Testcontainer-NATS), zwei Läufe: „ohne Ziel 18.242683ms (548165 Changes/s),
-  mit Ziel 21.239865ms (470813 Changes/s)“ und „ohne Ziel 17.479304ms (572105
-  Changes/s), mit Ziel 22.739539ms (439763 Changes/s)“; Verhältnis mit/ohne 1,16 und
-  1,30 (**abgeleitet**), die Zahl streut zwischen den Läufen. Die
+  Abonnent, Testcontainer-NATS), zwei Läufe des Implementers: „ohne Ziel 18.242683ms
+  (548165 Changes/s), mit Ziel 21.239865ms (470813 Changes/s)“ und „ohne Ziel
+  17.479304ms (572105 Changes/s), mit Ziel 22.739539ms (439763 Changes/s)“; Verhältnis
+  mit/ohne 1,16 und 1,30 (**abgeleitet**). Zwei weitere Läufe (Review: 1,05; Fixrunde:
+  1,14, gedruckte Zeile „ohne Ziel 18.450212ms (541999 Changes/s), mit Ziel 21.111558ms
+  (473674 Changes/s)“) ergeben über vier Läufe eine Streuung von 1,05 bis 1,30; das
+  Review-Verhältnis ist **übernommen** aus dem Review-Report. Die
   Messung hat keine Schwelle und deckt die Verteilung an Abonnenten nicht ab; der
   Re-Evaluierungs-Trigger der ADR bleibt „Messung der zweiten NATS-Veröffentlichung
   zeigt Druck am Publisher“.

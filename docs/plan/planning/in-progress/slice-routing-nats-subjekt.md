@@ -131,7 +131,9 @@ unverändert. Drei Liefer-Punkte:
 | `docs/user/benutzerhandbuch.md` | **nicht** | Adresse `slice-routing-betriebsdoku` (§2). |
 | `internal/adapters/driven/natsstream/publisher_nats_test.go` | neu | die Real-Server-Tests (`CDC_NATS_TEST_URL`, ohne Server übersprungen) und die Kostenmessung; eigene Datei, damit `publisher_test.go` netzlos bleibt. |
 | `internal/adapters/driven/natsstream/publisher.go` (Nahtstelle) | update | die Verbindung des Publishers ist die kleine Schnittstelle `subjectPublisher` (`Publish`), `*nats.Conn` erfüllt sie; der Adapter-Tabellentest zählt damit die Veröffentlichungen je Change und lässt die zweite scheitern, ohne Server. `New` nimmt weiter `*nats.Conn`. |
-| `tools/harness/run-notify-tests.sh` | update | ein zweiter `go test -v`-Lauf für `natsstream` (`-run 'TestRealServer\|TestPublishCost'`), damit die gedruckten Zeilen im Lauf stehen. |
+| `tools/harness/run-notify-tests.sh` | update | ein zweiter `go test -v`-Lauf für `natsstream`, damit die gedruckten Zeilen im Lauf stehen. Fixrunde: der Lauf umfasst alle Tests des Pakets (kein `-run`-Präfix) und endet mit Exit 1, sobald ein Test sich überspringt (Review F-3). |
+| `internal/adapters/driven/natsstream/publisher_test.go` (Fixrunde) | update | `TestRouteSubjectSurvivesSkippedTableSubject`: die Gegenrichtung der Unabhängigkeit (Tabellen-Subjekt nicht bildbar, Ziel-Subjekt erscheint); der `publish`-Godoc ist im Indikativ neu gefasst (Review F-1, F-2). |
+| `spec/pflichtenheft.md` (Fixrunde) | update (fremde Datei, minimal) | `SPEC-024` Zeile Zusatz-Subjekt: „Last nicht gemessen" auf den gemessenen Umfang gezogen, ohne Zahl; Historienzeile (Review F-4). |
 | `Makefile` (Hilfetext `test-notify`) | update | der Text nennt `natsstream` neben `natsnotify`. |
 | `docs/plan/planning/open/slice-routing-betriebsdoku.md` | update (fremde Datei, minimal) | Übergabe-Block: Zusatz-Subjekt, erprobte Token-Aussage, gemessene Kosten-Aussage mit Ursprung (Punkt C: **gemessen**). |
 
@@ -149,7 +151,7 @@ Nichtgefundenes ein):**
 diff 5 -n -E 'cdc\.stream\.' -- internal ':!*_test.go'
 diff 22 -n -E 'cdc\.stream\.' -- internal tools/harness test
 diff 66 -n -E 'cdc\.stream\.' -- spec docs/user sdks examples harness README.md
-diff 19 -n -E 'cdc\.route' -- internal tools test
+diff 20 -n -E 'cdc\.route' -- internal tools test
 diff 3 -n -E 'cdc\.route' -- spec docs/user sdks examples harness README.md
 diff 7 -n subjectPrefix -- internal
 ```
@@ -158,7 +160,7 @@ diff 7 -n subjectPrefix -- internal
 |---|---|---|
 | Quellen, die das Subjekt-Schema führen | Zeilen 1 und 2: 5 Nicht-Test-Zeilen in `internal`, 12 mit Tests und `tools/harness`/`test` | jede Stelle gelesen: `publisher.go` (Paketkommentar, `subjectPrefix`, Typkommentar, `publish`-Kommentar) beschreibt das Tabellen-Subjekt, bleibt wahr (die Zusatz-Veröffentlichung steht im Typ- und `publish`-Kommentar); `tools/harness/natsstreamsub` und `run-integration-tests.sh` lesen `cdc.stream…` und sind unberührt. Diff: Nicht-Test 5 (unverändert), mit Tests 22 (die 10 neuen Zeilen sind die Tests dieses Slice) |
 | Beschreibungen des Subjekt-Schemas in Spec, Handbuch, SDKs, Beispielen, Harness | Zeile 3: 64 Zeilen | Diff 66 (65 am Stand `72a59d5a` durch Commits nach dem Parent — die Spec-Zeile des Zusatz-Subjekts —, +1 `harness/README.md`-Zeile `make test-notify`, hier nachgezogen). Handbuch (9 Zeilen) → `slice-routing-betriebsdoku` (Übergabe-Block dort ergänzt); SDKs und Beispiele → `slice-routing-sdk-beispiel-target` (keine Änderung hier; ihre Subjekt-Beschreibungen bleiben wahr, sie kennen das Zusatz-Subjekt nicht). Nicht gefunden: eine Beschreibung „genau ein Subjekt je Change" in einem Träger außerhalb der Handbuch-Adresse |
-| Namensraum `cdc.route` | Zeile 4: 0 Zeilen im Quell- und Doku-Suchraum | Diff: Quellen und Tests 19 Zeilen (3 `publisher.go`, die übrigen Tests dieses Slice), Doku-Suchraum 3 (Spec-Zeilen und `harness/README.md`, nicht aus diesem Slice außer der README-Zeile); keine Kollision mit einem Bestand |
+| Namensraum `cdc.route` | Zeile 4: 0 Zeilen im Quell- und Doku-Suchraum | Diff: Quellen und Tests 20 Zeilen (3 `publisher.go`, die übrigen Tests dieses Slice, 19 am Stand vor der Fixrunde), Doku-Suchraum 3 (Spec-Zeilen und `harness/README.md`, nicht aus diesem Slice außer der README-Zeile); keine Kollision mit einem Bestand |
 | Verwendung der Subjekt-Wurzel | Zeile 5: 7 Zeilen `subjectPrefix` | Diff 7 — Konstante und Nutzung unverändert; die neue Wurzel heißt `routeSubjectPrefix` und ist nicht Teil dieses Treffers |
 
 ## 4. Trigger

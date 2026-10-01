@@ -225,9 +225,8 @@ func TestRunSkipsNilChange(t *testing.T) {
 // Publish-Versuch übersprungen und protokolliert, statt ein aufgespaltenes
 // beziehungsweise verkürztes Subjekt zu publizieren.
 //
-// Rot färbende Mutation: die Leerwert-Prüfung in `publish` streichen — die
-// beiden Leerwert-Fälle färben rot, weil dann ein verkürztes Subjekt
-// publiziert würde.
+// Rot färbende Mutation: die Leerwert-Prüfung in `tableSubject` streichen —
+// die beiden Leerwert-Fälle färben rot (verkürztes Subjekt).
 func TestPublishSkipsUnusableSubjectName(t *testing.T) {
 	for _, testcase := range []struct {
 		name        string
@@ -390,6 +389,43 @@ func TestPublishSkipsReservedRouteTarget(t *testing.T) {
 			}
 			if len(log.warns) != 1 || !strings.Contains(log.warns[0], "Zielname") {
 				t.Fatalf("Warn-Aufzeichnung: %q", log.warns)
+			}
+		})
+	}
+}
+
+// TestRouteSubjectSurvivesSkippedTableSubject trägt die Gegenrichtung der
+// Unabhängigkeit: ist das Tabellen-Subjekt nicht bildbar (leerer oder
+// reservierter Name), erscheint das Ziel-Subjekt der Change trotzdem.
+//
+// Rot färbende Mutation: in `publish` die Ziel-Veröffentlichung nur bei
+// `change.Table != ""` ausführen — der Fall „leere Tabelle" färbt rot.
+func TestRouteSubjectSurvivesSkippedTableSubject(t *testing.T) {
+	for _, testcase := range []struct {
+		name   string
+		schema string
+		table  string
+	}{
+		{name: "leere Tabelle", schema: "public", table: ""},
+		{name: "leeres Schema", schema: "", table: "orders"},
+		{name: "reserviertes Zeichen in der Tabelle", schema: "public", table: "tbl.name"},
+	} {
+		t.Run(testcase.name, func(t *testing.T) {
+			conn := &recordingConn{}
+			log := &recordingLog{}
+			p := newRecordingPublisher(conn, log)
+			change := testChange(t)
+			change.Schema = testcase.schema
+			change.Table = testcase.table
+			change.RouteTarget = "eu"
+
+			p.publish(context.Background(), change)
+
+			if got := conn.attempts(); len(got) != 1 || got[0] != "cdc.route.src-1.eu" {
+				t.Fatalf("Veröffentlichungen = %q, Erwartung nur das Ziel-Subjekt", got)
+			}
+			if len(log.warns) != 1 {
+				t.Fatalf("Warnungen = %q, Erwartung genau eine (Tabellen-Subjekt übersprungen)", log.warns)
 			}
 		})
 	}

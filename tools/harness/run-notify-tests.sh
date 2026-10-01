@@ -64,10 +64,24 @@ docker run --rm --network "$NETWORK" \
 
 # natsstream: Ziel-Subjekt, Wildcard-Abonnenten, Payload-Gleichheit und die
 # Kostenmessung der zweiten Veröffentlichung; -v druckt die Zeile je Fall.
+# Der Lauf umfasst alle Tests des Pakets mit gesetzter URL und endet mit Exit 1,
+# sobald ein Test sich überspringt: ein Real-Server-Test ohne Server färbt den
+# Lauf rot, und jeder Testname läuft mit.
+LOG=$(mktemp)
+trap 'rm -f "$LOG"; cleanup' EXIT
+status=0
 docker run --rm --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
   -w /src \
   -e GOCACHE=/tmp/gocache \
   -e CDC_NATS_TEST_URL="$NATS_URL" \
-  "$TOOLCHAIN_IMAGE" go test -v -count=1 -run 'TestRealServer|TestPublishCost' ./internal/adapters/driven/natsstream/...
+  "$TOOLCHAIN_IMAGE" go test -v -count=1 ./internal/adapters/driven/natsstream/... >"$LOG" 2>&1 || status=$?
+cat "$LOG"
+if [ "$status" -ne 0 ]; then
+  exit "$status"
+fi
+if grep -Eq '^ *--- SKIP' "$LOG"; then
+  echo "run-notify-tests: natsstream-Test übersprungen — Real-Server-Beleg fehlt" >&2
+  exit 1
+fi

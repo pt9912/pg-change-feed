@@ -223,14 +223,15 @@ func routeSubjectFor(sourceID string, target model.RouteTarget) string {
 // publish veröffentlicht einen einzelnen Change als vollständiges
 // JSON-Event (`ADR-0100`): zuerst auf dem Tabellen-Subjekt, danach — nur bei
 // gesetztem Zustellziel — mit demselben Payload auf dem Ziel-Subjekt. Die
-// beiden Veröffentlichungen sind voneinander unabhängig: Prüfung, Fehlschlag
-// und Überspringen der einen verändern die andere nicht. Ein leerer
-// Schema-/Tabellenname, ein Name mit NATS-reserviertem Zeichen oder
-// Whitespace, ein Kodierfehler oder ein Publish-Fehlschlag bleiben lokal —
-// kein Rückgabewert, kein propagierter Fehler: derselbe Fire-and-Forget-
-// Vertrag wie der `Broadcaster` selbst. Ohne die Leerwert-Prüfung entstünde
-// aus einem leeren Relationsnamen ein verkürztes Subjekt
-// (`cdc.stream.<source>.<schema>.`), das still publiziert würde. Ein
+// beiden Veröffentlichungen sind in ihrer Prüfung unabhängig: ein übersprungenes
+// Tabellen-Subjekt (leerer oder reservierter Name) lässt das Ziel-Subjekt
+// bestehen, ein übersprungenes oder gescheitertes Ziel-Subjekt lässt das
+// Tabellen-Subjekt bestehen. Ein leerer Schema-/Tabellenname, ein Name mit
+// NATS-reserviertem Zeichen oder Whitespace, ein Kodierfehler oder ein
+// Publish-Fehlschlag bleiben lokal — kein Rückgabewert, kein propagierter
+// Fehler: derselbe Fire-and-Forget-Vertrag wie der `Broadcaster` selbst. Die
+// Prüfung in `tableSubject` lässt einen leeren Relationsnamen nicht als
+// verkürztes Subjekt (`cdc.stream.<source>.<schema>.`) durch. Ein
 // Fehlschlag erreicht weder den `CaptureService` noch den kritischen
 // Erfassungspfad — der Aufrufer liest ausschließlich aus dem bereits
 // isolierten Broadcaster-Kanal.

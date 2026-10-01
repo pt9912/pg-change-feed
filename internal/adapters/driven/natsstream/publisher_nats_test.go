@@ -14,7 +14,9 @@ import (
 
 // Die Tests dieser Datei laufen gegen einen echten NATS-Server und über
 // `make test-notify` (`CDC_NATS_TEST_URL`, `tools/harness/run-notify-tests.sh`);
-// ohne Server werden sie übersprungen.
+// ohne Server werden sie übersprungen. Das Skript fährt alle Tests des Pakets
+// mit gesetzter URL und endet mit Exit 1, sobald ein Test sich überspringt;
+// ein neuer Real-Server-Test braucht deshalb keinen bestimmten Namenspräfix.
 
 func realConn(t *testing.T) *nats.Conn {
 	t.Helper()
