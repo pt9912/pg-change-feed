@@ -168,6 +168,39 @@ Liefer-Punkte:
 | `internal/bootstrap/*_test.go`, `internal/adapters/driven/postgresstorage/*_test.go`, Use-Case-Tests | neu / update | Happy/Boundary/Negative nach [`LH-FA-CFG-008`](../../../../spec/lastenheft.md); Rollen-Test unter den drei Logins; Ableitung mit gleichem `requested_at`. |
 | `harness/targets/schema-rollout.md`, `harness/README.md` | update | Zählwörter und Beschreibungen, soweit der Suchlauf sie findet. |
 
+**Konkretisierung vor dem Code** (Ist-Zustand am Parent `461ba1bf~1` gemessen, bevor
+editiert wurde; Namen des Implementers):
+
+| Datei / Komponente | Änderungs-Art | Konkretisierung |
+|---|---|---|
+| `internal/domain/model/routespec.go` (+ `routespec_test.go`) | neu | `ParseRouteSpec` (Form, unbekannte Schlüssel, Alphabet des Ziels; Reihenfolge der Fehlertext-Tabelle), `RouteSpec.Build`, `RouteRule.CheckIdentity` (R1, R2), `RouteRule.CheckArrangement` (R4, R5), `RoutesConditionOn` (R3 Gegenrichtung), `RouteRecord`/`FoldRoutes` (Ableitung aus den `applied`-Zeilen), `RouteSpecError` (Grund plus Adresswert), `MaxRouteOrder`. R3 (Spalte existiert, nicht ausgeschlossen) liegt im Use Case: Katalog und Ausschlussstand sind Port-Wissen. |
+| `internal/domain/errors/errors.go` | update | sechs Sentinels für die Texte der Spec, die kein Transformations-Grund sind: `ErrRouteOrderTaken`, `ErrRouteConditionTaken`, `ErrRouteWithoutWhenTaken`, `ErrRouteWithoutWhenNotLast`, `ErrRouteBehindWithoutWhen`, `ErrColumnHasRouteCondition`; R1/R6/R3 tragen `ErrRuleNameTaken`/`ErrRuleNotKept`/`ErrRoutingColumnExcluded` (der Kern-Slice legte den letzten an) und `inbound.ErrSourceColumnMissing`. |
+| `internal/application/port/inbound/routing.go`, `.../outbound/routing.go` | neu | `SetRouteUseCase`/`RemoveRouteUseCase` (Namen aus `spec/architecture.md`), `outbound.RoutingPort` mit `RoutingRules(ctx, source)`; die Spaltenexistenz und der Ausschlussstand kommen aus dem bestehenden `ColumnExclusionPort`. |
+| `internal/application/usecase/setroute/`, `removeroute/` | neu | Prüfreihenfolge: Regelname · Formzeilen · Zielalphabet · R1 · R2 · R3 (fehlt, ausgeschlossen) · R4 · R5; `remove_route`: Regelname · R6. |
+| `internal/application/usecase/excludecolumn/service.go` | update | Konstruktor trägt den `RoutingPort`; nach der Prüfung der Spaltenexistenz endet eine Spalte mit Routing-Bedingung als `Spalte trägt eine Routing-Bedingung: schema.table.column`. Aufrufer: `wiring.go` und drei Test-Stellen. |
+| `internal/adapters/driven/postgresstorage/` | update | `RoutingRules` am `TableActivationAdapter` (`queries.SelectAppliedRoutingRequests`, `sqlexec.ReadRoutingRules`); die Lesung der offenen Anträge (`ListPending`) braucht keine Änderung, die Art kommt über den Domänen-Konstruktor. |
+| `internal/bootstrap/wiring.go`, `assemblersync.go` | update | `activatedTableBindings` und `syncAssemblerAddBinding` tragen einen weiteren Port `routing` (Prozessstart, Aktivierungs-Zweig, API-Aktivierung); `applyAdministrationRequest` zwei Zweige (`SetRoute`/`RemoveRoute` am `Assembler`). `processedAdministrationKinds` leitet sich aus `model.AdministrationRequestKinds()` ab (gemessen: keine handgeführte Liste). |
+| `internal/adapters/driven/postgresstorage/schema.sql` | keine Änderung (Nicht-Realisierung) | die zweite Schema-Beschreibung trägt weder `administration_request` noch `request_kind` (gemessen: `git grep -n -E 'administration\|request_kind' -- internal/adapters/driven/postgresstorage/schema.sql` druckt keine Zeile); die Antrags-Tabelle steht allein in `tools/schema/schema.yaml` und `nacharbeit-administration.sql`. |
+| `tools/schema/plan.yaml`, `tools/schema/down.sql` | keine Änderung (Nicht-Realisierung) | die Erzeugnisse des Rollouts ändern sich durch diesen Slice nicht: weder Tabellen noch Spalten noch Views kommen hinzu (die Funktionen und die CHECK-Menge liegen in der Nacharbeit-Datei, nicht im d-migrate-Plan); gemessen am ersten Rollout gegen ein leeres Ziel: Differenz allein die Ziel-Bezeichnung in `plan.yaml`, `down.sql` unverändert. Beide Dateien werden nach dem Lauf aus dem Index wiederhergestellt (`rollout-restore`-Regel). |
+| `internal/bootstrap/roles_rollout_file_internal_test.go`, `administration_roles_internal_test.go`, `routing_internal_test.go` (neu) | update / neu | die Signaturen der zwei Funktionen in der Datei-Prüfung; der Antragsweg unter den Rollen-Logins zieht die Routing-Anträge und die Sperre gegen `exclude_column` durch; Verdrahtungs-Tests mit abgeleitetem Stand. |
+| `internal/adapters/driven/postgresstorage/administrationrequest_routing_test.go` (neu), `administrationrequest_test.go` | neu / update | Funktionen schreiben `pending` und senden `NOTIFY`; Rollen-Test (42501 unter `cdc_reader`/`cdc_capture`, Gegenprobe `cdc_admin`); Annahmemenge von `rule_spec`; Ableitung mit gleichem `requested_at`; Aufruf-Ordnung in einer Transaktion; Menge der Arten (neun) und der Funktionen (neun). |
+
+**Umsetzungsentscheidungen** (die Spec lässt sie offen; gemeldet, die Spec ändert dieser
+Slice nicht):
+
+- **Parametertyp `json`** (nicht `jsonb` wie im Wortlaut der ADR): der Bestand ist der Beleg —
+  `cdc.set_transformation` trägt `p_rule_spec json` (`tools/schema/nacharbeit-administration.sql`),
+  der Precheck-Report nennt die Funktion `…in:json`, die Spalte `rule_spec` ist `jsonb`.
+  `cdc.set_route` folgt dem Bestand; die Messung am Ziel steht im Bericht.
+- **Obergrenze von `order`:** `MaxRouteOrder` = 2147483647 (32-Bit-Ganzzahl). Grund: weit
+  über jeder Zahl von Regeln einer Tabelle, und der Wert bleibt in jedem Ganzzahltyp eines
+  Verbrauchers (SQL-`integer`, SDK-Sprachen) darstellbar; eine größere Zahl endet
+  `rule_spec ist ungültig`. `SPEC-032` sagt „positive ganze Zahl“ ohne Obergrenze.
+- **Schreibweise der Zahl:** nur eine Ganzzahl-Schreibweise (Ziffern ohne Bruch und Exponent).
+  `10.0` und `1e1` enden `rule_spec ist ungültig`, obwohl sie mathematisch ganz sind;
+  `jsonb` bewahrt die Schreibweise (`10.0` bleibt `10.0`). Die Spec nennt die Schreibweise
+  nicht — Meldung an die Spec, nicht Änderung.
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die `request_kind`-Menge
 trägt zwei Werte mehr; es gibt zwei SQL-Funktionen mehr; der Regelstand hat eine
 zweite Ableitung"; Parent ist `30fd6cb5`; der Implementer ergänzt die `diff`-Zeilen
