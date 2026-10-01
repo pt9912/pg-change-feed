@@ -9,7 +9,7 @@ Befunde V-1 bis V-7 des Verifikations-Reports
 DoD-Abgleich (Verifier-Aufgabe, Modul 11).
 
 **Gegenstand:** Slice-Plan
-[`slice-routing-lesewege.md`](../plan/planning/in-progress/slice-routing-lesewege.md);
+[`slice-routing-lesewege.md`](../plan/planning/done/slice-routing-lesewege.md);
 [`ADR-0137`](../plan/adr/0137-routing-zustellziele-persistiertes-ziel-label.md),
 [`ADR-0139`](../plan/adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md)
 (vollständig gelesen, Festlegung 2 und deren Befund-Abschnitt).
@@ -125,7 +125,7 @@ leer“), M1/M2 die des Use-Case-Tests. Der Capture-Test-Kommentar nennt jetzt d
 - `kategorie`: LOW
 - `quelle`: [`ADR-0139`](../plan/adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md)
   Festlegung 2; Modul 8 (Rollen-Zuständigkeit); Hauptreport A-1
-- `pfad`: [`slice-routing-lesewege.md`](../plan/planning/in-progress/slice-routing-lesewege.md) (§6, Ausgang
+- `pfad`: [`slice-routing-lesewege.md`](../plan/planning/done/slice-routing-lesewege.md) (§6, Ausgang
   „Rangfolge ungültiges Ziel gegen Lese-Kontrakt“)
 - `befund`: Der Hauptreport wies die Frage dem Architect zu; entschieden hat der Hauptlauf, im Plan
   als „kein Architect-Verdikt“ geführt. Die Entscheidung ist von der ADR-Begründung gedeckt (siehe

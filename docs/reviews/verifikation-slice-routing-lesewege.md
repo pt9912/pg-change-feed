@@ -13,7 +13,7 @@ Festlegung 2,
 Review-Artefakt: [`review-slice-routing-lesewege.md`](review-slice-routing-lesewege.md).
 Formvorbild: [`verifikation-slice-routing-backfill-pfad.md`](verifikation-slice-routing-backfill-pfad.md).
 
-**Gegenstand:** Slice-Plan [`slice-routing-lesewege`](../plan/planning/in-progress/slice-routing-lesewege.md)
+**Gegenstand:** Slice-Plan [`slice-routing-lesewege`](../plan/planning/done/slice-routing-lesewege.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter
 [`LH-FA-SST-006`](../../spec/lastenheft.md), [`LH-FA-SST-008`](../../spec/lastenheft.md); Welle
 [`welle-routing`](../plan/planning/welle-routing.md)). Diff `26c16275~1..HEAD` (`8c3d6e2e`, Fixrunde):
