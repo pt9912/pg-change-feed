@@ -19,6 +19,7 @@ object Cli {
         var verb = "stream"
         var schema = ""
         var table = ""
+        var target = ""
         var consumerId = ""
         var name = ""
         var offset = 0L
@@ -54,6 +55,7 @@ object Cli {
                 "--verb" -> verb = nextValue()
                 "--schema" -> schema = nextValue()
                 "--table" -> table = nextValue()
+                "--target" -> target = nextValue()
                 "--consumer-id" -> consumerId = nextValue()
                 "--name" -> name = nextValue()
                 "--offset" -> offset = parseNonNegativeLong(flagName, nextValue())
@@ -78,6 +80,7 @@ object Cli {
             tableId = tableId, schemaVersionId = schemaVersionId, version = version,
             source = source, publication = publication,
             from = from, to = to, limit = limit, minAgeNanos = minAgeNanos,
+            target = target,
         )
     }
 

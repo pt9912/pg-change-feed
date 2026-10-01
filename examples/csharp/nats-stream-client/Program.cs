@@ -23,8 +23,6 @@ namespace CdcExamples.NatsStream;
 /// </summary>
 internal static class Program
 {
-    private const string Subject = "cdc.stream.>";
-
     private static async Task<int> Main(string[] args)
     {
         Config cfg;
@@ -46,6 +44,17 @@ internal static class Program
         if (string.IsNullOrEmpty(cfg.Token))
         {
             Console.Error.WriteLine("nats-stream-client: kein Token gesetzt — CDC_NATS_STREAM_TOKEN (oder --token) ist noetig, um den dritten Zustellweg zu abonnieren");
+            return 2;
+        }
+
+        string Subject;
+        try
+        {
+            Subject = SubscribeSubject.Resolve(cfg.Source, cfg.Target);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.Error.WriteLine(ex.Message);
             return 2;
         }
 

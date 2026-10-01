@@ -26,4 +26,5 @@ public sealed record Config(
     string From,
     string To,
     string Limit,
-    long MinAgeNanos);
+    long MinAgeNanos,
+    string Target = "");

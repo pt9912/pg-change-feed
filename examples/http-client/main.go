@@ -48,9 +48,10 @@ type config struct {
 	schemaVersionID string
 	version         int64
 
-	from  string
-	to    string
-	limit string
+	target string
+	from   string
+	to     string
+	limit  string
 
 	minAgeNanos int64
 }
@@ -109,6 +110,7 @@ func parseFlags() config {
 	flag.StringVar(&cfg.schemaVersionID, "schema-version-id", "", "Schema-Versions-Kennung (Default: <table-id>-v1, nur enable-table)")
 	flag.Int64Var(&cfg.version, "version", 1, "Versionsnummer der Tabelle (nur enable-table)")
 
+	flag.StringVar(&cfg.target, "target", "", "Zustellziel einer Change (nur changes, optional; leer = kein Filter)")
 	flag.StringVar(&cfg.from, "from", "", "Untere Positions-Grenze, einschließlich (nur changes, optional)")
 	flag.StringVar(&cfg.to, "to", "", "Obere Positions-Grenze, ausschließlich (nur changes, optional)")
 	flag.StringVar(&cfg.limit, "limit", "", "Maximale Zeilenzahl (nur changes, optional)")

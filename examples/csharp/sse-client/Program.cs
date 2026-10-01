@@ -42,7 +42,7 @@ internal static class Program
             return 2;
         }
 
-        var streamUrl = SseStream.StreamUrl(cfg.Addr);
+        var streamUrl = SseStream.StreamUrl(cfg.Addr, cfg.Target);
 
         // Der Stream bleibt offen, bis die Verbindung endet: der Aufruf läuft
         // ohne Antwort-Frist (Muster: examples/sse-client/main.go).

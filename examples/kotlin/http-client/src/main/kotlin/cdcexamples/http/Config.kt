@@ -26,4 +26,5 @@ data class Config(
     val to: String,
     val limit: String,
     val minAgeNanos: Long,
+    val target: String = "",
 )

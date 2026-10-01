@@ -31,6 +31,34 @@ class ChangesClientTest {
     }
 
     @Test
+    fun changesUrlBuilderCarriesTheTargetAsEscapedQueryParameter() {
+        assertEquals(
+            "http://feed:8080/changes?source=quelle-1&target=eu",
+            ChangesUrlBuilder.build("feed:8080", "quelle-1", "", "", "", "", "", "eu"),
+        )
+        assertEquals(
+            "http://feed:8080/changes?source=quelle-1&target=a%26b%3Dc",
+            ChangesUrlBuilder.build("feed:8080", "quelle-1", "", "", "", "", "", "a&b=c"),
+        )
+        assertEquals(
+            "http://feed:8080/changes?source=quelle-1",
+            ChangesUrlBuilder.build("feed:8080", "quelle-1", "", "", "", "", "", ""),
+        )
+    }
+
+    @Test
+    fun readChangesSendsTheTargetOfTheConfig() {
+        FakeServer.start().use { server ->
+            server.respondWith(200, """{"changes":[]}""")
+            val cfg = baseConfig(server.addr).copy(source = "quelle-1", target = "eu")
+
+            ChangesClient.readChanges(HttpClient.newHttpClient(), cfg)
+
+            assertEquals("source=quelle-1&target=eu", server.lastQuery)
+        }
+    }
+
+    @Test
     fun changesUrlBuilderOmitsEmptyOptionalValues() {
         val got = ChangesUrlBuilder.build("feed:8080", "quelle-1", "", "orders", "", "20", "")
         assertEquals("http://feed:8080/changes?source=quelle-1&table=orders&to=20", got)

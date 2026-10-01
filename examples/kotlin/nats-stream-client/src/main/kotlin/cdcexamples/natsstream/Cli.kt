@@ -12,6 +12,8 @@ object Cli {
     fun parse(args: Array<String>, getEnv: (String) -> String?): Config {
         var natsUrl = getEnv("CDC_NATS_URL") ?: ""
         var token = getEnv("CDC_NATS_STREAM_TOKEN") ?: ""
+        var source = ""
+        var target = ""
 
         var i = 0
         while (i < args.size) {
@@ -31,12 +33,14 @@ object Cli {
             when (name) {
                 "--nats-url" -> natsUrl = nextValue()
                 "--token" -> token = nextValue()
+                "--source" -> source = nextValue()
+                "--target" -> target = nextValue()
                 else -> throw IllegalArgumentException("nats-stream-client: unbekanntes Flag $name")
             }
             i += 1
         }
 
-        return Config(natsUrl, token)
+        return Config(natsUrl, token, source, target)
     }
 
     /**

@@ -5,6 +5,32 @@ import (
 	"testing"
 )
 
+// TestStreamRequestCarriesTargetWithSchemaAndTable prüft die Bindung
+// Flag → Anfrage des Streams: `target` reist mit `schema`/`table` im
+// Request, ohne Angabe bleibt der Request leer wie vor dem Parameter.
+func TestStreamRequestCarriesTargetWithSchemaAndTable(t *testing.T) {
+	got := streamRequest(config{schema: "public", table: "orders", target: "eu"})
+	if got.GetSchema() != "public" || got.GetTable() != "orders" || got.GetTarget() != "eu" {
+		t.Fatalf("streamRequest = %v", got)
+	}
+	empty := streamRequest(config{})
+	if empty.GetSchema() != "" || empty.GetTable() != "" || empty.GetTarget() != "" {
+		t.Fatalf("streamRequest ohne Filter = %v", empty)
+	}
+}
+
+// TestReadChangesRequestCarriesTarget prüft die Bindung Flag → Anfrage von
+// `read-changes`: `target` reist neben `schema`/`table` im Request.
+func TestReadChangesRequestCarriesTarget(t *testing.T) {
+	got := readChangesRequest(config{source: "quelle-1", schema: "public", target: "eu"})
+	if got.GetSource() != "quelle-1" || got.GetSchema() != "public" || got.GetTarget() != "eu" {
+		t.Fatalf("readChangesRequest = %v", got)
+	}
+	if readChangesRequest(config{source: "quelle-1"}).GetTarget() != "" {
+		t.Fatal("readChangesRequest ohne -target trägt ein Ziel")
+	}
+}
+
 // TestValidateRejectsUnknownVerb prüft, dass ein unbekannter `-verb`-Wert
 // vor jedem Netzwerkaufruf abbricht.
 func TestValidateRejectsUnknownVerb(t *testing.T) {

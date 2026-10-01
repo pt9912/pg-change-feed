@@ -38,8 +38,9 @@ data class ReadChangesResponse(
 
 /**
  * ChangesUrlBuilder baut die Lese-Adresse von `GET /changes`: `source` ist
- * Pflicht, die übrigen fünf Parameter sind unabhängig optional — ein
+ * Pflicht, die übrigen sechs Parameter sind unabhängig optional — ein
  * leerer Wert bleibt weg statt als leerer Query-Parameter zu erscheinen.
+ * `target` wählt das Zustellziel einer Change (`ADR-0137`).
  * `from` ist die untere Positions-Grenze **einschließlich**, `to` die
  * obere Grenze **ausschließlich**. `GET /changes` lässt nur einen
  * unbekannten Parameter**namen** mit `400` enden; ein leerer Wert eines
@@ -57,10 +58,12 @@ object ChangesUrlBuilder {
         from: String,
         to: String,
         limit: String,
+        target: String = "",
     ): String {
         val params = sortedMapOf("source" to source)
         addIfNotEmpty(params, "schema", schema)
         addIfNotEmpty(params, "table", table)
+        addIfNotEmpty(params, "target", target)
         addIfNotEmpty(params, "from", from)
         addIfNotEmpty(params, "to", to)
         addIfNotEmpty(params, "limit", limit)
@@ -84,7 +87,7 @@ object ChangesClient {
     fun readChanges(httpClient: HttpClient, cfg: Config): ReadChangesResponse =
         RequestHelper.sendJson(
             httpClient, "GET",
-            ChangesUrlBuilder.build(cfg.addr, cfg.source, cfg.schema, cfg.table, cfg.from, cfg.to, cfg.limit),
+            ChangesUrlBuilder.build(cfg.addr, cfg.source, cfg.schema, cfg.table, cfg.from, cfg.to, cfg.limit, cfg.target),
             cfg.token, null, 200,
         )
 }

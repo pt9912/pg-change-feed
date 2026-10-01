@@ -17,13 +17,17 @@ object ChangesClient {
      * `from`/`to`/`limit`-Wert trägt `0` (nicht gesetzt).
      */
     suspend fun readChanges(client: AdministrationGrpcKt.AdministrationCoroutineStub, cfg: Config): String {
-        val resp = withCallTimeout(client).readChanges(
-            ReadChangesRequest.newBuilder()
-                .setSource(cfg.source).setSchema(cfg.schema).setTable(cfg.table)
-                .setFrom(cfg.from).setTo(cfg.to).setLimit(cfg.limit)
-                .build(),
-            CallMetadata.headers(cfg.token),
-        )
+        val resp = withCallTimeout(client).readChanges(buildRequest(cfg), CallMetadata.headers(cfg.token))
         return Format.formatReadChanges(resp)
     }
+
+    /**
+     * buildRequest bildet die Anfrage von `ReadChanges` aus der
+     * Konfiguration; ein leeres `target` ist kein Filter.
+     */
+    fun buildRequest(cfg: Config): ReadChangesRequest =
+        ReadChangesRequest.newBuilder()
+            .setSource(cfg.source).setSchema(cfg.schema).setTable(cfg.table).setTarget(cfg.target)
+            .setFrom(cfg.from).setTo(cfg.to).setLimit(cfg.limit)
+            .build()
 }

@@ -73,13 +73,20 @@ Endpunkt passenden Flags (z. B. `ARGS="-verb=changes -source <quelle>"`).
 
 `grpc-client` trägt zusätzlich das `-verb`-Flag (Default `stream`, die obige
 Startform bleibt unverändert funktionsfähig und nimmt den optionalen
-`-schema`/`-table`-Filter entgegen): `register-consumer`,
+`-schema`/`-table`/`-target`-Filter entgegen): `register-consumer`,
 `acknowledge-consumer`, `get-consumer-position`, `remove-consumer`,
 `enable-table`, `disable-table`, `get-table-status`, `list-tables`,
 `run-retention`, `read-changes` und `diagnose` rufen die elf RPCs der
 [gRPC-Verwaltungs-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-grpc-verwaltungs-api)
 auf, je mit den zu ihrer RPC passenden Flags (z. B.
 `ARGS="-verb=list-tables -source <quelle> -publication <publication>"`).
+
+Das Flag `-target` wählt das Zustellziel einer Change (leer ist kein Filter):
+an `http-client` mit `-verb=changes`, an `grpc-client` im Verb `stream` und
+`read-changes`, an `sse-client` für den Stream. `nats-stream-client` nimmt
+`-source` zusammen mit `-target` entgegen und abonniert dann
+`cdc.route.<source_id>.<ziel>` statt `cdc.stream.>`; ein Wert mit Punkt, `*`,
+`>` oder Leerraum endet mit Exit 2, bevor ein Abonnement entsteht.
 
 ## C#
 
@@ -110,13 +117,19 @@ ihrem Endpunkt passenden Flags (z. B. `ARGS="--verb=changes --source <quelle>"`)
 
 `csharp/grpc-client` trägt zusätzlich das `--verb`-Flag (Default `stream`,
 die obige Startform bleibt unverändert funktionsfähig und nimmt den
-optionalen `--schema`/`--table`-Filter entgegen): `register-consumer`,
+optionalen `--schema`/`--table`/`--target`-Filter entgegen): `register-consumer`,
 `acknowledge-consumer`, `get-consumer-position`, `remove-consumer`,
 `enable-table`, `disable-table`, `get-table-status`, `list-tables`,
 `run-retention`, `read-changes` und `diagnose` rufen die elf RPCs der
 [gRPC-Verwaltungs-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-grpc-verwaltungs-api)
 auf, je mit den zu ihrer RPC passenden Flags (z. B.
 `ARGS="--verb=list-tables --source <quelle> --publication <publication>"`).
+
+Das Flag `--target` wählt das Zustellziel einer Change (leer ist kein Filter):
+an `http-client` mit `--verb=changes`, an `grpc-client` im Verb `stream` und
+`read-changes`, an `sse-client` für den Stream. `nats-stream-client` nimmt
+`--source` zusammen mit `--target` entgegen und abonniert dann
+`cdc.route.<source_id>.<ziel>` statt `cdc.stream.>`.
 
 ## Kotlin
 
@@ -148,13 +161,18 @@ den zu ihrem Endpunkt passenden Flags (z. B.
 
 `kotlin/grpc-client` trägt zusätzlich das `--verb`-Flag (Default `stream`,
 die obige Startform bleibt unverändert funktionsfähig und nimmt den
-optionalen `--schema`/`--table`-Filter entgegen): `register-consumer`,
+optionalen `--schema`/`--table`/`--target`-Filter entgegen): `register-consumer`,
 `acknowledge-consumer`, `get-consumer-position`, `remove-consumer`,
 `enable-table`, `disable-table`, `get-table-status`, `list-tables`,
 `run-retention`, `read-changes` und `diagnose` rufen die elf RPCs der
 [gRPC-Verwaltungs-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-grpc-verwaltungs-api)
 auf, je mit den zu ihrer RPC passenden Flags (z. B.
 `ARGS="--verb=list-tables --source <quelle> --publication <publication>"`).
+
+Das Flag `--target` wählt das Zustellziel einer Change (leer ist kein Filter)
+und gilt an denselben Stellen wie bei C#: `http-client` mit `--verb=changes`,
+`grpc-client` im Verb `stream` und `read-changes`, `sse-client` und, zusammen
+mit `--source`, `nats-stream-client` (Subjekt `cdc.route.<source_id>.<ziel>`).
 
 ## Abgrenzung
 

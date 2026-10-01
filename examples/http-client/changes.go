@@ -33,14 +33,16 @@ type readChangesResponse struct {
 }
 
 // ChangesURL baut die Lese-Adresse von `GET /changes`: `source` ist Pflicht,
-// die übrigen fünf Parameter sind unabhängig optional — ein leerer Wert
-// bleibt weg statt als leerer Query-Parameter zu erscheinen.
-func ChangesURL(addr, source, schema, table, from, to, limit string) string {
+// die übrigen sechs Parameter sind unabhängig optional — ein leerer Wert
+// bleibt weg statt als leerer Query-Parameter zu erscheinen. `target` wählt
+// das Zustellziel einer Change (`ADR-0137`).
+func ChangesURL(addr, source, schema, table, target, from, to, limit string) string {
 	u := url.URL{Scheme: "http", Host: addr, Path: "/changes"}
 	q := u.Query()
 	q.Set("source", source)
 	setIfNotEmpty(q, "schema", schema)
 	setIfNotEmpty(q, "table", table)
+	setIfNotEmpty(q, "target", target)
 	setIfNotEmpty(q, "from", from)
 	setIfNotEmpty(q, "to", to)
 	setIfNotEmpty(q, "limit", limit)
@@ -62,6 +64,6 @@ func setIfNotEmpty(q url.Values, key, value string) {
 // readChanges ruft den `reader`-Endpunkt `GET /changes` auf.
 func readChanges(client *http.Client, cfg config) (readChangesResponse, error) {
 	var resp readChangesResponse
-	err := doRequestJSON(client, http.MethodGet, ChangesURL(cfg.addr, cfg.source, cfg.schema, cfg.table, cfg.from, cfg.to, cfg.limit), cfg.token, nil, &resp, http.StatusOK)
+	err := doRequestJSON(client, http.MethodGet, ChangesURL(cfg.addr, cfg.source, cfg.schema, cfg.table, cfg.target, cfg.from, cfg.to, cfg.limit), cfg.token, nil, &resp, http.StatusOK)
 	return resp, err
 }

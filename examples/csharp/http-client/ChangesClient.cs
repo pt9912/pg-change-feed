@@ -34,9 +34,10 @@ public sealed record ReadChangesResponse(
 
 /// <summary>
 /// ChangesUrlBuilder baut die Lese-Adresse von <c>GET /changes</c>:
-/// <c>source</c> ist Pflicht, die übrigen fünf Parameter sind unabhängig
+/// <c>source</c> ist Pflicht, die übrigen sechs Parameter sind unabhängig
 /// optional — ein leerer Wert bleibt weg statt als leerer Query-Parameter
-/// zu erscheinen. <c>GET /changes</c> lässt nur einen unbekannten
+/// zu erscheinen. <c>target</c> wählt das Zustellziel einer Change
+/// (<c>ADR-0137</c>). <c>GET /changes</c> lässt nur einen unbekannten
 /// Parameter**namen** mit <c>400</c> enden; ein leerer Wert eines bekannten
 /// optionalen Parameters (<c>schema</c>, <c>table</c>, <c>from</c>,
 /// <c>to</c>, <c>limit</c>) bleibt für den Server unberücksichtigt und
@@ -46,11 +47,12 @@ public sealed record ReadChangesResponse(
 /// </summary>
 public static class ChangesUrlBuilder
 {
-    public static string Build(string addr, string source, string schema, string table, string from, string to, string limit)
+    public static string Build(string addr, string source, string schema, string table, string from, string to, string limit, string target = "")
     {
         var parameters = new SortedDictionary<string, string>(StringComparer.Ordinal) { ["source"] = source };
         AddIfNotEmpty(parameters, "schema", schema);
         AddIfNotEmpty(parameters, "table", table);
+        AddIfNotEmpty(parameters, "target", target);
         AddIfNotEmpty(parameters, "from", from);
         AddIfNotEmpty(parameters, "to", to);
         AddIfNotEmpty(parameters, "limit", limit);
@@ -78,6 +80,6 @@ public static class ChangesClient
         System.Net.Http.HttpClient httpClient, Config cfg, CancellationToken cancellationToken = default) =>
         RequestHelper.SendJsonAsync<ReadChangesResponse>(
             httpClient, HttpMethod.Get,
-            ChangesUrlBuilder.Build(cfg.Addr, cfg.Source, cfg.Schema, cfg.Table, cfg.From, cfg.To, cfg.Limit),
+            ChangesUrlBuilder.Build(cfg.Addr, cfg.Source, cfg.Schema, cfg.Table, cfg.From, cfg.To, cfg.Limit, cfg.Target),
             cfg.Token, null, HttpStatusCode.OK, cancellationToken);
 }

@@ -2,7 +2,6 @@ package cdcexamples.grpc
 
 import cdc.administration.v1.AdministrationGrpcKt
 import cdc.stream.v1.ChangeStreamGrpcKt
-import cdc.stream.v1.Changestream.StreamChangesRequest
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.StatusException
@@ -80,14 +79,13 @@ fun main(args: Array<String>): Unit = runBlocking {
 /**
  * runStream öffnet den Server-Streaming-RPC `ChangeStream/StreamChanges`
  * real gegen den laufenden Feed-Container und gibt jede empfangene
- * Nachricht aus, bis die Verbindung endet. `cfg.schema`/`cfg.table` tragen
- * den optionalen, unabhängig setzbaren Filter (`ADR-0133`) — beide leer
- * liefert jeden Change aller aktivierten Tabellen.
+ * Nachricht aus, bis die Verbindung endet; die Anfrage baut
+ * [StreamRequest.build].
  */
 private suspend fun runStream(channel: ManagedChannel, cfg: Config) {
     val stub = ChangeStreamGrpcKt.ChangeStreamCoroutineStub(channel)
     val headers = CallMetadata.headers(cfg.token)
-    val request = StreamChangesRequest.newBuilder().setSchema(cfg.schema).setTable(cfg.table).build()
+    val request = StreamRequest.build(cfg)
 
     try {
         stub.streamChanges(request, headers).collect { change -> println(Format.formatChange(change)) }

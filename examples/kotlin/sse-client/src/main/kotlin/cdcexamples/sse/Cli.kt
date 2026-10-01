@@ -12,6 +12,7 @@ object Cli {
     fun parse(args: Array<String>, getEnv: (String) -> String?): Config {
         var addr = getEnv("CDC_HTTP_ADDR") ?: ""
         var token = getEnv("CDC_API_TOKEN_READER") ?: ""
+        var target = ""
 
         var i = 0
         while (i < args.size) {
@@ -31,12 +32,13 @@ object Cli {
             when (name) {
                 "--addr" -> addr = nextValue()
                 "--token" -> token = nextValue()
+                "--target" -> target = nextValue()
                 else -> throw IllegalArgumentException("sse-client: unbekanntes Flag $name")
             }
             i += 1
         }
 
-        return Config(addr, token)
+        return Config(addr, token, target)
     }
 
     /**

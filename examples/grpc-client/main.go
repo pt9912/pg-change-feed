@@ -56,6 +56,7 @@ type config struct {
 
 	schema string
 	table  string
+	target string
 
 	consumerID string
 	name       string
@@ -130,6 +131,8 @@ func parseFlags() config {
 
 	flag.StringVar(&cfg.schema, "schema", "", "Schema (Stream-Filter, optional; sonst Pflichtfeld der Tabellen-RPCs)")
 	flag.StringVar(&cfg.table, "table", "", "Tabellenname (Stream-Filter, optional; sonst Pflichtfeld der Tabellen-RPCs)")
+
+	flag.StringVar(&cfg.target, "target", "", "Zustellziel einer Change (Stream-Filter und read-changes, optional; leer = kein Filter)")
 
 	flag.StringVar(&cfg.consumerID, "consumer-id", "", "Consumer-Kennung")
 	flag.StringVar(&cfg.name, "name", "", "Anzeigename des Consumers (nur register-consumer)")

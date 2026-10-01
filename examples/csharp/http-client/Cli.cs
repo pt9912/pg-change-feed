@@ -32,6 +32,7 @@ public static class Cli
         var to = "";
         var limit = "";
         var minAgeNanos = 0L;
+        var target = "";
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -94,6 +95,9 @@ public static class Cli
                 case "--version":
                     version = ParseInt64(flagName, NextValue());
                     break;
+                case "--target":
+                    target = NextValue();
+                    break;
                 case "--from":
                     from = NextValue();
                     break;
@@ -116,7 +120,7 @@ public static class Cli
             Source: source, Publication: publication,
             ConsumerId: consumerId, Name: name, Offset: offset,
             Schema: schema, Table: table, TableId: tableId, SchemaVersionId: schemaVersionId, Version: version,
-            From: from, To: to, Limit: limit, MinAgeNanos: minAgeNanos);
+            From: from, To: to, Limit: limit, MinAgeNanos: minAgeNanos, Target: target);
     }
 
     private static ulong ParseUInt64(string flagName, string value)

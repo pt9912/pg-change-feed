@@ -6,7 +6,8 @@ namespace CdcExamples.Grpc;
 /// Fähigkeiten — je Verb prüft <see cref="Validator.Validate"/> nur die
 /// tatsächlich nötigen Felder. <c>Schema</c>/<c>Table</c> dienen doppelt: als
 /// optionaler Stream-Filter (<c>ADR-0133</c>) und als Tabellen-Identität der
-/// Verwaltungs-RPCs. Form-Vorbild: <c>examples/grpc-client</c> (Go),
+/// Verwaltungs-RPCs; <c>Target</c> (<c>--target</c>) wählt das Zustellziel einer
+/// Change im Stream und in <c>read-changes</c>, leer ist kein Filter. Form-Vorbild: <c>examples/grpc-client</c> (Go),
 /// <c>config</c> in <c>main.go</c>.
 /// </summary>
 public sealed record Config(
@@ -27,4 +28,5 @@ public sealed record Config(
     ulong From,
     ulong To,
     long Limit,
-    long MinAgeNanos);
+    long MinAgeNanos,
+    string Target = "");

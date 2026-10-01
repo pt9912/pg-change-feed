@@ -6,6 +6,9 @@ namespace CdcExamples.NatsStream;
 /// (<c>ADR-0100</c>). Beide kommen aus denselben Umgebungsvariablen, die das
 /// Benutzerhandbuch führt (<c>CDC_NATS_URL</c>, <c>CDC_NATS_STREAM_TOKEN</c>),
 /// und lassen sich per Flag übersteuern (<c>ADR-0076</c> Festlegung 1).
+/// <c>Source</c> und <c>Target</c> (<c>--source</c>, <c>--target</c>) wählen
+/// zusammen das Subjekt eines Zustellziels; beide leer abonnieren den
+/// Wurzel-Wildcard.
 /// Form-Vorbild: <c>examples/nats-stream-client/main.go</c> (<c>config</c>).
 /// </summary>
-public sealed record Config(string NatsUrl, string Token);
+public sealed record Config(string NatsUrl, string Token, string Source = "", string Target = "");

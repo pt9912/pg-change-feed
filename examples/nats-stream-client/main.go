@@ -25,12 +25,6 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-// subject ist der Wurzel-Wildcard des Vollinhalts-Namensraums (ADR-0100
-// Teilfrage 2) — dieses Beispiel zeigt den Zugriffsweg über alle Quellen und
-// Tabellen; ein Consumer, der nur eine Tabelle verfolgt, engt das Subjekt
-// entsprechend ein (siehe Benutzerhandbuch).
-const subject = "cdc.stream.>"
-
 // waitTimeout begrenzt das Warten auf das nächste Ereignis; ein großzügiger,
 // aber endlicher Wert hält das Beispiel terminierend, ohne den Regelfall
 // (mehrere Changes innerhalb der Demo-Umgebung) frühzeitig zu beenden —
@@ -45,6 +39,8 @@ const waitTimeout = 24 * time.Hour
 type config struct {
 	natsURL string
 	token   string
+	source  string
+	target  string
 }
 
 func main() {
@@ -55,6 +51,14 @@ func main() {
 	}
 	if cfg.token == "" {
 		fmt.Fprintln(os.Stderr, "nats-stream-client: kein Token gesetzt — CDC_NATS_STREAM_TOKEN (oder -token) ist nötig, um den dritten Zustellweg zu abonnieren")
+		os.Exit(2)
+	}
+
+	// Ohne -source/-target der Wurzel-Wildcard über alle Quellen und Tabellen
+	// (ADR-0100 Teilfrage 2); mit beiden das Subjekt eines Zustellziels.
+	subject, err := SubscribeSubject(cfg.source, cfg.target)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "nats-stream-client: %v\n", err)
 		os.Exit(2)
 	}
 
@@ -99,6 +103,8 @@ func parseFlags() config {
 	var cfg config
 	flag.StringVar(&cfg.natsURL, "nats-url", os.Getenv("CDC_NATS_URL"), "NATS-Server-URL des Vollinhalts-Streams (Default: CDC_NATS_URL)")
 	flag.StringVar(&cfg.token, "token", os.Getenv("CDC_NATS_STREAM_TOKEN"), "Verbindungs-Token des dritten Zustellwegs (Default: CDC_NATS_STREAM_TOKEN)")
+	flag.StringVar(&cfg.source, "source", "", "Quelle (source_id), nur zusammen mit -target")
+	flag.StringVar(&cfg.target, "target", "", "Zustellziel: abonniert cdc.route.<source_id>.<ziel> statt cdc.stream.> (optional, nur zusammen mit -source)")
 	flag.Parse()
 	return cfg
 }

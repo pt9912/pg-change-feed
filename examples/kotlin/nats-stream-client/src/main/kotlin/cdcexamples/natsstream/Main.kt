@@ -26,8 +26,6 @@ import kotlin.system.exitProcess
  * [Duration.ZERO] — jnats wartet damit real unbegrenzt (dieselbe Semantik
  * wie `examples/kotlin/nats-client`, dort ausführlich begründet).
  */
-private const val subject = "cdc.stream.>"
-
 fun main(args: Array<String>) {
     val cfg = try {
         Cli.parse(args) { name -> System.getenv(name) }
@@ -46,6 +44,13 @@ fun main(args: Array<String>) {
         System.err.println(
             "nats-stream-client: kein Token gesetzt — CDC_NATS_STREAM_TOKEN (oder --token) ist noetig, um den dritten Zustellweg zu abonnieren",
         )
+        exitProcess(2)
+    }
+
+    val subject = try {
+        SubscribeSubject.resolve(cfg.source, cfg.target)
+    } catch (ex: IllegalArgumentException) {
+        System.err.println(ex.message)
         exitProcess(2)
     }
 

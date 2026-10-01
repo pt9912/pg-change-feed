@@ -30,6 +30,30 @@ public class ChangesClientTests
         Assert.Equal("http://feed:8080/changes?from=10&limit=5&schema=public&source=quelle-1&table=orders&to=20", got);
     }
 
+    [Theory]
+    [InlineData("eu", "http://feed:8080/changes?source=quelle-1&target=eu")]
+    [InlineData("a&b=c", "http://feed:8080/changes?source=quelle-1&target=a%26b%3Dc")]
+    [InlineData("", "http://feed:8080/changes?source=quelle-1")]
+    public void ChangesUrlBuilderCarriesTheTargetAsEscapedQueryParameter(string target, string want)
+    {
+        Assert.Equal(want, ChangesUrlBuilder.Build("feed:8080", "quelle-1", "", "", "", "", "", target));
+    }
+
+    [Fact]
+    public async Task ReadChangesAsyncSendsTheTargetOfTheConfig()
+    {
+        var (httpClient, _) = TestHttpClientFactory.Create(request =>
+        {
+            Assert.Equal("source=quelle-1&target=eu", request.RequestUri!.Query.TrimStart('?'));
+            return FakeHttpMessageHandler.JsonResponse(HttpStatusCode.OK, """{"changes":[]}""");
+        });
+
+        var cfg = BaseConfig() with { Source = "quelle-1", Target = "eu" };
+        var resp = await ChangesClient.ReadChangesAsync(httpClient, cfg);
+
+        Assert.Empty(resp.Changes);
+    }
+
     [Fact]
     public void ChangesUrlBuilderOmitsEmptyOptionalValues()
     {

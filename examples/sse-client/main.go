@@ -31,8 +31,9 @@ const maxEventBytes = 1024 * 1024
 // `CDC_API_TOKEN_READER`), und lassen sich per Flag übersteuern (`ADR-0076`
 // Festlegung 1).
 type config struct {
-	addr  string
-	token string
+	addr   string
+	token  string
+	target string
 }
 
 func main() {
@@ -46,7 +47,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	streamURL := StreamURL(cfg.addr)
+	streamURL := StreamURL(cfg.addr, cfg.target)
 	req, err := http.NewRequest(http.MethodGet, streamURL, nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sse-client: Request bauen: %v\n", err)
@@ -99,6 +100,7 @@ func parseFlags() config {
 	var cfg config
 	flag.StringVar(&cfg.addr, "addr", os.Getenv("CDC_HTTP_ADDR"), "Horch-Adresse der HTTP-API, host:port (Default: CDC_HTTP_ADDR)")
 	flag.StringVar(&cfg.token, "token", os.Getenv("CDC_API_TOKEN_READER"), "Bearer-Token der lesenden Rechtsklasse (Default: CDC_API_TOKEN_READER)")
+	flag.StringVar(&cfg.target, "target", "", "Zustellziel einer Change (optional; leer = kein Filter, jede Change)")
 	flag.Parse()
 	return cfg
 }

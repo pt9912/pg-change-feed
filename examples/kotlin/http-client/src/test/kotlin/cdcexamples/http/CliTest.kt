@@ -83,6 +83,14 @@ class CliTest {
     }
 
     @Test
+    fun parseTargetFlagFillsTheConfigInBothFlagForms() {
+        val emptyEnv: (String) -> String? = { null }
+        assertEquals("eu", Cli.parse(arrayOf("--target", "eu"), emptyEnv).target)
+        assertEquals("eu", Cli.parse(arrayOf("--target=eu"), emptyEnv).target)
+        assertEquals("", Cli.parse(emptyArray(), emptyEnv).target)
+    }
+
+    @Test
     fun parseRejectsUnknownFlag() {
         assertFailsWith<IllegalArgumentException> { Cli.parse(arrayOf("--unknown"), emptyEnv) }
     }

@@ -28,6 +28,15 @@ public class SseStreamTests
         Assert.Equal("http://feed:8080/changes/stream", got);
     }
 
+    [Theory]
+    [InlineData("eu", "http://feed:8080/changes/stream?target=eu")]
+    [InlineData("a&b=c", "http://feed:8080/changes/stream?target=a%26b%3Dc")]
+    [InlineData("", "http://feed:8080/changes/stream")]
+    public void StreamUrlCarriesTheTargetAsEscapedQueryParameter(string target, string want)
+    {
+        Assert.Equal(want, SseStream.StreamUrl("feed:8080", target));
+    }
+
     [Fact]
     public void ReadEventReadsNameAndPayload()
     {

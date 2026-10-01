@@ -29,6 +29,13 @@ class SseStreamTest {
     }
 
     @Test
+    fun streamUrlCarriesTheTargetAsEscapedQueryParameter() {
+        assertEquals("http://feed:8080/changes/stream?target=eu", SseStream.streamUrl("feed:8080", "eu"))
+        assertEquals("http://feed:8080/changes/stream?target=a%26b%3Dc", SseStream.streamUrl("feed:8080", "a&b=c"))
+        assertEquals("http://feed:8080/changes/stream", SseStream.streamUrl("feed:8080", ""))
+    }
+
+    @Test
     fun readEventReadsNameAndPayload() {
         val ev = SseStream.readEvent(
             lines(

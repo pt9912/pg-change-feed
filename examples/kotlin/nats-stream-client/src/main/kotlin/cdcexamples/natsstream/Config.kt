@@ -6,9 +6,13 @@ package cdcexamples.natsstream
  * (`ADR-0100`). Beide kommen aus denselben Umgebungsvariablen, die das
  * Benutzerhandbuch führt (`CDC_NATS_URL`, `CDC_NATS_STREAM_TOKEN`), und
  * lassen sich per Flag übersteuern (`ADR-0076` Festlegung 1). Form-Vorbild:
- * `examples/nats-stream-client/main.go` (`config`).
+ * `examples/nats-stream-client/main.go` (`config`). `source` und `target`
+ * (`--source`, `--target`) wählen zusammen das Subjekt eines Zustellziels;
+ * beide leer abonnieren den Wurzel-Wildcard.
  */
 data class Config(
     val natsUrl: String,
     val token: String,
+    val source: String = "",
+    val target: String = "",
 )

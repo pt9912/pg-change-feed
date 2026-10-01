@@ -21,6 +21,7 @@ public static class Cli
         var verb = "stream";
         var schema = "";
         var table = "";
+        var target = "";
         var consumerId = "";
         var name = "";
         var offset = 0UL;
@@ -67,6 +68,9 @@ public static class Cli
                     break;
                 case "--schema":
                     schema = NextValue();
+                    break;
+                case "--target":
+                    target = NextValue();
                     break;
                 case "--table":
                     table = NextValue();
@@ -118,7 +122,7 @@ public static class Cli
             ConsumerId: consumerId, Name: name, Offset: offset,
             TableId: tableId, SchemaVersionId: schemaVersionId, Version: version,
             Source: source, Publication: publication,
-            From: from, To: to, Limit: limit, MinAgeNanos: minAgeNanos);
+            From: from, To: to, Limit: limit, MinAgeNanos: minAgeNanos, Target: target);
     }
 
     private static ulong ParseUInt64(string flagName, string value)

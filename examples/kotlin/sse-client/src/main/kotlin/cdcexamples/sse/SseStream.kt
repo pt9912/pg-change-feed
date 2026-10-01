@@ -17,7 +17,29 @@ data class Event(val name: String, val data: String)
  * Fremdmodul (etwa `okhttp-sse`) nötig.
  */
 object SseStream {
-    fun streamUrl(addr: String): String = "http://$addr/changes/stream"
+    /**
+     * streamUrl baut die Adresse des SSE-Endpunkts. Ein gesetztes [target]
+     * erscheint als maskierter Query-Parameter und wählt das Zustellziel einer
+     * Change (`ADR-0137`); ein leeres lässt die Adresse ohne Query.
+     */
+    fun streamUrl(addr: String, target: String = ""): String =
+        if (target.isEmpty()) "http://$addr/changes/stream" else "http://$addr/changes/stream?target=${encode(target)}"
+
+    /**
+     * Prozent-Kodierung nach RFC 3986 (unreserviert: `A-Za-z0-9-_.~`), wie
+     * `Uri.EscapeDataString` im C#-Pendant.
+     */
+    private fun encode(value: String): String {
+        val sb = StringBuilder()
+        for (byte in value.toByteArray(Charsets.UTF_8)) {
+            val unsigned = byte.toInt() and 0xFF
+            val c = unsigned.toChar()
+            val isUnreserved = c in 'A'..'Z' || c in 'a'..'z' || c in '0'..'9' ||
+                c == '-' || c == '_' || c == '.' || c == '~'
+            if (isUnreserved) sb.append(c) else sb.append('%').append(String.format("%02X", unsigned))
+        }
+        return sb.toString()
+    }
 
     /**
      * readEvent liest ein vollständiges Frame über [next] und liefert es

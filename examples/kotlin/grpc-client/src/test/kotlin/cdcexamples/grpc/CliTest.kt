@@ -61,6 +61,34 @@ class CliTest {
     }
 
     @Test
+    fun parseTargetFlagInBothFlagForms() {
+        assertEquals("eu", Cli.parse(arrayOf("--target=eu"), emptyEnv).target)
+        assertEquals("eu", Cli.parse(arrayOf("--target", "eu"), emptyEnv).target)
+        assertEquals("", Cli.parse(emptyArray(), emptyEnv).target)
+    }
+
+    @Test
+    fun streamRequestCarriesTargetWithSchemaAndTable() {
+        val request = StreamRequest.build(Cli.parse(arrayOf("--schema=public", "--table=orders", "--target=eu"), emptyEnv))
+        assertEquals("public", request.schema)
+        assertEquals("orders", request.table)
+        assertEquals("eu", request.target)
+        assertEquals(
+            cdc.stream.v1.Changestream.StreamChangesRequest.getDefaultInstance(),
+            StreamRequest.build(Cli.parse(emptyArray(), emptyEnv)),
+        )
+    }
+
+    @Test
+    fun readChangesRequestCarriesTarget() {
+        val request = ChangesClient.buildRequest(Cli.parse(arrayOf("--source=quelle-1", "--schema=public", "--target=eu"), emptyEnv))
+        assertEquals("quelle-1", request.source)
+        assertEquals("public", request.schema)
+        assertEquals("eu", request.target)
+        assertEquals("", ChangesClient.buildRequest(Cli.parse(arrayOf("--source=quelle-1"), emptyEnv)).target)
+    }
+
+    @Test
     fun parseEnableTableFields() {
         val got = Cli.parse(
             arrayOf(

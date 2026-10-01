@@ -17,9 +17,14 @@ type Event struct {
 
 // StreamURL baut die Adresse des SSE-Endpunkts (`LH-FA-SST-008`): ein `GET`
 // auf `/changes/stream`. `addr` ist die Horch-Adresse des Feed-Containers
-// (`CDC_HTTP_ADDR`, Form `host:port`).
-func StreamURL(addr string) string {
+// (`CDC_HTTP_ADDR`, Form `host:port`). Ein gesetztes `target` erscheint als
+// Query-Parameter und wählt das Zustellziel einer Change; ein leeres `target`
+// lässt die Adresse ohne Query, der Stream liefert dann jede Change.
+func StreamURL(addr, target string) string {
 	u := url.URL{Scheme: "http", Host: addr, Path: "/changes/stream"}
+	if target != "" {
+		u.RawQuery = url.Values{"target": {target}}.Encode()
+	}
 	return u.String()
 }
 

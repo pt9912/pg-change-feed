@@ -77,6 +77,40 @@ public class CliTests
     }
 
     [Fact]
+    public void Parse_TargetFlagInBothFlagForms()
+    {
+        Assert.Equal("eu", Cli.Parse(["--target=eu"], NoEnv).Target);
+        Assert.Equal("eu", Cli.Parse(["--target", "eu"], NoEnv).Target);
+        Assert.Equal("", Cli.Parse([], NoEnv).Target);
+    }
+
+    [Fact]
+    public void StreamRequest_CarriesTargetWithSchemaAndTable()
+    {
+        var cfg = Cli.Parse(["--schema=public", "--table=orders", "--target=eu"], NoEnv);
+
+        var request = StreamRequest.Build(cfg);
+
+        Assert.Equal("public", request.Schema);
+        Assert.Equal("orders", request.Table);
+        Assert.Equal("eu", request.Target);
+        Assert.Equal(new Cdc.Stream.V1.StreamChangesRequest(), StreamRequest.Build(Cli.Parse([], NoEnv)));
+    }
+
+    [Fact]
+    public void ReadChangesRequest_CarriesTarget()
+    {
+        var cfg = Cli.Parse(["--source=quelle-1", "--schema=public", "--target=eu"], NoEnv);
+
+        var request = ChangesClient.BuildRequest(cfg);
+
+        Assert.Equal("quelle-1", request.Source);
+        Assert.Equal("public", request.Schema);
+        Assert.Equal("eu", request.Target);
+        Assert.Equal("", ChangesClient.BuildRequest(Cli.Parse(["--source=quelle-1"], NoEnv)).Target);
+    }
+
+    [Fact]
     public void Parse_EnableTableFields()
     {
         var cfg = Cli.Parse(

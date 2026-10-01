@@ -77,9 +77,7 @@ internal static class Program
     /// RunStreamAsync öffnet den Server-Streaming-RPC
     /// <c>ChangeStream/StreamChanges</c> real gegen den laufenden
     /// Feed-Container und gibt jede empfangene Nachricht aus, bis die
-    /// Verbindung endet. <c>cfg.Schema</c>/<c>cfg.Table</c> tragen den
-    /// optionalen, unabhängig setzbaren Filter (<c>ADR-0133</c>) — beide leer
-    /// liefert jeden Change aller aktivierten Tabellen.
+    /// Verbindung endet; die Anfrage baut <see cref="StreamRequest.Build"/>.
     /// </summary>
     private static async Task<int> RunStreamAsync(GrpcChannel channel, Config cfg)
     {
@@ -88,8 +86,7 @@ internal static class Program
 
         try
         {
-            using var call = client.StreamChanges(
-                new StreamChangesRequest { Schema = cfg.Schema, Table = cfg.Table }, headers: headers);
+            using var call = client.StreamChanges(StreamRequest.Build(cfg), headers: headers);
             await foreach (var change in call.ResponseStream.ReadAllAsync())
             {
                 Console.WriteLine(Format.FormatChange(change));

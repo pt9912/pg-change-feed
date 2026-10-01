@@ -14,6 +14,8 @@ public static class Cli
     {
         var natsUrl = getEnv("CDC_NATS_URL") ?? "";
         var token = getEnv("CDC_NATS_STREAM_TOKEN") ?? "";
+        var source = "";
+        var target = "";
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -40,12 +42,18 @@ public static class Cli
                 case "--token":
                     token = NextValue();
                     break;
+                case "--source":
+                    source = NextValue();
+                    break;
+                case "--target":
+                    target = NextValue();
+                    break;
                 default:
                     throw new ArgumentException($"nats-stream-client: unbekanntes Flag {name}");
             }
         }
 
-        return new Config(natsUrl, token);
+        return new Config(natsUrl, token, source, target);
     }
 
     /// <summary>

@@ -6,9 +6,11 @@ package cdcexamples.sse
  * denselben Umgebungsvariablen, die das Benutzerhandbuch führt
  * (`CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`), und lassen sich per Flag
  * übersteuern (`ADR-0076` Festlegung 1). Form-Vorbild: `examples/sse-client`
- * (Go), `examples/csharp/sse-client/Config.cs` (C#).
+ * (Go), `examples/csharp/sse-client/Config.cs` (C#). `target` (`--target`)
+ * wählt das Zustellziel einer Change; leer ist kein Filter.
  */
 data class Config(
     val addr: String,
     val token: String,
+    val target: String = "",
 )

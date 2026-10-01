@@ -27,6 +27,7 @@ object Cli {
         var schemaVersionId = ""
         var version = 1L
         var from = ""
+        var target = ""
         var to = ""
         var limit = ""
         var minAgeNanos = 0L
@@ -61,6 +62,7 @@ object Cli {
                 "--table-id" -> tableId = nextValue()
                 "--schema-version-id" -> schemaVersionId = nextValue()
                 "--version" -> version = parseLong(flagName, nextValue())
+                "--target" -> target = nextValue()
                 "--from" -> from = nextValue()
                 "--to" -> to = nextValue()
                 "--limit" -> limit = nextValue()
@@ -76,6 +78,7 @@ object Cli {
             consumerId = consumerId, name = name, offset = offset,
             schema = schema, table = table, tableId = tableId, schemaVersionId = schemaVersionId, version = version,
             from = from, to = to, limit = limit, minAgeNanos = minAgeNanos,
+            target = target,
         )
     }
 

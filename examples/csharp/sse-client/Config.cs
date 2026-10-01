@@ -7,5 +7,7 @@ namespace CdcExamples.Sse;
 /// (<c>CDC_HTTP_ADDR</c>, <c>CDC_API_TOKEN_READER</c>), und lassen sich per
 /// Flag übersteuern (<c>ADR-0076</c> Festlegung 1). Form-Vorbild:
 /// <c>examples/sse-client</c> (Go), <c>config</c> in <c>main.go</c>.
+/// <c>Target</c> wählt das Zustellziel einer Change (<c>--target</c>); leer
+/// ist kein Filter.
 /// </summary>
-public sealed record Config(string Addr, string Token);
+public sealed record Config(string Addr, string Token, string Target = "");

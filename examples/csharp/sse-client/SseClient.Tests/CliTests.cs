@@ -35,6 +35,14 @@ public class CliTests
     }
 
     [Fact]
+    public void ParseTargetFlagFillsTheConfigInBothFlagForms()
+    {
+        Assert.Equal("eu", Cli.Parse(new[] { "--target", "eu" }, EmptyEnv).Target);
+        Assert.Equal("eu", Cli.Parse(new[] { "--target=eu" }, EmptyEnv).Target);
+        Assert.Equal("", Cli.Parse(Array.Empty<string>(), EmptyEnv).Target);
+    }
+
+    [Fact]
     public void ParseRejectsUnknownFlag()
     {
         Assert.Throws<ArgumentException>(() => Cli.Parse(new[] { "--unknown" }, EmptyEnv));

@@ -21,9 +21,14 @@ public static class SseStream
     /// StreamUrl baut die Adresse des SSE-Endpunkts (<c>LH-FA-SST-008</c>): ein
     /// <c>GET</c> auf <c>/changes/stream</c>. <paramref name="addr"/> ist die
     /// Horch-Adresse des Feed-Containers (<c>CDC_HTTP_ADDR</c>, Form
-    /// <c>host:port</c>).
+    /// <c>host:port</c>). Ein gesetztes <paramref name="target"/> erscheint als
+    /// maskierter Query-Parameter und wählt das Zustellziel einer Change; ein
+    /// leeres lässt die Adresse ohne Query.
     /// </summary>
-    public static string StreamUrl(string addr) => $"http://{addr}/changes/stream";
+    public static string StreamUrl(string addr, string target = "") =>
+        target.Length == 0
+            ? $"http://{addr}/changes/stream"
+            : $"http://{addr}/changes/stream?target={Uri.EscapeDataString(target)}";
 
     /// <summary>
     /// ReadEvent liest ein vollständiges Frame über <paramref name="next"/> und
