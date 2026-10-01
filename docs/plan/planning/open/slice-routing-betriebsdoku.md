@@ -108,6 +108,12 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
   `schema`/`table`, das Verhalten eines Servers ohne diesen Parameter (Alt-Server
   ignoriert das Feld am gRPC-Weg, lehnt den Parameter an HTTP und SSE ab; die Aussage
   trägt ihren Ursprung aus dem Slice), und: das Ziel ist Auswahl, kein Zugriffsschutz;
+  Zählwort „zwei optionale Felder/Parameter“ (`schema`/`table`) wird „drei“ (mit
+  `target`); Handbuch-Zeilen (Stand `docs/user/benutzerhandbuch.md` am Ende von
+  `slice-routing-lesewege`): `:1301` (gRPC-Stream, „zwei optionale“ Felder), `:1364`–`:1365`
+  (C#-Stream, „zwei optionale Parameter“), `:1378` (Kotlin-Stream), `:1403` (Python-Stream),
+  `:1456`–`:1457` (`ReadChanges` ohne `target` in der Filter-Aufzählung) und `:1557`
+  (SSE, „Zwei optionale“ Query-Parameter);
 - aus `slice-routing-nats-subjekt` — das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>`,
   fire-and-forget und die Kosten-Aussage mit Ursprung (Abschnitt „Zugriff über den
   NATS-Vollinhalts-Stream").

@@ -325,3 +325,50 @@ func TestReadChangesMissingSourceWinsOverInvalidTarget(t *testing.T) {
 		t.Fatalf("Fehler = %v, wollen %v", err, domainerrors.ErrEmptyIdentifier)
 	}
 }
+
+// Ein Fehler des Lese-Kontrakts hat Vorrang vor der Antwort „leer" für ein
+// Ziel außerhalb des Alphabets: dieselbe fehlerhafte Anfrage endet mit
+// demselben Fehler wie ohne Ziel (`ADR-0139`), und der Port wird nicht
+// angefragt.
+// Rot färbende Mutation: die Alphabet-Prüfung vor die Validierung setzen
+// (Rückgabe der leeren Liste ohne `Validate`).
+func TestReadChangesContractErrorsWinOverInvalidTarget(t *testing.T) {
+	position := func(source model.SourceID, offset uint64) *model.SourcePosition {
+		p, err := model.NewSourcePosition(source, offset)
+		if err != nil {
+			t.Fatalf("NewSourcePosition: %v", err)
+		}
+		return &p
+	}
+	zero := 0
+	cases := []struct {
+		name  string
+		query inbound.ReadChangesQuery
+		want  error
+	}{
+		{"Limit unter 1", inbound.ReadChangesQuery{Source: "src-1", Limit: &zero}, outbound.ErrNonPositiveLimit},
+		{"invertierter Bereich", inbound.ReadChangesQuery{Source: "src-1", Start: position("src-1", 300), End: position("src-1", 100)}, outbound.ErrRangeInverted},
+		{"Start einer anderen Quelle", inbound.ReadChangesQuery{Source: "src-1", Start: position("src-2", 5)}, domainerrors.ErrSourceMismatch},
+	}
+	for _, tc := range cases {
+		for _, target := range []string{"EU", ""} {
+			t.Run(tc.name+" Ziel "+target, func(t *testing.T) {
+				store := &fakeChangeStore{}
+				query := tc.query
+				query.Target = target
+
+				_, err := readchanges.NewReadChangesService(store).ReadChanges(context.Background(), query)
+				if !stderrors.Is(err, tc.want) {
+					t.Fatalf("Fehler = %v, wollen %v", err, tc.want)
+				}
+				wantCalls := 1 // ohne Ziel erzeugt der Port-Fake den Fehler
+				if target != "" {
+					wantCalls = 0
+				}
+				if len(store.queries) != wantCalls {
+					t.Fatalf("Port-Aufrufe = %d, wollen %d", len(store.queries), wantCalls)
+				}
+			})
+		}
+	}
+}

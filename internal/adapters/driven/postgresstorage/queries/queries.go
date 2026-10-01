@@ -37,9 +37,10 @@ ON CONFLICT (change_id) DO NOTHING`
 // der Bindungs-Zeile (`st.schema_name`/`st.table_name`), je optional und
 // unabhängig; `route_target = $6` wählt das Zustellziel als Gleichheit aus
 // (kein Muster-Vergleich), `NULL` grenzt nicht ein und eine Zeile ohne Ziel
-// trifft nie ein gesetztes `$6`; der Join auf `cdc.source_table` trägt dieselben Bezeichner
-// in die Projektion, damit die Rückgabe die Tabellen-Identität in Klartext
-// führt — dieselbe Projektion wie die View `cdc.changes`. Lesen trägt nur
+// trifft nie ein gesetztes `$6`. Der Join auf `cdc.source_table` trägt
+// dieselben Bezeichner in die Projektion, damit die Rückgabe die
+// Tabellen-Identität in Klartext führt — dieselbe Projektion wie die View
+// `cdc.changes`. Lesen trägt nur
 // SELECT — gespeicherte Positionen bleiben unverändert.
 // committed_at trägt den realen Quell-Commit-Zeitpunkt der Transaktion
 // — die zeitbasierte Retention liest

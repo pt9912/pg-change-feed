@@ -13,8 +13,10 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
 	administrationv1 "github.com/pt9912/pg-change-feed/gen/cdc/administration/v1"
 	grpcadapter "github.com/pt9912/pg-change-feed/internal/adapters/driving/grpc"
@@ -44,6 +46,9 @@ func (s *parityStore) PersistTransaction(context.Context, *model.ChangeTransacti
 
 func (s *parityStore) ReadChanges(_ context.Context, query outbound.ChangeQuery) ([]outbound.ChangeRecord, error) {
 	s.calls++
+	if err := query.Validate(); err != nil {
+		return nil, err
+	}
 	var out []outbound.ChangeRecord
 	for _, record := range s.records {
 		if query.Source != record.Position.SourceID {
@@ -88,6 +93,8 @@ func parityRecord(t *testing.T, id string, offset uint64, schema, table string, 
 }
 
 // freeLoopbackAddr liefert eine freie Loopback-Adresse für den gRPC-Server.
+// Der Server bindet die Adresse selbst; ein Start-Fehler (etwa ein zwischen
+// Wahl und Start belegter Port) kommt über den Kanal von `startGRPC` zurück.
 func freeLoopbackAddr(t *testing.T) string {
 	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
@@ -101,6 +108,29 @@ func freeLoopbackAddr(t *testing.T) string {
 	return addr
 }
 
+// startGRPC startet den Server und liefert den Kanal seines Start-Ergebnisses;
+// ein Aufrufer, dessen Anfrage scheitert, liest daraus den benannten
+// Start-Fehler statt einer Zeitüberschreitung.
+func startGRPC(t *testing.T, server *grpcadapter.Server) <-chan error {
+	t.Helper()
+	errCh := make(chan error, 1)
+	go func() { errCh <- server.Start() }()
+	t.Cleanup(server.Shutdown)
+	return errCh
+}
+
+// failWithStartError meldet einen gescheiterten Aufruf; ist der Server nicht
+// gestartet, nennt die Meldung den Start-Fehler.
+func failWithStartError(t *testing.T, startErr <-chan error, call error) {
+	t.Helper()
+	select {
+	case err := <-startErr:
+		t.Fatalf("gRPC-Server nicht gestartet: %v (Aufruf: %v)", err, call)
+	default:
+		t.Fatalf("Aufruf: %v", call)
+	}
+}
+
 // TestReadChangesWegeLiefernFuerDieselbeEingabeDieselbenChanges trägt die
 // Gleichwertigkeit der Zugriffswege für den Ziel-Filter (`ADR-0138`
 // Festlegung 1): `GET /changes` und der RPC `ReadChanges` rufen
@@ -112,7 +142,9 @@ func freeLoopbackAddr(t *testing.T) string {
 // `administrationService.ReadChanges` (gRPC) das Ziel nicht an die Abfrage
 // reichen — der Weg liefert dann alle Changes, der Vergleich mit dem
 // erwarteten Satz und mit dem anderen Weg schlägt fehl; die
-// Alphabet-Prüfung im Use Case streichen — der Store-Zähler steigt.
+// Alphabet-Prüfung im Use Case streichen — der Store-Zähler steigt; die
+// Alphabet-Prüfung vor die Validierung des Lese-Kontrakts setzen — die
+// Fehlerfälle mit ungültigem Ziel antworten leer statt mit 400/InvalidArgument.
 func TestReadChangesWegeLiefernFuerDieselbeEingabeDieselbenChanges(t *testing.T) {
 	store := &parityStore{records: []outbound.ChangeRecord{
 		parityRecord(t, "c-eu-orders", 10, "public", "orders", "eu"),
@@ -131,8 +163,7 @@ func TestReadChangesWegeLiefernFuerDieselbeEingabeDieselbenChanges(t *testing.T)
 	grpcServer := grpcadapter.New(grpcadapter.Config{
 		Addr: grpcAddr, TokenReader: parityReaderToken, TokenAdmin: parityAdminToken, ReadChanges: useCase,
 	})
-	go func() { _ = grpcServer.Start() }()
-	t.Cleanup(grpcServer.Shutdown)
+	startErr := startGRPC(t, grpcServer)
 	conn, err := grpc.NewClient(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("gRPC-Client: %v", err)
@@ -191,7 +222,7 @@ func TestReadChangesWegeLiefernFuerDieselbeEingabeDieselbenChanges(t *testing.T)
 			Source: "src-1", Schema: schema, Table: table, Target: target,
 		}, grpc.WaitForReady(true))
 		if err != nil {
-			t.Fatalf("ReadChanges (target %q): %v", target, err)
+			failWithStartError(t, startErr, err)
 		}
 		ids := []string{}
 		for _, change := range resp.GetChanges() {
@@ -231,6 +262,51 @@ func TestReadChangesWegeLiefernFuerDieselbeEingabeDieselbenChanges(t *testing.T)
 			if callsAfterHTTP != tc.storeCalls || store.calls != 2*tc.storeCalls {
 				t.Fatalf("Store-Aufrufe = %d nach HTTP, %d nach beiden Wegen, wollen %d und %d",
 					callsAfterHTTP, store.calls, tc.storeCalls, 2*tc.storeCalls)
+			}
+		})
+	}
+
+	// Ein Fehler des Lese-Kontrakts endet auf beiden Wegen mit dem Fehler des
+	// Bestands (HTTP 400, gRPC InvalidArgument), auch bei einem Ziel außerhalb
+	// des Alphabets; kein Weg antwortet dort „leer".
+	errorCases := []struct {
+		name   string
+		target string
+		query  url.Values
+		req    *administrationv1.ReadChangesRequest
+	}{
+		{"Limit unter 1, gültiges Ziel", "eu", url.Values{"limit": {"-1"}}, &administrationv1.ReadChangesRequest{Limit: -1}},
+		{"Limit unter 1, ungültiges Ziel", "EU", url.Values{"limit": {"-1"}}, &administrationv1.ReadChangesRequest{Limit: -1}},
+		{"invertierter Bereich, gültiges Ziel", "eu", url.Values{"from": {"300"}, "to": {"100"}}, &administrationv1.ReadChangesRequest{From: 300, To: 100}},
+		{"invertierter Bereich, ungültiges Ziel", "EU", url.Values{"from": {"300"}, "to": {"100"}}, &administrationv1.ReadChangesRequest{From: 300, To: 100}},
+	}
+	for _, tc := range errorCases {
+		t.Run(tc.name, func(t *testing.T) {
+			values := tc.query
+			values.Set("source", "src-1")
+			values.Set("target", tc.target)
+			req, err := http.NewRequest(http.MethodGet, httpServer.URL+"/changes?"+values.Encode(), nil)
+			if err != nil {
+				t.Fatalf("Request bauen: %v", err)
+			}
+			req.Header.Set("Authorization", "Bearer "+parityReaderToken)
+			resp, err := httpServer.Client().Do(req)
+			if err != nil {
+				t.Fatalf("GET /changes: %v", err)
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusBadRequest {
+				t.Fatalf("GET /changes: Status %d, wollen 400", resp.StatusCode)
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+parityReaderToken)
+			tc.req.Source = "src-1"
+			tc.req.Target = tc.target
+			_, err = client.ReadChanges(ctx, tc.req, grpc.WaitForReady(true))
+			if status.Code(err) != codes.InvalidArgument {
+				t.Fatalf("ReadChanges: Code %v (%v), wollen InvalidArgument", status.Code(err), err)
 			}
 		})
 	}

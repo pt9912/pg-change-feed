@@ -41,24 +41,21 @@ func NewReadChangesService(store outbound.ChangeStorePort) *ReadChangesService {
 var _ inbound.ReadChangesUseCase = (*ReadChangesService)(nil)
 
 // ReadChanges bildet `ReadChangesQuery` auf `outbound.ChangeQuery` ab und
-// ruft `ChangeStorePort.ReadChanges`. Der Bereichs- und Limit-Kontrakt des
-// Ports (`outbound.ErrRangeInverted`/`outbound.ErrNonPositiveLimit`) kommt
-// unverändert zurück — der Use Case normiert nichts und entscheidet nichts.
-// Eine leere Quellen-Kennung ist eine
+// ruft `ChangeStorePort.ReadChanges`. Eine leere Quellen-Kennung ist eine
 // ungültige Eingabe und endet über den bestehenden Fehlerpfad, keine stille
-// Übernahme über alle Quellen. Eine leere Rückgabe trägt eine leere,
-// gesetzte Liste. Ein gesetztes `Target` außerhalb des Alphabets des
-// Zielnamens (`model.IsValidRouteTarget`) trifft nie ein vergebenes Ziel:
-// die Antwort ist die leere, gesetzte Liste, ohne Fehler und ohne den Port
-// anzufragen (`ADR-0139`).
+// Übernahme über alle Quellen. Den Lese-Kontrakt (Limit, Bereich, Quelle der
+// Positionen) prüft `outbound.ChangeQuery.Validate`, dieselbe Prüfung, die der
+// Port führt; ihr Fehler kommt unverändert zurück, auch bei einem `Target`
+// außerhalb des Alphabets. Eine leere Rückgabe trägt eine leere, gesetzte
+// Liste. Ein gesetztes `Target` außerhalb des Alphabets des Zielnamens
+// (`model.IsValidRouteTarget`) trifft nie ein vergebenes Ziel: bei sonst
+// gültiger Anfrage ist die Antwort die leere, gesetzte Liste, ohne Fehler und
+// ohne den Port anzufragen (`ADR-0139`).
 func (s *ReadChangesService) ReadChanges(ctx context.Context, query ReadChangesQuery) (ReadChangesResult, error) {
 	if query.Source == "" {
 		return ReadChangesResult{}, domainerrors.ErrEmptyIdentifier
 	}
-	if query.Target != "" && !model.IsValidRouteTarget(query.Target) {
-		return ReadChangesResult{Changes: []ReadChange{}}, nil
-	}
-	records, err := s.store.ReadChanges(ctx, outbound.ChangeQuery{
+	portQuery := outbound.ChangeQuery{
 		Source: query.Source,
 		Schema: query.Schema,
 		Table:  query.Table,
@@ -66,7 +63,14 @@ func (s *ReadChangesService) ReadChanges(ctx context.Context, query ReadChangesQ
 		Start:  query.Start,
 		End:    query.End,
 		Limit:  query.Limit,
-	})
+	}
+	if query.Target != "" && !model.IsValidRouteTarget(query.Target) {
+		if err := portQuery.Validate(); err != nil {
+			return ReadChangesResult{}, err
+		}
+		return ReadChangesResult{Changes: []ReadChange{}}, nil
+	}
+	records, err := s.store.ReadChanges(ctx, portQuery)
 	if err != nil {
 		return ReadChangesResult{}, err
 	}

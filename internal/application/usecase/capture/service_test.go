@@ -528,10 +528,11 @@ func TestCapturePublishesEachChangeOnceAfterAckAndNotify(t *testing.T) {
 }
 
 // TestCapturePublishesTheRouteTargetOfEachChange trägt die Strecke des
-// Zustellziels vom Assembler zum Stream: die Change, die der Store
-// persistiert, und die Change, die der Stream-Port erhält, sind dieselbe
-// Change mit demselben `RouteTarget` — die Handler der Live-Wege filtern auf
-// diesem Feld. Eine Change ohne Ziel bleibt ohne Ziel.
+// Zustellziels von der Transaktion zum Stream-Port-Fake: die Change, die der
+// Store persistiert, und die Change, die der Stream-Port erhält, sind
+// dieselbe Change mit demselben `RouteTarget`. Der Assembler-Schritt, der das
+// Ziel setzt, liegt nicht auf dieser Strecke; die Transaktion trägt das Ziel
+// bereits. Eine Change ohne Ziel bleibt ohne Ziel.
 // Rot färbende Mutation: in `changesOfCommittedTransaction` die Changes ohne
 // ihr Ziel kopieren (`RouteTarget` zurücksetzen) — der Stream-Port erhält
 // leere Ziele.
