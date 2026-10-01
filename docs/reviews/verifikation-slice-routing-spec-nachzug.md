@@ -8,7 +8,7 @@ Plan-vs-Code-Diff. Review-Artefakt:
 [`review-slice-routing-spec-nachzug.md`](review-slice-routing-spec-nachzug.md). Formvorbild:
 [`verifikation-slice-capture-retry-aufbau-frist-bindung.md`](verifikation-slice-capture-retry-aufbau-frist-bindung.md).
 
-**Gegenstand:** Slice-Plan [`slice-routing-spec-nachzug`](../plan/planning/in-progress/slice-routing-spec-nachzug.md)
+**Gegenstand:** Slice-Plan [`slice-routing-spec-nachzug`](../plan/planning/done/slice-routing-spec-nachzug.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), Welle
 [`welle-routing`](../plan/planning/welle-routing.md)), Diff `b8085839..HEAD` (`e2f9244c`): sechs
 Commits, neun Dateien, davon `spec/pflichtenheft.md` und `spec/architecture.md`; **kein Code**,
