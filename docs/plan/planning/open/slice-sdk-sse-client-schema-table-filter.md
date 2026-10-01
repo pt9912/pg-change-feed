@@ -29,7 +29,7 @@ sie nicht).
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
 **Autor:** Planner-Agent, Closure von
-[slice-routing-sdk-beispiel-target](../in-progress/slice-routing-sdk-beispiel-target.md)
+[slice-routing-sdk-beispiel-target](../done/slice-routing-sdk-beispiel-target.md)
 (dort §6, Aufschub „`schema`/`table` am SSE-Client der Packages“). **Datum:** 2026-10-01.
 
 ---
@@ -205,7 +205,7 @@ Pfaden `sdks/`, `examples/` und `docs/user/` — eine Sub-Area.
 **Vorgelagert — offene Beobachtungen sichten:** das Register wurde durchgegangen
 (Zähler = Zahl der `evidence/`-Dateien, ausgezählt am 2026-10-01); Treffer:
 `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall` (offen, 3× nach der Closure von
-[slice-routing-sdk-beispiel-target](../in-progress/slice-routing-sdk-beispiel-target.md)),
+[slice-routing-sdk-beispiel-target](../done/slice-routing-sdk-beispiel-target.md)),
 `BEO-PGC/docker-cache-ueberspringt-tests-still` (offen, 1×),
 `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme` (verkörpert, 3×),
 `BEO-PGC/intern-kennungen-in-ausgelieferten-texten` (offen, 1×),

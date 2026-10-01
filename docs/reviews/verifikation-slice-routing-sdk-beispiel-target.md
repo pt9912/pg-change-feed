@@ -12,7 +12,7 @@ Festlegung 1,
 Review-Artefakt: [`review-slice-routing-sdk-beispiel-target.md`](review-slice-routing-sdk-beispiel-target.md).
 Formvorbild: [`verifikation-slice-routing-betriebsdoku.md`](verifikation-slice-routing-betriebsdoku.md).
 
-**Gegenstand:** Slice-Plan [`slice-routing-sdk-beispiel-target`](../plan/planning/in-progress/slice-routing-sdk-beispiel-target.md)
+**Gegenstand:** Slice-Plan [`slice-routing-sdk-beispiel-target`](../plan/planning/done/slice-routing-sdk-beispiel-target.md)
 (Haupt-Bezug [`LH-FA-CFG-008`](../../spec/lastenheft.md), weiter
 [`LH-FA-SST-009`](../../spec/lastenheft.md), [`LH-FA-SST-006`](../../spec/lastenheft.md); Welle
 [`welle-routing`](../plan/planning/welle-routing.md)). Diff `101e24cd~1..HEAD` (`9e8bc1ce`): Commits

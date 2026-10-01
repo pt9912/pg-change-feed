@@ -233,7 +233,7 @@ Kommentarzeilen („JSON needs a target type“) in den Verwaltungs-Clients, kei
 `StreamChangesAsync(schema, table, cancellationToken)` und die Gegenstücke in Kotlin und Python tragen zwei Parameter. Die
 Abweichung vom Wortlaut des Übergabe-Blocks ist wahr und im Plan (§3 Konkretisierung) begründet; der Satz „das Feld `target`
 folgt mit dem Package“ ist der benannte Aufschub zu
-[`slice-routing-sdk-beispiel-target`](../plan/planning/in-progress/slice-routing-sdk-beispiel-target.md) (der Plan existiert in
+[`slice-routing-sdk-beispiel-target`](../plan/planning/done/slice-routing-sdk-beispiel-target.md) (der Plan existiert in
 `open/`, sein Titel nennt „der Parameter `target` an allen Zustellweg-Flächen“). Die Suchläufe im Plan (`zwei optionale` 4 am
 Elternstand, 2 am Diff; `drei optionale` 2) stimmen nach `make suchlauf-nachmessen`; die C#-Stelle bricht zwischen „zwei“ und
 „optionale“ um und fällt aus dem Zeilenmuster, der Plan sagt das.
