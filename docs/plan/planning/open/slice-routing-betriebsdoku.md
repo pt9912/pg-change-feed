@@ -101,7 +101,7 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
   `cdc.remove_route` und neuer Antrag. Handbuch-Stellen, die bisher nur Ausschluss und
   Transformationsregeln nennen: `benutzerhandbuch.md` Aufzählung „Ausgeschlossene
   Spalten“ im Abschnitt „Bestand als Backfill überführen“ (Wechsel des Standes während
-  des Runs) und die Zeile `schema` der Fehlerklassen-Tabelle in §5 (Run mit nicht
+  des Runs) und die Zeile `schema` der Fehlerklassen-Tabelle in §6 „Fehlerbehebung“ (Run mit nicht
   anwendbarer Routing-Regel); Messung der Stellen:
   `git grep -n -E "Ausgeschlossene Spalten|Transformationsregel ist auf die Relation" -- docs/user/benutzerhandbuch.md`;
 - aus `slice-routing-lesewege` — Parameter `target` je Weg, Konjunktion mit
