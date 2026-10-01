@@ -95,8 +95,8 @@ wird (`go test -run` meldet keinen Fehler, solange ein anderer Name im selben Au
 **Zuschnitt, den der Slice festlegt (Verdikt §3.2):** gelesen werden die `-run`-Argumentwerte
 (`-run '…'` und `-run "…"`, Muster der Form `^(A|B)$` und `^A$`), keine Kommentarzeilen.
 Eine Erweiterung des Lesers auf `-run=Name` oder `-run Name` ohne Anführungszeichen entscheidet der
-Implementer an den Formen im Skript (am Stand `77c7a795` kommen nur `-run '…'`-Formen vor — Befehl im
-Suchlauf-Feld) und benennt sie im Godoc.
+Implementer an den Formen im Skript (am Stand `77c7a795` zeigt die Ausgabe der zweiten
+Suchlauf-Zeile nur `-run '…'`-Formen) und benennt sie im Godoc.
 
 **§3.13-Suchlauf (Eigenschaft: Zahl der `func TestE2E*` und der `-run`-Stellen des Runners).** Vor
 dem Start ergänzt der Implementer die Zeilen am dann geltenden Parent und trägt Gefundenes und
@@ -111,8 +111,9 @@ diff 21 -n -E '^func TestE2E' -- test/integration
 diff 8 -n -E '(^|[^a-z])-run' -- tools/harness/run-integration-tests.sh
 ```
 
-Gefunden: 21 Testfunktionen, 8 Zeilen mit `-run` (davon vier Kommentar- oder Zählzeilen: Zeilen 450,
-470; Zeile 215 gehört dem Deklarations-Test, nicht den `TestE2E*`-Funktionen). Nicht gefunden: eine
+Gefunden: 21 Testfunktionen, 8 Zeilen mit `-run`: zwei Kommentarzeilen (450, 470), der Aufruf des
+Deklarations-Tests (215, keine `TestE2E*`-Funktion), das Sammelmuster (466) und vier Einzelaufrufe
+(3842, 5106, 5203, 5244). Nicht gefunden: eine
 Stelle außerhalb von `tools/harness/run-integration-tests.sh`, die `TestE2E*`-Funktionen per `-run`
 fährt (Suchraum: der Pfad der Zeile; **nicht** gemessen für `.github/workflows/`, `Makefile` und
 `harness/mk/`). Die Zahlen sind am Stand `77c7a795` gemessen; der Implementer misst nach, wenn der
