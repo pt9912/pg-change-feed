@@ -22,8 +22,14 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **19×** (der Text führte
-zuvor 17×, ausgezählt waren 18 Dateien; die neue Datei ist die neunzehnte:
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **20×** (die zwanzigste Datei:
+evidence/slice-routing-antragsweg.md — Form **Plan-Satz und Testfall**, F-1 (HIGH, daher
+Datei trotz Deckel): der Plan stützte eine Ablehnung auf „`jsonb` bewahrt die Schreibweise“,
+gemessen normalisiert `jsonb` den Exponenten, und der Testfall rief den Parser mit Text
+statt über den Antragsweg auf; vor dem Merge vom Reviewer gefunden, in der Fixrunde auf
+zwei Tests am echten Weg gestellt (der Re-Review fand dieselbe Klasse in milder Form,
+F-N1, LOW, ohne eigene Datei); der Text führte
+zuvor 17×, ausgezählt waren 18 Dateien; die neunzehnte war:
 evidence/slice-routing-kern-label.md — Form **Skript-Kommentar/Mutationsliste**, F-2 (MEDIUM,
 daher Datei trotz Deckel): der Kopfkommentar des Alt-Tag-Laufs führte nach dem Entfernen
 der Vorbedingungen zu den Transformations-Objekten das Upgrade als ergänzend und die

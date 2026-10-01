@@ -90,7 +90,7 @@ Liefer-Punkte:
 
 ## 2. Definition of Done
 
-- [ ] [`LH-FA-ADM-001`](../../../../spec/lastenheft.md) und
+- [x] [`LH-FA-ADM-001`](../../../../spec/lastenheft.md) und
       [`LH-QA-SEC-002`](../../../../spec/lastenheft.md) (A): `cdc.set_route` und
       `cdc.remove_route` legen unter `cdc_admin` einen `pending`-Antrag der Art
       `set_route`/`remove_route` an; ein Aufruf unter `cdc_reader` und
@@ -99,8 +99,11 @@ Liefer-Punkte:
       (`tools/harness/run-schema-rollout-guard-test.sh`) kennt die neuen Arten und
       Funktionen (seine hart verdrahtete Liste der Arten ändert der Slice mit).
       *Zu belegen durch:* `make test-store` (Rollen-Test, Funktionen),
-      `make schema-rollout` (zweimal), Alt-Tag-Lauf.
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Boundary (B): je eine
+      `make schema-rollout` (zweimal), Alt-Tag-Lauf. *Beleg (Verifier):*
+      Verifikations-Report §1 und §2 Zeile 1 (Rollout zweimal Exit 0, neun Werte in der
+      CHECK-Menge, Rechte-Matrix und `permission denied` an einer Wegwerf-DB,
+      `make test-store` Exit 0, Alt-Tag-Lauf Exit 0; Mutationen M5 und M10 rot).
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Boundary (B): je eine
       Verletzung von R1 bis R6 endet `failed` mit dem Klartext der Spec und der
       Adresse, der Regelstand bleibt, die Gegenprobe ohne die Verletzung endet
       `applied`; ein unbekannter Schlüssel und ein ungültiger Zielname enden
@@ -111,8 +114,11 @@ Liefer-Punkte:
       *Zu belegen durch:* Use-Case-Tabellentests je Verletzung mit Eingabe-Bindung
       (die Eingabe ist die Verletzung, nicht ein Nachbarfall,
       `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`), `make test`,
-      `make test-store`.
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Happy Path (C): ein
+      `make test-store`. *Beleg (Verifier):* Verifikations-Report §2 Zeile 2 (Klartexte
+      und Adressen am Quelltext gegen die Fehlertext-Tabelle von
+      [`SPEC-019`](../../../../spec/pflichtenheft.md) gelesen, `make test` Exit 0;
+      Mutationen M6a, M6b und M7 rot).
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Happy Path (C): ein
       `applied`-Antrag setzt die Regelliste am laufenden `Assembler` ohne Neustart;
       nach einem Prozessstart ist der Regelstand aus den `applied`-Zeilen abgeleitet
       (Ordnung `requested_at`, dann `administration_request_id`, auch bei gleichem
@@ -120,32 +126,57 @@ Liefer-Punkte:
       aktivierten Tabelle; ein Antrag gegen eine Tabelle ohne laufende Bindung endet
       wie bei den Spalten- und Transformations-Antragsarten (Spec-Zusage).
       *Zu belegen durch:* `internal/bootstrap`-Test mit realen Store-Zeilen
-      (`make test-store`), Unit-Test der Ableitung (`make test`).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
-      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+      (`make test-store`), Unit-Test der Ableitung (`make test`). *Beleg (Verifier):*
+      Verifikations-Report §2 Zeile 3 (Antrag setzt die Regelliste live, Ableitung gegen
+      reale PostgreSQL mit Zweitschlüssel, Aktivierungs-Zweig, Antrag ohne Bindung
+      `applied`; Mutationen M8 und M9c rot, M9a rot über Panik). **Rest V-2:** die
+      Feldbelegung `routing: activation` des HTTP-/gRPC-Aktivierungs-Pfads in
+      `internal/bootstrap/wiring.go` bindet kein Unit-Test (M9b grün, Verifikations-Report
+      §4); der Rest ist durch den DoD-Punkt „API-Aktivierung“ von
+      [`slice-routing-e2e`](../open/slice-routing-e2e.md) §2 getragen (Aktivierung per
+      HTTP bzw. gRPC mit `applied`-Routing-Regel, Gegenprobe ohne Regel,
+      `make test-integration`, gedruckte Zeile je Weg), bis dahin trägt die Zeile an diesem
+      Pfad die Weitergabe im Dekorator (M9a), nicht die Belegung.
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9). *Beleg
+      (Verifier):* Verifikations-Report §1 (Exit 0, `a-check`: 0 Befunde).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+      Self-Review (Modul 8). *Beleg:* Review
+      [`review-slice-routing-antragsweg`](../../../reviews/review-slice-routing-antragsweg.md)
+      (1 HIGH F-1, 2 MEDIUM F-2 und F-4, 4 LOW, 3 INFO) **und** Re-Review der Fixrunde
+      `cc653a85`
+      [`review-slice-routing-antragsweg-fixrunde-1`](../../../reviews/review-slice-routing-antragsweg-fixrunde-1.md)
+      (0 HIGH, 0 MEDIUM, 2 LOW F-N1 und F-N2, 2 INFO F-N3 und F-N4); F-N1 und F-N2 sind
+      im Nachzug `836e64d2` geschlossen (Store-Test-Godoc benennt die
+      `jsonb`-Normalisierung, Kommentarzeile in `queries.go` umbrochen), F-N3 und F-N4
+      tragen keine Aktion. Der Nachzug `836e64d2` ist von keinem Reviewer gelesen (nur
+      Godoc, Fallname und Umbruch; keine Anweisung). Kein offenes HIGH/MEDIUM.
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-routing-antragsweg.md`
-      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `harness/targets/schema-rollout.md` (Zählwort der SQL-Funktionen
+      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13). *Beleg
+      (Verifier):* Verifikations-Report §1 und §2 Zeile 6 (22 Zeilen stimmen).
+- [x] Doku-Update: `harness/targets/schema-rollout.md` (Zählwort der SQL-Funktionen
       und der Arten) und `harness/README.md` (nur bewegte Beschreibungen, laut
       Suchlauf). **Aufschub mit Adresse:** die Beschreibung der Betreiber-Oberfläche
       im Benutzerhandbuch — `cdc.set_route`/`cdc.remove_route` mit Parametern und
       Rolle `cdc_admin` (Rollen-Tabelle, Abschnitt „Zugriff und Rollen"), die
       `rule_spec`-Form, R1–R6 mit Fehlertexten (führende Stelle: die Spec),
       Abhilfe — geht an `slice-routing-betriebsdoku`, dessen §2 den Gegenstand
-      vollständig nennt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+      vollständig nennt. *Beleg (Verifier):* Verifikations-Report §2 Zeile 7
+      (`harness/targets/schema-rollout.md` und `harness/README.md` im Diff gelesen
+      und gegen die gemessenen Zahlen gehalten; der Plan der Adresse trägt die
+      `order`-Obergrenze und die Annahmemenge).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
-      Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+      Antwort und wird in §7 notiert (§7: vier neue `evidence/`-Dateien in vier
+      bestehenden Einträgen).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
@@ -197,7 +228,12 @@ Slice nicht):
   eine Setzung dieses Slice. Grund: weit über jeder Zahl von Regeln einer Tabelle; eine größere
   Zahl endet `rule_spec ist ungültig`. `SPEC-032` sagt „positive ganze Zahl“ ohne Obergrenze;
   das Handbuch nennt die Grenze (Aufschub-Adresse `slice-routing-betriebsdoku`).
-- **Schreibweise der Zahl:** `SPEC-032` gilt wörtlich (Entscheid des Hauptlaufs zu A-1): jede
+- **Schreibweise der Zahl:** `SPEC-032` gilt wörtlich. Den Entscheid zu A-1 (Review-Frage an den
+  Architect) hat der Hauptlauf der Sitzung getroffen, **kein Architect-Verdikt**: ein Report dazu
+  liegt unter `docs/reviews/` nicht vor (Re-Review F-N4, `ls docs/reviews | grep -i routing` ohne
+  Verdikt-Datei zu `order`). Die Richtung ist der Wortlaut der Spec und schließt die Abweichung des
+  Erstentwurfs, statt eine neue zu setzen; die Obergrenze bleibt Umsetzungsgrenze. Das Handbuch
+  nennt Obergrenze und Annahmemenge (Adresse `slice-routing-betriebsdoku` §2). Jede
   JSON-Zahl mit dem Wert einer positiven ganzen Zahl wird angenommen (`10`, `10.0`, `1e1`,
   `1E+1`); ein Bruchteil ungleich 0 (`1.5`), 0, ein negativer Wert, ein Nicht-Zahlen-Wert und
   ein Wert über `MaxRouteOrder` enden `rule_spec ist ungültig`. Der Wert wird exakt als
@@ -276,47 +312,182 @@ geschrieben.
 - **Zwischenzustand: Regeln setzbar, Backfill ohne Label.** Ab diesem Slice trägt
   jede neu erfasste WAL-Change das Ziel, ein Backfill-Run noch `NULL`; dieselbe
   Tabelle hat zwei Formen, bis `slice-routing-backfill-pfad` (unmittelbar danach)
-  liegt. — **Ausgang:** bei der Closure einzutragen (Fenster ein Slice lang).
+  liegt. — **Ausgang:** weiter offen. Das Fenster ist das benannte Fenster der Welle
+  ([`welle-routing`](../welle-routing.md) §5), nicht gemessen; Adresse:
+  [`slice-routing-backfill-pfad`](../open/slice-routing-backfill-pfad.md), dessen Start-Trigger
+  diesen Slice in `done/` voraussetzt.
 - **Parametertyp `json` gegen `jsonb`.** Die ADR nennt `rule_spec jsonb`;
   `cdc.set_transformation` trägt `json`, und die Wache `rolloutguard` kennt die
   Schreibweise der Report-Signatur (`in:json…`, `tools/schema/rolloutguard/guard.go`).
   Ein anderer Typ ändert die Signatur, die der Rollout-Report über einen Alt-Bestand
-  meldet. — **Ausgang:** bei der Closure einzutragen (Typ nach Bestand, Wortlaut der
-  Spec; der Bestand ist der Beleg, die ADR-Notation ist kein Gegenbeleg).
+  meldet. — **Ausgang:** entfallen. Typ `json` nach Bestand und Wortlaut von
+  [`SPEC-019`](../../../../spec/pflichtenheft.md); Alt-Tag-Lauf Exit 0 (Verifikations-Report
+  §1), die Mutation `set_route`-Signatur `in:jsonb` färbt drei Tests rot (Review G2), die
+  `Accepted`-ADR bleibt unberührt (Review F-9, Verifikations-Report §6).
 - **R3 in der Gegenrichtung ändert einen bestehenden Use Case.** `exclude_column`
   trägt bisher keine Kenntnis von Routing-Regeln; die Sperre ist eine zweite
   Abhängigkeit des Use Case. Das Queue-Lesen der Anträge läuft in **einer**
   Administrations-Goroutine, die Prüfung ist dadurch seriell (*erwartet*; die Annahme
   „genau eine Instanz" ist nicht erzwungen, `BEO-PGC/ein-instanz-annahme-ohne-erzwingung`,
-  offen, 3×). — **Ausgang:** bei der Closure einzutragen (Regressionstest der
-  bestehenden Pfade; Aussage zur Serialität mit ihrem Ursprung).
+  offen, 3×). — **Ausgang:** Regression **entfallen**: die Bestandstests von
+  `exclude_column` bleiben grün, der Regelstand wird erst nach der Spaltenexistenz
+  gelesen, Mutationen M6a und M6b rot (Verifikations-Report §2 Zeile 2, §3, §4). Die
+  Serialität bleibt **erwartet**, nicht gemessen (Ursprung: Lesen des Codes, eine
+  Administrations-Goroutine); weiter offen unter
+  `BEO-PGC/ein-instanz-annahme-ohne-erzwingung`, Ausgang beim Lese-Schritt der Closure
+  von [`welle-routing`](../welle-routing.md).
 - **R4 und die Reihenfolge der Anträge.** Eine Abschlussregel ohne `when` muss die
   höchste `order` tragen; ein später gesetzter Antrag mit höherer `order` endet
   `failed`, auch wenn er ein anderer Zweck wäre. Der Betreiber löst es über
-  `cdc.remove_route` und ein neues Setzen. — **Ausgang:** bei der Closure
-  einzutragen (Handbuch-Adresse `slice-routing-betriebsdoku` für die Abhilfe).
-- **Aufschub mit Adresse** (Handbuch-Beschreibung, §2). — **Ausgang:** bei der
-  Closure einzutragen; der Gegenstand steht als committeter Text im §2 von
-  `slice-routing-betriebsdoku` (Prüfung: `git grep` der Kernbegriffe
-  `cdc.set_route`, `rule_spec`, `Rollen-Tabelle` im Plan der Adresse).
+  `cdc.remove_route` und ein neues Setzen. — **Ausgang:** weiter offen (Aufschub
+  mit Adresse). Das Verhalten ist durch R4 gebunden (Verifikations-Report §2 Zeile 2); die
+  Abhilfe beschreibt das Handbuch: Adresse [`slice-routing-betriebsdoku`](../open/slice-routing-betriebsdoku.md)
+  §2 (Fall R4 steht dort als committeter Text, `git grep -n -E 'R4|höchste'` im Plan der
+  Adresse: Zeile 86).
+- **Aufschub mit Adresse** (Handbuch-Beschreibung, §2). — **Ausgang:** weiter offen;
+  der Gegenstand steht als committeter Text im §2 von `slice-routing-betriebsdoku`
+  (Prüfung: `git grep -n -c -E 'cdc\.set_route|rule_spec|Rollen-Tabelle'` im Plan der
+  Adresse druckt 9, gemessen bei der Closure; der Verifier bestätigt die Aufnahme,
+  Verifikations-Report §2 Zeile 7).
 - **Coverage-Messgegenstand und Paketlisten.** Zwei neue Use-Case-Pakete liegen in der
   netzlos gemessenen Fläche; der Store-Teil im DB-Gegenstand
   (`tools/harness/db-package-lists-check.sh` hält die Paketlisten gleich). —
-  **Ausgang:** bei der Closure einzutragen (`make coverage-gate`).
+  **Ausgang:** entfallen: `make gates` Exit 0 (enthält `coverage-gate`), der DB-Teil im
+  `make test-store`-Lauf des Verifiers gedruckt `db-coverage: OK — DB-Adapter-Coverage
+  82.99% erfuellt Schwelle 80%` (Verifikations-Report §1; der Wert ist lauf-gebunden,
+  keine Zustandsgröße).
 - **Rollen-Test.** Die Rechte der neuen Funktionen sind eine Wirkung, die kein Sensor
   außer dem Rollen-Test liest (`BEO-PGC/rollen-test-abdeckungsluecken`, gestrichen,
-  4×; `BEO-PGC/rollen-verdrahtung`). — **Ausgang:** bei der Closure einzutragen.
+  4×; `BEO-PGC/rollen-verdrahtung`). — **Ausgang:** entfallen: der Store-Test
+  `TestAdministrationRequestRoutingFunctionsRequireCdcAdminMembership` und der Alt-Tag-Lauf
+  tragen die Rechte, die Mutation `REVOKE` ohne `cdc.set_route` (M5) färbt den Store-Test
+  rot (Verifikations-Report §2 Zeile 1, §4). Die Rollen-Tests in `internal/bootstrap` binden
+  das `REVOKE` nicht (V-5, Re-Review F-N3): ein Schnitt zwischen zwei Testebenen, beide
+  tragen, keine Lücke.
+- **API-Aktivierung: Feldbelegung `routing: activation` in `Run` ungebunden** (Review F-4,
+  Verifikation V-2; neu in §6 aufgenommen bei der Closure). Die Weitergabe im Dekorator ist
+  gebunden (M9a rot, über Panik), die Belegung in `internal/bootstrap/wiring.go` nicht (M9b
+  grün). Ein `nil`-Port wäre im Betrieb ein lauter Fehler beim ersten API-Aktivieren, kein
+  stilles Ausbleiben (*hergeleitet*). — **Ausgang:** weiter offen. Adresse:
+  [`slice-routing-e2e`](../open/slice-routing-e2e.md) §2, DoD-Punkt „API-Aktivierung“ (im Plan
+  der Adresse gelesen, Verifikations-Report §5 Zeile F-4; `git grep -n 'API-Aktivierung'` im Plan
+  der Adresse: Zeile 108).
+- **Wiederholungs-Grenze der Queue (Review F-5).** Der Kommentar in `applyAdministrationRequest`
+  (`internal/bootstrap/wiring.go`) sagt, eine Wiederholung eines `set_route` nach einem
+  fehlgeschlagenen `applied`-Vermerk sei folgenlos; der Satz ist als **hergeleitet** gekennzeichnet
+  (R1 liest nur `applied`-Zeilen, `Assembler.SetRoute` ersetzt nach dem Regelnamen), ein
+  Wiederholungs-Test fehlt (die Transformations-Antragsarten tragen einen:
+  `TestProcessAdministrationRequestsSetTransformationIsIdempotent`). — **Ausgang:** weiter
+  offen. Adresse: der Kommentar an dieser Stelle (der Marker „Hergeleitet aus dem Code, ohne
+  Wiederholungs-Test“ ist der Wächter); die Entscheidung gegen einen Test ist offen benannt,
+  ein Träger-Slice ist nicht angelegt. Der Planner von
+  [`slice-routing-e2e`](../open/slice-routing-e2e.md) liest diesen Punkt beim Start und
+  entscheidet, ob der Neustart-Lauf dort ihn belegen kann.
+- **Heredoc-Selbstauskunft des Implementers (Verifikation V-7).** Der Implementer meldete
+  einen früheren Heredoc-Schreibvorgang auf `internal/application/usecase/excludecolumn/service.go`
+  (Verstoß gegen [`AGENTS.md`](../../../../AGENTS.md) §3.1, einmal geleert, per `git checkout`
+  wiederhergestellt). Am Endstand ist er nicht erkennbar (`git grep -E '^EOF$|<<.?EOF' -- internal`:
+  0, `make fmt-check` Exit 0, Diff von Review und Verifier gelesen), der Guard liest
+  Umleitungen nicht. — **Ausgang:** weiter offen, **übernommen, nicht gemessen**: eine
+  Messung am Endstand ist strukturell unmöglich; kein Träger-Slice, keine
+  `evidence/`-Datei (ohne Spur kein nachprüfbares Auftreten, Entscheidung in §7).
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
-
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** Die drei Liefer-Punkte tragen: zwei Antragsarten und zwei
+  Funktionen allein für `cdc_admin`, Validierung R1 bis R6 in Go mit den Klartexten der Spec
+  (R3 in beide Richtungen), Regelstand aus den `applied`-Zeilen in Prozessstart,
+  Aktivierungs-Zweig und `applyAdministrationRequest`. Gemessen im Verifier-Lauf: `make test`,
+  `make test-store`, `make test-replication`, zweimal `make schema-rollout`, Alt-Tag-Lauf,
+  `make gates`, `make docs-check`, Suchlauf (22 Zeilen) alle Exit 0 (Verifikations-Report §1).
+  Das Muster der Transformations-Antragsarten (Formvorbild, Guard-Liste, Alt-Tag-Lauf) trug den
+  Schnitt ohne Rückführung nach §4; die in §4 vorab benannte Abtrennung von (A) ist nicht
+  ausgelöst (Review F-10).
+- **Was ging anders als geplant:** Eine Fixrunde (`cc653a85`) und ein Nachzug (`836e64d2`).
+  Das HIGH F-1 war eine Tatsachenbehauptung des Plans: die Annahme, `jsonb` bewahre die
+  Schreibweise der Zahl, sodass `1e1` abgelehnt werde. Gemessen an PostgreSQL 18 bewahrt `jsonb`
+  `10.0` und normalisiert `1e1`/`1E+1` zu `10`; ein Testfall, der `ParseRouteSpec` mit Text
+  aufrief, belegte einen Pfad, den kein Antrag erreicht. Mit F-2 (Setzung enger als
+  [`SPEC-032`](../../../../spec/pflichtenheft.md)) führte das zur Annahme jeder JSON-Zahl mit dem
+  Wert einer positiven ganzen Zahl, exakt über `math/big`. Den Entscheid zu `order` hat der
+  Hauptlauf der Sitzung getroffen, **nicht ein Architect-Verdikt**: ein Report dazu liegt nicht
+  vor (Re-Review F-N4); die Richtung ist der Wortlaut der Spec, die Obergrenze 2147483647 bleibt
+  Umsetzungsgrenze, das Handbuch trägt sie über die Adresse `slice-routing-betriebsdoku`. F-4
+  (Dekorator-Test mit leerem Regelstand) wurde bis auf die Feldbelegung in `Run` gebunden; der
+  Rest liegt bei `slice-routing-e2e`. Anders als in den beiden Vorgänger-Slices wurde die Fixrunde
+  **von einem Reviewer gelesen** (Re-Review, Verifier-Empfehlung V-1); der Nachzug `836e64d2`
+  (Godoc, Fallname, Umbruch) ist wieder ungelesen, er enthält keine Anweisung. Die Zahl der
+  Mutationen trägt ihren Ursprung (Instanz A von [`AGENTS.md`](../../../../AGENTS.md) §3.12):
+  Implementer 23 + 10 + 2 = 35, **übernommen** (Bericht des Implementers, nicht nachgefahren);
+  Reviewer 23 selbst gefahren, **gemessen** (19 rot, 4 grün: vier äquivalente beziehungsweise
+  redundante Mutanten, F-8); Verifier 12 selbst gefahren, **gemessen** (11 rot, eine grün: M9b,
+  die Feldbelegung); Re-Review 5 selbst gefahren, **gemessen** (R1 bis R5, jede in mindestens
+  einer Ebene rot). Die Mutationen des Reviews übernahm der Verifier, die des Verifiers der
+  Re-Review: Wer die Zahl liest, liest die Läufe eines unabhängigen Lesers, nicht die des
+  Autors.
+- **Steering-Loop-Eintrag:** geschärfte Regel, kein neuer Sensor. Ein Plan-Satz über das
+  Verhalten des Fremdsystems („was PostgreSQL bewahrt oder normalisiert“) ist eine
+  **Tatsachenbehauptung** ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B) und gehört vor
+  dem Schreiben an der gepinnten Instanz gemessen, mit dem Messort im Satz (hier
+  `select (…)::json::jsonb::text`); eine Annahme dieser Art steht sonst als *erwartet*. F-1 (HIGH)
+  entstand, weil `1e1` als „bleibt erhalten“ galt und ein Testfall den Direktaufruf des Parsers
+  statt des Antragswegs fuhr; die Messung dauert eine Anweisung, der Reviewer fand sie vor dem
+  Merge. Zweite Hälfte: ein Test, der eine Schreibweise „bindet“, fährt den Weg, den die Eingabe
+  real geht (Funktion, `jsonb`, Queue, Parser); der Store-Test tat es und band `1e1` trotzdem
+  nicht, weil `jsonb` den Exponenten vor dem Parser normalisiert (F-N1, im Godoc benannt).
+  Träger: die Lese-Handlung des Planners beim Schreiben von Plan-Sätzen und die verkörperten
+  Einträge im Register (unten), keine neue Regel im Text von `AGENTS.md`: §3.12 Instanz B
+  trägt den Satz bereits, der Slice liefert seine Ausprägung „Verhalten des Fremdsystems“.
+- **Beobachtungs-Register (`../observations/`):** vier `evidence/`-Dateien in vier
+  bestehenden Einträgen, Zähler real ausgezählt (`ls …/evidence | wc -l` je Eintrag):
+  - **`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`** (verkörpert): F-1 (HIGH, daher Datei
+    trotz Deckel), Form **Plan-Satz und Testfall**; Zähler **19×** → **20×**.
+  - **`BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`** (verkörpert): F-1 ist
+    dieselbe Aussage in ihrer Instanz-B-Ausprägung („Verhalten des Fremdsystems“, Plan-Satz
+    als Begründung einer Umsetzungsentscheidung); eine eigene Datei, weil HIGH; Zähler
+    **12×** → **13×**. Beide Einträge zählen denselben Vorgang mit verschiedenem Mechanismus
+    (dort trägt der Beleg den Satz nicht, hier trägt die Behauptung nicht).
+  - **`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`** (verkörpert): F-4 (MEDIUM, daher
+    Datei trotz Deckel), Form **Dekorator-Test mit leerem Fake-Port**; Zähler **21×** → **22×**.
+  - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen): Verifikation V-1, drittes Auftreten;
+    Zähler **2×** → **3×**, damit Schwelle erreicht, Ausgang beim Lese-Schritt der Closure
+    von [`welle-routing`](../welle-routing.md). **Gegenbeleg im Eintrag vermerkt:** hier hat der
+    Verifier das Muster benannt und einen Re-Review empfohlen, der Re-Review wurde gefahren und
+    fand F-N1 (LOW), das dem Verifier entgangen war; anders als die beiden Vorgänger änderte
+    diese Fixrunde Anweisungen (den Parser).
+  - Ohne eigene Datei (Deckel, ≤ LOW, vor dem Merge gefunden, bekannter Träger-Typ):
+    F-N1 (LOW, Beleg trägt seinen Satz nur zur Hälfte, `beleg-befehl-traegt-seinen-satz-nicht`),
+    F-6 und F-N2 (LOW, Umbruch nach Teilersetzung, Zähler läuft unter
+    `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`), F-7 (LOW, Godoc „alle sieben Funktionen“
+    außerhalb des Suchmusters, `arbeit-ueberholt-stehenden-traeger`), F-5 (LOW, Zusage im Kommentar
+    ohne Marker, `negativtest-ohne-bindung-an-seine-eingabe`; Marker nachgezogen).
+  - V-7 (Heredoc-Selbstauskunft): **keine** Datei bei `inplace-textwerkzeug-am-repo-trotz-nutzerregel`.
+    Der Zähler misst Auftreten mit nachprüfbarer Spur; am Endstand gibt es keine, die Aussage ist
+    **übernommen** (§6). Wird eine Spur sichtbar, folgt die Datei.
+  - Kein Eintrag steht bei 3× oder mehr ohne Ausgang an, den dieser Slice neu erreichte, außer
+    `fixrunde-ohne-reviewer-lesung` (3×, Ausgang beim Lese-Schritt der Welle-Closure).
+- **Folge-Slices:** keine neuen. Übergaben: `slice-routing-e2e` (API-Aktivierung, Neustart-Lauf
+  mit realen Zeilen V-6, Wiederholungs-Grenze), `slice-routing-betriebsdoku` (Betreiber-Oberfläche,
+  Abhilfe R4, `order`-Obergrenze und Annahmemenge), `slice-routing-backfill-pfad` (Fenster
+  Backfill ohne Label).
+- **Risiken aus §6:** Zwischenzustand Backfill ohne Label **weiter offen** (Adresse
+  `slice-routing-backfill-pfad`); Parametertyp `json` **entfallen**; R3-Gegenrichtung
+  **entfallen**, Serialität **weiter offen** (erwartet, Register); R4-Abhilfe **weiter offen**
+  (Adresse `slice-routing-betriebsdoku`); Aufschub Handbuch **weiter offen** (gleiche Adresse);
+  Coverage **entfallen**; Rollen-Test **entfallen**; API-Aktivierung **weiter offen** (Adresse
+  `slice-routing-e2e` §2); Wiederholungs-Grenze **weiter offen** (hergeleitet); Heredoc V-7 **weiter
+  offen** (übernommen, nicht gemessen). Befunde ohne Risiko-Eintrag: V-3 (nicht reproduzierbare
+  Aussage zu `run-store-tests.sh`, `make test-store` Exit 0), V-4 (durch F-N2 im Nachzug behoben),
+  V-5 (Testebenen-Schnitt), V-6 (Adresse `slice-routing-e2e`).
+- **Drei Paarungen:** dieser Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+  Prüfung läuft regelkonform bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der
+  Lerneintrag verkörpert nichts neu (Ausprägung unter §3.12 Instanz B, Register); (b) Folge-Slice:
+  keiner neu, die genannten Pläne liegen unter `open/`; (c) Register: die genannten Kennungen
+  existieren als Verzeichnis, jede trägt ein nicht leeres `evidence/`.
+- **Validator (Modul 8):** entfällt — der Antragsweg ohne Lesewege und ohne Backfill-Label ist
+  für Betreiber noch nicht als Ganzes nutzbar; der Nutzer-Bedarf
+  ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md)) wird erst durch den Wellen-Beleg
+  validierbar.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

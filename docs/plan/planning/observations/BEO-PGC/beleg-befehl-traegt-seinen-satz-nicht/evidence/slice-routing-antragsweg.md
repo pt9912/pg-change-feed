@@ -1,0 +1,9 @@
+**Vorgang:** slice-routing-antragsweg (Review F-1, HIGH; Re-Review F-N1, LOW, unter dem Deckel mitgeführt)
+
+**Fund:** Der Plan stützte „`10.0` und `1e1` enden `rule_spec ist ungültig`“ auf den Satz, `jsonb` bewahre die Schreibweise der Zahl. Gemessen an PostgreSQL 18 (`select ('{"order": 1e1, "b": 10.0, "c": 1E+1, "d": 10}')::json::jsonb::text` druckt `{"b": 10.0, "c": 10, "d": 10, "order": 10}`) bewahrt `jsonb` den Bruch und normalisiert den Exponenten: `1e1` erreicht Go über die Antrags-Queue als `10` und wird angenommen. Der Testfall „order mit Exponent“ rief `ParseRouteSpec` mit Text auf, einen Pfad, den kein Antrag erreicht; er belegte nicht, was der Satz sagte. Die Fixrunde ersetzte den Plan-Satz („die Annahme hängt an keiner der beiden Schreibweisen“) und den Testfall durch zwei Tests auf dem echten Antragsweg (Store: Funktion, `jsonb`, Queue, Parser; Bootstrap: Queue, Use Case, Assembler); die Mutationen M1 bis M3 des Verifiers färben sie rot. Der Re-Review fand dieselbe Klasse in milder Form (F-N1): der Godoc des Store-Tests nannte nur die Rückführung auf die Ziffernform als rot färbende Mutation und band `1e1`/`1E+1` an der Schreibweise nicht, weil `jsonb` sie vor dem Parser zu `10` normalisiert; im Nachzug benennt der Godoc die Normalisierung.
+
+**Form (Ausprägung):** Form **Plan-Satz und Testfall** über das Verhalten eines Fremdsystems: die Behauptung über PostgreSQL stand ungemessen im Plan, und der zugehörige Test fuhr einen Weg neben dem realen. Schwere HIGH, daher eine Datei trotz Deckel; vor dem Merge vom Reviewer gefunden, vom Verifier an Text und Code geschlossen.
+
+Quelle: `docs/reviews/review-slice-routing-antragsweg.md` (F-1) <!-- d-check:status-provenance -->
+· `docs/reviews/review-slice-routing-antragsweg-fixrunde-1.md` (F-N1) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-routing-antragsweg.md` (§4 M1 bis M3, §5 Zeile F-1). <!-- d-check:status-provenance -->

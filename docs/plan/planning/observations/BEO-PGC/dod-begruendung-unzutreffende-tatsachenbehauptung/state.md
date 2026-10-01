@@ -18,7 +18,8 @@ Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Findin
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
 ab 10×). Ausgang unverändert **verkörpert**.
 
-Zähler (abgeleitet): **12×** (evidence/slice-routing-spec-nachzug.md,
+Zähler (abgeleitet): **13×** (evidence/slice-routing-antragsweg.md,
+evidence/slice-routing-spec-nachzug.md,
 evidence/slice-capture-leerlauf-quellbelege.md,
 evidence/slice-transformationen-map-value.md,
 evidence/slice-harness-guard-inplace-textwerkzeug.md,
@@ -27,7 +28,13 @@ evidence/slice-081.md, evidence/slice-083.md, evidence/slice-095.md,
 evidence/slice-sdk-kotlin-sse-client-flaeche.md,
 evidence/slice-backfill-snapshot-reader.md,
 evidence/slice-sdk-kotlin-cloudsmith.md) — **Schwelle erreicht**,
-Ausgang beim Lese-Schritt der `welle-20`-Closure. Der elfte Beleg
+Ausgang beim Lese-Schritt der `welle-20`-Closure. Der dreizehnte Beleg
+(`slice-routing-antragsweg`, Review F-1, HIGH, daher Datei trotz Deckel) trifft eine
+**Plan-Begründung über das Verhalten eines Fremdsystems**: „`jsonb` bewahrt die
+Schreibweise der Zahl“ stand ungemessen als Grund einer Umsetzungsentscheidung, die Messung
+an PostgreSQL 18 widerlegte sie (Exponent wird normalisiert); derselbe Vorgang zählt im
+Eintrag `beleg-befehl-traegt-seinen-satz-nicht` mit dem Mechanismus des Testfalls; vor dem
+Merge vom Reviewer gefunden, Ausgang unverändert **verkörpert**. Der elfte Beleg
 (`slice-capture-leerlauf-quellbelege`, Verifikation V-4, INFO) trifft einen **Review-Report** als
 Träger: der Satz „das Tier läuft nicht in `ci.yml`/`e2e.yml`“ stand ohne Anker, der Verifier
 las den Workflow und fand das Gegenteil; vor dem Merge gefunden, Ausgang unverändert

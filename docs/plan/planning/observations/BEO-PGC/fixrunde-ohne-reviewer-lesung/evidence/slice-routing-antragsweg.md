@@ -1,0 +1,8 @@
+**Vorgang:** slice-routing-antragsweg (Verifikation V-1; Re-Review der Fixrunde)
+
+**Fund:** Die Fixrunde `cc653a85` (Parser `jsonRouteOrder`, Tests in vier Paketen, Dekorator-Test, Kommentare, Plan) wurde zunächst von keinem Reviewer gelesen; der Verifier las sie inhaltlich (Verifikations-Report §7, ohne Beanstandung) und führte das Muster als Prozessbefund V-1 mit der Empfehlung eines kurzen Re-Reviews. Der Re-Review wurde gefahren (Report unter Quelle: 0 HIGH, 0 MEDIUM, 2 LOW, 2 INFO, fünf Mutationen) und fand F-N1 (LOW), das dem Verifier entgangen war; F-N2 hatte der Verifier schon als V-4 gemeldet. Der Nachzug `836e64d2` (Godoc, Fallname, Umbruch, keine Anweisung) ist danach wieder ungelesen.
+
+**Form (Ausprägung):** drittes Auftreten in Folge innerhalb derselben Welle, **mit Gegenbeleg**: anders als bei den beiden Vorgängern änderte diese Fixrunde **Anweisungen** (den Parser) und nicht nur Texte, und das Muster wurde vor der Closure geschlossen, weil der Verifier den Re-Review empfahl und dieser vor der Closure gefahren wurde. Der Re-Review hat einen Befund gefunden, den die Verifier-Lesung nicht fand: die Lesung des Verifiers ersetzt den Re-Review einer Fixrunde mit Anweisungen nicht. Der Kandidat des Eintrags (eine Zeile im Handoff nach der Fixrunde, die den Re-Review bei Anweisungen verlangt und die Verifier-Lesung nur für Fixrunden ohne Anweisungen zulässt) hat damit einen Beleg; der Ausgang gehört zum Lese-Schritt der Closure von `welle-routing`.
+
+Quelle: `docs/reviews/verifikation-slice-routing-antragsweg.md` (V-1, §7) <!-- d-check:status-provenance -->
+· `docs/reviews/review-slice-routing-antragsweg-fixrunde-1.md` (F-N1, V-1 im Statusteil). <!-- d-check:status-provenance -->

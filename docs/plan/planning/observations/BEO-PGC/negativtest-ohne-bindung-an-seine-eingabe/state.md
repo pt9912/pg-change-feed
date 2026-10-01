@@ -37,7 +37,8 @@ Träger“ — eine Gegenentscheidung des Architects ist ein neues Verdikt):
   einer Abfrage-Eingabe; er ist im Slice gebunden (Test mit Run einer fremden Quelle,
   Mutation danach rot), der Reviewer fand ihn vor dem Merge.
 
-Zähler (abgeleitet): **21×** (evidence/slice-capture-transient-wiederholung.md,
+Zähler (abgeleitet): **22×** (evidence/slice-routing-antragsweg.md,
+evidence/slice-capture-transient-wiederholung.md,
 evidence/slice-harness-mutationsbild-und-verweigerte-aktion.md,
 evidence/slice-transformationen-e2e-wirkung.md,
 evidence/slice-transformationen-map-value.md,
@@ -56,7 +57,13 @@ evidence/slice-sdk-kotlin-cloudsmith.md,
 evidence/slice-harness-suchlauf-nachmessen.md) —
 **Schwelle erreicht**; der Lese-Schritt der Closure von `welle-backfill-bestand`
 liest den Eintrag mit (11×), der Lese-Schritt der nächsten Welle-Closure
-(`welle-transformationen`) den zwölften bis neunzehnten Beleg. Der zwanzigste Beleg
+(`welle-transformationen`) den zwölften bis neunzehnten Beleg. Der zweiundzwanzigste Beleg
+(`slice-routing-antragsweg`, Review F-4, MEDIUM, daher Datei trotz Deckel) trifft einen
+**Fake mit leerem Zustand**: die drei Tests des Aktivierungs-Dekorators übergaben einen
+Port mit leerem Regelstand, keine Mutation an der Weitergabe färbte sie; gebunden in der
+Fixrunde (Test mit einer Regel, Ziel am Assembler gelesen), die Feldbelegung in `Run` bleibt
+ungebunden und liegt bei `slice-routing-e2e`; die Regel hat mit dem Reviewer vor dem Merge
+gewirkt, kein Kandidat der Schärfung. Der zwanzigste Beleg
 (`slice-harness-mutationsbild-und-verweigerte-aktion`, Review H-1, HIGH, daher Datei
 trotz Deckel) trifft wieder ein **Skript-Tabellentest**: die Zusage „`SRC` wird vor dem
 Wurzel-Vergleich zu einem absoluten Pfad aufgelöst“ (`realpath`) trug keinen Testfall mit
