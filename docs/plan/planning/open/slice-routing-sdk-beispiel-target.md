@@ -40,8 +40,8 @@ sie nicht).
 **Ziel:** Die drei SDK-Packages (C# `PgChangeFeed.Client`, Kotlin
 `pgchangefeed-kotlin`, Python `pgchangefeed`) und die Beispiel-Clients (Go, C#,
 Kotlin) wählen das Ziel einer Change an den Flächen, die der Server mit `target`
-bedient — der HTTP-Lesezugriff, der gRPC-Stream (und der RPC `ReadChanges` nach dem
-Verdikt V1), der SSE-Stream — und abonnieren das Zusatz-Subjekt des NATS-Vollinhalts-
+bedient — der HTTP-Lesezugriff, der gRPC-Stream (und der RPC `ReadChanges` nach
+`ADR-0138` Festlegung 1), der SSE-Stream — und abonnieren das Zusatz-Subjekt des NATS-Vollinhalts-
 Wegs; ohne Angabe bleibt jeder Aufruf unverändert (additiv und optional). Drei
 Liefer-Punkte:
 
@@ -62,10 +62,11 @@ Liefer-Punkte:
 - **Ein Release oder eine Versionsänderung der Packages** — jedes SDK-Release ist eine
   Freigabe des Auftraggebers (neue Version, Tag-Workflow, externes Konto); diese Welle
   ändert Quellen, nicht Versionen (Welle §6).
-- **Realserver-Belege der SDK-Tiers** (`make test-sdk-*-integration`) — Welle §6; der
-  Slice belegt auf Unit-Ebene mit Fake-Transport und Fake-Invoker (Formvorbild der
-  Slices der Welle `welle-sdk-grpc-administration-flaeche`) und dem Bau der Packages.
-  Offene Frage an den Auftraggeber im Eröffnungs-Bericht.
+- **Realserver-Belege der SDK-Tiers** (`make test-sdk-*-integration`) —
+  `slice-routing-sdk-realserver-e2e` (Slice 10 der Welle, Entscheidung des
+  Auftraggebers); dieser Slice belegt auf Unit-Ebene mit Fake-Transport und
+  Fake-Invoker (Formvorbild der Slices der Welle
+  `welle-sdk-grpc-administration-flaeche`) und dem Bau der Packages.
 - **Änderung des Nachrichtenmodells der SDKs** — das Label ist nicht Teil der
   Nachrichten (zehn bzw. dreizehn Felder bleiben); die Decoder bekommen kein neues Feld
   zu lesen.
@@ -78,8 +79,9 @@ Liefer-Punkte:
 
 - [ ] [`LH-FA-SST-009`](../../../../spec/lastenheft.md) und
       [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (A): in jedem der drei Packages
-      tragen der HTTP-Lesezugriff, der gRPC-Stream, der SSE-Client (und, nach dem
-      Verdikt V1, der `ReadChanges`-Aufruf des Administration-Clients) einen optionalen
+      tragen der HTTP-Lesezugriff, der gRPC-Stream, der SSE-Client (und, nach
+      `ADR-0138` Festlegung 1 mit `ReadChangesRequest.target = 7`, der
+      `ReadChanges`-Aufruf des Administration-Clients) einen optionalen
       Parameter für das Ziel, der nur gesetzt auf dem Draht erscheint; der NATS-Stream-
       Client bietet das Abonnement des Zusatz-Subjekts je Ziel (Subjekt-Bau mit der
       Prüfung der reservierten Zeichen wie beim Bestand); jede Fläche hat einen Test
@@ -138,10 +140,10 @@ Liefer-Punkte:
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `sdks/csharp/PgChangeFeed.Client/` (`Http/PgChangeFeedHttpClient.cs`, `Grpc/PgChangeFeedGrpcClient.cs`, `Grpc/PgChangeFeedAdministrationClient.cs` nach V1, `Sse/PgChangeFeedSseClient.cs`, `Nats/PgChangeFeedNatsStreamClient.cs`) | update | optionaler Parameter je Fläche, additiv; die Signatur ohne Parameter bleibt aufrufbar. |
+| `sdks/csharp/PgChangeFeed.Client/` (`Http/PgChangeFeedHttpClient.cs`, `Grpc/PgChangeFeedGrpcClient.cs`, `Grpc/PgChangeFeedAdministrationClient.cs` (`ReadChanges`, `ADR-0138`), `Sse/PgChangeFeedSseClient.cs`, `Nats/PgChangeFeedNatsStreamClient.cs`) | update | optionaler Parameter je Fläche, additiv; die Signatur ohne Parameter bleibt aufrufbar. |
 | `sdks/csharp/PgChangeFeed.Client.Tests/`, `sdks/csharp/README.md` | update | Tests je Fläche (Draht, Regression); README (Englisch). |
 | `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/` (`http/`, `grpc/`, `sse/`, `nats/`) und `README.md` | update | dasselbe für Kotlin; Testquellen unter `src/test`. |
-| `sdks/python/pgchangefeed/src/pgchangefeed/` (`http_client.py`, `grpc_client.py`, `administration_client.py` nach V1, `sse_client.py`, `nats_stream_client.py`) und `sdks/python/README.md` | update | dasselbe für Python; Tests unter `sdks/python/pgchangefeed/tests/`. |
+| `sdks/python/pgchangefeed/src/pgchangefeed/` (`http_client.py`, `grpc_client.py`, `administration_client.py` (`ReadChanges`, `ADR-0138`), `sse_client.py`, `nats_stream_client.py`) und `sdks/python/README.md` | update | dasselbe für Python; Tests unter `sdks/python/pgchangefeed/tests/`. |
 | `examples/<fläche>-client/` (Go), `examples/csharp/<fläche>-client/`, `examples/kotlin/` | update | Flag für das Ziel; Tests des Beispiels. |
 | `examples/README.md`, `docs/user/benutzerhandbuch.md` (SDK-Passagen, Version, Änderungshistorie) | update | Nachzug (Liefer-Punkt C). |
 
@@ -217,9 +219,9 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   (`BEO-PGC/sdk-decoder-verhalten-am-neuen-feld-ungemessen`, gestrichen, 2×). —
   **Ausgang:** bei der Closure einzutragen.
 - **Kein Realserver-Beleg.** Die Unit-Ebene beweist den Draht gegen Fakes, nicht gegen
-  den laufenden Server (Welle §6; Abgrenzung §1). — **Ausgang:** bei der Closure
-  einzutragen (Aussage im Bericht auf die Menge „Unit-Ebene, Fake-Transport"
-  beschränkt).
+  den laufenden Server (Abgrenzung §1; der Realserver-Beleg liegt bei
+  `slice-routing-sdk-realserver-e2e`). — **Ausgang:** bei der Closure einzutragen
+  (Aussage im Bericht auf die Menge „Unit-Ebene, Fake-Transport" beschränkt).
 - **Netzbezug der Bauten.** `make sdk-pack-*` und `make examples-*` brauchen Netz
   (Paketquellen) und Zeit; ein Netzausfall ist Umgebung, kein Befund. — **Ausgang:** bei
   der Closure einzutragen.

@@ -19,6 +19,8 @@ Folgepflicht 6 und Teilfrage 6 (Backfill durchläuft dieselbe Auswertung),
 [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) (Backfill),
 [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) (Fehlerklasse
 `schema` des Runs für eine **Transformationsregel**),
+[`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+Festlegung 2 (dieselbe Behandlung für eine **Routing-Regel**),
 [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
 Folgepflicht 7 (Formvorbild: Bindung künftiger Erzeugungspfade).
 
@@ -26,11 +28,11 @@ Folgepflicht 7 (Formvorbild: Bindung künftiger Erzeugungspfade).
 [`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md) (Absätze Markierung,
 Fail-closed vor dem Commit, Sichtbarkeit und Fehler des Runs),
 [`SPEC-008`](../../../../spec/pflichtenheft.md) (Zeile `schema`, Absatz „Nicht
-anwendbare Regel"), die Routing-Regelform (neue Kennung aus
-`slice-routing-spec-nachzug`). Die Spec führt: der Slice setzt
-`slice-routing-spec-nachzug` voraus; die Zeilen zum Run (Vorab-Bedingung V2) zieht
-dieser Slice nach, falls der Spec-Nachzug sie mangels Verdikt nicht trug
-(Übergabe-Block in §2).
+anwendbare Regel"), [`SPEC-029`](../../../../spec/pflichtenheft.md) (Run-Fehlerklasse
+`schema`), die Routing-Regelform (neue Kennung aus `slice-routing-spec-nachzug`).
+Die Spec führt: der Slice setzt `slice-routing-spec-nachzug` voraus, der die
+Run-Zeilen (`SPEC-029`, `SPEC-008`) nach `ADR-0138` Festlegung 2 selbst trägt;
+dieser Slice ändert die Spec nicht.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
@@ -46,21 +48,21 @@ ersten treffenden Regel (derselben Auswertung wie der WAL-Pfad, **eine**
 Auswertungsstelle) und schreibt es als `route_target` in die Backfill-Change; der
 Regelstand ist Teil der Fail-closed-Prüfung des Runs (eine Abweichung des Regelstands
 zwischen den Blöcken endet den Run `failed`, Klasse `configuration`, wie bei den
-Transformationsregeln); eine im Run nicht anwendbare Regel endet den Run nach dem
-Kurzverdikt zu Vorab-Bedingung V2 der Welle. Das Label gehört nicht zum
+Transformationsregeln); eine im Run nicht anwendbare Regel endet den Run `failed`,
+Klasse `schema`, run-lokal, einmal je Run vor der Schreibtransaktion (`ADR-0138`
+Festlegung 2, Vorab-Bedingung V2 der Welle). Das Label gehört nicht zum
 Zeilenzustand: die Replay-Invariante (das Log ab dem Log-Anfang ergibt den
 Quellstand) bleibt unberührt.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
-- **Die Entscheidung der Run-Behandlung selbst** — V2 ist eine Lücke im Text von
-  [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
-  (`ADR-0117` gilt der Transformationsregel). Der Implementer legt sie nicht aus; der
-  Slice startet mit dem Architect-Kurzverdikt (§4), wie
-  `slice-transformationen-backfill-pfad` mit `ADR-0117` startete.
+- **Die Entscheidung der Run-Behandlung selbst** — V2 ist mit
+  [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+  Festlegung 2 entschieden (Lücke im Text von `ADR-0137`, dort per Ergänzung
+  geschlossen); der Implementer setzt sie um und legt sie nicht aus.
 - **Eine neue Run-Fehlerklasse** — die Klassenmenge des Runs bleibt (sieben Klassen
-  des Prozesses, [`ADR-0023`](../../adr/0023-fehlerklassifikation.md)); ein Verdikt, das
-  eine achte Klasse verlangte, wäre eine Folge-ADR.
+  des Prozesses, [`ADR-0023`](../../adr/0023-fehlerklassifikation.md)); `ADR-0138`
+  führt keine achte ein, eine solche wäre eine Folge-ADR.
 - **Die Auswertung im WAL-Pfad** — `slice-routing-kern-label`; der Slice **ruft**
   dieselbe Domänen-Funktion auf und dupliziert sie nicht.
 - **Umetikettieren erfasster Changes** — Entscheidung 6 der ADR: der Altbestand wird
@@ -92,11 +94,17 @@ Quellstand) bleibt unberührt.
       Replay-Test des bestehenden E2E (`make test-integration`, nicht Teil dieses
       Slice, hier nur nicht-brechend).
 - [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Negative im Run: eine im Run
-      nicht anwendbare Regel (`when.column` fehlt in den Spalten des Snapshots)
-      endet nach dem Kurzverdikt zu V2 (Welle §5): erwartet — *nicht entschieden* —
-      Run `failed`, Klasse `schema`, run-lokal, ohne Change, der Erfassungspfad läuft
-      weiter (Muster `ADR-0117`). *Zu belegen durch:* Use-Case-Test mit einem
-      Snapshot, dem die Spalte fehlt; der Testname nennt die Eingabe.
+      nicht anwendbare Regel (`when.column` fehlt in `TableSnapshot.Columns()`)
+      endet nach
+      [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+      Festlegung 2 (V2, entschieden) den Run `failed` mit Klasse `schema`:
+      einmal je Run, vor der Schreibtransaktion und der ersten Zeile,
+      `error_message` beginnt mit `schema: ` und nennt Regelname und Spalte; keine
+      Change entsteht, der Snapshot ist geschlossen, run-lokal (kein
+      Heartbeat-Zustand, kein Halt des Erfassungspfads); dieselbe Prüffunktion der
+      Domäne wie im Erfassungspfad, keine zweite Implementierung. *Zu belegen
+      durch:* Use-Case-Test mit einem Snapshot, dem die Spalte fehlt; der Testname
+      nennt die Eingabe (`make test`, `make test-store`).
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
@@ -107,12 +115,10 @@ Quellstand) bleibt unberührt.
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-routing-backfill-pfad.md`
       endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `spec/pflichtenheft.md` (`LH-FA-CAP-009.a`, `SPEC-008` Zeile
-      `schema` und Absatz zur Nichtanwendbarkeit im Run) **soweit** der Spec-Nachzug
-      sie mangels Verdikt V2 nicht trug — **Übergabe-Block** (committeter Text, den
-      der Slice abarbeitet): Gegenstand ist der Satz, dass eine im Run nicht anwendbare
-      Routing-Regel den Run mit der im Verdikt entschiedenen Klasse beendet, ohne
-      Change und ohne den Erfassungspfad zu berühren; das Benutzerhandbuch (Abschnitt
+- [ ] Doku-Update: `spec/pflichtenheft.md` entfällt — `SPEC-029` (Run-Klasse
+      `schema` auch für eine Routing-Regel), `SPEC-008` (Zeile `schema`, Absatz zur
+      Nichtanwendbarkeit) und `LH-FA-CAP-009.a` trägt `slice-routing-spec-nachzug`
+      (`ADR-0138` Folgepflicht); das Benutzerhandbuch (Abschnitt
       „Bestand als Backfill überführen") bleibt unberührt — Adresse:
       `slice-routing-betriebsdoku` §2 (Backfill-Bestand trägt das Label des
       Regelstands zum Run; Altbestand-Neuerzeugung über einen neuen Run).
@@ -132,14 +138,13 @@ Quellstand) bleibt unberührt.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/application/usecase/backfill/service.go` | update | Regelstand der Routing-Regeln lesen (neben `transformationRules`), Auswertung je Zeile über die Domänen-Funktion, Label in die Change des Blocks, Vergleich des Regelstands vor jedem Block (Fail-closed), `classifyError` für die im Verdikt V2 entschiedene Klasse. |
+| `internal/application/usecase/backfill/service.go` | update | Regelstand der Routing-Regeln lesen (neben `transformationRules`), Auswertung je Zeile über die Domänen-Funktion, Label in die Change des Blocks, Vergleich des Regelstands vor jedem Block (Fail-closed), Prüfung der Nichtanwendbarkeit einmal je Run vor der Schreibtransaktion, `classifyError` auf Klasse `schema` (`ADR-0138` Festlegung 2). |
 | `internal/application/port/outbound/` (Regelstand-Port der Routing-Regeln aus `slice-routing-antragsweg`) | lesen | der Run nutzt den Port, den der Antragsweg anlegt; ein tabellenbezogener Lesezugriff ist nicht Teil (Risiko Lesekosten, §6). |
 | `internal/adapters/driven/postgressnapshot/` | lesen / bei Bedarf update | der Snapshot-Reader liefert Spaltenwerte als Text (Ergebnisformat `ADR-0115`); die Auswertung liest dieselbe Textform wie der WAL-Pfad. |
 | `internal/adapters/driven/postgresstorage/` (Backfill-Writer) | lesen | der Writer schreibt `route_target` seit `slice-routing-kern-label` (`InsertBackfillChange`); hier nur ein Test, dass ein gesetztes Feld ankommt. |
 | `internal/bootstrap/wiring.go` | update | der Backfill-Dienst erhält den Regelstand-Port; Bindung des Worker-Pfads. |
 | `internal/application/usecase/backfill/routing_test.go` (neu), `service_test.go` | neu / update | Happy/Boundary/Negative nach [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) und [`LH-FA-CAP-009`](../../../../spec/lastenheft.md); Vertragstest WAL-Label gleich Backfill-Label. |
 | `internal/adapters/driven/postgresstorage/*_test.go`, `internal/adapters/driven/postgressnapshot/*_test.go` | update | Label überlebt den Backfill-Insert; Bild-Parität des Typ-Satzes bleibt grün (Bedingung liest Textwerte). |
-| `spec/pflichtenheft.md` (`LH-FA-CAP-009.a`, `SPEC-008`) | update, soweit offen | Übergabe-Block in §2. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „ein Backfill-Run
 liefert Changes ohne Ziel", „der Regelstand des Runs besteht aus den
@@ -157,17 +162,16 @@ Transformationsregeln"; Parent ist `30fd6cb5`; der Implementer ergänzt die
 | Träger | Messung am Parent (`30fd6cb5`, gemessen am 2026-10-01) | Behandlung und Befund am Diff |
 |---|---|---|
 | Stellen, an denen der Run den Regelstand der Transformationen führt | Zeile 1: 46 Nicht-Test-Zeilen in Backfill-Dienst und Composition Root | jede Stelle lesen: ist sie Aufzählung der Regel-Quellen des Runs (Start, Block, Abschluss, Klassifikation), die um die Routing-Regeln wachsen muss — Befund am Diff: einzutragen |
-| Klassen-Abbildung des Runs | Zeilen 2 und 3: 18 bzw. 5 Zeilen | die Abbildung der Fehler auf `schema`/`configuration` folgt dem Verdikt V2; Befund: einzutragen |
+| Klassen-Abbildung des Runs | Zeilen 2 und 3: 18 bzw. 5 Zeilen | die Abbildung der Fehler auf `schema`/`configuration` folgt `ADR-0138` Festlegung 2 (V2); Befund: einzutragen |
 | Spec-Aussagen zum Run | Zeilen 4 und 5: 5 bzw. 25 Zeilen („Fail-closed", „Regelstand") | Aussagen über „der Regelstand" im Backfill nennen heute nur Transformationen und Ausschluss; Nachzug nach dem Übergabe-Block; Befund: einzutragen |
 | Handbuch Abschnitt „Bestand als Backfill überführen" | liegt außerhalb dieses Suchraums | gemeldet an `slice-routing-betriebsdoku` (§2 dort nennt den Gegenstand), nicht mitgeändert |
 
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): `slice-routing-antragsweg` liegt in `done/`,
-**das Architect-Kurzverdikt zu V2** (Welle §5) liegt vor (eine Datei unter
-`docs/reviews/` oder eine Folge-ADR; ohne sie legte der Implementer eine
-Entscheidung aus) und kein anderer Slice liegt in `in-progress/` (WIP-Limit 1).
-Grund der ersten Bedingung: der Run liest den Regelstand über den Port des
+`slice-routing-spec-nachzug` liegt in `done/` und kein anderer Slice liegt in
+`in-progress/` (WIP-Limit 1). Die Frage zu V2 (Welle §5) ist mit `ADR-0138`
+Festlegung 2 beantwortet, kein Verdikt steht aus. Grund der ersten Bedingung: der Run liest den Regelstand über den Port des
 Antragswegs, und dieser Slice folgt **unmittelbar** auf den Antragsweg, damit das
 Fenster, in dem Regeln setzbar sind, ein Backfill-Run aber `NULL` liefert, ein Slice
 lang ist (Welle §4 Reihenfolge).
@@ -178,8 +182,10 @@ lang ist (Welle §4 Reihenfolge).
   Auswertung ist eine Zeile je Zeile des Bestands und die Fail-closed-Prüfung folgt
   dem Muster der Transformationsregeln; sprengte die Klassen-Abbildung den Umfang,
   trennt sich die Nichtanwendbarkeit im Run (Liefer-Punkt 3) ab.
-- `in-progress` → `open` (blockiert): das Verdikt V2 fordert eine achte Fehlerklasse
-  oder ein anderes Run-Ende als `failed` — dann eine Folge-ADR, kein Weiterbau.
+- `in-progress` → `open` (blockiert): die Umsetzung von `ADR-0138` Festlegung 2
+  zeigt, dass die Klasse `schema` oder das Run-Ende `failed` die Nichtanwendbarkeit
+  nicht trägt (z. B. die Prüfung vor der Schreibtransaktion ist am Snapshot nicht
+  möglich) — dann eine Folge-ADR, kein Weiterbau.
 
 ## 5. Closure-Trigger
 
@@ -202,9 +208,12 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
 - **Zwei Regelstände, ein Fail-closed.** Transformations- und Routing-Regeln ändern
   sich unabhängig voneinander; die Prüfung vergleicht beide. — **Ausgang:** bei der
   Closure einzutragen (Testfall: nur der Routing-Stand wechselt).
-- **Nichtanwendbarkeit im Run ohne Verdikt (V2).** Der Plan nimmt die Klasse `schema`
-  als Erwartung; sie ist keine Entscheidung. — **Ausgang:** bei der Closure
-  einzutragen (Verdikt-Verweis).
+- **Nichtanwendbarkeit im Run (V2, entschieden).** Klasse `schema`, run-lokal, einmal
+  je Run vor der Schreibtransaktion nach `ADR-0138` Festlegung 2; die Erreichbarkeit
+  am System ist V3 (offen laut `ADR-0138`, Messung in `slice-routing-kern-label` und
+  `slice-routing-e2e`), die Run-Prüfung selbst ist am Snapshot mit fehlender Spalte
+  auf Unit-Ebene erreichbar. — **Ausgang:** bei der Closure einzutragen
+  (Test-Verweis).
 - **Bild-Parität.** Die Bedingung liest den Textwert wie das Row Image ihn trägt
   (`ADR-0115`); der Backfill-Pfad liest über das Text-Ergebnisformat des Snapshots,
   der WAL-Pfad über `pgoutput`-Text — gleiche Textform für den Typ-Satz ist
@@ -245,8 +254,8 @@ stehen in §6 und in der Eröffnungs-Sichtung der Welle
 `BEO-PGC/backfill-schema-version-hinter-snapshot-spalten` (verkörpert, 1×),
 `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` (verkörpert, 3×),
 `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (verkörpert, 21×),
-`BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` (offen, 2× — V2 ist eine
-benannte Frage statt einer stillen Abweichung). Keiner der offenen Einträge erreicht
+`BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` (offen, 2× — V2 ist mit
+`ADR-0138` entschieden statt still ausgelegt). Keiner der offenen Einträge erreicht
 mit diesem Slice 3×.
 
 **Modus-Begründungsblock:** alle berührten Sub-Areas GF.

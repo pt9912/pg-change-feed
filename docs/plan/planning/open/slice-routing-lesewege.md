@@ -16,6 +16,8 @@ Haupt-Bezug), [`LH-FA-SST-006`](../../../../spec/lastenheft.md) (Gleichwertigkei
 der Zugriffswege), [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (Live-Streaming),
 [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
 Folgepflicht 4 und Teilfrage 5 (ein Parameter je Weg),
+[`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+Festlegung 1 (`ReadChangesRequest.target = 7`),
 [`ADR-0133`](../../adr/0133-tabellen-granulare-filterung-grpc-sse.md)
 (Formvorbild: optionale Filterparameter `schema`/`table`),
 [`ADR-0081`](../../adr/0081-changes-lesen-ueber-die-http-api.md) und
@@ -26,11 +28,10 @@ gRPC-`ReadChanges`), [`ADR-0060`](../../adr/0060-grpc-streaming-mechanismus.md),
 **Berührte Spec-Stellen:**
 [`SPEC-020`](../../../../spec/pflichtenheft.md) (gRPC-Request),
 [`SPEC-021`](../../../../spec/pflichtenheft.md) (SSE-Query-Parameter),
-[`SPEC-022`](../../../../spec/pflichtenheft.md) (`GET /changes`), gegebenenfalls
-die Zeile zum RPC `ReadChanges` im `Administration`-Service (Vorab-Bedingung V1).
-Die Spec führt: der Slice setzt `slice-routing-spec-nachzug` voraus; die Zeile zu V1
-zieht dieser Slice nach, falls der Spec-Nachzug sie mangels Verdikt nicht trug
-(Übergabe-Block in §2).
+[`SPEC-022`](../../../../spec/pflichtenheft.md) (`GET /changes`),
+[`SPEC-031`](../../../../spec/pflichtenheft.md) (Zeile `ReadChanges`, Feld `target`).
+Die Spec führt: der Slice setzt `slice-routing-spec-nachzug` voraus, der auch die
+`SPEC-031`-Zeile trägt (`ADR-0138` ist `Accepted`); dieser Slice ändert die Spec nicht.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
@@ -51,7 +52,8 @@ Konjunktion, ein ungefilterter Leser sieht weiterhin alle Changes. Drei Liefer-P
   (`WHERE route_target = $n` in der Lese-Anweisung, reine Auswahl nach
   [`ADR-0046`](../../adr/0046-sql-driving-adapter-lese-schreib-trennung.md)); unbekannte
   Parameter bleiben `400`; das Nachrichtenschema (dreizehn Felder) bleibt;
-  der gRPC-RPC `ReadChanges` folgt dem Verdikt zu V1 (derselbe Use Case);
+  der gRPC-RPC `ReadChanges` trägt `string target = 7` in `ReadChangesRequest`
+  (`ADR-0138` Festlegung 1; derselbe Use Case, `ChangeRecord` bleibt dreizehnfeldrig);
 - (B) **gRPC-Stream:** das Proto-Feld, die Generierung (`make proto-generate`,
   `make generated-sync`), der Handler filtert über die gemeinsame Funktion;
 - (C) **SSE-Stream:** der Query-Parameter mit demselben `400`-Pfad, derselbe Filter;
@@ -99,12 +101,16 @@ Konjunktion, ein ungefilterter Leser sieht weiterhin alle Changes. Drei Liefer-P
       `MatchesFilter` (Parent: vier Nicht-Test-Zeilen) trägt das Ziel durchgängig.
       *Zu belegen durch:* Handler-Tests mit Fake-Stream (`make test`),
       `make generated-sync`.
-- [ ] **Vorab-Bedingung V1** (Welle §5) ist beantwortet und umgesetzt: das
-      Architect-Verdikt zu `target` am gRPC-RPC `ReadChanges` liegt vor; folgt es dem
-      Vorschlag (Feld `target = 7` in `ReadChangesRequest`), trägt der Slice
-      es mit derselben Filterfunktion des Lesepfads; die Aussage „der RPC sieht
-      dasselbe wie `GET /changes`" ist am Test belegt (gleiche Eingabe, gleiche
-      Changes).
+- [ ] **Vorab-Bedingung V1** (Welle §5) ist durch
+      [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+      Festlegung 1 entschieden (erfüllt); der Slice setzt sie um: `ReadChangesRequest`
+      trägt `string target = 7` (leer = kein Filter, Konjunktion mit `schema`/`table`),
+      der Use Case `ReadChangesUseCase` erhält den Filter einmal und bedient
+      `GET /changes` und den RPC; die Aussage „der RPC sieht dasselbe wie
+      `GET /changes`" ist am Test belegt (gleiche Eingabe, gleiche Changes); ein
+      `target` außerhalb des Alphabets liefert eine leere Liste, keinen Fehler (in
+      `ADR-0138` als Erwartung geführt, hier am Test zu belegen); `make generated-sync`
+      grün für beide `.proto`-Dateien, `tools/harness/grpcadminclient` trägt `target`.
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
@@ -115,11 +121,9 @@ Konjunktion, ein ungefilterter Leser sieht weiterhin alle Changes. Drei Liefer-P
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-routing-lesewege.md`
       endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `spec/pflichtenheft.md` nur, soweit der Spec-Nachzug die Zeile zu
-      V1 mangels Verdikt nicht trug — **Übergabe-Block** (committeter Text, den der
-      Slice abarbeitet): Gegenstand ist die Zeile des RPC `ReadChanges` im
-      `Administration`-Service mit dem Feld `target` und seiner Kombinatorik mit
-      `schema`/`table`; das Benutzerhandbuch (Abschnitte „Zugriff über die
+- [ ] Doku-Update: `spec/pflichtenheft.md` entfällt — die `SPEC-031`-Zeile
+      `ReadChanges` mit dem Feld `target` trägt `slice-routing-spec-nachzug`
+      (`ADR-0138` Folgepflicht); das Benutzerhandbuch (Abschnitte „Zugriff über die
       HTTP-/JSON-API", „…gRPC-Change-Stream", „…gRPC-Verwaltungs-API", „…Server-Sent-Events")
       bleibt unberührt — Adresse: `slice-routing-betriebsdoku` §2 (Parameter `target`
       je Weg, Konjunktion mit `schema`/`table`, die Beispiele der Clients folgen
@@ -146,10 +150,10 @@ Konjunktion, ein ungefilterter Leser sieht weiterhin alle Changes. Drei Liefer-P
 | `internal/adapters/driving/http/readchanges.go` | update | Query-Parameter `target`, die strenge Parameter-Menge (unbekannte → `400`) um ein Element erweitert. |
 | `internal/adapters/driving/http/sse.go` | update | Query-Parameter `target`; `parseStreamChangesFilter`, gleicher `400`-Pfad. |
 | `internal/adapters/driving/grpc/server.go` | update | `StreamChangesRequest.target` in den Filter. |
-| `internal/adapters/driving/grpc/administration.go` | update, nach V1 | `ReadChangesRequest.target` an den Use Case. |
-| `proto/cdc/stream/v1/changestream.proto` und `proto/cdc/administration/v1/administration.proto` (nach V1), `gen/cdc/**` | update (Erzeugnis) | additive Felder; `make proto-generate`, Prüfung `make generated-sync`. |
+| `internal/adapters/driving/grpc/administration.go` | update | `ReadChangesRequest.target` an den Use Case (`ADR-0138` Festlegung 1). |
+| `tools/harness/grpcadminclient/` | update | Flag `target` für den RPC `ReadChanges` (`ADR-0138` Folgepflicht). |
+| `proto/cdc/stream/v1/changestream.proto` und `proto/cdc/administration/v1/administration.proto` (`string target = 7`), `gen/cdc/**` | update (Erzeugnis) | additive Felder; `make proto-generate`, Prüfung `make generated-sync`. |
 | `internal/adapters/driving/http/*_test.go`, `internal/adapters/driving/grpc/*_test.go`, `internal/domain/model/change_test.go`, `internal/adapters/driven/postgresstorage/*_test.go` | update | Happy/Boundary/Negative je Weg, Konjunktion, Regression ohne Parameter. |
-| `spec/pflichtenheft.md` (Zeile `ReadChanges`) | update, soweit offen | Übergabe-Block in §2. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Stream- und
 Lese-Anfragen tragen `schema` und `table` als einzige Filter"; Parent ist `30fd6cb5`;
@@ -174,9 +178,10 @@ der Implementer ergänzt die `diff`-Zeilen und trägt Gefundenes und Nichtgefund
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): `slice-routing-kern-label` liegt in `done/`
-(die Spalte und das Feld `RouteTarget` an der Change), **das Architect-Verdikt zu V1
-liegt vor** (Welle §5: ob und wie `target` am gRPC-RPC `ReadChanges` steht) und kein
-anderer Slice liegt in `in-progress/` (WIP-Limit 1). Der Slice braucht den Antragsweg
+(die Spalte und das Feld `RouteTarget` an der Change), `slice-routing-spec-nachzug`
+liegt in `done/` und kein anderer Slice liegt in `in-progress/` (WIP-Limit 1). Die
+Frage zu V1 (Welle §5) ist mit `ADR-0138` Festlegung 1 beantwortet, kein Verdikt
+steht aus. Der Slice braucht den Antragsweg
 nicht: seine Tests setzen das Ziel an hand-gebauten Changes. Er steht in der Tabelle
 trotzdem hinter `slice-routing-backfill-pfad` (Welle §4 Abweichung 2).
 
@@ -187,7 +192,7 @@ trotzdem hinter `slice-routing-backfill-pfad` (Welle §4 Abweichung 2).
   (`slice-routing-lesewege-stream`); (A) liefert dann `GET /changes` allein.
 - `in-progress` → `open` (blockiert): `make generated-sync` bleibt rot, weil der
   gepinnte Generator das Feld anders erzeugt als die committeten Dateien (Pin-Frage,
-  kein Weiterbau) — oder V1 fehlt.
+  kein Weiterbau).
 
 ## 5. Closure-Trigger
 
@@ -220,9 +225,11 @@ Block nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   außer Takt färbt `make generated-sync`
   (`BEO-PGC/generierte-artefakte-ohne-sync-sensor`, verkörpert, 4×). — **Ausgang:**
   bei der Closure einzutragen.
-- **V1 ungeklärt.** Ohne Verdikt bleibt der RPC `ReadChanges` ohne `target`; die
-  Gleichwertigkeit der Zugriffswege ([`LH-FA-SST-006`](../../../../spec/lastenheft.md))
-  wäre für das Routing verletzt. — **Ausgang:** bei der Closure einzutragen.
+- **V1 entschieden (`ADR-0138` Festlegung 1).** Die Gleichwertigkeit der
+  Zugriffswege ([`LH-FA-SST-006`](../../../../spec/lastenheft.md)) hängt am Feld
+  `target = 7`; dessen Wire-Kompatibilität (alter Server ignoriert das Feld) ist in
+  der ADR *hergeleitet*, nicht gefahren. — **Ausgang:** bei der Closure einzutragen
+  (Test mit dem Feld, Aussage zum alten Server mit Ursprung).
 
 ## 7. Closure-Notiz
 

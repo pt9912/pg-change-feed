@@ -40,7 +40,7 @@ nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
 - [welle-routing](../welle-routing.md) — Routing auf Zustellziele: erfasste
   Changes tragen bei der Erfassung das durch geordnete Regeln bestimmte Ziel als
-  persistiertes Label, wählbar an jedem Lesezugriffsweg; neun Slices, alle in
+  persistiertes Label, wählbar an jedem Lesezugriffsweg; zehn Slices, alle in
   `open/` ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md),
   [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)).
 

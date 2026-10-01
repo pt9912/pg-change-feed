@@ -39,7 +39,7 @@ konfiguriert über zwei neue Antragsarten der Antrags-Queue (`cdc.set_route`,
 `cdc.remove_route`), Mehrdeutigkeit über `order` geordnet und über sechs
 Invarianten R1–R6 statisch ausgeschlossen.
 
-Das *Mehr* gegenüber den neun Slice-DoDs: keiner der Slices belegt eines der drei
+Das *Mehr* gegenüber den zehn Slice-DoDs: keiner der Slices belegt eines der drei
 Kriterien allein. Der Happy Path braucht die Domäne, den `Assembler`, die
 Spalte samt View, den Antragsweg mit Dauerhaftigkeit und alle Lesewege am
 laufenden Feed-Container; die Boundary (Reihenfolge entscheidet, R1–R6) liegt
@@ -77,10 +77,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht — der Trigger muss das *Mehr* gegenüber den
 einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
 
-- Alle neun Slices in `done/` (die Zahl ist ein Plan-Stand:
+- Alle zehn Slices in `done/` (die Zahl ist ein Plan-Stand:
   [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) nennt
   acht Folgepflichten, Folgepflicht 8 ist in `betriebsdoku` und
-  `sdk-beispiel-target` geteilt, §4 Abweichung 1).
+  `sdk-beispiel-target` geteilt, §4 Abweichung 1; `sdk-realserver-e2e` ist der
+  zehnte Slice, §4 Abweichung 4).
 - `make gates` grün — der Exit-Code des Laufs wird ungefiltert gesichert und
   gesondert ausgewertet ([`AGENTS.md`](../../../AGENTS.md) §3.9).
 - **Ein realer, grüner `make test-integration`-Lauf** mit den Belegen am
@@ -147,6 +148,11 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   §3.12); die drei SDK-Packages und die Beispiel-Clients tragen den Parameter
   `target` (`slice-routing-sdk-beispiel-target`), ohne interne Kennungen
   (`make sdk-public-doc-check` grün).
+- **Reale, grüne Läufe der drei SDK-Realserver-Tiers**
+  (`make test-sdk-csharp-integration`, `make test-sdk-kotlin-integration`,
+  `make test-sdk-python-integration`) mit der Routing-Phase je Fläche
+  (`slice-routing-sdk-realserver-e2e`); die gedruckten Zeilen stehen im
+  Closure-Bericht.
 - Der **Lese-Schritt** des Beobachtungs-Registers ist gelaufen (Einträge bei 3×
   oder darüber, Modul 6).
 - Closure-Notiz in `welle-routing-results.md`.
@@ -168,6 +174,7 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 | slice-routing-e2e | `make test-integration`: Regel per SQL, alle Lesewege, Boundary R1–R6, Negative, Neustart, Ausschluss-Sperre, Replay, Backfill-Bestand, DELETE-Messung an PostgreSQL 17 und 18; RTM-Träger für `LH-FA-CFG-008` | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../spec/lastenheft.md), [`LH-FA-ADM-003`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 7 |
 | slice-routing-betriebsdoku | Benutzerhandbuch: Routing-Konfiguration, Konsequenzen, DELETE und Inhaltsregeln, Abhilfe, Fehlerklasse | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 8 (Handbuch-Hälfte) |
 | slice-routing-sdk-beispiel-target | Parameter `target` in den drei SDK-Packages (HTTP, gRPC, SSE, NATS) und den Beispiel-Clients; SDK-Dokumentation ohne interne Kennungen | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Folgepflicht 8 (SDK-Hälfte) |
+| slice-routing-sdk-realserver-e2e | Realserver-E2E der drei SDK-Packages für das Routing: die bestehenden Läufe `make test-sdk-{csharp,kotlin,python}-integration` erhalten je Fläche eine Routing-Phase mit gesetztem `target` | [`LH-FA-CFG-008`](../../../spec/lastenheft.md), [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Teilfrage 5, [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) Festlegung 2 (Mechanik) |
 
 **Reihenfolge:** sequentiell in der Tabellen-Reihenfolge (WIP-Limit 1 je
 Rolleninhaber, Baseline-Regelwerk `modul-05-planning-harness.md`); jeder Slice
@@ -182,7 +189,7 @@ Label trägt, ein Slice lang ist (§5).
 §Folgepflichten (dort ausdrücklich „der Planner formt Welle und Slices"),
 je mit Grund:
 
-1. **Folgepflicht 8 geteilt, neun statt acht Slices.** Die Pflicht nennt zwei
+1. **Folgepflicht 8 geteilt (Handbuch · SDK und Beispiele).** Die Pflicht nennt zwei
    Gegenstände mit verschiedener Abhängigkeit und verschiedenem Gate: das
    Handbuch darf nur beschreiben, was `slice-routing-e2e` belegt hat
    (`betriebsdoku`, Server-Seite, `make docs-check`), die SDK- und
@@ -204,6 +211,13 @@ je mit Grund:
    `request_kind`-Menge, Grants, Guard). Der Slice trägt die Teilungsnaht in
    seiner Rückführung (`antragsweg-schema` / `antragsweg-usecase`); er ist mit drei
    Liefer-Punkten der größte der Welle.
+4. **Zehnter Slice `sdk-realserver-e2e`.** Entscheidung des Auftraggebers
+   (2026-10-01): die Realserver-Belege der drei SDK-Tiers für das Routing gehören
+   zur Welle. Der Slice folgt `sdk-beispiel-target` (die Parameter müssen in den
+   Packages stehen) und trägt die Mechanik von
+   [`slice-sdk-regel-realserver-e2e`](done/slice-sdk-regel-realserver-e2e.md).
+   `sdk-beispiel-target` wird nicht vorab geteilt; die Teilung nach Sprach-Wurzel
+   bleibt dort als Rückführung benannt.
 
 ## 5. Abhängigkeiten
 
@@ -221,7 +235,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   lauffähige System der Vorstufe): `spec-nachzug` → jeder übrige Slice (die Spec
   führt) · `kern-label` → `antragsweg` → `backfill-pfad` · `kern-label` →
   `lesewege` · `kern-label` → `nats-subjekt` · `antragsweg`, `backfill-pfad`,
-  `lesewege`, `nats-subjekt` → `e2e` → `betriebsdoku` → `sdk-beispiel-target`.
+  `lesewege`, `nats-subjekt` → `e2e` → `betriebsdoku` → `sdk-beispiel-target` →
+  `sdk-realserver-e2e`.
   Gemessen gegen die ADR-Abhängigkeiten (1 vor allen; 2 vor 3–6; 3 vor 6 und 7; 4, 5,
   6 untereinander unabhängig; 7 nach 2–6; 8 nach 7): die Welle erfüllt sie bis
   auf die Wahl der Reihenfolge innerhalb der unabhängigen Gruppe 4–6 (§4,
@@ -232,28 +247,24 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   Stand am Parent `30fd6cb5` (gemessen, `git grep -h -o 'SPEC-0[0-9][0-9]'
   30fd6cb5 -- spec/pflichtenheft.md | sort -u | tail -1`): `SPEC-031`; der Slice
   misst an seinem Start neu.
-- **Vorab-Bedingungen mit Adresse** (Lücken im Text von
+- **Vorab-Bedingungen** (Lücken im Text von
   [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md), die
-  der Planner nicht entscheidet — jede steht als Start-Trigger im Slice, der sie
-  braucht, und als Frage im Eröffnungs-Bericht; die Antwort ist ein
-  Architect-Verdikt bzw. eine Folge-ADR, keine Auslegung durch den Implementer):
-  - **V1 — gRPC-`ReadChanges`.** Die Tabelle in Teilfrage 5 nennt `GET /changes`,
-    den `StreamChangesRequest`, SSE und NATS, nicht den zehnten RPC des
-    `Administration`-Service
-    ([`ADR-0131`](../adr/0131-grpc-readchanges-zehnter-rpc.md): derselbe Use Case
-    wie `GET /changes`, Request mit `source`, `schema`, `table`, `from`, `to`,
-    `limit`). Ohne `target` dort ist die Gleichwertigkeit der Zugriffswege
-    ([`LH-FA-SST-006`](../../../spec/lastenheft.md)) für das Routing verletzt.
-    Adresse: `slice-routing-lesewege` (Start-Trigger).
-  - **V2 — Nichtanwendbarkeit im Backfill-Run.**
-    [`ADR-0117`](../adr/0117-backfill-run-fehlerklasse-schema.md) setzt die Klasse
-    `schema` für eine im Run nicht anwendbare **Transformationsregel** fest;
-    [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
-    Teilfrage 6 sagt nur, dass der Backfill dieselbe Auswertung durchläuft. Ob
-    dieselbe Run-Behandlung (Run `failed`, Klasse `schema`, run-lokal, ohne Change)
-    für eine Routing-Regel gilt, steht nirgends. Adresse:
-    `slice-routing-backfill-pfad` (Start-Trigger: Kurzverdikt).
-  - **V3 — Erreichbarkeit der Nichtanwendbarkeit.** Eine Routing-Regel ist nicht
+  der Planner nicht entscheidet; V1 und V2 sind mit
+  [`ADR-0138`](../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+  entschieden, V3 bleibt offen):
+  - **V1 — gRPC-`ReadChanges`.** Beantwortet durch
+    [`ADR-0138`](../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+    Festlegung 1: `ReadChangesRequest` erhält `string target = 7` (leer = kein
+    Filter, Konjunktion mit `schema`/`table`); `ReadChangesUseCase` bedient
+    `GET /changes` und den RPC mit demselben Filter. Träger: `slice-routing-lesewege`.
+  - **V2 — Nichtanwendbarkeit im Backfill-Run.** Beantwortet durch
+    [`ADR-0138`](../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+    Festlegung 2: Run `failed`, Klasse `schema`, run-lokal, ohne Change; die
+    Prüfung läuft einmal je Run vor der Schreibtransaktion und ruft dieselbe
+    Prüffunktion der Domäne wie der Erfassungspfad. Träger:
+    `slice-routing-backfill-pfad`.
+  - **V3 — Erreichbarkeit der Nichtanwendbarkeit (offen laut
+    [`ADR-0138`](../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)).** Eine Routing-Regel ist nicht
     anwendbar, wenn `when.column` in der Relation der Change fehlt
     ([`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
     Teilfrage 4). Die naheliegende Ursache — Spalte entfernt — endet nach dem
@@ -296,11 +307,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | 1 Spec-Nachzug | `slice-routing-spec-nachzug` |
 | 2 Kern: Domäne, `Assembler`, Persistenz, View | `slice-routing-kern-label` |
 | 3 Antragsweg und Dauerhaftigkeit | `slice-routing-antragsweg` |
-| 4 Lesewege (`GET /changes`, gRPC, SSE) | `slice-routing-lesewege`; Vorab-Bedingung V1 für den RPC `ReadChanges` |
+| 4 Lesewege (`GET /changes`, gRPC, SSE) | `slice-routing-lesewege`; der RPC `ReadChanges` nach `ADR-0138` Festlegung 1 (V1) |
 | 5 NATS-Zusatz-Subjekt | `slice-routing-nats-subjekt` |
-| 6 Backfill-Pfad | `slice-routing-backfill-pfad`; Vorab-Bedingung V2 |
+| 6 Backfill-Pfad | `slice-routing-backfill-pfad`; Nichtanwendbarkeit im Run nach `ADR-0138` Festlegung 2 (V2) |
 | 7 E2E-Belege samt DELETE-Messung | `slice-routing-e2e`; Vorab-Bedingung V3 |
-| 8 Betriebsdokumentation und SDK-/Beispiel-Parameter | `slice-routing-betriebsdoku` (Handbuch) und `slice-routing-sdk-beispiel-target` (SDK, Beispiele) |
+| 8 Betriebsdokumentation und SDK-/Beispiel-Parameter | `slice-routing-betriebsdoku` (Handbuch) und `slice-routing-sdk-beispiel-target` (SDK, Beispiele); der Realserver-Beleg der SDKs: `slice-routing-sdk-realserver-e2e` |
 
 ## 6. Out-of-Scope für diese Welle
 
@@ -331,11 +342,6 @@ der Closure-Trigger unerreichbar wird.
   ([`SPEC-017`](../../../spec/pflichtenheft.md)) bleibt unverändert. Die
   Proto-Änderung beschränkt sich auf das Anfrage-Feld `target`
   (`make generated-sync`, `slice-routing-lesewege`).
-- **Realserver-E2E der SDK-Packages für das Routing** — die drei SDK-Realserver-Tiers
-  (`make test-sdk-*-integration`) bekommen in dieser Welle keine Routing-Phase;
-  `slice-routing-sdk-beispiel-target` belegt den Parameter mit Unit-Tests und dem
-  `sdk-public-doc-check`. Ein Realserver-Beleg wäre ein weiterer Slice (Frage an den
-  Auftraggeber im Eröffnungs-Bericht).
 - **Ein allgemeiner Recovery-Weg für Schema-Fehler** —
   `BEO-PGC/kein-admin-weg-schema-fehler-recovery`: die Welle liefert die Abhilfe
   für die Nichtanwendbarkeit einer Routing-Regel (soweit V3 sie erreichbar macht),
@@ -370,8 +376,9 @@ der sie als Risiko trägt (Detail je Slice in §8):
   die Abhilfe nach einer nicht anwendbaren Regel (V3), nicht die allgemeine
   Recovery (§6).
 - `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` (offen, 2×) —
-  **einschlägig:** V1 bis V3 sind Stellen, an denen der ADR-Wortlaut die Umsetzung
-  nicht trägt; sie sind als Fragen geführt, nicht als stille Abweichung.
+  **einschlägig:** V1 bis V3 sind Stellen, an denen der Wortlaut von
+  `ADR-0137` die Umsetzung nicht trägt; V1 und V2 sind mit `ADR-0138`
+  entschieden, V3 ist als offene Messung geführt, nicht als stille Abweichung.
 - `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` (verkörpert, 5×) und
   `BEO-PGC/aufschub-adresse-verfaellt` (verkörpert, 3×) — jeder Aufschub in den
   Plänen dieser Welle trägt eine Adresse, deren §2 den Gegenstand deckt;

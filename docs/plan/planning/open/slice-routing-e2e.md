@@ -68,9 +68,8 @@ Waise ist. Drei Liefer-Punkte:
 - **Das Handbuch** — `slice-routing-betriebsdoku`: es beschreibt, was dieser Slice
   gemessen hat; die DELETE-Aussage steht dort erst mit der Messung dieses Slice.
 - **SDK-Realserver-Tiers** (`make test-sdk-*-integration`) — `slice-routing-sdk-beispiel-target`
-  trägt die SDK-Parameter mit Unit-Tests; ein Realserver-Beleg der drei SDKs für das
-  Routing wäre ein weiterer Slice (Welle §6 führt ihn als ausgeschlossen; offene
-  Frage an den Auftraggeber im Eröffnungs-Bericht).
+  trägt die SDK-Parameter mit Unit-Tests, `slice-routing-sdk-realserver-e2e` (Slice 10
+  der Welle) den Realserver-Beleg der drei SDKs für das Routing.
 - **Der `e2e.yml`-Workflow** — keine strukturelle Änderung
   ([`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht); die beiden Legs der
   Matrix fahren das erweiterte Testpaket, ihr Lauf nach dem Push ist der Beleg des
@@ -104,7 +103,8 @@ Waise ist. Drei Liefer-Punkte:
       (Phasen im Runner `tools/harness/run-integration-tests.sh`, Testfunktionen in
       `test/integration/routing_e2e_test.go`; die gedruckten Zeilen je Phase stehen im
       Bericht). Die Wegwerf-Clients unter `tools/harness/` (`httpclient`, `grpcclient`,
-      `sseclient`, `natsstreamsub`) erhalten die Auswahl des Ziels als Flag.
+      `sseclient`, `natsstreamsub`; für den RPC `ReadChanges` nach `ADR-0138`
+      Festlegung 1 der Client `grpcadminclient`) erhalten die Auswahl des Ziels als Flag.
 - [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Negative (B), nach
       Vorab-Bedingung V3: **erster Schritt des Slice** ist die Messung, welche Ursache
       `ErrRoutingNotApplicable` am laufenden System erzeugt (Kandidaten: Entfernen der
@@ -232,7 +232,9 @@ geschrieben.
 
 ## 6. Risiken und offene Punkte
 
-- **Die Nichtanwendbarkeit ist am System nicht erzeugbar (V3).** Entfernt der
+- **Die Nichtanwendbarkeit ist am System nicht erzeugbar (V3, offen laut
+  [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md);
+  Messung hier und in `slice-routing-kern-label`).** Entfernt der
   Betreiber die Bedingungsspalte, endet der Prozess nach dem Bestand im Pfad der
   inkompatiblen Schemaänderung, bevor die Regel zählt (*hergeleitet*); die Abhilfe
   `cdc.remove_route` + Neustart ist dann nicht der Weg aus diesem Zustand. — **Ausgang:**

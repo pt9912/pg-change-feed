@@ -17,7 +17,10 @@ ADR-pflichtige Frage „Routingform"),
 [`ADR-0137`](../../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
 Folgepflicht 1 (Spec-Nachzug — Träger dieses Slice),
 [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) (Transformationen — nur
-abgegrenzt).
+abgegrenzt),
+[`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+Folgepflicht (Spec-Zeilen `SPEC-031`, `SPEC-029`/`SPEC-008` — ebenfalls Träger dieses
+Slice).
 
 **Berührte Spec-Stellen:**
 [`LH-FA-CFG-008.a`](../../../../spec/pflichtenheft.md),
@@ -30,8 +33,11 @@ Antragsarten), eine **neue** Kennung für die Routing-Regelform (neben
 [`SPEC-020`](../../../../spec/pflichtenheft.md),
 [`SPEC-021`](../../../../spec/pflichtenheft.md),
 [`SPEC-022`](../../../../spec/pflichtenheft.md) (Parameter `target`),
-[`SPEC-024`](../../../../spec/pflichtenheft.md) (Zusatz-Subjekt), gegebenenfalls
-`spec/architecture.md` (Antragsart-Tabelle, Capture-Sequenz). Gelesen, nicht
+[`SPEC-024`](../../../../spec/pflichtenheft.md) (Zusatz-Subjekt),
+[`SPEC-031`](../../../../spec/pflichtenheft.md) (Zeile `ReadChanges`: Request um
+`target` ergänzt),
+[`SPEC-029`](../../../../spec/pflichtenheft.md) (Run-Fehlerklasse `schema` gilt auch
+für eine Routing-Regel), gegebenenfalls `spec/architecture.md` (Antragsart-Tabelle, Capture-Sequenz). Gelesen, nicht
 geändert: [`SPEC-017`](../../../../spec/pflichtenheft.md) (Wecksignal). Der
 Verweis zeigt **aufwärts**: die Spec nennt diesen Slice nie.
 
@@ -80,13 +86,21 @@ die Doku führt). Umfang:
 - (e) [`SPEC-008`](../../../../spec/pflichtenheft.md): die Zeile `schema` nennt die
   Nichtanwendbarkeit einer Routing-Regel (Spalte fehlt in der Relation der Change)
   im Erfassungspfad samt Abhilfe-Weg (`cdc.remove_route`, Neustart — als Zusage,
-  bis die Umsetzung sie belegt; Vorab-Bedingung V3 der Welle); der Run-Satz folgt
-  erst mit dem Verdikt V2 (siehe NICHT unten);
+  bis die Umsetzung sie belegt; Vorab-Bedingung V3 der Welle, offen laut
+  `ADR-0138`); der Run-Satz (V2, entschieden mit `ADR-0138` Festlegung 2) steht in
+  [`SPEC-008`](../../../../spec/pflichtenheft.md) und
+  [`SPEC-029`](../../../../spec/pflichtenheft.md): eine im Run nicht anwendbare
+  Routing-Regel (`when.column` fehlt in den Spalten des Snapshots) beendet den Run
+  `failed` mit Klasse `schema`, einmal je Run vor der Schreibtransaktion, run-lokal,
+  ohne Change (als Zusage in Zukunfts-Form), samt der Zeile zu `LH-FA-CAP-009.a`;
 - (f) [`SPEC-020`](../../../../spec/pflichtenheft.md),
   [`SPEC-021`](../../../../spec/pflichtenheft.md),
   [`SPEC-022`](../../../../spec/pflichtenheft.md): der optionale Parameter
   `target` (leer = kein Filter, Konjunktion mit `schema`/`table`; HTTP: unbekannte
-  Parameter bleiben `400`); [`SPEC-024`](../../../../spec/pflichtenheft.md): das
+  Parameter bleiben `400`); [`SPEC-031`](../../../../spec/pflichtenheft.md): die
+  Zeile `ReadChanges` trägt `target` als siebtes Request-Feld (`string target = 7`,
+  leer = kein Filter, Konjunktion mit `schema`/`table`; `ChangeRecord` bleibt
+  unverändert); [`SPEC-024`](../../../../spec/pflichtenheft.md): das
   Zusatz-Subjekt `cdc.route.<source_id>.<ziel>` (Payload wie `cdc.stream…`, nur
   für Changes mit Ziel);
 - (g) `spec/architecture.md`: die Antragsart-Tabelle (heute sieben Arten) trägt die
@@ -101,13 +115,12 @@ die Doku führt). Umfang:
 
 - **Lastenheft** — bleibt unverändert; das Pflichtenheft präzisiert, erweitert
   nie (Kopf von `spec/pflichtenheft.md`).
-- **Zusagen ohne Verdikt** — die Vorab-Bedingungen V1 und V2 der Welle (Parameter
-  am gRPC-RPC `ReadChanges`, Nichtanwendbarkeit im Backfill-Run) sind Lücken im Text
-  der ADR. Liegt das Verdikt zum Start dieses Slice vor, gehören die Spec-Zeilen in
-  (b), (e), (f); liegt es nicht vor, schreibt der Slice keine Zusage, die kein
-  Verdikt trägt, und die Zeilen folgen im Slice, der das Verdikt braucht
-  (`lesewege`, `backfill-pfad`; dort als Übergabe-Block in §2 geführt). Die
-  Aufzählung in (f) nennt dann `SPEC-020` nur für den `StreamChangesRequest`.
+- **Zusagen ohne Entscheidung** — V1 und V2 der Welle sind mit
+  [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
+  `Accepted`; ihre Spec-Zeilen (`SPEC-031` `ReadChanges`, `SPEC-029`/`SPEC-008` Run)
+  trägt dieser Slice in (e) und (f). Es gibt keinen Übergabe-Block an `lesewege` und
+  `backfill-pfad`. Offen bleibt V3 (Erreichbarkeit der Nichtanwendbarkeit): die
+  Abhilfe-Aussage steht nur als Zusage (e).
 - **Benutzerhandbuch** — beschreibt Betreiber-Oberfläche und darf keine Funktion
   nennen, die es noch nicht gibt; `slice-routing-betriebsdoku` trägt sie (Welle §4
   Abweichung 1).
@@ -132,11 +145,14 @@ die Doku führt). Umfang:
       `applied`-Bedeutung, Fehlertexte R1–R6), die Routing-Regelform samt
       Randfällen und Bildbasis, [`SPEC-001`](../../../../spec/pflichtenheft.md) und
       [`SPEC-002`](../../../../spec/pflichtenheft.md) (`route_target`), die Zeile
-      `schema` in [`SPEC-008`](../../../../spec/pflichtenheft.md), der Parameter
+      `schema` in [`SPEC-008`](../../../../spec/pflichtenheft.md) (Erfassungspfad
+      und Backfill-Run), der Run-Satz in
+      [`SPEC-029`](../../../../spec/pflichtenheft.md) und `LH-FA-CAP-009.a`, der Parameter
       `target` in [`SPEC-020`](../../../../spec/pflichtenheft.md),
-      [`SPEC-021`](../../../../spec/pflichtenheft.md) und
-      [`SPEC-022`](../../../../spec/pflichtenheft.md), das Zusatz-Subjekt in
-      [`SPEC-024`](../../../../spec/pflichtenheft.md); eine neu vergebene Kennung
+      [`SPEC-021`](../../../../spec/pflichtenheft.md),
+      [`SPEC-022`](../../../../spec/pflichtenheft.md) und als Feld `target` der Zeile
+      `ReadChanges` in [`SPEC-031`](../../../../spec/pflichtenheft.md), das
+      Zusatz-Subjekt in [`SPEC-024`](../../../../spec/pflichtenheft.md); eine neu vergebene Kennung
       ist die nächste freie (*zu belegen durch* `git grep -h -o 'SPEC-0[0-9][0-9]'
       <Stand> -- spec/pflichtenheft.md | sort -u | tail -1` am Parent-Stand und am
       Diff-Stand); §7 Historie trägt je Änderung eine Zeile ohne ADR-/Slice-Bezug.
@@ -177,7 +193,8 @@ die Doku führt). Umfang:
 | `spec/pflichtenheft.md` §2 (neue Kennung, nächste freie am Parent-Stand: `SPEC-032`) | neu | die Routing-Regelform als eigene Datenstruktur (Schlüssel, Bildbasis, Randfälle), Formvorbild `SPEC-030`; die Aufteilung gegenüber `SPEC-019` entscheidet der Slice (Festlegungen unten). |
 | `spec/pflichtenheft.md` §2 ([`SPEC-001`](../../../../spec/pflichtenheft.md), [`SPEC-002`](../../../../spec/pflichtenheft.md)) | update | Spalte `route_target` an `cdc.change` und `cdc.changes` (letzte Spalte der View); Format wie die Zeile zu `origin`. |
 | `spec/pflichtenheft.md` §2 ([`SPEC-020`](../../../../spec/pflichtenheft.md), [`SPEC-021`](../../../../spec/pflichtenheft.md), [`SPEC-022`](../../../../spec/pflichtenheft.md), [`SPEC-024`](../../../../spec/pflichtenheft.md)) | update | Parameter `target` bzw. Zusatz-Subjekt; die Zählwörter „zehn Felder" und „dreizehn Felder" bleiben (das Label ist nicht Teil der Nachrichten). |
-| `spec/pflichtenheft.md` §4 ([`SPEC-008`](../../../../spec/pflichtenheft.md) Zeile `schema`) | update | Nichtanwendbarkeit einer Routing-Regel im Erfassungspfad; Absatzstruktur wie „Nicht anwendbare Regel (Klasse `schema`)" der Transformationen (Zellenlänge des `structure`-Moduls). |
+| `spec/pflichtenheft.md` §2 ([`SPEC-031`](../../../../spec/pflichtenheft.md) Zeile `ReadChanges`, [`SPEC-029`](../../../../spec/pflichtenheft.md), `LH-FA-CAP-009.a`) | update | Request-Feld `target` (siebtes, Nummer 7); Run-Klasse `schema` für eine Routing-Regel (Quelle der Entscheidungen: `ADR-0138`, in der Spec ohne ADR-Bezug formuliert). |
+| `spec/pflichtenheft.md` §4 ([`SPEC-008`](../../../../spec/pflichtenheft.md) Zeile `schema`) | update | Nichtanwendbarkeit einer Routing-Regel im Erfassungspfad und im Backfill-Run; Absatzstruktur wie „Nicht anwendbare Regel (Klasse `schema`)" der Transformationen (Zellenlänge des `structure`-Moduls). |
 | `spec/pflichtenheft.md` §7 Historie | update | je Änderung eine Zeile ohne ADR-/Slice-Bezug. |
 | `spec/architecture.md` (Antragsart-Tabelle bei „sieben Arten", Capture-Sequenz) | update | die zwei weiteren Antragsarten; das Ziel einer Change steht vor der Persistierung. |
 
@@ -197,7 +214,8 @@ Bestands-Beleg wie in `slice-transformationen-spec-nachzug`):
 - Verhalten der Lesewege bei einem Wert von `target`, der das Alphabet verletzt oder
   nie vergeben wurde (`400`/`InvalidArgument` oder leere Antwort) — die Lesewege-
   Parameter von `SPEC-020`/`-021`/`-022` und das Subjekt von `SPEC-024` sagen es
-  einheitlich.
+  einheitlich (`ADR-0138` führt für den RPC „leere Liste, kein Fehler" als
+  Erwartung; die Spec legt es fest oder benennt den Gegenfall).
 - Aufteilung `SPEC-019` / neue Kennung; „führende Stelle je Sachverhalt" wie in
   `slice-transformationen-spec-nachzug` (Anwendbarkeit und Reihenfolge, Fehlertexte,
   Abhilfe — je an genau einer Stelle).
@@ -231,9 +249,8 @@ in Zellen):**
 **Start** (`next` → `in-progress`): wenn die Welle [welle-routing](../welle-routing.md)
 eröffnet ist und kein anderer Slice in `in-progress/` liegt (WIP-Limit 1). Dieser
 Slice kommt vor jedem übrigen der Welle: jeder Folge-Slice liest die hier
-festgelegten Zusagen. Wünschenswert, nicht Bedingung: die Verdikte V1 und V2 (Welle
-§5) liegen vor; dann zieht der Slice ihre Zeilen mit (§1, NICHT-Punkt „Zusagen ohne
-Verdikt").
+festgelegten Zusagen. V1 und V2 (Welle §5) sind mit `ADR-0138` entschieden (erfüllt);
+der Slice zieht ihre Zeilen mit (§1, NICHT-Punkt „Zusagen ohne Entscheidung").
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
@@ -270,9 +287,10 @@ Closure-Notiz mit Lerneintrag geschrieben.
   `ids` verlangt Links auf nackte Kennungen, `structure` misst Zellenlängen (die
   Transformations-Fassung färbte `section-cell-oversized`). — **Ausgang:** bei der
   Closure einzutragen (`make docs-check` Exit 0 am Diff-Stand).
-- **Zusagen ohne Verdikt** (V1, V2 der Welle). — **Ausgang:** bei der Closure
-  einzutragen (Spec-Zeilen gezogen oder mit Adresse an `lesewege` bzw.
-  `backfill-pfad` übergeben, dort als committeter Text in §2).
+- **V3 offen, V1/V2 entschieden.** `SPEC-031`, `SPEC-029` und `SPEC-008` tragen die
+  Festlegungen aus `ADR-0138`; die Abhilfe-Aussage zur Nichtanwendbarkeit bleibt
+  Zusage, bis V3 gemessen ist. — **Ausgang:** bei der Closure einzutragen
+  (Spec-Zeilen gezogen; Abhilfe als Zusage gekennzeichnet).
 
 ## 7. Closure-Notiz
 

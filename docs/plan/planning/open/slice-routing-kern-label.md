@@ -222,7 +222,8 @@ geschrieben.
   geprüft). Die Transformations-Welle änderte keine bestehende View; dies ist der
   erste Rollout dieser Art seit `ADR-0114`. — **Ausgang:** bei der Closure
   einzutragen (Alt-Tag-Lauf, gedruckte Zeile, Rollen-Lesetest).
-- **Erreichbarkeit der Nichtanwendbarkeit auf Unit-Ebene (V3 der Welle).**
+- **Erreichbarkeit der Nichtanwendbarkeit auf Unit-Ebene (V3 der Welle, offen laut
+  [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)).**
   `Assembler.observeRelation` meldet eine entfernte Spalte als
   `ErrIncompatibleSchemaChange`, bevor eine Change assembliert wird (*hergeleitet*,
   nicht für Routing geprüft). Ob ein `mapper`-Test `ErrRoutingNotApplicable` ohne
