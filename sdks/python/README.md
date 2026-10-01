@@ -78,7 +78,7 @@ with grpc.insecure_channel(options.address) as channel:
 
 `schema`/`table`/`target` are each optional and independent: a set `schema` without `table` delivers every table of that schema, a set `table` without `schema` delivers every table of that name regardless of schema, both set delivers exactly one table, and leaving all out (the original, still valid call) delivers every change of every captured table. `target` selects the delivery target a change is routed to: a set value delivers only the changes routed to that target, combined with `schema`/`table` as a conjunction, and a target no change carries delivers nothing and raises no error: `client.stream_changes(target="eu")`. A server release that predates the parameter is expected to ignore it on the gRPC stream, which then stays unfiltered, and to answer `400` on the HTTP read path and the SSE stream; this follows from how the server reads its parameters and has not been run against such a release.
 
-Server-Sent Events (`address` is the HTTP base URL; the read timeout must be off for a long-lived stream). `stream_changes(target="eu")` delivers only the changes routed to that target, and leaving `target` out delivers every change; the SSE client has no `schema`/`table` filter:
+Server-Sent Events (`address` is the HTTP base URL; the read timeout must be off for a long-lived stream). `stream_changes(target="eu")` delivers only the changes routed to that target, and leaving `target` out delivers every change; the SSE client of this package does not set `schema`/`table`, `target` is its only filter:
 
 ```python
 import httpx
@@ -93,7 +93,7 @@ for change in client.stream_changes():
     print(change.operation, change.schema, change.table, change.new_image)
 ```
 
-NATS (`address` is the NATS URL, the token is the NATS stream token checked when the connection is opened; the stream covers all tables of one source). `stream_changes(target="eu")` subscribes to the subject of one delivery target of the source (`cdc.route.<source>.<target>`) instead: a change routed to a target arrives on its table subject and, with the same payload, on the target subject, a change without a target on the table subject only. A target that is blank or contains `.`, `*`, `>` or whitespace raises `ValueError`:
+NATS (`address` is the NATS URL, the token is the NATS stream token checked when the connection is opened; the stream covers all tables of one source). `stream_changes(target="eu")` subscribes to the subject of one delivery target of the source (`cdc.route.<source>.<target>`) instead: a change routed to a target arrives on its table subject and, with the same payload, on the target subject, a change without a target on the table subject only. An empty `target` means no target (all tables of the source); a non-empty target that is whitespace only or contains `.`, `*`, `>` or whitespace raises `ValueError` at the first `next()` on the returned iterator, before a connection is opened:
 
 ```python
 from pgchangefeed import ClientOptions, PgChangeFeedNatsStreamClient

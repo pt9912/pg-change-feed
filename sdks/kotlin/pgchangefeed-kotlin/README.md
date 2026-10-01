@@ -150,9 +150,9 @@ fun main() {
 }
 ```
 
-The SSE stream takes one optional parameter, `target`: `client.streamChanges(target = "eu")` delivers only the changes routed to that target, and leaving it out delivers every change. The SSE client has no `schema`/`table` filter.
+The SSE stream takes one optional parameter, `target`: `client.streamChanges(target = "eu")` delivers only the changes routed to that target, and leaving it out delivers every change. The SSE client of this package does not set `schema`/`table`; `target` is its only filter.
 
-NATS (the address is the NATS URL, the token is the NATS stream token checked when the connection is opened, so a rejected token fails in the constructor). The subject selects what you receive: `buildSourceSubject` covers all tables of one source, `buildSubject` one table, `buildTargetSubject` one delivery target of a source (`cdc.route.<source>.<target>`), `buildSourceTargetsSubject` every delivery target of a source, and without a subject you receive every source. A change routed to a target arrives on its table subject and, with the same payload, on the target subject; a change without a target arrives on the table subject only. The tokens are validated like those of `buildSubject`:
+NATS (the address is the NATS URL, the token is the NATS stream token checked when the connection is opened, so a rejected token fails in the constructor). The subject selects what you receive: `buildSourceSubject` covers all tables of one source, `buildSubject` one table, `buildTargetSubject` one delivery target of a source (`cdc.route.<source>.<target>`), `buildSourceTargetsSubject` every delivery target of a source, and without a subject you receive every source. A change routed to a target arrives on its table subject and, with the same payload, on the target subject; a change without a target arrives on the table subject only. The tokens are validated like those of `buildSubject`; an empty or blank target is invalid (the builders have no "no filter" form, use `buildSourceSubject` for that):
 
 ```kotlin
 import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions

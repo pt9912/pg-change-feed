@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.85
+Version: 1.86
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-10-01
 
@@ -1979,8 +1979,9 @@ eines anderen Ziels oder ohne Ziel. Die Beispiel-Clients (Go/C#/Kotlin) und
 die drei SDK-Packages nehmen von den Query-Parametern nur `target` als eigenen
 Aufrufparameter entgegen (`-target`/`--target`, `StreamChangesAsync(target: …)`,
 `streamChanges(target)`, `stream_changes(target)`); `schema` und `table` setzen
-sie am SSE-Stream nicht — offener Folge-Schritt (anders der gRPC-Stream oben,
-dessen drei Filter die Packages als Parameter entgegennehmen).
+sie am SSE-Stream nicht; `target` ist dort der einzige Filter der Clients
+(anders der gRPC-Stream oben, dessen drei Filter die Packages als Parameter
+entgegennehmen).
 
 **Zustellsemantik:** keine Zustellgarantie (Fire-and-Forget): Ein nicht
 verbundener oder langsamer lesender Client verpasst die betroffenen
@@ -2789,3 +2790,4 @@ MIT — siehe `LICENSE`.
 | 1.83 | 2026-09-30 | „Neustart nach einem Fehler“ (`ADR-0136`): „gestreamt“ heißt ab Bestätigung von `START_REPLICATION` (Rücksetzung nach mindestens 30 s Streaming, der Aufbau zählt nie), der Aufbau eines Zyklus hat eine Frist von 30 s, das INFO der Fortsetzung folgt dem Streaming-Beginn, die wiederholte Fehlermenge steht als SQLSTATE-Auswahl (Klassen 08, 40, 53, 55, 57, 58 und 25006), jede andere Server-Abweisung endet sofort |
 | 1.84 | 2026-10-01 | Routing von Changes auf Zustellziele dokumentiert (`LH-FA-CFG-008`, `LH-FA-SST-006`, `ADR-0137`, `ADR-0138`, `ADR-0139`, `ADR-0140`, `ADR-0141`, slice-routing-betriebsdoku): §4 neuer Abschnitt „Routing-Regel konfigurieren“ (Voraussetzung `cdc_admin`, `cdc.set_route`/`cdc.remove_route`, Form der `rule_spec`, ausgeführtes Beispiel, R1–R6 mit Fehlertexten, die Fehlerklasse `schema` mit zwei Ursachen und der Abhilfe, „Ziel lesen“, Hinweise zu festem Label, Change ohne Treffer, abwesendem Wert, `DELETE` ohne volle Replica-Identität, Auswahl statt Zugriffsschutz); die Zugriffswege (HTTP, gRPC-Stream, gRPC-Verwaltungs-API `ReadChanges`, SSE) nennen den Filter `target`, der NATS-Vollinhalts-Stream das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>` samt Kosten-Messung, „Änderungen lesen“ die Spalte `route_target`; Fehlerklassen-Zeile `schema`, „Neustart nach einem Fehler“, Rollen-Tabelle, Glossar, „Grenzwerte“ und „Schema aktualisieren“ nachgezogen; der Fehlerblock der Transformationsregeln trennt die entfernte Spalte von der nicht anwendbaren Regel; die Fehlerklasse `schema` ordnet eine Publication mit Spaltenliste an einer Tabelle mit bekannter Spaltenform der Ursache 2 zu, und übernommene Messungen nennen ihren Bericht; die Kosten-Spanne der zweiten Veröffentlichung nennt nur Einzelwerte mit verlinktem Bericht, die R4-Zeile „höchste `order`“ ist als am System nicht gefahren gekennzeichnet, und die Abhilfe der inkompatiblen Schemaänderung ist als im Handbuch nicht beschrieben benannt |
 | 1.85 | 2026-10-01 | Parameter `target` in den SDK-Packages und den Beispiel-Clients dokumentiert (`LH-FA-CFG-008`, `LH-FA-SST-009`, `ADR-0137`, slice-routing-sdk-beispiel-target): `PgChangeFeed.Client`, `pgchangefeed` und `pgchangefeed-kotlin` tragen `target` am HTTP-Lesezugriff, am gRPC-Stream, am SSE-Stream (dort als einziger Filter-Parameter) und als Feld des `ReadChanges`-Requests, der NATS-Vollinhalts-Client baut das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>`; die Beispiele in Go, C# und Kotlin nehmen `-target`/`--target` an `changes`, `stream`, `read-changes` und dem SSE-Beispiel entgegen, das NATS-Vollinhalts-Beispiel `-source` mit `-target` |
+| 1.86 | 2026-10-01 | SSE-Absatz berichtigt (`LH-FA-CFG-008`, `ADR-0137`, slice-routing-sdk-beispiel-target): `target` ist am SSE-Client der einzige Filter-Parameter; der Verweis auf einen offenen Folge-Schritt für `schema`/`table` entfällt |

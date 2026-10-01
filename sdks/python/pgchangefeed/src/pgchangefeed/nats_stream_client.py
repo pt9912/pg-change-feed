@@ -70,8 +70,9 @@ class PgChangeFeedNatsStreamClient:
         ``cdc.route.<source_id>.<target>``, which carries the changes routed to
         it with the same payload; left ``None`` or empty the subscription
         covers all tables of the source. A target containing ``.``, ``*``, ``>``
-        or whitespace raises ``ValueError``, because such a name would change
-        which subjects the subscription matches.
+        or whitespace raises ``ValueError`` at the first ``next()`` on the
+        returned iterator, before a connection is opened; these characters
+        are NATS subject separators and wildcards.
 
         The token is sent when the connection is opened. If the server rejects
         it, the connect error of the NATS client library is raised (the stream
