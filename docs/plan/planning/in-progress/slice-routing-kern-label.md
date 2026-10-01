@@ -151,19 +151,20 @@ Liefer-Punkte:
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/domain/model/route.go` (neu; Name des Implementers) | neu | Zielname, Regel, reine Auswertung; Formvorbild `internal/domain/model/transformation.go` und `transformationspec.go`. |
-| `internal/domain/model/route_test.go` | neu | Tabellentest Happy/Boundary/Negative nach [`LH-FA-CFG-008`](../../../../spec/lastenheft.md): Reihenfolge, kein Treffer, abwesender Wert, DELETE auf Alt-Bild, Alphabet des Zielnamens, Eigenschaftstest „kein Regel-Ziel nennt eine ausgeschlossene Spalte" (R3, Richtung Regel → Ausschluss; Gegenrichtung `antragsweg`). |
-| `internal/domain/errors/errors.go` | update | Domänenfehler der Regel-Validierung (Form von `ErrInvalidChangeOrigin`, `ErrTransformationColumnMissing`). |
-| `internal/domain/model/change.go` | update | Feld `RouteTarget`, `WithRouteTarget` nach dem Muster `WithOrigin`; `NewChange` bleibt (39 Aufrufstellen, Parent `30fd6cb5`). |
-| `internal/adapters/driving/replication/mapper/mapper.go` | update | `TableBinding.Routes`, Setzen/Entfernen im Schnappschuss unter `tablesMu`, Auswertung in `change` vor der Transformation, `ErrRoutingNotApplicable`. |
-| `internal/adapters/driving/replication/mapper/routing_test.go` | neu | Unit-Tests der Bindung (Happy/Boundary/Negative), `-race`-Test des gleichzeitigen Zugriffs; ermittelt in §6 die Erreichbarkeit von `ErrRoutingNotApplicable` auf Unit-Ebene (V3). |
-| `internal/bootstrap/wiring.go` (`classifyRunError`) | update | `ErrRoutingNotApplicable` → `schema` neben `ErrTransformationNotApplicable`. |
-| `internal/bootstrap/*_test.go` | update | Klassen-Abbildung-Test. |
-| `tools/schema/schema.yaml` | update | Spalte `route_target` (nullable, kein DEFAULT, kein CHECK) an `cdc.change`, View `cdc.changes` mit `route_target` als letzter Spalte (ohne `COALESCE`), `columns:`-Signatur. |
-| `internal/adapters/driven/postgresstorage/schema.sql`, `queries/queries.go` (WAL-Insert, `InsertBackfillChange`, Lese-Anweisung der View), `mapper/mapper.go` | update | die zweite Schema-Beschreibung des Store-Tiers und die Statements schreiben und lesen die Spalte; die Backfill-Anweisung schreibt sie (§1). |
-| `internal/adapters/driven/postgresstorage/store_test.go`, `sqlviews_test.go` | update | `route_target` überlebt Persistierung und Lesen über `cdc.changes`; `NULL` bleibt `NULL`; View-Signatur (Reihenfolge, letzte Spalte); Lesen unter den drei Rollen. |
-| `tools/schema/plan.yaml`, `tools/schema/down.sql` | update (Erzeugnis) | Pflicht-Report und Rollback-Artefakt des echten `--execute`-Laufs; `tools/schema/rollout-restore.sh` stellt sie nach Test-Läufen wieder her. |
-| `tools/harness/run-schema-rollout-guard-test.sh` | lesen / bei Bedarf update | der Alt-Tag-Lauf; belegt den Vorlauf über einen Alt-Bestand (erwartet); ob das Skript eine View-Liste fest trägt, klärt der Suchlauf. |
+| `internal/domain/model/route.go` | neu (geliefert) | Zielname (`RouteTarget`, `IsValidRouteTarget`), Regel (`RouteRule`, `NewRouteRule`, `CheckApplicable`, `CheckNotExcluded`), reine Auswertung `EvaluateRoute`; Formvorbild `internal/domain/model/transformation.go` und `transformationspec.go`. `CheckNotExcluded` ist die Domänenhälfte von R3 (Richtung Regel → Ausschluss) für den Slice `antragsweg`. |
+| `internal/domain/model/route_test.go` | neu (geliefert) | Tabellentest Happy/Boundary/Negative nach [`LH-FA-CFG-008`](../../../../spec/lastenheft.md): Reihenfolge, kein Treffer, abwesender Wert, Alphabet des Zielnamens, Konstruktor-Invarianten, Permutationsunabhängigkeit der Auswertung bei eindeutiger `order`, Eigenschaftstest „kein Regel-Ziel nennt eine ausgeschlossene Spalte" über alle Teilmengen (R3, Richtung Regel → Ausschluss; Gegenrichtung `antragsweg`), `Change.WithRouteTarget`. |
+| `internal/domain/errors/errors.go` | update (geliefert) | vier Domänenfehler: `ErrInvalidRouteTarget`, `ErrInvalidRoute`, `ErrRoutingColumnMissing`, `ErrRoutingColumnExcluded` (Form von `ErrInvalidChangeOrigin`, `ErrTransformationColumnMissing`). |
+| `internal/domain/model/change.go` | update (geliefert) | Feld `RouteTarget`, `WithRouteTarget` nach dem Muster `WithOrigin`; `NewChange` bleibt (39 Aufrufstellen, Parent `30fd6cb5`). |
+| `internal/adapters/driving/replication/mapper/mapper.go` | update (geliefert) | `TableBinding.Routes`, `SetRoute`/`RemoveRoute` im Schnappschuss unter `tablesMu`, `AddBinding` übernimmt `Routes` einer getragenen Bindung, Auswertung in `change` vor der Transformation (Prüfung `checkRoutes` vor dem Vorrücken der Sequenz), `ErrRoutingNotApplicable`. |
+| `internal/adapters/driving/replication/mapper/routing_test.go` | neu (geliefert) | Unit-Tests der Bindung (Happy/Boundary/Negative), `-race`-Test des gleichzeitigen Zugriffs; ermittelt in §6 die Erreichbarkeit von `ErrRoutingNotApplicable` auf Unit-Ebene (V3). |
+| `internal/bootstrap/wiring.go` (`classifyRunError`) | update (geliefert) | `ErrRoutingNotApplicable` → `schema` neben `ErrTransformationNotApplicable`. |
+| `internal/bootstrap/heartbeat_internal_test.go` | update (geliefert) | Klassen-Abbildung-Test (zwei Fälle, mit und ohne Wrappung). |
+| `tools/schema/schema.yaml` | update (geliefert) | Spalte `route_target` (nullable, kein DEFAULT, kein CHECK) an `cdc.change`, View `cdc.changes` mit `route_target` als letzter Spalte (ohne `COALESCE`), `columns:`-Signatur. |
+| `internal/adapters/driven/postgresstorage/schema.sql`, `queries/queries.go` (WAL-Insert, `InsertBackfillChange`, Lese-Anweisung der View), `mapper/mapper.go`, `store.go`, `backfillwriter.go`, `sqlexec/translate.go` | update (geliefert) | die zweite Schema-Beschreibung des Store-Tiers und die Statements schreiben und lesen die Spalte; die Backfill-Anweisung schreibt sie (§1); `ChangeRow.RouteTarget` ist ein `*string` (`nil` = `NULL`), `store.go`/`backfillwriter.go` reichen es an die Insert-Anweisungen, `sqlexec/translate.go` scannt es. |
+| `internal/adapters/driven/postgresstorage/store_test.go`, `sqlviews_test.go`, `backfillwriter_test.go`, `mapper/mapper_test.go`, `sqlexec/translate_test.go` | update (geliefert) | `route_target` überlebt Persistierung (WAL- und Backfill-Insert) und Lesen über `cdc.changes` und `ReadChanges`; `NULL` bleibt `NULL`; View-Signatur (Reihenfolge, letzte Spalte); Lesen unter den drei Rollen (`cdc_reader` liest, `cdc_capture` und `cdc_admin` nicht); Alphabet-Prüfung in beiden Richtungen der Zeilen-Übersetzung. |
+| `tools/schema/plan.yaml`, `tools/schema/down.sql` | update (Erzeugnis, geliefert) | Pflicht-Report und Rollback-Artefakt des echten `--execute`-Laufs gegen ein frisches Ziel (erster von zwei Läufen, Ziel-Host `cdc-test-postgres` wie im Bestand); `tools/schema/rollout-restore.sh` stellt sie nach Test-Läufen wieder her. |
+| `tools/harness/run-schema-rollout-guard-test.sh` | update (geliefert) | der Alt-Tag-Lauf (Lauf 5): belegt den Vorlauf über einen Alt-Bestand, prüft zusätzlich die Rechte der drei Rollen auf `cdc.changes` und `route_target` NULL der Alt-Zeile. Die Vorbedingungen zu den Transformations-Funktionen, den Spalten `rule_name`/`rule_spec` und den Antragsarten sind entfernt: der jüngste Tag `v0.4.0` (2026-09-30) trägt sie bereits, der Lauf endete am Arbeitsbaum dieser Änderung an der ersten davon (gemessen; die Vorbedingung prüft den Stand des Tags, nicht die Änderung); Vorbedingung bleibt „der Tag trägt `route_target` noch nicht". `grep` auf die Namen der fünf Views im Skript: 0 Treffer, eine feste View-Liste trägt es nicht. |
+| `harness/targets/schema-rollout.md` | update (geliefert) | Beschreibung des Alt-Tag-Laufs (Belege, Punkt 5) um die Rechte auf `cdc.changes`, `route_target` und die geänderte Vorbedingung nachgezogen. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „`cdc.change` und
 `cdc.changes` tragen eine Spalte mehr; `model.Change` trägt ein Feld mehr; eine
@@ -177,15 +178,22 @@ ein):**
 30fd6cb5 44 -n -E 'cdc\.changes' -- harness docs/user README.md
 30fd6cb5 29 -n -E 'ErrTransformationNotApplicable' -- internal tools
 30fd6cb5 2 -n -E 'fünf (deklarierten )?Views|vier Views|fünf Views' -- harness docs/user spec tools
+diff 24 -n -w origin -- internal tools/schema test ':!*_test.go'
+diff 95 -n -w origin -- internal tools/schema test
+diff 45 -n -E 'cdc\.changes' -- harness docs/user README.md
+diff 29 -n -E 'ErrTransformationNotApplicable' -- internal tools
+diff 2 -n -E 'fünf (deklarierten )?Views|vier Views|fünf Views' -- harness docs/user spec tools
+diff 17 -n -E 'ErrRoutingNotApplicable' -- internal tools
+diff 13 -n -w route_target -- internal tools/schema test ':!*_test.go'
 ```
 
 | Träger | Messung am Parent (`30fd6cb5`, gemessen am 2026-10-01) | Behandlung und Befund am Diff |
 |---|---|---|
-| Stellen, die `origin` als Schwesterfeld führen (Nicht-Test-Quellen: Domäne, Store, View, Handler) | Zeile 1: 24 Zeilen (u. a. `postgresstorage/mapper/mapper.go` 4, `queries/queries.go` 6, `schema.sql` 2, `driving/http/readchanges.go` 2, `domain/model/change.go` 4, `tools/schema/schema.yaml` 4); mit Tests (Zeile 2) 94 | jede Stelle lesen: führt sie die Change-Felder auf, trägt sie `route_target` oder ist die Auslassung begründet (z. B. `driving/http/readchanges.go`: Nachrichtenschema bleibt, `ADR-0137` Teilfrage 5); Befund am Diff: einzutragen |
-| Beschreibungen von `cdc.changes` in Harness und Handbuch | Zeile 3: 44 Zeilen (`harness/README.md` 7, Rest in `docs/user`) | Sensor- und Target-Beschreibungen der Schema-Rollout-Kette melden, wenn eine die Spaltenliste führt; Handbuch-Adresse `slice-routing-betriebsdoku`; Befund: einzutragen |
-| Aufzählung der Fehler-Abbildungen und Tests zu `ErrTransformationNotApplicable` | Zeile 4: 29 Zeilen | jede Aufzählung der „Nichtanwendbarkeit"-Fehler (Klassen-Abbildung, `diagnose`, Heartbeat, Startpfad) prüfen, ob `ErrRoutingNotApplicable` fehlt; Befund: einzutragen |
-| Zählwörter zu den Views | Zeile 5: 2 Zeilen („fünf deklarierten Views", `harness/targets/schema-rollout.md`) | die Zahl der Views bleibt fünf (eine Spalte mehr, keine View mehr) — erwartet unverändert am Diff; Befund: einzutragen |
-| Pläne der Welle und offene Pläne, die die View-Signatur ändern | Lesen von `docs/plan/planning/open/` und `welle-routing.md` am Start (der Parent-Stand kennt die Pläne noch nicht) | kein weiterer Plan ändert die Signatur von `cdc.changes` (Welle §5, benannte Kopplung); Befund: einzutragen |
+| Stellen, die `origin` als Schwesterfeld führen (Nicht-Test-Quellen: Domäne, Store, View, Handler) | Zeile 1: 24 Zeilen (u. a. `postgresstorage/mapper/mapper.go` 4, `queries/queries.go` 6, `schema.sql` 2, `driving/http/readchanges.go` 2, `domain/model/change.go` 4, `tools/schema/schema.yaml` 4); mit Tests (Zeile 2) 94 | jede Stelle lesen: führt sie die Change-Felder auf, trägt sie `route_target` oder ist die Auslassung begründet (z. B. `driving/http/readchanges.go`: Nachrichtenschema bleibt, `ADR-0137` Teilfrage 5); **Befund am Diff (Zeile 1: 24, Zeile 2: 95; Zeile 7: 13 Treffer auf `route_target` in Nicht-Test-Quellen und Schema):** die 24 Treffer sind unverändert 24 (`origin` bleibt, `route_target` steht daneben, kein Treffer entfiel oder entstand in dieser Zählung); Stellen, die `route_target` neben `origin` tragen: `postgresstorage/mapper/mapper.go` (Zeilen-Typ, Schreib- und Lesefunktion), `queries/queries.go` (beide Insert-Anweisungen und die Lese-Anweisung), `schema.sql`, `tools/schema/schema.yaml` (Spalte, View-Abfrage, View-Signatur), `domain/model/change.go`, `sqlexec/translate.go`, `store.go`, `backfillwriter.go`. Auslassungen mit Grund: `driving/http/readchanges.go`, `driving/grpc/administration.go` (ChangeRecord/`GET /changes`: das Label ist nicht Teil der Nachrichten, `ADR-0137` Teilfrage 5, `ADR-0138` Festlegung 1), `natsstream/publisher.go` und `driving/http/sse.go` (Kommentare zum Nachrichtenschema ohne `Origin`, dasselbe Schema ohne Ziel), `application/usecase/backfill/service.go:574` (`WithOrigin`; der Backfill-Pfad setzt das Ziel nicht, `slice-routing-backfill-pfad`), `tools/harness/httpclient` (Wegwerf-Client liest `GET /changes`, kein Ziel in der Antwort). Zeile 2 steigt um eine Zeile (Test-Kommentar). |
+| Beschreibungen von `cdc.changes` in Harness und Handbuch | Zeile 3: 44 Zeilen (`harness/README.md` 7, Rest in `docs/user`) | Sensor- und Target-Beschreibungen der Schema-Rollout-Kette melden, wenn eine die Spaltenliste führt; Handbuch-Adresse `slice-routing-betriebsdoku`; **Befund am Diff (Zeile 3: 45):** `harness/README.md` nennt `cdc.changes` nur als Lesezugriffsweg (keine Spaltenliste) — unverändert; `harness/targets/schema-rollout.md` Belege Punkt 5 beschrieb den Alt-Tag-Lauf ohne die View-Rechte — nachgezogen (der Zuwachs um eine Zeile); die Handbuch-Treffer in `docs/user` bleiben unberührt, Aufschub-Adresse `slice-routing-betriebsdoku` (Gegenstand dort in §2 geführt, `git grep -n 'route_target' -- docs/plan/planning/open/slice-routing-betriebsdoku.md` trifft die Zeilen 43, 52, 80, 112 und 173, Zeile 80 trägt den Gegenstand aus diesem Slice). |
+| Aufzählung der Fehler-Abbildungen und Tests zu `ErrTransformationNotApplicable` | Zeile 4: 29 Zeilen | jede Aufzählung der „Nichtanwendbarkeit"-Fehler (Klassen-Abbildung, `diagnose`, Heartbeat, Startpfad) prüfen, ob `ErrRoutingNotApplicable` fehlt; **Befund am Diff (Zeile 4: 29, Zeile 6: 17 Treffer auf `ErrRoutingNotApplicable`):** außerhalb des `mapper`-Pakets und seiner Tests nennt `git grep` den Sentinel an genau zwei Stellen, `internal/bootstrap/wiring.go` (`classifyRunError`) und `internal/bootstrap/heartbeat_internal_test.go`; beide tragen jetzt den Routing-Fehler daneben. `diagnose`, Heartbeat und Startpfad lesen die Klasse (`schema`), nicht den Sentinel — keine weitere Aufzählung. |
+| Zählwörter zu den Views | Zeile 5: 2 Zeilen („fünf deklarierten Views", `harness/targets/schema-rollout.md`) | die Zahl der Views bleibt fünf (eine Spalte mehr, keine View mehr) — erwartet unverändert am Diff; **Befund am Diff:** 2 Zeilen, unverändert, die Zahl bleibt fünf. |
+| Pläne der Welle und offene Pläne, die die View-Signatur ändern | Lesen von `docs/plan/planning/open/` und `welle-routing.md` am Start (der Parent-Stand kennt die Pläne noch nicht) | kein weiterer Plan ändert die Signatur von `cdc.changes` (Welle §5, benannte Kopplung); **Befund:** `git grep -n -i 'View-Signatur\|Signatur.*cdc.changes\|cdc.changes.*Signatur\|DROP VIEW' -- docs/plan/planning/open docs/plan/planning/welle-routing.md` trifft sechs Zeilen, alle in `welle-routing.md` (Zeilen 50, 114, 119, 169, 299, 301); kein Plan unter `open/` trägt eine Signaturänderung von `cdc.changes`, und die Welle (§5, Zeile 299–302) nennt keinen späteren Slice, der die View ändert. |
 
 ## 4. Trigger
 
@@ -229,7 +237,19 @@ geschrieben.
   nicht für Routing geprüft). Ob ein `mapper`-Test `ErrRoutingNotApplicable` ohne
   Umgehung der Relation-Prüfung erzeugen kann, ist die erste Messung des Slice; kann
   er es nicht, steht das Ergebnis im Bericht und im Plan von `slice-routing-e2e`
-  (Architect-Verdikt, Welle §5 V3). — **Ausgang:** bei der Closure einzutragen.
+  (Architect-Verdikt, Welle §5 V3). **Messung des Implementers (Unit-Ebene,
+  `internal/adapters/driving/replication/mapper/routing_test.go`,
+  `TestRoutingNotApplicableReachabilityThroughRelationCheck`, Instanz: der
+  `Assembler` mit `fakeSchemaStore`, `make test`):** (a) ist die Spaltenform der
+  aktuellen Version bekannt und fehlt die Bedingungsspalte in der eingehenden
+  Relation, meldet `Consume` die Relation als `ErrIncompatibleSchemaChange`,
+  bevor eine Change assembliert wird — `ErrRoutingNotApplicable` ist auf diesem
+  Weg nicht erzeugbar; (b) trägt die aktuelle Version noch keine Spaltenform
+  (Erstaktivierung, `observeRelation` registriert die erste Relation ohne
+  Vergleich), passiert die Relation ohne die Spalte, und die folgende Change
+  endet als `ErrRoutingNotApplicable`. Beide Läufe grün; die Erreichbarkeit am
+  laufenden System (ob ein Abzug aus (b) real entsteht) ist nicht gemessen und
+  gehört `slice-routing-e2e`. — **Ausgang:** bei der Closure einzutragen.
 - **Konstruktor-Ripple.** `model.Change` trägt ein Feld mehr; `NewChange` hat
   39 Aufrufstellen (gemessen, `git grep -n 'NewChange(' 30fd6cb5 -- internal test tools`).
   Der Plan ändert die Signatur nicht (Muster `WithOrigin`); ein Test, der
