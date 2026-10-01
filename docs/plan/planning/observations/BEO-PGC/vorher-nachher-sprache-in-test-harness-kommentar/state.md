@@ -8,7 +8,10 @@ begrenzt · seit welle-backfill-bestand
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §4.1, R6a).
 
-Zähler: 7× (Dateien unter `evidence/`; die siebte, `evidence/slice-transformationen-e2e-wirkung.md`,
+Zähler: 8× (Dateien unter `evidence/`; die achte, `evidence/slice-routing-nats-subjekt.md`,
+trägt F-2 (MEDIUM, daher Datei): ein geerbter Konjunktiv-Satz über die verworfene Alternative im
+umgebrochenen `publish`-Godoc des NATS-Publishers (Ausprägung **Bestand im umgebrochenen Block**);
+der Reviewer fand ihn vor dem Merge, Ausgang unverändert **verkörpert**; die siebte, `evidence/slice-transformationen-e2e-wirkung.md`,
 trägt F-1 (HIGH, daher Datei): dieselbe Form im **Runner-Skript** (der Kommentar vor dem ersten
 Neustart der Phase „Neustart und Ausschluss“ nannte den Zustand ohne die Zusage im Konjunktiv „trüge“); der
 Reviewer fand sie vor dem Merge, Ausgang unverändert **verkörpert**. Der diff-skopierte

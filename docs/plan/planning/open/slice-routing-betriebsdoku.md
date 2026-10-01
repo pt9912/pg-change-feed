@@ -137,10 +137,15 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
   Abonnent, Testcontainer-NATS), zwei Läufe des Implementers: „ohne Ziel 18.242683ms
   (548165 Changes/s), mit Ziel 21.239865ms (470813 Changes/s)“ und „ohne Ziel
   17.479304ms (572105 Changes/s), mit Ziel 22.739539ms (439763 Changes/s)“; Verhältnis
-  mit/ohne 1,16 und 1,30 (**abgeleitet**). Zwei weitere Läufe (Review: 1,05; Fixrunde:
+  mit/ohne 1,16 und 1,30 (**abgeleitet**). Drei weitere Läufe (Review: 1,05; Fixrunde:
   1,14, gedruckte Zeile „ohne Ziel 18.450212ms (541999 Changes/s), mit Ziel 21.111558ms
-  (473674 Changes/s)“) ergeben über vier Läufe eine Streuung von 1,05 bis 1,30; das
-  Review-Verhältnis ist **übernommen** aus dem Review-Report. Die
+  (473674 Changes/s)“; Verifier: 0,92, gedruckte Zeile „ohne Ziel 20,856 ms (479477
+  Changes/s), mit Ziel 19,272 ms (518898 Changes/s)“) ergeben über fünf Läufe eine
+  Streuung von 0,92 bis 1,30; das Review-Verhältnis ist **übernommen** aus dem
+  Review-Report, die Verifier-Zeile stammt aus dem Verifikations-Report (ebenfalls
+  übernommen), das Verhältnis 0,92 ist **abgeleitet**. Ein Aufschlag der zweiten
+  Veröffentlichung ist an diesem Messaufbau nicht auflösbar (das Verhältnis liegt im
+  Rauschen). Die
   Messung hat keine Schwelle und deckt die Verteilung an Abonnenten nicht ab; der
   Re-Evaluierungs-Trigger der ADR bleibt „Messung der zweiten NATS-Veröffentlichung
   zeigt Druck am Publisher“.

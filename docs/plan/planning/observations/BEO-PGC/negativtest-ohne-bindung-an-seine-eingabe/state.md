@@ -37,7 +37,8 @@ Träger“ — eine Gegenentscheidung des Architects ist ein neues Verdikt):
   einer Abfrage-Eingabe; er ist im Slice gebunden (Test mit Run einer fremden Quelle,
   Mutation danach rot), der Reviewer fand ihn vor dem Merge.
 
-Zähler (abgeleitet): **22×** (evidence/slice-routing-antragsweg.md,
+Zähler (abgeleitet): **23×** (evidence/slice-routing-nats-subjekt.md,
+evidence/slice-routing-antragsweg.md,
 evidence/slice-capture-transient-wiederholung.md,
 evidence/slice-harness-mutationsbild-und-verweigerte-aktion.md,
 evidence/slice-transformationen-e2e-wirkung.md,
@@ -57,7 +58,13 @@ evidence/slice-sdk-kotlin-cloudsmith.md,
 evidence/slice-harness-suchlauf-nachmessen.md) —
 **Schwelle erreicht**; der Lese-Schritt der Closure von `welle-backfill-bestand`
 liest den Eintrag mit (11×), der Lese-Schritt der nächsten Welle-Closure
-(`welle-transformationen`) den zwölften bis neunzehnten Beleg. Der zweiundzwanzigste Beleg
+(`welle-transformationen`) den zwölften bis neunzehnten Beleg. Der dreiundzwanzigste Beleg
+(`slice-routing-nats-subjekt`, Review F-1, MEDIUM, daher Datei trotz Deckel) trifft die
+**Gegenrichtung einer Unabhängigkeits-Zusage**: die Tests banden nur „Ziel-Veröffentlichung
+scheitert, Tabellen-Veröffentlichung bleibt“, die Mutation „Ziel nur bei gesetzter Tabelle“
+blieb grün; gebunden in der Fixrunde durch einen Test mit der Eingabe der Gegenrichtung, die
+Regel hat mit dem Reviewer vor dem Merge gewirkt, kein Kandidat der Schärfung. Der
+zweiundzwanzigste Beleg
 (`slice-routing-antragsweg`, Review F-4, MEDIUM, daher Datei trotz Deckel) trifft einen
 **Fake mit leerem Zustand**: die drei Tests des Aktivierungs-Dekorators übergaben einen
 Port mit leerem Regelstand, keine Mutation an der Weitergabe färbte sie; gebunden in der

@@ -66,7 +66,8 @@ docker run --rm --network "$NETWORK" \
 # Kostenmessung der zweiten Veröffentlichung; -v druckt die Zeile je Fall.
 # Der Lauf umfasst alle Tests des Pakets mit gesetzter URL und endet mit Exit 1,
 # sobald ein Test sich überspringt: ein Real-Server-Test ohne Server färbt den
-# Lauf rot, und jeder Testname läuft mit.
+# Lauf rot, und jeder Testname läuft mit. Die Grenze: auch ein Test, der sich
+# aus anderem Grund überspringt, färbt den Lauf rot.
 LOG=$(mktemp)
 trap 'rm -f "$LOG"; cleanup' EXIT
 status=0

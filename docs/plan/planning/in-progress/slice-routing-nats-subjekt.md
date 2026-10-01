@@ -24,7 +24,9 @@ fire-and-forget), [`ADR-0055`](../../adr/0055-nats-change-notification-wecksigna
 [`SPEC-024`](../../../../spec/pflichtenheft.md) (NATS-Vollinhalt, Zusatz-Subjekt);
 gelesen, nicht geändert: [`SPEC-017`](../../../../spec/pflichtenheft.md)
 (Wecksignal). Die Spec führt: der Slice setzt `slice-routing-spec-nachzug`
-voraus und ändert sie nicht.
+voraus. Er ändert in der Fixrunde allein die Last-Aussage der Zeile
+Zusatz-Subjekt von `SPEC-024` („nicht gemessen“ auf „ohne Abonnent und ohne
+Schwelle gemessen, keine Last-Zusage“) und die Geschichte-Tabelle (Review F-4).
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
@@ -70,51 +72,78 @@ unverändert. Drei Liefer-Punkte:
 
 ## 2. Definition of Done
 
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) und
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) und
       [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (A): eine Change mit Ziel
       erzeugt genau zwei Veröffentlichungen — `cdc.stream.<source_id>.<schema>.<table>`
       (unverändert) und `cdc.route.<source_id>.<ziel>` mit byte-gleichem Payload —, eine
       Change ohne Ziel genau eine; der Fehlschlag der zweiten Veröffentlichung
       beendet weder die Schleife noch verändert er die erste (Test mit einer
       Verbindung, die die zweite verweigert). *Zu belegen durch:* Adapter-Tabellentest
-      (`make test`), Zählung der Veröffentlichungen je Change am Test.
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (B): am realen NATS-Server
+      (`make test`), Zählung der Veröffentlichungen je Change am Test. *Beleg
+      (Verifier):* Verifikations-Report §2 Zeile 1 (`TestPublishCountsPublicationsPerChange`,
+      `TestRouteFailureStaysLocal`, `TestRouteSubjectSurvivesSkippedTableSubject`; Mutationen
+      M1, M2, M3 rot).
+- [x] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) (B): am realen NATS-Server
       empfängt ein Abonnent auf `cdc.route.<source_id>.<ziel>` nur die Changes dieses
       Ziels (mindestens zwei Ziele und eine Change ohne Ziel), ein Zielname mit `-` und
       `_` wird angenommen, ein Wildcard-Abonnent auf `cdc.route.<source_id>.*` empfängt
       beide Ziele, ein Abonnent der bestehenden `cdc.stream…`-Form und der des
       Wecksignals empfangen unverändert. *Zu belegen durch:* `make test-notify`
-      (erweiterter Lauf mit gedruckter Zeile je Fall).
-- [ ] **Kosten der zweiten Veröffentlichung** (C): gemessen — Veröffentlichungen je
+      (erweiterter Lauf mit gedruckter Zeile je Fall). *Beleg (Verifier):*
+      Verifikations-Report §1 und §2 Zeile 2 (`make test-notify` Exit 0, gedruckte Zeilen
+      je Fall; Mutationen N1 und N2 rot). **Grenze:** der Wecksignal-Abonnent ist nur
+      negativ belegt (null Nachrichten, im Test läuft kein Wecksignal-Sender); „das
+      Wecksignal funktioniert unverändert“ trägt der unberührte `natsnotify`-Adapter mit
+      seinem Test im selben Lauf.
+- [x] **Kosten der zweiten Veröffentlichung** (C): gemessen — Veröffentlichungen je
       Sekunde (oder Zeit je 10 000) mit und ohne Ziel am Testcontainer-NATS, Median von
       fünf Läufen, die gedruckte Zeile steht im Bericht, ein abgeleiteter Wert ist als
       abgeleitet gekennzeichnet ([`AGENTS.md`](../../../../AGENTS.md) §3.12) — **oder**
       ausdrücklich als nicht gemessen geführt mit dem Re-Evaluierungs-Trigger der ADR
       („Messung der zweiten NATS-Veröffentlichung zeigt Druck am Publisher"). Das
-      Ergebnis geht in die Handbuch-Adresse (`slice-routing-betriebsdoku`).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
-      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+      Ergebnis geht in die Handbuch-Adresse (`slice-routing-betriebsdoku`). *Beleg
+      (Verifier):* Verifikations-Report §1 (gedruckte Kostenzeile) und §2 Zeile 3:
+      gemessen, Verhältnis mit/ohne über fünf Läufe 0,92 bis 1,30 (abgeleitet), kein
+      Aufschlag auflösbar, keine Schwelle.
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+      gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9). *Beleg
+      (Verifier):* Verifikations-Report §1 (Exit 0, `coverage-gate` 82,00 %, `a-check`
+      0 Befunde).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+      Self-Review (Modul 8). *Beleg:* Review
+      [`review-slice-routing-nats-subjekt`](../../../reviews/review-slice-routing-nats-subjekt.md)
+      (0 HIGH, 2 MEDIUM F-1 und F-2, 2 LOW F-3 und F-4, 2 INFO F-5 und F-6) und die
+      **Gegenprüfung der Fixrunde `d8371372` durch den Verifier**
+      ([`verifikation-slice-routing-nats-subjekt`](../../../reviews/verifikation-slice-routing-nats-subjekt.md)
+      §5 und §7: F-1 bis F-4 geschlossen). Es gibt **kein separates Re-Review**.
+      Begründung: die Fixrunde enthält keine geänderte Produktionslogik (der Diff von
+      `publisher.go` ändert nur Kommentare), sondern Godoc, Tests, das Skript und die
+      Abschwächung einer Spec-Zeile; das Skript hat der Verifier in drei Zuständen
+      ausgeführt (grün, `FAIL`, `SKIP`), Mutation M3 färbt den neuen Test rot. Kein
+      offenes HIGH/MEDIUM.
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-routing-nats-subjekt.md`
-      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `harness/README.md` (Beschreibung von `make test-notify`) nur,
+      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13). *Beleg
+      (Verifier):* Verifikations-Report §1 und §2 Zeile 6 (11 Zeilen stimmen).
+- [x] Doku-Update: `harness/README.md` (Beschreibung von `make test-notify`) nur,
       soweit der Suchlauf eine bewegte Beschreibung findet; das Benutzerhandbuch
       (Abschnitt „Zugriff über den NATS-Vollinhalts-Stream") bleibt unberührt —
       Adresse: `slice-routing-betriebsdoku` §2 (Zusatz-Subjekt, Kosten-Aussage mit
       Ursprung); die NATS-Clients der SDKs und Beispiele folgen
-      `slice-routing-sdk-beispiel-target`.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+      `slice-routing-sdk-beispiel-target`. Die Fixrunde änderte zusätzlich die
+      Last-Aussage in der `SPEC-024`-Zeile (Review F-4). *Beleg (Verifier):*
+      Verifikations-Report §2 Zeile 7.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
-      Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+      Antwort und wird in §7 notiert (§7: drei neue `evidence/`-Dateien, ein
+      `state.md` mit Vermerk).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Closure der Welle [welle-routing](../welle-routing.md) (die Roadmap führt sie
@@ -191,35 +220,145 @@ Closure-Notiz mit Lerneintrag geschrieben.
 ## 6. Risiken und offene Punkte
 
 - **Zusätzliche Last am Publisher.** Jede geroutete Change erzeugt eine zweite
-  Veröffentlichung; die Kosten sind nach der ADR *nicht gemessen*. — **Ausgang:** bei
-  der Closure einzutragen (Messung mit gedruckter Zeile oder ausdrücklicher Verzicht
-  mit Trigger).
+  Veröffentlichung; die Kosten sind nach der ADR *nicht gemessen*. — **Ausgang:**
+  entfallen (gemessen). Die Zeit für `publish` samt Flush ist je 10 000 Changes mit
+  Median von fünf Läufen gemessen, ohne Abonnent, ohne Schwelle, am Testcontainer-NATS;
+  das Verhältnis mit/ohne (**abgeleitet**) liegt über fünf Läufe zwischen 0,92 und
+  1,30 (Verifier-Zeile: „ohne Ziel 20,856 ms (479477 Changes/s), mit Ziel 19,272 ms
+  (518898 Changes/s)“, Verifikations-Report §1; die übrigen vier Läufe stehen im
+  Übergabe-Block von `slice-routing-betriebsdoku` §2, der Review-Lauf als
+  **übernommen**). Ein Aufschlag der zweiten Veröffentlichung ist an diesem Messaufbau
+  nicht auflösbar; eine Last-Zusage folgt nicht (Spec-Zeile `SPEC-024` entsprechend
+  abgeschwächt). Der Re-Evaluierungs-Trigger der ADR („Messung zeigt Druck am
+  Publisher“) bleibt.
 - **Fire-and-forget gegen Erwartung eines Abonnenten.** Wer das Ziel-Subjekt abonniert,
   bekommt keine Zustellgarantie und keine Wiederholung (`ADR-0100` Teilfrage 3); ein
   Abonnent, der nach einem Verbindungsabbruch zurückkehrt, liest die Lücke über
-  `cdc.changes` mit `route_target`. — **Ausgang:** bei der Closure einzutragen
-  (Handbuch-Adresse).
+  `cdc.changes` mit `route_target`. — **Ausgang:** weiter offen bis zur Handbuch-Stelle.
+  Die Lokalität des Fehlschlags ist belegt (`TestRouteFailureStaysLocal`); die
+  Aussage an den Anwender trägt der Übergabe-Block in `slice-routing-betriebsdoku` §2.
 - **Subjekt-Syntax *hergeleitet*.** Die ADR leitet aus der Syntax ab, dass das Alphabet
   des Zielnamens ein einzelnes Token bildet; am Server nicht geprüft. — **Ausgang:**
-  bei der Closure einzutragen (Test am realen Server, Punkt B).
+  entfallen (erprobt). Abonnent auf `cdc.route.src-route.eu-west_1` empfängt zwei
+  Nachrichten, `.*` und `.>` empfangen alle drei (`make test-notify` Exit 0,
+  Verifikations-Report §1).
 - **Ein Subjekt je Ziel, eine Quelle je Publisher.** Der Publisher hält genau eine
   `source_id`; mehrere Quellen im Prozess sind nach dem Bestand nicht vorgesehen
   (*erwartet*, `internal/adapters/driven/natsstream/publisher.go` `New`). —
-  **Ausgang:** bei der Closure einzutragen.
+  **Ausgang:** entfallen als Risiko dieses Slice: `New` ist textgleich zum Vor-Stand
+  (Review, Negativbefund zu `publisher.go`); die Annahme bleibt *erwartet*, ohne Test.
 - **Testcontainer-Abhängigkeit.** `make test-notify` braucht den gepinnten NATS-Digest
-  und Docker; ein Pin-Wechsel ist ein bewusster Commit. — **Ausgang:** bei der Closure
-  einzutragen.
+  und Docker; ein Pin-Wechsel ist ein bewusster Commit. — **Ausgang:** entfallen.
+  `make test-notify` Exit 0 mit den Pins des Skripts (Verifikations-Report §1).
+- **Überspringen aus anderem Grund färbt den Lauf rot.** Das Skript wertet jedes
+  `--- SKIP` im Paket `natsstream` als Fehler; heute überspringt sich allein `realConn`
+  ohne Server (Verifikations-Report §5 F-3). — **Ausgang:** entfallen als Gefahr (die
+  Wirkung ist die sichere Richtung), als Grenze im Kommentar von
+  `tools/harness/run-notify-tests.sh` benannt; der `natsnotify`-Lauf im selben Skript
+  läuft ohne `-v` und ohne SKIP-Zweig (Verifikations-Report §8, vor dem Slice vorhanden).
+- **Feste Wartezeiten der Real-Server-Tests.** `publisher_nats_test.go` wartet mit festen
+  Zeiten (100 ms Wartezeit, 300 ms `NextMsg`-Frist je Drain); an einem langsamen
+  Server ist das eine mögliche, **nicht beobachtete** Quelle von Intermittenz
+  (*hergeleitet*, Review F-6). — **Ausgang:** weiter offen. Adresse:
+  `internal/adapters/driven/natsstream/publisher_nats_test.go`; Trigger: die erste
+  beobachtete Intermittenz von `make test-notify` — dann ein Folge-Slice, der auf die
+  Nachricht wartet statt auf eine Zeit.
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
-
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** Die drei Liefer-Punkte tragen: der Publisher veröffentlicht
+  eine Change mit Ziel zusätzlich auf `cdc.route.<source_id>.<ziel>` mit byte-gleichem
+  Payload, ohne Ziel auf genau einem Subjekt; der Fehlschlag der zweiten
+  Veröffentlichung bleibt lokal; die Nahtstelle `subjectPublisher` macht die Zählung der
+  Veröffentlichungen je Change ohne Server testbar; am realen Server ist der Zielname mit
+  `-` und `_` ein einzelnes Token (erprobt). Gemessen im Lauf des Verifiers: `make test`,
+  `make test-notify`, `make gates`, `make docs-check`, `make fmt-check`, Suchlauf (11 Zeilen)
+  alle Exit 0 (Verifikations-Report §1). Der Mutationsweg über beide Wege (Unit im Race-Image
+  und `make test-notify`) färbte die Pflicht-Mutationen auf beiden Wegen rot.
+- **Was ging anders als geplant:** Eine Fixrunde (`d8371372`). Der Review fand, dass die
+  Unabhängigkeit der beiden Veröffentlichungen nur in einer Richtung gebunden war (F-1,
+  MEDIUM) und dass der umgeschriebene `publish`-Godoc einen Konjunktiv-Satz über die
+  verworfene Alternative mitführte (F-2, MEDIUM); das Skript hing am Namenspräfix der
+  Tests (F-3) und die Spec-Zeile sagte „Last nicht gemessen“, obwohl der Slice sie misst
+  (F-4). Die Fixrunde ergänzte `TestRouteSubjectSurvivesSkippedTableSubject` (die Eingabe
+  der Gegenrichtung: Tabellen-Subjekt nicht bildbar), setzte den Godoc in den Indikativ,
+  ließ das Skript das ganze Paket ohne `-run` fahren und bei jedem `--- SKIP` mit Exit 1
+  enden, und zog die Spec-Zeile auf den gemessenen Umfang. **Kein separates Re-Review:** der
+  Verifier hat die Fixrunde gegengeprüft (Diff von `publisher.go` nur Kommentare, das Skript
+  in drei Zuständen ausgeführt, M3 rot); die Fixrunde enthält keine geänderte
+  Produktionslogik, nur Godoc, Tests, Skript und die Abschwächung einer Spec-Zeile
+  (Verifikations-Report §7). Das ist die Gegenprüfung durch einen zweiten Kontext, nicht
+  ein Review. Nach der Verifikation (V-1 bis V-4): Plan-Kopf und DoD-Zeile an die
+  Spec-Änderung angepasst, eine Grenzen-Zeile im Skript-Kommentar, die README-Zeile für die
+  Wecksignal-Wurzel auf „empfängt nichts von der zweiten Veröffentlichung“ (negativ belegt),
+  die Kosten-Spanne im Übergabe-Block auf fünf Läufe (0,92 bis 1,30, Ursprung je Lauf:
+  zwei Implementer-Läufe gemessen, der Review-Lauf **übernommen**, ein Fixrunden-Lauf
+  gemessen, der Verifier-Lauf gemessen im Verifikations-Report und hier **übernommen**).
+  Die Mutationszahlen tragen ihren Ursprung (Instanz A von
+  [`AGENTS.md`](../../../../AGENTS.md) §3.12): Implementer sieben, **übernommen** (Bericht,
+  nicht nachgefahren); Reviewer sieben selbst gefahren, **gemessen** (sechs rot, eine grün —
+  das ist F-1); Fixrunde zwei selbst gefahren, **gemessen**; Verifier sechs selbst gefahren,
+  **gemessen** (alle rot; die sieben des Reviews übernahm er, soweit nicht wiederholt).
+  Zahlen aus den Reports.
+- **Steering-Loop-Eintrag:** geschärfte Regel, kein neuer Sensor. Eine
+  Unabhängigkeits-Zusage zweier Seiteneffekte („das Überspringen der einen verändert die
+  andere nicht“) ist zwei Zusagen und braucht beide Richtungen als Test, mit der Eingabe
+  der Gegenrichtung als Eingabe (hier: leeres Tabellen-Subjekt bei gesetztem Ziel); ein
+  Test, der nur eine Richtung bindet, lässt die Mutation der anderen grün (M6 des Reviews).
+  Zweitens: ein Test, der nur mit einem Fremdsystem läuft, darf sich nicht still
+  überspringen, und die Absicherung gehört an das Skript, das ihn fährt (Exit 1 bei
+  `--- SKIP`, ganzes Paket ohne `-run`), nicht an eine Namenspräfix-Konvention, die niemand
+  prüft: ein `go test -run` ohne Treffer endet mit Exit 0. Die Handlung vor dem
+  Reviewer-Handoff: je Zusage mit „und umgekehrt“ im Wortlaut die Gegenrichtung mutieren
+  (Schritt 19 in `.claude/commands/implement-slice.md` verlangt das schon: „je Zusage eine
+  benannte Eingabeseiten-Mutation“). Träger: die Lese-Handlung des Reviewers und das Skript;
+  keine neue Regel im Text von `AGENTS.md`.
+- **Beobachtungs-Register (`../observations/`):** drei neue `evidence/`-Dateien, zwei
+  Vermerke in `state.md`:
+  - **`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`** (verkörpert, Deckel bei 14×):
+    F-1 (MEDIUM, daher Datei trotz Deckel), die Gegenrichtung der Unabhängigkeit ohne
+    Eingabe-Bindung; Zähler **22×** → **23×** (`ls evidence | wc -l`). Der Reviewer fand
+    sie vor dem Merge, die Regel hat gewirkt.
+  - **`BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar`** (verkörpert): F-2
+    (MEDIUM, daher Datei), der Konjunktiv über die verworfene Alternative im
+    umgeschriebenen `publish`-Godoc; Zähler **7×** → **8×**. Der Reviewer fand ihn vor dem
+    Merge (Lese-Handlung); der Satz stand im Vor-Stand und wurde mit dem umgebrochenen Block
+    mitgeführt. Ob der Kandidatenlauf von Schritt 20 ihn gemeldet hätte, ist nicht nachgemessen.
+  - **`BEO-PGC/test-runner-stiller-ausschluss`** (offen): F-3 (LOW), der Lauf von
+    `make test-notify` hing am `-run`-Namenspräfix; dieselbe Klasse wie die `-run`-Muster
+    von `run-integration-tests.sh`; Zähler **2×** → **3×**, Schwelle erreicht, Ausgang beim
+    Lese-Schritt der Closure von [welle-routing](../welle-routing.md). Für das Skript
+    `run-notify-tests.sh` ist die Lücke geschlossen (ganzes Paket, Exit 1 bei Skip); für
+    `run-integration-tests.sh` bleibt sie offen.
+  - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×): **vierter Gegenbeleg, keine
+    Datei.** Die Fixrunde änderte eine Anweisung (das Skript), ein Re-Review blieb aus,
+    weil der Verifier sie in drei Zuständen **ausgeführt** hat. Der Kandidat-Wortlaut
+    „sobald die Fixrunde Anweisungen ändert“ ist damit zu weit; tragfähiger: „Produktionslogik
+    oder Norm geändert, oder nach der Fixrunde hat kein anderer Kontext sie ausgeführt“.
+    Im `state.md` vermerkt, die Entscheidung bleibt beim Lese-Schritt der Closure von
+    [welle-routing](../welle-routing.md).
+  - **Keine Beobachtung** (Begründung): F-4 (LOW, Spec-Zeile „Last nicht gemessen“) ist ein
+    Träger-Nachzug nach §3.13 und im Slice gezogen, der Fall ist durch die geltende Regel
+    gedeckt; F-5 und F-6 (INFO) stehen als Grenzen in §2 und §6.
+- **Folge-Slices:** keine neuen. Übergaben: `slice-routing-betriebsdoku` (Handbuch-Stelle
+  „Zugriff über den NATS-Vollinhalts-Stream“: Zusatz-Subjekt, Kosten-Aussage mit der Spanne
+  0,92 bis 1,30, Wecksignal nur negativ belegt), `slice-routing-sdk-beispiel-target` (NATS-Clients),
+  `slice-routing-e2e` (Beleg am laufenden System).
+- **Risiken aus §6:** Last **entfallen** (gemessen, ohne Aufschlag auflösbar); Fire-and-forget
+  **weiter offen** (Adresse: Handbuch-Stelle in `slice-routing-betriebsdoku` §2);
+  Subjekt-Syntax **entfallen** (erprobt); eine Quelle je Publisher **entfallen** (unverändert);
+  Testcontainer **entfallen**; Überspringen aus anderem Grund **entfallen** als Gefahr, als
+  Grenze benannt; feste Wartezeiten **weiter offen** (Adresse `publisher_nats_test.go`,
+  Trigger: erste beobachtete Intermittenz).
+- **Drei Paarungen:** der Slice gehört zu [welle-routing](../welle-routing.md) (offen) — die
+  Prüfung läuft bei deren Closure; die DoD-Zeile bleibt deshalb `[ ]`. (a) Anker: der
+  Lerneintrag verkörpert nichts neu (Ausprägung unter Register und Reviewer-Skill); (b)
+  Folge-Slice: keiner neu, die genannten Pläne liegen unter `open/`; (c) Register: die
+  genannten Kennungen existieren als Verzeichnis, jede trägt ein nicht leeres `evidence/`.
+- **Validator (Modul 8):** entfällt — das Zusatz-Subjekt ohne Handbuch, SDK-Clients und E2E ist
+  für Betreiber noch nicht als Ganzes nutzbar; der Nutzer-Bedarf
+  ([`LH-FA-CFG-008`](../../../../spec/lastenheft.md)) wird erst durch den Wellen-Beleg
+  validierbar.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
