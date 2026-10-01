@@ -2,12 +2,15 @@
 # run-sdk-kotlin-integration-tests.sh — Realserver-Integrationstest der
 # Kotlin-SDK-Zustellweg-Flächen (Mechanik-Klasse
 # ADR-0110 §Entscheidung Festlegung 2, gespiegelt vom Python-Vorbild und dem
-# C#-Spiegel tools/harness/run-sdk-csharp-integration-tests.sh): acht
+# C#-Spiegel tools/harness/run-sdk-csharp-integration-tests.sh): zwölf
 # Phasen — die vier Flächen des Packages pgchangefeed-kotlin (HTTP,
 # gRPC, SSE, NATS-Vollinhalt) prüfen ihre
 # Protokoll-Annahmen je gegen eine reale, laufende Server-Instanz ohne
-# Regel, und dieselben vier Flächen ein zweites Mal gegen eine Tabelle mit
-# aktiver `rename_column`-Regel —
+# Regel, dieselben vier Flächen ein zweites Mal gegen eine Tabelle mit
+# aktiver `rename_column`-Regel und ein drittes Mal gegen eine Tabelle mit
+# zwei Routing-Regeln (ein Client mit `target` empfängt nur die Changes seines
+# Ziels, ein Client ohne `target` alle; Vorbereitung und Ablauf über
+# tools/harness/lib-sdk-route-fixture.sh) —
 # der Prüfling ist die kompilierte Client-Assembly, der Integrationstest
 # importiert io.github.pt9912.pgchangefeed direkt (kein
 # Wegwerf-Duplikat-Client daneben).
@@ -54,6 +57,8 @@ cd "$(git rev-parse --show-toplevel)"
 
 # shellcheck source=tools/harness/lib-sdk-rule-fixture.sh
 source tools/harness/lib-sdk-rule-fixture.sh
+# shellcheck source=tools/harness/lib-sdk-route-fixture.sh
+source tools/harness/lib-sdk-route-fixture.sh
 
 COMPOSE=${COMPOSE:-docker compose -f compose.yaml}
 NETWORK=${NETWORK:-cdc-feed-test}
@@ -368,6 +373,37 @@ HTTP_RULE_IDENT=$(run_phase \
   changes_renamed "$SDK_RULE_TABLE" \
   "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN=$API_TOKEN PGCHANGEFEED_SOURCE_ID=$SOURCE_ID PGCHANGEFEED_RULE_SOURCE_KEY=$SDK_RULE_SOURCE_KEY PGCHANGEFEED_RULE_TARGET_KEY=$SDK_RULE_TARGET_KEY")
 
+# --- Routing-Phasen (ADR-0137 Teilfrage 5) --------------------------------
+# Dieselben vier Flächen gegen die eigene Tabelle $SDK_ROUTE_TABLE mit zwei
+# Routing-Regeln (tools/harness/lib-sdk-route-fixture.sh): der Client mit
+# `target` empfängt nur die Changes seines Ziels, der Client ohne `target`
+# alle; die Kennungen werden gegen cdc.changes (route_target) gehalten.
+sdk_route_fixture_setup "run-sdk-kotlin-integration-tests"
+
+sdk_route_phase "run-sdk-kotlin-integration-tests" \
+  "gRPC-Routing-Fläche (SPEC-020, ADR-0137)" "KotlinGrpcRouteSdkE2ESentinel" 600 \
+  "PGCHANGEFEED_TEST_NAME=GrpcRouteRealserverTest" \
+  "PGCHANGEFEED_GRPC_ADDR=pg-change-feed:9090 PGCHANGEFEED_API_TOKEN=$API_TOKEN" \
+  "$SDK_ROUTE_QUIET_SECONDS"
+
+sdk_route_phase "run-sdk-kotlin-integration-tests" \
+  "SSE-Routing-Fläche (SPEC-021, ADR-0137)" "KotlinSseRouteSdkE2ESentinel" 700 \
+  "PGCHANGEFEED_TEST_NAME=SseRouteRealserverTest" \
+  "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN=$API_TOKEN" \
+  "$SDK_ROUTE_QUIET_SECONDS"
+
+sdk_route_phase "run-sdk-kotlin-integration-tests" \
+  "NATS-Routing-Fläche (SPEC-024, ADR-0137)" "KotlinNatsRouteSdkE2ESentinel" 800 \
+  "PGCHANGEFEED_TEST_NAME=NatsRouteRealserverTest" \
+  "PGCHANGEFEED_NATS_URL=nats://nats:4222 PGCHANGEFEED_NATS_STREAM_TOKEN=$NATS_STREAM_TOKEN PGCHANGEFEED_SOURCE_ID=$SOURCE_ID" \
+  "$SDK_ROUTE_QUIET_SECONDS"
+
+sdk_route_phase "run-sdk-kotlin-integration-tests" \
+  "HTTP-Routing-Fläche (SPEC-018, ADR-0137)" "KotlinHttpRouteSdkE2ESentinel" 900 \
+  "PGCHANGEFEED_TEST_NAME=HttpRouteRealserverTest" \
+  "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN=$API_TOKEN PGCHANGEFEED_SOURCE_ID=$SOURCE_ID" \
+  0
+
 # --- Abdeckungs-Träger (docs/user/sdk-e2e-abdeckung.md) -------------------
 # Der Kotlin-Abschnitt entsteht aus derselben Messung, die ihn belegt;
 # geschrieben wird nur bei inhaltlicher Abweichung (Temp-Datei + cmp),
@@ -401,6 +437,7 @@ abdeckung_kotlin_abschnitt() {
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Kotlin-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`NatsRealserverTest\` | \`tools/harness/run-sdk-kotlin-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-006\`](../../spec/lastenheft.md), [\`LH-FA-CON-001\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Kotlin-SDK-Client (\`PgChangeFeedHttpClient\`) registriert real einen Consumer (admin-Token) und listet Tabellen (reader-Token); die Registrierung ist unabhängig über \`cdc.consumer\` lesbar; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`HttpRealserverTest\` | \`tools/harness/run-sdk-kotlin-integration-tests.sh\` |" \
     "| [\`LH-FA-CFG-007\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | eine aktive \`rename_column\`-Regel auf einer eigenen Tabelle: alle vier Kotlin-SDK-Clients empfangen die danach erfasste Änderung mit dem umbenannten Schlüssel im opaken Bild-Modell (Gson \`JsonElement\`, gRPC die Bytes als JSON) — Zielschlüssel trägt den Sentinel, Quellschlüssel fehlt; \`change_id\` je unabhängig über \`cdc.changes\` lesbar | \`GrpcRuleRealserverTest\`, \`SseRuleRealserverTest\`, \`NatsRuleRealserverTest\`, \`HttpRuleRealserverTest\` | \`tools/harness/run-sdk-kotlin-integration-tests.sh\` |" \
+    "| [\`LH-FA-CFG-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | zwei aktive Routing-Regeln (Ziele \`eu\` und \`us\`) auf einer eigenen Tabelle: die vier Kotlin-SDK-Flächen (gRPC-Stream, SSE-Stream, NATS-Zusatz-Subjekt \`cdc.route.<source_id>.<ziel>\`, HTTP-Lesezugriff) liefern mit \`target\` genau die Changes des Ziels \`eu\` und im Ruhefenster keine Change eines anderen Ziels oder ohne Ziel (der HTTP-Lesezugriff liefert exakt die Ziel-Teilmenge der ungefilterten Lesung), ohne \`target\` alle; \`change_id\` je unabhängig über \`cdc.changes\` (\`route_target\`) gegengelesen | \`GrpcRouteRealserverTest\`, \`SseRouteRealserverTest\`, \`NatsRouteRealserverTest\`, \`HttpRouteRealserverTest\` | \`tools/harness/run-sdk-kotlin-integration-tests.sh\` |" \
     '<!-- pgchangefeed-sdk-e2e:kotlin-end -->'
 }
 
@@ -462,3 +499,4 @@ abdeckung_schreiben
 
 echo "run-sdk-kotlin-integration-tests: Kotlin-SDK-Realserver-Belege (slice-sdk-kotlin-reale2e, Mechanik-Klasse ADR-0110 Festlegung 2) grün — gRPC-Fläche (PgChangeFeedGrpcClient, pg-change-feed:9090, change_id=$GRPC_IDENT), SSE-Fläche (PgChangeFeedSseClient, pg-change-feed:8090, change_id=$SSE_IDENT) und NATS-Vollinhalts-Fläche (PgChangeFeedNatsStreamClient, nats://nats:4222, change_id=$NATS_IDENT) empfingen je eine danach committete Änderung (change_id je unabhängig über cdc.changes lesbar), die HTTP-Fläche (PgChangeFeedHttpClient) registrierte real einen Consumer (consumer_id=$HTTP_IDENT, unabhängig über cdc.consumer lesbar) und listete Tabellen; ein Aufruf ohne gültiges Token endete je mit gRPC-Status Unauthenticated, HTTP-Status 401 bzw. der laut ablehnenden NATS-Verbindungsablehnung"
 echo "run-sdk-kotlin-integration-tests: Regel-Belege (slice-sdk-regel-realserver-e2e, ADR-0112) grün — eine aktive rename_column-Regel auf $SDK_RULE_TABLE, alle vier Flächen empfingen die danach erfasste Änderung mit dem umbenannten Schlüssel $SDK_RULE_TARGET_KEY (Quellschlüssel $SDK_RULE_SOURCE_KEY fehlt): gRPC change_id=$GRPC_RULE_IDENT, SSE change_id=$SSE_RULE_IDENT, NATS change_id=$NATS_RULE_IDENT, HTTP change_id=$HTTP_RULE_IDENT (je unabhängig über cdc.changes lesbar)"
+echo "run-sdk-kotlin-integration-tests: Routing-Belege (ADR-0137 Teilfrage 5) grün — zwei Routing-Regeln auf $SDK_ROUTE_TABLE (Ziel $SDK_ROUTE_TARGET_A und $SDK_ROUTE_TARGET_B), je Fläche ein Client mit target und ein Client ohne target${SDK_ROUTE_REPORT}"

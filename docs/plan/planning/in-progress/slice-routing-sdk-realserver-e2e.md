@@ -164,36 +164,55 @@ Kostenklasse der Läufe folgt dem Vorbild.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `tools/harness/lib-sdk-rule-fixture.sh` oder Schwester-Datei | update / neu | die Vorbereitung der Routing-Phasen an **einer** Stelle: Tabelle, `cdc.enable_table`, zwei `cdc.set_route`, Polls auf `applied` mit Frist, das SQL des Gegenlesens (`route_target`); drei Kopien sind die Klasse von `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`. |
-| `tools/harness/run-sdk-csharp-integration-tests.sh`, `run-sdk-kotlin-integration-tests.sh`, `run-sdk-python-integration-tests.sh` | update | Einbindung nach den acht bestehenden Phasen; vier Routing-Phasen je Runner; die Routing-Zeile im marker-gegrenzten Abschnitt des Abdeckungs-Trägers; Kopf-Kommentar. |
-| `sdks/csharp/PgChangeFeed.Client.Integration/`, `sdks/kotlin/pgchangefeed-kotlin/src/integrationTest/`, `sdks/python/pgchangefeed/integration/` | neu / update | je Sprache vier Testklassen bzw. -dateien: Client mit `target` gegen den laufenden Feed-Container; Umgebungswerte (Ziele, Sentinels) kommen vom Runner; keine interne Kennung im Test-Text (`make sdk-public-doc-check`). |
+| `tools/harness/lib-sdk-route-fixture.sh` (neu, Schwester-Datei von `lib-sdk-rule-fixture.sh`, dessen `sdk_rule_fixture_await_applied` sie aufruft) | neu | die Vorbereitung **und der Phasenablauf** der Routing-Phasen an **einer** Stelle: Tabelle `feed_e2e_sdkroute (id, region, name)`, `cdc.enable_table`, zwei `cdc.set_route` (Inhaltsregeln: Region `eu` auf Ziel `eu`, Region `us` auf Ziel `us`; eine Zeile der Region `asia` trifft keine Regel), Polls auf `applied` mit Frist; `sdk_route_phase`: Test-Container starten, auf `READY` warten, je Versuch eine Dreiergruppe (`asia`, `us`, `eu`) committen bis der Test `SEEN` druckt, auf das Prozessende warten, jede `RECEIVED_TARGETED`-/`RECEIVED_UNFILTERED`-Kennung gegen `cdc.changes` (`route_target`, Region, Sentinel) halten und die Zeile `ROUTE_RESULT` prüfen. Ein Phasenablauf statt drei Kopien (`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`). |
+| `tools/harness/run-sdk-csharp-integration-tests.sh`, `run-sdk-kotlin-integration-tests.sh`, `run-sdk-python-integration-tests.sh` | update | Einbindung der Schwester-Datei; nach den acht bestehenden Phasen `sdk_route_fixture_setup` und vier `sdk_route_phase`-Aufrufe (gRPC, SSE, NATS, HTTP; ID-Basen 600/700/800/900, Sentinel je Phase); die Routing-Zeile (`LH-FA-CFG-008`, `LH-FA-SST-009`) im marker-gegrenzten Abschnitt des Abdeckungs-Trägers; Kopf-Kommentar („zwölf Phasen“); Schlusszeile mit den gemessenen Werten. |
+| `sdks/csharp/PgChangeFeed.Client.Integration/` (neu: `RouteScenario.cs`, `GrpcRouteRealserverTests.cs`, `SseRouteRealserverTests.cs`, `NatsRouteRealserverTests.cs`, `HttpRouteRealserverTests.cs`; update: `PhaseEnvironment.cs`), `sdks/kotlin/pgchangefeed-kotlin/src/integrationTest/` (neu: `RouteScenario.kt`, vier `*RouteRealserverTest.kt`; update: `PhaseEnvironment.kt`), `sdks/python/pgchangefeed/integration/` (neu: `route_scenario.py`, vier `test_*_route_realserver.py`) | neu / update | je Sprache ein gemeinsamer Ablauf und vier Test-Klassen bzw. -Dateien. Stream-Flächen: zwei Clients nebeneinander (einer mit `target = eu`, einer ohne; NATS: Abonnement `cdc.route.<source_id>.eu` und Abonnement der Quelle), Sammler pro Client auf einem Hintergrund-Thread; Positivphase bis der Client mit Ziel eine Change der Region `eu` und der Client ohne Ziel alle drei Regionen dieser Phase (Sentinel) empfangen hat (`SEEN`), dann das Ruhefenster **ab diesem Zeitpunkt**; im Fenster zählen beide Sammler weiter, jede empfangene Change des Clients mit Ziel mit anderer Region ist rot (`foreign`). HTTP-Lesezugriff (Pull): ungefilterte Lesung vor und nach der Lesung mit Ziel; die Lesung mit Ziel enthält jede `eu`-Change der ersten und nur `eu`-Changes der zweiten Lesung, kein Fenster (`quiet_seconds=0`). Umgebungswerte (Ziele, Region ohne Ziel, Fenster, Sentinel) kommen vom Runner; keine interne Kennung im Test-Text (`make sdk-public-doc-check`). |
+| `sdks/csharp/PgChangeFeed.Client.Integration/GrpcRealserverTests.cs`, `GrpcRuleRealserverTests.cs` | update (Plan-Nachzug) | **Befund am Start:** das C#-Integrationsprojekt übersetzte am Parent nicht — drei Aufrufe `client.StreamChangesAsync(<CancellationToken>)` übergeben das Token positional als erstes Argument, seit `StreamChangesAsync(schema, table, cancellationToken)` (Stream-Filter, `ADR-0133`) steht dort `string? schema` (Compiler-Fehler `CS1503` im `integration`-Bau von `make test-sdk-csharp-integration`). Reiner Test-Code; die drei Aufrufe übergeben das Token benannt (`cancellationToken:`), Erwartung unverändert. Ohne diese Korrektur trägt kein C#-Lauf der Routing-Phasen. |
 | `docs/user/sdk-e2e-abdeckung.md` | Erzeugnis | die Runner schreiben ihre Abschnitte; nicht von Hand. |
 | `harness/README.md` §Sensors, `harness/mk/sdk.mk` | update | Aufzählung der Belege der drei Ziele; Hilfetexte. |
 | `sdks/*/Dockerfile` (Stufe `integration`), `compose.yaml` | prüfen | keine Änderung erwartet; eine Änderung ist ein Plan-Nachzug. |
 
 **Ansatz:** Die Tiers laufen gegen den Server des Arbeitsbaums; die Quelle der Ziel-
 Namen und Sentinels ist der Runner. Die Negativ-Aussage („nicht B") wird über ein
-Fenster belegt, das länger ist als die Zustelldauer der positiven Phase (Wert und
-Ursprung im Bericht, nicht erfunden). Der Aufbau folgt `slice-sdk-regel-realserver-e2e`.
+Fenster belegt, das länger ist als die Zustelldauer der positiven Phase. Das Fenster
+(`SDK_ROUTE_QUIET_SECONDS`, 15 s) ist der Wert des Server-Rundlaufs (`RT_WINDOW` in
+`tools/harness/run-integration-tests.sh`) — **übernommen**, nicht neu bemessen; es
+beginnt erst, wenn der Client ohne `target` die Change des fremden Ziels empfangen hat
+(derselbe Zustellweg hat sie dann nachweislich ausgeliefert). Die Zustelldauer der
+positiven Phase misst jeder Lauf (`SEEN nach … ms ab dem letzten Commit`, in der
+Schlusszeile des Runners; Obergrenze mit Abfrage-Granularität von 0,2 s). Der HTTP-
+Lesezugriff ist ein Pull-Weg: dort steht kein Ruhefenster, sondern der Vergleich der
+Lesung mit Ziel mit der ungefilterten Lesung davor und danach. Der Aufbau folgt
+`slice-sdk-regel-realserver-e2e`.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die SDK-Tiers fahren
-acht Phasen, davon vier mit Regel"; Parent ist `26392b65`; der Implementer ergänzt die
-`diff`-Zeilen und trägt Gefundenes und Nichtgefundenes ein):**
+acht Phasen, davon vier mit Regel"; Parent ist `26392b65`; die `diff`-Zeilen und die
+Befunde trägt der Implementer ein; neue Dateien sind für den Stand `diff` mit `git add`
+im Index):**
 
 ```suchlauf
 26392b65 3 -n -E 'acht Phasen' -- harness tools
 26392b65 16 -n -F 'rule-fixture' -- tools/harness
 26392b65 0 -n -F 'set_route' -- tools/harness
 26392b65 0 -n -E 'test-sdk-(csharp|kotlin|python)-integration' -- .github
+26392b65 14 -n -E 'Regel-Phasen' -- harness tools
+26392b65 0 -n -E 'zwölf Phasen' -- harness tools
+diff 0 -n -E 'acht Phasen' -- harness tools
+diff 17 -n -F 'rule-fixture' -- tools/harness
+diff 20 -n -F 'set_route' -- tools/harness
+diff 0 -n -E 'test-sdk-(csharp|kotlin|python)-integration' -- .github
+diff 14 -n -E 'Regel-Phasen' -- harness tools
+diff 4 -n -E 'zwölf Phasen' -- harness tools
+diff 13 -n -F 'route-fixture' -- tools/harness
 ```
 
 | Träger | Messung am Parent (`26392b65`, gemessen am 2026-10-01) | Behandlung und Befund am Diff |
 |---|---|---|
-| Phasenzahl in Hilfetexten und Kopf-Kommentaren | Zeile 1: 3 Zeilen („acht Phasen": zwei Hilfetexte in `harness/mk/sdk.mk`, ein Runner-Kopf) | auf den Ist-Umfang ziehen; weitere Aufzählungen („die vier Regel-Phasen") in den Runnern lesen; Befund: einzutragen |
-| Einbindung der Hilfsdatei | Zeile 2: 16 Zeilen unter `tools/harness` | jede Einbindungsstelle lesen: Routing-Phasen binden dieselbe Datei oder die Schwester ein; Befund: einzutragen |
-| `set_route` in den Runnern | Zeile 3: 0 Zeilen | entsteht in diesem Slice; Diff-Zeile zählt gegen |
-| Workflows, die ein `test-sdk-*-integration`-Ziel aufrufen | Zeile 4: 0 Zeilen | muss 0 bleiben (kein Workflow-Zug, §3.10) |
-| `harness/README.md` §Sensors, die drei Zeilen der Ziele | liegen außerhalb dieses Suchraums | werden in diesem Slice nachgezogen (DoD Doku-Update); Befund: einzutragen |
+| Phasenzahl in Hilfetexten und Kopf-Kommentaren | Zeile 1: 3 Zeilen („acht Phasen": zwei Hilfetexte in `harness/mk/sdk.mk`, ein Runner-Kopf); Zeile 5: 14 Zeilen „Regel-Phasen" | auf den Ist-Umfang gezogen. **Befund am Diff:** „acht Phasen" 0 Zeilen; „zwölf Phasen" 4 Zeilen (die drei Hilfetexte in `harness/mk/sdk.mk`, auch der des Python-Ziels, der am Parent keine Phasenzahl nannte, und der Kopf des C#-Runners); die Köpfe des Kotlin- und des Python-Runners nennen die Zahl in einer Zeilenumbruch-Form („acht\n# Phasen" bzw. gar nicht) und wurden gelesen und berichtigt (Kotlin „zwölf"). Die 14 „Regel-Phasen"-Zeilen bleiben (14 am Diff): sie sagen „die vier Regel-Phasen tragen keinen REJECTED-Beleg" und bleiben wahr, weil die Routing-Phasen nicht über `run_phase` laufen. Nichtgefunden: keine weitere Phasenzahl in `harness/` und `tools/` |
+| Einbindung der Hilfsdatei | Zeile 2: 16 Zeilen unter `tools/harness` | jede Einbindungsstelle gelesen. **Befund am Diff (17, +1):** die +1 ist die Verweiszeile der neuen Schwester-Datei auf `lib-sdk-rule-fixture.sh` (sie ruft `sdk_rule_fixture_await_applied` auf); die drei Runner binden beide Dateien ein (`route-fixture`: 13 Zeilen, 0 am Parent). Nichtgefunden: keine vierte Einbindungsstelle der Regel-Vorbereitung außerhalb der drei Runner |
+| `set_route` in den Runnern | Zeile 3: 0 Zeilen | entsteht in diesem Slice. **Befund am Diff (20):** Aufruf und Meldungstexte der Schwester-Datei, die Kopf-Kommentare und Abdeckungszeilen der drei Runner; kein Runner ruft `cdc.set_route` selbst auf (nur über `sdk_route_fixture_setup`) |
+| Workflows, die ein `test-sdk-*-integration`-Ziel aufrufen | Zeile 4: 0 Zeilen | **Befund am Diff: 0** — kein Workflow-Zug, §3.10 greift nicht |
+| `harness/README.md` §Sensors, die drei Zeilen der Ziele | liegen außerhalb dieses Suchraums | nachgezogen: jede der drei Zeilen nennt die Routing-Phasen und `lib-sdk-route-fixture.sh` (`git diff -- harness/README.md`). Nichtgefunden: kein weiterer Satz mit der Phasenzahl der Tiers im Benutzerhandbuch (`docs/user/benutzerhandbuch.md` unberührt, Plan §2) |
 
 ## 4. Trigger
 

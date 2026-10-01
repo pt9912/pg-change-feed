@@ -24,7 +24,8 @@ public sealed class GrpcRuleRealserverTests
         using var client = new PgChangeFeedGrpcClient(options);
         PhaseEnvironment.Print("READY");
 
-        var received = await ReceiveSentinelAsync(client.StreamChangesAsync(PhaseEnvironment.ReceiveCts.Token));
+        var received = await ReceiveSentinelAsync(
+            client.StreamChangesAsync(cancellationToken: PhaseEnvironment.ReceiveCts.Token));
 
         Assert.Equal("INSERT", received.Operation);
         Assert.Equal(PhaseEnvironment.Table, received.Table);

@@ -24,7 +24,8 @@ public sealed class GrpcRealserverTests
         using var client = new PgChangeFeedGrpcClient(options);
         PhaseEnvironment.Print("READY");
 
-        var received = await ReceiveSentinelAsync(client.StreamChangesAsync(PhaseEnvironment.ReceiveCts.Token));
+        var received = await ReceiveSentinelAsync(
+            client.StreamChangesAsync(cancellationToken: PhaseEnvironment.ReceiveCts.Token));
 
         Assert.NotEqual(string.Empty, received.ChangeId);
         Assert.NotEqual(string.Empty, received.TransactionId);
@@ -47,7 +48,8 @@ public sealed class GrpcRealserverTests
         using var client = new PgChangeFeedGrpcClient(options);
 
         var exception = await Assert.ThrowsAnyAsync<RpcException>(async () =>
-            await FirstChangeAsync(client.StreamChangesAsync(PhaseEnvironment.RejectCts.Token)));
+            await FirstChangeAsync(
+                client.StreamChangesAsync(cancellationToken: PhaseEnvironment.RejectCts.Token)));
 
         Assert.Equal(StatusCode.Unauthenticated, exception.StatusCode);
         PhaseEnvironment.Print("REJECTED code=Unauthenticated");

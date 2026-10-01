@@ -28,4 +28,8 @@ object PhaseEnvironment {
     val httpPublication: String get() = required("PGCHANGEFEED_HTTP_PUBLICATION")
     val ruleSourceKey: String get() = required("PGCHANGEFEED_RULE_SOURCE_KEY")
     val ruleTargetKey: String get() = required("PGCHANGEFEED_RULE_TARGET_KEY")
+    val routeTargetA: String get() = required("PGCHANGEFEED_ROUTE_TARGET_A")
+    val routeTargetB: String get() = required("PGCHANGEFEED_ROUTE_TARGET_B")
+    val routeRegionNone: String get() = required("PGCHANGEFEED_ROUTE_REGION_NONE")
+    val routeQuietSeconds: Long get() = required("PGCHANGEFEED_ROUTE_QUIET_SECONDS").toLong()
 }

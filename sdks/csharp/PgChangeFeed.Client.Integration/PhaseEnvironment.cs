@@ -36,6 +36,11 @@ internal static class PhaseEnvironment
     internal static string RuleSourceKey => Required("PGCHANGEFEED_RULE_SOURCE_KEY");
     internal static string RuleTargetKey => Required("PGCHANGEFEED_RULE_TARGET_KEY");
 
+    internal static string RouteTargetA => Required("PGCHANGEFEED_ROUTE_TARGET_A");
+    internal static string RouteTargetB => Required("PGCHANGEFEED_ROUTE_TARGET_B");
+    internal static string RouteRegionNone => Required("PGCHANGEFEED_ROUTE_REGION_NONE");
+    internal static int RouteQuietSeconds => int.Parse(Required("PGCHANGEFEED_ROUTE_QUIET_SECONDS"));
+
     internal static CancellationTokenSource ReceiveCts => new(TimeSpan.FromSeconds(90));
     internal static CancellationTokenSource RejectCts => new(TimeSpan.FromSeconds(15));
 }
