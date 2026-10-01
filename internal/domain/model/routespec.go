@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/big"
 	"sort"
 	"strconv"
 	"strings"
@@ -14,9 +15,9 @@ import (
 
 // MaxRouteOrder ist die größte `order`, die ein `set_route`-Antrag trägt:
 // `SPEC-032` verlangt eine positive ganze Zahl und legt keine Obergrenze
-// fest. Die Umsetzung wählt die Grenze der 32-Bit-Ganzzahl: sie liegt weit
-// über jeder Zahl von Regeln einer Tabelle, und die `order` bleibt in jedem
-// Ganzzahltyp eines Verbrauchers darstellbar.
+// fest. Die Obergrenze ist eine Setzung der Umsetzung (der größte Wert einer
+// 32-Bit-Ganzzahl): sie liegt weit über jeder Zahl von Regeln einer Tabelle
+// und begrenzt die Eingabe, die `ParseRouteSpec` annimmt.
 const MaxRouteOrder int64 = math.MaxInt32
 
 // RouteSpecError trägt zu einem Ablehnungsgrund den Wert, den die Adresse des
@@ -77,9 +78,9 @@ var (
 //	b) jeder Schlüssel von `rule_spec` und von `when` gehört zur Regelform:
 //	   sonst `ErrUnknownRuleSpecKey` mit dem Schlüssel, bei mehreren dem
 //	   ersten in aufsteigender Ordnung, `rule_spec` vor `when`;
-//	c) `target` steht als Zeichenkette, `order` als ganze Zahl von 1 bis
-//	   `MaxRouteOrder` in der Schreibweise einer Ganzzahl (ein Bruch oder
-//	   ein Exponent, auch `10.0`, endet hier), `when` — wenn es steht — als
+//	c) `target` steht als Zeichenkette, `order` als JSON-Zahl mit dem Wert
+//	   einer ganzen Zahl von 1 bis `MaxRouteOrder` (`10.0` und `1e1` gelten,
+//	   `1.5` endet hier), `when` — wenn es steht — als
 //	   Objekt mit den Zeichenketten `column` (nicht leer, ohne U+0000) und
 //	   `equals`: sonst `ErrInvalidRuleSpec`;
 //	d) `target` liegt im Alphabet des Zielnamens: sonst
@@ -155,16 +156,26 @@ func firstUnknownKey(fields map[string]json.RawMessage, allowed []string) (strin
 	return "", false
 }
 
-// jsonRouteOrder liest einen JSON-Wert, der eine ganze Zahl von 1 bis
-// `MaxRouteOrder` in der Schreibweise einer Ganzzahl sein muss (nur Ziffern);
-// abwesend, eine Zeichenkette, ein Vorzeichen, ein Bruch und ein Exponent
-// liefern `false`.
+// jsonRouteOrder liest einen JSON-Wert, der eine JSON-Zahl mit dem Wert einer
+// ganzen Zahl von 1 bis `MaxRouteOrder` sein muss; die Schreibweise ist
+// gleichgültig (`10`, `10.0`, `1e1`, `1E+1`). Der Wert wird exakt als
+// rationale Zahl geprüft, nicht über eine Gleitkommazahl. Abwesend, eine
+// Zeichenkette oder ein anderer Nicht-Zahlen-Wert, ein Bruchteil ungleich 0,
+// Null, ein negativer Wert und ein Wert über der Obergrenze liefern `false`.
 func jsonRouteOrder(raw json.RawMessage) (int64, bool) {
-	if len(raw) == 0 || raw[0] < '0' || raw[0] > '9' {
+	if len(raw) == 0 || (raw[0] != '-' && (raw[0] < '0' || raw[0] > '9')) {
 		return 0, false
 	}
-	order, err := strconv.ParseInt(string(raw), 10, 64)
-	if err != nil || order < 1 || order > MaxRouteOrder {
+	value, ok := new(big.Rat).SetString(string(raw))
+	if !ok || !value.IsInt() {
+		return 0, false
+	}
+	whole := value.Num()
+	if !whole.IsInt64() {
+		return 0, false
+	}
+	order := whole.Int64()
+	if order < 1 || order > MaxRouteOrder {
 		return 0, false
 	}
 	return order, true

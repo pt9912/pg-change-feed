@@ -1787,13 +1787,9 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 		// R3 hat gegen den Katalog und den Ausschlussstand zum Antragszeitpunkt
 		// geprüft; der Nachtrag steht vor dem Vermerk `applied` — scheitert der
 		// Vermerk, trägt die laufende Bindung die Regel weiter, und der nächste
-		// Durchlauf verarbeitet denselben Antrag erneut (der Ersatz nach Namen
-		// macht den Nachtrag folgenlos; R1 prüft nur gegen `applied`-Zeilen).
-		// Grenze wie bei `set_transformation`: verarbeitet ein Durchlauf
-		// dazwischen einen Antrag, der zum noch nicht vermerkten in R2, R4 oder
-		// R5 steht, prüft er gegen einen Regelstand ohne den ersten und wird
-		// `applied`; die Wiederholung des ersten endet danach `failed`, und die
-		// laufende Bindung trägt bis zum Neustart beide Regeln.
+		// Durchlauf verarbeitet denselben Antrag erneut. Hergeleitet aus dem
+		// Code, ohne Wiederholungs-Test: R1 liest nur `applied`-Zeilen, und
+		// `Assembler.SetRoute` ersetzt nach dem Regelnamen.
 		rule, err := deps.setRoutes.Set(ctx, inbound.SetRouteCommand{
 			Source:   request.Source,
 			Schema:   request.Schema,

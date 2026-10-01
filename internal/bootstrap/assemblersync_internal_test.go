@@ -25,7 +25,10 @@ import (
 // Kennung, Schema-Version, Ausschluss- und Regelstand der Quelle
 // eingeschlossen. Ohne diesen Nachtrag bliebe eine über den direkten
 // HTTP-/gRPC-Zugriffsweg aktivierte Tabelle bis zum nächsten Neustart
-// unerfasst.
+// unerfasst. Der Routing-Port trägt eine Regel: die Weitergabe des Ports im
+// Dekorator ist gebunden (rot färbende Mutation: `e.routing` in `Enable` durch
+// einen leeren Port ersetzen — das Ziel bleibt leer); die Belegung des Feldes
+// in `Run` bindet dieser Test nicht.
 func TestEnableTableWithAssemblerSyncAddsBindingOnSuccess(t *testing.T) {
 	ctx := context.Background()
 	const source = model.SourceID("src-api")
@@ -40,6 +43,11 @@ func TestEnableTableWithAssemblerSyncAddsBindingOnSuccess(t *testing.T) {
 		"public.orders_api_enable": {"secret"},
 	}}
 	transformations := &fakeTransformationPort{rules: map[string][]model.Transformation{}}
+	rule, err := model.NewRouteRule("all_orders", "alle", 10, nil)
+	if err != nil {
+		t.Fatalf("NewRouteRule: %v", err)
+	}
+	routing := &fakeRoutingPort{rules: map[string][]model.RouteRule{"public.orders_api_enable": {rule}}}
 	assembler, err := mapper.NewAssembler(source, map[string]mapper.TableBinding{}, nil)
 	if err != nil {
 		t.Fatalf("NewAssembler: %v", err)
@@ -52,7 +60,7 @@ func TestEnableTableWithAssemblerSyncAddsBindingOnSuccess(t *testing.T) {
 		schemaStore:        schemaStore,
 		columnExclusion:    columnExclusion,
 		transformations:    transformations,
-		routing:            &fakeRoutingPort{},
+		routing:            routing,
 	}
 
 	result, err := decorator.Enable(ctx, inbound.EnableTableCommand{
@@ -76,6 +84,9 @@ func TestEnableTableWithAssemblerSyncAddsBindingOnSuccess(t *testing.T) {
 	}
 	if image := assemblerRowImage(t, assembler, 2, "public", "orders_api_enable"); image != `{"id":"1"}` {
 		t.Fatalf("Row Image = %s, wollen ohne den ausgeschlossenen Schlüssel secret (Ausschlussstand nicht übernommen)", image)
+	}
+	if target := routedTargetIn(t, assembler, 3, "orders_api_enable", "region", "eu"); target != "alle" {
+		t.Fatalf("Ziel nach Enable = %q, wollen alle (Regelstand der Quelle nicht übernommen)", target)
 	}
 }
 

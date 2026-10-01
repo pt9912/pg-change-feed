@@ -159,7 +159,7 @@ VALUES ($1, $2, 'public', $3, $4, $5, $6::text::jsonb, $7, $8, $9)`
 
 // TestAdministrationRequestSameTransactionCallsKeepCallOrder trägt die
 // Zusage von `ADR-0127` gegen die realen SQL-Funktionen (nicht gegen von
-// Hand geschriebene Zeilen): alle sieben Funktionen (`backfill_table`,
+// Hand geschriebene Zeilen): sieben der neun Funktionen (`backfill_table`,
 // `remove_transformation`/`set_transformation` derselben Regel,
 // `exclude_column`/`include_column` derselben Spalte,
 // `disable_table`/`enable_table` derselben Tabelle) tragen `requested_at` je

@@ -131,6 +131,24 @@ func set(routing *fakeRouting, columns *fakeColumns, source model.SourceID, tabl
 	})
 }
 
+// TestSetRouteAcceptsEveryNotationOfAPositiveWholeOrder trägt `SPEC-032`: eine
+// JSON-Zahl mit dem Wert einer positiven ganzen Zahl gilt in jeder
+// Schreibweise (`16`, `16.0`, `1.6e1`, `16E+0`, `0.16e2`) als dieselbe `order`.
+// Rot färbende Mutation: die Prüfung auf die Ziffernform des Rohtexts
+// zurückführen — jede Schreibweise außer `16` endet abgelehnt.
+func TestSetRouteAcceptsEveryNotationOfAPositiveWholeOrder(t *testing.T) {
+	for _, literal := range []string{"16", "16.0", "1.6e1", "16E+0", "0.16e2"} {
+		routing, columns := newPorts(t)
+		got, err := set(routing, columns, "src-1", "orders", "neu", `{"target": "x", "order": `+literal+`, "when": {"column": "region", "equals": "asia"}}`)
+		if err != nil {
+			t.Fatalf("order %s: Set = %v, wollen nil", literal, err)
+		}
+		if got.Order() != 16 {
+			t.Fatalf("order %s: Ordnung = %d, wollen 16", literal, got.Order())
+		}
+	}
+}
+
 // TestSetRouteAcceptsAConflictFreeRule trägt den Happy Path
 // (`LH-FA-CFG-008`): eine Regel ohne Verstoß gegen R1 bis R5 wird als Regel mit
 // Name, Ziel, `order` und Bedingung geliefert; der Use Case schreibt den
@@ -218,8 +236,7 @@ func TestSetRouteRejectsWithTheSpecTexts(t *testing.T) {
 		{"order 0", "orders", "neu", `{"target": "x", "order": 0}`, "rule_spec ist ungültig: public.orders.neu", domainerrors.ErrInvalidRuleSpec},
 		{"order negativ", "orders", "neu", `{"target": "x", "order": -3}`, "rule_spec ist ungültig: public.orders.neu", domainerrors.ErrInvalidRuleSpec},
 		{"order mit Bruch", "orders", "neu", `{"target": "x", "order": 5.5}`, "rule_spec ist ungültig: public.orders.neu", domainerrors.ErrInvalidRuleSpec},
-		{"order ganzzahlig mit Nachkommastelle", "orders", "neu", `{"target": "x", "order": 5.0}`, "rule_spec ist ungültig: public.orders.neu", domainerrors.ErrInvalidRuleSpec},
-		{"order mit Exponent", "orders", "neu", `{"target": "x", "order": 1e1}`, "rule_spec ist ungültig: public.orders.neu", domainerrors.ErrInvalidRuleSpec},
+		{"order mit Bruchteil ungleich 0 und Exponent", "orders", "neu", `{"target": "x", "order": 15e-1}`, "rule_spec ist ungültig: public.orders.neu", domainerrors.ErrInvalidRuleSpec},
 		{"order über der Obergrenze", "orders", "neu", `{"target": "x", "order": 2147483648}`, "rule_spec ist ungültig: public.orders.neu", domainerrors.ErrInvalidRuleSpec},
 		{"order über int64", "orders", "neu", `{"target": "x", "order": 99999999999999999999}`, "rule_spec ist ungültig: public.orders.neu", domainerrors.ErrInvalidRuleSpec},
 		{"when keine Objekt", "orders", "neu", `{"target": "x", "order": 5, "when": "region"}`, "rule_spec ist ungültig: public.orders.neu", domainerrors.ErrInvalidRuleSpec},

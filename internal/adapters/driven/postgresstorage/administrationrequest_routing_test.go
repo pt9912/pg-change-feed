@@ -368,6 +368,75 @@ func TestAdministrationRequestSetRouteAcceptanceSet(t *testing.T) {
 	}
 }
 
+// TestAdministrationRequestSetRouteOrderLiteralsReachTheParser trägt die
+// Schreibweise von `order` über den echten Antragsweg (`SPEC-032`): jedes
+// Literal läuft durch `cdc.set_route` (Parameter `json`, Spalte `jsonb`) und
+// `ListPending` und erreicht `ParseRouteSpec` so, wie die Queue es liefert. Der
+// Wert zählt, nicht die Schreibweise: `10`, `10.0`, `1e1` und `1E+1` gelten
+// als die Ordnung 10; ein Bruchteil, 0, ein negativer Wert, ein Wert über der
+// Obergrenze und eine Zeichenkette enden `rule_spec ist ungültig`. Die Eingabe
+// jedes Falls ist die Verletzung. Rot färbende Mutation: `jsonRouteOrder` auf
+// die Ziffernform zurückführen (`strconv.ParseInt` des Rohtexts) — `10.0` endet
+// abgelehnt; `value.IsInt()` streichen — `1.5` wird angenommen.
+func TestAdministrationRequestSetRouteOrderLiteralsReachTheParser(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+	const table = "route_order_literals"
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE table_name = $1", table)
+	})
+	adapter, err := postgresstorage.NewAdministrationRequest(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewAdministrationRequest: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+
+	for _, tc := range []struct {
+		name    string
+		literal string
+		want    int64 // 0: abgelehnt
+	}{
+		{"ganzzahl", `10`, 10},
+		{"mit_nachkommastelle", `10.0`, 10},
+		{"exponent", `1e1`, 10},
+		{"exponent_gross_mit_vorzeichen", `1E+1`, 10},
+		{"obergrenze", `2147483647`, 2147483647},
+		{"bruchteil", `1.5`, 0},
+		{"null", `0`, 0},
+		{"negativ", `-1`, 0},
+		{"ueber_der_obergrenze", `2147483648`, 0},
+		{"zeichenkette", `"5"`, 0},
+	} {
+		var requestID string
+		spec := `{"target":"a","order":` + tc.literal + `}`
+		if err := pool.QueryRow(ctx,
+			"SELECT cdc.set_route($1, $2, $3, $4, $5::text::json)", administrationRequestSource, "public", table, tc.name, spec,
+		).Scan(&requestID); err != nil {
+			t.Fatalf("%s: cdc.set_route = %v, wollen nil", tc.name, err)
+		}
+		pending, err := adapter.ListPending(ctx)
+		if err != nil {
+			t.Fatalf("%s: ListPending: %v", tc.name, err)
+		}
+		var request *model.AdministrationRequest
+		for i := range pending {
+			if pending[i].Rejected == nil && pending[i].Request.ID == model.AdministrationRequestID(requestID) {
+				request = &pending[i].Request
+			}
+		}
+		if request == nil {
+			t.Fatalf("%s: ListPending trägt den Antrag %q nicht", tc.name, requestID)
+		}
+		parsed, err := model.ParseRouteSpec(request.RuleSpec)
+		switch {
+		case tc.want == 0 && !stderrors.Is(err, domainerrors.ErrInvalidRuleSpec):
+			t.Errorf("%s: ParseRouteSpec(%q) = %v, wollen rule_spec ist ungültig", tc.name, request.RuleSpec, err)
+		case tc.want != 0 && (err != nil || parsed.Order() != tc.want):
+			t.Errorf("%s: ParseRouteSpec(%q) = %v / order %d, wollen order %d", tc.name, request.RuleSpec, err, parsed.Order(), tc.want)
+		}
+	}
+}
+
 // TestTableActivationRoutingRulesDeriveAppliedRouteRequests trägt die
 // Ableitung des dauerhaften Routing-Regelstandes gegen die reale PostgreSQL
 // (`SPEC-019`): die `applied`-Zeilen der beiden Routing-Antragsarten tragen den

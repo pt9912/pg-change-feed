@@ -85,6 +85,10 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
   `rule_spec`-Form, R1–R6 mit Fehlertexten (führende Stelle: die Spec), Abhilfe, und der
   Fall R4: eine Abschlussregel ohne `when` muss die höchste `order` tragen — wer eine
   Regel mit höherer `order` ergänzen will, entfernt die Abschlussregel und setzt sie neu;
+  die `order`-Obergrenze 2147483647 (`MaxRouteOrder`, Setzung des Slice
+  `routing-antragsweg`, `SPEC-032` nennt keine) und die Annahme jeder JSON-Zahl mit dem
+  Wert einer positiven ganzen Zahl (`10`, `10.0`, `1e1`), während ein Bruchteil, 0, ein
+  negativer Wert und ein Wert über der Obergrenze `rule_spec ist ungültig` enden;
 - aus `slice-routing-backfill-pfad` — Backfill-Bestand trägt das Label des Regelstands
   zum Run; Neuerzeugung des Altbestands über einen neuen Run (Abschnitt „Bestand als
   Backfill überführen");

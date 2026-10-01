@@ -351,6 +351,49 @@ func TestProcessAdministrationRequestsExcludeColumnAndRouteBlockEachOther(t *tes
 	}
 }
 
+// TestProcessAdministrationRequestsRouteOrderNotation trägt `SPEC-032` über den
+// Antragsweg (Queue, Use Case, Assembler): `order` gilt als JSON-Zahl mit dem
+// Wert einer positiven ganzen Zahl, gleich in welcher Schreibweise — der Antrag
+// wird `applied` und die Regel weist ihr Ziel zu; ein Bruchteil, 0, ein
+// negativer Wert, ein Wert über `MaxRouteOrder` und eine Zeichenkette enden
+// `failed` mit `rule_spec ist ungültig`, und die Bindung bleibt ohne Ziel. Die
+// Eingabe jedes Falls ist das `order`-Literal. Rot färbende Mutation: die
+// Zahlenprüfung von `jsonRouteOrder` auf die Ziffernform des Rohtexts
+// zurückführen — `10.0` und `1e1` enden `failed`.
+func TestProcessAdministrationRequestsRouteOrderNotation(t *testing.T) {
+	ctx := context.Background()
+	table := "public." + routeTable
+	for _, tc := range []struct {
+		literal string
+		applied bool
+	}{
+		{"10", true},
+		{"10.0", true},
+		{"1e1", true},
+		{"1E+1", true},
+		{"1.5", false},
+		{"0", false},
+		{"-1", false},
+		{"2147483648", false},
+		{`"5"`, false},
+	} {
+		request := routeRequest("req-order", "eu_orders", `{"target": "eu", "order": `+tc.literal+`, "when": {"column": "region", "equals": "eu"}}`)
+		deps, queue, assembler := routeFixture(t, request)
+		process(ctx, deps, queue, request)
+		message, failed := failureOf(queue, "req-order")
+		target := routedTarget(t, assembler, 1, "eu")
+		if tc.applied {
+			if !isApplied(queue, "req-order") || target != "eu" {
+				t.Fatalf("order %s: applied = %t, Fehlertext %q, Ziel %q, wollen applied und Ziel eu", tc.literal, isApplied(queue, "req-order"), message, target)
+			}
+			continue
+		}
+		if !failed || message != "rule_spec ist ungültig: "+table+".eu_orders" || target != "" {
+			t.Fatalf("order %s: failed = %t, Fehlertext %q, Ziel %q, wollen failed mit rule_spec ist ungültig und ohne Ziel", tc.literal, failed, message, target)
+		}
+	}
+}
+
 // TestProcessAdministrationRequestsRouteWithoutBindingIsApplied trägt die
 // Zusage des Antrags gegen eine Tabelle ohne laufende Bindung (`SPEC-019`): er
 // endet `applied`, der Nachtrag ist wirkungslos, und die Regel entsteht beim

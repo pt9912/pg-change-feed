@@ -105,6 +105,14 @@ Waise ist. Drei Liefer-Punkte:
       Bericht). Die Wegwerf-Clients unter `tools/harness/` (`httpclient`, `grpcclient`,
       `sseclient`, `natsstreamsub`; für den RPC `ReadChanges` nach `ADR-0138`
       Festlegung 1 der Client `grpcadminclient`) erhalten die Auswahl des Ziels als Flag.
+- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) API-Aktivierung (aus
+      `slice-routing-antragsweg`, Review-Frage A-2): die Aktivierung einer Tabelle über
+      HTTP bzw. gRPC (`EnableTable`) trägt den abgeleiteten Regelstand mit — eine Tabelle
+      mit `applied`-Routing-Regel wird per API (nicht per `cdc.enable_table` und nicht per
+      Prozessstart) aktiviert, die danach erfasste Change trägt das Ziel der Regel;
+      Gegenprobe: eine Tabelle ohne Regel trägt kein Ziel. *Zu belegen durch:* `make
+      test-integration`, gedruckte Zeile je Weg im Bericht (der Dekorator-Test in
+      `internal/bootstrap/assemblersync_internal_test.go` bindet nur die Weitergabe).
 - [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Negative (B), zerlegt nach
       [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
       Entscheidung 4 (V3 der Welle ist dort beantwortet):

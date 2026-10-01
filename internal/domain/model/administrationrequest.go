@@ -79,15 +79,14 @@ type AdministrationRequest struct {
 // nichtleere Kennungen (ID, Quelle, Schema, Tabelle) sowie eine Antragsart
 // aus der geschlossenen Menge `enable`/`disable`/`exclude_column`/
 // `include_column`/`backfill`/`set_transformation`/`remove_transformation`/
-// `set_route`/`remove_route` —
-// dasselbe Konstruktor-Muster wie die übrigen zehn Domänentypen in diesem
-// Paket (z. B. `NewSchemaVersion`); die Prüfung der geschlossenen Menge liegt
-// am Domain-Core-Rand, wie es die Architektur-Sicht für Domänenobjekte und
-// ihre Invarianten vorsieht.
+// `set_route`/`remove_route`. Der Konstruktor folgt dem Muster der übrigen
+// zehn Domänentypen in diesem Paket (z. B. `NewSchemaVersion`); die Prüfung
+// der geschlossenen Menge liegt am Domain-Core-Rand, wie es die
+// Architektur-Sicht für Domänenobjekte und ihre Invarianten vorsieht.
 // Die beiden Spalten-Antragsarten tragen eine nichtleere Spalte — ohne sie
 // adressiert der Antrag kein Ziel. Die vier Regel-Antragsarten
-// (Transformation und Routing)
-// tragen Regelname und Regelform, wie die Zeile sie hält, auch leer: ein
+// (Transformation und Routing) tragen Regelname und Regelform, wie die Zeile
+// sie hält, auch leer: ein
 // leerer oder fehlender Regelname und eine fehlende Regelform sind ein
 // `failed`-Ausgang des Antrags mit dem Fehlertext der Spec (`SPEC-019`),
 // den der Use Case bestimmt. Eine Zeile, die dieser Konstruktor verwirft,
