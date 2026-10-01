@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.83
+Version: 1.84
 Software-Version: siehe `docs/user/version.md`
-Stand: 2026-09-28
+Stand: 2026-10-01
 
 ## 1. Einleitung
 
@@ -73,7 +73,7 @@ Gruppenrolle zuweisen:
 | Rolle | Zweck | Umgebungsvariable |
 |---|---|---|
 | `cdc_capture` | Erfassungspfad des Feed-Containers (Store-Adapter, Replication-Stream) und Ausführung eines Backfills (Run-Zustand fortschreiben, Bestand im Snapshot lesen und schreiben, siehe [Bestand als Backfill überführen](#bestand-als-backfill-überführen)) | `CDC_CAPTURE_DSN` |
-| `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`, Retention-Löschausführung, Verarbeitung der Antrags-Queue `cdc.administration_request` — offene Anträge lesen und ihren Ausgang vermerken, ohne Anträge selbst anzulegen oder zu löschen —, Annahme eines Backfill-Antrags, die die Run-Zeile in `cdc.backfill_run` anlegt; `cdc.backfill_table`, `cdc.set_transformation`/`cdc.remove_transformation` (siehe [Transformationsregel konfigurieren](#transformationsregel-konfigurieren)) und die übrigen Antragsfunktionen ruft nur diese Rolle auf) | `CDC_ADMIN_DSN` |
+| `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`, Retention-Löschausführung, Verarbeitung der Antrags-Queue `cdc.administration_request` — offene Anträge lesen und ihren Ausgang vermerken, ohne Anträge selbst anzulegen oder zu löschen —, Annahme eines Backfill-Antrags, die die Run-Zeile in `cdc.backfill_run` anlegt; `cdc.backfill_table`, `cdc.set_transformation`/`cdc.remove_transformation` (siehe [Transformationsregel konfigurieren](#transformationsregel-konfigurieren)), `cdc.set_route`/`cdc.remove_route` (siehe [Routing-Regel konfigurieren](#routing-regel-konfigurieren)) und die übrigen Antragsfunktionen ruft nur diese Rolle auf) | `CDC_ADMIN_DSN` |
 | `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`, `cdc.retention_blockers`, `cdc.backfill_status`) — trägt auch `--healthcheck` und `diagnose` (siehe [Diagnose ausführen](#diagnose-ausführen)) | `CDC_READER_DSN` |
 
 ```sql
@@ -386,17 +386,24 @@ entfernen (siehe „Regel wieder entfernen" oben).
 
 **Fehler: Erfassung endet mit der Fehlerklasse `schema`**
 
-**Ursache:** Eine Regel ist auf eine Change nicht anwendbar — ihre `column`
-fehlt in der Relation, oder ihr Zielname kollidiert mit einer Spalte (etwa
-nach einer Tabellen-Erweiterung). Die Erfassung der **gesamten Quelle**
-endet dann sichtbar mit dieser Fehlerklasse (siehe [Fehlerklassen](#fehlerklassen))
-— kein Datenverlust.
+**Ursache:** Eine Regel ist auf eine Change nicht anwendbar — ihr Zielname
+kollidiert mit einer Spalte (etwa nach einer Tabellen-Erweiterung), oder ihre
+`column` fehlt in der Relation einer Tabelle, deren Spaltenform noch nicht
+bekannt ist. Die Erfassung der **gesamten Quelle** endet dann sichtbar mit
+dieser Fehlerklasse (siehe [Fehlerklassen](#fehlerklassen)) — kein
+Datenverlust. Wurde die Spalte `column` an der Quelle entfernt, während die
+Spaltenform der Tabelle bekannt ist, endet die Erfassung schon an der
+inkompatiblen Schemaänderung (`LH-FA-SCH-004`), nicht an der Regel: das
+Entfernen der Regel genügt dort nicht, und die Regel auf die entfernte Spalte
+ist zusätzlich zu entfernen (*hergeleitet*, nicht gefahren; dieselbe
+Lage wie bei Routing-Regeln, siehe
+[Routing-Regel konfigurieren](#routing-regel-konfigurieren)).
 
-**Lösung:** Regel entfernen oder ersetzen, Prozess neu starten; die zuvor
-nicht bestätigte Transaktion erscheint danach über `cdc.changes` in
-Rohform. Im Backfill gilt dieselbe Prüfung — der betroffene Run endet
-`failed`; hier ist die Lösung ein **neuer** `cdc.backfill_table`-Antrag,
-ohne Prozessneustart.
+**Lösung:** Bei einer nicht anwendbaren Regel: Regel entfernen oder ersetzen,
+Prozess neu starten; die zuvor nicht bestätigte Transaktion erscheint danach
+über `cdc.changes` in Rohform. Im Backfill gilt dieselbe Prüfung — der
+betroffene Run endet `failed`; hier ist die Lösung ein **neuer**
+`cdc.backfill_table`-Antrag, ohne Prozessneustart.
 
 **Hinweise:**
 
@@ -428,6 +435,290 @@ ohne Prozessneustart.
 
 Ein Beispiel gegen eine laufende Demo-Umgebung liefert
 `make example-transformation-demo` (siehe [`examples/README.md`](../../examples/README.md)).
+
+### Routing-Regel konfigurieren
+
+Eine Routing-Regel weist einer erfassten Change ein **Zustellziel** zu: einen
+benannten Kanal je Quelle, den ein Leser über den Parameter `target` oder das
+NATS-Zusatz-Subjekt auswählt (siehe „Ziel lesen" unten). Die Regel ändert weder
+das Row Image noch ein anderes Feld der Change als ihr Ziel-Label
+`route_target`; eine Change trägt höchstens ein Ziel, und es gibt kein
+Standardziel (`LH-FA-CFG-008`).
+
+**Voraussetzung:** eine Login-Identität mit `cdc_admin`-Mitgliedschaft,
+verbunden über `CDC_ADMIN_DSN` (siehe [Zugriff und Rollen](#zugriff-und-rollen));
+die physische Tabelle existiert an der Quelle; der Feed-Container läuft für die
+Quelle, denn er verarbeitet den Antrag. Das Lesen der Ergebnisse braucht eine
+Login-Identität mit `cdc_reader`-Mitgliedschaft.
+
+**Vorgehen:**
+
+1. Legen Sie die Regel fest. Die `rule_spec` ist ein JSON-Objekt mit diesen
+   Schlüsseln; jeder andere Schlüssel, auch innerhalb von `when`, endet den
+   Antrag `failed`:
+
+   | Schlüssel | Pflicht | Bedeutung |
+   |---|---|---|
+   | `target` | ja | Name des Zustellziels, 1 bis 63 Zeichen: das erste aus `a`–`z` und `0`–`9`, die übrigen aus `a`–`z`, `0`–`9`, `_` und `-`. Der Name wird zeichengenau verglichen, nicht gefaltet oder gekürzt. |
+   | `order` | ja | Auswertungsreihenfolge: eine positive ganze Zahl bis 2147483647, je Tabelle eindeutig; die kleinere `order` wird zuerst geprüft. |
+   | `when` | nein | Objekt mit den beiden Pflichtschlüsseln `column` und `equals` (beide Zeichenketten): die Regel trifft, wenn der Wert der Quellspalte `column` im Bild zeichengenau `equals` ist. Ohne `when` trifft die Regel jede Change der Tabelle (**Abschlussregel**). |
+
+   Der erste Treffer in aufsteigender `order` bestimmt das Ziel, keine weitere
+   Regel wird geprüft; trifft keine Regel, ist `route_target` `NULL`. Die
+   Bedingung liest den Quellwert vor jeder Transformation (siehe
+   [Transformationsregel konfigurieren](#transformationsregel-konfigurieren)).
+   Die Obergrenze von `order` ist eine Setzung der Umsetzung, die
+   Spezifikation nennt keine. Als `order` wird jede JSON-Zahl mit dem Wert einer
+   positiven ganzen Zahl angenommen (`10`, `10.0`, `1e1`); ein Bruchteil, 0, ein
+   negativer Wert und ein Wert über der Obergrenze enden den Antrag `failed` mit
+   `rule_spec ist ungültig`.
+
+2. Rufen Sie die Regel auf — `rule_spec` als `json`, **nicht** als `jsonb`:
+
+   ```sql
+   SELECT cdc.set_route('<source_id>', '<schema>', '<tabelle>', '<regelname>',
+     '{"target": "eu", "order": 10, "when": {"column": "region", "equals": "eu"}}');
+   ```
+
+   Der Regelname ist je Tabelle unter den Routing-Regeln eindeutig; der
+   Namensraum ist von dem der Transformationsregeln getrennt. Ein
+   `::jsonb`-Wert wird abgelehnt (`function cdc.set_route(unknown, unknown,
+   unknown, unknown, jsonb) does not exist`); casten Sie in diesem Fall mit
+   `::json`.
+
+3. Prüfen Sie den Fortschritt über die zurückgegebene Antrags-Kennung:
+
+   ```sql
+   SELECT status, error_message
+   FROM cdc.administration_request
+   WHERE administration_request_id = '<zurückgegebene-id>';
+   ```
+
+**Ergebnis:** `status` wechselt von `pending` zu `applied` (Erfolg) oder `failed`
+(Fehlertext in `error_message`). Ab `applied` trägt jede danach erfasste Change
+dieser Tabelle das Ziel der ersten treffenden Regel, am laufenden Prozess ohne
+Neustart. Der Regelstand übersteht einen Neustart des Feed-Containers und gilt
+auch für eine Tabelle, die über `EnableTable` des gRPC- oder HTTP-Zugriffswegs
+aktiviert wird (*Ursprung:* gemessen im Lauf von `make test-integration`,
+Phasen „Routing-Neustart und Ausschluss-Sperre" und „Routing-Aktivierung über
+die API" in [`e2e-abdeckung.md`](e2e-abdeckung.md): zwei reale `docker restart`,
+je Aktivierungsweg eine Tabelle mit Regel mit Ziel `api` und eine ohne Regel
+mit `NULL`).
+
+**Beispiel** (Quelle `meine-quelle`, Tabelle `public.orders` mit den Spalten
+`id`, `name`, `region`, aktiviert; die Zeilen 1 bis 3 sind vor den Regeln
+eingefügt). Die Aufrufe von `cdc.set_route` laufen unter einer
+`cdc_admin`-Identität:
+
+```sql
+SELECT cdc.set_route('meine-quelle', 'public', 'orders', 'eu_orders',
+  '{"target": "eu", "order": 10, "when": {"column": "region", "equals": "eu"}}');
+SELECT cdc.set_route('meine-quelle', 'public', 'orders', 'rest',
+  '{"target": "sonstige", "order": 100}');
+```
+
+Beide Anträge enden `applied`. Danach fügt die Quelle drei Zeilen ein
+(`INSERT INTO public.orders VALUES (4, 'Di', 'eu'), (5, 'Ed', 'us'), (6, 'Fy', NULL);`);
+die Abfrage läuft unter einer `cdc_reader`-Identität:
+
+```sql
+SELECT new_data->>'id' AS id, new_data->>'region' AS region, route_target
+FROM cdc.changes
+WHERE source_id = 'meine-quelle'
+ORDER BY commit_position, sequence;
+```
+
+```text
+ id | region | route_target
+----+--------+--------------
+ 1  | eu     |
+ 2  | us     |
+ 3  |        |
+ 4  | eu     | eu
+ 5  | us     | sonstige
+ 6  |        | sonstige
+```
+
+Die Zeilen 1 bis 3 sind vor den Regeln erfasst und tragen kein Ziel. Zeile 4
+trifft `eu_orders`; Zeile 5 trifft keine Bedingung, die Abschlussregel `rest`
+bestimmt `sonstige`; bei Zeile 6 fehlt der Wert von `region` im Bild, die
+Bedingung trifft nicht, und `rest` bestimmt ebenfalls `sonstige`. Ohne die
+Regel `rest` bliebe `route_target` bei den Zeilen 5 und 6 `NULL`. Ein Ziel wählt
+`WHERE route_target = 'eu'` (liefert die Zeile 4), die Changes ohne Ziel
+`WHERE route_target IS NULL`. *Ursprung:* gemessen in einer Compose-Umgebung
+(PostgreSQL 18.6, Image `:dev`); die Aufrufe liefen unter Login-Identitäten mit
+`cdc_admin`- bzw. `cdc_reader`-Mitgliedschaft, die gedruckten Zeilen entsprechen
+der Ausgabe oben.
+
+**Regel wieder entfernen:** `SELECT cdc.remove_route('<source_id>', '<schema>',
+'<tabelle>', '<regelname>')` — derselbe Antrags-Weg und Status-Poll wie beim
+Setzen. Um eine Regel zu ersetzen: erst entfernen, dann neu setzen.
+
+**Fehler: Antrag endet `failed`**
+
+**Ursache:** eine Prüfung der Regel verletzt — der Klartext steht in
+`error_message`, gefolgt von einem Doppelpunkt, einem Leerzeichen und der
+Adresse (`schema.tabelle.regelname`, `schema.tabelle.spalte`,
+`schema.tabelle.zielname`, bei `order` `schema.tabelle.<Wert>`). Die führende
+Stelle für Wortlaut und Reihenfolge ist `SPEC-019`; die Konfliktfreiheit
+schließt Mehrdeutigkeit aus, statt sie aufzulösen:
+
+| Prüfung | Fehlertext (Beispiel mit Adresse) |
+|---|---|
+| R1 — Regelname je Tabelle eindeutig | `Regelname bereits vergeben: public.orders.eu_orders` |
+| R2 — `order` je Tabelle eindeutig | `order bereits vergeben: public.orders.10` |
+| R3 — `when.column` existiert an der Quelle | `Spalte existiert nicht an der Quelle: public.orders.regio` |
+| R3 — `when.column` ist keine ausgeschlossene Spalte | `Spalte ist ausgeschlossen: public.orders.name` |
+| R3 — umgekehrt: `cdc.exclude_column` gegen eine Spalte mit Routing-Bedingung | `Spalte trägt eine Routing-Bedingung: public.orders.region` |
+| R4 — höchstens eine Abschlussregel (ohne `when`) | `Regel ohne when bereits vorhanden: public.orders.rest` |
+| R4 — die Abschlussregel trägt die höchste `order` | `Regel ohne when trägt nicht die höchste order: public.orders.rest` |
+| R4 — eine Regel mit `when` trägt keine höhere `order` als die Abschlussregel | `order liegt hinter der Regel ohne when: public.orders.rest` |
+| R5 — das Paar (`when.column`, `when.equals`) kommt je Tabelle einmal vor | `Bedingung bereits vergeben: public.orders.region` |
+| R6 — `cdc.remove_route` gegen einen unbekannten Regelnamen | `Regelname nicht geführt: public.orders.nope` |
+
+Dazu kommen die Formprüfungen vor R1: `Regelname ist ungültig`, `rule_spec ist
+ungültig`, `unbekannter Schlüssel in rule_spec` und `Zielname ist ungültig`.
+Der Regelstand bleibt bei jedem `failed` unverändert. *Ursprung:* gemessen — die
+Texte der Tabelle und der Formprüfungen sind die Ausgabe von `error_message`
+einer Compose-Umgebung (PostgreSQL 18.6, `cdc_admin`-Identität); die Adressen
+nennen die Namen des Beispiels.
+
+**Lösung:** den betroffenen Namen oder die `order` ändern; bei R4 mit
+Abschlussregel: wer eine Regel mit höherer `order` als die Abschlussregel
+ergänzen will, entfernt die Abschlussregel und setzt sie nach der neuen Regel
+mit der dann höchsten `order` neu.
+
+**Fehler: Erfassung endet mit der Fehlerklasse `schema`**
+
+Eine Routing-Regel kann auf zwei Wegen zu dieser Klasse führen; die Abhilfe
+unterscheidet sich.
+
+**Ursache 1 — die Regel ist auf die Change nicht anwendbar.** Die
+Bedingungsspalte `when.column` fehlt in der Relation der Change, ohne dass die
+bekannte Spaltenform der Tabelle eine Entfernung zeigt. Das entsteht bei der
+Erstaktivierung einer Tabelle ohne bekannte Spaltenform (die Version der Tabelle
+trägt noch keine Spaltenzeilen) und bei einer Publication mit Spaltenliste, die
+die Bedingungsspalte nicht enthält (*Ursprung:* gemessen im Lauf von `make
+test-integration`, Phase „Routing-Nichtanwendbarkeit und Abhilfe",
+PostgreSQL 17.11 und 18.6). Die Erfassung der **gesamten Quelle** endet sichtbar
+mit der Klasse `schema` (siehe [Fehlerklassen](#fehlerklassen)): der Log nennt
+die Regel und die Spalte, `cdc.heartbeat.error_class` zeigt `schema`, keine
+Change der Tabelle ist persistiert, es geht keine Change verloren.
+
+```text
+Fehlerklasse schema: Routing-Regel auf die Änderung nicht anwendbar: Regel "rt_eu" an public.rt2: Spalte der Routing-Regel fehlt in den Spalten der Änderung: region
+```
+
+**Lösung:** `cdc.remove_route` beantragen — der Antrag bleibt `pending`, solange
+der Prozess steht —, den Prozess neu starten; offene Anträge werden beim Start
+innerhalb der Frist des Vorlaufs verarbeitet, bevor die erste Transaktion der
+Tabelle verarbeitet wird, und die zuvor nicht bestätigte Transaktion erscheint
+danach über `cdc.changes` ohne Ziel (`route_target IS NULL`), ohne zweiten
+`schema`-Fehler. *Ursprung:* gemessen im selben Lauf von `make test-integration`
+(Antrag `pending`, nach dem Neustart `applied`) und in einer Compose-Umgebung
+(PostgreSQL 18.6, der Log-Text oben, nach dem Neustart `applied`, die Zeile ohne
+Ziel, Feed-Container `healthy`).
+
+**Ursache 2 — die Spalte wurde an der Quelle entfernt, die Spaltenform der
+Tabelle ist bekannt.** Die Erfassung endet nicht an der Regel, sondern als
+inkompatible Schemaänderung (`LH-FA-SCH-003`, `LH-FA-SCH-004`): der Log nennt
+„Relation-Änderung nicht sicher als Obermenge interpretierbar", und die Change
+nach der Entfernung hat keine Zeile in `cdc.changes` (*Ursprung:* gemessen im
+selben Lauf von `make test-integration`: Spalte entfernt, nachdem eine Change
+der Tabelle die Spaltenform angelegt hat). **Das Entfernen der Regel genügt dort nicht** — es verändert den
+Vergleich der Spaltenform nicht (*hergeleitet*, der Neustart nach diesem Weg ist
+nicht gefahren). Die Abhilfe dieser Ursache ist die der inkompatiblen
+Schemaänderung; zusätzlich ist die Regel auf die entfernte Spalte zu entfernen,
+sonst endet die Erfassung danach an der fehlenden Bedingungsspalte
+(*hergeleitet*).
+
+**Im Backfill:** Ein Run (siehe [Bestand als Backfill
+überführen](#bestand-als-backfill-überführen)) prüft dieselbe Anwendbarkeit gegen
+die Spalten des Snapshots. Eine Regel, deren `when.column` der Snapshot nicht
+trägt, endet den Run `failed` mit der Klasse `schema` vor der ersten Zeile; der
+Text nennt Regelname und Spalte, der Run ist run-lokal und stoppt die Erfassung
+nicht. Die Lösung ist `cdc.remove_route` und ein **neuer** `cdc.backfill_table`-Antrag,
+ohne Prozessneustart. Wird ein `set_route` oder `remove_route` während des Runs
+`applied`, endet der Run `failed` mit der Klasse `configuration` und dem Text
+„Routing-Regelstand während des Backfills geändert", bevor etwas sichtbar wird;
+die Lösung ist ein neuer Antrag. Ein Lesefehler des Regelstands endet den Run mit
+der Klasse seiner Ursache (z. B. `storage`), nicht mit `configuration`.
+*Ursprung:* Unit-Tests des Backfill-Use-Cases (`routing_test.go`), nicht am
+System gefahren.
+
+**Ziel lesen:** Ein Leser wählt ein Ziel; ohne Auswahl sieht er weiterhin alle
+Changes, geroutete eingeschlossen.
+
+| Weg | Auswahl |
+|---|---|
+| SQL (`cdc.changes`) | Spalte `route_target`: `WHERE route_target = '<ziel>'` bzw. `IS NULL` für „ohne Ziel" |
+| `GET /changes` | Query-Parameter `target` (siehe [Zugriff über die HTTP-/JSON-API](#zugriff-über-die-http-json-api)) |
+| gRPC-RPC `ReadChanges` | Feld `target` (siehe [Zugriff über die gRPC-Verwaltungs-API](#zugriff-über-die-grpc-verwaltungs-api)) |
+| gRPC-Stream | Feld `target` des `StreamChangesRequest` (siehe [Zugriff über den gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)) |
+| SSE (`GET /changes/stream`) | Query-Parameter `target` (siehe [Zugriff über Server-Sent-Events](#zugriff-über-server-sent-events)) |
+| NATS-Vollinhalt | Subjekt `cdc.route.<source_id>.<ziel>` (siehe [Zugriff über den NATS-Vollinhalts-Stream](#zugriff-über-den-nats-vollinhalts-stream)) |
+
+Das NATS-Wecksignal trägt kein Ziel. Das Ziel steht in keiner Antwort und in
+keiner Stream-Nachricht der Zugriffswege, nur in der Spalte `route_target`.
+
+**Hinweise:**
+
+- **Das Ziel ist zum Erfassungszeitpunkt fest.** Eine Regeländerung wirkt nur
+  auf danach erfasste Changes; es gibt kein Umetikettieren. Eine vor der Regel
+  erfasste Change bleibt ohne Ziel, und dieselbe `change_id` liefert nach einer
+  Regeländerung über `cdc.changes` und `GET /changes?target=` dasselbe Ziel
+  (*Ursprung:* gemessen im Lauf von `make test-integration`, Test
+  `TestE2ERoutingReplayKeepsLabelAndBackfillCarriesIt`, gedruckte Zeile
+  `ROUTING-REPLAY WAL-Ziele ["" "eu" "" "europa"], Backfill-Ziele zeilenweise 1="europa" 2="europa" 3="" 4="europa"`).
+- **Altbestand über einen neuen Backfill-Run.** Ein Backfill-Run
+  (`cdc.backfill_table`, siehe [Bestand als Backfill
+  überführen](#bestand-als-backfill-überführen)) trägt das Ziel des Regelstands
+  zum Run in seinen Changes (`origin = 'backfill'`); die WAL-Changes derselben
+  Zeilen behalten ihr Label. *Ursprung:* gemessen in einer Compose-Umgebung
+  (PostgreSQL 18.6): mit den Regeln des Beispiels und nach dem Löschen der
+  Zeile 5 trugen die fünf Backfill-Changes `eu` (Region `eu`) bzw. `sonstige`
+  (übrige Werte, auch fehlende); die sechs WAL-Changes derselben Zeilen trugen
+  unverändert `NULL` (Zeilen 1 bis 3), `eu` und `sonstige` wie bei ihrer
+  Erfassung.
+- **Eine Change ohne Treffer bleibt sichtbar.** Trifft keine Regel, ist
+  `route_target` `NULL`: die Change geht nicht verloren und nicht an ein
+  Standardziel, sie bleibt im Log, über jeden ungefilterten Weg und über
+  `route_target IS NULL` sichtbar. Für einen Leser, der nur ein Ziel abruft, ist
+  sie unsichtbar; eine Abschlussregel (ohne `when`, höchste `order`) vergibt ein
+  Ziel an alles, was keine Bedingung trifft.
+- **Ein abwesender Wert trifft nicht.** Fehlt der Wert der Bedingungsspalte im
+  gelesenen Bild (`NULL`, unverändertes TOAST, generierte Spalte), trifft die
+  Bedingung nicht; die nächste Regel wird geprüft — das ist keine
+  Nichtanwendbarkeit und kein Fehler. Gemessen ist `NULL` (Zeile 6 des
+  Beispiels, `DELETE` unten); für unverändertes TOAST und generierte Spalten gilt
+  die Zusage der Spezifikation (`SPEC-032`), am System nicht gefahren. Der
+  Vergleich ist zeichengenau (Groß-/Kleinschreibung zählt; Zusage von
+  `SPEC-032`).
+- **`DELETE` ohne volle Replica-Identität.** Das Alt-Bild trägt dort nur den
+  Schlüssel; eine Inhaltsregel auf eine Nicht-Schlüsselspalte **trifft nicht**.
+  Mit einer Abschlussregel bestimmt diese das Ziel, ohne sie bleibt
+  `route_target` `NULL`; unter `REPLICA IDENTITY FULL` trifft die Inhaltsregel.
+  `INSERT` und `UPDATE` tragen das Ziel der Inhaltsregel. *Ursprung:* gemessen im
+  Lauf von `make test-integration` (Zeilen `ROUTING-DELETE-MESSUNG`) an
+  PostgreSQL 17.11 und 18.6, beide mit denselben Zielen: `INSERT` und `UPDATE`
+  `eu`; `DELETE` mit Abschlussregel `sonstige` (Alt-Bild `{"id": "1"}`), ohne sie
+  nicht gesetzt, unter `REPLICA IDENTITY FULL` `eu`. Eine Bedingung auf die
+  Schlüsselspalte trifft dort, weil das Alt-Bild den Schlüssel trägt
+  (*hergeleitet*, nicht gefahren). In einer Compose-Umgebung (PostgreSQL 18.6)
+  ergab ein `DELETE` ohne volle Replica-Identität mit den Regeln des Beispiels
+  das Alt-Bild `{"id": "5"}` (die Zeile 5 hatte die Region `us`) und das Ziel
+  `sonstige`.
+- **Auswahl, kein Zugriffsschutz.** Jeder Leser mit `reader`-Token kann jedes
+  Ziel wählen oder gar nicht filtern. Das Ziel schützt keinen Inhalt; wer einen
+  Wert vor Lesern verbergen will, schließt die Spalte aus (siehe [Spalte vom
+  Ausschluss konfigurieren](#spalte-vom-ausschluss-konfigurieren)). Eine Spalte mit
+  Routing-Bedingung lässt sich nicht ausschließen, und eine ausgeschlossene Spalte
+  kann keine Bedingung tragen (R3): sonst verriete das Ziel eine Eigenschaft des
+  ausgeschlossenen Werts.
+- **Verhältnis zu Transformationen.** Die Bedingung liest den Quellwert vor jeder
+  Transformation; eine `rename_column`- oder `map_value`-Regel ändert das
+  Ergebnis nicht, und das Ziel ändert das Row Image nicht. Beide Regelwerke haben
+  getrennte Namensräume und getrennte Stände.
 
 ### Aktivierte Tabellen auflisten
 
@@ -500,7 +791,7 @@ für jeden Aufruf über diesen Zugriffsweg (`LH-FA-CON-004.a`).
 
 ```sql
 SELECT source_id, commit_position, change_id, schema_name, table_name,
-       operation, old_data, new_data, committed_at, origin
+       operation, old_data, new_data, committed_at, origin, route_target
 FROM cdc.changes
 WHERE source_id = '<quelle-id>' AND commit_position > <letzte-gelesene-position>
 ORDER BY commit_position, sequence
@@ -513,8 +804,14 @@ LIMIT 500;
 `wal` für eine über den Replication Stream erfasste Änderung, `backfill`
 für eine Bestands-Änderung eines Backfills (`LH-FA-CAP-009`); eine
 Änderung, die ohne dieses Feld gespeichert wurde, liest als `wal`
-(`LH-FA-DAT-006`). `origin` ist die letzte Spalte der View; die drei
-Live-Zustellwege (gRPC, SSE, NATS-Vollinhalt) tragen das Feld nicht.
+(`LH-FA-DAT-006`). `route_target` nennt das Zustellziel der Change, das eine
+Routing-Regel bei der Erfassung vergeben hat (siehe [Routing-Regel
+konfigurieren](#routing-regel-konfigurieren)); `NULL` heißt „nicht geroutet" —
+keine Regel hat getroffen, oder die Change entstand vor der Regel —, ein
+Standardziel gibt es nicht (anders als bei `origin` liest ein fehlender Wert
+nicht als Vorgabe). `route_target` ist die letzte Spalte der View,
+`origin` steht davor; die drei Live-Zustellwege (gRPC, SSE, NATS-Vollinhalt)
+tragen keines der beiden Felder.
 
 Dieselben Änderungen sind ohne SQL-Direktzugriff über die API lesbar:
 `GET /changes` — derselbe Lesezugriff mit denselben Filtern und derselben
@@ -757,8 +1054,17 @@ dieser Quelle ihn annimmt.
   konfigurieren](#spalte-vom-ausschluss-konfigurieren)) tragen die Backfill-
   Änderungen nicht; ein Ausschluss, der während des Runs geändert wird, endet den
   Run `failed` (Klasse `configuration`), bevor etwas sichtbar wird.
+- **Routing-Regeln** (siehe [Routing-Regel
+  konfigurieren](#routing-regel-konfigurieren)) vergeben den Backfill-Änderungen
+  das Ziel des Regelstands zum Run (Spalte `route_target`); der Altbestand erhält
+  ein Ziel durch einen neuen Run mit dem aktuellen Regelstand. Ein
+  `cdc.set_route` oder `cdc.remove_route`, das während des Runs `applied` wird,
+  endet den Run `failed` (Klasse `configuration`), bevor etwas sichtbar wird; eine
+  Regel, deren Bedingungsspalte der Snapshot nicht trägt, endet ihn `failed`
+  (Klasse `schema`) vor der ersten Zeile, die Abhilfe steht unter „Fehler:
+  Erfassung endet mit der Fehlerklasse `schema`" im Abschnitt Routing.
 - **Zustellung:** Backfill-Änderungen gehen in keinen der Live-Zustellwege (gRPC,
-  SSE, NATS-Vollinhalt); nach dem Commit sendet der Run je Tabelle ein
+  SSE, NATS-Vollinhalt, auch nicht auf das Zusatz-Subjekt `cdc.route.…`); nach dem Commit sendet der Run je Tabelle ein
   Wecksignal (NATS-Wecksignal, wenn aktiviert). Sie unterliegen der Aufbewahrung
   wie jede Änderung.
 
@@ -1030,7 +1336,7 @@ Rollback-Artefakt (`tools/schema/down.sql`).
 **Reihenfolge beim Upgrade.** Rollen Sie das Schema **vor** dem Tausch des
 Feed-Containers aus, dann ersetzen Sie den Container durch die neue Version.
 Der neue Container erwartet das neue Schema (er schreibt zum Beispiel die
-Spalte `cdc.change.origin`); umgekehrt ist der Rollout vor dem Tausch für
+Spalten `cdc.change.origin` und `cdc.change.route_target`); umgekehrt ist der Rollout vor dem Tausch für
 den weiterlaufenden Container erwartungsgemäß unkritisch, weil neue Spalten
 nullable und neue Tabellen oder Views additiv sind (abgeleitet, nicht mit
 einem laufenden Alt-Container gemessen).
@@ -1056,8 +1362,8 @@ allein: eine Login-Identität ohne diese Mitgliedschaft scheitert mit
 
 **Änderung an der Spaltenliste einer View.** Ändert ein Release die Signatur
 einer View des Schemas (Spalte anhängen, umordnen, umbenennen, Typ ändern —
-so trägt `cdc.changes` seit der Einführung des Feldes `origin` eine
-zusätzliche letzte Spalte), kann d-migrate die View nicht in-place ersetzen.
+so trägt `cdc.changes` mit den Feldern `origin` und `route_target` zwei
+zusätzliche letzte Spalten), kann d-migrate die View nicht in-place ersetzen.
 Der Lauf entfernt sie dann selbst und legt sie neu an; er meldet das:
 
 ```text
@@ -1146,8 +1452,9 @@ mit der Antwort — ohne Neustart und ohne die Antrags-Queue des SQL-Zugriffsweg
 derselbe Live-Reload-Vertrag, ein anderer Netzwerkzugriffsweg.
 
 **Changes lesen:** `GET /changes?source=<quelle-id>` liefert persistierte
-Änderungen einer Quelle — optional gefiltert über `schema` und `table`
-(je einzeln oder zusammen), eingegrenzt über `from` (inklusive) und `to`
+Änderungen einer Quelle — optional gefiltert über `schema`, `table` und
+`target` (je einzeln oder in beliebiger Kombination, gemeinsam als
+Konjunktion), eingegrenzt über `from` (inklusive) und `to`
 (exklusive, jeweils ein `commit_position`-Wert) und begrenzt über `limit`
 (≥ 1). Ohne `limit` liest der Aufruf unbegrenzt. Die Antwort trägt je
 Änderung `commit_position`, `change_id`, `transaction_id`,
@@ -1155,7 +1462,8 @@ derselbe Live-Reload-Vertrag, ein anderer Netzwerkzugriffsweg.
 `old_image`, `new_image`, `schema_version`, `committed_at` (RFC 3339,
 UTC) und `origin` (`wal` oder `backfill`, als letztes Feld; eine ohne
 dieses Feld gespeicherte Änderung liest als `wal`) — dieselbe Sicht wie
-der SQL-Zugriff auf `cdc.changes`. Die
+der SQL-Zugriff auf `cdc.changes`, ohne die Spalte `route_target`: das
+Zustellziel steht nicht in der Antwort, es wählt nur den Filter `target`. Die
 Reihenfolge ist deterministisch; die Fortsetzung liest ab
 `from = <letzte gelieferte commit_position> + 1`, wenn das Lesen die letzte
 Position vollständig erfasst hat. Ein `limit` schneidet Zeilen, nicht Positionen:
@@ -1170,6 +1478,27 @@ endet `200` mit leerer Liste (`{"changes": []}`), nie `404`; ein Parameter
 außerhalb der genannten Liste endet `400`, ebenso ein fehlendes `source`,
 eine nicht lesbare Zahl, `from`/`to` unter 1, `limit` unter 1 und
 `from > to`.
+
+**Zustellziel wählen:** `target` liefert nur Changes, deren Zustellziel
+(`route_target`, siehe [Routing-Regel konfigurieren](#routing-regel-konfigurieren))
+genau dieser Name ist; ohne den Parameter oder mit leerem Wert gilt kein Filter.
+Ein Name, den keine Change trägt — auch einer außerhalb des Alphabets des
+Zielnamens —, ist bei sonst gültiger Anfrage kein `400`, sondern ein Filter ohne
+Treffer: `200` mit `{"changes": []}`. Ein Fehler des Lese-Kontrakts (fehlendes
+`source`, `limit` unter 1, `from > to`, Start- oder Endposition einer anderen
+Quelle) hat Vorrang und endet mit demselben Fehler wie ohne `target`. Der
+SQL-Zugriff `cdc.changes` ist davon ausgenommen: dort bestimmt der Aufrufer sein
+Prädikat auf `route_target` selbst. Das Ziel ist Auswahl, kein Zugriffsschutz:
+jedes Token der Klasse `reader` kann jedes Ziel wählen. *Ursprung:* die Zusagen
+stehen in `SPEC-022`; gemessen in einer Compose-Umgebung (PostgreSQL 18.6, Token
+der Klasse `reader`): `?target=eu` lieferte die eine `eu`-Change, `?target=Gross`
+`200` mit `{"changes":[]}`, `?target=Gross&limit=0` `400`, `?target=eu&schema=other`
+`200` mit leerer Liste (Konjunktion). Ein Server ohne diese Funktion lehnt den
+unbekannten Parameter an `GET /changes` und `GET /changes/stream` mit `400` ab
+(*hergeleitet* aus der strengen Parameter-Menge, an einem ausgelieferten
+Alt-Server nicht gefahren). Die Beispiel-Clients und die drei SDK-Packages
+nehmen `target` nicht als Aufrufparameter entgegen; das folgt mit den
+SDK-Packages.
 
 **Diagnose lesen:** `GET /diagnose?source=<quelle-id>` liefert denselben
 Bericht wie [Diagnose ausführen](#diagnose-ausführen) — Betriebsstatus und
@@ -1298,20 +1627,34 @@ Jede Nachricht trägt zehn Felder:
 | `schema` | string | Schema-Name der Tabelle |
 | `table` | string | Tabellenname |
 
-**Filterung:** Der Request `StreamChangesRequest` trägt zwei optionale,
-unabhängig setzbare Felder `schema`/`table`. Ein gesetztes `schema` ohne
-`table` liefert alle Tabellen dieses Schemas, ein gesetztes `table` ohne
-`schema` jede Tabelle dieses Namens unabhängig vom Schema, beide gesetzt
-liefert exakt eine Tabelle; bleiben beide leer (der unveränderte, alte
-Aufruf), liefert der Stream wie zuvor jeden Change aller aktivierten
-Tabellen. Die Prüfung läuft serverseitig, bevor eine nicht passende Change
-über das Netz geht. Go, C# und Kotlin nehmen den Filter über `-schema`/`-table`
+**Filterung:** Der Request `StreamChangesRequest` trägt drei optionale,
+unabhängig setzbare Felder `schema`/`table`/`target` (Feldnummern 1/2/3). Ein
+gesetztes `schema` ohne `table` liefert alle Tabellen dieses Schemas, ein
+gesetztes `table` ohne `schema` jede Tabelle dieses Namens unabhängig vom
+Schema, beide gesetzt liefert exakt eine Tabelle. Ein gesetztes `target`
+liefert nur Changes, deren Zustellziel (`route_target`, siehe
+[Routing-Regel konfigurieren](#routing-regel-konfigurieren)) dieser Name ist, als
+Konjunktion mit `schema`/`table`; ein Name, den keine Change trägt — auch einer
+außerhalb des Alphabets des Zielnamens —, liefert keine Nachricht und keinen
+Fehler. Bleiben alle drei Felder leer (der unveränderte, alte Aufruf), liefert
+der Stream wie zuvor jeden Change aller aktivierten Tabellen. Die Prüfung läuft
+serverseitig, bevor eine nicht passende Change über das Netz geht. Ein Server
+ohne das Feld `target` ignoriert es und liefert ungefilterte Changes (proto3
+verwirft unbekannte Felder: gemessen an der Protobuf-Bibliothek dieses
+Repositorys, an einem ausgelieferten Alt-Server *hergeleitet*). Die Nachricht
+`Change` trägt das Ziel nicht. *Ursprung:* gemessen im Lauf von `make
+test-integration`, Phase „Routing-Happy-Path (fünf Zustellwege)": ein gRPC-Client
+mit Ziel empfing von einer festen Menge gemischter Changes genau die Changes
+seines Ziels und im Ruhefenster von 15 s keine Change eines anderen Ziels oder
+ohne Ziel. Go, C# und Kotlin nehmen den Filter über `-schema`/`-table`
 bzw. `--schema`/`--table` entgegen; das NuGet-Package `PgChangeFeed.Client`
 nimmt ihn jetzt ebenfalls entgegen (`StreamChangesAsync(schema, table,
 cancellationToken)`, beide Parameter optional), ebenso das PyPI-Package
 `pgchangefeed` (`stream_changes(timeout, schema, table)`, beide Parameter
 optional) und das Gradle-/Maven-Package `pgchangefeed-kotlin`
-(`streamChanges(schema, table)`, beide Parameter optional, Default `null`).
+(`streamChanges(schema, table)`, beide Parameter optional, Default `null`). Die
+Beispiele und die drei Packages tragen kein `target` als Aufrufparameter; das
+folgt mit den SDK-Packages.
 
 **Zustellsemantik:** Es gibt **keine** Zustellgarantie (Fire-and-Forget,
 verlustbehaftet). Je Abonnent trägt der Server eine begrenzte
@@ -1362,9 +1705,9 @@ NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
 `dotnet add package PgChangeFeed.Client`) — `PgChangeFeedGrpcClient.StreamChangesAsync`
 öffnet den `ChangeStream/StreamChanges`-RPC und liefert ein
 `IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben; zwei
-optionale Parameter `schema`/`table` tragen denselben Filter wie oben
-beschrieben (`ADR-0133`), beide `null` (der Default) liefert wie zuvor jeden
-Change. Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
+optionale Parameter `schema`/`table` tragen den Filter über Schema und Tabelle
+wie oben beschrieben (`ADR-0133`), beide `null` (der Default) liefert wie zuvor
+jeden Change; das Feld `target` folgt mit dem Package. Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
 fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 `Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren; siehe
 `sdks/csharp/README.md`.
@@ -1375,9 +1718,9 @@ Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
 `PgChangeFeedGrpcClient.streamChanges()` öffnet denselben
 `ChangeStream/StreamChanges`-RPC und liefert ein
 `kotlinx.coroutines.flow.Flow<Change>` mit allen zehn Feldern der Tabelle
-oben; zwei optionale Parameter `schema`/`table` tragen denselben Filter wie
-oben beschrieben (`ADR-0133`), beide `null` (der Default) liefert wie zuvor
-jeden Change. Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
+oben; zwei optionale Parameter `schema`/`table` tragen den Filter über Schema
+und Tabelle wie oben beschrieben (`ADR-0133`), beide `null` (der Default) liefert
+wie zuvor jeden Change; das Feld `target` folgt mit dem Package. Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
 fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 `Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren. Derselbe
 Package trägt außerdem den SSE-Stream (siehe „Zugriff über
@@ -1400,9 +1743,10 @@ der Tabelle oben; das Bearer-Token landet im `authorization`-Metadata-Eintrag,
 ein fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 `Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren
 (`timeout` ist der Gesamtfriestempel des Aufrufs in Sekunden, `None` =
-unbegrenzt); zwei optionale Parameter `schema`/`table` tragen denselben
-Filter wie oben beschrieben (`ADR-0133`), beide `None` (der Default) liefert
-wie zuvor jeden Change. Siehe `sdks/python/README.md`.
+unbegrenzt); zwei optionale Parameter `schema`/`table` tragen den Filter über
+Schema und Tabelle wie oben beschrieben (`ADR-0133`), beide `None` (der Default)
+liefert wie zuvor jeden Change; das Feld `target` folgt mit dem Package. Siehe
+`sdks/python/README.md`.
 
 ### Zugriff über die gRPC-Verwaltungs-API
 
@@ -1453,14 +1797,31 @@ Response-Feldern der gleichnamigen HTTP-Fähigkeit (Tabelle unter [Zugriff
 liefert `tables` und `retained` als je eine Liste einer `SourceTable`
 genannten Nachricht (`table_id`, `source`, `schema`, `table`). `ReadChanges`
 liest einen begrenzten Bereich persistierter Änderungen — dieselbe Filter-
-und Bereichs-Semantik wie `GET /changes` (Quelle Pflicht, `schema`/`table`
+und Bereichs-Semantik wie `GET /changes` (Quelle Pflicht, `schema`/`table`/`target`
 optional und unabhängig, `from`/`to` als Positions-Bereich `[from, to)`,
-`limit`), die Antwort trägt `changes` als Liste einer `ChangeRecord`
+`limit`; `target` ist `string`, Feldnummer 7: leer heißt kein Filter, gesetzt
+liefert nur Changes mit diesem Zustellziel, als Konjunktion mit `schema`/`table`),
+die Antwort trägt `changes` als Liste einer `ChangeRecord`
 genannten Nachricht mit denselben dreizehn Feldern wie die HTTP-Antwort
 (`commit_position`, `change_id`, `transaction_id`, `source_table_id`,
 `schema`, `table`, `sequence`, `operation`, `old_image`, `new_image`,
-`schema_version`, `committed_at`, `origin`); kein Treffer liefert eine
-leere, gesetzte Liste statt eines Fehlers. Der [gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)
+`schema_version`, `committed_at`, `origin`; das Zustellziel gehört nicht dazu);
+kein Treffer liefert eine leere, gesetzte Liste statt eines Fehlers. Ein
+`target`, das keine Change trägt — auch eines außerhalb des Alphabets des
+Zielnamens —, liefert bei sonst gültiger Anfrage eine leere Liste, keinen Fehler;
+ein Fehler des Lese-Kontrakts (`limit`, Bereich, Quelle) hat Vorrang und endet
+mit demselben Code wie ohne `target`. *Ursprung:* die Auswahl nach Ziel über
+`ReadChanges` ist am laufenden System gemessen (`make test-integration`, Phase
+„Routing-Happy-Path (fünf Zustellwege)": die Kennungen entsprechen der
+SQL-Auswahl); den leeren Treffer für einen Namen außerhalb des Alphabets und den
+Vorrang des Lese-Kontrakts tragen die Unit-Tests des gemeinsamen Use Cases
+(`TestReadChangesTargetOutsideAlphabetAnswersEmptyWithoutStore`,
+`TestReadChangesContractErrorsWinOverInvalidTarget`), am gRPC-Weg des Systems
+nicht gefahren (den HTTP-Weg desselben Use Cases siehe oben). Das Ziel ist
+Auswahl, kein Zugriffsschutz. Ein Server ohne das Feld `target` ignoriert es und liefert
+ungefilterte Changes (proto3 verwirft unbekannte Felder; gemessen an der
+Protobuf-Bibliothek dieses Repositorys, an einem ausgelieferten Alt-Server
+*hergeleitet*). Der [gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)
 oben bleibt der Zugriffsweg für neue, laufend eintreffende Changes.
 `Diagnose` liefert denselben Bericht wie [Diagnose ausführen](#diagnose-ausführen)
 und `GET /diagnose` (siehe [Zugriff über die HTTP-/JSON-API](#zugriff-über-die-http-json-api))
@@ -1554,12 +1915,22 @@ ein fehlendes Row Image ist `null`. Jedes Event wird sofort ausgeliefert. Ist
 die Adresse gesetzt, aber kein Live-Stream-Träger verdrahtet, antwortet der
 Endpunkt mit `503`.
 
-**Filterung:** Zwei optionale, unabhängig setzbare Query-Parameter
-`schema`/`table` — dieselben Feldnamen und dieselbe Kombinatorik wie beim
-gRPC-Stream oben und bei `GET /changes` (siehe
-[Änderungen lesen](#änderungen-lesen)). Ohne Parameter liefert der Endpunkt
-wie zuvor jeden Change; ein Parameter außerhalb dieser beiden Namen endet
-mit `400`, bevor das erste Event läuft. Die Beispiel-Clients (Go/C#/Kotlin)
+**Filterung:** Drei optionale, unabhängig setzbare Query-Parameter
+`schema`/`table`/`target` — dieselben Feldnamen und dieselbe Kombinatorik wie
+beim gRPC-Stream oben und bei `GET /changes` (siehe
+[Änderungen lesen](#änderungen-lesen)); `target` wählt das Zustellziel (siehe
+[Routing-Regel konfigurieren](#routing-regel-konfigurieren)) und liefert nur
+Changes dieses Ziels, als Konjunktion mit `schema`/`table`. Ein Name, den keine
+Change trägt — auch einer außerhalb des Alphabets des Zielnamens —, liefert
+keinen Event und keinen Fehler. Ohne Parameter liefert der Endpunkt wie zuvor
+jeden Change; ein Parameter außerhalb dieser drei Namen endet mit `400`, bevor
+das erste Event läuft; ein Server ohne den Parameter `target` lehnt ihn mit `400`
+ab (*hergeleitet* aus der strengen Parameter-Menge, an einem ausgelieferten
+Alt-Server nicht gefahren). Das Event trägt das Ziel nicht. *Ursprung:*
+gemessen im Lauf von `make test-integration`, Phase „Routing-Happy-Path (fünf
+Zustellwege)": ein SSE-Client mit Ziel empfing von einer festen Menge gemischter
+Changes genau die Changes seines Ziels und im Ruhefenster von 15 s keine Change
+eines anderen Ziels oder ohne Ziel. Die Beispiel-Clients (Go/C#/Kotlin)
 und die drei SDK-Packages nehmen den SSE-Filter noch nicht als eigenen
 Aufrufparameter entgegen — offener Folge-Schritt (anders inzwischen der
 gRPC-Stream oben, dessen Filter das NuGet-Package `PgChangeFeed.Client`
@@ -1641,7 +2012,11 @@ Tabelle auf dem tabellen-granularen Subjekt
 konfigurierte `CDC_SOURCE_ID`, `<schema>`/`<table>` sind die
 Klartext-Bezeichner der Tabelle. Ein Consumer, der alle Tabellen einer Quelle
 verfolgt, abonniert die Wildcard `cdc.changes.<source_id>.>`; ein Consumer, der
-mehrere Quellen verfolgt, `cdc.changes.>`.
+mehrere Quellen verfolgt, `cdc.changes.>`. Das Wecksignal trägt kein
+Zustellziel; die Wurzel `cdc.changes` bekommt von der Zusatz-Veröffentlichung des
+[NATS-Vollinhalts-Streams](#zugriff-über-den-nats-vollinhalts-stream) nichts
+(*Ursprung:* Unit-Test des Vollinhalts-Adapters, nur negativ belegt: ohne
+Wecksignal-Sender null Nachrichten).
 
 **Der leere Payload:** Das Signal trägt **keine** Daten — keinen Change-Inhalt,
 keine Positionsangabe. Jede Nachricht bedeutet ausschließlich „lies erneut über
@@ -1704,12 +2079,44 @@ bleiben unabhängig voneinander abonnierbar.
 Felder: `change_id`, `transaction_id`, `source_table_id`, `sequence`,
 `operation`, `old_image`, `new_image`, `schema_version`, `schema`, `table`)
 als Bytes des JSON-Dokuments — kein drittes Nachrichtenschema für dieselben
-Daten.
+Daten. Das Zustellziel gehört nicht zur Nachricht.
+
+**Das Zusatz-Subjekt (Zustellziel):** Jede Change mit einem Zustellziel
+(`route_target`, siehe [Routing-Regel konfigurieren](#routing-regel-konfigurieren))
+wird zusätzlich auf `cdc.route.<source_id>.<ziel>` veröffentlicht, mit demselben
+Payload wie auf dem `cdc.stream…`-Subjekt; eine Change ohne Ziel erzeugt keine
+zweite Nachricht, das Subjekt `cdc.stream.<source_id>.<schema>.<table>` bleibt
+unverändert. Ein Consumer abonniert `cdc.route.<source_id>.<ziel>` für ein Ziel,
+`cdc.route.<source_id>.*` oder `cdc.route.<source_id>.>` für alle Ziele einer
+Quelle. Das Alphabet des Zielnamens enthält weder Punkt noch NATS-Platzhalter:
+ein Zielname mit `-` und `_` (`eu-west_1`) ist an einem realen NATS-Server ein
+einzelnes Subjekt-Token, und `.*` wie `.>` empfangen jedes Ziel (*Ursprung:*
+gemessen im Lauf von `make test-notify`, Test
+`internal/adapters/driven/natsstream/publisher_nats_test.go`). Die zweite
+Veröffentlichung ist von der ersten in der Prüfung unabhängig (Tabellen-Subjekt
+zuerst, danach das Ziel): ein Fehlschlag oder Überspringen der einen verändert
+die andere nicht. Backfill-Changes gehen auf keines der beiden Subjekte (siehe
+[Bestand als Backfill überführen](#bestand-als-backfill-überführen)).
+
+**Kosten der zweiten Veröffentlichung:** Die Zeit für `publish` samt Flush zum
+Server (je 10.000 Changes, Median von fünf Durchgängen, ohne Abonnent,
+Testcontainer-NATS, `make test-notify`) lag mit Ziel-Veröffentlichung beim
+0,92- bis 1,30-fachen der Zeit ohne. *Ursprung:* sechs Läufe; gemessen und
+abgeleitet in diesem Handbuch-Zug: gedruckte Zeile „ohne Ziel 19.656453ms
+(508739 Changes/s), mit Ziel 20.129363ms (496787 Changes/s)", Verhältnis 1,02
+(abgeleitet); übernommen aus den Berichten der Umsetzung und ihrer Prüfung: 1,16
+und 1,30 (zwei Läufe der Umsetzung, abgeleitet aus „ohne Ziel 18.242683ms, mit
+Ziel 21.239865ms" bzw. „ohne Ziel 17.479304ms, mit Ziel 22.739539ms"), 1,05,
+1,14 und 0,92 (Review, Fixrunde, Verifikation). Ein Aufschlag ist an diesem
+Messaufbau nicht auflösbar — die Verhältnisse liegen im Rauschen. Die Messung
+hat keine Schwelle und deckt die Verteilung an Abonnenten nicht ab; eine
+Last-Zusage folgt daraus nicht.
 
 **Zustellsemantik:** Core NATS, Fire-and-Forget, kein Replay — dieselbe
-Zusicherung wie gRPC und SSE: ein nicht verbundener oder gerade getrennter
-Consumer verpasst die Änderung ersatzlos und holt sie über
-[Änderungen lesen](#änderungen-lesen) nach.
+Zusicherung wie gRPC und SSE, auch für das Zusatz-Subjekt: ein nicht
+verbundener oder gerade getrennter Consumer verpasst die Änderung ersatzlos und
+holt sie über [Änderungen lesen](#änderungen-lesen) nach — die Lücke schließt
+`WHERE route_target = '<ziel>'` auf `cdc.changes` oder `GET /changes?target=<ziel>`.
 
 **Die Auth-Nebenwirkung — wichtig beim Einschalten:** Ein gesetzter
 `CDC_NATS_STREAM_TOKEN` verlangt vom NATS-Server denselben Token **serverweit**
@@ -1873,7 +2280,7 @@ Klassen (`ADR-0023`, `SPEC-008`):
 | `transient` | vorübergehend nicht verfügbare Quelle/Speicher | Erneuter Versuch mit begrenztem Backoff (siehe [Neustart nach einem Fehler](#neustart-nach-einem-fehler)); der Erfassungspfad trägt die Klasse, wenn das Wiederholungsfenster erschöpft ist — ein Backfill-Run trägt sie als Klasse seines Fehlertexts |
 | `configuration` | ungültige oder fehlende Umgebungsvariable | Kein Start, sichtbarer Fehler |
 | `permission` | fehlende Berechtigung | Sichtbarer Fehler, kein stiller Retry; der Erfassungspfad trägt sie bei SQLSTATE 42501 und bei Fehlern der Klasse 28 (Authentifizierung/Autorisierung) am Quellzugriff, ein Backfill-Run als Klasse seines Fehlertexts (z. B. fehlendes `SELECT` auf die Quelltabelle) |
-| `schema` | eine Replikationsnachricht ist nicht sicher interpretierbar (z. B. TRUNCATE, unbekannter Nachrichtentyp) oder eine Transformationsregel ist auf die Relation einer Change nicht anwendbar (siehe [Transformationsregel konfigurieren](#transformationsregel-konfigurieren)) | Sichtbarer Fehler, kein stilles Überspringen; ein Backfill-Run trägt dieselbe Ursache als Klasse seines Fehlertexts, run-lokal |
+| `schema` | eine Replikationsnachricht ist nicht sicher interpretierbar (z. B. TRUNCATE, unbekannter Nachrichtentyp) oder eine Transformations- oder Routing-Regel ist auf die Relation einer Change nicht anwendbar (siehe [Transformationsregel konfigurieren](#transformationsregel-konfigurieren) und [Routing-Regel konfigurieren](#routing-regel-konfigurieren)) | Sichtbarer Fehler, kein stilles Überspringen; ein Backfill-Run trägt dieselbe Ursache als Klasse seines Fehlertexts, run-lokal — bei einer Routing-Regel, deren Bedingungsspalte der Snapshot nicht trägt, vor der ersten Zeile |
 | `storage` | Persistenzfehler | Kein Source-ACK, damit keine Änderung verloren geht |
 | `replication` | zwei Unterarten (`ADR-0049`): **Stream-Ordnungs-Verletzung** (z. B. Commit ohne offene Transaktion) oder **Transport-/Verbindungsstörung** (Verbindungsaufbau, Slot, Keepalive, Quell-Bestätigung) | Stream-Ordnungs-Verletzung: sofortiger, sichtbarer Abbruch, unabhängig vom WAL-Rückstand. Transport-/Verbindungsstörung: Schwellen-Überwachung über den WAL-Rückstand (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)) — kontrollierte Fortsetzung unterhalb 1 GiB, sichtbarer Abbruch darüber |
 | `internal` | unerwarteter interner Fehler, der keiner anderen Klasse zuzuordnen ist | Sichtbarer Fehler; realer Fallback für jeden nicht erkannten Fehler |
@@ -1942,6 +2349,23 @@ Heartbeat. Ein Neustart
 setzt am zuletzt bestätigten Slot-Stand fort; keine bereits gespeicherte
 Änderung geht dabei verloren.
 
+**Nicht anwendbare Routing-Regel.** Endet der Prozess mit der Fehlerklasse
+`schema`, weil eine Routing-Regel auf eine Change nicht anwendbar ist (der Log
+nennt „Routing-Regel auf die Änderung nicht anwendbar", Regel und Spalte), hilft
+der bloße Neustart nicht: dieselbe Change trifft dieselbe Regel erneut. Die
+Abhilfe ist `cdc.remove_route` zu beantragen — der Antrag bleibt `pending`, solange
+der Prozess steht — und den Prozess dann neu zu starten; offene Anträge werden im
+Vorlauf des Starts verarbeitet, bevor die erste Transaktion der Tabelle
+verarbeitet wird (Frist des Vorlaufs: 30 Sekunden), und die zuvor nicht
+bestätigte Transaktion erscheint danach über `cdc.changes` ohne Ziel (Einzelheiten
+und Ursprung: [Routing-Regel konfigurieren](#routing-regel-konfigurieren)). Das
+gilt nur für diese Ursache: endete der Prozess, weil eine Spalte an der Quelle
+entfernt wurde (inkompatible Schemaänderung, Log „Relation-Änderung nicht sicher
+als Obermenge interpretierbar"), genügt das Entfernen der Regel nicht. Im
+Backfill-Run ist die Regel dieselbe Ursache, run-lokal: der Run endet `failed`,
+der Prozess läuft weiter, und die Abhilfe ist `cdc.remove_route` samt einem
+neuen `cdc.backfill_table`-Antrag ohne Neustart.
+
 ## 7. FAQ
 
 **Kann ich mehrere Quellen mit einem Container betreiben?**
@@ -1973,6 +2397,8 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
 | Angenommen (`applied` bei `backfill`) | Der Antrag ist angenommen und die Run-Zeile `queued` angelegt; sagt nichts über die Ausführung des Runs |
 | Geschätzte Zeilenzahl | Eine Schätzung des Katalogs der Quelle für die Zeilenzahl der Tabelle (`estimated_rows`); keine Zählung und keine Grenze, NULL heißt unbekannt |
 | Transformationsregel | Eine deklarative Regel (`rename_column` oder `map_value`), die im Row Image eine Spalte umbenennt oder ihren Wert abbildet, ausgewertet vor der Persistierung; konfiguriert über `cdc.set_transformation`/`cdc.remove_transformation` |
+| Routing-Regel | Eine Regel je Tabelle (`target`, `order`, optional `when`), die einer erfassten Change bei der Erfassung ein Zustellziel zuweist; der erste Treffer in aufsteigender `order` bestimmt das Ziel; konfiguriert über `cdc.set_route`/`cdc.remove_route` |
+| Zustellziel (`route_target`) | Der benannte Kanal einer Change, vergeben von einer Routing-Regel und mit der Change gespeichert; `NULL` heißt „nicht geroutet"; ein Leser wählt es über `target` oder das Subjekt `cdc.route.<source_id>.<ziel>` |
 
 ## 9. Anhang
 
@@ -1986,6 +2412,17 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   `replication`, Unterart Transport-/Verbindungsstörung (siehe
   [Fehlerklassen](#fehlerklassen)).
 - Ein Container-Lauf bindet genau eine Quelle.
+- Zielname einer Routing-Regel (`target`, `SPEC-032`): 1 bis 63 Zeichen, das
+  erste aus `a`–`z` und `0`–`9`, die übrigen aus `a`–`z`, `0`–`9`, `_` und `-`
+  (`[a-z0-9][a-z0-9_-]{0,62}`); ein Name außerhalb des Alphabets endet den Antrag
+  `failed` (`Zielname ist ungültig`). Das Alphabet ist aus der Subjekt-Syntax
+  hergeleitet, nicht gegen einen NATS-Server geprüft; ein Name mit `-` und `_` ist
+  an einem realen NATS-Server ein einzelnes Token (siehe [Zugriff über den
+  NATS-Vollinhalts-Stream](#zugriff-über-den-nats-vollinhalts-stream)).
+- `order` einer Routing-Regel: eine positive ganze Zahl bis 2147483647
+  (**Setzung** der Umsetzung, die Spezifikation nennt keine Obergrenze;
+  gemessen: `2147483647` wird angenommen, `2147483648` endet `failed`). Die
+  Spezifikation führt keine Obergrenze für die Zahl der Regeln je Tabelle.
 - Ein Container-Lauf hält zwei gleichzeitige Replication-Protokoll-
   Verbindungen zur Quelle (Stream-Adapter, WAL-Rückstand-Messung) — beide
   zählen gegen `max_wal_senders` der Quell-Instanz. Während der Slot-Anlage
@@ -2282,3 +2719,4 @@ MIT — siehe `LICENSE`.
 | 1.81 | 2026-09-28 | Kotlin-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-kotlin-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene `suspend fun`-Methode, `PgChangeFeedGrpcClient.streamChanges()` nimmt die optionalen `schema`/`table`-Parameter jetzt entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `pgchangefeed-kotlin` jetzt namentlich statt als offenen Folge-Schritt — mit dieser Zeile ist die Drei-Sprachen-SDK-Matrix für die gRPC-Verwaltungs-API vollständig |
 | 1.82 | 2026-09-30 | „Neustart nach einem Fehler": begrenzte Wiederholung der Klasse `transient` im Capture-Pfad (`ADR-0135`) ergänzt — Rücksetzung der Episode nach einem Zyklus von mindestens 30 s, WARN mit Versuchszähler und INFO bei Fortsetzung, keine Wiederholung bei Berechtigungsfehlern und Server-Abweisungen; Fehlerklassen-Tabelle nennt `transient` und `permission` als im Erfassungspfad beobachtbar |
 | 1.83 | 2026-09-30 | „Neustart nach einem Fehler“ (`ADR-0136`): „gestreamt“ heißt ab Bestätigung von `START_REPLICATION` (Rücksetzung nach mindestens 30 s Streaming, der Aufbau zählt nie), der Aufbau eines Zyklus hat eine Frist von 30 s, das INFO der Fortsetzung folgt dem Streaming-Beginn, die wiederholte Fehlermenge steht als SQLSTATE-Auswahl (Klassen 08, 40, 53, 55, 57, 58 und 25006), jede andere Server-Abweisung endet sofort |
+| 1.84 | 2026-10-01 | Routing von Changes auf Zustellziele dokumentiert (`LH-FA-CFG-008`, `LH-FA-SST-006`, `ADR-0137`, `ADR-0138`, `ADR-0139`, `ADR-0140`, `ADR-0141`, slice-routing-betriebsdoku): §4 neuer Abschnitt „Routing-Regel konfigurieren“ (Voraussetzung `cdc_admin`, `cdc.set_route`/`cdc.remove_route`, Form der `rule_spec`, ausgeführtes Beispiel, R1–R6 mit Fehlertexten, die Fehlerklasse `schema` mit zwei Ursachen und der Abhilfe, „Ziel lesen“, Hinweise zu festem Label, Change ohne Treffer, abwesendem Wert, `DELETE` ohne volle Replica-Identität, Auswahl statt Zugriffsschutz); die Zugriffswege (HTTP, gRPC-Stream, gRPC-Verwaltungs-API `ReadChanges`, SSE) nennen den Filter `target`, der NATS-Vollinhalts-Stream das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>` samt Kosten-Messung, „Änderungen lesen“ die Spalte `route_target`; Fehlerklassen-Zeile `schema`, „Neustart nach einem Fehler“, Rollen-Tabelle, Glossar, „Grenzwerte“ und „Schema aktualisieren“ nachgezogen; der Fehlerblock der Transformationsregeln trennt die entfernte Spalte von der nicht anwendbaren Regel |
