@@ -51,7 +51,7 @@ flowchart TB
 
 | ID | Komponente | Rolle |
 |---|---|---|
-| `ARC-001` | Domain Core | Domänenobjekte und Invarianten: Source, SourceTable, ChangeTransaction, Change, SourcePosition, Consumer, ConsumerPosition, SchemaVersion, RetentionPolicy, Transformationsregel; pur, ohne Treiber |
+| `ARC-001` | Domain Core | Domänenobjekte und Invarianten: Source, SourceTable, ChangeTransaction, Change, SourcePosition, Consumer, ConsumerPosition, SchemaVersion, RetentionPolicy, Transformationsregel, Routing-Regel; pur, ohne Treiber |
 | `ARC-002` | Application | Use-Case-Orchestrierung: Capture, Consumer-Verwaltung, Retention, Konfiguration |
 | `ARC-003` | Inbound Ports | Fähigkeitsschnittstellen, über die Driving Adapters die Use Cases aufrufen |
 | `ARC-004` | Outbound Ports | Fähigkeitsschnittstellen, über die Application Services technische Wirkungen anfordern |
@@ -139,6 +139,16 @@ SQL-Lesezugriff und Live-Wege sehen dieselbe Form, und der Backfill-Pfad nutzt
 dieselbe Bild-Konstruktion. Eine Regel, die auf eine Change nicht anwendbar ist,
 endet den Erfassungspfad mit der Fehlerklasse `schema` (§5): die Transaktion
 wird weder persistiert noch bestätigt.
+
+**Zustellziel der Change.** An derselben Stelle bestimmt die Routing-Regel
+der Tabelle das Zustellziel einer Change, ebenfalls bevor etwas persistiert
+wird: aus den Quellwerten vor der Transformation, als reine Funktion der
+Domäne, ohne eine Change zu verwerfen. Das Ziel ist ein Label an der Change
+(kein Teil des Row Images); ein Log trägt alle Ziele, und Speicher,
+SQL-Lesezugriff und Live-Wege sehen dasselbe Ziel. Der Backfill-Pfad nutzt
+dieselbe Bestimmung. Eine Routing-Regel, die auf eine Change nicht anwendbar
+ist, endet den Erfassungspfad wie eine Transformationsregel mit der
+Fehlerklasse `schema`.
 
 **Leerlauf-Weg.** Trägt eine Keepalive-Nachricht der Quelle ein WAL-Ende hinter
 der zuletzt bestätigten Position, während der Stream keine Quelltransaktion
@@ -255,7 +265,7 @@ einen Hintergrund-Zug, der offene Anträge liest, denselben
 Antrags-Datensatz vermerkt. Beide Pfade laufen über denselben Inbound
 Port; nur der Aufrufweg zu ihm unterscheidet sich.
 
-Die **Antragsart des Datensatzes wählt den Inbound Port** — sieben Arten
+Die **Antragsart des Datensatzes wählt den Inbound Port** — neun Arten
 laufen über diesen einen Weg:
 
 | Antragsart | SQL-Funktion | Inbound Port |
@@ -267,6 +277,8 @@ laufen über diesen einen Weg:
 | `backfill` | `cdc.backfill_table(...)` | `BackfillTableUseCase` |
 | `set_transformation` | `cdc.set_transformation(...)` | `SetTransformationUseCase` |
 | `remove_transformation` | `cdc.remove_transformation(...)` | `RemoveTransformationUseCase` |
+| `set_route` | `cdc.set_route(...)` | `SetRouteUseCase` |
+| `remove_route` | `cdc.remove_route(...)` | `RemoveRouteUseCase` |
 
 Die beiden Spalten-Antragsarten ([`LH-FA-CFG-005`](lastenheft.md)) rufen
 denselben Administrations-Hintergrundzug auf demselben Antrags-Datensatz;
@@ -280,7 +292,12 @@ Konfliktfreiheit gegen den dauerhaften Regelstand und die Spaltenliste der
 Quelltabelle, die ein Outbound Port (`ARC-004`) liefert, und lassen den
 Regelstand bei einer Verletzung unverändert. Der Regelstand einer Tabelle wird
 wie der Ausschlussstand aus den `applied`-Zeilen der Antragsarten abgeleitet
-und bei jedem Anlegen einer Erfassungs-Bindung mitgeführt. Das
+und bei jedem Anlegen einer Erfassungs-Bindung mitgeführt. Die beiden
+Routing-Antragsarten ([`LH-FA-CFG-008`](lastenheft.md)) nehmen denselben Weg
+mit eigenem Regelstand und eigenem Namensraum; ihre Use Cases prüfen die
+Konfliktfreiheit gegen den dauerhaften Routing-Regelstand, die Spaltenliste der
+Quelltabelle und den Ausschlussstand, und ein Spaltenausschluss prüft
+umgekehrt gegen den Routing-Regelstand. Das
 Diagramm unten zeigt den Weg am Beispiel `enable` (`EnableTableUseCase`); die
 übrigen Antragsarten nehmen denselben Weg von der Antragsqueue über den
 Hintergrund-Zug und wählen dort ihren Inbound Port. Die Antragsart `backfill`
@@ -397,8 +414,8 @@ fremde Transaktion die Tabelle exklusiv hält. Die Umschreib-Prüfung vergleicht
 die Datei der Tabelle im Snapshot mit dem aktuellen Katalog; wurde die Tabelle
 zwischen Snapshot-Export und Lesesperre umgeschrieben, endet der Run `failed`
 mit der Klasse `transient` und ohne Change, und ein neuer Antrag beginnt neu.
-Ist eine Transformationsregel der Tabelle auf die Spalten des Snapshots nicht
-anwendbar, endet der Run `failed` mit der Klasse `schema`, bevor die erste Zeile
+Ist eine Transformations- oder Routing-Regel der Tabelle auf die Spalten des
+Snapshots nicht anwendbar, endet der Run `failed` mit der Klasse `schema`, bevor die erste Zeile
 gelesen wird; der Erfassungspfad bleibt davon unberührt. Der Snapshot-Leser
 trägt den Snapshot-Export, den Import, die Lesesperre und die Umschreib-Prüfung;
 der Worker arbeitet auf eigenen Verbindungen, der Capture-kritische Pfad bleibt
@@ -413,7 +430,7 @@ denselben Port gesendet wie das der WAL-Changes.
 |---|---|---|
 | Replication-Stream-/Slot-Störung (`ARC-008`) | Driving Adapter übersetzt in die Klasse `replication`; Application entscheidet über kontrollierte Fortsetzung mit begrenztem Backoff | strukturiert mit Klassen-Feld; Schwellen beobachtbar (§3, `cdc_wal_retention_bytes`) |
 | Persistenzfehler im ChangeStore (`ARC-009`) | Driven Adapter meldet Klasse `storage`; Application setzt keinen Source-ACK — Wiederholung wird gegenüber Datenverlust bevorzugt | strukturiert mit Klassen-Feld |
-| Dekodier- und Schemafehler, auf eine Change nicht anwendbare Transformationsregel | Adapter melden Klasse `schema`; sichtbarer Fehler, kein stillers Überspringen und keine stille Fehlinterpretation; die Regel wird nie übersprungen, die Change nie roh ausgeliefert | strukturiert mit Klassen-Feld |
+| Dekodier- und Schemafehler, auf eine Change nicht anwendbare Transformations- oder Routing-Regel | Adapter melden Klasse `schema`; sichtbarer Fehler, kein stillers Überspringen und keine stille Fehlinterpretation; die Regel wird nie übersprungen, die Change nie roh ausgeliefert und nie an ein Standardziel geleitet | strukturiert mit Klassen-Feld |
 | Berechtigungsfehler | Adapter melden Klasse `permission`; sichtbarer Fehler, kein stiller Retry | strukturiert mit Klassen-Feld |
 | Konfigurationsfehler | Bootstrap meldet Klasse `configuration` beim Start; kein Start im falschen Stand | strukturiert mit Klassen-Feld |
 | Unerwarteter interner Fehler | Klasse `internal`; kontrollierter Neustart und Fortsetzung aus persistierten Zuständen | strukturiert mit Klassen-Feld |

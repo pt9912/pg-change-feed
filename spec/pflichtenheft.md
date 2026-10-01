@@ -255,10 +255,14 @@ Umsetzung, keine Messergebnisse.
   CLI-Diagnose zeigen den Run (`SPEC-029`). Run-Fehler tragen die Klasse aus
   `SPEC-008` im Fehlertext und sind **run-lokal**: sie setzen weder den
   Heartbeat-Fehlerzustand noch stoppen sie den Capture-Pfad. Ist eine Regel des
-  Regelstands der Tabelle auf die Spalten des Snapshots nicht anwendbar
-  (`SPEC-008`, Zeile `schema`), endet der Run `failed` mit der Klasse `schema`,
-  bevor die erste Zeile gelesen wird — ohne Change und ohne den Erfassungspfad
-  zu berühren.
+  Regelstands der Tabelle — eine Transformationsregel oder eine Routing-Regel
+  — auf die Spalten des Snapshots nicht anwendbar (`SPEC-008`, Zeile `schema`),
+  endet der Run `failed` mit der Klasse `schema`, bevor die erste Zeile gelesen
+  wird — ohne Change und ohne den Erfassungspfad zu berühren.
+- **Ziel der Backfill-Changes.** Backfill-Changes durchlaufen dieselbe
+  Bestimmung des Zustellziels wie WAL-Changes (`LH-FA-CFG-008.a`) und tragen
+  `route_target` des Regelstands zum Run (`SPEC-002`); die Replay-Invariante
+  bleibt unberührt, weil das Label nicht zum Zeilenzustand gehört.
 - **Zustellung und Retention.** Backfill-Changes gehen in keinen Live-Weg
   (`SPEC-020`, `SPEC-021`, `SPEC-024`); nach dem Commit sendet der Run je
   Tabelle ein Wecksignal (`SPEC-017`, best effort). Die Retention behandelt sie
@@ -346,20 +350,100 @@ Sätze sind Zusagen an die Umsetzung, keine Messergebnisse.
 - **Abgrenzung.** Die Regeln bestimmen die Form einer Change, nicht ihr
   Zustellziel; das Routing bleibt bei `LH-FA-CFG-008.a`.
 
-### LH-FA-CFG-008.a — Routingform offen
+### LH-FA-CFG-008.a — Routingform
 
-**Eingabe:** erfasste Change. **Ausgabe:** Zustellung an das durch eine
-Routing-Regel bestimmte Zustellziel.
+**Eingabe:** erfasste Change. **Ausgabe:** Change mit dem durch eine
+Routing-Regel bestimmten Zustellziel, je Ziel abrufbar über jeden Zustellweg.
 
-Die Lastenheft-Fähigkeit ist gefordert ([`LH-FA-CFG-008`](lastenheft.md)),
-das Modell der Zustellziele, Konfigurationsmechanismus und Ausdrucksform der
-Routing-Regeln sowie ihre Auflösung bei mehreren zutreffenden Regeln sind
-offene technische Fragen, ADR-pflichtig. Die bestehenden Zustellwege tragen
-kein serverseitig konfigurierbares Zielmodell: gRPC und SSE lassen den
-Consumer einen optionalen `schema`/`table`-Filter je eigener Verbindung
-setzen (`SPEC-020`, `SPEC-021`), aber keine Routing-Regel lenkt eine Change
-ohne Zutun des Consumers an ein bestimmtes Ziel; das NATS-Subjekt
-(`SPEC-024`) bleibt die einzige adressierbare Zielform.
+Die Lastenheft-Fähigkeit ([`LH-FA-CFG-008`](lastenheft.md)) wird durch eine
+geordnete Liste einfacher Regeln je Tabelle erfüllt — keine Routing-Sprache,
+kein Skripting-, kein Plugin-Modell. Die folgenden Sätze sind Zusagen an die
+Umsetzung, keine Messergebnisse: bis die Umsetzung sie am laufenden System
+belegt, sind sie keine geprüften Tatsachen.
+
+- **Zielmodell.** Ein Zustellziel ist ein benannter Kanal je Quelle. Sein Name
+  folgt `[a-z0-9][a-z0-9_-]{0,62}`; das Alphabet enthält weder Punkt noch
+  NATS-Platzhalter, damit der Name ein einzelnes Subjekt-Token sein kann
+  (hergeleitet aus der Subjekt-Syntax, nicht gegen einen NATS-Server geprüft).
+  „Zustellung" heißt Abruf oder Abonnement des Kanals über die vorhandenen
+  Zustellwege; es gibt keine aktive Zustellung an externe Senken und keine feste
+  Bindung eines Consumers an ein Ziel, Consumer-Positionen bleiben
+  Log-Positionen. Eine Change trägt höchstens ein Ziel, und es gibt kein
+  benanntes Standardziel.
+- **Konfigurationsmechanismus.** Zwei Antragsarten der Antrags-Queue
+  (`SPEC-019`): `set_route` legt eine Regel für eine Tabelle an, `remove_route`
+  nimmt sie heraus; die SQL-Funktionen `cdc.set_route(...)` und
+  `cdc.remove_route(...)` schreiben ausschließlich den Antrag. Die Regeln gelten
+  je Tabelle, wirken am laufenden Prozess ohne Neustart und überleben ihn: der
+  Regelstand wird aus den `applied`-Zeilen der beiden Antragsarten abgeleitet
+  (`SPEC-019`). Es gibt keinen zweiten Konfigurationsweg.
+- **Ausdrucksform.** Eine Regel trägt ein Ziel (`target`), eine Ordnungszahl
+  (`order`) und optional eine Bedingung (`when`), die die Gleichheit des
+  Textwerts einer Spalte der Quelle prüft (`SPEC-032`). Operatoren über die
+  Gleichheit hinaus, ein Standardziel und mehrere Ziele je Change gehören nicht
+  zu dieser Festlegung; jede Erweiterung ist eine Änderung dieser Festlegung.
+- **Auflösung bei Mehrdeutigkeit.** Der erste Treffer in aufsteigender `order`
+  bestimmt das Ziel. Fälle, in denen eine Regel nie wirken könnte, werden
+  statisch ausgeschlossen: sechs Invarianten R1 bis R6 je Tabelle (`SPEC-019`).
+  Ein Antrag, der eine Invariante verletzt, endet `failed` mit Fehlertext, der
+  Regelstand bleibt unverändert.
+- **Kein Treffer, abwesender Wert.** Trifft keine Regel, ist das Ziel leer
+  (`route_target` ist `NULL`, `SPEC-002`): die Change geht nicht verloren und
+  nicht an ein Standardziel, sie bleibt im Log, in der SQL-Sicht mit
+  `route_target IS NULL` und über jeden ungefilterten Weg sichtbar; für einen
+  Leser, der nur ein Ziel abruft, ist sie unsichtbar. Ein abwesender Wert im
+  Bild (`NULL`, unverändertes TOAST, bei `DELETE` ohne volle Replica-Identität
+  jede Nicht-Schlüsselspalte) ist ein Nicht-Treffer der Bedingung, keine
+  Nichtanwendbarkeit; die nächste Regel wird geprüft. Die Aussage zu `DELETE`
+  ist aus dem Abwesenheits-Vertrag von [`LH-FA-DAT-005`](lastenheft.md)
+  hergeleitet und nicht gegen PostgreSQL 17 und 18 gemessen.
+- **Verhältnis zu Transformationen** ([`LH-FA-CFG-007`](lastenheft.md)). Die
+  Bedingung liest den Quellwert vor jeder Transformation; das Ziel ist ein
+  Metadatum der Change und ändert das Row Image nicht, eine Transformation
+  ändert das Ziel nicht. Beide Regelwerke haben getrennte Namensräume und
+  getrennte Stände.
+- **Verhältnis zum Spaltenausschluss** ([`LH-FA-CFG-005`](lastenheft.md),
+  [`LH-QA-SEC-004`](lastenheft.md)). Eine ausgeschlossene Spalte darf keine
+  Routing-Bedingung tragen, und eine Spalte mit Routing-Bedingung lässt sich
+  nicht ausschließen (R3, `SPEC-019`): sonst verriete das Ziel eine Eigenschaft
+  des ausgeschlossenen Werts.
+- **Wirkort.** Das Ziel wird bei der Konstruktion der Change bestimmt — vor der
+  Persistierung, an **einer** Stelle, die jeder Pfad nutzt, der Changes erzeugt
+  (Replication Stream und Backfill) — und als Label `route_target` an der Change
+  persistiert: ein Log, kein getrenntes Log je Ziel. Live und beim erneuten
+  Lesen ([`LH-FA-REA-005`](lastenheft.md)) trägt eine Change dasselbe Ziel. Die
+  Bestimmung verwirft nie eine Change. Das Label ist zum Erfassungszeitpunkt
+  festgeschrieben: eine Regeländerung wirkt nur auf danach erfasste Changes, es
+  gibt kein Umetikettieren. Backfill-Changes tragen das Label des Regelstands
+  zum Run (`LH-FA-CAP-009.a`); der Altbestand erhält ein Ziel durch einen
+  Backfill-Run mit dem aktuellen Regelstand.
+- **Auswahl, keine Ausblendung.** Ein ungefilterter Leser sieht weiterhin alle
+  Changes, geroutete eingeschlossen. Ein Leser wählt ein Ziel über den optionalen
+  Parameter `target` (leer = kein Filter, Konjunktion mit `schema`/`table`) am
+  Bereichslesen (`SPEC-022`, `SPEC-031` `ReadChanges`) und an den beiden
+  Live-Streams (`SPEC-020`, `SPEC-021`), über die Spalte `route_target` der
+  SQL-Sicht (`SPEC-002`) und über das Zusatz-Subjekt des NATS-Vollinhalts-Streams
+  (`SPEC-024`). Das Wecksignal (`SPEC-017`) trägt kein Ziel.
+- **Nicht anwendbare Regel.** Wann eine Regel auf eine Change nicht anwendbar
+  ist, definiert `SPEC-032` (Anwendbarkeit). Der Erfassungspfad endet dann
+  sichtbar mit der Fehlerklasse `schema` (`SPEC-008`): die Transaktion wird
+  weder persistiert noch bestätigt, Heartbeat und Diagnose zeigen den Zustand,
+  es geht keine Change verloren. Im Run eines Backfills gilt dieselbe Ursache mit
+  derselben Klasse, run-lokal (`LH-FA-CAP-009.a`, `SPEC-008`).
+- **Abhilfe (Zusage).** Diese Stelle führt die Abhilfe im gescheiterten
+  Prozess: `cdc.remove_route` beantragen — die Anträge bleiben `pending`,
+  solange der Prozess steht —, den Prozess neu starten, offene Anträge werden
+  beim Start innerhalb der Frist des Vorlaufs verarbeitet, **bevor** die erste
+  Transaktion der Tabelle assembliert wird, und die zuvor nicht bestätigte
+  Transaktion erscheint danach über `cdc.changes`. Diese Abfolge muss die
+  Umsetzung liefern. Offen und nicht gemessen: ob die Nichtanwendbarkeit am
+  laufenden System überhaupt erreichbar ist (die naheliegende Ursache, eine
+  entfernte Spalte, endet vermutlich im Pfad der inkompatiblen
+  Schemaänderung, `LH-FA-SCH-004.a` — hergeleitet, nicht gemessen) und ob die
+  Abfolge für diese Antragsart greift; erst der Beleg am laufenden System macht
+  sie zur Tatsache.
+- **Abgrenzung.** Die Routing-Regeln bestimmen das Ziel einer Change, nicht ihre
+  Form; die Form bleibt bei `LH-FA-CFG-007.a`.
 
 ### LH-FA-SST-009.a — Sprachmatrix und Vertriebsweg offen
 
@@ -413,7 +497,7 @@ Vorgesehene Tabellen:
 | `cdc.source` | erfasste Quellen |
 | `cdc.source_table` | aktivierte Tabellen je Quelle |
 | `cdc.transaction` | persistierte Quelltransaktionen (interne ID, Commit-Position) |
-| `cdc.change` | die einzelnen Changes (SPEC-002) |
+| `cdc.change` | die einzelnen Changes (SPEC-002), mit dem Zustellziel `route_target` ([`LH-FA-CFG-008`](lastenheft.md)) |
 | `cdc.consumer` | registrierte Consumer |
 | `cdc.consumer_position` | bestätigte Position je Consumer |
 | `cdc.schema_version` | Schema-Versionen (SPEC-004) |
@@ -432,7 +516,8 @@ Vorgesehene Tabellen:
   "old_data": "jsonb | null",
   "new_data": "jsonb | null",
   "schema_version": "Referenz auf cdc.schema_version",
-  "origin": "wal | backfill (fehlender Wert liest als wal; LH-FA-CAP-009)"
+  "origin": "wal | backfill (fehlender Wert liest als wal; LH-FA-CAP-009)",
+  "route_target": "Name des Zustellziels | null (null = kein Ziel; LH-FA-CFG-008)"
 }
 ```
 
@@ -450,9 +535,19 @@ Quelltabelle ([`LH-FA-SCH-005`](lastenheft.md)), nicht den Regelstand.
 `origin` benennt die Herkunft des Changes: `wal` für einen über den
 Replication Stream erfassten Change, `backfill` für einen Bestands-Change
 eines Backfill-Runs (`LH-FA-CAP-009.a`). Die Menge ist geschlossen; ein
-gespeicherter Change ohne das Feld liest sich als `wal`, die View `cdc.changes` führt das Feld
-als **letzte** Spalte. Die Live-Wege (`SPEC-020`, `SPEC-021`, `SPEC-024`)
-tragen es nicht.
+gespeicherter Change ohne das Feld liest sich als `wal`. Die Live-Wege
+(`SPEC-020`, `SPEC-021`, `SPEC-024`) tragen es nicht.
+
+`route_target` benennt das Zustellziel der Change (`LH-FA-CFG-008.a`,
+`SPEC-032`): den Namen eines Ziels oder `NULL` für „kein Ziel". Die Spalte an
+`cdc.change` ist nullable, ohne `DEFAULT` und ohne `CHECK`; ein gespeicherter
+Change ohne das Feld und eine Change ohne Regeltreffer lesen sich gleich als
+`NULL`. Das Label wird bei der Erfassung festgeschrieben (`LH-FA-CFG-008.a`,
+Wirkort) und ändert sich danach nicht. Es gehört weder zum Row Image noch zur
+Schlüsselmenge der Images, und die Live-Wege (`SPEC-020`, `SPEC-021`,
+`SPEC-024`) und `GET /changes` (`SPEC-022`) tragen es nicht als Feld ihrer
+Nachrichten; gelesen wird es über die View `cdc.changes`. Die View führt
+`route_target` als **letzte** Spalte, `origin` steht davor.
 
 ### SPEC-003 — SourcePosition
 
@@ -604,10 +699,12 @@ interner Fehler (`500`).
 
 Feldform des Antrags-Datensatzes der schreibenden SQL-Administration
 ([`LH-FA-ADM-001`](lastenheft.md), [`LH-FA-CFG-005`](lastenheft.md),
-[`LH-FA-CFG-007`](lastenheft.md), [`LH-FA-CAP-009`](lastenheft.md)):
+[`LH-FA-CFG-007`](lastenheft.md), [`LH-FA-CFG-008`](lastenheft.md),
+[`LH-FA-CAP-009`](lastenheft.md)):
 `cdc.enable_table`/`cdc.disable_table`/`cdc.exclude_column`/
 `cdc.include_column`/`cdc.backfill_table`/`cdc.set_transformation`/
-`cdc.remove_transformation` schreiben ausschließlich eine Zeile hierher und
+`cdc.remove_transformation`/`cdc.set_route`/`cdc.remove_route` schreiben
+ausschließlich eine Zeile hierher und
 senden `pg_notify` auf dem Kanal `cdc_administration`; der laufende
 Capture-Prozess liest die offenen Anträge und vermerkt das Ergebnis in
 derselben Zeile.
@@ -617,18 +714,19 @@ derselben Zeile.
 | `administration_request_id` | text (PK) | ja | von der SQL-Funktion vergeben; zugleich der `pg_notify`-Payload |
 | `source_id` | text (FK `cdc.source`) | ja | Quelle des Antrags |
 | `schema_name` / `table_name` | text | ja | adressierte Tabelle; ein leerer Wert endet den Antrag `failed` (Tabelle „Zeilen, die kein Antrag sind“ unten) |
-| `column_name` | text | nein | Ziel-Spalte der beiden Spalten-Antragsarten, dort nichtleer; die fünf übrigen Antragsarten (`enable`, `disable`, `backfill`, `set_transformation`, `remove_transformation`) tragen hier NULL |
-| `rule_name` | text | nein | Regelname der beiden Transformations-Antragsarten, je Tabelle eindeutig, Alphabet in `SPEC-030` (Bezeichner); die fünf übrigen Antragsarten tragen hier NULL |
-| `rule_spec` | jsonb | nein | Regelform (`SPEC-030`) der Antragsart `set_transformation`; die sechs übrigen Antragsarten tragen hier NULL |
-| `request_kind` | text | ja | geschlossene Menge `enable` \| `disable` \| `exclude_column` \| `include_column` \| `backfill` \| `set_transformation` \| `remove_transformation` |
+| `column_name` | text | nein | Ziel-Spalte der beiden Spalten-Antragsarten, dort nichtleer; die sieben übrigen Antragsarten (`enable`, `disable`, `backfill`, `set_transformation`, `remove_transformation`, `set_route`, `remove_route`) tragen hier NULL |
+| `rule_name` | text | nein | Regelname der Transformations- und der Routing-Antragsarten, je Tabelle und Regelwerk eindeutig, Alphabet in `SPEC-030` (Bezeichner); die fünf übrigen Antragsarten tragen hier NULL |
+| `rule_spec` | jsonb | nein | Regelform der Antragsarten `set_transformation` (`SPEC-030`) und `set_route` (`SPEC-032`); die sieben übrigen Antragsarten tragen hier NULL |
+| `request_kind` | text | ja | geschlossene Menge `enable` \| `disable` \| `exclude_column` \| `include_column` \| `backfill` \| `set_transformation` \| `remove_transformation` \| `set_route` \| `remove_route` |
 | `requested_at` | timestamptz | ja, Default `current_timestamp` | Zeitpunkt des Funktionsaufrufs (die Funktionen setzen ihn ausdrücklich auf `clock_timestamp()`); die Verarbeitungs-Ordnung |
 | `status` | text | ja, Default `pending` | geschlossene Menge `pending` \| `applied` \| `failed` |
 | `error_message` | text | nein | Fehlertext eines `failed`-Antrags; `applied` trägt NULL |
 
-**Ordnung der Verarbeitung.** Die sieben SQL-Funktionen setzen `requested_at` auf den
+**Ordnung der Verarbeitung.** Die neun SQL-Funktionen setzen `requested_at` auf den
 Zeitpunkt ihres Aufrufs (`clock_timestamp()`), nicht auf den Beginn der Transaktion.
 Aufrufe **einer** Transaktion tragen dadurch verschiedene Zeitstempel in der Reihenfolge
 des Aufrufs: `remove_transformation` vor `set_transformation` derselben Regel,
+`remove_route` vor `set_route` derselben Regel,
 `exclude_column` vor `include_column` derselben Spalte und `disable_table` vor
 `enable_table` werden in dieser Folge verarbeitet und abgeleitet. Die offenen Anträge
 werden in der Ordnung `requested_at`, bei gleichem Zeitstempel nach
@@ -778,6 +876,75 @@ sind dadurch tragend — eine Bereinigung der Tabelle verlöre den Regelstand.
 Der aktive Regelstand ist über diese Tabelle lesbar; eine eigene Sicht gibt es
 nicht.
 
+**Routing-Antragsarten.** `rule_name` ist für `set_route` und `remove_route`
+Pflicht, `rule_spec` nur für `set_route`; der Namensraum der Routing-Regeln ist
+getrennt von dem der Transformationsregeln (derselbe Name darf in beiden
+vorkommen). Die Prüfung liegt wie bei den Transformations-Antragsarten
+vollständig in der Verarbeitung (`cdc.set_route` nimmt die Regelform wie
+`cdc.set_transformation` als `json`-Parameter an; Annahmemenge, Cast und
+Grenzen wie dort), der Antrag endet bei einer Verletzung `failed` mit dem
+Fehlertext der Tabelle unten und lässt den Regelstand unverändert. Die
+**Konfliktfreiheit** je Tabelle schließt Mehrdeutigkeit statt sie aufzulösen
+aus:
+
+- **R1** — `rule_name` ist je Tabelle unter den Routing-Regeln eindeutig
+  (erst entfernen, dann neu setzen).
+- **R2** — `order` ist je Tabelle eindeutig.
+- **R3** — `when.column` existiert an der Quelle und ist keine
+  ausgeschlossene Spalte; umgekehrt endet `exclude_column` gegen eine Spalte,
+  die eine Routing-Bedingung des Regelstands trägt, `failed`. `include_column`
+  bleibt zulässig.
+- **R4** — höchstens eine Regel ohne `when` je Tabelle, und sie trägt die
+  höchste `order` der Tabelle.
+- **R5** — das Paar (`when.column`, `when.equals`) kommt je Tabelle höchstens
+  einmal vor; eine Regel ohne `when` trägt kein Paar.
+- **R6** — `remove_route` gegen einen nicht geführten Regelnamen endet `failed`.
+
+Der Fehlertext ist der Klartext der Zeile, gefolgt von einem Doppelpunkt, einem
+Leerzeichen und der Adresse; die Adresse eines Regelnamens ist
+`schema.table.rule_name`, die einer Spalte `schema.table.column`, die eines
+Zielnamens `schema.table.zielname`, die einer `order` `schema.table.<Wert>` in
+Dezimalschreibweise, die eines Schlüssels der Schlüsselname. Die erste verletzte
+Prüfung bestimmt den Text, in der Reihenfolge der Tabelle von oben nach unten:
+erst die Formzeilen, dann R1 bis R5; `remove_route` durchläuft nur die Zeile zum
+Regelnamen und R6. Die letzte Zeile gilt für `exclude_column` zusätzlich zu
+den Prüfungen der Spalten-Antragsarten.
+
+| Verletzung | Klartext | Adresse |
+|---|---|---|
+| `rule_name` ist leer oder NULL oder liegt außerhalb des Alphabets (`SPEC-030`, Bezeichner) | `Regelname ist ungültig` | Regelname, wie beantragt |
+| `set_route` mit `rule_spec` NULL (SQL oder JSON) oder ohne JSON-Objekt | `rule_spec ist ungültig` | Regelname |
+| `rule_spec` oder `when` trägt einen Schlüssel, den die Regelform nicht kennt (`SPEC-032`) | `unbekannter Schlüssel in rule_spec` | der Schlüsselname |
+| `target` fehlt oder ist keine Zeichenkette, `order` fehlt oder ist keine positive Ganzzahl im Wertebereich, `when` ist kein Objekt oder trägt nicht beide Schlüssel, `column` oder `equals` hat die falsche Form (`SPEC-032`) | `rule_spec ist ungültig` | Regelname |
+| `target` liegt außerhalb des Alphabets des Zielnamens (`SPEC-032`) | `Zielname ist ungültig` | Zielname, wie beantragt |
+| R1 | `Regelname bereits vergeben` | Regelname |
+| R2 | `order bereits vergeben` | order |
+| R3, `when.column` fehlt an der Quelle | `Spalte existiert nicht an der Quelle` | Spalte |
+| R3, `when.column` ist ausgeschlossen | `Spalte ist ausgeschlossen` | Spalte |
+| R4, eine Regel ohne `when` ist bereits geführt | `Regel ohne when bereits vorhanden` | Regelname der geführten Regel |
+| R4, die Regel ohne `when` trägt nicht die höchste `order` | `Regel ohne when trägt nicht die höchste order` | Regelname |
+| R4, die Regel mit `when` trägt eine höhere `order` als die geführte Regel ohne `when` | `order liegt hinter der Regel ohne when` | Regelname der geführten Regel ohne `when` |
+| R5 | `Bedingung bereits vergeben` | Spalte |
+| R6, `remove_route` gegen einen nicht geführten Regelnamen | `Regelname nicht geführt` | Regelname |
+| R3, `exclude_column` gegen eine Spalte mit Routing-Bedingung | `Spalte trägt eine Routing-Bedingung` | Spalte |
+
+Für die beiden Routing-Antragsarten trägt `applied` wie bei den
+Transformations-Antragsarten eine zweite Bedeutung: der Stand ist **dauerhaft
+vermerkt**. Ihre `applied`-Zeilen sind die einzige Herkunft des Routing-
+Regelstands einer Tabelle, ausgewertet in der Reihenfolge `requested_at`, bei
+gleichem Zeitstempel deterministisch nach `administration_request_id`;
+`set_route` trägt die Regel ein, `remove_route` nimmt sie heraus. Jeder Pfad, der
+eine Erfassungs-Bindung anlegt, trägt den abgeleiteten Stand mit — der
+Prozessstart **und** der Aktivierungs-Zweig der Antrags-Verarbeitung. Ein Antrag
+gegen eine Tabelle ohne laufende Bindung endet `applied`, nicht `failed`, sofern
+keine der Bedingungen oben verletzt ist: er wirkt, sobald die Tabelle erfasst
+wird. Die Antrags-Zeilen dieser beiden Arten sind dadurch tragend — eine
+Bereinigung der Tabelle verlöre den Regelstand. Der aktive Regelstand ist über
+diese Tabelle lesbar; eine eigene Sicht gibt es nicht. Die Wortlaute und
+Reihenfolgen dieses Absatzes sind Zusagen an die Umsetzung (`SPEC-032`); die
+Gleichheit der Annahmemenge mit `cdc.set_transformation` ist hergeleitet, die
+Messung an PostgreSQL 17 und 18 gilt dort.
+
 **Grants** (Rollen nach der Zuordnung der DSN-Verdrahtung):
 
 | Rolle | Recht auf `cdc.administration_request` | Träger |
@@ -804,8 +971,8 @@ trägt kein Replay ([`LH-FA-SST-008`](lastenheft.md) Boundary).
 |---|---|
 | Protokoll / Dienst | gRPC über HTTP/2 mit Protobuf (`proto3`); Paket `cdc.stream.v1`, Dienst `ChangeStream`, Quelldatei `proto/cdc/stream/v1/changestream.proto` |
 | RPC | `StreamChanges(StreamChangesRequest) returns (stream Change)` — ein Server-Streaming-Aufruf: ein Öffnungsversuch, viele Antwortnachrichten über die Zeit |
-| Request | `StreamChangesRequest` trägt zwei optionale, unabhängig setzbare Felder `schema`/`table` (string, Feldnummern 1/2); ein leeres Feld trägt keinen Filter auf dieser Dimension, ein leeres Paar (der proto3-Zero-Value, auch einer noch nicht neu generierten `StreamChangesRequest{}` alter Clients) liefert wie zuvor jeden Change ungefiltert. Ein gesetztes `schema` ohne `table` filtert auf alle Tabellen dieses Schemas, ein gesetztes `table` ohne `schema` auf jede Tabelle dieses Namens unabhängig vom Schema, beide gesetzt filtert exakt eine Tabelle. Die Filterprüfung läuft im Driving-Handler nach dem Empfang aus dem `Broadcaster`, dessen Fan-out unverändert ungefiltert bleibt |
-| Nachricht `Change` | dieselben Felder wie der Domain-Typ `model.Change` (`OldImage`/`NewImage`, `internal/domain/model/change.go`): `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, eine der drei Operationen `INSERT`, `UPDATE`, `DELETE`), `old_image` (bytes), `new_image` (bytes), `schema_version` (string), `schema` (string), `table` (string); das Feld `origin` (`SPEC-002`) gehört nicht zur Nachricht |
+| Request | `StreamChangesRequest` trägt drei optionale, unabhängig setzbare Felder `schema`/`table`/`target` (string, Feldnummern 1/2/3); ein leeres Feld trägt keinen Filter auf dieser Dimension, ein leerer Request (der proto3-Zero-Value, auch einer noch nicht neu generierten `StreamChangesRequest{}` alter Clients) liefert wie zuvor jeden Change ungefiltert. Ein gesetztes `schema` ohne `table` filtert auf alle Tabellen dieses Schemas, ein gesetztes `table` ohne `schema` auf jede Tabelle dieses Namens unabhängig vom Schema, beide gesetzt filtert exakt eine Tabelle. Ein gesetztes `target` liefert nur Changes, deren Zustellziel (`route_target`, `SPEC-002`) dieser Name ist, als Konjunktion mit `schema`/`table`; ein Name, den keine Change trägt (auch einer außerhalb des Alphabets des Zielnamens, `SPEC-032`), liefert keine Nachricht und keinen Fehler. Die Filterprüfung läuft im Driving-Handler nach dem Empfang aus dem `Broadcaster`, dessen Fan-out unverändert ungefiltert bleibt |
+| Nachricht `Change` | dieselben Felder wie der Domain-Typ `model.Change` (`OldImage`/`NewImage`, `internal/domain/model/change.go`): `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, eine der drei Operationen `INSERT`, `UPDATE`, `DELETE`), `old_image` (bytes), `new_image` (bytes), `schema_version` (string), `schema` (string), `table` (string); die Felder `origin` und `route_target` (`SPEC-002`) gehören nicht zur Nachricht |
 | Granularität | eine Nachricht je Zeilen-Change der committed Transaktion, in deren Reihenfolge — keine Deduplizierung nach Tabelle |
 | Zustellgarantie | keine (Fire-and-Forget, verlustbehaftet): ein Consumer, der nicht verbunden ist **oder langsamer liest als Changes eintreffen**, verpasst die betroffenen Nachrichten ersatzlos — je Abonnent trägt der `Broadcaster` eine begrenzte Empfangs-Warteschlange, deren Überlauf verworfen wird. Ein Replay innerhalb des Streams gibt es nicht; verpasste Changes bleiben über den bestehenden Lesezugriffsweg ([`LH-FA-REA-001`](lastenheft.md) ff.) und die bestätigte Consumer-Position ([`LH-FA-CON-003`](lastenheft.md)/[`LH-FA-CON-005`](lastenheft.md)) nachholbar ([`LH-FA-SST-008`](lastenheft.md) Boundary) |
 | Erzeuger-Blockade | keine: `Publish` blockiert nie auf einen Abonnenten — auch ein verbundener, gerade nicht lesender Consumer hält den Capture-Pfad nicht an. Der Aufruf liefert nur bei ungültigem Aufruf (fehlender Change oder bereits beendeter Aufruf-Kontext) einen Fehler; ein Fehlschlag geht nicht in den Rückgabewert des Capture-Aufrufs ein (Zeile *Fehler bei Publish-Fehlschlag*) |
@@ -822,10 +989,10 @@ Technische Ausgestaltung von [`LH-FA-SST-008`](lastenheft.md), zweiter Zustellwe
 |---|---|
 | Endpunkt / Methode | `GET /changes/stream` |
 | Rechtsklasse | `reader` oder `admin` — Streaming ist rein lesend |
-| Query-Parameter | `schema`, `table` (je optional und unabhängig, dieselben Feldnamen und dieselbe Kombinatorik wie `SPEC-020`s gRPC-Request und `GET /changes`, `SPEC-022`); ohne Parameter liefert der Endpunkt wie zuvor jeden Change ungefiltert. Ein Parameter außerhalb dieser Menge endet mit `400`, vor jedem SSE-Event |
+| Query-Parameter | `schema`, `table`, `target` (je optional und unabhängig, dieselben Feldnamen und dieselbe Kombinatorik wie `SPEC-020`s gRPC-Request und `GET /changes`, `SPEC-022`; `target` wählt das Zustellziel, `SPEC-020`); ohne Parameter liefert der Endpunkt wie zuvor jeden Change ungefiltert. Ein Parameter außerhalb dieser Menge endet mit `400`, vor jedem SSE-Event |
 | Response-Form | `Content-Type: text/event-stream`; je Change ein Event, sofort über `http.Flusher` ausgeliefert |
 | Event-Typ | `event: change` |
-| Event-Daten | `data:` trägt ein JSON-Objekt mit denselben zehn Feldern wie der Domain-Typ `model.Change`, ohne das Feld `origin` (`SPEC-002`): `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, `INSERT`/`UPDATE`/`DELETE`), `old_image`, `new_image`, `schema_version` (string), `schema` (string), `table` (string). Die Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild ist `null` |
+| Event-Daten | `data:` trägt ein JSON-Objekt mit denselben zehn Feldern wie der Domain-Typ `model.Change`, ohne die Felder `origin` und `route_target` (`SPEC-002`): `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, `INSERT`/`UPDATE`/`DELETE`), `old_image`, `new_image`, `schema_version` (string), `schema` (string), `table` (string). Die Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild ist `null` |
 | Zustellgarantie | keine (Fire-and-Forget): ein nicht verbundener **oder langsamer lesender** Consumer verpasst die betroffenen Nachrichten ersatzlos; ein Erzeuger hält nie auf einen Empfänger an. Verpasste Changes bleiben über den bestehenden Lesezugriffsweg ([`LH-FA-REA-001`](lastenheft.md) ff.) und die bestätigte Consumer-Position ([`LH-FA-CON-003`](lastenheft.md)/[`LH-FA-CON-005`](lastenheft.md)) nachholbar |
 | Replay | kein Stream-internes Replay; der `Last-Event-ID`-Header wird weder gesendet noch ausgewertet |
 | Aktivierung | wie die übrigen Endpunkte über `CDC_HTTP_ADDR`; ungesetzt bedeutet deaktiviertes Feature, kein HTTP-Server. Ist die Adresse gesetzt, aber kein `Broadcaster` verdrahtet, antwortet der Endpunkt mit `503` |
@@ -843,7 +1010,7 @@ Port-gedeckten Fähigkeiten ausgestaltet.
 
 | Fähigkeit | Endpunkt | Rechtsklasse | Request | Response |
 |---|---|---|---|---|
-| `ReadChanges` ([`LH-FA-SST-006`](lastenheft.md), [`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md)) | `GET /changes` | `reader` oder `admin` | Query-Parameter `source` (**Pflicht**), `schema`, `table` (je optional und **unabhängig**), `from`, `to` (optional, `commit_position`-Werte ≥ 1, `from` **inklusiv** / `to` **exklusiv**), `limit` (optional, ≥ 1) — **kein** Default-Limit | `200`: `{"changes": [{"commit_position": <int64>, "change_id": "<string>", "transaction_id": "<string>", "source_table_id": "<string>", "schema": "<string>", "table": "<string>", "sequence": <int64>, "operation": "<INSERT\|UPDATE\|DELETE>", "old_image": <eingebettetes JSON \| null>, "new_image": <eingebettetes JSON \| null>, "schema_version": "<string>", "committed_at": "<RFC 3339 in UTC, Bruchteil-Sekunden mit bis zu neun Stellen (abschließende Nullen entfallen)>", "origin": "<wal\|backfill>"}, …]}` — kein Treffer → leere Liste, **nie `404`** |
+| `ReadChanges` ([`LH-FA-SST-006`](lastenheft.md), [`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md)) | `GET /changes` | `reader` oder `admin` | Query-Parameter `source` (**Pflicht**), `schema`, `table`, `target` (je optional und **unabhängig**), `from`, `to` (optional, `commit_position`-Werte ≥ 1, `from` **inklusiv** / `to` **exklusiv**), `limit` (optional, ≥ 1) — **kein** Default-Limit | `200`: `{"changes": [{"commit_position": <int64>, "change_id": "<string>", "transaction_id": "<string>", "source_table_id": "<string>", "schema": "<string>", "table": "<string>", "sequence": <int64>, "operation": "<INSERT\|UPDATE\|DELETE>", "old_image": <eingebettetes JSON \| null>, "new_image": <eingebettetes JSON \| null>, "schema_version": "<string>", "committed_at": "<RFC 3339 in UTC, Bruchteil-Sekunden mit bis zu neun Stellen (abschließende Nullen entfallen)>", "origin": "<wal\|backfill>"}, …]}` — kein Treffer → leere Liste, **nie `404`** |
 
 Die Feldnamen folgen dem API-Vokabular, nicht dem Spaltenvokabular der
 View: `schema`/`table` statt `schema_name`/`table_name` (wie
@@ -858,6 +1025,7 @@ steht zusätzlich daneben — die API adressiert Tabellen an anderer Stelle
 | Leere Menge | `{"changes": []}`, nie `null` — ohne Treffer (unbekannte Quelle, unbekanntes Schema, unbekannte Tabelle, leerer Bereich) endet der Aufruf `200`; ein leerer Bestand ist kein Fehler ([`LH-FA-REA-006`](lastenheft.md) Boundary) |
 | Fehler-Antwortform | unverändert `{"error": "<Klartext>"}` (`SPEC-018`); `400` für ein fehlendes `source`, einen **Parameter außerhalb der Liste** (strenger als die neun Bestandsendpunkte — ein unbekannter *Filter* änderte den Ergebnisstand sonst still), eine nicht als Ganzzahl lesbare Zahl, `from`/`to` `< 1`, `limit` `< 1` ([`LH-FA-REA-003`](lastenheft.md) Negative) oder `from > to` ([`LH-FA-REA-001`](lastenheft.md) Negative); fehlender/unbekannter Bearer-Token `401`; Store-Fehler der Klasse `storage` `500`. Kein `404`-Pfad: das Lesen prüft nichts an der Quelle, es liest einen Bestand |
 | Herkunft | `origin` trägt `wal` für einen über den Replication Stream erfassten Change und `backfill` für einen Bestands-Change (`SPEC-002`, `LH-FA-CAP-009.a`); ein gespeicherter Change ohne das Feld liest als `wal`. Der Abschnitt bietet keinen Filter auf `origin` |
+| Zustellziel | `target` ist ein optionaler Filter auf das Zustellziel der Change (`route_target`, `SPEC-002`): leer oder ohne den Parameter kein Filter, gesetzt nur Changes mit genau diesem Ziel, als Konjunktion mit `schema`/`table`. Ein Name, den keine Change trägt (auch einer außerhalb des Alphabets des Zielnamens, `SPEC-032`), ist kein `400`, sondern ein Filter ohne Treffer: `{"changes": []}`. Das Ziel steht nicht in der Antwort; die View `cdc.changes` trägt es als Spalte |
 | Position und `limit` | Ein `limit` schneidet Zeilen, nicht Positionen: enthält eine Commit-Position mehr Changes als `limit`, liefert `from = <letzte gelieferte commit_position> + 1` den Rest dieser Position nicht, und ein Lesen ab derselben Position liefert wieder dieselben Zeilen. Ein Bestandsabzug legt alle seine Changes auf **eine** Position; er wird ohne `limit` gelesen (oder über den Schlüsselvergleich auf der View `cdc.changes`) |
 | Noch nicht begrenzt | Kein Default-Limit und **keine** harte Obergrenze: ohne `limit` liest der Aufruf unbegrenzt, wie der View-Direktzugriff. Eine eingebaute Grenze wäre eine eigene Festlegung dieses Abschnitts |
 | Aktivierung | wie die übrigen Endpunkte über `CDC_HTTP_ADDR`; ungesetzt bedeutet deaktiviertes Feature, kein HTTP-Server |
@@ -901,6 +1069,7 @@ unverändert.
 | Merkmal | Festlegung |
 |---|---|
 | Subjekt-Schema | `cdc.stream.<source_id>.<schema>.<table>` — ein Subjekt je Tabelle einer Quelle, strukturell wie `SPEC-017`s Wecksignal-Subjekt, aber mit dem Wurzel-Token `cdc.stream` statt `cdc.changes`, um `SPEC-017`s leeren Payload nicht zu berühren. Ein Consumer mit Tabelleninteresse abonniert das vollständige vierstufige Subjekt; `cdc.stream.<source_id>.>` deckt alle Tabellen einer Quelle, `cdc.stream.>` alle Quellen |
+| Zusatz-Subjekt (Zustellziel) | `cdc.route.<source_id>.<ziel>` — jede Change mit einem Zustellziel (`route_target`, `SPEC-002`) wird zusätzlich auf diesem Subjekt veröffentlicht, mit demselben Payload wie auf dem `cdc.stream…`-Subjekt; eine Change ohne Ziel erzeugt keine zweite Nachricht. Das Subjekt `cdc.stream.<source_id>.<schema>.<table>` bleibt unverändert, das Alphabet des Zielnamens (`SPEC-032`) enthält weder Punkt noch NATS-Platzhalter. Ein Consumer abonniert `cdc.route.<source_id>.<ziel>` für ein Ziel, `cdc.route.<source_id>.>` für alle Ziele einer Quelle. Die zweite Veröffentlichung ist eine Zusage an die Umsetzung; ihre Last am Publisher ist nicht gemessen. Backfill-Changes gehen in keinen Live-Weg (`LH-FA-CAP-009.a`), also auch nicht auf dieses Subjekt |
 | Nachrichteninhalt | JSON-Objekt mit denselben zehn Feldern wie `SPEC-021`s SSE-Event: `change_id`, `transaction_id`, `source_table_id`, `sequence`, `operation` (`INSERT`/`UPDATE`/`DELETE`), `old_image`, `new_image`, `schema_version`, `schema`, `table` — dasselbe Nachrichtenschema, kein drittes |
 | Granularität | eine Nachricht je Zeilen-Change der committed Transaktion, wie `SPEC-020`/`SPEC-021` — **nicht** `SPEC-017`s Tabellen-Dedup-Kardinalität |
 | Zustellgarantie | keine (Core NATS, Fire-and-Forget) — ein nicht verbundener oder langsamer Consumer verpasst Nachrichten ersatzlos; Nachholen ausschließlich über den bestehenden Lesezugriffsweg ([`LH-FA-REA-001`](lastenheft.md) ff.) und die bestätigte Consumer-Position ([`LH-FA-CON-003`](lastenheft.md)/[`LH-FA-CON-005`](lastenheft.md)) |
@@ -1091,7 +1260,7 @@ Anfrage/Antwort-Aufrufen, dieselbe Begründung wie `SPEC-018`):
 | `GetTableStatus` ([`LH-FA-CFG-003`](lastenheft.md)) | `reader` | `source`, `schema`, `table`, `publication` — alle Pflicht | `enabled` (`bool`), `retained` (`bool`) |
 | `ListTables` ([`LH-FA-CFG-004`](lastenheft.md)) | `reader` | `source`, `publication` — beide Pflicht | `tables` (`repeated SourceTable`), `retained` (`repeated SourceTable`) — ohne Aktivierung beide leer |
 | `RunRetention` ([`LH-FA-RET-002`](lastenheft.md)…[`004`](lastenheft.md)) | `admin` | `source` Pflicht, `min_age_nanos` (`int64`) ≥ 0 | `deleted` (`int64`) — Anzahl real gelöschter Changes |
-| `ReadChanges` ([`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md)) | `reader` | `source` Pflicht, `schema`, `table` (je optional, unabhängig), `from`, `to` (`uint64`, `0` = nicht gesetzt, Start inklusiv/Ende exklusiv), `limit` (`int64`, `0` = unbegrenzt) | `changes` (`repeated ChangeRecord`) — kein Treffer liefert eine leere, gesetzte Liste (`LH-FA-REA-006` Boundary), kein `NotFound` |
+| `ReadChanges` ([`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md)) | `reader` | `source` Pflicht, `schema`, `table` (je optional, unabhängig), `from`, `to` (`uint64`, `0` = nicht gesetzt, Start inklusiv/Ende exklusiv), `limit` (`int64`, `0` = unbegrenzt), `target` (`string`, Feldnummer 7, optional: leer = kein Filter, gesetzt = nur Changes mit diesem Zustellziel, Konjunktion mit `schema`/`table`) | `changes` (`repeated ChangeRecord`) — kein Treffer liefert eine leere, gesetzte Liste (`LH-FA-REA-006` Boundary), kein `NotFound`; ein `target`, das keine Change trägt (auch eines außerhalb des Alphabets des Zielnamens, `SPEC-032`), liefert eine leere Liste, keinen Fehler |
 | `Diagnose` ([`LH-FA-SST-003`](lastenheft.md), deckt [`LH-FA-ADM-002`](lastenheft.md)…[`005`](lastenheft.md), [`LH-FA-RET-005`](lastenheft.md), [`LH-FA-RET-006`](lastenheft.md), [`LH-FA-CAP-009`](lastenheft.md)) | `reader` | `source` Pflicht | `heartbeat` (`HeartbeatStatus`), `capture_lag` (`double`), `consumer_lags` (`repeated ConsumerLag`), `retention_blocker` (`RetentionBlocker`), `storage_bytes` (`double`), `backfill` (`repeated BackfillTableStatus`) — dieselben sechs Signalgruppen wie `GET /diagnose` (`SPEC-018`) |
 
 Hilfsnachricht `SourceTable` (für `ListTables`): `table_id`, `source`,
@@ -1102,7 +1271,12 @@ HTTP-Adapter. Hilfsnachricht `ChangeRecord` (für `ReadChanges`):
 `operation`, `old_image`, `new_image` (`bytes`, rohe JSON-Bytes, dieselbe
 Form wie `streamv1.Change`), `schema_version`, `committed_at` (`string`,
 RFC 3339 mit Nanosekunden, UTC), `origin` — dieselben dreizehn Felder wie
-`readChangeResponse` im HTTP-Adapter (`SPEC-022`), in derselben Reihenfolge.
+`readChangeResponse` im HTTP-Adapter (`SPEC-022`), in derselben Reihenfolge;
+das Zustellziel (`route_target`, `SPEC-002`) ist kein Feld von `ChangeRecord`.
+Die Wire-Kompatibilität des zusätzlichen Request-Felds ist aus den
+Proto3-Regeln hergeleitet, nicht gegen einen alten Server gefahren: ein alter
+Client sendet das Feld nicht (leer, kein Filter), ein alter Server ignoriert
+ein unbekanntes Feld und liefert ungefiltert.
 Alle String-Felder tragen proto3-`string`; `snake_case` im `.proto` wird zu
 `camelCase` im generierten Go-/C#-/Kotlin-Code — Formsache der Zielsprache,
 keine inhaltliche Abweichung.
@@ -1138,6 +1312,90 @@ typisiert):
 `ChangeStream` (`SPEC-020`); ungesetzt bedeutet deaktiviertes Feature, kein
 Listener, unverändertes Bestandsverhalten.
 
+### SPEC-032 — Routing-Regel (`rule_spec`) und ihre Wirkung auf das Zustellziel
+
+Feldform und Semantik der Regel zu `LH-FA-CFG-008.a`
+([`LH-FA-CFG-008`](lastenheft.md)): das Feld `rule_spec` der Antragsart
+`set_route` (`SPEC-019`) und die Bestimmung des Feldes `route_target` einer
+Change (`SPEC-002`). Die Sätze dieses Eintrags sind Zusagen an die Umsetzung,
+keine Messergebnisse; wo die Spec eine Grenze festlegt, die über den Wortlaut
+des Lastenhefts hinausgeht, ist das eine Festlegung dieses Eintrags, keine
+Messung.
+
+`rule_spec` ist ein JSON-Objekt. Jeder Schlüssel steht in der Tabelle; ein
+anderer Schlüssel, auch innerhalb von `when`, endet den Antrag `failed`
+(Fehlertexte in `SPEC-019`).
+
+| Schlüssel | Pflicht | Form | Bedeutung |
+|---|---|---|---|
+| `target` | ja | Zeichenkette, Alphabet siehe Zielname | Name des Zustellziels, das die Regel einer treffenden Change zuweist |
+| `order` | ja | JSON-Zahl ohne Bruchteil und Exponent, ganze Zahl von 1 bis 2147483647 | Auswertungsreihenfolge: eine kleinere `order` wird zuerst geprüft |
+| `when` | nein | Objekt mit den beiden Pflichtschlüsseln `column` und `equals` (beide Zeichenketten) | Bedingung auf den Textwert einer Spalte der Quelle; ohne `when` trifft die Regel jede Change der Tabelle |
+
+- **Herkunft und Inhalt.** Die Tabelle der Antragszeile ist die Herkunft: eine
+  Regel gilt für genau diese Tabelle. Der Inhalt ist die Bedingung `when`;
+  weitere Operatoren (Präfix, Menge, Vergleich) kennt die Regelform nicht.
+- **Zielname.** `target` hat 1 bis 63 Zeichen: das erste aus `a`–`z` und
+  `0`–`9`, die übrigen aus `a`–`z`, `0`–`9`, `_` und `-`. Ein Name außerhalb des
+  Alphabets endet den Antrag `failed`, er wird nicht gefaltet oder gekürzt. Der
+  Zielname wird zeichengenau verglichen. Das Alphabet enthält weder Punkt noch
+  NATS-Platzhalter und ist hergeleitet aus der Subjekt-Syntax, nicht gegen einen
+  NATS-Server geprüft.
+- **Bedingung.** `when.column` ist die Quellspalte: nicht leer, ohne das Zeichen
+  U+0000; sie muss zeichengenau als Spaltenname der Quelltabelle im Katalog
+  stehen (R3, `SPEC-019`), Groß-/Kleinschreibung wird nicht gefaltet.
+  `when.equals` ist eine Zeichenkette, begrenzt nur durch die Grenzen von
+  `jsonb`, ohne eigene Längenvorgabe; die leere Zeichenkette ist zulässig. Die Bedingung trifft, wenn
+  der Wert der Spalte im Bild als Zeichenkette zeichengenau gleich `when.equals`
+  ist (Text-Stand der Quelle); es wird nichts abgeschnitten oder normalisiert.
+- **Bildbasis.** Die Bedingung liest bei `INSERT` und `UPDATE` das Neu-Bild, bei
+  `DELETE` das Alt-Bild, und zwar den Quellwert vor jeder Transformation
+  (`SPEC-030`): eine `rename_column`- oder `map_value`-Regel der Tabelle ändert
+  das Ergebnis der Bedingung nicht. Eine Backfill-Change (`INSERT`) wird
+  wie ein `INSERT` des WAL-Pfads behandelt.
+- **Abwesenheit.** Fehlt der Wert der Spalte im gelesenen Bild (`NULL`,
+  unverändertes TOAST, bei `DELETE` ohne volle Replica-Identität jede
+  Nicht-Schlüsselspalte, generierte Spalte), trifft die Bedingung nicht; die
+  nächste Regel wird geprüft. Das ist keine Nichtanwendbarkeit. Die Aussage zu
+  `DELETE` ist hergeleitet aus dem Abwesenheits-Vertrag von
+  [`LH-FA-DAT-005`](lastenheft.md), nicht gegen PostgreSQL 17 und 18 gemessen.
+- **Auswertung.** Die Regeln der Tabelle werden in aufsteigender `order`
+  geprüft; der erste Treffer bestimmt `route_target`, keine weitere Regel wird
+  geprüft. Trifft keine Regel, ist `route_target` `NULL`. R2 macht die
+  Reihenfolge eindeutig, R4 und R5 schließen Regeln aus, die nie wirken könnten
+  (`SPEC-019`); gleicher Regelstand und gleiche Change ergeben dasselbe Ziel.
+- **Anwendbarkeit** (die führende Stelle; `LH-FA-CFG-008.a` und `SPEC-008`
+  verweisen hierher). Eine Regel ohne `when` ist auf jede Change anwendbar. Eine
+  Regel mit `when` ist auf eine Change anwendbar, wenn `when.column` in der
+  Relation der Change vorkommt. Im Run eines Backfills gilt dieselbe Definition
+  gegen die Spalten des Snapshots. Anwendbarkeit hängt an Regelstand und
+  Spaltenmenge, nie am Wert einer Zeile: kein Wert macht eine Regel
+  unanwendbar. Eine nicht anwendbare Regel endet mit der Fehlerklasse `schema`
+  (`SPEC-008`).
+- **Wirkung nur auf das Ziel.** Die Regeln ändern weder das Row Image noch ein
+  anderes Feld der Change als `route_target`; die Auswertung einer Transformation
+  ändert das Ziel nicht.
+
+**Beispiele** (Tabelle `public.orders` mit den Spalten `id`, `name`, `region`;
+Regel `eu_orders` mit `rule_spec`
+`{"target": "eu", "order": 10, "when": {"column": "region", "equals": "eu"}}`
+und Regel `rest` mit `rule_spec` `{"target": "sonstige", "order": 100}`):
+
+- Eine Change mit dem Bild `{"id": "7", "name": "Ada", "region": "eu"}` trägt
+  `route_target = eu`; mit `"region": "us"` trägt sie `sonstige`; ist `region`
+  `NULL`, fehlt der Schlüssel im Bild, die Bedingung trifft nicht, und die Regel
+  `rest` bestimmt `sonstige`. Ohne die Regel `rest` bliebe `route_target`
+  `NULL`: die Change ist im Log und über jeden ungefilterten Weg sichtbar, aber
+  unter keinem Ziel.
+- Abgelehnter Antrag: eine weitere Regel mit `"order": 10` endet `failed` mit dem
+  Fehlertext `order bereits vergeben: public.orders.10` (`SPEC-019`, R2); der
+  Regelstand bleibt unverändert.
+- Nicht anwendbare Regel: Fehlt `region` in der Relation einer Change der
+  Tabelle, ist `eu_orders` nicht anwendbar; die Change endet im Erfassungspfad
+  mit der Fehlerklasse `schema`, bis die Regel entfernt ist
+  (`LH-FA-CFG-008.a`, Abhilfe). Ob dieser Fall am laufenden System entstehen
+  kann, ist nicht gemessen (`LH-FA-CFG-008.a`).
+
 ---
 
 ## 3. Defaults und Konstanten
@@ -1171,15 +1429,20 @@ Fehler werden mindestens in die folgenden Klassen klassifiziert
 | `SPEC-008` | `transient` | vorübergehend nicht verfügbare Quelle/Speicher | Erneut versuchen mit begrenztem Backoff — Bedingung: wiederholt wird die Transport-/Verbindungsstörung am Quellzugriff (`receive.ErrReplication`/`outbound.ErrReplication`), am Server ausgewählt nach SQLSTATE: Fehler ohne SQLSTATE, die Klassen 08, 40, 53, 55, 57, 58 und der Code 25006; nicht wiederholt enden die Klassen `permission`/`configuration`/`schema`/`storage`, Stream-Ordnungs-Verletzungen und Server-Abweisungen außerhalb dieser Auswahl (`receive.ErrRejected`) mit sichtbarem Fehler |
 | `SPEC-008` | `configuration` | ungültige/falsch gesetzte Konfiguration | Sichtbarer Fehler; kein Start und keine Fortsetzung im falschen Stand |
 | `SPEC-008` | `permission` | fehlende Berechtigung | Sichtbarer Fehler; kein stiller Retry |
-| `SPEC-008` | `schema` | nicht sicher interpretierbare Schemaänderung/Dekodierfehler; eine Transformationsregel, die auf die Spalten der Change bzw. des Snapshots nicht anwendbar ist (`SPEC-030`) — im Erfassungspfad und im Run | Sichtbarer Fehler (LH-FA-SCH-004.a); kein stilles Überspringen. Erfassungspfad: keine Persistierung und keine Bestätigung der Transaktion, Erfassung endet sichtbar (Heartbeat, Diagnose); Run: `failed`, run-lokal. Abhilfe nur bei nicht anwendbarer Regel: Regelstand ändern (Absatz unten) |
+| `SPEC-008` | `schema` | nicht sicher interpretierbare Schemaänderung/Dekodierfehler; eine Transformations- oder Routing-Regel, die auf die Spalten der Change bzw. des Snapshots nicht anwendbar ist (`SPEC-030`, `SPEC-032`) — im Erfassungspfad und im Run | Sichtbarer Fehler (LH-FA-SCH-004.a); kein stilles Überspringen. Erfassungspfad: keine Persistierung und keine Bestätigung der Transaktion, Erfassung endet sichtbar (Heartbeat, Diagnose); Run: `failed`, run-lokal. Abhilfe nur bei nicht anwendbarer Regel: Regelstand ändern (Absatz unten) |
 | `SPEC-008` | `storage` | Persistenzfehler im ChangeStore | **Kein Source-ACK** (LH-QA-REL-001.a) |
 | `SPEC-008` | `replication` | Replication-Stream/Slot-Störung: **Stream-Ordnungsverletzung** (BEGIN/COMMIT/Change außerhalb der erwarteten Reihenfolge) oder **Transport-/Verbindungsstörung** (Verbindungsaufbau, Start, Keepalive, Quell-Bestätigung) | Stream-Ordnungsverletzung: sichtbarer Fehler, harter Abbruch, keine Fortsetzung im widersprüchlichen Stand; Transport-/Verbindungsstörung: Überwachung über Schwellen (§5, WAL-Rückstand); kontrollierte Fortsetzung |
 | `SPEC-008` | `internal` | unerwarteter interner Fehler | Sichtbarer Fehler; Restart-Strategie nach [`LH-QA-REL-002`](lastenheft.md) |
 
 **Nicht anwendbare Regel (Klasse `schema`).** Die Ursache definiert `SPEC-030`
-(Anwendbarkeit); sie trägt in beiden Pfaden dieselbe Klasse. Das Verhalten des
-Erfassungspfads und die Abhilfe führt `LH-FA-CFG-007.a` (Nicht anwendbare
-Regel, Abhilfe). Im Run steht nur der Run — `cdc.backfill_status` und die
+(Anwendbarkeit) für eine Transformationsregel und `SPEC-032` (Anwendbarkeit)
+für eine Routing-Regel; sie trägt in beiden Pfaden dieselbe Klasse. Das
+Verhalten des Erfassungspfads und die Abhilfe führt `LH-FA-CFG-007.a` bzw.
+`LH-FA-CFG-008.a` (Nicht anwendbare Regel, Abhilfe). Im Run einer Routing-Regel
+prüft dieselbe Funktion wie im Erfassungspfad einmal je Run, vor der
+Schreibtransaktion und der ersten Zeile; der Fehlertext beginnt mit der Klasse
+(`schema: `) und nennt Regelname und Spalte, keine Change entsteht. Das ist eine
+Zusage an die Umsetzung. Im Run steht nur der Run — `cdc.backfill_status` und die
 CLI-Diagnose zeigen ihn `failed` mit der Klasse im Fehlertext, der
 Erfassungspfad läuft weiter. Die Abhilfe ist die Regelstand-Änderung der
 Abhilfe-Zusage; ein Prozessneustart für den neuen Run ist nicht Teil der
@@ -1296,3 +1559,7 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-26 | `SPEC-019` Absatz „Transformations-Antragsarten“: die Prüfung von Regelname und Regelform liegt in der Verarbeitung, nicht im Antrags-Konstruktor — ein fehlender oder ungültiger Wert endet `failed` mit dem Fehlertext der Tabelle, die Queue lehnt den Antrag nicht beim Lesen ab |
 | 2026-09-26 | `SPEC-019` neuer Absatz „Zeilen, die kein Antrag sind“: die Lesung der Queue lehnt keine Zeile ab, eine vom Antrags-Konstruktor verworfene Zeile (leere Quelle, leeres Schema, leerer Tabellenname, unbekannte Antragsart, leere Spalte der Spalten-Antragsarten) endet in der Verarbeitung `failed` mit Klartext und Antrags-Kennung als Adresse, die Zeilen dahinter laufen weiter; Grenze: eine Zeile ohne Kennung wird mit Warnung übersprungen; Zeilen `schema_name`/`table_name`/`column_name` und Absatz „Transformations-Antragsarten“ nachgezogen |
 | 2026-09-28 | `SPEC-020` Zeile „Request“: `StreamChangesRequest` trägt zwei optionale, unabhängig setzbare Felder `schema`/`table` statt keiner Felder — Kombinatorik und Filterort ergänzt; `SPEC-021` neue Zeile „Query-Parameter“: `GET /changes/stream` nimmt dieselben zwei Felder als Query-Parameter, ein Parameter außerhalb der Menge endet `400`; `LH-FA-CFG-008.a` umformuliert — „gRPC und SSE liefern ungefiltert" trifft nicht mehr zu, die offene Frage bleibt auf das serverseitig konfigurierbare Routing-Zielmodell beschränkt |
+| 2026-10-01 | `LH-FA-CFG-008.a` beantwortet: Routing als Zusagen an die Umsetzung — Zustellziel als benannter Kanal je Quelle, Konfiguration über zwei Antragsarten der Antrags-Queue, Regeln mit Ziel, Ordnungszahl und optionaler Gleichheitsbedingung, erster Treffer in aufsteigender Ordnungszahl, Mehrdeutigkeit statisch ausgeschlossen, Wirkort vor der Persistierung mit dem Ziel als Label an der Change, kein Treffer ergibt kein Ziel, nicht anwendbare Regel endet sichtbar mit Klasse `schema`, Abhilfe als Zusage (Erreichbarkeit offen); die Überschrift verliert „offen" |
+| 2026-10-01 | `SPEC-019` um die Antragsarten `set_route` und `remove_route` (neun Werte in `request_kind`), die Bedeutung von `rule_name`/`rule_spec` für sie, die sechs Konfliktfreiheits-Invarianten R1 bis R6 mit Prüfreihenfolge und Fehlertexten, die zweite Bedeutung von `applied` für die Routing-Regelstand-Ableitung und die Sperre von `exclude_column` gegen eine Spalte mit Routing-Bedingung ergänzt |
+| 2026-10-01 | `SPEC-032` ergänzt: Routing-Regel (`rule_spec`) und ihre Wirkung auf das Zustellziel — Schlüssel, Zielname, Bedingung, Bildbasis, Abwesenheit, Auswertung, Anwendbarkeit, Beispiele |
+| 2026-10-01 | `SPEC-001`/`SPEC-002`: Spalte `route_target` an `cdc.change`, als letzte Spalte der View `cdc.changes`; `SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-031` (Zeile `ReadChanges`, Feld `target = 7`): optionaler Filter `target` als Konjunktion mit `schema`/`table`; `SPEC-024`: Zusatz-Subjekt `cdc.route.<source_id>.<ziel>`; `SPEC-008` Zeile `schema` und Absatz „Nicht anwendbare Regel" sowie `LH-FA-CAP-009.a` (Fehler des Runs, Ziel der Backfill-Changes) um die Routing-Regel ergänzt |
