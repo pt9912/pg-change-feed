@@ -114,8 +114,13 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
       oder gar nicht, bis `slice-routing-sdk-beispiel-target` es einlöst.
       *Zu belegen durch:* Lesen, `make docs-check`, Suchlauf in §3.
 - [ ] (C): die Zeile `schema` der Fehlerklassen-Tabelle und der Abschnitt „Neustart nach
-      einem Fehler" nennen die nicht anwendbare Routing-Regel (Pfad nach Messung V3 von
-      `slice-routing-e2e`); die Rollen-Tabelle nennt die zwei Funktionen; „Grenzwerte"
+      einem Fehler" nennen die nicht anwendbare Routing-Regel (Pfad nach Messung von
+      `slice-routing-e2e`); der Routing-Fehlerblock trennt nach
+      [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
+      die zwei Ursachen der Klasse `schema` — nicht anwendbare Regel (Abhilfe: Regel
+      entfernen, Neustart) und entfernte Spalte (inkompatible Schemaänderung; die Regel
+      auf diese Spalte ist zusätzlich zu entfernen) — und sagt für die entfernte Spalte
+      nicht „Regel entfernen“ als Abhilfe; die Rollen-Tabelle nennt die zwei Funktionen; „Grenzwerte"
       nennt Alphabet und Länge des Zielnamens (Ursprung: die Spec) und die Zahl der Regeln,
       soweit die Spec eine Grenze sagt; die Handbuch-Version (Kopfzeile) und die
       Änderungshistorie tragen die nächste Zeile (Parent: Version 1.83, gemessen).
@@ -152,6 +157,8 @@ Adresse hierher aufgeschoben; sie gehören zu (A), (B) oder (C):
 | `docs/user/benutzerhandbuch.md` §4 „Aufgaben" (neuer Abschnitt „Routing-Regel konfigurieren", Formvorbild „Transformationsregel konfigurieren") | neu | Liefer-Punkt A. |
 | `docs/user/benutzerhandbuch.md` §4 („Änderungen lesen", „Bestand als Backfill überführen", „Zugriff über …": HTTP, gRPC-Stream, gRPC-Verwaltungs-API, SSE, NATS-Vollinhalt) | update | Liefer-Punkt B. |
 | `docs/user/benutzerhandbuch.md` §2 „Zugriff und Rollen", §6 „Fehlerklassen" und „Neustart nach einem Fehler", §9 „Grenzwerte" und „Änderungshistorie", Kopfzeile (Version, Stand) | update | Liefer-Punkt C. |
+| `docs/user/benutzerhandbuch.md` Transformationen, „Fehler: Erfassung endet mit der Fehlerklasse `schema`“ (Bestandsbefund, Parent `2629d544` etwa Z. 387; *hergeleitet* nach `ADR-0112` Teilfrage 4) | update | Handbuch-Nachzug zu `ADR-0140`: Ursache „`column` fehlt in der Relation“ mit Lösung „Regel entfernen, Neustart“ ist für die entfernte Spalte falsch (der Pfad endet dort schon an der inkompatiblen Schemaänderung); die Ursachen trennen wie im Routing-Block. Das Handbuch wird in diesem Plan nicht geändert, der Zug gehört diesem Slice. |
+| `docs/user/benutzerhandbuch.md` „Änderungen lesen“ und Feldliste (Bestandsbefund Review F-4, Parent `2629d544`: `:516` „`origin` ist die letzte Spalte der View“, `:1462` Feldliste endet bei `origin`) | update | `route_target` ist seit der Spalte `route_target` die letzte Spalte der View `cdc.changes`; beide Stellen nachziehen (Liefer-Punkt B). |
 | `README.md` | lesen | nur, wenn der Suchlauf eine bewegte Beschreibung findet. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „das Handbuch kennt zwei

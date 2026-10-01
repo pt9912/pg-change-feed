@@ -221,9 +221,12 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   Closure einzutragen (Testfall: nur der Routing-Stand wechselt).
 - **Nichtanwendbarkeit im Run (V2, entschieden).** Klasse `schema`, run-lokal, einmal
   je Run vor der Schreibtransaktion nach `ADR-0138` Festlegung 2; die Erreichbarkeit
-  am System ist V3 (offen laut `ADR-0138`, Messung in `slice-routing-kern-label` und
-  `slice-routing-e2e`), die Run-Prüfung selbst ist am Snapshot mit fehlender Spalte
-  auf Unit-Ebene erreichbar. — **Ausgang:** bei der Closure einzutragen
+  am System ist V3 (beantwortet durch `ADR-0140`, Messung in `slice-routing-e2e`), die
+  Run-Prüfung selbst ist am Snapshot mit fehlender Spalte auf Unit-Ebene erreichbar.
+  Dieser Fall ist Fall (d) von `ADR-0140` Entscheidung 3 (entfernte Spalte bei weiter
+  geführter Regel: Run `failed`/`schema`, Abhilfe neuer Antrag nach `cdc.remove_route`);
+  der Unit-/Store-Beleg dort entsteht mit dieser Prüfung, ein neues Kriterium
+  folgt daraus nicht. — **Ausgang:** bei der Closure einzutragen
   (Test-Verweis).
 - **Bild-Parität.** Die Bedingung liest den Textwert wie das Row Image ihn trägt
   (`ADR-0115`); der Backfill-Pfad liest über das Text-Ergebnisformat des Snapshots,

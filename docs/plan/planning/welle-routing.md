@@ -94,10 +94,11 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   ([`LH-QA-SEC-004`](../../../spec/lastenheft.md)), Replay (erneutes Lesen
   derselben Change liefert dasselbe Label), ein Backfill-Bestand mit Label und
   die **Negative** (nicht anwendbare Regel endet sichtbar mit Klasse `schema`).
-  Für die Negative gilt die Vorab-Bedingung V3 (§5): Kann die Nichtanwendbarkeit
-  am komponierten System nicht erzeugt werden, steht das Verdikt dazu im
-  Closure-Bericht; sie wird nicht stillschweigend auf einen Unit-Beleg
-  verengt. Kein Gate, aber Pflichtbeleg dieser Welle.
+  Für die Negative gilt V3 (§5, beantwortet durch `ADR-0140`): der Beleg am Weg
+  „Spalte entfernt“ trägt das Negative-Kriterium, die Abhilfe wird am erzeugbaren
+  Fall belegt; kann die Nichtanwendbarkeit am komponierten System nicht erzeugt
+  werden, steht die Verengung mit Namen im Closure-Bericht, nicht
+  stillschweigend auf einen Unit-Beleg. Kein Gate, aber Pflichtbeleg dieser Welle.
 - **Die Messung des DELETE-Verhaltens an beiden PostgreSQL-Versionen**
   ([`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
   Entscheidung 4, Folgepflicht 7): eine Inhaltsregel auf eine Nicht-Schlüsselspalte
@@ -251,7 +252,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   [`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md), die
   der Planner nicht entscheidet; V1 und V2 sind mit
   [`ADR-0138`](../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
-  entschieden, V3 bleibt offen):
+  entschieden, V3 mit
+  [`ADR-0140`](../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
+  beantwortet):
   - **V1 — gRPC-`ReadChanges`.** Beantwortet durch
     [`ADR-0138`](../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)
     Festlegung 1: `ReadChangesRequest` erhält `string target = 7` (leer = kein
@@ -263,8 +266,12 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     Prüfung läuft einmal je Run vor der Schreibtransaktion und ruft dieselbe
     Prüffunktion der Domäne wie der Erfassungspfad. Träger:
     `slice-routing-backfill-pfad`.
-  - **V3 — Erreichbarkeit der Nichtanwendbarkeit (offen laut
-    [`ADR-0138`](../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)).** Eine Routing-Regel ist nicht
+  - **V3 — Erreichbarkeit der Nichtanwendbarkeit (beantwortet durch
+    [`ADR-0140`](../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md):
+    die Abhilfe-Zusage gilt für den Fall `ErrRoutingNotApplicable`, der Weg
+    „Spalte entfernt“ bleibt der Pfad der inkompatiblen Schemaänderung; die
+    Systemmessung von (b)/(c) trägt `slice-routing-e2e`; Ausgangsstand laut
+    [`ADR-0138`](../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md) offen).** Eine Routing-Regel ist nicht
     anwendbar, wenn `when.column` in der Relation der Change fehlt
     ([`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
     Teilfrage 4). Die naheliegende Ursache — Spalte entfernt — endet nach dem
@@ -275,16 +282,15 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     System erzeugt — und ob der Abhilfe-Weg „`cdc.remove_route` und Neustart"
     dann greift — ist offen. Adresse: Messung im ersten Schritt von
     `slice-routing-kern-label` (Unit-Ebene) und von `slice-routing-e2e`
-    (Systemebene); bei unerreichbarem Fall ein Architect-Verdikt vor dem
-    Negative-Beleg.
+    (Systemebene). Ausgang: `ADR-0140` (Verdikt liegt vor; erzeugt die Messung
+    von (b)/(c) keinen Fall, steht die Verengung mit Namen im Closure-Bericht).
   - **A-1/A-2 (Review `review-slice-routing-spec-nachzug`) — geschlossen** durch
     [`ADR-0139`](../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md):
     der Routing-Regelstand ist im Run fail-closed (Klasse `configuration`, Stand
     des Runs nach dem Öffnen des Snapshots; Träger `slice-routing-backfill-pfad`);
     ein `target` außerhalb des Alphabets liefert auf allen Lesewegen leer, geprüft
     im Use Case (Träger `slice-routing-lesewege`). **A-3** (Klarstellung der
-    Lesart „Zustellung" im Lastenheft) bleibt offen und liegt beim Auftraggeber,
-    ebenso V3.
+    Lesart „Zustellung" im Lastenheft) bleibt offen und liegt beim Auftraggeber.
   - **V4 — Pflichtenheft-Kennung der Regelform.** Kein Entscheidungsbedarf: die
     Regelform bekommt eine eigene Kennung neben `SPEC-030`
     ([`ADR-0137`](../adr/0137-routing-zustellziele-persistiertes-ziel-label.md)
@@ -386,7 +392,8 @@ der sie als Risiko trägt (Detail je Slice in §8):
 - `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` (offen, 2×) —
   **einschlägig:** V1 bis V3 sind Stellen, an denen der Wortlaut von
   `ADR-0137` die Umsetzung nicht trägt; V1 und V2 sind mit `ADR-0138`
-  entschieden, V3 ist als offene Messung geführt, nicht als stille Abweichung.
+  entschieden, V3 ist mit `ADR-0140` beantwortet (die Systemmessung von (b)/(c)
+  bleibt offen), nicht als stille Abweichung geführt.
 - `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` (verkörpert, 5×) und
   `BEO-PGC/aufschub-adresse-verfaellt` (verkörpert, 3×) — jeder Aufschub in den
   Plänen dieser Welle trägt eine Adresse, deren §2 den Gegenstand deckt;

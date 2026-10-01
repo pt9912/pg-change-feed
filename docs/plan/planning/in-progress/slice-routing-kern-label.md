@@ -231,7 +231,9 @@ geschrieben.
   erste Rollout dieser Art seit `ADR-0114`. — **Ausgang:** bei der Closure
   einzutragen (Alt-Tag-Lauf, gedruckte Zeile, Rollen-Lesetest).
 - **Erreichbarkeit der Nichtanwendbarkeit auf Unit-Ebene (V3 der Welle, offen laut
-  [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md)).**
+  [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md),
+  beantwortet durch
+  [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)).**
   `Assembler.observeRelation` meldet eine entfernte Spalte als
   `ErrIncompatibleSchemaChange`, bevor eine Change assembliert wird (*hergeleitet*,
   nicht für Routing geprüft). Ob ein `mapper`-Test `ErrRoutingNotApplicable` ohne
@@ -249,7 +251,13 @@ geschrieben.
   Vergleich), passiert die Relation ohne die Spalte, und die folgende Change
   endet als `ErrRoutingNotApplicable`. Beide Läufe grün; die Erreichbarkeit am
   laufenden System (ob ein Abzug aus (b) real entsteht) ist nicht gemessen und
-  gehört `slice-routing-e2e`. — **Ausgang:** bei der Closure einzutragen.
+  gehört `slice-routing-e2e`. — **Ausgang:** V3 ist durch
+  [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
+  beantwortet (Option C: die Abhilfe-Zusage gilt für den Fall
+  `ErrRoutingNotApplicable`, der Weg „Spalte entfernt“ bleibt der Pfad der
+  inkompatiblen Schemaänderung, das Sicherheitsnetz bleibt, die Belege sind
+  getrennt); Test und Sentinel dieses Slice bleiben unverändert, die Systemmessung
+  trägt `slice-routing-e2e`.
 - **Konstruktor-Ripple.** `model.Change` trägt ein Feld mehr; `NewChange` hat
   39 Aufrufstellen (gemessen, `git grep -n 'NewChange(' 30fd6cb5 -- internal test tools`).
   Der Plan ändert die Signatur nicht (Muster `WithOrigin`); ein Test, der
@@ -288,7 +296,10 @@ Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
 - **Steering-Loop-Eintrag:** —
 - **Beobachtungs-Register (`../observations/`):** —
 - **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Risiken aus §6:** V3 (Erreichbarkeit der Nichtanwendbarkeit): Ausgang eingetragen,
+  beantwortet durch
+  [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md);
+  die übrigen Punkte bei der Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

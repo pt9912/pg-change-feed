@@ -444,12 +444,19 @@ belegt, sind sie keine geprüften Tatsachen.
   beim Start innerhalb der Frist des Vorlaufs verarbeitet, **bevor** die erste
   Transaktion der Tabelle assembliert wird, und die zuvor nicht bestätigte
   Transaktion erscheint danach über `cdc.changes`. Diese Abfolge muss die
-  Umsetzung liefern. Offen und nicht gemessen: ob die Nichtanwendbarkeit am
-  laufenden System überhaupt erreichbar ist (die naheliegende Ursache, eine
-  entfernte Spalte, endet vermutlich im Pfad der inkompatiblen
-  Schemaänderung, `LH-FA-SCH-004.a` — hergeleitet, nicht gemessen) und ob die
-  Abfolge für diese Antragsart greift; erst der Beleg am laufenden System macht
-  sie zur Tatsache.
+  Umsetzung liefern. Die Zusage gilt für den Fall, in dem der Erfassungspfad an
+  der Nichtanwendbarkeit der Regel endet. Eine entfernte Spalte mit bekannter
+  Spaltenform endet dagegen zuerst im Pfad der inkompatiblen Schemaänderung
+  (`LH-FA-SCH-003`, `LH-FA-SCH-004.a`), weil die Prüfung der Relation der Prüfung
+  der Change vorausgeht und keine Regel liest (hergeleitet, nicht am laufenden
+  System gemessen); dort genügt das Entfernen der Regel nicht, die Abhilfe ist die
+  der inkompatiblen Schemaänderung, und die Regel auf die entfernte Spalte ist
+  zusätzlich zu entfernen (hergeleitet). Offen und nicht gemessen: ob die
+  Nichtanwendbarkeit der Regel am laufenden System entsteht (erwartet bei
+  Erstaktivierung ohne bekannte Spaltenform und bei einer Publication mit
+  Spaltenliste, die die Bedingungsspalte nicht trägt) und ob die Abfolge für
+  diese Antragsart greift; erst der Beleg am laufenden System macht sie zur
+  Tatsache.
 - **Abgrenzung.** Die Routing-Regeln bestimmen das Ziel einer Change, nicht ihre
   Form; die Form bleibt bei `LH-FA-CFG-007.a`.
 
@@ -1380,7 +1387,10 @@ anderer Schlüssel, auch innerhalb von `when`, endet den Antrag `failed`
   gegen die Spalten des Snapshots. Anwendbarkeit hängt an Regelstand und
   Spaltenmenge, nie am Wert einer Zeile: kein Wert macht eine Regel
   unanwendbar. Eine nicht anwendbare Regel endet mit der Fehlerklasse `schema`
-  (`SPEC-008`).
+  (`SPEC-008`). Die Prüfung der Relation auf eine entfernte oder geänderte Spalte
+  geht der Prüfung der Change voraus und ist regelunabhängig: eine Relation ohne
+  eine bekannte Spalte endet als inkompatible Schemaänderung (`LH-FA-SCH-004.a`),
+  mit oder ohne Regel auf diese Spalte.
 - **Wirkung nur auf das Ziel.** Die Regeln ändern weder das Row Image noch ein
   anderes Feld der Change als `route_target`; die Auswertung einer Transformation
   ändert das Ziel nicht.
@@ -1403,7 +1413,8 @@ und Regel `rest` mit `rule_spec` `{"target": "sonstige", "order": 100}`):
   Tabelle, ist `eu_orders` nicht anwendbar; die Change endet im Erfassungspfad
   mit der Fehlerklasse `schema`, bis die Regel entfernt ist
   (`LH-FA-CFG-008.a`, Abhilfe). Ob dieser Fall am laufenden System entstehen
-  kann, ist nicht gemessen (`LH-FA-CFG-008.a`).
+  kann, ist nicht gemessen (`LH-FA-CFG-008.a`); wird `region` aus der Tabelle
+  entfernt, endet der Pfad zuerst als inkompatible Schemaänderung.
 
 ---
 
@@ -1457,6 +1468,10 @@ Erfassungspfad läuft weiter. Die Abhilfe ist die Regelstand-Änderung der
 Abhilfe-Zusage; ein Prozessneustart für den neuen Run ist nicht Teil der
 Zusage. Nach der Abhilfe im Run beginnt ein **neuer** Antrag
 `cdc.backfill_table` einen neuen Run, ein `failed`-Run wird nicht fortgesetzt.
+Die Abhilfe im Erfassungspfad gilt nur, wenn er an der Nichtanwendbarkeit der
+Regel endete; endete er an einer inkompatiblen Schemaänderung (eine entfernte
+Spalte), ist die Abhilfe die dieser Ursache (`LH-FA-SCH-003`, `LH-FA-SCH-004.a`),
+und das Entfernen der Regel genügt dort nicht.
 
 Keine Credentials in Logs.
 
@@ -1573,3 +1588,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-01 | `SPEC-032` ergänzt: Routing-Regel (`rule_spec`) und ihre Wirkung auf das Zustellziel — Schlüssel, Zielname, Bedingung, Bildbasis, Abwesenheit, Auswertung, Anwendbarkeit, Beispiele |
 | 2026-10-01 | `SPEC-001`/`SPEC-002`: Spalte `route_target` an `cdc.change`, als letzte Spalte der View `cdc.changes`; `SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-031` (Zeile `ReadChanges`, Feld `target = 7`): optionaler Filter `target` als Konjunktion mit `schema`/`table`; `SPEC-024`: Zusatz-Subjekt `cdc.route.<source_id>.<ziel>`; `SPEC-008` Zeile `schema` und Absatz „Nicht anwendbare Regel" sowie `LH-FA-CAP-009.a` (Fehler des Runs, Ziel der Backfill-Changes) um die Routing-Regel ergänzt |
 | 2026-10-01 | `LH-FA-CAP-009.a`: Fail-closed-Prüfung vor dem Commit um den Routing-Regelstand ergänzt (Stand des Runs, Klasse `configuration`), „Regelstand zum Run" definiert; `SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-031`: ein `target` außerhalb des Alphabets, auch mit U+0000, liefert auf den Lesewegen eine leere Antwort, der SQL-Zugriff ist ausgenommen; `SPEC-032`: Wertebereich von `order` auf „positive ganze Zahl" zurückgenommen |
+| 2026-10-01 | `LH-FA-CFG-008.a` Absatz „Abhilfe (Zusage)": Geltung auf den Fall der nicht anwendbaren Regel geschärft, die entfernte Spalte endet zuerst als inkompatible Schemaänderung (hergeleitet), Erreichbarkeit am System weiter offen; `SPEC-032` (Anwendbarkeit): Relation-Prüfung geht der Change-Prüfung voraus und ist regelunabhängig, Beispiel „Nicht anwendbare Regel" nachgezogen; `SPEC-008` Absatz „Nicht anwendbare Regel": Grenze der Abhilfe |

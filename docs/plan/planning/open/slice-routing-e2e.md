@@ -105,22 +105,29 @@ Waise ist. Drei Liefer-Punkte:
       Bericht). Die Wegwerf-Clients unter `tools/harness/` (`httpclient`, `grpcclient`,
       `sseclient`, `natsstreamsub`; für den RPC `ReadChanges` nach `ADR-0138`
       Festlegung 1 der Client `grpcadminclient`) erhalten die Auswahl des Ziels als Flag.
-- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Negative (B), nach
-      Vorab-Bedingung V3: **erster Schritt des Slice** ist die Messung, welche Ursache
-      `ErrRoutingNotApplicable` am laufenden System erzeugt (Kandidaten: Entfernen der
-      Spalte — nach dem Bestand der Pfad der inkompatiblen Schemaänderung —, eine
-      Publication mit Spaltenliste, deren Relation die Bedingungsspalte nicht trägt;
-      *hergeleitet*, keiner geprüft); die gedruckte Messung steht im Bericht. Ist ein Fall
-      erzeugbar: der Erfassungspfad endet sichtbar mit der Klasse `schema` samt
-      Log-Sentinel (`diagnose`/Heartbeat), `cdc.remove_route` wird beantragt, während der
+- [ ] [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) Negative (B), zerlegt nach
+      [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)
+      Entscheidung 4 (V3 der Welle ist dort beantwortet):
+      (i) **Weg (a) mit Regel** (Negative-Beleg, *Erwartung*): eine eigene Tabelle trägt
+      eine Routing-Regel auf die Spalte `region`; `ALTER TABLE … DROP COLUMN region`; die
+      nächste Change der Tabelle beendet den Erfassungspfad sichtbar mit der Klasse
+      `schema` (`diagnose`/Heartbeat), und über `cdc.changes` erscheint für diese Change
+      **keine** Zeile — weder mit `route_target = NULL` noch mit einem anderen Ziel. Dieser
+      Beleg trägt nur das Negative-Kriterium, nicht die Abhilfe-Zusage;
+      (ii) **Messung von (b)/(c) als erster Schritt des Slice:** ob `ErrRoutingNotApplicable`
+      am laufenden System entsteht — (b) Erstaktivierung ohne Spaltenform, (c) Publication
+      mit Spaltenliste, die die Bedingungsspalte nicht trägt (*hergeleitet*, keiner
+      gefahren); die gedruckte Messung steht im Bericht;
+      (iii) **Abhilfe-Beleg am erzeugbaren Fall:** der Erfassungspfad endet sichtbar mit
+      der Klasse `schema` samt Log-Sentinel, `cdc.remove_route` wird beantragt, während der
       Prozess steht (Antrag `pending`), nach einem realen Neustart ist der Antrag `applied`,
       bevor die erste Transaktion der Tabelle assembliert wird, und die zuvor nicht
       bestätigte Transaktion erscheint über `cdc.changes` ohne Label und ohne zweiten
-      `schema`-Fehler. Ist kein Fall erzeugbar: das Architect-Verdikt (Welle §5 V3) liegt
-      vor, und der Closure-Bericht der Welle nennt, welcher Beleg das Negative-Kriterium
-      von [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) trägt — die Verengung auf
-      einen Unit-Beleg steht dort mit Namen, nicht stillschweigend. Die Phase läuft als
-      letzte vor der Container-Ende-Grenze des Runners. *Zu belegen durch:*
+      `schema`-Fehler. Ist weder (b) noch (c) erzeugbar: die Abhilfe-Zusage für den
+      Erfassungspfad bleibt Erwartung ohne Systembeleg, und der Closure-Bericht der Welle
+      nennt diese Verengung mit Namen (Unit plus Run-Fall (d) tragen sie), nicht
+      stillschweigend; `ADR-0140` Re-Evaluierungs-Trigger greift dann (Spec-Slice). Die
+      Phase läuft als letzte vor der Container-Ende-Grenze des Runners. *Zu belegen durch:*
       `make test-integration`; `TestE2E…`-Funktion mit den Kennungen im Godoc
       (Erzeugnis-Eingabe der E2E-Abdeckung).
 - [ ] [`LH-QA-POR-001`](../../../../spec/lastenheft.md) und RTM (C): die Aussage zu
@@ -210,7 +217,8 @@ liegen in `done/` (Welle §5: alles, was der E2E belegt, steht) und kein anderer
 liegt in `in-progress/` (WIP-Limit 1). Am Start: `make image` ist ausgeführt
 (`compose.yaml` referenziert das lokal gebaute Image,
 [`ADR-0044`](../../adr/0044-image-beleg-semantik.md)); das Architect-Verdikt zu V3
-liegt vor, **wenn** die erste Messung des Slice den Fall nicht erzeugen kann.
+liegt mit `ADR-0140` vor (kein weiteres Verdikt nötig; erzeugt die erste Messung weder (b)
+noch (c), gilt dessen Verengung).
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
@@ -232,13 +240,13 @@ geschrieben.
 
 ## 6. Risiken und offene Punkte
 
-- **Die Nichtanwendbarkeit ist am System nicht erzeugbar (V3, offen laut
-  [`ADR-0138`](../../adr/0138-routing-filter-target-readchanges-und-nichtanwendbarkeit-im-backfill-run.md);
-  Messung hier und in `slice-routing-kern-label`).** Entfernt der
-  Betreiber die Bedingungsspalte, endet der Prozess nach dem Bestand im Pfad der
-  inkompatiblen Schemaänderung, bevor die Regel zählt (*hergeleitet*); die Abhilfe
-  `cdc.remove_route` + Neustart ist dann nicht der Weg aus diesem Zustand. — **Ausgang:**
-  bei der Closure einzutragen (gemessene Ursache oder Verdikt; Welle-Closure-Bericht).
+- **Die Nichtanwendbarkeit ist am System nicht erzeugbar (V3, beantwortet durch
+  [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md);
+  Messung hier).** Entfernt der Betreiber die Bedingungsspalte, endet der Prozess nach
+  dem Bestand im Pfad der inkompatiblen Schemaänderung, bevor die Regel zählt
+  (*hergeleitet*); die Abhilfe `cdc.remove_route` + Neustart ist dann nicht der Weg aus
+  diesem Zustand. — **Ausgang:** bei der Closure einzutragen (gemessene Ursache von
+  (b)/(c) oder die Verengung nach `ADR-0140`; Welle-Closure-Bericht).
 - **Die DELETE-Erwartung kann falsch sein.** „Wert abwesend, Regel Nicht-Treffer"
   ist *hergeleitet* aus dem Abwesenheits-Vertrag von `LH-FA-DAT-005` und der
   Transformations-ADR, an PostgreSQL 17 und 18 nicht gemessen. — **Ausgang:** bei der
