@@ -396,8 +396,7 @@ func failureText(class model.ErrorClass, cause error) string {
 // erkannter Fehler bleibt
 // `internal`, so auch eine `applied`-Zeile des Regelstands, die die Faltung
 // nicht mehr in eine Regel führt. Ein Wechsel von Ausschluss- oder Regelstand
-// (Transformationen, Routing) während des Runs ist `configuration`, ebenso ein
-// nicht lesbarer Routing-Regelstand (`routingRules`). Die
+// (Transformationen, Routing) während des Runs ist `configuration`. Die
 // Abbildung gilt dem Run und ist nicht die des Capture-Pfads.
 func classifyError(err error) model.ErrorClass {
 	switch {
@@ -500,16 +499,10 @@ func (s *BackfillTableService) transformationRules(ctx context.Context, run mode
 }
 
 // routingRules liest den dauerhaften Routing-Regelstand der Tabelle des Runs.
-// Ein nicht lesbarer Stand ist eine Abweichung: der Fehler trägt
-// `ErrRoutingStateChanged` (Klasse `configuration`) und wickelt die Ursache,
-// die im Fehlertext sichtbar bleibt. Der Ausschluss- und der
-// Transformationsstand melden einen Lesefehler mit der Klasse der Ursache; das
-// Nebeneinander ist die vom Wortlaut der Spec gedeckte Abweichung zwischen den
-// Ständen.
 func (s *BackfillTableService) routingRules(ctx context.Context, run model.BackfillRun) ([]model.RouteRule, error) {
 	byTable, err := s.ports.Routing.RoutingRules(ctx, run.Source)
 	if err != nil {
-		return nil, fmt.Errorf("Routing-Regelstand nicht lesbar (%w): %w", domainerrors.ErrRoutingStateChanged, err)
+		return nil, err
 	}
 	return byTable[run.QualifiedName()], nil
 }

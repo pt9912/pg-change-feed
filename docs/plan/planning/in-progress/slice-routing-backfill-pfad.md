@@ -50,8 +50,9 @@ Regelstand ist Teil der Fail-closed-Prüfung des Runs (Festlegung nach
 [`ADR-0139`](../../adr/0139-routing-run-regelstand-fail-closed-und-target-ausserhalb-alphabet.md):
 Stand des Runs ist die Lesung nach dem Öffnen des Snapshots, jeder weitere Block
 und der Zustand vor dem Commit lesen neu und vergleichen als Menge; eine Abweichung
-oder ein nicht lesbarer Stand endet den Run `failed`, Klasse `configuration`; beim
-Routing-Stand trägt der Fehlertext die gewickelte Ursache des Lesefehlers); eine im Run nicht anwendbare Regel endet den Run `failed`,
+endet den Run `failed`, Klasse `configuration`; ein nicht lesbarer Stand endet ihn
+`failed` mit der Klasse der Ursache, für alle drei Stände gleich,
+[`ADR-0141`](../../adr/0141-run-regelstand-lesefehler-klasse-der-ursache.md)); eine im Run nicht anwendbare Regel endet den Run `failed`,
 Klasse `schema`, run-lokal, einmal je Run vor der Schreibtransaktion (`ADR-0138`
 Festlegung 2, Vorab-Bedingung V2 der Welle). Das Label gehört nicht zum
 Zeilenzustand: die Replay-Invariante (das Log ab dem Log-Anfang ergibt den
@@ -176,7 +177,7 @@ Eigenschaft sind:**
 ```suchlauf
 30fd6cb5 46 -n -E 'Transformation' -- internal/application/usecase/backfill internal/bootstrap ':!*_test.go'
 9712d01a 47 -n -E 'Transformation' -- internal/application/usecase/backfill internal/bootstrap ':!*_test.go'
-diff 52 -n -E 'Transformation' -- internal/application/usecase/backfill internal/bootstrap ':!*_test.go'
+diff 51 -n -E 'Transformation' -- internal/application/usecase/backfill internal/bootstrap ':!*_test.go'
 30fd6cb5 18 -n -E 'ErrTransformationColumnMissing|ErrTransformationTargetCollides' -- internal ':!*_test.go'
 9712d01a 18 -n -E 'ErrTransformationColumnMissing|ErrTransformationTargetCollides' -- internal ':!*_test.go'
 diff 18 -n -E 'ErrTransformationColumnMissing|ErrTransformationTargetCollides' -- internal ':!*_test.go'
@@ -194,22 +195,26 @@ diff 3 -n -E 'EvaluateRoute\(' -- internal ':!*_test.go'
 9712d01a 7 -n -E 'RoutingRules|RoutingPort' -- internal/application/usecase/backfill internal/bootstrap ':!*_test.go'
 diff 11 -n -E 'RoutingRules|RoutingPort' -- internal/application/usecase/backfill internal/bootstrap ':!*_test.go'
 9712d01a 4 -n -E 'ErrRoutingColumnMissing|ErrRoutingStateChanged' -- internal ':!*_test.go'
-diff 14 -n -E 'ErrRoutingColumnMissing|ErrRoutingStateChanged' -- internal ':!*_test.go'
+diff 12 -n -E 'ErrRoutingColumnMissing|ErrRoutingStateChanged' -- internal ':!*_test.go'
 9712d01a 1 -n -E 'backfill\.Ports\{' -- internal ':!*_test.go'
 diff 1 -n -E 'backfill\.Ports\{' -- internal ':!*_test.go'
 9712d01a 11 -n -E 'sameSet|vergleichbar' -- internal ':!*_test.go'
 diff 13 -n -E 'sameSet|vergleichbar' -- internal ':!*_test.go'
+9712d01a 6 -n -E 'nicht lesbar' -- spec docs/user harness
+diff 6 -n -E 'nicht lesbar' -- spec docs/user harness
+9712d01a 17 -n -E 'configuration' -- spec docs/user harness
+diff 18 -n -E 'configuration' -- spec docs/user harness
 ```
 
 | Träger | Messung am Parent der Umsetzung (`9712d01a`) und am Diff | Behandlung und Befund am Diff |
 |---|---|---|
-| Stellen, an denen der Run den Regelstand der Transformationen führt | Zeile `Transformation`: 47 Nicht-Test-Zeilen am Parent, 52 am Diff (gegenüber 46 am Planungs-Parent `30fd6cb5`) | alle Treffer in `service.go` gelesen: die Aufzählung der Regel-Quellen des Runs (Start `transformationRules` + `checkRulesApplicable`, Block, Abschluss, Klassifikation) ist um die Routing-Regeln gewachsen (`routingRules`, `checkRoutesApplicable`, je Block und vor dem Commit; die fünf Zusatz-Treffer des Musters liegen in `service.go`). **Gefunden und nachgezogen:** `service.go` (Ports, `copyBlocks`, `classifyError`, `build`). **Nicht gefunden (kein Träger):** `internal/bootstrap` trägt Transformations-Treffer nur für den Erfassungspfad (`assemblersync.go`, `activatedTableBindings`, Administrations-Verarbeitung), die Routing-Regeln dort tragen die Antragsarten-Slices; im Backfill-Pfad der Composition Root steht allein `wiring.go` Zeile `Transformations: activation` in `backfill.Ports{` — dort um `Routing: activation` ergänzt. |
-| Klassen-Abbildung des Runs | `ErrTransformationColumnMissing|…TargetCollides`: 18 am Parent, 18 am Diff (die Routing-Sentinels stehen in den eigenen Zeilen); `ErrTransformationStateChanged`: 5, 5 | die Abbildung `schema`/`configuration` folgt `ADR-0138` Festlegung 2 und `ADR-0139` Festlegung 1; Zeile `ErrRoutingColumnMissing|ErrRoutingStateChanged`: 4 am Parent (`errors.go`, `route.go`), 14 am Diff (`classifyError`, `copyBlocks`, Fehler-Sentinel). **Nicht gefunden:** eine zweite Klassen-Abbildung des Runs außerhalb von `classifyError` (`wiring.go:1876` ist die Abbildung des Erfassungspfads für `mapper.ErrRoutingNotApplicable`, ein anderer Gegenstand). |
+| Stellen, an denen der Run den Regelstand der Transformationen führt | Zeile `Transformation`: 47 Nicht-Test-Zeilen am Parent, 51 am Diff (gegenüber 46 am Planungs-Parent `30fd6cb5`) | alle Treffer in `service.go` gelesen: die Aufzählung der Regel-Quellen des Runs (Start `transformationRules` + `checkRulesApplicable`, Block, Abschluss, Klassifikation) ist um die Routing-Regeln gewachsen (`routingRules`, `checkRoutesApplicable`, je Block und vor dem Commit; die vier Zusatz-Treffer des Musters liegen in `service.go`). **Gefunden und nachgezogen:** `service.go` (Ports, `copyBlocks`, `classifyError`, `build`). **Nicht gefunden (kein Träger):** `internal/bootstrap` trägt Transformations-Treffer nur für den Erfassungspfad (`assemblersync.go`, `activatedTableBindings`, Administrations-Verarbeitung), die Routing-Regeln dort tragen die Antragsarten-Slices; im Backfill-Pfad der Composition Root steht allein `wiring.go` Zeile `Transformations: activation` in `backfill.Ports{` — dort um `Routing: activation` ergänzt. |
+| Klassen-Abbildung des Runs | `ErrTransformationColumnMissing|…TargetCollides`: 18 am Parent, 18 am Diff (die Routing-Sentinels stehen in den eigenen Zeilen); `ErrTransformationStateChanged`: 5, 5 | die Abbildung `schema`/`configuration` folgt `ADR-0138` Festlegung 2 und `ADR-0139` Festlegung 1; Zeile `ErrRoutingColumnMissing|ErrRoutingStateChanged`: 4 am Parent (`errors.go`, `route.go`), 12 am Diff (`classifyError`, `copyBlocks`, Fehler-Sentinel). **Nicht gefunden:** eine zweite Klassen-Abbildung des Runs außerhalb von `classifyError` (`wiring.go:1876` ist die Abbildung des Erfassungspfads für `mapper.ErrRoutingNotApplicable`, ein anderer Gegenstand). |
 | Eine Auswertungsstelle | `EvaluateRoute\(` in Nicht-Test-Code: 2 am Parent (Definition `route.go`, Aufruf im Mapper), 3 am Diff (zusätzlich der Aufruf in `blockBuilder.build`) | **Gefunden:** die Domänen-Funktion wird gerufen, nicht dupliziert; **nicht gefunden:** eine zweite Implementierung der Auswertung (`matches`/`best`-Schleife) außerhalb von `route.go`. |
 | Konstruktionsstellen des Backfill-Dienstes | `backfill\.Ports\{` in Nicht-Test-Code: 1 am Parent, 1 am Diff (`wiring.go`) | einzige Stelle um `Routing` ergänzt; die Konstruktionen in Tests (`service_test.go`, `internal/bootstrap`) tragen `Routing` ebenfalls. |
 | Spec-Aussagen zum Run | Zeilen `fail-closed` und `Regelstand`: 6 und 45 Zeilen am Parent der Umsetzung, 6 und 45 am Diff (am Planungs-Parent: 5 und 25 — der Zuwachs kam durch `slice-routing-spec-nachzug` und die ADRs, nicht durch diesen Slice) | **Gefunden:** `spec/pflichtenheft.md` Absatz „Fail-closed vor dem Commit" nennt den Routing-Regelstand, Klasse `configuration`, Stand des Runs und Anwendbarkeit `schema` (so wie umgesetzt); `spec/architecture.md` Sequenz „Bindung, Ausschluss- und Regelstand erneut prüfen" ist ohne Aufzählung der Regelarten formuliert und bleibt wahr. **Nicht gefunden:** eine Spec-Stelle, die für den Run nur Ausschluss und Transformationen nennt. |
 | Typschranke des Mengenvergleichs | `sameSet|vergleichbar` in Nicht-Test-Code von `internal`: 11 am Parent der Umsetzung, 13 am Diff | **Gefunden und nachgezogen:** der Godoc von `sameSet` nennt neben `model.Transformation` auch `model.RouteRule`. **Nicht gefunden:** eine weitere Stelle, die die Vergleichbarkeit nur für die Transformation zusagt (die Treffer in `route.go` und `transformation.go` betreffen die jeweilige Regel selbst). |
-| Lesefehler des Regelstands | Der Lesefehler des Routing-Standes endet `configuration` (Ursache gewickelt), der des Ausschluss- und des Transformationsstandes mit der Klasse der Ursache | bekannte, vom Wortlaut von `ADR-0139` Festlegung 1 und der Spec gedeckte Abweichung zwischen den Ständen; `routingRules` und `classifyError` tragen sie als Kommentar. |
+| Lesefehler des Regelstands | Der Lesefehler jedes der drei Regelstände (Ausschluss, Transformationen, Routing) endet `failed` mit der Klasse der Ursache; `configuration` gilt dem Wechsel des Standes | nach [`ADR-0141`](../../adr/0141-run-regelstand-lesefehler-klasse-der-ursache.md) kein Unterschied zwischen den Ständen; `routingRules` gibt den Fehler unverändert zurück (Stand 55384d2f). Zählwörter `configuration` und „nicht lesbar“ mit `git grep` in `spec`, `docs/user`, `harness` gemessen (siehe Block: „nicht lesbar“ 6 und 6, `configuration` 17 und 18 — der eine Zusatztreffer ist der Spec-Satz dieses Nachzugs): **Gefunden und nachgezogen:** `spec/pflichtenheft.md` Absatz „Fail-closed vor dem Commit“. **Nicht gefunden:** ein Träger in `docs/user` oder `harness`, der einem Lesefehler eines Regelstands `configuration` zuschreibt (Handbuch §6 Zeilen 1874/1877 nach `ADR-0141` kein Nachzug). |
 | Handbuch Abschnitt „Bestand als Backfill überführen" und §6 (Fehlerbehebung) Fehlerklassen | liegt außerhalb dieses Suchraums (`docs/user/benutzerhandbuch.md` Zeile 756 „Ausgeschlossene Spalten … `configuration`", Zeile 1876 Klasse `schema`) | gemeldet an `slice-routing-betriebsdoku`; der Gegenstand steht als Übergabe-Block in dessen §2 (committeter Text), nicht mitgeändert; Frist: die Closure dieses Slice. |
 
 ## 4. Trigger
@@ -253,8 +258,8 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   Konsequenz oder liest beide Zustände in einem Aufruf).
 - **Zwei Regelstände, ein Fail-closed.** Transformations- und Routing-Regeln ändern
   sich unabhängig voneinander; die Prüfung vergleicht beide. Ein Lesefehler endet
-  beim Routing-Stand `configuration`, bei Ausschluss- und Transformationsstand mit
-  der Klasse der Ursache (vom Wortlaut gedeckte Abweichung zwischen den Ständen). — **Ausgang:** bei der
+  bei allen drei Ständen mit der Klasse der Ursache, `configuration` gilt dem
+  Wechsel ([`ADR-0141`](../../adr/0141-run-regelstand-lesefehler-klasse-der-ursache.md)). — **Ausgang:** bei der
   Closure einzutragen (Testfall: nur der Routing-Stand wechselt).
 - **Nichtanwendbarkeit im Run (V2, entschieden).** Klasse `schema`, run-lokal, einmal
   je Run vor der Schreibtransaktion nach `ADR-0138` Festlegung 2; die Erreichbarkeit
@@ -270,6 +275,8 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   der WAL-Pfad über `pgoutput`-Text — gleiche Textform für den Typ-Satz ist
   *erwartet*, belegt für das Row Image, nicht für die Auswertung. — **Ausgang:** bei
   der Closure einzutragen (Typ-Satz-Test: dieselbe Zeile, beide Pfade, dasselbe Ziel).
+  **Grenze:** der Paritätstest (`make test-replication`) ist nur gegen
+  PostgreSQL 18 gefahren, PostgreSQL 17 (`PG_TEST_IMAGE` übersteuert) nicht.
 - **Persistenz des Labels im Backfill-Insert.** Wird in `slice-routing-kern-label`
   gebaut; wenn der Writer das Feld dort nicht schreibt, fiele das Label hier
   unbemerkt weg. — **Ausgang:** bei der Closure einzutragen (Store-Test mit gesetztem

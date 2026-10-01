@@ -206,12 +206,10 @@ func TestExecuteOnlyRoutingStateChangesEndsRunAsConfiguration(t *testing.T) {
 // TestExecuteRoutingReadFailureEndsRun trägt den Lesefehler-Zweig: ein
 // Routing-Regelstand, der nicht gelesen werden kann, ist kein bestätigter
 // Stand. Der n-te Lesefehler (Lesung 1 zu Beginn, 2 bis 4 je Block, 5 vor dem
-// Commit) endet den Run `failed` mit der Klasse `configuration` und der
-// Ursache im Fehlertext, ohne Commit und ohne Wecksignal. Die Eingabe ist der
-// Lesefehler an der jeweiligen Lesung; weil nur der n-te Aufruf scheitert,
-// färbt sich der Test rot, sobald ein Lesefehler verworfen wird (der Run läuft
-// bis zum Commit durch) oder wieder mit der Klasse der Ursache (`storage`)
-// endet.
+// Commit) endet den Run `failed` mit der Klasse der Ursache (`storage`), ohne
+// Commit und ohne Wecksignal; weil nur der n-te Aufruf scheitert, färbt sich
+// der Test rot, sobald ein Lesefehler verworfen wird (der Run läuft bis zum
+// Commit durch).
 func TestExecuteRoutingReadFailureEndsRun(t *testing.T) {
 	for call := 1; call <= 5; call++ {
 		t.Run(fmt.Sprintf("Lesung %d", call), func(t *testing.T) {
@@ -219,9 +217,8 @@ func TestExecuteRoutingReadFailureEndsRun(t *testing.T) {
 			r.routes.err = outbound.ErrStorage
 			r.routes.errCall = call
 			run := mustExecute(t, r)
-			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "configuration: ") ||
-				!strings.Contains(run.ErrorMessage, outbound.ErrStorage.Error()) {
-				t.Fatalf("Run = %+v, will failed mit Klasse configuration und der Ursache im Text", run)
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage: ") {
+				t.Fatalf("Run = %+v, will failed mit Klasse storage", run)
 			}
 			if r.routes.calls != call {
 				t.Fatalf("Lesungen = %d, will %d (der Lauf bricht an der Lesung ab)", r.routes.calls, call)
