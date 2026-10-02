@@ -213,7 +213,7 @@ func TestBackfillWorkerEndsARunOfAnUnboundTableAsConfigurationFailure(t *testing
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
-	if status != "failed" || !strings.HasPrefix(message, "configuration: ") || !strings.Contains(message, "trägt keine Bindung") || finished == nil {
-		t.Fatalf("Run nach der Aufnahme: Status %q, Fehlertext %q, finished_at %v — erwartet failed, „configuration: … trägt keine Bindung“ und gesetztes finished_at", status, message, finished)
+	if status != "failed" || !strings.HasPrefix(message, "configuration [PCF-E2005]: ") || !strings.Contains(message, "trägt keine Bindung") || finished == nil {
+		t.Fatalf("Run nach der Aufnahme: Status %q, Fehlertext %q, finished_at %v — erwartet failed, „configuration [PCF-E2005]: … trägt keine Bindung“ und gesetztes finished_at", status, message, finished)
 	}
 }

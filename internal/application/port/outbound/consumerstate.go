@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -16,7 +17,7 @@ import (
 // Consumer-ACK keinen Träger, der Consumer-ACK bestätigt keine
 // Quellposition; deshalb führt dieser Port seine Klasse als eigenen
 // Sentinel.
-var ErrConsumerStateStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler im Consumer-State-Speicher")
+var ErrConsumerStateStorage = messagecode.New(messagecode.ConsumerStateFailed, "Persistenzfehler im Consumer-State-Speicher")
 
 // ErrConsumerUnregistered trägt die Registrierungs-Grenze der Bestätigung
 // (`LH-FA-CON-004`): ein ACK ohne registrierte Kennung ist ein

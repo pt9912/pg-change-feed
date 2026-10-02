@@ -1392,18 +1392,18 @@ func TestReadPendingRequestsPassesRejectedRowsThrough(t *testing.T) {
 		wantID  model.AdministrationRequestID
 		wantMsg string
 	}{
-		{"leere Quelle", []any{"req-x", "", "public", "feed", "", "regel", ruleRow, set}, "req-x", "Quelle ist leer: req-x"},
-		{"leeres Schema", []any{"req-x", "src-1", "", "feed", "", "regel", ruleRow, set}, "req-x", "Schemaname ist leer: req-x"},
-		{"leerer Tabellenname", []any{"req-x", "src-1", "public", "", "", "regel", ruleRow, set}, "req-x", "Tabellenname ist leer: req-x"},
-		{"leeres Schema und leerer Tabellenname", []any{"req-x", "src-1", "", "", "", "", "", remove}, "req-x", "Schemaname ist leer: req-x"},
-		{"leere Kennung und leere Quelle", []any{"", "", "public", "feed", "", "", "", remove}, "", "Kennung ist leer: public.feed"},
-		{"leere Quelle und leeres Schema", []any{"req-x", "", "", "feed", "", "", "", remove}, "req-x", "Quelle ist leer: req-x"},
-		{"leeres Schema und Antragsart außerhalb der Menge", []any{"req-x", "src-1", "", "feed", "", "", "", "unbekannt"}, "req-x", "Schemaname ist leer: req-x"},
-		{"leerer Tabellenname und Antragsart außerhalb der Menge", []any{"req-x", "src-1", "public", "", "", "", "", "unbekannt"}, "req-x", "Tabellenname ist leer: req-x"},
-		{"exclude_column mit leerer Spalte", []any{"req-x", "src-1", "public", "feed", "", "", "", exclude}, "req-x", "Spaltenname ist leer: req-x"},
-		{"include_column mit leerer Spalte", []any{"req-x", "src-1", "public", "feed", "", "", "", include}, "req-x", "Spaltenname ist leer: req-x"},
-		{"Antragsart außerhalb der Menge", []any{"req-x", "src-1", "public", "feed", "", "", "", "unbekannt"}, "req-x", "Antragsart ist unbekannt: req-x"},
-		{"Zeile ohne Kennung", []any{"", "src-1", "public", "feed", "", "", "", remove}, "", "Kennung ist leer: public.feed"},
+		{"leere Quelle", []any{"req-x", "", "public", "feed", "", "regel", ruleRow, set}, "req-x", "abgelehnt [PCF-E8002]: Quelle ist leer: req-x"},
+		{"leeres Schema", []any{"req-x", "src-1", "", "feed", "", "regel", ruleRow, set}, "req-x", "abgelehnt [PCF-E8003]: Schemaname ist leer: req-x"},
+		{"leerer Tabellenname", []any{"req-x", "src-1", "public", "", "", "regel", ruleRow, set}, "req-x", "abgelehnt [PCF-E8004]: Tabellenname ist leer: req-x"},
+		{"leeres Schema und leerer Tabellenname", []any{"req-x", "src-1", "", "", "", "", "", remove}, "req-x", "abgelehnt [PCF-E8003]: Schemaname ist leer: req-x"},
+		{"leere Kennung und leere Quelle", []any{"", "", "public", "feed", "", "", "", remove}, "", "abgelehnt [PCF-E8001]: Kennung ist leer: public.feed"},
+		{"leere Quelle und leeres Schema", []any{"req-x", "", "", "feed", "", "", "", remove}, "req-x", "abgelehnt [PCF-E8002]: Quelle ist leer: req-x"},
+		{"leeres Schema und Antragsart außerhalb der Menge", []any{"req-x", "src-1", "", "feed", "", "", "", "unbekannt"}, "req-x", "abgelehnt [PCF-E8003]: Schemaname ist leer: req-x"},
+		{"leerer Tabellenname und Antragsart außerhalb der Menge", []any{"req-x", "src-1", "public", "", "", "", "", "unbekannt"}, "req-x", "abgelehnt [PCF-E8004]: Tabellenname ist leer: req-x"},
+		{"exclude_column mit leerer Spalte", []any{"req-x", "src-1", "public", "feed", "", "", "", exclude}, "req-x", "abgelehnt [PCF-E8006]: Spaltenname ist leer: req-x"},
+		{"include_column mit leerer Spalte", []any{"req-x", "src-1", "public", "feed", "", "", "", include}, "req-x", "abgelehnt [PCF-E8006]: Spaltenname ist leer: req-x"},
+		{"Antragsart außerhalb der Menge", []any{"req-x", "src-1", "public", "feed", "", "", "", "unbekannt"}, "req-x", "abgelehnt [PCF-E8005]: Antragsart ist unbekannt: req-x"},
+		{"Zeile ohne Kennung", []any{"", "src-1", "public", "feed", "", "", "", remove}, "", "abgelehnt [PCF-E8001]: Kennung ist leer: public.feed"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{

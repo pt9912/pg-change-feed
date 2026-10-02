@@ -2,7 +2,8 @@ package outbound
 
 import (
 	"context"
-	stderrors "errors"
+
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 )
 
 // ErrNotify trägt die Fehlerklasse `transient` des Wecksignal-Pfads
@@ -14,7 +15,7 @@ import (
 // Verbindungsebene. Application und Betrieb klassifizieren über
 // `errors.Is`, ohne einen Treibertyp zu kennen; die technische Ursache
 // bleibt über die zweite Wrappung lesbar.
-var ErrNotify = stderrors.New("Fehlerklasse transient: Wecksignal fehlgeschlagen")
+var ErrNotify = messagecode.New(messagecode.NotifyFailed, "Wecksignal fehlgeschlagen")
 
 // ChangeNotificationPort trägt das Wecksignal an verbundene Consumer
 // (`ARC-013`): ein reines, verlustbehaftetes

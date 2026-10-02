@@ -24,6 +24,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -36,13 +37,13 @@ const outputPlugin = "pgoutput"
 // dem Aufrufer, der den Stream startet. Der Aufrufer klassifiziert über
 // `errors.Is`; die technische Ursache bleibt über die zweite Wrappung
 // lesbar.
-var ErrReplication = errors.New("Fehlerklasse replication: Replication-Stream/Slot-Störung")
+var ErrReplication = messagecode.New(messagecode.ReplicationStreamFailed, "Replication-Stream/Slot-Störung")
 
 // ErrPermission trägt die Fehlerklasse `permission` (`ADR-0023`): der Server
 // weist den Zugriff mit SQLSTATE 42501 oder einem Fehler der Klasse 28
 // (Authentifizierung/Autorisierung) ab. Ein Warten gewinnt diese Berechtigung
 // nicht; der Fehler trägt `ErrReplication` nicht.
-var ErrPermission = errors.New("Fehlerklasse permission: fehlende Berechtigung am Replication-Zugriff")
+var ErrPermission = messagecode.New(messagecode.ReplicationPermission, "fehlende Berechtigung am Replication-Zugriff")
 
 // ErrRejected markiert eine Server-Abweisung außerhalb der Positivliste der
 // wiederholten SQLSTATE (`serverFault`): der Fehler trägt zusätzlich
@@ -78,7 +79,7 @@ func serverFault(what string, err error) error {
 // Stream-Adapters (`ADR-0023`): eine ungültige oder falsch
 // gesetzte Konfiguration endet ohne Start und ohne Fortsetzung im
 // falschen Stand.
-var ErrConfiguration = errors.New("Fehlerklasse configuration: ungültige/falsch gesetzte Konfiguration")
+var ErrConfiguration = messagecode.New(messagecode.ReplicationConfiguration, "ungültige/falsch gesetzte Konfiguration")
 
 // identifierShape begrenzt Slot- und Publication-Namen auf das
 // Bezeichner-Alphabet der Quelle; beide gehen als Bezeichner-Literal in

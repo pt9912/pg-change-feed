@@ -16,6 +16,7 @@ import (
 	"sync"
 
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/decode"
@@ -27,17 +28,17 @@ import (
 // MVP (`LH-FA-CFG-001.a`): die Operation wird erkannt und als sichtbarer
 // Fehler der Klasse `schema` behandelt, nicht still übersprungen
 // (Lastenheft §5 Out-of-Scope).
-var ErrTruncateUnsupported = errors.New("Fehlerklasse schema: TRUNCATE wird im MVP nicht unterstützt")
+var ErrTruncateUnsupported = messagecode.New(messagecode.TruncateUnsupported, "TRUNCATE wird im MVP nicht unterstützt")
 
 // ErrChangeWithoutBegin trägt einen Stream-Vertragsverstoß: eine
 // Änderung vor dem zugehörigen BEGIN ist nicht interpretierbar; die
 // Klasse ist `replication` (`SPEC-008`), weil sie eine Störung der
 // Stream-Ordnung trägt.
-var ErrChangeWithoutBegin = errors.New("Fehlerklasse replication: Änderung ohne offene Quelltransaktion")
+var ErrChangeWithoutBegin = messagecode.New(messagecode.StreamOrderViolated, "Änderung ohne offene Quelltransaktion")
 
 // ErrCommitWithoutBegin trägt denselben Vertragsverstoß für einen Commit
 // ohne zugehöriges BEGIN.
-var ErrCommitWithoutBegin = errors.New("Fehlerklasse replication: Commit ohne offene Quelltransaktion")
+var ErrCommitWithoutBegin = messagecode.New(messagecode.StreamOrderViolated, "Commit ohne offene Quelltransaktion")
 
 // ErrBeginWithoutCommit trägt denselben Vertragsverstoß für ein BEGIN bei
 // bereits offener Transaktion: ein zweites BEGIN überschreibt die offene
@@ -45,7 +46,7 @@ var ErrCommitWithoutBegin = errors.New("Fehlerklasse replication: Commit ohne of
 // serialisiert die Quelltransaktionen (`ADR-0021`); ein
 // Doppel-BEGIN ist eine Störung der Stream-Ordnung und endet sichtbar
 // (Klasse `replication`).
-var ErrBeginWithoutCommit = errors.New("Fehlerklasse replication: BEGIN während offener Quelltransaktion")
+var ErrBeginWithoutCommit = messagecode.New(messagecode.StreamOrderViolated, "BEGIN während offener Quelltransaktion")
 
 // ErrIncompatibleSchemaChange trägt jede nicht sicher als Obermenge
 // erkennbare Relation-Änderung (`relationOther`: Spalte entfernt, Typ
@@ -53,7 +54,7 @@ var ErrBeginWithoutCommit = errors.New("Fehlerklasse replication: BEGIN während
 // Fehler der Klasse `schema` (`LH-FA-SCH-004.a`,
 // `observeRelation`) — der Erfassungspfad endet darüber, statt die
 // Änderung stillschweigend zu übernehmen.
-var ErrIncompatibleSchemaChange = errors.New("Fehlerklasse schema: Relation-Änderung nicht sicher als Obermenge interpretierbar")
+var ErrIncompatibleSchemaChange = messagecode.New(messagecode.SchemaChangeIncompatible, "Relation-Änderung nicht sicher als Obermenge interpretierbar")
 
 // ErrTransformationNotApplicable trägt eine Transformationsregel der
 // Bindung, die auf die Relation einer Änderung nicht anwendbar ist: ihre
@@ -66,7 +67,7 @@ var ErrIncompatibleSchemaChange = errors.New("Fehlerklasse schema: Relation-Änd
 // ohne Bild meldet. `receive.Stream` beendet damit den Lauf, die Transaktion
 // erreicht `Capture` nicht und wird nicht bestätigt (Fehlerklasse `schema`;
 // Norm der Anwendbarkeit: `SPEC-030`).
-var ErrTransformationNotApplicable = errors.New("Fehlerklasse schema: Transformationsregel auf die Änderung nicht anwendbar")
+var ErrTransformationNotApplicable = messagecode.New(messagecode.TransformationInapplicable, "Transformationsregel auf die Änderung nicht anwendbar")
 
 // ErrRoutingNotApplicable trägt eine Routing-Regel der Bindung, die auf die
 // Relation einer Änderung nicht anwendbar ist: ihre Bedingungsspalte fehlt in
@@ -75,7 +76,7 @@ var ErrTransformationNotApplicable = errors.New("Fehlerklasse schema: Transforma
 // `receive.Stream` beendet damit den Lauf, die Transaktion erreicht `Capture`
 // nicht und wird nicht bestätigt (Fehlerklasse `schema`; Norm der
 // Anwendbarkeit: `SPEC-032`).
-var ErrRoutingNotApplicable = errors.New("Fehlerklasse schema: Routing-Regel auf die Änderung nicht anwendbar")
+var ErrRoutingNotApplicable = messagecode.New(messagecode.RoutingInapplicable, "Routing-Regel auf die Änderung nicht anwendbar")
 
 // TableBinding trägt die am Port getragenen Kennungen einer aktivierten
 // Tabelle: die Tabelle und die Schema-Version, die die

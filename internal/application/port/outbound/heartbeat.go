@@ -2,8 +2,8 @@ package outbound
 
 import (
 	"context"
-	stderrors "errors"
 
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -14,7 +14,7 @@ import (
 // Source-ACK") trägt dieser Sentinel keine
 // Klasse-Aktion am Capture-Pfad — ein Heartbeat-Schreibfehler bricht den
 // Stream-Lauf nicht ab.
-var ErrHeartbeatStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler im Heartbeat-Speicher")
+var ErrHeartbeatStorage = messagecode.New(messagecode.HeartbeatStoreFailed, "Persistenzfehler im Heartbeat-Speicher")
 
 // HeartbeatPort trägt die Lebenszeichen-Fähigkeit des Capture-Prozesses
 // (`ARC-004`): der periodische Schreib-Zug der Composition Root

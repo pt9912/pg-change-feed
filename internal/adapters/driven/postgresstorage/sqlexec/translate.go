@@ -9,6 +9,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -467,24 +468,27 @@ func ReadPendingRequests(ctx context.Context, exec Executor, statement Statement
 // in einem Ausdruck und nennt einen Grund. Ein Grund außerhalb dieser
 // Liste trägt den
 // allgemeinen Klartext. Eine Zeile ohne Kennung trägt statt der Kennung
-// `schema.table` als Adresse — sie bleibt unvermerkt (`ID` leer).
+// `schema.table` als Adresse — sie bleibt unvermerkt (`ID` leer). Der Text
+// beginnt mit `abgelehnt [<code>]: `; jeder Klartext trägt den Code seiner
+// Zeile, der allgemeine Klartext den Rückfall der Ablehnungen.
 func rejectionMessage(cause error, id, source, schema, table, column string) string {
 	clear := "Antrag ist ungültig"
+	code := messagecode.RejectedFallback
 	switch {
 	case id == "":
-		return "Kennung ist leer: " + schema + "." + table
+		return messagecode.RejectionMessage(messagecode.RejectedIdentifierEmpty, "Kennung ist leer: "+schema+"."+table)
 	case source == "":
-		clear = "Quelle ist leer"
+		clear, code = "Quelle ist leer", messagecode.RejectedSourceEmpty
 	case schema == "":
-		clear = "Schemaname ist leer"
+		clear, code = "Schemaname ist leer", messagecode.RejectedSchemaEmpty
 	case table == "":
-		clear = "Tabellenname ist leer"
+		clear, code = "Tabellenname ist leer", messagecode.RejectedTableEmpty
 	case stderrors.Is(cause, domainerrors.ErrInvalidAdministrationRequestKind):
-		clear = "Antragsart ist unbekannt"
+		clear, code = "Antragsart ist unbekannt", messagecode.RejectedKindUnknown
 	case column == "" && stderrors.Is(cause, domainerrors.ErrEmptyIdentifier):
-		clear = "Spaltenname ist leer"
+		clear, code = "Spaltenname ist leer", messagecode.RejectedColumnEmpty
 	}
-	return clear + ": " + id
+	return messagecode.RejectionMessage(code, clear+": "+id)
 }
 
 // RegisterConsumer trägt die Consumer-Zeile ein und meldet den Ausgang:

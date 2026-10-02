@@ -258,7 +258,7 @@ func TestExecuteInapplicableRuleEndsRunAsSchema(t *testing.T) {
 				}
 				return
 			}
-			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "schema: ") {
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "schema [PCF-E4004]: ") {
 				t.Fatalf("Run = %+v, will failed mit Klasse schema", run)
 			}
 			if !strings.Contains(run.ErrorMessage, tc.wantErr.Error()) {
@@ -297,7 +297,7 @@ func TestExecuteRuleTargetCollisionInBlockEndsRunAsSchema(t *testing.T) {
 	r := newRig()
 	r.rules.stateFn = ruleStates(rulesOf(testQualified, rename(t, "r-a", "name", "gleich"), rename(t, "r-b", "secret", "gleich")))
 	run := mustExecute(t, r)
-	if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "schema: ") || !strings.Contains(run.ErrorMessage, domainerrors.ErrTransformationTargetCollides.Error()) {
+	if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "schema [PCF-E4004]: ") || !strings.Contains(run.ErrorMessage, domainerrors.ErrTransformationTargetCollides.Error()) {
 		t.Fatalf("Run = %+v, will failed mit Klasse schema und der Kollision", run)
 	}
 	if r.writer.begun != 1 || r.writer.rollbacks != 1 || len(r.writer.committed) != 0 || len(r.writer.blocks) != 0 {
@@ -412,7 +412,7 @@ func TestExecuteRuleStateChangeEndsRunAsConfiguration(t *testing.T) {
 				}
 				return
 			}
-			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "configuration: ") ||
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "configuration [PCF-E2006]: ") ||
 				!strings.Contains(run.ErrorMessage, domainerrors.ErrTransformationStateChanged.Error()) {
 				t.Fatalf("Run = %+v, will failed mit Klasse configuration und dem Zustandswechsel", run)
 			}
@@ -460,7 +460,7 @@ func TestExecuteRuleReadFailure(t *testing.T) {
 			r.rules.err = fmt.Errorf("%w: Regelstand nicht lesbar", outbound.ErrStorage)
 			r.rules.errCall = tc.call
 			run := mustExecute(t, r)
-			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage: ") || !strings.Contains(run.ErrorMessage, "Regelstand nicht lesbar") {
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage [PCF-E5001]: ") || !strings.Contains(run.ErrorMessage, "Regelstand nicht lesbar") {
 				t.Fatalf("Run = %+v, will failed mit storage-Klasse und Ursache", run)
 			}
 			if run.RowsCopied != tc.rows {
@@ -511,7 +511,7 @@ func TestExecuteUnreadableAppliedRowEndsRunAsInternal(t *testing.T) {
 			r := newRig()
 			r.rules.err, r.rules.errCall = foldErr, call
 			run := mustExecute(t, r)
-			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "internal: ") || !strings.Contains(run.ErrorMessage, "r-kaputt") {
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "internal [PCF-E7000]: ") || !strings.Contains(run.ErrorMessage, "r-kaputt") {
 				t.Fatalf("Run = %+v, will failed mit Klasse internal und dem Regelnamen", run)
 			}
 			if r.trace.count("Commit") != 0 || len(r.writer.committed) != 0 {

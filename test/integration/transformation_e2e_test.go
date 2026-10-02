@@ -275,17 +275,17 @@ func TestE2ETransformationConflictsFailWithSpecText(t *testing.T) {
 		want     string
 	}{
 		{"K1 Regelname vergeben", "kundenname", validSpec, false,
-			"Regelname bereits vergeben: " + address("kundenname")},
+			"abgelehnt [PCF-E8020]: Regelname bereits vergeben: " + address("kundenname")},
 		{"K2 Spalte trägt bereits eine Regel", "notiz_memo", `{"kind":"rename_column","column":"name","to":"memo"}`, false,
-			"Spalte trägt bereits eine Regel: " + address("name")},
+			"abgelehnt [PCF-E8021]: Spalte trägt bereits eine Regel: " + address("name")},
 		{"K3 Zielname gleicht dem Zielnamen einer anderen Regel", "notiz_memo", `{"kind":"rename_column","column":"note","to":"customer_name"}`, false,
-			"Zielname kollidiert mit einer anderen Regel: " + address("customer_name")},
+			"abgelehnt [PCF-E8022]: Zielname kollidiert mit einer anderen Regel: " + address("customer_name")},
 		{"K3 Zielname gleicht einer Spalte der Tabelle", "notiz_memo", `{"kind":"rename_column","column":"note","to":"id"}`, false,
-			"Zielname kollidiert mit einer Spalte der Tabelle: " + address("id")},
+			"abgelehnt [PCF-E8022]: Zielname kollidiert mit einer Spalte der Tabelle: " + address("id")},
 		{"K4 Spalte fehlt an der Quelle", "notiz_memo", `{"kind":"rename_column","column":"nicht_vorhanden","to":"memo"}`, false,
-			"Spalte existiert nicht an der Quelle: " + address("nicht_vorhanden")},
+			"abgelehnt [PCF-E8024]: Spalte existiert nicht an der Quelle: " + address("nicht_vorhanden")},
 		{"K4 Regelname nicht geführt", "gibt_es_nicht", "", true,
-			"Regelname nicht geführt: " + address("gibt_es_nicht")},
+			"abgelehnt [PCF-E8023]: Regelname nicht geführt: " + address("gibt_es_nicht")},
 	}
 	for _, violation := range violations {
 		var requestID string

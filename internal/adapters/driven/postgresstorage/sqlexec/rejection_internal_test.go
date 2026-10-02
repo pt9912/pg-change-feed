@@ -17,7 +17,7 @@ import (
 func TestRejectionMessageFallsBackToGeneralText(t *testing.T) {
 	got := rejectionMessage(stderrors.New("künftiger Grund"), "req-1", "src-1", "public", "feed", "spalte")
 
-	if want := "Antrag ist ungültig: req-1"; got != want {
+	if want := "abgelehnt [PCF-E8000]: Antrag ist ungültig: req-1"; got != want {
 		t.Fatalf("rejectionMessage = %q, wollen %q", got, want)
 	}
 }
@@ -40,9 +40,9 @@ func TestRejectionMessageColumnCaseNeedsEmptyColumnAndEmptyIdentifierCause(t *te
 		column string
 		want   string
 	}{
-		{"leere Spalte, Grund leerer Bezeichner", domainerrors.ErrEmptyIdentifier, "", "Spaltenname ist leer: req-1"},
-		{"gesetzte Spalte, Grund leerer Bezeichner", domainerrors.ErrEmptyIdentifier, "spalte", "Antrag ist ungültig: req-1"},
-		{"leere Spalte, fremder Grund", stderrors.New("künftiger Grund"), "", "Antrag ist ungültig: req-1"},
+		{"leere Spalte, Grund leerer Bezeichner", domainerrors.ErrEmptyIdentifier, "", "abgelehnt [PCF-E8006]: Spaltenname ist leer: req-1"},
+		{"gesetzte Spalte, Grund leerer Bezeichner", domainerrors.ErrEmptyIdentifier, "spalte", "abgelehnt [PCF-E8000]: Antrag ist ungültig: req-1"},
+		{"leere Spalte, fremder Grund", stderrors.New("künftiger Grund"), "", "abgelehnt [PCF-E8000]: Antrag ist ungültig: req-1"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := rejectionMessage(tc.cause, "req-1", "src-1", "public", "feed", tc.column); got != tc.want {

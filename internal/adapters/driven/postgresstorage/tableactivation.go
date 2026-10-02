@@ -10,6 +10,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/queries"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/sqlexec"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -17,7 +18,7 @@ import (
 // Aktivierungs-Adapters (`ADR-0023`): Bezeichner, die nicht
 // ins Bezeichner-Alphabet der Quelle passen, enden vor dem ersten
 // SQL-Aufruf — kein Start im falschen Stand.
-var ErrActivationConfiguration = fmt.Errorf("Fehlerklasse configuration: Aktivierung ohne gültige Bezeichner")
+var ErrActivationConfiguration = messagecode.New(messagecode.ActivationIdentifier, "Aktivierung ohne gültige Bezeichner")
 
 // identifierShape begrenzt die Bezeichner der Aktivierung auf das
 // Alphabet der Quelle; Publication, Schema und Tabellenname gehen als

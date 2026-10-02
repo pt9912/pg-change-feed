@@ -268,23 +268,23 @@ func TestProcessAdministrationRequestsRouteViolationsFailWithSpecTexts(t *testin
 		request model.AdministrationRequest
 		text    string
 	}{
-		{routeRequest("req-r1", "eu_orders", routeSpecText("x", 5, "region", "q")), "Regelname bereits vergeben: " + table + ".eu_orders"},
-		{routeRequest("req-r2", "zweite", routeSpecText("x", 10, "region", "q")), "order bereits vergeben: " + table + ".10"},
-		{routeRequest("req-r3a", "dritte", routeSpecText("x", 5, "gibt_es_nicht", "q")), "Spalte existiert nicht an der Quelle: " + table + ".gibt_es_nicht"},
-		{routeRequest("req-r3b", "vierte", routeSpecText("x", 5, "secret", "q")), "Spalte ist ausgeschlossen: " + table + ".secret"},
-		{routeRequest("req-r4a", "fuenfte", routeSpecText("x", 200, "", "")), "Regel ohne when bereits vorhanden: " + table + ".rest"},
-		{routeRequest("req-r4c", "sechste", routeSpecText("x", 150, "region", "q")), "order liegt hinter der Regel ohne when: " + table + ".rest"},
-		{routeRequest("req-r5", "siebte", routeSpecText("x", 15, "region", "eu")), "Bedingung bereits vergeben: " + table + ".region"},
-		{unrouteRequest("req-r6", "gibt_es_nicht"), "Regelname nicht geführt: " + table + ".gibt_es_nicht"},
-		{routeRequest("req-key", "achte", `{"target": "x", "order": 5, "extra": 1}`), "unbekannter Schlüssel in rule_spec: extra"},
-		{routeRequest("req-form", "neunte", `{"target": "x"}`), "rule_spec ist ungültig: " + table + ".neunte"},
-		{routeRequest("req-target", "zehnte", routeSpecText("EU", 5, "", "")), "Zielname ist ungültig: " + table + ".EU"},
-		{routeRequest("req-name", "Elfte", routeSpecText("x", 5, "", "")), "Regelname ist ungültig: " + table + ".Elfte"},
+		{routeRequest("req-r1", "eu_orders", routeSpecText("x", 5, "region", "q")), "abgelehnt [PCF-E8020]: Regelname bereits vergeben: " + table + ".eu_orders"},
+		{routeRequest("req-r2", "zweite", routeSpecText("x", 10, "region", "q")), "abgelehnt [PCF-E8030]: order bereits vergeben: " + table + ".10"},
+		{routeRequest("req-r3a", "dritte", routeSpecText("x", 5, "gibt_es_nicht", "q")), "abgelehnt [PCF-E8024]: Spalte existiert nicht an der Quelle: " + table + ".gibt_es_nicht"},
+		{routeRequest("req-r3b", "vierte", routeSpecText("x", 5, "secret", "q")), "abgelehnt [PCF-E8033]: Spalte ist ausgeschlossen: " + table + ".secret"},
+		{routeRequest("req-r4a", "fuenfte", routeSpecText("x", 200, "", "")), "abgelehnt [PCF-E8032]: Regel ohne when bereits vorhanden: " + table + ".rest"},
+		{routeRequest("req-r4c", "sechste", routeSpecText("x", 150, "region", "q")), "abgelehnt [PCF-E8032]: order liegt hinter der Regel ohne when: " + table + ".rest"},
+		{routeRequest("req-r5", "siebte", routeSpecText("x", 15, "region", "eu")), "abgelehnt [PCF-E8031]: Bedingung bereits vergeben: " + table + ".region"},
+		{unrouteRequest("req-r6", "gibt_es_nicht"), "abgelehnt [PCF-E8023]: Regelname nicht geführt: " + table + ".gibt_es_nicht"},
+		{routeRequest("req-key", "achte", `{"target": "x", "order": 5, "extra": 1}`), "abgelehnt [PCF-E8011]: unbekannter Schlüssel in rule_spec: extra"},
+		{routeRequest("req-form", "neunte", `{"target": "x"}`), "abgelehnt [PCF-E8011]: rule_spec ist ungültig: " + table + ".neunte"},
+		{routeRequest("req-target", "zehnte", routeSpecText("EU", 5, "", "")), "abgelehnt [PCF-E8012]: Zielname ist ungültig: " + table + ".EU"},
+		{routeRequest("req-name", "Elfte", routeSpecText("x", 5, "", "")), "abgelehnt [PCF-E8010]: Regelname ist ungültig: " + table + ".Elfte"},
 		// Zeilen mit fehlendem Regelnamen und fehlender Regelform (SQL-NULL):
 		// sie erreichen den Zweig als Antrag und enden `failed`, ohne die Queue
 		// anzuhalten.
-		{routeRequest("req-empty-name", "", routeSpecText("x", 5, "", "")), "Regelname ist ungültig: " + table + "."},
-		{routeRequest("req-empty-spec", "zwoelfte", ""), "rule_spec ist ungültig: " + table + ".zwoelfte"},
+		{routeRequest("req-empty-name", "", routeSpecText("x", 5, "", "")), "abgelehnt [PCF-E8010]: Regelname ist ungültig: " + table + "."},
+		{routeRequest("req-empty-spec", "zwoelfte", ""), "abgelehnt [PCF-E8011]: rule_spec ist ungültig: " + table + ".zwoelfte"},
 	}
 	all := []model.AdministrationRequest{first, closing}
 	for _, violation := range violations {
@@ -337,7 +337,7 @@ func TestProcessAdministrationRequestsExcludeColumnAndRouteBlockEachOther(t *tes
 
 	process(ctx, deps, queue, blocked)
 	message, found := failureOf(queue, "req-exclude-region")
-	if !found || message != "Spalte trägt eine Routing-Bedingung: public."+routeTable+".region" {
+	if !found || message != "abgelehnt [PCF-E8034]: Spalte trägt eine Routing-Bedingung: public."+routeTable+".region" {
 		t.Fatalf("exclude_column gegen die Routing-Spalte: failed = %t, Fehlertext %q", found, message)
 	}
 	if target := routedTarget(t, assembler, 1, "eu"); target != "eu" {
@@ -388,7 +388,7 @@ func TestProcessAdministrationRequestsRouteOrderNotation(t *testing.T) {
 			}
 			continue
 		}
-		if !failed || message != "rule_spec ist ungültig: "+table+".eu_orders" || target != "" {
+		if !failed || message != "abgelehnt [PCF-E8011]: rule_spec ist ungültig: "+table+".eu_orders" || target != "" {
 			t.Fatalf("order %s: failed = %t, Fehlertext %q, Ziel %q, wollen failed mit rule_spec ist ungültig und ohne Ziel", tc.literal, failed, message, target)
 		}
 	}
@@ -529,8 +529,8 @@ func TestProcessAdministrationRequestsMarksFailedWhenRoutingStateReadFails(t *te
 	if isApplied(queue, "req-routes-read-fail") {
 		t.Fatal("der Antrag ist applied, obwohl der Routing-Regelstand nicht lesbar war")
 	}
-	if message, found := failureOf(queue, "req-routes-read-fail"); !found || message != wantErr.Error() {
-		t.Fatalf("Fehlertext = %q (vermerkt %v), wollen %q", message, found, wantErr.Error())
+	if message, found := failureOf(queue, "req-routes-read-fail"); !found || message != "Fehlerklasse internal [PCF-E7000]: "+wantErr.Error() {
+		t.Fatalf("Fehlertext = %q (vermerkt %v), wollen den Kopf der Klasse internal vor %q", message, found, wantErr.Error())
 	}
 	if assemblerCapturesQualified(t, assembler, 1, "public", routeTable) {
 		t.Fatal("Assembler trägt nach gescheitertem Regelstand-Lesen eine Bindung")

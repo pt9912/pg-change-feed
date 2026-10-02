@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"context"
 	stderrors "errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -552,7 +554,7 @@ func TestAdministrationBackfillBranchRequestsAndWakesTheWorker(t *testing.T) {
 	// Ablehnung: kein Signal, Vermerk failed samt Text.
 	<-wake
 	useCase.requestFn = func(inbound.BackfillRequestCommand) error {
-		return stderrors.New("Tabelle nicht aktiviert")
+		return fmt.Errorf("%w: sales.orders", domainerrors.ErrTableNotActivated)
 	}
 	requests.pending = []model.AdministrationRequest{
 		{ID: "req-refused", Source: "src-admin", Schema: "sales", Table: "orders", Kind: model.AdministrationRequestBackfill},
@@ -561,8 +563,8 @@ func TestAdministrationBackfillBranchRequestsAndWakesTheWorker(t *testing.T) {
 	if len(wake) != 0 {
 		t.Fatal("ein abgelehnter Antrag weckte den Worker")
 	}
-	if message := requests.failed["req-refused"]; message != "Tabelle nicht aktiviert" {
-		t.Fatalf("Fehlertext des abgelehnten Antrags = %q, erwartet der Text von Request", message)
+	if message, want := requests.failed["req-refused"], "abgelehnt [PCF-E8040]: "+domainerrors.ErrTableNotActivated.Error()+": sales.orders"; message != want {
+		t.Fatalf("Fehlertext des abgelehnten Antrags = %q, erwartet %q", message, want)
 	}
 }
 

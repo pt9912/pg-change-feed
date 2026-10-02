@@ -12,6 +12,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/backfill"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -1022,7 +1023,7 @@ func TestExecuteRechecksPreconditions(t *testing.T) {
 			r := newRig()
 			tc.setup(r)
 			run := mustExecute(t, r)
-			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "configuration: ") {
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "configuration [PCF-E2005]: ") {
 				t.Fatalf("Run = %+v", run)
 			}
 			if !run.StartedAt.Unset() {
@@ -1057,42 +1058,44 @@ func TestExecuteRejectsNonQueuedRun(t *testing.T) {
 
 // --- Execute: Fehlerklassen und Rollback -----------------------------------
 
-// TestExecuteClassifiesFailures trägt die Abbildung der Fehlerursachen auf die
-// `SPEC-008`-Klassen, je Sentinel ein Fall an seiner Eingabe: die fünf
+// TestExecuteClassifiesFailures trägt die Abbildung der Fehlerursachen auf
+// Klasse und Meldungscode, je Sentinel ein Fall an seiner Eingabe: die fünf
 // Sentinels des Snapshot-Ports, die Storage-Sentinels der Backfill-Ports und
-// des Schema Stores, `ErrSchemaVersionUnknown` als `configuration`; ein nicht
-// erkannter Fehler bleibt `internal`. Die Klasse `schema` und der Wechsel des
-// Regelstands tragen die Tests in `transformation_test.go`. Jeder Fall endet
-// den Run `failed` mit der Klasse vor dem Text, ohne Commit und ohne
-// Wecksignal.
+// des Schema Stores, `ErrSchemaVersionUnknown` als Rückfall `configuration`;
+// ein nicht erkannter Fehler trägt den Rückfall `internal`. Die Klasse
+// `schema` und der Wechsel des Regelstands tragen die Tests in
+// `transformation_test.go`. Jeder Fall endet den Run `failed` mit
+// `<Klasse> [<Code>]: ` vor dem Text, ohne Commit und ohne Wecksignal. Rot
+// färbende Mutation: im `switch` von `failureCode` den Code eines Zweigs
+// vertauschen — der Fall dieses Sentinels trägt den falschen Kopf.
 func TestExecuteClassifiesFailures(t *testing.T) {
 	cause := func(sentinel error) error { return fmt.Errorf("%w: technische Ursache", sentinel) }
 	cases := []struct {
-		name  string
-		setup func(*rig)
-		class string
+		name   string
+		setup  func(*rig)
+		prefix string
 	}{
-		{"Snapshot permission", func(r *rig) { r.snapshotP.openErr = cause(outbound.ErrSnapshotPermission) }, "permission"},
-		{"Snapshot configuration", func(r *rig) { r.snapshotP.openErr = cause(outbound.ErrSnapshotConfiguration) }, "configuration"},
-		{"Snapshot transient", func(r *rig) { r.snapshotP.openErr = cause(outbound.ErrSnapshotTransient) }, "transient"},
-		{"Snapshot replication", func(r *rig) { r.snapshotP.openErr = cause(outbound.ErrSnapshotReplication) }, "replication"},
-		{"Snapshot storage", func(r *rig) { r.snapshotP.openErr = cause(outbound.ErrSnapshotStorage) }, "storage"},
+		{"Snapshot permission", func(r *rig) { r.snapshotP.openErr = cause(outbound.ErrSnapshotPermission) }, "permission [PCF-E3002]: "},
+		{"Snapshot configuration", func(r *rig) { r.snapshotP.openErr = cause(outbound.ErrSnapshotConfiguration) }, "configuration [PCF-E2004]: "},
+		{"Snapshot transient", func(r *rig) { r.snapshotP.openErr = cause(outbound.ErrSnapshotTransient) }, "transient [PCF-E1003]: "},
+		{"Snapshot replication", func(r *rig) { r.snapshotP.openErr = cause(outbound.ErrSnapshotReplication) }, "replication [PCF-E6004]: "},
+		{"Snapshot storage", func(r *rig) { r.snapshotP.openErr = cause(outbound.ErrSnapshotStorage) }, "storage [PCF-E5008]: "},
 		{"Lesefehler im Block", func(r *rig) {
 			r.snapshot.nextErrAt, r.snapshot.nextErr = 2, cause(outbound.ErrSnapshotStorage)
-		}, "storage"},
-		{"Schreiber Begin", func(r *rig) { r.writer.beginErr = cause(outbound.ErrBackfillStorage) }, "storage"},
+		}, "storage [PCF-E5008]: "},
+		{"Schreiber Begin", func(r *rig) { r.writer.beginErr = cause(outbound.ErrBackfillStorage) }, "storage [PCF-E5003]: "},
 		{"Schreiber AppendBlock", func(r *rig) {
 			r.writer.appendErr, r.writer.appendErrN = cause(outbound.ErrBackfillStorage), 2
-		}, "storage"},
-		{"Schreiber Commit", func(r *rig) { r.writer.commitErr = cause(outbound.ErrBackfillStorage) }, "storage"},
-		{"ChangeStore-Fehler am Schreiber", func(r *rig) { r.writer.commitErr = cause(outbound.ErrStorage) }, "storage"},
-		{"Run-Zustand MarkRunning", func(r *rig) { r.runs.markRunningErr = cause(outbound.ErrBackfillStorage) }, "storage"},
-		{"Run-Zustand Fortschritt", func(r *rig) { r.runs.progressErr = cause(outbound.ErrBackfillStorage) }, "storage"},
-		{"Schema Store", func(r *rig) { r.schemas.err = cause(outbound.ErrSchemaStoreStorage) }, "storage"},
-		{"Schema-Version unbekannt", func(r *rig) { r.schemas.found = false }, "configuration"},
-		{"Ausschlussstand nicht lesbar", func(r *rig) { r.exclusion.err = stderrors.New("unbekannter Fehler") }, "internal"},
-		{"Position ohne Offset", func(r *rig) { r.snapshot.offset = 0 }, "internal"},
-		{"unbekannter Fehler", func(r *rig) { r.snapshotP.openErr = stderrors.New("unbekannt") }, "internal"},
+		}, "storage [PCF-E5003]: "},
+		{"Schreiber Commit", func(r *rig) { r.writer.commitErr = cause(outbound.ErrBackfillStorage) }, "storage [PCF-E5003]: "},
+		{"ChangeStore-Fehler am Schreiber", func(r *rig) { r.writer.commitErr = cause(outbound.ErrStorage) }, "storage [PCF-E5001]: "},
+		{"Run-Zustand MarkRunning", func(r *rig) { r.runs.markRunningErr = cause(outbound.ErrBackfillStorage) }, "storage [PCF-E5003]: "},
+		{"Run-Zustand Fortschritt", func(r *rig) { r.runs.progressErr = cause(outbound.ErrBackfillStorage) }, "storage [PCF-E5003]: "},
+		{"Schema Store", func(r *rig) { r.schemas.err = cause(outbound.ErrSchemaStoreStorage) }, "storage [PCF-E5007]: "},
+		{"Schema-Version unbekannt", func(r *rig) { r.schemas.found = false }, "configuration [PCF-E2000]: "},
+		{"Ausschlussstand nicht lesbar", func(r *rig) { r.exclusion.err = stderrors.New("unbekannter Fehler") }, "internal [PCF-E7000]: "},
+		{"Position ohne Offset", func(r *rig) { r.snapshot.offset = 0 }, "internal [PCF-E7000]: "},
+		{"unbekannter Fehler", func(r *rig) { r.snapshotP.openErr = stderrors.New("unbekannt") }, "internal [PCF-E7000]: "},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1102,8 +1105,8 @@ func TestExecuteClassifiesFailures(t *testing.T) {
 			if run.Status != model.BackfillRunFailed {
 				t.Fatalf("Status = %q, will failed (%+v)", run.Status, run)
 			}
-			if !strings.HasPrefix(run.ErrorMessage, tc.class+": ") {
-				t.Fatalf("Fehlertext = %q, will Klasse %q vorn", run.ErrorMessage, tc.class)
+			if !strings.HasPrefix(run.ErrorMessage, tc.prefix) {
+				t.Fatalf("Fehlertext = %q, will %q vorn", run.ErrorMessage, tc.prefix)
 			}
 			if len(r.runs.finished) != 1 || r.runs.finished[0] != run {
 				t.Fatalf("Finish = %+v", r.runs.finished)
@@ -1125,14 +1128,14 @@ func TestExecuteClassifiesFailures(t *testing.T) {
 	}
 }
 
-// TestExecuteFailureTextCarriesClassOnce trägt: der Fehlertext nennt die
-// Klasse einmal vor der Ursache, auch wenn der Fehlerwert des Ports sie
-// selbst trägt („Fehlerklasse transient: …“).
+// TestExecuteFailureTextCarriesClassOnce trägt: der Fehlertext nennt Klasse
+// und Code einmal vor der Ursache, auch wenn der Fehlerwert des Ports sie
+// selbst im Kopf trägt (`Fehlerklasse transient [PCF-E1003]: …`).
 func TestExecuteFailureTextCarriesClassOnce(t *testing.T) {
 	r := newRig()
 	r.snapshotP.openErr = fmt.Errorf("%w: Tabelle umgeschrieben", outbound.ErrSnapshotTransient)
 	run := mustExecute(t, r)
-	want := "transient: " + strings.TrimPrefix(outbound.ErrSnapshotTransient.Error(), "Fehlerklasse transient: ") + ": Tabelle umgeschrieben"
+	want := "transient [PCF-E1003]: Quelle für den Tabellen-Snapshot vorübergehend nicht verfügbar: Tabelle umgeschrieben"
 	if run.Status != model.BackfillRunFailed || run.ErrorMessage != want {
 		t.Fatalf("Fehlertext = %q, will %q", run.ErrorMessage, want)
 	}
@@ -1236,13 +1239,16 @@ func TestExecuteFailClosed(t *testing.T) {
 			if run.Status != model.BackfillRunFailed {
 				t.Fatalf("Status = %q, will failed (%+v)", run.Status, run)
 			}
-			class := "configuration: "
-			if tc.wantErr == outbound.ErrBackfillStorage {
-				class = "storage: "
+			prefix := "configuration [PCF-E2006]: "
+			switch tc.wantErr {
+			case outbound.ErrBackfillStorage:
+				prefix = "storage [PCF-E5003]: "
+			case domainerrors.ErrTableNotActivated:
+				prefix = "configuration [PCF-E2005]: "
 			}
-			wantText := strings.TrimPrefix(tc.wantErr.Error(), "Fehlerklasse "+class)
-			if !strings.HasPrefix(run.ErrorMessage, class) || !strings.Contains(run.ErrorMessage, wantText) {
-				t.Fatalf("Fehlertext = %q", run.ErrorMessage)
+			wantText := messagecode.WithoutHead(tc.wantErr)
+			if !strings.HasPrefix(run.ErrorMessage, prefix) || !strings.Contains(run.ErrorMessage, wantText) {
+				t.Fatalf("Fehlertext = %q, will %q vorn und %q darin", run.ErrorMessage, prefix, wantText)
 			}
 			if len(r.writer.committed) != 0 || r.trace.count("Commit") != 0 {
 				t.Fatalf("Commit trotz Abweichung: %v", r.trace.events)
@@ -1282,7 +1288,7 @@ func TestExecuteExclusionReadFailure(t *testing.T) {
 			r.exclusion.err = fmt.Errorf("%w: Ausschlussstand nicht lesbar", outbound.ErrStorage)
 			r.exclusion.errCall = tc.call
 			run := mustExecute(t, r)
-			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage: ") || !strings.Contains(run.ErrorMessage, "Ausschlussstand nicht lesbar") {
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage [PCF-E5001]: ") || !strings.Contains(run.ErrorMessage, "Ausschlussstand nicht lesbar") {
 				t.Fatalf("Run = %+v, will failed mit storage-Klasse und Ursache", run)
 			}
 			if run.RowsCopied != tc.rows {
@@ -1336,7 +1342,7 @@ func TestExecuteProgressFailure(t *testing.T) {
 			r.runs.progressErr = fmt.Errorf("%w: Fortschritt nicht schreibbar", outbound.ErrBackfillStorage)
 			r.runs.progressErrCall = tc.call
 			run := mustExecute(t, r)
-			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage: ") || !strings.Contains(run.ErrorMessage, "Fortschritt nicht schreibbar") {
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage [PCF-E5003]: ") || !strings.Contains(run.ErrorMessage, "Fortschritt nicht schreibbar") {
 				t.Fatalf("Run = %+v, will failed mit storage-Klasse und Ursache", run)
 			}
 			if run.RowsCopied != tc.rows {
@@ -1379,7 +1385,7 @@ func TestExecuteEmptyTableFinishFailure(t *testing.T) {
 		r.runs.finishErr = fmt.Errorf("%w: Endzustand nicht schreibbar", outbound.ErrBackfillStorage)
 		r.runs.finishErrCall = 1
 		run := mustExecute(t, r)
-		if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage: ") || !strings.Contains(run.ErrorMessage, "Endzustand nicht schreibbar") {
+		if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage [PCF-E5003]: ") || !strings.Contains(run.ErrorMessage, "Endzustand nicht schreibbar") {
 			t.Fatalf("Run = %+v, will failed mit storage-Klasse und Ursache", run)
 		}
 		if got := finishedStatuses(r); !reflect.DeepEqual(got, want) {
@@ -1598,7 +1604,7 @@ func TestExecuteCleanupFailuresAreLoggedNotFatal(t *testing.T) {
 	r.snapshot.closeErr = stderrors.New("Close fehlgeschlagen")
 	r.writer.rollbackErr = stderrors.New("Rollback fehlgeschlagen")
 	run := mustExecute(t, r)
-	if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage: ") || !strings.Contains(run.ErrorMessage, "Verbindung weg") {
+	if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage [PCF-E5008]: ") || !strings.Contains(run.ErrorMessage, "Verbindung weg") {
 		t.Fatalf("Run = %+v", run)
 	}
 	if len(r.log.warns) != 2 {

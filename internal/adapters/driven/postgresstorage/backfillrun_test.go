@@ -10,6 +10,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -179,7 +180,7 @@ func TestBackfillRunFinishAllowsExactlyTheSpecifiedTransitions(t *testing.T) {
 
 	// queued -> failed
 	queuedRun := newRun("fin-q-failed", false)
-	failed, err := queuedRun.Fail(at, model.ErrorClassConfiguration, "Bindung fehlt")
+	failed, err := queuedRun.Fail(at, messagecode.ConfigurationFallback, "Bindung fehlt")
 	if err != nil {
 		t.Fatalf("Fail: %v", err)
 	}
@@ -191,18 +192,18 @@ func TestBackfillRunFinishAllowsExactlyTheSpecifiedTransitions(t *testing.T) {
 	var message *string
 	f.scan("SELECT status, started_at, finished_at, error_message FROM cdc.backfill_run WHERE run_id = 'fin-q-failed'", nil,
 		&status, &started, &finished, &message)
-	if status != "failed" || started != nil || finished == nil || message == nil || *message != "configuration: Bindung fehlt" {
+	if status != "failed" || started != nil || finished == nil || message == nil || *message != "configuration [PCF-E2000]: Bindung fehlt" {
 		t.Fatalf("queued->failed: %s started %v finished %v message %v", status, started, finished, message)
 	}
 
 	// running -> failed, interrupted, completed
 	runningRun := newRun("fin-r-failed", true)
-	failed, _ = runningRun.Fail(at, model.ErrorClassStorage, "Verbindung verloren")
+	failed, _ = runningRun.Fail(at, messagecode.StorageFallback, "Verbindung verloren")
 	if err := runs.Finish(context.Background(), failed); err != nil {
 		t.Fatalf("Finish running->failed: %v", err)
 	}
 	f.scan("SELECT status, started_at, error_message FROM cdc.backfill_run WHERE run_id = 'fin-r-failed'", nil, &status, &started, &message)
-	if status != "failed" || started == nil || message == nil || *message != "storage: Verbindung verloren" {
+	if status != "failed" || started == nil || message == nil || *message != "storage [PCF-E5000]: Verbindung verloren" {
 		t.Fatalf("running->failed: %s started %v message %v", status, started, message)
 	}
 
@@ -270,7 +271,7 @@ func TestBackfillRunFinishOnAnEndedRunIsANoOpSuccess(t *testing.T) {
 		case model.BackfillRunCompleted:
 			final, err = run.Complete(at, 0)
 		case model.BackfillRunFailed:
-			final, err = run.Fail(at, model.ErrorClassInternal, "erster Ausgang")
+			final, err = run.Fail(at, messagecode.InternalFallback, "erster Ausgang")
 		default:
 			final, err = run.Interrupt(at)
 		}

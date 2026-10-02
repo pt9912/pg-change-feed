@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -12,7 +13,7 @@ import (
 // (`consumerstate.go`): ein Persistenzfehler am Schema Store endet
 // sichtbar, Application und Betrieb klassifizieren über `errors.Is` und
 // kennen keinen Treibertyp.
-var ErrSchemaStoreStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler im Schema Store")
+var ErrSchemaStoreStorage = messagecode.New(messagecode.SchemaStoreFailed, "Persistenzfehler im Schema Store")
 
 // ErrSchemaVersionUnknown trägt die Abwesenheit einer TableSchema-Zeile zu
 // einer `SchemaVersionID` (`ADR-0015` Folgepflicht): eine referenzierte,

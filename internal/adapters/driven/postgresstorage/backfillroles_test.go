@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -111,7 +112,7 @@ func TestBackfillAdaptersRunUnderTheirRoles(t *testing.T) {
 		t.Fatalf("Queued unter cdc_capture lieferte %v, erwartet bfr-fail und bfr-int", seen)
 	}
 	failingRunning := mustRunning(t, runs, failing, base.Add(2*time.Second))
-	failed, err := failingRunning.Fail(model.NewTimePoint(base.Add(3*time.Second).UnixNano()), model.ErrorClassStorage, "Testfehler")
+	failed, err := failingRunning.Fail(model.NewTimePoint(base.Add(3*time.Second).UnixNano()), messagecode.StorageFallback, "Testfehler")
 	if err != nil {
 		t.Fatalf("Fail (Domäne): %v", err)
 	}

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 )
 
 func queuedRun(t *testing.T) BackfillRun {
@@ -100,7 +101,7 @@ func TestBackfillRunTransitions(t *testing.T) {
 	progress := func(r BackfillRun) (BackfillRun, error) { return r.RecordProgress(position, 3) }
 	complete := func(r BackfillRun) (BackfillRun, error) { return r.Complete(NewTimePoint(300), 3) }
 	fail := func(r BackfillRun) (BackfillRun, error) {
-		return r.Fail(NewTimePoint(300), ErrorClassStorage, "Schreibfehler")
+		return r.Fail(NewTimePoint(300), messagecode.StorageFallback, "Schreibfehler")
 	}
 	interrupt := func(r BackfillRun) (BackfillRun, error) { return r.Interrupt(NewTimePoint(300)) }
 
@@ -177,8 +178,8 @@ func TestBackfillRunFields(t *testing.T) {
 	if err != nil || completed.RowsCopied != 9 || completed.FinishedAt != NewTimePoint(300) || completed.ErrorMessage != "" {
 		t.Fatalf("Complete = %+v, %v", completed, err)
 	}
-	failed, err := progressed.Fail(NewTimePoint(300), ErrorClassPermission, "kein SELECT")
-	if err != nil || failed.ErrorMessage != "permission: kein SELECT" || failed.FinishedAt != NewTimePoint(300) || failed.RowsCopied != 5 {
+	failed, err := progressed.Fail(NewTimePoint(300), messagecode.SnapshotPermission, "kein SELECT")
+	if err != nil || failed.ErrorMessage != "permission [PCF-E3002]: kein SELECT" || failed.FinishedAt != NewTimePoint(300) || failed.RowsCopied != 5 {
 		t.Fatalf("Fail = %+v, %v", failed, err)
 	}
 	interrupted, err := progressed.Interrupt(NewTimePoint(300))
@@ -216,8 +217,10 @@ func TestBackfillRunProgressGuards(t *testing.T) {
 	if _, err := progressed.RecordProgress(other, 6); !stderrors.Is(err, domainerrors.ErrSourceMismatch) {
 		t.Fatalf("Position einer anderen Quelle = %v, will ErrSourceMismatch", err)
 	}
-	if _, err := progressed.Fail(NewTimePoint(300), ErrorClass("bogus"), "x"); !stderrors.Is(err, domainerrors.ErrInvalidErrorClass) {
-		t.Fatalf("unbekannte Klasse = %v, will ErrInvalidErrorClass", err)
+	for _, code := range []messagecode.Code{"bogus", "PCF-E9999", messagecode.RejectedFallback} {
+		if _, err := progressed.Fail(NewTimePoint(300), code, "x"); !stderrors.Is(err, domainerrors.ErrInvalidErrorClass) {
+			t.Fatalf("Code %q ohne Fehlerklasse = %v, will ErrInvalidErrorClass", code, err)
+		}
 	}
 	if _, err := progressed.RecordProgress(position, 5); err != nil {
 		t.Fatalf("gleicher Zähler ist zulässig: %v", err)

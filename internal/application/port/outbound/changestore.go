@@ -5,6 +5,7 @@ import (
 	stderrors "errors"
 
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -75,7 +76,7 @@ var (
 	// Klasse über errors.Is und kennen keinen Treibertyp. Der Adapter
 	// wickelt seine Treiber-Fehler in dieses Sentinel; die technische
 	// Ursache bleibt über `errors.Is` lesbar.
-	ErrStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler im ChangeStore")
+	ErrStorage = messagecode.New(messagecode.ChangeStoreFailed, "Persistenzfehler im ChangeStore")
 )
 
 // Validate prüft die Bereichs- und Limit-Grenzen der Abfrage. Positionen

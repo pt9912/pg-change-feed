@@ -7,11 +7,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -346,7 +346,7 @@ func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.Backfil
 }
 
 // conclude beendet den Run, dessen Ausführung mit `cause` endete: `failed`
-// mit der Fehlerklasse der Ursache (`classifyError`) — oder `interrupted`,
+// mit Fehlerklasse und Meldungscode der Ursache (`failureCode`) — oder `interrupted`,
 // wenn der eigene Kontext endete, denn ein Fehler bei beendetem Kontext ist
 // dessen Folge. Ein noch `queued` Run bleibt bei beendetem Kontext `queued`
 // (`ADR-0113` Festlegung 2). Der Endzustand wird auf einem vom Abbruch
@@ -366,9 +366,8 @@ func (s *BackfillTableService) conclude(ctx context.Context, run model.BackfillR
 		now = s.ports.Clock.Now()
 		final, err = run.Interrupt(now)
 	default:
-		class := classifyError(cause)
 		now = s.ports.Clock.Now()
-		final, err = run.Fail(now, class, failureText(class, cause))
+		final, err = run.Fail(now, failureCode(cause), messagecode.WithoutHead(cause))
 	}
 	if err != nil {
 		return BackfillExecuteResult{Run: run}, fmt.Errorf("%w (Ursache des Runs: %v)", err, cause)
@@ -380,50 +379,51 @@ func (s *BackfillTableService) conclude(ctx context.Context, run model.BackfillR
 	return BackfillExecuteResult{Run: final}, nil
 }
 
-// failureText ist der Text der Ursache ohne die Klassen-Angabe, die ein
-// Fehlerwert der Ports selbst trägt („Fehlerklasse <Klasse>: …“): `Fail`
-// setzt die Klasse einmal vor den Text.
-func failureText(class model.ErrorClass, cause error) string {
-	return strings.Replace(cause.Error(), "Fehlerklasse "+string(class)+": ", "", 1)
-}
-
-// classifyError ordnet die Ursache eines Run-Fehlers einer der Klassen des
-// Run-Vertrags zu — `permission`, `configuration`, `storage`, `transient`,
-// `replication` (`ADR-0111` Teilfrage 5) und `schema`
-// (eine Regel des Regelstands ist auf die Spalten des Snapshots
-// oder auf eine Zeile nicht anwendbar, `ErrTransformationColumnMissing`,
-// `ErrTransformationTargetCollides`, `ErrRoutingColumnMissing`); ein nicht
-// erkannter Fehler bleibt
+// failureCode ordnet die Ursache eines Run-Fehlers dem Meldungscode ihrer
+// Einzelursache zu; die Klasse des Codes ist die des Run-Vertrags —
+// `permission`, `configuration`, `storage`, `transient`, `replication`
+// (`ADR-0111` Teilfrage 5) und `schema` (eine Regel des Regelstands ist auf
+// die Spalten des Snapshots oder auf eine Zeile nicht anwendbar,
+// `ErrTransformationColumnMissing`, `ErrTransformationTargetCollides`,
+// `ErrRoutingColumnMissing`). Ein nicht erkannter Fehler trägt den Rückfall
 // `internal`, so auch eine `applied`-Zeile des Regelstands, die die Faltung
-// nicht mehr in eine Regel führt. Ein Wechsel von Ausschluss- oder Regelstand
+// nicht mehr in eine Regel führt; `ErrSchemaVersionUnknown` trägt den
+// Rückfall `configuration`. Ein Wechsel von Ausschluss- oder Regelstand
 // (Transformationen, Routing) während des Runs ist `configuration`. Die
 // Abbildung gilt dem Run und ist nicht die des Capture-Pfads.
-func classifyError(err error) model.ErrorClass {
+func failureCode(err error) messagecode.Code {
 	switch {
 	case errors.Is(err, outbound.ErrSnapshotPermission):
-		return model.ErrorClassPermission
+		return messagecode.SnapshotPermission
 	case errors.Is(err, domainerrors.ErrTransformationColumnMissing),
-		errors.Is(err, domainerrors.ErrTransformationTargetCollides),
-		errors.Is(err, domainerrors.ErrRoutingColumnMissing):
-		return model.ErrorClassSchema
-	case errors.Is(err, outbound.ErrSnapshotConfiguration),
-		errors.Is(err, domainerrors.ErrTableNotActivated),
-		errors.Is(err, domainerrors.ErrExclusionStateChanged),
+		errors.Is(err, domainerrors.ErrTransformationTargetCollides):
+		return messagecode.TransformationInapplicable
+	case errors.Is(err, domainerrors.ErrRoutingColumnMissing):
+		return messagecode.RoutingInapplicable
+	case errors.Is(err, outbound.ErrSnapshotConfiguration):
+		return messagecode.SnapshotConfiguration
+	case errors.Is(err, domainerrors.ErrTableNotActivated):
+		return messagecode.BackfillTableNotActivated
+	case errors.Is(err, domainerrors.ErrExclusionStateChanged),
 		errors.Is(err, domainerrors.ErrTransformationStateChanged),
-		errors.Is(err, domainerrors.ErrRoutingStateChanged),
-		errors.Is(err, outbound.ErrSchemaVersionUnknown):
-		return model.ErrorClassConfiguration
+		errors.Is(err, domainerrors.ErrRoutingStateChanged):
+		return messagecode.BackfillStateChanged
+	case errors.Is(err, outbound.ErrSchemaVersionUnknown):
+		return messagecode.ConfigurationFallback
 	case errors.Is(err, outbound.ErrSnapshotTransient):
-		return model.ErrorClassTransient
+		return messagecode.SnapshotSourceUnavailable
 	case errors.Is(err, outbound.ErrSnapshotReplication):
-		return model.ErrorClassReplication
-	case errors.Is(err, outbound.ErrSnapshotStorage),
-		errors.Is(err, outbound.ErrBackfillStorage),
-		errors.Is(err, outbound.ErrStorage),
-		errors.Is(err, outbound.ErrSchemaStoreStorage):
-		return model.ErrorClassStorage
+		return messagecode.SnapshotSlotFailed
+	case errors.Is(err, outbound.ErrSnapshotStorage):
+		return messagecode.SnapshotReadFailed
+	case errors.Is(err, outbound.ErrBackfillStorage):
+		return messagecode.BackfillStoreFailed
+	case errors.Is(err, outbound.ErrStorage):
+		return messagecode.ChangeStoreFailed
+	case errors.Is(err, outbound.ErrSchemaStoreStorage):
+		return messagecode.SchemaStoreFailed
 	default:
-		return model.ErrorClassInternal
+		return messagecode.InternalFallback
 	}
 }
 

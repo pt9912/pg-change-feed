@@ -2,15 +2,15 @@ package outbound
 
 import (
 	"context"
-	stderrors "errors"
 
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
 // ErrBackfillStorage trägt die Fehlerklasse `storage` der Backfill-Ports
 // (`ADR-0023`): ein Persistenzfehler am Run-Zustand oder am
 // Schreiber bleibt über `errors.Is` klassifizierbar, ohne Treibertyp.
-var ErrBackfillStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler im Backfill-Speicher")
+var ErrBackfillStorage = messagecode.New(messagecode.BackfillStoreFailed, "Persistenzfehler im Backfill-Speicher")
 
 // BackfillRunPort trägt die Fähigkeit, den Zustand eines angenommenen
 // Backfill-Runs fortzuschreiben (`ARC-004`, Fähigkeits-Port).

@@ -42,7 +42,6 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/telemetry"
 	apigrpc "github.com/pt9912/pg-change-feed/internal/adapters/driving/grpc"
 	apihttp "github.com/pt9912/pg-change-feed/internal/adapters/driving/http"
-	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/decode"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/receive"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
@@ -66,6 +65,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/setroute"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/settransformation"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/status"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -144,13 +144,13 @@ const (
 // (`ADR-0023`): eine fehlende oder falsch gesetzte
 // Vorbedingung endet ohne Start und ohne Fortsetzung im falschen Stand;
 // der Prozess-Aufrufer meldet sie als Ausgang.
-var ErrConfiguration = errors.New("Fehlerklasse configuration: Verdrahtung ohne vollständige Vorbedingung")
+var ErrConfiguration = messagecode.New(messagecode.WiringPrecondition, "Verdrahtung ohne vollständige Vorbedingung")
 
 // ErrTransientExhausted trägt die Erschöpfung der begrenzten Wiederholung
 // (`ADR-0135` Festlegung 5): die Klasse `transient` entsteht durch diesen
 // Sentinel im Heartbeat-Fehlerzustand, der Prozess-Aufrufer endet mit
 // Ausgang 1 und setzt den Betrieb neu.
-var ErrTransientExhausted = errors.New("Fehlerklasse transient: Wiederholung erschöpft")
+var ErrTransientExhausted = messagecode.New(messagecode.RetryExhausted, "Wiederholung erschöpft")
 
 // heartbeatInterval trägt den periodischen Schreib-Zug des
 // Heartbeat-Timers (`LH-FA-ADM-002`): ein MVP-Default ohne
@@ -1574,7 +1574,7 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 			}
 			deps.log.Warn(ctx, "administration: Antrag fehlgeschlagen",
 				"request_id", request.ID, "kind", request.Kind, "error", err)
-			if markErr := deps.requests.MarkFailed(ctx, request.ID, err.Error()); markErr != nil {
+			if markErr := deps.requests.MarkFailed(ctx, request.ID, administrationFailureText(err)); markErr != nil {
 				deps.log.Warn(ctx, "administration: Fehlschlag nicht vermerkt", "request_id", request.ID, "error", markErr)
 			}
 			continue
@@ -1856,41 +1856,17 @@ func reportFault(port outbound.HeartbeatPort, source model.SourceID, runErr *err
 }
 
 // classifyRunError übersetzt den Lauf-Fehler in eine der sieben stabilen
-// Kategorien aus `ADR-0023`: die Composition Root kennt die
-// Sentinel-Fehler aller beteiligten Adapter (`.a-check.yml`
-// `composition_root` — kein Hexagon-Schichten-Edge, der diese Referenz
-// einschränkt) und übersetzt sie in den Fehlerzustand, den `reportFault`
-// oben fortträgt. Ein nicht erkannter Fehler bleibt in der Kategorie
-// `internal` („unerwarteter interner Fehler").
+// Kategorien aus `ADR-0023`: die Klasse ist die des Meldungscodes, den der
+// erste klassifizierte Fehlerwert der Kette trägt (`messagecode.From`); die
+// Sentinel-Fehler aller beteiligten Adapter tragen ihren Code selbst. Ein
+// Fehler ohne Code bleibt in der Kategorie `internal` („unerwarteter
+// interner Fehler").
 func classifyRunError(err error) model.ErrorClass {
-	switch {
-	case errors.Is(err, ErrTransientExhausted):
-		return model.ErrorClassTransient
-	case errors.Is(err, ErrConfiguration),
-		errors.Is(err, receive.ErrConfiguration),
-		errors.Is(err, postgresstorage.ErrActivationConfiguration):
-		return model.ErrorClassConfiguration
-	case errors.Is(err, decode.ErrSchema),
-		errors.Is(err, mapper.ErrTruncateUnsupported),
-		errors.Is(err, mapper.ErrIncompatibleSchemaChange),
-		errors.Is(err, mapper.ErrTransformationNotApplicable),
-		errors.Is(err, mapper.ErrRoutingNotApplicable):
-		return model.ErrorClassSchema
-	case errors.Is(err, receive.ErrPermission):
-		return model.ErrorClassPermission
-	case errors.Is(err, receive.ErrReplication),
-		errors.Is(err, outbound.ErrReplication),
-		errors.Is(err, mapper.ErrChangeWithoutBegin),
-		errors.Is(err, mapper.ErrCommitWithoutBegin),
-		errors.Is(err, mapper.ErrBeginWithoutCommit):
-		return model.ErrorClassReplication
-	case errors.Is(err, outbound.ErrStorage),
-		errors.Is(err, outbound.ErrHeartbeatStorage),
-		errors.Is(err, outbound.ErrConsumerStateStorage):
-		return model.ErrorClassStorage
-	default:
+	code, ok := messagecode.From(err)
+	if !ok {
 		return model.ErrorClassInternal
 	}
+	return model.ErrorClass(messagecode.ClassOf(code))
 }
 
 // Die Backoff-Setzungen der Wiederholung (`ADR-0135` Festlegung 2):

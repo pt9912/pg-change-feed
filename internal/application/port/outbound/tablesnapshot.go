@@ -2,7 +2,8 @@ package outbound
 
 import (
 	"context"
-	stderrors "errors"
+
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 )
 
 // Fehlerklassen des Snapshot-Lesers (`ADR-0023`): jede
@@ -13,24 +14,24 @@ var (
 	// ErrSnapshotPermission: der Capture-Login darf die Quelltabelle nicht
 	// lesen oder den temporären Slot nicht anlegen (`SELECT` und
 	// `REPLICATION` sind Betriebs-Vorbedingungen, `ADR-0047`).
-	ErrSnapshotPermission = stderrors.New("Fehlerklasse permission: fehlende Berechtigung für den Tabellen-Snapshot")
+	ErrSnapshotPermission = messagecode.New(messagecode.SnapshotPermission, "fehlende Berechtigung für den Tabellen-Snapshot")
 
 	// ErrSnapshotConfiguration: die Anfrage oder die Quelle steht im
 	// falschen Stand — Tabelle nicht vorhanden, ungültige Kennung, keine
 	// Reserve in `max_replication_slots`/`max_wal_senders`.
-	ErrSnapshotConfiguration = stderrors.New("Fehlerklasse configuration: Tabellen-Snapshot im falschen Stand der Konfiguration")
+	ErrSnapshotConfiguration = messagecode.New(messagecode.SnapshotConfiguration, "Tabellen-Snapshot im falschen Stand der Konfiguration")
 
 	// ErrSnapshotTransient: die Quelle war für den Snapshot vorübergehend
 	// nicht verfügbar — das Zeitlimit der Slot-Anlage ist abgelaufen, die
 	// Verbindung ist abgebrochen oder der Kontext endete.
-	ErrSnapshotTransient = stderrors.New("Fehlerklasse transient: Quelle für den Tabellen-Snapshot vorübergehend nicht verfügbar")
+	ErrSnapshotTransient = messagecode.New(messagecode.SnapshotSourceUnavailable, "Quelle für den Tabellen-Snapshot vorübergehend nicht verfügbar")
 
 	// ErrSnapshotReplication: die Störung liegt an Replication-Verbindung
 	// oder Slot-Anlage, ohne dass eine spezifischere Klasse zutrifft.
-	ErrSnapshotReplication = stderrors.New("Fehlerklasse replication: Slot-/Replication-Störung beim Tabellen-Snapshot")
+	ErrSnapshotReplication = messagecode.New(messagecode.SnapshotSlotFailed, "Slot-/Replication-Störung beim Tabellen-Snapshot")
 
 	// ErrSnapshotStorage: das Lesen der Zeilen im Snapshot ist gescheitert.
-	ErrSnapshotStorage = stderrors.New("Fehlerklasse storage: Lesefehler im Tabellen-Snapshot")
+	ErrSnapshotStorage = messagecode.New(messagecode.SnapshotReadFailed, "Lesefehler im Tabellen-Snapshot")
 )
 
 // TableSnapshotPort trägt die Fähigkeit, den Bestand einer Tabelle als

@@ -66,7 +66,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 if [ ! -f "$SCHEMA_SOURCE" ]; then
-  echo "FEHLER: $SCHEMA_SOURCE fehlt — das neutrale Schema-YAML ist die Erstlieferung des d-migrate-Einbaus; Überführungsquelle ist internal/adapters/driven/postgresstorage/schema.sql" >&2
+  echo "FEHLER [PCF-E2007]: $SCHEMA_SOURCE fehlt — das neutrale Schema-YAML ist die Erstlieferung des d-migrate-Einbaus; Überführungsquelle ist internal/adapters/driven/postgresstorage/schema.sql" >&2
   exit 2
 fi
 

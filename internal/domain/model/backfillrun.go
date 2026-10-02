@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 )
 
 // BackfillRunID identifiziert einen Backfill-Run: die Kennung des Antrags,
@@ -60,7 +61,7 @@ func (e RowEstimate) Rows() (rows int64, known bool) {
 // `StartedAt` ist der Beginn der Kopierdauer (Übergang nach `running`), die
 // Wartezeit in `queued` zählt nicht. `SnapshotPosition` ist die Position `X`
 // des Runs, der Nullwert bis zur Anlage des Snapshots. `ErrorMessage` trägt
-// bei `failed` die Fehlerklasse vor dem Text, sonst ist er
+// bei `failed` Fehlerklasse und Meldungscode vor dem Text, sonst ist er
 // leer. Die beiden Warn-Kennzeichnungen sind `false`, bis die Auswertung des
 // Use Cases sie setzt; sie ändern weder Status noch
 // Ablauf des Runs.
@@ -161,18 +162,21 @@ func (r BackfillRun) Complete(at TimePoint, rowsCopied int64) (BackfillRun, erro
 	return r, nil
 }
 
-// Fail wechselt `queued` oder `running` → `failed`; der Fehlertext trägt die
-// Fehlerklasse (`SPEC-008`) vor der Ursache: `<Klasse>: <Ursache>`.
-func (r BackfillRun) Fail(at TimePoint, class ErrorClass, cause string) (BackfillRun, error) {
+// Fail wechselt `queued` oder `running` → `failed`; der Fehlertext trägt
+// Fehlerklasse und Meldungscode (`SPEC-008`) vor der Ursache:
+// `<Klasse> [<Code>]: <Ursache>`. Die Klasse folgt aus dem Code; ein Code
+// außerhalb der Tabelle oder ohne Fehlerklasse endet als
+// `ErrInvalidErrorClass`.
+func (r BackfillRun) Fail(at TimePoint, code messagecode.Code, cause string) (BackfillRun, error) {
 	if !r.IsActive() {
 		return r, domainerrors.ErrInvalidBackfillTransition
 	}
-	if _, err := NewErrorClass(string(class)); err != nil {
+	if _, err := NewErrorClass(string(messagecode.ClassOf(code))); err != nil {
 		return r, err
 	}
 	r.Status = BackfillRunFailed
 	r.FinishedAt = at
-	r.ErrorMessage = fmt.Sprintf("%s: %s", class, cause)
+	r.ErrorMessage = messagecode.RunMessage(code, cause)
 	return r, nil
 }
 

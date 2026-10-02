@@ -635,8 +635,8 @@ func TestProcessAdministrationRequestsMarksFailedWhenColumnUseCaseErrors(t *test
 	if !failedFound {
 		t.Fatal("MarkFailed wurde nicht aufgerufen")
 	}
-	if failedMessage != wantErr.Error() {
-		t.Fatalf("Fehlertext = %q, wollen %q", failedMessage, wantErr.Error())
+	if want := "abgelehnt [PCF-E8024]: " + wantErr.Error(); failedMessage != want {
+		t.Fatalf("Fehlertext = %q, wollen %q", failedMessage, want)
 	}
 }
 
@@ -676,8 +676,8 @@ func TestProcessAdministrationRequestsMarksFailedWhenUseCaseErrors(t *testing.T)
 	if !failedFound {
 		t.Fatal("MarkFailed wurde nicht aufgerufen")
 	}
-	if failedMessage != wantErr.Error() {
-		t.Fatalf("Fehlertext = %q, wollen %q", failedMessage, wantErr.Error())
+	if want := "Fehlerklasse internal [PCF-E7000]: " + wantErr.Error(); failedMessage != want {
+		t.Fatalf("Fehlertext = %q, wollen %q", failedMessage, want)
 	}
 }
 
@@ -952,7 +952,7 @@ func TestProcessAdministrationRequestsMapValueTakesEffectLive(t *testing.T) {
 	queue.mu.Unlock()
 	processAdministrationRequests(ctx, deps)
 	message, failed := failureOf(queue, "req-again")
-	if !failed || message != "Spalte trägt bereits eine Regel: public."+ruleTable+".secret" {
+	if !failed || message != "abgelehnt [PCF-E8021]: Spalte trägt bereits eine Regel: public."+ruleTable+".secret" {
 		t.Fatalf("zweiter map_value-Antrag auf dieselbe Spalte: failed = %t, Fehlertext %q, wollen K2", failed, message)
 	}
 	if image := assemblerRowImage(t, assembler, 2, "public", ruleTable); image != `{"id":"1","secret":"GEHEIM"}` {
@@ -973,17 +973,17 @@ func TestProcessAdministrationRequestsRuleViolationsFailWithSpecTexts(t *testing
 		request model.AdministrationRequest
 		text    string
 	}{
-		{setRuleRequest("req-k1", "geheimname", ruleSpecText("note", "notiz")), "Regelname bereits vergeben: public." + ruleTable + ".geheimname"},
-		{setRuleRequest("req-k2", "zweite", ruleSpecText("secret", "anders")), "Spalte trägt bereits eine Regel: public." + ruleTable + ".secret"},
-		{setRuleRequest("req-k3a", "dritte", ruleSpecText("note", "renamed_secret")), "Zielname kollidiert mit einer anderen Regel: public." + ruleTable + ".renamed_secret"},
-		{setRuleRequest("req-k3b", "vierte", ruleSpecText("note", "id")), "Zielname kollidiert mit einer Spalte der Tabelle: public." + ruleTable + ".id"},
-		{setRuleRequest("req-k3c", "fuenfte", ruleSpecText("note", "note")), "Zielname kollidiert mit einer Spalte der Tabelle: public." + ruleTable + ".note"},
-		{setRuleRequest("req-k4", "sechste", ruleSpecText("gibt_es_nicht", "x")), "Spalte existiert nicht an der Quelle: public." + ruleTable + ".gibt_es_nicht"},
-		{removeRuleRequest("req-k4r", "gibt_es_nicht"), "Regelname nicht geführt: public." + ruleTable + ".gibt_es_nicht"},
-		{setRuleRequest("req-kind", "siebte", `{"kind": "explode"}`), "unbekannter Regeltyp: explode"},
-		{setRuleRequest("req-key", "achte", `{"kind": "rename_column", "column": "note", "to": "n", "extra": 1}`), "unbekannter Schlüssel in rule_spec: extra"},
-		{setRuleRequest("req-form", "neunte", `{"kind": "rename_column", "column": "note"}`), "rule_spec ist ungültig: public." + ruleTable + ".neunte"},
-		{setRuleRequest("req-name", "Zehnte", ruleSpecText("note", "n")), "Regelname ist ungültig: public." + ruleTable + ".Zehnte"},
+		{setRuleRequest("req-k1", "geheimname", ruleSpecText("note", "notiz")), "abgelehnt [PCF-E8020]: Regelname bereits vergeben: public." + ruleTable + ".geheimname"},
+		{setRuleRequest("req-k2", "zweite", ruleSpecText("secret", "anders")), "abgelehnt [PCF-E8021]: Spalte trägt bereits eine Regel: public." + ruleTable + ".secret"},
+		{setRuleRequest("req-k3a", "dritte", ruleSpecText("note", "renamed_secret")), "abgelehnt [PCF-E8022]: Zielname kollidiert mit einer anderen Regel: public." + ruleTable + ".renamed_secret"},
+		{setRuleRequest("req-k3b", "vierte", ruleSpecText("note", "id")), "abgelehnt [PCF-E8022]: Zielname kollidiert mit einer Spalte der Tabelle: public." + ruleTable + ".id"},
+		{setRuleRequest("req-k3c", "fuenfte", ruleSpecText("note", "note")), "abgelehnt [PCF-E8022]: Zielname kollidiert mit einer Spalte der Tabelle: public." + ruleTable + ".note"},
+		{setRuleRequest("req-k4", "sechste", ruleSpecText("gibt_es_nicht", "x")), "abgelehnt [PCF-E8024]: Spalte existiert nicht an der Quelle: public." + ruleTable + ".gibt_es_nicht"},
+		{removeRuleRequest("req-k4r", "gibt_es_nicht"), "abgelehnt [PCF-E8023]: Regelname nicht geführt: public." + ruleTable + ".gibt_es_nicht"},
+		{setRuleRequest("req-kind", "siebte", `{"kind": "explode"}`), "abgelehnt [PCF-E8011]: unbekannter Regeltyp: explode"},
+		{setRuleRequest("req-key", "achte", `{"kind": "rename_column", "column": "note", "to": "n", "extra": 1}`), "abgelehnt [PCF-E8011]: unbekannter Schlüssel in rule_spec: extra"},
+		{setRuleRequest("req-form", "neunte", `{"kind": "rename_column", "column": "note"}`), "abgelehnt [PCF-E8011]: rule_spec ist ungültig: public." + ruleTable + ".neunte"},
+		{setRuleRequest("req-name", "Zehnte", ruleSpecText("note", "n")), "abgelehnt [PCF-E8010]: Regelname ist ungültig: public." + ruleTable + ".Zehnte"},
 	}
 	all := []model.AdministrationRequest{first}
 	for _, violation := range violations {
@@ -1042,11 +1042,11 @@ func TestProcessAdministrationRequestsInvalidRuleRowsDoNotStallTheQueue(t *testi
 	processAdministrationRequests(ctx, deps)
 
 	for id, want := range map[string]string{
-		"req-empty-name":   "Regelname ist ungültig: public." + ruleTable + ".",
-		"req-null-spec":    "rule_spec ist ungültig: public." + ruleTable + ".regel_a",
-		"req-json-null":    "rule_spec ist ungültig: public." + ruleTable + ".regel_b",
-		"req-scalar":       "rule_spec ist ungültig: public." + ruleTable + ".regel_c",
-		"req-remove-empty": "Regelname ist ungültig: public." + ruleTable + ".",
+		"req-empty-name":   "abgelehnt [PCF-E8010]: Regelname ist ungültig: public." + ruleTable + ".",
+		"req-null-spec":    "abgelehnt [PCF-E8011]: rule_spec ist ungültig: public." + ruleTable + ".regel_a",
+		"req-json-null":    "abgelehnt [PCF-E8011]: rule_spec ist ungültig: public." + ruleTable + ".regel_b",
+		"req-scalar":       "abgelehnt [PCF-E8011]: rule_spec ist ungültig: public." + ruleTable + ".regel_c",
+		"req-remove-empty": "abgelehnt [PCF-E8010]: Regelname ist ungültig: public." + ruleTable + ".",
 	} {
 		if message, found := failureOf(queue, id); !found || message != want {
 			t.Fatalf("Antrag %q: Fehlertext = %q (vermerkt %v), wollen %q", id, message, found, want)
@@ -1429,8 +1429,8 @@ func TestProcessAdministrationRequestsMarksFailedWhenRuleStateReadFails(t *testi
 	if isApplied(queue, "req-rules-read-fail") {
 		t.Fatal("der Antrag ist applied, obwohl der Regelstand nicht lesbar war")
 	}
-	if message, found := failureOf(queue, "req-rules-read-fail"); !found || message != wantErr.Error() {
-		t.Fatalf("Fehlertext = %q (vermerkt %v), wollen %q", message, found, wantErr.Error())
+	if message, found := failureOf(queue, "req-rules-read-fail"); !found || message != "Fehlerklasse internal [PCF-E7000]: "+wantErr.Error() {
+		t.Fatalf("Fehlertext = %q (vermerkt %v), wollen den Kopf der Klasse internal vor %q", message, found, wantErr.Error())
 	}
 	if assemblerCapturesQualified(t, assembler, 1, "public", ruleTable) {
 		t.Fatal("Assembler trägt nach gescheitertem Regelstand-Lesen eine Bindung")

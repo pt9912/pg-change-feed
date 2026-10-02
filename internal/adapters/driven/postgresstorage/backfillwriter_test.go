@@ -10,6 +10,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -217,7 +218,7 @@ func TestBackfillWriterRollbackLeavesNoRow(t *testing.T) {
 	if status, _ := f.runStatus("wr-rollback"); status != "running" {
 		t.Fatalf("Run-Status nach dem Rollback = %s, erwartet running", status)
 	}
-	failed, err := w.run.Fail(model.NewTimePoint(snapshotAt.UnixNano()), model.ErrorClassInternal, "verworfen")
+	failed, err := w.run.Fail(model.NewTimePoint(snapshotAt.UnixNano()), messagecode.InternalFallback, "verworfen")
 	if err != nil {
 		t.Fatalf("Fail: %v", err)
 	}

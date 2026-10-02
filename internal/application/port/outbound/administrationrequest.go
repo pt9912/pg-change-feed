@@ -2,8 +2,8 @@ package outbound
 
 import (
 	"context"
-	stderrors "errors"
 
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -14,7 +14,7 @@ import (
 // Capture-Pfad — ein Lese- oder Vermerk-Fehler der Administrations-
 // Goroutine bricht den Stream-Lauf nicht ab (best-effort, derselbe Fallback-
 // Poll deckt einen verpassten Durchlauf ab).
-var ErrAdministrationStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler an der Antrags-Queue")
+var ErrAdministrationStorage = messagecode.New(messagecode.RequestQueueFailed, "Persistenzfehler an der Antrags-Queue")
 
 // PendingAdministrationRequest ist eine gelesene Zeile der Antrags-Queue mit
 // Status `pending`: entweder der Antrag (`Rejected == nil`) oder, wenn der

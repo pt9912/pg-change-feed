@@ -3807,7 +3807,7 @@ bf_request "$BF_RULE_BAD_TABLE" "$BF_PHASE"
 bf_bad_run=$bf_run_id
 bf_await_sql "SELECT status FROM cdc.backfill_run WHERE run_id = '$bf_bad_run'" failed 60 "$BF_PHASE — Run mit nicht anwendbarer Regel"
 bf_bad_error=$(bf_sql "SELECT error_message FROM cdc.backfill_run WHERE run_id = '$bf_bad_run'")
-printf '%s' "$bf_bad_error" | grep -q '^schema: ' || bf_fail "$BF_PHASE — der Fehlertext beginnt nicht mit der Klasse schema: $bf_bad_error"
+printf '%s' "$bf_bad_error" | grep -qE '^schema \[PCF-E4004\]: ' || bf_fail "$BF_PHASE — der Fehlertext beginnt nicht mit Klasse und Code (schema [PCF-E4004]): $bf_bad_error"
 printf '%s' "$bf_bad_error" | grep -qF 'kundenname' || bf_fail "$BF_PHASE — der Fehlertext nennt den Regelnamen nicht: $bf_bad_error"
 bf_expect "$(bf_sql "SELECT status FROM cdc.backfill_status WHERE source_id = 'src-e2e' AND schema_name = 'public' AND table_name = '$BF_RULE_BAD_TABLE'")" failed "$BF_PHASE — Status über cdc.backfill_status"
 bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$bf_bad_run'")" 0 "$BF_PHASE — rows_copied des fehlgeschlagenen Runs"
@@ -3852,9 +3852,10 @@ BF_PHASE="Backfill-DDL-Fenster"
 BF_DDL_TABLE=feed_e2e_backfill_ddl
 BF_REWRITE_TABLE=feed_e2e_backfill_rewrite
 
-# bf_ddl_window <Tabelle> <DDL-Anweisung> <Fehlerklasse>: beantragt einen
+# bf_ddl_window <Tabelle> <DDL-Anweisung> <Fehlerklasse> <Meldungscode>:
+# beantragt einen
 # Backfill der Tabelle, führt die DDL im Fenster zwischen Snapshot-Export und
-# Snapshot-Import aus und prüft, dass der Run failed mit der Klasse endet,
+# Snapshot-Import aus und prüft, dass der Run failed mit Klasse und Code endet,
 # ohne Change und ohne Fehlerzustand des Erfassungspfads. Sie setzt
 # bf_ddl_run, bf_ddl_error und bf_pause_ms.
 #
@@ -3868,7 +3869,7 @@ BF_REWRITE_TABLE=feed_e2e_backfill_rewrite
 # Pause bleibt unter der Hälfte von wal_sender_timeout (2 s, compose.yaml),
 # innerhalb derer PostgreSQL die Verbindung des Erfassungspfads beendet.
 bf_ddl_window() {
-  local table=$1 ddl=$2 class=$3 pause_start
+  local table=$1 ddl=$2 class=$3 code=$4 pause_start
   bf_hold_start e2e-bf-xid $'BEGIN;\nSELECT pg_current_xact_id();\nSELECT pg_sleep(120);'
   bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE application_name = 'e2e-bf-xid' AND backend_xid IS NOT NULL" 1 30 "$BF_PHASE $table — Haltetransaktion"
   bf_request "$table" "$BF_PHASE"
@@ -3899,7 +3900,7 @@ COMMIT;"
   [ "$bf_pause_ms" -lt 1000 ] || bf_fail "$BF_PHASE $table — die Pause des Feed-Containers dauerte ${bf_pause_ms} ms; erlaubt sind unter 1000 ms, die Hälfte von wal_sender_timeout (2000 ms)"
   bf_await_run "$bf_ddl_run" failed 60 "$BF_PHASE $table"
   bf_ddl_error=$(bf_sql "SELECT error_message FROM cdc.backfill_run WHERE run_id = '$bf_ddl_run'")
-  printf '%s' "$bf_ddl_error" | grep -q "^$class: " || bf_fail "$BF_PHASE $table — der Fehlertext beginnt nicht mit der Klasse $class: $bf_ddl_error"
+  [ "${bf_ddl_error#"$class [$code]: "}" != "$bf_ddl_error" ] || bf_fail "$BF_PHASE $table — der Fehlertext beginnt nicht mit Klasse und Code ($class [$code]): $bf_ddl_error"
   bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$table'")" 0 "$BF_PHASE $table — Changes der Tabelle nach dem fehlgeschlagenen Run"
   bf_expect "$(bf_sql "SELECT count(*) FROM cdc.transaction WHERE transaction_id LIKE '0bf-$bf_ddl_run-%'")" 0 "$BF_PHASE $table — Transaktionen des fehlgeschlagenen Runs"
   bf_expect "$(bf_sql "SELECT count(*) FROM cdc.heartbeat WHERE source_id = 'src-e2e' AND error_class IS NULL")" 1 "$BF_PHASE $table — Lebenszeichen der Quelle ohne Fehlerzustand (der Run-Fehler ist run-lokal)"
@@ -3916,7 +3917,7 @@ SQL
 bf_enable "$BF_DDL_TABLE" "$BF_PHASE"
 bf_enable "$BF_REWRITE_TABLE" "$BF_PHASE"
 
-bf_ddl_window "$BF_DDL_TABLE" "ALTER TABLE public.$BF_DDL_TABLE DROP COLUMN note" storage
+bf_ddl_window "$BF_DDL_TABLE" "ALTER TABLE public.$BF_DDL_TABLE DROP COLUMN note" storage PCF-E5008
 bf_ddl_run_drop=$bf_ddl_run
 bf_ddl_error_drop=$bf_ddl_error
 bf_pause_ms_drop=$bf_pause_ms
@@ -3930,7 +3931,7 @@ bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e
 # Umgeschriebene Tabelle: der ältere Snapshot sieht die neue Datei leer; die
 # Sperre mit dem Filenode-Vergleich beendet den Run (Klasse transient), er
 # schließt nicht mit 0 Zeilen ab.
-bf_ddl_window "$BF_REWRITE_TABLE" "ALTER TABLE public.$BF_REWRITE_TABLE ALTER COLUMN name TYPE varchar(64)" transient
+bf_ddl_window "$BF_REWRITE_TABLE" "ALTER TABLE public.$BF_REWRITE_TABLE ALTER COLUMN name TYPE varchar(64)" transient PCF-E1003
 bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$bf_ddl_run'")" 0 "$BF_PHASE — rows_copied des abgebrochenen Runs nach dem Umschreiben"
 bf_ddl_run_rewrite=$bf_ddl_run
 bf_ddl_error_rewrite=$bf_ddl_error
@@ -4884,7 +4885,7 @@ bf_expect "$(rt_target_of_row "$RS_TABLE" 7)" eu "$RS_PHASE — Ziel mit Ausschl
 rs_exclude_request=$(bf_sql "SELECT cdc.exclude_column('src-e2e', 'public', '$RS_TABLE', 'region')")
 [ -n "$rs_exclude_request" ] || bf_fail "$RS_PHASE — cdc.exclude_column(region) lieferte keine Antrags-ID"
 bf_await_sql "SELECT status FROM cdc.administration_request WHERE administration_request_id = '$rs_exclude_request'" failed 30 "$RS_PHASE — Ausschluss der Bedingungsspalte"
-bf_expect "$(bf_sql "SELECT error_message FROM cdc.administration_request WHERE administration_request_id = '$rs_exclude_request'")" "Spalte trägt eine Routing-Bedingung: public.$RS_TABLE.region" "$RS_PHASE — Fehlertext des Ausschlusses der Bedingungsspalte"
+bf_expect "$(bf_sql "SELECT error_message FROM cdc.administration_request WHERE administration_request_id = '$rs_exclude_request'")" "abgelehnt [PCF-E8034]: Spalte trägt eine Routing-Bedingung: public.$RS_TABLE.region" "$RS_PHASE — Fehlertext des Ausschlusses der Bedingungsspalte"
 rs_row 8 "'eu'" RsGeheimNachAblehnung
 tf_form "$RS_TABLE" 8 '{"name":"Rs8","region":"eu"}' "$RS_PHASE — Bild nach dem abgelehnten Ausschluss"
 bf_expect "$(rt_target_of_row "$RS_TABLE" 8)" eu "$RS_PHASE — Ziel nach dem abgelehnten Ausschluss"
@@ -5251,7 +5252,7 @@ ta_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/d
 [ "$ta_running" = "false" ] || bf_fail "$TA_PHASE — Feed-Container lief nach der Kollision entgegen der Erwartung noch (der Prozess soll sichtbar mit Fehlerklasse schema enden)"
 
 ta_log=$(docker logs "$FEED_CONTAINER" 2>&1 || true)
-[[ "$ta_log" == *"Transformationsregel auf die Änderung nicht anwendbar"* ]] || bf_fail "$TA_PHASE — Container-Log trägt den Sentinel-Text der Fehlerklasse schema nicht: $ta_log"
+[[ "$ta_log" == *"Fehlerklasse schema [PCF-E4004]: Transformationsregel auf die Änderung nicht anwendbar"* ]] || bf_fail "$TA_PHASE — Container-Log trägt Kopf und Sentinel-Text der Fehlerklasse schema (PCF-E4004) nicht: $ta_log"
 
 # Kriterium (b): der Antrag wird beantragt, während der Prozess steht, und
 # bleibt zunächst pending (SPEC-019-Status; „requested“ im ADR-Wortlaut) —
@@ -5296,8 +5297,8 @@ abdeckung_declare "Routing-Nichtanwendbarkeit und Abhilfe" "LH-FA-CFG-008,LH-FA-
 #     bleibt am Ende stehen, ohne Wiederanlauf.
 RN_PHASE="Routing-Nichtanwendbarkeit und Abhilfe"
 RN_RULE='{"target":"eu","order":10,"when":{"column":"region","equals":"eu"}}'
-RN_SENTINEL_NOT_APPLICABLE="Routing-Regel auf die Änderung nicht anwendbar"
-RN_SENTINEL_INCOMPATIBLE="Relation-Änderung nicht sicher als Obermenge interpretierbar"
+RN_SENTINEL_NOT_APPLICABLE="Fehlerklasse schema [PCF-E4005]: Routing-Regel auf die Änderung nicht anwendbar"
+RN_SENTINEL_INCOMPATIBLE="Fehlerklasse schema [PCF-E4003]: Relation-Änderung nicht sicher als Obermenge interpretierbar"
 
 # rn_shape_rows <Tabelle>: die Zahl der Spaltenform-Zeilen der Versionen einer
 # Tabelle in cdc.table_schema.

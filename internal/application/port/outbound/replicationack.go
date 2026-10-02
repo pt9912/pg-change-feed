@@ -2,8 +2,8 @@ package outbound
 
 import (
 	"context"
-	stderrors "errors"
 
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -14,7 +14,7 @@ import (
 // (Schritt ACK Source). Application und Betrieb
 // klassifizieren über `errors.Is` und kennen keinen Treibertyp; die
 // technische Ursache bleibt über die zweite Wrappung lesbar.
-var ErrReplication = stderrors.New("Fehlerklasse replication: Bestätigung am Replication-Stream fehlgeschlagen")
+var ErrReplication = messagecode.New(messagecode.ReplicationAckFailed, "Bestätigung am Replication-Stream fehlgeschlagen")
 
 // ReplicationAckPort trägt die Quell-Bestätigung als Core-gesteuerte
 // Wirkung (`ADR-0007`): der Replication-Stream-Adapter liest denselben

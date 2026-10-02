@@ -2,8 +2,8 @@ package outbound
 
 import (
 	"context"
-	stderrors "errors"
 
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -11,7 +11,7 @@ import (
 // (`ADR-0132`): ein Lesefehler an einer der Diagnose-Views bleibt über
 // `errors.Is` klassifizierbar, ohne Treibertyp — dieselbe Übersetzungsform
 // wie `ErrHeartbeatStorage`/`ErrStorage`.
-var ErrDiagnosticsStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler beim Lesen der Diagnose-Views")
+var ErrDiagnosticsStorage = messagecode.New(messagecode.DiagnosticsReadFailed, "Persistenzfehler beim Lesen der Diagnose-Views")
 
 // ConsumerLagSnapshot trägt den Verarbeitungsrückstand eines Consumers mit
 // mindestens einer bestätigten Position; `Lag == nil` bedeutet, dass die

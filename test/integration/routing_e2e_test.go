@@ -392,21 +392,21 @@ func TestE2ERoutingConflictsFailWithSpecText(t *testing.T) {
 	// Stand: eine Regel mit Bedingung.
 	check([]violation{
 		{"R1 Regelname vergeben", "eu_orders", `{"target":"x","order":20,"when":{"column":"name","equals":"a"}}`, false,
-			"Regelname bereits vergeben: " + address("eu_orders")},
+			"abgelehnt [PCF-E8020]: Regelname bereits vergeben: " + address("eu_orders")},
 		{"R2 order vergeben", "andere", `{"target":"x","order":10,"when":{"column":"name","equals":"a"}}`, false,
-			"order bereits vergeben: " + address("10")},
+			"abgelehnt [PCF-E8030]: order bereits vergeben: " + address("10")},
 		{"R3 Spalte fehlt an der Quelle", "ohne_spalte", `{"target":"x","order":20,"when":{"column":"nicht_vorhanden","equals":"a"}}`, false,
-			"Spalte existiert nicht an der Quelle: " + address("nicht_vorhanden")},
+			"abgelehnt [PCF-E8024]: Spalte existiert nicht an der Quelle: " + address("nicht_vorhanden")},
 		{"R4 Regel ohne when trägt nicht die höchste order", "fruehrest", `{"target":"x","order":5}`, false,
-			"Regel ohne when trägt nicht die höchste order: " + address("fruehrest")},
+			"abgelehnt [PCF-E8032]: Regel ohne when trägt nicht die höchste order: " + address("fruehrest")},
 		{"R5 Bedingung vergeben", "eu_doppelt", `{"target":"eu2","order":30,"when":{"column":"region","equals":"eu"}}`, false,
-			"Bedingung bereits vergeben: " + address("region")},
+			"abgelehnt [PCF-E8031]: Bedingung bereits vergeben: " + address("region")},
 		{"R6 Regelname nicht geführt", "gibt_es_nicht", "", true,
-			"Regelname nicht geführt: " + address("gibt_es_nicht")},
+			"abgelehnt [PCF-E8023]: Regelname nicht geführt: " + address("gibt_es_nicht")},
 		{"Zielname außerhalb des Alphabets", "schlecht", `{"target":"Eu.Bad","order":40,"when":{"column":"name","equals":"a"}}`, false,
-			"Zielname ist ungültig: " + address("Eu.Bad")},
+			"abgelehnt [PCF-E8012]: Zielname ist ungültig: " + address("Eu.Bad")},
 		{"unbekannter Schlüssel", "unbekannt", `{"target":"x","order":50,"extra":1}`, false,
-			"unbekannter Schlüssel in rule_spec: extra"},
+			"abgelehnt [PCF-E8011]: unbekannter Schlüssel in rule_spec: extra"},
 	})
 
 	// Stand mit Abschlussregel: eine zweite Regel ohne when und eine Regel
@@ -414,9 +414,9 @@ func TestE2ERoutingConflictsFailWithSpecText(t *testing.T) {
 	env.setRoute(t, table, "rest", `{"target":"sonstige","order":100}`)
 	check([]violation{
 		{"R4 zweite Regel ohne when", "rest2", `{"target":"x","order":200}`, false,
-			"Regel ohne when bereits vorhanden: " + address("rest")},
+			"abgelehnt [PCF-E8032]: Regel ohne when bereits vorhanden: " + address("rest")},
 		{"R4 Regel mit when hinter der Abschlussregel", "hinter_rest", `{"target":"x","order":150,"when":{"column":"name","equals":"Bob"}}`, false,
-			"order liegt hinter der Regel ohne when: " + address("rest")},
+			"abgelehnt [PCF-E8032]: order liegt hinter der Regel ohne when: " + address("rest")},
 	})
 
 	// R3 in beide Richtungen: der Ausschluss der Spalte secret gelingt, eine
@@ -425,10 +425,10 @@ func TestE2ERoutingConflictsFailWithSpecText(t *testing.T) {
 	env.awaitRequestApplied(t, env.requestExclude(t, table, "secret"))
 	check([]violation{
 		{"R3 Regel auf ausgeschlossene Spalte", "auf_geheim", `{"target":"x","order":60,"when":{"column":"secret","equals":"a"}}`, false,
-			"Spalte ist ausgeschlossen: " + address("secret")},
+			"abgelehnt [PCF-E8033]: Spalte ist ausgeschlossen: " + address("secret")},
 	})
 	status, message := env.awaitRequestOutcome(t, env.requestExclude(t, table, "region"))
-	if want := "Spalte trägt eine Routing-Bedingung: " + address("region"); status != "failed" || message != want {
+	if want := "abgelehnt [PCF-E8034]: Spalte trägt eine Routing-Bedingung: " + address("region"); status != "failed" || message != want {
 		t.Fatalf("R3 Ausschluss der Bedingungsspalte: Antrag endete %s mit %q, erwartet failed mit %q", status, message, want)
 	}
 

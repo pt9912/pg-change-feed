@@ -170,7 +170,7 @@ func TestExecuteRoutingStateChangeEndsRunAsConfiguration(t *testing.T) {
 				}
 				return
 			}
-			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "configuration: ") ||
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "configuration [PCF-E2006]: ") ||
 				!strings.Contains(run.ErrorMessage, domainerrors.ErrRoutingStateChanged.Error()) {
 				t.Fatalf("Run = %+v, will failed mit Klasse configuration und dem Wechsel des Routing-Regelstands", run)
 			}
@@ -195,7 +195,7 @@ func TestExecuteOnlyRoutingStateChangesEndsRunAsConfiguration(t *testing.T) {
 	r.rules.stateFn = ruleStates(rulesOf(testQualified, rename(t, "r-name", "name", "label")))
 	r.routes.stateFn = routeStates(routesOf(testQualified), routesOf(testQualified, routeRule(t, "regel", "ziel", 10, nil)))
 	run := mustExecute(t, r)
-	if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "configuration: ") {
+	if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "configuration [PCF-E2006]: ") {
 		t.Fatalf("Run = %+v, will failed mit Klasse configuration", run)
 	}
 	if r.rules.calls < 2 {
@@ -217,7 +217,7 @@ func TestExecuteRoutingReadFailureEndsRun(t *testing.T) {
 			r.routes.err = outbound.ErrStorage
 			r.routes.errCall = call
 			run := mustExecute(t, r)
-			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage: ") {
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage [PCF-E5001]: ") {
 				t.Fatalf("Run = %+v, will failed mit Klasse storage", run)
 			}
 			if r.routes.calls != call {
@@ -287,7 +287,7 @@ func TestExecuteInapplicableRoutingRuleEndsRunAsSchema(t *testing.T) {
 				}
 				return
 			}
-			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "schema: ") {
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "schema [PCF-E4005]: ") {
 				t.Fatalf("Run = %+v, will failed mit Klasse schema", run)
 			}
 			if !strings.Contains(run.ErrorMessage, domainerrors.ErrRoutingColumnMissing.Error()) {
@@ -327,7 +327,7 @@ func TestExecuteInapplicabilityPrecedesStateChange(t *testing.T) {
 		r := newRig()
 		r.routes.stateFn = routeStates(routesOf(testQualified, missing), routesOf(testQualified))
 		run := mustExecute(t, r)
-		if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "schema: ") {
+		if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "schema [PCF-E4005]: ") {
 			t.Fatalf("Run = %+v, will failed mit Klasse schema", run)
 		}
 		if r.routes.calls != 1 || r.trace.count("NextBlock") != 0 {
@@ -339,7 +339,7 @@ func TestExecuteInapplicabilityPrecedesStateChange(t *testing.T) {
 		r.rules.stateFn = ruleStates(rulesOf(testQualified, rename(t, "t-fehlt", "gibt_es_nicht", "x")))
 		r.routes.stateFn = routeStates(routesOf(testQualified, missing))
 		run := mustExecute(t, r)
-		if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "schema: ") || !strings.Contains(run.ErrorMessage, `"t-fehlt"`) {
+		if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "schema [PCF-E4004]: ") || !strings.Contains(run.ErrorMessage, `"t-fehlt"`) {
 			t.Fatalf("Run = %+v, will schema mit der Transformationsregel t-fehlt", run)
 		}
 	})

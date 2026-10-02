@@ -250,8 +250,8 @@ func TestBackfillRunAgainstPostgreSQLCarriesRoutingStateAndLabel(t *testing.T) {
 		}
 		runID, run := execute(snapshot)
 		status, message := persisted(runID)
-		if run.Status != model.BackfillRunFailed || status != "failed" || !strings.HasPrefix(message, "configuration: ") || !strings.Contains(message, "Routing-Regelstand") {
-			t.Fatalf("Run = %+v, Zeile %q/%q, will failed mit Klasse configuration und dem Routing-Regelstand", run, status, message)
+		if run.Status != model.BackfillRunFailed || status != "failed" || !strings.HasPrefix(message, "configuration [PCF-E2006]: ") || !strings.Contains(message, "Routing-Regelstand") {
+			t.Fatalf("Run = %+v, Zeile %q/%q, will failed mit Klasse configuration, Code PCF-E2006 und dem Routing-Regelstand", run, status, message)
 		}
 		if got := targetsOf(runID); len(got) != 0 {
 			t.Fatalf("Changes des fehlgeschlagenen Runs in cdc.changes: %v", got)
@@ -272,8 +272,8 @@ func TestBackfillRunAgainstPostgreSQLCarriesRoutingStateAndLabel(t *testing.T) {
 		}
 		runID, run := execute(snapshot)
 		status, message := persisted(runID)
-		if run.Status != model.BackfillRunFailed || status != "failed" || !strings.HasPrefix(message, "configuration: ") || !strings.Contains(message, "Routing-Regelstand") {
-			t.Fatalf("Run = %+v, Zeile %q/%q, will failed mit Klasse configuration und dem Routing-Regelstand", run, status, message)
+		if run.Status != model.BackfillRunFailed || status != "failed" || !strings.HasPrefix(message, "configuration [PCF-E2006]: ") || !strings.Contains(message, "Routing-Regelstand") {
+			t.Fatalf("Run = %+v, Zeile %q/%q, will failed mit Klasse configuration, Code PCF-E2006 und dem Routing-Regelstand", run, status, message)
 		}
 		if got := targetsOf(runID); len(got) != 0 {
 			t.Fatalf("Changes des fehlgeschlagenen Runs in cdc.changes: %v", got)
@@ -286,9 +286,9 @@ func TestBackfillRunAgainstPostgreSQLCarriesRoutingStateAndLabel(t *testing.T) {
 		snapshot := &routeStoreSnapshot{columns: columns, blocks: rows()}
 		runID, run := execute(snapshot)
 		status, message := persisted(runID)
-		if run.Status != model.BackfillRunFailed || status != "failed" || !strings.HasPrefix(message, "schema: ") ||
+		if run.Status != model.BackfillRunFailed || status != "failed" || !strings.HasPrefix(message, "schema [PCF-E4005]: ") ||
 			!strings.Contains(message, `"fehlt"`) || !strings.Contains(message, `"gibt_es_nicht"`) {
-			t.Fatalf("Run = %+v, Zeile %q/%q, will failed mit Klasse schema, Regelname und Spalte", run, status, message)
+			t.Fatalf("Run = %+v, Zeile %q/%q, will failed mit Klasse schema, Code PCF-E4005, Regelname und Spalte", run, status, message)
 		}
 		if snapshot.calls != 0 || snapshot.closed != 1 {
 			t.Fatalf("NextBlock %d-mal, Snapshot %d-mal geschlossen, will 0 und 1", snapshot.calls, snapshot.closed)

@@ -9,6 +9,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -154,7 +155,7 @@ func TestBackfillAdmitRefusesASecondActiveRunOfTheSameTable(t *testing.T) {
 
 	f.admit(admission, "adm-active-other", "adm_active_other", now, model.UnknownRowEstimate())
 
-	failed, err := started.Fail(model.NewTimePoint(now.UnixNano()), model.ErrorClassTransient, "beendet")
+	failed, err := started.Fail(model.NewTimePoint(now.UnixNano()), messagecode.TransientFallback, "beendet")
 	if err != nil {
 		t.Fatalf("Fail: %v", err)
 	}

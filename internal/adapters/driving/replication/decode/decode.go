@@ -11,11 +11,12 @@
 package decode
 
 import (
-	stderrors "errors"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pglogrepl"
+
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 )
 
 // ErrSchema trägt die Fehlerklasse `schema` der Dekodierung (`ADR-0023`):
@@ -23,7 +24,7 @@ import (
 // Überspringen. Der
 // Aufrufer klassifiziert über `errors.Is`; die technische Ursache bleibt
 // über die zweite Wrappung lesbar.
-var ErrSchema = stderrors.New("Fehlerklasse schema: pgoutput-Nachricht nicht sicher interpretierbar")
+var ErrSchema = messagecode.New(messagecode.DecodeUnreadable, "pgoutput-Nachricht nicht sicher interpretierbar")
 
 // Event ist ein dekodiertes `pgoutput`-Ereignis. Die Konkretisierungen
 // tragen die Nachrichten des Capture-Pfads; nicht relevante
