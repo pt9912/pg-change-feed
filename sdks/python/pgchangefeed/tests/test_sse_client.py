@@ -129,6 +129,11 @@ def test_stream_changes_sends_target_as_an_escaped_query_parameter() -> None:
     assert _query_of_stream(target="") == "target="
     assert _query_of_stream(target="eu") == "target=eu"
     assert _query_of_stream(target="a&b=c") == "target=a%26b%3Dc"
+    assert _query_of_stream(target="a+b") == "target=a%2Bb"
+    assert _query_of_stream(target="100%") == "target=100%25"
+    assert _query_of_stream(target="ü") == "target=%C3%BC"
+    # The C# and Kotlin clients send a space as "%20"; the server decodes both alike.
+    assert _query_of_stream(target="a b") == "target=a+b"
 
 
 # --- Schema and table: query parameters only when set ---
@@ -142,12 +147,22 @@ def test_stream_changes_sends_schema_as_an_escaped_query_parameter() -> None:
     assert _query_of_stream(schema="") == "schema="
     assert _query_of_stream(schema="eu") == "schema=eu"
     assert _query_of_stream(schema="a&b=c") == "schema=a%26b%3Dc"
+    assert _query_of_stream(schema="a+b") == "schema=a%2Bb"
+    assert _query_of_stream(schema="100%") == "schema=100%25"
+    assert _query_of_stream(schema="ü") == "schema=%C3%BC"
+    # The C# and Kotlin clients send a space as "%20"; the server decodes both alike.
+    assert _query_of_stream(schema="a b") == "schema=a+b"
 
 
 def test_stream_changes_sends_table_as_an_escaped_query_parameter() -> None:
     assert _query_of_stream(table="") == "table="
     assert _query_of_stream(table="eu") == "table=eu"
     assert _query_of_stream(table="a&b=c") == "table=a%26b%3Dc"
+    assert _query_of_stream(table="a+b") == "table=a%2Bb"
+    assert _query_of_stream(table="100%") == "table=100%25"
+    assert _query_of_stream(table="ü") == "table=%C3%BC"
+    # The C# and Kotlin clients send a space as "%20"; the server decodes both alike.
+    assert _query_of_stream(table="a b") == "table=a+b"
 
 
 def test_stream_changes_sends_schema_and_table_together() -> None:

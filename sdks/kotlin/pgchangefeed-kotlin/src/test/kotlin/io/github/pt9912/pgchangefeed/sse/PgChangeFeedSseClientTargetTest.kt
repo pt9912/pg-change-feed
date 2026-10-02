@@ -27,6 +27,11 @@ class PgChangeFeedSseClientTargetTest {
         assertEquals("$base?schema=", urlOf(null, schema = ""))
         assertEquals("$base?schema=eu", urlOf(null, schema = "eu"))
         assertEquals("$base?schema=a%26b%3Dc", urlOf(null, schema = "a&b=c"))
+        assertEquals("$base?schema=a%2Bb", urlOf(null, schema = "a+b"))
+        assertEquals("$base?schema=100%25", urlOf(null, schema = "100%"))
+        assertEquals("$base?schema=%C3%BC", urlOf(null, schema = "ü"))
+        // The Python client sends a space as "+"; the server decodes both alike.
+        assertEquals("$base?schema=a%20b", urlOf(null, schema = "a b"))
     }
 
     @Test
@@ -34,6 +39,11 @@ class PgChangeFeedSseClientTargetTest {
         assertEquals("$base?table=", urlOf(null, table = ""))
         assertEquals("$base?table=eu", urlOf(null, table = "eu"))
         assertEquals("$base?table=a%26b%3Dc", urlOf(null, table = "a&b=c"))
+        assertEquals("$base?table=a%2Bb", urlOf(null, table = "a+b"))
+        assertEquals("$base?table=100%25", urlOf(null, table = "100%"))
+        assertEquals("$base?table=%C3%BC", urlOf(null, table = "ü"))
+        // The Python client sends a space as "+"; the server decodes both alike.
+        assertEquals("$base?table=a%20b", urlOf(null, table = "a b"))
     }
 
     @Test
@@ -64,5 +74,10 @@ class PgChangeFeedSseClientTargetTest {
         assertEquals("http://example.invalid:8080/changes/stream?target=", urlOf(""))
         assertEquals("http://example.invalid:8080/changes/stream?target=eu", urlOf("eu"))
         assertEquals("http://example.invalid:8080/changes/stream?target=a%26b%3Dc", urlOf("a&b=c"))
+        assertEquals("$base?target=a%2Bb", urlOf("a+b"))
+        assertEquals("$base?target=100%25", urlOf("100%"))
+        assertEquals("$base?target=%C3%BC", urlOf("ü"))
+        // The Python client sends a space as "+"; the server decodes both alike.
+        assertEquals("$base?target=a%20b", urlOf("a b"))
     }
 }

@@ -39,6 +39,10 @@ public class PgChangeFeedSseClientTargetTests
     [InlineData("", "?target=")]
     [InlineData("eu", "?target=eu")]
     [InlineData("a&b=c", "?target=a%26b%3Dc")]
+    [InlineData("a+b", "?target=a%2Bb")]
+    [InlineData("100%", "?target=100%25")]
+    [InlineData("ü", "?target=%C3%BC")]
+    [InlineData("a b", "?target=a%20b")] // the Python client sends a space as "+"; the server decodes both alike
     public async Task StreamChangesAsync_Target_IsSentAsEscapedQueryParameter(string target, string expectedQuery)
     {
         var uri = await RequestUriOf(target);
@@ -60,6 +64,10 @@ public class PgChangeFeedSseClientTargetTests
     [InlineData("", "?schema=")]
     [InlineData("eu", "?schema=eu")]
     [InlineData("a&b=c", "?schema=a%26b%3Dc")]
+    [InlineData("a+b", "?schema=a%2Bb")]
+    [InlineData("100%", "?schema=100%25")]
+    [InlineData("ü", "?schema=%C3%BC")]
+    [InlineData("a b", "?schema=a%20b")] // the Python client sends a space as "+"; the server decodes both alike
     public async Task StreamChangesAsync_Schema_IsSentAsEscapedQueryParameter(string schema, string expectedQuery)
     {
         var uri = await RequestUriOf(null, schema: schema);
@@ -72,6 +80,10 @@ public class PgChangeFeedSseClientTargetTests
     [InlineData("", "?table=")]
     [InlineData("eu", "?table=eu")]
     [InlineData("a&b=c", "?table=a%26b%3Dc")]
+    [InlineData("a+b", "?table=a%2Bb")]
+    [InlineData("100%", "?table=100%25")]
+    [InlineData("ü", "?table=%C3%BC")]
+    [InlineData("a b", "?table=a%20b")] // the Python client sends a space as "+"; the server decodes both alike
     public async Task StreamChangesAsync_Table_IsSentAsEscapedQueryParameter(string table, string expectedQuery)
     {
         var uri = await RequestUriOf(null, table: table);

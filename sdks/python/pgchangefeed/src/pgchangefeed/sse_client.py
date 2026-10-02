@@ -76,7 +76,8 @@ class PgChangeFeedSseClient:
         ``schema`` without ``table`` delivers every table of that schema, a set
         ``table`` without ``schema`` delivers every table of that name
         regardless of schema, both set delivers exactly one table. They
-        combine with ``target`` as a conjunction.
+        combine with ``target`` as a conjunction. Values are percent-encoded;
+        a space is sent as ``+``, which the server decodes to a space.
 
         A missing or invalid bearer token, or any other non-success response,
         raises the same typed status-code error as the HTTP client (``401`` for
