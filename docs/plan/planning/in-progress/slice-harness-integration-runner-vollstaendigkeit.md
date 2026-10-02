@@ -88,7 +88,7 @@ wird (`go test -run` meldet keinen Fehler, solange ein anderer Name im selben Au
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `test/integration/integration_test.go` (oder eine Schwesterdatei im selben Paket) | update | Wächter neben `TestAbdeckungstabelleZeilen`: leitet die Funktionsnamen aus dem AST ab (wie die Deklarations-Hälfte), liest die `-run`-Werte des Skripts und vergleicht; Quelle des Skripts über den Repo-Mount `/src` des Runners (Pfad im Godoc) |
+| `test/integration/runner_vollstaendigkeit_test.go` (geliefert: Schwesterdatei; Wächter und Tabellentest in einer Datei, Leser als reine Funktion `fehlendeImRunner`; läuft unter `make test`, ohne Stack, Skript über den Repo-Mount `/src`) | neu (statt update von `integration_test.go`) | Wächter neben `TestAbdeckungstabelleZeilen`: leitet die Funktionsnamen aus dem AST ab (wie die Deklarations-Hälfte), liest die `-run`-Werte des Skripts und vergleicht; Quelle des Skripts über den Repo-Mount `/src` des Runners (Pfad im Godoc) |
 | Testdatei im selben Paket | neu / update | Tabellentest in drei Zuständen am Skripttext (vollständig · Name fehlt · Name nur im Kommentar) — nach `LH-QA-POR-003` |
 | `harness/sensors/` | neu, nur falls ein Gate- oder `make`-Ziel entsteht | Vertrag des Sensors; sonst keine Änderung |
 
@@ -109,7 +109,19 @@ Nichtgefundenes je Träger ein (Träger, die „21“ oder die Zahl der Testfunk
 77c7a795 8 -n -E '(^|[^a-z])-run' -- tools/harness/run-integration-tests.sh
 diff 21 -n -E '^func TestE2E' -- test/integration
 diff 8 -n -E '(^|[^a-z])-run' -- tools/harness/run-integration-tests.sh
+af53b900 21 -n -E '^func TestE2E' -- test/integration
+af53b900 8 -n -E '(^|[^a-z])-run' -- tools/harness/run-integration-tests.sh
+af53b900 0 -n -E '(21|einundzwanzig) (func|Test|E2E)' -- harness/README.md docs/user
+diff 0 -n -E '(21|einundzwanzig) (func|Test|E2E)' -- harness/README.md docs/user
+diff 2 -n -E '^func TestRunner' -- test/integration
 ```
+
+Nachmessung am Parent `af53b900` (Implementer): dieselben Zahlen wie am Plan-Stand (21 Testfunktionen,
+8 `-run`-Zeilen). Träger der Zahl „21“ oder einer Zahl der Testfunktionen: keiner in
+`harness/README.md` und `docs/user` (Suchmuster `(21|einundzwanzig) (func|Test|E2E)`, 0 Treffer);
+`docs/user/e2e-abdeckung.md` Zeile 11 nennt `func TestE2E*` ohne Zahl. Der Wächter ist neu und
+ändert keine Zahl der bestehenden Zeilen; seine beiden Funktionen (`diff`-Zeile mit Soll 2) liegen
+in `test/integration/runner_vollstaendigkeit_test.go`.
 
 Gefunden: 21 Testfunktionen, 8 Zeilen mit `-run`: zwei Kommentarzeilen (450, 470), der Aufruf des
 Deklarations-Tests (215, keine `TestE2E*`-Funktion), das Sammelmuster (466) und vier Einzelaufrufe
