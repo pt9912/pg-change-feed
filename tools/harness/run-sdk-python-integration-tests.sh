@@ -39,7 +39,10 @@
 # Tabelle mit zwei Routing-Regeln (ein Client mit `target` empfängt nur die
 # Changes seines Ziels, ein Client ohne `target` alle; Vorbereitung und
 # Ablauf über tools/harness/lib-sdk-route-fixture.sh, Testdatei je Fläche
-# wieder über `PGCHANGEFEED_TEST_FILE`).
+# wieder über `PGCHANGEFEED_TEST_FILE`). Eine dreizehnte Phase fährt den
+# SSE-Client mit `schema` und `table` sowie mit `schema` allein gegen drei
+# Tabellen in zwei Schemas: er empfängt nur die Changes seiner Auswahl
+# (Vorbereitung und Ablauf über tools/harness/lib-sdk-filter-fixture.sh).
 #
 # Voraussetzungen: Docker, ein geladenes :dev-Image (`make image` vorher —
 # compose.yaml trägt keinen build:-Block, ADR-0044) und Netz (pip-Paketbezug
@@ -57,6 +60,8 @@ cd "$(git rev-parse --show-toplevel)"
 source tools/harness/lib-sdk-rule-fixture.sh
 # shellcheck source=tools/harness/lib-sdk-route-fixture.sh
 source tools/harness/lib-sdk-route-fixture.sh
+# shellcheck source=tools/harness/lib-sdk-filter-fixture.sh
+source tools/harness/lib-sdk-filter-fixture.sh
 
 COMPOSE=${COMPOSE:-docker compose -f compose.yaml}
 NETWORK=${NETWORK:-cdc-feed-test}
@@ -461,6 +466,17 @@ sdk_route_phase "run-sdk-python-integration-tests" \
   "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN=$API_TOKEN PGCHANGEFEED_SOURCE_ID=$SDK_ROUTE_SOURCE" \
   0
 
+# --- Filter-Phase (ADR-0133 Teilfrage 4) -----------------------------------
+# Der SSE-Client gegen drei Tabellen in zwei Schemas
+# (tools/harness/lib-sdk-filter-fixture.sh): schema + table und schema allein
+# empfangen nur die Changes der Auswahl, der Client ohne Filter alle drei.
+sdk_filter_fixture_setup "run-sdk-python-integration-tests"
+
+sdk_filter_phase "run-sdk-python-integration-tests" \
+  "SSE-Filter-Fläche (SPEC-021, ADR-0133)" "PythonSseFilterSdkE2ESentinel" 1000 \
+  "PGCHANGEFEED_TEST_FILE=integration/test_sse_filter_realserver.py" \
+  "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN=$API_TOKEN"
+
 # --- Abdeckungs-Träger (docs/user/sdk-e2e-abdeckung.md) -------------------
 # Der Python-Abschnitt entsteht aus derselben Messung, die ihn belegt;
 # geschrieben wird nur bei inhaltlicher Abweichung (Temp-Datei + cmp),
@@ -501,6 +517,7 @@ abdeckung_python_abschnitt() {
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein Python-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`test_nats_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
     "| [\`LH-FA-CFG-007\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | eine aktive \`rename_column\`-Regel auf einer eigenen Tabelle: alle vier Python-SDK-Clients empfangen die danach erfasste Änderung mit dem umbenannten Schlüssel im opaken Wert (\`Any\`, gRPC die Bytes per \`json.loads\`) — Zielschlüssel trägt den Sentinel, Quellschlüssel fehlt; \`change_id\` je unabhängig über \`cdc.changes\` lesbar | \`test_grpc_rule_realserver.py\`, \`test_sse_rule_realserver.py\`, \`test_nats_rule_realserver.py\`, \`test_http_rule_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
     "| [\`LH-FA-CFG-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | zwei aktive Routing-Regeln (Ziele \`eu\` und \`us\`) auf einer eigenen Tabelle: die vier Python-SDK-Flächen (gRPC-Stream, SSE-Stream, NATS-Zusatz-Subjekt \`cdc.route.<source_id>.<ziel>\`, HTTP-Lesezugriff) liefern mit \`target\` genau die Changes des Ziels \`eu\` und im Ruhefenster keine Change eines anderen Ziels oder ohne Ziel (der HTTP-Lesezugriff liefert exakt die Ziel-Teilmenge der ungefilterten Lesung), ohne \`target\` alle; \`change_id\` je unabhängig über \`cdc.changes\` (\`route_target\`) gegengelesen | \`test_grpc_route_realserver.py\`, \`test_sse_route_realserver.py\`, \`test_nats_route_realserver.py\`, \`test_http_route_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | drei aktive Tabellen in zwei Schemas (zwei im Schema \`public\`, eine gleichnamige im zweiten Schema): der Python-SDK-Client \`PgChangeFeedSseClient\` empfängt mit \`schema\` und \`table\` genau die Changes seiner Tabelle, mit \`schema\` allein genau die Changes dieses Schemas und im Ruhefenster keine Change einer anderen Tabelle, ohne Filter alle drei; \`change_id\` je unabhängig über \`cdc.changes\` (\`schema_name\`, \`table_name\`) gegengelesen | \`test_sse_filter_realserver.py\` | \`tools/harness/run-sdk-python-integration-tests.sh\` |" \
     '<!-- pgchangefeed-sdk-e2e:python-end -->'
 }
 
@@ -555,3 +572,4 @@ abdeckung_schreiben
 echo "run-sdk-python-integration-tests: SDK-Realserver-Belege (ADR-0110 Festlegung 2/Folgepflicht 1) grün — gRPC-Fläche (pgchangefeed.grpc_client, pg-change-feed:9090, change_id=$GRPC_CHANGE_ID), SSE-Fläche (pgchangefeed.sse_client, pg-change-feed:8090, change_id=$SSE_CHANGE_ID) und NATS-Vollinhalts-Fläche (pgchangefeed.nats_stream_client, nats://nats:4222, change_id=$NATS_CHANGE_ID) öffneten real ihre Server-Streams gegen den laufenden Feed-Container und empfingen je eine danach committete Änderung (Tabelle, Operation und Sentinel real am Wire; change_id je unabhängig über cdc.changes lesbar), die HTTP-Fläche (pgchangefeed.http_client) registrierte real einen Consumer (consumer_id=$HTTP_IDENT, unabhängig über cdc.consumer lesbar) und listete Tabellen; ein Aufruf ohne gültiges Token endete je mit gRPC-Status Unauthenticated, HTTP-Status 401 bzw. der laut ablehnenden NATS-Verbindungsablehnung"
 echo "run-sdk-python-integration-tests: Regel-Belege (slice-sdk-regel-realserver-e2e, ADR-0112) grün — eine aktive rename_column-Regel auf $SDK_RULE_TABLE, alle vier Flächen empfingen die danach erfasste Änderung mit dem umbenannten Schlüssel $SDK_RULE_TARGET_KEY (Quellschlüssel $SDK_RULE_SOURCE_KEY fehlt): gRPC change_id=$GRPC_RULE_CHANGE_ID, SSE change_id=$SSE_RULE_CHANGE_ID, NATS change_id=$NATS_RULE_CHANGE_ID, HTTP change_id=$HTTP_RULE_CHANGE_ID (je unabhängig über cdc.changes lesbar)"
 echo "run-sdk-python-integration-tests: Routing-Belege (ADR-0137 Teilfrage 5) grün — zwei Routing-Regeln auf $SDK_ROUTE_TABLE (Ziel $SDK_ROUTE_TARGET_A und $SDK_ROUTE_TARGET_B), je Fläche ein Client mit target und ein Client ohne target${SDK_ROUTE_REPORT}"
+echo "run-sdk-python-integration-tests: Filter-Belege (ADR-0133 Teilfrage 4) grün — drei Tabellen in zwei Schemas, SSE-Client mit schema und table, mit schema allein und ohne Filter${SDK_FILTER_REPORT}"

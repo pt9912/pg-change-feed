@@ -213,16 +213,22 @@ trägt der Implementer ein; neue Dateien sind für den Stand `diff` mit `git add
 448ee4a5 16 -n -F 'sdk-e2e-abdeckung' -- tools harness .d-check.yml docs/user
 448ee4a5 3 -n -E 'vier mit Routing-Regeln' -- harness tools
 448ee4a5 0 -n -F 'feed_e2e_sdkfilt' -- tools harness sdks
+diff 0 -n -E 'zwölf Phasen' -- harness tools
+diff 18 -n -F 'route-fixture' -- tools/harness harness
+diff 0 -n -E 'test-sdk-(csharp|kotlin|python)-integration' -- .github
+diff 16 -n -F 'sdk-e2e-abdeckung' -- tools harness .d-check.yml docs/user
+diff 3 -n -E 'vier mit Routing-Regeln' -- harness tools
+diff 3 -n -F 'feed_e2e_sdkfilt' -- tools harness sdks
 ```
 
 | Träger | Messung am Parent (`448ee4a5`, gemessen am 2026-10-02) | Behandlung und Befund am Diff |
 |---|---|---|
-| Phasenzahl in Hilfetexten und Kopf-Kommentaren | Zeile 1: 4 Zeilen („zwölf Phasen": drei Hilfetexte in `harness/mk/sdk.mk`, ein Runner-Kopf); die Köpfe von Kotlin- und Python-Runner nennen die Zahl in einer Zeilenumbruch-Form und sind zu lesen | *vom Implementer* (Diff-Stand und Nichtgefundenes nachzutragen) |
-| Einbindung der Fixture-Dateien | Zeile 2: 16 Zeilen | *vom Implementer*; jede Einbindungsstelle gelesen |
-| Workflows, die ein `test-sdk-*-integration`-Ziel aufrufen | Zeile 3: 0 Zeilen | *vom Implementer*; erwartet 0, dann greift [`AGENTS.md`](../../../../AGENTS.md) §3.10 nicht |
-| Abdeckungs-Träger | Zeile 4: 16 Zeilen (Runner, `harness/mk/sdk.mk`, `harness/README.md`, `.d-check.yml`, `harness/sensors/docs-check.md`) | *vom Implementer*; der Abdeckungs-Träger bekommt drei Zeilen aus den Läufen |
-| `harness/README.md` §Sensors, die drei Zeilen der Ziele | liegen in Zeile 2 und 4 | nachziehen: jede Zeile nennt die Filter-Phase und `lib-sdk-filter-fixture.sh` |
-| Phasenzahl in Hilfetexten, Zeile 5 | 3 Zeilen („vier mit Routing-Regeln" in `harness/mk/sdk.mk`) | *vom Implementer*; der Hilfetext ergänzt „eine mit Tabellenfilter" |
+| Phasenzahl in Hilfetexten und Kopf-Kommentaren | Zeile 1: 4 Zeilen („zwölf Phasen": drei Hilfetexte in `harness/mk/sdk.mk`, ein Runner-Kopf); die Köpfe von Kotlin- und Python-Runner nennen die Zahl in einer Zeilenumbruch-Form und sind zu lesen | Gefunden und nachgezogen: die drei Hilfetexte in `harness/mk/sdk.mk` und der Kopf des C#-Runners („zwölf" → „dreizehn Phasen"); die Köpfe von Kotlin- und Python-Runner trugen die Zahl nicht in der Form „zwölf Phasen" (Kotlin: „zwölf" am Zeilenende, nachgezogen; Python: ohne Zahl, um den Satz zur dreizehnten Phase ergänzt). Diff-Stand Zeile 1: 0 Treffer. Nichtgefunden: keine weitere Nennung der Zahl in `harness`, `tools`, `sdks` (`git grep -i zwölf`: nur ein fremder Treffer in `harness/sensors/fmt-check.md`, der die Fälle eines anderen Tabellentests zählt) |
+| Einbindung der Fixture-Dateien | Zeile 2: 16 Zeilen | Diff-Stand 18 Zeilen: die drei Runner binden die neue Datei mit einer `source`-Zeile samt `shellcheck`-Hinweis ein, die neue Datei nennt die Schwester in ihrem Kopf (zwei Zeilen); jede Einbindungsstelle gelesen, die drei Zeilen in `harness/README.md` liegen unverändert in der Zahl (3) |
+| Workflows, die ein `test-sdk-*-integration`-Ziel aufrufen | Zeile 3: 0 Zeilen | Diff-Stand 0 Zeilen; [`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht |
+| Abdeckungs-Träger | Zeile 4: 16 Zeilen (Runner, `harness/mk/sdk.mk`, `harness/README.md`, `.d-check.yml`, `harness/sensors/docs-check.md`) | Diff-Stand 16 Zeilen (Namensmuster, nicht der Inhalt der Datei); `.d-check.yml` und `harness/sensors/docs-check.md` nennen die Datei als Ganzes und bleiben unverändert; der Träger `docs/user/sdk-e2e-abdeckung.md` bekommt je Runner eine Zeile (siehe Läufe) |
+| `harness/README.md` §Sensors, die drei Zeilen der Ziele | liegen in Zeile 2 und 4 | nachgezogen: jede der drei Zeilen nennt die Filter-Phase und `lib-sdk-filter-fixture.sh` |
+| Phasenzahl in Hilfetexten, Zeile 5 | 3 Zeilen („vier mit Routing-Regeln" in `harness/mk/sdk.mk`) | Diff-Stand 3 Zeilen; der Hilfetext ergänzt „eine mit Tabellenfilter" |
 
 ## 4. Trigger
 
