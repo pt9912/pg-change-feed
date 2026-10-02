@@ -1,0 +1,371 @@
+# Slice handbuch-public-doc-check-gate-und-skill: Ein Gate für kennungsfreie Nutzerdokumentation, die ADR dazu und ein kleiner Skill „Nutzerdokumentation schreiben“
+
+**Lifecycle:** Der Zustand dieses Slice ist das Verzeichnis, in dem diese
+Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
+wechselt nur durch `git mv`, siehe
+Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
+Übernimmt ein anderer Slice den Gegenstand oder entfällt er, geht diese Datei
+aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
+Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
+(§Ein Slice, dessen Gegenstand ein anderer übernimmt).
+
+**Welle:** ohne Welle — es gibt keine Closure-Bedingung, die von der DoD dieses
+Slice verschieden ist (Baseline-Regelwerk `modul-06-roadmap.md`
+§Wann Arbeit eine Welle braucht).
+
+**Bezug:** [`LH-QA-OPS-001`](../../../../spec/lastenheft.md) (Dokumentation für
+Betreiber; Haupt-Bezug, die Nutzerdokumentation ist die Betreiber-/Integrator-Sicht),
+[`ADR-0134`](../../adr/0134-sdk-public-doc-check-gate-make-gates.md) (Vorbild: ein
+netzloses `grep`-Gate für „keine interne Kennung“, hier für `docs/user/`),
+[`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) (Herkunft von
+Aussagen: der Skill-Inhalt „Ursprungs-Wort statt Berichts-Kennung“),
+[`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md),
+[`ADR-0088`](../../adr/0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md),
+[`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) (`Accepted`, unberührbar;
+fordern die Zeile in der Änderungshistorie des Handbuchs — die ADR dieses Slice
+schärft sie, ändert sie nicht). Anlass: das Benutzerhandbuch trug interne Kennungen
+und Chronik; die Bereinigung ist committet
+(`7d1c4611`, `de0d899a`, `983e209a`), ein Wächter, der den Rückfall fängt, fehlt.
+
+**Berührte Spec-Stellen:** keine geändert. Gelesen:
+[`spec/pflichtenheft.md`](../../../../spec/pflichtenheft.md) Zeile 1075 (Beispiel-Zeile
+„die Änderungshistorie des Handbuchs trägt die Zeile“) — bleibt wahr, weil das Kapitel
+bleibt; ein Träger, der nicht mitzuändern ist, im Suchlauf in §3 geführt.
+
+**Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
+
+**Autor:** Planner-Agent, auf Freigabe des Auftraggebers (zwei Aussagen, wörtlich):
+(1) Auf die Frage „Brauchen wir dafür eine eigene Rolle, Command oder Skill
+(Handbuch-Schreiber)?“ lautete der Vorschlag: zuerst ein Gate (Muster
+`make sdk-public-doc-check`, [`ADR-0134`](../../adr/0134-sdk-public-doc-check-gate-make-gates.md)), dann ein kleiner Skill statt einer Rolle, eine
+Rolle nur bei erneutem Drift; Antwort des Auftraggebers: „ja, nachdem die anderen offenen
+Slices abgearbeitet sind“ (sie sind abgearbeitet). (2) „Die History kann ohne Kennung
+auskommen“ — das Kapitel `### Änderungshistorie` bleibt, ohne Kennungen.
+**Datum:** 2026-10-02.
+
+---
+
+## 1. Ziel und Abgrenzung
+
+**Ziel:** Drei zusammengehörige Teile, weil sie dieselbe Regel tragen („Nutzerdokumentation
+ist Betreiber-/Integrator-Sicht und trägt keine interne Kennung“) und sich gegenseitig
+brauchen — das Gate fängt, der Skill verhindert, die ADR legt fest, was gilt:
+
+- **(A) Ein Gate.** Ein netzloser, `grep`-basierter Wächter, Teil von `make gates`, der die
+  Nutzerdokumente unter `docs/user/` (Reichweite: unten) auf interne Kennungen und auf Links
+  in `docs/reviews/` und `docs/plan/` prüft. Form wie `sdk-public-doc-check`:
+  Skript `tools/harness/<name>.sh`, Sensor-Vertrag `harness/sensors/<name>.md`,
+  Make-Ziel mit `GATE_CHECKS +=` (Heimat: `harness/mk/doc-gate.mk`, wo die
+  Dokumentations-Gates liegen; der Architect bestätigt), Tabellentest
+  `make test-<name>` (Werkzeug, kein Gate — wie `test-sdk-public-doc-check`), Zeile in
+  `harness/README.md` §Sensors (Gate-Index, [`AGENTS.md`](../../../../AGENTS.md) §4) und in
+  der `make gates`-Aufzählung. Arbeitsname `handbuch-public-doc-check`; der endgültige
+  Name ist Teil der Architect-Entscheidung.
+- **(B) Eine ADR.** Eine neue Schwelle ist nach [`AGENTS.md`](../../../../AGENTS.md) §3.6 eine
+  Entscheidung, kein PR-Kommentar. Die ADR (Muster `ADR-0134`) legt fest: Reichweite,
+  Muster, Ausnahmen, Gate-Aufnahme, Beziehung zum Standard und zu `ADR-0087`/`-0088`/`-0090`
+  (`Schärft:` — die Accepted-ADRs bleiben unberührt, §3.5).
+- **(C) Ein kleiner Skill und die Umstellung zweier Prüfpunkte.** Ein Skill
+  „Nutzerdokumentation schreiben“ (Ort und Inhalt: unten) und die Umstellung der beiden
+  Stellen, die die Handbuch-Historie verlangen: `.claude/commands/implement-slice.md`
+  Schritt 17 und `.harness/skills/reviewer.md` (HIGH-Punkt „Handbuch-Versionshistorie
+  nicht fortgeschrieben“). **Die Pflicht „Version hochzählen + Zeile in der
+  Änderungshistorie“ bleibt**; sie wird ergänzt um „ohne Kennungen, Betreibersicht“ und den
+  Verweis auf Skill und Gate.
+
+**Der Slice beginnt mit der Architect-Entscheidung** (Startbedingung §4): Reichweite, Muster
+und Ausnahmen sind Entscheidungen der ADR; die Vorschläge unten sind Eingang, nicht
+Vorwegnahme. Der Implementer setzt (A) und (C) erst um, wenn die ADR `Accepted` ist.
+
+**Vorschläge des Planners als Eingang für den Architect (gemessen am Stand `7e993efd`,
+2026-10-02, Zahlen im Suchlauf-Feld §3):**
+
+1. *Reichweite.* Jede Datei unter `docs/user/` wurde per `git grep` auf Kennungen
+   (`LH-(FA|QA)-`, `ADR-[0-9]`, `SPEC-[0-9]`, `ARC-[0-9]`, `slice-`, `welle-`, `BEO-`,
+   `MR-[0-9]`, `CO-[0-9]`) eingestuft:
+
+   | Datei | Treffer | Einstufung (Vorschlag) |
+   |---|---|---|
+   | `benutzerhandbuch.md` | 0 | **im Gate** — Nutzerdokumentation, Gegenstand des Anlasses |
+   | `benutzerhandbuch-standard.md` | 0 | **im Gate** — Nutzerdoku (kein Record), trägt die Form des Handbuchs; kostet nichts, schützt den Standard vor Rückfall |
+   | `version.md` | 0 | im Gate unnötig (eine Zeile, Versionsangabe); Architect entscheidet, ob die Liste „alle Dateien außer ausgenommenen“ oder „genannte Dateien“ ist |
+   | `releasing.md` | 26 (7 Links nach `../plan/adr/`) | **nicht im Gate** — Betreiber-/Maintainer-Doku zum Release-Prozess, die ihre Entscheidungen ([`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md), `-0106` …) und eine kennungsgespickte Änderungshistorie bewusst trägt; ein Gate hier wäre ein Bereinigungs-Slice (Inhaltsänderung), nicht dieser. Offener Punkt für den Architect: Bereinigung als eigener Folge-Slice ja/nein |
+   | `e2e-abdeckung.md`, `bench-abdeckung.md`, `ci-matrix-abdeckung.md`, `sdk-e2e-abdeckung.md` | 74 · 4 · 3 · 21 | **nicht im Gate** — von Runnern geschriebene Erzeugnisse; die Kennungen *sind* ihr Inhalt (Spec-Kennung je Zeile, RTM-Eingabe von `make doc-trace`) |
+
+   Die Wahl „genannte Dateien“ (Liste im Skript) gegenüber „Verzeichnis minus Ausnahmeliste“
+   ist offen: die Liste verhindert, dass eine künftige Erzeugnis-Datei falsch rot färbt
+   (`sdk-public-doc-check` Grenze 2), die Ausnahmeliste, dass eine neue Nutzerdatei
+   unbewacht bleibt.
+2. *Muster.* Kennungen wie oben; dazu Links, deren Ziel `docs/reviews/` oder `docs/plan/`
+   ist (Muster `docs/(reviews|plan)/` und relative Formen `\.\./(reviews|plan)/`). Gemessen:
+   0 solcher Links im Handbuch (`git grep`, §3). Zu klären: das `\b` vor `slice-` trifft auch
+   `byte-slice-…` (Bindestrich ist Wortgrenze) — falsch-positiv-Rand, nicht eingetreten
+   (0 Treffer), aber in der ADR zu benennen (wie die Grenzen 2/3 des Sensors
+   `sdk-public-doc-check`).
+3. *Ausnahmen / Befehlsbeispiele.* Im Handbuch tragen Befehlsbeispiele keine Kennung
+   (0 Treffer gemessen; Tag-Muster wie `sdk-csharp-v*` treffen keines der Muster). Vorschlag:
+   **keine Ausnahme**, auch nicht in Fenced-Blöcken — ein Handbuch-Beispiel mit Kennung ist
+   selbst der Fehler. Falls der Architect eine Ausnahme will, braucht sie eine benannte
+   Form (Opt-out-Marker), keine stille Liste.
+4. *Beziehung zum Standard.* [`benutzerhandbuch-standard.md`](../../../user/benutzerhandbuch-standard.md)
+   Zeile 229 („Changelog oder Änderungshistorie“) und Zeile 350 (`## 11. Änderungshistorie`)
+   verlangen das Kapitel — es **bleibt**. Zu ergänzen ist an beiden Stellen die
+   Kennungsfreiheit (Historie ohne Kennungen, Betreibersicht). Das ist Nutzerdoku, kein
+   Record: die Anpassung gehört in den Slice (Liefer-Punkt 4).
+5. *Beziehung zu `ADR-0087`/`-0088`/`-0090`.* Sie fordern die Zeile in der
+   Änderungshistorie (Fundstellen im Suchlauf, §3); die Forderung bleibt wahr. Die neue ADR
+   schärft sie um „ohne Kennungen“ (`Schärft:`), keine Supersession.
+6. *Gate-Fläche und CI.* `make gates` läuft in `ci.yml` unverändert; kein Workflow ändert
+   sich, [`AGENTS.md`](../../../../AGENTS.md) §3.10 greift deshalb nicht (am Start zu messen,
+   §6).
+7. *Skill-Ort.* Bestand: `.harness/skills/` trägt `reviewer.md` und
+   `closure-note-reviewer.md` (beide mit Kopf „Status/Bezug/Gilt für“), `.claude/` trägt
+   Agenten, Commands, Hooks und Rules, **kein** `skills/`-Verzeichnis. Vorschlag:
+   `.harness/skills/nutzerdoku-schreiben.md` (gleiche Form wie die beiden Vorgänger),
+   eingetragen in `harness/README.md` §Guides (dort steht der Reviewer-Skill) und aus
+   `implement-slice.md` Schritt 17 sowie dem Reviewer-Skill verlinkt. Der Skill ersetzt
+   **nicht** den Schritt 17, er trägt den Inhalt, den Schritt 17 heute inline führt
+   (siehe Risiko Zeilen-Gate, §6).
+
+**Skill-Inhalt (Vorgabe, Form-Prüfung im Review):** Ist-Zustand statt Chronik; keine
+internen Kennungen und keine Links nach `docs/plan/`/`docs/reviews/`;
+Betreiber-/Integrator-Sicht (was tut der Nutzer, nicht wie ist es gebaut); bei Messungen
+das Ursprungs-**Wort** (gemessen/übernommen/abgeleitet, [`AGENTS.md`](../../../../AGENTS.md)
+§3.12) und den Lauf-Hinweis **ohne** Berichts-Kennung; Version hochzählen und je Version eine
+Zeile in `### Änderungshistorie`, in Betreibersicht und ohne Kennungen; Verweis auf das Gate
+als Fangnetz („das Gate liest Kennungen, nicht Sinn“). **Der Skill ändert `AGENTS.md`
+nicht** (Regeln dort sind Hard Rules; der Skill verweist auf sie, ergänzt keine).
+
+**Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
+
+- **Eine Rolle „Handbuch-Schreiber“** — der Auftraggeber hat „nur bei erneutem Drift“
+  gesagt; Beleg wäre ein weiterer Rückfall trotz Gate und Skill, nicht jetzt.
+- **Eine Änderung des Handbuch-Inhalts** — das Handbuch ist bereinigt (0 Treffer am Stand
+  `7e993efd`); der Slice berührt `benutzerhandbuch.md` nicht und zählt keine Version hoch.
+  Findet das Gate am echten Baum einen Treffer, den die Bereinigung übersah, geht er als
+  Befund an den Planner, keine stille Mitänderung.
+- **`releasing.md` und die Erzeugnisse bereinigen** — andere Dokumentklasse (Vorschlag 1);
+  gemeldet, nicht geändert.
+- **`AGENTS.md`, `spec/` oder Accepted-ADRs ändern** — `AGENTS.md` ist Hard-Rules-Quelle,
+  die Spec-Zeile 1075 bleibt wahr, Accepted-ADRs sind nach §3.5 unberührbar (die neue ADR
+  schärft).
+- **Ein Release oder eine Versionsänderung** — kein Tag, keine Versionsdatei.
+- **Ein neuer Workflow** — das Gate hängt in `GATE_CHECKS`, `ci.yml` fährt es mit.
+
+## 2. Definition of Done
+
+- [ ] **Liefer-Punkt 0 — Architect-Entscheidung.** Eine ADR (nächste freie Nummer; Muster
+      `ADR-0134`) liegt `Accepted` vor und entscheidet: Reichweite (Dateien/Ausnahmeform),
+      Muster (Kennungen, Links), Ausnahmen (Befehlsbeispiele), Gate-Aufnahme, Beziehung zu
+      Standard Z. 229/350 und zu `ADR-0087`/`-0088`/`-0090` (`Schärft:`), Skill-Ort.
+      ADR-Index (`docs/plan/adr/README.md`) um die Zeile ergänzt. *Zu belegen durch:* die
+      Datei, der Index-Eintrag, `make docs-check` Exit 0.
+- [ ] **Liefer-Punkt 1 — Das Gate.** Skript, Sensor-Vertrag, Make-Ziel samt
+      `GATE_CHECKS +=`, Tabellentest und `harness/README.md`-Zeile nach der ADR.
+      Der Tabellentest deckt je Kennungsart einen Treffer (Exit 1), je Link-Klasse
+      (`docs/reviews/`, `docs/plan/`, relativ) einen Treffer, eine saubere Datei, den
+      Wortrand `byte-slice` (laut ADR) und die ausgenommenen Dateien (Exit 0). *Zu belegen
+      durch:* (a) `make test-<name>` Exit 0, die gedruckte Schlusszeile im Bericht;
+      (b) **Mutationsprobe**: eine Kennung (z. B. `ADR-0134`) in eine **Kopie** von
+      `docs/user/benutzerhandbuch.md` im Scratchpad einfügen (Edit/Write, nie am
+      Arbeitsbaum, [`AGENTS.md`](../../../../AGENTS.md) §3.1) und das Skript mit dem
+      Kopie-Verzeichnis als Wurzel aufrufen → Exit 1 mit gedruckter Zeile; ebenso ein Link
+      nach `docs/plan/`; Rücknahme = Kopie verwerfen; Stelle, Instanz und Farbe im Bericht
+      ([`AGENTS.md`](../../../../AGENTS.md) §3.12); (c) **grüner Lauf am echten Baum**:
+      `make <name>` Exit 0 ohne Treffer; (d) `make gates` Exit 0 **mit** dem neuen Gate
+      (Exit-Code ungefiltert gesichert und gesondert ausgewertet, §3.9), das Gate steht in
+      der Aufzählung der Lauf-Ausgabe.
+- [ ] **Liefer-Punkt 2 — Der Skill.** `.harness/skills/nutzerdoku-schreiben.md` (Ort laut
+      ADR) existiert, trägt den Inhalt aus §1, ändert `AGENTS.md` nicht und ist aus
+      `harness/README.md` §Guides, `implement-slice.md` Schritt 17 und dem Reviewer-Skill
+      verlinkt. *Zu belegen durch:* `test -f`, `git grep -n nutzerdoku-schreiben` nennt die
+      drei Verweise, `git diff --name-only <Basis> -- AGENTS.md` ist leer, `make docs-check`
+      Exit 0 (Links lösen auf).
+- [ ] **Liefer-Punkt 3 — Umstellung der zwei Prüfpunkte (Regeltexte).** Diese Änderungen
+      an Regeltexten sind **durch die Freigabe des Auftraggebers gedeckt** („ja, nachdem …“
+      für Gate, ADR, Skill und Umstellung der Prüfpunkte) und im Slice als solche benannt:
+      `.claude/commands/implement-slice.md` Schritt 17 und `.harness/skills/reviewer.md`
+      (HIGH-Punkt „Handbuch-Versionshistorie nicht fortgeschrieben“). Beide behalten die
+      Pflicht „`Version:` hochzählen **und** eine Zeile in `### Änderungshistorie`“,
+      ergänzt um „ohne Kennungen, Betreibersicht“ und den Verweis auf Skill und Gate;
+      keine Abschwächung der Pflicht. Der Kandidatenlauf in Schritt 17 bleibt. *Zu belegen
+      durch:* `git diff` beider Dateien im Bericht; im Diff steht die Pflicht weiter
+      (`git grep -n "Änderungshistorie" -- .claude .harness/skills` hat weiterhin je einen
+      Treffer), die Ergänzung und der Verweis sind ergänzt; Zeilenzahl von
+      `implement-slice.md` nach dem Eingriff **nicht größer** als am Start (Risiko
+      Zeilen-Gate, §6).
+- [ ] **Liefer-Punkt 4 — Der Standard.** `docs/user/benutzerhandbuch-standard.md` Zeile 229
+      und Kapitel `## 11. Änderungshistorie` (Zeile 350) tragen die Kennungsfreiheit der
+      Historie (Betreibersicht), das Kapitel bleibt. *Zu belegen durch:* `git diff` der Datei;
+      `git grep -nF "Änderungshistorie" -- docs/user/benutzerhandbuch-standard.md` liefert
+      weiter zwei Treffer; das neue Gate läuft grün über die Datei.
+- [ ] **Nur diese Pfade.** Der Diff berührt `docs/user/benutzerhandbuch.md`, `AGENTS.md`,
+      `spec/` und Accepted-ADRs nicht. *Zu belegen durch:*
+      `git diff --name-only <Basis> -- docs/user/benutzerhandbuch.md AGENTS.md spec` ist leer;
+      für die ADRs `0087`/`0088`/`0090` ebenfalls.
+- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert
+      ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [ ] Review durchgeführt, Report unter
+      `docs/reviews/review-slice-handbuch-public-doc-check-gate-und-skill.md` liegt vor,
+      kein offenes HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8
+      des Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review
+      (Modul 8).
+- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes
+      je Träger, beide Stände gemessen (Parent und Diff);
+      `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-handbuch-public-doc-check-gate-und-skill.md`
+      endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
+- [ ] Doku-Update: `harness/README.md` §Sensors (Zeile des neuen Gates, `make gates`-
+      Aufzählung) und §Guides (Skill), ADR-Index; das Benutzerhandbuch bleibt unberührt.
+- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7). Kandidat des Lerneintrags: ein
+      Rückfall in Nutzerdoku war bisher nur über Lesen (Reviewer) gefangen — das Gate ist der
+      erste Sensor für diese Klasse; die benannte Grenze („liest Kennungen, nicht Sinn“) ist
+      Teil des Eintrags.
+- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem Repo
+      (Greenfield).
+- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7) — kein Anfall ist
+      ebenfalls eine Antwort und wird in §7 notiert (Nachbarn:
+      `BEO-PGC/handbuch-versionshistorie-uebersprungen`,
+      `BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft`).
+- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+
+**Umfang:** S bis M — Schätzung, nicht gemessen: ein Skript, ein Tabellentest, ein
+Sensor-Vertrag, eine ADR, ein Skill, vier Textstellen in Regeln/Standard.
+
+**Voraussetzung:** Die ADR (Liefer-Punkt 0) ist `Accepted`, bevor (A) und (C) umgesetzt
+werden. Kein weiterer offener Slice mit demselben Gegenstand liegt vor
+(`slice-meldungscodes-statt-interner-kennungen` in `open/` betrifft Meldungstexte des Codes,
+nicht Nutzerdoku — am Start zu bestätigen).
+
+## 3. Plan (vor Code)
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `docs/plan/adr/<nächste Nummer>-…md`, `docs/plan/adr/README.md` | neu / update | Architect-Entscheidung (Liefer-Punkt 0); `Schärft:` `ADR-0087`/`-0088`/`-0090` |
+| `tools/harness/handbuch-public-doc-check.sh` (Name laut ADR) | neu | `grep`-Wächter nach dem Muster von `sdk-public-doc-check.sh`; optionales erstes Argument = Wurzel für den Tabellentest |
+| `tools/harness/run-handbuch-public-doc-check-tests.sh` | neu | Tabellentest (Muster `run-sdk-public-doc-check-tests.sh`) |
+| `harness/mk/doc-gate.mk` | update | Ziele `…-check` und `test-…`, `GATE_CHECKS +=` (Heimat laut ADR) |
+| `harness/sensors/handbuch-public-doc-check.md` | neu | Vertrag, Ausgänge, Grenze, Sperren, Bindung (Muster `sdk-public-doc-check.md`) |
+| `harness/README.md` | update | §Sensors: Gate-Zeile, `make gates`-Aufzählung, Zeile des Tabellentests; §Guides: Skill |
+| `.harness/skills/nutzerdoku-schreiben.md` (Ort laut ADR) | neu | der Skill |
+| `.claude/commands/implement-slice.md` Schritt 17 | update (Regeltext) | Pflicht bleibt, Ergänzung + Verweis; Inhalt zum Skill verlagern, Zeilen nicht mehren |
+| `.harness/skills/reviewer.md` (HIGH-Punkt, Z. ~75) | update (Regeltext) | dieselbe Ergänzung + Verweis |
+| `docs/user/benutzerhandbuch-standard.md` Z. 229, 350 | update (Nutzerdoku) | Kennungsfreiheit der Historie; Kapitel bleibt |
+| `docs/user/benutzerhandbuch.md`, `AGENTS.md`, `spec/` | prüfen, nicht ändern | siehe „Nur diese Pfade“ |
+| `.github/workflows/*` | prüfen | keine Änderung erwartet (§3.10) |
+
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Nutzerdokumentation trägt
+keine Kennung; die Historie ist kennungsfrei“; Zählwort „Kennung“, Symbolname
+„Änderungshistorie“; Parent ist `7e993efd`, gemessen am 2026-10-02 mit
+`make suchlauf-nachmessen`; die `diff`-Zeilen und die Befunde trägt der Implementer nach;
+neue Dateien sind für den Stand `diff` mit `git add` im Index):**
+
+```suchlauf
+7e993efd 0 -n -E '\b(LH-(FA|QA)-|ADR-[0-9]|SPEC-[0-9]|ARC-[0-9]|slice-|welle-|BEO-|MR-[0-9]|CO-[0-9])' -- docs/user/benutzerhandbuch.md
+7e993efd 0 -n -E '\b(LH-(FA|QA)-|ADR-[0-9]|SPEC-[0-9]|ARC-[0-9]|slice-|welle-|BEO-|MR-[0-9]|CO-[0-9])' -- docs/user/benutzerhandbuch-standard.md
+7e993efd 0 -n -E '\b(LH-(FA|QA)-|ADR-[0-9]|SPEC-[0-9]|ARC-[0-9]|slice-|welle-|BEO-|MR-[0-9]|CO-[0-9])' -- docs/user/version.md
+7e993efd 26 -n -E '\b(LH-(FA|QA)-|ADR-[0-9]|SPEC-[0-9]|ARC-[0-9]|slice-|welle-|BEO-|MR-[0-9]|CO-[0-9])' -- docs/user/releasing.md
+7e993efd 4 -n -E '\b(LH-(FA|QA)-|ADR-[0-9]|SPEC-[0-9]|ARC-[0-9]|slice-|welle-|BEO-|MR-[0-9]|CO-[0-9])' -- docs/user/bench-abdeckung.md
+7e993efd 3 -n -E '\b(LH-(FA|QA)-|ADR-[0-9]|SPEC-[0-9]|ARC-[0-9]|slice-|welle-|BEO-|MR-[0-9]|CO-[0-9])' -- docs/user/ci-matrix-abdeckung.md
+7e993efd 74 -n -E '\b(LH-(FA|QA)-|ADR-[0-9]|SPEC-[0-9]|ARC-[0-9]|slice-|welle-|BEO-|MR-[0-9]|CO-[0-9])' -- docs/user/e2e-abdeckung.md
+7e993efd 21 -n -E '\b(LH-(FA|QA)-|ADR-[0-9]|SPEC-[0-9]|ARC-[0-9]|slice-|welle-|BEO-|MR-[0-9]|CO-[0-9])' -- docs/user/sdk-e2e-abdeckung.md
+7e993efd 0 -n -E 'docs/(reviews|plan)/|\.\./(reviews|plan)/' -- docs/user/benutzerhandbuch.md docs/user/benutzerhandbuch-standard.md
+7e993efd 2 -n -F Änderungshistorie -- docs/user/benutzerhandbuch-standard.md
+7e993efd 2 -n -F Änderungshistorie -- .claude .harness/skills
+7e993efd 8 -n -F Änderungshistorie -- docs/plan/adr
+7e993efd 1 -n -F Änderungshistorie -- spec
+7e993efd 0 -n -F nutzerdoku-schreiben -- .
+```
+
+| Träger | Messung am Parent (`7e993efd`, 2026-10-02) | Behandlung (Befund am Diff trägt der Implementer ein) |
+|---|---|---|
+| Kennungstreffer je Nutzerdokument (Zeilen 1–8) | Handbuch 0, Standard 0, `version.md` 0, `releasing.md` 26, vier Erzeugnisse (bench 4, ci-matrix 3, e2e 74, sdk-e2e 21) | Die Null-Zeilen sind die Bedingung für den grünen Lauf des Gates am echten Baum; `releasing.md` und die Erzeugnisse bleiben außerhalb der Reichweite (Vorschlag 1) und ihre Zahlen am Diff **unverändert**. Befund am Diff: Implementer. |
+| Links nach `docs/plan/`/`docs/reviews/` (Zeile 9) | 0 im Handbuch und im Standard | Soll am Diff weiter 0. Die 7 Links in `releasing.md` und je einer in zwei Erzeugnissen liegen außerhalb. |
+| `Änderungshistorie` im Standard (Zeile 10) | 2 (Z. 229, 350) | beide Stellen bekommen die Kennungsfreiheit (Liefer-Punkt 4); Soll am Diff weiter 2 (Kapitel bleibt). |
+| `Änderungshistorie` in Regeln (Zeile 11) | 2 Trefferzeilen (`implement-slice.md` 1, `reviewer.md` 1) | Die Pflicht bleibt; keiner der beiden Treffer darf verschwinden. Befund am Diff: Implementer. |
+| `Änderungshistorie` in den drei Accepted-ADRs (Zeile 12) | 8 (`0087` ×3, `0088` ×2, `0090` ×3) | **unberührbar** (§3.5); Soll am Diff weiter 8; die neue ADR liegt in `docs/plan/adr/` und zählt dann zusätzlich — der Implementer trägt den neuen Soll-Wert (8 + Treffer der neuen ADR) ein. |
+| `Änderungshistorie` in `spec/` (Zeile 13) | 1 (`pflichtenheft.md` Z. 1075, Beispiel-Zeile) | bleibt wahr, kein Nachzug; Soll am Diff weiter 1. |
+| Skill-Name (Zeile 14) | 0 | Soll am Diff: Treffer in Skill-Datei, `harness/README.md`, `implement-slice.md`, `reviewer.md`, ADR (der Implementer trägt den gezählten Wert ein). |
+
+## 4. Trigger
+
+**Start** (`next` → `in-progress`): die Architect-Entscheidung (Liefer-Punkt 0) ist als ADR
+`Accepted` gelandet **oder** sie ist die erste Handlung des Slice im Architect-Lauf —
+der Implementer beginnt (A) und (C) erst nach `Accepted`. Kein anderer Slice liegt in
+`in-progress/` (WIP-Limit 1). Das Handbuch ist am Start weiter kennungsfrei
+(Suchlauf-Zeile 1 gemessen am dann aktuellen Stand, sonst zuerst Befund an den Planner).
+
+**Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
+
+- `in-progress` → `next` (zu groß, zurück zur Zerlegung): (C) trennt sich als eigener Slice
+  ab (`…-skill-und-pruefpunkte`); Gate, ADR und Standard bleiben hier.
+- `in-progress` → `open` (blockiert): der Architect verwirft die Reichweite oder die Aufnahme
+  in `make gates`, oder das Gate färbt am echten Baum rot durch einen Treffer, den der
+  Slice nicht bereinigen darf (Handbuch-Inhalt ist ausgeschlossen) — der Fund geht an den
+  Planner, kein Verstecken in einer Ausnahmeliste.
+
+## 5. Closure-Trigger
+
+DoD vollständig (inkl. ADR `Accepted`), Review ohne offenes HIGH/MEDIUM, `make gates` grün
+(Exit-Code ungefiltert) mit dem neuen Gate, Mutationsprobe rot gesehen und grüner Lauf am
+echten Baum, Suchlauf-Block nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
+
+## 6. Risiken und offene Punkte
+
+- **Falsch-positive bei Befehlsbeispielen und Wortrand.** `\bslice-` trifft `byte-slice-…`;
+  `CO-[0-9]`/`MR-[0-9]` könnten in Zahlen-/Einheitentexten treffen. Am Stand `7e993efd`
+  0 Treffer im Handbuch (gemessen, Suchlauf Zeile 1); künftige Beispiele sind nicht
+  vorhersagbar. Gegenmaßnahme: Tabellentest mit Randfall, benannte Grenze im Sensor-Vertrag,
+  Ausnahmeform nur per ADR. — **Ausgang:** *offen bis Closure.*
+- **Gate-Fläche zu klein oder zu groß.** Zu klein: eine neue Nutzerdatei bleibt unbewacht;
+  zu groß: eine Erzeugnis-Datei färbt falsch rot (`sdk-public-doc-check` Grenze 2). —
+  **Ausgang:** *offen bis Closure* (Entscheid der ADR: Liste gegen Ausnahmeliste).
+- **Skill-Drift.** Der Skill kann von Schritt 17 und dem Reviewer-Punkt auseinanderlaufen
+  (zwei Orte für „was ins Handbuch gehört“). Gegenmaßnahme: Schritt 17 und Reviewer
+  verweisen auf den Skill, statt den Inhalt zu duplizieren; Verweis-Existenz im Suchlauf
+  (Zeile 14). — **Ausgang:** *offen bis Closure.*
+- **Zeilen-/Dateigröße-Gate für `implement-slice.md` kommt** (Auftraggeber-Vorgabe,
+  Memory-Eintrag; übernommen, nicht gemessen): eine Textkürzung reicht dann nicht, es
+  braucht eine strukturelle Lösung. Deshalb Liefer-Punkt 3: Inhalt von Schritt 17 in den
+  Skill verlagern, Zeilenzahl nicht mehren. — **Ausgang:** *offen bis Closure.*
+- **Regeltext-Änderung ohne eigene Freigabe.** Änderungen an `implement-slice.md` und
+  `reviewer.md` sind Regeltexte; sie stützen sich auf die Freigabe des Auftraggebers („ja,
+  nachdem …“ für Gate, ADR, Skill und Umstellung der Prüfpunkte), wörtlich im Kopf dieser
+  Datei. Weitergehende Änderungen (z. B. Abschwächung der Pflicht) sind nicht gedeckt. —
+  **Ausgang:** *offen bis Closure* (Review prüft die Pflicht im Diff).
+- **Das Gate fängt Kennungen, nicht Chronik.** Eine Historie-Zeile in Chronik-Sprache ohne
+  Kennung („früher … jetzt …“) bleibt grün; das ist die Lese-Hälfte (Skill, Reviewer).
+  Grenze im Sensor-Vertrag zu führen. — **Ausgang:** *offen bis Closure.*
+- **Kein Workflow ändert sich.** `ci.yml` fährt `make gates`; die Aufnahme in `GATE_CHECKS`
+  ändert keinen Workflow ([`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht — am Start
+  mit `git diff --name-only <Basis> -- .github` zu messen). — **Ausgang:** *offen bis
+  Closure.*
+- **Kein Release, keine Versionsänderung.** — **Ausgang:** *offen bis Closure.*
+
+## 7. Closure-Notiz
+
+*(Wird bei der Closure vom Planner geschrieben. Ursprung der Angaben nach
+[`AGENTS.md`](../../../../AGENTS.md) §3.12: gemessen · übernommen · hergeleitet.)*
+
+- **Was hat funktioniert:** —
+- **Was ging anders als geplant:** —
+- **Steering-Loop-Eintrag (Lerneintrag):** —
+- **Beobachtungs-Register (`../observations/`):** —
+- **Folge-Slices:** —
+- **Risiken aus §6:** —
+- **Drei Paarungen:** —
+
+## 8. Sub-Area-Prüfungen und Modus-Begründung
+
+**Vorgelagert — Sub-Area-Wahl prüfen:** berührt ist die Default-Sub-Area `*`
+(`harness/conventions.md`, Modus-Deklaration: Greenfield, Kürzel `PGC`) mit den Pfaden
+`tools/harness/`, `harness/`, `.harness/skills/`, `.claude/commands/`, `docs/user/` und
+`docs/plan/adr/` — eine Sub-Area.
+
+**Vorgelagert — offene Beobachtungen sichten:** Treffer in §6/§2:
+`handbuch-versionshistorie-uebersprungen` (Klasse, deren Prüfpunkte dieser Slice umstellt),
+`zwei-quellen-drift-handbuch-gegen-pflichtenheft`,
+`handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche` (Nachbarn). Der Implementer
+zählt die `evidence/`-Dateien bei der Closure nach.
+
+**Modus-Begründungsblock:** alle berührten Sub-Areas GF.
