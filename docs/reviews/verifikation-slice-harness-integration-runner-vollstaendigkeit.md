@@ -4,7 +4,7 @@
 ([`AGENTS.md`](../../AGENTS.md) §3.12 Instanz B). DoD- und Entscheidungs-Konformität
 plus Plan-vs-Code-Diff in frischem Kontext.
 
-**Gegenstand:** [`slice-harness-integration-runner-vollstaendigkeit`](../plan/planning/in-progress/slice-harness-integration-runner-vollstaendigkeit.md);
+**Gegenstand:** [`slice-harness-integration-runner-vollstaendigkeit`](../plan/planning/done/slice-harness-integration-runner-vollstaendigkeit.md);
 `git diff af53b900 HEAD`, fünf Commits: `eeefa622` (Wächter), `fa7e07a9` (Review),
 `631a95cd` (Fixrunde 1), `7ea934d9` (Re-Review), `556a9326` (Fixrunde 2).
 Bezug: [`LH-QA-POR-003`](../../spec/lastenheft.md), [`ADR-0030`](../plan/adr/0030-testpyramide.md),

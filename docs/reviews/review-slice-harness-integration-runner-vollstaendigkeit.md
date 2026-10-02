@@ -1,7 +1,7 @@
 # Review-Report: slice-harness-integration-runner-vollstaendigkeit — 2026-10-02
 
 **Review-Art:** Code — geprüft gegen Plan
-([`slice-harness-integration-runner-vollstaendigkeit`](../plan/planning/in-progress/slice-harness-integration-runner-vollstaendigkeit.md)),
+([`slice-harness-integration-runner-vollstaendigkeit`](../plan/planning/done/slice-harness-integration-runner-vollstaendigkeit.md)),
 Architect-Verdikt
 [`architect-verdict-welle-routing-lese-schritt`](architect-verdict-welle-routing-lese-schritt.md) §3.2/§5,
 [`LH-QA-POR-003`](../../spec/lastenheft.md), [`ADR-0030`](../plan/adr/0030-testpyramide.md),
