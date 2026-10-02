@@ -255,6 +255,16 @@ a420e223 4 -n -E 'dreizehn Phasen' -- harness tools
 a420e223 6 -n -F SEEN -- sdks/csharp/PgChangeFeed.Client.Integration/RouteScenario.cs sdks/kotlin/pgchangefeed-kotlin/src/integrationTest/kotlin/io/github/pt9912/pgchangefeed/integration/RouteScenario.kt sdks/python/pgchangefeed/integration/route_scenario.py
 a420e223 0 -n -F SEEN_SECOND -- tools/harness/lib-sdk-route-fixture.sh sdks/csharp/PgChangeFeed.Client.Integration/RouteScenario.cs sdks/python/pgchangefeed/integration/route_scenario.py
 a420e223 0 -n -E 'ROUTE_SENTINEL_SECOND|RouteSentinelSecond' -- harness tools sdks
+diff 12 -n -F ROUTE_RESULT -- harness tools sdks docs/user
+diff 6 -n -F Dreiergruppe -- tools/harness/lib-sdk-route-fixture.sh
+diff 10 -n -F 'drei Gruppen' -- sdks tools
+diff 14 -n -F sdk_route_phase -- tools
+diff 10 -n -F 'Routing-Phase' -- harness tools docs/user sdks
+diff 4 -n -E 'vier Routing' -- harness tools docs/user sdks
+diff 4 -n -E 'dreizehn Phasen' -- harness tools
+diff 15 -n -F SEEN -- sdks/csharp/PgChangeFeed.Client.Integration/RouteScenario.cs sdks/kotlin/pgchangefeed-kotlin/src/integrationTest/kotlin/io/github/pt9912/pgchangefeed/integration/RouteScenario.kt sdks/python/pgchangefeed/integration/route_scenario.py
+diff 8 -n -F SEEN_SECOND -- tools/harness/lib-sdk-route-fixture.sh sdks/csharp/PgChangeFeed.Client.Integration/RouteScenario.cs sdks/python/pgchangefeed/integration/route_scenario.py
+diff 6 -n -E 'ROUTE_SENTINEL_SECOND|RouteSentinelSecond' -- harness tools sdks
 ```
 
 | Träger | Messung am Parent (`a420e223`, 2026-10-02) | Behandlung (Befund am Diff trägt der Implementer ein) |
@@ -268,6 +278,48 @@ a420e223 0 -n -E 'ROUTE_SENTINEL_SECOND|RouteSentinelSecond' -- harness tools sd
 | Zeile 7 `dreizehn Phasen` | 4 Zeilen | **soll unverändert 4 bleiben**. |
 | Zeile 8 `SEEN` in den drei Szenario-Dateien | 6 Zeilen | Soll am Diff: mehr (je Datei zwei `SEEN` je Stream-/Pull-Pfad plus `SEEN_SECOND` im Stream-Pfad); der Implementer trägt den gezählten Wert ein. |
 | Zeilen 9 und 10 (neue Namen) | 0 Zeilen | Soll am Diff: `SEEN_SECOND` in Fixture-Kommentar und drei Szenario-Dateien; `ROUTE_SENTINEL_SECOND`/`RouteSentinelSecond` in Fixture, C#-/Kotlin-Umgebungs-Hilfe und Python-Szenario — der Implementer trägt die gezählten Werte ein. |
+
+**Befunde am Diff (Stand `diff` nach Commit `5245fa21`, gemessen am 2026-10-02 mit `make suchlauf-nachmessen`, 20 Zeilen Exit 0):**
+
+- *Zeile 1 `ROUTE_RESULT`:* 12 Zeilen (+2, Fixture-Kommentar und `SDK_ROUTE_REPORT` nennen die Abschlusszeile); die Form der Zeile ist unverändert, keine Trefferzeile nennt einen festen Zahlenwert (Zahlen stehen nur in gedruckten Laufzeilen im Bericht).
+- *Zeile 2 `Dreiergruppe`:* 6 Zeilen in der Routing-Fixture (+3, Kopf-Kommentar, Phasenkommentar und Fehlertext der zweiten Gruppe); die Filter-Fixture und `run-integration-tests.sh` unverändert (nicht Gegenstand).
+- *Zeile 3 `drei Gruppen`:* 10 Zeilen, unverändert; gelesen: „alle drei Gruppen“ meint die drei Kategorien (A, B, ohne Ziel) und bleibt wahr; nichts nachzuziehen. Die Zeile in `run-integration-tests.sh` ist fremd (Server-Rundlauf, nicht untersucht, gemeldet).
+- *Zeile 4 `sdk_route_phase`:* 14 Zeilen, unverändert; die Signatur ist unverändert.
+- *Zeile 5 `Routing-Phase`:* 10 Zeilen, unverändert; die vier README-Zeilen tragen den nachgezogenen Satz zur zweiten Gruppe in ihrer Tier-Zeile, die Runner-Phasenkommentare tragen den Zusatz.
+- *Zeile 6 `vier Routing`:* 4 Zeilen, unverändert (keine fünfte Phase). *Zeile 7 `dreizehn Phasen`:* 4 Zeilen, unverändert.
+- *Zeile 8 `SEEN`:* 15 Zeilen in den drei Szenario-Dateien (5 je Datei: Kommentar, Druckzeilen und `SEEN_SECOND` im Stream-Pfad).
+- *Zeilen 9 und 10:* `SEEN_SECOND` 8 Zeilen (Fixture 4, C# 2, Python 2; die Kotlin-Szenario-Datei druckt `SEEN_SECOND` ebenfalls, ist aber nicht in der Zeilen-Auswahl); `ROUTE_SENTINEL_SECOND|RouteSentinelSecond` 6 Zeilen (Fixture 1, C# `PhaseEnvironment.cs` 1 und Szenario 2, Kotlin `PhaseEnvironment.kt` 1, Python-Szenario 1; die Kotlin-Szenario-Datei liest `routeSentinelSecond` in Kleinschreibung und trifft das Muster nicht — Musterlücke, nicht Trägerlücke).
+- *Nicht gefunden:* kein weiterer Träger, der die Routing-Phase als „eine Dreiergruppe“ beschreibt; `harness/mk/sdk.mk` und die Hilfetexte unverändert. *Gemeldet, nicht geändert:* `run-integration-tests.sh` (Server-Rundlauf mit eigenem `RT_WINDOW`) — ob dort dieselbe Lücke besteht, ist nicht untersucht.
+- *HTTP-Fläche (Prüfung beim Lesen):* die Pull-Fläche braucht keine zweite Gruppe (kein Ruhefenster, keine Verbindung, die zu spät kommen könnte); `RunPullAsync` und der Ablauf für Ruhefenster 0 sind unverändert. Die HTTP-Zahl `targeted` stieg von 4 auf 7 (gemessen), weil jede der drei Stream-Phasen jetzt zwei statt einer `eu`-Change in dieselbe Tabelle schreibt; die Aussage der Zeile (Ziel-Teilmenge) ist unverändert.
+
+**Belege des Implementers (gemessen am 2026-10-02, Commit `5245fa21`, jeder Lauf seriell, geladenes `ghcr.io/pt9912/pg-change-feed:dev` mit Digest `sha256:48e5699d…` aus `harness/image-hash.txt`; seit dessen Bau änderte sich nur Test-Code unter `internal/`):**
+
+Unmutierte Läufe (Exit 0; ein zweiter Lauf je Tier schreibt `docs/user/sdk-e2e-abdeckung.md` nicht erneut, `git status --short` danach leer; der erste Lauf änderte genau drei Zeilen):
+
+```text
+C#:     gRPC/SSE/NATS: ROUTE_RESULT target=eu targeted=2 foreign=0 unfiltered=6 quiet_seconds=15   (SEEN nach 364/319/330 ms, SEEN_SECOND nach 326/329/330 ms, Versuch 1)
+Kotlin: gRPC/SSE/NATS: ROUTE_RESULT target=eu targeted=2 foreign=0 unfiltered=6 quiet_seconds=15   (SEEN nach 338/332/327 ms, SEEN_SECOND nach 332/336/331 ms, Versuch 1)
+Python: gRPC/SSE/NATS: ROUTE_RESULT target=eu targeted=2 foreign=0 unfiltered=6 quiet_seconds=15   (SEEN nach 330/338/323 ms, SEEN_SECOND nach 332/90/335 ms, Versuch 1)
+HTTP (alle drei): ROUTE_RESULT target=eu targeted=7 foreign=0 unfiltered=3 quiet_seconds=0
+```
+
+Mutationen an Kopien im Scratchpad (Edit/Write, kein `sed -i`; Unit-Stufe des Package-Baus an der Kopie umgangen; eigener Image-Tag `pg-change-feed-mutation:rh-*`, danach `docker rmi` ohne `-f`):
+
+| Zelle | Stelle der Kopie (Stand `5245fa21`) | Farbe | gedruckte Zeile |
+|---|---|---|---|
+| Package C# SSE | `Sse/PgChangeFeedSseClient.cs`: `target` nicht in die Query | rot, Exit 2 | `ROUTE_RESULT target=eu targeted=6 foreign=4 unfiltered=6 quiet_seconds=15` |
+| Package C# gRPC | `Grpc/PgChangeFeedGrpcClient.cs`: `request.Target` nicht gesetzt | rot, Exit 2 | `targeted=6 foreign=4 unfiltered=6` |
+| Package C# NATS | `Nats/PgChangeFeedNatsStreamClient.cs`: `BuildTargetSubject` liefert `cdc.route.<source_id>.>` | rot, Exit 2 | `targeted=4 foreign=2 unfiltered=6` |
+| Package Kotlin SSE | `sse/PgChangeFeedSseClient.kt`: `"target" to (null as String?)` | rot, Exit 2 | `targeted=6 foreign=4 unfiltered=6` |
+| Package Python SSE | `sse_client.py`: `("target", None)` | rot, Exit 2 | `targeted=6 foreign=4 unfiltered=6` |
+| Eingabeseite C# SSE | `SseRouteRealserverTests.cs`: Ziel B statt A an den Client mit Ziel | rot, Exit 2 | „kein SEEN“ nach 5 Dreiergruppen |
+| Eingabeseite Kotlin SSE | `SseRouteRealserverTest.kt`: `routeTargetB` | rot, Exit 2 | „kein SEEN“ nach 5 Dreiergruppen |
+| Eingabeseite Python SSE | `test_sse_route_realserver.py`: `ROUTE_TARGET_B` | rot, Exit 2 | „kein SEEN“ nach 5 Dreiergruppen |
+| Arm A (Parent `bce372c1`, ohne Härtung; a+b+c) | C#-SSE-Package-Mutation, Client mit Ziel startet 4 s nach `READY`, erste Gruppe mit `\! sleep` (ohne Regel bei t, B bei t+2 s, A bei t+6 s) | **grün (Falsch-Grün)**, Exit 0 | SSE: „1 Change(s) mit Ziel eu und keine fremde … foreign=0, 3 Change(s) am Client ohne Ziel“, SEEN nach 6342 ms |
+| Arm B (Stand `5245fa21` mit Härtung; a+b+c) | dieselben Überlagerungen | rot, Exit 2 | `ROUTE_RESULT target=eu targeted=4 foreign=2 unfiltered=6 quiet_seconds=15` |
+| Kontrolle (Stand `5245fa21`; b+c, ohne a) | ohne Package-Mutation | grün, Exit 0 | SSE: `ROUTE_RESULT target=eu targeted=2 foreign=0 unfiltered=6 quiet_seconds=15`, SEEN nach 6342 ms, SEEN_SECOND nach 94 ms |
+
+Arm A ist ein **indirekter** Beleg über die Zählung (`targeted=1` bei Package-Mutation und SEEN nach ≈ 6,3 s zeigen, dass der Client mit Ziel die ersten zwei Changes verpasste; eine `RECEIVED_TARGETED`-Liste druckt der Runner im grünen Lauf nicht). Die Überlagerung (c) wirkte in Arm A und Arm B auf alle vier Routing-Phasen derselben Kopie (SEEN nach 6342 bis 6458 ms), die Messung nennt die SSE-Phase. Gemessen und nicht gemessen: gRPC und NATS in Kotlin und Python sind **hergeleitet** (gleicher Ablauf in `RouteScenario`), ebenso die Eingabeseiten-Mutation für gRPC und NATS.
 
 ## 4. Trigger
 
