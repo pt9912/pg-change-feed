@@ -48,8 +48,9 @@ nur gesetzt auf dem Draht). Drei Liefer-Punkte:
 
 - (A) **SDK-Packages:** der SSE-Client der drei Packages nimmt `schema` und `table`
   optional entgegen; Unit-Tests mit Fake-Transport je Sprache (gesetzt → Parameter auf
-  dem Draht, leer → Aufruf byte-gleich zum Bestand, Konjunktion mit `target`; dieselbe
-  Eingabetabelle je Sprache);
+  dem Draht, `null` → Aufruf byte-gleich zum Bestand, `""` → `schema=`/`table=` auf dem
+  Draht (der Server liest einen leeren Wert als „kein Filter“, wie beim vorhandenen
+  `target=""`), Konjunktion mit `target`; dieselbe Eingabetabelle je Sprache);
 - (B) **SSE-Beispiele:** die Flags `-schema`/`-table` (Go) bzw. `--schema`/`--table`
   (C#, Kotlin) am SSE-Beispiel, mit den Tests des jeweiligen Beispiels;
 - (C) **Öffentlicher Text und Nachzug:** READMEs der drei Packages, `examples/README.md`
@@ -76,8 +77,12 @@ nur gesetzt auf dem Draht). Drei Liefer-Punkte:
 - [ ] [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (A): der SSE-Client jedes
       Packages trägt `schema` und `table` als optionale Parameter, die nur gesetzt auf
       dem Draht erscheinen (Prozent-Kodierung wie bei `target`); jede Sprache hat Tests
-      für gesetzt, leer und die Konjunktion mit `target`, mit derselben Eingabetabelle
-      (`null`/`""`/`eu`/`a&b=c`;
+      für gesetzt, `null` (Parameter fehlt, Aufruf byte-gleich zum Bestand), `""`
+      (erscheint als `schema=`/`table=`, vom Server als „kein Filter“ gelesen:
+      `parseStreamChangesFilter`, `MatchesFilter`) und die Konjunktion mit `target`,
+      mit derselben Eingabetabelle
+      (`null`/`""`/`eu`/`a&b=c`/`a+b`/`100%`/`ü`/`a b`; ein Leerzeichen sendet Python
+      als `+`, C# und Kotlin als `%20`, der Server dekodiert beides gleich;
       `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`). *Zu belegen durch:*
       `make sdk-pack-csharp`, `make sdk-pack-python`, `make sdk-pack-kotlin` (die Tests
       laufen im Bau; ein Lauf aus dem Docker-Schicht-Cache druckt keine Testzeile und
@@ -123,6 +128,8 @@ nur gesetzt auf dem Draht). Drei Liefer-Punkte:
 | `sdks/csharp/PgChangeFeed.Client/Sse/PgChangeFeedSseClient.cs`, `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/sse/PgChangeFeedSseClient.kt`, `sdks/python/pgchangefeed/src/pgchangefeed/sse_client.py` | update | `schema` und `table` als optionale Parameter des SSE-Clients, nach `target` angefügt (kein Verschieben bestehender Parameter), Query-Aufbau mit der vorhandenen Prozent-Kodierung. |
 | Testquellen der drei Packages (SSE-Tests je Sprache), die drei READMEs | update | Fake-Transport-Tests je Sprache mit derselben Eingabetabelle, Regression ohne Parameter; README (Englisch, ohne interne Kennung). |
 | `examples/sse-client/` (Go), `examples/csharp/sse-client/`, `examples/kotlin/sse-client/` | update | Flags nach dem Muster von `examples/grpc-client/`; Tests Flag → Anfrage. |
+| `examples/sse-client/main.go` (`parseConfig`, `config.streamURL`), `examples/sse-client/main_test.go` (neu), `examples/csharp/sse-client/SseStream.cs` (Überladung `StreamUrl(Config)`), `examples/kotlin/sse-client/.../SseStream.kt` (Überladung `streamUrl(Config)`), die Tests `CliTests.cs`/`CliTest.kt` | update | Fixrunde nach dem Review: Die Verdrahtung Flag → Anfrage liegt in einer testbaren Funktion; die Tests fahren die echten Flag-Argumente bis zur URL (Bindung auch für das vorhandene `-target`). |
+| Docstring in `sse_client.py` und die SSE-Testtabellen der drei Packages | update | Fixrunde: Eingabetabelle um `a+b`, `100%`, `ü`, `a b` erweitert; die Leerzeichen-Divergenz (Python `+`, C#/Kotlin `%20`) ist im Test benannt und gebunden. |
 | `examples/README.md`, `docs/user/benutzerhandbuch.md` (SSE-Absätze, Version, Änderungshistorie) | update | Nachzug (Liefer-Punkt C). |
 
 **Ansatz:** Das Formvorbild ist der `schema`/`table`-Filter des gRPC-Clients der drei
@@ -152,7 +159,7 @@ dd5377bc 0 -n -E 'ADR-|LH-FA|LH-QA|SPEC-|ARC-' -- sdks ':!dist'
 diff 1 -n -i -E 'only filter|does not set|einzige Filter' -- sdks docs/user examples
 diff 67 -n -E 'StreamChangesAsync|stream_changes|streamChanges' -- sdks ':!*Test*' ':!*test*' ':!dist'
 diff 43 -n -E 'schema|table' -- sdks/csharp/PgChangeFeed.Client/Sse sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/sse sdks/python/pgchangefeed/src/pgchangefeed/sse_client.py
-diff 76 -n -E 'schema|table' -- examples/sse-client examples/csharp/sse-client examples/kotlin/sse-client
+diff 88 -n -E 'schema|table' -- examples/sse-client examples/csharp/sse-client examples/kotlin/sse-client
 diff 0 -n -E 'ADR-|LH-FA|LH-QA|SPEC-|ARC-' -- sdks ':!dist'
 ```
 
@@ -161,7 +168,7 @@ diff 0 -n -E 'ADR-|LH-FA|LH-QA|SPEC-|ARC-' -- sdks ':!dist'
 | Aussagen „`target` ist der einzige Filter“ (READMEs, Handbuch) | Zeile 1: 5 Zeilen (drei READMEs, Handbuch-Absatz am SSE-Stream, Änderungshistorie 1.86) | jede Zeile lesen: die Aussage entfällt oder wird auf den neuen Stand berichtigt; die Historienzeile 1.86 bleibt als Historie stehen. **Befund am Diff:** Zeile 1 am Diff: 1 (die Historienzeile 1.86, bewusst stehen gelassen). Gefunden und berichtigt: die drei READMEs (je der SSE-Absatz, dazu die API-Tabellenzeile und der Abschnitt „Known limits“ „… filtered by delivery target only“, den das Suchmuster nicht trifft), im Handbuch der SSE-Absatz am Ende von „Zugriff über Server-Sent-Events“ (Beispiel-Clients und Packages nehmen alle drei Parameter entgegen), die drei SDK-Abschnitte und die Beispielliste dort; der Docstring-Hinweis „target only“ in `sse_client.py`. Nicht gefunden: weitere Träger in `harness/README.md`, `docs/user/` außerhalb des Handbuchs oder `spec/` (Suche nach `SSE`-Zeilen mit `target`/`schema`/`filter`: nur die E2E-Abdeckungstabellen, die den Server-Pfad beschreiben, nicht die Clients). |
 | Stellen der Stream-Methoden | Zeile 2: 67 Nicht-Test-Zeilen | jede SSE-Stelle trägt `schema`/`table` oder die Auslassung ist begründet. **Befund am Diff:** 67 am Diff (Zahl unverändert, weil nur Parameter und Zeilen innerhalb bestehender Zeilen hinzukommen). Die SSE-Stelle je Package ist `StreamChangesAsync`/`streamChanges`/`stream_changes` des SSE-Clients (jetzt mit `schema`/`table`), dazu die README-Zeilen (nachgezogen). Die gRPC- und NATS-Stellen sind nicht Gegenstand (gRPC trägt die Parameter bereits, NATS filtert über das Subjekt). |
 | `schema`/`table` im SSE-Teil der Packages | Zeile 3: 14 Zeilen (Nachrichtenmodell `Change` der Antwort, Docstring), kein Treffer am Aufrufparameter | die Treffer sind die Felder der empfangenen Change, nicht der Anfrage; der Anfrageparameter kommt hinzu. **Befund am Diff:** 43 am Diff; der Anfrageparameter steht jetzt in allen drei Clients (Signatur, Query-Aufbau, Docstring). Die 14 Treffer des Parents (Felder der Antwort) bleiben unverändert. |
-| Flags der SSE-Beispiele | Zeile 4: 6 Zeilen (Testdaten der Antwort), kein Flag | das Paar kommt je Sprache hinzu. **Befund am Diff:** 76 am Diff; das Flag-Paar steht in Go (`main.go`), C# (`Cli.cs`) und Kotlin (`Cli.kt`), jeweils mit Tests Flag → Anfrage. |
+| Flags der SSE-Beispiele | Zeile 4: 6 Zeilen (Testdaten der Antwort), kein Flag | das Paar kommt je Sprache hinzu. **Befund am Diff:** 88 am Diff (nach der Fixrunde: 76 + die Verdrahtungs-Tests und -Funktionen); das Flag-Paar steht in Go (`main.go`), C# (`Cli.cs`) und Kotlin (`Cli.kt`), jeweils mit Tests Flag → Anfrage, die die echten Flag-Argumente bis zur URL fahren. |
 | Interne Kennungen unter `sdks/` | Zeile 5: 0 Zeilen | muss 0 bleiben; `make sdk-public-doc-check` ist der Wächter. **Befund am Diff:** 0 am Diff, `make sdk-public-doc-check` Exit 0 (siehe Bericht). |
 
 ## 4. Trigger
@@ -194,6 +201,10 @@ rote Mutation), Suchlauf-Block nachgemessen, Closure-Notiz mit Lerneintrag gesch
 - **Test läuft nicht, Bau grün.** Ein Lauf aus dem Docker-Schicht-Cache druckt keine
   Testzeile. — **Ausgang:** bei der Closure einzutragen (Beleg: gedruckte Testzahl im Bau
   ohne Cache oder rote Mutation).
+- **Binärkompatibilität bei künftigem Release.** Die neuen Parameter (C# optionale
+  Parameter, Kotlin ohne `@JvmOverloads`) ändern die binäre Signatur; gegen 0.2.x
+  kompilierte Aufrufer brauchen Neukompilierung (quellkompatibel). — **Ausgang:** bei der
+  Closure einzutragen.
 - **Interne Kennung in öffentlichem Text.** Docstrings, KDoc, XML-Doku und Fehlertexte
   erreichen die Anwender über die Packages. — **Ausgang:** bei der Closure einzutragen
   (`make sdk-public-doc-check` Exit 0).
