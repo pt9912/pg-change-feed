@@ -178,9 +178,13 @@ func fehlendeImRunner(skript string, namen []string) ([]string, error) {
 	return fehlend, nil
 }
 
-// TestRunnerLeserDreiZustaende fährt den Leser am Skripttext: vollständig,
-// ein Name aus dem Muster entfernt, derselbe Name nur noch im Kommentar —
-// und prüft jeweils den erwarteten Namen, nicht nur Rot.
+// TestRunnerLeserDreiZustaende fährt den Leser am Skripttext: die drei
+// Kernzustände (vollständig, ein Name aus dem Muster entfernt, derselbe Name nur
+// noch im Kommentar) und weitere Fälle zu Quoting, Kommentar-Erkennung, den
+// benannten Grenzen und den Fehlerfällen. Ein Fall vergleicht die fehlende
+// Namensliste mit DeepEqual, ein Fehlerfall den Fehlertext. Fail-open bleiben
+// Formen außerhalb des Zustandsautomaten (`;#`, ANSI-C-Quotes `$'…'`, ein
+// Anführungszeichen über Zeilengrenzen); sie sind nicht gebunden.
 func TestRunnerLeserDreiZustaende(t *testing.T) {
 	namen := []string{"TestE2EAlpha", "TestE2EBeta", "TestE2EGamma"}
 	vollstaendig := "go test -v \\\n  -run '^(TestE2EAlpha|TestE2EBeta)$' \\\n  ./x\n" +
@@ -213,6 +217,24 @@ func TestRunnerLeserDreiZustaende(t *testing.T) {
 			"# in Anführungszeichen im Muster bleibt gelesen",
 			"go test -run '^TestE2EAlpha$| #|TestE2EBeta|TestE2EGamma' ./x\n",
 			[]string{}, "",
+		},
+		{
+			"# in Doppelanführungszeichen vor dem -run beginnt keinen Kommentar",
+			strings.Replace(vollstaendig, "|TestE2EBeta", "", 1) +
+				"echo \"a #b\" -run '^TestE2EBeta$'\n",
+			[]string{}, "",
+		},
+		{
+			"maskiertes \\\" in Doppelanführungszeichen schließt sie nicht",
+			strings.Replace(vollstaendig, "|TestE2EBeta", "", 1) +
+				"echo \"a \\\" #b\" -run '^TestE2EBeta$'\n",
+			[]string{}, "",
+		},
+		{
+			"maskiertes \\\" außerhalb öffnet keine Anführungszeichen, das folgende # ist Kommentar",
+			strings.Replace(vollstaendig, "|TestE2EBeta", "", 1) +
+				"echo \\\" #x -run '^TestE2EBeta$'\n",
+			[]string{"TestE2EBeta"}, "",
 		},
 		{
 			"$# vor dem -run beginnt keinen Kommentar",
