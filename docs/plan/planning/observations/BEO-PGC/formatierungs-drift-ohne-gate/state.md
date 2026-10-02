@@ -1,4 +1,4 @@
-Zustand: **verkörpert (Schritt und Werkzeug), kein Gate** (3×).
+Zustand: **verkörpert (Schritt und Werkzeug), kein Gate** (4×).
 
 Ausgang: kein Gate. Der Fund kam in allen drei Vorgängen von einem Leser (Reviewer, Verifier)
 vor dem Merge, Schwere LOW, je eine kleine Zahl Dateien; ein Gate in `make gates` verlangt
@@ -20,5 +20,13 @@ ein weiteres Auftreten, das der Reviewer trotz gelaufenem Schritt 18 findet. Am 
 von `slice-harness-fmt-check` ist der Trigger nicht eingetreten: Review und Verifikation dieses
 Slice nennen keinen Format-Befund.
 
-Zähler (abgeleitet): **3×** (evidence/slice-backfill-sql-administration.md,
-evidence/slice-backfill-e2e.md, evidence/slice-transformationen-antragsweg-usecase.md).
+Auslegung des Triggers (4. Beleg, `slice-sdk-sse-client-schema-table-filter-realserver`, Kotlin): der
+Trigger ist auf Go formuliert (`make fmt-check` deckt nur Go-Dateien). Der vierte Fund liegt auf einer
+Fläche, für die es kein Formatwerkzeug gibt; Schritt 18 konnte ihn nicht fangen, weil er dort nichts
+ausführt. Er zählt als Beleg der Klasse (Zähler), löst die Gate-Frage für Go aber nicht aus. Ein
+Format-Werkzeug für Kotlin wäre ein eigener Gegenstand und nicht Teil dieses Eintrags. Ausgang bleibt
+kein Gate.
+
+Zähler (abgeleitet): **4×** (evidence/slice-backfill-sql-administration.md,
+evidence/slice-backfill-e2e.md, evidence/slice-transformationen-antragsweg-usecase.md,
+evidence/slice-sdk-sse-client-schema-table-filter-realserver.md).
