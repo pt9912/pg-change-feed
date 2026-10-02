@@ -1,6 +1,7 @@
-Zustand: offen (**1×**) — unter der Schwelle, kein Ausgang zugewiesen.
+Zustand: offen (**2×**) — unter der Schwelle (3×), kein Ausgang zugewiesen.
 
-Zähler (abgeleitet): **1×** (evidence/slice-routing-sdk-beispiel-target.md). Der Reviewer
+Zähler (abgeleitet): **2×** (evidence/slice-routing-sdk-beispiel-target.md,
+evidence/slice-sdk-sse-client-schema-table-filter.md). Beim ersten Beleg nannte der Reviewer
 nannte die Grenze im Review-Report (F-5, Grenze zu den Sensor-Läufen), der Verifier erzwang die
 Ausführung mit `docker build --no-cache` an der Test-Stufe jedes Packages und mit Mutationen.
 Die verfügbare Falsifikation ist die gedruckte Testzeile im Bau ohne Cache oder eine rote

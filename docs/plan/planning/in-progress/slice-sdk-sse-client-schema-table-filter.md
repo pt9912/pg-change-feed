@@ -74,7 +74,7 @@ nur gesetzt auf dem Draht). Drei Liefer-Punkte:
 
 ## 2. Definition of Done
 
-- [ ] [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (A): der SSE-Client jedes
+- [x] [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (A): der SSE-Client jedes
       Packages trägt `schema` und `table` als optionale Parameter, die nur gesetzt auf
       dem Draht erscheinen (Prozent-Kodierung wie bei `target`); jede Sprache hat Tests
       für gesetzt, `null` (Parameter fehlt, Aufruf byte-gleich zum Bestand), `""`
@@ -88,37 +88,38 @@ nur gesetzt auf dem Draht). Drei Liefer-Punkte:
       laufen im Bau; ein Lauf aus dem Docker-Schicht-Cache druckt keine Testzeile und
       belegt keine Ausführung — der Belegbefehl ist der Bau mit `--no-cache` der
       Test-Stufe oder eine Mutation, die den Test rot färbt).
-- [ ] [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (B): die SSE-Beispiele in Go
+- [x] [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (B): die SSE-Beispiele in Go
       (`examples/sse-client/`), C# (`examples/csharp/sse-client/`) und Kotlin
       (`examples/kotlin/sse-client/`) nehmen `schema` und `table` über Flags entgegen;
       ihre Tests belegen Flag → Anfrage. *Zu belegen durch:* `make test` (Go-Beispiel),
       `make examples-csharp`, `make examples-kotlin` (gleiche Cache-Bedingung wie in (A)).
-- [ ] [`ADR-0134`](../../adr/0134-sdk-public-doc-check-gate-make-gates.md) und Nachzug
+- [x] [`ADR-0134`](../../adr/0134-sdk-public-doc-check-gate-make-gates.md) und Nachzug
       (C): `make sdk-public-doc-check` Exit 0; die READMEs, `examples/README.md` und das
       Benutzerhandbuch (Version und Änderungshistorie) nennen die Parameter; die Sätze
       „`target` ist der einzige Filter“ sind ersetzt, das Zählwort an den SSE-Absätzen
       steht erst nach (A). *Zu belegen durch:* `make sdk-public-doc-check`,
       `make docs-check`, Suchlauf in §3.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+      Self-Review (Modul 8). F-1 (MEDIUM) bis F-3 sind durch die Fixrunde geschlossen,
+      ein Re-Review nach der Fixrunde fand nicht statt (§7).
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-sdk-sse-client-schema-table-filter.md`
       endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: siehe (C); kein SPEC-/ARC-Eintrag. Die Package-Versionen bleiben.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Doku-Update: siehe (C); kein SPEC-/ARC-Eintrag. Die Package-Versionen bleiben.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
       Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo ohne
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo ohne
       Welle für diesen Slice hier geprüft.
 
 ## 3. Plan (vor Code)
@@ -196,29 +197,81 @@ rote Mutation), Suchlauf-Block nachgemessen, Closure-Notiz mit Lerneintrag gesch
 
 - **Drei Sprachen, ein Randfall, drei Lesarten.** Leerer Wert gegen nicht gesetzt,
   Zeichen im Namen, Kodierung im Query-Parameter
-  (`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`). — **Ausgang:** bei der Closure
-  einzutragen (dieselbe Eingabetabelle je Sprache).
+  (`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`). — **Ausgang: entfallen.**
+  Dieselbe Eingabetabelle (`null`/`""`/`eu`/`a&b=c`/`a+b`/`100%`/`ü`/`a b`) steht in allen
+  drei Sprachen; die erwarteten Draht-Bytes sind gleich bis auf das Leerzeichen (Python `+`,
+  C# und Kotlin `%20`), das im Test benannt und dekodiert-äquivalent gebunden ist (Server
+  dekodiert beide Formen zum selben Wert; gemessen vom Verifier, Verifikation §4).
 - **Test läuft nicht, Bau grün.** Ein Lauf aus dem Docker-Schicht-Cache druckt keine
-  Testzeile. — **Ausgang:** bei der Closure einzutragen (Beleg: gedruckte Testzahl im Bau
-  ohne Cache oder rote Mutation).
+  Testzeile. — **Ausgang: eingetreten, gelöst.** Alle fünf `make sdk-pack-*`-/`make
+  examples-*`-Ziele liefen bei Reviewer und Verifier mit Exit 0 aus dem Cache ohne Testzeile;
+  der Verifier holte die Zahlen mit `docker build --no-cache --target build` nach (Python
+  `150 passed`, C# `Passed: 159`, C#-SSE-Beispiel `Passed: 25`) und sah zehn Einzelmutationen
+  rot (Verifikation §1 bis §3).
 - **Binärkompatibilität bei künftigem Release.** Die neuen Parameter (C# optionale
   Parameter, Kotlin ohne `@JvmOverloads`) ändern die binäre Signatur; gegen 0.2.x
-  kompilierte Aufrufer brauchen Neukompilierung (quellkompatibel). — **Ausgang:** bei der
-  Closure einzutragen.
+  kompilierte Aufrufer brauchen Neukompilierung (quellkompatibel). — **Ausgang: weiter
+  offen** bis zum nächsten SDK-Release (Freigabe des Auftraggebers, nicht Teil dieses
+  Slice); Hinweis für die Release-Notiz: C# und Kotlin neu kompilieren.
 - **Interne Kennung in öffentlichem Text.** Docstrings, KDoc, XML-Doku und Fehlertexte
-  erreichen die Anwender über die Packages. — **Ausgang:** bei der Closure einzutragen
-  (`make sdk-public-doc-check` Exit 0).
+  erreichen die Anwender über die Packages. — **Ausgang: entfallen**
+  (`make sdk-public-doc-check` Exit 0, Suchlauf-Zeile `diff 0`).
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
+Ursprung der Angaben: **gemessen** = vom Reviewer
+([`review-slice-sdk-sse-client-schema-table-filter`](../../../reviews/review-slice-sdk-sse-client-schema-table-filter.md))
+oder Verifier
+([`verifikation-slice-sdk-sse-client-schema-table-filter`](../../../reviews/verifikation-slice-sdk-sse-client-schema-table-filter.md))
+im eigenen Lauf; **übernommen** = aus einem dieser Berichte ohne eigene Nachmessung. Der
+Planner hat diese Zahlen nicht nachgemessen (übernommen), ausgenommen der Zählwort-Suchlauf
+unten (gemessen, Closure).
 
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** Die Eingabetabelle je Sprache (Plan-Pflicht) hielt die Draht-Bytes
+  der drei Packages gleich (gemessen, Verifikation §4). Der Reviewer fand die Verdrahtungs-Lücke
+  F-1 mit Mutationen vor dem Merge. Der Verifier sah zehn Einzelmutationen rot (G1 bis G3, C1,
+  C2, K1, K2, P-C#, P-Py, P-Kt; gemessen) und `make gates` Exit 0 (gemessen).
+- **Was ging anders als geplant:** F-1 (MEDIUM: Verdrahtung Flag → Anfrage der Beispiele
+  ungebunden) bis F-3 (LOW) wurden durch die Fixrunde `81ad7643`/`410e22ac`/`9b1023c7`
+  geschlossen; Beleg ist die Verifikation (zehn Einzelmutationen rot). **Ein Re-Review nach der
+  Fixrunde fand nicht statt (ehrliche Abweichung);** die Review-Reports tragen deshalb weiter
+  „merge-blockierend: ja" bei F-1 (Records, unverändert). Der Verifier hielt dies als
+  Bedingung B1 fest und stufte einen Re-Review als nicht erforderlich ein, weil die Fixrunde
+  nur Beispiel-Verdrahtung, Tests und Plantext änderte. Verbleibende LOW-Lücke: der Aufruf
+  der URL-Funktion in `main`/`Program.cs`/`Main.kt` ist von keinem Test gebunden
+  (hergeleitet, nicht gemutet; das vorhandene `-target` trug sie schon vorher). INFO: das
+  Go-Beispiel beendet `-h` jetzt mit Exit 2 statt 0.
+- **Steering-Loop-Eintrag (Lerneintrag):** Die Verdrahtung Flag → Anfrage ist eine eigene
+  Bindung; Parser und URL-Bau einzeln zu testen genügt nicht, der Test fährt die echten
+  Flag-Argumente bis zur URL. Das ist die Anwendung der verkörperten Regel
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` („mutiere den Eingabewert"), kein neuer
+  Eintrag. Neu und real aufgetreten: die Docker-Cache-Falle. Alle fünf `make sdk-pack-*`-/
+  `make examples-*`-Ziele sind aus dem Schicht-Cache grün ohne Testzeile; der Belegbefehl ist
+  `docker build --no-cache` an der Test-Stufe oder eine rote Mutation, nie der Exit des Ziels
+  allein.
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/docker-cache-ueberspringt-tests-still`
+  um `evidence/slice-sdk-sse-client-schema-table-filter.md` fortgeschrieben, Zähler **2×**
+  (Schwelle 3× nicht erreicht, kein Ausgang zu entscheiden).
+  `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall` (gestrichen, 3×): Vermerk „Gegenmaßnahme
+  beobachtet, kein neuer Anfall" im state, Zähler bleibt 3×, keine neue Datei.
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (verkörpert, 23×, Schwelle bereits
+  erreicht und beschieden): F-1 ist ein weiterer Träger-Typ-Treffer, vom Reviewer vor dem Merge
+  gefunden, Schwere MEDIUM; die Eintragsform verlangt für Schwere über LOW eine `evidence/`-Datei,
+  deshalb weder Deckel-Vermerk noch Zählung hier entschieden. Die Notiz meldet den Fall: ob eine
+  `evidence/`-Datei (24×) oder ein Verweis in dieser Notiz genügt, ist Sache des nächsten
+  Lese-Schritts; dieser Slice hat sie nicht angelegt.
+- **Folge-Slices:** keiner angelegt. Empfehlung (optional, nicht angelegt): ein Realserver-Beleg
+  für `schema`/`table` am SSE-Client der drei Packages und der Beispiele als eigener Slice in
+  `open/` im Muster `make test-sdk-*-integration`. Grund: Das Handbuch sagt, Packages und
+  Beispiele nähmen alle drei Parameter entgegen; belegt ist das nur auf Unit-Ebene mit
+  Fake-Transport, ein Realserver-Beleg war laut Plan §1 ausgeschlossen.
+- **Zählwort „drei optionale":** Suchlauf am Arbeitsbaum
+  (`git grep -n -i -E 'drei optionale' -- sdks docs/user examples`, gemessen bei der Closure):
+  vier Treffer, alle im Handbuch (Zeilen am gRPC-Request, am SSE-Absatz und an der
+  `GET /changes`-Passage); keine in den READMEs. Das Zählwort steht an den SSE-Absätzen nach (A).
+- **Risiken aus §6:** Randfall-Kopie entfallen · Test läuft nicht (Cache) eingetreten, gelöst ·
+  Binärkompatibilität (C# und Kotlin) weiter offen bis zum SDK-Release, Hinweis für die
+  Release-Notiz · interne Kennung entfallen (Ausgänge in §6).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

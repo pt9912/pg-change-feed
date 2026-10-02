@@ -52,4 +52,11 @@ Meldetexte sind gleich gelesen (Review „Negativbefunde“). Die Gegenmaßnahme
 hat wieder gewirkt (`tools/harness/lib-sdk-route-fixture.sh` trägt Vorbereitung und Phasenablauf
 einmal). Zähler bleibt bei **3×**, keine neue Datei.
 
+**Gegenmaßnahme beobachtet, kein neuer Anfall (slice-sdk-sse-client-schema-table-filter):** der
+Plan nannte dieselbe Eingabetabelle je Sprache als Pflicht, die Fixrunde erweiterte sie um `a+b`,
+`100%`, `ü`, `a b`; die Draht-Bytes sind in den drei Packages gleich bis auf das Leerzeichen
+(Python `+`, C# und Kotlin `%20`), im Test benannt und dekodiert-äquivalent gebunden (Verifikation
+§4). Der Review-Fund F-2 war eine Lücke der Tabelle, keine Divergenz einer Sprache. Zähler bleibt
+bei **3×**, keine neue Datei.
+
 **Ausgang (Lese-Schritt der Closure von `welle-routing`, Architect-Verdikt 2026-10-02): gestrichen (akzeptiertes Negativ).** Der Zustand ist `gestrichen`. Begründung (Verdikt `architect-verdict-welle-routing-lese-schritt` §3.3): (a) alle drei Belege sind LOW und der Reviewer fand jeden vor dem Merge; das dritte Auftreten ist ein Satz der Python-README, enger als der Code, die Verhaltens-Differenz selbst (leeres Ziel am NATS-Stream) eine gewollte API-Form-Differenz. (b) Der mögliche Schaden ist eine zu enge Doku-Aussage oder ein Randwert, den der Server nicht sendet. (c) Die wirksamen Gegenmaßnahmen stehen im Code und im Plan der Slices und werden dort vom Reviewer gelesen: ein Pflicht-Eingabesatz je Sprache und eine Fixture-Quelle (`tools/harness/lib-sdk-route-fixture.sh`, `lib-sdk-rule-fixture.sh`). Eine Plan-Pflicht wäre Zeremonie bei kleinem Schaden. **Wiederaufnahme-Trigger:** ein Divergenz-Fund nach dem Merge, oder ein Fund mit Schwere ab MEDIUM. Kein Folge-Artefakt; die Alternative (Plan-Pflicht in `.claude/commands/plan-welle.md`) bleibt für den Auftraggeber verfügbar, der Architect empfiehlt sie nicht.
