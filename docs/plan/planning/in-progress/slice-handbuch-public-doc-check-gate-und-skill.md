@@ -226,7 +226,7 @@ nicht** (Regeln dort sind Hard Rules; der Skill verweist auf sie, ergänzt keine
       für die ADRs `0087`/`0088`/`0090` ebenfalls.
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert
       ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter
+- [x] Review durchgeführt, Report unter
       `docs/reviews/review-slice-handbuch-public-doc-check-gate-und-skill.md` liegt vor,
       kein offenes HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8
       des Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review
