@@ -16,7 +16,7 @@ Handbuch trägt keine interne Kennung; Abgrenzung in Festlegung 7),
 [ADR-0134](0134-sdk-public-doc-check-gate-make-gates.md) (Muster des Wächters),
 [ADR-0083](0083-herkunft-von-aussagen-in-traegern.md) (Herkunft von Aussagen),
 `AGENTS.md` §3.5 (Accepted-ADRs sind unberührbar), §3.6 (ein neues Gate braucht
-eine ADR), §3.11, §3.12; Slice-Plan `docs/plan/planning/open/slice-meldungscodes-kennungsfreie-ausgaben.md`.
+eine ADR), §3.11, §3.12; Slice-Plan `docs/plan/planning/done/slice-meldungscodes-kennungsfreie-ausgaben.md`.
 
 **Schärft:** [ADR-0023](0023-fehlerklassifikation.md) und
 [ADR-0049](0049-replication-fehlerklassen-schwellen.md): die **sieben Klassen und
@@ -320,8 +320,9 @@ ist der Wächter ein AST-Programm (Festlegung 10).
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-10-02 | Accepted — Architect-Entscheidung als Vorstufe der Umsetzungs-Slices | `docs/plan/planning/open/slice-meldungscodes-kennungsfreie-ausgaben.md` |
+| 2026-10-02 | Accepted — Architect-Entscheidung als Vorstufe der Umsetzungs-Slices | `docs/plan/planning/done/slice-meldungscodes-kennungsfreie-ausgaben.md` |
 | 2026-10-02 | Zitat-Korrektur nach ADR-0073: Pfad des Slice-Plans (Kopf und diese Tabelle) nach der Umbenennung zu T1 | `30afb025` |
+| 2026-10-03 | Zitat-Korrektur nach ADR-0073: Pfad des Umsetzungs-Slices | `3e86332b` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
