@@ -300,8 +300,8 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   SSE-Beispiel setzen beides nicht, `target` ist ihr einziger Filter. Die Nachlieferung
   ist ein eigener Slice (die öffentliche Doku nennt keinen Slice-Namen). —
   **Ausgang: weiter offen**, Adresse
-  [slice-sdk-sse-client-schema-table-filter](../open/slice-sdk-sse-client-schema-table-filter.md); der
-  Plan dort trägt den Gegenstand (`git grep -n -E 'SSE-Client|schema|table' -- docs/plan/planning/open/slice-sdk-sse-client-schema-table-filter.md`
+  [slice-sdk-sse-client-schema-table-filter](../in-progress/slice-sdk-sse-client-schema-table-filter.md); der
+  Plan dort trägt den Gegenstand (`git grep -n -E 'SSE-Client|schema|table' -- docs/plan/planning/in-progress/slice-sdk-sse-client-schema-table-filter.md`
   trifft §1 bis §3; seine Zusage „drei optionale“ steht erst nach der Lieferung an den SSE-Absätzen).
 - **Python-NATS-Randfall `target=""`** (Review F-3):
   `drei-sprachen-kopie-divergiert-am-randfall` — Python liest ein leeres Ziel als
@@ -381,7 +381,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
     einmal vorlag (unter der Schwelle, wird bei einem weiteren Auftreten neu angelegt). Review F-2 (Binärkompatibilität),
     F-4, F-5 sind Träger-Nachzüge im Slice. `BEO-PGC/intern-kennungen-in-ausgelieferten-texten`: kein Auftreten
     (Gate Exit 0); `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme`: kein Fund in den READMEs.
-- **Folge-Slices:** [slice-sdk-sse-client-schema-table-filter](../open/slice-sdk-sse-client-schema-table-filter.md)
+- **Folge-Slices:** [slice-sdk-sse-client-schema-table-filter](../in-progress/slice-sdk-sse-client-schema-table-filter.md)
   (SSE-Client der drei Packages und SSE-Beispiele: `schema`/`table`; ist eine Datei in `open/`, ohne Welle) und
   [slice-routing-sdk-realserver-e2e](slice-routing-sdk-realserver-e2e.md) (Realserver-Beleg, Welle §4
   Abweichung 4).
