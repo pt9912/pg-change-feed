@@ -1,4 +1,4 @@
-Zustand: **verkörpert (Schritt und Werkzeug), kein Gate** (4×).
+Zustand: **verkörpert (Schritt und Werkzeug), kein Gate** (5×).
 
 Ausgang: kein Gate. Der Fund kam in allen drei Vorgängen von einem Leser (Reviewer, Verifier)
 vor dem Merge, Schwere LOW, je eine kleine Zahl Dateien; ein Gate in `make gates` verlangt
@@ -27,6 +27,11 @@ ausführt. Er zählt als Beleg der Klasse (Zähler), löst die Gate-Frage für G
 Format-Werkzeug für Kotlin wäre ein eigener Gegenstand und nicht Teil dieses Eintrags. Ausgang bleibt
 kein Gate.
 
-Zähler (abgeleitet): **4×** (evidence/slice-backfill-sql-administration.md,
+Der fünfte Beleg (`slice-sdk-sse-filter-phase-verbindung-haertung`, Review F-5, INFO) liegt auf
+derselben Nicht-Go-Fläche (Kotlin, Zeilenlänge); die Auslegung gilt unverändert: Beleg der Klasse,
+Trigger für Go nicht ausgelöst, Ausgang bleibt kein Gate. Nicht-Go-Belege: 2 (beide Kotlin).
+
+Zähler (abgeleitet): **5×** (evidence/slice-backfill-sql-administration.md,
 evidence/slice-backfill-e2e.md, evidence/slice-transformationen-antragsweg-usecase.md,
-evidence/slice-sdk-sse-client-schema-table-filter-realserver.md).
+evidence/slice-sdk-sse-client-schema-table-filter-realserver.md,
+evidence/slice-sdk-sse-filter-phase-verbindung-haertung.md).
