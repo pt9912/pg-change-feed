@@ -77,7 +77,7 @@ wird (`go test -run` meldet keinen Fehler, solange ein anderer Name im selben Au
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes HIGH/MEDIUM
       (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8).
 - [ ] §3.13-Suchlauf: das Feld in §3 trägt Gefundenes und Nichtgefundenes, beide Stände gemessen;
-      `make suchlauf-nachmessen PLAN=docs/plan/planning/open/slice-harness-integration-runner-vollstaendigkeit.md`
+      `make suchlauf-nachmessen PLAN=docs/plan/planning/in-progress/slice-harness-integration-runner-vollstaendigkeit.md`
       endet mit Exit 0 (nach dem Nachzug auf den Lifecycle-Ort des Plans).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag; der Register-Eintrag
       `BEO-PGC/test-runner-stiller-ausschluss` wechselt auf `verkörpert` (Zielort: der Test).
