@@ -69,7 +69,13 @@ sie), erzeugter Code unter `gen/`, Spec und ADR-Texte.
    Kennung.
 4. **Block-Kommentar `/* … */`** wird nicht als Kommentar erkannt: eine Zeile darin
    mit einem Anführungszeichen vor der Kennung trifft.
-5. **Andere Ausgabewege.** Die Gegenstand-Liste ist abschließend: SQL-Funktionen
+5. **Einzeiliger Raw-String mit inneren Anführungszeichen und Rune-Literal `'"'`.**
+   Gemessen mit dem Skript an einer Wegwerf-Wurzel (Tabellentest, Exit 0 = Lücke):
+   `` var s = `{"a": "ADR-0043"}` `` und `x := '"' + " ADR-0043"` enden beide mit
+   Exit 0 — die gerade Anzahl `"` vor der Kennung lässt das Muster das Backtick-
+   bzw. das zweite Literal nicht als offen erkennen. Beide stehen als „benannte
+   Grenze“-Fälle im Tabellentest; eine künftige Schließung färbt sie rot.
+6. **Andere Ausgabewege.** Die Gegenstand-Liste ist abschließend: SQL-Funktionen
    (`RAISE`), SDK-Quellen unter `sdks/` (eigenes Gate `make sdk-public-doc-check`),
    Beispiel-Programme in Go/C#/Kotlin unter `examples/` und Texte, die zur
    Laufzeit aus Daten entstehen, liest das Gate nicht.

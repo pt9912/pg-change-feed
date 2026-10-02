@@ -107,7 +107,19 @@ expect 0 "Kennung im Laeufer-Verzeichnis tools/harness" tools/harness/run-x.sh '
 expect 0 "Kennung in Go-Datei ausserhalb der Wurzeln" docs/x.go 'var s = "ADR-0043"'
 expect 0 "Kennung in Skript ausserhalb der Wurzeln" docs/x.sh 'echo "ADR-0043"'
 
+# Shell-Kommentar-Ausnahme (skip_sh) je Skript-Wurzel: mit # Exit 0, ohne # Exit 1
+expect 0 "Shell-Kommentar mit echo und Kennung (examples)" examples/demo.sh '# echo "Lauf (LH-FA-ADM-002)"'
+expect 0 "eingerueckter Shell-Kommentar mit echo und Kennung (examples)" examples/demo.sh $'if true; then\n  # echo "Lauf (LH-FA-ADM-002)"\nfi'
+expect 0 "Shell-Kommentar mit echo und Kennung (tools/schema)" tools/schema/rollout.sh '# echo "Lauf (ADR-0049)"'
+expect 0 "eingerueckter Shell-Kommentar mit echo und Kennung (tools/schema)" tools/schema/rollout.sh $'if true; then\n\t# echo "Lauf (ADR-0049)"\nfi'
+expect 1 "echo mit Kennung ohne Kommentarzeichen (examples)" examples/demo.sh $'if true; then\n  echo "Lauf (LH-FA-ADM-002)"\nfi' \
+  '^examples/demo\.sh:2:.*LH-FA-ADM-002'
+expect 1 "echo mit Kennung ohne Kommentarzeichen (tools/schema)" tools/schema/rollout.sh $'if true; then\n\techo "Lauf (ADR-0049)"\nfi' \
+  '^tools/schema/rollout\.sh:2:.*ADR-0049'
+
 # Benannte Grenzen: der Falsch-Positiv (laut) und das Negativ (leise)
+expect 0 "benannte Grenze: einzeiliger Raw-String mit inneren Anfuehrungszeichen" internal/a/a.go 'var s = `{"a": "ADR-0043"}`'
+expect 0 "benannte Grenze: Rune-Literal vor dem Literal" internal/a/a.go $'x := \'"\' + " ADR-0043"'
 expect 1 "Falsch-Positiv: nachgestellter Kommentar mit zitiertem Literal" internal/a/a.go 'x := 1 // Fehler "ADR-0049" frueher'
 expect 0 "Grenze: mehrzeiliges Raw-String-Literal wird nicht gelesen" internal/a/a.go $'var s = `\nZeile mit ADR-0043\n`'
 
