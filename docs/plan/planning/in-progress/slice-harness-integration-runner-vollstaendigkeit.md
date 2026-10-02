@@ -57,32 +57,32 @@ wird (`go test -run` meldet keinen Fehler, solange ein anderer Name im selben Au
 
 ## 2. Definition of Done
 
-- [ ] Der Wächter steht und liest die `-run`-Argumentwerte, nicht beliebigen Skripttext: Kommentare
+- [x] Der Wächter steht und liest die `-run`-Argumentwerte, nicht beliebigen Skripttext: Kommentare
       und Namen außerhalb eines `-run`-Arguments zählen nicht als erfasst. *Zu belegen durch:* der
       Test samt Godoc und der gedruckte grüne Lauf am echten Skript (21 von 21 erfasst).
-- [ ] Ein Tabellentest fährt den Wächter an einer Kopie des Skripts in drei Zuständen: vollständig
+- [x] Ein Tabellentest fährt den Wächter an einer Kopie des Skripts in drei Zuständen: vollständig
       (grün), ein Name aus dem Muster entfernt (rot, der fehlende Name in der Meldung), derselbe
       Name nur noch in einem Kommentar (rot). *Zu belegen durch:* die drei gedruckten Läufe mit Farbe
       im Bericht; die Kopie entsteht im Scratchpad über Edit/Write
       ([`AGENTS.md`](../../../../AGENTS.md) §3.1). Die Aussage „der Test färbt rot, wenn ein Name im
       Muster fehlt“ ist im Verdikt **hergeleitet**; sie gilt erst mit diesem Beleg als erprobt (Stelle:
       das Sammelmuster, Instanz: der Go-Test, gesehene Farbe: im Bericht).
-- [ ] Ist ein Vertrag nötig (Gate-Ziel oder `make`-Ziel), steht er unter `harness/sensors/` und im
+- [x] Ist ein Vertrag nötig (Gate-Ziel oder `make`-Ziel), steht er unter `harness/sensors/` und im
       Gate-Index von [`harness/README.md`](../../../../harness/README.md); sonst trägt der Godoc des
       Tests die Grenze (liest nur `-run`-Werte, nicht die Phasen; prüft die Anwesenheit im Muster, nicht
       dass die Phase erreicht wird). *Zu belegen durch:* der Diff.
-- [ ] `make gates` grün — Exit-Code ungefiltert gesichert und gesondert ausgewertet
+- [x] `make gates` grün — Exit-Code ungefiltert gesichert und gesondert ausgewertet
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9); Docker-only und netzlos für den Teil, der in
       `make test` läuft.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes HIGH/MEDIUM
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes HIGH/MEDIUM
       (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das Feld in §3 trägt Gefundenes und Nichtgefundenes, beide Stände gemessen;
+- [x] §3.13-Suchlauf: das Feld in §3 trägt Gefundenes und Nichtgefundenes, beide Stände gemessen;
       `make suchlauf-nachmessen PLAN=docs/plan/planning/in-progress/slice-harness-integration-runner-vollstaendigkeit.md`
       endet mit Exit 0 (nach dem Nachzug auf den Lifecycle-Ort des Plans).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag; der Register-Eintrag
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag; der Register-Eintrag
       `BEO-PGC/test-runner-stiller-ausschluss` wechselt auf `verkörpert` (Zielort: der Test).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
 
 ## 3. Plan (vor Code)
 
@@ -161,23 +161,61 @@ Zielort und Herkunfts-Anker (`liegt in` Test; Feld und Zielort auf einer Zeile).
 - **Das Muster ist in einer Zeile mit Shell-Zusammensetzung gebaut** (Variablen, Zeilenumbruch mit
   `\`) und der Leser sieht den Wert nicht. — **Ausgang:** bei der Closure einzutragen (Form im Skript am
   Stand `77c7a795`: Literal in Einfach-Anführungszeichen; ändert sich das, schlägt der Leser an der
-  Form laut fehl statt still durchzulassen).
+  Form laut fehl statt still durchzulassen). **Ausgang: geschlossen** — der Leser lehnt einen Wert
+  ohne Anführungszeichen und eine ungültige Form laut ab (Tabellenfälle des Tests); Shell-Zusammensetzung
+  parst er nicht (benannte Grenze im Godoc). Beleg: `TestRunnerLeserDreiZustaende`, 14 Unterfälle PASS
+  (gemessen vom Verifier, Verifikation §1).
 - **Der Wächter fängt nur die Anwesenheit im Muster.** Eine Funktion kann im Muster stehen und im
   Lauf übersprungen werden (`--- SKIP`). — **Ausgang:** weiter offen: der Fall liegt im Skript selbst
   (Zeile `--- SKIP` am Runner) und ist nicht Gegenstand; Grenze steht im Godoc.
+  **Ausgang: weiter offen** — Anker: Godoc von `TestRunnerFuehrtJedeE2EFunktionAus`
+  (`test/integration/runner_vollstaendigkeit_test.go`) und Register-Zeile „Grenze“.
 - **Die Wirksamkeit ist hergeleitet bis zum Beleg der drei Zustände.** — **Ausgang:** bei der Closure
-  einzutragen (gedruckte Farbe je Zustand).
+  einzutragen (gedruckte Farbe je Zustand). **Ausgang: erprobt** — vollständig grün (`21 von 21`),
+  Name aus dem Sammelmuster entfernt rot (`TestE2EHeartbeatHealthy`, Exit 1), Name nur im Kommentar
+  rot (Tabellenfall `Name_nur_im_Zeilenkommentar`); gemessen vom Verifier, Verifikation §1/§2 (c).
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
-
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** Der Wächter `TestRunnerFuehrtJedeE2EFunktionAus` liest die
+  `-run`-Werte des Runners und meldet `21 von 21 func TestE2E* … erfasst` (gemessen vom Verifier,
+  `go test -v -run TestRunner`, Exit 0). Die drei Zustände mit gesehener Farbe: vollständig grün;
+  `TestE2EHeartbeatHealthy` aus dem Sammelmuster (Zeile 466) entfernt rot, Exit 1 (Verifikation
+  §2 c, gemessen vom Verifier); Name nur im Kommentar rot (Tabellenfall, Review-Mutationen M1/M2
+  **übernommen** aus dem Review, dort gemessen). Die zwei Zweige von `ohneKommentar`: Doppelquote-Verfolgung
+  entfernt rot (Verifikation §2 a), Backslash-Überspringen entfernt rot (§2 b), je Einzelmutation an
+  einer Kopie, gemessen vom Verifier. Kein Produktivcode berührt; `make gates` Exit 0 (Verifikation §1).
+- **Was ging anders als geplant:** (1) Zwei Fixrunden: Fixrunde 1 (`631a95cd`) für F-1 — ein
+  Zeilenende-Kommentar wurde als Erfassung gelesen; Fixrunde 2 (`556a9326`) für R-1 (MEDIUM) —
+  zwei Zweige des Hilfsparsers `ohneKommentar` waren zugesagt, aber nicht an Eingaben gebunden.
+  (2) Der Wächter liegt in der Schwesterdatei `runner_vollstaendigkeit_test.go` statt in
+  `integration_test.go`. (3) **Abweichung, ehrlich:** nach Fixrunde 2 fand kein Re-Review statt.
+  **R-1 durch `556a9326` geschlossen, Beleg: Verifikation (zwei Einzelmutationen rot, §2 a/b);**
+  der Review-Report führt R-1 als offen und bleibt als Record unverändert. Die Verifikation
+  ersetzt den Reviewer-Durchgang formal nicht (Modul 8), schließt die inhaltliche Lücke; `556a9326`
+  ändert nur Testcode (25 Zeilen hinzu, 3 entfernt, `ohneKommentar` unverändert; Verifikation §4).
+- **Steering-Loop-Eintrag:** Ein Wächter, dessen Leser Shell-Text liest, braucht eine
+  Eingabe-Bindung je Zweig seines Hilfsparsers (Doppelquote, Backslash, Einfachquote, Kommentarbeginn):
+  ein Zweig ohne eigenen Tabellenfall ist grün ohne Aussage. Kommentar-Erkennung in Shell-Text ist
+  Parser-Arbeit (Anführungszeichen-Zustand), nicht eine Prüfung auf den Zeilenanfang — die erste
+  Fassung las Zeilenende-Kommentare als Erfassung (F-1). Das ist eine Anwendung der verkörperten
+  Regel `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, kein neuer Eintrag; Reviewer und
+  Verifier haben sie vor dem Merge gefunden bzw. bestätigt.
+- **Beobachtungs-Register (`../observations/`):**
+  [`test-runner-stiller-ausschluss`](../observations/BEO-PGC/test-runner-stiller-ausschluss/state.md)
+  auf `verkörpert` (Zielort: `test/integration/runner_vollstaendigkeit_test.go`,
+  `TestRunnerFuehrtJedeE2EFunktionAus`; Zähler 3× = Zahl der `evidence/`-Dateien, geprüft, die
+  frühere Zeile „2×“ berichtigt).
+- **Folge-Slices:** keine. Träger-Nachzug (Review F-4, Verifikation §5): nachgezogen
+  `harness/sensors/docs-check.md` (Wächter genannt, Register `verkörpert`), der Kommentar in
+  `.d-check.yml` (Achte Regel) und der Kopftext der E2E-Abdeckungstabelle — dort in der Quelle,
+  dem Kopf-String in `tools/harness/run-integration-tests.sh`, und im Erzeugnis
+  `docs/user/e2e-abdeckung.md` mit demselben Wortlaut und unveränderter Zeilenzahl des Skripts
+  (Orte der Tabelle bleiben stehen). Nicht nachgezogen: nichts.
+- **Risiken aus §6:** (1) Muster-Zusammensetzung — **geschlossen:** Form fail-loud für
+  unquotierte/ungültige Werte, belegt durch Tabellenfälle. (2) `--- SKIP` — **weiter offen**, Anker:
+  Godoc des Wächters, Register-Zeile „Grenze“. (3) Wirksamkeit — **erprobt** durch die Mutationen
+  oben (gedruckte Farbe je Zustand).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

@@ -97,7 +97,11 @@ Regel zählt Zeilen.
      Phase, die es nicht gibt" — der Lauf bricht ab), nicht die andere: eine
      neue Runner-Phase, die niemand deklariert, fehlt still in der Tabelle.
      Dieselbe Klasse führt `BEO-PGC/test-runner-stiller-ausschluss` für die
-     `-run`-Muster.
+     `-run`-Muster (Register `verkörpert`): die Vollständigkeits-Hälfte trägt
+     `TestRunnerFuehrtJedeE2EFunktionAus` in
+     `test/integration/runner_vollstaendigkeit_test.go` — jede `func TestE2E*`
+     steht in einem `-run`-Wert des Runners; die Phasen ohne Go-Testfunktion
+     bleiben deklariert, nicht abgeleitet.
 
    Die tragende Garantie der Tabelle ist deshalb die **Ableitung aus dem
    Quelltext** (Go-Hälfte) und der **Anker je Phase** (Bash-Hälfte) — nicht

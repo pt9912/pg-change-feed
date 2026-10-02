@@ -144,7 +144,7 @@ ABDECKUNG_KOPF='# E2E-Abdeckung je Spec-Kennung
 
 Erzeugt von `make test-integration` über `tools/harness/run-integration-tests.sh`:
 die Go-Zeilen leitet das Testpaket aus seinem eigenen Quelltext ab
-(`TestAbdeckungstabelleZeilen` in `test/integration/integration_test.go`),
+(`TestAbdeckungstabelleZeilen` in `test/integration/integration_test.go`; ob jede Funktion in einem Testmuster dieses Runners steht, prüft `TestRunnerFuehrtJedeE2EFunktionAus`),
 die Bash-Zeilen deklariert jede Phase des Runners an Ort und Stelle über
 einen Anker. Diese Datei ist eine **stabile Abdeckungs-Deklaration**, kein
 Lauf-Beleg: der Runner schreibt sie nur bei inhaltlicher Abweichung. Sie

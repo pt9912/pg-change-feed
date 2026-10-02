@@ -249,7 +249,8 @@ structure:
   # die Regel NICHT traegt, ist ein falscher Nachweis — die tragende
   # Garantie der Tabelle ist ihre Ableitung aus dem Quelltext
   # (TestAbdeckungstabelleZeilen bzw. der Deklarations-Anker je
-  # Runner-Phase). Die Regel rotet auch, solange die Datei fehlt
+  # Runner-Phase; TestRunnerFuehrtJedeE2EFunktionAus prueft, dass jede
+  # func TestE2E* in einem -run-Wert des Runners steht). Die Regel rotet auch, solange die Datei fehlt
   # (`section-missing`, "Regel trifft keine Datei") — das Erzeugnis gehoert
   # in den Baum, nicht nur in den Lauf.
   - files: docs/user/e2e-abdeckung.md
