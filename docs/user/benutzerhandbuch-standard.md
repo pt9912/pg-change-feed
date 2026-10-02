@@ -226,7 +226,7 @@ Ein Handbuch veraltet schnell. Deshalb müssen diese Angaben rein:
 * Handbuch-Version
 * Änderungsdatum
 * Autor oder Team
-* Changelog oder Änderungshistorie
+* Changelog oder Änderungshistorie (je Version eine Zeile in Betreibersicht, ohne interne Kennungen)
 * Gültigkeitsbereich
 
 Beispiel:
@@ -349,6 +349,8 @@ Stand: <Datum>
 
 ## 11. Änderungshistorie
 ```
+
+Das letzte Kapitel führt je Version eine Zeile in Betreibersicht: Es sagt, was sich für die Leserin oder den Leser ändert. Es nennt keine internen Kennungen, keine Namen von Arbeitspaketen und keine Links in die Planungsunterlagen.
 
 ## Kurz gesagt
 

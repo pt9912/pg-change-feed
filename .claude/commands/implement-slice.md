@@ -124,17 +124,13 @@ ist eine Lifecycle-Rücksprungkante (11).
 17. Doku, ADR-Index und README aktualisieren, falls ein öffentlicher Vertrag berührt ist.
     **Handbuch-Versionshistorie im selben Diff**
     (`BEO-PGC/handbuch-versionshistorie-uebersprungen`):
-    Berührt dieser Lauf `docs/user/benutzerhandbuch.md` inhaltlich (neuer
-    Abschnitt, neue Umgebungsvariable, geänderte Beschreibung — nicht nur eine
-    reine Versions-/Historie-Korrektur), zieht derselbe Diff **zwingend** den
-    `Version:`-Kopf hoch und ergänzt eine neue Zeile in
-    `### Änderungshistorie`. Kandidatenlauf:
-    `git diff --name-only <Basis> -- docs/user/benutzerhandbuch.md` — bei
-    Treffer zusätzlich `git diff <Basis> -- docs/user/benutzerhandbuch.md |
-    grep -E '^\+Version:|^\+\| [0-9]+\.[0-9]+ \|'` gegen beide Muster prüfen;
-    fehlt eines, Version/Historie vor Handoff nachtragen. **Grenze:** wie bei
-    Schritt 20 (§Grenze dieser Selbstprüfung) erste, nicht tragende Linie; die
-    tragende ist der unabhängige Reviewer
+    Berührt dieser Lauf `docs/user/benutzerhandbuch.md` inhaltlich, zieht derselbe
+    Diff **zwingend** den `Version:`-Kopf hoch und ergänzt eine neue Zeile in
+    `### Änderungshistorie` — in Betreibersicht und **ohne Kennungen**. Schreib-
+    regeln und Kandidatenlauf: Skill `.harness/skills/nutzerdoku-schreiben.md`;
+    Fangnetz: `make handbuch-public-doc-check` (liest Kennungen, nicht Sinn).
+    **Grenze:** wie bei Schritt 20 (§Grenze dieser Selbstprüfung) erste, nicht
+    tragende Linie; die tragende ist der unabhängige Reviewer
     (`.harness/skills/reviewer.md`, eigener benannter HIGH-Punkt).
 
     **Neue Betreiber-Oberfläche zieht das Handbuch mit**

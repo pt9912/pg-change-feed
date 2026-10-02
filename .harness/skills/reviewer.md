@@ -76,7 +76,10 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   `docs/user/benutzerhandbuch.md` inhaltlich (neuer Abschnitt, neue
   Umgebungsvariable, geänderte Beschreibung), ohne im selben Diff den
   `Version:`-Kopf hochzuzählen **und** eine neue Zeile in
-  `### Änderungshistorie` zu ergänzen. Dies ist die tragende
+  `### Änderungshistorie` zu ergänzen; die Zeile steht in Betreibersicht und
+  **ohne Kennungen** (Skill `.harness/skills/nutzerdoku-schreiben.md`; das Gate
+  `make handbuch-public-doc-check` liest Kennungen, nicht Sinn — Chronik-Sprache
+  und Entwicklersicht prüft der Reviewer beim Lesen). Dies ist die tragende
   Verteidigungslinie: Die Implementer-Selbstprüfung
   (`.claude/commands/implement-slice.md` Schritt 17) läuft im selben
   Kontext, der die Doku-Änderung geschrieben hat, und hat die Klasse real
