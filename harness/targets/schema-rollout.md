@@ -209,7 +209,14 @@ Ein `SIGKILL` des Skripts lässt einen gestoppten Container
 `docker rm` ihn entfernt (hergeleitet aus der Funktionsweise von `docker
 create`; in Image-Schichten und Build-Args steht kein Zugangsdatum). Ein
 `SIGKILL` lässt zudem das Staging-Verzeichnis `.stage.*` mit halb exportierten
-Dateien unter `SCHEMA_ARTEFACT_DIR` zurück; zeigt der Betreiber die Variable auf
+Dateien unter `SCHEMA_ARTEFACT_DIR` zurück. Das Skript setzt das Verzeichnis nach
+`mktemp -d` auf Modus 755: `make docs-check` liest den Repo-Baum im d-check-Container
+unter einer anderen uid und endete an einem 700-Verzeichnis fail-closed
+(`Dateibaum nicht lesbar … permission denied`, `make gates` Exit 2), auch unter dem
+in `.d-check.yml` ignorierten `.tmp/**` (die Ausnahme greift nach dem Baumlauf);
+mit 755 bleibt `docs-check` während eines Rollouts und nach einem `SIGKILL` grün
+(gemessen mit einem manuell angelegten 700- und 755-Verzeichnis, nicht mit einem
+SIGKILL-Lauf). Zeigt der Betreiber die Variable auf
 ein versioniertes Verzeichnis, ist es dort nicht durch `.gitignore` ausgenommen
 (hergeleitet aus dem Skript, nicht gefahren). Die lokalen Images `pg-change-feed-schema:rollout`/`:guard` bleiben
 bewusst bestehen (Schicht-Cache des nächsten Laufs).

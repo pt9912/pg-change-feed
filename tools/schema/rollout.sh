@@ -141,6 +141,10 @@ for v in $drop_views; do
 done
 
 STAGE=$(mktemp -d "$DIR/.stage.XXXXXX") || exit 2
+# mktemp legt 700 an; der d-check-Container (andere uid) liest den Repo-Baum
+# lesend und endet an einem unlesbaren Verzeichnis fail-closed, auch unter einem
+# ignorierten Pfad. Das Staging-Verzeichnis ist deshalb durchsuchbar.
+chmod 755 "$STAGE" || exit 2
 exec_exit=0
 run_dmigrate execute "$NET" schema migrate --source /work/schema.yaml \
   --target "$SCHEMA_TARGET" --execute ${execute_flags[@]+"${execute_flags[@]}"} \
