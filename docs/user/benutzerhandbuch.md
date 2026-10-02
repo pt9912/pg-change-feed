@@ -2359,14 +2359,14 @@ Der Code steht an diesen Stellen:
 
 | Stelle | Form |
 |---|---|
-| Log-Zeile und Zeile beim Prozessende (Ausgang 1) | `Fehlerklasse schema [PCF-E4003]: <Ursache>` |
+| Log-Zeile und Zeile beim Prozessende | `Fehlerklasse schema [PCF-E4003]: <Ursache>` |
 | `cdc.backfill_status.error_message` eines fehlgeschlagenen Runs | `schema [PCF-E4004]: <Ursache>` |
 | `cdc.administration_request.error_message` eines abgelehnten Antrags | `abgelehnt [PCF-E8021]: <Klartext>` |
 | `cdc.administration_request.error_message` eines Antrags, der an einem klassifizierten Fehler scheiterte | `Fehlerklasse storage [PCF-E5002]: <Ursache>` |
 | Meldungen von `make schema-rollout` | `FEHLER [PCF-E2007]: <Text>` |
 
 **Der Text ist nicht Vertrag, der Code ist es.** Stabil sind der Code, die Klasse,
-das Wort `Fehlerklasse` am Anfang einer Fehlerzeile und der Ausgang 1; der Text
+das Wort `Fehlerklasse` am Anfang einer Fehlerzeile und der Ausgang des Prozesses; der Text
 nach dem Code nennt Laufzeitdetails (Regelname, Spalte, Adresse) und kann
 sich ändern. Wer Meldungen maschinell auswertet, wertet den Code oder die Klasse
 aus, nicht den Text. Ein Code wird nie neu belegt und seine Klasse ändert sich nie.

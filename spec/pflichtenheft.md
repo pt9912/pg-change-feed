@@ -1480,13 +1480,14 @@ trägt den Rückfall seiner Klasse, nie keinen Code. Die Klasse folgt aus dem
 Code; `cdc.process_heartbeat.error_class` und das Metrik-Label `class` bleiben
 die Klasse. Der Fehlertext (Fehlerwert, Zeile beim Prozessende, Attribut
 `error` einer Log-Zeile) beginnt mit dem Kopf
-`Fehlerklasse <klasse> [<code>]: <Ursache>`; der Prozessausgang bleibt 1.
+`Fehlerklasse <klasse> [<code>]: <Ursache>`; der Prozessausgang bleibt unverändert,
+kein Code ändert ihn.
 `error_message` eines `failed`-Runs beginnt mit `<klasse> [<code>]: `, die eines
 abgelehnten Antrags mit `abgelehnt [<code>]: `, eines an einem klassifizierten
 Fehler gescheiterten Antrags mit dem Kopf des Fehlertexts. Ein Code wird nie
 neu belegt; ein entfallener Code wird zurückgezogen und bleibt vergeben; die
 Klasse eines Codes ändert sich nie. Stabil sind Code, Klasse, das Wort
-`Fehlerklasse` am Anfang des Kopfes und der Ausgang 1; der Text nach dem Kopf
+`Fehlerklasse` am Anfang des Kopfes und der Prozessausgang; der Text nach dem Kopf
 ist nicht Vertrag. Die Code-Tabelle liegt im Quelltext, der Katalog (Code,
 Klasse, Bedeutung, Maßnahme) im Benutzerhandbuch.
 
