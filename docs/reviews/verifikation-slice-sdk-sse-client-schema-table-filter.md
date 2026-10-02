@@ -2,7 +2,7 @@
 
 **Rolle:** Verifier (Modul 11) — „Bauen wir es richtig?" gegen den DoD-Vertrag
 des Slice-Plans
-([`slice-sdk-sse-client-schema-table-filter.md`](../plan/planning/in-progress/slice-sdk-sse-client-schema-table-filter.md)
+([`slice-sdk-sse-client-schema-table-filter.md`](../plan/planning/done/slice-sdk-sse-client-schema-table-filter.md)
 §2) und die §6-Risiko-Ausgänge, in frischem Kontext. Geprüft werden die
 **Belege**, nicht die Behauptung ([`AGENTS.md`](../../AGENTS.md) §3.12 Instanz B).
 Nicht der Diff als solcher (Reviewer, abgeschlossen mit
