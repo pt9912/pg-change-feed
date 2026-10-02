@@ -241,6 +241,7 @@ gefahren):
 | `tools/schema/rollout-restore.sh`, `tools/harness/run-rollout-restore-tests.sh`, Makefile-Ziel `test-rollout-restore` | Entfall | ohne Schreiber in den Baum ohne Gegenstand (Liefer-Punkt 2, `ADR-0142`). |
 | `tools/schema/plan.yaml`, `tools/schema/down.sql` | Entfall (`git rm`) | Testlauf-Erzeugnis gegen `cdc-test-postgres`, ohne Schreiber im Baum würden sie still altern (`ADR-0142` Festlegung 2); Commit nennt `ADR-0142`. |
 | `tools/schema/apply-rollout.sh`, `tools/harness/run-integration-tests.sh`, `tools/harness/run-sdk-csharp-integration-tests.sh`, `tools/harness/run-sdk-kotlin-integration-tests.sh`, `tools/harness/run-sdk-python-integration-tests.sh`, `tools/bench-lib.sh`, `examples/bootstrap.sh` | update | Aufrufzeile ohne `rollout-restore.sh`; Kommentare, die die Rücknahme nennen, tragen den Ist-Zustand. |
+| `tools/schema/rolloutguard/guard.go`, `main.go`, `report.go` (nur Kommentare), `docs/user/e2e-abdeckung.md` | update (Implementer, über den Plan hinaus) | die drei Kommentare nannten das Makefile-Target als Aufrufer und nennen jetzt `tools/schema/rollout.sh` (Ist-Zustand, keine Logikänderung); `docs/user/e2e-abdeckung.md` ist das Erzeugnis von `make test-integration`, dessen Zeilen-Lokatoren in `tools/harness/run-integration-tests.sh` sich mit der gekürzten Kommentarzeile um eins verschoben haben (der Lauf schrieb die Datei neu). |
 | `tools/harness/run-schema-rollout-guard-test.sh` | update | Eigensicherung von `plan.yaml`/`down.sql` (Kopf, `ARTEFACT_BACKUP`, `cleanup`) entfällt; Läufe 1–6 unverändert; zusätzlich prüft Lauf 1, dass `plan.yaml` und `down.sql` in `SCHEMA_ARTEFACT_DIR` liegen und `git status --short` des Arbeitsbaums leer ist. |
 | `.gitignore` | update | Eintrag `tools/schema/rollout-precheck.yaml` entfällt; der Kommentar (Zeilen 8–10, „der Beleg eines echten Rollouts bleibt `tools/schema/plan.yaml`“) nennt den neuen Ort: Report, Rollback-Artefakt und Precheck-Report liegen in `SCHEMA_ARTEFACT_DIR` (Default `.tmp/schema-rollout`, durch `.tmp/` ausgenommen). |
 | `harness/README.md` (Zeilen `make schema-validate`, `make schema-rollout`, `make test-rollout-restore`), `harness/targets/schema-rollout.md`, `docs/user/benutzerhandbuch.md` | update | Träger (Suchlauf unten). |
@@ -312,15 +313,40 @@ Implementer ein; neue Dateien sind für den Stand `diff` mit `git add` im Index)
 3d10e8c6 4 -n -E 'CURDIR[^:]*:/src:ro' -- Makefile
 3d10e8c6 6 -n -F 'rollout-precheck' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 3d10e8c6 80 -n -E 'plan\.yaml|down\.sql' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 10 -n -F 'rollout-restore' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 3 -n -F 'test-rollout-restore' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 1 -n -F 'D_MIGRATE_RUN_USER' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 0 -n -E 'CURDIR[^:]*:/work' -- Makefile harness tools
+diff 3 -n -E 'CURDIR[^:]*:/src:ro' -- Makefile
+diff 0 -n -E '(-v|--volume)[ =]"?[^ ]*:/|--mount' -- tools/schema/rollout.sh
+diff 10 -n -F 'rollout-precheck' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 67 -n -E 'plan\.yaml|down\.sql' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 ```
 
 Der Stand ist `3d10e8c6` (Parent der Umsetzung, **gemessen** am 2026-10-02 durch
 `make suchlauf-nachmessen`). Gegenüber `4a43f6ac` (Planstand: 33/6/5/7/4/5/72) bewegen sich die
 Zählungen durch `ADR-0142`, ihren Index-Eintrag und die Verweise darauf: `rollout-restore` +6,
 `test-rollout-restore` +1, `D_MIGRATE_RUN_USER` +1, `rollout-precheck` +1, `plan.yaml|down.sql` +8;
-die Mount-Zeilen sind unverändert. Die `diff`-Zeilen (Soll 0 für `…:/work`, 3 für `…:/src:ro`,
-Soll für `rollout-restore`, `test-rollout-restore`, `D_MIGRATE_RUN_USER` außerhalb der
-ausgenommenen Records 0) ergänzt der Implementer.
+die Mount-Zeilen sind unverändert. Die `diff`-Zeilen sind am Arbeitsbaum des Implementers
+gemessen (neue Dateien im Index): `…:/work` 0, `…:/src:ro` 3 (Zeilen 124, 205, 209 des
+`Makefile` — `make test` und die Sensoren, außerhalb des Auftrags), kein Mount in
+`tools/schema/rollout.sh` 0.
+
+**Befund am Diff (Gefundenes und Nichtgefundenes, §3.13).** Die Rest-Treffer sind keine
+stehenden Träger der bewegten Eigenschaft, sondern Records oder Beschreibungen des neuen
+Ortes: `rollout-restore` 10 = sechs in `ADR-0142` (`Accepted`, unberührbar), drei in
+`BEO-PGC/test-schreibt-in-committete-datei/state.md` und eines in `BEO-PGC/nachzug-laesst-ueberholten-text-stehen/evidence` — Register-Nachtrag bei der
+Closure (§7), Adresse Planner; `test-rollout-restore` 3 = ein Treffer in `ADR-0142`, zwei in
+`BEO-PGC/test-schreibt-in-committete-datei/state.md`; `D_MIGRATE_RUN_USER` 1 = `ADR-0142`;
+`rollout-precheck` 10 = neuer Ort (`rollout.sh`, Vertrag, Handbuch, `ADR-0142`);
+`plan.yaml|down.sql` 67 (davon 17 außerhalb `docs/plan/`): die 50 Treffer unter `docs/plan/`
+sind `ADR-0043`, `ADR-0084`, `ADR-0114`, `ADR-0125`, `ADR-0142` (alle `Accepted`,
+unberührbar) und Register-Einträge (Beschreibungen des Altstands, Closure-Nachtrag); die 17
+anderen sind die neuen Beschreibungen des Orts `SCHEMA_ARTEFACT_DIR` (Handbuch, `harness/`,
+`rollout.sh`, Guard-Test). Nichtgefunden: kein Träger außerhalb von ADR und Register nennt
+noch `tools/schema/plan.yaml`/`down.sql`, `rollout-restore`, `D_MIGRATE_RUN_USER` oder den
+alten Precheck-Pfad (Lesen aller Treffer). Eine fremde Datei, die nachgezogen werden muss,
+ist nicht angefallen; die beiden Register-Nachträge (§7) sind Planner-Closure-Arbeit.
 
 Die Zeile `CURDIR[^:]*:/src:ro` zählt die Mounts, die **außerhalb** des Auftrags bleiben (Soll am
 Diff: 3, die Wache-Zeile entfällt); die Zeile `CURDIR[^:]*:/work` ist die bewegte Eigenschaft

@@ -5,10 +5,9 @@
 # - harness/image-hash.txt: Lauf-Beleg des letzten make image-Laufs
 #   (ADR-0044), lokal geschrieben und nicht committet (ADR-0103) — weder
 #   Archiv- noch Replay-Bedingung trifft in diesem Repo zu
-# - tools/schema/rollout-precheck.yaml: Vorlauf-Report der
-#   schema-rollout-Idempotenz-Wache (--plan-only, ADR-0043); der Beleg
-#   eines echten Rollouts bleibt tools/schema/plan.yaml
+# - .tmp/schema-rollout/: Pflicht-Report, Rollback-Artefakt und Precheck-Report
+#   von `make schema-rollout` (SCHEMA_ARTEFACT_DIR, ADR-0142), je Lauf
+#   überschrieben; den Beleg je Rollout hält der Betreiber selbst
 .tmp/
 harness/image-hash.raw
 harness/image-hash.txt
-tools/schema/rollout-precheck.yaml

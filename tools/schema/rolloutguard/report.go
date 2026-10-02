@@ -7,7 +7,7 @@
 // (docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/).
 // Es liest den strukturierten JSON-Report eines vorgelagerten
 // `schema migrate --plan-only`-Laufs und meldet über Exit-Code und
-// stdout-Zeilen, was das Makefile-Target tun darf.
+// stdout-Zeilen, was tools/schema/rollout.sh tun darf.
 package main
 
 import "encoding/json"

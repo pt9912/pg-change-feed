@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// Ausgabevertrag (das Makefile-Target schema-rollout liest ihn): stdout
+// Ausgabevertrag (tools/schema/rollout.sh liest ihn): stdout
 // trägt je erlaubter Erweiterung genau eine Zeile — `allow-destructive`
 // bzw. `drop-view <name>` —, stderr die Begründung. Exit 0: mindestens eine
 // Erweiterung ist erlaubt; 1: keine; 2: Report nicht lesbar/dekodierbar.

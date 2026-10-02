@@ -29,13 +29,28 @@ manuellen Eingriff durch
   der Rollout-Verbindung ist `cdc` (`tools/schema/apply-rollout.sh` legt beides
   für die Test-Läufe an, `tools/schema/compose-init/01-cdc-schema.sql` für die
   Compose-Umgebung). Der Vorlauf adressiert `cdc.<view>` fest.
-- **Gepinnte Images** (Pin-Hebung ist ein bewusster Commit): d-migrate
-  (`D_MIGRATE_IMAGE`), der Toolchain-Container für die Wache
-  (`TOOLCHAIN_IMAGE`, `go run ./tools/schema/rolloutguard`, ohne Netz) und das
-  PostgreSQL-Image (`PG_TEST_IMAGE`, nur als `psql`-Client).
-- `D_MIGRATE_RUN_USER` (uid/gid des aufrufenden Nutzers): das d-migrate-Image
-  läuft als uid 10001 und kann sonst nicht in den Bind-Mount des Arbeitsbaums
-  schreiben.
+- **Gepinnte Images** (Pin-Hebung ist ein bewusster Commit; die Pins stehen
+  allein im `Makefile` und reisen als `--build-arg` in den Bau): d-migrate
+  (`D_MIGRATE_IMAGE`, Basis der Stufe `rollout`), der Toolchain-Container für
+  den Bau der Wache (`TOOLCHAIN_IMAGE`, Stufe `guard`, `CGO_ENABLED=0`, Endstufe
+  `FROM scratch`) und das PostgreSQL-Image (`PG_TEST_IMAGE`, nur als
+  `psql`-Client). Der Bau braucht Netz für die Basis-Images und den
+  `go build`-Schritt der Wache.
+- **`SCHEMA_ARTEFACT_DIR`** (Default `.tmp/schema-rollout`, durch `.tmp/` in
+  `.gitignore` ausgenommen): das Verzeichnis der Erzeugnisse. Kein Bind-Mount,
+  keine uid-Kopplung: die Dateien gehören dem aufrufenden Nutzer
+  (`tar -x --no-same-owner`).
+
+Der Rollout liest den Arbeitsbaum nicht über einen Mount
+([`ADR-0142`](../../docs/plan/adr/0142-schema-rollout-erzeugnisse-ausserhalb-baum-eingabe-ohne-bind-mount.md)):
+`tools/schema/Dockerfile` (Allow-Liste des Kontexts in
+`tools/schema/Dockerfile.dockerignore`) trägt das Schema-YAML per `COPY` in das
+Image der Stufe `rollout` und die Wache als statisches Binary in das Image der
+Stufe `guard`; die Rezeptur steht in `tools/schema/rollout.sh` (bash mit
+`pipefail`). Der Zustand „nur diese zwei Ziele sind mountfrei“ ist ein
+Ist-Stand, keine Regel: die `:ro`-Mounts von `make test` und der Sensoren
+bleiben. `SCHEMA_SOURCE` wirkt nur auf Pfade, die die Allow-Liste zulässt; ein
+anderer Pfad scheitert am `COPY` des Baus.
 
 ## Ablauf
 
@@ -43,28 +58,34 @@ Die Schritte laufen in dieser Reihenfolge. Der Precheck-Exit und der
 Wachen-Exit werden gelesen und brechen das Target nicht ab; der Fehlschlag jedes
 anderen Schritts tut es.
 
-1. **`schema-validate`** — `schema validate --source $(SCHEMA_SOURCE)` ohne
-   Netz.
-2. **Precheck** — `schema migrate --plan-only` schreibt den Plan nach
-   `tools/schema/rollout-precheck.yaml` (nicht committet; der committete
-   Pflicht-Report `tools/schema/plan.yaml` belegt ausschließlich echte
-   `--execute`-Läufe). Sein Exit-Code wird nur gelesen, nicht durchgereicht.
-3. **Wache** — nur bei Precheck-Exit 8 (Blocker) wertet
-   `tools/schema/rolloutguard` den Report aus (Abschnitt „Alles oder nichts")
-   und liefert je erlaubter Erweiterung eine stdout-Zeile: `allow-destructive`
-   und/oder `drop-view <name>`. Ohne Erweiterung läuft alles Weitere ohne sie.
+1. **`schema-validate`** — `schema validate` auf dem Schema-YAML des Images
+   (`--network none`, kein Mount).
+2. **Precheck** — `schema migrate --plan-only` schreibt den Plan in den
+   d-migrate-Container (`create`/`start`/`cp`/`rm` mit eindeutigem Namen,
+   Aufräumen per `trap`); bei Exit 0 oder 8 exportiert das Skript ihn als
+   `rollout-precheck.yaml` nach `SCHEMA_ARTEFACT_DIR`. Sein Exit-Code wird nur
+   gelesen, nicht durchgereicht.
+3. **Wache** — nur bei Precheck-Exit 8 (Blocker) wertet das Binary
+   `rolloutguard` (`docker run -i --network none`, Argument `/dev/stdin`, der
+   Report kommt per Dateiumleitung über stdin) den Report aus (Abschnitt „Alles
+   oder nichts") und liefert je erlaubter Erweiterung eine stdout-Zeile:
+   `allow-destructive` und/oder `drop-view <name>`. Ohne Erweiterung läuft alles
+   Weitere ohne sie.
 4. **Vorlauf** — für jede gemeldete View ein `DROP VIEW cdc.<name>` (ohne
    `CASCADE`, ein Statement je View, per `psql` mit `ON_ERROR_STOP=1`), jedes
    mit der Meldung `schema-rollout: Vorlauf (ADR-0114) - View-Signatur-Aenderung,
    DROP VIEW cdc.<name>`. Ein Fehler bricht das Target ab.
 5. **`--execute`** — `schema migrate --execute` mit Pflicht-Report
-   (`tools/schema/plan.yaml`) und Rollback-Artefakt (`tools/schema/down.sql`),
+   (`plan.yaml`) und Rollback-Artefakt (`down.sql`), beide per `tar`-Stream nach
+   `SCHEMA_ARTEFACT_DIR` exportiert (ein Exportfehler bricht das Target ab),
    bei erlaubter Erweiterung zusätzlich mit `--allow-destructive`. Der Schritt
    läuft in jedem Fall, damit eine gleichzeitig anstehende echte
    Schema-Änderung im selben Lauf wirksam wird. Legt d-migrate eine im Vorlauf
    entfernte View neu an, steht die Operation `CreateView` im Pflicht-Report.
-6. **psql-Nacharbeit**, je ein `psql -v ON_ERROR_STOP=1 -f`-Lauf, in dieser
-   Reihenfolge:
+6. **psql-Nacharbeit**, je ein `docker run -i … psql -v ON_ERROR_STOP=1 -f -`-Lauf
+   mit der Datei als stdin (ohne `-i` liest `psql -f -` sofort EOF und endet mit
+   Exit 0, ohne etwas auszuführen; Fehlertexte nennen `<stdin>` statt des
+   Dateinamens), in dieser Reihenfolge:
 
    | Schritt | Datei | Objektklasse |
    |---|---|---|
@@ -150,33 +171,33 @@ noch Erweiterung.
    Blocker; jede andere Änderung, die d-migrate nicht in-place ausliefern kann,
    endet mit Exit 8.
 
-## Erzeugnisse in Test-, Bench- und Beispiel-Läufen
+## Erzeugnisse
 
-Ein direkter `make schema-rollout`-Aufruf überschreibt die committeten Dateien
-`tools/schema/plan.yaml` und `tools/schema/down.sql`; im Betrieb sind sie der
-Beleg des Rollouts. Läufe, die den Rollout nur als Vorbedingung brauchen —
-`make test-store`, `make test-replication` (über `tools/schema/apply-rollout.sh`),
-`make test-integration`, `make test-sdk-*-integration`, `make bench` und
-`make example-demo-up` —, rufen ihn über `tools/schema/rollout-restore.sh`: das
-Skript stellt beide Dateien nach dem Kommando auf den Zustand vor dem Lauf
-zurück, auch bei einem Fehlschlag (eine vorab lokal geänderte Datei bleibt so
-geändert). `make test-rollout-restore` belegt die Rücknahme und prüft, dass jedes
-Skript unter `tools/` und `examples/`, das `make schema-rollout` aufruft, durch
-`rollout-restore.sh` geht; der Guard-Test unten sichert und stellt beide Dateien
-selbst wieder her.
+`plan.yaml` (Pflicht-Report), `down.sql` (Rollback-Artefakt) und
+`rollout-precheck.yaml` entstehen in `SCHEMA_ARTEFACT_DIR`, nicht im
+versionierten Baum; je Lauf überschrieben, der Pfad steht in der letzten
+Ausgabezeile des erfolgreichen Laufs. Der Arbeitsbaum bleibt unberührt
+(`git status --short` nach dem Lauf unverändert): Läufe, die den Rollout nur als
+Vorbedingung brauchen — `make test-store`, `make test-replication` (über
+`tools/schema/apply-rollout.sh`), `make test-integration`,
+`make test-sdk-*-integration`, `make bench` und `make example-demo-up` —, rufen
+`make schema-rollout` direkt. Die Aufbewahrung „je Rollout“
+([`ADR-0043`](../../docs/plan/adr/0043-schemamigrationen-mit-d-migrate.md)) ist
+Sache des Betreibers: `SCHEMA_ARTEFACT_DIR` auf ein Ziel je Rollout setzen oder
+die Dateien nach dem Lauf kopieren.
 
-**Grenzen der Rücknahme:** Zwei gleichzeitig laufende Aufrufe teilen dieselben
-zwei Dateien; der zweite sichert den Zwischenstand des ersten als Zustand vor
-dem Lauf, und beide schreiben ohnehin dieselben Erzeugnisse. Ein `SIGKILL` des
-Skripts lässt die Erzeugnisse verändert (`trap` fängt es nicht). Die
-Aufrufer-Prüfung liest Einzelzeilen mit `make … schema-rollout`; eine
-Fortsetzungszeile, `$MAKE`, ein Makefile-Rezept oder ein Compose-Kommando sieht
-sie nicht.
+**Grenzen:** Zwei gleichzeitig laufende Aufrufe teilen `SCHEMA_ARTEFACT_DIR`
+und überschreiben dieselben Dateien. Ein `SIGKILL` des Skripts lässt einen
+gestoppten Container `pg-change-feed-schema-<pid>-…` zurück (`trap` fängt es
+nicht), die lokalen Images `pg-change-feed-schema:rollout`/`:guard` bleiben
+bewusst bestehen (Schicht-Cache des nächsten Laufs).
 
 ## Belege
 
 - `bash tools/harness/run-schema-rollout-guard-test.sh` — sechs Läufe gegen eine
-  Wegwerf-PostgreSQL (kein Gate, braucht DB-Zugang): (1) frischer Rollout,
+  Wegwerf-PostgreSQL (kein Gate, braucht DB-Zugang): (1) frischer Rollout; Lauf 1
+  prüft zusätzlich, dass `plan.yaml` und `down.sql` in `SCHEMA_ARTEFACT_DIR`
+  liegen und `git status --short` vor und nach dem Lauf gleich ist,
   (2) Idempotenz über den `--allow-destructive`-Pfad ohne Vorlauf, (3) eine
   echte anstehende Änderung neben den elf bekannten Blockern bleibt wirksam,
   (4) View-Signatur-Vorlauf samt Soll-Signatur, Recht und lesbarer Zeile,
@@ -196,6 +217,8 @@ sie nicht.
 (Schema-Migrationen mit d-migrate, Nacharbeit-Ausweichform, Idempotenz-Wache),
 [`ADR-0114`](../../docs/plan/adr/0114-schema-rollout-vorlauf-view-signatur.md)
 (Vorlauf für View-Signatur-Änderungen),
+[`ADR-0142`](../../docs/plan/adr/0142-schema-rollout-erzeugnisse-ausserhalb-baum-eingabe-ohne-bind-mount.md)
+(Erzeugnisse außerhalb des Baums, Eingabe ohne Bind-Mount),
 [`LH-QA-OPS-005`](../../spec/lastenheft.md) (Upgrade-Sicherheit). Sicht des
 Betreibers: [`docs/user/benutzerhandbuch.md`](../../docs/user/benutzerhandbuch.md)
 §Schema aktualisieren ([Anker](../../docs/user/benutzerhandbuch.md#schema-aktualisieren)).

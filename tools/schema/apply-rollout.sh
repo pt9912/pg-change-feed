@@ -9,9 +9,9 @@
 # Aufrufer sind tools/harness/run-store-tests.sh und
 # tools/harness/run-replication-tests.sh: beide Test-Läufe stehen damit auf
 # demselben Schema-Stand wie der Betrieb, statt ihn je Lauf selbst
-# zusammenzustellen. Pflicht-Report (tools/schema/plan.yaml) und
-# Rollback-Artefakt (tools/schema/down.sql) des make-Targets stellt
-# tools/schema/rollout-restore.sh nach dem Rollout wieder her.
+# zusammenzustellen. Pflicht-Report und Rollback-Artefakt des make-Targets
+# liegen in SCHEMA_ARTEFACT_DIR (Default .tmp/schema-rollout), der
+# Arbeitsbaum bleibt unberührt.
 #
 # Aufruf: apply-rollout.sh <container> <db> <user> <network> <dsn>
 set -euo pipefail
@@ -44,4 +44,4 @@ docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "CREATE SCHEMA IF NOT EXISTS cdc" \
   -c "ALTER ROLE $USER IN DATABASE $DB SET search_path = cdc"
 
-bash tools/schema/rollout-restore.sh make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
+make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"

@@ -128,7 +128,7 @@ fi
 
 # Schema-Rollout über d-migrate vor dem Lauf (ADR-0043) — dieselbe Kette
 # wie der Server-E2E-Runner.
-bash tools/schema/rollout-restore.sh make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
+make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
 
 # Vorbedingungen der Aktivierung: die drei CDC_TABLES-Tabellen existieren
 # physisch, die Quelle-Zeile trägt die Fremdschlüssel-Registrierung

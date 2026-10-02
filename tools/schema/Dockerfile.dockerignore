@@ -1,0 +1,12 @@
+# tools/schema/Dockerfile.dockerignore — dateispezifische Ignore-Datei
+# (Docker-Mechanismus: `<Dockerfile>.dockerignore`), wirkt ausschließlich für
+# Bauten, die `tools/schema/Dockerfile` über `-f` referenzieren (ADR-0142
+# Festlegung 3, Muster examples/Dockerfile.dockerignore). Die Wurzel-
+# `.dockerignore` und der Kontext von `make image` bleiben unberührt.
+*
+# Stufe `rollout`: das neutrale Schema-YAML
+!tools/schema/schema.yaml
+# Stufe `guard-build`: Modul-Definition und Quellen der Wache
+!go.mod
+!go.sum
+!tools/schema/rolloutguard/

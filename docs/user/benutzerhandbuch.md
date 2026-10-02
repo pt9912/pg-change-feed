@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.87
+Version: 1.88
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-10-02
 
@@ -1358,8 +1358,15 @@ mit demselben Befehl wie bei der Ersteinrichtung erneut aus:
 make schema-rollout SCHEMA_TARGET="db:<ihre-postgres-dsn>"
 ```
 
-Der Lauf erzeugt einen Pflicht-Report (`tools/schema/plan.yaml`) und ein
-Rollback-Artefakt (`tools/schema/down.sql`).
+Der Lauf erzeugt einen Pflicht-Report (`plan.yaml`), ein Rollback-Artefakt
+(`down.sql`) und den Precheck-Report (`rollout-precheck.yaml`). Sie liegen in
+dem Verzeichnis, das die Variable `SCHEMA_ARTEFACT_DIR` nennt (Default
+`.tmp/schema-rollout`, durch `.gitignore` ausgenommen); der Lauf druckt den
+Pfad am Ende. Das Verzeichnis wird bei jedem Lauf überschrieben — wer die
+Berichte je Rollout als Beleg hält, setzt `SCHEMA_ARTEFACT_DIR` auf ein Ziel je
+Rollout (etwa ein Verzeichnis mit Datum) oder kopiert die Dateien nach dem
+Lauf. Der Lauf mountet den Arbeitsbaum nicht in einen Container und lässt ihn
+unverändert.
 
 **Reihenfolge beim Upgrade.** Rollen Sie das Schema **vor** dem Tausch des
 Feed-Containers aus, dann ersetzen Sie den Container durch die neue Version.
@@ -2799,3 +2806,4 @@ MIT — siehe `LICENSE`.
 | 1.85 | 2026-10-01 | Parameter `target` in den SDK-Packages und den Beispiel-Clients dokumentiert (`LH-FA-CFG-008`, `LH-FA-SST-009`, `ADR-0137`, slice-routing-sdk-beispiel-target): `PgChangeFeed.Client`, `pgchangefeed` und `pgchangefeed-kotlin` tragen `target` am HTTP-Lesezugriff, am gRPC-Stream, am SSE-Stream (dort als einziger Filter-Parameter) und als Feld des `ReadChanges`-Requests, der NATS-Vollinhalts-Client baut das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>`; die Beispiele in Go, C# und Kotlin nehmen `-target`/`--target` an `changes`, `stream`, `read-changes` und dem SSE-Beispiel entgegen, das NATS-Vollinhalts-Beispiel `-source` mit `-target` |
 | 1.86 | 2026-10-01 | SSE-Absatz berichtigt (`LH-FA-CFG-008`, `ADR-0137`, slice-routing-sdk-beispiel-target): `target` ist am SSE-Client der einzige Filter-Parameter; der Verweis auf einen offenen Folge-Schritt für `schema`/`table` entfällt |
 | 1.87 | 2026-10-02 | Parameter `schema` und `table` am SSE-Stream der SDK-Packages und der Beispiel-Clients dokumentiert (`LH-FA-SST-008`, `LH-FA-SST-009`, `ADR-0133`, slice-sdk-sse-client-schema-table-filter): `PgChangeFeed.Client`, `pgchangefeed` und `pgchangefeed-kotlin` nehmen am SSE-Client `target`, `schema` und `table` als optionale Parameter entgegen (die Beschränkung auf `target` entfällt), die SSE-Beispiele in Go, C# und Kotlin die Flags `-schema`/`-table` bzw. `--schema`/`--table`; Package-Versionen unverändert |
+| 1.88 | 2026-10-02 | Ablageort der Rollout-Erzeugnisse (`ADR-0142`, slice-schema-rollout-ohne-bind-mount): Pflicht-Report, Rollback-Artefakt und Precheck-Report von `make schema-rollout` liegen in `SCHEMA_ARTEFACT_DIR` (Default `.tmp/schema-rollout`) statt unter `tools/schema/`; die Aufbewahrung je Rollout liegt beim Betreiber; der Lauf mountet den Arbeitsbaum nicht |

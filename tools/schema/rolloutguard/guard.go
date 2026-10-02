@@ -18,8 +18,7 @@ import (
 // `json`-Parameter (ADR-0125, Begründung in
 // tools/schema/nacharbeit-administration.sql). Ein neues
 // nacharbeit-*.sql-Skript trägt seinen Eintrag hier im selben Commit wie
-// seine Aufrufzeile im Makefile-Target `schema-rollout` — dieselbe
-// Kolokation.
+// seine Aufrufzeile in tools/schema/rollout.sh — dieselbe Kolokation.
 var knownForeignObjects = map[foreignObject]bool{
 	{kind: "DropFunction", objectType: "FUNCTION", path: "enable_table(in:text,in:text,in:text)"}:                       true,
 	{kind: "DropFunction", objectType: "FUNCTION", path: "disable_table(in:text,in:text,in:text)"}:                      true,
@@ -82,7 +81,7 @@ type decision struct {
 // kein --allow-destructive, der --execute-Lauf bricht mit Exit 8 ab.
 //
 // Das Ergebnis entscheidet bewusst NICHT, ob `--execute` überhaupt läuft —
-// der Aufrufer (Makefile-Target schema-rollout) lässt `--execute` in jedem
+// der Aufrufer (tools/schema/rollout.sh) lässt `--execute` in jedem
 // Fall laufen, damit eine echte, gleichzeitig anstehende Schema-Änderung im
 // selben Plan wirksam bleibt (Regressionsbeleg:
 // tools/harness/run-schema-rollout-guard-test.sh Lauf 3).

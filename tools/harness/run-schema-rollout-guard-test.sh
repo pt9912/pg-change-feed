@@ -79,9 +79,10 @@
 #         Exit 8 gegen einen real gemeldeten Blocker, nicht für die
 #         Bekannt-Liste.
 #
-# Am Ende (auch beim Fehlschlag) stellt der Lauf die vom Rollout
-# überschriebenen Erzeugnisse tools/schema/plan.yaml und tools/schema/down.sql
-# wieder her; der Arbeitsbaum bleibt unverändert.
+# Lauf 1 prüft zusätzlich, dass die Erzeugnisse plan.yaml und down.sql in
+# SCHEMA_ARTEFACT_DIR (Default .tmp/schema-rollout) liegen und der
+# Arbeitsbaum unberührt bleibt (`git status --short` vor und nach dem Lauf
+# gleich).
 #
 # Eigenständiges Docker-Netz/-Container, unabhängig von der
 # Wurzel-`compose.yaml` und `examples/compose.yaml` — Daten leben
@@ -100,10 +101,7 @@ PASSWORD=postgres
 TARGET="db:postgres://$USER:$PASSWORD@$CONTAINER:5432/$DB?sslmode=disable"
 ALT_TARGET="db:postgres://$USER:$PASSWORD@$CONTAINER:5432/$ALT_DB?sslmode=disable"
 ALT_DIR=""
-# `make schema-rollout` ohne `-C` überschreibt die committeten Erzeugnisse
-# tools/schema/plan.yaml und down.sql; cleanup stellt sie aus dieser Sicherung wieder her.
-ARTEFACT_BACKUP=$(mktemp -d "${TMPDIR:-/tmp}/schema-rollout-artefakte.XXXXXX")
-cp tools/schema/plan.yaml tools/schema/down.sql "$ARTEFACT_BACKUP"/
+ARTEFACT_DIR=${SCHEMA_ARTEFACT_DIR:-.tmp/schema-rollout}
 
 docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NETWORK" >/dev/null
 
@@ -115,8 +113,6 @@ cleanup() {
   if [ -n "$ALT_DIR" ]; then
     rm -rf "$ALT_DIR"
   fi
-  cp "$ARTEFACT_BACKUP"/plan.yaml "$ARTEFACT_BACKUP"/down.sql tools/schema/
-  rm -rf "$ARTEFACT_BACKUP"
 }
 trap cleanup EXIT
 
@@ -188,7 +184,12 @@ docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "ALTER ROLE $USER IN DATABASE $DB SET search_path = cdc"
 
 echo "run-schema-rollout-guard-test: Lauf 1/6 (frischer Rollout, muss durchlaufen)"
-make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
+status_before=$(git status --short)
+make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK" SCHEMA_ARTEFACT_DIR="$ARTEFACT_DIR"
+[ -s "$ARTEFACT_DIR/plan.yaml" ] || fail "Lauf 1: plan.yaml fehlt oder ist leer in $ARTEFACT_DIR"
+[ -s "$ARTEFACT_DIR/down.sql" ] || fail "Lauf 1: down.sql fehlt oder ist leer in $ARTEFACT_DIR"
+[ "$(git status --short)" = "$status_before" ] || fail "Lauf 1: der Arbeitsbaum hat sich durch den Rollout verändert (git status --short)"
+echo "run-schema-rollout-guard-test: Lauf 1 OK — Erzeugnisse in $ARTEFACT_DIR: $(wc -c <"$ARTEFACT_DIR/plan.yaml") Byte plan.yaml, $(wc -c <"$ARTEFACT_DIR/down.sql") Byte down.sql; git status --short unverändert ($(printf '%s' "$status_before" | grep -c '') Zeilen vor und nach dem Lauf)"
 
 echo "run-schema-rollout-guard-test: Lauf 2/6 (Idempotenz — muss den --allow-destructive-Pfad nehmen, ohne Vorlauf)"
 out=$(make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK" 2>&1)

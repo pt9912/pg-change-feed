@@ -151,10 +151,6 @@ test-image-mutation: ## Tabellentest gegen tools/harness/image-mutation.sh (Stub
 test-command-guard: ## Tabellentest gegen den PreToolUse-Guard .claude/hooks/pretooluse-command-guard.sh (Wegwerf-Repo im Temp-Verzeichnis, netzlos, kein Gate; Prüfling per GUARD=<Datei>, Maskierer per MASKER=<Datei>, Fragmente per BLOCKED_DIR=<Verzeichnis> übersteuerbar; harness/conventions/MR-003-guard-inplace-textwerkzeug.md, harness/conventions/MR-004-guard-host-python-am-kopf.md)
 	@bash tools/harness/run-command-guard-tests.sh
 
-.PHONY: test-rollout-restore
-test-rollout-restore: ## Tabellentest gegen tools/schema/rollout-restore.sh (Rücknahme von plan.yaml/down.sql, Aufrufer-Prüfung, netzlos)
-	@bash tools/harness/run-rollout-restore-tests.sh
-
 .PHONY: test-sdk-csharp-release-tag-info
 test-sdk-csharp-release-tag-info: ## Tabellentest gegen tools/harness/sdk-csharp-release-tag-info.sh (SemVer-2.0-Validierung, ADR-0106, netzlos)
 	@bash tools/harness/run-sdk-csharp-release-tag-info-tests.sh
@@ -288,18 +284,23 @@ D_MIGRATE_IMAGE ?= ghcr.io/pt9912/d-migrate@sha256:862dfb04c34dd17278b1bab469613
 SCHEMA_SOURCE ?= tools/schema/schema.yaml
 SCHEMA_TARGET ?= db:postgres://postgres:postgres@localhost:5432/cdc?sslmode=disable
 SCHEMA_ROLLOUT_NETWORK ?= bridge
-# Das d-migrate-Image läuft als uid 10001 (dmigrate) und kann in den
-# Bind-Mount des Arbeitsbaums nicht schreiben — der Report- und
-# Rollback-Schreibpfad trägt den Host-Nutzer (uid/gid des make-Laufs).
-D_MIGRATE_RUN_USER ?= $(shell id -u):$(shell id -g)
+# Pflicht-Report, Rollback-Artefakt und Precheck-Report landen in
+# SCHEMA_ARTEFACT_DIR außerhalb des versionierten Baums (je Lauf
+# überschrieben); wer Belege je Rollout hält, setzt die Variable auf ein Ziel
+# je Rollout oder kopiert die Dateien (ADR-0142).
+SCHEMA_ARTEFACT_DIR ?= .tmp/schema-rollout
+
+# Beide Ziele mounten den Arbeitsbaum nicht: Eingabe per COPY in gebaute
+# Images (tools/schema/Dockerfile), Erzeugnisse als tar-Stream. Die Rezeptur
+# steht in tools/schema/rollout.sh (bash mit pipefail; das Rezept selbst
+# liefe unter /bin/sh).
+SCHEMA_ENV = D_MIGRATE_IMAGE="$(D_MIGRATE_IMAGE)" TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" \
+	PG_TEST_IMAGE="$(PG_TEST_IMAGE)" SCHEMA_SOURCE="$(SCHEMA_SOURCE)" SCHEMA_TARGET="$(SCHEMA_TARGET)" \
+	SCHEMA_ROLLOUT_NETWORK="$(SCHEMA_ROLLOUT_NETWORK)" SCHEMA_ARTEFACT_DIR="$(SCHEMA_ARTEFACT_DIR)"
 
 .PHONY: schema-validate schema-rollout
 schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor generate/migrate, kein Gate)
-	@if [ ! -f "$(SCHEMA_SOURCE)" ]; then \
-	  echo "FEHLER: $(SCHEMA_SOURCE) fehlt — das neutrale Schema-YAML ist die Erstlieferung des d-migrate-Einbaus (ADR-0043); Überführungsquelle ist internal/adapters/driven/postgresstorage/schema.sql" >&2; \
-	  exit 2; \
-	fi
-	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network none -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema validate --source $(SCHEMA_SOURCE)
+	@$(SCHEMA_ENV) bash tools/schema/rollout.sh validate
 
 # Rollout des neutralen Schemas: Precheck (--plan-only), Wache
 # tools/schema/rolloutguard, Vorlauf `DROP VIEW cdc.<name>` bei einer
@@ -310,30 +311,7 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 # Vertrag, Reihenfolge, Exit-Codes und Grenzen:
 # harness/targets/schema-rollout.md.
 schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflicht-Report und Rollback-Artefakt (braucht DB-Zugang, kein Gate)
-	@mkdir -p tools/schema
-	@docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --plan-only --report tools/schema/rollout-precheck.yaml; \
-	plan_exit=$$?; \
-	allow_destructive=""; \
-	drop_views=""; \
-	if [ "$$plan_exit" = "8" ]; then \
-	  guard_out=$$(docker run --rm --network none -v "$(CURDIR)":/src:ro -v $(GO_MODCACHE_VOLUME):/go/pkg/mod -w /src -e GOCACHE=/tmp/gocache $(TOOLCHAIN_IMAGE) go run ./tools/schema/rolloutguard tools/schema/rollout-precheck.yaml) && guard_ok=1 || guard_ok=0; \
-	  if [ "$$guard_ok" = "1" ]; then \
-	    if printf '%s\n' "$$guard_out" | grep -qx 'allow-destructive'; then \
-	      echo "schema-rollout: bekannte Fremdobjekt-Blocker (ADR-0043) - --execute laeuft mit --allow-destructive"; \
-	      allow_destructive="--allow-destructive"; \
-	    fi; \
-	    drop_views=$$(printf '%s\n' "$$guard_out" | sed -n 's/^drop-view //p'); \
-	  fi; \
-	fi; \
-	for v in $$drop_views; do \
-	  echo "schema-rollout: Vorlauf (ADR-0114) - View-Signatur-Aenderung, DROP VIEW cdc.$$v"; \
-	  docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -c "DROP VIEW cdc.$$v" || exit 1; \
-	done; \
-	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --execute $$allow_destructive --report tools/schema/plan.yaml --generate-rollback --rollback-output tools/schema/down.sql
-	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-roles.sql
-	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-observability.sql
-	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-heartbeat.sql
-	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-administration.sql
+	@$(SCHEMA_ENV) bash tools/schema/rollout.sh rollout
 
 help: ## Diese Hilfe
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN{FS=":.*##"}{printf "  %-14s %s\n",$$1,$$2}'
