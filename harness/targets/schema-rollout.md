@@ -36,7 +36,8 @@ manuellen Eingriff durch
   `FROM scratch`) und das PostgreSQL-Image (`PG_TEST_IMAGE`, nur als
   `psql`-Client). Der Bau braucht zur Laufzeit keinen Netzzugang, aber die
   Basis-Images müssen lokal vorhanden sein (gemessen: `docker build --no-cache
-  --network none --target guard` endet grün). Das Wache-Image (Toolchain-Bau)
+  --network none --target guard` endet grün; für die Stufe `rollout`
+  hergeleitet, nicht gefahren). Das Wache-Image (Toolchain-Bau)
   entsteht erst im Pfad mit Precheck-Exit 8, das `rollout`-Image bei jedem Lauf.
 - **`SCHEMA_ARTEFACT_DIR`** (Default `.tmp/schema-rollout`, durch `.tmp/` in
   `.gitignore` ausgenommen): das Verzeichnis der Erzeugnisse. Kein Bind-Mount,
@@ -206,7 +207,11 @@ Ein `SIGKILL` des Skripts lässt einen gestoppten Container
 `pg-change-feed-schema-<pid>-…` zurück (`trap` fängt es nicht); sein
 `docker create` trägt den DSN samt Passwort in der Container-Konfiguration, bis
 `docker rm` ihn entfernt (hergeleitet aus der Funktionsweise von `docker
-create`; in Image-Schichten und Build-Args steht kein Zugangsdatum). Die lokalen Images `pg-change-feed-schema:rollout`/`:guard` bleiben
+create`; in Image-Schichten und Build-Args steht kein Zugangsdatum). Ein
+`SIGKILL` lässt zudem das Staging-Verzeichnis `.stage.*` mit halb exportierten
+Dateien unter `SCHEMA_ARTEFACT_DIR` zurück; zeigt der Betreiber die Variable auf
+ein versioniertes Verzeichnis, ist es dort nicht durch `.gitignore` ausgenommen
+(hergeleitet aus dem Skript, nicht gefahren). Die lokalen Images `pg-change-feed-schema:rollout`/`:guard` bleiben
 bewusst bestehen (Schicht-Cache des nächsten Laufs).
 
 ## Belege

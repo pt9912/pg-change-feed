@@ -1,8 +1,10 @@
-Zustand: **verkörpert** → `Makefile` (`schema-rollout`-Target) und
-`tools/schema/rolloutguard/` (`schema-rollout-zentrale-idempotenz-wache`,
+Zustand: **verkörpert** → `tools/schema/rollout.sh` (Ablauf hinter dem
+`schema-rollout`-Target) und `tools/schema/rolloutguard/`
+(`schema-rollout-zentrale-idempotenz-wache`,
 [`ADR-0043`](../../../../adr/0043-schemamigrationen-mit-d-migrate.md)).
 Ein vorgelagerter `--plan-only`-Lauf klassifiziert jeden Blocker gegen die
-sechs bekannten Fremdobjekte; sind ausschließlich sie betroffen, läuft
+elf bekannten Fremdobjekte (gezählt in `knownForeignObjects`,
+`tools/schema/rolloutguard/guard.go`); sind ausschließlich sie betroffen, läuft
 `--execute` zusätzlich mit `--allow-destructive` — jeder andere Fall
 bricht weiterhin mit Exit 8 ab. Real geprüft mit vier DB-Läufen
 (`tools/harness/run-schema-rollout-guard-test.sh`, inkl. eines

@@ -15,3 +15,12 @@ committete Datei verändert). Der vierte Beleg ist ein weiterer Vorgang derselbe
 Klasse und kein neuer Handlungsbedarf: `slice-086` **erzeugt** die
 Abdeckungstabelle neu (Teil seiner DoD) und nimmt `plan.yaml` wieder von Hand
 zurück — die Bindung ist weiterhin Disziplin, kein Sensor.
+
+Stand der Träger: `tools/schema/plan.yaml` und `tools/schema/down.sql` sind kein
+committetes Erzeugnis mehr; der Rollout legt sie in `SCHEMA_ARTEFACT_DIR`
+(Default `.tmp/schema-rollout`) ab. [`ADR-0084`](../../../../adr/0084-sync-gate-fuer-generierte-artefakte.md)
+Trigger (b) ist eingelöst durch
+[`ADR-0142`](../../../../adr/0142-schema-rollout-erzeugnisse-ausserhalb-baum-eingabe-ohne-bind-mount.md)
+(Gegenstand weggefallen) · seit slice-schema-rollout-ohne-bind-mount. Die
+Beschreibung der beiden Dateien als Kandidat in `observation.md` ist der Stand
+der Anlage (`observation.md` ist ab Anlage unveränderlich).

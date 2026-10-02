@@ -74,7 +74,7 @@ Arbeitsbaum keine Änderung (`git status --short` leer).
 Die DoD gilt für die Variante „Erzeugnisse landen außerhalb des Arbeitsbaums", wie sie
 `ADR-0142` festlegt (A1 beantwortet, §4).
 
-- [ ] **Liefer-Punkt 1 — Rollout und Validierung ohne Bind-Mount.** Ein Dockerfile
+- [x] **Liefer-Punkt 1 — Rollout und Validierung ohne Bind-Mount.** Ein Dockerfile
       `tools/schema/Dockerfile` mit eigener `tools/schema/Dockerfile.dockerignore`
       (Allow-Liste: `tools/schema/schema.yaml`, die Wache samt `go.mod`/`go.sum`; Muster
       `examples/Dockerfile.dockerignore`) trägt zwei Stufen: `rollout` (aufbauend auf dem
@@ -109,7 +109,7 @@ Die DoD gilt für die Variante „Erzeugnisse landen außerhalb des Arbeitsbaums
       0; (d) `git diff <Parent> -- Dockerfile .dockerignore` leer; (e) `make schema-validate`
       endet mit Exit 0 ohne `-v` und mit `--network none` (Zeile der Rezeptur im Bericht);
       (f) Mutationsproben (Zeile „Mutationsproben" unten).
-- [ ] **Liefer-Punkt 2 — Aufrufer-Nachzug, Entfall der Rücknahme und der zwei committeten
+- [x] **Liefer-Punkt 2 — Aufrufer-Nachzug, Entfall der Rücknahme und der zwei committeten
       Erzeugnisse.** Die zwei committeten Dateien zeigen einen Testlauf gegen
       `cdc-test-postgres`, keinen Betriebs-Rollout (`ADR-0142` Festlegung 2): sie werden mit
       `git rm tools/schema/plan.yaml tools/schema/down.sql` aus dem Index genommen; der Commit
@@ -134,7 +134,7 @@ Die DoD gilt für die Variante „Erzeugnisse landen außerhalb des Arbeitsbaums
       gefahren, solange der Bericht keinen Lauf nennt; Suchlauf-Zeilen `rollout-restore`,
       `test-rollout-restore`, `D_MIGRATE_RUN_USER` am Diff mit Soll 0 außerhalb der
       ausgenommenen Records.
-- [ ] **Mutationsproben (Eingabeseite, Reviewer-Skill; je Mutation Stelle, Instanz, gesehene
+- [x] **Mutationsproben (Eingabeseite, Reviewer-Skill; je Mutation Stelle, Instanz, gesehene
       Farbe im Bericht; Mutation auf einer Kopie im Scratchpad bzw. als Edit mit
       anschließender Rücknahme per `git checkout`, kein `sed -i`,
       [`AGENTS.md`](../../../../AGENTS.md) §3.1).** (M1) Export-Pfad falsch: der kopierte
@@ -148,33 +148,35 @@ Die DoD gilt für die Variante „Erzeugnisse landen außerhalb des Arbeitsbaums
       Exit ≠ 0. Die Matrix (vier Mutationen × die betroffene Stelle) nennt je Zelle erprobt oder
       **hergeleitet**; „der Implementer fährt sie" ist eine Erwartung, keine Erprobung
       ([`AGENTS.md`](../../../../AGENTS.md) §3.12).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert ausgewertet
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert ausgewertet
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/review-slice-schema-rollout-ohne-bind-mount.md`
+- [x] Review durchgeführt, Report unter `docs/reviews/review-slice-schema-rollout-ohne-bind-mount.md`
       liegt vor, kein offenes HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach
       Schritt 8 des Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes je
+      Self-Review (Modul 8). Der Review fand 0 HIGH und ein MEDIUM (F-1); F-1 ist durch die
+      Fixrunde `786e5b3f` geschlossen, Beleg: Verifikation (zwei Einzelmutationen, `mv -f` und
+      Löschzeile, rot gesehen). Ein Re-Review nach der Fixrunde fand nicht statt (§7).
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes je
       Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-schema-rollout-ohne-bind-mount.md`
       endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `harness/README.md` §Sensors (Zeilen `make schema-validate`,
+- [x] Doku-Update: `harness/README.md` §Sensors (Zeilen `make schema-validate`,
       `make schema-rollout`, Wegfall der Zeile `make test-rollout-restore`),
       `harness/targets/schema-rollout.md` (Voraussetzungen, Ablauf, §Erzeugnisse in Test-,
       Bench- und Beispiel-Läufen, Belege), Kommentarblock über den Schema-Zielen im `Makefile`,
       `docs/user/benutzerhandbuch.md` §Schema aktualisieren (Ablageort des Reports);
       `AGENTS.md` bleibt unverändert (siehe §3: kein Regeltext zum Wrapper); die Kopf-Kommentare
       der berührten Skripte tragen den Ist-Zustand ([`AGENTS.md`](../../../../AGENTS.md) §3.7).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7), bei Closure:
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem Repo (Greenfield).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7), bei Closure:
       `BEO-PGC/test-schreibt-in-committete-datei` (Zustand „verkörpert → `rollout-restore.sh`")
       beschreibt nach diesem Slice einen entfallenen Träger; sein Zustand wird nachgetragen.
       Zusätzlich `BEO-PGC/generierte-artefakte-ohne-sync-sensor` (`state.md` und
       `observation.md` nennen `plan.yaml`): vermerkt „`ADR-0084` Trigger (b) eingelöst durch
       `ADR-0142`“.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo ohne
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo ohne
       Wellen-Betrieb für diesen wellenlosen Slice hier geprüft.
 
 **Umfang:** M — Schätzung, nicht gemessen: ein Dockerfile, ein Skript, eine Makefile-Umstellung,
@@ -419,27 +421,36 @@ geschrieben.
 - **Build-Kontext- und Cache-Kosten.** Jeder Aufruf von `schema-validate`/`schema-rollout` führt
   einen `docker build` aus; ohne Änderung an `schema.yaml` und der Wache trifft der Cache
   (nicht gemessen — am Bau zu lesen). Die Wurzel-Kontexte ändern sich nicht (Beleg: `git diff` der
-  beiden Wurzel-Dateien leer). — **Ausgang:** *zu entscheiden bei Closure* (Messung der
-  Bauzeit warm und kalt im Bericht, Ursprung gemessen).
+  beiden Wurzel-Dateien leer). — **Ausgang:** *entfallen* für den warmen Bau (gemessen vom
+  Verifier: `make schema-validate` 1,4 s bei Cache-Treffer; Wurzel-Dateien `git diff` leer); der
+  kalte Bau ist **nicht gemessen**, sein Wert ist nicht bekannt.
 - **d-migrate-Image-Besonderheiten.** `ENTRYPOINT ["d-migrate"]`, Lauf als uid 10001 und Schreiben
   nur in `/work` und `/tmp`; ob die Erzeugnis-Pfade (`--report`, `--rollback-output`) unter
   diesem Nutzer außerhalb von `/work` schreibbar sind, ist nicht gemessen (die Image-
   Eigenschaften selbst sind gemessen, §3; die Besitzer-Zuordnung beim Export: nächster Punkt). —
-  **Ausgang:** *zu entscheiden bei Closure*.
+  **Ausgang:** *entfallen* (gemessen: der Guard-Test und `make test-integration` enden mit Exit 0,
+  `plan.yaml` und `down.sql` liegen in `SCHEMA_ARTEFACT_DIR`; Verifikation §1).
 - **Wache-Eingabe über `/dev/stdin`.** Siehe §3 Ansatz 3; die Ebene darunter ist gemessen
   (Verdikt), `os.ReadFile` auf diesem Weg und der Wache-Bau ohne Netz sind hergeleitet. —
-  **Ausgang:** *zu entscheiden bei Closure*.
+  **Ausgang:** *entfallen* (gemessen vom Verifier: `/dev/stdin` trägt die Wache in den Läufen 2–6
+  des Guard-Tests, Mutation M2 mit leerem stdin färbt Lauf 2 rot; Bau ohne Netz:
+  `docker build --no-cache --network none --target guard` grün, Stufe `guard`).
 - **Stiller No-op bei fehlendem `-i`.** `psql -f -` ohne offenen stdin endet mit Exit 0 und
   tut nichts — die vier Nacharbeit-Schritte (Rollen, Views, Funktionen) würden still entfallen
   (hergeleitet aus dem Verhalten von `psql`, nicht gefahren). Eine Mutationsprobe (M3) belegt,
-  dass der Guard-Test das sieht. — **Ausgang:** *zu entscheiden bei Closure*.
+  dass der Guard-Test das sieht. — **Ausgang:** *eingetreten als Befund der Probe, gefangen*
+  (gemessen von Reviewer und Verifier: M3 färbt den Guard-Test rot, Lauf 2 „hat den
+  --allow-destructive-Pfad nicht genommen“, Test-Exit 1).
 - **Container-Aufräumen bei Abbruch** (`SIGKILL`, `trap` greift nicht): ein liegengebliebener
   gestoppter Container und das lokale Image `pg-change-feed-schema:*` (kein `:dev`, kein
-  `harness/image-hash.txt`, kein `--push`). — **Ausgang:** *weiter offen* → Register, falls
-  es im Lauf auftritt; kein `prune` im Ziel.
+  `harness/image-hash.txt`, kein `--push`). — **Ausgang:** *weiter offen*; benannte Grenze im
+  Vertrag (`harness/targets/schema-rollout.md` §Erzeugnisse, Grenzen), dort um das
+  Staging-Verzeichnis `.stage.*` nach `SIGKILL` und den Betreiber-Pfad auf ein versioniertes
+  Verzeichnis ergänzt (hergeleitet, nicht gefahren); kein Auftreten in den gefahrenen Läufen,
+  kein `prune` im Ziel.
 - **Gleichzeitige Läufe teilen `SCHEMA_ARTEFACT_DIR`.** Zwei parallele `make schema-rollout`
   schreiben dieselben Dateien (wie heute dieselben zwei committeten). — **Ausgang:** *weiter
-  offen* (benannte Grenze im Vertrag, wie die bestehende Grenze der Rücknahme).
+  offen* (benannte Grenze im Vertrag, `harness/targets/schema-rollout.md` §Erzeugnisse).
 - **Kein Beleg auf einem Docker-Backend ohne Bind-Mount-Fähigkeit.** Das Ziel des Auftrags (Backends
   mit eingeschränktem Mount, vgl. `harness/sensors/generated-sync.md`) ist am vorhandenen Backend
   nur über „kein `-v` in der Rezeptur" belegt, nicht an einem Backend mit `mounts: []`. —
@@ -452,19 +463,104 @@ geschrieben.
 - **Verhaltensänderung für Betreiber.** Der Report liegt nicht mehr unter `tools/schema/`,
   sondern in `SCHEMA_ARTEFACT_DIR` (`ADR-0142` Festlegung 1). Das Handbuch nennt die Variable
   und den Hinweis, dass der Betreiber den Report selbst aufbewahrt (Variable auf ein Ziel je
-  Rollout oder Kopie). — **Ausgang:** *zu entscheiden bei Closure*: Handbuch nachgezogen; ob ein
+  Rollout oder Kopie). — **Ausgang:** *eingetreten* (die Verhaltensänderung gilt; Handbuch 1.88 nachgezogen); ob ein
   Hinweis im nächsten Release-Text nötig ist, entscheidet der Auftraggeber (kein Release in
   diesem Slice).
 - **Besitzer-Zuordnung beim Export.** `docker cp` liefert die Dateien als uid 10001; läuft der
   Rollout als root (CI), würde `tar -x` sonst chownen. Der Export nutzt
   `tar -x --no-same-owner`. Das Verhalten ist **hergeleitet**, nicht gefahren (Verdikt A3
-  Schärfung 3). — **Ausgang:** *zu entscheiden bei Closure* (Besitzer der Dateien in
-  `SCHEMA_ARTEFACT_DIR` im Bericht lesen).
+  Schärfung 3). — **Ausgang:** *entfallen* für einen Host-Lauf als Nutzer ohne root (gemessen vom Verifier: die
+  Dateien in `SCHEMA_ARTEFACT_DIR` gehören dem aufrufenden Nutzer, `-rw-r--r--`); der Lauf als
+  root (CI-Runner) ist **hergeleitet**, nicht gemessen — auf dem gehosteten Runner trägt der
+  grüne `e2e`-Lauf (siehe CI unten) den Pfad, der Besitzer der Dateien dort wurde nicht gelesen.
+
+- **Gehosteter Runner** ([`AGENTS.md`](../../../../AGENTS.md) §3.10): der Rollout-Pfad hinter
+  `make test-integration` läuft in `e2e.yml` auf dem gehosteten Runner. — **Ausgang:**
+  *entfallen* (gemessen vom Hauptlauf mit `gh run view` am Push-Commit `786e5b3f`: `ci`
+  (36995923719), `examples` (36995923571) und `e2e` (36995923595, beide Legs PostgreSQL 17 und 18)
+  `success`; die Verifikation sah `e2e` noch `in_progress`, das Endergebnis stammt aus dieser
+  Nachmessung).
 
 ## 7. Closure-Notiz
 
-*(wird bei Closure gefüllt — Reihenfolge: Inhalt, dann `git mv` nach `done/`, dann Häkchen,
-[`AGENTS.md`](../../../../AGENTS.md) §3.3.)*
+Ursprung der Angaben: **gemessen** = vom Reviewer
+([`review-slice-schema-rollout-ohne-bind-mount`](../../../reviews/review-slice-schema-rollout-ohne-bind-mount.md))
+oder Verifier
+([`verifikation-slice-schema-rollout-ohne-bind-mount`](../../../reviews/verifikation-slice-schema-rollout-ohne-bind-mount.md))
+im eigenen Lauf, oder vom Hauptlauf per `gh run view` (CI); **übernommen** = aus dem Bericht des
+Implementers oder einem dieser Berichte ohne Nachmessung des Planners; **hergeleitet** = nicht
+gefahren. Der Planner hat keine Zahl dieser Notiz nachgemessen.
+
+- **Was hat funktioniert:** `make gates` Exit 0, der Guard-Test mit allen Läufen (1, 1b, 2–4, 5 mit
+  Alt-Tag `v0.4.0`, 6a, 6b) Exit 0, `make test-store`, `make test-replication`,
+  `make test-integration`, `make example-demo-up`/`-down` je Exit 0 und `git status --short`
+  danach leer (alles gemessen, Verifier; Verifikation §1). `make suchlauf-nachmessen` meldete
+  15 stimmende Zeilen. Der Suchlauf zeigte die Mount-Zeilen der Rezeptur bei 0 am Diff. Das
+  Muster des Stream-Exports (`ADR-0060`, `ADR-0084`) trug ohne Anpassung der Wache-Logik.
+- **Mutations-Matrix (Ursprung je Zelle):**
+
+  | Mutation | Stelle | Instanz | Farbe | Ursprung |
+  |---|---|---|---|---|
+  | M1 Export-Pfad falsch (`downX.sql`) | `rollout.sh` Export | Guard-Test Lauf 1 | rot, Exit 2 | Reviewer und Verifier, gemessen |
+  | M2 leerer stdin der Wache | `rollout.sh` Wache | Guard-Test Lauf 2 | rot, Exit 2 | Reviewer und Verifier, gemessen |
+  | M3 `-i` fehlt | `rollout.sh` Nacharbeit-`docker run` | Guard-Test Lauf 2 | rot, Exit 1 (Lauf 1 blieb grün) | Reviewer und Verifier, gemessen |
+  | M4 Reihenfolge der Nacharbeit-Dateien umgekehrt | `rollout.sh` Nacharbeit | Guard-Test, Kopie | auf frischem Cluster rot; auf einem Cluster mit schon vorhandenen Rollen grün | Reviewer, gemessen (F-7: Aussage gilt nur für eine frische Instanz); vom Verifier nicht gefahren |
+  | M-mv `mv -f` auf falsches Ziel | `rollout.sh:153` | Guard-Test Lauf 1 | rot, Exit 2 | Verifier, gemessen |
+  | M-del Löschzeile am Lauf-Anfang | `rollout.sh:112` | Guard-Test Lauf 1b | rot, Exit 1 (Lauf 1 blieb grün) | Verifier, gemessen |
+
+  Die Verallgemeinerung von diesen Instanzen auf „jede Stelle der Rezeptur“ ist **hergeleitet**,
+  nicht erprobt.
+- **Was ging anders als geplant:** (1) Der Plan sah vor, die Erzeugnisse je Lauf zu überschreiben;
+  die erste Umsetzung löschte `plan.yaml`/`down.sql` am Lauf-Anfang — ein Lauf, der vor
+  `--execute` scheiterte, nahm damit das Rollback-Artefakt des letzten erfolgreichen Rollouts
+  weg (Review F-1, MEDIUM). Die Fixrunde `786e5b3f` exportiert nach einem Staging-Verzeichnis
+  unter `SCHEMA_ARTEFACT_DIR` und ersetzt die zwei Dateien nur nach erfolgreichem `--execute`
+  per `mv -f`; das Wache-Image entsteht erst im Pfad mit Precheck-Exit 8. (2) Ein Re-Review nach
+  der Fixrunde fand nicht statt; stattdessen las der Verifier `rollout.sh` vollständig und
+  mutierte die Fixrunde zweifach (M-mv, M-del). Das ist eine ehrliche Abweichung vom Ablauf
+  „Review, Fix, Re-Review“ und von der DoD-Formulierung; die Fixrunde ist durch den Verifier
+  gedeckt, nicht durch einen Reviewer. (3) Über den Plan hinaus: drei Kommentare in
+  `tools/schema/rolloutguard/*.go` und `docs/user/e2e-abdeckung.md` (Zeilen-Lokatoren des
+  Erzeugnisses), siehe §3.
+- **Nicht gefahren:** die drei SDK-Runner (`make test-sdk-*-integration`) und `make bench` —
+  **hergeleitet** aus der Gleichheit der Aufrufzeile `make schema-rollout` mit der von
+  `tools/schema/apply-rollout.sh`; ein Lauf auf einem Docker-Backend mit `mounts: []`
+  (§6); der kalte Bau und der Lauf als root (§6).
+- **Steering-Loop-Eintrag (Lerneintrag):** Ein Schritt „am Lauf-Anfang löschen, damit nichts
+  Altes stehen bleibt“ ist ein Zustandsverlust, den der Plan („je Lauf überschrieben“) nicht
+  nannte: bei einem Lauf, der vor dem Schreiben scheitert, ist das gelöschte Artefakt der
+  einzige Beleg des letzten erfolgreichen Rollouts. Die geschärfte Regel für Rezepturen, die
+  ein Erzeugnis „überschreiben“: das Artefakt wird erst nach dem Erfolg des Schreibers ersetzt
+  (Staging und `mv`), und die Mutationsprobe trennt den Fall durch einen Lauf, der **vor** dem
+  Schreiber scheitert (Guard-Test Lauf 1b), nicht nur den Erfolgsfall. Der Fund ist durch den
+  Reviewer an der Eingabeseite (nicht erreichter Schreiber) gekommen, nicht durch einen Sensor;
+  der neue Sensor ist Lauf 1b des Guard-Tests, den der Verifier durch M-del rot gesehen hat.
+- **Beobachtungs-Register (`../observations/`):**
+  `BEO-PGC/test-schreibt-in-committete-datei` (`state.md`): Träger `rollout-restore.sh` und
+  `make test-rollout-restore` entfallen; Ausgang auf `tools/schema/rollout.sh`
+  (`ADR-0142`) nachgetragen, Zähler unverändert 4× (kein neues Auftreten).
+  `BEO-PGC/generierte-artefakte-ohne-sync-sensor` (`state.md`): „`ADR-0084` Trigger (b)
+  eingelöst durch `ADR-0142`“; `observation.md` bleibt als Stand der Anlage. `BEO-PGC/schema-rollout-fremdobjekte`
+  (`state.md`): Träger auf `tools/schema/rollout.sh` und die Zahl der bekannten
+  Fremdobjekte auf elf berichtigt (gezählt in `knownForeignObjects`). Kein neues Verzeichnis,
+  keine neue `evidence/`.
+- **Risiken aus §6:** Bauzeit warm entfallen (1,4 s gemessen), kalt nicht gemessen · d-migrate-
+  Besonderheiten entfallen · `/dev/stdin` entfallen · stiller No-op bei fehlendem `-i` gefangen
+  (M3) · Container-Aufräumen weiter offen (benannte Grenze, `.stage.*` ergänzt, hergeleitet) ·
+  gleichzeitige Läufe weiter offen (benannte Grenze) · Backend ohne Bind-Mount weiter offen
+  (hergeleitet) · Alt-Tag-Lauf entfallen · Verhaltensänderung für Betreiber eingetreten ·
+  Besitzer-Zuordnung entfallen (Host ohne root gemessen, root-Runner hergeleitet) · gehosteter
+  Runner entfallen (`e2e` beide Legs `success`, `786e5b3f`).
+- **Doku-Version:** Benutzerhandbuch 1.88 (Doku-Version, keine Paketversion).
+- **Kein Release.** Server und SDKs bleiben 0.5.0, `docs/user/version.md` und die
+  Package-Versionen sind unberührt (gemessen vom Verifier: der Diff berührt keine Versionsdatei).
+  Für den Text des nächsten Releases: der Pflicht-Report von `make schema-rollout` liegt nicht
+  mehr unter `tools/schema/`, sondern in `SCHEMA_ARTEFACT_DIR` (Default `.tmp/schema-rollout`);
+  ob und wie das im Release-Text steht, entscheidet der Auftraggeber.
+- **Folge-Slices:** keine. Die benannten Grenzen (Staging-Verzeichnis nach `SIGKILL`, gleichzeitige
+  Läufe, Backend ohne Bind-Mount) sind im Vertrag geführt und lösen keinen Slice aus.
+- **Drei Paarungen:** Anker: Verifikation §5 (V-1, V-2) und Review F-7. Folge-Slice: keiner, mit
+  der Begründung oben. Register: die drei Einträge oben.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
