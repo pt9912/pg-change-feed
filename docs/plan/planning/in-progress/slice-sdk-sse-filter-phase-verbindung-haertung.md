@@ -120,7 +120,7 @@ Der Vorschlag trägt, mit drei Festlegungen, die der Plan trifft:
 
 ## 2. Definition of Done
 
-- [ ] **Liefer-Punkt 1 — Härtung im gemeinsamen Ablauf und C#-Tier.** In
+- [x] **Liefer-Punkt 1 — Härtung im gemeinsamen Ablauf und C#-Tier.** In
       `tools/harness/lib-sdk-filter-fixture.sh` committet der Runner nach `SEEN` genau eine zweite
       Dreiergruppe (Reihenfolge B, zweites Schema, A; ID-Bereich getrennt von der ersten, z. B.
       Basis + 100; Sentinel `<Sentinel>Second`, vom Fixture als
@@ -140,7 +140,7 @@ Der Vorschlag trägt, mit drei Festlegungen, die der Plan trifft:
       (bei Versuch k > 1 größere Zahlen der ersten Gruppe, dann nennt der Bericht den Versuch) —,
       dazu die Zeilen der Gegenlesung und die Schlusszeile des Runners; die dreizehn Phasen laufen
       mit unveränderter Erwartung grün.
-- [ ] **Liefer-Punkt 2 — Kotlin- und Python-Tier.** Dieselbe Form in
+- [x] **Liefer-Punkt 2 — Kotlin- und Python-Tier.** Dieselbe Form in
       `SseFilterRealserverTest.kt` und `PhaseEnvironment.kt` (Kotlin) und
       `test_sse_filter_realserver.py` (Python; ein Umgebungswert mehr, gelesen wie die
       bestehenden); die Runner brauchen nur die Aktualisierung ihrer Abdeckungs-Zeile und
@@ -148,7 +148,7 @@ Der Vorschlag trägt, mit drei Festlegungen, die der Plan trifft:
       `make test-sdk-kotlin-integration`- bzw. `make test-sdk-python-integration`-Lauf nach
       `make image`, im Bericht die gedruckte `FILTER_RESULT`-Zeile je Sprache (erwartet bei
       Versuch 1 dieselben Zahlen `f1=2 … f2=2 … unfiltered=6`).
-- [ ] **Liefer-Punkt 3 — Mutationsproben, davon der Härtungsbeweis.** Alle Mutationen laufen an
+- [x] **Liefer-Punkt 3 — Mutationsproben, davon der Härtungsbeweis.** Alle Mutationen laufen an
       Kopien im Scratchpad ([`AGENTS.md`](../../../../AGENTS.md) §3.1: Edit/Write, nie `sed -i` oder
       eine Umleitung auf den Arbeitsbaum), jede Probe nennt im Bericht Stelle, Instanz,
       Farbe und die gedruckte Zeile. Ablauf der Läufe seriell (feste Container-Namen der
@@ -182,12 +182,12 @@ Der Vorschlag trägt, mit drei Festlegungen, die der Plan trifft:
       (M1 je Sprache, M2 C#/Kotlin, M3 C#/Python, Package Kotlin/Python am Vorgänger-Stand
       gemessen) gelten für den neuen Stand als **hergeleitet** — die Härtung ändert an der
       Eingabeseite nichts —, und die Closure-Notiz führt die Matrix mit dem Ursprung je Zelle.
-- [ ] **Nur Test-Code und Runner.** `git diff --name-only 91e46048 -- sdks` nennt ausschließlich
+- [x] **Nur Test-Code und Runner.** `git diff --name-only 91e46048 -- sdks` nennt ausschließlich
       Pfade unter den drei Test-Verzeichnissen (`PgChangeFeed.Client.Integration/`,
       `src/integrationTest/`, `integration/`), keine Versionsdatei; kein Release, kein Tag;
       `make sdk-public-doc-check` endet mit Exit 0. *Zu belegen durch:* der Diff-Befehl im
       Bericht und der Suchlauf in §3.
-- [ ] **Die Abdeckung ist getragen.** Die Zeile je SDK im marker-gegrenzten Abschnitt von
+- [x] **Die Abdeckung ist getragen.** Die Zeile je SDK im marker-gegrenzten Abschnitt von
       [`docs/user/sdk-e2e-abdeckung.md`](../../../user/sdk-e2e-abdeckung.md) (geschrieben von den drei
       Runnern, nicht von Hand) nennt die zweite Gruppe nach stehender Verbindung; Kennungen
       ([`LH-FA-SST-008`](../../../../spec/lastenheft.md),
@@ -197,26 +197,32 @@ Der Vorschlag trägt, mit drei Festlegungen, die der Plan trifft:
       Exit 0. Die Läufe der Tiers sind **seriell** und enden vor dem Commit der Datei (andere
       Runner und `make bench` schreiben Erzeugnisse im selben Arbeitsbaum; der Implementer
       committet ausschließlich eigene Pfade).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert ausgewertet
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert ausgewertet
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter
+- [x] Review durchgeführt, Report unter
       `docs/reviews/review-slice-sdk-sse-filter-phase-verbindung-haertung.md` liegt vor, kein
       offenes HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes je
+      *Lesart:* kein HIGH; das eine MEDIUM (F-1, `grep -q` hinter `docker logs` unter `pipefail` in
+      den Runnern) liegt **außerhalb des Diffs** (Bestand der Runner, nicht Gegenstand dieses Slice)
+      und trägt die Adresse
+      [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../open/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
+      sowie `BEO-PGC/runner-grep-pipe-verfehlt-zeile` — „benannt, nicht in diesem Slice“, wie die
+      Verifikation §7 B-2 es verlangt; die Review-Reports bleiben unverändert.
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes je
       Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-sdk-sse-filter-phase-verbindung-haertung.md`
       endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `harness/README.md` §Sensors (die drei Zeilen `make test-sdk-*-integration`:
+- [x] Doku-Update: `harness/README.md` §Sensors (die drei Zeilen `make test-sdk-*-integration`:
       Satz zur Filter-Phase um die zweite Gruppe nach beobachteter Verbindung ergänzt), die
       Kopf-Kommentare von `lib-sdk-filter-fixture.sh`, der drei Testklassen und der Runner
       tragen den Ist-Umfang; das Benutzerhandbuch bleibt unberührt (es beschreibt die Packages,
       nicht die Tiers).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7) — neues Verzeichnis oder
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem Repo (Greenfield).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7) — neues Verzeichnis oder
       weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo ohne
       Wellen-Betrieb für diesen wellenlosen Slice hier geprüft.
 
@@ -358,57 +364,165 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
 
 - **Laufzeit-Verlängerung durch die zweite Gruppe.** Erwartet: unter zwei Sekunden je Tier
   (Polling 0,2 s plus Zustellung ~0,3 s laut Vorgänger-Lauf „SEEN nach 335–369 ms"); das
-  Ruhefenster bleibt 15 s. **Hergeleitet**, nicht gefahren. — **Ausgang:** *zu entscheiden bei
-  Closure* (Messung: `SEEN`→`SEEN_SECOND` im Lauf).
+  Ruhefenster bleibt 15 s. **Hergeleitet**, nicht gefahren. — **Ausgang:** *entfallen* —
+  `SEEN`→`SEEN_SECOND` 105 bis 327 ms (Verifier, gemessen, Verifikation §6; Implementer-Läufe
+  331 bis 379 ms, übernommen), unter der erwarteten Sekunde.
 - **Flake der bestehenden NATS-Phase.** Der Vorgänger sah einmal einen Ausfall der **alten**
   NATS-Phase (F-4: Fenster des Runners 20 s gegen 15 s des Tests, hergeleitet). Die Härtung
   verlängert diese Phase nicht; sie wird hier nicht untersucht und nur als Hinweis geführt. —
-  **Ausgang:** *weiter offen* → bei Auftreten in den elf Läufen `evidence/` am passenden
-  Register-Eintrag, sonst *kein Auftreten*.
+  **Ausgang:** *eingetreten* — im ersten C#-Tier-Lauf des Reviewers (gemessen, Review F-1;
+  die Ursache ist dort `docker logs … | grep -qF` unter `pipefail`, hergeleitet, nicht das
+  Zeitfenster aus F-4 des Vorgängers). Adresse:
+  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../open/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
+  und `BEO-PGC/runner-grep-pipe-verfehlt-zeile` (1×). Gegenzählung des Verifiers: 0 Ausfälle in
+  fünf C#-, zwei Kotlin- und einem Python-Gesamtlauf (gemessen).
 - **Die Überlagerungen des Härtungsbeweises treffen die Reihenfolge nicht.** Die Rechnung
   (B bei t, zweites Schema t+2 s, A t+6 s, F1-Verbindung ≈ `READY` + 4 s, Commit der ersten Gruppe
   ≤ 1 s nach `READY`) lässt je ≥ 1 s Spielraum auf beiden Seiten; Beleg ist die
-  `RECEIVED_F1`-Liste von Arm A (nur A der ersten Gruppe). — **Ausgang:** *zu entscheiden bei
-  Closure*; trifft die Reihenfolge nicht, werden die Verzögerungen angepasst und der Lauf
-  wiederholt, die Abweichung steht im Bericht.
+  `RECEIVED_F1`-Liste von Arm A (nur A der ersten Gruppe). — **Ausgang:** *entfallen* —
+  Arm A grün mit `f1=1`, SEEN nach 6454 ms (Implementer) bzw. 6376 ms (Verifier, gemessen):
+  F1 verpasste B der ersten Gruppe. Der Beleg ist **indirekt** über die Zählung, nicht über eine
+  abgelesene `RECEIVED_F1`-Liste (Review F-2; die Fixture druckt sie im grünen Lauf nicht); die
+  Plan-Bedingung ist wörtlich nicht erfüllt, der Schluss trägt (Entscheid des Auftraggebers
+  vom 2026-10-02: kein zusätzliches Drucken).
 - **`SEEN` im Versuch > 1.** Die Zahlen der ersten Gruppe sind dann größer; die exakte Prüfung
-  trägt die zweite Gruppe (Sentinel), nicht `f1 == 2`. — **Ausgang:** *entfallen*, wenn der
-  Runner die zweite Gruppe über den Sentinel zählt (Konstruktion); der Bericht nennt den Versuch.
+  trägt die zweite Gruppe (Sentinel), nicht `f1 == 2`. — **Ausgang:** *entfallen* — der Runner
+  zählt die zweite Gruppe über den Sentinel (Konstruktion); `SEEN` fiel in allen Läufen im
+  Versuch 1 (Implementer, Review, Verifier).
 - **Rest-Grenze der ersten Gruppe.** Für die erste Gruppe bleibt F-2 sinngemäß: ihr Negativ ist
   nicht belegt. Das ist gewollt — das Negativ trägt die zweite Gruppe; die erste trägt nur die
   Verbindung (`SEEN`). Ein Empfang belegt eine stehende Verbindung (**hergeleitet**: ein Client
-  empfängt nur über seine Verbindung). — **Ausgang:** *zu entscheiden bei Closure* (entfallen,
-  wenn Arm A/Arm B wie erwartet färben).
+  empfängt nur über seine Verbindung). — **Ausgang:** *entfallen* — Arm A grün, Arm B rot,
+  Kontrolle grün (Verifier, gemessen).
 - **Docker-Cache der Stufe `integration`** (`BEO-PGC/docker-cache-ueberspringt-tests-still`). —
-  **Ausgang:** *zu entscheiden bei Closure*; Beleg ist die gedruckte Zeile `FILTER_RESULT` mit
-  gezähltem Fremdwert, nicht der Exit-Code des Baus.
+  **Ausgang:** *entfallen* (kein Auftreten) — jede gezeigte Mutation druckte eine geänderte
+  `FILTER_RESULT`-Zeile mit gezähltem Fremdwert (Verifier, gemessen).
 - **Drei Sprachen, ein Randfall** (`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`). —
-  **Ausgang:** *zu entscheiden bei Closure*; Gegenmaßnahme: Ablauf und Gegenlesung einmal in der
+  **Ausgang:** *entfallen* (kein Auftreten) — Ablauf und Gegenlesung stehen einmal in der
   Fixture-Datei, derselbe Eingabesatz je Sprache.
 - **Kein Sensor übersetzt die Integrationsprojekte**
   (`BEO-PGC/integrationsprojekt-uebersetzt-nicht-unbemerkt`). — **Ausgang:** *weiter offen* →
-  Register (der Slice fährt alle drei Tiers real).
+  Register (kein Auftreten in diesem Slice, keine `evidence/`; der Slice fuhr alle drei Tiers
+  real, die Integrationsprojekte übersetzten und liefen).
 - **Gleichzeitige Läufe im Arbeitsbaum.** Der Auftraggeber fährt SDK-Runner und `make bench` im
   Hintergrund; diese schreiben Erzeugnisse (z. B. `docs/user/sdk-e2e-abdeckung.md`,
-  `docs/user/bench-abdeckung.md`) und belegen feste Container-Namen. — **Ausgang:** *zu
-  entscheiden bei Closure*; Gegenmaßnahme: serielle Läufe, Commit nur eigener Pfade
-  (`git add <Pfad>`, nie `-A`/`-a`).
-- **Kein Release, keine Versionsänderung.** — **Ausgang:** *zu entscheiden bei Closure*;
-  *entfallen*, solange `git diff` unter `sdks/` nur Test-Pfade zeigt (DoD „Nur Test-Code und
-  Runner").
+  `docs/user/bench-abdeckung.md`) und belegen feste Container-Namen. — **Ausgang:**
+  *eingetreten*, ohne Auswirkung auf die Belege: der Verifier startete
+  im ersten Anlauf einen zweiten C#-Lauf neben dem laufenden und las veraltete `.ec`-Dateien
+  einer früheren Sitzung (eigener Fehler, im Verifikations-Report benannt); beide Läufe
+  kollidierten im Netz `cdc-feed-test`, die Ergebnisse stammen aus dem seriellen zweiten Anlauf.
+  Eine Kollision mit den Hintergrundläufen des Auftraggebers ist in keinem Bericht genannt.
+  Gegenmaßnahme trug: serielle Läufe, Commit nur eigener Pfade (`git status --short` im
+  Echtrepo nach den Läufen leer, Verifier gemessen).
+- **Kein Release, keine Versionsänderung.** — **Ausgang:** *entfallen* (Verifier, gemessen:
+  `git diff --name-only 91e46048 HEAD -- sdks` nennt fünf Test-Pfade, keine Versionsdatei, kein
+  Tag).
 
 ## 7. Closure-Notiz
 
-Wird bei Closure gefüllt (Vorlage: Closure-Notiz des Vorgängers). Mindestinhalt: die gedruckten
-`FILTER_RESULT`-Zeilen je Sprache mit Ursprung (gemessen/übernommen/hergeleitet,
-[`AGENTS.md`](../../../../AGENTS.md) §3.12), die Mutationsmatrix (zwölf Zellen plus Arm A/B/
-Kontrolle) mit Ursprung je Zelle, der Versuch, in dem `SEEN` fiel, und die gemessene Zeit
-`SEEN`→`SEEN_SECOND`. Lerneintrag-Richtung (vom Implementer zu bestätigen): ein Negativ
-braucht eine **beobachtete** Vorbedingung — bei Stream-Clients heißt „gestartet" nicht
-„verbunden"; die Vorbedingung wird durch eine Änderung beobachtet, die **vor** der Negativ-Gruppe
-beim Client ankommt. Anwendung der verkörperten Regel
-`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`; Entscheid über einen neuen Eintrag beim
-Planner. Meldung an den Auftraggeber (offen): gleicher Aufbau der Routing-Phase (§1).
+Ursprung der Angaben ([`AGENTS.md`](../../../../AGENTS.md) §3.12): **gemessen** = vom Reviewer
+([`review-slice-sdk-sse-filter-phase-verbindung-haertung`](../../../reviews/review-slice-sdk-sse-filter-phase-verbindung-haertung.md))
+oder Verifier
+([`verifikation-slice-sdk-sse-filter-phase-verbindung-haertung`](../../../reviews/verifikation-slice-sdk-sse-filter-phase-verbindung-haertung.md))
+im eigenen Lauf; **übernommen** = aus dem Bericht des Implementers (§3 „Belege des Implementers“)
+oder einem der beiden Berichte ohne Nachmessung des Planners; **hergeleitet** = nicht gefahren.
+Der Planner hat keine Zahl dieser Notiz nachgemessen, außer dem Suchlauf-Feld und den
+Register-Zählern (Dateien gezählt).
+
+- **Was hat funktioniert:** Alle drei Tiers druckten unmutiert, je Lauf vom Verifier gefahren
+  (gemessen), `FILTER_RESULT f1=2 f1_foreign=0 f2=2 f2_foreign=0 unfiltered=6 quiet_seconds=15`,
+  jeweils `SEEN` im Versuch 1 (`SEEN` nach 361 ms C#, 340 ms Kotlin, 325 ms Python;
+  `SEEN`→`SEEN_SECOND` 122 ms, 327 ms, 105 ms). Der Reviewer sah dieselbe Zeile in seinen Läufen
+  (gemessen), die Implementer-Zeilen decken sich (übernommen; `SEEN_SECOND` nach 333, 331, 379 ms).
+  Die Gegenlesung über `cdc.changes` (zweite Gruppe exakt: F1 1, F2 1, ohne Filter 3) bestand in
+  allen Läufen; `docs/user/sdk-e2e-abdeckung.md` änderte genau drei Zeilen, ein zweiter Lauf je
+  Tier schrieb nichts (gemessen, Verifier). Mutationsmatrix mit Ursprung je Zelle (gedruckte
+  Zeilen in den beiden Berichten und in §3 „Belege des Implementers“):
+
+  | Zelle | C# | Kotlin | Python |
+  |---|---|---|---|
+  | Package (`table` nicht auf den Draht) | rot in der Filter-Phase, `f1=4 f1_foreign=2` (Verifier, **erprobt**, Unit-Stufe an der Kopie umgangen) | rot, `f1=4 f1_foreign=2` (Verifier, **erprobt**) | rot, `f1=4 f1_foreign=2` (Review, **erprobt**) |
+  | M3 (falsches Schema an F2) | **hergeleitet** | rot, „kein SEEN“ (Implementer, **übernommen**) | **hergeleitet** |
+  | M2 (`schema` weg an F2) | **hergeleitet** | **hergeleitet** | rot, `f2=6 f2_foreign=4` (Implementer, **übernommen**) |
+  | M1 (`table` weg) | **hergeleitet** | **hergeleitet** | **hergeleitet** |
+  | Zeilenzahl der zweiten Gruppe falsch erwartet (Fixture, einmal) | — | — | rot, „F1 empfing 1 Change(s) der zweiten Gruppe“ (Review, **erprobt**; die Fixture ist für alle drei Sprachen dieselbe) |
+
+  Die sieben hergeleiteten Zellen stützen sich darauf, dass die Eingabeseite der Mutation sich
+  gegenüber dem Vorgänger nicht ändert (dort erprobt) und der Ablauf in der Fixture einmal steht;
+  eine Messung am neuen Stand steht aus. Härtungsbeweis (C#, SSE-Package-Mutation plus F1
+  verzögert plus erste Gruppe mit Abstand): Arm A (Parent `91e46048`, ohne Härtung) **grün**,
+  `f1=1 f1_foreign=0 f2=1 f2_foreign=0 unfiltered=3`, `SEEN` nach 6376 ms (Verifier, **erprobt**;
+  Implementer 6454 ms, übernommen) — das Falsch-Grün; Arm B (Härtung) **rot**,
+  `f1=3 f1_foreign=1 f2=2 f2_foreign=0 unfiltered=6` (Verifier, **erprobt**); Kontrolle (Härtung,
+  ohne Package-Mutation) **grün**, `f1=2 … unfiltered=6`, `SEEN` nach 6111 ms, `SEEN_SECOND` nach
+  327 ms (Verifier, **erprobt**). **Arm A ist ein indirekter Beleg** (Review F-2): die Zählung
+  `f1=1` und die gemessene Zeit bis `SEEN` zeigen, dass F1 die ersten Changes verpasste; eine
+  abgelesene `RECEIVED_F1`-Liste druckt die Fixture im grünen Lauf nicht, und der Auftraggeber
+  hat ein zusätzliches Drucken nicht gewollt. Die Überlagerung (c) fuhr der Verifier als `\! sleep`
+  zwischen den INSERTs derselben `psql`-Sitzung statt als drei getrennte `psql`-Aufrufe (gleiche
+  Wirkung: autocommit, gemessene 6 s bis `SEEN`).
+- **Was ging anders als geplant:** (1) Review F-1 (MEDIUM): ein Ausfall der NATS-Phase im ersten
+  C#-Lauf des Reviewers, Ursache `docker logs … | grep -qF` unter `pipefail` (hergeleitet,
+  Reviewer-Messung 3 von 300 an einem Nachbau, vom Reviewer gemessen); liegt außerhalb des Diffs
+  und in allen drei Runnern und in `run-integration-tests.sh` (35 Fundstellen, am Stand
+  `a420e223` gemessen) — **Adresse:**
+  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../open/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
+  und `BEO-PGC/runner-grep-pipe-verfehlt-zeile`; die Review-Reports bleiben unverändert. (2) F-2
+  (LOW): der indirekte Beleg für Arm A bleibt (Entscheid des Hauptlaufs 2026-10-02: kein
+  zusätzliches Drucken). (3) F-3 (INFO): die `SEEN_SECOND`-Wartebedingung ist innerhalb des
+  15-s-Fensters nicht eigenständig falsifizierbar (hergeleitet, nicht gefahren); sie senkt das
+  Flake-Risiko und ordnet die Gegenlesung, die Zusage trägt die zweite Gruppe — keine Aktion.
+  (4) F-4 (INFO): die Routing-Phase hat denselben Aufbau; Adresse jetzt
+  [`slice-sdk-routing-phase-verbindung-haertung`](../open/slice-sdk-routing-phase-verbindung-haertung.md)
+  (Lesen am Stand `a420e223`: die Falsch-Grün-Lücke besteht für die drei Stream-Flächen, die
+  HTTP-Fläche ist nicht betroffen — beides hergeleitet, im Folge-Slice zu messen). (5) F-5 (INFO):
+  Kotlin-Zeilenlängen, kein Formatwerkzeug für Kotlin →
+  `BEO-PGC/formatierungs-drift-ohne-gate` (5×). Package-Version und Release unberührt
+  (Verifier: nur Test-Pfade unter `sdks`, keine Versionsdatei). Der Verifier benannte einen
+  eigenen Fehler im ersten Anlauf (§6, „Gleichzeitige Läufe“).
+- **Steering-Loop-Eintrag (Lerneintrag):** (1) Ein Negativ-Beleg über Abwesenheit braucht eine
+  **Beobachtung, dass der Beobachter verbunden war**, bevor das Negativ-Fenster beginnt: `READY`
+  heißt bei Stream-Clients „Konsument gestartet“, nicht „Verbindung steht“; die Vorbedingung wird
+  durch eine Änderung beobachtet, die **vor** der Negativ-Gruppe beim Client ankommt (`SEEN`), und
+  die Negativ-Gruppe selbst durch eine zweite Beobachtung abgeschlossen (`SEEN_SECOND`). Belegt am
+  Arm-A/Arm-B-Paar: dieselbe Überlagerung ist ohne Härtung grün (Falsch-Grün), mit Härtung rot.
+  Anwendung der verkörperten Regel `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, kein
+  neuer Eintrag. (2) Ein `grep -q` als Empfänger einer Pipe unter `pipefail` in einem
+  Hilfsskript ist eine Fehlerquelle, sobald der Erzeuger nach dem Treffer weiterschreibt: eine
+  vorhandene Zeile kann verfehlt werden. Neuer Eintrag `BEO-PGC/runner-grep-pipe-verfehlt-zeile`
+  (1×), Ausgang *geplant* → der Folge-Slice (a); nichts verkörpert, daher ohne „liegt in“. (3) Ein
+  Beleg über die Zählung (statt über abgelesene Zeilen) trägt, wenn die Closure ihn als
+  **indirekt** kennzeichnet.
+- **Beobachtungs-Register (`../observations/`):** neu angelegt `BEO-PGC/runner-grep-pipe-verfehlt-zeile/`
+  mit `evidence/slice-sdk-sse-filter-phase-verbindung-haertung.md` (Zähler 1×: ein gemessenes
+  Vorkommen mit Anker, Review F-1; der Lauf des Implementers desselben Vorgangs ist keine zweite
+  Datei; die Implementer-Meldung im Vorgänger-Slice F-4 ist wegen abweichender hergeleiteter
+  Ursache und fehlendem Lauf-Beleg nicht gezählt). `BEO-PGC/formatierungs-drift-ohne-gate` um
+  `evidence/slice-sdk-sse-filter-phase-verbindung-haertung.md` fortgeschrieben, Zähler **5×**
+  (Review F-5, Nicht-Go-Fläche Kotlin wie der vierte Beleg; Auslegung des Triggers im state
+  unverändert, Ausgang bleibt kein Gate, Trigger für Go nicht ausgelöst).
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (verkörpert, über dem Deckel): F-2 (LOW)
+  und F-3 (INFO) sind Funde ≤ LOW vor dem Merge, nach dem Deckel kein `evidence/`, sondern die
+  Finding-Kennungen in dieser Notiz. `BEO-PGC/pipe-maskiert-make-exit-code`: Nachbar der neuen
+  Klasse (andere Hälfte der Pipe-Eigenschaft), kein Beleg. `BEO-PGC/docker-cache-ueberspringt-tests-still`,
+  `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`,
+  `BEO-PGC/integrationsprojekt-uebersetzt-nicht-unbemerkt`: kein Auftreten.
+  `BEO-PGC/e2e-routing-abhilfe-phase-einmal-rot`: unberührt; der Folge-Slice (a) behauptet
+  keinen Zusammenhang.
+- **Folge-Slices:** zwei Dateien in `open/` —
+  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../open/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
+  (F-1) und
+  [`slice-sdk-routing-phase-verbindung-haertung`](../open/slice-sdk-routing-phase-verbindung-haertung.md)
+  (F-4, Routing-Phase). Reihenfolge: (a) vor (b), beide ändern `lib-sdk-route-fixture.sh`.
+- **Risiken aus §6:** Laufzeit entfallen · NATS-Flake eingetreten → Adresse Register und
+  Folge-Slice (a) · Überlagerungen entfallen (Arm A indirekt belegt) · `SEEN` im Versuch > 1
+  entfallen · Rest-Grenze der ersten Gruppe entfallen · Docker-Cache kein Auftreten · Drei
+  Sprachen kein Auftreten · Übersetzung der Integrationsprojekte weiter offen → Register ·
+  Gleichzeitige Läufe eingetreten (eigener Fehler des Verifiers, ohne Auswirkung) · Kein Release
+  entfallen. Routing-Phase: Adresse Folge-Slice (b).
+- **Drei Paarungen:** Anker: Review F-1 und Verifikation §5/§6. Folge-Slices: (a) und (b) in
+  `open/`. Register: `runner-grep-pipe-verfehlt-zeile` (neu), `formatierungs-drift-ohne-gate`
+  (5×).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
@@ -418,9 +532,9 @@ Planner. Meldung an den Auftraggeber (offen): gleicher Aufbau der Routing-Phase 
 Sub-Area.
 
 **Vorgelagert — offene Beobachtungen sichten:** Treffer in §6:
-`negativtest-ohne-bindung-an-seine-eingabe` (verkörpert; Vorgänger zählte 24 `evidence/`-Dateien,
-**übernommen**, nicht nachgezählt), `docker-cache-ueberspringt-tests-still`,
-`drei-sprachen-kopie-divergiert-am-randfall`, `integrationsprojekt-uebersetzt-nicht-unbemerkt`
-(Stände beim Start aus dem Register zu lesen).
+`negativtest-ohne-bindung-an-seine-eingabe` (verkörpert; 24 `evidence/`-Dateien, bei der Closure
+vom Planner nachgezählt), `docker-cache-ueberspringt-tests-still` (2),
+`drei-sprachen-kopie-divergiert-am-randfall` (3 Dateien), `integrationsprojekt-uebersetzt-nicht-unbemerkt`
+(1); bei der Closure neu: `runner-grep-pipe-verfehlt-zeile` (1), `formatierungs-drift-ohne-gate` (5).
 
 **Modus-Begründungsblock:** alle berührten Sub-Areas GF.
