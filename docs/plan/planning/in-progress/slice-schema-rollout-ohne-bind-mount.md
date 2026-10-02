@@ -319,8 +319,8 @@ diff 1 -n -F 'D_MIGRATE_RUN_USER' -- . :!docs/reviews :!docs/plan/planning/done 
 diff 0 -n -E 'CURDIR[^:]*:/work' -- Makefile harness tools
 diff 3 -n -E 'CURDIR[^:]*:/src:ro' -- Makefile
 diff 0 -n -E '(-v|--volume)[ =]"?[^ ]*:/|--mount' -- tools/schema/rollout.sh
-diff 10 -n -F 'rollout-precheck' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
-diff 67 -n -E 'plan\.yaml|down\.sql' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 11 -n -F 'rollout-precheck' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 74 -n -E 'plan\.yaml|down\.sql' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 ```
 
 Der Stand ist `3d10e8c6` (Parent der Umsetzung, **gemessen** am 2026-10-02 durch

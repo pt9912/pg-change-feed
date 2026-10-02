@@ -34,8 +34,10 @@ manuellen Eingriff durch
   (`D_MIGRATE_IMAGE`, Basis der Stufe `rollout`), der Toolchain-Container für
   den Bau der Wache (`TOOLCHAIN_IMAGE`, Stufe `guard`, `CGO_ENABLED=0`, Endstufe
   `FROM scratch`) und das PostgreSQL-Image (`PG_TEST_IMAGE`, nur als
-  `psql`-Client). Der Bau braucht Netz für die Basis-Images und den
-  `go build`-Schritt der Wache.
+  `psql`-Client). Der Bau braucht zur Laufzeit keinen Netzzugang, aber die
+  Basis-Images müssen lokal vorhanden sein (gemessen: `docker build --no-cache
+  --network none --target guard` endet grün). Das Wache-Image (Toolchain-Bau)
+  entsteht erst im Pfad mit Precheck-Exit 8, das `rollout`-Image bei jedem Lauf.
 - **`SCHEMA_ARTEFACT_DIR`** (Default `.tmp/schema-rollout`, durch `.tmp/` in
   `.gitignore` ausgenommen): das Verzeichnis der Erzeugnisse. Kein Bind-Mount,
   keine uid-Kopplung: die Dateien gehören dem aufrufenden Nutzer
@@ -76,8 +78,9 @@ anderen Schritts tut es.
    mit der Meldung `schema-rollout: Vorlauf (ADR-0114) - View-Signatur-Aenderung,
    DROP VIEW cdc.<name>`. Ein Fehler bricht das Target ab.
 5. **`--execute`** — `schema migrate --execute` mit Pflicht-Report
-   (`plan.yaml`) und Rollback-Artefakt (`down.sql`), beide per `tar`-Stream nach
-   `SCHEMA_ARTEFACT_DIR` exportiert (ein Exportfehler bricht das Target ab),
+   (`plan.yaml`) und Rollback-Artefakt (`down.sql`), beide nach erfolgreichem
+   Schritt per `tar`-Stream über ein Staging-Verzeichnis nach
+   `SCHEMA_ARTEFACT_DIR` übernommen (ein Exportfehler bricht das Target ab),
    bei erlaubter Erweiterung zusätzlich mit `--allow-destructive`. Der Schritt
    läuft in jedem Fall, damit eine gleichzeitig anstehende echte
    Schema-Änderung im selben Lauf wirksam wird. Legt d-migrate eine im Vorlauf
@@ -175,8 +178,16 @@ noch Erweiterung.
 
 `plan.yaml` (Pflicht-Report), `down.sql` (Rollback-Artefakt) und
 `rollout-precheck.yaml` entstehen in `SCHEMA_ARTEFACT_DIR`, nicht im
-versionierten Baum; je Lauf überschrieben, der Pfad steht in der letzten
-Ausgabezeile des erfolgreichen Laufs. Der Arbeitsbaum bleibt unberührt
+versionierten Baum; der Pfad steht in der letzten Ausgabezeile des
+erfolgreichen Laufs. `rollout-precheck.yaml` wird zu Beginn jedes Laufs
+entfernt und vom Precheck neu geschrieben. `plan.yaml` und `down.sql` ersetzt
+nur ein erfolgreicher `--execute`: der Lauf exportiert sie zuerst in ein
+Staging-Verzeichnis unter `SCHEMA_ARTEFACT_DIR` und verschiebt sie danach. Ein
+Lauf, der `--execute` nicht erreicht oder dort scheitert (Ziel unerreichbar,
+Wache ohne Freigabe mit d-migrate-Exit 8, Vorlauf-Fehler), lässt das
+Rollback-Artefakt des letzten erfolgreichen Rollouts und den zugehörigen
+Pflicht-Report liegen; der Report eines gescheiterten `--execute` wird nicht
+abgelegt (die Fehlerausgabe steht im Log). Der Arbeitsbaum bleibt unberührt
 (`git status --short` nach dem Lauf unverändert): Läufe, die den Rollout nur als
 Vorbedingung brauchen — `make test-store`, `make test-replication` (über
 `tools/schema/apply-rollout.sh`), `make test-integration`,
@@ -187,9 +198,15 @@ Sache des Betreibers: `SCHEMA_ARTEFACT_DIR` auf ein Ziel je Rollout setzen oder
 die Dateien nach dem Lauf kopieren.
 
 **Grenzen:** Zwei gleichzeitig laufende Aufrufe teilen `SCHEMA_ARTEFACT_DIR`
-und überschreiben dieselben Dateien. Ein `SIGKILL` des Skripts lässt einen
-gestoppten Container `pg-change-feed-schema-<pid>-…` zurück (`trap` fängt es
-nicht), die lokalen Images `pg-change-feed-schema:rollout`/`:guard` bleiben
+und überschreiben dieselben Dateien; die festen Image-Tags
+`pg-change-feed-schema:rollout`/`:guard` teilen sie ebenfalls, zwei Läufe aus
+verschiedenen Arbeitsbäumen mit verschiedenem Schema-YAML können den Tag
+zwischen Bau und `docker create` überschreiben (hergeleitet, nicht gefahren).
+Ein `SIGKILL` des Skripts lässt einen gestoppten Container
+`pg-change-feed-schema-<pid>-…` zurück (`trap` fängt es nicht); sein
+`docker create` trägt den DSN samt Passwort in der Container-Konfiguration, bis
+`docker rm` ihn entfernt (hergeleitet aus der Funktionsweise von `docker
+create`; in Image-Schichten und Build-Args steht kein Zugangsdatum). Die lokalen Images `pg-change-feed-schema:rollout`/`:guard` bleiben
 bewusst bestehen (Schicht-Cache des nächsten Laufs).
 
 ## Belege

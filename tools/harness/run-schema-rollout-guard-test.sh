@@ -191,6 +191,19 @@ make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK" SC
 [ "$(git status --short)" = "$status_before" ] || fail "Lauf 1: der Arbeitsbaum hat sich durch den Rollout verändert (git status --short)"
 echo "run-schema-rollout-guard-test: Lauf 1 OK — Erzeugnisse in $ARTEFACT_DIR: $(wc -c <"$ARTEFACT_DIR/plan.yaml") Byte plan.yaml, $(wc -c <"$ARTEFACT_DIR/down.sql") Byte down.sql; git status --short unverändert ($(printf '%s' "$status_before" | grep -c '') Zeilen vor und nach dem Lauf)"
 
+# Lauf 1b: ein Lauf, der vor `--execute` scheitert (Ziel nicht erreichbar),
+# lässt plan.yaml und down.sql des Lauf 1 unverändert liegen.
+sum_before=$(sha256sum "$ARTEFACT_DIR/plan.yaml" "$ARTEFACT_DIR/down.sql")
+set +e
+make schema-rollout SCHEMA_TARGET="db:postgres://$USER:$PASSWORD@cdc-unerreichbar-host:5432/$DB?sslmode=disable" \
+  SCHEMA_ROLLOUT_NETWORK="$NETWORK" SCHEMA_ARTEFACT_DIR="$ARTEFACT_DIR" >/dev/null 2>&1
+unreachable_exit=$?
+set -e
+[ "$unreachable_exit" -ne 0 ] || fail "Lauf 1b: der Rollout gegen ein unerreichbares Ziel endete mit Exit 0"
+[ "$(sha256sum "$ARTEFACT_DIR/plan.yaml" "$ARTEFACT_DIR/down.sql")" = "$sum_before" ] \
+  || fail "Lauf 1b: plan.yaml/down.sql haben sich durch einen Lauf verändert, der vor --execute scheiterte"
+echo "run-schema-rollout-guard-test: Lauf 1b OK — unerreichbares Ziel: Exit $unreachable_exit, plan.yaml ($(wc -c <"$ARTEFACT_DIR/plan.yaml") Byte) und down.sql ($(wc -c <"$ARTEFACT_DIR/down.sql") Byte) unverändert (Prüfsumme)"
+
 echo "run-schema-rollout-guard-test: Lauf 2/6 (Idempotenz — muss den --allow-destructive-Pfad nehmen, ohne Vorlauf)"
 out=$(make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK" 2>&1)
 echo "$out"

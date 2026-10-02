@@ -11,9 +11,11 @@
 # SCHEMA_ARTEFACT_DIR außerhalb des versionierten Baums; der Arbeitsbaum
 # bleibt unberührt.
 #
-# `set -o pipefail` macht die Export-Pipe sicher: ein `docker cp`-Fehlschlag
-# verschwindet sonst hinter einem erfolgreichen, aber leeren `tar -x`. Das
-# Skript läuft unter bash, das make-Rezept selbst unter /bin/sh.
+# `set -o pipefail` gilt für die Export-Pipe (`docker cp … | tar -x`): der Exit
+# der Pipe ist der erste Fehlschlag. Gemessen: mit dem Host-`tar` bleiben ein
+# leeres Archiv und ein `docker cp`-Exit 1 auch ohne `pipefail` rot; die
+# Einstellung ist Disziplin (AGENTS.md §3.9). Das Skript läuft unter bash, das
+# make-Rezept selbst unter /bin/sh.
 #
 # Kopplung: die Reihenfolge der vier Nacharbeit-Dateien unten und die
 # Bekannt-Liste `knownForeignObjects` in tools/schema/rolloutguard/guard.go
@@ -47,9 +49,14 @@ DSN=${SCHEMA_TARGET#db:}
 NET=$SCHEMA_ROLLOUT_NETWORK
 DIR=$SCHEMA_ARTEFACT_DIR
 CONTAINERS=()
+STAGE=""
 
 cleanup() {
   local c
+  if [ -n "$STAGE" ]; then
+    rm -f "$STAGE/plan.yaml" "$STAGE/down.sql"
+    rmdir "$STAGE" 2>/dev/null || true
+  fi
   for c in ${CONTAINERS[@]+"${CONTAINERS[@]}"}; do
     docker rm -f "$c" >/dev/null 2>&1 || true
   done
@@ -82,9 +89,10 @@ run_dmigrate() {
   docker start -a "$name"
 }
 
-# export_file <name> <Pfad im Container>: eine Datei als tar-Stream nach DIR.
+# export_file <name> <Pfad im Container> [Zielverzeichnis, Default DIR]: eine
+# Datei als tar-Stream.
 export_file() {
-  docker cp "pg-change-feed-schema-$$-$1:$2" - | tar -x --no-same-owner -C "$DIR"
+  docker cp "pg-change-feed-schema-$$-$1:$2" - | tar -x --no-same-owner -C "${3:-$DIR}"
 }
 
 build_stage rollout "$ROLLOUT_IMG" || exit 2
@@ -94,9 +102,14 @@ if [ "$mode" = validate ]; then
   exit $?
 fi
 
-build_stage guard "$GUARD_IMG" || exit 2
 mkdir -p "$DIR" || exit 2
-rm -f "$DIR/plan.yaml" "$DIR/down.sql" "$DIR/rollout-precheck.yaml"
+# Der Precheck-Report gehört zum laufenden Lauf; die Wache liest ihn erst nach
+# seinem Export. plan.yaml und down.sql (das Rollback-Artefakt des letzten
+# Rollouts) werden nur durch einen erfolgreichen `--execute` ersetzt: der Lauf
+# exportiert sie zuerst in ein Staging-Verzeichnis unter DIR. Ein Lauf, der
+# `--execute` nicht erreicht oder dort scheitert (der Precheck-Exit bricht das
+# Skript nicht ab), lässt das vorige Paar liegen.
+rm -f "$DIR/rollout-precheck.yaml"
 
 # Precheck: sein Exit-Code wird gelesen, nicht durchgereicht.
 plan_exit=0
@@ -110,7 +123,9 @@ execute_flags=()
 drop_views=""
 if [ "$plan_exit" = 8 ]; then
   # Die Wache liest den Precheck-Report über stdin; ihr Exit-Code wird
-  # gelesen: ohne Erweiterung läuft alles Weitere ohne sie.
+  # gelesen: ohne Erweiterung läuft alles Weitere ohne sie. Das Wache-Image
+  # (Toolchain-Bau) entsteht erst in diesem Pfad.
+  build_stage guard "$GUARD_IMG" || exit 2
   if guard_out=$(docker run --rm -i --network none "$GUARD_IMG" /dev/stdin <"$DIR/rollout-precheck.yaml"); then
     if printf '%s\n' "$guard_out" | grep -qx 'allow-destructive'; then
       echo "schema-rollout: bekannte Fremdobjekt-Blocker (ADR-0043) - --execute laeuft mit --allow-destructive"
@@ -125,16 +140,17 @@ for v in $drop_views; do
   docker run --rm --network "$NET" "$PG_TEST_IMAGE" psql "$DSN" -v ON_ERROR_STOP=1 -c "DROP VIEW cdc.$v" || exit 1
 done
 
+STAGE=$(mktemp -d "$DIR/.stage.XXXXXX") || exit 2
 exec_exit=0
 run_dmigrate execute "$NET" schema migrate --source /work/schema.yaml \
   --target "$SCHEMA_TARGET" --execute ${execute_flags[@]+"${execute_flags[@]}"} \
   --report /work/plan.yaml --generate-rollback --rollback-output /work/down.sql || exec_exit=$?
 if [ "$exec_exit" -ne 0 ]; then
-  export_file execute /work/plan.yaml 2>/dev/null || true
   exit "$exec_exit"
 fi
-export_file execute /work/plan.yaml || exit 2
-export_file execute /work/down.sql || exit 2
+export_file execute /work/plan.yaml "$STAGE" || exit 2
+export_file execute /work/down.sql "$STAGE" || exit 2
+mv -f "$STAGE/plan.yaml" "$STAGE/down.sql" "$DIR/" || exit 2
 
 # Nacharbeit: `-i` hält stdin offen; ohne ihn liest `psql -f -` sofort EOF
 # und endet mit Exit 0, ohne etwas auszuführen.
