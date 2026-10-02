@@ -79,8 +79,8 @@ Review `review-slice-routing-e2e` F-2), nicht reproduziert.
       Bericht.
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
-      HIGH/MEDIUM (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+      HIGH/MEDIUM (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8). Report: [`review-slice-capture-retry-realtest-lieferzahl-lockern`](../../../reviews/review-slice-capture-retry-realtest-lieferzahl-lockern.md) (0 HIGH, 0 MEDIUM, keine Fixrunde).
 - [ ] §3.13-Suchlauf: das Feld in §3 trägt Gefundenes und Nichtgefundenes je Träger
       (bewegte Eigenschaft: „genau eine Lieferung im zweiten Versuch" im Godoc, in
       Plänen und in der ADR-Fitness-Function-Zeile), beide Stände gemessen.
