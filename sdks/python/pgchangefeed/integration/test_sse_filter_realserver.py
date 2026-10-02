@@ -160,7 +160,7 @@ def test_realserver_streams_with_schema_and_table_filter_receive_only_their_sele
         _raise_on_failure(f1, f2, unfiltered)
         assert time.monotonic() < deadline, (
             "innerhalb der Frist weder die Change der Tabelle am Client mit Schema und Tabelle, "
-            "noch die des zweiten Schemas am Client mit Schema, noch alle drei Gruppen am Client ohne Filter empfangen"
+            "noch die des zweiten Schemas am Client mit Schema, noch alle drei Tabellen am Client ohne Filter empfangen"
         )
         time.sleep(0.1)
     print("SEEN", flush=True)

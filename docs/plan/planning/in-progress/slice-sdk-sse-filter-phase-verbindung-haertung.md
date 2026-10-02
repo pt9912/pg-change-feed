@@ -279,20 +279,54 @@ Index):**
 91e46048 4 -n -E 'dreizehn Phasen' -- harness tools
 91e46048 0 -n -F SEEN_SECOND -- harness tools sdks docs/user
 91e46048 0 -n -E 'SENTINEL_SECOND|FilterSentinelSecond' -- harness tools sdks docs/user
+diff 13 -n -F FILTER_RESULT -- harness tools sdks docs/user
+diff 30 -n -F Dreiergruppe -- harness tools sdks docs/user
+diff 11 -n -F 'drei Gruppen' -- harness tools sdks docs/user
+diff 12 -n -F 'ohne Filter alle drei' -- harness tools sdks docs/user
+diff 14 -n -F 'unfiltered=' -- harness tools sdks docs/user
+diff 16 -n -F f1_foreign -- harness tools sdks docs/user
+diff 2 -n -F "new_data->>'name'" -- tools/harness/lib-sdk-filter-fixture.sh
+diff 7 -n -F Filter-Phase -- harness tools sdks docs/user .github
+diff 4 -n -E 'dreizehn Phasen' -- harness tools
+diff 13 -n -F SEEN_SECOND -- harness tools sdks docs/user
+diff 12 -n -E 'SENTINEL_SECOND|FilterSentinelSecond' -- harness tools sdks docs/user
 ```
 
 | Träger | Messung am Parent (`91e46048`, 2026-10-02) | Behandlung (Befund am Diff trägt der Implementer ein) |
 |---|---|---|
-| Zeile 1 `FILTER_RESULT` (Abschlusszeile, Parser, Beschreibungen) | 12 Zeilen | Fixture (Parser/Regex), drei Testdateien, drei Abdeckungs-Texte, `harness/README.md`; die Form der Zeile bleibt, der Wert ändert sich — jede Trefferzeile gelesen, ob sie eine Zahl nennt |
-| Zeile 2 `Dreiergruppe` | 9 Zeilen — `lib-sdk-filter-fixture.sh` (3), `lib-sdk-route-fixture.sh` (3), `run-integration-tests.sh` (3) | nur die drei Treffer der Filter-Datei sind Gegenstand; die sechs fremden (Routing-Phase der Tiers, Server-Rundlauf) bleiben, **gemeldet** (§1) |
-| Zeile 3 `drei Gruppen` | 20 Zeilen: Filter-Dateien (Fixture ×3, drei Testdateien je ×2) 9, davon fremd: Routing-Szenarien der drei Tiers (je ×3) 9, `docs/user/e2e-abdeckung.md` ×1 und `run-integration-tests.sh` ×1 | je Filter-Zeile lesen: „alle drei" meint die drei **Tabellen** der Gruppe und bleibt wahr; nachzuziehen nur, wo „genau eine Gruppe" gemeint ist; die elf fremden Treffer gehören nicht zum Gegenstand |
-| Zeile 4 `ohne Filter alle drei` | 13 Zeilen (`sdk-e2e-abdeckung.md` ×3, `harness/README.md` ×3, Fixture ×1, drei Runner je ×2) | wie Zeile 3; die Abdeckungs-Texte der drei Runner nennen die zweite Gruppe |
-| Zeile 5 `unfiltered=` | 14 Zeilen | Parser und Beschreibungen; erwarteter Wert bei Versuch 1: 6 |
-| Zeile 6 `f1_foreign` | 16 Zeilen | Parser, Fehlertexte, Beschreibungen; Wert unverändert 0 |
-| Zeile 7 Gegenlesung `new_data->>'name'` | 2 Zeilen in der Fixture-Datei | beide Stellen nehmen beide Sentinels |
-| Zeile 8 `Filter-Phase` | 7 Zeilen (`harness/README.md` ×3, Fixture ×1, drei Runner je ×1) | Texte, die die Phase beschreiben: README-Satz nachziehen |
-| Zeile 9 `dreizehn Phasen` | 4 Zeilen (drei Hilfetexte `harness/mk/sdk.mk`, ein Runner-Kopf) | **soll unverändert 4 bleiben** (keine vierzehnte Phase) |
-| Zeilen 10 und 11 (neue Namen) | 0 Zeilen am Parent | Soll am Diff: `SEEN_SECOND` in Fixture-Kommentar, drei Testdateien; `SENTINEL_SECOND`/`FilterSentinelSecond` in Fixture, Kotlin-/C#-Umgebungs-Hilfe, Python-Test — der Implementer trägt die gezählten Werte ein |
+| Zeile 1 `FILTER_RESULT` (Abschlusszeile, Parser, Beschreibungen) | 12 Zeilen | Fixture (Parser/Regex), drei Testdateien, drei Abdeckungs-Texte, `harness/README.md`; die Form der Zeile bleibt, der Wert ändert sich — jede Trefferzeile gelesen, ob sie eine Zahl nennt. **Befund (Diff, 13 Zeilen, +1):** die Mehrzeile ist die Test-Kommentar-/Fixture-Zeile, die `FILTER_RESULT` beschreibt; keine der 13 Zeilen nennt einen festen Zahlenwert (Zahlen stehen nur als gedruckte Laufzeile im Bericht), nichts nachzuziehen. |
+| Zeile 2 `Dreiergruppe` | 9 Zeilen — `lib-sdk-filter-fixture.sh` (3), `lib-sdk-route-fixture.sh` (3), `run-integration-tests.sh` (3) | nur die drei Treffer der Filter-Datei sind Gegenstand; die sechs fremden (Routing-Phase der Tiers, Server-Rundlauf) bleiben, **gemeldet** (§1). **Befund (Diff, 30 Zeilen):** 27 Zeilen in geänderten Dateien — Fixture 6 (+3), drei Runner je 4 (Kopf, Phasenkommentar, Abdeckungs-Text, Schlusszeile), `harness/README.md` 3 — und 3 im Erzeugnis `docs/user/sdk-e2e-abdeckung.md` (von den Runnern geschrieben); die sechs fremden (`lib-sdk-route-fixture.sh` 3, `run-integration-tests.sh` 3) unverändert 6. **Gemeldet, nicht geändert:** die Routing-Phase hat denselben Aufbau (Dreiergruppe nach `READY`, `SEEN`); Betroffenheit nicht untersucht (hergeleitet), Entscheid beim Auftraggeber. |
+| Zeile 3 `drei Gruppen` | 20 Zeilen: Filter-Dateien (Fixture ×3, drei Testdateien je ×2) 9, davon fremd: Routing-Szenarien der drei Tiers (je ×3) 9, `docs/user/e2e-abdeckung.md` ×1 und `run-integration-tests.sh` ×1 | je Filter-Zeile lesen: „alle drei" meint die drei **Tabellen** der Gruppe und bleibt wahr; nachzuziehen nur, wo „genau eine Gruppe" gemeint ist; die elf fremden Treffer gehören nicht zum Gegenstand. **Befund (Diff, 11 Zeilen, −9):** gelesen — die neun Filter-Treffer des Parents sind auf null gesunken: die Fixture-Treffer (3) und die Beschreibungen sind auf die Zwei-Gruppen-Form umgeschrieben, in den drei Testdateien steht statt „alle drei Gruppen" nun „alle drei Tabellen" (die Meldung der ersten Frist meint die Tabellen der Dreiergruppe); verbleibend sind die elf fremden (Routing: `RouteScenario`/`route_scenario` ×9, `docs/user/e2e-abdeckung.md` 1, `run-integration-tests.sh` 1), unverändert. |
+| Zeile 4 `ohne Filter alle drei` | 13 Zeilen (`sdk-e2e-abdeckung.md` ×3, `harness/README.md` ×3, Fixture ×1, drei Runner je ×2) | wie Zeile 3; die Abdeckungs-Texte der drei Runner nennen die zweite Gruppe. **Befund (Diff, 12 Zeilen, −1):** die Fixture-Zeile (Report-Text „alle drei Gruppen") trägt jetzt die Zahlen der zweiten Gruppe; die Abdeckungs-Texte der Runner (je 2) und `harness/README.md` (3) und der Erzeugnis-Träger (3) tragen „ohne Filter alle drei" weiter wahr (gemeint: alle drei Tabellen), die zweite Gruppe steht daneben. |
+| Zeile 5 `unfiltered=` | 14 Zeilen | Parser und Beschreibungen; erwarteter Wert bei Versuch 1: 6. **Befund (Diff, 14 Zeilen, ±0):** Parser/Beschreibungen gelesen, keine nennt einen festen Wert; gemessen 6 in allen drei Läufen. |
+| Zeile 6 `f1_foreign` | 16 Zeilen | Parser, Fehlertexte, Beschreibungen; Wert unverändert 0. **Befund (Diff, 16 Zeilen, ±0):** unverändert, gemessen 0 in allen drei unmutierten Läufen. |
+| Zeile 7 Gegenlesung `new_data->>'name'` | 2 Zeilen in der Fixture-Datei | beide Stellen nehmen beide Sentinels. **Befund (Diff, 2 Zeilen):** beide Zeilen lesen `IN ('<Sentinel>', '<Sentinel>Second')` und liefern zusätzlich den Namen der Zeile (Zuordnung zur Gruppe). |
+| Zeile 8 `Filter-Phase` | 7 Zeilen (`harness/README.md` ×3, Fixture ×1, drei Runner je ×1) | Texte, die die Phase beschreiben: README-Satz nachziehen. **Befund (Diff, 7 Zeilen, ±0):** die drei README-Zeilen tragen den Satz zur zweiten Gruppe, Fixture und die drei Runner-Phasenkommentare bleiben wahr; gefunden und nachgezogen, nichts offen. |
+| Zeile 9 `dreizehn Phasen` | 4 Zeilen (drei Hilfetexte `harness/mk/sdk.mk`, ein Runner-Kopf) | **soll unverändert 4 bleiben** (keine vierzehnte Phase). **Befund (Diff):** 4, unverändert. |
+| Zeilen 10 und 11 (neue Namen) | 0 Zeilen am Parent | Soll am Diff: `SEEN_SECOND` in Fixture-Kommentar, drei Testdateien; `SENTINEL_SECOND`/`FilterSentinelSecond` in Fixture, Kotlin-/C#-Umgebungs-Hilfe, Python-Test — der Implementer trägt die gezählten Werte ein. **Befund (Diff):** `SEEN_SECOND` 13 Zeilen: Fixture 4, `harness/README.md` 3, drei Testdateien je 2. `SENTINEL_SECOND|FilterSentinelSecond` 12 Zeilen: Fixture 2, C# `PhaseEnvironment.cs` 1 und Test 2, Kotlin `PhaseEnvironment.kt` 1 (die Kotlin-Testdatei liest `filterSentinelSecond` in Kleinschreibung und trifft das Muster nicht — Musterlücke, nicht Trägerlücke), Python 6. |
+
+**Belege des Implementers (gemessen am 2026-10-02, Commit `26e6a500` plus Wortlaut-Korrektur der Frist-Meldung, jeder Lauf seriell nach `make image`; die DoD-Häkchen setzt die Planner-Closure):**
+
+Unmutierte Läufe (zweiter Lauf je Tier schreibt `docs/user/sdk-e2e-abdeckung.md` nicht erneut; der erste Lauf änderte genau drei Zeilen):
+
+```text
+C#:     FILTER_RESULT f1=2 f1_foreign=0 f2=2 f2_foreign=0 unfiltered=6 quiet_seconds=15   (SEEN nach 333ms, SEEN_SECOND nach 333ms, Versuch 1)
+Kotlin: FILTER_RESULT f1=2 f1_foreign=0 f2=2 f2_foreign=0 unfiltered=6 quiet_seconds=15   (SEEN nach 346ms, SEEN_SECOND nach 331ms, Versuch 1)
+Python: FILTER_RESULT f1=2 f1_foreign=0 f2=2 f2_foreign=0 unfiltered=6 quiet_seconds=15   (SEEN nach 350ms, SEEN_SECOND nach 379ms, Versuch 1)
+```
+
+Mutationen an Kopien im Scratchpad (Edit/Write, kein `sed -i`; Unit-Stufe des Package-Baus an der Kopie umgangen; eigener Image-Tag `pg-change-feed-mutation:hd-*`, danach `docker rmi`):
+
+| Zelle | Stelle der Kopie | Farbe | gedruckte Zeile |
+|---|---|---|---|
+| Package C# | `PgChangeFeedSseClient.cs`: `table` nicht auf den Draht, `dotnet test` → `RUN true` | rot, Exit 2, Filter-Phase | `FILTER_RESULT f1=4 f1_foreign=2 f2=2 f2_foreign=0 unfiltered=6 quiet_seconds=15` |
+| Package Kotlin | `PgChangeFeedSseClient.kt`: `"table" to (null as String?)`, Tests umgangen | rot, Exit 2 | `f1=4 f1_foreign=2 f2=2 f2_foreign=0 unfiltered=6` |
+| Package Python | `sse_client.py`: `("table", None)`, `pytest` umgangen | rot, Exit 2 | `f1=4 f1_foreign=2 f2=2 f2_foreign=0 unfiltered=6` |
+| Kotlin M3 | `SseFilterRealserverTest.kt`: F2 mit `filterSchemaA` | rot, Exit 2 | „kein SEEN" nach fünf Dreiergruppen |
+| Python M2 | `test_sse_filter_realserver.py`: F2 ohne `schema` | rot, Exit 2 | `f1=2 f1_foreign=0 f2=6 f2_foreign=4 unfiltered=6` |
+| Arm A (Parent `91e46048`, ohne Härtung; Überlagerungen a+b+c) | C#-Package-Mutation, F1 startet 4 s nach `READY`, erste Gruppe als drei `psql`-Aufrufe (B bei t, zweites Schema t+2 s, A t+6 s) | **grün (Falsch-Grün)**, Exit 0 | `FILTER_RESULT f1=1 f1_foreign=0 f2=1 f2_foreign=0 unfiltered=3 quiet_seconds=15`, SEEN nach 6454ms; f1=1 bei Package-Mutation und Gegenlesung `public.feed_e2e_sdkfilt_a`: F1 hat B der ersten Gruppe verpasst |
+| Arm B (Stand mit Härtung; a+b+c) | dieselben Überlagerungen | rot, Exit 2 | `FILTER_RESULT f1=3 f1_foreign=1 f2=2 f2_foreign=0 unfiltered=6 quiet_seconds=15` |
+| Kontrolle (Stand mit Härtung; b+c, ohne a) | ohne Package-Mutation | grün, Exit 0 | `FILTER_RESULT f1=2 f1_foreign=0 f2=2 f2_foreign=0 unfiltered=6 quiet_seconds=15`, SEEN nach 6201ms, SEEN_SECOND nach 324ms |
 
 ## 4. Trigger
 

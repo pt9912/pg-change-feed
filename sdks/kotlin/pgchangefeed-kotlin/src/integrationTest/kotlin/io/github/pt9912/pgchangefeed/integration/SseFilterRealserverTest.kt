@@ -92,7 +92,7 @@ class SseFilterRealserverTest {
             assertTrue(
                 System.currentTimeMillis() < deadline,
                 "innerhalb der Frist weder die Change der Tabelle am Client mit Schema und Tabelle, " +
-                    "noch die des zweiten Schemas am Client mit Schema, noch alle drei Gruppen am Client ohne Filter empfangen",
+                    "noch die des zweiten Schemas am Client mit Schema, noch alle drei Tabellen am Client ohne Filter empfangen",
             )
             Thread.sleep(100)
         }
