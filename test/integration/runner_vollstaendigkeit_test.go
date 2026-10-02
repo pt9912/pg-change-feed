@@ -31,12 +31,15 @@ var runArgumentMuster = regexp.MustCompile(`(?:^|\s)-run(?:=|\s+)(?:'([^']*)'|"(
 // Name desselben Aufrufs trifft; eine Funktion außerhalb aller Muster liefe nie.
 //
 // Der Leser liest nur die `-run`-Werte (Anführungszeichen-Formen, siehe
-// runArgumentMuster); Zeilen, die mit `#` beginnen, zählen nicht. Er prüft die
-// Anwesenheit im Muster, nicht dass die Phase erreicht wird oder die Funktion
-// ohne `--- SKIP` läuft. Ein Kommentar am Zeilenende ist kein Zeilenkommentar
-// und wird mitgelesen. Der Test braucht keinen Stack und keine Datenbank: er
-// liest Quelltext und Skript aus dem Repo-Mount (`/src` in `make test`) und
-// läuft deshalb auch dort.
+// runArgumentMuster); ein Kommentar zählt nicht: ab einem `#` außerhalb von
+// Einfach- und Doppelanführungszeichen, das am Zeilenanfang oder nach Leerraum
+// steht, ist der Rest der Zeile entfernt (`$#`, `${#x}`, `a#b` sind keiner).
+// Er prüft die Anwesenheit im Muster, nicht dass die Phase erreicht wird oder
+// die Funktion ohne `--- SKIP` läuft. Benannte Grenze: der Leser parst keine
+// Shell-Grammatik und liest ein `-run` in einem String (`echo "… -run '…'"`)
+// oder Heredoc-Text wie ein Argument mit. Der Test braucht keinen Stack und
+// keine Datenbank: er liest Quelltext und Skript aus dem Repo-Mount (`/src` in
+// `make test`) und läuft deshalb auch dort.
 func TestRunnerFuehrtJedeE2EFunktionAus(t *testing.T) {
 	_, quelle, _, ok := runtime.Caller(0)
 	if !ok {
@@ -93,15 +96,43 @@ func e2eFunktionsnamen(verzeichnis string) ([]string, error) {
 	return namen, nil
 }
 
+// ohneKommentar entfernt einen Shell-Kommentar aus einer Zeile: ab dem ersten
+// `#` außerhalb von Anführungszeichen, das am Zeilenanfang oder nach Leerraum
+// steht. Ein Backslash außerhalb von Einfachanführungszeichen schützt das
+// folgende Zeichen.
+func ohneKommentar(zeile string) string {
+	einfach, doppelt := false, false
+	for i := 0; i < len(zeile); i++ {
+		c := zeile[i]
+		switch {
+		case einfach:
+			if c == '\'' {
+				einfach = false
+			}
+		case c == '\\':
+			i++
+		case doppelt:
+			if c == '"' {
+				doppelt = false
+			}
+		case c == '\'':
+			einfach = true
+		case c == '"':
+			doppelt = true
+		case c == '#' && (i == 0 || zeile[i-1] == ' ' || zeile[i-1] == '\t'):
+			return zeile[:i]
+		}
+	}
+	return zeile
+}
+
 // runMuster liest die `-run`-Werte eines Skripttexts als Muster, ohne
-// Zeilenkommentare. Ein `-run` ohne Anführungszeichen oder mit einem
+// Kommentare (ohneKommentar). Ein `-run` ohne Anführungszeichen oder mit einem
 // ungültigen Muster ist ein Fehler.
 func runMuster(skript string) ([]*regexp.Regexp, error) {
 	muster := make([]*regexp.Regexp, 0)
 	for nummer, zeile := range strings.Split(skript, "\n") {
-		if strings.HasPrefix(strings.TrimSpace(zeile), "#") {
-			continue
-		}
+		zeile = ohneKommentar(zeile)
 		for _, treffer := range runArgumentMuster.FindAllStringSubmatch(zeile, -1) {
 			if treffer[3] != "" || (treffer[1] == "" && treffer[2] == "") {
 				return nil, fmt.Errorf("Zeile %d: -run ohne Anführungszeichen oder ohne Wert (%q) — Form nicht lesbar", nummer+1, strings.TrimSpace(treffer[0]))
@@ -118,8 +149,10 @@ func runMuster(skript string) ([]*regexp.Regexp, error) {
 }
 
 // fehlendeImRunner liefert die Namen, die kein `-run`-Muster des Skripttexts
-// trifft (Trefferregel wie `go test -run`: Teilübereinstimmung), sortiert.
-// Ein Skript ohne jedes `-run` ist ein Fehler.
+// trifft (Trefferregel wie `go test -run`: Teilübereinstimmung, ein
+// unverankerter Wert wie `TestE2E` erfasst alle Namen mit diesem Teilstring;
+// Reihenfolge der Läufe liest der Wächter nicht), sortiert. Ein Skript ohne
+// jedes `-run` ist ein Fehler.
 func fehlendeImRunner(skript string, namen []string) ([]string, error) {
 	muster, err := runMuster(skript)
 	if err != nil {
@@ -169,6 +202,33 @@ func TestRunnerLeserDreiZustaende(t *testing.T) {
 			strings.Replace(vollstaendig, "|TestE2EBeta", "", 1) +
 				"# TestE2EBeta läuft separat\n  # go test -run '^TestE2EBeta$'\n",
 			[]string{"TestE2EBeta"}, "",
+		},
+		{
+			"Name nur im Zeilenende-Kommentar",
+			strings.Replace(vollstaendig, "|TestE2EBeta", "", 1) +
+				"true # -run '^TestE2EBeta$'\n",
+			[]string{"TestE2EBeta"}, "",
+		},
+		{
+			"# in Anführungszeichen im Muster bleibt gelesen",
+			"go test -run '^TestE2EAlpha$| #|TestE2EBeta|TestE2EGamma' ./x\n",
+			[]string{}, "",
+		},
+		{
+			"$# vor dem -run beginnt keinen Kommentar",
+			"echo $# && go test -run '^(TestE2EAlpha|TestE2EBeta|TestE2EGamma)$' ./x\n",
+			[]string{}, "",
+		},
+		{
+			"-run nur in echo-String zählt als erfasst (benannte Grenze)",
+			strings.Replace(vollstaendig, "|TestE2EBeta", "", 1) +
+				"echo \"go test -run '^TestE2EBeta$' ./x\"\n",
+			[]string{}, "",
+		},
+		{
+			"unverankerter Wert erfasst alle Namen (Semantik von go test -run)",
+			"go test -run 'TestE2E' ./x\n",
+			[]string{}, "",
 		},
 		{
 			"Name außerhalb eines -run-Arguments",

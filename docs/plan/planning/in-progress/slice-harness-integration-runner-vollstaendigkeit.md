@@ -111,14 +111,18 @@ diff 21 -n -E '^func TestE2E' -- test/integration
 diff 8 -n -E '(^|[^a-z])-run' -- tools/harness/run-integration-tests.sh
 af53b900 21 -n -E '^func TestE2E' -- test/integration
 af53b900 8 -n -E '(^|[^a-z])-run' -- tools/harness/run-integration-tests.sh
-af53b900 0 -n -E '(21|einundzwanzig) (func|Test|E2E)' -- harness/README.md docs/user
-diff 0 -n -E '(21|einundzwanzig) (func|Test|E2E)' -- harness/README.md docs/user
+fa7e07a9 1 -n -E '(21|einundzwanzig) (func|Test|E2E)' -- . :(exclude)docs/reviews :(exclude)docs/plan/planning/done :(exclude).harness/baseline
+diff 1 -n -E '(21|einundzwanzig) (func|Test|E2E)' -- . :(exclude)docs/reviews :(exclude)docs/plan/planning/done :(exclude).harness/baseline
 diff 2 -n -E '^func TestRunner' -- test/integration
 ```
 
 Nachmessung am Parent `af53b900` (Implementer): dieselben Zahlen wie am Plan-Stand (21 Testfunktionen,
-8 `-run`-Zeilen). Träger der Zahl „21“ oder einer Zahl der Testfunktionen: keiner in
-`harness/README.md` und `docs/user` (Suchmuster `(21|einundzwanzig) (func|Test|E2E)`, 0 Treffer);
+8 `-run`-Zeilen). Träger der Zahl „21“ oder einer Zahl der Testfunktionen: keiner im ganzen Baum
+(Suchmuster `(21|einundzwanzig) (func|Test|E2E)` ohne einschränkenden Pathspec; ausgeschlossen
+sind `docs/reviews/**` und `.harness/baseline/**` als Berichte bzw. vendored Fremdbestand sowie
+`docs/plan/planning/done/**` als Records; Stand `fa7e07a9`: ein Treffer,
+`harness/sensors/coverage-gate.md:204`, „21 Tests, 21 `SKIP`“ — ein anderer Gegenstand, kein
+Träger der Zahl der `TestE2E*`-Funktionen);
 `docs/user/e2e-abdeckung.md` Zeile 11 nennt `func TestE2E*` ohne Zahl. Der Wächter ist neu und
 ändert keine Zahl der bestehenden Zeilen; seine beiden Funktionen (`diff`-Zeile mit Soll 2) liegen
 in `test/integration/runner_vollstaendigkeit_test.go`.
