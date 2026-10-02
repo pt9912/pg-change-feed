@@ -153,7 +153,7 @@ nur Test-Code und Runner der Tiers (und die Abdeckungs-Zeilen, die die Runner sc
       `make docs-check`.
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert ausgewertet
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes HIGH/MEDIUM
+- [x] Review durchgeführt, Report unter `docs/reviews/review-slice-sdk-sse-client-schema-table-filter-realserver.md` liegt vor, kein offenes HIGH/MEDIUM
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des Minimal Agent Workflow
       ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
 - [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes je
