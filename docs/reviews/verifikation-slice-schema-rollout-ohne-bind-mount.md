@@ -7,7 +7,7 @@ gegen Plan, DoD und Entscheidung.
 **Gegenstand:** `git diff fcbb2044 HEAD` — drei Commits: Implementer `fb269dc3`, Review `01551df9`
 ([Review-Report](review-slice-schema-rollout-ohne-bind-mount.md): 0 HIGH, 1 MEDIUM F-1, 4 LOW),
 Fixrunde `786e5b3f`. Plan:
-[`slice-schema-rollout-ohne-bind-mount`](../plan/planning/in-progress/slice-schema-rollout-ohne-bind-mount.md).
+[`slice-schema-rollout-ohne-bind-mount`](../plan/planning/done/slice-schema-rollout-ohne-bind-mount.md).
 Entscheidungen: [`ADR-0142`](../plan/adr/0142-schema-rollout-erzeugnisse-ausserhalb-baum-eingabe-ohne-bind-mount.md),
 [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md),
 [`ADR-0114`](../plan/adr/0114-schema-rollout-vorlauf-view-signatur.md),

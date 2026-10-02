@@ -315,8 +315,8 @@ Implementer ein; neue Dateien sind für den Stand `diff` mit `git add` im Index)
 3d10e8c6 4 -n -E 'CURDIR[^:]*:/src:ro' -- Makefile
 3d10e8c6 6 -n -F 'rollout-precheck' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 3d10e8c6 80 -n -E 'plan\.yaml|down\.sql' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
-diff 10 -n -F 'rollout-restore' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
-diff 3 -n -F 'test-rollout-restore' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 7 -n -F 'rollout-restore' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 1 -n -F 'test-rollout-restore' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 diff 1 -n -F 'D_MIGRATE_RUN_USER' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 diff 0 -n -E 'CURDIR[^:]*:/work' -- Makefile harness tools
 diff 3 -n -E 'CURDIR[^:]*:/src:ro' -- Makefile
@@ -339,7 +339,9 @@ stehenden Träger der bewegten Eigenschaft, sondern Records oder Beschreibungen 
 Ortes: `rollout-restore` 10 = sechs in `ADR-0142` (`Accepted`, unberührbar), drei in
 `BEO-PGC/test-schreibt-in-committete-datei/state.md` und eines in `BEO-PGC/nachzug-laesst-ueberholten-text-stehen/evidence` — Register-Nachtrag bei der
 Closure (§7), Adresse Planner; `test-rollout-restore` 3 = ein Treffer in `ADR-0142`, zwei in
-`BEO-PGC/test-schreibt-in-committete-datei/state.md`; `D_MIGRATE_RUN_USER` 1 = `ADR-0142`;
+`BEO-PGC/test-schreibt-in-committete-datei/state.md`. Nach dem Register-Nachtrag der Closure
+(Stand `diff` am Closure-Commit) sind die Soll-Werte 7 bzw. 1: die drei bzw. zwei Treffer in
+`state.md` entfallen, übrig bleiben `ADR-0142` und die `evidence`-Datei; `D_MIGRATE_RUN_USER` 1 = `ADR-0142`;
 `rollout-precheck` 10 = neuer Ort (`rollout.sh`, Vertrag, Handbuch, `ADR-0142`);
 `plan.yaml|down.sql` 67 (davon 17 außerhalb `docs/plan/`): die 50 Treffer unter `docs/plan/`
 sind `ADR-0043`, `ADR-0084`, `ADR-0114`, `ADR-0125`, `ADR-0142` (alle `Accepted`,
