@@ -88,6 +88,9 @@ an `http-client` mit `-verb=changes`, an `grpc-client` im Verb `stream` und
 `cdc.route.<source_id>.<ziel>` statt `cdc.stream.>`; ein Wert mit Punkt, `*`,
 `>` oder Leerraum endet mit Exit 2, bevor ein Abonnement entsteht.
 
+`sse-client` nimmt zusätzlich `-schema` und `-table` entgegen (leer ist kein
+Filter); alle drei Flags wirken zusammen als Konjunktion.
+
 ## C#
 
 Eigene Sprach-Wurzel [`csharp/`](csharp), gebaut über
@@ -131,6 +134,9 @@ an `http-client` mit `--verb=changes`, an `grpc-client` im Verb `stream` und
 `--source` zusammen mit `--target` entgegen und abonniert dann
 `cdc.route.<source_id>.<ziel>` statt `cdc.stream.>`.
 
+`sse-client` nimmt zusätzlich `--schema` und `--table` entgegen (leer ist kein
+Filter); alle drei Flags wirken zusammen als Konjunktion.
+
 ## Kotlin
 
 Eigene Sprach-Wurzel [`kotlin/`](kotlin), gebaut über
@@ -173,6 +179,8 @@ Das Flag `--target` wählt das Zustellziel einer Change (leer ist kein Filter)
 und gilt an denselben Stellen wie bei C#: `http-client` mit `--verb=changes`,
 `grpc-client` im Verb `stream` und `read-changes`, `sse-client` und, zusammen
 mit `--source`, `nats-stream-client` (Subjekt `cdc.route.<source_id>.<ziel>`).
+`sse-client` nimmt zusätzlich `--schema` und `--table` entgegen (leer ist kein
+Filter); alle drei Flags wirken zusammen als Konjunktion.
 
 ## Abgrenzung
 

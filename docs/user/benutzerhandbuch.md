@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.86
+Version: 1.87
 Software-Version: siehe `docs/user/version.md`
-Stand: 2026-10-01
+Stand: 2026-10-02
 
 ## 1. Einleitung
 
@@ -1976,12 +1976,14 @@ Phase „Routing-Happy-Path (fünf
 Zustellwege)": ein SSE-Client mit Ziel empfing von einer festen Menge gemischter
 Changes genau die Changes seines Ziels und im Ruhefenster von 15 s keine Change
 eines anderen Ziels oder ohne Ziel. Die Beispiel-Clients (Go/C#/Kotlin) und
-die drei SDK-Packages nehmen von den Query-Parametern nur `target` als eigenen
-Aufrufparameter entgegen (`-target`/`--target`, `StreamChangesAsync(target: …)`,
-`streamChanges(target)`, `stream_changes(target)`); `schema` und `table` setzen
-sie am SSE-Stream nicht; `target` ist dort der einzige Filter der Clients
-(anders der gRPC-Stream oben, dessen drei Filter die Packages als Parameter
-entgegennehmen).
+die drei SDK-Packages nehmen alle drei Query-Parameter als eigene
+Aufrufparameter entgegen (`-schema`/`-table`/`-target` bzw.
+`--schema`/`--table`/`--target`, `StreamChangesAsync(target: …, schema: …,
+table: …)`, `streamChanges(target, schema, table)`,
+`stream_changes(target, schema, table)`); ein nicht gesetzter oder leerer Wert
+des Beispiels erscheint nicht auf dem Draht, am Package erscheint ein gesetzter
+Parameter — auch ein leerer — auf dem Draht, und der Server liest einen leeren
+Wert als „kein Filter“.
 
 **Zustellsemantik:** keine Zustellgarantie (Fire-and-Forget): Ein nicht
 verbundener oder langsamer lesender Client verpasst die betroffenen
@@ -2000,15 +2002,18 @@ aus; Adresse und Token liest jedes Beispiel aus `CDC_HTTP_ADDR` und
 - **Go:** `examples/sse-client` — Container-Aufruf über
   `make example-run-go SURFACE=sse` (baut bei Bedarf
   `pg-change-feed-examples:go-sse` aus `examples/Dockerfile`); das optionale
-  Flag `ARGS="-target=<ziel>"` wählt das Zustellziel
+  Flag `ARGS="-target=<ziel>"` wählt das Zustellziel, `-schema=<schema>` und
+  `-table=<tabelle>` wählen Schema und Tabelle
 - **C#:** `examples/csharp/sse-client` — Container-Aufruf über
   `make example-run-csharp SURFACE=sse` (startet das mit
   `make examples-csharp` gebaute Image); das optionale Flag
-  `ARGS="--target=<ziel>"` wählt das Zustellziel
+  `ARGS="--target=<ziel>"` wählt das Zustellziel, `--schema=<schema>` und
+  `--table=<tabelle>` wählen Schema und Tabelle
 - **Kotlin:** `examples/kotlin/sse-client` — Container-Aufruf über
   `make example-run-kotlin SURFACE=sse` (startet das mit
   `make examples-kotlin` gebaute Image); das optionale Flag
-  `ARGS="--target=<ziel>"` wählt das Zustellziel
+  `ARGS="--target=<ziel>"` wählt das Zustellziel, `--schema=<schema>` und
+  `--table=<tabelle>` wählen Schema und Tabelle
 
 **SDK:** .NET-Anwendungen können statt des Beispiels dasselbe offizielle
 NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
@@ -2017,8 +2022,9 @@ NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
 allen zehn Feldern der Tabelle oben; das Bearer-Token landet im
 `Authorization`-Header, ein fehlender oder unbekannter Token endet den
 Aufruf mit `PgChangeFeedUnauthorizedException` (HTTP-Status `401`), statt
-den Draht-Vertrag selbst zu implementieren; der optionale Parameter `target`
-(per Name übergeben) wählt das Zustellziel; siehe `sdks/csharp/README.md`.
+den Draht-Vertrag selbst zu implementieren; die optionalen Parameter `target`,
+`schema` und `table` (per Name übergeben) wählen Zustellziel, Schema und
+Tabelle; siehe `sdks/csharp/README.md`.
 
 Kotlin/JVM-Anwendungen können statt des Beispiels dasselbe offizielle
 Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
@@ -2027,8 +2033,9 @@ Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
 liefert eine `Sequence<Change>` mit allen zehn Feldern der Tabelle oben; das
 Bearer-Token landet im `Authorization`-Header, ein fehlender oder
 unbekannter Token endet den Aufruf mit `PgChangeFeedUnauthorizedException`
-(HTTP-Status `401`), statt den Draht-Vertrag selbst zu implementieren; der
-optionale Parameter `target` wählt das Zustellziel. Wie
+(HTTP-Status `401`), statt den Draht-Vertrag selbst zu implementieren; die
+optionalen Parameter `target`, `schema` und `table` wählen Zustellziel,
+Schema und Tabelle. Wie
 beim HTTP-API-Zugriff oben ist der Bezug über Cloudsmith ohne Konto und
 ohne Token möglich (`ADR-0123`); der Bezug über **GitHub Packages** verlangt
 dagegen immer eine Authentifizierung (`ADR-0109` Festlegung 2). Siehe
@@ -2041,9 +2048,9 @@ PyPI-Package `pgchangefeed` einbinden (`LH-FA-SST-009`, `ADR-0110`,
 über die getypten `StreamChange`-Events mit allen zehn Feldern der Tabelle
 oben; das Bearer-Token landet im `Authorization`-Header, ein fehlender oder
 unbekannter Token endet den Aufruf mit `PgChangeFeedUnauthorizedError`
-(HTTP-Status `401`), statt den Draht-Vertrag selbst zu implementieren; der
-optionale Parameter `target` wählt das Zustellziel. Siehe
-`sdks/python/README.md`.
+(HTTP-Status `401`), statt den Draht-Vertrag selbst zu implementieren; die
+optionalen Parameter `target`, `schema` und `table` wählen Zustellziel,
+Schema und Tabelle. Siehe `sdks/python/README.md`.
 
 ### Zugriff über das NATS-Wecksignal
 
@@ -2791,3 +2798,4 @@ MIT — siehe `LICENSE`.
 | 1.84 | 2026-10-01 | Routing von Changes auf Zustellziele dokumentiert (`LH-FA-CFG-008`, `LH-FA-SST-006`, `ADR-0137`, `ADR-0138`, `ADR-0139`, `ADR-0140`, `ADR-0141`, slice-routing-betriebsdoku): §4 neuer Abschnitt „Routing-Regel konfigurieren“ (Voraussetzung `cdc_admin`, `cdc.set_route`/`cdc.remove_route`, Form der `rule_spec`, ausgeführtes Beispiel, R1–R6 mit Fehlertexten, die Fehlerklasse `schema` mit zwei Ursachen und der Abhilfe, „Ziel lesen“, Hinweise zu festem Label, Change ohne Treffer, abwesendem Wert, `DELETE` ohne volle Replica-Identität, Auswahl statt Zugriffsschutz); die Zugriffswege (HTTP, gRPC-Stream, gRPC-Verwaltungs-API `ReadChanges`, SSE) nennen den Filter `target`, der NATS-Vollinhalts-Stream das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>` samt Kosten-Messung, „Änderungen lesen“ die Spalte `route_target`; Fehlerklassen-Zeile `schema`, „Neustart nach einem Fehler“, Rollen-Tabelle, Glossar, „Grenzwerte“ und „Schema aktualisieren“ nachgezogen; der Fehlerblock der Transformationsregeln trennt die entfernte Spalte von der nicht anwendbaren Regel; die Fehlerklasse `schema` ordnet eine Publication mit Spaltenliste an einer Tabelle mit bekannter Spaltenform der Ursache 2 zu, und übernommene Messungen nennen ihren Bericht; die Kosten-Spanne der zweiten Veröffentlichung nennt nur Einzelwerte mit verlinktem Bericht, die R4-Zeile „höchste `order`“ ist als am System nicht gefahren gekennzeichnet, und die Abhilfe der inkompatiblen Schemaänderung ist als im Handbuch nicht beschrieben benannt |
 | 1.85 | 2026-10-01 | Parameter `target` in den SDK-Packages und den Beispiel-Clients dokumentiert (`LH-FA-CFG-008`, `LH-FA-SST-009`, `ADR-0137`, slice-routing-sdk-beispiel-target): `PgChangeFeed.Client`, `pgchangefeed` und `pgchangefeed-kotlin` tragen `target` am HTTP-Lesezugriff, am gRPC-Stream, am SSE-Stream (dort als einziger Filter-Parameter) und als Feld des `ReadChanges`-Requests, der NATS-Vollinhalts-Client baut das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>`; die Beispiele in Go, C# und Kotlin nehmen `-target`/`--target` an `changes`, `stream`, `read-changes` und dem SSE-Beispiel entgegen, das NATS-Vollinhalts-Beispiel `-source` mit `-target` |
 | 1.86 | 2026-10-01 | SSE-Absatz berichtigt (`LH-FA-CFG-008`, `ADR-0137`, slice-routing-sdk-beispiel-target): `target` ist am SSE-Client der einzige Filter-Parameter; der Verweis auf einen offenen Folge-Schritt für `schema`/`table` entfällt |
+| 1.87 | 2026-10-02 | Parameter `schema` und `table` am SSE-Stream der SDK-Packages und der Beispiel-Clients dokumentiert (`LH-FA-SST-008`, `LH-FA-SST-009`, `ADR-0133`, slice-sdk-sse-client-schema-table-filter): `PgChangeFeed.Client`, `pgchangefeed` und `pgchangefeed-kotlin` nehmen am SSE-Client `target`, `schema` und `table` als optionale Parameter entgegen (die Beschränkung auf `target` entfällt), die SSE-Beispiele in Go, C# und Kotlin die Flags `-schema`/`-table` bzw. `--schema`/`--table`; Package-Versionen unverändert |

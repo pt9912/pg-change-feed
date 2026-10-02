@@ -130,6 +130,14 @@ Packages und der Parameter `target` am SSE-Client (letzter Parameter, nur gesetz
 dem Draht). Der Implementer liest beide und setzt `schema`/`table` an dieselbe Stelle des
 SSE-Query-Aufbaus.
 
+**Umsetzung (Implementer):** Reihenfolge auf dem Draht `schema`, `table`, `target` (wie
+`GET /changes`); in den Packages gilt wie bei `target`: `null` fehlt auf dem Draht, ein
+leerer Wert erscheint als `schema=` (der Server liest ihn als „kein Filter“,
+`MatchesFilter`); in den Beispielen ist leer „nicht gesetzt“ (wie beim vorhandenen
+`-target`). Der Server hat keinen Randfall für `table` ohne `schema` (Treffer in jedem
+Schema); das Python-Test `test_readme_examples` bindet die API-Tabelle des README an die
+Signatur.
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „der SSE-Client der Packages
 und das SSE-Beispiel setzen `schema`/`table` nicht, `target` ist ihr einziger Filter“;
 Parent ist `dd5377bc`; der Implementer ergänzt die `diff`-Zeilen und trägt Gefundenes und
@@ -141,15 +149,20 @@ dd5377bc 67 -n -E 'StreamChangesAsync|stream_changes|streamChanges' -- sdks ':!*
 dd5377bc 14 -n -E 'schema|table' -- sdks/csharp/PgChangeFeed.Client/Sse sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/sse sdks/python/pgchangefeed/src/pgchangefeed/sse_client.py
 dd5377bc 6 -n -E 'schema|table' -- examples/sse-client examples/csharp/sse-client examples/kotlin/sse-client
 dd5377bc 0 -n -E 'ADR-|LH-FA|LH-QA|SPEC-|ARC-' -- sdks ':!dist'
+diff 1 -n -i -E 'only filter|does not set|einzige Filter' -- sdks docs/user examples
+diff 67 -n -E 'StreamChangesAsync|stream_changes|streamChanges' -- sdks ':!*Test*' ':!*test*' ':!dist'
+diff 43 -n -E 'schema|table' -- sdks/csharp/PgChangeFeed.Client/Sse sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/sse sdks/python/pgchangefeed/src/pgchangefeed/sse_client.py
+diff 76 -n -E 'schema|table' -- examples/sse-client examples/csharp/sse-client examples/kotlin/sse-client
+diff 0 -n -E 'ADR-|LH-FA|LH-QA|SPEC-|ARC-' -- sdks ':!dist'
 ```
 
 | Träger | Messung am Parent (`dd5377bc`, gemessen am 2026-10-01) | Behandlung und Befund am Diff |
 |---|---|---|
-| Aussagen „`target` ist der einzige Filter“ (READMEs, Handbuch) | Zeile 1: 5 Zeilen (drei READMEs, Handbuch-Absatz am SSE-Stream, Änderungshistorie 1.86) | jede Zeile lesen: die Aussage entfällt oder wird auf den neuen Stand berichtigt; die Historienzeile 1.86 bleibt als Historie stehen. **Befund am Diff:** vom Implementer einzutragen. |
-| Stellen der Stream-Methoden | Zeile 2: 67 Nicht-Test-Zeilen | jede SSE-Stelle trägt `schema`/`table` oder die Auslassung ist begründet. **Befund am Diff:** vom Implementer einzutragen. |
-| `schema`/`table` im SSE-Teil der Packages | Zeile 3: 14 Zeilen (Nachrichtenmodell `Change` der Antwort, Docstring), kein Treffer am Aufrufparameter | die Treffer sind die Felder der empfangenen Change, nicht der Anfrage; der Anfrageparameter kommt hinzu. **Befund am Diff:** vom Implementer einzutragen. |
-| Flags der SSE-Beispiele | Zeile 4: 6 Zeilen (Testdaten der Antwort), kein Flag | das Paar kommt je Sprache hinzu. **Befund am Diff:** vom Implementer einzutragen. |
-| Interne Kennungen unter `sdks/` | Zeile 5: 0 Zeilen | muss 0 bleiben; `make sdk-public-doc-check` ist der Wächter. **Befund am Diff:** vom Implementer einzutragen. |
+| Aussagen „`target` ist der einzige Filter“ (READMEs, Handbuch) | Zeile 1: 5 Zeilen (drei READMEs, Handbuch-Absatz am SSE-Stream, Änderungshistorie 1.86) | jede Zeile lesen: die Aussage entfällt oder wird auf den neuen Stand berichtigt; die Historienzeile 1.86 bleibt als Historie stehen. **Befund am Diff:** Zeile 1 am Diff: 1 (die Historienzeile 1.86, bewusst stehen gelassen). Gefunden und berichtigt: die drei READMEs (je der SSE-Absatz, dazu die API-Tabellenzeile und der Abschnitt „Known limits“ „… filtered by delivery target only“, den das Suchmuster nicht trifft), im Handbuch der SSE-Absatz am Ende von „Zugriff über Server-Sent-Events“ (Beispiel-Clients und Packages nehmen alle drei Parameter entgegen), die drei SDK-Abschnitte und die Beispielliste dort; der Docstring-Hinweis „target only“ in `sse_client.py`. Nicht gefunden: weitere Träger in `harness/README.md`, `docs/user/` außerhalb des Handbuchs oder `spec/` (Suche nach `SSE`-Zeilen mit `target`/`schema`/`filter`: nur die E2E-Abdeckungstabellen, die den Server-Pfad beschreiben, nicht die Clients). |
+| Stellen der Stream-Methoden | Zeile 2: 67 Nicht-Test-Zeilen | jede SSE-Stelle trägt `schema`/`table` oder die Auslassung ist begründet. **Befund am Diff:** 67 am Diff (Zahl unverändert, weil nur Parameter und Zeilen innerhalb bestehender Zeilen hinzukommen). Die SSE-Stelle je Package ist `StreamChangesAsync`/`streamChanges`/`stream_changes` des SSE-Clients (jetzt mit `schema`/`table`), dazu die README-Zeilen (nachgezogen). Die gRPC- und NATS-Stellen sind nicht Gegenstand (gRPC trägt die Parameter bereits, NATS filtert über das Subjekt). |
+| `schema`/`table` im SSE-Teil der Packages | Zeile 3: 14 Zeilen (Nachrichtenmodell `Change` der Antwort, Docstring), kein Treffer am Aufrufparameter | die Treffer sind die Felder der empfangenen Change, nicht der Anfrage; der Anfrageparameter kommt hinzu. **Befund am Diff:** 43 am Diff; der Anfrageparameter steht jetzt in allen drei Clients (Signatur, Query-Aufbau, Docstring). Die 14 Treffer des Parents (Felder der Antwort) bleiben unverändert. |
+| Flags der SSE-Beispiele | Zeile 4: 6 Zeilen (Testdaten der Antwort), kein Flag | das Paar kommt je Sprache hinzu. **Befund am Diff:** 76 am Diff; das Flag-Paar steht in Go (`main.go`), C# (`Cli.cs`) und Kotlin (`Cli.kt`), jeweils mit Tests Flag → Anfrage. |
+| Interne Kennungen unter `sdks/` | Zeile 5: 0 Zeilen | muss 0 bleiben; `make sdk-public-doc-check` ist der Wächter. **Befund am Diff:** 0 am Diff, `make sdk-public-doc-check` Exit 0 (siehe Bericht). |
 
 ## 4. Trigger
 
