@@ -85,7 +85,7 @@ der Ausgangstabelle.
       *Zu belegen durch:* `git diff --name-only <Basis> -- docs/plan/adr .github AGENTS.md` ist leer.
 - [ ] `make gates` grün — Exit-Code ungefiltert gesichert und gesondert ausgewertet
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor (`.harness/skills/reviewer.md`),
+- [x] Review durchgeführt, Report `docs/reviews/review-slice-sdk-public-doc-check-lesefehler-fail-closed.md` liegt vor (`.harness/skills/reviewer.md`),
       kein offenes HIGH/MEDIUM — Rollenwechsel nach Schritt 8 des Minimal Agent Workflow
       ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review.
 - [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes, beide
