@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.89
+Version: 1.90
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-10-03
 
@@ -365,17 +365,17 @@ dann neu setzen; beide Aufrufe dürfen in derselben Transaktion stehen.
 
 **Fehler: Antrag endet `failed` mit einem Konfliktfehler**
 
-**Ursache:** einer der folgenden Konflikte — der Klartext steht in
-`error_message`:
+**Ursache:** einer der folgenden Konflikte — Meldungscode und Klartext stehen in
+`error_message` (siehe [Meldungscodes](#meldungscodes)):
 
 | Ursache | Fehlertext |
 |---|---|
-| Regelname bereits vergeben (je Tabelle eindeutig) | `Regelname bereits vergeben` |
-| Spalte trägt bereits eine andere Regel | `Spalte trägt bereits eine Regel` |
-| Zielname (`to`) kollidiert mit dem `to` einer anderen Regel | `Zielname kollidiert mit einer anderen Regel` |
-| Zielname kollidiert mit einer Spalte der Tabelle (auch mit ausgeschlossenen) | `Zielname kollidiert mit einer Spalte der Tabelle` |
-| Spalte existiert nicht an der Quelle | `Spalte existiert nicht an der Quelle` |
-| `remove_transformation` gegen einen unbekannten Regelnamen | `Regelname nicht geführt` |
+| Regelname bereits vergeben (je Tabelle eindeutig) | `abgelehnt [PCF-E8020]: Regelname bereits vergeben` |
+| Spalte trägt bereits eine andere Regel | `abgelehnt [PCF-E8021]: Spalte trägt bereits eine Regel` |
+| Zielname (`to`) kollidiert mit dem `to` einer anderen Regel | `abgelehnt [PCF-E8022]: Zielname kollidiert mit einer anderen Regel` |
+| Zielname kollidiert mit einer Spalte der Tabelle (auch mit ausgeschlossenen) | `abgelehnt [PCF-E8022]: Zielname kollidiert mit einer Spalte der Tabelle` |
+| Spalte existiert nicht an der Quelle | `abgelehnt [PCF-E8024]: Spalte existiert nicht an der Quelle` |
+| `remove_transformation` gegen einen unbekannten Regelnamen | `abgelehnt [PCF-E8023]: Regelname nicht geführt` |
 
 Ein Tippfehler beim Aufruf selbst (leeres Schema, leerer Tabellenname, leere
 Spalte) endet ebenso `failed`, ohne nachfolgende Anträge zu blockieren.
@@ -554,8 +554,9 @@ Setzen. Um eine Regel zu ersetzen: erst entfernen, dann neu setzen.
 
 **Fehler: Antrag endet `failed`**
 
-**Ursache:** eine Prüfung der Regel verletzt — der Klartext steht in
-`error_message`, gefolgt von einem Doppelpunkt, einem Leerzeichen und der
+**Ursache:** eine Prüfung der Regel verletzt — `error_message` beginnt mit
+`abgelehnt [<Code>]: ` (siehe [Meldungscodes](#meldungscodes)); es folgt der
+Klartext, ein Doppelpunkt, ein Leerzeichen und die
 Adresse (`schema.tabelle.regelname`, `schema.tabelle.spalte`,
 `schema.tabelle.zielname`, bei `order` `schema.tabelle.<Wert>`; bei einem
 unbekannten Schlüssel der bloße Schlüsselname ohne Tabelle). Die führende
@@ -564,25 +565,26 @@ schließt Mehrdeutigkeit aus, statt sie aufzulösen:
 
 | Prüfung | Fehlertext (Beispiel mit Adresse) |
 |---|---|
-| R1 — Regelname je Tabelle eindeutig | `Regelname bereits vergeben: public.orders.eu_orders` |
-| R2 — `order` je Tabelle eindeutig | `order bereits vergeben: public.orders.10` |
-| R3 — `when.column` existiert an der Quelle | `Spalte existiert nicht an der Quelle: public.orders.regio` |
-| R3 — `when.column` ist keine ausgeschlossene Spalte | `Spalte ist ausgeschlossen: public.orders.name` |
-| R3 — umgekehrt: `cdc.exclude_column` gegen eine Spalte mit Routing-Bedingung | `Spalte trägt eine Routing-Bedingung: public.orders.region` |
-| R4 — höchstens eine Abschlussregel (ohne `when`) | `Regel ohne when bereits vorhanden: public.orders.rest` |
-| R4 — die Abschlussregel trägt die höchste `order` | `Regel ohne when trägt nicht die höchste order: public.orders.rest` (Text laut Spezifikation, am System nicht gefahren) |
-| R4 — eine Regel mit `when` trägt keine höhere `order` als die Abschlussregel | `order liegt hinter der Regel ohne when: public.orders.rest` |
-| R5 — das Paar (`when.column`, `when.equals`) kommt je Tabelle einmal vor | `Bedingung bereits vergeben: public.orders.region` |
-| R6 — `cdc.remove_route` gegen einen unbekannten Regelnamen | `Regelname nicht geführt: public.orders.nope` |
+| R1 — Regelname je Tabelle eindeutig | `abgelehnt [PCF-E8020]: Regelname bereits vergeben: public.orders.eu_orders` |
+| R2 — `order` je Tabelle eindeutig | `abgelehnt [PCF-E8030]: order bereits vergeben: public.orders.10` |
+| R3 — `when.column` existiert an der Quelle | `abgelehnt [PCF-E8024]: Spalte existiert nicht an der Quelle: public.orders.regio` |
+| R3 — `when.column` ist keine ausgeschlossene Spalte | `abgelehnt [PCF-E8033]: Spalte ist ausgeschlossen: public.orders.name` |
+| R3 — umgekehrt: `cdc.exclude_column` gegen eine Spalte mit Routing-Bedingung | `abgelehnt [PCF-E8034]: Spalte trägt eine Routing-Bedingung: public.orders.region` |
+| R4 — höchstens eine Abschlussregel (ohne `when`) | `abgelehnt [PCF-E8032]: Regel ohne when bereits vorhanden: public.orders.rest` |
+| R4 — die Abschlussregel trägt die höchste `order` | `abgelehnt [PCF-E8032]: Regel ohne when trägt nicht die höchste order: public.orders.rest` (Text laut Spezifikation, am System nicht gefahren) |
+| R4 — eine Regel mit `when` trägt keine höhere `order` als die Abschlussregel | `abgelehnt [PCF-E8032]: order liegt hinter der Regel ohne when: public.orders.rest` |
+| R5 — das Paar (`when.column`, `when.equals`) kommt je Tabelle einmal vor | `abgelehnt [PCF-E8031]: Bedingung bereits vergeben: public.orders.region` |
+| R6 — `cdc.remove_route` gegen einen unbekannten Regelnamen | `abgelehnt [PCF-E8023]: Regelname nicht geführt: public.orders.nope` |
 
-Dazu kommen die Formprüfungen vor R1: `Regelname ist ungültig`, `rule_spec ist
-ungültig`, `unbekannter Schlüssel in rule_spec` (gemessen: `unbekannter
+Dazu kommen die Formprüfungen vor R1: `abgelehnt [PCF-E8010]: Regelname ist
+ungültig`, `abgelehnt [PCF-E8011]: rule_spec ist ungültig`, `abgelehnt
+[PCF-E8011]: unbekannter Schlüssel in rule_spec` (Beispiel: `unbekannter
 Schlüssel in rule_spec: foo`, auch für einen Schlüssel innerhalb von `when`) und
-`Zielname ist ungültig`.
-Der Regelstand bleibt bei jedem `failed` unverändert. *Ursprung:* gemessen — die
-Texte der Tabelle und der Formprüfungen sind die Ausgabe von `error_message`
-einer Compose-Umgebung (PostgreSQL 18.6, `cdc_admin`-Identität); die Adressen
-nennen die Namen des Beispiels.
+`abgelehnt [PCF-E8012]: Zielname ist ungültig`.
+Der Regelstand bleibt bei jedem `failed` unverändert. *Ursprung:* gemessen — Code
+und Text der Tabelle und der Formprüfungen sind die Ausgabe von `error_message`
+einer Compose-Umgebung (`make test-integration`, `cdc_admin`-Identität); die
+Adressen nennen die Namen des Beispiels.
 
 **Lösung:** den betroffenen Namen oder die `order` ändern; bei R4 mit
 Abschlussregel: wer eine Regel mit höherer `order` als die Abschlussregel
@@ -609,7 +611,7 @@ die Regel und die Spalte, `cdc.heartbeat.error_class` zeigt `schema`, keine
 Change der Tabelle ist persistiert, es geht keine Change verloren.
 
 ```text
-Fehlerklasse schema: Routing-Regel auf die Änderung nicht anwendbar: Regel "rt_eu" an public.rt2: Spalte der Routing-Regel fehlt in den Spalten der Änderung: region
+Fehlerklasse schema [PCF-E4005]: Routing-Regel auf die Änderung nicht anwendbar: Regel "rt_eu" an public.rt2: Spalte der Routing-Regel fehlt in den Spalten der Änderung: region
 ```
 
 **Lösung:** `cdc.remove_route` beantragen — der Antrag bleibt `pending`, solange
@@ -619,8 +621,9 @@ Tabelle verarbeitet wird, und die zuvor nicht bestätigte Transaktion erscheint
 danach über `cdc.changes` ohne Ziel (`route_target IS NULL`), ohne zweiten
 `schema`-Fehler. *Ursprung:* übernommen aus demselben E2E-Lauf (Antrag
 `pending`, nach dem Neustart `applied`) und gemessen in einer Compose-Umgebung
-(PostgreSQL 18.6, der Log-Text oben, nach dem Neustart `applied`, die Zeile ohne
-Ziel, Feed-Container `healthy`).
+(PostgreSQL 18.6, der Log-Text oben ohne den Meldungscode, der aus der Tabelle
+folgt, nach dem Neustart `applied`, die Zeile ohne Ziel, Feed-Container
+`healthy`).
 
 **Ursache 2 — die Spalte wurde an der Quelle entfernt oder fehlt in der
 Relation, die Spaltenform der Tabelle ist bekannt.** Zwei Anlässe: die Spalte
@@ -636,7 +639,7 @@ Für die Spaltenliste gemessen in einer Compose-Umgebung (PostgreSQL 18.6, Feed
 als Superuser, Tabelle `public.orders` mit bekannter Spaltenform und einer Regel
 auf `region`): nach `ALTER PUBLICATION … SET TABLE public.orders (id, name)` und
 einer eingefügten Zeile endet der Prozess mit Exit 1, gedruckt `Fehlerklasse
-schema: Relation-Änderung nicht sicher als Obermenge interpretierbar:
+schema [PCF-E4003]: Relation-Änderung nicht sicher als Obermenge interpretierbar:
 public.orders`, `cdc.heartbeat.error_class` zeigt `schema`. **Das Entfernen der
 Regel genügt dort nicht:** nach dem Entfernen beider Regeln der Tabelle und einem
 Neustart endete die Erfassung am System mit demselben Text, ebenso nach dem
@@ -976,7 +979,7 @@ WHERE source_id = '<source_id>' AND schema_name = '<schema>' AND table_name = '<
 | `queued` | angenommen, wartet; ein Run läuft zugleich, weitere warten in der Reihenfolge ihrer Anträge |
 | `running` | die Kopie läuft; `rows_copied` schreitet je Block fort |
 | `completed` | alle Zeilen sind in **einer** Transaktion geschrieben; `rows_copied` ist die Zahl der Backfill-Änderungen (eine leere Tabelle endet `completed` mit 0) |
-| `failed` | der Run endete mit einem Fehler; `error_message` trägt die Fehlerklasse (siehe [Fehlerklassen](#fehlerklassen)) vor der Ursache; der Run hinterlässt keine Änderung |
+| `failed` | der Run endete mit einem Fehler; `error_message` trägt Fehlerklasse und Meldungscode (siehe [Meldungscodes](#meldungscodes)) vor der Ursache; der Run hinterlässt keine Änderung |
 | `interrupted` | der Prozess endete während der Kopie; der Run hinterlässt keine Änderung, `rows_copied` nennt den zuletzt festgehaltenen Fortschritt der Kopie und zählt keine sichtbaren Änderungen |
 
 - **`estimated_rows` ist eine Schätzung** der Quelle (aus dem Katalog), keine
@@ -1001,7 +1004,7 @@ WHERE source_id = '<source_id>' AND schema_name = '<schema>' AND table_name = '<
   Sperre kann eine fremde DDL die Tabelle umschreiben (`ALTER TABLE … ALTER
   COLUMN … TYPE`, das die Datei neu schreibt, oder `TRUNCATE`); der ältere
   Snapshot sieht die neue Datei leer. Der Run erkennt das an der Datei der
-  Tabelle und endet `failed` mit `error_message` `transient: …`, Ursache
+  Tabelle und endet `failed` mit `error_message` `transient [PCF-E1003]: …`, Ursache
   „nach dem Snapshot-Export umgeschrieben“ und ohne Änderung; ein **neuer
   Antrag** beginnt neu und liest den Bestand des neuen Zustands. Dieselbe
   Erkennung schlägt auch bei `VACUUM FULL` und `CLUSTER` an, obwohl der Snapshot
@@ -2340,6 +2343,98 @@ zuletzt beobachtete Fehlerzustand wird zusätzlich in
 `cdc.heartbeat.error_class` festgehalten und bei einem erfolgreichen
 Neustart automatisch wieder gelöscht.
 
+### Meldungscodes
+
+Jeder klassifizierte Fehler und jede abgelehnte Eingabe trägt einen
+Meldungscode, der die Ursache feiner benennt als die Fehlerklasse. Ein Code hat
+die Form `PCF-E4003`: der Buchstabe `E` kennzeichnet einen Fehler, die erste
+Ziffer die Fehlerklasse (1 `transient`, 2 `configuration`, 3 `permission`,
+4 `schema`, 5 `storage`, 6 `replication`, 7 `internal`), die übrigen drei
+Ziffern die Ursache. Die Endung `000` ist der Rückfall einer Klasse: ein Fehler,
+dem keine einzelne Ursache zugeordnet ist, trägt den Rückfall seiner Klasse und
+nie keinen Code. Die erste Ziffer `8` kennzeichnet die Ablehnung einer
+Eingabe, etwa eines Antrags; sie trägt keine Fehlerklasse.
+
+Der Code steht an diesen Stellen:
+
+| Stelle | Form |
+|---|---|
+| Log-Zeile und Zeile beim Prozessende (Ausgang 1) | `Fehlerklasse schema [PCF-E4003]: <Ursache>` |
+| `cdc.backfill_status.error_message` eines fehlgeschlagenen Runs | `schema [PCF-E4004]: <Ursache>` |
+| `cdc.administration_request.error_message` eines abgelehnten Antrags | `abgelehnt [PCF-E8021]: <Klartext>` |
+| `cdc.administration_request.error_message` eines Antrags, der an einem klassifizierten Fehler scheiterte | `Fehlerklasse storage [PCF-E5002]: <Ursache>` |
+| Meldungen von `make schema-rollout` | `FEHLER [PCF-E2007]: <Text>` |
+
+**Der Text ist nicht Vertrag, der Code ist es.** Stabil sind der Code, die Klasse,
+das Wort `Fehlerklasse` am Anfang einer Fehlerzeile und der Ausgang 1; der Text
+nach dem Code nennt Laufzeitdetails (Regelname, Spalte, Adresse) und kann
+sich ändern. Wer Meldungen maschinell auswertet, wertet den Code oder die Klasse
+aus, nicht den Text. Ein Code wird nie neu belegt und seine Klasse ändert sich nie.
+Entfällt eine Ursache, bleibt ihr Code in dieser Tabelle und trägt den Vermerk
+„zurückgezogen“.
+
+| Code | Klasse | Bedeutung | Maßnahme |
+|---|---|---|---|
+| `PCF-E1000` | `transient` | vorübergehend nicht verfügbare Quelle oder nicht näher zugeordnete vorübergehende Störung (Rückfall) | Erreichbarkeit der Quelle und des Netzes prüfen, Container neu starten |
+| `PCF-E1001` | `transient` | das Wecksignal über NATS konnte nicht veröffentlicht werden; die Änderung selbst ist erfasst und über SQL lesbar | NATS-Server und `CDC_NATS_URL` prüfen |
+| `PCF-E1002` | `transient` | das Wiederholungsfenster (5 Minuten) bei einer vorübergehenden Störung am Quellzugriff ist erschöpft; der Prozess endet mit Ausgang 1 | Erreichbarkeit der Quelle prüfen, Container neu starten (siehe [Neustart nach einem Fehler](#neustart-nach-einem-fehler)) |
+| `PCF-E1003` | `transient` | die Quelle war für den Snapshot eines Backfills vorübergehend nicht verfügbar (Zeitlimit der Slot-Anlage, Verbindungsabbruch, Umschreiben der Tabelle zwischen Export und Import) | Backfill neu beantragen |
+| `PCF-E2000` | `configuration` | ungültige oder falsch gesetzte Konfiguration ohne nähere Zuordnung (Rückfall) | Konfiguration prüfen |
+| `PCF-E2001` | `configuration` | eine Pflicht-Umgebungsvariable oder ein Wert der Konfigurationsdatei fehlt oder ist falsch gesetzt; der Container startet nicht | die Meldung nennt die Variable; korrigieren und neu starten (siehe [Container startet nicht](#container-startet-nicht)) |
+| `PCF-E2002` | `configuration` | der Replikationszugriff ist falsch konfiguriert: Slot- oder Publication-Name außerhalb des Bezeichner-Alphabets, Publication fehlt an der Quelle, DSN fehlt | Namen und Publication prüfen |
+| `PCF-E2003` | `configuration` | ein Bezeichner einer Aktivierung (Schema, Tabelle, Publication) liegt außerhalb des Bezeichner-Alphabets | Namen korrigieren |
+| `PCF-E2004` | `configuration` | der Snapshot eines Backfills steht im falschen Stand der Konfiguration: Tabelle nicht vorhanden, ungültige Kennung oder keine freie Reserve bei `max_replication_slots`/`max_wal_senders` | Tabelle und Einstellungen der Instanz prüfen, Backfill neu beantragen |
+| `PCF-E2005` | `configuration` | der Backfill-Run fand bei der Ausführung keine Aktivierung der Tabelle (Bindung oder Mitgliedschaft in der Publication fehlt) | Tabelle aktivieren, Backfill neu beantragen |
+| `PCF-E2006` | `configuration` | während des Backfill-Runs hat sich der Ausschluss- oder Regelstand der Tabelle geändert; der Run endet ohne Change | Änderung des Regelstands abschließen, Backfill neu beantragen |
+| `PCF-E2007` | `configuration` | die Schema-Quelldatei von `make schema-rollout` fehlt | Variable `SCHEMA_SOURCE` und Arbeitsbaum prüfen |
+| `PCF-E3000` | `permission` | fehlende Berechtigung ohne nähere Zuordnung (Rückfall) | Rechte der Rollen prüfen (siehe [Zugriff und Rollen](#zugriff-und-rollen)) |
+| `PCF-E3001` | `permission` | der Server weist den Replikationszugriff ab (SQLSTATE 42501 oder Klasse 28) | Rechte und `REPLICATION`-Attribut der Capture-Rolle prüfen |
+| `PCF-E3002` | `permission` | die Capture-Rolle darf die Quelltabelle eines Backfills nicht lesen oder den temporären Slot nicht anlegen | `SELECT` auf die Tabelle und das `REPLICATION`-Attribut prüfen, Backfill neu beantragen |
+| `PCF-E4000` | `schema` | nicht sicher interpretierbare Schemaänderung ohne nähere Zuordnung (Rückfall) | Meldung im Log lesen |
+| `PCF-E4001` | `schema` | eine Replikationsnachricht ist nicht sicher interpretierbar; die Erfassung endet sichtbar, es geht keine Änderung verloren | Ursache im Log prüfen, Container neu starten |
+| `PCF-E4002` | `schema` | `TRUNCATE` an einer erfassten Tabelle wird nicht unterstützt; die Erfassung endet sichtbar | `TRUNCATE` an erfassten Tabellen vermeiden, stattdessen `DELETE` verwenden |
+| `PCF-E4003` | `schema` | Relation-Änderung nicht sicher als Obermenge interpretierbar (Spalte entfernt, Typ geändert, Spalte umbenannt); die Erfassung endet sichtbar | die Schemaänderung an der Quelle prüfen; das Entfernen einer Regel genügt nicht (siehe [Routing-Regel konfigurieren](#routing-regel-konfigurieren)) |
+| `PCF-E4004` | `schema` | eine Transformationsregel ist auf die Änderung nicht anwendbar, im Backfill auf die Spalten des Snapshots | Regelstand ändern (siehe [Transformationsregel konfigurieren](#transformationsregel-konfigurieren)) |
+| `PCF-E4005` | `schema` | eine Routing-Regel ist auf die Änderung nicht anwendbar, im Backfill auf die Spalten des Snapshots | Regelstand ändern (siehe [Routing-Regel konfigurieren](#routing-regel-konfigurieren)) |
+| `PCF-E5000` | `storage` | Persistenzfehler ohne nähere Zuordnung (Rückfall) | Erreichbarkeit, Speicherplatz und Rechte der CDC-Datenbank prüfen |
+| `PCF-E5001` | `storage` | Persistenzfehler im Change-Speicher; es wird keine Quellposition bestätigt | Erreichbarkeit, Speicherplatz und Rechte der CDC-Datenbank prüfen |
+| `PCF-E5002` | `storage` | Persistenzfehler an der Antrags-Queue | Erreichbarkeit und Rechte der CDC-Datenbank prüfen, Antrag erneut stellen |
+| `PCF-E5003` | `storage` | Persistenzfehler im Backfill-Speicher | Erreichbarkeit und Rechte der CDC-Datenbank prüfen, Backfill neu beantragen |
+| `PCF-E5004` | `storage` | Persistenzfehler im Speicher der Consumer-Stände | Erreichbarkeit und Rechte der CDC-Datenbank prüfen |
+| `PCF-E5005` | `storage` | Lesefehler an den Diagnose-Views | Erreichbarkeit und Rechte der Rolle `cdc_reader` prüfen |
+| `PCF-E5006` | `storage` | Persistenzfehler im Heartbeat-Speicher | Erreichbarkeit und Rechte der CDC-Datenbank prüfen |
+| `PCF-E5007` | `storage` | Persistenzfehler im Schema-Speicher | Erreichbarkeit und Rechte der CDC-Datenbank prüfen |
+| `PCF-E5008` | `storage` | Lesefehler im Snapshot eines Backfills (etwa eine Spalte, die zwischen Export und Import entfernt wurde) | Tabelle prüfen, Backfill neu beantragen |
+| `PCF-E6000` | `replication` | Störung des Replication-Streams oder Slots ohne nähere Zuordnung (Rückfall) | Quelle, Slot und WAL-Rückstand prüfen (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)) |
+| `PCF-E6001` | `replication` | Störung an Replikationsverbindung oder Slot (Verbindungsaufbau, Start, Keepalive) | Quelle, Slot und WAL-Rückstand prüfen (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)) |
+| `PCF-E6002` | `replication` | die Bestätigung der Position an der Quelle ist fehlgeschlagen, oder der WAL-Rückstand liegt über der Fehlerschwelle | WAL-Rückstand und Slot prüfen (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)) |
+| `PCF-E6003` | `replication` | Verletzung der Stream-Ordnung (Änderung oder Commit ohne offene Transaktion, BEGIN bei offener Transaktion); sofortiger Abbruch | Log sichern, Container neu starten |
+| `PCF-E6004` | `replication` | Störung an Slot oder Replikationsverbindung beim Snapshot eines Backfills | Reserve von `max_replication_slots` prüfen, Backfill neu beantragen |
+| `PCF-E7000` | `internal` | unerwarteter interner Fehler, der keiner anderen Klasse zuzuordnen ist | Log sichern, Container neu starten |
+| `PCF-E8000` | Ablehnung | ein Antrag ist ungültig, ohne dass eine nähere Ursache benannt ist (Rückfall der Ablehnungen) | Antrag prüfen und erneut stellen |
+| `PCF-E8001` | Ablehnung | die Antrags-Zeile trägt keine Kennung; sie bleibt `pending` und erscheint als Warnung im Log | Zeile in `cdc.administration_request` prüfen |
+| `PCF-E8002` | Ablehnung | die Quelle des Antrags ist leer | Quelle angeben |
+| `PCF-E8003` | Ablehnung | der Schemaname des Antrags ist leer | Schemaname angeben |
+| `PCF-E8004` | Ablehnung | der Tabellenname des Antrags ist leer | Tabellenname angeben |
+| `PCF-E8005` | Ablehnung | die Antragsart liegt außerhalb der bekannten Menge | eine der dokumentierten Funktionen `cdc.*` verwenden |
+| `PCF-E8006` | Ablehnung | der Spaltenname eines Spaltenausschluss-Antrags ist leer | Spalte angeben |
+| `PCF-E8010` | Ablehnung | der Regelname ist leer oder liegt außerhalb des Alphabets `a`–`z`, `0`–`9`, `_` mit 1 bis 63 Zeichen | Regelnamen korrigieren |
+| `PCF-E8011` | Ablehnung | die Regelform `rule_spec` ist ungültig: kein JSON-Objekt, unbekannter Regeltyp oder Schlüssel, fehlender oder falsch typisierter Pflichtschlüssel | Regelform korrigieren |
+| `PCF-E8012` | Ablehnung | die Routing-Regel oder ihr Zielname ist ungültig | Zielname und `order` korrigieren |
+| `PCF-E8020` | Ablehnung | der Regelname ist je Tabelle bereits vergeben | andere Regel zuerst entfernen oder anderen Namen wählen |
+| `PCF-E8021` | Ablehnung | die Quellspalte trägt bereits eine Regel | vorhandene Regel zuerst entfernen |
+| `PCF-E8022` | Ablehnung | der Zielname kollidiert mit dem Zielnamen einer anderen Regel oder mit einer Spalte der Tabelle | anderen Zielnamen wählen |
+| `PCF-E8023` | Ablehnung | die Tabelle führt keine Regel mit diesem Namen | Regelnamen prüfen |
+| `PCF-E8024` | Ablehnung | die Spalte existiert nicht an der Quelle | Spaltennamen prüfen |
+| `PCF-E8025` | Ablehnung | die Tabelle existiert nicht an der Quelle | Tabellennamen prüfen |
+| `PCF-E8030` | Ablehnung | die `order` einer Routing-Regel ist je Tabelle bereits vergeben | andere `order` wählen |
+| `PCF-E8031` | Ablehnung | die Bedingung (Spalte und Wert) kommt je Tabelle bereits vor | Bedingung ändern oder die vorhandene Regel entfernen |
+| `PCF-E8032` | Ablehnung | die Lage der Regel ohne `when` verletzt die Ordnung: sie ist bereits vorhanden, trägt nicht die höchste `order`, oder eine Regel mit `when` liegt hinter ihr | `order` anpassen |
+| `PCF-E8033` | Ablehnung | die Bedingungsspalte der Routing-Regel ist ausgeschlossen | andere Spalte wählen oder den Ausschluss aufheben |
+| `PCF-E8034` | Ablehnung | die Spalte trägt eine Routing-Bedingung und lässt sich nicht ausschließen | Routing-Regel zuerst entfernen |
+| `PCF-E8040` | Ablehnung | die Tabelle ist nicht aktiviert oder nicht Mitglied der Publication (Vorbedingung eines Backfills) | Tabelle aktivieren, Backfill erneut beantragen |
+| `PCF-E8041` | Ablehnung | für die Tabelle besteht bereits ein aktiver Backfill-Run | Ende des Runs abwarten |
+
 ### Container startet nicht
 
 **Ursache:** eine Pflicht-Umgebungsvariable fehlt oder ist falsch
@@ -2724,3 +2819,4 @@ MIT — siehe `LICENSE`.
 | 1.87 | 2026-10-02 | Der SSE-Client der SDK-Packages und die SSE-Beispiele in Go, C# und Kotlin nehmen zusätzlich `schema` und `table` entgegen (Flags `-schema`/`-table` bzw. `--schema`/`--table`) |
 | 1.88 | 2026-10-02 | Die Erzeugnisse von `make schema-rollout` (Pflicht-Report, Rollback-Artefakt, Precheck-Report) liegen in `SCHEMA_ARTEFACT_DIR` (Standard `.tmp/schema-rollout`); die Aufbewahrung je Rollout liegt beim Betreiber; der Lauf mountet den Arbeitsbaum nicht |
 | 1.89 | 2026-10-03 | Die Ausgabe von `diagnose`, die Meldungen von `make schema-rollout` und der Fehlertext der Konfigurationsdatei tragen keine Anforderungs- oder Entscheidungskennung mehr; die Beispiele zeigen den tatsächlichen Ausgabetext |
+| 1.90 | 2026-10-03 | Neuer Abschnitt „Meldungscodes“ (Fehlerbehebung) mit dem Katalog aller Codes: Fehlerzeilen tragen jetzt `Fehlerklasse <Klasse> [<Code>]: …`, `error_message` von Backfill-Runs `<Klasse> [<Code>]: …` und abgelehnte Anträge `abgelehnt [<Code>]: …`, die Meldungen von `make schema-rollout` `FEHLER [<Code>]: …`; der Code ist stabil, der Text nicht; ein `grep` auf den bisherigen Wortlaut `Fehlerklasse schema:` greift nicht mehr, ein `grep` auf die Klasse oder den Code schon |

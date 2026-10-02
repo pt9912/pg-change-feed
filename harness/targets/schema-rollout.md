@@ -147,7 +147,7 @@ noch Erweiterung.
 | 2 | ein Rezeptschritt scheiterte; make meldet den Exit des Schritts (`Error <n>`), `Error 8` für einen d-migrate-`--execute` mit unbekanntem Blocker, `Error 1` für einen gescheiterten Vorlauf, der psql-Exit des Schritts (bei `ON_ERROR_STOP` 3) für eine gescheiterte Nacharbeit |
 
 `schema-validate` endet bei fehlender Quelle mit Exit 2 und einer
-`FEHLER:`-Zeile.
+`FEHLER [PCF-E2007]:`-Zeile.
 
 ## Grenze
 
