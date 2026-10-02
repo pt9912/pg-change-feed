@@ -110,7 +110,7 @@ Slice zu messen.**
 - **Das Ruhefenster-Maß und die Tier-Struktur** — Wert (15 s) und Form des Fensters bleiben; die
   Phasenzahl bleibt dreizehn; die Hilfetexte in `harness/mk/sdk.mk` bleiben unverändert (Suchlauf).
 - **Die Form `docker logs … | grep -q…` unter `pipefail`** — Gegenstand des Slice
-  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../in-progress/slice-harness-grep-pipe-sigpipe-unter-pipefail.md),
+  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../done/slice-harness-grep-pipe-sigpipe-unter-pipefail.md),
   der `lib-sdk-route-fixture.sh` zuerst ändert; dieser Slice startet danach (§4).
 - **Eine Workflow- oder Compose-Änderung** — `compose.yaml` bleibt unverändert; kein Workflow ruft
   die drei `make`-Ziele auf (am Start zu messen, Suchlauf), [`AGENTS.md`](../../../../AGENTS.md)
@@ -275,7 +275,7 @@ a420e223 0 -n -E 'ROUTE_SENTINEL_SECOND|RouteSentinelSecond' -- harness tools sd
 Tier-Bauten, kein anderer Runner und kein `make bench` laufen, kein anderer Slice liegt in
 `in-progress/` (WIP-Limit 1). Der Vorgänger
 `sdk-sse-filter-phase-verbindung-haertung` liegt in `done/`; der Slice
-[`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../in-progress/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
+[`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../done/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
 liegt in `done/` (beide ändern `lib-sdk-route-fixture.sh`) — oder der Auftraggeber legt die
 Reihenfolge anders fest; Versionen der Packages unverändert.
 
@@ -317,7 +317,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
 - **Flake der Phase durch `docker logs … | grep -q…` unter `pipefail`**
   (`BEO-PGC/runner-grep-pipe-verfehlt-zeile`). Die Fixture liest `READY`/`SEEN` mit dieser Form; der
   Vorgänger-Slice
-  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../in-progress/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
+  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../done/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
   ersetzt sie. Ein roter Lauf dieses Slice mit „kein SEEN“ oder „kein READY“ ist **erst nach der
   Reihenfolge-Prüfung** dem Slice zuzuschreiben. — **Ausgang:** *zu entscheiden bei Closure*;
   bei Auftreten `evidence/` am Register-Eintrag.

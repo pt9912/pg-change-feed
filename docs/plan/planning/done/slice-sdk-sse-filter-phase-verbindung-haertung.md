@@ -206,7 +206,7 @@ Der Vorschlag trägt, mit drei Festlegungen, die der Plan trifft:
       *Lesart:* kein HIGH; das eine MEDIUM (F-1, `grep -q` hinter `docker logs` unter `pipefail` in
       den Runnern) liegt **außerhalb des Diffs** (Bestand der Runner, nicht Gegenstand dieses Slice)
       und trägt die Adresse
-      [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../in-progress/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
+      [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../done/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
       sowie `BEO-PGC/runner-grep-pipe-verfehlt-zeile` — „benannt, nicht in diesem Slice“, wie die
       Verifikation §7 B-2 es verlangt; die Review-Reports bleiben unverändert.
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes je
@@ -373,7 +373,7 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
   **Ausgang:** *eingetreten* — im ersten C#-Tier-Lauf des Reviewers (gemessen, Review F-1;
   die Ursache ist dort `docker logs … | grep -qF` unter `pipefail`, hergeleitet, nicht das
   Zeitfenster aus F-4 des Vorgängers). Adresse:
-  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../in-progress/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
+  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../done/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
   und `BEO-PGC/runner-grep-pipe-verfehlt-zeile` (1×). Gegenzählung des Verifiers: 0 Ausfälle in
   fünf C#-, zwei Kotlin- und einem Python-Gesamtlauf (gemessen).
 - **Die Überlagerungen des Härtungsbeweises treffen die Reihenfolge nicht.** Die Rechnung
@@ -466,7 +466,7 @@ Register-Zählern (Dateien gezählt).
   Reviewer-Messung 3 von 300 an einem Nachbau, vom Reviewer gemessen); liegt außerhalb des Diffs
   und in allen drei Runnern und in `run-integration-tests.sh` (35 Fundstellen, am Stand
   `a420e223` gemessen) — **Adresse:**
-  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../in-progress/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
+  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../done/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
   und `BEO-PGC/runner-grep-pipe-verfehlt-zeile`; die Review-Reports bleiben unverändert. (2) F-2
   (LOW): der indirekte Beleg für Arm A bleibt (Entscheid des Hauptlaufs 2026-10-02: kein
   zusätzliches Drucken). (3) F-3 (INFO): die `SEEN_SECOND`-Wartebedingung ist innerhalb des
@@ -510,7 +510,7 @@ Register-Zählern (Dateien gezählt).
   `BEO-PGC/e2e-routing-abhilfe-phase-einmal-rot`: unberührt; der Folge-Slice (a) behauptet
   keinen Zusammenhang.
 - **Folge-Slices:** zwei Dateien in `open/` —
-  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../in-progress/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
+  [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../done/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
   (F-1) und
   [`slice-sdk-routing-phase-verbindung-haertung`](../open/slice-sdk-routing-phase-verbindung-haertung.md)
   (F-4, Routing-Phase). Reihenfolge: (a) vor (b), beide ändern `lib-sdk-route-fixture.sh`.

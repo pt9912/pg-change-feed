@@ -8,7 +8,7 @@ Plan-vs-Code-Diff + Gates, in frischem Kontext. Review-Artefakt:
 [`verifikation-slice-sdk-sse-filter-phase-verbindung-haertung.md`](verifikation-slice-sdk-sse-filter-phase-verbindung-haertung.md).
 
 **Gegenstand:** Slice-Plan
-[`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../plan/planning/in-progress/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
+[`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../plan/planning/done/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
 (wellenlos), Diff `git diff 3bcafd41 f8aca691` (Implementer-Commit `f8aca691`); der Commit `7d1c4611` und die
 weiteren Handbuch-Commits (`de0d899a`, `983e209a`) sind fremd und ausgeschlossen (die Zeilen von
 `docs/user/benutzerhandbuch.md` im Diffstat gehören dazu). Review-Commit `0e41c68c`.
@@ -30,7 +30,7 @@ Verweigerung der Berechtigungsschicht ([`AGENTS.md`](../../AGENTS.md) §3.15 nic
 | `make test` | Exit 0 | alle Pakete `ok` / `[no test files]` (kein Go-Code im Diff, Gegenprobe) |
 | `make fmt-check` | Exit 0 | `fmt-check: 323 Go-Dateien geprüft, alle formatiert` |
 | `make kommentar-kennungen DIFF=3bcafd41` | Exit 0 | keine Ausgabe, kein Kandidat |
-| `make suchlauf-nachmessen PLAN=docs/plan/planning/in-progress/slice-harness-grep-pipe-sigpipe-unter-pipefail.md` | Exit 0 | `suchlauf-nachmessen: 14 Zeilen stimmen` (u. a. `diff 0` für `docker logs … \| grep -q…` im Code, `diff 79` für die übrigen Pipes) |
+| `make suchlauf-nachmessen PLAN=docs/plan/planning/done/slice-harness-grep-pipe-sigpipe-unter-pipefail.md` | Exit 0 | `suchlauf-nachmessen: 14 Zeilen stimmen` (u. a. `diff 0` für `docker logs … \| grep -q…` im Code, `diff 79` für die übrigen Pipes) |
 | `make docs-check` | Exit 0 | `d-check: 1570 Datei(en) geprüft, 0 Befund(e)` (vor Anlage dieses Reports) |
 | `make commit-traceability` | Exit 0 | `OK — 5 Commit(s) in "HEAD~5..HEAD"` |
 | `make doc-commits RANGE=3bcafd41..HEAD` | Exit 0 | `d-check: 1570 Datei(en) geprüft, 0 Befund(e)` |

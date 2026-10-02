@@ -180,7 +180,7 @@ behauptet keine Ursache für den roten Lauf. Die offene Frage dieses Eintrags bl
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem Repo (Greenfield).
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo ohne
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo ohne
       Wellen-Betrieb für diesen wellenlosen Slice hier geprüft.
 
 **Umfang:** S bis M — Schätzung, nicht gemessen: 35 mechanische Ersetzungen in sechs Dateien,
