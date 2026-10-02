@@ -161,7 +161,7 @@ behauptet keine Ursache für den roten Lauf. Die offene Frage dieses Eintrags bl
       Änderung wird gemeldet, nicht verschwiegen. Das Risiko bleibt bis dahin *weiter offen* (§6).
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert ausgewertet
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter
+- [x] Review durchgeführt, Report unter
       `docs/reviews/review-slice-harness-grep-pipe-sigpipe-unter-pipefail.md` liegt vor, kein
       offenes HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
