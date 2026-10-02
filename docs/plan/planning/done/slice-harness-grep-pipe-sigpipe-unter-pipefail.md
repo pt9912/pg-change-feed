@@ -106,7 +106,7 @@ behauptet keine Ursache für den roten Lauf. Die offene Frage dieses Eintrags bl
   Python) bleiben unberührt.
 - **Die Routing-Phase der SDK-Tiers als Verbindungs-Härtung** — die Lücke „READY heißt nicht
   verbunden“ ist ein anderer Gegenstand (Folge-Slice
-  [`slice-sdk-routing-phase-verbindung-haertung`](../in-progress/slice-sdk-routing-phase-verbindung-haertung.md));
+  [`slice-sdk-routing-phase-verbindung-haertung`](../done/slice-sdk-routing-phase-verbindung-haertung.md));
   dieser Slice berührt dort nur die zwei `grep -q`-Zeilen von `lib-sdk-route-fixture.sh`, und nur
   in der Form des Austauschs.
 - **Andere `… | grep -q…`-Pipes mit kleinem, einmaligem Erzeuger** (`echo`, `printf`, `git
@@ -417,7 +417,7 @@ Suchlauf-Feld (`make suchlauf-nachmessen`) und den Register-Zählern. Docker 29.
   **unbewiesen**, weder bestätigt noch ausgeschlossen (`rn_abhilfe` und `rn_expect_end` tragen
   keine Prozess-Pipe nach `grep -q`). `BEO-PGC/pipe-maskiert-make-exit-code`: Nachbar, kein Beleg.
 - **Folge-Slices:** keine neuen. Der Slice
-  [`slice-sdk-routing-phase-verbindung-haertung`](../in-progress/slice-sdk-routing-phase-verbindung-haertung.md)
+  [`slice-sdk-routing-phase-verbindung-haertung`](../done/slice-sdk-routing-phase-verbindung-haertung.md)
   (Routing-Phase, `lib-sdk-route-fixture.sh`) kann starten; die Überschneidung ist durch die
   Reihenfolge entfallen.
 - **Offene Entscheidungen des Auftraggebers:** (a) Freigabe des Regelwerk-Satzes in

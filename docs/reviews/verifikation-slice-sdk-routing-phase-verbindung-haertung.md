@@ -8,7 +8,7 @@ Plan-vs-Code-Diff + Gates, in frischem Kontext. Review-Artefakt:
 [`verifikation-slice-sdk-sse-filter-phase-verbindung-haertung.md`](verifikation-slice-sdk-sse-filter-phase-verbindung-haertung.md).
 
 **Gegenstand:** Slice-Plan
-[`slice-sdk-routing-phase-verbindung-haertung`](../plan/planning/in-progress/slice-sdk-routing-phase-verbindung-haertung.md)
+[`slice-sdk-routing-phase-verbindung-haertung`](../plan/planning/done/slice-sdk-routing-phase-verbindung-haertung.md)
 (wellenlos), Diff `bce372c1..HEAD` (`e2e73458`): Implementer-Commits `5245fa21` (Code), `7fd408ab` (Plan), Review-Commit `e2e73458`.
 Bezug: [`LH-FA-CFG-008`](../../spec/lastenheft.md), [`LH-FA-SST-008`](../../spec/lastenheft.md), [`LH-FA-SST-009`](../../spec/lastenheft.md),
 [`ADR-0137`](../plan/adr/0137-routing-zustellziele-persistiertes-ziel-label.md) Teilfrage 5,
