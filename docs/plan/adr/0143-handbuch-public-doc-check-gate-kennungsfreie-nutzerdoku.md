@@ -16,7 +16,7 @@ Betreiber; die Nutzerdokumentation ist die Betreiber- und Integrator-Sicht),
 Skill führt das Ursprungs-Wort statt einer Berichts-Kennung),
 `AGENTS.md` §3.6 (Träger-Pflicht für ein neues Gate), §3.5 (Accepted-ADRs sind
 unberührbar), §3.1 (Docker-only; Host-Klasse `bash`/`git`/`grep`);
-Slice-Plan `docs/plan/planning/open/slice-handbuch-public-doc-check-gate-und-skill.md`.
+Slice-Plan `docs/plan/planning/done/slice-handbuch-public-doc-check-gate-und-skill.md`.
 
 **Schärft:** [ADR-0087](0087-beispiel-clients-csharp-kotlin.md) (Abschnitt 6 /
 Folgepflicht Handbuch-Zug), [ADR-0088](0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md)
@@ -224,7 +224,8 @@ Kennungs-Syntax (`harness/conventions.md`), ist das Muster `P` nachzuziehen.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-10-02 | Accepted — Architect-Entscheidung als Vorstufe des Umsetzungs-Slices | `docs/plan/planning/open/slice-handbuch-public-doc-check-gate-und-skill.md` |
+| 2026-10-02 | Accepted — Architect-Entscheidung als Vorstufe des Umsetzungs-Slices | `docs/plan/planning/done/slice-handbuch-public-doc-check-gate-und-skill.md` |
+| 2026-10-02 | Zitat-Korrektur nach ADR-0073: Pfad des Umsetzungs-Slices (`open/` und `done/`, Kopf und diese Tabelle) | `336833f7` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
