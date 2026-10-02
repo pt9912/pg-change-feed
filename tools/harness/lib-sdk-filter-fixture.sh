@@ -21,6 +21,10 @@
 # Clients ihre Zeilen der zweiten Gruppe haben (SEEN_SECOND), und der Runner
 # prüft die zweite Gruppe exakt gegen cdc.changes (F1 genau eine, F2 genau
 # eine, der Client ohne Filter genau drei, je Tabelle eine).
+#
+# Die Marker-Prüfungen lesen `docker logs … | grep … >/dev/null` ohne `-q`:
+# `grep` liest bis zum Dateiende, `docker logs` schreibt vollständig, und die
+# `pipefail`-Einstellung des Runners wertet den Treffer-Status der Pipeline.
 
 SDK_FILTER_SOURCE=src-e2e
 SDK_FILTER_SCHEMA_A=public
@@ -110,7 +114,7 @@ sdk_filter_phase() {
 
   local test_ready=0
   for _ in $(seq 1 120); do
-    if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+    if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -F "READY" >/dev/null; then
       test_ready=1
       break
     fi
@@ -133,7 +137,7 @@ INSERT INTO $SDK_FILTER_SCHEMA_OTHER.$SDK_FILTER_TABLE_A (id, name) VALUES ($((g
 INSERT INTO $SDK_FILTER_SCHEMA_A.$SDK_FILTER_TABLE_A (id, name) VALUES ($((group_id + 3)), '$sentinel');
 SQL
     for _ in $(seq 1 60); do
-      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qE '^[[:space:]]*SEEN[[:space:]]*$'; then
+      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -E '^[[:space:]]*SEEN[[:space:]]*$' >/dev/null; then
         seen=1
         finished=$(date +%s%N)
         seen_after_ms=$(((finished - started) / 1000000))
@@ -160,7 +164,7 @@ INSERT INTO $SDK_FILTER_SCHEMA_OTHER.$SDK_FILTER_TABLE_A (id, name) VALUES ($((s
 INSERT INTO $SDK_FILTER_SCHEMA_A.$SDK_FILTER_TABLE_A (id, name) VALUES ($((second_id + 3)), '$sentinel_second');
 SQL
     for _ in $(seq 1 450); do
-      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qE '^[[:space:]]*SEEN_SECOND[[:space:]]*$'; then
+      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -E '^[[:space:]]*SEEN_SECOND[[:space:]]*$' >/dev/null; then
         seen_second=1
         finished=$(date +%s%N)
         second_after_ms=$(((finished - second_started) / 1000000))

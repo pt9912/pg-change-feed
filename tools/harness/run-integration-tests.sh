@@ -84,6 +84,10 @@
 # Compose-Container und -Netz werden in jedem Ausgang abgeräumt, das
 # Modul-Cache-Volume bleibt als Vorbereitung für netzlose `make test`-Läufe
 # bestehen.
+#
+# Eine Prüfung eines Container-Logs liest `docker logs … | grep -F "…"
+# >/dev/null` ohne `-q`: `grep` liest bis zum Dateiende, `docker logs`
+# schreibt vollständig, und `pipefail` wertet den Treffer-Status der Pipeline.
 set -euo pipefail
 # Vor dem cd unten einfangen: BASH_SOURCE[0] ist relativ zum AUFRUF-Verzeichnis
 # (z. B. `../tools/harness/run-integration-tests.sh` bei Aufruf aus einem
@@ -1780,7 +1784,7 @@ docker run -d --name "$NATS_SUBSCRIBER_CONTAINER" --network "$NETWORK" \
 
 nats_subscriber_ready=0
 for _ in $(seq 1 60); do
-  if docker logs "$NATS_SUBSCRIBER_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+  if docker logs "$NATS_SUBSCRIBER_CONTAINER" 2>/dev/null | grep -F "READY" >/dev/null; then
     nats_subscriber_ready=1
     break
   fi
@@ -1801,7 +1805,7 @@ SQL
 
 nats_signal_received=0
 for _ in $(seq 1 60); do
-  if docker logs "$NATS_SUBSCRIBER_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+  if docker logs "$NATS_SUBSCRIBER_CONTAINER" 2>/dev/null | grep -F "RECEIVED" >/dev/null; then
     nats_signal_received=1
     break
   fi
@@ -1920,7 +1924,7 @@ docker run -d --name "$NATS_RECONNECT_BEFORE_CONTAINER" --network "$NETWORK" \
 
 nats_reconnect_before_ready=0
 for _ in $(seq 1 60); do
-  if docker logs "$NATS_RECONNECT_BEFORE_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+  if docker logs "$NATS_RECONNECT_BEFORE_CONTAINER" 2>/dev/null | grep -F "READY" >/dev/null; then
     nats_reconnect_before_ready=1
     break
   fi
@@ -1987,7 +1991,7 @@ docker run -d --name "$NATS_RECONNECT_AFTER_CONTAINER" --network "$NETWORK" \
 
 nats_reconnect_after_ready=0
 for _ in $(seq 1 60); do
-  if docker logs "$NATS_RECONNECT_AFTER_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+  if docker logs "$NATS_RECONNECT_AFTER_CONTAINER" 2>/dev/null | grep -F "READY" >/dev/null; then
     nats_reconnect_after_ready=1
     break
   fi
@@ -2008,7 +2012,7 @@ SQL
 
 nats_reconnect_signal_resumed=0
 for _ in $(seq 1 60); do
-  if docker logs "$NATS_RECONNECT_AFTER_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+  if docker logs "$NATS_RECONNECT_AFTER_CONTAINER" 2>/dev/null | grep -F "RECEIVED" >/dev/null; then
     nats_reconnect_signal_resumed=1
     break
   fi
@@ -2400,7 +2404,7 @@ docker run -d --name "$GRPC_CLIENT_CONTAINER" --network "$NETWORK" \
 
 grpc_client_ready=0
 for _ in $(seq 1 60); do
-  if docker logs "$GRPC_CLIENT_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+  if docker logs "$GRPC_CLIENT_CONTAINER" 2>/dev/null | grep -F "READY" >/dev/null; then
     grpc_client_ready=1
     break
   fi
@@ -2428,7 +2432,7 @@ for grpc_attempt in $(seq 1 5); do
 INSERT INTO public.$GRPC_STREAM_TABLE (id, name) VALUES ($grpc_id, '$GRPC_STREAM_SENTINEL');
 SQL
   for _ in $(seq 1 20); do
-    if docker logs "$GRPC_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+    if docker logs "$GRPC_CLIENT_CONTAINER" 2>/dev/null | grep -F "RECEIVED" >/dev/null; then
       grpc_received=1
       break
     fi
@@ -2448,7 +2452,7 @@ done
 # ausgewerteten Zeilen unten aus einem abgeschlossenen Lauf stammen.
 grpc_rejected=0
 for _ in $(seq 1 40); do
-  if docker logs "$GRPC_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED code=Unauthenticated"; then
+  if docker logs "$GRPC_CLIENT_CONTAINER" 2>/dev/null | grep -F "REJECTED code=Unauthenticated" >/dev/null; then
     grpc_rejected=1
     break
   fi
@@ -2544,7 +2548,7 @@ docker run -d --name "$GRPC_FILTER_CLIENT_CONTAINER" --network "$NETWORK" \
 
 grpc_filter_client_ready=0
 for _ in $(seq 1 60); do
-  if docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+  if docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -F "READY" >/dev/null; then
     grpc_filter_client_ready=1
     break
   fi
@@ -2567,7 +2571,7 @@ SQL
 # reale, aber begrenzte Wartezeit, bevor geprüft wird, dass die
 # nicht passende Change NICHT ankommt.
 sleep 3
-if docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+if docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -F "RECEIVED" >/dev/null; then
   grpc_filter_leaked_output=$(docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>&1 || true)
   docker rm -fv "$GRPC_FILTER_CLIENT_CONTAINER" >/dev/null 2>&1 || true
   echo "run-integration-tests: gRPC-Stream-Filter-Rundlauf — eine Change auf $GRPC_FILTER_OTHER_TABLE erreichte den auf $GRPC_FILTER_TABLE gefilterten Client (Filter griff nicht): $grpc_filter_leaked_output" >&2
@@ -2581,7 +2585,7 @@ for grpc_filter_attempt in $(seq 1 5); do
 INSERT INTO public.$GRPC_FILTER_TABLE (id, name) VALUES ($grpc_filter_id, '$GRPC_FILTER_SENTINEL');
 SQL
   for _ in $(seq 1 20); do
-    if docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+    if docker logs "$GRPC_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -F "RECEIVED" >/dev/null; then
       grpc_filter_received=1
       break
     fi
@@ -3018,7 +3022,7 @@ docker run -d --name "$SSE_CLIENT_CONTAINER" --network "$NETWORK" \
 
 sse_client_ready=0
 for _ in $(seq 1 60); do
-  if docker logs "$SSE_CLIENT_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+  if docker logs "$SSE_CLIENT_CONTAINER" 2>/dev/null | grep -F "READY" >/dev/null; then
     sse_client_ready=1
     break
   fi
@@ -3043,7 +3047,7 @@ for sse_attempt in $(seq 1 5); do
 INSERT INTO public.$SSE_STREAM_TABLE (id, name) VALUES ($sse_id, '$SSE_STREAM_SENTINEL');
 SQL
   for _ in $(seq 1 20); do
-    if docker logs "$SSE_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+    if docker logs "$SSE_CLIENT_CONTAINER" 2>/dev/null | grep -F "RECEIVED" >/dev/null; then
       sse_received=1
       break
     fi
@@ -3063,7 +3067,7 @@ done
 # ausgewerteten Zeilen unten aus einem abgeschlossenen Lauf stammen.
 sse_rejected=0
 for _ in $(seq 1 40); do
-  if docker logs "$SSE_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED code=401"; then
+  if docker logs "$SSE_CLIENT_CONTAINER" 2>/dev/null | grep -F "REJECTED code=401" >/dev/null; then
     sse_rejected=1
     break
   fi
@@ -3155,7 +3159,7 @@ docker run -d --name "$SSE_FILTER_CLIENT_CONTAINER" --network "$NETWORK" \
 
 sse_filter_client_ready=0
 for _ in $(seq 1 60); do
-  if docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+  if docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -F "READY" >/dev/null; then
     sse_filter_client_ready=1
     break
   fi
@@ -3178,7 +3182,7 @@ SQL
 # reale, aber begrenzte Wartezeit, bevor geprüft wird, dass die
 # nicht passende Change NICHT ankommt.
 sleep 3
-if docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+if docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -F "RECEIVED" >/dev/null; then
   sse_filter_leaked_output=$(docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>&1 || true)
   docker rm -fv "$SSE_FILTER_CLIENT_CONTAINER" >/dev/null 2>&1 || true
   echo "run-integration-tests: SSE-Stream-Filter-Rundlauf — eine Change auf $SSE_FILTER_OTHER_TABLE erreichte den auf $SSE_FILTER_TABLE gefilterten Client (Filter griff nicht): $sse_filter_leaked_output" >&2
@@ -3192,7 +3196,7 @@ for sse_filter_attempt in $(seq 1 5); do
 INSERT INTO public.$SSE_FILTER_TABLE (id, name) VALUES ($sse_filter_id, '$SSE_FILTER_SENTINEL');
 SQL
   for _ in $(seq 1 20); do
-    if docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+    if docker logs "$SSE_FILTER_CLIENT_CONTAINER" 2>/dev/null | grep -F "RECEIVED" >/dev/null; then
       sse_filter_received=1
       break
     fi
@@ -3283,7 +3287,7 @@ docker run -d --name "$NATS_STREAM_CLIENT_CONTAINER" --network "$NETWORK" \
 
 nats_stream_client_ready=0
 for _ in $(seq 1 60); do
-  if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+  if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -F "READY" >/dev/null; then
     nats_stream_client_ready=1
     break
   fi
@@ -3309,7 +3313,7 @@ fi
 # RECEIVED-Warten weiter oben in dieser Datei.
 nats_stream_client_rejected_no_token=0
 for _ in $(seq 1 20); do
-  if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED-NO-TOKEN"; then
+  if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -F "REJECTED-NO-TOKEN" >/dev/null; then
     nats_stream_client_rejected_no_token=1
     break
   fi
@@ -3323,7 +3327,7 @@ fi
 
 nats_stream_client_rejected_wrong_token=0
 for _ in $(seq 1 20); do
-  if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED-WRONG-TOKEN"; then
+  if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -F "REJECTED-WRONG-TOKEN" >/dev/null; then
     nats_stream_client_rejected_wrong_token=1
     break
   fi
@@ -3348,7 +3352,7 @@ for nats_stream_attempt in $(seq 1 5); do
 INSERT INTO public.$NATS_STREAM_TABLE (id, name) VALUES ($nats_stream_id, '$NATS_STREAM_SENTINEL');
 SQL
   for _ in $(seq 1 20); do
-    if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+    if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -F "RECEIVED" >/dev/null; then
       nats_stream_received=1
       break
     fi

@@ -121,7 +121,7 @@ behauptet keine Ursache für den roten Lauf. Die offene Frage dieses Eintrags bl
 
 ## 2. Definition of Done
 
-- [ ] **Liefer-Punkt 1 — Reproduktion und Fix der Form `docker logs … | grep -q…`.** Vor dem Fix
+- [x] **Liefer-Punkt 1 — Reproduktion und Fix der Form `docker logs … | grep -q…`.** Vor dem Fix
       reproduziert der Implementer die Fehlerrate in einem Wegwerf-Skript im Scratchpad (nicht im
       Repo): ein beendeter Container mit einer Treffer-Zeile und 20 Folgezeilen, 1000 Aufrufe der
       Schleifenform des Bestands (`docker logs "$c" 2>/dev/null | grep -qF "$marker"` unter
@@ -133,7 +133,7 @@ behauptet keine Ursache für den roten Lauf. Die offene Frage dieses Eintrags bl
       durch:* beide gedruckten Zahlen im Bericht; das Wegwerf-Skript und seine Ausgabe, mit der
       Docker-Version. (Eine Null-Zahl bei 300 Aufrufen wäre bei einer wahren Rate von 1 % mit
       Wahrscheinlichkeit 0,99³⁰⁰ ≈ 5 % zufällig, **abgeleitet**; deshalb 1000 Aufrufe, ≈ 4·10⁻⁵.)
-- [ ] **Liefer-Punkt 2 — Belege am Fix, Mutationsprobe, Auswahl der übrigen Pipes.**
+- [x] **Liefer-Punkt 2 — Belege am Fix, Mutationsprobe, Auswahl der übrigen Pipes.**
       (i) **Mutationsprobe an einer Kopie im Scratchpad** ([`AGENTS.md`](../../../../AGENTS.md)
       §3.1: Edit/Write, nie `sed -i`): die Fix-Form einer Stelle kehrt zu `-qF` zurück; dieselbe
       1000er-Schleife gegen die Zeile der Kopie zeigt wieder Fehlschläge (rot) — die Schleife
@@ -159,17 +159,17 @@ behauptet keine Ursache für den roten Lauf. Die offene Frage dieses Eintrags bl
       aber den Runner. Der erste reale Post-Push-Lauf von `e2e` nach dem Merge wird gelesen
       (`gh run list --workflow e2e.yml`) und das Ergebnis im Bericht genannt; rot ohne Bezug zur
       Änderung wird gemeldet, nicht verschwiegen. Das Risiko bleibt bis dahin *weiter offen* (§6).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert ausgewertet
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert ausgewertet
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter
       `docs/reviews/review-slice-harness-grep-pipe-sigpipe-unter-pipefail.md` liegt vor, kein
       offenes HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes je
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes je
       Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-harness-grep-pipe-sigpipe-unter-pipefail.md`
       endet mit Exit 0.
-- [ ] Doku-Update: Kopf-Kommentare der geänderten Skripte tragen den Ist-Umfang;
+- [x] Doku-Update: Kopf-Kommentare der geänderten Skripte tragen den Ist-Umfang;
       `harness/README.md` §Sensors und das Benutzerhandbuch bleiben unberührt (kein neues Target,
       keine Nutzerfläche) — am Diff zu belegen (Suchlauf).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
@@ -195,7 +195,9 @@ kein anderer Runner und kein `make bench` läuft gleichzeitig (feste Container-N
 | `tools/harness/run-sdk-csharp-integration-tests.sh`, `run-sdk-kotlin-integration-tests.sh`, `run-sdk-python-integration-tests.sh` | update | je 3 Fundstellen (READY, RECEIVED, `$reject_marker`); die Ablehnungs-Schleife ist die vom Reviewer gemessene. |
 | `tools/harness/lib-sdk-filter-fixture.sh`, `tools/harness/lib-sdk-route-fixture.sh` | update | 3 bzw. 2 Fundstellen (READY, SEEN, SEEN_SECOND); die Dateien ändert auch der Folge-Slice `slice-sdk-routing-phase-verbindung-haertung` — Reihenfolge der Slices beachten (WIP-Limit 1). |
 | weitere `\| grep -q…`-Pipes mit anderem Erzeuger (79 Zeilen in 15 Dateien) | prüfen | Erzeuger und Ausgabemenge lesen; „ändern“ nur bei Erzeuger mit Ausgabe über einem Puffer oder Schreiben nach dem Treffer (z. B. `docker exec … psql` mit Mehrzeilen-Ausgabe, `git log`, `ls -R`); sonst „bleibt“ mit Grund. Das Ergebnis steht als Tabelle im Bericht und im Befund-Feld unten. |
-| `harness/README.md`, `AGENTS.md` | prüfen | siehe Liefer-Punkt 3; kein Target, kein Gate. |
+| `harness/README.md`, `AGENTS.md` | prüfen | siehe Liefer-Punkt 3; kein Target, kein Gate. Unverändert (Implementer, Liefer-Punkt 3 gehört dem Planner). |
+| `docs/user/e2e-abdeckung.md` | update (Erzeugnis) | `make test-integration` schreibt die Datei neu; die Zeilen-Lokatoren der Runner-Zeilen verschieben sich um die vier neuen Kommentarzeilen im Kopf von `run-integration-tests.sh`. Kein Handschnitt. |
+| Kopf-Kommentare der sechs Skripte | update | je ein Absatz mit dem Ist-Zustand der Prüfform (kein `-q`, `grep` liest bis zum Ende); Zusage/Kopplung nach `AGENTS.md` §3.7. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „der Empfänger einer Pipe unter
 `pipefail` ist `grep` mit `-q`“; Parent ist `a420e223`, gemessen am 2026-10-02 mit
@@ -209,6 +211,13 @@ a420e223 5 -n -E 'docker logs.*\| *grep +-[a-zA-Z]*q' -- tools/harness/lib-sdk-f
 a420e223 114 -n -E '\| *grep +-[a-zA-Z]*q' -- harness tools examples test sdks Makefile .github
 a420e223 67 -l -F pipefail -- harness tools examples test
 a420e223 0 -n -F 'docker logs' -- harness/README.md AGENTS.md .claude .harness/skills
+diff 0 -n -E 'docker logs.*\| *grep +-[a-zA-Z]*q' -- harness tools examples test sdks
+diff 0 -n -E 'docker logs.*\| *grep +-[a-zA-Z]*q' -- tools/harness/run-integration-tests.sh
+diff 0 -n -E 'docker logs.*\| *grep +-[a-zA-Z]*q' -- tools/harness/run-sdk-csharp-integration-tests.sh tools/harness/run-sdk-kotlin-integration-tests.sh tools/harness/run-sdk-python-integration-tests.sh
+diff 0 -n -E 'docker logs.*\| *grep +-[a-zA-Z]*q' -- tools/harness/lib-sdk-filter-fixture.sh tools/harness/lib-sdk-route-fixture.sh
+diff 79 -n -E '\| *grep +-[a-zA-Z]*q' -- harness tools examples test sdks Makefile .github
+diff 69 -l -F pipefail -- harness tools examples test
+diff 0 -n -F 'docker logs' -- harness/README.md AGENTS.md .claude .harness/skills
 ```
 
 | Träger | Messung am Parent (`a420e223`, 2026-10-02) | Behandlung (Befund am Diff trägt der Implementer ein) |
@@ -218,6 +227,60 @@ a420e223 0 -n -F 'docker logs' -- harness/README.md AGENTS.md .claude .harness/s
 | Zeile 5: jede `\| grep -q…`-Pipe | 114 Zeilen in 15 Dateien (davon 78 in `run-integration-tests.sh`, je 4 in den drei SDK-Runnern, 4 in `lib-sdk-filter-fixture.sh`, 3 in `lib-sdk-route-fixture.sh`) | Soll am Diff: 114 minus die Zahl der in Punkt 2 (ii) mit „ändern“ entschiedenen; der Rest steht mit Grund in der Tabelle im Bericht. |
 | Zeile 6: Dateien, die `pipefail` setzen | 67 | Gegenprobe zum Umfang: die sechs Dateien setzen es (`run-integration-tests.sh` Zeile 87, `run-sdk-csharp-integration-tests.sh` Zeile 54); die Lib-Dateien erben es vom Aufrufer. |
 | Zeile 7: Träger, die die Form beschreiben (Regelwerk, Agenten-Briefing, Skills) | 0 Zeilen | Soll am Diff: 0, außer Liefer-Punkt 3 entscheidet für einen Satz; dann trägt der Befund die Fundstelle. |
+
+**Befunde und Belege des Implementers (gemessen am 2026-10-02, Docker 29.8.2 build 7fc2dff, Parent
+`3bcafd41`; Skripte im Scratchpad, nicht im Repo):**
+
+| Messung | Gedruckte Zeile |
+|---|---|
+| Reproduktion vor dem Fix: beendeter Container (`busybox`), Treffer-Zeile `REJECTED token-rejected: x` plus 20 Folgezeilen, `docker logs "$c" 2>/dev/null \| grep -qF "$marker"` unter `set -euo pipefail`, 1000 Aufrufe | `form=q calls=1000 failures=10` (1,0 %; ein zweiter Lauf an der Mutationskopie: 9 von 1000) |
+| Fix-Form `docker logs … \| grep -F "$marker" >/dev/null`, dieselbe Schleife, 1000 Aufrufe | `form=nq calls=1000 failures=0` |
+| Fix-Form aus der geänderten Datei gelesen (die Prüfzeile `READY` von `tools/harness/lib-sdk-filter-fixture.sh`, per `eval` gefahren), 1000 Aufrufe | `calls=1000 failures=0` |
+| Mutationsprobe (Kopie der Fixture im Scratchpad, die `READY`-Zeile zurück auf `grep -qF`), dieselbe Schleife | `calls=1000 failures=9` (rot gesehen: die Schleife unterscheidet) |
+| Grenze der `printf '%s' "$var" \| grep -q…`-Form: Variable mit Treffer in der ersten Zeile, 300 Aufrufe je Größe | 8 KiB: 0 Fehlschläge; 48 KiB: 0; 200 KiB: 300 (der Pipe-Puffer von Linux, 64 KiB, ist **übernommen**; die Schwelle liegt zwischen 48 und 200 KiB gemessen) |
+| Reale Läufe nach dem Fix, seriell, `:dev` als `ghcr.io/pt9912/pg-change-feed:dev` geladen vorgefunden (`make image` nicht neu gelaufen: kein Server-Code im Diff) | `make test-integration` Exit 0, Schlusszeile `run-integration-tests: Lauf abgeschlossen — E2E-Abdeckungstabelle aus 21 Go-Zeilen und 53 Bash-Zeilen`; `make test-sdk-csharp-integration`, `make test-sdk-kotlin-integration`, `make test-sdk-python-integration` je Exit 0, Schlusszeile je `… Filter-Belege (ADR-0133 Teilfrage 4) grün — drei Tabellen in zwei Schemas …` |
+
+Ein Lauf belegt hier keine Flake-Freiheit (DoD); die Rate trägt die 1000er-Schleife. Der gesamte
+Lauf-Log von `make test-integration` ist 38 214 Byte lang, die der drei Tier-Läufe 7,5 bis 8,1 KB
+(**gemessen** mit `wc -c`); eine Variable aus diesen Ausgaben liegt weit unter 64 KiB.
+
+**Die zwei Einmal-Stellen** (`run-integration-tests.sh` Parent-Zeilen 2570 und 3181, außerhalb einer
+Schleife): beide sind das **Negativ** der Filter-Rundläufe („Change einer fremden Tabelle darf nicht
+ankommen“, `sleep 3`, dann `docker logs … \| grep -qF "RECEIVED"` als Leck-Test, Treffer = `exit 1`).
+Dort färbt der Mechanismus **nicht** rot, sondern **grün**: ein vorhandener Treffer (ein Leck des
+Filters), den `grep -q` durch SIGPIPE verwirft, bliebe unbemerkt. Die Form ist wie bei den
+Schleifen ausgetauscht; die Richtung der Fehlwirkung ist die entgegengesetzte (verfehlter
+Treffer = verdecktes Leck). Die Stellen 2584 und 3195 (dieselbe Prüfung in der Wiederhol-Schleife)
+sind Schleifen-Stellen.
+
+**Entscheid über die übrigen 79 Zeilen** (Parent-Zeilen; **bleibt** in allen 79, **0** „ändern“).
+Gemeinsamer Grund, soweit nicht anders genannt: der Erzeuger ist `printf '%s'`/`echo`/`printf '%s\n'`
+auf eine **bereits eingelesene Shell-Variable** (Befehlsersetzung), kein laufender Prozess. Ein
+Builtin schreibt die Variable in einem Zug; SIGPIPE kann nur entstehen, wenn die Variable den
+Pipe-Puffer (64 KiB) übersteigt, was die Messung oben (Schwelle zwischen 48 und 200 KiB) und die
+Größen der Läufe (38 KB für den ganzen Lauf-Log) ausschließen — **hergeleitet** aus Erzeuger und
+Lauf-Log, nicht je Variable gemessen.
+
+| Datei | Zeilen (Parent) | Anzahl | Erzeuger | Entscheid |
+|---|---|---|---|---|
+| `tools/harness/run-integration-tests.sh` | 328, 339, 743, 915, 1025, 1060, 1064, 1311, 1316, 1320, 1324, 1358, 1367, 1846, 1875, 1939, 1948, 1966, 2117, 2121, 2125, 2129, 2133, 2137, 2148, 2153, 2163, 2168, 2234, 2256, 2307, 2477, 2605, 2609, 2714, 2718, 2722, 2726, 2730, 2741, 2760, 2778, 2782, 2855, 2902, 2954, 3092, 3216, 3220, 3372, 3607, 3656, 3670, 3712, 3806, 3807, 3898 | 57 | `printf`/`echo` einer Variable aus `psql`, `docker exec`, den Wegwerf-Clients oder der `diagnose`-Ausgabe (je wenige Zeilen) | bleibt (gemeinsamer Grund); 3607: das letzte `grep -qF` liest aus `tail -n1`, eine Zeile |
+| `tools/harness/run-sdk-csharp-integration-tests.sh`, `…-kotlin-…`, `…-python-…` | 274 · 272 · 308 | 3 | `printf '%s' "$test_output"` (Log eines Test-Containers, wenige KB) | bleibt |
+| `tools/harness/lib-sdk-filter-fixture.sh`, `lib-sdk-route-fixture.sh` | 201 · 177 | 2 | `printf '%s' "$result_line"`, eine Zeile | bleibt |
+| `tools/harness/run-command-guard-tests.sh` | 97, 99, 446, 447 | 4 | `printf '%s' "$out"`, Hook-JSON einer Zeile | bleibt |
+| `tools/harness/run-fmt-check-tests.sh` | 38, 45, 175 | 3 | `printf` einer Variable; 175: `grep -A1` mit zwei Ausgabezeilen | bleibt |
+| `tools/harness/run-dockerfile-from-tests.sh`, `run-image-mutation-tests.sh`, `run-kommentar-kennungen-tests.sh` | 53 · 72 · 78 | 3 | `printf` einer Variable | bleibt |
+| `tools/harness/run-suchlauf-nachmessen-tests.sh` | 65, 102, 150, 182 | 4 | `printf` einer Variable | bleibt |
+| `tools/schema/rollout.sh` | 130 | 1 | `printf` einer Variable (Ausgabe der Wache, wenige Zeilen) | bleibt |
+| `sdks/kotlin/Dockerfile` | 92 | 1 | `printf` des Gradle-`--dry-run`-Plans; `sh` ohne `pipefail` | bleibt |
+| `examples/compose.yaml` | 60 | 1 | `wget -q -O - …/healthz`, Antwort `ok` | bleibt |
+
+Summe 57 + 3 + 2 + 4 + 3 + 3 + 4 + 1 + 1 + 1 = 79 (abgeleitet), gleich der Messung `diff 79` im
+Suchlauf-Block. **Nicht Gegenstand, aber gelesen und gemeldet:** `tools/harness/pin-stale-actions.sh`
+(Zeile 43), `pin-stale-baseline.sh` (26) und `pin-stale-dcheck.sh` (31) lesen
+`github_api_get … \| grep -m1 '"tag_name"'` unter `set -uo pipefail` — derselbe Mechanismus
+(`grep` endet beim ersten Treffer, der Erzeuger schreibt weiter), mit `-m1` statt `-q`, deshalb
+von der Suche dieses Slice nicht erfasst; `make pin-stale-*` ist kein Gate. Die Betroffenheit
+ist **nicht gemessen**; Meldung an den Planner (Frist: Closure dieses Slice).
 
 ## 4. Trigger
 

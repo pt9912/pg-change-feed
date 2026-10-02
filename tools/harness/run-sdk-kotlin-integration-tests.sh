@@ -56,6 +56,10 @@
 #
 # Aufruf: `make test-sdk-kotlin-integration`. Override:
 # SDK_KOTLIN_INTEGRATION_IMAGE.
+#
+# Die Marker-Prüfungen lesen `docker logs … | grep -F "…" >/dev/null` ohne
+# `-q`: `grep` liest bis zum Dateiende, `docker logs` schreibt vollständig, und
+# `pipefail` wertet den Treffer-Status der Pipeline.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -200,7 +204,7 @@ run_phase() {
 
   test_ready=0
   for _ in $(seq 1 60); do
-    if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+    if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -F "READY" >/dev/null; then
       test_ready=1
       break
     fi
@@ -223,7 +227,7 @@ run_phase() {
 INSERT INTO public.$table (id, name) VALUES ($insert_id, '$sentinel');
 SQL
     for _ in $(seq 1 20); do
-      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -F "RECEIVED" >/dev/null; then
         received=1
         break
       fi
@@ -241,7 +245,7 @@ SQL
   if [ -n "$reject_marker" ]; then
     rejected=0
     for _ in $(seq 1 40); do
-      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "$reject_marker"; then
+      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -F "$reject_marker" >/dev/null; then
         rejected=1
         break
       fi

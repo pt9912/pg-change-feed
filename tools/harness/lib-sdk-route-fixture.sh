@@ -13,6 +13,10 @@
 # Je Versuch committet der Runner eine Dreiergruppe in der Reihenfolge asia,
 # us, eu: ein Client mit Ziel eu sieht vor der Change seines Ziels zwei
 # Changes, die er nicht empfangen darf.
+#
+# Die Marker-Prüfungen lesen `docker logs … | grep … >/dev/null` ohne `-q`:
+# `grep` liest bis zum Dateiende, `docker logs` schreibt vollständig, und die
+# `pipefail`-Einstellung des Runners wertet den Treffer-Status der Pipeline.
 
 SDK_ROUTE_TABLE=feed_e2e_sdkroute
 SDK_ROUTE_SOURCE=src-e2e
@@ -109,7 +113,7 @@ sdk_route_phase() {
 
   local test_ready=0
   for _ in $(seq 1 120); do
-    if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+    if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -F "READY" >/dev/null; then
       test_ready=1
       break
     fi
@@ -135,7 +139,7 @@ INSERT INTO public.$SDK_ROUTE_TABLE (id, region, name) VALUES
   ($((group_id + 3)), '$SDK_ROUTE_TARGET_A', '$sentinel');
 SQL
     for _ in $(seq 1 60); do
-      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qE '^[[:space:]]*SEEN[[:space:]]*$'; then
+      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -E '^[[:space:]]*SEEN[[:space:]]*$' >/dev/null; then
         seen=1
         finished=$(date +%s%N)
         seen_after_ms=$(((finished - started) / 1000000))
