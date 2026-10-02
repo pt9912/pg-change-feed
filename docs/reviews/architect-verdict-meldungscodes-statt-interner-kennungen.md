@@ -2,7 +2,7 @@
 
 **Rolle:** Architect (Modul 8)
 **Anlass:** Startbedingung des Slice
-[`meldungscodes-statt-interner-kennungen`](../plan/planning/open/slice-meldungscodes-kennungsfreie-ausgaben.md)
+[`meldungscodes-statt-interner-kennungen`](../plan/planning/in-progress/slice-meldungscodes-kennungsfreie-ausgaben.md)
 (Liefer-Punkt A; Planner-Fragen 1 bis 7 und die Zusatzfragen des Auftraggebers)
 **Datum:** 2026-10-02
 **Bezug:** [`LH-QA-OPS-001`](../../spec/lastenheft.md),

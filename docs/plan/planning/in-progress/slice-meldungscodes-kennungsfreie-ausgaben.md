@@ -29,9 +29,9 @@ Verdikt: [`architect-verdict-meldungscodes-statt-interner-kennungen`](../../../r
 [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md) Festlegung 8).
 
 **Teil-Slices der Umsetzung** ([`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md)
-Festlegung 9): **T1 (dieser Slice)** → [T2 `meldungscodes-registry-fehlerkopf`](slice-meldungscodes-registry-fehlerkopf.md)
-→ [T3 `meldungscodes-warnungen-heartbeat-diagnose`](slice-meldungscodes-warnungen-heartbeat-diagnose.md)
-und [T4 `meldungscodes-http-grpc-fehlerkoerper`](slice-meldungscodes-http-grpc-fehlerkoerper.md)
+Festlegung 9): **T1 (dieser Slice)** → [T2 `meldungscodes-registry-fehlerkopf`](../open/slice-meldungscodes-registry-fehlerkopf.md)
+→ [T3 `meldungscodes-warnungen-heartbeat-diagnose`](../open/slice-meldungscodes-warnungen-heartbeat-diagnose.md)
+und [T4 `meldungscodes-http-grpc-fehlerkoerper`](../open/slice-meldungscodes-http-grpc-fehlerkoerper.md)
 (T3 und T4 untereinander unabhängig).
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
