@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.88
+Version: 1.89
 Software-Version: siehe `docs/user/version.md`
-Stand: 2026-10-02
+Stand: 2026-10-03
 
 ## 1. Einleitung
 
@@ -1238,7 +1238,7 @@ pg-change-feed diagnose: Quelle "src-e2e"
   CDC-Abstand cdc_capture_lag: 0.087s
   Verarbeitungsrückstand cdc_consumer_lag je Consumer (nur Consumer mit mindestens einer bestätigten Position):
     cli-e2e-consumer: 3
-  Blockierender Consumer: cli-e2e-consumer, bestätigte Position 42, Rückstand 3
+  Blockierender Consumer: Orders-Reader (cli-e2e-consumer), bestätigte Position 42, Rückstand 3
   Speicherverbrauch cdc_storage_bytes: 65536 Bytes
   Backfill je Tabelle (letzter Run; die Zeilenzahl ist geschätzt):
     public.orders: completed, 1200 Zeilen kopiert, geschätzt 1150, Warnung Größe false, Warnung Dauer false
@@ -1246,10 +1246,6 @@ pg-change-feed diagnose: Quelle "src-e2e"
       Fehler: permission: …
     public.events: completed, 4800000 Zeilen kopiert, geschätzt 4700000, Warnung Größe true, Warnung Dauer true
 ```
-
-Die Überschriften der Zeilen tragen im tatsächlichen Ausgabetext zusätzlich eine
-interne Anforderungskennung in Klammern; sie ist für den Betrieb ohne Bedeutung
-und hier weggelassen.
 
 Der Abschnitt „Backfill je Tabelle" liest die View `cdc.backfill_status` (siehe
 [Bestand als Backfill überführen](#bestand-als-backfill-überführen)): je
@@ -1391,7 +1387,7 @@ zusätzliche letzte Spalten), kann d-migrate die View nicht in-place ersetzen.
 Der Lauf entfernt sie dann selbst und legt sie neu an; er meldet das:
 
 ```text
-schema-rollout: Vorlauf (<interne Kennung>) - View-Signatur-Aenderung, DROP VIEW cdc.changes
+schema-rollout: Vorlauf - View-Signatur-Aenderung, DROP VIEW cdc.changes
 ```
 
 Dabei gilt:
@@ -2727,3 +2723,4 @@ MIT — siehe `LICENSE`.
 | 1.86 | 2026-10-01 | Redaktionelle Korrektur: `target` ist am SSE-Client der einzige Filter-Parameter; der Verweis auf einen offenen Folge-Schritt entfällt |
 | 1.87 | 2026-10-02 | Der SSE-Client der SDK-Packages und die SSE-Beispiele in Go, C# und Kotlin nehmen zusätzlich `schema` und `table` entgegen (Flags `-schema`/`-table` bzw. `--schema`/`--table`) |
 | 1.88 | 2026-10-02 | Die Erzeugnisse von `make schema-rollout` (Pflicht-Report, Rollback-Artefakt, Precheck-Report) liegen in `SCHEMA_ARTEFACT_DIR` (Standard `.tmp/schema-rollout`); die Aufbewahrung je Rollout liegt beim Betreiber; der Lauf mountet den Arbeitsbaum nicht |
+| 1.89 | 2026-10-03 | Die Ausgabe von `diagnose`, die Meldungen von `make schema-rollout` und der Fehlertext der Konfigurationsdatei tragen keine Anforderungs- oder Entscheidungskennung mehr; die Beispiele zeigen den tatsächlichen Ausgabetext |

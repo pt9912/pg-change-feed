@@ -66,7 +66,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 if [ ! -f "$SCHEMA_SOURCE" ]; then
-  echo "FEHLER: $SCHEMA_SOURCE fehlt — das neutrale Schema-YAML ist die Erstlieferung des d-migrate-Einbaus (ADR-0043); Überführungsquelle ist internal/adapters/driven/postgresstorage/schema.sql" >&2
+  echo "FEHLER: $SCHEMA_SOURCE fehlt — das neutrale Schema-YAML ist die Erstlieferung des d-migrate-Einbaus; Überführungsquelle ist internal/adapters/driven/postgresstorage/schema.sql" >&2
   exit 2
 fi
 
@@ -128,7 +128,7 @@ if [ "$plan_exit" = 8 ]; then
   build_stage guard "$GUARD_IMG" || exit 2
   if guard_out=$(docker run --rm -i --network none "$GUARD_IMG" /dev/stdin <"$DIR/rollout-precheck.yaml"); then
     if printf '%s\n' "$guard_out" | grep -qx 'allow-destructive'; then
-      echo "schema-rollout: bekannte Fremdobjekt-Blocker (ADR-0043) - --execute laeuft mit --allow-destructive"
+      echo "schema-rollout: bekannte Fremdobjekt-Blocker - --execute laeuft mit --allow-destructive"
       execute_flags=(--allow-destructive)
     fi
     drop_views=$(printf '%s\n' "$guard_out" | sed -n 's/^drop-view //p')
@@ -136,7 +136,7 @@ if [ "$plan_exit" = 8 ]; then
 fi
 
 for v in $drop_views; do
-  echo "schema-rollout: Vorlauf (ADR-0114) - View-Signatur-Aenderung, DROP VIEW cdc.$v"
+  echo "schema-rollout: Vorlauf - View-Signatur-Aenderung, DROP VIEW cdc.$v"
   docker run --rm --network "$NET" "$PG_TEST_IMAGE" psql "$DSN" -v ON_ERROR_STOP=1 -c "DROP VIEW cdc.$v" || exit 1
 done
 

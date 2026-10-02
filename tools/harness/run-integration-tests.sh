@@ -1061,11 +1061,11 @@ if [ "$diagnose_noblocker_status" -ne 0 ]; then
   echo "run-integration-tests: diagnose (Retention-Beleg, kein Blocker, docker exec) endete mit Ausgang $diagnose_noblocker_status: $diagnose_noblocker_output" >&2
   exit 1
 fi
-if ! printf '%s' "$diagnose_noblocker_output" | grep -qF "Blockierender Consumer (LH-FA-RET-005): kein Blocker"; then
+if ! printf '%s' "$diagnose_noblocker_output" | grep -qF "Blockierender Consumer: kein Blocker"; then
   echo "run-integration-tests: diagnose-Ausgabe zeigt vor jeder Consumer-Bestätigung nicht 'kein Blocker' (LH-FA-RET-005): $diagnose_noblocker_output" >&2
   exit 1
 fi
-if ! printf '%s' "$diagnose_noblocker_output" | grep -qE "Speicherverbrauch cdc_storage_bytes \(LH-FA-RET-006\): [0-9]+ Bytes"; then
+if ! printf '%s' "$diagnose_noblocker_output" | grep -qE "Speicherverbrauch cdc_storage_bytes: [0-9]+ Bytes"; then
   echo "run-integration-tests: diagnose-Ausgabe trägt keine numerische cdc_storage_bytes-Zeile (LH-FA-RET-006): $diagnose_noblocker_output" >&2
   exit 1
 fi
@@ -1307,9 +1307,9 @@ if [ "$diagnose_status" -ne 0 ]; then
   exit 1
 fi
 for expected in \
-  "Betriebsstatus (LH-FA-ADM-002):" \
-  "Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)" \
-  "CDC-Abstand cdc_capture_lag (LH-FA-ADM-004):" \
+  "Betriebsstatus:" \
+  "Fehlerzustand: keiner (Normalbetrieb)" \
+  "CDC-Abstand cdc_capture_lag:" \
   "$BACKLOG_CONSUMER: 0"
 do
   if ! printf '%s' "$diagnose_output" | grep -qF "$expected"; then
@@ -1321,11 +1321,11 @@ if ! printf '%s' "$diagnose_output" | grep -qE "$CLI_CONSUMER: [0-9]+"; then
   echo "run-integration-tests: diagnose-Ausgabe (Normalbetrieb) trägt keine numerische Rückstands-Zeile für $CLI_CONSUMER: $diagnose_output" >&2
   exit 1
 fi
-if ! printf '%s' "$diagnose_output" | grep -qE "Blockierender Consumer \(LH-FA-RET-005\): .*\($CLI_CONSUMER\), bestätigte Position [0-9]+, Rückstand [0-9]+"; then
+if ! printf '%s' "$diagnose_output" | grep -qE "Blockierender Consumer: .*\($CLI_CONSUMER\), bestätigte Position [0-9]+, Rückstand [0-9]+"; then
   echo "run-integration-tests: diagnose-Ausgabe (Normalbetrieb) zeigt $CLI_CONSUMER nicht als real blockierenden Consumer (LH-FA-RET-005): $diagnose_output" >&2
   exit 1
 fi
-if ! printf '%s' "$diagnose_output" | grep -qE "Speicherverbrauch cdc_storage_bytes \(LH-FA-RET-006\): [0-9]+ Bytes"; then
+if ! printf '%s' "$diagnose_output" | grep -qE "Speicherverbrauch cdc_storage_bytes: [0-9]+ Bytes"; then
   echo "run-integration-tests: diagnose-Ausgabe (Normalbetrieb) trägt keine numerische cdc_storage_bytes-Zeile (LH-FA-RET-006): $diagnose_output" >&2
   exit 1
 fi
@@ -1359,7 +1359,7 @@ for _ in $(seq 1 20); do
   diagnose_error_output=$(exec_feed diagnose)
   diagnose_error_status=$?
   set -e
-  if [ "$diagnose_error_status" -eq 0 ] && printf '%s' "$diagnose_error_output" | grep -qF "Fehlerzustand (LH-FA-ADM-003): schema"; then
+  if [ "$diagnose_error_status" -eq 0 ] && printf '%s' "$diagnose_error_output" | grep -qF "Fehlerzustand: schema"; then
     error_state_seen=1
     break
   fi
@@ -2149,7 +2149,7 @@ fi
 # zwei robuste, boolesche Ableitungen statt roher Zeitstempel/Sekundenwerte
 # (die zwischen zwei sequenziellen Aufrufen nie exakt gleich wären): ob ein
 # Lebenszeichen bekannt ist, und ob ein Fehlerzustand vorliegt.
-if printf '%s' "$http_diagnose_cli_output" | grep -qF "Betriebsstatus (LH-FA-ADM-002): Lebenszeichen vor"; then
+if printf '%s' "$http_diagnose_cli_output" | grep -qF "Betriebsstatus: Lebenszeichen vor"; then
   http_diagnose_cli_known=1
 else
   http_diagnose_cli_known=0
@@ -2164,7 +2164,7 @@ if [ "$http_diagnose_cli_known" != "$http_diagnose_http_known" ]; then
   exit 1
 fi
 
-if printf '%s' "$http_diagnose_cli_output" | grep -qF "Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)"; then
+if printf '%s' "$http_diagnose_cli_output" | grep -qF "Fehlerzustand: keiner (Normalbetrieb)"; then
   http_diagnose_cli_no_error=1
 else
   http_diagnose_cli_no_error=0
@@ -2742,7 +2742,7 @@ fi
 # zwei robuste, boolesche Ableitungen statt roher Zeitstempel/Sekundenwerte
 # (die zwischen zwei sequenziellen Aufrufen nie exakt gleich wären): ob ein
 # Lebenszeichen bekannt ist, und ob ein Fehlerzustand vorliegt.
-if printf '%s' "$grpc_admin_diagnose_cli_output" | grep -qF "Betriebsstatus (LH-FA-ADM-002): Lebenszeichen vor"; then
+if printf '%s' "$grpc_admin_diagnose_cli_output" | grep -qF "Betriebsstatus: Lebenszeichen vor"; then
   grpc_admin_diagnose_cli_known=1
 else
   grpc_admin_diagnose_cli_known=0
@@ -2761,7 +2761,7 @@ if [ "$grpc_admin_diagnose_cli_known" != "$grpc_admin_diagnose_grpc_known" ]; th
   exit 1
 fi
 
-if printf '%s' "$grpc_admin_diagnose_cli_output" | grep -qF "Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)"; then
+if printf '%s' "$grpc_admin_diagnose_cli_output" | grep -qF "Fehlerzustand: keiner (Normalbetrieb)"; then
   grpc_admin_diagnose_cli_no_error=1
 else
   grpc_admin_diagnose_cli_no_error=0

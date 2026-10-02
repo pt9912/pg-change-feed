@@ -248,7 +248,7 @@ docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   || fail "Lauf 4: Vorbedingung fehlgeschlagen, cdc_reader hat das SELECT-Recht schon vor dem Rollout"
 run_rollout . "$TARGET"
 [ "$RUN_EXIT" -eq 0 ] || fail "Lauf 4: Rollout gegen die abweichende View-Signatur endete mit Exit $RUN_EXIT statt 0"
-grep -q "Vorlauf (ADR-0114) - View-Signatur-Aenderung, DROP VIEW cdc.changes" <<<"$RUN_OUT" \
+grep -q "Vorlauf - View-Signatur-Aenderung, DROP VIEW cdc.changes" <<<"$RUN_OUT" \
   || fail "Lauf 4: die Vorlauf-Meldung für cdc.changes fehlt in der Ausgabe"
 [ "$(view_signature "$DB")" = "$sig_ref" ] || fail "Lauf 4: die View trägt nach dem Rollout nicht die Soll-Signatur"
 [ "$(psql_q "$DB" "SELECT has_table_privilege('cdc_reader', 'cdc.changes', 'SELECT')")" = "t" ] \
@@ -411,7 +411,7 @@ run_rollout . "$TARGET"
 run6a_exit=$RUN_EXIT
 [ "$run6a_exit" -ne 0 ] || fail "Lauf 6a lief durch (Exit 0), obwohl ein unbekannter destruktiver Blocker vorlag"
 grep -qE "(Error|Fehler) 8" <<<"$RUN_OUT" || fail "Lauf 6a: der Abbruch trägt nicht den d-migrate-Exit 8 (Error 8/Fehler 8 fehlt in der Ausgabe)"
-if grep -q "bekannte Fremdobjekt-Blocker (ADR-0043)" <<<"$RUN_OUT"; then
+if grep -q "bekannte Fremdobjekt-Blocker" <<<"$RUN_OUT"; then
   fail "Lauf 6a: die Wache hat --allow-destructive für einen unbekannten Blocker freigegeben"
 fi
 [ "$(psql_q "$DB" "SELECT to_regprocedure('cdc.zz_rolloutguard_unbekannt()') IS NOT NULL")" = "t" ] \

@@ -2229,20 +2229,20 @@ func Diagnose(ctx context.Context, dsn string, source model.SourceID) int {
 // direkt aus den SQL-Zeilen entstand.
 func printDiagnoseReport(result inbound.DiagnoseResult) {
 	if result.HeartbeatAgeSeconds == nil {
-		fmt.Println("  Betriebsstatus (LH-FA-ADM-002): kein Lebenszeichen — Instanz hat noch nie geschlagen")
-		fmt.Println("  Fehlerzustand (LH-FA-ADM-003): unbekannt (kein Lebenszeichen)")
+		fmt.Println("  Betriebsstatus: kein Lebenszeichen — Instanz hat noch nie geschlagen")
+		fmt.Println("  Fehlerzustand: unbekannt (kein Lebenszeichen)")
 	} else {
-		fmt.Printf("  Betriebsstatus (LH-FA-ADM-002): Lebenszeichen vor %.3fs\n", *result.HeartbeatAgeSeconds)
+		fmt.Printf("  Betriebsstatus: Lebenszeichen vor %.3fs\n", *result.HeartbeatAgeSeconds)
 		if result.ErrorClass == nil {
-			fmt.Println("  Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)")
+			fmt.Println("  Fehlerzustand: keiner (Normalbetrieb)")
 		} else {
-			fmt.Printf("  Fehlerzustand (LH-FA-ADM-003): %s\n", *result.ErrorClass)
+			fmt.Printf("  Fehlerzustand: %s\n", *result.ErrorClass)
 		}
 	}
 
-	fmt.Printf("  CDC-Abstand cdc_capture_lag (LH-FA-ADM-004): %.3fs\n", result.CaptureLag)
+	fmt.Printf("  CDC-Abstand cdc_capture_lag: %.3fs\n", result.CaptureLag)
 
-	fmt.Println("  Verarbeitungsrückstand cdc_consumer_lag je Consumer (LH-FA-ADM-005, nur Consumer mit mindestens einer bestätigten Position):")
+	fmt.Println("  Verarbeitungsrückstand cdc_consumer_lag je Consumer (nur Consumer mit mindestens einer bestätigten Position):")
 	if len(result.ConsumerLags) == 0 {
 		fmt.Println("    (keiner — kein Consumer mit bestätigter Position)")
 	}
@@ -2255,19 +2255,19 @@ func printDiagnoseReport(result inbound.DiagnoseResult) {
 	}
 
 	if result.RetentionBlocker == nil {
-		fmt.Println("  Blockierender Consumer (LH-FA-RET-005): kein Blocker (kein Consumer hat je gegen diese Quelle bestätigt)")
+		fmt.Println("  Blockierender Consumer: kein Blocker (kein Consumer hat je gegen diese Quelle bestätigt)")
 	} else {
 		blocker := result.RetentionBlocker
 		if blocker.Backlog == nil {
-			fmt.Printf("  Blockierender Consumer (LH-FA-RET-005): %s (%s), bestätigte Position %d, Rückstand unbekannt (Quelle trug noch nie eine Transaktion)\n", blocker.Name, blocker.ConsumerID, blocker.AcknowledgedPosition)
+			fmt.Printf("  Blockierender Consumer: %s (%s), bestätigte Position %d, Rückstand unbekannt (Quelle trug noch nie eine Transaktion)\n", blocker.Name, blocker.ConsumerID, blocker.AcknowledgedPosition)
 		} else {
-			fmt.Printf("  Blockierender Consumer (LH-FA-RET-005): %s (%s), bestätigte Position %d, Rückstand %d\n", blocker.Name, blocker.ConsumerID, blocker.AcknowledgedPosition, *blocker.Backlog)
+			fmt.Printf("  Blockierender Consumer: %s (%s), bestätigte Position %d, Rückstand %d\n", blocker.Name, blocker.ConsumerID, blocker.AcknowledgedPosition, *blocker.Backlog)
 		}
 	}
 
-	fmt.Printf("  Speicherverbrauch cdc_storage_bytes (LH-FA-RET-006): %.0f Bytes\n", result.StorageBytes)
+	fmt.Printf("  Speicherverbrauch cdc_storage_bytes: %.0f Bytes\n", result.StorageBytes)
 
-	fmt.Println("  Backfill je Tabelle (LH-FA-CAP-009, letzter Run; die Zeilenzahl ist geschätzt):")
+	fmt.Println("  Backfill je Tabelle (letzter Run; die Zeilenzahl ist geschätzt):")
 	if len(result.Backfill) == 0 {
 		fmt.Println("    (keiner — kein Backfill beantragt)")
 	}

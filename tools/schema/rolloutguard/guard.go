@@ -145,6 +145,6 @@ func decide(r report) decision {
 		d.dropViews = append(d.dropViews, v)
 	}
 	sort.Strings(d.dropViews)
-	d.reason = "alle Blocker sind bekannte Fremdobjekte (ADR-0043) oder View-Signatur-Aenderungen (ADR-0114)"
+	d.reason = "alle Blocker sind bekannte Fremdobjekte oder View-Signatur-Aenderungen"
 	return d
 }

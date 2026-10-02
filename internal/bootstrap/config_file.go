@@ -111,7 +111,7 @@ func ConfigFromFile(path string) (fileConfig, error) {
 	}
 	for _, key := range forbiddenFileCredentialKeys {
 		if _, found := raw[key]; found {
-			return fileConfig{}, fmt.Errorf("%w: Konfigurationsdatei %q trägt den Schlüssel %q — Zugangsdaten bleiben env-var-exklusiv (ADR-0088 Festlegung 1, SPEC-016)", ErrConfiguration, path, key)
+			return fileConfig{}, fmt.Errorf("%w: Konfigurationsdatei %q trägt den Schlüssel %q — Zugangsdaten bleiben env-var-exklusiv", ErrConfiguration, path, key)
 		}
 	}
 

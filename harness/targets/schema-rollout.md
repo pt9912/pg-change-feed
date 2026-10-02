@@ -76,7 +76,7 @@ anderen Schritts tut es.
    Weitere ohne sie.
 4. **Vorlauf** — für jede gemeldete View ein `DROP VIEW cdc.<name>` (ohne
    `CASCADE`, ein Statement je View, per `psql` mit `ON_ERROR_STOP=1`), jedes
-   mit der Meldung `schema-rollout: Vorlauf (ADR-0114) - View-Signatur-Aenderung,
+   mit der Meldung `schema-rollout: Vorlauf - View-Signatur-Aenderung,
    DROP VIEW cdc.<name>`. Ein Fehler bricht das Target ab.
 5. **`--execute`** — `schema migrate --execute` mit Pflicht-Report
    (`plan.yaml`) und Rollback-Artefakt (`down.sql`), beide nach erfolgreichem

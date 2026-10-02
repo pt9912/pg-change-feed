@@ -148,13 +148,13 @@ func TestDiagnoseReportsNormalOperation(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("Diagnose-Exit-Code = %d, wollen 0 (erfolgreicher Lesezugriff)", code)
 	}
-	if !strings.Contains(output, "Betriebsstatus (LH-FA-ADM-002): Lebenszeichen vor") {
+	if !strings.Contains(output, "Betriebsstatus: Lebenszeichen vor") {
 		t.Fatalf("stdout = %q, wollen eine Betriebsstatus-Zeile", output)
 	}
-	if !strings.Contains(output, "Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)") {
+	if !strings.Contains(output, "Fehlerzustand: keiner (Normalbetrieb)") {
 		t.Fatalf("stdout = %q, wollen 'keiner (Normalbetrieb)' im Normalfall", output)
 	}
-	if !strings.Contains(output, "CDC-Abstand cdc_capture_lag (LH-FA-ADM-004):") {
+	if !strings.Contains(output, "CDC-Abstand cdc_capture_lag:") {
 		t.Fatalf("stdout = %q, wollen eine cdc_capture_lag-Zeile", output)
 	}
 	if !strings.Contains(output, diagnoseTestConsumer+": 1") {
@@ -189,7 +189,7 @@ func TestDiagnoseReportsErrorState(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("Diagnose-Exit-Code = %d, wollen 0 (erfolgreicher Lesezugriff, der Fehlerzustand ist Berichtsinhalt)", code)
 	}
-	if !strings.Contains(output, "Fehlerzustand (LH-FA-ADM-003): schema") {
+	if !strings.Contains(output, "Fehlerzustand: schema") {
 		t.Fatalf("stdout = %q, wollen die Fehlerklasse 'schema' sichtbar und von Normalbetrieb unterscheidbar", output)
 	}
 	if strings.Contains(output, "keiner (Normalbetrieb)") {
@@ -229,10 +229,10 @@ func TestDiagnoseReportsNoHeartbeat(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("Diagnose-Exit-Code = %d, wollen 0 (erfolgreicher Lesezugriff, fehlendes Lebenszeichen ist Berichtsinhalt)", code)
 	}
-	if !strings.Contains(output, "Betriebsstatus (LH-FA-ADM-002): kein Lebenszeichen — Instanz hat noch nie geschlagen") {
+	if !strings.Contains(output, "Betriebsstatus: kein Lebenszeichen — Instanz hat noch nie geschlagen") {
 		t.Fatalf("stdout = %q, wollen die 'kein Lebenszeichen'-Zeile", output)
 	}
-	if !strings.Contains(output, "Fehlerzustand (LH-FA-ADM-003): unbekannt (kein Lebenszeichen)") {
+	if !strings.Contains(output, "Fehlerzustand: unbekannt (kein Lebenszeichen)") {
 		t.Fatalf("stdout = %q, wollen die 'unbekannt (kein Lebenszeichen)'-Zeile", output)
 	}
 }
@@ -545,7 +545,7 @@ func TestDiagnoseReportsTheLatestBackfillRunPerTable(t *testing.T) {
 		t.Fatalf("Diagnose-Exit-Code = %d, wollen 0 (ein failed-Run ist Berichtsinhalt) — stdout %q", code, output)
 	}
 	for _, want := range []string{
-		"Backfill je Tabelle (LH-FA-CAP-009, letzter Run; die Zeilenzahl ist geschätzt):",
+		"Backfill je Tabelle (letzter Run; die Zeilenzahl ist geschätzt):",
 		"    public.diag_done: completed, 12 Zeilen kopiert, geschätzt 10, Warnung Größe false, Warnung Dauer false\n",
 		"    public.diag_unknown: failed, 0 Zeilen kopiert, geschätzt unbekannt, Warnung Größe true, Warnung Dauer false\n",
 		"      Fehler: permission: kein SELECT auf die Quelltabelle\n",
