@@ -84,7 +84,7 @@ class SseFilterRealserverTest {
         println("READY")
         System.out.flush()
         val deadline = System.currentTimeMillis() + POSITIVE_DEADLINE_MILLIS
-        while (!(own(f1.rows).any { isTableA(it) } && own(f2.rows).any { isOtherSchema(it) } &&hasAllThree(unfiltered.rows))) {
+        while (!(own(f1.rows).any { isTableA(it) } && own(f2.rows).any { isOtherSchema(it) } && hasAllThree(unfiltered.rows))) {
             throwOnFailure(f1, f2, unfiltered)
             assertTrue(
                 System.currentTimeMillis() < deadline,
