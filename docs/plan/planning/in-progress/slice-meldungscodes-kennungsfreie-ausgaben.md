@@ -200,6 +200,20 @@ ba60c7bc 0 -n -E '(SPEC|ADR|ARC)-[0-9]+|LH-(FA|QA)-' -- sdks
 ba60c7bc 16 -n -E 'description:.*(LH|ADR|SPEC|ARC)-' -- tools/schema/schema.yaml
 ba60c7bc 28 -n -E '"Fehlerklasse [a-z]+: ' -- '*.go' ':!*_test.go'
 ba60c7bc 97 -n -P '^[^/]*(LH|ADR|SPEC|ARC)-[A-Z0-9]' -- '*_test.go'
+diff 0 -n -P '^[^/]*(LH|ADR|SPEC|ARC)-[A-Z0-9]' -- '*.go' ':!*_test.go'
+diff 0 -n -E 'echo.*(ADR|LH|SPEC)-[A-Z0-9]' -- tools/schema/rollout.sh
+diff 1 -n -E '\((LH|ADR)-' -- internal/bootstrap/wiring.go
+diff 0 -n -E '\((LH|ADR)-' -- internal/bootstrap/diagnose_test.go
+diff 0 -n -E '(Betriebsstatus|Fehlerzustand|Blockierender Consumer|CDC-Abstand cdc_capture_lag|Speicherverbrauch cdc_storage_bytes) \(LH' -- tools/harness/run-integration-tests.sh
+ba60c7bc 3 -n -E '\\\((LH|ADR)-' -- tools/harness/run-integration-tests.sh
+diff 0 -n -E '\\\((LH|ADR)-' -- tools/harness/run-integration-tests.sh
+diff 3 -n -E 'Vorlauf \(ADR|Fremdobjekt-Blocker \(ADR' -- tools harness
+diff 0 -n -F 'interne Anforderungskennung' -- docs/user
+diff 0 -n -F '<interne Kennung>' -- docs/user
+diff 0 -n -E '(SPEC|ADR|ARC)-[0-9]+|LH-(FA|QA)-' -- sdks
+diff 16 -n -E 'description:.*(LH|ADR|SPEC|ARC)-' -- tools/schema/schema.yaml
+diff 28 -n -E '"Fehlerklasse [a-z]+: ' -- '*.go' ':!*_test.go'
+diff 90 -n -P '^[^/]*(LH|ADR|SPEC|ARC)-[A-Z0-9]' -- '*_test.go'
 ```
 
 Die Sollzahlen sind am Parent `ba60c7bc` mit `make suchlauf-nachmessen` gemessen (12 Zeilen,
@@ -209,14 +223,19 @@ geklärt — der Implementer klärt sie, bevor er sich auf die Zahl der Läufer-
 
 | Träger | Messung am Parent (`ba60c7bc`, gemessen am 2026-10-02) | Behandlung und Befund am Diff |
 |---|---|---|
-| Ausgabe-Literale im Go-Produktionscode | Zeile 1: 14 (12 `wiring.go`, 1 `config_file.go`, 1 `guard.go`) | Implementer: Diff-Stand soll 0 sein |
-| Rollout-Meldungen | Zeile 2: 3; Zeile 6: Meldungstexte samt Erwartungen und Vertragsdatei `harness/targets/schema-rollout.md` | Quelle, Erwartungen im Läufer und Vertragsdatei zusammen nachziehen |
-| Diagnose-Ausgabe und ihre Erwartungen | Zeile 3 (13: 12 Literale + 1 Kommentar), Zeile 4 (7), Zeile 5 (Erwartungen in `run-integration-tests.sh`) | `diff`-Zeilen ergänzen, Soll 0 |
-| Handbuch | Zeilen 7 und 8 (je 1) | Diff-Stand 0 beider |
-| SDKs | Zeile 9: 0 | Nichtgefunden belegt; kein Nachzug |
-| Datenbank-Metadaten | Zeile 10: 16 | offen: Messung am Rollout-Ergebnis, dann Entscheidung im Bericht |
-| `Fehlerklasse`-Präfix | Zeile 11: 28 | gehört zu T2; Diff-Stand in T1 unverändert 28 |
-| Test-Zeilen mit Kennung | Zeile 12: 97 (Muster des Architects; Vorläufer-Plan nannte 142, nicht nachgemessen) | Implementer klärt die Differenz, trennt Ausgabe-Erwartung von Testname/Kommentar |
+| Ausgabe-Literale im Go-Produktionscode | Zeile 1: 14 (12 `wiring.go`, 1 `config_file.go`, 1 `guard.go`) | Gefunden und nachgezogen: 14 Zeilen in `wiring.go`, `config_file.go`, `guard.go`; Diff-Stand 0 (erste `diff`-Zeile des Blocks). Nichtgefunden: kein weiteres Ausgabe-Literal mit Kennung im Produktions-Go |
+| Rollout-Meldungen | Zeile 2: 3; Zeile 6: Meldungstexte samt Erwartungen und Vertragsdatei `harness/targets/schema-rollout.md` | Gefunden und nachgezogen: 3 `echo`-Zeilen in `rollout.sh`, 2 Erwartungen in `run-schema-rollout-guard-test.sh`, 1 Meldungsnennung in `harness/targets/schema-rollout.md`; Diff-Stand Zeile 6 = 3, alle drei bewusst stehen geblieben: ein Läufer-Kommentar (`run-schema-rollout-guard-test.sh:12`), ein Test-Kommentar (`guard_test.go:123`), eine Fixture des neuen Tabellentests; Zeile 2 Diff-Stand 0 |
+| Diagnose-Ausgabe und ihre Erwartungen | Zeile 3 (13: 12 Literale + 1 Kommentar), Zeile 4 (7), Zeile 5 (Erwartungen in `run-integration-tests.sh`) | Gefunden und nachgezogen: 12 Literale; 7 Erwartungen in `diagnose_test.go` (Diff 0), 9 Erwartungszeilen in `run-integration-tests.sh` (Diff 0); Zeile 3 Diff-Stand 1 = der Kommentar mit `ADR-0132` (Quellcode-Kommentar, außerhalb der Reichweite). Differenz 9 gegen 12 des Vorläufer-Plans geklärt: 12 Erwartungszeilen an die Produkt-Ausgabe, davon 9 mit der Klammer `(LH-…)` im Klartext (Suchlauf-Zeile 5, 3 in der Prüfliste, 6 einzelne `grep -qF`) und 3 als `grep -qE` mit maskierter Klammer `\(LH-…\)` (eigene Suchlauf-Zeile mit dem maskierten Muster: `Speicherverbrauch` zweimal, `Blockierender Consumer` einmal), die das Muster der Zeile 5 nicht trifft; alle 12 nachgezogen. Der erste `make test-integration`-Lauf nach den neun Zeilen endete rot an der Speicherverbrauch-Erwartung, genau an diesen drei; die weiteren Kennungen in der Datei (`echo`-Läufer-Ausgaben, Kommentare) sind Läufer-Ausgabe und bleiben |
+| Handbuch | Zeilen 7 und 8 (je 1) | Gefunden und nachgezogen: Hinweissatz und Platzhalter entfernt (Diff 0 beider); Version 1.89 mit Historienzeile; zusätzlich die Beispielzeile „Blockierender Consumer“ an die echte Ausgabe (`<Name> (<Kennung>)`) angeglichen |
+| SDKs | Zeile 9: 0 | Nichtgefunden belegt (Diff-Stand 0); kein Nachzug |
+| Datenbank-Metadaten | Zeile 10: 16 | Gemessen (Wegwerf-PostgreSQL 18, `bash tools/schema/apply-rollout.sh`, danach `SELECT count(*) FROM pg_description d JOIN pg_class c ON c.oid = d.objoid WHERE c.relnamespace = 'cdc'::regnamespace` → 0; mit Kennungsfilter → 0; weder `\d+ cdc.source` noch `plan.yaml`, `down.sql`, `rollout-precheck.yaml` oder das Rollout-Log tragen eine `description:`): die Texte kommen nicht als Datenbank-Kommentar an, kein `COMMENT ON` im Rollout. Entscheidung nach der Regel der ADR: Quelltext-Dokumentation des Schema-YAML, bleibt (Diff-Stand 16) |
+| `Fehlerklasse`-Präfix | Zeile 11: 28 | Diff-Stand 28, unverändert (gehört zu T2) |
+| Test-Zeilen mit Kennung | Zeile 12: 97 (Muster des Architects; Vorläufer-Plan nannte 142, nicht nachgemessen) | Diff-Stand 90 (−7: die Erwartungen in `diagnose_test.go`). Die 97 sind 42 Fixtures in `tools/harness/kommentar-kennungen/main_test.go`, 18 in `roles_rollout_file_internal_test.go` und sonst `t.Fatalf`-Fehlertexte und Testnamen; Ausgabe-Erwartung an die Produkt-Ausgabe waren nur die 7 in `diagnose_test.go`. Die 142 sind nicht reproduziert: das Muster `"[^"]*(LH|ADR|SPEC|ARC)-[A-Z0-9]` liefert 147 Zeilen am Parent (mit Kommentaren, die ein Anführungszeichen tragen), das Muster ohne Schrägstrich-Ausschluss 1029 |
+
+**Belege des Implementers (gemessen am Arbeitsbaum nach `ba60c7bc`, 2026-10-03):**
+
+- **Realer `diagnose`-Lauf** (`ghcr.io/pt9912/pg-change-feed:dev` nach `make image`, gegen eine Wegwerf-PostgreSQL 18 nach `apply-rollout.sh`, Quelle `demo`): ohne Lebenszeichen `Betriebsstatus: kein Lebenszeichen — Instanz hat noch nie geschlagen` / `Fehlerzustand: unbekannt (kein Lebenszeichen)`; mit Lebenszeichen und Consumer `Betriebsstatus: Lebenszeichen vor 0.415s`, `Fehlerzustand: keiner (Normalbetrieb)`, `Blockierender Consumer: cli-consumer (c1), bestätigte Position 5, Rückstand unbekannt (…)`; mit `error_class = 'schema'` `Fehlerzustand: schema`. Keine Zeile trägt eine Kennung. Der Fehlertext der Konfigurationsdatei lautet `… trägt den Schlüssel "capture_dsn" — Zugangsdaten bleiben env-var-exklusiv`.
+- **Mutationsprobe des Gates** (Kopie von `internal/`, `cmd/`, `examples/`, `tools/schema/` im Scratchpad, Wurzel als erstes Argument): Ausgangslage Exit 0; `fmt.Println("  Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)")` in `wiring.go` → **Exit 1** mit `internal/bootstrap/wiring.go:2237:…`; dieselbe Kennung als Kommentarzeile davor → **Exit 0**; `echo "schema-rollout: Vorlauf (ADR-0114) - …"` in `rollout.sh` → **Exit 1**. Mutationen am Wächter selbst (Kopie in einem Scratchpad-Repo, Tabellentest dagegen): `skip_go` wirkungslos → Fall „eingerückte Kommentarzeile“ rot; Backtick aus dem Go-Muster → Fall „Raw-String in Backticks“ rot; Test-Ausnahme aus dem `find` → Fall „Kennung in Test-Datei“ rot; Lesefehler-Zweig von `grep` abgeschaltet → die Lesefehler-Fälle rot.
 
 ## 4. Trigger
 

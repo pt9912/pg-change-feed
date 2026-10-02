@@ -28,3 +28,19 @@ GATE_CHECKS += handbuch-public-doc-check
 .PHONY: test-handbuch-public-doc-check
 test-handbuch-public-doc-check: ## Tabellentest gegen tools/harness/handbuch-public-doc-check.sh (netzlos)
 	@bash tools/harness/run-handbuch-public-doc-check-tests.sh
+
+# Kennungsfreie Programm-Ausgaben (ADR-0144 Festlegung 10): ein grep-Wächter
+# über die Ausgabe-Literale der Produktions-Go-Dateien (internal/, cmd/,
+# tools/schema/) und die echo-/printf-Zeilen der Skripte unter tools/schema/
+# und examples/ auf interne Kennungen; Lesefehler und ein leerer Gegenstand
+# enden mit Exit 2. Netzlos (tools/harness/ausgabe-kennungen-check.sh). Der
+# Tabellentest zur Wächter-Logik bleibt Werkzeug, kein Gate.
+.PHONY: ausgabe-kennungen-check
+ausgabe-kennungen-check: ## Gate: keine interne Kennung in Ausgabe-Literalen des Servers und seiner Betriebs-Skripte (netzlos, grep; ADR-0144)
+	@bash tools/harness/ausgabe-kennungen-check.sh
+
+GATE_CHECKS += ausgabe-kennungen-check
+
+.PHONY: test-ausgabe-kennungen-check
+test-ausgabe-kennungen-check: ## Tabellentest gegen tools/harness/ausgabe-kennungen-check.sh (netzlos)
+	@bash tools/harness/run-ausgabe-kennungen-check-tests.sh
