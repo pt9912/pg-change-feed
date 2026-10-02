@@ -44,3 +44,19 @@ GATE_CHECKS += ausgabe-kennungen-check
 .PHONY: test-ausgabe-kennungen-check
 test-ausgabe-kennungen-check: ## Tabellentest gegen tools/harness/ausgabe-kennungen-check.sh (netzlos)
 	@bash tools/harness/run-ausgabe-kennungen-check-tests.sh
+
+# Meldungscodes (ADR-0144 Festlegung 5): ein grep-Wächter gleicht die Codes
+# des Quelltexts (Produktions-Go, Skripte unter tools/schema/ und examples/),
+# der Code-Tabelle (internal/domain/messagecode/codes.go) und des Katalogs im
+# Benutzerhandbuch ab; Lesefehler, ein leerer Gegenstand und eine Tabelle ohne
+# Code enden mit Exit 2. Netzlos (tools/harness/meldungscodes-check.sh). Der
+# Tabellentest zur Wächter-Logik bleibt Werkzeug, kein Gate.
+.PHONY: meldungscodes-check
+meldungscodes-check: ## Gate: Meldungscodes in Quelltext, Code-Tabelle und Handbuch-Katalog gleich (netzlos, grep; ADR-0144)
+	@bash tools/harness/meldungscodes-check.sh
+
+GATE_CHECKS += meldungscodes-check
+
+.PHONY: test-meldungscodes-check
+test-meldungscodes-check: ## Tabellentest gegen tools/harness/meldungscodes-check.sh (netzlos)
+	@bash tools/harness/run-meldungscodes-check-tests.sh
