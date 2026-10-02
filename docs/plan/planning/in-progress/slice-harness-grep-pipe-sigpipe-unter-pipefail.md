@@ -58,8 +58,9 @@ gemessen; der Planner hat nichts davon nachgemessen):
   SIGPIPE und beendet sich mit einem Fehlerstatus; unter `pipefail` ist dann der Status der
   **Pipeline** der des ersten fehlgeschlagenen Glieds, `if` liest „kein Treffer“. Messung des
   Reviewers: ein beendeter Container mit einer Treffer-Zeile und 20 Folgezeilen,
-  `docker logs | grep -qF` unter `pipefail`, **300 Aufrufe → 3 Fehlschläge** (1 %, **vom Reviewer
-  gemessen**, nicht nachgemessen).
+  `docker logs | grep -qF` unter `pipefail`, **300 Aufrufe → 3 Fehlschläge** (**vom Reviewer
+  gemessen** am Nachbau des Vorgängers; die Rate der alten Form in vier Messungen dieses Slice
+  steht in §7: 6 bis 16 von je 1000).
 - Die Form steht im Bestand nicht nur in der Ablehnungs-Schleife: am Stand `a420e223`
   **35 Zeilen** der Form `docker logs … | grep -q…` in sechs Dateien (Suchlauf unten), dazu
   weitere `… | grep -q…`-Pipes mit anderem Erzeuger (114 Zeilen in 15 Dateien; Auswahl nach
@@ -144,17 +145,20 @@ behauptet keine Ursache für den roten Lauf. Die offene Frage dieses Eintrags bl
       `make test-sdk-python-integration` und `make test-integration` je Exit 0, im Bericht die
       Schlusszeilen; ein Lauf belegt hier **keine Flake-Freiheit**, nur dass die Ersetzung die
       Phasen nicht bricht (die Fehlerrate trägt die Schleife aus Punkt 1, nicht die Tier-Läufe).
-- [ ] **Liefer-Punkt 3 — Folgesatz im Regelwerk und Beobachtungs-Register.** Der Slice entscheidet
+- [x] **Liefer-Punkt 3 — Folgesatz im Regelwerk und Beobachtungs-Register.** *Entschieden:
+      Vorschlag, Freigabe offen* — `AGENTS.md` bleibt in diesem Slice unverändert (eine
+      Regeltext-Änderung braucht die Freigabe des Auftraggebers); der Textvorschlag steht in §7,
+      das Register ist fortgeschrieben (§7). Der Slice entscheidet
       (Planner bei Closure, begründet), ob der Mechanismus einen Satz in
       [`AGENTS.md`](../../../../AGENTS.md) §3.9 („Geschärft“-Absatz) oder im Implementer-Ablauf
       (`.claude/commands/implement-slice.md`) bekommt, und trägt `BEO-PGC/runner-grep-pipe-verfehlt-zeile`
       mit dem Ausgang fort (Anker: dieser Slice). *Zu belegen durch:* der Diff der geänderten Datei
       oder die Begründung der Absage in §7.
-- [ ] **Nur Skripte, kein Produktivcode.** `git diff --name-only <Parent>` nennt ausschließlich
+- [x] **Nur Skripte, kein Produktivcode.** `git diff --name-only <Parent>` nennt ausschließlich
       Dateien unter `tools/harness/` (die sechs genannten und, soweit Punkt 2 (ii) „ändern“
       entscheidet, die in §3 benannten), `docs/plan/` und `docs/reviews/`; kein `internal/`,
       kein `cmd/`, kein `sdks/`, keine Versionsdatei.
-- [ ] **GitHub-Actions-Beleg** ([`AGENTS.md`](../../../../AGENTS.md) §3.10): der Workflow `e2e`
+- [x] **GitHub-Actions-Beleg** ([`AGENTS.md`](../../../../AGENTS.md) §3.10): der Workflow `e2e`
       führt `run-integration-tests.sh` auf dem Runner aus; der Slice ändert den Workflow nicht,
       aber den Runner. Der erste reale Post-Push-Lauf von `e2e` nach dem Merge wird gelesen
       (`gh run list --workflow e2e.yml`) und das Ergebnis im Bericht genannt; rot ohne Bezug zur
@@ -172,10 +176,10 @@ behauptet keine Ursache für den roten Lauf. Die offene Frage dieses Eintrags bl
 - [x] Doku-Update: Kopf-Kommentare der geänderten Skripte tragen den Ist-Umfang;
       `harness/README.md` §Sensors und das Benutzerhandbuch bleiben unberührt (kein neues Target,
       keine Nutzerfläche) — am Diff zu belegen (Suchlauf).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem Repo (Greenfield).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo ohne
       Wellen-Betrieb für diesen wellenlosen Slice hier geprüft.
 
@@ -312,38 +316,118 @@ nachgemessen, Closure-Notiz mit Lerneintrag geschrieben.
 ## 6. Risiken und offene Punkte
 
 - **Die Fehlerrate ist an der Reproduktion nicht zu sehen.** Dann trägt der Mechanismus nicht
-  (siehe Rückführung). — **Ausgang:** *zu entscheiden bei Closure*.
+  (siehe Rückführung). — **Ausgang:** *entfallen* — Fehlschläge in vier unabhängigen Messungen
+  (§7).
 - **Das Ersetzen ändert eine Schleife still.** Eine Stelle, die `-q` für Exit-Status-Zwecke braucht
   (`grep -q` mit anschließendem `|| …` in einer Bedingung), behält mit `>/dev/null` dieselbe
   Semantik; eine Stelle, die `-q` mit `-c`/`-o` kombiniert, tut es nicht. — **Ausgang:** *zu
-  entscheiden bei Closure*; Gegenmaßnahme: jede Zeile gelesen (Suchlauf-Befund), vier reale Läufe.
+  entfallen* — Review las alle 35 Stellen am Wort-Diff, `docker logs`-Pipes am Diff: 0, drei
+  reale Läufe vom Verifier grün.
 - **GitHub-Actions-Lauf unbewiesen** (`e2e` führt den Runner auf dem Runner aus,
-  [`AGENTS.md`](../../../../AGENTS.md) §3.10). — **Ausgang:** *weiter offen* bis der erste
-  Post-Push-Lauf gelesen ist; dann *entfallen* oder *eingetreten*.
+  [`AGENTS.md`](../../../../AGENTS.md) §3.10). — **Ausgang:** *entfallen* — Post-Push-Lauf `e2e`
+  37036006973 beide Legs (PostgreSQL 17 und 18) `success`, `ci` 37036006996 und `examples`
+  37036007066 `success` (gemessen vom Verifier und vom Hauptlauf).
 - **Die Aussage „1 %“ ist die eines Reviewers.** Sie ist hier **übernommen**, nicht nachgemessen;
-  die Zahl der 1000er-Schleife des Implementers ersetzt sie in der Closure-Notiz. — **Ausgang:**
-  *zu entscheiden bei Closure*.
+  die Zahlen der 1000er-Schleifen ersetzen sie (§7). — **Ausgang:** *entfallen* — ersetzt durch
+  vier Messungen, 6 bis 16 von 1000.
 - **Überschneidung mit `slice-sdk-routing-phase-verbindung-haertung`** in
   `lib-sdk-route-fixture.sh`. — **Ausgang:** *entfallen* durch die Reihenfolge der Slices (§4);
   bei gleichzeitigem Bedarf Merge-Konflikt, kein stilles Überschreiben.
 - **Der rote `e2e`-Lauf in der Routing-Abhilfe-Phase** (`BEO-PGC/e2e-routing-abhilfe-phase-einmal-rot`)
   ist nicht Gegenstand. — **Ausgang:** *weiter offen* → Register (dort); der Slice behauptet keine
   Ursache und schließt keine aus.
-- **Kein Release, keine Versionsänderung.** — **Ausgang:** *zu entscheiden bei Closure*;
-  *entfallen*, solange `git diff` nur Skripte und Planungs-Dokumente zeigt.
+- **Kein Release, keine Versionsänderung.** — **Ausgang:** *entfallen* — `git diff` zeigt nur
+  Skripte, das Erzeugnis `docs/user/e2e-abdeckung.md` und Planungs-/Review-Dokumente
+  (Verifier, DoD-Zeile „Nur Skripte“).
 
 ## 7. Closure-Notiz
 
-Wird bei Closure gefüllt (Vorlage: Closure-Notiz des Vorgängers
-`slice-sdk-sse-filter-phase-verbindung-haertung`). Mindestinhalt: die gedruckten Zahlen der
-1000er-Schleifen (Ursprung gemessen, mit Docker-Version), die Tabelle der 79 Entscheide,
-die Fundstelle des Satzes in Liefer-Punkt 3 oder dessen Absage, die Antwort auf die
-Architect-Frage „Form-Wächter für `… | grep -q…` unter `pipefail`?“ (gestellt, nicht
-beantwortet), `BEO-PGC/runner-grep-pipe-verfehlt-zeile` mit dem Zählerstand, den der Slice
-vorfindet (**1×** am Anlegen, gemessen), und der Ausgang des Post-Push-Laufs von `e2e`.
-Lerneintrag-Richtung (vom Implementer zu bestätigen): ein `grep -q` als Empfänger einer Pipe
-unter `pipefail` ist eine Fehlerquelle, sobald der Erzeuger nach dem Treffer weiterschreibt —
-ein Hilfsskript, das ein Gate speist, liest die Ausgabe zu Ende.
+Ursprung der Angaben ([`AGENTS.md`](../../../../AGENTS.md) §3.12): **gemessen** = vom Implementer,
+Reviewer
+([`review-slice-harness-grep-pipe-sigpipe-unter-pipefail`](../../../reviews/review-slice-harness-grep-pipe-sigpipe-unter-pipefail.md))
+oder Verifier
+([`verifikation-slice-harness-grep-pipe-sigpipe-unter-pipefail`](../../../reviews/verifikation-slice-harness-grep-pipe-sigpipe-unter-pipefail.md))
+im eigenen Lauf; **übernommen** = aus einem dieser Berichte ohne Nachmessung des Planners;
+**hergeleitet** = nicht gefahren. Der Planner hat keine Zahl dieser Notiz nachgemessen, außer dem
+Suchlauf-Feld (`make suchlauf-nachmessen`) und den Register-Zählern. Docker 29.8.2 (build 7fc2dff).
+
+- **Was hat funktioniert:**
+  - Fehlerrate der alten Form `docker logs "$c" 2>/dev/null | grep -qF "$marker"` unter
+    `set -euo pipefail` (beendeter `busybox`-Container, Treffer-Zeile plus 20 Folgezeilen), je
+    1000 Aufrufe, in vier Messungen (Ursprung gemessen): Implementer **10**, Implementer an der
+    Mutationskopie **9**, Reviewer **16**, Verifier **6** (Verifier an seiner Mutationskopie: 5).
+    Neue Form `… | grep -F "$marker" >/dev/null`: **0** von 1000 bei Implementer, Reviewer und
+    Verifier. Die Rate schwankt mit Lauf und Last (0,6 bis 1,6 %); belegt ist die **Richtung**
+    (alt > 0, neu 0), nicht eine feste Zahl. Die „1 %“ des Reviewers im Vorgänger (3 von 300,
+    gemessen am Nachbau) ist damit durch Messungen an der Schleifenform ersetzt.
+  - Alle 35 Fundstellen ersetzt; `git grep -E 'docker logs.*\| *grep +-[a-zA-Z]*q'` am Diff: 0
+    (Suchlauf, `suchlauf-nachmessen` Exit 0 mit 14 Zeilen). Die 79 übrigen `| grep -q…`-Pipes
+    bleiben, Entscheid je Zeile in §3 (Erzeuger ist eine bereits eingelesene Variable; die
+    Restgrenze 64 KiB ist **hergeleitet**, die Schwelle zwischen 48 und 200 KiB vom Implementer
+    gemessen).
+  - Reale Läufe: `make test-integration`, `make test-sdk-csharp-integration`,
+    `make test-sdk-kotlin-integration` je Exit 0 (Verifier, gemessen); der Python-Tier-Lauf ist
+    **übernommen** (Implementer und Review, Exit 0). Das Erzeugnis `docs/user/e2e-abdeckung.md`
+    ändert 53 Zeilen, alle nur im Zeilen-Lokator um +4 (Verifier, gemessen).
+  - Post-Push (AGENTS §3.10), Commit `0e41c68c` (enthält `f8aca691`): `e2e` 37036006973 beide
+    Legs (PostgreSQL 17 und 18) `success`, `ci` 37036006996 `success`, `examples` 37036007066
+    `success` (Verifier und Hauptlauf, gemessen). Ein grüner Lauf belegt keine Flake-Freiheit.
+- **Was ging anders als geplant:** Nichts am Umfang. Der Plan erwartete eine Fehlerrate „bis
+  zweistellig“; die Messungen liegen bei 6 bis 16 von 1000. Die zwei Einmal-Stellen (§3) sind
+  Negativ-Prüfungen: dort färbte der Mechanismus **grün** (verdecktes Leck), nicht rot.
+  Offene Grenzen aus dem Review (beide INFO, keine Aktion in diesem Slice): **F-1** — die
+  64-KiB-Grenze der „bleibt“-Variablen ist nicht je Variable gemessen (größte: Test-Container-Log,
+  7,5 bis 8,1 KB gemessen); nur `nats_reconnect_before_output` (Negativ-Prüfung) färbte bei
+  Überlauf falsch grün. **F-2** — die Negativ-Prüfungen der Filter-Rundläufe sind nicht an den
+  Ausfall von `docker logs` selbst gebunden (Container entfernt: kein Leck gemeldet); der
+  SIGPIPE-Pfad ist geschlossen. **F-3** (Fremdstellen `pin-stale-actions.sh`,
+  `pin-stale-baseline.sh`, `pin-stale-dcheck.sh`, `grep -m1` hinter `github_api_get`, ohne `-e`):
+  Entscheid **bleibt, kein Slice** — **hergeleitet**, nicht gemessen (Netz, kein Gate); Fehlwirkung
+  höchstens eine Meldung auf stderr, keine falsche Verzweigung. F-4: Kopf-Kommentare in Ordnung.
+- **Liefer-Punkt 3 — Regelwerk-Satz (Entscheid des Hauptlaufs):** `AGENTS.md` wird in diesem Slice
+  **nicht** geändert. Der Textvorschlag des Implementers für §3.9 (Absatz „Geschärft“) steht
+  hier als **Vorschlag**; **die Freigabe liegt beim Auftraggeber (offen)**, weil die Änderung
+  eines Regeltexts seine Zustimmung braucht. Anfang des Vorschlags (vom Implementer):
+  „Eine Pipe liest bis zum Ende, wenn ihr Erzeuger weiterschreibt …“ — gemeint ist: ein Hilfsskript
+  unter `pipefail`, das die Ausgabe eines Prozesses auf einen Treffer prüft, liest sie zu Ende
+  (`… | grep -F … >/dev/null`), statt den Empfänger beim ersten Treffer zu beenden (`grep -q`,
+  `grep -m1` mit ausgewertetem Status); sonst wird eine vorhandene Zeile verfehlt. Der Wortlaut ab
+  „…“ ist vom Planner aus dem Mechanismus ergänzt, nicht vom Implementer übernommen; maßgeblich
+  ist der Bericht des Implementers. DoD-Zeile: *entschieden: Vorschlag, Freigabe offen* — nicht
+  umgesetzt.
+- **Architect-Frage „Form-Wächter für `… | grep -q…` unter `pipefail`?“ (Entscheid des
+  Hauptlaufs):** **kein Wächter in diesem Slice.** Der Ist-Beleg ist der Suchlauf (`diff 0` für
+  `docker logs`-Pipes); er bewegt sich mit jedem Commit und ist kein Wächter. Ein Wiederauftreten
+  zählt im Register (`runner-grep-pipe-verfehlt-zeile`); der Wächter wird beim Slice für das
+  Handbuch-/Doku-Gate nicht mitgeführt (anderer Gegenstand).
+- **Steering-Loop-Eintrag (Lerneintrag):** (1) Ein Hilfs-`grep -q` hinter einer Pipe unter
+  `pipefail` verwirft einen Treffer, sobald der Erzeuger nach dem Treffer weiterschreibt (SIGPIPE
+  auf dem Erzeuger, Status der Pipeline falsch); die Form war an 35 Stellen im Bestand, an zwei
+  davon als Negativ-Prüfung mit falschem Grün. Gegenmaßnahme: Ausgabe zu Ende lesen
+  (`>/dev/null` statt `-q`). (2) Ein Mechanismus mit seltener Fehlwirkung wird als **Schleife mit
+  Rate** reproduziert, nicht als Einzellauf; die Rate schwankt (6 bis 16 von 1000), belegt wird
+  die **Richtung** (alt > 0, neu 0) mit Mutationsprobe an einer Kopie, nicht die Zahl. (3) Der
+  Suchlauf war das Werkzeug der Umfangsbestimmung (35 Stellen, 79 gelesene Rest-Stellen); die
+  Vollständigkeit des Musters bleibt Lese-Handlung des Reviewers.
+- **Beobachtungs-Register (`../observations/`):**
+  `BEO-PGC/runner-grep-pipe-verfehlt-zeile`: Zustand **verkörpert** (Anker: dieser Slice, Commit
+  `f8aca691`, e2e-Lauf 37036006973); Zähler bleibt **1×** (Reproduktionsläufe sind keine
+  Vorkommen); `observation.md` auf den Zustand nachgezogen.
+  `BEO-PGC/e2e-routing-abhilfe-phase-einmal-rot`: unverändert (1×, offen); Zusammenhang
+  **unbewiesen**, weder bestätigt noch ausgeschlossen (`rn_abhilfe` und `rn_expect_end` tragen
+  keine Prozess-Pipe nach `grep -q`). `BEO-PGC/pipe-maskiert-make-exit-code`: Nachbar, kein Beleg.
+- **Folge-Slices:** keine neuen. Der Slice
+  [`slice-sdk-routing-phase-verbindung-haertung`](../open/slice-sdk-routing-phase-verbindung-haertung.md)
+  (Routing-Phase, `lib-sdk-route-fixture.sh`) kann starten; die Überschneidung ist durch die
+  Reihenfolge entfallen.
+- **Offene Entscheidungen des Auftraggebers:** (a) Freigabe des Regelwerk-Satzes in
+  `AGENTS.md` §3.9 (Vorschlag oben); (b) keine weitere.
+- **Risiken aus §6:** alle mit Ausgang (§6): Reproduktion entfallen · Schleife still geändert
+  entfallen · Actions-Lauf entfallen · „1 %“ entfallen · Überschneidung entfallen · roter
+  `e2e`-Lauf weiter offen (Register) · Release entfallen.
+- **Drei Paarungen:** Anker: Review F-1 des Vorgängers und Verifikation B-1 bis B-3. Folge-Slice:
+  keiner nötig; die Freigabe (a) ist beim Auftraggeber benannt. Register:
+  `runner-grep-pipe-verfehlt-zeile` (verkörpert, 1×).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
