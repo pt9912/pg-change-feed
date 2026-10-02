@@ -214,7 +214,7 @@ Waise ist. Drei Liefer-Punkte:
       Verifier — ein anderer Kontext — hat Runner und Wegwerf-Clients ausgeführt (vollständiger
       Lauf an PostgreSQL 17 grün) und mutiert (drei Mutationen rot). F-1 ist geschlossen
       (Verifier §5), F-2 liegt in einem anderen Tier und ist als Folge-Slice
-      [`slice-capture-retry-realtest-lieferzahl-lockern`](../open/slice-capture-retry-realtest-lieferzahl-lockern.md)
+      [`slice-capture-retry-realtest-lieferzahl-lockern`](../in-progress/slice-capture-retry-realtest-lieferzahl-lockern.md)
       geführt (kein Befund am Slice-Diff, `internal/bootstrap` ist im Diff unberührt).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
@@ -376,7 +376,7 @@ geschrieben.
   ersten Lauf von `make test-replication` aufgetreten (Lieferpositionen `[94993648 95321768]`,
   vom Implementer **übernommen**), die Wiederholung war grün; die Ursache ist *hergeleitet*
   (Review F-2), von Reviewer und Verifier nicht reproduziert. Adresse:
-  [`slice-capture-retry-realtest-lieferzahl-lockern`](../open/slice-capture-retry-realtest-lieferzahl-lockern.md)
+  [`slice-capture-retry-realtest-lieferzahl-lockern`](../in-progress/slice-capture-retry-realtest-lieferzahl-lockern.md)
   (Reproduktion, Lockerung auf „Retry-Change genau einmal persistiert“, Mutation der
   Eingabeseite); Register:
   [`test-strenger-als-die-zusage`](../observations/BEO-PGC/test-strenger-als-die-zusage/observation.md).
@@ -511,7 +511,7 @@ geschrieben.
     stark**: rot ohne Verletzung) und nicht `nicht-reproduzierbarer-test-ausfall` (dort fehlt
     jede Ursache, hier liegt eine Herleitung vor, die die Erwartung trifft, nicht den
     Produktivcode). Unter der Schwelle, kein Ausgang; Adresse
-    [`slice-capture-retry-realtest-lieferzahl-lockern`](../open/slice-capture-retry-realtest-lieferzahl-lockern.md).
+    [`slice-capture-retry-realtest-lieferzahl-lockern`](../in-progress/slice-capture-retry-realtest-lieferzahl-lockern.md).
   - **`BEO-PGC/fixrunde-ohne-reviewer-lesung`** (offen, 3×): **fünfter Gegenbeleg, keine
     Datei.** Die Fixrunde änderte Anweisungen und den Messstand von Spec-Aussagen, ein
     Re-Review blieb aus, weil der Verifier sie ausgeführt und mutiert hat; die engere Fassung
@@ -525,7 +525,7 @@ geschrieben.
     (LOW) sind Träger-Nachzüge nach [`AGENTS.md`](../../../../AGENTS.md) §3.13 und im Slice
     gezogen; F-6 bis F-9 (INFO) sind Bestätigungen oder Grenzen in §6.
 - **Folge-Slices:**
-  [`slice-capture-retry-realtest-lieferzahl-lockern`](../open/slice-capture-retry-realtest-lieferzahl-lockern.md)
+  [`slice-capture-retry-realtest-lieferzahl-lockern`](../in-progress/slice-capture-retry-realtest-lieferzahl-lockern.md)
   — ist eine Datei in `open/`, ohne Welle. Übergaben ohne neuen Slice:
   `slice-routing-betriebsdoku` (DELETE- und Erreichbarkeits-Messung samt Version und Lauf im
   Übergabe-Block der Datei), `slice-routing-sdk-realserver-e2e` (Realserver-Beleg der SDKs).
