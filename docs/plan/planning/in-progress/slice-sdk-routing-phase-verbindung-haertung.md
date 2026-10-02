@@ -182,7 +182,7 @@ Slice zu messen.**
       vor dem Commit der Datei.
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert ausgewertet
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter
+- [x] Review durchgeführt, Report unter
       `docs/reviews/review-slice-sdk-routing-phase-verbindung-haertung.md` liegt vor, kein
       offenes HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
