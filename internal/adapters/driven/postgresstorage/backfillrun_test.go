@@ -299,7 +299,7 @@ func TestBackfillRunFinishOnAnEndedRunIsANoOpSuccess(t *testing.T) {
 		f.scan("SELECT status, finished_at, rows_copied, error_message FROM cdc.backfill_run WHERE run_id = $1", []any{id},
 			&status, &finished, &rowsCopied, &message)
 		if status != string(ended) || !finished.Equal(base.Add(time.Minute)) || rowsCopied != 0 ||
-			(ended == model.BackfillRunFailed) != (message != nil && *message == "internal: erster Ausgang") {
+			(ended == model.BackfillRunFailed) != (message != nil && *message == "internal [PCF-E7000]: erster Ausgang") {
 			t.Fatalf("%s: die Zeile änderte sich: %s finished %v rows %d message %v", ended, status, finished, rowsCopied, message)
 		}
 	}

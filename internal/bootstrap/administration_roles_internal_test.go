@@ -318,15 +318,15 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	if got := rowImage(2); got != `{"id":"1","renamed_secret":"geheim"}` {
 		t.Fatalf("Row Image nach set_transformation = %s, erwartet den Zielnamen renamed_secret ohne Neustart", got)
 	}
-	expectRule("set_transformation K1", "failed", "Regelname bereits vergeben: "+table+".roles_rule",
+	expectRule("set_transformation K1", "failed", "abgelehnt [PCF-E8020]: Regelname bereits vergeben: "+table+".roles_rule",
 		setRule, string(sourceID), testTable, "roles_rule", `{"kind": "rename_column", "column": "id", "to": "id_renamed"}`)
-	expectRule("set_transformation K2", "failed", "Spalte trägt bereits eine Regel: "+table+".secret",
+	expectRule("set_transformation K2", "failed", "abgelehnt [PCF-E8021]: Spalte trägt bereits eine Regel: "+table+".secret",
 		setRule, string(sourceID), testTable, "roles_k2", `{"kind": "rename_column", "column": "secret", "to": "anders"}`)
-	expectRule("set_transformation K3 (Spalte der Tabelle)", "failed", "Zielname kollidiert mit einer Spalte der Tabelle: "+table+".id",
+	expectRule("set_transformation K3 (Spalte der Tabelle)", "failed", "abgelehnt [PCF-E8022]: Zielname kollidiert mit einer Spalte der Tabelle: "+table+".id",
 		setRule, string(sourceID), testTable, "roles_k3", `{"kind": "rename_column", "column": "id", "to": "id"}`)
-	expectRule("set_transformation K3 (andere Regel)", "failed", "Zielname kollidiert mit einer anderen Regel: "+table+".renamed_secret",
+	expectRule("set_transformation K3 (andere Regel)", "failed", "abgelehnt [PCF-E8022]: Zielname kollidiert mit einer anderen Regel: "+table+".renamed_secret",
 		setRule, string(sourceID), testTable, "roles_k3b", `{"kind": "rename_column", "column": "id", "to": "renamed_secret"}`)
-	expectRule("set_transformation K4", "failed", "Spalte existiert nicht an der Quelle: "+table+".does_not_exist",
+	expectRule("set_transformation K4", "failed", "abgelehnt [PCF-E8024]: Spalte existiert nicht an der Quelle: "+table+".does_not_exist",
 		setRule, string(sourceID), testTable, "roles_k4", `{"kind": "rename_column", "column": "does_not_exist", "to": "x"}`)
 	if got := rowImage(3); got != `{"id":"1","renamed_secret":"geheim"}` {
 		t.Fatalf("Row Image nach den abgelehnten Anträgen = %s, erwartet unverändert", got)
@@ -352,8 +352,8 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	valid := createRequest(setRule, string(sourceID), testTable, "roles_second", `{"kind": "rename_column", "column": "id", "to": "id_renamed"}`)
 	processAdministrationRequests(ctx, deps)
 	for id, want := range map[string][2]string{
-		invalidName: {"failed", "Regelname ist ungültig: " + table + "."},
-		invalidSpec: {"failed", "rule_spec ist ungültig: " + table + ".roles_null"},
+		invalidName: {"failed", "abgelehnt [PCF-E8010]: Regelname ist ungültig: " + table + "."},
+		invalidSpec: {"failed", "abgelehnt [PCF-E8011]: rule_spec ist ungültig: " + table + ".roles_null"},
 		valid:       {"applied", ""},
 	} {
 		if status, message := outcome(id); status != want[0] || message != want[1] {
@@ -376,10 +376,10 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	afterRejected := createRequest("SELECT cdc.include_column($1, 'public', $2, 'secret')", string(sourceID), testTable)
 	processAdministrationRequests(ctx, deps)
 	for id, want := range map[string][2]string{
-		emptySchema:        {"failed", "Schemaname ist leer: " + emptySchema},
-		emptyTable:         {"failed", "Tabellenname ist leer: " + emptyTable},
-		emptyExcludeColumn: {"failed", "Spaltenname ist leer: " + emptyExcludeColumn},
-		emptyIncludeColumn: {"failed", "Spaltenname ist leer: " + emptyIncludeColumn},
+		emptySchema:        {"failed", "abgelehnt [PCF-E8003]: Schemaname ist leer: " + emptySchema},
+		emptyTable:         {"failed", "abgelehnt [PCF-E8004]: Tabellenname ist leer: " + emptyTable},
+		emptyExcludeColumn: {"failed", "abgelehnt [PCF-E8006]: Spaltenname ist leer: " + emptyExcludeColumn},
+		emptyIncludeColumn: {"failed", "abgelehnt [PCF-E8006]: Spaltenname ist leer: " + emptyIncludeColumn},
 		afterRejected:      {"applied", ""},
 	} {
 		if status, message := outcome(id); status != want[0] || message != want[1] {
@@ -392,7 +392,7 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	if got := rowImage(5); got != `{"id":"1","secret":"geheim"}` {
 		t.Fatalf("Row Image nach remove_transformation = %s, erwartet die Rohform", got)
 	}
-	expectRule("remove_transformation K4", "failed", "Regelname nicht geführt: "+table+".roles_rule", removeRule, string(sourceID), testTable, "roles_rule")
+	expectRule("remove_transformation K4", "failed", "abgelehnt [PCF-E8023]: Regelname nicht geführt: "+table+".roles_rule", removeRule, string(sourceID), testTable, "roles_rule")
 	if state, err := activation.TransformationRules(ctx, sourceID); err != nil || len(state[table]) != 0 {
 		t.Fatalf("abgeleiteter Regelstand nach dem Herausnehmen = %v (%v), erwartet leer", state[table], err)
 	}
@@ -414,19 +414,19 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	if got := targetOf(100); got != "" {
 		t.Fatalf("Ziel vor den Routing-Anträgen = %q, erwartet keines", got)
 	}
-	expectRule("set_route R3 (Spalte fehlt)", "failed", "Spalte existiert nicht an der Quelle: "+table+".does_not_exist",
+	expectRule("set_route R3 (Spalte fehlt)", "failed", "abgelehnt [PCF-E8024]: Spalte existiert nicht an der Quelle: "+table+".does_not_exist",
 		setRoute, string(sourceID), testTable, "roles_route_missing", `{"target": "x", "order": 5, "when": {"column": "does_not_exist", "equals": "v"}}`)
 	expectRule("set_route", "applied", "", setRoute, string(sourceID), testTable, "roles_route", secretRoute)
 	if got := targetOf(101); got != "geheim_ziel" {
 		t.Fatalf("Ziel nach set_route = %q, erwartet geheim_ziel ohne Neustart", got)
 	}
-	expectRule("set_route R1", "failed", "Regelname bereits vergeben: "+table+".roles_route",
+	expectRule("set_route R1", "failed", "abgelehnt [PCF-E8020]: Regelname bereits vergeben: "+table+".roles_route",
 		setRoute, string(sourceID), testTable, "roles_route", `{"target": "x", "order": 11}`)
-	expectRule("set_route R2", "failed", "order bereits vergeben: "+table+".10",
+	expectRule("set_route R2", "failed", "abgelehnt [PCF-E8030]: order bereits vergeben: "+table+".10",
 		setRoute, string(sourceID), testTable, "roles_route_two", `{"target": "x", "order": 10}`)
-	expectRule("set_route R5", "failed", "Bedingung bereits vergeben: "+table+".secret",
+	expectRule("set_route R5", "failed", "abgelehnt [PCF-E8031]: Bedingung bereits vergeben: "+table+".secret",
 		setRoute, string(sourceID), testTable, "roles_route_pair", `{"target": "x", "order": 12, "when": {"column": "secret", "equals": "geheim"}}`)
-	expectRule("exclude_column gegen die Routing-Spalte (R3)", "failed", "Spalte trägt eine Routing-Bedingung: "+table+".secret",
+	expectRule("exclude_column gegen die Routing-Spalte (R3)", "failed", "abgelehnt [PCF-E8034]: Spalte trägt eine Routing-Bedingung: "+table+".secret",
 		"SELECT cdc.exclude_column($1, 'public', $2, $3)", string(sourceID), testTable, "secret")
 	if got := targetOf(102); got != "geheim_ziel" {
 		t.Fatalf("Ziel nach den abgelehnten Routing-Anträgen = %q, erwartet unverändert", got)
@@ -442,10 +442,10 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	if got := targetOf(103); got != "" {
 		t.Fatalf("Ziel nach remove_route = %q, erwartet keines", got)
 	}
-	expectRule("remove_route R6", "failed", "Regelname nicht geführt: "+table+".roles_route", removeRoute, string(sourceID), testTable, "roles_route")
+	expectRule("remove_route R6", "failed", "abgelehnt [PCF-E8023]: Regelname nicht geführt: "+table+".roles_route", removeRoute, string(sourceID), testTable, "roles_route")
 	// Die Gegenrichtung von R3: nach dem Ausschluss lehnt `set_route` die Spalte ab.
 	expectRule("exclude_column ohne Routing-Regel", "applied", "", "SELECT cdc.exclude_column($1, 'public', $2, $3)", string(sourceID), testTable, "secret")
-	expectRule("set_route R3 (Spalte ausgeschlossen)", "failed", "Spalte ist ausgeschlossen: "+table+".secret",
+	expectRule("set_route R3 (Spalte ausgeschlossen)", "failed", "abgelehnt [PCF-E8033]: Spalte ist ausgeschlossen: "+table+".secret",
 		setRoute, string(sourceID), testTable, "roles_route_excluded", secretRoute)
 	expectRule("include_column", "applied", "", "SELECT cdc.include_column($1, 'public', $2, $3)", string(sourceID), testTable, "secret")
 	if state, err := activation.RoutingRules(ctx, sourceID); err != nil || len(state[table]) != 0 {

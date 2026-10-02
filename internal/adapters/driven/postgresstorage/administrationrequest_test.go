@@ -1433,16 +1433,16 @@ func TestAdministrationRequestListPendingPassesRejectedRowsThrough(t *testing.T)
 	var rejected []rejectedCase
 	var after []string
 	for _, tc := range []struct {
-		clear, call string
-		args        []any
+		clear, code, call string
+		args              []any
 	}{
-		{"Schemaname ist leer", "SELECT cdc.enable_table($1, '', $2)", []any{administrationRequestSource, table}},
-		{"Tabellenname ist leer", "SELECT cdc.enable_table($1, 'public', '')", []any{administrationRequestSource}},
-		{"Spaltenname ist leer", "SELECT cdc.exclude_column($1, 'public', $2, '')", []any{administrationRequestSource, table}},
-		{"Spaltenname ist leer", "SELECT cdc.include_column($1, 'public', $2, '')", []any{administrationRequestSource, table}},
+		{"Schemaname ist leer", "PCF-E8003", "SELECT cdc.enable_table($1, '', $2)", []any{administrationRequestSource, table}},
+		{"Tabellenname ist leer", "PCF-E8004", "SELECT cdc.enable_table($1, 'public', '')", []any{administrationRequestSource}},
+		{"Spaltenname ist leer", "PCF-E8006", "SELECT cdc.exclude_column($1, 'public', $2, '')", []any{administrationRequestSource, table}},
+		{"Spaltenname ist leer", "PCF-E8006", "SELECT cdc.include_column($1, 'public', $2, '')", []any{administrationRequestSource, table}},
 	} {
 		id := create(tc.call, tc.args...)
-		rejected = append(rejected, rejectedCase{id: id, message: tc.clear + ": " + id})
+		rejected = append(rejected, rejectedCase{id: id, message: "abgelehnt [" + tc.code + "]: " + tc.clear + ": " + id})
 		after = append(after, create("SELECT cdc.disable_table($1, 'public', $2)", administrationRequestSource, table))
 	}
 
