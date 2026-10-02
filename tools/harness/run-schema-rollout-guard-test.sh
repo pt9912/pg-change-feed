@@ -28,8 +28,8 @@
 #      (eine View im Schema `public`, das d-migrate nicht liest), scheitert
 #      der Rollout laut, das Objekt bleibt bestehen (`DROP VIEW` ohne
 #      CASCADE), und der Wiederholungslauf ohne das Objekt heilt.
-#   5. Alt-Tag-Lauf (ADR-0114 Entscheidung 7): das Schema des jüngsten
-#      `v*`-Tags (`git archive` in ein Verzeichnis unter `${TMPDIR:-/tmp}`,
+#   5. Alt-Tag-Lauf (ADR-0114 Entscheidung 7): das Schema des festen
+#      Alt-Stands `v0.4.0` (`git archive` in ein Verzeichnis unter `${TMPDIR:-/tmp}`,
 #      nie im Repo-Baum) wird mit dem Makefile dieses Tags ausgerollt, eine
 #      Datenzeile geschrieben, danach der Arbeitsbaum zweimal ausgerollt —
 #      Exit 0 zweimal, die Zeile über `cdc.changes` unverändert lesbar,
@@ -263,9 +263,12 @@ run_rollout . "$TARGET"
 [ "$RUN_EXIT" -eq 0 ] || fail "Lauf 4: der Wiederholungslauf nach dem gescheiterten Vorlauf endete mit Exit $RUN_EXIT statt 0"
 [ "$(view_signature "$DB")" = "$sig_ref" ] || fail "Lauf 4: die View trägt nach dem Wiederholungslauf nicht die Soll-Signatur"
 
-echo "run-schema-rollout-guard-test: Lauf 5/6 (Alt-Tag-Lauf — Schema des jüngsten v*-Tags, danach der Arbeitsbaum)"
-ALT_TAG=$(git tag --list 'v[0-9]*' --sort=-v:refname | head -n 1)
-[ -n "$ALT_TAG" ] || fail "Lauf 5: kein v*-Tag im Repository"
+echo "run-schema-rollout-guard-test: Lauf 5/6 (Alt-Tag-Lauf — Schema des Alt-Stands v0.4.0, danach der Arbeitsbaum)"
+# Fester Alt-Stand: v0.4.0 ist der letzte Tag ohne die Spalte route_target. Ein
+# neuerer Tag trägt sie schon; die Vorbedingungen unten (Spalte fehlt, Funktionen
+# fehlen) gelten nur für diesen Stand.
+ALT_TAG=v0.4.0
+git rev-parse --verify --quiet "refs/tags/$ALT_TAG" >/dev/null || fail "Lauf 5: der Tag $ALT_TAG fehlt im Repository"
 ALT_DIR=$(mktemp -d "${TMPDIR:-/tmp}/schema-rollout-alt-tag.XXXXXX")
 git archive "$ALT_TAG" | tar -x -C "$ALT_DIR"
 docker exec "$CONTAINER" psql -U "$USER" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE $ALT_DB"
