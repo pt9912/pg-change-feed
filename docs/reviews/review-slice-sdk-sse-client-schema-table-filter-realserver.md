@@ -2,7 +2,7 @@
 
 **Review-Art:** Code — geprüft gegen Plan, ADRs, Spec und `AGENTS.md` Hard Rules (Modul 10). Kein DoD-Abgleich (Verifier).
 
-**Gegenstand:** Slice [sdk-sse-client-schema-table-filter-realserver](../plan/planning/in-progress/slice-sdk-sse-client-schema-table-filter-realserver.md),
+**Gegenstand:** Slice [sdk-sse-client-schema-table-filter-realserver](../plan/planning/done/slice-sdk-sse-client-schema-table-filter-realserver.md),
 Implementer-Commit `8b0e1e52` (Parent der Plan-Anlage: `448ee4a5`; die Commits `40371908`, `de905535`, `d79086d1` sind Planner-Commits ohne Code).
 Diff `git diff 448ee4a5 HEAD`: 13 Dateien, +1191/−14 (drei Testdateien, zwei `PhaseEnvironment`-Hilfen, die neue Hilfsdatei
 `tools/harness/lib-sdk-filter-fixture.sh`, drei Runner, `harness/README.md`, `harness/mk/sdk.mk`, drei Abdeckungs-Zeilen, Plan).

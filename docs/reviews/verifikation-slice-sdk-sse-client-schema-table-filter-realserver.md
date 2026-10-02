@@ -8,7 +8,7 @@ Plan-vs-Code-Diff + Gates, in frischem Kontext. Review-Artefakt:
 [`verifikation-slice-wal-fehlerschwelle-ausgangsklasse.md`](verifikation-slice-wal-fehlerschwelle-ausgangsklasse.md).
 
 **Gegenstand:** Slice-Plan
-[`slice-sdk-sse-client-schema-table-filter-realserver`](../plan/planning/in-progress/slice-sdk-sse-client-schema-table-filter-realserver.md)
+[`slice-sdk-sse-client-schema-table-filter-realserver`](../plan/planning/done/slice-sdk-sse-client-schema-table-filter-realserver.md)
 (wellenlos), Diff-Range `448ee4a5..HEAD` (`c6c7aaf7`): Implementer-Commit `8b0e1e52`, Review-Commit
 `3c6851df`, Stilfix `c6c7aaf7` (F-1), dazu Planner-Commits ohne Code. Bezug:
 [`LH-FA-SST-008`](../../spec/lastenheft.md), [`LH-FA-SST-009`](../../spec/lastenheft.md),
