@@ -42,7 +42,7 @@ Skript liest Zeilen.
 |---|---|
 | 0 | keine Treffer; der Erfolgstext nennt die Zahl der geprüften Dateien (`handbuch-public-doc-check: keine interne Kennung in 3 Nutzerdokumenten unter docs/user/`) |
 | 1 | mindestens ein Treffer; je Treffer eine Zeile `docs/user/<datei>:<zeile>:<text>` auf stderr, darunter die Sammelzeile `handbuch-public-doc-check: interne Kennung oder Link nach docs/plan/ bzw. docs/reviews/ in den Nutzerdokumenten (siehe oben)` |
-| 2 | Klassifikationsfehler: unklassifizierte `*.md` (`unklassifizierte Datei: docs/user/<datei>`) oder genannte, fehlende Datei (`genannte Datei fehlt: docs/user/<datei>`) auf stderr; es wird nicht gegen die Muster geprüft |
+| 2 | Klassifikationsfehler: unklassifizierte `*.md` (`unklassifizierte Datei: docs/user/<datei>`) oder genannte, fehlende Datei (`genannte Datei fehlt: docs/user/<datei>`) auf stderr; es wird nicht gegen die Muster geprüft. Ebenso **Lesefehler** (fail-closed, nie „sauber“): eine nicht lesbare geprüfte Datei (`Lesefehler: docs/user/<datei> (<Meldung von grep>)`, `grep`-Exit ≥ 2) oder ein nicht lesbares Verzeichnis unter `docs/user/` (`Lesefehler beim Durchsuchen von docs/user/ (<Meldung von find>)`). `grep`-Exit 1 (kein Treffer) bleibt Erfolg; eine Datei mit NUL-Byte wird als Text gelesen (`grep -a`), ihre Treffer bleiben sichtbar |
 
 Über `make` kommt jeder Exit ≠ 0 des Skripts als Make-eigener Exit `2` an.
 
@@ -69,13 +69,20 @@ Skript liest Zeilen.
 4. **Die Wächter-Logik ist im Gate-Lauf nicht gegen ihren Tabellentest
    gesichert.** `make test-handbuch-public-doc-check` bleibt Werkzeug; der Ort,
    an dem eine Änderung am Wächter gegen diesen Vertrag gelesen wird, ist der
-   Review-Diff.
+   Review-Diff. Die Lesefehler-Fälle des Tabellentests (`chmod 000`) entfallen
+   unter root, der Rechte nicht bindet; der Lauf druckt das dann.
+5. **Muster-Ränder.** `ADR 0143` (Leerzeichen statt Bindestrich) trifft nicht;
+   `--slice-x` (Bindestriche davor) trifft nicht; eine GitHub-URL mit
+   `docs/plan/` trifft als Link-Muster (Falsch-Positiv, gewollt: auch eine
+   absolute URL auf Plan-Dokumente gehört nicht ins Handbuch).
 
 ## Sperren
 
-- **Keine über `bash`, `git` und `grep` hinaus.** Kein Docker, kein Netz; das
-  Skript steigt über `git rev-parse --show-toplevel` auf die Wurzel. Der
-  Wächter liest den Arbeitsbaum, nicht den Index.
+- **Host-Werkzeuge:** `bash`, `git`, `grep`, `find`, `sort`, `sed`, `head`,
+  `mktemp` (`AGENTS.md` §3.1, POSIX-/coreutils-Basis). Kein Docker, kein Netz;
+  das Skript steigt über `git rev-parse --show-toplevel` auf die Wurzel und
+  legt ein Temp-Verzeichnis an, das es beim Ende entfernt. Der Wächter liest
+  den Arbeitsbaum, nicht den Index.
 
 ## Bindung
 

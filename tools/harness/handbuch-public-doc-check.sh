@@ -15,7 +15,8 @@
 # Aufruf: `make handbuch-public-doc-check` (netzlos, nur bash/git/grep).
 # Optional eine abweichende Wurzel als erstes Argument (fuer den Tabellentest
 # run-handbuch-public-doc-check-tests.sh). Exit 0 ohne Treffer, Exit 1 mit
-# Treffern (Ausgabe `datei:zeile: text`), Exit 2 bei Klassifikationsfehlern.
+# Treffern (Ausgabe `datei:zeile: text`), Exit 2 bei Klassifikationsfehlern und
+# bei Lesefehlern (nicht lesbare Datei oder Verzeichnis; nie "sauber").
 set -euo pipefail
 
 if [ "$#" -ge 1 ]; then
@@ -32,6 +33,19 @@ excluded=(releasing.md bench-abdeckung.md ci-matrix-abdeckung.md
 # Muster P: Kennungen; Muster L: Links nach docs/plan/ und docs/reviews/.
 pat_id='\b(LH-(FA|QA|RB)-|(ADR|SPEC|ARC)-[0-9]|BEO-[A-Za-z]|(MR|CO)-[0-9]{3})|(^|[^[:alnum:]_-])(slice|welle)-[a-z0-9]'
 pat_link='docs/(reviews|plan)/|\.\./(reviews|plan)/'
+
+scratch=$(mktemp -d)
+trap 'rm -rf "${scratch:?}"' EXIT
+
+# find laeuft vor der Schleife: ein nicht lesbares Verzeichnis ist Exit 2, nicht
+# eine stillschweigend kuerzere Liste.
+frc=0
+find "$dir" -type f -name '*.md' -print0 > "$scratch/list.raw" 2> "$scratch/find.err" || frc=$?
+if [ "$frc" -ne 0 ]; then
+  echo "handbuch-public-doc-check: Lesefehler beim Durchsuchen von docs/user/ ($(head -n 1 "$scratch/find.err"))" >&2
+  exit 2
+fi
+sort -z "$scratch/list.raw" > "$scratch/list"
 
 class_err=0
 for f in "${checked[@]}" "${excluded[@]}"; do
@@ -51,7 +65,7 @@ while IFS= read -r -d '' path; do
     echo "handbuch-public-doc-check: unklassifizierte Datei: docs/user/$rel (in checked oder excluded aufnehmen)" >&2
     class_err=1
   fi
-done < <(find "$dir" -type f -name '*.md' -print0 2>/dev/null | sort -z)
+done < "$scratch/list"
 
 if [ "$class_err" -ne 0 ]; then
   exit 2
@@ -59,7 +73,14 @@ fi
 
 hits=""
 for f in "${checked[@]}"; do
-  h=$(grep -InE -e "$pat_id" -e "$pat_link" "$dir/$f" || true)
+  # -a: eine Datei mit NUL-Byte wird als Text gelesen statt still uebersprungen.
+  # grep-Exit 1 = kein Treffer (Erfolg), >= 2 = Lesefehler (Exit 2).
+  grc=0
+  h=$(grep -anE -e "$pat_id" -e "$pat_link" "$dir/$f" 2>"$scratch/grep.err") || grc=$?
+  if [ "$grc" -ge 2 ]; then
+    echo "handbuch-public-doc-check: Lesefehler: docs/user/$f ($(head -n 1 "$scratch/grep.err"))" >&2
+    exit 2
+  fi
   if [ -n "$h" ]; then
     hits+=$(printf '%s\n' "$h" | sed "s|^|docs/user/$f:|")$'\n'
   fi

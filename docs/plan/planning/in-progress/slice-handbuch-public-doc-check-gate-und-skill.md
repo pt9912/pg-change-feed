@@ -209,7 +209,8 @@ nicht** (Regeln dort sind Hard Rules; der Skill verweist auf sie, ergänzt keine
       (HIGH-Punkt „Handbuch-Versionshistorie nicht fortgeschrieben“). Beide behalten die
       Pflicht „`Version:` hochzählen **und** eine Zeile in `### Änderungshistorie`“,
       ergänzt um „ohne Kennungen, Betreibersicht“ und den Verweis auf Skill und Gate;
-      keine Abschwächung der Pflicht. Der Kandidatenlauf in Schritt 17 bleibt. *Zu belegen
+      keine Abschwächung der Pflicht. Der Kandidatenlauf wandert mit dem Inhalt in den Skill
+      (beide Befehle stehen dort vollständig); Schritt 17 verweist auf ihn. *Zu belegen
       durch:* `git diff` beider Dateien im Bericht; im Diff steht die Pflicht weiter
       (`git grep -n "Änderungshistorie" -- .claude .harness/skills` hat weiterhin je einen
       Treffer), die Ergänzung und der Verweis sind ergänzt; Zeilenzahl von
@@ -312,7 +313,7 @@ diff 2 -n -F Änderungshistorie -- docs/user/benutzerhandbuch-standard.md
 diff 5 -n -F Änderungshistorie -- .claude .harness/skills
 diff 15 -n -F Änderungshistorie -- docs/plan/adr
 diff 1 -n -F Änderungshistorie -- spec
-diff 6 -n -F nutzerdoku-schreiben -- .
+diff 7 -n -F nutzerdoku-schreiben -- .
 ```
 
 | Träger | Messung am Parent (`7e993efd`, 2026-10-02) | Behandlung (Befund am Diff trägt der Implementer ein) |
@@ -332,9 +333,9 @@ Standard bleibt 2 (die Ergänzung an Z. 229 steht in derselben Zeile, die an Kap
 eigener Absatz ohne das Wort). (3) `Änderungshistorie` in `.claude`/`.harness/skills`: **5**
 statt 2 — die zwei Pflicht-Treffer bleiben (`implement-slice.md` 1, `reviewer.md` 1), dazu
 drei Zeilen im neuen Skill; kein Treffer verschwunden. (4) Accepted-ADRs und `ADR-0143`
-15, `spec/` 1, unverändert. (5) Skill-Name: 6 Trefferzeilen außerhalb des Plans
+15, `spec/` 1, unverändert. (5) Skill-Name: 7 Trefferzeilen außerhalb des Plans
 (`implement-slice.md` 1, `reviewer.md` 1, `harness/README.md` 2, Sensor-Vertrag 1,
-Architect-Verdikt 1); die Skill-Datei selbst nennt ihren Namen nicht, und die ADR bricht
+Architect-Verdikt 1, Review-Report 1 — der Report entstand nach der ersten Messung mit 6); die Skill-Datei selbst nennt ihren Namen nicht, und die ADR bricht
 den Dateinamen über einen Zeilenumbruch (kein Treffer). Nicht gefunden: weitere Träger der
 Aussage „Handbuch-Versionshistorie“ (`git grep -il Versionshistorie`, ohne `docs/reviews`,
 `done/`, Baseline) außer den bearbeiteten Dateien; gemeldet, nicht geändert (Accepted-ADRs
