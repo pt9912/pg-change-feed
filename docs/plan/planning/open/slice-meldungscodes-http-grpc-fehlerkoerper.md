@@ -24,7 +24,7 @@ heute `{"error": "<Klartext>"}`; additives Feld `code`) und
 [`SPEC-031`](../../../../spec/pflichtenheft.md) (gRPC-Fehler: `ErrorInfo`) — Liefer-Punkte
 dieses Slice.
 
-**Reihenfolge:** nach [T2 `meldungscodes-registry-fehlerkopf`](slice-meldungscodes-registry-fehlerkopf.md)
+**Reihenfolge:** nach [T2 `meldungscodes-registry-fehlerkopf`](../in-progress/slice-meldungscodes-registry-fehlerkopf.md)
 (Tabelle, besonders die `E8…`-Ablehnungs-Codes); unabhängig von
 [T3](slice-meldungscodes-warnungen-heartbeat-diagnose.md).
 
@@ -137,7 +137,7 @@ ba60c7bc 0 -n -F 'ErrorInfo' -- internal proto spec docs/user
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): kein anderer Slice liegt in `in-progress/` (WIP-Limit 1),
-`make image` ist ausgeführt, [T2](slice-meldungscodes-registry-fehlerkopf.md) liegt in `done/`,
+`make image` ist ausgeführt, [T2](../in-progress/slice-meldungscodes-registry-fehlerkopf.md) liegt in `done/`,
 und die **Vorab-Messung (Liefer-Punkt 0) liegt vor** und zeigt keinen brechenden SDK-Leser
 (sonst Auftraggeber-Frage).
 

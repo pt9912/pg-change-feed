@@ -26,7 +26,7 @@ Verdikt: [`architect-verdict-meldungscodes-statt-interner-kennungen`](../../../r
 Liefer-Punkt dieses Slice), die `Diagnose`-Zeile des gRPC-/HTTP-Vertrags (additives Feld
 `error_code`) — jeweils die Stelle, die die Spalte bzw. das Feld heute beschreibt.
 
-**Reihenfolge:** nach [T2 `meldungscodes-registry-fehlerkopf`](slice-meldungscodes-registry-fehlerkopf.md)
+**Reihenfolge:** nach [T2 `meldungscodes-registry-fehlerkopf`](../in-progress/slice-meldungscodes-registry-fehlerkopf.md)
 (Tabelle, Katalog, Gate); unabhängig von [T4](slice-meldungscodes-http-grpc-fehlerkoerper.md).
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
@@ -144,7 +144,7 @@ ba60c7bc 35 -n -E '\.Warn\(' -- internal cmd ':!*_test.go'
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): kein anderer Slice liegt in `in-progress/` (WIP-Limit 1),
-`make image` ist ausgeführt, [T2](slice-meldungscodes-registry-fehlerkopf.md) liegt in `done/`.
+`make image` ist ausgeführt, [T2](../in-progress/slice-meldungscodes-registry-fehlerkopf.md) liegt in `done/`.
 
 **Rückführung:** `in-progress` → `next` (zu groß), wenn Warn-Codes und Spalte/Diagnose zusammen
 nicht in einen Diff passen: Schnitt `W`-Codes gegen `error_code` (Spalte, Proto, Rollout);

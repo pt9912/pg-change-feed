@@ -31,8 +31,8 @@ dieses Slice, nicht des Auftraggebers.
 
 **Reihenfolge:** nach [T1 `meldungscodes-kennungsfreie-ausgaben`](../done/slice-meldungscodes-kennungsfreie-ausgaben.md)
 (sein Gate hält die Ausgaben bei 0, bevor dieser Slice die Fehlertext-Literale anfasst); vor
-[T3](slice-meldungscodes-warnungen-heartbeat-diagnose.md) und
-[T4](slice-meldungscodes-http-grpc-fehlerkoerper.md), die an der Tabelle dieses Slice hängen.
+[T3](../open/slice-meldungscodes-warnungen-heartbeat-diagnose.md) und
+[T4](../open/slice-meldungscodes-http-grpc-fehlerkoerper.md), die an der Tabelle dieses Slice hängen.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
