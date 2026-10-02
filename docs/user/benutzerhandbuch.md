@@ -2633,3 +2633,97 @@ Fragen und Fehler bitte über das Projekt-Repository melden.
 ### Lizenz
 
 MIT — siehe `LICENSE`.
+
+### Änderungshistorie
+
+| Version | Datum | Änderung |
+|---|---|---|
+| 1.0 | 2026-09-12 | Erste Fassung |
+| 1.1 | 2026-09-12 | Rollenspezifische Verbindungen: `CDC_SOURCE_DSN` entfällt, stattdessen `CDC_CAPTURE_DSN`, `CDC_ADMIN_DSN` und `CDC_READER_DSN`; Hinweis zum `REPLICATION`-Attribut ergänzt |
+| 1.2 | 2026-09-12 | Fehlerklassen-Tabelle um die Klassen `transient`, `permission` und `internal` vervollständigt (alle sieben Klassen) |
+| 1.3 | 2026-09-12 | Metrik `cdc_wal_retention_bytes` (WAL-Rückstand) ergänzt: periodische Messung, Log-Ausgabe, Abgrenzung gegen `cdc.metrics` |
+| 1.4 | 2026-09-12 | Fehlerklasse `replication` in zwei Unterarten gefasst: Verletzung der Stream-Ordnung beendet sofort, Verbindungsstörungen laufen über die WAL-Schwellen (Warnung 100 MiB, Fehler 1 GiB) mit kontrollierter Fortsetzung bzw. Abbruch |
+| 1.5 | 2026-09-13 | Neuer Sondermodus `diagnose` ergänzt (Abschnitt „Diagnose ausführen“); Rollen- und Variablentabellen angepasst |
+| 1.6 | 2026-09-13 | Optionale YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`) beschrieben; Pflichtangabe von `CDC_TABLES` präzisiert |
+| 1.7 | 2026-09-13 | Neue Abschnitte „Tabelle live aktivieren“ und „Tabelle deaktivieren“ (`cdc.enable_table`/`cdc.disable_table`, asynchrone Antrags-Queue, Status abfragen) |
+| 1.8 | 2026-09-13 | Neuer Abschnitt „Blockierende Consumer erkennen“ (`cdc.retention_blockers`) |
+| 1.9 | 2026-09-13 | Metrik `cdc_storage_bytes` in „Metriken lesen“ ergänzt |
+| 1.10 | 2026-09-13 | Die `diagnose`-Ausgabe nennt jetzt je Quelle den aktuell blockierenden Consumer (oder „kein Blocker“) und `cdc_storage_bytes` |
+| 1.11 | 2026-09-13 | `CDC_NATS_URL`: Subjekt-Schema auf `cdc.changes.<source_id>.<schema>.<table>` (je Tabelle) korrigiert |
+| 1.12 | 2026-09-14 | Beispielausgabe der Diagnose auf den Quellnamen `src-e2e` umgestellt |
+| 1.13 | 2026-09-15 | Netzwerk-Zugriff ergänzt: Variablen `CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN` und `CDC_GRPC_ADDR`; Abschnitt „Spalte vom Ausschluss konfigurieren“; Zugriffswege HTTP-/JSON-API, gRPC-Change-Stream und Server-Sent-Events |
+| 1.14 | 2026-09-15 | Redaktionelle Korrekturen: Fähigkeitsliste der HTTP-API (Retention-Auslösung nur über die API) sowie Feldangaben bei gRPC (zehn Felder) und SSE präzisiert |
+| 1.15 | 2026-09-15 | Änderungen lassen sich über `GET /changes` lesen (Parameter, Antwort, Fehlerfälle); die Zustellsemantik nennt die nicht streamende Form neben dem Live-Stream |
+| 1.16 | 2026-09-15 | Neuer Abschnitt „Zugriff über das NATS-Wecksignal“: Subjekt-Schema, leerer Payload, Zustellsemantik, Ablauf (lauschen, dann über `GET /changes` holen) mit Beispielprogramm |
+| 1.17 | 2026-09-17 | Go-Beispielprogramme für die HTTP-API und für SSE mit Startbefehl ergänzt; sie lesen Adresse und Token aus `CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` |
+| 1.18 | 2026-09-17 | Konfigurationsdatei: neue Felder `http_addr` und `grpc_addr` mit Vorrangregel; Zugangsdaten-Felder auf sechs Schlüssel erweitert; `CDC_NATS_URL` und die beiden Token wirken auch bei geladener Datei aus der Umgebung |
+| 1.19 | 2026-09-17 | Go-Beispielprogramm für den gRPC-Change-Stream ergänzt; es liest Adresse und Token aus `CDC_GRPC_ADDR` und `CDC_API_TOKEN_READER` |
+| 1.20 | 2026-09-17 | Erstes C#-Beispielprogramm (HTTP-API) ergänzt; die Beispiele stehen jetzt je Sprache in einer Liste |
+| 1.21 | 2026-09-17 | Erstes Kotlin-Beispielprogramm (HTTP-API) ergänzt |
+| 1.22 | 2026-09-17 | C#- und Kotlin-Beispielprogramme für Server-Sent-Events ergänzt |
+| 1.23 | 2026-09-17 | C#- und Kotlin-Beispielprogramme für das NATS-Wecksignal ergänzt |
+| 1.24 | 2026-09-17 | C#-Beispielprogramm für den gRPC-Change-Stream ergänzt; der gRPC-Code entsteht beim Bau aus der `.proto`-Datei |
+| 1.25 | 2026-09-17 | Kotlin-Beispielprogramm für den gRPC-Change-Stream ergänzt; die Beispiele für den gRPC-Change-Stream sind damit in allen drei Sprachen vorhanden |
+| 1.26 | 2026-09-18 | Go-Beispiele starten jetzt über `make example-run-go SURFACE=<oberfläche>` statt über `go run` |
+| 1.27 | 2026-09-18 | C#- und Kotlin-Beispiele starten jetzt über `make example-run-csharp SURFACE=<oberfläche>` bzw. `make example-run-kotlin SURFACE=<oberfläche>`; die Ziele starten die bereits gebauten Images |
+| 1.28 | 2026-09-18 | Neuer Zustellweg „Zugriff über den NATS-Vollinhalts-Stream“ (Subjekte `cdc.stream.<...>`, gleiches Nachrichtenschema wie SSE, Aktivierungsbedingungen, Auswirkung der Authentifizierung auf das Wecksignal); neue Variable `CDC_NATS_STREAM_TOKEN`; Zugangsdaten-Felder der Konfigurationsdatei auf sieben erweitert |
+| 1.29 | 2026-09-18 | Go-Beispielprogramm für den NATS-Vollinhalts-Stream ergänzt |
+| 1.30 | 2026-09-18 | C#- und Kotlin-Beispielprogramme für den NATS-Vollinhalts-Stream ergänzt; alle Zustellwege haben damit Beispiele in drei Sprachen |
+| 1.31 | 2026-09-19 | Metriken `cdc_changes_pending` und `cdc_errors_total` in „Metriken lesen“ genannt |
+| 1.32 | 2026-09-19 | Kopffeld `Software-Version` verweist jetzt auf die maßgebliche Versionsquelle statt auf einen veralteten Wert |
+| 1.33 | 2026-09-19 | C#-SDK (NuGet-Package `PgChangeFeed.Client`) für die HTTP-API beschrieben: alle zehn Fähigkeiten mit typisierten Anfragen, Antworten und Fehlerklasse |
+| 1.34 | 2026-09-19 | C#-SDK für den gRPC-Change-Stream beschrieben: `PgChangeFeedGrpcClient.StreamChangesAsync` liefert die Changes mit allen zehn Feldern |
+| 1.35 | 2026-09-19 | Python-SDK (PyPI-Package `pgchangefeed`) für die HTTP-API beschrieben: dieselben zehn Fähigkeiten, typisiert |
+| 1.36 | 2026-09-20 | Kotlin-SDK `pgchangefeed-kotlin` für die HTTP-API beschrieben, samt Hinweis, dass der Bezug über GitHub Packages einen Token mit `read:packages` verlangt |
+| 1.37 | 2026-09-20 | Kotlin-SDK für den gRPC-Change-Stream beschrieben (`streamChanges()` als `Flow`); Hinweis zum Token beim Bezug wiederholt |
+| 1.38 | 2026-09-22 | C#-SDK für Server-Sent-Events und den NATS-Vollinhalts-Stream beschrieben; das Package deckt damit alle vier Zugriffswege ab |
+| 1.39 | 2026-09-22 | Kotlin-SDK für Server-Sent-Events und den NATS-Vollinhalts-Stream beschrieben |
+| 1.40 | 2026-09-23 | Python-SDK deckt zusätzlich den gRPC-Change-Stream ab (`PgChangeFeedGrpcClient`) |
+| 1.41 | 2026-09-23 | Python-SDK-Absatz im Abschnitt zum gRPC-Change-Stream ergänzt (`stream_changes()` mit `timeout`-Parameter) |
+| 1.42 | 2026-09-23 | Python-SDK für Server-Sent-Events beschrieben (`PgChangeFeedSseClient.stream_changes()`) |
+| 1.43 | 2026-09-23 | Python-SDK für den NATS-Vollinhalts-Stream beschrieben (`PgChangeFeedNatsStreamClient`); das Package `pgchangefeed` erscheint als Version 0.2.0, alle vier Zugriffswege sind in allen drei SDK-Sprachen abgedeckt |
+| 1.44 | 2026-09-24 | Feld `origin` ergänzt: `cdc.changes` und `GET /changes` unterscheiden `wal` und `backfill` (fehlender Wert liest als `wal`); die Live-Zustellwege tragen das Feld nicht |
+| 1.45 | 2026-09-24 | „Schema aktualisieren“ beschreibt den Ablauf bei geänderter View-Signatur: Schema-Rollout vor dem Container-Tausch, automatisches Löschen der View, Lesefenster für SQL-Leser, Verhalten bei abhängigen Objekten oder Abbruch |
+| 1.46 | 2026-09-24 | Hinweis zu Rechten beim Neuanlegen der View: nur `cdc_reader` erhält sein `SELECT`-Recht zurück, eigene Rechte für andere Rollen setzt der Betreiber erneut; Schema `cdc` wird fest adressiert |
+| 1.47 | 2026-09-24 | Rechte der drei Rollen beschrieben: `cdc_admin` verarbeitet die Antrags-Queue; der Rollout setzt die Rechte bei jedem Lauf; ohne das Recht bleiben Anträge `pending` |
+| 1.48 | 2026-09-24 | Neuer Abschnitt „Bestand als Backfill überführen“ (`cdc.backfill_table`, View `cdc.backfill_status`, geschätzte Zeilenzahl, Verhalten beim Neustart, Sichtbarkeit, Schema-Version, Vorbedingungen); „Änderungen lesen“ erklärt Position und `limit`; „Diagnose ausführen“ zeigt Backfill-Runs |
+| 1.49 | 2026-09-24 | Backfill-Abschnitt präzisiert: Antrag unter `cdc_admin`, `cdc.backfill_status` unter `cdc_reader` lesen; der Run beginnt mit dem Snapshot; Anträge anderer Quellen bleiben für diese Instanz `pending` |
+| 1.50 | 2026-09-24 | Backfill: Startposition eines frisch registrierten Consumers beschrieben (`offset` 0, nicht bestätigt); `rows_copied` eines unterbrochenen Runs nennt den zuletzt gesicherten Fortschritt |
+| 1.51 | 2026-09-24 | Backfill: Lesesperre der Tabelle während des Runs und ihre Wirkung auf DDL beschrieben; Verhalten bei umgeschriebener Tabelle (Run `failed`, Klasse `transient`, neuer Antrag als Abhilfe) |
+| 1.52 | 2026-09-24 | Backfill: Wirkung der Tabellensperre vollständig beschrieben (wartende DDL staut Leser, Schreiber und Administration; der Run wartet ohne Zeitgrenze auf offene `ACCESS EXCLUSIVE`-Transaktionen) |
+| 1.53 | 2026-09-25 | Backfill: Wann `warn_estimated_size` und `warn_duration` gesetzt werden, WAL-Rückstand als vierte Vorbedingung; „Grenzwerte“ nennt Toleranz der Kopierdauer, Richtgröße und gemessene Werte |
+| 1.54 | 2026-09-25 | Backfill: Ursache und Abhilfen des WAL-Rückstands beschrieben (Commit auf einer aktivierten Tabelle, Datei-Feld `wal_retention_error_bytes`); Messwerte in „Grenzwerte“ ergänzt |
+| 1.55 | 2026-09-25 | „Grenzwerte“: Herkunft der Messzahlen gekennzeichnet, Richtgröße um eine weitere Messung ergänzt |
+| 1.56 | 2026-09-25 | WAL ohne Inhalt für die Publication wird im Leerlauf bestätigt und lässt `cdc_wal_retention_bytes` nicht wachsen; Backfill-Abschnitt und „Grenzwerte“ entsprechend angepasst |
+| 1.57 | 2026-09-25 | „Grenzwerte“: Herkunft weiterer Messzahlen gekennzeichnet, Nachmessung ergänzt (Rückstand 0 MiB in neun Runs), Richtgröße als Spanne von 2.000.000 bis 5.000.000 Zeilen angegeben |
+| 1.58 | 2026-09-25 | Die drei SDK-Packages tragen das Feld `origin` bei `GET /changes`; eine Antwort ohne das Feld liest als `wal` |
+| 1.59 | 2026-09-25 | Regel für `origin` in den SDK-Packages präzisiert: fehlendes Feld oder `null` liest als `wal`, jeder andere Wert kommt unverändert an; das Python-Package trägt SSE und den NATS-Vollinhalts-Stream |
+| 1.60 | 2026-09-25 | Speicherbedarf des Feed-Containers im Backfill gemessen: die Spitze hängt an der Zahl der Changes in `cdc.change`, nicht an der Tabellengröße; Hinweise zur Bemessung des Speicherlimits in „Grenzwerte“ und im Backfill-Abschnitt |
+| 1.61 | 2026-09-25 | Messzahlen und Herkunftsangaben zum Speicherbedarf berichtigt (Höchstwert je Change, Wirkung von `GOGC=25`, Messung mit sehr vielen Changes); die Server-Versionen `v0.1.0` bis `v0.1.2` tragen das beschriebene Verhalten |
+| 1.62 | 2026-09-25 | Der Bereinigungslauf liest die Kandidaten seitenweise (10.000 Changes) ohne Row Images; „Aufbewahrung (Retention)“ beschreibt die Seiten; Speicherspitze 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes |
+| 1.63 | 2026-09-25 | Aussagen zum Speicher angeglichen: der Bedarf hängt an der Seitengröße, nicht nennenswert an der Zahl der Changes (über 3.000.000 Changes nicht gemessen) |
+| 1.64 | 2026-09-25 | „Aufbewahrung (Retention)“: Changes, die ein Durchlauf löscht, sind für einen erstmals bestätigenden Consumer verloren; ein Durchlauf kann eine Transaktion in mehreren Schritten löschen |
+| 1.65 | 2026-09-25 | Kotlin-SDK ohne Token beziehbar: Cloudsmith als anonym lesbarer Bezugsweg neben GitHub Packages; `pgchangefeed-kotlin` erscheint als Version 0.2.2 |
+| 1.66 | 2026-09-27 | Zusage der Bestätigung im Leerlauf präzisiert: bestätigt wird WAL ohne Inhalt für die Publication zwischen den Schreibvorgängen; neuer Absatz „Grenze der Bestätigung im Leerlauf“ (ein Stoß über `wal_retention_error_bytes` bleibt bis zur nächsten Bestätigung im Rückstand, Abhilfe: Fehlerschwelle heben) |
+| 1.67 | 2026-09-27 | Neuer Abschnitt „Transformationsregel konfigurieren“ (`cdc.set_transformation`/`cdc.remove_transformation`, Regeltypen, Konfliktfreiheit, Wirkung, Dauerhaftigkeit, Nichtanwendbarkeit samt Abhilfe, Backfill-Bezug, Form auf allen Zustellwegen); Rollen, Fehlerklassen und Glossar ergänzt |
+| 1.68 | 2026-09-27 | Fehlertext eines `::jsonb`-Aufrufs von `cdc.set_transformation` auf den tatsächlichen Wortlaut korrigiert; Absatz „Zeilen, die kein Antrag sind“ um ein Beispiel ergänzt |
+| 1.69 | 2026-09-28 | „Transformationsregel konfigurieren“ als Anleitung überarbeitet (Voraussetzung, nummeriertes Vorgehen, Ergebnis, zwei Fehlerblöcke mit Ursache und Lösung); interne Verweise und Messrohwerte aus dem Fließtext entfernt |
+| 1.70 | 2026-09-28 | Beispiele der HTTP-API in allen drei Sprachen decken jetzt alle zehn Fähigkeiten ab: ein Verb-Flag (Standard `tables`); Hinweis auf `make example-transformation-demo` |
+| 1.71 | 2026-09-28 | Neuer Abschnitt „Zugriff über die gRPC-Verwaltungs-API“: die Fähigkeiten der HTTP-API als gRPC-Dienst `Administration`, Rechteklassen, Fehlercodes; `CDC_GRPC_ADDR` gilt für beide gRPC-Dienste |
+| 1.72 | 2026-09-28 | gRPC-Verwaltungs-API um den RPC `ReadChanges` ergänzt (zehn RPCs; Filter, Bereiche und Nachrichtenschema wie `GET /changes`; leerer Treffer ist kein `NotFound`) |
+| 1.73 | 2026-09-28 | Diagnose auch über `GET /diagnose` und den gRPC-RPC `Diagnose` (elfter RPC) abrufbar, gleichwertig zum CLI-Aufruf; Antwortschema beschrieben |
+| 1.74 | 2026-09-28 | gRPC-Change-Stream und SSE lassen sich nach Tabelle filtern: optionales `schema`/`table`-Paar mit derselben Kombinatorik wie `GET /changes` |
+| 1.75 | 2026-09-28 | Go-Beispiel für gRPC deckt mit dem Flag `-verb` zusätzlich alle elf Verwaltungs-RPCs ab; der Stream-Modus nimmt den Filter `-schema`/`-table` entgegen |
+| 1.76 | 2026-09-28 | C#-Beispiel für gRPC deckt wie das Go-Beispiel alle elf Verwaltungs-RPCs ab (`--verb`, Filter `--schema`/`--table`) |
+| 1.77 | 2026-09-28 | Kotlin-Beispiel für gRPC deckt ebenfalls alle elf Verwaltungs-RPCs ab; die gRPC-Verwaltungs-API hat damit Beispiele in allen drei Sprachen |
+| 1.78 | 2026-09-28 | `EnableTable`/`DisableTable` über HTTP und gRPC wirken unmittelbar mit der Antwort auf den laufenden Erfassungsprozess, ohne Neustart |
+| 1.79 | 2026-09-28 | C#-SDK deckt die volle gRPC-Fläche ab: `PgChangeFeedAdministrationClient` mit allen elf RPCs, Stream-Filter `schema`/`table` |
+| 1.80 | 2026-09-28 | Python-SDK deckt die volle gRPC-Fläche ab: `PgChangeFeedAdministrationClient` mit allen elf RPCs, Stream-Filter `schema`/`table` |
+| 1.81 | 2026-09-28 | Kotlin-SDK deckt die volle gRPC-Fläche ab; die gRPC-Verwaltungs-API ist damit in allen drei SDK-Sprachen verfügbar |
+| 1.82 | 2026-09-30 | „Neustart nach einem Fehler“: begrenzte Wiederholung bei Fehlerklasse `transient` im Erfassungspfad (Rücksetzung nach einem Zyklus von mindestens 30 s, Log-Meldungen mit Versuchszähler); keine Wiederholung bei Berechtigungsfehlern und Server-Abweisungen |
+| 1.83 | 2026-09-30 | Wiederholung präzisiert: ein Zyklus zählt als gestreamt ab Bestätigung von `START_REPLICATION` (mindestens 30 s), der Aufbau hat eine Frist von 30 s; wiederholt werden nur bestimmte SQLSTATE-Klassen, jede andere Server-Abweisung beendet sofort |
+| 1.84 | 2026-10-01 | Neuer Abschnitt „Routing-Regel konfigurieren“ (`cdc.set_route`/`cdc.remove_route`, Regelform, Konfliktfälle, Fehlerklasse `schema`, Ziel lesen, Hinweise zu festem Label, nicht treffenden Changes und `DELETE`); der Filter `target` an allen Zugriffswegen, das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>` im NATS-Vollinhalts-Stream, die Spalte `route_target` in `cdc.changes` |
+| 1.85 | 2026-10-01 | Parameter `target` in den drei SDK-Packages und in den Go-, C#- und Kotlin-Beispielen (HTTP-Lesen, gRPC-Stream, SSE, `ReadChanges`, NATS-Vollinhalts-Stream) |
+| 1.86 | 2026-10-01 | Redaktionelle Korrektur: `target` ist am SSE-Client der einzige Filter-Parameter; der Verweis auf einen offenen Folge-Schritt entfällt |
+| 1.87 | 2026-10-02 | Der SSE-Client der SDK-Packages und die SSE-Beispiele in Go, C# und Kotlin nehmen zusätzlich `schema` und `table` entgegen (Flags `-schema`/`-table` bzw. `--schema`/`--table`) |
+| 1.88 | 2026-10-02 | Die Erzeugnisse von `make schema-rollout` (Pflicht-Report, Rollback-Artefakt, Precheck-Report) liegen in `SCHEMA_ARTEFACT_DIR` (Standard `.tmp/schema-rollout`); die Aufbewahrung je Rollout liegt beim Betreiber; der Lauf mountet den Arbeitsbaum nicht |
