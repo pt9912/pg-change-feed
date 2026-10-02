@@ -19,12 +19,18 @@ type Event struct {
 // auf `/changes/stream`. `addr` ist die Horch-Adresse des Feed-Containers
 // (`CDC_HTTP_ADDR`, Form `host:port`). Ein gesetztes `target` erscheint als
 // Query-Parameter und wählt das Zustellziel einer Change; ein leeres `target`
-// lässt die Adresse ohne Query, der Stream liefert dann jede Change.
-func StreamURL(addr, target string) string {
+// lässt die Adresse ohne Query, der Stream liefert dann jede Change. `schema`
+// und `table` erscheinen ebenso nur gesetzt als Query-Parameter, je optional
+// und unabhängig, und wirken mit `target` als Konjunktion.
+func StreamURL(addr, target, schema, table string) string {
 	u := url.URL{Scheme: "http", Host: addr, Path: "/changes/stream"}
-	if target != "" {
-		u.RawQuery = url.Values{"target": {target}}.Encode()
+	query := url.Values{}
+	for name, value := range map[string]string{"schema": schema, "table": table, "target": target} {
+		if value != "" {
+			query.Set(name, value)
+		}
 	}
+	u.RawQuery = query.Encode()
 	return u.String()
 }
 

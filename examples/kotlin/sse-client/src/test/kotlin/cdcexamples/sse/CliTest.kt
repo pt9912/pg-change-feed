@@ -40,6 +40,16 @@ class CliTest {
     }
 
     @Test
+    fun parseSchemaAndTableFlagsFillTheConfigInBothFlagForms() {
+        val got = Cli.parse(arrayOf("--schema", "public", "--table=orders"), emptyEnv)
+        assertEquals("public", got.schema)
+        assertEquals("orders", got.table)
+        val none = Cli.parse(emptyArray(), emptyEnv)
+        assertEquals("", none.schema)
+        assertEquals("", none.table)
+    }
+
+    @Test
     fun parseRejectsUnknownFlag() {
         assertFailsWith<IllegalArgumentException> { Cli.parse(arrayOf("--unknown"), emptyEnv) }
     }

@@ -20,7 +20,7 @@ func lines(all []string) func() (string, bool) {
 // TestStreamURL prüft den Aufbau der Stream-Adresse (`LH-FA-SST-008`): der
 // Endpunkt ist `/changes/stream`, der Host kommt aus `CDC_HTTP_ADDR`.
 func TestStreamURL(t *testing.T) {
-	got := StreamURL("feed:8080", "")
+	got := StreamURL("feed:8080", "", "", "")
 	want := "http://feed:8080/changes/stream"
 	if got != want {
 		t.Fatalf("StreamURL = %q, want %q", got, want)
@@ -34,8 +34,34 @@ func TestStreamURLCarriesTarget(t *testing.T) {
 		"eu":    "http://feed:8080/changes/stream?target=eu",
 		"a&b=c": "http://feed:8080/changes/stream?target=a%26b%3Dc",
 	} {
-		if got := StreamURL("feed:8080", target); got != want {
+		if got := StreamURL("feed:8080", target, "", ""); got != want {
 			t.Fatalf("StreamURL(%q) = %q, want %q", target, got, want)
+		}
+	}
+}
+
+// TestStreamURLCarriesSchemaAndTable prüft die Bindung Flag → Anfrage für
+// `-schema`/`-table`: ein gesetzter Wert erscheint als maskierter
+// Query-Parameter, ein leerer lässt die Adresse unverändert, und alle drei
+// Filter wirken zusammen als Konjunktion.
+func TestStreamURLCarriesSchemaAndTable(t *testing.T) {
+	const base = "http://feed:8080/changes/stream"
+	for _, tc := range []struct {
+		name                  string
+		target, schema, table string
+		want                  string
+	}{
+		{"keiner", "", "", "", base},
+		{"schema eu", "", "eu", "", base + "?schema=eu"},
+		{"schema maskiert", "", "a&b=c", "", base + "?schema=a%26b%3Dc"},
+		{"table eu", "", "", "eu", base + "?table=eu"},
+		{"table maskiert", "", "", "a&b=c", base + "?table=a%26b%3Dc"},
+		{"schema und table", "", "public", "orders", base + "?schema=public&table=orders"},
+		{"table und target", "eu", "", "orders", base + "?table=orders&target=eu"},
+		{"alle drei", "eu", "public", "orders", base + "?schema=public&table=orders&target=eu"},
+	} {
+		if got := StreamURL("feed:8080", tc.target, tc.schema, tc.table); got != tc.want {
+			t.Fatalf("%s: StreamURL = %q, want %q", tc.name, got, tc.want)
 		}
 	}
 }

@@ -16,6 +16,8 @@ public static class Cli
         var addr = getEnv("CDC_HTTP_ADDR") ?? "";
         var token = getEnv("CDC_API_TOKEN_READER") ?? "";
         var target = "";
+        var schema = "";
+        var table = "";
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -45,12 +47,18 @@ public static class Cli
                 case "--target":
                     target = NextValue();
                     break;
+                case "--schema":
+                    schema = NextValue();
+                    break;
+                case "--table":
+                    table = NextValue();
+                    break;
                 default:
                     throw new ArgumentException($"sse-client: unbekanntes Flag {name}");
             }
         }
 
-        return new Config(addr, token, target);
+        return new Config(addr, token, target, schema, table);
     }
 
     /// <summary>

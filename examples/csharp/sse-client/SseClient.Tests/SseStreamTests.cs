@@ -37,6 +37,21 @@ public class SseStreamTests
         Assert.Equal(want, SseStream.StreamUrl("feed:8080", target));
     }
 
+    [Theory]
+    [InlineData("", "", "", "http://feed:8080/changes/stream")]
+    [InlineData("", "eu", "", "http://feed:8080/changes/stream?schema=eu")]
+    [InlineData("", "a&b=c", "", "http://feed:8080/changes/stream?schema=a%26b%3Dc")]
+    [InlineData("", "", "eu", "http://feed:8080/changes/stream?table=eu")]
+    [InlineData("", "", "a&b=c", "http://feed:8080/changes/stream?table=a%26b%3Dc")]
+    [InlineData("", "public", "orders", "http://feed:8080/changes/stream?schema=public&table=orders")]
+    [InlineData("eu", "", "orders", "http://feed:8080/changes/stream?table=orders&target=eu")]
+    [InlineData("eu", "public", "orders", "http://feed:8080/changes/stream?schema=public&table=orders&target=eu")]
+    public void StreamUrlCarriesSchemaAndTableAsEscapedQueryParameters(
+        string target, string schema, string table, string want)
+    {
+        Assert.Equal(want, SseStream.StreamUrl("feed:8080", target, schema, table));
+    }
+
     [Fact]
     public void ReadEventReadsNameAndPayload()
     {

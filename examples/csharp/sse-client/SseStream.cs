@@ -23,12 +23,30 @@ public static class SseStream
     /// Horch-Adresse des Feed-Containers (<c>CDC_HTTP_ADDR</c>, Form
     /// <c>host:port</c>). Ein gesetztes <paramref name="target"/> erscheint als
     /// maskierter Query-Parameter und wählt das Zustellziel einer Change; ein
-    /// leeres lässt die Adresse ohne Query.
+    /// leeres lässt die Adresse ohne Query. <paramref name="schema"/> und
+    /// <paramref name="table"/> erscheinen ebenso nur gesetzt als
+    /// Query-Parameter, je optional und unabhängig, und wirken mit dem Ziel als
+    /// Konjunktion.
     /// </summary>
-    public static string StreamUrl(string addr, string target = "") =>
-        target.Length == 0
+    public static string StreamUrl(string addr, string target = "", string schema = "", string table = "")
+    {
+        var query = new List<string>();
+        if (schema.Length > 0)
+        {
+            query.Add($"schema={Uri.EscapeDataString(schema)}");
+        }
+        if (table.Length > 0)
+        {
+            query.Add($"table={Uri.EscapeDataString(table)}");
+        }
+        if (target.Length > 0)
+        {
+            query.Add($"target={Uri.EscapeDataString(target)}");
+        }
+        return query.Count == 0
             ? $"http://{addr}/changes/stream"
-            : $"http://{addr}/changes/stream?target={Uri.EscapeDataString(target)}";
+            : $"http://{addr}/changes/stream?{string.Join("&", query)}";
+    }
 
     /// <summary>
     /// ReadEvent liest ein vollständiges Frame über <paramref name="next"/> und

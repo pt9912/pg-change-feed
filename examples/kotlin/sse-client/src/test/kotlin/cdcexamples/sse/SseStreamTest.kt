@@ -36,6 +36,22 @@ class SseStreamTest {
     }
 
     @Test
+    fun streamUrlCarriesSchemaAndTableAsEscapedQueryParameters() {
+        val base = "http://feed:8080/changes/stream"
+        assertEquals(base, SseStream.streamUrl("feed:8080", "", "", ""))
+        assertEquals("$base?schema=eu", SseStream.streamUrl("feed:8080", "", "eu", ""))
+        assertEquals("$base?schema=a%26b%3Dc", SseStream.streamUrl("feed:8080", "", "a&b=c", ""))
+        assertEquals("$base?table=eu", SseStream.streamUrl("feed:8080", "", "", "eu"))
+        assertEquals("$base?table=a%26b%3Dc", SseStream.streamUrl("feed:8080", "", "", "a&b=c"))
+        assertEquals("$base?schema=public&table=orders", SseStream.streamUrl("feed:8080", "", "public", "orders"))
+        assertEquals("$base?table=orders&target=eu", SseStream.streamUrl("feed:8080", "eu", "", "orders"))
+        assertEquals(
+            "$base?schema=public&table=orders&target=eu",
+            SseStream.streamUrl("feed:8080", "eu", "public", "orders"),
+        )
+    }
+
+    @Test
     fun readEventReadsNameAndPayload() {
         val ev = SseStream.readEvent(
             lines(

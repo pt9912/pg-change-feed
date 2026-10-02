@@ -13,6 +13,8 @@ object Cli {
         var addr = getEnv("CDC_HTTP_ADDR") ?: ""
         var token = getEnv("CDC_API_TOKEN_READER") ?: ""
         var target = ""
+        var schema = ""
+        var table = ""
 
         var i = 0
         while (i < args.size) {
@@ -33,12 +35,14 @@ object Cli {
                 "--addr" -> addr = nextValue()
                 "--token" -> token = nextValue()
                 "--target" -> target = nextValue()
+                "--schema" -> schema = nextValue()
+                "--table" -> table = nextValue()
                 else -> throw IllegalArgumentException("sse-client: unbekanntes Flag $name")
             }
             i += 1
         }
 
-        return Config(addr, token, target)
+        return Config(addr, token, target, schema, table)
     }
 
     /**

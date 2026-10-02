@@ -7,10 +7,13 @@ package cdcexamples.sse
  * (`CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`), und lassen sich per Flag
  * übersteuern (`ADR-0076` Festlegung 1). Form-Vorbild: `examples/sse-client`
  * (Go), `examples/csharp/sse-client/Config.cs` (C#). `target` (`--target`)
- * wählt das Zustellziel einer Change; leer ist kein Filter.
+ * wählt das Zustellziel einer Change, `schema` (`--schema`) und `table`
+ * (`--table`) wählen Schema und Tabelle; leer ist kein Filter.
  */
 data class Config(
     val addr: String,
     val token: String,
     val target: String = "",
+    val schema: String = "",
+    val table: String = "",
 )

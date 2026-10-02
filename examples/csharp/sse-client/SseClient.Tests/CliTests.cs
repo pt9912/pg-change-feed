@@ -43,6 +43,18 @@ public class CliTests
     }
 
     [Fact]
+    public void ParseSchemaAndTableFlagsFillTheConfigInBothFlagForms()
+    {
+        var got = Cli.Parse(new[] { "--schema", "public", "--table=orders" }, EmptyEnv);
+
+        Assert.Equal("public", got.Schema);
+        Assert.Equal("orders", got.Table);
+        var none = Cli.Parse(Array.Empty<string>(), EmptyEnv);
+        Assert.Equal("", none.Schema);
+        Assert.Equal("", none.Table);
+    }
+
+    [Fact]
     public void ParseRejectsUnknownFlag()
     {
         Assert.Throws<ArgumentException>(() => Cli.Parse(new[] { "--unknown" }, EmptyEnv));

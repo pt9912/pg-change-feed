@@ -20,10 +20,16 @@ object SseStream {
     /**
      * streamUrl baut die Adresse des SSE-Endpunkts. Ein gesetztes [target]
      * erscheint als maskierter Query-Parameter und wählt das Zustellziel einer
-     * Change (`ADR-0137`); ein leeres lässt die Adresse ohne Query.
+     * Change (`ADR-0137`); ein leeres lässt die Adresse ohne Query. [schema]
+     * und [table] erscheinen ebenso nur gesetzt als Query-Parameter, je
+     * optional und unabhängig, und wirken mit dem Ziel als Konjunktion.
      */
-    fun streamUrl(addr: String, target: String = ""): String =
-        if (target.isEmpty()) "http://$addr/changes/stream" else "http://$addr/changes/stream?target=${encode(target)}"
+    fun streamUrl(addr: String, target: String = "", schema: String = "", table: String = ""): String {
+        val params = listOf("schema" to schema, "table" to table, "target" to target)
+            .filter { (_, value) -> value.isNotEmpty() }
+            .map { (name, value) -> "$name=${encode(value)}" }
+        return if (params.isEmpty()) "http://$addr/changes/stream" else "http://$addr/changes/stream?" + params.joinToString("&")
+    }
 
     /**
      * Prozent-Kodierung nach RFC 3986 (unreserviert: `A-Za-z0-9-_.~`), wie
