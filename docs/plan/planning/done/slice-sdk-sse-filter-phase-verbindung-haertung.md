@@ -473,7 +473,7 @@ Register-Zählern (Dateien gezählt).
   15-s-Fensters nicht eigenständig falsifizierbar (hergeleitet, nicht gefahren); sie senkt das
   Flake-Risiko und ordnet die Gegenlesung, die Zusage trägt die zweite Gruppe — keine Aktion.
   (4) F-4 (INFO): die Routing-Phase hat denselben Aufbau; Adresse jetzt
-  [`slice-sdk-routing-phase-verbindung-haertung`](../open/slice-sdk-routing-phase-verbindung-haertung.md)
+  [`slice-sdk-routing-phase-verbindung-haertung`](../in-progress/slice-sdk-routing-phase-verbindung-haertung.md)
   (Lesen am Stand `a420e223`: die Falsch-Grün-Lücke besteht für die drei Stream-Flächen, die
   HTTP-Fläche ist nicht betroffen — beides hergeleitet, im Folge-Slice zu messen). (5) F-5 (INFO):
   Kotlin-Zeilenlängen, kein Formatwerkzeug für Kotlin →
@@ -512,7 +512,7 @@ Register-Zählern (Dateien gezählt).
 - **Folge-Slices:** zwei Dateien in `open/` —
   [`slice-harness-grep-pipe-sigpipe-unter-pipefail`](../done/slice-harness-grep-pipe-sigpipe-unter-pipefail.md)
   (F-1) und
-  [`slice-sdk-routing-phase-verbindung-haertung`](../open/slice-sdk-routing-phase-verbindung-haertung.md)
+  [`slice-sdk-routing-phase-verbindung-haertung`](../in-progress/slice-sdk-routing-phase-verbindung-haertung.md)
   (F-4, Routing-Phase). Reihenfolge: (a) vor (b), beide ändern `lib-sdk-route-fixture.sh`.
 - **Risiken aus §6:** Laufzeit entfallen · NATS-Flake eingetreten → Adresse Register und
   Folge-Slice (a) · Überlagerungen entfallen (Arm A indirekt belegt) · `SEEN` im Versuch > 1
