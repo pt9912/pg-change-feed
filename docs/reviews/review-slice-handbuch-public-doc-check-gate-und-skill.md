@@ -116,7 +116,7 @@ Ziel, kein geteilter Zustand berührt; [`AGENTS.md`](../../AGENTS.md) §3.15).
 
 - `kategorie`: LOW
 - `quelle`: Maintainability (Nachzug widerspricht dem Nachbarn im selben Träger)
-- `pfad`: `docs/plan/planning/in-progress/slice-handbuch-public-doc-check-gate-und-skill.md:212` gegen `:273`; `.claude/commands/implement-slice.md:124-134`
+- `pfad`: `docs/plan/planning/done/slice-handbuch-public-doc-check-gate-und-skill.md:212` gegen `:273`; `.claude/commands/implement-slice.md:124-134`
 - `befund`: DoD-Punkt 3 sagt „Der Kandidatenlauf in Schritt 17 bleibt“, die Träger-Tabelle (Zeile 273) „Inhalt zum Skill verlagern“. Umgesetzt ist die Verlagerung: Schritt 17 nennt Pflicht, Betreibersicht, Verweis und Grenze, die beiden Befehle des Kandidatenlaufs stehen nur im Skill; Schritt 17 allein ist für den Lauf nicht ausreichend, der Skill ist vollständig.
 - `verifizierbar`: nein — Lese-Handlung; der Verifier liest den DoD-Wortlaut gegen die Umsetzung.
 - `klasse`: Plan-interner Widerspruch DoD gegen Träger-Tabelle

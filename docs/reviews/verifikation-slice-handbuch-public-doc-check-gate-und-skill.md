@@ -10,7 +10,7 @@ Befunde im Plan), `c1772278` (Review-Report), `28a5aafe` (Fixrunde: Gate fail-cl
 Lesefehlern, Tabellentest bindet Meldungstext und `LH-RB-`-Zweig, Plan-DoD berichtigt).
 
 **Eingang:**
-[Plan](../plan/planning/in-progress/slice-handbuch-public-doc-check-gate-und-skill.md),
+[Plan](../plan/planning/done/slice-handbuch-public-doc-check-gate-und-skill.md),
 [ADR-0143](../plan/adr/0143-handbuch-public-doc-check-gate-kennungsfreie-nutzerdoku.md),
 [ADR-0134](../plan/adr/0134-sdk-public-doc-check-gate-make-gates.md) (Muster),
 [Architect-Verdikt](architect-verdict-handbuch-public-doc-check-gate-und-skill.md),

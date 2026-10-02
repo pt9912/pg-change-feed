@@ -250,7 +250,7 @@ nicht** (Regeln dort sind Hard Rules; der Skill verweist auf sie, ergänzt keine
       `BEO-PGC/handbuch-versionshistorie-uebersprungen`,
       `BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft`).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
 
 **Umfang:** S bis M — Schätzung, nicht gemessen: ein Skript, ein Tabellentest, ein
 Sensor-Vertrag, eine ADR, ein Skill, vier Textstellen in Regeln/Standard.

@@ -2,7 +2,7 @@
 
 **Rolle:** Architect (Modul 8)
 **Anlass:** Startbedingung des Slice
-[`handbuch-public-doc-check-gate-und-skill`](../plan/planning/in-progress/slice-handbuch-public-doc-check-gate-und-skill.md)
+[`handbuch-public-doc-check-gate-und-skill`](../plan/planning/done/slice-handbuch-public-doc-check-gate-und-skill.md)
 (Liefer-Punkt 0; Planner-Fragen 1 bis 6)
 **Datum:** 2026-10-02
 **Bezug:** [`LH-QA-OPS-001`](../../spec/lastenheft.md),
