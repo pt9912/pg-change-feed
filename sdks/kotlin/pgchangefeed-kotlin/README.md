@@ -318,6 +318,10 @@ A `PgChangeFeedAdministrationClient` call that the server answers with a non-`OK
 - **The live streams** (gRPC, SSE, NATS) are pushing: you get every change committed after you connected, in commit order, with the full row content. There is no delivery guarantee and no replay. A change committed while you were disconnected, or while you read too slowly, does not arrive on the stream. Use the stream to react quickly and `readChanges` to catch up on what it missed.
 - The gRPC stream can be filtered by schema, table and delivery target (`streamChanges(schema, table, target)`); the SSE stream can be filtered by delivery target, schema and table (`streamChanges(target, schema, table)`); on the NATS stream the subject chooses the source, the table or the delivery target.
 
+## Upgrading
+
+- **0.5.0** — `streamChanges` of the SSE client gained the optional parameters `schema` and `table` after `target`. Source code that calls it keeps compiling unchanged. A class file that was compiled against an earlier version calls the old method signature, which no longer exists, and has to be recompiled against 0.5.0.
+
 ## More
 
 - [Project README](https://github.com/pt9912/pg-change-feed/blob/main/README.md)
