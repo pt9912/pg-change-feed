@@ -8,7 +8,7 @@ Plan-vs-Code-Diff, eigene Sensor-Läufe, Reproduktion des Defekts und Einzelmuta
 Sensor-Vertrag, Plan-Feld) und `894fb7ce` (Review-Report).
 
 **Eingang:**
-[Plan](../plan/planning/in-progress/slice-sdk-public-doc-check-lesefehler-fail-closed.md),
+[Plan](../plan/planning/done/slice-sdk-public-doc-check-lesefehler-fail-closed.md),
 [ADR-0134](../plan/adr/0134-sdk-public-doc-check-gate-make-gates.md) (`Accepted`, unberührbar),
 [ADR-0143](../plan/adr/0143-handbuch-public-doc-check-gate-kennungsfreie-nutzerdoku.md) (Schwester-Gate, Muster),
 [Review-Report](review-slice-sdk-public-doc-check-lesefehler-fail-closed.md) (0 HIGH/MEDIUM/LOW, 3 INFO),

@@ -12,7 +12,7 @@ und Hard Rules. DoD-Vollständigkeit bleibt Verifier-Aufgabe.
 
 **Eingangs-Kontext:**
 
-- `docs/plan/planning/in-progress/slice-sdk-public-doc-check-lesefehler-fail-closed.md`
+- `docs/plan/planning/done/slice-sdk-public-doc-check-lesefehler-fail-closed.md`
 - [ADR-0134](../plan/adr/0134-sdk-public-doc-check-gate-make-gates.md), [ADR-0143](../plan/adr/0143-handbuch-public-doc-check-gate-kennungsfreie-nutzerdoku.md)
 - `AGENTS.md` §3.1, §3.2, §3.6, §3.7, §3.9, §3.12, §3.13, §3.15; `tools/harness/handbuch-public-doc-check.sh` (Vorbild)
 - Entscheidung des Hauptlaufs: keine Folge-ADR (Verschärfung, Festlegung im Sensor-Vertrag)
