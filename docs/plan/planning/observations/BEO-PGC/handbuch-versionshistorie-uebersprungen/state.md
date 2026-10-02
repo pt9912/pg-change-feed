@@ -17,5 +17,12 @@ abzuwarten, ist der Sinn des Steering Loop. Der Architect-Verdikt zur
 die `slice-053`-Evidence (dritter Beleg), außerhalb einer laufenden
 Slice-Closure (Modul 6 „Träger im Repo ohne Wellen").
 
+Träger der Prüfpunkte: `.harness/skills/nutzerdoku-schreiben.md` (Inhalt und Kandidatenlauf),
+`.claude/commands/implement-slice.md` Schritt 17 (Verweis) und der HIGH-Punkt in
+`.harness/skills/reviewer.md`. Die Pflicht lautet: `Version:` hochzählen und je Version eine
+Zeile in `### Änderungshistorie`, in Betreibersicht und **ohne Kennungen**. Das Gate
+`make handbuch-public-doc-check` fängt Kennungen in `docs/user/`; es liest Kennungen, nicht
+Sinn — die Lese-Hälfte bleibt bei Reviewer und Verifier.
+
 Zähler (abgeleitet): 3× (evidence/slice-045.md, evidence/slice-046.md,
 evidence/slice-053.md) — Schwelle erreicht, Ausgang zugewiesen.

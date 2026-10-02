@@ -30,5 +30,10 @@ hätte die aufgelaufene Lücke dokumentiert, nicht den Mechanismus ausgelöst;
 Betreiber-Oberfläche ohne Handbuch-Zug löst keine der bestehenden Regeln
 aus).
 
+Der Inhalt „neue Betreiber-Oberfläche“ liegt in `.claude/commands/implement-slice.md`
+Schritt 17 und in `.harness/skills/nutzerdoku-schreiben.md`; der HIGH-Punkt in
+`.harness/skills/reviewer.md` bleibt die tragende Linie. Das Gate `make handbuch-public-doc-check`
+prüft Kennungsfreiheit, nicht Vollständigkeit des Handbuchs und fängt diese Klasse nicht.
+
 Zähler (abgeleitet): 3× (evidence/slice-059.md, evidence/slice-066.md,
 evidence/slice-069.md) — Schwelle erreicht, Ausgang zugewiesen.

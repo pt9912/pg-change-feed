@@ -14,6 +14,16 @@ das Server-Image, die Docker-Hub-Beschreibung).
 
 Zähler (abgeleitet): **1×** (evidence/slice-sdk-readme-nutzerdoku.md).
 
+**Fangnetz für `docs/user/`:** `make handbuch-public-doc-check` (Gate in `make gates`) prüft
+`benutzerhandbuch.md`, `benutzerhandbuch-standard.md` und `version.md` auf Kennungen und auf
+Links nach `docs/plan/` und `docs/reviews/`; der Skill `.harness/skills/nutzerdoku-schreiben.md`
+trägt die Schreib-Seite. Grenze: das Gate liest Kennungen, nicht Sinn (Chronik-Sprache ohne
+Kennung bleibt grün). Die Texte, die das Repo verlassen, haben damit zwei Wächter
+(`make sdk-public-doc-check` für `sdks/`, dieses Gate für `docs/user/`); der Zähler bleibt
+**1×**, weil kein neuer Vorgang dieser Klasse dazukommt. Offene Grenze des SDK-Wächters:
+bei einem Lesefehler meldet er „keine interne Kennung“ (Exit 0); Träger der Behebung ist
+`slice-sdk-public-doc-check-lesefehler-fail-closed` in `open/`.
+
 **Verwandt, nicht gleich:** `BEO-PGC/slice-chronik-in-code-kommentar` (Chronik in
 Code-Kommentaren, Leser ist der Entwickler im Repo) — hier ist der Leser ein
 Anwender außerhalb des Repos, und der Träger ist ein Paket.
