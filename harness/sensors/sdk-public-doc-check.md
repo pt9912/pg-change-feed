@@ -36,9 +36,18 @@ die gewollte Form (`AGENTS.md` §3.7, `make kommentar-kennungen`).
 | Exit | Bedeutung |
 |---|---|
 | 0 | keine Treffer; der Erfolgstext nennt das geprüfte Wurzelverzeichnis (`sdk-public-doc-check: keine interne Kennung unter sdks`) |
-| 1 | mindestens ein Treffer; je Treffer eine Zeile `datei:zeile: text` auf stderr, darunter die Sammelzeile `sdk-public-doc-check: interne Kennung in den SDK-Dateien (siehe oben)` |
+| 1 | mindestens ein Treffer; je Treffer eine Zeile `datei:zeile:text` auf stderr, darunter die Sammelzeile `sdk-public-doc-check: interne Kennung in den SDK-Dateien (siehe oben)` |
+| 2 | Lesefehler (fail-closed): eine Datei oder ein Verzeichnis unter dem Wurzelverzeichnis ist nicht lesbar; stderr nennt die Datei (`sdk-public-doc-check: Lesefehler: <datei> (…)`) bzw. das Durchsuchen (`sdk-public-doc-check: Lesefehler beim Durchsuchen von <wurzel> (…)`). Ein Lesefehler endet nie mit Exit 0 |
 
-Über `make` kommt der Exit-Code des Skripts (1) als der Make-eigene Exit
+`grep` Exit 1 (kein Treffer) ist Erfolg, `grep` Exit ≥ 2 und ein Fehler von
+`find` sind Exit 2. Eine Datei mit NUL-Byte wird als Text gelesen (`grep -a`)
+und liefert ihre Treffer. Die Lesefehler-Semantik ist eine Verschärfung des
+Gates gegenüber [`ADR-0134`](../../docs/plan/adr/0134-sdk-public-doc-check-gate-make-gates.md),
+keine Senkung; sie folgt dem Vertrag des Schwester-Gates
+[`handbuch-public-doc-check`](handbuch-public-doc-check.md)
+([`ADR-0143`](../../docs/plan/adr/0143-handbuch-public-doc-check-gate-kennungsfreie-nutzerdoku.md)).
+
+Über `make` kommt jeder Exit-Code ≠ 0 des Skripts als der Make-eigene Exit
 `2` an — wie bei jedem gescheiterten Rezept.
 
 ## Overrides
@@ -68,6 +77,13 @@ die gewollte Form (`AGENTS.md` §3.7, `make kommentar-kennungen`).
    Entscheidungsdokument ohne `ADR-<NNNN>`-Schreibweise), bleibt grün —
    das Muster- und Prüfumfangs-Verhältnis ist Gegenstand von
    `AGENTS.md` §3.7-Review, nicht des Gates.
+
+4. **Die Lesefehler-Fälle des Tabellentests laufen nur bei uid ≠ 0.**
+   `chmod 000` hindert root nicht; unter uid 0 überspringt
+   `tools/harness/run-sdk-public-doc-check-tests.sh` die Fälle „nicht lesbare
+   Datei“ und „nicht lesbares Unterverzeichnis“ und meldet das Überspringen.
+   Das Gate selbst ist davon nicht betroffen: es liest unter root alles und hat
+   dort keinen Lesefehler zu melden.
 
 ## Sperren
 

@@ -111,7 +111,7 @@ Das Handbuch-Gate und sein Tabellentest liegen vor und sind das Muster.
 | `tools/harness/sdk-public-doc-check.sh` | update | Lesefehler → Exit 2 nach dem Muster von `handbuch-public-doc-check.sh` |
 | `tools/harness/run-sdk-public-doc-check-tests.sh` | update | Lesefehler-Fälle (nur uid ≠ 0), Meldungsbindung; Aufräumen mit `chmod -R u+rwx` vor `rm -rf` |
 | `harness/sensors/sdk-public-doc-check.md` | update | Ausgang Exit 2, Grenze der uid-0-Fälle |
-| `harness/README.md` | prüfen | Zeile `make sdk-public-doc-check` zählt Ausgänge nicht auf, laut Lesung am Start zu bestätigen |
+| `harness/README.md` | prüfen | Zeile `make sdk-public-doc-check` zählt Ausgänge nicht auf (am Start gelesen: unverändert) |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „das SDK-Gate ist fail-open bei
 Lesefehlern“; Symbolnamen `|| true`, `Lesefehler`; Hedge `fail-`. Stand `6a8c9c51`, gemessen
@@ -127,8 +127,27 @@ Lesefehlern“; Symbolnamen `|| true`, `Lesefehler`; Hedge `fail-`. Stand `6a8c9
 6a8c9c51 1 -n -E 'fail-closed|fail-open' -- docs/plan/adr/0134-sdk-public-doc-check-gate-make-gates.md
 ```
 
-Die `diff`-Zeilen (Soll am Arbeitsbaum nach der Umsetzung) fügt der Implementer hinzu; sie
-stehen hier nicht, weil sie am Anlege-Stand abwichen und den Block nicht nachmessbar machten.
+Die `diff`-Zeilen (Arbeitsbaum nach der Umsetzung, gemessen 2026-10-03; die Plan-Datei ist
+aus dem Suchraum ausgeschlossen):
+
+```suchlauf
+diff 0 -n -F '|| true' -- tools/harness/sdk-public-doc-check.sh
+diff 0 -n -F '|| true' -- tools/harness/handbuch-public-doc-check.sh
+diff 14 -n -F 'Lesefehler' -- tools/harness/sdk-public-doc-check.sh harness/sensors/sdk-public-doc-check.md tools/harness/run-sdk-public-doc-check-tests.sh
+diff 4 -n -F 'Lesefehler' -- tools/harness/handbuch-public-doc-check.sh
+diff 2 -n -F 'Lesefehler' -- harness/sensors/handbuch-public-doc-check.md
+diff 6 -n -F 'chmod' -- tools/harness/run-sdk-public-doc-check-tests.sh
+diff 1 -n -E 'fail-closed|fail-open' -- docs/plan/adr/0134-sdk-public-doc-check-gate-make-gates.md
+```
+
+**Befund am Diff (Implementer, gemessen):** Gefunden: der Fallback `|| true` im SDK-Skript ist
+entfernt (1 → 0); `Lesefehler` steht in Skript (4), Sensor-Vertrag (4) und Tabellentest (6);
+`chmod` im Tabellentest 0 → 6. Nicht gefunden: kein weiterer Träger der Aussage „SDK-Gate
+fail-open/Lesefehler“ außerhalb dieser Dateien; `harness/README.md` zählt die Ausgänge des
+Gates nicht auf (keine Änderung); `ADR-0134` unverändert (`fail-closed` weiter 1 Zeile, die
+Prune-Liste); das Handbuch-Gate unverändert. Die Verschärfung ist ohne Folge-ADR festgelegt
+(Entscheidung des Hauptlaufs auf Delegation des Auftraggebers zur Architect-Frage in §4: Verschärfung,
+keine Senkung nach `AGENTS.md` §3.6; Vertrag im Sensor-Vertrag).
 
 | Träger | Messung am Stand `6a8c9c51` | Behandlung (Befund am Diff trägt der Implementer ein) |
 |---|---|---|

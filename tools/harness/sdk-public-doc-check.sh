@@ -16,7 +16,8 @@
 # Aufruf: `make sdk-public-doc-check` (netzlos, nur grep). Optional ein
 # abweichendes Wurzelverzeichnis als erstes Argument (fuer den Tabellentest
 # run-sdk-public-doc-check-tests.sh). Exit 0 ohne Treffer, Exit 1 mit Treffern
-# (Ausgabe `datei:zeile: text`).
+# (Ausgabe `datei:zeile:text`), Exit 2 bei Lesefehlern (nicht lesbare Datei
+# oder Verzeichnis; nie "sauber").
 set -euo pipefail
 
 if [ "$#" -ge 1 ]; then
@@ -28,11 +29,36 @@ fi
 
 pattern='\b(SPEC|ADR|ARC)-[0-9]+|\bLH-(FA|QA)-[A-Z]{3}-[0-9]+|\b(slice|welle)-[a-z0-9]'
 
-hits=$(find "$root" \
+scratch=$(mktemp -d)
+trap 'rm -rf "${scratch:?}"' EXIT
+
+# find laeuft vor der Schleife: ein nicht lesbares Verzeichnis ist Exit 2, nicht
+# eine stillschweigend kuerzere Liste.
+frc=0
+find "$root" \
   \( -name obj -o -name bin -o -name build -o -name dist -o -name .gradle \
      -o -name __pycache__ -o -name .pytest_cache -o -name '*.egg-info' \
      -o -name grpc_gen \) -prune -o -type f -print0 \
-  | xargs -0 -r grep -InE "$pattern" || true)
+  > "$scratch/list" 2> "$scratch/find.err" || frc=$?
+if [ "$frc" -ne 0 ]; then
+  echo "sdk-public-doc-check: Lesefehler beim Durchsuchen von $root ($(head -n 1 "$scratch/find.err"))" >&2
+  exit 2
+fi
+
+hits=""
+while IFS= read -r -d '' f; do
+  # -a: eine Datei mit NUL-Byte wird als Text gelesen statt still uebersprungen.
+  # grep-Exit 1 = kein Treffer (Erfolg), >= 2 = Lesefehler (Exit 2).
+  grc=0
+  h=$(grep -aHnE -e "$pattern" -- "$f" 2>"$scratch/grep.err") || grc=$?
+  if [ "$grc" -ge 2 ]; then
+    echo "sdk-public-doc-check: Lesefehler: $f ($(head -n 1 "$scratch/grep.err"))" >&2
+    exit 2
+  fi
+  if [ -n "$h" ]; then
+    hits+=$h$'\n'
+  fi
+done < "$scratch/list"
 
 if [ -n "$hits" ]; then
   printf '%s\n' "$hits" >&2
