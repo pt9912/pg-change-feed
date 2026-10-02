@@ -299,6 +299,20 @@ und die Befunde trägt der Implementer nach; neue Dateien sind für den Stand `d
 30a060c9 15 -n -F Änderungshistorie -- docs/plan/adr
 7e993efd 1 -n -F Änderungshistorie -- spec
 7e993efd 0 -n -F nutzerdoku-schreiben -- .
+diff 0 -n -E '\b(LH-(FA|QA|RB)-|(ADR|SPEC|ARC)-[0-9]|BEO-[A-Za-z]|(MR|CO)-[0-9]{3})|(^|[^[:alnum:]_-])(slice|welle)-[a-z0-9]' -- docs/user/benutzerhandbuch.md
+diff 0 -n -E '\b(LH-(FA|QA|RB)-|(ADR|SPEC|ARC)-[0-9]|BEO-[A-Za-z]|(MR|CO)-[0-9]{3})|(^|[^[:alnum:]_-])(slice|welle)-[a-z0-9]' -- docs/user/benutzerhandbuch-standard.md
+diff 0 -n -E '\b(LH-(FA|QA|RB)-|(ADR|SPEC|ARC)-[0-9]|BEO-[A-Za-z]|(MR|CO)-[0-9]{3})|(^|[^[:alnum:]_-])(slice|welle)-[a-z0-9]' -- docs/user/version.md
+diff 26 -n -E '\b(LH-(FA|QA|RB)-|(ADR|SPEC|ARC)-[0-9]|BEO-[A-Za-z]|(MR|CO)-[0-9]{3})|(^|[^[:alnum:]_-])(slice|welle)-[a-z0-9]' -- docs/user/releasing.md
+diff 4 -n -E '\b(LH-(FA|QA|RB)-|(ADR|SPEC|ARC)-[0-9]|BEO-[A-Za-z]|(MR|CO)-[0-9]{3})|(^|[^[:alnum:]_-])(slice|welle)-[a-z0-9]' -- docs/user/bench-abdeckung.md
+diff 3 -n -E '\b(LH-(FA|QA|RB)-|(ADR|SPEC|ARC)-[0-9]|BEO-[A-Za-z]|(MR|CO)-[0-9]{3})|(^|[^[:alnum:]_-])(slice|welle)-[a-z0-9]' -- docs/user/ci-matrix-abdeckung.md
+diff 74 -n -E '\b(LH-(FA|QA|RB)-|(ADR|SPEC|ARC)-[0-9]|BEO-[A-Za-z]|(MR|CO)-[0-9]{3})|(^|[^[:alnum:]_-])(slice|welle)-[a-z0-9]' -- docs/user/e2e-abdeckung.md
+diff 21 -n -E '\b(LH-(FA|QA|RB)-|(ADR|SPEC|ARC)-[0-9]|BEO-[A-Za-z]|(MR|CO)-[0-9]{3})|(^|[^[:alnum:]_-])(slice|welle)-[a-z0-9]' -- docs/user/sdk-e2e-abdeckung.md
+diff 0 -n -E 'docs/(reviews|plan)/|\.\./(reviews|plan)/' -- docs/user/benutzerhandbuch.md docs/user/benutzerhandbuch-standard.md docs/user/version.md
+diff 2 -n -F Änderungshistorie -- docs/user/benutzerhandbuch-standard.md
+diff 5 -n -F Änderungshistorie -- .claude .harness/skills
+diff 15 -n -F Änderungshistorie -- docs/plan/adr
+diff 1 -n -F Änderungshistorie -- spec
+diff 6 -n -F nutzerdoku-schreiben -- .
 ```
 
 | Träger | Messung am Parent (`7e993efd`, 2026-10-02) | Behandlung (Befund am Diff trägt der Implementer ein) |
@@ -310,6 +324,25 @@ und die Befunde trägt der Implementer nach; neue Dateien sind für den Stand `d
 | `Änderungshistorie` in den drei Accepted-ADRs (Zeile 12) | 8 (`0087` ×3, `0088` ×2, `0090` ×3) | **unberührbar** (§3.5); die 8 Trefferzeilen der drei Accepted-ADRs bleiben, dazu 7 in `ADR-0143`: Soll in Zeile 12 ist **15** (gemessen am Stand `30a060c9`, in dem die ADR liegt); am Diff bleibt 15. |
 | `Änderungshistorie` in `spec/` (Zeile 13) | 1 (`pflichtenheft.md` Z. 1075, Beispiel-Zeile) | bleibt wahr, kein Nachzug; Soll am Diff weiter 1. |
 | Skill-Name (Zeile 14) | 0 | Soll am Diff: Treffer in Skill-Datei, `harness/README.md`, `implement-slice.md`, `reviewer.md`, ADR (der Implementer trägt den gezählten Wert ein). |
+
+**Befunde am Diff (Implementer, gemessen mit `make suchlauf-nachmessen`, 28 Zeilen stimmen,
+Exit 0):** Gefunden: (1) Kennungstreffer: Handbuch, Standard und `version.md` je 0, die fünf
+ausgenommenen Dateien unverändert 26 · 4 · 3 · 74 · 21; Links 0. (2) `Änderungshistorie` im
+Standard bleibt 2 (die Ergänzung an Z. 229 steht in derselben Zeile, die an Kapitel 11 als
+eigener Absatz ohne das Wort). (3) `Änderungshistorie` in `.claude`/`.harness/skills`: **5**
+statt 2 — die zwei Pflicht-Treffer bleiben (`implement-slice.md` 1, `reviewer.md` 1), dazu
+drei Zeilen im neuen Skill; kein Treffer verschwunden. (4) Accepted-ADRs und `ADR-0143`
+15, `spec/` 1, unverändert. (5) Skill-Name: 6 Trefferzeilen außerhalb des Plans
+(`implement-slice.md` 1, `reviewer.md` 1, `harness/README.md` 2, Sensor-Vertrag 1,
+Architect-Verdikt 1); die Skill-Datei selbst nennt ihren Namen nicht, und die ADR bricht
+den Dateinamen über einen Zeilenumbruch (kein Treffer). Nicht gefunden: weitere Träger der
+Aussage „Handbuch-Versionshistorie“ (`git grep -il Versionshistorie`, ohne `docs/reviews`,
+`done/`, Baseline) außer den bearbeiteten Dateien; gemeldet, nicht geändert (Accepted-ADRs
+und Register sind fremde Träger): `ADR-0058`, `ADR-0090` (unberührbar) und die Register-Einträge
+`BEO-PGC/handbuch-versionshistorie-uebersprungen` und
+`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche` — Hinweis an den Planner
+(Frist: Closure): die Prüfpunkte des ersten Eintrags tragen jetzt die Ergänzung „ohne
+Kennungen“.
 
 ## 4. Trigger
 
