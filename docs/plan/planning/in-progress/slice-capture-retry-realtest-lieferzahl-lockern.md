@@ -94,12 +94,58 @@ Review `review-slice-routing-e2e` F-2), nicht reproduziert.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/bootstrap/replication_stream_retry_internal_test.go` | update | die Prüfung `len(delivered[2]) != 1` und der Godoc („genau eine Lieferung im zweiten Versuch") auf die Persistierung der Retry-Change und die zulässige Wiederzustellung |
-| `docs/plan/adr/0135-capture-transient-wiederholung-stream-zyklus.md` | lesen | die Fitness-Function-Zeile „Slot noch aktiv" ist `Accepted` und unberührbar ([`AGENTS.md`](../../../../AGENTS.md) §3.5); weicht die Test-Erwartung von ihrem Wortlaut ab, ist das ein Befund an eine Folge-ADR, kein stiller Nachzug |
+| `internal/bootstrap/replication_stream_retry_internal_test.go` | update | die Prüfung `len(delivered[2]) != 1` und der Godoc („genau eine Lieferung im zweiten Versuch“) auf die Persistierung der Retry-Change und die zulässige Wiederzustellung. Konkret: (a) die Zeilen von `cdc.change` werden mit Commit-Position und `change_id` gelesen — genau zwei, die erste auf `haltedPosition`, die zweite (die Retry-Change) dahinter; (b) die Retry-Position liegt hinter `flushAtSecondStart` (ersetzt die Prüfung von `delivered[2][0]`); (c) jede Lieferung des zweiten Versuchs ist die Halter- oder die Retry-Position (eine Wiederzustellung der Halter-Transaktion ist zulässig), die Retry-Position wird mindestens einmal geliefert; (d) `t.Logf` druckt Lieferungen, `haltedPosition`, Retry-Position und `flushAtSecondStart` (sichtbar unter `-v`). Kein Produktivcode |
+| `docs/plan/adr/0135-capture-transient-wiederholung-stream-zyklus.md` | lesen | die Fitness-Function-Zeile „Slot noch aktiv“ ist `Accepted` und unberührbar ([`AGENTS.md`](../../../../AGENTS.md) §3.5); weicht die Test-Erwartung von ihrem Wortlaut ab, ist das ein Befund an eine Folge-ADR, kein stiller Nachzug. Gemessen: die Zeile (Z. 202) sagt „der Stream-Zyklus wiederholt statt zu beenden, die Fortsetzung liest an `confirmed_flush_lsn`“ und nennt keine Lieferzahl — kein Widerspruch, kein Befund |
 
-**§3.13-Suchlauf:** der Implementer ergänzt am Start einen `suchlauf`-Block
-(Parent als Commit-Kennung) über den ganzen Baum nach „genau eine" im Zusammenhang
-mit „zweiten Versuch" / `delivered` und trägt Gefundenes und Nichtgefundenes ein.
+**§3.13-Suchlauf** (bewegte Eigenschaft: „genau eine Lieferung im zweiten Versuch“; Suchraum der
+ganze Baum ohne `.harness/baseline` und `docs/reviews`, Plan-Datei vom Werkzeug ausgeschlossen;
+Symbol `len(delivered[2])`, Zählwort/Beschreibung `genau eine Lieferung`,
+`erwartet genau eine`, Hedge/Gegenbegriff Wiederzustellung):
+
+```suchlauf
+09a04af8 2 -F 'len(delivered[2])' -- . ':!.harness/baseline' ':!docs/reviews'
+diff 1 -F 'len(delivered[2])' -- . ':!.harness/baseline' ':!docs/reviews'
+09a04af8 6 -E 'genau eine Lieferung' -- . ':!.harness/baseline' ':!docs/reviews'
+diff 5 -E 'genau eine Lieferung' -- . ':!.harness/baseline' ':!docs/reviews'
+09a04af8 3 -E 'erwartet genau eine( |")' -- . ':!.harness/baseline' ':!docs/reviews'
+diff 2 -E 'erwartet genau eine( |")' -- . ':!.harness/baseline' ':!docs/reviews'
+09a04af8 14 -E 'Wiederzustellung|erneut zu|erneut geliefert|erneut liefern' -- . ':!.harness/baseline' ':!docs/reviews'
+diff 15 -E 'Wiederzustellung|erneut zu|erneut geliefert|erneut liefern' -- . ':!.harness/baseline' ':!docs/reviews'
+```
+
+Gefunden (Parent `09a04af8`, Muster `genau eine Lieferung`, 6 Treffer): der Godoc des Tests (und
+mit dem Symbol `len(delivered[2])` die Prüfung im Test) — beide in diesem Slice umgeschrieben; fünf weitere Treffer sind
+Records oder Beobachtungs-Belege, die den Anfall beschreiben (`done/slice-routing-e2e.md` Z. 374 und 499,
+`done/slice-capture-retry-realtest-belege-schaerfen.md` Z. 168, `done/welle-routing-results.md` Z. 271,
+`observations/BEO-PGC/test-strenger-als-die-zusage/observation.md` Z. 8) — Records und Beobachtungs-Belege werden nicht
+geändert. Der Beleg `evidence/slice-routing-e2e.md` trägt `len(delivered[2])` als Beschreibung des Fundes (der
+verbleibende Treffer am `diff`-Stand). Aktive Träger der strengeren Zusage außer dem Test: keine
+gefunden ([`ADR-0135`](../../adr/0135-capture-transient-wiederholung-stream-zyklus.md) Z. 202 und [`ADR-0136`](../../adr/0136-capture-wiederholung-stabilitaetsmass-und-sqlstate-auswahl.md) tragen keine Lieferzahl). Nicht gefunden: eine Handbuch-, Spec-
+oder Harness-Stelle mit der Wendung. `erwartet genau eine Zeile` in `postgressnapshot/snapshot_test.go` trifft
+das Muster `erwartet genau eine( |")` nicht fachlich (anderer Test, Zeilenzahl einer Abfrage). Der
+Beobachtungs-Eintrag `state.md` („Lockerung auf Retry-Change genau einmal persistiert“) beschreibt die
+Adresse und bleibt bis zur Closure des Planners unverändert.
+
+**Belege des Implementers** (Lauf 2026-10-02, Stand der Test-Änderung im Arbeitsbaum):
+
+- *Reproduktion:* sechs Läufe je Version von `TestRunStreamWithRetrySlotStillActive -count=1 -v` in einer
+  Kopie des Repos im Scratchpad (Runner `tools/harness/run-replication-tests.sh` mit auf diesen Test verkürzter
+  Tier-Phase, frische Instanz je Lauf), PostgreSQL 17 (`postgres:17-alpine@sha256:7456ef82…`, Digest des
+  Legs in `.github/workflows/e2e.yml`) und 18 (`postgres:18-alpine@sha256:63bdc97d…`): 12 von 12 grün, 0 rot.
+  Gedruckte Zeile in allen sechs Läufen an 17: `zweiter Versuch: Lieferungen [27273304], Halter-Position
+  27271848, Retry-Position 27273304, confirmed_flush_lsn vor dem Aufbau 27273168`; an 18: `Lieferungen
+  [30214736], Halter-Position 30213280, Retry-Position 30214736, confirmed_flush_lsn vor dem Aufbau
+  30214600`. Der Slot-Stand lag in jedem Lauf zwischen Halter- und Retry-Position (kein Zusammenfallen von Stand
+  und Halter-`CommitLSN`), die Halter-Transaktion wurde nie wiederzugestellt; das Rot von `slice-routing-e2e`
+  ist nicht reproduziert, seine Ursache bleibt hergeleitet.
+- *Vollläufe:* `make test-replication` an 18 (Default) und an 17 (`PG_TEST_IMAGE` auf den Digest des Legs): Exit 0
+  beide, `internal/bootstrap` `ok`; die Keepalive-Zeile nennt `PostgreSQL 18.6` bzw. `PostgreSQL 17.11`.
+- *Mutationen der Eingabeseite* (Kopien im Scratchpad, PostgreSQL 18, Erwartung des geänderten Tests):
+  Retry-Change wird im zweiten Versuch nicht persistiert (Capture des zweiten Versuchs liefert ohne Persistierung
+  zurück) → rot, `die Retry-Change wird nicht persistiert`; Retry-Change zweimal persistiert (zweite Zeile in einer
+  eigenen Transaktion im Wartezug) → rot, `cdc.change-Zeilen = [{30213280 793-1} {30214736 795-1} {30214920 796-1}],
+  erwartet genau 2`; Gegenrichtung (die Halter-Transaktion wird im zweiten Versuch real erneut an den Capture
+  Service gegeben, Lieferungen `[30214736 30213280]`) → grün, die Persistierung bleibt bei zwei Zeilen.
 
 ## 4. Trigger
 
