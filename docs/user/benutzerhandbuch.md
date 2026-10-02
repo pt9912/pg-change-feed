@@ -294,7 +294,7 @@ erfasst.
 
 **Dauerhaftigkeit:** Der Ausschlussstand ist **dauerhaft** und hängt nicht an
 der Prozesslebensdauer. Die `applied`-Zeilen der beiden Spalten-Antragsarten
-sind die einzige Herkunft des Standes einer Tabelle (`SPEC-019`); jeder Pfad,
+sind die einzige Herkunft des Standes einer Tabelle; jeder Pfad,
 der eine Erfassungs-Bindung anlegt — der Prozessstart **und** die laufende
 Aktivierung — trägt den abgeleiteten Stand mit. Ein Neustart des
 Feed-Containers verliert den Ausschluss deshalb **nicht**, und eine
@@ -388,15 +388,14 @@ entfernen (siehe „Regel wieder entfernen" oben).
 
 **Ursache:** Eine Regel ist auf eine Change nicht anwendbar — ihr Zielname
 kollidiert mit einer Spalte (etwa nach einer Tabellen-Erweiterung), oder ihre
-`column` fehlt in der Relation der Change (`ADR-0112` Teilfrage 4; am System
-gefahren ist die Namenskollision in einer Phase von `make test-integration`,
-nicht der Fall der fehlenden Spalte). Die Erfassung der **gesamten Quelle** endet dann sichtbar mit
+`column` fehlt in der Relation der Change. Die Erfassung der **gesamten Quelle** endet dann sichtbar mit
 dieser Fehlerklasse (siehe [Fehlerklassen](#fehlerklassen)) — kein
 Datenverlust. Wurde die Spalte `column` an der Quelle entfernt, während die
 Spaltenform der Tabelle bekannt ist, endet die Erfassung schon an der
-inkompatiblen Schemaänderung (`LH-FA-SCH-004`), nicht an der Regel: das
+inkompatiblen Schemaänderung, nicht an der Regel: das
 Entfernen der Regel genügt dort nicht, und die Regel auf die entfernte Spalte
-ist zusätzlich zu entfernen (*hergeleitet*, nicht gefahren; dieselbe
+ist zusätzlich zu entfernen (*abgeleitet*, nicht am laufenden System
+ausprobiert; dieselbe
 Lage wie bei Routing-Regeln, siehe
 [Routing-Regel konfigurieren](#routing-regel-konfigurieren)).
 
@@ -444,7 +443,7 @@ benannten Kanal je Quelle, den ein Leser über den Parameter `target` oder das
 NATS-Zusatz-Subjekt auswählt (siehe „Ziel lesen" unten). Die Regel ändert weder
 das Row Image noch ein anderes Feld der Change als ihr Ziel-Label
 `route_target`; eine Change trägt höchstens ein Ziel, und es gibt kein
-Standardziel (`LH-FA-CFG-008`).
+Standardziel.
 
 **Voraussetzung:** eine Login-Identität mit `cdc_admin`-Mitgliedschaft,
 verbunden über `CDC_ADMIN_DSN` (siehe [Zugriff und Rollen](#zugriff-und-rollen));
@@ -501,11 +500,8 @@ dieser Tabelle das Ziel der ersten treffenden Regel, am laufenden Prozess ohne
 Neustart. Der Regelstand übersteht einen Neustart des Feed-Containers und gilt
 auch für eine Tabelle, die über `EnableTable` des gRPC- oder HTTP-Zugriffswegs
 aktiviert wird (*Ursprung:* übernommen aus dem E2E-Lauf von `make
-test-integration` (Verifikations-Report
-[`verifikation-slice-routing-e2e`](../reviews/verifikation-slice-routing-e2e.md)),
-Phasen „Routing-Neustart und Ausschluss-Sperre" und „Routing-Aktivierung über
-die API": zwei reale `docker restart`, je Aktivierungsweg eine Tabelle mit Regel
-mit Ziel `api` und eine ohne Regel mit `NULL`).
+test-integration`: zwei reale `docker restart`, je Aktivierungsweg eine Tabelle
+mit Regel mit Ziel `api` und eine ohne Regel mit `NULL`).
 
 **Beispiel** (Quelle `meine-quelle`, Tabelle `public.orders` mit den Spalten
 `id`, `name`, `region`, aktiviert; die Zeilen 1 bis 3 sind vor den Regeln
@@ -563,7 +559,7 @@ Setzen. Um eine Regel zu ersetzen: erst entfernen, dann neu setzen.
 Adresse (`schema.tabelle.regelname`, `schema.tabelle.spalte`,
 `schema.tabelle.zielname`, bei `order` `schema.tabelle.<Wert>`; bei einem
 unbekannten Schlüssel der bloße Schlüsselname ohne Tabelle). Die führende
-Stelle für Wortlaut und Reihenfolge ist `SPEC-019`; die Konfliktfreiheit
+Stelle für Wortlaut und Reihenfolge ist die Fehlertext-Tabelle unten; die Konfliktfreiheit
 schließt Mehrdeutigkeit aus, statt sie aufzulösen:
 
 | Prüfung | Fehlertext (Beispiel mit Adresse) |
@@ -574,7 +570,7 @@ schließt Mehrdeutigkeit aus, statt sie aufzulösen:
 | R3 — `when.column` ist keine ausgeschlossene Spalte | `Spalte ist ausgeschlossen: public.orders.name` |
 | R3 — umgekehrt: `cdc.exclude_column` gegen eine Spalte mit Routing-Bedingung | `Spalte trägt eine Routing-Bedingung: public.orders.region` |
 | R4 — höchstens eine Abschlussregel (ohne `when`) | `Regel ohne when bereits vorhanden: public.orders.rest` |
-| R4 — die Abschlussregel trägt die höchste `order` | `Regel ohne when trägt nicht die höchste order: public.orders.rest` (Text der Spec, am System nicht gefahren) |
+| R4 — die Abschlussregel trägt die höchste `order` | `Regel ohne when trägt nicht die höchste order: public.orders.rest` (Text laut Spezifikation, am System nicht gefahren) |
 | R4 — eine Regel mit `when` trägt keine höhere `order` als die Abschlussregel | `order liegt hinter der Regel ohne when: public.orders.rest` |
 | R5 — das Paar (`when.column`, `when.equals`) kommt je Tabelle einmal vor | `Bedingung bereits vergeben: public.orders.region` |
 | R6 — `cdc.remove_route` gegen einen unbekannten Regelnamen | `Regelname nicht geführt: public.orders.nope` |
@@ -604,10 +600,8 @@ bekannte Spaltenform der Tabelle eine Entfernung zeigt. Das entsteht bei der
 Erstaktivierung einer Tabelle ohne bekannte Spaltenform (die Version der Tabelle
 trägt noch keine Spaltenzeilen), etwa mit einer Publication mit Spaltenliste, die
 die Bedingungsspalte nicht enthält (*Ursprung:* übernommen aus dem E2E-Lauf von
-`make test-integration`, Phase „Routing-Nichtanwendbarkeit und Abhilfe";
-gemessen an PostgreSQL 17.11 im Verifikations-Report
-[`verifikation-slice-routing-e2e`](../reviews/verifikation-slice-routing-e2e.md);
-PostgreSQL 18.6: Lauf des Implementers und der `e2e.yml`-Legs, dort übernommen). Eine
+`make test-integration`; gemessen an PostgreSQL 17.11, an PostgreSQL 18.6
+übernommen). Eine
 Publication mit Spaltenliste an einer Tabelle **mit** bekannter Spaltenform
 gehört nicht hierher, sondern zu Ursache 2. Die Erfassung der **gesamten Quelle** endet sichtbar
 mit der Klasse `schema` (siehe [Fehlerklassen](#fehlerklassen)): der Log nennt
@@ -632,13 +626,12 @@ Ziel, Feed-Container `healthy`).
 Relation, die Spaltenform der Tabelle ist bekannt.** Zwei Anlässe: die Spalte
 wird an der Quelle entfernt, oder eine Publication mit Spaltenliste, die eine
 bekannte Spalte nicht enthält, wird für die Tabelle gesetzt. Die Erfassung endet
-nicht an der Regel, sondern als inkompatible Schemaänderung (`LH-FA-SCH-003`,
-`LH-FA-SCH-004`): der Log nennt „Relation-Änderung nicht sicher als Obermenge
+nicht an der Regel, sondern als inkompatible Schemaänderung: der Log nennt
+„Relation-Änderung nicht sicher als Obermenge
 interpretierbar", und die Change nach der Entfernung hat keine Zeile in
 `cdc.changes` (*Ursprung:* für die entfernte Spalte übernommen aus dem E2E-Lauf
-von `make test-integration` (Verifikations-Report
-[`verifikation-slice-routing-e2e`](../reviews/verifikation-slice-routing-e2e.md)):
-Spalte entfernt, nachdem eine Change der Tabelle die Spaltenform angelegt hat).
+von `make test-integration`: Spalte entfernt, nachdem eine Change der Tabelle
+die Spaltenform angelegt hat).
 Für die Spaltenliste gemessen in einer Compose-Umgebung (PostgreSQL 18.6, Feed
 als Superuser, Tabelle `public.orders` mit bekannter Spaltenform und einer Regel
 auf `region`): nach `ALTER PUBLICATION … SET TABLE public.orders (id, name)` und
@@ -647,14 +640,12 @@ schema: Relation-Änderung nicht sicher als Obermenge interpretierbar:
 public.orders`, `cdc.heartbeat.error_class` zeigt `schema`. **Das Entfernen der
 Regel genügt dort nicht:** nach dem Entfernen beider Regeln der Tabelle und einem
 Neustart endete die Erfassung am System mit demselben Text, ebenso nach dem
-Zurücksetzen der Publication auf die volle Spaltenliste (*Ursprung:* übernommen
-aus dem Review-Bericht
-[`review-slice-routing-betriebsdoku`](../reviews/review-slice-routing-betriebsdoku.md),
-dort am System gefahren). Die Abhilfe dieser
-Ursache ist die der inkompatiblen Schemaänderung (`LH-FA-SCH-003`,
-`LH-FA-SCH-004`); zusätzlich ist die Regel auf die entfernte oder nicht mehr
+Zurücksetzen der Publication auf die volle Spaltenliste (*Ursprung:* übernommen,
+am System gefahren). Die Abhilfe dieser
+Ursache ist die der inkompatiblen Schemaänderung; zusätzlich ist die Regel auf
+die entfernte oder nicht mehr
 gelieferte Spalte zu entfernen, sonst endet die Erfassung danach an der fehlenden
-Bedingungsspalte (*hergeleitet*). Eine Anleitung zur Abhilfe der inkompatiblen
+Bedingungsspalte (*abgeleitet*). Eine Anleitung zur Abhilfe der inkompatiblen
 Schemaänderung ist in diesem Handbuch nicht beschrieben.
 
 **Im Backfill:** Ein Run (siehe [Bestand als Backfill
@@ -691,9 +682,7 @@ keiner Stream-Nachricht der Zugriffswege, nur in der Spalte `route_target`.
   auf danach erfasste Changes; es gibt kein Umetikettieren. Eine vor der Regel
   erfasste Change bleibt ohne Ziel, und dieselbe `change_id` liefert nach einer
   Regeländerung über `cdc.changes` und `GET /changes?target=` dasselbe Ziel
-  (*Ursprung:* übernommen aus dem E2E-Lauf von `make test-integration`
-  (Verifikations-Report
-  [`verifikation-slice-routing-e2e`](../reviews/verifikation-slice-routing-e2e.md)),
+  (*Ursprung:* übernommen aus dem E2E-Lauf von `make test-integration`,
   dort gedruckte Zeile
   `ROUTING-REPLAY WAL-Ziele ["" "eu" "" "europa"], Backfill-Ziele zeilenweise 1="europa" 2="europa" 3="" 4="europa"`).
 - **Altbestand über einen neuen Backfill-Run.** Ein Backfill-Run
@@ -717,22 +706,19 @@ keiner Stream-Nachricht der Zugriffswege, nur in der Spalte `route_target`.
   Bedingung nicht; die nächste Regel wird geprüft — das ist keine
   Nichtanwendbarkeit und kein Fehler. Gemessen ist `NULL` (Zeile 6 des
   Beispiels, `DELETE` unten); für unverändertes TOAST und generierte Spalten gilt
-  die Zusage der Spezifikation (`SPEC-032`), am System nicht gefahren. Der
-  Vergleich ist zeichengenau (Groß-/Kleinschreibung zählt; Zusage von
-  `SPEC-032`).
+  die Zusage der Spezifikation, am System nicht gefahren. Der
+  Vergleich ist zeichengenau (Groß-/Kleinschreibung zählt).
 - **`DELETE` ohne volle Replica-Identität.** Das Alt-Bild trägt dort nur den
   Schlüssel; eine Inhaltsregel auf eine Nicht-Schlüsselspalte **trifft nicht**.
   Mit einer Abschlussregel bestimmt diese das Ziel, ohne sie bleibt
   `route_target` `NULL`; unter `REPLICA IDENTITY FULL` trifft die Inhaltsregel.
   `INSERT` und `UPDATE` tragen das Ziel der Inhaltsregel. *Ursprung:* übernommen
-  aus dem E2E-Lauf von `make test-integration` (Zeilen `ROUTING-DELETE-MESSUNG`,
-  Verifikations-Report
-  [`verifikation-slice-routing-e2e`](../reviews/verifikation-slice-routing-e2e.md))
+  aus dem E2E-Lauf von `make test-integration` (Zeilen `ROUTING-DELETE-MESSUNG`)
   an PostgreSQL 17.11 und 18.6, beide mit denselben Zielen: `INSERT` und `UPDATE`
   `eu`; `DELETE` mit Abschlussregel `sonstige` (Alt-Bild `{"id": "1"}`), ohne sie
   nicht gesetzt, unter `REPLICA IDENTITY FULL` `eu`. Eine Bedingung auf die
   Schlüsselspalte trifft dort, weil das Alt-Bild den Schlüssel trägt
-  (*hergeleitet*, nicht gefahren). In einer Compose-Umgebung (PostgreSQL 18.6)
+  (*abgeleitet*, nicht gefahren). In einer Compose-Umgebung (PostgreSQL 18.6)
   ergab ein `DELETE` ohne volle Replica-Identität mit den Regeln des Beispiels
   das Alt-Bild `{"id": "5"}` (die Zeile 5 hatte die Region `us`) und das Ziel
   `sonstige`.
@@ -781,9 +767,9 @@ register-consumer <name>`. `<name>` trägt zugleich Kennung und Namen des
 Consumers.
 
 **Ergebnis:** Der Consumer ist registriert und kann fortan lesen und
-Positionen bestätigen (`LH-FA-CON-001`). Ein bereits registrierter Name
+Positionen bestätigen. Ein bereits registrierter Name
 bleibt unverändert; der Lauf meldet das über eine eigene Ausgabe-Zeile,
-Exit-Code bleibt 0 (Idempotenz, `LH-FA-CON-001` Boundary).
+Exit-Code bleibt 0 (idempotent).
 
 ### Position bestätigen
 
@@ -808,12 +794,12 @@ Offset innerhalb der konfigurierten Quelle (`CDC_SOURCE_ID`) — derselbe
 Wert, den `cdc.changes.commit_position` für die zuletzt verarbeitete
 Änderung trägt.
 
-**Ergebnis:** Die Position ist bestätigt und fortgeschrieben
-(`LH-FA-CON-004`). Die Wiederholung derselben Position bleibt ohne Wirkung
-(Idempotenz, `LH-FA-CON-004` Boundary); ein echter Rückschritt (eine
+**Ergebnis:** Die Position ist bestätigt und fortgeschrieben.
+Die Wiederholung derselben Position bleibt ohne Wirkung
+(idempotent); ein echter Rückschritt (eine
 Position vor dem bereits bestätigten Stand) wird abgelehnt, der
 gespeicherte Fortschritt bleibt unverändert — die Vorwärts-Invariante gilt
-für jeden Aufruf über diesen Zugriffsweg (`LH-FA-CON-004.a`).
+für jeden Aufruf über diesen Zugriffsweg.
 
 ### Änderungen lesen
 
@@ -830,9 +816,9 @@ LIMIT 500;
 `old_data`/`new_data` sind `jsonb`; bei `INSERT` ist `old_data` NULL, bei
 `DELETE` ist `new_data` NULL. `origin` nennt die Herkunft der Änderung:
 `wal` für eine über den Replication Stream erfasste Änderung, `backfill`
-für eine Bestands-Änderung eines Backfills (`LH-FA-CAP-009`); eine
-Änderung, die ohne dieses Feld gespeichert wurde, liest als `wal`
-(`LH-FA-DAT-006`). `route_target` nennt das Zustellziel der Change, das eine
+für eine Bestands-Änderung eines Backfills; eine
+Änderung, die ohne dieses Feld gespeichert wurde, liest als `wal`.
+`route_target` nennt das Zustellziel der Change, das eine
 Routing-Regel bei der Erfassung vergeben hat (siehe [Routing-Regel
 konfigurieren](#routing-regel-konfigurieren)); `NULL` heißt „nicht geroutet" —
 keine Regel hat getroffen, oder die Change entstand vor der Regel —, ein
@@ -848,8 +834,8 @@ Reihenfolge (siehe
 
 **Fortsetzen und `LIMIT`:** Ein `LIMIT` schneidet Zeilen, nicht Positionen.
 Trug eine Commit-Position mehr Änderungen als das `LIMIT`, überspringt
-`commit_position > <letzte-gelesene-position>` den Rest dieser Position
-(`SPEC-022`, Zeile „Position und `limit`"). Das trifft den Bestandsabzug eines
+`commit_position > <letzte-gelesene-position>` den Rest dieser Position.
+Das trifft den Bestandsabzug eines
 Backfills, der alle seine Änderungen auf **eine** Position legt (siehe
 [Bestand als Backfill überführen](#bestand-als-backfill-überführen)): lesen Sie
 ihn ohne `LIMIT` oder setzen Sie über den Schlüsselvergleich fort:
@@ -867,8 +853,8 @@ LIMIT 500;
 
 Die Erfassung trägt nur Änderungen ab der Aktivierung. Ein **Backfill**
 überführt zusätzlich die Zeilen, die die Tabelle zum Startzeitpunkt des Runs
-bereits enthält, als `INSERT`-Änderungen mit `origin = 'backfill'` in den Feed
-(`LH-FA-CAP-009`, `LH-FA-ADM-001`). Er wird **ausdrücklich** ausgelöst — die
+bereits enthält, als `INSERT`-Änderungen mit `origin = 'backfill'` in den Feed.
+Er wird **ausdrücklich** ausgelöst — die
 Aktivierung einer Tabelle startet keinen.
 
 **Voraussetzung:** Die Tabelle ist aktiviert (laufende Bindung, Mitglied der
@@ -913,7 +899,7 @@ Start. Für den Lauf selbst gelten vier Betriebs-Vorbedingungen an der Quelle:
   Fehlerschwelle (etwa weil der Feed nicht antwortet), beendet sich der
   Feed-Container mit der Klasse `replication` (Ausgang 1) und ein laufender Run
   endet `interrupted`; das Datei-Feld `wal_retention_error_bytes` (Bytes, kein
-  Umgebungsvariablen-Gegenstück, `SPEC-016`, siehe
+  Umgebungsvariablen-Gegenstück, siehe
   [Optionale YAML-Konfigurationsdatei](#optionale-yaml-konfigurationsdatei-cdc_config_file))
   hebt die Fehlerschwelle über den erwarteten Rückstand — es ändert die Ursache
   nicht und wirkt für jede Ursache eines Rückstands.
@@ -1053,7 +1039,7 @@ dieser Quelle ihn annimmt.
   gehört der Bestand zu seinem Fortschritt, gefolgt von den Änderungen der
   Erfassung. Bestätigt er eine Position hinter `X`, liegt der Bestand vor seiner
   Position und erscheint nicht in seinem Fortschritt. *Ursprung:* gemessen im
-  Lauf von `make test-integration`, Phase „Backfill-Startposition“ (Zeile in
+  Lauf von `make test-integration` (siehe
   [`e2e-abdeckung.md`](e2e-abdeckung.md)): `offset` 0, `acknowledged` `false`,
   5 Backfill-Änderungen mit `commit_position > 0`, 0 mit `commit_position`
   hinter der bestätigten Position; die Lauf-Zeile lautet „… startet an Position
@@ -1152,7 +1138,7 @@ Eine Zeile, die dort nicht mehr erscheint, wurde bereits bereinigt.
 ### Blockierende Consumer erkennen
 
 `cdc.retention_blockers` zeigt je Quelle den Consumer, dessen bestätigte
-Position aktuell die Löschgrenze der Bereinigung trägt (`LH-FA-RET-005`) —
+Position aktuell die Löschgrenze der Bereinigung trägt —
 also genau den Consumer, den `RunRetentionUseCase` als
 weitesten-zurückliegend behandelt, bevor er weitere Zeilen freigibt:
 
@@ -1203,15 +1189,15 @@ Verfügbare Kennzahlen: `cdc_transactions_total`, `cdc_changes_processed`,
 letzten Quelländerung und der CDC-Verfügbarkeit, gemessen über den
 Commit-Zeitstempel aus dem WAL), `cdc_consumer_position` und
 `cdc_consumer_lag` je registriertem Consumer, `cdc_changes_pending`
-(`LH-QA-OPS-003`, Label = Consumer-ID, Wert = Anzahl noch nicht
-bestätigter Changes dieses Consumers), `cdc_errors_total` (`LH-QA-OPS-003`,
-Label = Fehlerklasse aus `cdc.process_heartbeat.error_class`, Wert =
+(Label = Consumer-ID, Wert = Anzahl noch nicht
+bestätigter Changes dieses Consumers), `cdc_errors_total`
+(Label = Fehlerklasse aus `cdc.process_heartbeat.error_class`, Wert =
 Anzahl der Quellen aktuell in dieser Fehlerklasse), sowie
-`cdc_storage_bytes` (`LH-FA-RET-006`, physische Speichergröße von
+`cdc_storage_bytes` (physische Speichergröße von
 `cdc.change` über `pg_relation_size` — der mit dem Erfassungsvolumen
 wachsenden Tabelle).
 
-`cdc_wal_retention_bytes` (WAL-Rückstand des Capture-Slots, `SPEC-009`)
+`cdc_wal_retention_bytes` (WAL-Rückstand des Capture-Slots)
 steht **nicht** in `cdc.metrics`: Die Erhebung braucht Systemkatalog-Zugriffe
 außerhalb des `cdc`-Schemas (`pg_replication_slots`, `IDENTIFY_SYSTEM`), die
 die Least-Privilege-Fläche von `cdc_reader` unnötig erweitern würden — siehe
@@ -1222,8 +1208,7 @@ die Least-Privilege-Fläche von `cdc_reader` unnötig erweitern würden — sieh
 Statt der SQL-Abfragen oben einzeln zu stellen, liest der
 `diagnose`-Sondermodus dieselben Views (`cdc.heartbeat`, `cdc.metrics`,
 `cdc.retention_blockers`, `cdc.backfill_status`) über `CDC_READER_DSN` und gibt eine
-menschenlesbare Zusammenfassung aus (`LH-FA-SST-003`, deckt
-`LH-FA-ADM-002`…`005`, `LH-FA-RET-005`/`006`, `LH-FA-CAP-009`) — derselbe Image-Tag wie der
+menschenlesbare Zusammenfassung aus — derselbe Image-Tag wie der
 Daemon, als einmaliger, kurzlebiger Lauf statt als Dauerdienst:
 
 ```bash
@@ -1248,19 +1233,23 @@ Zugriffsweg für ein Deployment ohne `CDC_HTTP_ADDR`/`CDC_GRPC_ADDR`.
 
 ```text
 pg-change-feed diagnose: Quelle "src-e2e"
-  Betriebsstatus (LH-FA-ADM-002): Lebenszeichen vor 1.203s
-  Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)
-  CDC-Abstand cdc_capture_lag (LH-FA-ADM-004): 0.087s
-  Verarbeitungsrückstand cdc_consumer_lag je Consumer (LH-FA-ADM-005, nur Consumer mit mindestens einer bestätigten Position):
+  Betriebsstatus: Lebenszeichen vor 1.203s
+  Fehlerzustand: keiner (Normalbetrieb)
+  CDC-Abstand cdc_capture_lag: 0.087s
+  Verarbeitungsrückstand cdc_consumer_lag je Consumer (nur Consumer mit mindestens einer bestätigten Position):
     cli-e2e-consumer: 3
-  Blockierender Consumer (LH-FA-RET-005): cli-e2e-consumer, bestätigte Position 42, Rückstand 3
-  Speicherverbrauch cdc_storage_bytes (LH-FA-RET-006): 65536 Bytes
-  Backfill je Tabelle (LH-FA-CAP-009, letzter Run; die Zeilenzahl ist geschätzt):
+  Blockierender Consumer: cli-e2e-consumer, bestätigte Position 42, Rückstand 3
+  Speicherverbrauch cdc_storage_bytes: 65536 Bytes
+  Backfill je Tabelle (letzter Run; die Zeilenzahl ist geschätzt):
     public.orders: completed, 1200 Zeilen kopiert, geschätzt 1150, Warnung Größe false, Warnung Dauer false
     public.audit: failed, 0 Zeilen kopiert, geschätzt unbekannt, Warnung Größe false, Warnung Dauer false
       Fehler: permission: …
     public.events: completed, 4800000 Zeilen kopiert, geschätzt 4700000, Warnung Größe true, Warnung Dauer true
 ```
+
+Die Überschriften der Zeilen tragen im tatsächlichen Ausgabetext zusätzlich eine
+interne Anforderungskennung in Klammern; sie ist für den Betrieb ohne Bedeutung
+und hier weggelassen.
 
 Der Abschnitt „Backfill je Tabelle" liest die View `cdc.backfill_status` (siehe
 [Bestand als Backfill überführen](#bestand-als-backfill-überführen)): je
@@ -1277,11 +1266,11 @@ Trägt keine Quelle in `cdc.retention_blockers` gar keine Zeile (noch kein
 Consumer hat je gegen sie bestätigt), zeigt die Zeile stattdessen:
 
 ```text
-  Blockierender Consumer (LH-FA-RET-005): kein Blocker (kein Consumer hat je gegen diese Quelle bestätigt)
+  Blockierender Consumer: kein Blocker (kein Consumer hat je gegen diese Quelle bestätigt)
 ```
 
 **Ergebnis:** Wie bei den Rohwerten der Views trifft der Befehl keine
-Schwellenwert-Entscheidung (`SPEC-007` bleibt Sache des lesenden Systems) und
+Schwellenwert-Entscheidung (die bleibt Sache des lesenden Systems) und
 der Prozess-Ausgang trägt nur den Lese-Erfolg — ein gemeldeter Fehlerzustand
 oder Rückstand ist Berichtsinhalt, kein Befehlsfehler (Ausgang bleibt 0). Ein
 Consumer ohne je bestätigte Position erscheint nicht in der Rückstands-Liste
@@ -1319,7 +1308,7 @@ bestätigt: der Capture-Slot ist inaktiv und die Quelle schreibt weiter (z. B.
 während eines Verbindungsabbruchs), oder der Feed antwortet nicht — ein
 dauerhaft wachsender Wert ist ein Warnsignal für WAL-Erschöpfung auf der
 Quelle. Der Feed-Container vergleicht den gemessenen Wert bei jedem Takt
-gegen zwei Schwellen (`SPEC-013`, `ADR-0049`):
+gegen zwei Schwellen:
 
 - **Unterhalb 100 MiB:** unauffällig — derselbe Log-Eintrag wie oben.
 - **Zwischen 100 MiB und 1 GiB:** kontrollierte Fortsetzung — der
@@ -1402,7 +1391,7 @@ zusätzliche letzte Spalten), kann d-migrate die View nicht in-place ersetzen.
 Der Lauf entfernt sie dann selbst und legt sie neu an; er meldet das:
 
 ```text
-schema-rollout: Vorlauf (ADR-0114) - View-Signatur-Aenderung, DROP VIEW cdc.changes
+schema-rollout: Vorlauf (<interne Kennung>) - View-Signatur-Aenderung, DROP VIEW cdc.changes
 ```
 
 Dabei gilt:
@@ -1420,8 +1409,8 @@ Dabei gilt:
   `search_path` `cdc` des Ziels.
 - **Lesefenster:** Für SQL-Leser über `cdc_reader` fehlt die View — oder
   sie ist noch ohne Recht — für die Dauer des Rollouts. Richtwert rund 7
-  Sekunden, aus einer einzelnen Architect-Messung auf einer Testinstanz mit
-  einer Zeile (`ADR-0114`); eine Messung, nicht garantiert — auf einem
+  Sekunden, gemessen einmalig auf einer Testinstanz mit
+  einer Zeile; eine Messung, nicht garantiert — auf einem
   größeren Ziel kann es länger dauern. Der Feed-Container liest den Store über
   die Tabellen, nicht über diese View (aus dem Quelltext abgeleitet, nicht
   während eines Rollouts gemessen).
@@ -1504,7 +1493,7 @@ Reihenfolge ist deterministisch; die Fortsetzung liest ab
 Position vollständig erfasst hat. Ein `limit` schneidet Zeilen, nicht Positionen:
 Enthält eine Commit-Position mehr Änderungen als `limit`, liefert dieses `from`
 den Rest der Position nicht, und ein Lesen ab derselben Position liefert wieder
-dieselben Zeilen (`SPEC-022`). Den Bestandsabzug eines Backfills, der alle seine
+dieselben Zeilen. Den Bestandsabzug eines Backfills, der alle seine
 Änderungen auf **eine** Position legt (siehe [Bestand als Backfill
 überführen](#bestand-als-backfill-überführen)), lesen Sie deshalb ohne `limit`
 oder über den Schlüsselvergleich im SQL-Zugriff (siehe [Änderungen
@@ -1524,14 +1513,14 @@ Treffer: `200` mit `{"changes": []}`. Ein Fehler des Lese-Kontrakts (fehlendes
 Quelle) hat Vorrang und endet mit demselben Fehler wie ohne `target`. Der
 SQL-Zugriff `cdc.changes` ist davon ausgenommen: dort bestimmt der Aufrufer sein
 Prädikat auf `route_target` selbst. Das Ziel ist Auswahl, kein Zugriffsschutz:
-jedes Token der Klasse `reader` kann jedes Ziel wählen. *Ursprung:* die Zusagen
-stehen in `SPEC-022`; gemessen in einer Compose-Umgebung (PostgreSQL 18.6, Token
+jedes Token der Klasse `reader` kann jedes Ziel wählen. *Ursprung:*
+gemessen in einer Compose-Umgebung (PostgreSQL 18.6, Token
 der Klasse `reader`): `?target=eu` lieferte die eine `eu`-Change, `?target=Gross`
 `200` mit `{"changes":[]}`, `?target=Gross&limit=0` `400`, `?target=eu&schema=other`
 `200` mit leerer Liste (Konjunktion). Ein Server ohne diese Funktion lehnt den
 unbekannten Parameter an `GET /changes` und `GET /changes/stream` mit `400` ab
-(*hergeleitet* aus der strengen Parameter-Menge, an einem ausgelieferten
-Alt-Server nicht gefahren). Die Beispiel-Clients (Go, C#, Kotlin) nehmen
+(*abgeleitet* aus der strengen Parameter-Menge, an einem
+Server ohne diese Funktion nicht gefahren). Die Beispiel-Clients (Go, C#, Kotlin) nehmen
 `target` über das Flag `-target` bzw. `--target` des Verbs `changes` entgegen
 (`ARGS="-verb=changes -source=<quelle> -target=<ziel>"`), und die drei
 SDK-Packages tragen den Parameter `target` an `ReadChangesAsync`
@@ -1558,16 +1547,14 @@ unten), der die Verbindung offen hält — `GET /changes` ist demgegenüber die
 nicht streamende Form desselben Gegenstands.
 
 **Beispiele:** Jede Sprache deckt alle zehn Fähigkeiten der Tabelle oben über
-ein Verb-Flag ab (Default `tables` — die ursprüngliche, einzige Aufrufform
-bleibt damit unverändert funktionsfähig); Adresse und Token liest jedes
+ein Verb-Flag ab (Default `tables`); Adresse und Token liest jedes
 Beispiel aus `CDC_HTTP_ADDR`/`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN` und
 lässt sich per Flag übersteuern. `Diagnose lesen` (`GET /diagnose`) ist davon
-noch nicht abgedeckt — anders als beim elften gRPC-RPC `Diagnose` (siehe
+nicht abgedeckt — anders als beim elften gRPC-RPC `Diagnose` (siehe
 [Zugriff über die gRPC-Verwaltungs-API](#zugriff-über-die-grpc-verwaltungs-api)),
-den das Go-gRPC-Beispiel inzwischen abdeckt; die Aufnahme in die
-HTTP-Beispiel-Clients aller drei Sprachen, die C#-/Kotlin-gRPC-Beispiele und
-die drei SDK-Packages bleibt ein eigener, noch nicht terminierter
-Folge-Schritt.
+den das Go-gRPC-Beispiel abdeckt; die HTTP-Beispiel-Clients aller drei
+Sprachen, die C#-/Kotlin-gRPC-Beispiele und die drei SDK-Packages decken
+`Diagnose` nicht ab.
 
 - **Go:** `examples/http-client` — Container-Aufruf über
   `make example-run-go SURFACE=http ARGS="-verb=<verb> ..."`
@@ -1589,27 +1576,27 @@ angewendeten Regel — etwa nach einem Lauf von `make
 example-transformation-demo`.
 
 **SDK:** .NET-Anwendungen können statt der Beispiele das offizielle
-NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
-`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedHttpClient` deckt
+NuGet-Package `PgChangeFeed.Client` einbinden
+(`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedHttpClient` deckt
 alle zehn Fähigkeiten dieser Zugriffs-Oberfläche ab (die neun in der
 Tabelle oben plus `GET /changes`) mit typisierten Requests/Responses und
 einer typisierten Fehlerklasse für `400`/`401`/`403`/`404`/`500`, statt den
 Draht-Vertrag selbst zu implementieren; siehe `sdks/csharp/README.md`.
 
 Python-Anwendungen können statt der Beispiele das offizielle PyPI-Package
-`pgchangefeed` einbinden (`LH-FA-SST-009`, `ADR-0107`,
-`pip install pgchangefeed`) — `PgChangeFeedHttpClient` deckt dieselben zehn
+`pgchangefeed` einbinden
+(`pip install pgchangefeed`) — `PgChangeFeedHttpClient` deckt dieselben zehn
 Fähigkeiten dieser Zugriffs-Oberfläche ab (die neun in der Tabelle oben
 plus `GET /changes`) mit typisierten Requests/Responses (`dataclasses`) und
 einer typisierten Fehlerklasse für `400`/`401`/`403`/`404`/`500`; derselbe
 Package trägt außerdem den gRPC-Change-Stream (siehe unten, „Zugriff über
 den gRPC-Change-Stream"), den SSE-Stream (siehe „Zugriff über
 Server-Sent-Events") und den NATS-Vollinhalts-Stream (siehe „Zugriff über
-den NATS-Vollinhalts-Stream", `ADR-0110`). Siehe `sdks/python/README.md`.
+den NATS-Vollinhalts-Stream"). Siehe `sdks/python/README.md`.
 
 Kotlin/JVM-Anwendungen können statt der Beispiele das offizielle
-Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
-`ADR-0109`, Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
+Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden
+(Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
 `PgChangeFeedHttpClient` deckt dieselben zehn Fähigkeiten dieser
 Zugriffs-Oberfläche ab (die neun in der Tabelle oben plus `GET /changes`)
 mit typisierten Requests/Responses und einer versiegelten
@@ -1620,9 +1607,8 @@ Server-Sent-Events") und den NATS-Vollinhalts-Stream (siehe „Zugriff über
 den NATS-Vollinhalts-Stream"). Anders als NuGet/PyPI wird dieses Package
 nicht über die Registry der Sprache vertrieben, sondern über zwei Ziele: den
 **Cloudsmith-Repository-Pfad** `https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`
-(anonym lesbar — **ohne Konto und ohne Token**; `ADR-0123`) und **GitHub
-Packages** (`https://maven.pkg.github.com/pt9912/pg-change-feed`,
-`ADR-0109` Festlegung 2). GitHub Packages verlangt **immer** eine
+(anonym lesbar — **ohne Konto und ohne Token**) und **GitHub
+Packages** (`https://maven.pkg.github.com/pt9912/pg-change-feed`). GitHub Packages verlangt **immer** eine
 Authentifizierung zum Lesen, auch für ein öffentliches Package: ein
 GitHub-Konto und ein klassischer Personal Access Token (PAT) mit dem Scope
 `read:packages` sind dort Voraussetzung, unabhängig davon, ob das SDK
@@ -1675,17 +1661,14 @@ liefert nur Changes, deren Zustellziel (`route_target`, siehe
 [Routing-Regel konfigurieren](#routing-regel-konfigurieren)) dieser Name ist, als
 Konjunktion mit `schema`/`table`; ein Name, den keine Change trägt — auch einer
 außerhalb des Alphabets des Zielnamens —, liefert keine Nachricht und keinen
-Fehler. Bleiben alle drei Felder leer (der unveränderte, alte Aufruf), liefert
-der Stream wie zuvor jeden Change aller aktivierten Tabellen. Die Prüfung läuft
+Fehler. Bleiben alle drei Felder leer, liefert
+der Stream jeden Change aller aktivierten Tabellen. Die Prüfung läuft
 serverseitig, bevor eine nicht passende Change über das Netz geht. Ein Server
 ohne das Feld `target` ignoriert es und liefert ungefilterte Changes (proto3
-verwirft unbekannte Felder: übernommen aus den Tests der Lesewege (Verifikations-Report
-[`verifikation-slice-routing-lesewege`](../reviews/verifikation-slice-routing-lesewege.md)),
-an einem ausgelieferten Alt-Server *hergeleitet*). Die Nachricht
+verwirft unbekannte Felder: übernommen aus den Tests der Lesewege,
+an einem Server ohne das Feld *abgeleitet*). Die Nachricht
 `Change` trägt das Ziel nicht. *Ursprung:* übernommen aus dem E2E-Lauf von `make
-test-integration` (Verifikations-Report
-[`verifikation-slice-routing-e2e`](../reviews/verifikation-slice-routing-e2e.md)),
-Phase „Routing-Happy-Path (fünf Zustellwege)": ein gRPC-Client
+test-integration`: ein gRPC-Client
 mit Ziel empfing von einer festen Menge gemischter Changes genau die Changes
 seines Ziels und im Ruhefenster von 15 s keine Change eines anderen Ziels oder
 ohne Ziel. Go, C# und Kotlin nehmen den Filter über `-schema`/`-table`/`-target`
@@ -1723,50 +1706,50 @@ und lässt sich per Flag übersteuern.
   `pg-change-feed-examples:go-grpc` aus `examples/Dockerfile`); das
   Default-Verb `stream` nimmt den optionalen Filter über
   `ARGS="-schema=<schema> -table=<tabelle> -target=<ziel>"` entgegen (alle drei
-  leer liefert wie zuvor jeden Change aller aktivierten Tabellen); dasselbe
+  leer liefert jeden Change aller aktivierten Tabellen); dasselbe
   Programm deckt
   über `-verb` zusätzlich die elf RPCs der [gRPC-Verwaltungs-API](#zugriff-über-die-grpc-verwaltungs-api)
   ab
 - **C#:** `examples/csharp/grpc-client` — Container-Aufruf über
   `make example-run-csharp SURFACE=grpc` (startet das mit
   `make examples-csharp` gebaute Image; die beiden Stubs entstehen im Bau aus
-  den `.proto`-Dateien, über einen zusätzlichen, benannten Bau-Kontext gelesen
-  — `ADR-0090`); das Default-Verb `stream` nimmt den optionalen
-  `--schema`/`--table`/`--target`-Filter entgegen (`ADR-0133`); dasselbe Programm deckt
+  den `.proto`-Dateien, über einen zusätzlichen, benannten Bau-Kontext gelesen);
+  das Default-Verb `stream` nimmt den optionalen
+  `--schema`/`--table`/`--target`-Filter entgegen; dasselbe Programm deckt
   über `--verb` zusätzlich die elf RPCs der
   [gRPC-Verwaltungs-API](#zugriff-über-die-grpc-verwaltungs-api) ab
 - **Kotlin:** `examples/kotlin/grpc-client` — Container-Aufruf über
   `make example-run-kotlin SURFACE=grpc` (startet das mit
   `make examples-kotlin` gebaute Image; derselbe Stub-im-Bau-Mechanismus wie
-  beim C#-Client, übertragen auf die Kotlin-Werkzeugkette — `ADR-0090`); das
+  beim C#-Client, übertragen auf die Kotlin-Werkzeugkette); das
   Default-Verb `stream` nimmt den optionalen
-  `--schema`/`--table`/`--target`-Filter entgegen (`ADR-0133`); dasselbe
+  `--schema`/`--table`/`--target`-Filter entgegen; dasselbe
   Programm deckt über `--verb` zusätzlich die
   elf RPCs der [gRPC-Verwaltungs-API](#zugriff-über-die-grpc-verwaltungs-api)
   ab
 
 **SDK:** .NET-Anwendungen können statt der Beispiele das offizielle
-NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
-`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedGrpcClient.StreamChangesAsync`
+NuGet-Package `PgChangeFeed.Client` einbinden
+(`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedGrpcClient.StreamChangesAsync`
 öffnet den `ChangeStream/StreamChanges`-RPC und liefert ein
 `IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben; drei
 optionale Parameter `schema`/`table`/`target` tragen den Filter über Schema,
-Tabelle und Zustellziel wie oben beschrieben (`ADR-0133`), alle `null` (der
-Default) liefert wie zuvor jeden Change (`target` ist der letzte Parameter und
+Tabelle und Zustellziel wie oben beschrieben, alle `null` (der
+Default) liefert jeden Change (`target` ist der letzte Parameter und
 wird per Name übergeben). Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
 fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 `Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren; siehe
 `sdks/csharp/README.md`.
 
 Kotlin/JVM-Anwendungen können statt des Beispiels dasselbe offizielle
-Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
-`ADR-0109`, Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
+Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden
+(Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
 `PgChangeFeedGrpcClient.streamChanges()` öffnet denselben
 `ChangeStream/StreamChanges`-RPC und liefert ein
 `kotlinx.coroutines.flow.Flow<Change>` mit allen zehn Feldern der Tabelle
 oben; drei optionale Parameter `schema`/`table`/`target` tragen den Filter über
-Schema, Tabelle und Zustellziel wie oben beschrieben (`ADR-0133`), alle `null`
-(der Default) liefert wie zuvor jeden Change. Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
+Schema, Tabelle und Zustellziel wie oben beschrieben, alle `null`
+(der Default) liefert jeden Change. Das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
 fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 `Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren. Derselbe
 Package trägt außerdem den SSE-Stream (siehe „Zugriff über
@@ -1774,15 +1757,14 @@ Server-Sent-Events") und den NATS-Vollinhalts-Stream (siehe „Zugriff über
 den NATS-Vollinhalts-Stream"). Wie beim HTTP-API-Zugriff oben ist der Bezug
 über Cloudsmith
 (`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`) ohne Konto
-und ohne Token möglich (`ADR-0123`); der Bezug über **GitHub Packages**
+und ohne Token möglich; der Bezug über **GitHub Packages**
 (`https://maven.pkg.github.com/pt9912/pg-change-feed`) verlangt dagegen
 immer eine Authentifizierung: ein GitHub-Konto und ein klassischer Personal
-Access Token (PAT) mit dem Scope `read:packages` (`ADR-0109`
-Festlegung 2). Siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`.
+Access Token (PAT) mit dem Scope `read:packages`. Siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`.
 
 Python-Anwendungen können statt des Beispiels das offizielle
-PyPI-Package `pgchangefeed` einbinden (`LH-FA-SST-009`, `ADR-0110`,
-`pip install pgchangefeed`) — `PgChangeFeedGrpcClient.stream_changes()`
+PyPI-Package `pgchangefeed` einbinden
+(`pip install pgchangefeed`) — `PgChangeFeedGrpcClient.stream_changes()`
 öffnet denselben `ChangeStream/StreamChanges`-RPC und liefert einen
 Iterator über die generierten `Change`-Nachrichten mit allen zehn Feldern
 der Tabelle oben; das Bearer-Token landet im `authorization`-Metadata-Eintrag,
@@ -1790,8 +1772,8 @@ ein fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 `Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren
 (`timeout` ist der Gesamtfriestempel des Aufrufs in Sekunden, `None` =
 unbegrenzt); drei optionale Parameter `schema`/`table`/`target` tragen den
-Filter über Schema, Tabelle und Zustellziel wie oben beschrieben (`ADR-0133`),
-alle `None` (der Default) liefert wie zuvor jeden Change. Siehe
+Filter über Schema, Tabelle und Zustellziel wie oben beschrieben,
+alle `None` (der Default) liefert jeden Change. Siehe
 `sdks/python/README.md`.
 
 ### Zugriff über die gRPC-Verwaltungs-API
@@ -1858,18 +1840,13 @@ Zielnamens —, liefert bei sonst gültiger Anfrage eine leere Liste, keinen Feh
 ein Fehler des Lese-Kontrakts (`limit`, Bereich, Quelle) hat Vorrang und endet
 mit demselben Code wie ohne `target`. *Ursprung:* die Auswahl nach Ziel über
 `ReadChanges` ist übernommen aus dem E2E-Lauf von `make test-integration`
-(Verifikations-Report
-[`verifikation-slice-routing-e2e`](../reviews/verifikation-slice-routing-e2e.md),
-Phase „Routing-Happy-Path (fünf Zustellwege)": die Kennungen entsprechen der
-SQL-Auswahl); den leeren Treffer für einen Namen außerhalb des Alphabets und den
+(die Kennungen entsprechen der SQL-Auswahl); den leeren Treffer für einen Namen außerhalb des Alphabets und den
 Vorrang des Lese-Kontrakts belegen Unit-Tests des gemeinsamen Use Cases, am
 gRPC-Weg des Systems nicht gefahren (den HTTP-Weg desselben Use Cases siehe
 oben). Das Ziel ist
 Auswahl, kein Zugriffsschutz. Ein Server ohne das Feld `target` ignoriert es und liefert
 ungefilterte Changes (proto3 verwirft unbekannte Felder; übernommen aus den Tests
-der Lesewege, Verifikations-Report
-[`verifikation-slice-routing-lesewege`](../reviews/verifikation-slice-routing-lesewege.md),
-an einem ausgelieferten Alt-Server *hergeleitet*). Der [gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)
+der Lesewege, an einem Server ohne das Feld *abgeleitet*). Der [gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)
 oben bleibt der Zugriffsweg für neue, laufend eintreffende Changes.
 `Diagnose` liefert denselben Bericht wie [Diagnose ausführen](#diagnose-ausführen)
 und `GET /diagnose` (siehe [Zugriff über die HTTP-/JSON-API](#zugriff-über-die-http-json-api))
@@ -1896,8 +1873,7 @@ keine Warteschlange dazwischen.
 `examples/csharp/grpc-client` und das Kotlin-Beispiel
 `examples/kotlin/grpc-client` (siehe [gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream)
 oben) decken über dasselbe `-verb`-/`--verb`-Flag alle elf Fähigkeiten der
-Tabelle oben ab (Default `stream` — die ursprüngliche, einzige Aufrufform
-bleibt damit unverändert funktionsfähig); Adresse und Token lesen alle drei
+Tabelle oben ab (Default `stream`); Adresse und Token lesen alle drei
 aus `CDC_GRPC_ADDR`/`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN` und lassen
 sich per Flag übersteuern, z. B.
 `make example-run-go SURFACE=grpc ARGS="-verb=list-tables -source=<quelle> -publication=<publication>"`,
@@ -1908,8 +1884,8 @@ Das Verb `read-changes` nimmt zusätzlich `-target`/`--target` entgegen (leer
 ist kein Filter).
 
 **SDK:** .NET-Anwendungen können statt der Beispiele das offizielle
-NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`,
-`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedAdministrationClient`
+NuGet-Package `PgChangeFeed.Client` einbinden
+(`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedAdministrationClient`
 trägt alle elf RPCs der Tabelle oben als eigene async-Methode
 (`RegisterConsumerAsync`, `AcknowledgeConsumerAsync`,
 `GetConsumerPositionAsync`, `RemoveConsumerAsync`, `EnableTableAsync`,
@@ -1922,7 +1898,7 @@ oben, statt den Draht-Vertrag selbst zu implementieren; siehe
 `sdks/csharp/README.md`.
 
 Python-Anwendungen können statt der Beispiele das offizielle PyPI-Package
-`pgchangefeed` einbinden (`LH-FA-SST-009`, `pip install pgchangefeed`) —
+`pgchangefeed` einbinden (`pip install pgchangefeed`) —
 `PgChangeFeedAdministrationClient` trägt alle elf RPCs der Tabelle oben als
 eigene Methode (`register_consumer`, `acknowledge_consumer`,
 `get_consumer_position`, `remove_consumer`, `enable_table`, `disable_table`,
@@ -1934,8 +1910,8 @@ Fehlerform-Tabelle oben, statt den Draht-Vertrag selbst zu implementieren;
 siehe `sdks/python/README.md`.
 
 Kotlin/JVM-Anwendungen können statt der Beispiele dasselbe offizielle
-Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
-Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
+Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden
+(Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
 `PgChangeFeedAdministrationClient` trägt alle elf RPCs der Tabelle oben als
 eigene `suspend fun`-Methode (`registerConsumer`, `acknowledgeConsumer`,
 `getConsumerPosition`, `removeConsumer`, `enableTable`, `disableTable`,
@@ -1944,8 +1920,8 @@ Requests und Responses sind die generierten Protobuf-Nachrichten unverändert,
 kein eigener DTO-Layer. Ein nicht-`OK`-Status wird zu einer versiegelten
 (`sealed class`) `PgChangeFeedGrpcException`-Unterklasse je gRPC-Code der
 Fehlerform-Tabelle oben, statt den Draht-Vertrag selbst zu implementieren;
-siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`. Mit dieser Zeile ist die
-Drei-Sprachen-SDK-Matrix für die gRPC-Verwaltungs-API vollständig.
+siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`. Die gRPC-Verwaltungs-API ist
+damit in allen drei Sprach-SDKs (C#, Python, Kotlin) abgedeckt.
 
 ### Zugriff über Server-Sent-Events
 
@@ -1972,15 +1948,12 @@ beim gRPC-Stream oben und bei `GET /changes` (siehe
 [Routing-Regel konfigurieren](#routing-regel-konfigurieren)) und liefert nur
 Changes dieses Ziels, als Konjunktion mit `schema`/`table`. Ein Name, den keine
 Change trägt — auch einer außerhalb des Alphabets des Zielnamens —, liefert
-keinen Event und keinen Fehler. Ohne Parameter liefert der Endpunkt wie zuvor
+keinen Event und keinen Fehler. Ohne Parameter liefert der Endpunkt
 jeden Change; ein Parameter außerhalb dieser drei Namen endet mit `400`, bevor
 das erste Event läuft; ein Server ohne den Parameter `target` lehnt ihn mit `400`
-ab (*hergeleitet* aus der strengen Parameter-Menge, an einem ausgelieferten
-Alt-Server nicht gefahren). Das Event trägt das Ziel nicht. *Ursprung:*
-übernommen aus dem E2E-Lauf von `make test-integration` (Verifikations-Report
-[`verifikation-slice-routing-e2e`](../reviews/verifikation-slice-routing-e2e.md)),
-Phase „Routing-Happy-Path (fünf
-Zustellwege)": ein SSE-Client mit Ziel empfing von einer festen Menge gemischter
+ab (*abgeleitet* aus der strengen Parameter-Menge, an einem
+Server ohne diese Funktion nicht gefahren). Das Event trägt das Ziel nicht. *Ursprung:*
+übernommen aus dem E2E-Lauf von `make test-integration`: ein SSE-Client mit Ziel empfing von einer festen Menge gemischter
 Changes genau die Changes seines Ziels und im Ruhefenster von 15 s keine Change
 eines anderen Ziels oder ohne Ziel. Die Beispiel-Clients (Go/C#/Kotlin) und
 die drei SDK-Packages nehmen alle drei Query-Parameter als eigene
@@ -2023,8 +1996,8 @@ aus; Adresse und Token liest jedes Beispiel aus `CDC_HTTP_ADDR` und
   `--table=<tabelle>` wählen Schema und Tabelle
 
 **SDK:** .NET-Anwendungen können statt des Beispiels dasselbe offizielle
-NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
-`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedSseClient.StreamChangesAsync`
+NuGet-Package `PgChangeFeed.Client` einbinden
+(`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedSseClient.StreamChangesAsync`
 öffnet `GET /changes/stream` und liefert ein `IAsyncEnumerable<Change>` mit
 allen zehn Feldern der Tabelle oben; das Bearer-Token landet im
 `Authorization`-Header, ein fehlender oder unbekannter Token endet den
@@ -2034,8 +2007,8 @@ den Draht-Vertrag selbst zu implementieren; die optionalen Parameter `target`,
 Tabelle; siehe `sdks/csharp/README.md`.
 
 Kotlin/JVM-Anwendungen können statt des Beispiels dasselbe offizielle
-Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
-`ADR-0109`, Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
+Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden
+(Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
 `PgChangeFeedSseClient.streamChanges()` öffnet `GET /changes/stream` und
 liefert eine `Sequence<Change>` mit allen zehn Feldern der Tabelle oben; das
 Bearer-Token landet im `Authorization`-Header, ein fehlender oder
@@ -2044,13 +2017,13 @@ unbekannter Token endet den Aufruf mit `PgChangeFeedUnauthorizedException`
 optionalen Parameter `target`, `schema` und `table` wählen Zustellziel,
 Schema und Tabelle. Wie
 beim HTTP-API-Zugriff oben ist der Bezug über Cloudsmith ohne Konto und
-ohne Token möglich (`ADR-0123`); der Bezug über **GitHub Packages** verlangt
-dagegen immer eine Authentifizierung (`ADR-0109` Festlegung 2). Siehe
+ohne Token möglich; der Bezug über **GitHub Packages** verlangt
+dagegen immer eine Authentifizierung. Siehe
 `sdks/kotlin/pgchangefeed-kotlin/README.md`.
 
 Python-Anwendungen können statt des Beispiels das offizielle
-PyPI-Package `pgchangefeed` einbinden (`LH-FA-SST-009`, `ADR-0110`,
-`pip install pgchangefeed`) — `PgChangeFeedSseClient.stream_changes()`
+PyPI-Package `pgchangefeed` einbinden
+(`pip install pgchangefeed`) — `PgChangeFeedSseClient.stream_changes()`
 öffnet denselben Endpunkt `GET /changes/stream` und liefert einen Iterator
 über die getypten `StreamChange`-Events mit allen zehn Feldern der Tabelle
 oben; das Bearer-Token landet im `Authorization`-Header, ein fehlender oder
@@ -2118,8 +2091,7 @@ lässt sich per Flag übersteuern.
   `make example-run-kotlin SURFACE=nats ARGS="--source <quelle> --schema <schema> --table <tabelle>"`
   (startet das mit `make examples-kotlin` gebaute Image)
 
-Die Beispiele sind zum Lesen und Nachbauen gedacht; die E2E-Testclients des
-Harness liegen unter `tools/harness/` und sind kein Vorbild.
+Die Beispiele sind zum Lesen und Nachbauen gedacht.
 
 ### Zugriff über den NATS-Vollinhalts-Stream
 
@@ -2158,8 +2130,7 @@ unverändert. Ein Consumer abonniert `cdc.route.<source_id>.<ziel>` für ein Zie
 Quelle. Das Alphabet des Zielnamens enthält weder Punkt noch NATS-Platzhalter:
 ein Zielname mit `-` und `_` (`eu-west_1`) ist an einem realen NATS-Server ein
 einzelnes Subjekt-Token, und `.*` wie `.>` empfangen jedes Ziel (*Ursprung:*
-übernommen aus dem Lauf von `make test-notify` an einem realen NATS-Server; Verifikations-Report
-[`verifikation-slice-routing-nats-subjekt`](../reviews/verifikation-slice-routing-nats-subjekt.md)).
+übernommen aus dem Lauf von `make test-notify` an einem realen NATS-Server).
 Die zweite
 Veröffentlichung ist von der ersten in der Prüfung unabhängig (Tabellen-Subjekt
 zuerst, danach das Ziel): ein Fehlschlag oder Überspringen der einen verändert
@@ -2171,13 +2142,9 @@ Server (je 10.000 Changes, Median von fünf Durchgängen, ohne Abonnent,
 Testcontainer-NATS, `make test-notify`) lag mit Ziel-Veröffentlichung beim
 0,92- bis 1,30-fachen der Zeit ohne (Spanne mehrerer Läufe am Testcontainer,
 ohne Schwelle; das Verhältnis ist aus den gedruckten Zeiten *abgeleitet*).
-*Ursprung:* übernommen; auflösbar sind die Einzelwerte im
-[Review-Bericht](../reviews/review-slice-routing-nats-subjekt.md) (1,05; dort
-auch die Werte 1,16 und 1,30 genannt) und im
-[Verifikations-Bericht](../reviews/verifikation-slice-routing-nats-subjekt.md)
-(gedruckte Zeile „ohne Ziel 20.856066ms (479477 Changes/s), mit Ziel 19.271615ms
-(518898 Changes/s)", Verhältnis 0,92). Weitere Läufe nennt dieses Handbuch nicht
-einzeln. Ein Aufschlag der zweiten Veröffentlichung ist an diesem
+*Ursprung:* übernommen aus mehreren Läufen am Testcontainer, darunter ein Lauf
+mit ohne Ziel 20,86 ms (479.477 Changes/s) und mit Ziel 19,27 ms (518.898
+Changes/s), Verhältnis 0,92; weitere Verhältnisse waren 1,05, 1,16 und 1,30. Ein Aufschlag der zweiten Veröffentlichung ist an diesem
 Messaufbau nicht auflösbar. Die Messung hat keine Schwelle und deckt die
 Verteilung an Abonnenten nicht ab; eine Last-Zusage folgt daraus nicht.
 
@@ -2217,13 +2184,11 @@ per Flag übersteuern.
 `-source` und `-target` gelten nur zusammen; ein Wert mit Punkt, `*`, `>` oder
 Leerraum wird mit Exit 2 abgelehnt, bevor ein Abonnement entsteht.
 
-Die Beispiele sind zum Lesen und Nachbauen gedacht; die E2E-Testclients des
-Harness liegen unter `tools/harness/` (`natsstreamsub`) und sind kein
-Vorbild.
+Die Beispiele sind zum Lesen und Nachbauen gedacht.
 
 **SDK:** .NET-Anwendungen können statt des Beispiels dasselbe offizielle
-NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
-`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedNatsStreamClient.StreamChangesAsync`
+NuGet-Package `PgChangeFeed.Client` einbinden
+(`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedNatsStreamClient.StreamChangesAsync`
 abonniert den Vollinhalts-Namensraum (Default `cdc.stream.>`, oder ein über
 `BuildSubject`/`BuildSourceSubject` eingeschränktes Subjekt; `BuildTargetSubject`
 und `BuildSourceTargetsSubject` bauen das Zusatz-Subjekt eines Zustellziels bzw.
@@ -2235,8 +2200,8 @@ NATS-eigenen Ausnahme, statt den Draht-Vertrag selbst zu implementieren;
 siehe `sdks/csharp/README.md`.
 
 Kotlin/JVM-Anwendungen können statt des Beispiels dasselbe offizielle
-Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
-`ADR-0109`, Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
+Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden
+(Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
 `PgChangeFeedNatsStreamClient.streamChanges()` abonniert den
 Vollinhalts-Namensraum (Default `cdc.stream.>`, oder ein über `buildSubject`/
 `buildSourceSubject` eingeschränktes Subjekt; `buildTargetSubject` und
@@ -2248,13 +2213,12 @@ wie oben), ein abgelehnter Verbindungsversuch endet die Sequenz mit der
 zugrunde liegenden `io.nats.client`-Ausnahme unverändert, statt den
 Draht-Vertrag selbst zu implementieren oder eine zweite Fehlerklassen-Hierarchie
 zu erfinden. Wie beim HTTP-API-Zugriff oben ist der Bezug über Cloudsmith
-ohne Konto und ohne Token möglich (`ADR-0123`); der Bezug über **GitHub
-Packages** verlangt dagegen immer eine Authentifizierung (`ADR-0109`
-Festlegung 2). Siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`.
+ohne Konto und ohne Token möglich; der Bezug über **GitHub
+Packages** verlangt dagegen immer eine Authentifizierung. Siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`.
 
 Python-Anwendungen können statt des Beispiels das offizielle
-PyPI-Package `pgchangefeed` einbinden (`LH-FA-SST-009`, `ADR-0110`,
-`pip install pgchangefeed`) — `PgChangeFeedNatsStreamClient.stream_changes()`
+PyPI-Package `pgchangefeed` einbinden
+(`pip install pgchangefeed`) — `PgChangeFeedNatsStreamClient.stream_changes()`
 abonniert den Vollinhalts-Namensraum `cdc.stream.<source_id>.>` (alle
 Tabellen einer Quelle; `source_id` ist Konstruktor-Argument; der optionale
 Parameter `target` abonniert stattdessen das Zusatz-Subjekt
@@ -2263,8 +2227,8 @@ einen Iterator über die getypten `StreamChange`-Events mit allen zehn
 Feldern der Tabelle oben; die Authentifizierung ist verbindungsseitig
 (derselbe `CDC_NATS_STREAM_TOKEN` wie oben), ein abgelehnter
 Verbindungsversuch endet am Connect-Fehler der NATS-Bibliothek unverändert,
-statt den Draht-Vertrag selbst zu implementieren. Mit dieser Fläche deckt
-das Package dieselbe Vier-Wege-Matrix wie die C#-/Kotlin-Pendants. Siehe
+statt den Draht-Vertrag selbst zu implementieren. Das Package deckt damit
+dieselben vier Zugriffswege wie die C#-/Kotlin-Pendants ab. Siehe
 `sdks/python/README.md`.
 
 ## 5. Konfiguration
@@ -2281,8 +2245,8 @@ das Package dieselbe Vier-Wege-Matrix wie die C#-/Kotlin-Pendants. Siehe
 | `CDC_SLOT` | ja | Name des Logical-Replication-Slots |
 | `CDC_TABLES` | ja, falls keine Konfigurationsdatei dieselbe Aktivierung trägt | Aktivierte Tabellen, Format `schema.tabelle=tabelle-id:schema-version-id`, kommagetrennt |
 | `CDC_LOG_LEVEL` | nein | Log-Level des strukturierten JSON-Loggers (Default `info`) |
-| `CDC_NATS_URL` | nein | NATS-Server-URL für das Change-Notification-Wecksignal (`cdc.changes.<source_id>.<schema>.<table>`, tabellen-granular, leerer Payload, `ADR-0056`); ungesetzt bleibt das Feature vollständig deaktiviert, gesetzt ist eine erfolgreiche Verbindung Vorbedingung des Starts (Fehlerklasse `configuration`). Zusammen mit `CDC_NATS_STREAM_TOKEN` aktiviert dieselbe Variable zusätzlich den dritten, vollinhaltstragenden NATS-Zustellweg (`ADR-0100`, siehe [Zugriff über den NATS-Vollinhalts-Stream](#zugriff-über-den-nats-vollinhalts-stream)) |
-| `CDC_NATS_STREAM_TOKEN` | nein | Verbindungs-Token des dritten, vollinhaltstragenden NATS-Zustellwegs (`ADR-0100`); wirkt nur zusammen mit gesetztem `CDC_NATS_URL` — ist nur `CDC_NATS_STREAM_TOKEN` gesetzt, aber `CDC_NATS_URL` leer, startet der Container nicht (Fehlerklasse `configuration`). Ein gesetzter Wert verlangt vom NATS-Server denselben Token **serverweit**, auch für die Wecksignal-Verbindung (siehe dortiger Abschnitt) |
+| `CDC_NATS_URL` | nein | NATS-Server-URL für das Change-Notification-Wecksignal (`cdc.changes.<source_id>.<schema>.<table>`, tabellen-granular, leerer Payload); ungesetzt bleibt das Feature vollständig deaktiviert, gesetzt ist eine erfolgreiche Verbindung Vorbedingung des Starts (Fehlerklasse `configuration`). Zusammen mit `CDC_NATS_STREAM_TOKEN` aktiviert dieselbe Variable zusätzlich den dritten, vollinhaltstragenden NATS-Zustellweg (siehe [Zugriff über den NATS-Vollinhalts-Stream](#zugriff-über-den-nats-vollinhalts-stream)) |
+| `CDC_NATS_STREAM_TOKEN` | nein | Verbindungs-Token des dritten, vollinhaltstragenden NATS-Zustellwegs; wirkt nur zusammen mit gesetztem `CDC_NATS_URL` — ist nur `CDC_NATS_STREAM_TOKEN` gesetzt, aber `CDC_NATS_URL` leer, startet der Container nicht (Fehlerklasse `configuration`). Ein gesetzter Wert verlangt vom NATS-Server denselben Token **serverweit**, auch für die Wecksignal-Verbindung (siehe dortiger Abschnitt) |
 | `CDC_HTTP_ADDR` | nein | Horch-Adresse der HTTP-/JSON-API (`host:port`); ungesetzt bleibt die API vollständig deaktiviert — kein Server, keine zusätzliche Verbindung. Anders als `CDC_NATS_URL` ist die Adresse **keine** Start-Vorbedingung: Ist sie gesetzt, öffnet der Prozess den Server in eigener Goroutine und läuft unverändert weiter; scheitert das Binden der Adresse (z. B. belegter Port), meldet er das im Log und der Erfassungsbetrieb bleibt davon unberührt |
 | `CDC_API_TOKEN_READER` | nein | Bearer-Token der lesenden Rechtsklasse der HTTP- und gRPC-API; ungesetzt (leer) ist die Klasse nicht konfiguriert — ein Aufruf mit einem Token, das keiner konfigurierten Klasse entspricht, endet `401` |
 | `CDC_API_TOKEN_ADMIN` | nein | Bearer-Token der administrativen Rechtsklasse der HTTP- und gRPC-API (deckt die lesende Klasse implizit mit ab); leer bedeutet dieselbe Deaktivierung wie bei `CDC_API_TOKEN_READER` |
@@ -2295,7 +2259,7 @@ einen Wert für dasselbe Feld, startet der Container nicht (Fehlerklasse
 
 ### Optionale YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`)
 
-Additiv zu den Umgebungsvariablen (`ADR-0052`, `ADR-0088`, `SPEC-016`): Ist
+Additiv zu den Umgebungsvariablen: Ist
 `CDC_CONFIG_FILE` gesetzt, liest der Container zusätzlich eine
 YAML-Datei unter diesem Pfad (read-only in den Container gemountet). Jede
 gesetzte Umgebungsvariable überschreibt das gleichnamige Feld der Datei
@@ -2336,7 +2300,7 @@ ist die **Form** des Feldes, nicht sein Wert: `http_addr`/`grpc_addr` sind
 `host:port` und können keine Zugangsdaten tragen, `nats_url` ist eine URL
 und kann Benutzer sowie Passwort einbetten (`nats://benutzer:passwort@host:4222`),
 `nats_stream_token` trägt denselben Zugangsdaten-Charakter wie die beiden
-API-Token-Schlüssel (`ADR-0100`). Ein unbekannter Schlüssel bricht das
+API-Token-Schlüssel. Ein unbekannter Schlüssel bricht das
 Laden ebenfalls ab (striktes Decoding).
 
 Die env-exklusiven Variablen `CDC_NATS_URL`, `CDC_NATS_STREAM_TOKEN`,
@@ -2355,7 +2319,7 @@ ein Feld, nicht als Menge einzeln überschreibbarer Einträge).
 ### Fehlerklassen
 
 Jeder Fehler des Feed-Containers gehört zu einer von sieben stabilen
-Klassen (`ADR-0023`, `SPEC-008`):
+Klassen:
 
 | Klasse | Bedeutung | Verhalten |
 |---|---|---|
@@ -2364,7 +2328,7 @@ Klassen (`ADR-0023`, `SPEC-008`):
 | `permission` | fehlende Berechtigung | Sichtbarer Fehler, kein stiller Retry; der Erfassungspfad trägt sie bei SQLSTATE 42501 und bei Fehlern der Klasse 28 (Authentifizierung/Autorisierung) am Quellzugriff, ein Backfill-Run als Klasse seines Fehlertexts (z. B. fehlendes `SELECT` auf die Quelltabelle) |
 | `schema` | eine Replikationsnachricht ist nicht sicher interpretierbar (z. B. TRUNCATE, unbekannter Nachrichtentyp) oder eine Transformations- oder Routing-Regel ist auf die Relation einer Change nicht anwendbar (siehe [Transformationsregel konfigurieren](#transformationsregel-konfigurieren) und [Routing-Regel konfigurieren](#routing-regel-konfigurieren)) | Sichtbarer Fehler, kein stilles Überspringen; ein Backfill-Run trägt dieselbe Ursache als Klasse seines Fehlertexts, run-lokal — bei einer Routing-Regel, deren Bedingungsspalte der Snapshot nicht trägt, vor der ersten Zeile |
 | `storage` | Persistenzfehler | Kein Source-ACK, damit keine Änderung verloren geht |
-| `replication` | zwei Unterarten (`ADR-0049`): **Stream-Ordnungs-Verletzung** (z. B. Commit ohne offene Transaktion) oder **Transport-/Verbindungsstörung** (Verbindungsaufbau, Slot, Keepalive, Quell-Bestätigung) | Stream-Ordnungs-Verletzung: sofortiger, sichtbarer Abbruch, unabhängig vom WAL-Rückstand. Transport-/Verbindungsstörung: Schwellen-Überwachung über den WAL-Rückstand (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)) — kontrollierte Fortsetzung unterhalb 1 GiB, sichtbarer Abbruch darüber |
+| `replication` | zwei Unterarten: **Stream-Ordnungs-Verletzung** (z. B. Commit ohne offene Transaktion) oder **Transport-/Verbindungsstörung** (Verbindungsaufbau, Slot, Keepalive, Quell-Bestätigung) | Stream-Ordnungs-Verletzung: sofortiger, sichtbarer Abbruch, unabhängig vom WAL-Rückstand. Transport-/Verbindungsstörung: Schwellen-Überwachung über den WAL-Rückstand (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)) — kontrollierte Fortsetzung unterhalb 1 GiB, sichtbarer Abbruch darüber |
 | `internal` | unerwarteter interner Fehler, der keiner anderen Klasse zuzuordnen ist | Sichtbarer Fehler; realer Fallback für jeden nicht erkannten Fehler |
 
 `transient` und `permission` sind im Erfassungspfad beobachtbar (Heartbeat-Fehlerzustand
@@ -2489,16 +2453,16 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
 - Lebenszeichen-Takt: 5 Sekunden; als veraltet gilt ein Lebenszeichen
   nach mehr als 15 Sekunden (Faktor 3).
 - WAL-Rückstand-Messtakt: derselbe Takt wie das Lebenszeichen (5 Sekunden).
-- WAL-Rückstand-Schwellen (`SPEC-013`, `ADR-0049`): Warnschwelle 100 MiB,
+- WAL-Rückstand-Schwellen: Warnschwelle 100 MiB,
   Fehlerschwelle 1 GiB — betrifft ausschließlich die Fehlerklasse
   `replication`, Unterart Transport-/Verbindungsstörung (siehe
   [Fehlerklassen](#fehlerklassen)).
 - Ein Container-Lauf bindet genau eine Quelle.
-- Zielname einer Routing-Regel (`target`, `SPEC-032`): 1 bis 63 Zeichen, das
+- Zielname einer Routing-Regel (`target`): 1 bis 63 Zeichen, das
   erste aus `a`–`z` und `0`–`9`, die übrigen aus `a`–`z`, `0`–`9`, `_` und `-`
   (`[a-z0-9][a-z0-9_-]{0,62}`); ein Name außerhalb des Alphabets endet den Antrag
   `failed` (`Zielname ist ungültig`). Das Alphabet ist aus der Subjekt-Syntax
-  hergeleitet, nicht gegen einen NATS-Server geprüft; ein Name mit `-` und `_` ist
+  abgeleitet, nicht gegen einen NATS-Server geprüft; ein Name mit `-` und `_` ist
   an einem realen NATS-Server ein einzelnes Token (siehe [Zugriff über den
   NATS-Vollinhalts-Stream](#zugriff-über-den-nats-vollinhalts-stream)).
 - `order` einer Routing-Regel: eine positive ganze Zahl bis 2147483647
@@ -2521,42 +2485,23 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   **Orientierung, keine Grenze**: ein Antrag wird nie abgelehnt, ein Run nie
   abgebrochen; liegt die geschätzte Zeilenzahl beim Antrag darüber, setzt der
   Antrag `warn_estimated_size`. *Ursprung (abgeleitet):* die Kopierrate der
-  Stufe mit 200.000 Zeilen, Median von 3 Runs 7.693 Zeilen/s (Bereich 6.997 bis
-  8.686; Lauf `20260925T000439Z`, übernommen aus dem Lauf-Bericht, im
-  Repository nicht auflösbar), mal die Toleranz von 600 s ergibt 4.615.800
-  Zeilen, auf eine Stelle abgerundet: 4.000.000. Keine gemessene Stufe
-  kopierte die Toleranzdauer; die Rate ist hochgerechnet. Die Rate streut
-  zwischen Läufen; dieselbe Rechnung an zwei weiteren Läufen desselben Hosts
-  (Stufe 200.000, Median von 3 Runs): 8.933 Zeilen/s im Lauf
-  `20260925T011036Z` (gemessen im
-  [Review-Report](../reviews/review-slice-backfill-bench-richtgroesse.md)),
-  8.559 Zeilen/s im Lauf `20260925T012459Z` (übernommen aus dem Lauf-Bericht
-  des Implementers, im Repository nicht auflösbar), also je 5.000.000
-  Zeilen nach Rundung; der Lauf `20260925T015600Z` (gemessen, gedruckt im
-  [Verifikations-Report](../reviews/verifikation-slice-backfill-bench-richtgroesse.md)
-  §3) ergibt 8.654 Zeilen/s und ebenfalls 5.000.000 Zeilen. Der Lauf
-  `20260925T032925Z` (übernommen aus dem Lauf-Bericht des Implementers, im
-  Repository nicht auflösbar) ergibt bei 5.532 Zeilen/s (Bereich 4.778 bis
-  6.631) 3.319.200 Zeilen, abgerundet 3.000.000. Der Lauf `20260925T043056Z`
-  (gemessen, gedruckt im
-  [Review-Report](../reviews/review-slice-backfill-slot-leerlauf-bestaetigung.md);
-  der Host trug dabei Last fremder Container) ergibt bei 4.504 Zeilen/s
-  2.702.400 Zeilen, abgerundet 2.000.000. Die Spanne dieser sechs Läufe
-  reicht von 2.000.000 bis 5.000.000 Zeilen nach Rundung; der Wert im Code
-  (4.000.000) liegt innerhalb dieser Spanne und über den zwei niedrigsten
-  Werten (3.000.000 und 2.000.000); die Konstante ist ein Startwert, den eine
-  weitere Messung nachschärfen kann. Sechs weitere Läufe auf demselben Host lagen in den Stufen
-  ab 100.000 Zeilen zwischen 4.088 und 9.425 Zeilen/s je Run (übernommen aus
-  den Lauf-Berichten, nicht im Repository). Die Zahl gilt für den Host und die
+  Stufe mit 200.000 Zeilen (Median von 3 Runs je Lauf) mal die Toleranz von
+  600 s, auf eine Stelle abgerundet. In sechs Läufen auf demselben Host
+  (gemessen bzw. übernommen; ein Lauf bei Last fremder
+  Container) lag die Rate zwischen 4.504 und 8.933 Zeilen/s, die Rechnung ergab
+  nach Rundung zwischen 2.000.000 und 5.000.000 Zeilen; der Wert 4.000.000 liegt
+  innerhalb dieser Spanne und ist ein Startwert, den eine weitere Messung
+  nachschärfen kann. Keine gemessene Stufe kopierte die Toleranzdauer; die Rate
+  ist hochgerechnet. Sechs weitere Läufe auf demselben Host lagen in den Stufen
+  ab 100.000 Zeilen zwischen 4.088 und 9.425 Zeilen/s je Run (übernommen). Die
+  Zahl gilt für den Host und die
   Bedingungen der Messung (siehe unten). Breite Zeilen (`jsonb`, `bytea`),
   andere Hardware und eine andere Einfügeform sind für die Kopierrate
   ungemessen. Die Richtgröße folgt der Kopierdauer; der Speicher des
   Feed-Containers geht nicht ein, weil er nicht mit nennenswertem Betrag an der
   Zahl der Changes hängt (siehe *Backfill, Speicher des Feed-Containers*).
-- **Backfill, gemessene Werte** (Lauf `20260925T000439Z` von
-  `tools/bench-backfill.sh`, Vertrag in
-  [`harness/targets/bench-backfill.md`](../../harness/targets/bench-backfill.md);
-  aus dem Lauf-Bericht übernommen, im Repository nicht auflösbar;
+- **Backfill, gemessene Werte** (Messung mit `tools/bench-backfill.sh`;
+  übernommen;
   Host: Linux 6.8.0-139-generic, Docker 29.8.1, 20 CPU, 31 GiB RAM,
   PostgreSQL 18 (`postgres:18-alpine`) mit Standard-Einstellungen; Tabellen mit
   fünf schmalen Spalten, mittlere Zeilenbreite etwa 74 Bytes, Blockgröße 1.000
@@ -2569,11 +2514,10 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   | 50.000 | 5,89 s (5,58 bis 5,96 s) | 8.489 Zeilen/s |
   | 200.000 | 26,0 s (23,0 bis 28,6 s) | 7.693 Zeilen/s |
 
-  Eine Nachmessung am eigenen Lauf `20260925T012459Z` (gleicher Host, gleiche
-  Stufen, Median von 3 Runs; übernommen aus dem Lauf-Bericht des
-  Implementers, im Repository nicht auflösbar) lieferte 8.382, 8.975 und
-  8.559 Zeilen/s. Zwei Runs über je 1.000.000 Zeilen (Lauf `20260924T233628Z`,
-  `--full`, gleicher Host; übernommen, im Repository nicht auflösbar) dauerten
+  Eine Nachmessung (gleicher Host, gleiche Stufen, Median von 3 Runs;
+  übernommen) lieferte 8.382, 8.975 und
+  8.559 Zeilen/s. Zwei Runs über je 1.000.000 Zeilen (`--full`, gleicher Host;
+  übernommen) dauerten
   125,2 s und 122,8 s (7.986 und 8.141 Zeilen/s). Die
   mittlere Blockdauer liegt bei etwa 0,12 bis 0,13 s (abgeleitet: Dauer durch
   Blockzahl); die längste Dauer eines einzelnen Blocks und die Dauer des Commits
@@ -2584,14 +2528,11 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   3.000.000 Changes; der periodische Bereinigungslauf (alle 10 s, siehe
   [Aufbewahrung (Retention)](#aufbewahrung-retention)) liest sie seitenweise
   (10.000 Changes je Seite) und ohne Row Images. Gemessen wurde mit
-  `tools/bench-backfill-memory.sh` (Vertrag in
-  [`harness/targets/bench-backfill.md`](../../harness/targets/bench-backfill.md);
-  Host: Linux 6.8.0-139-generic, Docker 29.8.1, 20 CPU, 31 GiB RAM, PostgreSQL 18
+  `tools/bench-backfill-memory.sh` (Host: Linux 6.8.0-139-generic, Docker
+  29.8.1, 20 CPU, 31 GiB RAM, PostgreSQL 18
   mit Standard-Einstellungen; schmale Zeilen von 74 Bytes; drei Runs über je
   1.000.000 Zeilen hintereinander, ein frischer Feed-Container je Run,
-  `--memory 6g`; zwei Läufe, `20260925T183239Z` und `20260925T184503Z`; gedruckte
-  Zeilen im
-  [Messbericht](../reviews/messbericht-slice-retention-lauf-speicher-begrenzung.md)).
+  `--memory 6g`; zwei Läufe).
   Die Spitze des Feed-Containers (`memory.peak`, gedruckt 60 s nach dem Run) gegen
   die Zahl der Changes, die nach dem Run in `cdc.change` stehen:
 
@@ -2607,49 +2548,38 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   überlappen einander nicht, der Sprung von 1.000.000 auf 2.000.000 Changes fällt
   mit dem Ausgangszustand des Containers zusammen (leeres `cdc.change` im ersten
   Run, gefülltes in den folgenden); die Ursache des Anstiegs ist nicht
-  untersucht. Ein dritter Lauf (`20260925T193207Z`) lag bei 2.000.000 und
+  untersucht. Ein dritter Lauf lag bei 2.000.000 und
   3.000.000 Changes bei 16,6 und 16,8 MiB; bei 1.000.000 Changes stand die Spitze
   bei 31,8 MiB, davon 16,5 MiB Seiten-Cache des Containers (`memory.peak`
-  schließt ihn ein; der Speicher des Prozesses lag dort bei 9,1 MiB, gemessen,
-  [Review-Report](../reviews/review-slice-retention-lauf-speicher-begrenzung.md)).
+  schließt ihn ein; der Speicher des Prozesses lag dort bei 9,1 MiB, gemessen).
   Die Bereinigungs-Takte laufen in allen sechs Runs bis zum Ende weiter
   (gedruckt: 20 bis 23 Zeilen „Bereinigung gelaufen“ seit dem Start des
   Feed-Containers, keine fehlgeschlagene). Bei leerem `cdc.change` liegt die Spitze
   des Prozesses im Run bei 8,9 bis 10,5 MiB, von 10.000 bis 1.000.000 Zeilen
-  (Blockgröße 1.000; gemessen, [Messbericht der
-  Untersuchung](../reviews/messbericht-slice-backfill-speicher-untersuchung.md),
-  Abschnitt 3.2). Ungemessen bleiben breite Zeilen, ein Speicherlimit des
+  (Blockgröße 1.000; gemessen). Ungemessen bleiben breite Zeilen, ein Speicherlimit des
   Containers unter 6 GiB und die laufende Erfassung als Quelle der Changes; die
   Seite trägt keine Row Images, ihr Bedarf hängt deshalb nicht an der Zeilenbreite
-  (aus dem Aufbau der Seite hergeleitet, nicht gemessen).
+  (aus dem Aufbau der Seite abgeleitet, nicht gemessen).
 
-  **Vorversionen.** Die Server-Versionen `v0.1.0` bis `v0.1.2` lesen in jedem Takt
-  alle Changes der Quelle samt Row Images in den Speicher (Quelltext der drei
-  Versionen verglichen, nicht am Image der Version gemessen). Ihr Speicher wächst
-  mit der Zahl der Changes: 1,03 bis 1,59 KiB je Change bei schmalen Zeilen
-  (abgeleitet, ab 100.000 Changes; an einem Build mit dieser Lesung gemessen,
-  nicht am Image der Version) und 1.082,7 bis 1.273,5 MiB bei 1.000.000 Changes
-  ([Messbericht der
-  Untersuchung](../reviews/messbericht-slice-backfill-speicher-untersuchung.md),
-  Abschnitt 3.3).
+  **Ältere Server-Versionen.** Die Server-Versionen `v0.1.0` bis `v0.1.2` lesen in
+  jedem Takt alle Changes der Quelle samt Row Images in den Speicher (aus dem
+  Quelltext der drei Versionen abgeleitet, nicht am Image der Version gemessen).
+  Ihr Speicher wächst mit der Zahl der Changes: 1,03 bis 1,59 KiB je Change bei
+  schmalen Zeilen (abgeleitet, ab 100.000 Changes; an einem Build mit dieser
+  Lesung gemessen, nicht am Image der Version) und 1.082,7 bis 1.273,5 MiB bei
+  1.000.000 Changes (gemessen).
 - **Backfill, WAL-Rückstand des Capture-Slots** (Größe von
   `cdc_wal_retention_bytes`, siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)).
   Der Feed bestätigt WAL ohne Inhalt für die Publication im Leerlauf seines
-  Streams. Gemessen (Lauf `20260925T032925Z` von `tools/bench-backfill.sh`,
-  übernommen aus dem Lauf-Bericht des Implementers, im Repository nicht
-  auflösbar; nachgemessen im Lauf `20260925T043056Z`, gedruckt im
-  [Review-Report](../reviews/review-slice-backfill-slot-leerlauf-bestaetigung.md),
-  mit gleichem Ergebnis; Vertrag in
-  [`harness/targets/bench-backfill.md`](../../harness/targets/bench-backfill.md);
+  Streams. Gemessen (mit `tools/bench-backfill.sh`, übernommen aus dem
+  übernommen; in einem zweiten Lauf mit gleichem Ergebnis nachgemessen;
   Host und Tabellen wie oben, PostgreSQL 18; Rückstand im Abstand von 1 bis 2 s
   gelesen und auf ganze MiB gerundet): in allen neun Runs der Stufen mit 10.000,
   50.000 und 200.000 Zeilen (je 3 Runs) lag die Spitze des Rückstands im Run bei
   0 MiB, unmittelbar nach dem Run ebenfalls bei 0 MiB; das Skript schrieb
   zwischen den Runs nichts. Ohne die Bestätigung — gemessen an einem
-  Stand, der WAL ohne Inhalt für die Publication nicht bestätigte (Lauf
-  `20260925T000439Z`, Stufe 200.000 Zeilen, übernommen aus dem Lauf-Bericht, im
-  Repository nicht auflösbar; ebenso die Läufe `20260925T012459Z`,
-  `20260924T233628Z`) — lag die Spitze im Run im Median bei 140 MiB (etwa 735
+  Stand, der WAL ohne Inhalt für die Publication nicht bestätigte (Stufe
+  200.000 Zeilen, übernommen) — lag die Spitze im Run im Median bei 140 MiB (etwa 735
   Bytes je Zeile), bei 719 und 834 MiB in den zwei Runs über je 1.000.000 Zeilen,
   und der Rückstand blieb bis zu einem Commit auf einer aktivierten Tabelle
   bestehen (776 MiB unmittelbar nach dem ersten Run über 1.000.000 Zeilen); ein
@@ -2657,24 +2587,17 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   seinem Ende die Fehlerschwelle von 1 GiB (Messwert 1.098.218.616 Bytes,
   Feed-Container mit Ausgang 1, Run `interrupted`). Ein Schreiber auf eine nicht
   aktivierte Tabelle erzeugte dort ohne Run 33,5 MiB WAL je 200.000 Zeilen (175
-  Bytes je Zeile; Lauf `wal-verdikt[20260925T004731Z]`, gedruckt in
-  [`ADR-0120`](../plan/adr/0120-capture-slot-leerlauf-bestaetigung.md)
-  §Gemessen; Architekt-Verdikt
-  [`architect-verdict-backfill-wal-rueckstand-und-bench-rot`](../reviews/architect-verdict-backfill-wal-rueckstand-und-bench-rot.md)).
+  Bytes je Zeile; übernommen).
   **Grenze der Ein-Transaktions-Form:** das vom Slot auf der Platte der Quelle
   **gehaltene** WAL (`restart_lsn`) und der Spill des Walsenders bleiben. Das
   gehaltene WAL erreichte in der Stufe mit 200.000 Zeilen im Median 140 MiB
-  (Spitze im Run, Lauf `20260925T032925Z`, übernommen, im Repository nicht
-  auflösbar; 31 MiB bei 50.000 und 7 MiB bei 10.000 Zeilen) und 141 MiB (35
-  MiB bei 50.000, 7 MiB bei 10.000 Zeilen; Lauf `20260925T043056Z`, gedruckt im
-  [Review-Report](../reviews/review-slice-backfill-slot-leerlauf-bestaetigung.md)),
-  in den zwei Runs über je 1.000.000 Zeilen 782 und 1.613 MiB
-  (Lauf `20260924T233628Z`, übernommen, im Repository nicht auflösbar). Der
+  (Spitze im Run, übernommen; 31 MiB bei 50.000 und 7 MiB bei 10.000 Zeilen)
+  und 141 MiB (35 MiB bei 50.000, 7 MiB bei 10.000 Zeilen; gemessen im zweiten
+  Lauf), in den zwei Runs über je 1.000.000 Zeilen 782 und 1.613 MiB
+  (übernommen). Der
   Walsender lagerte bei einem Run über 200.000 Zeilen 79 MB der offenen
   Transaktion aus (`spill_bytes` des Slots, `logical_decoding_work_mem` 64 MB;
-  Lauf `spill-verdikt[20260925T005729Z]`, übernommen aus
-  [`ADR-0120`](../plan/adr/0120-capture-slot-leerlauf-bestaetigung.md)
-  §Gemessen). Beides wächst mit der Größe der Tabelle; die Bestätigung im
+  übernommen). Beides wächst mit der Größe der Tabelle; die Bestätigung im
   Leerlauf entlastet den Capture-Pfad, nicht die Platte der Quelle. Bemessen
   Sie den Plattenplatz der Quelle danach (abgeleitet: 1.613 MiB gehaltenes WAL
   bei 1.000.000 Zeilen von etwa 74 Bytes, gut das Zwanzigfache der
@@ -2682,22 +2605,19 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
 - **Backfill, Wirkung auf die Live-Erfassung** (je ein Run über 200.000 Zeilen
   bei 100 Live-Änderungen/s in eine andere aktivierte Tabelle, dazu eine
   Referenz gleicher Dauer ohne Run; **jeder Vergleich ist ein Einzellauf ohne
-  Wiederholung**): `cdc_capture_lag` im Run gegenüber ohne Run — Lauf
-  `20260925T000439Z` (übernommen, im Repository nicht auflösbar): 0,049 bis
+  Wiederholung**): `cdc_capture_lag` im Run gegenüber ohne Run — erster Lauf
+  (übernommen): 0,049 bis
   1,005 s (Median 0,48 s, 24 Proben) gegenüber 0,049 bis 1,022 s (Median 0,50
-  s, 29 Proben); Lauf `20260925T011036Z`
-  ([Review-Report](../reviews/review-slice-backfill-bench-richtgroesse.md)):
+  s, 29 Proben); zweiter Lauf (gemessen):
   0,123 bis 1,074 s (Median 0,59 s, 21 Proben) gegenüber 0,041 bis 1,011 s
-  (Median 0,40 s, 25 Proben); Lauf `20260925T012459Z` (übernommen, im Repository nicht auflösbar): 0,090 bis
+  (Median 0,40 s, 25 Proben); dritter Lauf (übernommen): 0,090 bis
   0,961 s (Median 0,456 s, 22 Proben) gegenüber 0,050 bis 1,008 s (Median
   0,413 s, 27 Proben). Die Mediane liegen in beiden Richtungen auseinander, die
   Maxima bei etwa 1 s; bei dieser Last und Größe ist aus diesen drei
   Einzelläufen kein Unterschied ableitbar.
 - **Backfill, Schätzung der Zeilenzahl** (`pg_class.reltuples`, PostgreSQL 18,
-  Tabelle mit 100.000 Zeilen, Lauf `20260925T000439Z`, übernommen und im
-  Repository nicht auflösbar; dieselben Werte in den Läufen
-  `20260925T011036Z` ([Review-Report](../reviews/review-slice-backfill-bench-richtgroesse.md))
-  und `20260925T012459Z`, übernommen, im Repository nicht auflösbar): eine frisch befüllte
+  Tabelle mit 100.000 Zeilen, übernommen; dieselben Werte in zwei weiteren
+  Läufen): eine frisch befüllte
   Tabelle trägt **keine** Schätzung (NULL, „unbekannt“) — mit und ohne
   Autovacuum; mit Autovacuum lag die Schätzung nach 35 s vor (Abfrage im
   Abstand von 5 s), ohne Autovacuum blieb sie unbekannt; nach `ANALYZE` stimmte
@@ -2713,97 +2633,3 @@ Fragen und Fehler bitte über das Projekt-Repository melden.
 ### Lizenz
 
 MIT — siehe `LICENSE`.
-
-### Änderungshistorie
-
-| Version | Datum | Änderung |
-|---|---|---|
-| 1.0 | 2026-09-12 | Erste Fassung |
-| 1.1 | 2026-09-12 | Rollen-spezifische DSN-Verdrahtung (`ADR-0047`): `CDC_SOURCE_DSN` ersatzlos ersetzt durch `CDC_CAPTURE_DSN`/`CDC_ADMIN_DSN`/`CDC_READER_DSN`, Betriebs-Hinweis zum `REPLICATION`-Attribut ergänzt |
-| 1.2 | 2026-09-12 | Fehlerklassen-Tabelle (§6) auf alle sieben Klassen aus `ADR-0023`/`SPEC-008` vervollständigt (`transient`, `permission`, `internal` ergänzt) |
-| 1.3 | 2026-09-12 | WAL-Rückstand-Metrik `cdc_wal_retention_bytes` (`SPEC-009`) ergänzt: periodische Messung, strukturierte Log-Ausgabe, Abgrenzung gegen `cdc.metrics` |
-| 1.4 | 2026-09-12 | Fehlerklasse `replication` auf zwei Unterarten präzisiert (`ADR-0049`): Stream-Ordnungs-Verletzung bleibt sofortiger Abbruch, Transport-/Verbindungsstörung trägt jetzt die Schwellen-Überwachung über den WAL-Rückstand (Warn 100 MiB, Fehler 1 GiB) mit kontrollierter Fortsetzung/Abbruch |
-| 1.5 | 2026-09-13 | Neuer `diagnose`-Sondermodus ergänzt (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`, slice-038): §4 „Diagnose ausführen", `cdc_reader`-Zeile und `CDC_READER_DSN`-Zeile aktualisiert |
-| 1.6 | 2026-09-13 | Optionale YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`, `ADR-0052`, `SPEC-016`, slice-041) ergänzt: §5 neue Unterüberschrift, Env-Var-Tabelle um `CDC_CONFIG_FILE` erweitert, `CDC_TABLES`-Pflichtangabe präzisiert |
-| 1.7 | 2026-09-13 | SQL-Administration nachdokumentiert (`LH-FA-ADM-001`, `LH-FA-CFG-002`, `ADR-0050`, slice-036, slice-037, slice-042): §4 zwei neue Abschnitte „Tabelle live aktivieren" und „Tabelle deaktivieren" (`cdc.enable_table`/`cdc.disable_table`, asynchrone Antrags-Queue, Status-Polling) |
-| 1.8 | 2026-09-13 | Sichtbarkeit blockierender Consumer ergänzt (`LH-FA-RET-005`, slice-045): §4 neuer Abschnitt „Blockierende Consumer erkennen" (`cdc.retention_blockers`) |
-| 1.9 | 2026-09-13 | `cdc_storage_bytes`-Metrik ergänzt (`LH-FA-RET-006`, slice-046): §4 „Metriken lesen" nennt die neue `cdc.metrics`-Zeile |
-| 1.10 | 2026-09-13 | `diagnose`-Ausgabe um Retention-Sichtbarkeit erweitert (`LH-FA-SST-003`, deckt `LH-FA-RET-005`/`006`, slice-047): §4 „Diagnose ausführen" trägt jetzt den aktuell blockierenden Consumer je Quelle (inkl. „kein Blocker"-Fall) und `cdc_storage_bytes` |
-| 1.11 | 2026-09-13 | `CDC_NATS_URL`-Zeile (§5) auf das tabellen-granulare Subjekt-Schema `cdc.changes.<source_id>.<schema>.<table>` korrigiert (`ADR-0056`, slice-058) |
-| 1.12 | 2026-09-14 | Diagnose-Beispielausgabe (§4) auf den umbenannten E2E-Quellnamen `src-e2e` aktualisiert (reines Namensrelikt aus der ursprünglichen MVP-Testumgebung, slice-057) |
-| 1.13 | 2026-09-15 | Betreiber-Oberfläche nachgezogen: §5 um die HTTP-Gruppe (`CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`) und `CDC_GRPC_ADDR` erweitert (je mit Aktivierungs-/No-Op-Semantik); §4 um „Spalte vom Ausschluss konfigurieren" (`cdc.exclude_column`/`cdc.include_column`, `LH-FA-CFG-005`, dauerhafter Ausschlussstand) und die drei Netzwerk-Zugriffswege (HTTP-/JSON-API `LH-FA-SST-006`, gRPC-Change-Stream und Server-Sent-Events `LH-FA-SST-008`) |
-| 1.14 | 2026-09-15 | Review-Nachzug: Rahmen-Aussage der HTTP-§4 auf die tatsächlich gelistete Fähigkeitsmenge gezogen (die Retention-Auslösung ist nicht CLI-/SQL-gleichwertig, sondern API-exklusiv); der gRPC-Abschnitt nennt die zehn Nachrichtenfelder, und der SSE-Abschnitt verweist darauf statt auf die Spaltenliste von `cdc.changes` |
-| 1.15 | 2026-09-15 | Changes-Lesen über die API ergänzt (`LH-FA-SST-006`, `LH-FA-REA-001`…`006`, `ADR-0081`, slice-086): §4 Fähigkeits-Tabelle um `GET /changes` erweitert, Parameter-/Antwort-Beschreibung samt Fehlerfällen, „Änderungen lesen" verweist auf den Endpunkt, und die Zustellsemantik nennt die nicht streamende Form neben dem Live-Stream |
-| 1.16 | 2026-09-15 | Vierter Zugriffs-Abschnitt ergänzt: §4 „Zugriff über das NATS-Wecksignal" (`LH-FA-SST-007`, `ADR-0055`/`ADR-0056`/`ADR-0079`, slice-083) — Subjekt-Schema, leerer Payload, Zustellsemantik und der zweiseitige Ablauf (lauschen, dann über `GET /changes` holen) samt Beispiel `examples/nats-client` |
-| 1.17 | 2026-09-17 | Beispiel-Programme der HTTP-Familie in den Zugriffs-Abschnitten ergänzt (`ADR-0076`, slice-095): §4 „Zugriff über die HTTP-/JSON-API" nennt `examples/http-client` samt Startbefehl, „Zugriff über Server-Sent-Events" nennt `examples/sse-client`; beide lesen Adresse und Token aus `CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` |
-| 1.18 | 2026-09-17 | Konfigurationsdatei nachgezogen (`ADR-0088`, `SPEC-016`, slice-096): §5.2 führt die zwei neuen Datei-Felder `http_addr`/`grpc_addr` samt Precedence, die Zugangsdaten-Klasse auf sechs Schlüssel gezogen (`capture_dsn`/`admin_dsn`/`reader_dsn`/`api_token_reader`/`api_token_admin`/`nats_url`, Grenze ist die Feld-Form) und festgehalten, dass `CDC_NATS_URL` und die zwei Token-Klassen auch unter geladener Datei aus der Umgebung wirken |
-| 1.19 | 2026-09-17 | Beispiel-Programm der gRPC-Familie ergänzt (`ADR-0076`, `ADR-0060`, slice-095): „Zugriff über den gRPC-Change-Stream" nennt `examples/grpc-client` samt Startbefehl; es liest Adresse und Token aus `CDC_GRPC_ADDR` und `CDC_API_TOKEN_READER` |
-| 1.20 | 2026-09-17 | Erster C#-Beispiel-Client ergänzt (`ADR-0087`, `ADR-0090`, slice-098): §4 „Zugriff über die HTTP-/JSON-API" trägt jetzt einen `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#) statt eines einzelnen `**Beispiel:**`-Absatzes — die Ziel-Form für die volle Matrix; `examples/csharp/http-client` ruft denselben `reader`-Endpunkt `GET /tables` über einen Container-Aufruf (`make examples-csharp`) |
-| 1.21 | 2026-09-17 | Erster Kotlin-Beispiel-Client ergänzt (`ADR-0087`, `ADR-0090`, slice-099): §4 „Zugriff über die HTTP-/JSON-API" — dritte Zeile im `**Beispiele:**`-Block; `examples/kotlin/http-client` ruft denselben `reader`-Endpunkt `GET /tables` über einen Container-Aufruf (`make examples-kotlin`) |
-| 1.22 | 2026-09-17 | C#- und Kotlin-SSE-Client ergänzt (`ADR-0090`, slice-100): §4 „Zugriff über Server-Sent-Events" — `**Beispiel:**`-Absatz (nur Go) wird zu einem `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#, Kotlin); `examples/csharp/sse-client` und `examples/kotlin/sse-client` öffnen denselben Endpunkt `GET /changes/stream` über einen Container-Aufruf (`make examples-csharp`/`make examples-kotlin`, Image-Tags `pg-change-feed-examples:csharp-sse`/`:kotlin-sse`) |
-| 1.23 | 2026-09-17 | C#- und Kotlin-NATS-Client ergänzt (`ADR-0090`, `ADR-0055`/`ADR-0056`/`ADR-0079`, slice-101): §4 „Zugriff über das NATS-Wecksignal" — Fließtext-Absatz wird zu einem `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#, Kotlin); `examples/csharp/nats-client` und `examples/kotlin/nats-client` lauschen auf dasselbe tabellen-granulare Subjekt und holen die Änderung über denselben `GET /changes`-Aufruf, über einen Container-Aufruf (`make examples-csharp`/`make examples-kotlin`, Image-Tags `pg-change-feed-examples:csharp-nats`/`:kotlin-nats`) |
-| 1.24 | 2026-09-17 | Erster C#-gRPC-Client ergänzt (`ADR-0090`, `ADR-0060`, slice-102): §4 „Zugriff über den gRPC-Change-Stream" — `**Beispiel:**`-Absatz (nur Go) wird zu einem `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#); `examples/csharp/grpc-client` öffnet denselben Server-Streaming-RPC `ChangeStream/StreamChanges` über einen Container-Aufruf (`make examples-csharp`, Image-Tag `pg-change-feed-examples:csharp-grpc`) — der C#-Stub entsteht dabei im Bau aus der `.proto`, gelesen über einen zusätzlichen, benannten Bau-Kontext (erste reale Bauprobe dieser Form, bislang nur isoliert gemessen) |
-| 1.25 | 2026-09-17 | Kotlin-gRPC-Client ergänzt (`ADR-0090`, `ADR-0060`, slice-103): §4 „Zugriff über den gRPC-Change-Stream" — dritte und letzte Zeile im `**Beispiele:**`-Block; `examples/kotlin/grpc-client` öffnet denselben Server-Streaming-RPC `ChangeStream/StreamChanges` über einen Container-Aufruf (`make examples-kotlin`, Image-Tag `pg-change-feed-examples:kotlin-grpc`) — der Kotlin-Stub entsteht dabei im Bau aus der `.proto`, gelesen über denselben zusätzlichen, benannten Bau-Kontext, jetzt auf die Kotlin-Werkzeugkette übertragen (`protoc-gen-grpc-java`/`protoc-gen-grpc-kotlin`). Mit dieser Zeile ist die volle Matrix (vier Zugriffs-Oberflächen × drei Sprachen, zwölf Programme) im Handbuch vollständig |
-| 1.26 | 2026-09-18 | Go-Startform auf `make`+Dockerfile umgestellt (`ADR-0098`, Supersedes `ADR-0076` Startform-Bullet, slice-beispiele-go-dockerfile-start): alle vier Go-Zeilen der `**Beispiele:**`-Blöcke zitieren jetzt `make example-run-go SURFACE=<oberfläche>` (baut bei Bedarf `pg-change-feed-examples:go[-<surface>]` aus dem neuen `examples/Dockerfile`) statt `go run ./examples/<name>`; `go run` bleibt technisch funktionsfähig, ist aber nicht mehr die zitierte Startform |
-| 1.27 | 2026-09-18 | C#-/Kotlin-Startform auf echte Start-Make-Ziele umgestellt (`ADR-0098` Festlegung 2, slice-beispiele-csharp-kotlin-start-target): alle acht C#-/Kotlin-Zeilen der vier `**Beispiele:**`-Blöcke zitieren jetzt `make example-run-csharp SURFACE=<oberfläche>`/`make example-run-kotlin SURFACE=<oberfläche>` statt des rohen `docker run --rm -e … <Image> …`-Aufrufs; beide Ziele bauen nichts, sie starten den bereits von `make examples-csharp`/`make examples-kotlin` gebauten Image-Tag |
-| 1.28 | 2026-09-18 | Dritter, vollinhaltstragender NATS-Zustellweg ergänzt (`ADR-0100`, `LH-FA-SST-008`, slice-nats-drittstream-core): neuer §4-Abschnitt „Zugriff über den NATS-Vollinhalts-Stream" (Subjekt-Namensraum `cdc.stream.<...>`, dasselbe Nachrichtenschema wie SSE, Zwei-Bedingungen-Aktivierung, serverweite Auth-Nebenwirkung auf das Wecksignal); §5 trägt die neue Variable `CDC_NATS_STREAM_TOKEN` und die auf sieben Schlüssel (drei DSN, drei Token, `nats_url`) gewachsene Zugangsdaten-Klasse der Konfigurationsdatei (`nats_stream_token` neu) |
-| 1.29 | 2026-09-18 | Erster Go-Client für den NATS-Vollinhalts-Stream ergänzt (`ADR-0100`, `LH-FA-SST-008`, slice-nats-drittstream-example-go): §4 „Zugriff über den NATS-Vollinhalts-Stream" — der Platzhalter-Absatz wird zu einem `**Beispiele:**`-Block (zunächst nur Go); `examples/nats-stream-client` abonniert `cdc.stream.>` und gibt jede empfangene Change aus, über einen Container-Aufruf (`make example-run-go SURFACE=nats-stream`, Image-Tag `pg-change-feed-examples:go-nats-stream`) |
-| 1.30 | 2026-09-18 | C#- und Kotlin-Client für den NATS-Vollinhalts-Stream ergänzt (`ADR-0100`, `LH-FA-SST-008`, slice-nats-drittstream-example-csharp-kotlin): §4 „Zugriff über den NATS-Vollinhalts-Stream" — `**Beispiele:**`-Block komplettiert; `examples/csharp/nats-stream-client` und `examples/kotlin/nats-stream-client` abonnieren `cdc.stream.>` und geben jede empfangene Change aus, über einen Container-Aufruf (`make example-run-csharp`/`make example-run-kotlin SURFACE=nats-stream`, Image-Tags `pg-change-feed-examples:csharp-nats-stream`/`:kotlin-nats-stream`). Mit dieser Zeile ist die volle Matrix (fünf Zugriffs-Oberflächen × drei Sprachen, fünfzehn Programme) im Handbuch vollständig |
-| 1.31 | 2026-09-19 | `cdc_changes_pending`/`cdc_errors_total`-Metriken nachgetragen (`LH-QA-OPS-003`, slice-e2e-drei-rtm-luecken): §4 „Metriken lesen" — beide Kennzahlen existierten in `cdc.metrics` bereits seit diesem Slice, waren aber nicht im Handbuch-Text genannt |
-| 1.32 | 2026-09-19 | Kopf-Feld `Software-Version` korrigiert: trug seit Ersteinführung unverändert `0.2.0-verdrahtung`, nie mit dem später eingeführten `docs/user/version.md` (`ADR-0051`, welle-release-pipeline-adr-0051) synchronisiert und nirgends sonst referenziert — auf einen Verweis auf die tatsächliche Versionsquelle umgestellt |
-| 1.33 | 2026-09-19 | C#-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0106`, slice-sdk-csharp-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt jetzt einen `**SDK:**`-Absatz nach dem `**Beispiele:**`-Block — das NuGet-Package `PgChangeFeed.Client` deckt alle zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer typisierten Fehlerklasse ab |
-| 1.34 | 2026-09-19 | C#-SDK-Hinweis für den gRPC-Change-Stream ergänzt (`LH-FA-SST-009`, `ADR-0106`, slice-sdk-csharp-grpc-client-flaeche): §4 „Zugriff über den gRPC-Change-Stream" trägt jetzt einen `**SDK:**`-Absatz nach dem `**Beispiele:**`-Block — `PgChangeFeedGrpcClient.StreamChangesAsync` öffnet `ChangeStream/StreamChanges` und liefert ein `IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben |
-| 1.35 | 2026-09-19 | Python-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0107`, slice-sdk-python-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt im `**SDK:**`-Absatz jetzt zusätzlich das PyPI-Package `pgchangefeed` — `PgChangeFeedHttpClient` deckt dieselben zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer typisierten Fehlerklasse ab |
-| 1.36 | 2026-09-20 | Kotlin-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0109`, slice-sdk-kotlin-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt im `**SDK:**`-Absatz jetzt zusätzlich das GitHub-Packages-Gradle-/Maven-Package `pgchangefeed-kotlin` — `PgChangeFeedHttpClient` deckt dieselben zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer versiegelten Fehlerklassen-Hierarchie ab, samt explizitem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages (`ADR-0109` Festlegung 2) |
-| 1.37 | 2026-09-20 | Kotlin-SDK-Hinweis für den gRPC-Change-Stream ergänzt (`LH-FA-SST-009`, `ADR-0109`, slice-sdk-kotlin-grpc-client-flaeche): §4 „Zugriff über den gRPC-Change-Stream" trägt jetzt einen zweiten Absatz im `**SDK:**`-Block — `PgChangeFeedGrpcClient.streamChanges()` öffnet `ChangeStream/StreamChanges` und liefert ein `kotlinx.coroutines.flow.Flow<Change>` mit allen zehn Feldern der Tabelle oben, samt erneutem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages (`ADR-0109` Festlegung 2); der vorangehende HTTP-Absatz oben wurde korrigiert — er behauptete fälschlich, der gRPC-Change-Stream „folge in einem Folge-Release" |
-| 1.38 | 2026-09-22 | C#-SDK-Hinweis für SSE und den NATS-Vollinhalts-Stream ergänzt (`LH-FA-SST-009`, `ADR-0106`, `welle-sdk-csharp-vollabdeckung`, slice-sdk-csharp-sse-client-flaeche + slice-sdk-csharp-nats-stream-client-flaeche): §4 „Zugriff über Server-Sent-Events" und §4 „Zugriff über den NATS-Vollinhalts-Stream" tragen jetzt je einen `**SDK:**`-Absatz — `PgChangeFeedSseClient.StreamChangesAsync` bzw. `PgChangeFeedNatsStreamClient.StreamChangesAsync` liefern ein `IAsyncEnumerable<Change>` mit allen zehn Feldern der jeweiligen Tabelle; das NuGet-Package `PgChangeFeed.Client` ist dafür auf `0.2.0` gehoben |
-| 1.39 | 2026-09-22 | Kotlin-SDK-Hinweis für SSE und den NATS-Vollinhalts-Stream ergänzt (`LH-FA-SST-009`, `ADR-0109`, `welle-sdk-kotlin-vollabdeckung`, slice-sdk-kotlin-sse-client-flaeche + slice-sdk-kotlin-nats-stream-client-flaeche): §4 „Zugriff über Server-Sent-Events" und §4 „Zugriff über den NATS-Vollinhalts-Stream" tragen jetzt je einen `**SDK:**`-Absatz — `PgChangeFeedSseClient.streamChanges()` bzw. `PgChangeFeedNatsStreamClient.streamChanges()` liefern eine `Sequence<Change>` mit allen zehn Feldern der jeweiligen Tabelle, samt erneutem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages; die vorangehenden HTTP-/gRPC-Absätze oben wurden korrigiert — sie behaupteten fälschlich, SSE und der NATS-Vollinhalts-Stream blieben für dieses Package „vorerst außerhalb"; das GitHub-Packages-Gradle-/Maven-Package `pgchangefeed-kotlin` ist dafür auf `0.2.0` gehoben |
-| 1.40 | 2026-09-23 | Python-SDK-Hinweis für den gRPC-Change-Stream ergänzt (`LH-FA-SST-009`, `ADR-0110`, `welle-sdk-python-vollabdeckung`, slice-sdk-python-grpc-client-flaeche): der §4-Absatz zum PyPI-Package `pgchangefeed` trägt jetzt die gRPC-Stream-Fläche `PgChangeFeedGrpcClient` (siehe „Zugriff über den gRPC-Change-Stream") statt „gRPC, SSE und der NATS-Vollinhalts-Stream bleiben vorerst außerhalb"; SSE und der NATS-Vollinhalts-Stream folgen im selben Folge-Release |
-| 1.41 | 2026-09-23 | Python-SDK-Absatz im gRPC-Handbuch-Abschnitt ergänzt (`LH-FA-SST-009`, `ADR-0110`, slice-sdk-python-grpc-client-flaeche Fixrunde): „Zugriff über den gRPC-Change-Stream" trägt jetzt den `**SDK:**`-Absatz des PyPI-Packages — `PgChangeFeedGrpcClient.stream_changes()` liefert einen Iterator über die generierten `Change`-Nachrichten mit allen zehn Feldern (dritte Sprache neben C#/Kotlin im selben Abschnitt), samt `timeout`-Form; `Stand:`-Datum auf diesen Zug gezogen |
-| 1.42 | 2026-09-23 | Python-SDK-Absatz im SSE-Handbuch-Abschnitt ergänzt (`LH-FA-SST-009`, `ADR-0110`, `welle-sdk-python-vollabdeckung`, slice-sdk-python-sse-client-flaeche): „Zugriff über Server-Sent-Events" trägt jetzt den `**SDK:**`-Absatz des PyPI-Packages — `PgChangeFeedSseClient.stream_changes()` liefert einen Iterator über die getypten `StreamChange`-Events mit allen zehn Feldern (dritte Sprache neben C#/Kotlin im selben Abschnitt); der NATS-Vollinhalts-Stream folgt im selben Folge-Release |
-| 1.43 | 2026-09-23 | Python-SDK-Absatz für den NATS-Vollinhalts-Stream ergänzt (`LH-FA-SST-009`, `ADR-0110`, `welle-sdk-python-vollabdeckung`, slice-sdk-python-nats-stream-client-flaeche): §4 „Zugriff über den NATS-Vollinhalts-Stream" trägt jetzt den dritten Sprach-`**SDK:**`-Absatz — `PgChangeFeedNatsStreamClient.stream_changes()` abonniert `cdc.stream.<source_id>.>` und liefert einen Iterator über die getypten `StreamChange`-Events mit allen zehn Feldern; das PyPI-Package `pgchangefeed` ist dafür auf `0.2.0` gehoben — die volle Vier-Wege-Matrix ist damit für alle drei SDK-Sprachen im Handbuch vollständig |
-| 1.44 | 2026-09-24 | Feld `origin` in den Lesewegen ergänzt (`LH-FA-CAP-009`, `LH-FA-DAT-006`, `ADR-0111`, slice-backfill-change-origin): §4 „Änderungen lesen" trägt `origin` als letzte Spalte des SQL-Beispiels über `cdc.changes` samt Bedeutung (`wal` \| `backfill`, ein fehlender Wert liest als `wal`), §4 „Zugriff über die HTTP-/JSON-API" nennt `origin` als letztes Feld der `GET /changes`-Antwort; die drei Live-Zustellwege tragen das Feld nicht |
-| 1.45 | 2026-09-24 | Schema-Upgrade über eine View-Signaturänderung dokumentiert (`LH-QA-OPS-005`, `ADR-0114`, slice-backfill-change-origin Fixrunde): §4 „Schema aktualisieren" nennt die Reihenfolge (Schema-Rollout vor dem Container-Tausch), den automatischen Vorlauf `DROP VIEW cdc.<name>` samt Meldung, das Lesefenster für SQL-Leser (Richtwert aus einer einzelnen Messung, nicht garantiert) und das Verhalten bei einem abhängigen Objekt oder einem Abbruch nach dem Vorlauf |
-| 1.46 | 2026-09-24 | Hinweis zu Rechten und Vorbedingung des View-Signatur-Vorlaufs ergänzt (`LH-QA-OPS-005`, `ADR-0114`, slice-backfill-change-origin Fixrunde): §4 „Schema aktualisieren" benennt, dass `DROP VIEW` die Rechteliste der View verwirft und nur `cdc_reader` im selben Lauf sein `SELECT`-Recht zurückbekommt (eigene Grants an andere Rollen setzt der Betreiber erneut), sowie die feste Adressierung des Schemas `cdc` |
-| 1.47 | 2026-09-24 | Rechteschnitt von `cdc_admin` ergänzt (`LH-QA-SEC-001`, `LH-QA-SEC-002`, `ADR-0047`, `ADR-0050`, slice-backfill-run-store Fixrunde): §2 „Zugriff und Rollen" nennt die Verarbeitung der Antrags-Queue `cdc.administration_request` (lesen, Ausgang vermerken) als Zweck der Rolle, §5 „Umgebungsvariablen des Feed-Containers" die Zeile `CDC_ADMIN_DSN`; §4 „Schema aktualisieren" trägt den Absatz „Rechte der drei Rollen" (der Rollout setzt die Rechte bei jedem Lauf, Schema-Rollout vor dem Container-Tausch, Anträge bleiben ohne das Recht `pending`) |
-| 1.48 | 2026-09-24 | SQL-Auslösung des Backfills dokumentiert (`LH-FA-CAP-009`, `LH-FA-ADM-001`, `LH-FA-SST-003`, `ADR-0111`, `ADR-0113`, `ADR-0116`, slice-backfill-sql-administration): §4 neuer Abschnitt „Bestand als Backfill überführen" (`cdc.backfill_table`, `applied` heißt „angenommen", View `cdc.backfill_status`, geschätzte Zeilenzahl, Neustart-Verhalten, Sichtbarkeits-Grenze, Bedeutung der Schema-Version einer Backfill-Änderung, Betriebs-Vorbedingungen); §4 „Änderungen lesen" trägt die Regel „Position und `limit`" mit dem Schlüsselvergleich, „Diagnose ausführen" den Abschnitt „Backfill je Tabelle", „Schema aktualisieren" die Rechte von `cdc_capture`/`cdc_reader`; §2 Rollen und Betriebs-Hinweis zum `SELECT`-Recht, §5 die beiden DSN-Zeilen, §6 Fehlerklassen, §8 Glossar, §9 Grenzwerte |
-| 1.49 | 2026-09-24 | Backfill-Abschnitt an Rollen und Stichtag angeglichen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-sql-administration Fixrunde): §4 „Bestand als Backfill überführen" nennt den Antrag und dessen Vermerk unter `cdc_admin`, das Lesen von `cdc.backfill_status` unter einer `cdc_reader`-Identität (die Rolle `cdc_admin` trägt kein `SELECT` auf die View), und den Snapshot als Start des Runs statt des Antrags (auch §8 Glossar); ein Backfill-Antrag einer anderen Quelle bleibt für die Instanz dieser Quelle `pending` |
-| 1.50 | 2026-09-24 | Gemessene Startposition eines frisch registrierten Consumers dokumentiert (`LH-FA-CAP-009`, `LH-FA-CON-005`, `ADR-0111`, slice-backfill-e2e): §4 „Bestand als Backfill überführen" trägt den Punkt „Startposition eines neuen Consumers" (`offset` 0, `acknowledged` `false`, vor der Snapshot-Position jedes Runs; Ursprung: der Lauf von `make test-integration`) und nennt in der Zustandstabelle, dass `rows_copied` eines `interrupted`-Runs den zuletzt festgehaltenen Fortschritt trägt |
-| 1.51 | 2026-09-24 | Sperre des Backfill-Runs und Ausgang bei umgeschriebener Tabelle dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0118`, slice-backfill-e2e Fixrunde): §4 „Bestand als Backfill überführen“ trägt den Absatz „Sperre der Tabelle“ (Lesesperre bis zum Ende des Runs, Wirkung auf DDL mit `ACCESS EXCLUSIVE`) und den Punkt „Umschreiben der Tabelle im Fenster“ (`failed`/`transient` ohne Änderung, neuer Antrag als Abhilfe, Fehlalarme `VACUUM FULL`/`CLUSTER`) |
-| 1.52 | 2026-09-24 | Wirkung der Tabellensperre des Backfill-Runs vollständig und mit Ursprung dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0118`, slice-backfill-e2e Fixrunde): §4 „Bestand als Backfill überführen“, Absatz „Sperre der Tabelle“, nennt neben Lesern auch Schreiber und die Publication-Abfrage der Administration als hinter einer wartenden DDL gestaut (gemessen, PostgreSQL 18) und die Gegenrichtung (der Run wartet ohne eigene Zeitgrenze auf eine offene `ACCESS EXCLUSIVE`-Transaktion); `RENAME COLUMN` im Fenster ist als im Review gemessen, nicht im E2E-Runner belegt gekennzeichnet |
-| 1.53 | 2026-09-25 | Warnungen des Backfill-Runs und gemessene Richtgrößen dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-bench-richtgroesse): §4 „Bestand als Backfill überführen“ nennt, wann `warn_estimated_size` und `warn_duration` gesetzt werden, und den WAL-Rückstand des Capture-Slots als vierte Betriebs-Vorbedingung; „Diagnose ausführen“ deutet die beiden Kennzeichnungen; §9 „Grenzwerte“ trägt die Toleranz der Kopierdauer (Startwert, Setzung ohne Messung), die Richtgröße (abgeleitet, Orientierung, keine Grenze) und die gemessenen Werte (Kopierdauer, Speicher, WAL-Rückstand, Wirkung auf die Live-Erfassung, Schätzung der Zeilenzahl) mit Host und Lauf |
-| 1.54 | 2026-09-25 | Ursache und Abhilfen des WAL-Rückstands sowie Ursprung der Messwerte nachgezogen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, `ADR-0120`, slice-backfill-bench-richtgroesse Fixrunde): §4 „Bestand als Backfill überführen“ nennt den WAL-Rückstand als nicht an den Backfill gebunden, den Folge-Slice `slice-backfill-slot-leerlauf-bestaetigung` und die Betriebs-Abhilfen (Commit auf einer aktivierten Tabelle, Datei-Feld `wal_retention_error_bytes`); §9 „Grenzwerte“ nennt zur Richtgröße die Werte dreier Läufe (7.693, 8.933, 8.559 Zeilen/s; Konstante = kleinster Wert), zum Speicher des Feed-Containers die Spitze im Run **und** die Probe 20 s nach dem Run (641,7 MiB als höchster gemessener Wert), zur Live-Wirkung drei Einzelläufe statt einer Aussage „kein Unterschied“, und kennzeichnet die im Repository nicht auflösbaren Läufe als übernommen |
-| 1.55 | 2026-09-25 | Herkunft der Zahlen des Laufs `20260925T012459Z` in §9 „Grenzwerte“ als übernommen aus dem Lauf-Bericht des Implementers gekennzeichnet (im Repository nicht auflösbar), Richtgröße um den gedruckten Lauf `20260925T015600Z` des Verifikations-Reports ergänzt (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-bench-richtgroesse Closure) |
-| 1.56 | 2026-09-25 | Bestätigung von WAL ohne Inhalt für die Publication im Leerlauf des Streams dokumentiert (`LH-FA-CAP-009`, `LH-QA-REL-001`, `ADR-0120`, slice-backfill-slot-leerlauf-bestaetigung): §4 „WAL-Rückstand prüfen“ nennt die Bedeutung von `cdc_wal_retention_bytes` (vom Feed noch nicht bestätigtes WAL) und dass WAL ohne Inhalt für die Publication den Wert nicht wachsen lässt; §4 „Bestand als Backfill überführen“ trägt den WAL-Rückstand als Punkt ohne Abbruch über die Fehlerschwelle und die offene Schreibtransaktion des Runs als verbleibende Last; §9 „Grenzwerte“ führt den Rückstand mit Bestätigung (Lauf `20260925T032925Z`), die Messwerte ohne Bestätigung mit ihrem Lauf, das gehaltene WAL und den Spill als Grenze der Ein-Transaktions-Form und die Richtgröße um den Lauf `20260925T032925Z` ergänzt; der Satz „Diese Schwelle kann bei weniger Zeilen greifen als die Richtgröße“ entfällt |
-| 1.57 | 2026-09-25 | Herkunft der Zahlen des Laufs `20260925T032925Z` in §9 „Grenzwerte“ als übernommen aus dem Lauf-Bericht des Implementers gekennzeichnet (im Repository nicht auflösbar); Nachmessung des Laufs `20260925T043056Z` aus dem Review-Report ergänzt (Rückstand 0 MiB in neun Runs, gehaltenes WAL 141 MiB bei 200.000 Zeilen, Richtgröße 2.000.000 bei 4.504 Zeilen/s); Spanne der Richtgröße über sechs Läufe 2.000.000 bis 5.000.000 (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, `ADR-0120`, slice-backfill-slot-leerlauf-bestaetigung Fixrunde) |
-| 1.58 | 2026-09-25 | Feld `origin` der über `GET /changes` gelesenen Änderungen in den SDK-Absätzen von §4 „Zugriff über die HTTP-/JSON-API“ ergänzt: die drei Packages tragen es, eine Antwort ohne das Feld liest als `wal`, die Live-Wege tragen es nicht (`LH-FA-SST-009`, `LH-FA-SST-006`, `ADR-0111`, slice-backfill-sdk-origin) |
-| 1.59 | 2026-09-25 | Regel für `origin` in den SDK-Absätzen von §4 „Zugriff über die HTTP-/JSON-API“ präzisiert: fehlendes Feld oder JSON-`null` liest als `wal`, jeder andere Server-Wert (auch leer oder unbekannt) kommt unverändert an; der Python-Absatz führt SSE und den NATS-Vollinhalts-Stream als vom Package getragen statt als folgend (`LH-FA-SST-009`, `LH-FA-SST-006`, `ADR-0111`, slice-backfill-sdk-origin Fixrunde) |
-| 1.60 | 2026-09-25 | Speicher des Feed-Containers im Backfill gemessen und die Ursache benannt (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-speicher-untersuchung): §9 „Grenzwerte“ ersetzt die übernommenen Zahlen durch gemessene — die Spitze hängt an der Zahl der Changes in `cdc.change` (Bereinigungslauf liest je Takt alle Changes), nicht an der Tabellengröße; 1,03 bis 1,59 KiB je Change bei schmalen, 2,65 bis 4,19 KiB bei breiten Zeilen; Bemessung des Speicherlimits; die Richtgröße um den Speicher ergänzt; §4 „Bestand als Backfill überführen“ nennt den Speicher des Feed-Containers, „Aufbewahrung (Retention)“ die Lesung aller Changes je Durchlauf |
-| 1.61 | 2026-09-25 | Zahlen und Herkunftsangaben der Speicher-Messung in §9 „Grenzwerte“ und §4 „Bestand als Backfill überführen“ nachgezogen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-speicher-untersuchung Fixrunde): Höchstwert je Change 1,59 statt 1,57 KiB, `GOGC=25` senkt die Spitze um 11 bis 21 % statt 18 bis 21 %, die Runs mit 2.000.000 Changes vor dem Run stehen in einer eigenen Zeile; der Speicher im Run bei nicht leerem `cdc.change` ist benannt; Herkunft der Aussage zur laufenden Erfassung; die Server-Versionen `v0.1.0` bis `v0.1.2` tragen denselben Bereinigungslauf; Reihe N als Gegenprobe zum Ausbleiben der Bereinigungs-Takte |
-| 1.62 | 2026-09-25 | Bereinigungslauf liest Kandidaten seitenweise ohne Row Images (`LH-FA-RET-004`, `LH-FA-CAP-009`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung): §4 „Aufbewahrung (Retention)“ beschreibt die Seiten (10.000 Changes, nicht atomar, Consumer-Positionen einmal je Durchlauf), §4 „Bestand als Backfill überführen“ und §9 „Grenzwerte“ ersetzen die Bemessung des Speicherlimits je Change durch die Nachmessung (Spitze 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes, zwei Läufe) und nennen den Stand der Vorversionen `v0.1.0` bis `v0.1.2`; die Richtgröße bleibt und folgt der Kopierdauer |
-| 1.63 | 2026-09-25 | Aussagen zum Speicher des Feed-Containers an die Messung angeglichen (`LH-FA-RET-004`, `LH-FA-CAP-009`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung Fixrunde): der Speicher hängt an der Seitengröße und nicht mit nennenswertem Betrag an der Zahl der Changes (gemessen 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes, über 3.000.000 Changes nichts gemessen); der Anstieg zwischen den Stufen ist als Differenz zweier Endpunkte (keine gemessene Steigung) mit dem Ausgangszustand des Containers benannt, ein dritter Lauf mit Seiten-Cache-Anteil ergänzt; die Beschreibung der Vorversionen nennt ihren Ist-Zustand |
-| 1.64 | 2026-09-25 | Betriebs-Hinweis (Consumer-Bindung) unter „Aufbewahrung (Retention)“ um zwei Folgen ergänzt (`LH-FA-RET-004`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung Closure): Changes, die ein Durchlauf nach dem Lesen der Positionen löscht, sind für einen erstmals bestätigenden Consumer verloren, sein Schutz beginnt mit dem nächsten Durchlauf; ein Durchlauf kann eine Transaktion in mehreren Schritten löschen, ein Consumer ohne Bestätigung kann sie währenddessen unvollständig lesen |
-| 1.65 | 2026-09-25 | Bezug des Kotlin-SDK ohne Token beschrieben (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): die vier Kotlin-Hinweise unter §4 „Zugriff über die HTTP-/JSON-API“, „…den gRPC-Change-Stream“, „…Server-Sent-Events“ und „…den NATS-Vollinhalts-Stream“ nennen Cloudsmith als anonym lesbaren Bezugsweg (`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`, Konto und Token nicht nötig) neben GitHub Packages, das für das Lesen weiter einen Token verlangt; das Package `pgchangefeed-kotlin` ist dafür auf `0.2.2` gehoben |
-| 1.66 | 2026-09-27 | Zusage der Bestätigung im Leerlauf an die Grenze des Mechanismus angeglichen (`LH-QA-REL-001`, `ADR-0120`, slice-leerlauf-phase-last-in-stuecken): §4 „Bestand als Backfill überführen“ (Absatz „WAL-Rückstand des Capture-Slots“) und „WAL-Rückstand prüfen“ (Ergebnis) nennen als Zusage WAL ohne Inhalt für die Publication, das der Feed zwischen den Schreibvorgängen bestätigt, nicht mehr „jeden Schreiber“; ein neuer Absatz „Grenze der Bestätigung im Leerlauf“ beschreibt, dass ein Stoß über `wal_retention_error_bytes` bis zur nächsten Bestätigung im Rückstand steht, und nennt das Heben der Fehlerschwelle als Weg |
-| 1.67 | 2026-09-27 | Transformationsregeln dokumentiert (`LH-FA-CFG-007`, `ADR-0112`, `ADR-0125`, `ADR-0126`, `ADR-0117`, `ADR-0127`, `ADR-0128`, slice-transformationen-betriebsdoku): §4 neuer Abschnitt „Transformationsregel konfigurieren“ (`cdc.set_transformation`/`cdc.remove_transformation`, Aufrufform des `json`-Parameters, Regeltypen, Konfliktfreiheit K1–K4, Wirkung, Informationsverlust bei `map_value`, Verhältnis zum Spaltenausschluss, Reihenfolge der Aufrufe, Dauerhaftigkeit samt Grenze bei einem älteren Binärstand, Nichtanwendbarkeit samt Abhilfe im Erfassungspfad und im Backfill-Run, Backfill-Bezug, Wartezeit des Stream-Starts, Kosten der Lesung im Backfill, Form auf allen Zustellwegen); §2 Rollen nennt die beiden Funktionen, §6 Fehlerklassen die Nichtanwendbarkeit in der Zeile `schema`, §8 Glossar den Begriff „Transformationsregel“ |
-| 1.68 | 2026-09-27 | Fixrunde nach Review (`LH-FA-CFG-007`, `ADR-0112`, `ADR-0125`, slice-transformationen-betriebsdoku Fixrunde): der Fehlertext eines `::jsonb`-Aufrufs von `cdc.set_transformation` in „Transformationsregel konfigurieren“ auf den tatsächlich gemessenen Wortlaut korrigiert (`unknown` statt `text` als Parametertyp der vier Textliterale — PostgreSQL typisiert nicht gecastete String-Literale beim Signatur-Fehler als `unknown`); der Absatz „Zeilen, die kein Antrag sind“ um das dritte, im Plan verlangte Beispiel ergänzt (leere Spalte bei `exclude_column`/`include_column`, belegt durch `TestAdministrationRequestListPendingPassesRejectedRowsThrough`) |
-| 1.69 | 2026-09-28 | „Transformationsregel konfigurieren“ aufgabenbasiert überarbeitet (`LH-FA-CFG-007`, `ADR-0112`): Voraussetzung/nummeriertes Vorgehen/Ergebnis statt Fließtext, zwei eigene Fehler/Ursache/Lösung-Blöcke (Konfliktfehler, Fehlerklasse `schema`) statt einer Bullet-Liste; ADR-/Review-Verweise, Go-Testnamen und Benchmark-Rohwerte aus dem Fließtext entfernt (Betreiber brauchen sie nicht, dieselben zwei Verweise auch aus dem Backfill-Abschnitt „Bestand als Backfill überführen“ entfernt) |
-| 1.70 | 2026-09-28 | §4 „Zugriff über die HTTP-/JSON-API“ Beispiele-Absatz auf die volle Zehn-Fähigkeiten-Fläche der drei Sprachbeispiele nachgezogen (`LH-FA-SST-006`): ein Verb-Flag (Default `tables`) statt eines festen `GET /tables`-Aufrufs, Hinweis auf `make example-transformation-demo` bei `-verb=changes`/`--verb=changes` |
-| 1.71 | 2026-09-28 | Neuer §4-Abschnitt „Zugriff über die gRPC-Verwaltungs-API“ (`LH-FA-SST-006`, `ADR-0130`): die neun Fähigkeiten der HTTP-API als gRPC-Dienst `Administration`, Rechtsklassen-Tabelle, Fehlercode-Tabelle (`InvalidArgument`/`Unauthenticated`/`PermissionDenied`/`NotFound`/`Internal`), Hinweis auf das noch fehlende Beispiel-Programm/SDK je Sprache; §5 `CDC_GRPC_ADDR`-Zeile nennt jetzt beide Dienste (`ChangeStream` und `Administration`) statt nur den Streaming-Server |
-| 1.72 | 2026-09-28 | Zehnter RPC `ReadChanges` im §4-Abschnitt „Zugriff über die gRPC-Verwaltungs-API“ ergänzt (`LH-FA-SST-006`, `LH-FA-REA-001`…`006`, `ADR-0131`): Fähigkeiten-Tabelle trägt jetzt zehn Zeilen, Absatz zu Filter-/Bereichs-Semantik und dem `ChangeRecord`-Nachrichtenschema (dieselben dreizehn Felder wie `GET /changes`), kein `NotFound` bei leerem Treffer; der Hinweis auf das fehlende Beispiel-Programm/SDK je Sprache benennt jetzt ausdrücklich, dass auch `ReadChanges` davon unberührt bleibt |
-| 1.73 | 2026-09-28 | Diagnose über zwei neue Netzwerkzugriffswege dokumentiert (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`, `LH-FA-RET-005`/`006`, `LH-FA-CAP-009`, `ADR-0132`): §4 „Diagnose ausführen“ nennt `GET /diagnose` und den elften gRPC-RPC `Diagnose` als gleichwertige Alternativen neben dem bestehenden CLI-Aufruf; „Zugriff über die HTTP-/JSON-API“ trägt eine neue Tabellenzeile und einen Absatz zum Antwortschema; „Zugriff über die gRPC-Verwaltungs-API“ trägt `Diagnose` als elfte Zeile samt Nachrichtenschema-Absatz; beide Beispiele-/SDK-Hinweise benennen `Diagnose` ausdrücklich als noch nicht abgedeckt |
-| 1.74 | 2026-09-28 | Tabellen-granulare Filterung für gRPC-Change-Stream und SSE ergänzt (`LH-FA-SST-008`, `ADR-0133`): „Zugriff über den gRPC-Change-Stream“ und „Zugriff über Server-Sent-Events“ tragen je einen neuen `**Filterung:**`-Absatz — ein optionales, unabhängig setzbares `schema`/`table`-Paar (Request-Felder bzw. Query-Parameter), dieselbe Kombinatorik wie `GET /changes`; die beiden Sätze „Eine Filterung nach Tabelle ist nicht Teil dieser Version“ entfallen. Beide Absätze benennen die Beispiel-Clients und die drei SDK-Packages ausdrücklich als noch nicht abgedeckt (offener Folge-Schritt) |
-| 1.75 | 2026-09-28 | Go-Beispiel `examples/grpc-client` von der Ein-Fähigkeit-Form (nur `StreamChanges`) auf die volle gRPC-Fläche erweitert (`LH-FA-SST-006`, `LH-FA-SST-008`): ein `-verb`-Flag (Default `stream` — die ursprüngliche Aufrufform bleibt unverändert funktionsfähig) deckt zusätzlich alle elf RPCs des `Administration`-Diensts ab; das Default-Verb `stream` nimmt den optionalen `-schema`/`-table`-Filter entgegen (`ADR-0133`). „Zugriff über den gRPC-Change-Stream“ nennt den Filter-Flag und den neuen `-verb`-Umfang des Go-Beispiels; „Zugriff über die gRPC-Verwaltungs-API“ trägt jetzt einen eigenen `**Beispiele:**`-Absatz statt der Aussage, keine Sprache decke diese Fläche ab — C#/Kotlin und alle drei SDK-Packages bleiben unverändert offener Folge-Schritt |
-| 1.76 | 2026-09-28 | C#-Beispiel `examples/csharp/grpc-client` von der Ein-Fähigkeit-Form (nur `StreamChanges`) auf die volle gRPC-Fläche erweitert (`LH-FA-SST-006`, `LH-FA-SST-008`), analog zum Go-Beispiel: ein `--verb`-Flag (Default `stream` — die ursprüngliche Aufrufform bleibt unverändert funktionsfähig) deckt zusätzlich alle elf RPCs des `Administration`-Diensts ab; das Default-Verb `stream` nimmt den optionalen `--schema`/`--table`-Filter entgegen (`ADR-0133`). „Zugriff über den gRPC-Change-Stream“ nennt den Filter-Flag des C#-Beispiels und dessen neuen `--verb`-Umfang; „Zugriff über die gRPC-Verwaltungs-API“ nennt das C#-Beispiel jetzt gleichrangig neben Go im `**Beispiele:**`-Absatz — Kotlin und alle drei SDK-Packages bleiben unverändert offener Folge-Schritt |
-| 1.77 | 2026-09-28 | Kotlin-Beispiel `examples/kotlin/grpc-client` von der Ein-Fähigkeit-Form (nur `StreamChanges`) auf die volle gRPC-Fläche erweitert (`LH-FA-SST-006`, `LH-FA-SST-008`), analog zum Go-/C#-Beispiel: ein `--verb`-Flag (Default `stream` — die ursprüngliche Aufrufform bleibt unverändert funktionsfähig) deckt zusätzlich alle elf RPCs des `Administration`-Diensts ab; das Default-Verb `stream` nimmt den optionalen `--schema`/`--table`-Filter entgegen (`ADR-0133`). „Zugriff über den gRPC-Change-Stream“ nennt den Filter-Flag des Kotlin-Beispiels und dessen neuen `--verb`-Umfang; „Zugriff über die gRPC-Verwaltungs-API“ nennt das Kotlin-Beispiel jetzt gleichrangig neben Go/C# im `**Beispiele:**`-Absatz — mit dieser Zeile ist die volle Drei-Sprachen-Matrix für die gRPC-Verwaltungs-API vollständig; die drei SDK-Packages bleiben unverändert offener Folge-Schritt |
-| 1.78 | 2026-09-28 | `EnableTable`/`DisableTable` über den direkten HTTP-/gRPC-Zugriffsweg (`LH-FA-CFG-001`, `LH-FA-CFG-002`) aktualisieren jetzt den laufenden Erfassungsprozess unmittelbar mit der Antwort, ohne Neustart — „Zugriff über die HTTP-/JSON-API“ und „Zugriff über die gRPC-Verwaltungs-API“ tragen je einen neuen Hinweisabsatz, der diese Zusage neben den SQL-Antragsweg stellt (siehe „Tabelle live aktivieren“) |
-| 1.79 | 2026-09-28 | C#-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-csharp-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene async-Methode, `PgChangeFeedGrpcClient.StreamChangesAsync` nimmt den optionalen `schema`/`table`-Filter jetzt als Parameter entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `PgChangeFeed.Client` jetzt namentlich statt als offenen Folge-Schritt; `pgchangefeed`/`pgchangefeed-kotlin` bleiben unverändert offen |
-| 1.80 | 2026-09-28 | Python-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-python-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene Methode, `PgChangeFeedGrpcClient.stream_changes()` nimmt die optionalen `schema`/`table`-Parameter jetzt entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `pgchangefeed` jetzt namentlich statt als offenen Folge-Schritt; `pgchangefeed-kotlin` bleibt unverändert offen |
-| 1.81 | 2026-09-28 | Kotlin-SDK deckt jetzt die volle gRPC-Fläche ab (`LH-FA-SST-009`, `ADR-0133`, slice-sdk-kotlin-grpc-administration-flaeche): `PgChangeFeedAdministrationClient` trägt alle elf RPCs des `Administration`-Diensts als eigene `suspend fun`-Methode, `PgChangeFeedGrpcClient.streamChanges()` nimmt die optionalen `schema`/`table`-Parameter jetzt entgegen. „Zugriff über den gRPC-Change-Stream“ und „Zugriff über die gRPC-Verwaltungs-API“ nennen `pgchangefeed-kotlin` jetzt namentlich statt als offenen Folge-Schritt — mit dieser Zeile ist die Drei-Sprachen-SDK-Matrix für die gRPC-Verwaltungs-API vollständig |
-| 1.82 | 2026-09-30 | „Neustart nach einem Fehler": begrenzte Wiederholung der Klasse `transient` im Capture-Pfad (`ADR-0135`) ergänzt — Rücksetzung der Episode nach einem Zyklus von mindestens 30 s, WARN mit Versuchszähler und INFO bei Fortsetzung, keine Wiederholung bei Berechtigungsfehlern und Server-Abweisungen; Fehlerklassen-Tabelle nennt `transient` und `permission` als im Erfassungspfad beobachtbar |
-| 1.83 | 2026-09-30 | „Neustart nach einem Fehler“ (`ADR-0136`): „gestreamt“ heißt ab Bestätigung von `START_REPLICATION` (Rücksetzung nach mindestens 30 s Streaming, der Aufbau zählt nie), der Aufbau eines Zyklus hat eine Frist von 30 s, das INFO der Fortsetzung folgt dem Streaming-Beginn, die wiederholte Fehlermenge steht als SQLSTATE-Auswahl (Klassen 08, 40, 53, 55, 57, 58 und 25006), jede andere Server-Abweisung endet sofort |
-| 1.84 | 2026-10-01 | Routing von Changes auf Zustellziele dokumentiert (`LH-FA-CFG-008`, `LH-FA-SST-006`, `ADR-0137`, `ADR-0138`, `ADR-0139`, `ADR-0140`, `ADR-0141`, slice-routing-betriebsdoku): §4 neuer Abschnitt „Routing-Regel konfigurieren“ (Voraussetzung `cdc_admin`, `cdc.set_route`/`cdc.remove_route`, Form der `rule_spec`, ausgeführtes Beispiel, R1–R6 mit Fehlertexten, die Fehlerklasse `schema` mit zwei Ursachen und der Abhilfe, „Ziel lesen“, Hinweise zu festem Label, Change ohne Treffer, abwesendem Wert, `DELETE` ohne volle Replica-Identität, Auswahl statt Zugriffsschutz); die Zugriffswege (HTTP, gRPC-Stream, gRPC-Verwaltungs-API `ReadChanges`, SSE) nennen den Filter `target`, der NATS-Vollinhalts-Stream das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>` samt Kosten-Messung, „Änderungen lesen“ die Spalte `route_target`; Fehlerklassen-Zeile `schema`, „Neustart nach einem Fehler“, Rollen-Tabelle, Glossar, „Grenzwerte“ und „Schema aktualisieren“ nachgezogen; der Fehlerblock der Transformationsregeln trennt die entfernte Spalte von der nicht anwendbaren Regel; die Fehlerklasse `schema` ordnet eine Publication mit Spaltenliste an einer Tabelle mit bekannter Spaltenform der Ursache 2 zu, und übernommene Messungen nennen ihren Bericht; die Kosten-Spanne der zweiten Veröffentlichung nennt nur Einzelwerte mit verlinktem Bericht, die R4-Zeile „höchste `order`“ ist als am System nicht gefahren gekennzeichnet, und die Abhilfe der inkompatiblen Schemaänderung ist als im Handbuch nicht beschrieben benannt |
-| 1.85 | 2026-10-01 | Parameter `target` in den SDK-Packages und den Beispiel-Clients dokumentiert (`LH-FA-CFG-008`, `LH-FA-SST-009`, `ADR-0137`, slice-routing-sdk-beispiel-target): `PgChangeFeed.Client`, `pgchangefeed` und `pgchangefeed-kotlin` tragen `target` am HTTP-Lesezugriff, am gRPC-Stream, am SSE-Stream (dort als einziger Filter-Parameter) und als Feld des `ReadChanges`-Requests, der NATS-Vollinhalts-Client baut das Zusatz-Subjekt `cdc.route.<source_id>.<ziel>`; die Beispiele in Go, C# und Kotlin nehmen `-target`/`--target` an `changes`, `stream`, `read-changes` und dem SSE-Beispiel entgegen, das NATS-Vollinhalts-Beispiel `-source` mit `-target` |
-| 1.86 | 2026-10-01 | SSE-Absatz berichtigt (`LH-FA-CFG-008`, `ADR-0137`, slice-routing-sdk-beispiel-target): `target` ist am SSE-Client der einzige Filter-Parameter; der Verweis auf einen offenen Folge-Schritt für `schema`/`table` entfällt |
-| 1.87 | 2026-10-02 | Parameter `schema` und `table` am SSE-Stream der SDK-Packages und der Beispiel-Clients dokumentiert (`LH-FA-SST-008`, `LH-FA-SST-009`, `ADR-0133`, slice-sdk-sse-client-schema-table-filter): `PgChangeFeed.Client`, `pgchangefeed` und `pgchangefeed-kotlin` nehmen am SSE-Client `target`, `schema` und `table` als optionale Parameter entgegen (die Beschränkung auf `target` entfällt), die SSE-Beispiele in Go, C# und Kotlin die Flags `-schema`/`-table` bzw. `--schema`/`--table`; Package-Versionen unverändert |
-| 1.88 | 2026-10-02 | Ablageort der Rollout-Erzeugnisse (`ADR-0142`, slice-schema-rollout-ohne-bind-mount): Pflicht-Report, Rollback-Artefakt und Precheck-Report von `make schema-rollout` liegen in `SCHEMA_ARTEFACT_DIR` (Default `.tmp/schema-rollout`) statt unter `tools/schema/`; die Aufbewahrung je Rollout liegt beim Betreiber; der Lauf mountet den Arbeitsbaum nicht |
