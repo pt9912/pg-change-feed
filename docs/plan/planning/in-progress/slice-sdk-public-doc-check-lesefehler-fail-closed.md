@@ -65,38 +65,38 @@ der Ausgangstabelle.
 
 ## 2. Definition of Done
 
-- [ ] **Liefer-Punkt 1 — Das Skript.** `tools/harness/sdk-public-doc-check.sh` endet bei
+- [x] **Liefer-Punkt 1 — Das Skript.** `tools/harness/sdk-public-doc-check.sh` endet bei
       einem Lesefehler mit Exit 2 und einer Meldung auf stderr; Exit 0 und 1 behalten ihre
       Bedeutung. *Zu belegen durch:* `git grep -n -F '|| true' -- tools/harness/sdk-public-doc-check.sh`
       ist leer; `make sdk-public-doc-check` Exit 0 am echten Baum (gedruckte Zeile im Bericht);
       Mutationsprobe auf einer Kopie im Scratchpad (Rücknahme der Lesefehler-Behandlung
       auf `|| true`): der Tabellentest wird rot — Stelle, Instanz und Farbe im Bericht
       ([`AGENTS.md`](../../../../AGENTS.md) §3.12).
-- [ ] **Liefer-Punkt 2 — Der Tabellentest.** `tools/harness/run-sdk-public-doc-check-tests.sh`
+- [x] **Liefer-Punkt 2 — Der Tabellentest.** `tools/harness/run-sdk-public-doc-check-tests.sh`
       deckt nicht lesbare Datei, nicht lesbares Unterverzeichnis und NUL-Byte-Datei, jeweils
       mit erwartetem Exit und gebundenem Meldungstext; die Lesefehler-Fälle laufen nur bei
       uid ≠ 0 und melden das Überspringen. *Zu belegen durch:* `make test-sdk-public-doc-check`
       Exit 0 mit gedruckter Schlusszeile; je Fall eine Mutation am Skript (Kopie), die den Fall rot färbt.
-- [ ] **Liefer-Punkt 3 — Der Sensor-Vertrag.** `harness/sensors/sdk-public-doc-check.md`
+- [x] **Liefer-Punkt 3 — Der Sensor-Vertrag.** `harness/sensors/sdk-public-doc-check.md`
       nennt Exit 2 (Lesefehler, fail-closed) in der Ausgangstabelle und die Grenze der
       uid-0-Fälle des Tabellentests. *Zu belegen durch:* `git diff` der Datei;
       `git grep -n -F Lesefehler -- harness/sensors/sdk-public-doc-check.md` hat mindestens einen Treffer.
-- [ ] **Nur diese Pfade.** Der Diff berührt `docs/plan/adr/0134-*`, `.github/` und `AGENTS.md` nicht.
+- [x] **Nur diese Pfade.** Der Diff berührt `docs/plan/adr/0134-*`, `.github/` und `AGENTS.md` nicht.
       *Zu belegen durch:* `git diff --name-only <Basis> -- docs/plan/adr .github AGENTS.md` ist leer.
-- [ ] `make gates` grün — Exit-Code ungefiltert gesichert und gesondert ausgewertet
+- [x] `make gates` grün — Exit-Code ungefiltert gesichert und gesondert ausgewertet
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [x] Review durchgeführt, Report `docs/reviews/review-slice-sdk-public-doc-check-lesefehler-fail-closed.md` liegt vor (`.harness/skills/reviewer.md`),
       kein offenes HIGH/MEDIUM — Rollenwechsel nach Schritt 8 des Minimal Agent Workflow
       ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review.
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes, beide
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes, beide
       Stände gemessen; `make suchlauf-nachmessen PLAN=<diese Datei>` endet mit Exit 0.
-- [ ] Doku-Update: Sensor-Vertrag (Liefer-Punkt 3); `harness/README.md` §Sensors, Zeile
+- [x] Doku-Update: Sensor-Vertrag (Liefer-Punkt 3); `harness/README.md` §Sensors, Zeile
       `make sdk-public-doc-check`, nennt den Ausgang, falls sie Ausgänge aufzählt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — kein Anfall ist ebenfalls eine
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — kein Anfall ist ebenfalls eine
       Antwort und wird in §7 notiert (Nachbar: `BEO-PGC/intern-kennungen-in-ausgelieferten-texten`).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
 
 **Umfang:** S — Schätzung, nicht gemessen: ein Skript (rund 20 Zeilen mehr), drei bis vier
 Tabellenfälle, ein Abschnitt im Sensor-Vertrag.
@@ -189,26 +189,69 @@ Mutationsprobe rot gesehen, Suchlauf-Block nachgemessen, Closure-Notiz mit Lerne
 
 - **Der Tabellentest läuft unter uid 0 nicht.** `chmod 000` hindert root nicht; die
   Lesefehler-Fälle werden dort übersprungen (wie im Handbuch-Tabellentest). Läuft die CI als
-  root-Container, sind die Fälle dort nicht gedeckt. — **Ausgang:** (bei Closure)
+  root-Container, sind die Fälle dort nicht gedeckt. — **Ausgang:** weiter offen als dokumentierte Grenze (Sensor-Vertrag, Grenze 4): unter uid 0 überspringt der Tabellentest die Lesefehler-Fälle und meldet es; das Gate selbst ist nicht betroffen, der Tabellentest ist kein Gate-Bestandteil (Verifikation §6, §7 Punkt 2).
 - **Falsch rot durch ein nicht lesbares Verzeichnis, das früher unbemerkt blieb.** Ein
   Verzeichnis unter `sdks/`, das der Nutzer nicht lesen darf (Bau-Artefakte mit fremdem
   Eigentümer, etwa von einem Container-Lauf), färbt den Lauf künftig rot. Die Richtung ist
-  die sichere; der Befund am echten Baum ist am Start zu messen. — **Ausgang:** (bei Closure)
+  die sichere; der Befund am echten Baum ist am Start zu messen. — **Ausgang:** entfallen: `make sdk-public-doc-check` Exit 0 und `make sdk-pack-python` Exit 0 am echten Baum (Verifier gemessen, Verifikation §1).
 - **Architect-Antwort bewegt den Umfang.** Verlangt die Antwort eine Folge-ADR, ist sie
-  Voraussetzung und kein Teil dieses Slice (§4). — **Ausgang:** (bei Closure)
+  Voraussetzung und kein Teil dieses Slice (§4). — **Ausgang:** entfallen: Hauptlauf-Entscheidung Verschärfung ohne Folge-ADR, Umfang unverändert.
 
 ## 7. Closure-Notiz
 
-*(Wird bei der Closure vom Planner geschrieben. Ursprung der Angaben nach
-[`AGENTS.md`](../../../../AGENTS.md) §3.12: gemessen · übernommen · hergeleitet.)*
+*(Ursprung der Angaben nach [`AGENTS.md`](../../../../AGENTS.md) §3.12: gemessen · übernommen · hergeleitet.)*
 
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag (Lerneintrag):** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
-- **Drei Paarungen:** —
+- **Was hat funktioniert:**
+  - Das Muster des Schwester-Skripts trug: Scratch-Verzeichnis mit Trap, `find` in eine Datei,
+    `grep -a` mit Auswertung (Exit 1 Erfolg, Exit ≥ 2 Lesefehler → Exit 2).
+  - Reproduktion des Defekts (Verifier gemessen, uid 1000): am Parent (`8e38389a`) endet die
+    Kopie mit nicht lesbarer `README.md` (Kennung, `chmod 000`) mit Exit 0 und „keine interne
+    Kennung“; am HEAD mit Exit 2 und `Lesefehler: <Pfad>`. Gleiches für ein nicht lesbares
+    Unterverzeichnis und eine nicht existierende Wurzel (Verifikation §2).
+  - Tabellentest: 19 Fälle bestanden, Lesefehler-Fälle gelaufen (Verifier gemessen,
+    `run-sdk-public-doc-check-tests: alle 19 Fälle bestanden`).
+  - Mutationen: 9 im Review (alle rot, Review-Report „Geprüfte Schwerpunkte“), im Verifier 7
+    Einzelmutationen M1 bis M7 rot (Verifikation §4, gemessen) plus M8 grün (siehe Altlücke).
+  - `make gates` Exit 0 (Verifier gemessen, ungepiped).
+- **Was ging anders als geplant:**
+  - **Schleife je Datei statt `xargs`:** `xargs` trennt den `grep`-Exit 1 (kein Treffer) nicht
+    von Exit ≥ 2 (Lesefehler); die Schleife `read -d ''` über `find -print0` kann es.
+  - **`grep -a` statt `-I`:** Binärdateien werden als Text gelesen; ein NUL-Byte-Fall bindet das
+    (Review F-1, bewusste Verhaltensverschärfung, im Sensor-Vertrag benannt).
+  - **Ausgabeform `datei:zeile:text`** (mit `-H`, auch für eine einzelne Datei; alt: Altdoku nannte
+    `datei:zeile: text`, ein Ein-Datei-Aufruf druckte ohne Dateinamen); kein Aufrufer parst sie
+    (Review F-3).
+  - **Keine Folge-ADR:** Entscheidung des Hauptlaufs auf Delegation der Architect-Frage (§4). Die
+    Verschärfung steht im Sensor-Vertrag, wie beim Handbuch-Gate. Eine gemeinsame Folge-ADR für
+    beide Gates (Frage aus Review und Verifikation §5) wird nicht angelegt, weil die Semantik der
+    Gate-Verträge der Sensor-Vertrag trägt und die `Accepted` ADRs unberührt bleiben; die
+    Spec-Lücke „Lesefehler-Semantik steht in keiner ADR“ bleibt dort benannt.
+- **Steering-Loop-Eintrag (Lerneintrag):** Die Klasse **„Wächter schweigt bei Lesefehler“**
+  trat zum zweiten Mal auf: ein kopierter Wächter gibt seine Lücke (`|| true` hinter `grep`,
+  Fehler von `find` verworfen) an die Kopie weiter; das SDK-Gate trug sie als Vorbild, das
+  Handbuch-Gate erbte sie, der Review fand sie dort. Die geschärfte Regel aus der Closure des
+  Handbuch-Slice gilt jetzt an beiden Wächtern, und beide binden sie im Tabellentest:
+  ein `grep`-Wächter trennt Exit 1 von Exit ≥ 2 und färbt einen Lesefehler rot. Der Sensor ist
+  der Tabellentest `make test-sdk-public-doc-check` mit drei Lesefehler-Fällen (Datei,
+  Unterverzeichnis, NUL-Byte); seine benannte Grenze ist uid 0. Hergeleitet, nicht gemessen:
+  ein weiterer `grep`-Wächter im Repo sollte dieselben Fälle tragen (kein Prüflauf über alle
+  Skripte gefahren).
+- **Altlücke (Verifier M8, gemessen):** Fünf Prune-Einträge (`build`, `.gradle`, `__pycache__`,
+  `.pytest_cache`, `bin`) haben keinen Tabellenfall; ihre einzeln entfernte Zeile färbt den
+  Tabellentest nicht (alle 19 Fälle grün). Die Lücke bestand vor dem Slice und gehört nicht zu
+  ihm. Optionaler Folge-Kandidat: ein Tabellenfall je Eintrag (kein Slice angelegt). Ein
+  Register-Eintrag dazu lohnt nicht: es ist ein Einzelbefund einer Abdeckungslücke ohne
+  Wiederholungsklasse; er steht hier als benannter Kandidat.
+- **Beobachtungs-Register (`../observations/`):** Keine neue Beobachtung, keine neue
+  `evidence/`-Datei; `BEO-PGC/intern-kennungen-in-ausgelieferten-texten` im Zustandsfeld
+  fortgeschrieben (Grenze des SDK-Wächters geschlossen, Anker Commit `8f6430a0`); Zähler bleibt **1×**.
+- **Folge-Slices:** keine angelegt; Kandidat: Tabellenfälle für die fünf Prune-Einträge (optional).
+- **Risiken aus §6:** Tabellentest unter uid 0 weiter offen (dokumentierte Grenze) · Falsch rot
+  durch nicht lesbares Verzeichnis entfallen · Architect-Antwort bewegt Umfang entfallen.
+- **Offene Entscheidungen des Auftraggebers:** keine.
+- **Drei Paarungen:** Anker: Review F-1 bis F-3 und Verifikation §7 Punkte 1 bis 4. Folge-Slice:
+  optionaler Kandidat (Prune-Tabellenfälle), nicht angelegt. Register:
+  `intern-kennungen-in-ausgelieferten-texten` (fortgeschrieben).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
