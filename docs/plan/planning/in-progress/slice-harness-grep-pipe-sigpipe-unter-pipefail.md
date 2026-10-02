@@ -105,7 +105,7 @@ behauptet keine Ursache für den roten Lauf. Die offene Frage dieses Eintrags bl
   Python) bleiben unberührt.
 - **Die Routing-Phase der SDK-Tiers als Verbindungs-Härtung** — die Lücke „READY heißt nicht
   verbunden“ ist ein anderer Gegenstand (Folge-Slice
-  [`slice-sdk-routing-phase-verbindung-haertung`](slice-sdk-routing-phase-verbindung-haertung.md));
+  [`slice-sdk-routing-phase-verbindung-haertung`](../open/slice-sdk-routing-phase-verbindung-haertung.md));
   dieser Slice berührt dort nur die zwei `grep -q`-Zeilen von `lib-sdk-route-fixture.sh`, und nur
   in der Form des Austauschs.
 - **Andere `… | grep -q…`-Pipes mit kleinem, einmaligem Erzeuger** (`echo`, `printf`, `git
