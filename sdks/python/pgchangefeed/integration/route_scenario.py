@@ -7,7 +7,10 @@ client without a target read the same table; the table carries two routing
 rules (region A to target A, region B to target B), and the runner commits
 groups of three changes (no rule, B, A). The client with the target must
 receive the change for A and no change of any other region; the client
-without a target must receive all three kinds.
+without a target must receive all three kinds. On the stream surfaces the
+first group proves the connections (`SEEN`); the runner then commits a second
+group with its own sentinel, and the quiet window starts once both clients hold
+their rows of that second group (`SEEN_SECOND`).
 """
 
 from __future__ import annotations
@@ -22,6 +25,7 @@ from typing import Any
 
 TABLE = os.environ["PGCHANGEFEED_E2E_TABLE"]
 SENTINEL = os.environ["PGCHANGEFEED_E2E_SENTINEL"]
+SENTINEL_SECOND = os.environ["PGCHANGEFEED_ROUTE_SENTINEL_SECOND"]
 ROUTE_TARGET_A = os.environ["PGCHANGEFEED_ROUTE_TARGET_A"]
 ROUTE_TARGET_B = os.environ["PGCHANGEFEED_ROUTE_TARGET_B"]
 ROUTE_REGION_NONE = os.environ["PGCHANGEFEED_ROUTE_REGION_NONE"]
@@ -106,12 +110,16 @@ class RouteCollector:
             self._stopped = True
 
 
-def _own(rows: list[RouteRow]) -> list[RouteRow]:
-    return [r for r in rows if r.table == TABLE and r.name == SENTINEL]
+def _own(rows: list[RouteRow], sentinel: str = SENTINEL) -> list[RouteRow]:
+    return [r for r in rows if r.table == TABLE and r.name == sentinel]
 
 
-def _has_all_three(rows: list[RouteRow]) -> bool:
-    regions = {r.region for r in _own(rows)}
+def _own_any(rows: list[RouteRow]) -> list[RouteRow]:
+    return [r for r in rows if r.table == TABLE and r.name in (SENTINEL, SENTINEL_SECOND)]
+
+
+def _has_all_three(rows: list[RouteRow], sentinel: str = SENTINEL) -> bool:
+    regions = {r.region for r in _own(rows, sentinel)}
     return {ROUTE_TARGET_A, ROUTE_TARGET_B, ROUTE_REGION_NONE} <= regions
 
 
@@ -138,10 +146,24 @@ def run_streams(targeted: RouteCollector, unfiltered: RouteCollector) -> None:
         time.sleep(0.1)
     print("SEEN", flush=True)
 
-    # The window starts only after the client without a target received the
-    # change of the other target: the same delivery path has then demonstrably
-    # dispatched it, so its absence at the client with a target is no early
-    # cut-off.
+    # The client with a target received a change, so its connection stands.
+    # The second group is committed after that point; the window starts once
+    # the client with a target holds the change of its target from that group
+    # and the client without a target holds all three, so the absence of
+    # foreign changes is no early cut-off.
+    second_deadline = time.monotonic() + POSITIVE_DEADLINE_SECONDS
+    while not (
+        any(r.region == ROUTE_TARGET_A for r in _own(targeted.rows, SENTINEL_SECOND))
+        and _has_all_three(unfiltered.rows, SENTINEL_SECOND)
+    ):
+        _raise_on_failure(targeted, unfiltered)
+        assert time.monotonic() < second_deadline, (
+            f"innerhalb der Frist weder die Change des Ziels {ROUTE_TARGET_A} der zweiten Gruppe "
+            "am Client mit Ziel noch alle drei der zweiten Gruppe am Client ohne Ziel empfangen"
+        )
+        time.sleep(0.1)
+    print("SEEN_SECOND", flush=True)
+
     time.sleep(QUIET_SECONDS)
     _raise_on_failure(targeted, unfiltered)
     targeted.stop()
@@ -181,7 +203,7 @@ def run_pull(read: Callable[[str | None], list[RouteRow]]) -> None:
 
 def _evaluate(targeted: list[RouteRow], unfiltered: list[RouteRow], quiet_seconds: int) -> None:
     foreign = [r for r in targeted if r.table != TABLE or r.region != ROUTE_TARGET_A]
-    own_unfiltered = _own(unfiltered)
+    own_unfiltered = _own_any(unfiltered)
     for r in targeted:
         print(f"RECEIVED_TARGETED change_id={r.change_id} table={r.table} region={r.region}", flush=True)
     for r in own_unfiltered:

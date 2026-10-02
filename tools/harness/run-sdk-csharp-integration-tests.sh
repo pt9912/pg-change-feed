@@ -9,7 +9,9 @@
 # ein zweites Mal gegen eine Tabelle mit aktiver `rename_column`-Regel und
 # ein drittes Mal gegen eine Tabelle mit zwei Routing-Regeln (ein Client mit
 # `target` empfängt nur die Changes seines Ziels, ein Client ohne `target`
-# alle; Vorbereitung und Ablauf über tools/harness/lib-sdk-route-fixture.sh)
+# alle; Vorbereitung und Ablauf über tools/harness/lib-sdk-route-fixture.sh;
+# das Negativ der Stream-Flächen trägt eine zweite Dreiergruppe, die der Runner
+# nach beobachteter Verbindung committet)
 # und eine dreizehnte Phase, in der der SSE-Client mit `schema` und `table`
 # sowie mit `schema` allein nur die Changes seiner Auswahl aus drei Tabellen in
 # zwei Schemas empfängt (Vorbereitung und Ablauf über
@@ -390,7 +392,9 @@ HTTP_RULE_IDENT=$(run_phase \
 # Dieselben vier Flächen gegen die eigene Tabelle $SDK_ROUTE_TABLE mit zwei
 # Routing-Regeln (tools/harness/lib-sdk-route-fixture.sh): der Client mit
 # `target` empfängt nur die Changes seines Ziels, der Client ohne `target`
-# alle; die Kennungen werden gegen cdc.changes (route_target) gehalten.
+# alle; die Kennungen werden gegen cdc.changes (route_target) gehalten. Auf
+# den Stream-Flächen trägt eine zweite Dreiergruppe, die der Runner nach
+# beobachteter Verbindung committet, das Negativ.
 sdk_route_fixture_setup "run-sdk-csharp-integration-tests"
 
 sdk_route_phase "run-sdk-csharp-integration-tests" \
@@ -464,7 +468,7 @@ abdeckung_csharp_abschnitt() {
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`NatsRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-006\`](../../spec/lastenheft.md), [\`LH-FA-CON-001\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedHttpClient\`) registriert real einen Consumer (admin-Token) und listet Tabellen (reader-Token); die Registrierung ist unabhängig über \`cdc.consumer\` lesbar; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401 | \`HttpRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     "| [\`LH-FA-CFG-007\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | eine aktive \`rename_column\`-Regel auf einer eigenen Tabelle: alle vier C#-SDK-Clients empfangen die danach erfasste Änderung mit dem umbenannten Schlüssel im opaken Bild-Modell (\`JsonElement\`, gRPC die Bytes als JSON) — Zielschlüssel trägt den Sentinel, Quellschlüssel fehlt; \`change_id\` je unabhängig über \`cdc.changes\` lesbar | \`GrpcRuleRealserverTests\`, \`SseRuleRealserverTests\`, \`NatsRuleRealserverTests\`, \`HttpRuleRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
-    "| [\`LH-FA-CFG-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | zwei aktive Routing-Regeln (Ziele \`eu\` und \`us\`) auf einer eigenen Tabelle: die vier C#-SDK-Flächen (gRPC-Stream, SSE-Stream, NATS-Zusatz-Subjekt \`cdc.route.<source_id>.<ziel>\`, HTTP-Lesezugriff) liefern mit \`target\` genau die Changes des Ziels \`eu\` und im Ruhefenster keine Change eines anderen Ziels oder ohne Ziel (der HTTP-Lesezugriff liefert exakt die Ziel-Teilmenge der ungefilterten Lesung), ohne \`target\` alle; \`change_id\` je unabhängig über \`cdc.changes\` (\`route_target\`) gegengelesen | \`GrpcRouteRealserverTests\`, \`SseRouteRealserverTests\`, \`NatsRouteRealserverTests\`, \`HttpRouteRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
+    "| [\`LH-FA-CFG-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | zwei aktive Routing-Regeln (Ziele \`eu\` und \`us\`) auf einer eigenen Tabelle: die vier C#-SDK-Flächen (gRPC-Stream, SSE-Stream, NATS-Zusatz-Subjekt \`cdc.route.<source_id>.<ziel>\`, HTTP-Lesezugriff) liefern mit \`target\` genau die Changes des Ziels \`eu\` und, auf den Stream-Flächen nach einer zweiten Dreiergruppe nach stehender Verbindung (Client mit \`target\` genau eine, Client ohne \`target\` genau drei Changes dieser Gruppe), im Ruhefenster keine Change eines anderen Ziels oder ohne Ziel (der HTTP-Lesezugriff liefert exakt die Ziel-Teilmenge der ungefilterten Lesung), ohne \`target\` alle; \`change_id\` je unabhängig über \`cdc.changes\` (\`route_target\`) gegengelesen | \`GrpcRouteRealserverTests\`, \`SseRouteRealserverTests\`, \`NatsRouteRealserverTests\`, \`HttpRouteRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | drei aktive Tabellen in zwei Schemas (zwei im Schema \`public\`, eine gleichnamige im zweiten Schema): der C#-SDK-Client \`PgChangeFeedSseClient\` empfängt mit \`schema\` und \`table\` genau die Changes seiner Tabelle, mit \`schema\` allein genau die Changes dieses Schemas, ohne Filter alle drei; nach beobachteter Verbindung (erste Dreiergruppe empfangen) committet der Runner eine zweite Dreiergruppe mit eigenem Sentinel, das Ruhefenster beginnt erst, wenn alle drei Clients ihre Zeilen der zweiten Gruppe haben, und in ihm empfängt kein gefilterter Client eine Change einer anderen Tabelle (zweite Gruppe: F1 genau eine, F2 genau eine, ohne Filter genau drei); \`change_id\` je unabhängig über \`cdc.changes\` (\`schema_name\`, \`table_name\`) gegengelesen | \`SseFilterRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     '<!-- pgchangefeed-sdk-e2e:csharp-end -->'
 }

@@ -73,17 +73,30 @@ internal sealed class RouteCollector
 /// B), and the runner commits groups of three changes (no rule, B, A). The
 /// client with the target must receive the change for A and no change of any
 /// other region; the client without a target must receive all three kinds.
+/// On the stream surfaces the first group proves the connections
+/// (<c>SEEN</c>); the runner then commits a second group with its own
+/// sentinel, and the quiet window starts once both clients hold their rows of
+/// that second group (<c>SEEN_SECOND</c>).
 /// </summary>
 internal static class RouteScenario
 {
     private static readonly TimeSpan PositiveDeadline = TimeSpan.FromSeconds(90);
 
-    private static IEnumerable<RouteRow> Own(IEnumerable<RouteRow> rows)
-        => rows.Where(r => r.Table == PhaseEnvironment.Table && r.Name == PhaseEnvironment.Sentinel);
+    private static IEnumerable<RouteRow> Own(IEnumerable<RouteRow> rows, string sentinel)
+        => rows.Where(r => r.Table == PhaseEnvironment.Table && r.Name == sentinel);
 
-    private static bool HasAllThree(IEnumerable<RouteRow> rows)
+    private static IEnumerable<RouteRow> Own(IEnumerable<RouteRow> rows)
+        => Own(rows, PhaseEnvironment.Sentinel);
+
+    private static IEnumerable<RouteRow> OwnAny(IEnumerable<RouteRow> rows)
+        => rows.Where(r => r.Table == PhaseEnvironment.Table
+            && (r.Name == PhaseEnvironment.Sentinel || r.Name == PhaseEnvironment.RouteSentinelSecond));
+
+    private static bool HasAllThree(IEnumerable<RouteRow> rows) => HasAllThree(rows, PhaseEnvironment.Sentinel);
+
+    private static bool HasAllThree(IEnumerable<RouteRow> rows, string sentinel)
     {
-        var regions = Own(rows).Select(r => r.Region).ToHashSet();
+        var regions = Own(rows, sentinel).Select(r => r.Region).ToHashSet();
         return regions.Contains(PhaseEnvironment.RouteTargetA)
             && regions.Contains(PhaseEnvironment.RouteTargetB)
             && regions.Contains(PhaseEnvironment.RouteRegionNone);
@@ -116,10 +129,24 @@ internal static class RouteScenario
         }
         PhaseEnvironment.Print("SEEN");
 
-        // The window starts only after the client without a target received the
-        // change of the other target: the same delivery path has then
-        // demonstrably dispatched it, so its absence at the client with a target
-        // is no early cut-off.
+        // The client with a target received a change, so its connection stands.
+        // The second group is committed after that point; the window starts
+        // once the client with a target holds the change of its target from
+        // that group and the client without a target holds all three, so the
+        // absence of foreign changes is no early cut-off.
+        var second = PhaseEnvironment.RouteSentinelSecond;
+        var secondDeadline = DateTime.UtcNow + PositiveDeadline;
+        while (!(Own(targeted.Rows, second).Any(r => r.Region == PhaseEnvironment.RouteTargetA)
+                 && HasAllThree(unfiltered.Rows, second)))
+        {
+            ThrowOnFailure(targeted, unfiltered);
+            Assert.True(DateTime.UtcNow < secondDeadline,
+                $"innerhalb der Frist weder die Change des Ziels {PhaseEnvironment.RouteTargetA} der zweiten Gruppe " +
+                "am Client mit Ziel noch alle drei der zweiten Gruppe am Client ohne Ziel empfangen");
+            await Task.Delay(100);
+        }
+        PhaseEnvironment.Print("SEEN_SECOND");
+
         await Task.Delay(TimeSpan.FromSeconds(PhaseEnvironment.RouteQuietSeconds));
         ThrowOnFailure(targeted, unfiltered);
         stop.Cancel();
@@ -161,7 +188,7 @@ internal static class RouteScenario
         var foreign = targeted
             .Where(r => r.Table != PhaseEnvironment.Table || r.Region != PhaseEnvironment.RouteTargetA)
             .ToList();
-        var ownUnfiltered = Own(unfiltered).ToList();
+        var ownUnfiltered = OwnAny(unfiltered).ToList();
         foreach (var row in targeted)
         {
             PhaseEnvironment.Print($"RECEIVED_TARGETED change_id={row.ChangeId} table={row.Table} region={row.Region}");

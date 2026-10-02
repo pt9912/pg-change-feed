@@ -12,7 +12,10 @@
 # us (B); eine Zeile der Region asia trifft keine Regel und trägt kein Ziel.
 # Je Versuch committet der Runner eine Dreiergruppe in der Reihenfolge asia,
 # us, eu: ein Client mit Ziel eu sieht vor der Change seines Ziels zwei
-# Changes, die er nicht empfangen darf.
+# Changes, die er nicht empfangen darf. Die Stream-Phasen (Ruhefenster > 0)
+# committen nach SEEN genau eine zweite Dreiergruppe mit dem Sentinel
+# `<Sentinel>Second`: der Client mit Ziel hat dann eine Change empfangen, seine
+# Verbindung steht, und das Negativ trägt die zweite Gruppe.
 #
 # Die Marker-Prüfungen lesen `docker logs … | grep … >/dev/null` ohne `-q`:
 # `grep` liest bis zum Dateiende, `docker logs` schreibt vollständig, und die
@@ -89,10 +92,18 @@ sdk_route_psql() {
 # fremder Changes am Client mit Ziel; der Runner verlangt 0). Der Runner hält jede Kennung
 # gegen cdc.changes (route_target) und setzt SDK_ROUTE_REPORT fort. Das
 # Ruhefenster 0 kennzeichnet eine Pull-Fläche (der Test vergleicht dort die
-# Lesung mit Ziel mit zwei ungefilterten Lesungen und wartet nicht).
+# Lesung mit Ziel mit zwei ungefilterten Lesungen und wartet nicht; es gibt
+# keine zweite Gruppe). Bei Ruhefenster > 0 committet der Runner nach SEEN die
+# zweite Dreiergruppe (Sentinel `<Sentinel>Second`, ID-Bereich Basis + 100),
+# wartet auf SEEN_SECOND (Client mit Ziel hat die Change des Ziels der zweiten
+# Gruppe, Client ohne Ziel alle drei) und prüft die zweite Gruppe exakt gegen
+# cdc.changes (Client mit Ziel eine, Client ohne Ziel drei, je Ziel eine); die
+# Zeilen RECEIVED_* und ROUTE_RESULT zählen beide Gruppen.
 sdk_route_phase() {
   local prefix=$1 phase_name=$2 sentinel=$3 id_base=$4 select_env=$5 extra_env=$6 quiet=$7
+  local sentinel_second="${sentinel}Second"
   local attempt group_id seen=0 seen_after_ms=0 pair started finished
+  local second_id second_started second_after_ms=0 seen_second=0
 
   local env_args=()
   for pair in $extra_env; do
@@ -105,6 +116,7 @@ sdk_route_phase() {
     -e "$select_env" \
     -e PGCHANGEFEED_E2E_TABLE="$SDK_ROUTE_TABLE" \
     -e PGCHANGEFEED_E2E_SENTINEL="$sentinel" \
+    -e PGCHANGEFEED_ROUTE_SENTINEL_SECOND="$sentinel_second" \
     -e PGCHANGEFEED_ROUTE_TARGET_A="$SDK_ROUTE_TARGET_A" \
     -e PGCHANGEFEED_ROUTE_TARGET_B="$SDK_ROUTE_TARGET_B" \
     -e PGCHANGEFEED_ROUTE_REGION_NONE="$SDK_ROUTE_REGION_NONE" \
@@ -155,6 +167,33 @@ SQL
     fi
   done
 
+  # Zweite Gruppe (nur Stream-Phasen): erst nach SEEN, also nach beobachteter
+  # Verbindung des Clients mit Ziel; ID-Bereich getrennt von den Versuchen.
+  if [ "$seen" -eq 1 ] && [ "$quiet" -gt 0 ]; then
+    second_id=$((id_base + 100))
+    second_started=$(date +%s%N)
+    docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 >/dev/null <<SQL
+INSERT INTO public.$SDK_ROUTE_TABLE (id, region, name) VALUES
+  ($((second_id + 1)), '$SDK_ROUTE_REGION_NONE', '$sentinel_second');
+INSERT INTO public.$SDK_ROUTE_TABLE (id, region, name) VALUES
+  ($((second_id + 2)), '$SDK_ROUTE_TARGET_B', '$sentinel_second');
+INSERT INTO public.$SDK_ROUTE_TABLE (id, region, name) VALUES
+  ($((second_id + 3)), '$SDK_ROUTE_TARGET_A', '$sentinel_second');
+SQL
+    for _ in $(seq 1 450); do
+      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -E '^[[:space:]]*SEEN_SECOND[[:space:]]*$' >/dev/null; then
+        seen_second=1
+        finished=$(date +%s%N)
+        second_after_ms=$(((finished - second_started) / 1000000))
+        break
+      fi
+      if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+        break
+      fi
+      sleep 0.2
+    done
+  fi
+
   local test_stopped=0
   for _ in $(seq 1 $((quiet + 120))); do
     if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
@@ -167,25 +206,31 @@ SQL
   test_exit=$(docker inspect --format '{{.State.ExitCode}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo unbekannt)
   test_output=$(docker logs "$SDK_TEST_CONTAINER" 2>&1 || true)
 
+  # Die Abschlusszeile steht vor jeder Auswertung im Fehlertext: ein Fremdwert
+  # ist in der Zeile selbst sichtbar.
+  local result_line
+  result_line=$(printf '%s\n' "$test_output" | grep -E '^[[:space:]]*ROUTE_RESULT ' | sed -E 's/^[[:space:]]+//' | head -n1 || true)
+
   if [ "$seen" -ne 1 ]; then
     echo "$prefix: $phase_name — der Test meldete nach $SDK_ROUTE_ATTEMPTS Dreiergruppen kein SEEN (Ziel $SDK_ROUTE_TARGET_A und Gegenseite nicht beide empfangen): $test_output" >&2
     exit 1
   fi
-  if [ "$test_stopped" -ne 1 ] || [ "$test_exit" != "0" ]; then
-    echo "$prefix: $phase_name — der Test endete nicht mit Ausgang 0 (gestoppt: $test_stopped, Ausgang: $test_exit): $test_output" >&2
+  if [ "$quiet" -gt 0 ] && [ "$seen_second" -ne 1 ]; then
+    echo "$prefix: $phase_name — der Test meldete nach der zweiten Dreiergruppe kein SEEN_SECOND: ${result_line:-keine ROUTE_RESULT-Zeile}; Ausgabe: $test_output" >&2
     exit 1
   fi
-
-  local result_line
-  result_line=$(printf '%s\n' "$test_output" | grep -E '^[[:space:]]*ROUTE_RESULT ' | sed -E 's/^[[:space:]]+//' | head -n1 || true)
   if ! printf '%s' "$result_line" | grep -qE "^ROUTE_RESULT target=$SDK_ROUTE_TARGET_A targeted=[0-9]+ foreign=[0-9]+ unfiltered=[0-9]+ quiet_seconds=$quiet([^0-9]|\$)"; then
-    echo "$prefix: $phase_name — die Abschlusszeile ROUTE_RESULT fehlt oder trägt nicht die erwartete Form (foreign=<n>, quiet_seconds=$quiet): ${result_line:-leer}" >&2
+    echo "$prefix: $phase_name — die Abschlusszeile ROUTE_RESULT fehlt oder trägt nicht die erwartete Form (foreign=<n>, quiet_seconds=$quiet): ${result_line:-leer}; Ausgang des Tests: $test_exit; Ausgabe: $test_output" >&2
     exit 1
   fi
   local targeted_count unfiltered_count foreign_count
   foreign_count=$(printf '%s' "$result_line" | sed -E 's/.* foreign=([0-9]+) .*/\1/')
   if [ "$foreign_count" != "0" ]; then
     echo "$prefix: $phase_name — der Client mit Ziel $SDK_ROUTE_TARGET_A zählte $foreign_count fremde Change(s) (ROUTE_RESULT foreign=$foreign_count): $result_line" >&2
+    exit 1
+  fi
+  if [ "$test_stopped" -ne 1 ] || [ "$test_exit" != "0" ]; then
+    echo "$prefix: $phase_name — der Test endete nicht mit Ausgang 0 (gestoppt: $test_stopped, Ausgang: $test_exit): $test_output" >&2
     exit 1
   fi
   targeted_count=$(printf '%s' "$result_line" | sed -E 's/.* targeted=([0-9]+) .*/\1/')
@@ -195,11 +240,16 @@ SQL
   # (und die Region A); eine Kennung mit anderem Ziel oder ohne Ziel ist ein
   # Befund, den der Test (foreign) und diese Gegenlesung unabhängig voneinander
   # tragen.
-  local ident route targeted_lines=0
+  local ident route name targeted_lines=0 targeted_second=0
   while IFS= read -r ident; do
     [ -n "$ident" ] || continue
     targeted_lines=$((targeted_lines + 1))
-    route=$(sdk_route_psql "SELECT coalesce(route_target, 'NULL') || ' ' || coalesce(new_data->>'region', 'NULL') FROM cdc.changes WHERE source_id = '$SDK_ROUTE_SOURCE' AND change_id = '$ident' AND table_name = '$SDK_ROUTE_TABLE'")
+    route=$(sdk_route_psql "SELECT coalesce(route_target, 'NULL') || ' ' || coalesce(new_data->>'region', 'NULL') || '|' || coalesce(new_data->>'name', 'NULL') FROM cdc.changes WHERE source_id = '$SDK_ROUTE_SOURCE' AND change_id = '$ident' AND table_name = '$SDK_ROUTE_TABLE'")
+    name=${route##*|}
+    route=${route%%|*}
+    if [ "$name" = "$sentinel_second" ]; then
+      targeted_second=$((targeted_second + 1))
+    fi
     if [ "$route" != "$SDK_ROUTE_TARGET_A $SDK_ROUTE_TARGET_A" ]; then
       echo "$prefix: $phase_name — der Client mit Ziel $SDK_ROUTE_TARGET_A empfing die Change $ident, die in cdc.changes (route_target region) '${route:-nicht gefunden}' trägt" >&2
       exit 1
@@ -209,15 +259,24 @@ SQL
     echo "$prefix: $phase_name — RECEIVED_TARGETED-Zeilen ($targeted_lines) und ROUTE_RESULT targeted=$targeted_count passen nicht zusammen oder sind leer" >&2
     exit 1
   fi
+  # Die zweite Gruppe trifft den Client mit Ziel genau einmal (die Change des
+  # Ziels); der Wert belegt, dass die stehende Verbindung das Ziel auswählt.
+  if [ "$quiet" -gt 0 ] && [ "$targeted_second" != "1" ]; then
+    echo "$prefix: $phase_name — der Client mit Ziel $SDK_ROUTE_TARGET_A empfing $targeted_second Change(s) der zweiten Gruppe, erwartet genau 1: $result_line" >&2
+    exit 1
+  fi
 
   # Der Client ohne Ziel hat für diese Phase alle drei Ziele gesehen: Ziel A,
   # Ziel B und eine Change ohne Ziel (route_target NULL), jede Kennung in der
-  # Sicht mit dem Sentinel dieser Phase.
-  local unfiltered_lines=0 seen_targets=""
+  # Sicht mit einem der beiden Sentinels dieser Phase; die zweite Gruppe
+  # genau einmal je Ziel.
+  local unfiltered_lines=0 seen_targets="" second_targets="" second_lines=0
   while IFS= read -r ident; do
     [ -n "$ident" ] || continue
     unfiltered_lines=$((unfiltered_lines + 1))
-    route=$(sdk_route_psql "SELECT coalesce(route_target, 'NULL') || ' ' || coalesce(new_data->>'region', 'NULL') FROM cdc.changes WHERE source_id = '$SDK_ROUTE_SOURCE' AND change_id = '$ident' AND table_name = '$SDK_ROUTE_TABLE' AND new_data->>'name' = '$sentinel'")
+    route=$(sdk_route_psql "SELECT coalesce(route_target, 'NULL') || ' ' || coalesce(new_data->>'region', 'NULL') || '|' || (new_data->>'name') FROM cdc.changes WHERE source_id = '$SDK_ROUTE_SOURCE' AND change_id = '$ident' AND table_name = '$SDK_ROUTE_TABLE' AND new_data->>'name' IN ('$sentinel', '$sentinel_second')")
+    name=${route##*|}
+    route=${route%%|*}
     case "$route" in
       "$SDK_ROUTE_TARGET_A $SDK_ROUTE_TARGET_A" | "$SDK_ROUTE_TARGET_B $SDK_ROUTE_TARGET_B" | "NULL $SDK_ROUTE_REGION_NONE") ;;
       *)
@@ -226,7 +285,26 @@ SQL
         ;;
     esac
     seen_targets="$seen_targets|$route"
+    if [ "$name" = "$sentinel_second" ]; then
+      second_lines=$((second_lines + 1))
+      second_targets="$second_targets|$route"
+    fi
   done < <(printf '%s\n' "$test_output" | sed -nE 's/^[[:space:]]*RECEIVED_UNFILTERED change_id=([^ ]+).*/\1/p')
+  if [ "$quiet" -gt 0 ]; then
+    for want in "|$SDK_ROUTE_TARGET_A $SDK_ROUTE_TARGET_A" "|$SDK_ROUTE_TARGET_B $SDK_ROUTE_TARGET_B" "|NULL $SDK_ROUTE_REGION_NONE"; do
+      case "$second_targets|" in
+        *"$want|"*) ;;
+        *)
+          echo "$prefix: $phase_name — der Client ohne Ziel empfing keine Change der zweiten Gruppe von '${want#|}' (Gegenlesung über cdc.changes)" >&2
+          exit 1
+          ;;
+      esac
+    done
+    if [ "$second_lines" != "3" ]; then
+      echo "$prefix: $phase_name — der Client ohne Ziel empfing $second_lines Change(s) der zweiten Gruppe, erwartet genau 3 (je Ziel eine): $result_line" >&2
+      exit 1
+    fi
+  fi
   for want in "|$SDK_ROUTE_TARGET_A $SDK_ROUTE_TARGET_A" "|$SDK_ROUTE_TARGET_B $SDK_ROUTE_TARGET_B" "|NULL $SDK_ROUTE_REGION_NONE"; do
     case "$seen_targets|" in
       *"$want|"*) ;;
@@ -258,5 +336,9 @@ SQL
   if [ "$quiet" -eq 0 ]; then
     targeted_scope="$targeted_count $SDK_ROUTE_TARGET_A-Change(s) aller Routing-Phasen derselben Tabelle"
   fi
-  SDK_ROUTE_REPORT="$SDK_ROUTE_REPORT; $phase_name: Ziel $SDK_ROUTE_TARGET_A, $targeted_scope und $window_text, gemessen foreign=$foreign_count, $unfiltered_count Change(s) dieser Phase am Client ohne Ziel (alle Gruppen $SDK_ROUTE_TARGET_A/$SDK_ROUTE_TARGET_B/ohne Ziel), SEEN nach ${seen_after_ms}ms ab dem letzten Commit (Versuch $attempt)"
+  local second_text=""
+  if [ "$quiet" -gt 0 ]; then
+    second_text=", zweite Gruppe nach stehender Verbindung: Client mit Ziel 1, Client ohne Ziel 3, SEEN_SECOND nach ${second_after_ms}ms ab dem Commit der zweiten Gruppe"
+  fi
+  SDK_ROUTE_REPORT="$SDK_ROUTE_REPORT; $phase_name: Ziel $SDK_ROUTE_TARGET_A, $targeted_scope und $window_text, gemessen foreign=$foreign_count, $unfiltered_count Change(s) dieser Phase am Client ohne Ziel (alle Gruppen $SDK_ROUTE_TARGET_A/$SDK_ROUTE_TARGET_B/ohne Ziel), SEEN nach ${seen_after_ms}ms ab dem letzten Commit (Versuch $attempt)$second_text; gedruckte Zeile: $result_line"
 }

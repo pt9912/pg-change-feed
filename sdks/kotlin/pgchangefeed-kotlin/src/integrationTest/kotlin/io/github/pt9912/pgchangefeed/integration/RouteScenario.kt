@@ -64,15 +64,25 @@ class RouteCollector {
  * B), and the runner commits groups of three changes (no rule, B, A). The
  * client with the target must receive the change for A and no change of any
  * other region; the client without a target must receive all three kinds.
+ * On the stream surfaces the first group proves the connections (`SEEN`); the
+ * runner then commits a second group with its own sentinel, and the quiet
+ * window starts once both clients hold their rows of that second group
+ * (`SEEN_SECOND`).
  */
 object RouteScenario {
     private const val POSITIVE_DEADLINE_MILLIS = 90_000L
 
-    private fun own(rows: List<RouteRow>): List<RouteRow> =
-        rows.filter { it.table == PhaseEnvironment.table && it.name == PhaseEnvironment.sentinel }
+    private fun own(rows: List<RouteRow>, sentinel: String = PhaseEnvironment.sentinel): List<RouteRow> =
+        rows.filter { it.table == PhaseEnvironment.table && it.name == sentinel }
 
-    private fun hasAllThree(rows: List<RouteRow>): Boolean {
-        val regions = own(rows).map { it.region }.toSet()
+    private fun ownAny(rows: List<RouteRow>): List<RouteRow> =
+        rows.filter {
+            it.table == PhaseEnvironment.table &&
+                (it.name == PhaseEnvironment.sentinel || it.name == PhaseEnvironment.routeSentinelSecond)
+        }
+
+    private fun hasAllThree(rows: List<RouteRow>, sentinel: String = PhaseEnvironment.sentinel): Boolean {
+        val regions = own(rows, sentinel).map { it.region }.toSet()
         return PhaseEnvironment.routeTargetA in regions &&
             PhaseEnvironment.routeTargetB in regions &&
             PhaseEnvironment.routeRegionNone in regions
@@ -101,10 +111,29 @@ object RouteScenario {
         println("SEEN")
         System.out.flush()
 
-        // The window starts only after the client without a target received the
-        // change of the other target: the same delivery path has then
-        // demonstrably dispatched it, so its absence at the client with a target
-        // is no early cut-off.
+        // The client with a target received a change, so its connection stands.
+        // The second group is committed after that point; the window starts
+        // once the client with a target holds the change of its target from
+        // that group and the client without a target holds all three, so the
+        // absence of foreign changes is no early cut-off.
+        val second = PhaseEnvironment.routeSentinelSecond
+        val secondDeadline = System.currentTimeMillis() + POSITIVE_DEADLINE_MILLIS
+        while (!(
+                own(targeted.rows, second).any { it.region == PhaseEnvironment.routeTargetA } &&
+                    hasAllThree(unfiltered.rows, second)
+                )
+        ) {
+            throwOnFailure(targeted, unfiltered)
+            assertTrue(
+                System.currentTimeMillis() < secondDeadline,
+                "innerhalb der Frist weder die Change des Ziels ${PhaseEnvironment.routeTargetA} der zweiten Gruppe " +
+                    "am Client mit Ziel noch alle drei der zweiten Gruppe am Client ohne Ziel empfangen",
+            )
+            Thread.sleep(100)
+        }
+        println("SEEN_SECOND")
+        System.out.flush()
+
         Thread.sleep(PhaseEnvironment.routeQuietSeconds * 1000)
         throwOnFailure(targeted, unfiltered)
         targeted.stop()
@@ -151,7 +180,7 @@ object RouteScenario {
         val foreign = targeted.filter {
             it.table != PhaseEnvironment.table || it.region != PhaseEnvironment.routeTargetA
         }
-        val ownUnfiltered = own(unfiltered)
+        val ownUnfiltered = ownAny(unfiltered)
         targeted.forEach { println("RECEIVED_TARGETED change_id=${it.changeId} table=${it.table} region=${it.region}") }
         ownUnfiltered.forEach {
             println("RECEIVED_UNFILTERED change_id=${it.changeId} table=${it.table} region=${it.region}")
