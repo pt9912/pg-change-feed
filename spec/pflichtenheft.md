@@ -741,7 +741,7 @@ derselben Zeile.
 | `request_kind` | text | ja | geschlossene Menge `enable` \| `disable` \| `exclude_column` \| `include_column` \| `backfill` \| `set_transformation` \| `remove_transformation` \| `set_route` \| `remove_route` |
 | `requested_at` | timestamptz | ja, Default `current_timestamp` | Zeitpunkt des Funktionsaufrufs (die Funktionen setzen ihn ausdrücklich auf `clock_timestamp()`); die Verarbeitungs-Ordnung |
 | `status` | text | ja, Default `pending` | geschlossene Menge `pending` \| `applied` \| `failed` |
-| `error_message` | text | nein | Fehlertext eines `failed`-Antrags; `applied` trägt NULL |
+| `error_message` | text | nein | Fehlertext eines `failed`-Antrags: `abgelehnt [<Code>]: <Klartext>` bei der Ablehnung einer Aufrufer-Eingabe, der Kopf `Fehlerklasse <klasse> [<Code>]: <Ursache>` bei einem klassifizierten Fehler (`SPEC-008`); `applied` trägt NULL |
 
 **Ordnung der Verarbeitung.** Die neun SQL-Funktionen setzen `requested_at` auf den
 Zeitpunkt ihres Aufrufs (`clock_timestamp()`), nicht auf den Beginn der Transaktion.
@@ -774,8 +774,9 @@ Bindungs-Zeilen und Publication nach.
 Die SQL-Funktionen prüfen Quelle, Schema, Tabelle und Spalte nicht; eine
 `pending`-Zeile, die der Antrags-Konstruktor verwirft, endet in der Verarbeitung
 `failed`, und die Zeilen dahinter werden in der Ordnung der Queue
-weiterverarbeitet. `error_message` trägt den Klartext der Tabelle, gefolgt von
-einem Doppelpunkt, einem Leerzeichen und der Adresse — hier die
+weiterverarbeitet. `error_message` beginnt mit `abgelehnt [<Code>]: `
+(`SPEC-008`), es folgt der Klartext der Tabelle, ein
+Doppelpunkt, ein Leerzeichen und die Adresse — hier die
 Antrags-Kennung (`administration_request_id`), weil Schema, Tabelle oder Spalte
 selbst leer sind. Die erste verletzte Prüfung bestimmt den Text, in der
 Reihenfolge der Tabelle von oben nach unten:
@@ -859,8 +860,9 @@ je Tabelle, die Mehrdeutigkeit statt sie aufzulösen ausschließt:
   `remove_transformation` gegen einen nicht geführten Regelnamen endet
   `failed`.
 
-Der Fehlertext ist der Klartext der Zeile, gefolgt von einem Doppelpunkt, einem
-Leerzeichen und der Adresse; die Adresse eines Regelnamens ist
+Der Fehlertext beginnt mit `abgelehnt [<Code>]: ` (`SPEC-008`); es folgt der
+Klartext der Zeile, ein Doppelpunkt, ein Leerzeichen und die Adresse; die
+Adresse eines Regelnamens ist
 `schema.table.rule_name`, die einer Spalte `schema.table.column`, die eines
 Zielnamens `schema.table.zielname`; der Name steht zeichengenau, wie beantragt.
 Die erste verletzte Prüfung bestimmt den Text, in der Reihenfolge der Tabelle
@@ -921,8 +923,9 @@ aus:
   einmal vor; eine Regel ohne `when` trägt kein Paar.
 - **R6** — `remove_route` gegen einen nicht geführten Regelnamen endet `failed`.
 
-Der Fehlertext ist der Klartext der Zeile, gefolgt von einem Doppelpunkt, einem
-Leerzeichen und der Adresse; die Adresse eines Regelnamens ist
+Der Fehlertext beginnt mit `abgelehnt [<Code>]: ` (`SPEC-008`); es folgt der
+Klartext der Zeile, ein Doppelpunkt, ein Leerzeichen und die Adresse; die
+Adresse eines Regelnamens ist
 `schema.table.rule_name`, die einer Spalte `schema.table.column`, die eines
 Zielnamens `schema.table.zielname`, die einer `order` `schema.table.<Wert>` in
 Dezimalschreibweise, die eines Schlüssels der Schlüsselname; ein Name steht
@@ -1120,7 +1123,7 @@ Zeile je Run, angelegt bei der Annahme eines Antrags der Antragsart
 | `estimated_rows` | bigint | nein | die beim Antrag **geschätzte** Zeilenzahl der Tabelle (eine Schätzung der Quelle, keine Zählung); NULL heißt „unbekannt", **nie** `0` |
 | `warn_estimated_size` | boolean | ja, Default `false` | Warnung (1): die **geschätzte** Zeilenzahl liegt über der Richtgröße; bleibt `false`, solange `estimated_rows` unbekannt ist oder keine Richtgröße festgelegt ist. Schreibt die Annahme |
 | `warn_duration` | boolean | ja, Default `false` | Warnung (2): die Kopierdauer hat die Toleranz überschritten; gesetzt beim Fortschritts-Update (je Block) oder beim Abschluss und danach unverändert. Schreibt der Worker |
-| `error_message` | text | nein | Fehlertext eines `failed`-Runs, mit der Fehlerklasse aus `SPEC-008`; sonst NULL |
+| `error_message` | text | nein | Fehlertext eines `failed`-Runs in der Form `<Klasse> [<Code>]: <Ursache>` (Klasse und Meldungscode aus `SPEC-008`); sonst NULL |
 
 Die beiden Warn-Spalten sind eine Kennzeichnung, kein Wert: sie nennen weder
 Toleranz noch Richtgröße, und eine gesetzte Warnung ändert weder `status` noch
@@ -1415,7 +1418,8 @@ und Regel `rest` mit `rule_spec` `{"target": "sonstige", "order": 100}`):
   `NULL`: die Change ist im Log und über jeden ungefilterten Weg sichtbar, aber
   unter keinem Ziel.
 - Abgelehnter Antrag: eine weitere Regel mit `"order": 10` endet `failed` mit dem
-  Fehlertext `order bereits vergeben: public.orders.10` (`SPEC-019`, R2); der
+  Fehlertext `abgelehnt [<Code>]: order bereits vergeben: public.orders.10`
+  (`SPEC-019`, R2); der
   Regelstand bleibt unverändert.
 - Nicht anwendbare Regel: Fehlt `region` in der Relation einer Change der
   Tabelle, ist `eu_orders` nicht anwendbar; die Change endet im Erfassungspfad
@@ -1464,14 +1468,37 @@ Fehler werden mindestens in die folgenden Klassen klassifiziert
 | `SPEC-008` | `replication` | Replication-Stream/Slot-Störung: **Stream-Ordnungsverletzung** (BEGIN/COMMIT/Change außerhalb der erwarteten Reihenfolge) oder **Transport-/Verbindungsstörung** (Verbindungsaufbau, Start, Keepalive, Quell-Bestätigung) | Stream-Ordnungsverletzung: sichtbarer Fehler, harter Abbruch, keine Fortsetzung im widersprüchlichen Stand; Transport-/Verbindungsstörung: Überwachung über Schwellen (§5, WAL-Rückstand); kontrollierte Fortsetzung |
 | `SPEC-008` | `internal` | unerwarteter interner Fehler | Sichtbarer Fehler; Restart-Strategie nach [`LH-QA-REL-002`](lastenheft.md) |
 
+**Meldungscode.** Jede klassifizierte Fehlerursache und jede Ablehnung einer
+Aufrufer-Eingabe trägt einen Meldungscode der Form `PCF-<S><NNNN>` (ERE
+`PCF-[EWI][0-9]{4}`); `S` ist die Schwere (`E` Fehler, `W` und `I` sind
+reserviert). Bei Fehlern ist die erste Ziffer die Klasse der Tabelle oben
+(1 `transient`, 2 `configuration`, 3 `permission`, 4 `schema`, 5 `storage`,
+6 `replication`, 7 `internal`); die Ziffer 8 kennzeichnet die Ablehnung einer
+Aufrufer-Eingabe, etwa eines Antrags, und trägt keine Klasse. Die Endung `000`
+ist der Rückfall der Klasse: ein klassifizierter Fehler ohne Einzelursache
+trägt den Rückfall seiner Klasse, nie keinen Code. Die Klasse folgt aus dem
+Code; `cdc.process_heartbeat.error_class` und das Metrik-Label `class` bleiben
+die Klasse. Der Fehlertext (Fehlerwert, Zeile beim Prozessende, Attribut
+`error` einer Log-Zeile) beginnt mit dem Kopf
+`Fehlerklasse <klasse> [<code>]: <Ursache>`; der Prozessausgang bleibt 1.
+`error_message` eines `failed`-Runs beginnt mit `<klasse> [<code>]: `, die eines
+abgelehnten Antrags mit `abgelehnt [<code>]: `, eines an einem klassifizierten
+Fehler gescheiterten Antrags mit dem Kopf des Fehlertexts. Ein Code wird nie
+neu belegt; ein entfallener Code wird zurückgezogen und bleibt vergeben; die
+Klasse eines Codes ändert sich nie. Stabil sind Code, Klasse, das Wort
+`Fehlerklasse` am Anfang des Kopfes und der Ausgang 1; der Text nach dem Kopf
+ist nicht Vertrag. Die Code-Tabelle liegt im Quelltext, der Katalog (Code,
+Klasse, Bedeutung, Maßnahme) im Benutzerhandbuch.
+
 **Nicht anwendbare Regel (Klasse `schema`).** Die Ursache definiert `SPEC-030`
 (Anwendbarkeit) für eine Transformationsregel und `SPEC-032` (Anwendbarkeit)
 für eine Routing-Regel; sie trägt in beiden Pfaden dieselbe Klasse. Das
 Verhalten des Erfassungspfads und die Abhilfe führt `LH-FA-CFG-007.a` bzw.
 `LH-FA-CFG-008.a` (Nicht anwendbare Regel, Abhilfe). Im Run einer Routing-Regel
 prüft dieselbe Funktion wie im Erfassungspfad einmal je Run, vor der
-Schreibtransaktion und der ersten Zeile; der Fehlertext beginnt mit der Klasse
-(`schema: `) und nennt Regelname und Spalte, keine Change entsteht. Das ist eine
+Schreibtransaktion und der ersten Zeile; der Fehlertext beginnt mit Klasse und
+Meldungscode (`schema [<code>]: `) und nennt Regelname und Spalte, keine Change
+entsteht. Das ist eine
 Zusage an die Umsetzung. Im Run steht nur der Run — `cdc.backfill_status` und die
 CLI-Diagnose zeigen ihn `failed` mit der Klasse im Fehlertext, der
 Erfassungspfad läuft weiter. Die Abhilfe ist die Regelstand-Änderung der
@@ -1601,3 +1628,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-01 | `LH-FA-CFG-008.a` Absatz „Abhilfe (Zusage)": Geltung auf den Fall der nicht anwendbaren Regel geschärft, die entfernte Spalte endet zuerst als inkompatible Schemaänderung (hergeleitet), Erreichbarkeit am System weiter offen; `SPEC-032` (Anwendbarkeit): Relation-Prüfung geht der Change-Prüfung voraus und ist regelunabhängig, Beispiel „Nicht anwendbare Regel" nachgezogen; `SPEC-008` Absatz „Nicht anwendbare Regel": Grenze der Abhilfe |
 | 2026-10-01 | `SPEC-024` (Zusatz-Subjekt): Aussage zur Last der zweiten Veröffentlichung von „nicht gemessen" auf den gemessenen Umfang (Testcontainer, ohne Abonnent, ohne Schwelle) gezogen, ohne Zahl und ohne Last-Zusage |
 | 2026-10-01 | `LH-FA-CFG-008.a`, `SPEC-032`: die Aussagen zu `DELETE` ohne volle Replica-Identität und zur Erreichbarkeit der Nichtanwendbarkeit von „nicht gemessen" auf den gemessenen Stand gezogen (PostgreSQL 17 und 18, E2E-Messung); `SPEC-019`: Adressspalte der Zeilen `Regelname ist ungültig` und `Zielname ist ungültig` der Routing-Tabelle auf die Adressform der Prosa angeglichen |
+| 2026-10-03 | `SPEC-008`: Absatz „Meldungscode“ (Form `PCF-[EWI][0-9]{4}`, Klasse in der ersten Ziffer, Ziffer 8 für Ablehnungen, Rückfall `…000`, Kopf `Fehlerklasse <klasse> [<code>]: …`, Stabilität); der Satz zum Fehlertext-Beginn im Run (`schema: `) nennt Klasse und Code; `SPEC-029` (`error_message` des Runs) und `SPEC-019` (`error_message` des Antrags, Texte der Ablehnungen mit dem Kopf `abgelehnt [<Code>]: `) |
