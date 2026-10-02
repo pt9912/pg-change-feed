@@ -9,7 +9,7 @@
 
 **Eingangs-Kontext:**
 
-- Slice-Plan [`slice-capture-retry-realtest-lieferzahl-lockern`](../plan/planning/in-progress/slice-capture-retry-realtest-lieferzahl-lockern.md)
+- Slice-Plan [`slice-capture-retry-realtest-lieferzahl-lockern`](../plan/planning/done/slice-capture-retry-realtest-lieferzahl-lockern.md)
 - [`ADR-0012`](../plan/adr/0012-at-least-once.md), [`ADR-0135`](../plan/adr/0135-capture-transient-wiederholung-stream-zyklus.md), [`ADR-0136`](../plan/adr/0136-capture-wiederholung-stabilitaetsmass-und-sqlstate-auswahl.md)
 - [`LH-QA-REL-004`](../../spec/lastenheft.md)
 - Beobachtung [`test-strenger-als-die-zusage`](../plan/planning/observations/BEO-PGC/test-strenger-als-die-zusage/observation.md)
@@ -63,7 +63,7 @@ Gates am echten Repo: `make test-replication` (PostgreSQL-Default, gedruckte Zei
 
 - `kategorie`: INFO
 - `quelle`: `AGENTS.md` §3.12 (Ursprung: übernommen)
-- `pfad`: `docs/plan/planning/in-progress/slice-capture-retry-realtest-lieferzahl-lockern.md:147-148`
+- `pfad`: `docs/plan/planning/done/slice-capture-retry-realtest-lieferzahl-lockern.md:147-148`
 - `befund`: Die Mutation, die eine Wiederzustellung der Halter-Transaktion real in den Mitschnitt bringt, ist die Angabe des Implementers; meine eigene Variante M3 erreichte den Mitschnitt nicht und bestätigt nur die Idempotenz der Persistierung. Der Zweig `case haltedPosition` ist durch Lesung geprüft, nicht durch einen eigenen Lauf mit Halter-Wiederzustellung.
 - `verifizierbar`: ja — Mutation im Mitschnitt, der Verifier kann sie fahren.
 - `klasse`: „Beleg übernommen statt nachgefahren“

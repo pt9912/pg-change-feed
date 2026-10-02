@@ -10,7 +10,7 @@ plus Plan-vs-Code-Diff, in frischem Kontext nach Implementierung und Review.
 
 **Eingangs-Kontext:**
 
-- Slice-Plan [`slice-capture-retry-realtest-lieferzahl-lockern`](../plan/planning/in-progress/slice-capture-retry-realtest-lieferzahl-lockern.md)
+- Slice-Plan [`slice-capture-retry-realtest-lieferzahl-lockern`](../plan/planning/done/slice-capture-retry-realtest-lieferzahl-lockern.md)
 - [`ADR-0012`](../plan/adr/0012-at-least-once.md), [`ADR-0135`](../plan/adr/0135-capture-transient-wiederholung-stream-zyklus.md), [`ADR-0136`](../plan/adr/0136-capture-wiederholung-stabilitaetsmass-und-sqlstate-auswahl.md), [`LH-QA-REL-004`](../../spec/lastenheft.md)
 - Review [`review-slice-capture-retry-realtest-lieferzahl-lockern`](review-slice-capture-retry-realtest-lieferzahl-lockern.md) (0 HIGH/MEDIUM/LOW, 4 INFO)
 - Beobachtung [`test-strenger-als-die-zusage`](../plan/planning/observations/BEO-PGC/test-strenger-als-die-zusage/observation.md)
