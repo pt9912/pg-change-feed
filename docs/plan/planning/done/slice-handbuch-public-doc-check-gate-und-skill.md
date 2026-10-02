@@ -422,8 +422,10 @@ echten Baum, Suchlauf-Block nachgemessen, Closure-Notiz mit Lerneintrag geschrie
   → CI-Beobachtung: kein Workflow ändert sich (Verifier: `git diff --name-only … -- .github`
   leer), aber der erste CI-Lauf nach dem Push trägt das Gate erstmals auf dem Runner
   (`ci.yml`, Schritt „Gates“; das Gate braucht `bash`, `git`, `grep`, `find`, `sort`,
-  `mktemp`, `sed`). Anker: Verifikations-Report §6; das Ergebnis des Laufs trägt der
-  Hauptlauf nach der Beobachtung nach.
+  `mktemp`, `sed`). Anker: Verifikations-Report §6. — **Ausgang (nachgetragen):**
+  *entfallen:* der Lauf `ci` 37056062289 am Push-Commit `abf71ace` endete `success`
+  (gemessen vom Hauptlauf mit `gh run watch`, 2026-10-02); `e2e` 37056062371 und `examples`
+  37056062284 waren ebenfalls `success`.
 - **Kein Release, keine Versionsänderung.** — **Ausgang:** *entfallen:* kein Tag, keine
   Versionsdatei berührt (Verifier).
 
