@@ -50,6 +50,22 @@ class CliTest {
     }
 
     @Test
+    fun flagsWireIntoTheStreamUrl() {
+        val base = "http://feed:8080/changes/stream"
+        val cases = listOf(
+            emptyList<String>() to base,
+            listOf("--schema", "public", "--table", "orders", "--target", "eu") to
+                "$base?schema=public&table=orders&target=eu",
+            listOf("--table=orders") to "$base?table=orders",
+            listOf("--target", "eu") to "$base?target=eu",
+        )
+        for ((flags, want) in cases) {
+            val args = (listOf("--addr", "feed:8080") + flags).toTypedArray()
+            assertEquals(want, SseStream.streamUrl(Cli.parse(args, emptyEnv)), "flags $flags")
+        }
+    }
+
+    @Test
     fun parseRejectsUnknownFlag() {
         assertFailsWith<IllegalArgumentException> { Cli.parse(arrayOf("--unknown"), emptyEnv) }
     }

@@ -54,6 +54,20 @@ public class CliTests
         Assert.Equal("", none.Table);
     }
 
+    [Theory]
+    [InlineData("http://feed:8080/changes/stream", new string[0])]
+    [InlineData(
+        "http://feed:8080/changes/stream?schema=public&table=orders&target=eu",
+        new[] { "--schema", "public", "--table", "orders", "--target", "eu" })]
+    [InlineData("http://feed:8080/changes/stream?table=orders", new[] { "--table=orders" })]
+    [InlineData("http://feed:8080/changes/stream?target=eu", new[] { "--target", "eu" })]
+    public void FlagsWireIntoTheStreamUrl(string want, string[] flags)
+    {
+        var args = new[] { "--addr", "feed:8080" }.Concat(flags).ToArray();
+
+        Assert.Equal(want, SseStream.StreamUrl(Cli.Parse(args, EmptyEnv)));
+    }
+
     [Fact]
     public void ParseRejectsUnknownFlag()
     {

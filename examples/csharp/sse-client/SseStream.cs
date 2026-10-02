@@ -49,6 +49,14 @@ public static class SseStream
     }
 
     /// <summary>
+    /// StreamUrl baut die Adresse aus der Konfiguration; <c>Target</c>,
+    /// <c>Schema</c> und <c>Table</c> gehen unverändert an die Überladung
+    /// oben.
+    /// </summary>
+    public static string StreamUrl(Config cfg) =>
+        StreamUrl(cfg.Addr, cfg.Target, cfg.Schema, cfg.Table);
+
+    /// <summary>
     /// ReadEvent liest ein vollständiges Frame über <paramref name="next"/> und
     /// liefert es zurück. Ein Frame endet mit der Leerzeile, die der Server
     /// nach der <c>event:</c>- und der <c>data:</c>-Zeile schreibt

@@ -32,6 +32,12 @@ object SseStream {
     }
 
     /**
+     * streamUrl baut die Adresse aus der Konfiguration; `target`, `schema` und
+     * `table` gehen unverändert an die Überladung oben.
+     */
+    fun streamUrl(cfg: Config): String = streamUrl(cfg.addr, cfg.target, cfg.schema, cfg.table)
+
+    /**
      * Prozent-Kodierung nach RFC 3986 (unreserviert: `A-Za-z0-9-_.~`), wie
      * `Uri.EscapeDataString` im C#-Pendant.
      */

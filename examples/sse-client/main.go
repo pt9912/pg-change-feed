@@ -39,7 +39,11 @@ type config struct {
 }
 
 func main() {
-	cfg := parseFlags()
+	cfg, err := parseConfig(os.Args[1:], os.Getenv)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "sse-client: %v\n", err)
+		os.Exit(2)
+	}
 	if cfg.addr == "" {
 		fmt.Fprintln(os.Stderr, "sse-client: keine HTTP-Adresse gesetzt — CDC_HTTP_ADDR (oder -addr) ist nötig, um den Stream zu öffnen")
 		os.Exit(2)
@@ -49,7 +53,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	streamURL := StreamURL(cfg.addr, cfg.target, cfg.schema, cfg.table)
+	streamURL := cfg.streamURL()
 	req, err := http.NewRequest(http.MethodGet, streamURL, nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sse-client: Request bauen: %v\n", err)
@@ -96,15 +100,26 @@ func main() {
 	}
 }
 
-// parseFlags liest die Flag-Werte und füllt fehlende Felder aus den im
-// Handbuch dokumentierten Umgebungsvariablen (`ADR-0076` Festlegung 1).
-func parseFlags() config {
+// parseConfig liest die Flag-Werte aus args und füllt fehlende Felder aus den
+// im Handbuch dokumentierten Umgebungsvariablen (`ADR-0076` Festlegung 1);
+// das Umgebungs-Lookup ist injiziert, damit die Verdrahtung Flag → Konfiguration
+// netzlos testbar ist.
+func parseConfig(args []string, getenv func(string) string) (config, error) {
 	var cfg config
-	flag.StringVar(&cfg.addr, "addr", os.Getenv("CDC_HTTP_ADDR"), "Horch-Adresse der HTTP-API, host:port (Default: CDC_HTTP_ADDR)")
-	flag.StringVar(&cfg.token, "token", os.Getenv("CDC_API_TOKEN_READER"), "Bearer-Token der lesenden Rechtsklasse (Default: CDC_API_TOKEN_READER)")
-	flag.StringVar(&cfg.target, "target", "", "Zustellziel einer Change (optional; leer = kein Filter, jede Change)")
-	flag.StringVar(&cfg.schema, "schema", "", "Schema einer Change (optional; leer = kein Filter)")
-	flag.StringVar(&cfg.table, "table", "", "Tabellenname einer Change (optional; leer = kein Filter)")
-	flag.Parse()
-	return cfg
+	fs := flag.NewFlagSet("sse-client", flag.ContinueOnError)
+	fs.StringVar(&cfg.addr, "addr", getenv("CDC_HTTP_ADDR"), "Horch-Adresse der HTTP-API, host:port (Default: CDC_HTTP_ADDR)")
+	fs.StringVar(&cfg.token, "token", getenv("CDC_API_TOKEN_READER"), "Bearer-Token der lesenden Rechtsklasse (Default: CDC_API_TOKEN_READER)")
+	fs.StringVar(&cfg.target, "target", "", "Zustellziel einer Change (optional; leer = kein Filter, jede Change)")
+	fs.StringVar(&cfg.schema, "schema", "", "Schema einer Change (optional; leer = kein Filter)")
+	fs.StringVar(&cfg.table, "table", "", "Tabellenname einer Change (optional; leer = kein Filter)")
+	if err := fs.Parse(args); err != nil {
+		return config{}, err
+	}
+	return cfg, nil
+}
+
+// streamURL baut die Stream-Adresse aus der Konfiguration; die drei Filter
+// gehen unverändert an StreamURL.
+func (c config) streamURL() string {
+	return StreamURL(c.addr, c.target, c.schema, c.table)
 }

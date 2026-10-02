@@ -44,7 +44,7 @@ fun main(args: Array<String>) {
         exitProcess(2)
     }
 
-    val streamUrl = SseStream.streamUrl(cfg.addr, cfg.target, cfg.schema, cfg.table)
+    val streamUrl = SseStream.streamUrl(cfg)
     val httpClient = HttpClient.newBuilder().build()
     val request = HttpRequest.newBuilder(URI.create(streamUrl))
         .header("Authorization", "Bearer ${cfg.token}")
