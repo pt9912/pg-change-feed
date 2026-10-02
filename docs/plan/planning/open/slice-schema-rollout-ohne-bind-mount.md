@@ -13,15 +13,21 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 Slice verschieden ist (Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht).
 
-**Bezug:** [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md)
-(Schema-Migrationen mit d-migrate; Pflicht-Report und Rollback-Artefakt je Rollout),
+**Bezug:** [`ADR-0142`](../../adr/0142-schema-rollout-erzeugnisse-ausserhalb-baum-eingabe-ohne-bind-mount.md)
+(Entscheidungsgrundlage dieses Slice: Erzeugnisse außerhalb des Baums, Eingabe ohne
+Bind-Mount; beantwortet A1–A3, Verdikt
+[`architect-verdict-schema-rollout-ohne-bind-mount`](../../../reviews/architect-verdict-schema-rollout-ohne-bind-mount.md)),
+[`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md)
+(Schema-Migrationen mit d-migrate; Pflicht-Report und Rollback-Artefakt je Rollout;
+Entscheidung 3 im Ort geschärft durch `ADR-0142`),
 [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) (Vorlauf für
 View-Signatur-Änderungen, Teil des Ablaufs),
 [`LH-QA-OPS-005`](../../../../spec/lastenheft.md) (Upgrade-Sicherheit; das Verhalten des
 Rollouts bleibt unverändert, nur der Zugriffsweg ändert sich). Vorbild des
 Mechanismus: [`ADR-0060`](../../adr/0060-grpc-streaming-mechanismus.md) /
 [`ADR-0084`](../../adr/0084-sync-gate-fuer-generierte-artefakte.md) (Dockerfile-Stufe
-`proto-export`, `COPY` statt Bind-Mount, `tar`-Stream über stdout, host-seitige Extraktion).
+`proto-export`, `COPY` statt Bind-Mount, `tar`-Stream über stdout, host-seitige Extraktion;
+Trigger (b) wird durch `ADR-0142` eingelöst, die ADR bleibt unberührt).
 
 **Berührte Spec-Stellen:** — (der Rollout-Vertrag lebt in
 `harness/targets/schema-rollout.md`, nicht in der Spec).
@@ -59,49 +65,61 @@ Arbeitsbaum keine Änderung (`git status --short` leer).
   Dockerfile mit eigener Ignore-Datei (§3), damit
   [`ADR-0085`](../../adr/0085-build-kontext-ausnahme-test-only-zweck.md) (Build-Kontext-Ausnahme
   der `coverage`-Stufe) und die Image-Neutralität von `make image` unberührt bleiben.
-- **Die Aufbewahrungsentscheidung für Betriebs-Erzeugnisse** über den hier genannten Default
-  hinaus: sie ist Architect-Frage A1 (§4), nicht Gegenstand des Planners.
+- **Die Aufbewahrung der Betriebs-Erzeugnisse** über den Default `SCHEMA_ARTEFACT_DIR` hinaus:
+  nach `ADR-0142` Festlegung 1 Sache des Betreibers (Variable oder Kopie), kein Gegenstand
+  dieses Slice.
 
 ## 2. Definition of Done
 
-Die DoD gilt für die Variante „Erzeugnisse landen außerhalb des Arbeitsbaums" (Empfehlung zu
-Architect-Frage A1); fällt A1 anders, ändert sich Liefer-Punkt 2 (Rückführung §4).
+Die DoD gilt für die Variante „Erzeugnisse landen außerhalb des Arbeitsbaums", wie sie
+`ADR-0142` festlegt (A1 beantwortet, §4).
 
 - [ ] **Liefer-Punkt 1 — Rollout und Validierung ohne Bind-Mount.** Ein Dockerfile
       `tools/schema/Dockerfile` mit eigener `tools/schema/Dockerfile.dockerignore`
       (Allow-Liste: `tools/schema/schema.yaml`, die Wache samt `go.mod`/`go.sum`; Muster
       `examples/Dockerfile.dockerignore`) trägt zwei Stufen: `rollout` (aufbauend auf dem
       gepinnten d-migrate-Image, `COPY` des Schema-YAML nach `/work`) und `guard` (Go-Binary der
-      Wache, gebaut aus dem gepinnten Toolchain-Stand). Beide Pins kommen als `--build-arg` aus
-      den Makefile-Variablen `D_MIGRATE_IMAGE` und `TOOLCHAIN_IMAGE` (kein zweiter Pin im
-      Dockerfile, `make pin-stale-dmigrate` liest weiter die Variable). Die Rezeptur von
+      Wache, gebaut aus dem gepinnten Toolchain-Stand mit `CGO_ENABLED=0`; die Endstufe ist
+      `FROM scratch` mit dem statischen Binary als `ENTRYPOINT`, Verdikt A3, `ADR-0142`).
+      Beide Pins kommen als `--build-arg` aus den Makefile-Variablen `D_MIGRATE_IMAGE` und
+      `TOOLCHAIN_IMAGE`; das Dockerfile trägt **keinen eigenen Digest** (`FROM ${ARG}` ohne
+      Default; ein Digest dort wäre ein zweiter Pin ohne Prüfer, `make pin-stale-dmigrate`
+      liest weiter die Variable, `make image-stale` liest nur das Wurzel-`Dockerfile`). Die Rezeptur von
       `schema-rollout` zieht in ein Skript `tools/schema/rollout.sh` unter `bash` mit
       `set -o pipefail` ([`AGENTS.md`](../../../../AGENTS.md) §3.9; das `make`-Rezept läuft
       unter `/bin/sh`), das Makefile ruft es auf. Ablauf wie im Vertrag (Validierung, Precheck,
       Wache, Vorlauf, `--execute`, vier Nacharbeit-Schritte), mit diesen Wegen statt Mounts:
       die d-migrate-Läufe als `docker create`/`start`/`cp`/`rm` mit eindeutigem Containernamen
       (Aufräumen per `trap`), die Erzeugnisse (`plan.yaml`, `down.sql`, Precheck-Report) per
-      `docker cp <Container>:<Pfad> - | tar -x -C <Verzeichnis>` in ein Verzeichnis außerhalb
-      des versionierten Baums (`SCHEMA_ARTEFACT_DIR`, Vorschlag `.tmp/schema-rollout`, durch
-      `.tmp/` in `.gitignore` bereits ausgenommen); die Wache liest den Precheck-Report über
+      `docker cp <Container>:<Pfad> - | tar -x --no-same-owner -C <Verzeichnis>` in ein
+      Verzeichnis außerhalb des versionierten Baums (`SCHEMA_ARTEFACT_DIR`, **festgelegter**
+      Default `.tmp/schema-rollout`, durch `.tmp/` in `.gitignore` ausgenommen; je Lauf
+      überschrieben, der Betreiber setzt die Variable auf ein Ziel je Rollout oder kopiert);
+      das Ziel druckt am Ende des erfolgreichen Laufs den Pfad. Die Wache liest den Precheck-Report über
       stdin (`rolloutguard /dev/stdin`, `docker run -i --network none`); die vier
       Nacharbeit-Dateien laufen als `docker run -i … psql -v ON_ERROR_STOP=1 -f -` mit
       Umleitung der Host-Datei auf stdin. `D_MIGRATE_RUN_USER` und die uid-Kopplung entfallen.
       *Zu belegen durch:* (a) `bash tools/harness/run-schema-rollout-guard-test.sh` mit allen
-      sechs Läufen grün (Idempotenz, echte Änderung neben den elf Blockern, View-Signatur-Vorlauf,
+      sechs Läufen grün, wobei Lauf 1 zusätzlich prüft, dass `plan.yaml` und `down.sql` in
+      `SCHEMA_ARTEFACT_DIR` liegen und `git status --short` leer ist (Idempotenz, echte Änderung neben den elf Blockern, View-Signatur-Vorlauf,
       Alt-Tag-Lauf, unbekannte Blocker Exit 8) — Ausgabe und Exit-Code ungefiltert im Bericht;
-      (b) `git status --short` unmittelbar nach `make schema-rollout` gegen eine
-      Wegwerf-PostgreSQL leer (ein Lauf mit lokal unveränderten `tools/schema/plan.yaml` und
-      `down.sql`); (c) Suchlauf-Zeile „kein Bind-Mount der Rollout-Rezeptur" (§3) am Diff mit Soll
+      (b) nach `make schema-rollout` gegen eine Wegwerf-PostgreSQL liegen `plan.yaml` und
+      `down.sql` in `SCHEMA_ARTEFACT_DIR` (Dateien vorhanden, nicht leer), das Ziel hat den Pfad
+      gedruckt, und `git status --short` ist leer; (c) Suchlauf-Zeile „kein Bind-Mount der Rollout-Rezeptur" (§3) am Diff mit Soll
       0; (d) `git diff <Parent> -- Dockerfile .dockerignore` leer; (e) `make schema-validate`
       endet mit Exit 0 ohne `-v` und mit `--network none` (Zeile der Rezeptur im Bericht);
       (f) Mutationsproben (Zeile „Mutationsproben" unten).
-- [ ] **Liefer-Punkt 2 — Aufrufer-Nachzug und Entfall der Rücknahme.** Ist der Arbeitsbaum nach
-      dem Rollout unberührt, ist `tools/schema/rollout-restore.sh` ohne Gegenstand: die acht
-      Aufrufstellen (`tools/schema/apply-rollout.sh`, `tools/harness/run-integration-tests.sh`,
+- [ ] **Liefer-Punkt 2 — Aufrufer-Nachzug, Entfall der Rücknahme und der zwei committeten
+      Erzeugnisse.** Die zwei committeten Dateien zeigen einen Testlauf gegen
+      `cdc-test-postgres`, keinen Betriebs-Rollout (`ADR-0142` Festlegung 2): sie werden mit
+      `git rm tools/schema/plan.yaml tools/schema/down.sql` aus dem Index genommen; der Commit
+      nennt `ADR-0142`. Ist der Arbeitsbaum nach dem Rollout unberührt, ist
+      `tools/schema/rollout-restore.sh` ohne Gegenstand: die sieben Aufrufer-Dateien
+      (`tools/schema/apply-rollout.sh`, `tools/harness/run-integration-tests.sh`,
       die drei `tools/harness/run-sdk-*-integration-tests.sh`, `tools/bench-lib.sh`,
-      `examples/bootstrap.sh`, dazu die Eigensicherung in
-      `tools/harness/run-schema-rollout-guard-test.sh`) rufen `make schema-rollout` direkt;
+      `examples/bootstrap.sh`) und die Eigensicherung in
+      `tools/harness/run-schema-rollout-guard-test.sh` — acht Stellen zusammen, die
+      Eigensicherung ist die achte — rufen `make schema-rollout` direkt;
       `rollout-restore.sh`, `tools/harness/run-rollout-restore-tests.sh` und das Ziel
       `make test-rollout-restore` entfallen; der `.gitignore`-Eintrag
       `tools/schema/rollout-precheck.yaml` und sein Kommentar folgen der neuen Lage. Vor dem
@@ -149,9 +167,12 @@ Architect-Frage A1); fällt A1 anders, ändert sich Liefer-Punkt 2 (Rückführun
       der berührten Skripte tragen den Ist-Zustand ([`AGENTS.md`](../../../../AGENTS.md) §3.7).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7): der Eintrag
+- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben (§7), bei Closure:
       `BEO-PGC/test-schreibt-in-committete-datei` (Zustand „verkörpert → `rollout-restore.sh`")
       beschreibt nach diesem Slice einen entfallenen Träger; sein Zustand wird nachgetragen.
+      Zusätzlich `BEO-PGC/generierte-artefakte-ohne-sync-sensor` (`state.md` und
+      `observation.md` nennen `plan.yaml`): vermerkt „`ADR-0084` Trigger (b) eingelöst durch
+      `ADR-0142`“.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo ohne
       Wellen-Betrieb für diesen wellenlosen Slice hier geprüft.
@@ -160,7 +181,7 @@ Architect-Frage A1); fällt A1 anders, ändert sich Liefer-Punkt 2 (Rückführun
 acht Aufrufstellen, ein entfallendes Werkzeug samt Test; zwei lange reale Läufe
 (`make test-integration`, Guard-Test).
 
-**Voraussetzung:** Architect-Frage A1 ist beantwortet (§4); Docker mit Netzzugang für den Bau der
+**Voraussetzung:** Architect-Fragen A1–A3 sind beantwortet (§4, `ADR-0142` `Accepted`); Docker mit Netzzugang für den Bau der
 beiden Stufen; für Beleg (a) und (b) Docker-Zugang zu einer Wegwerf-PostgreSQL (der Guard-Test
 legt sie selbst an).
 
@@ -175,14 +196,20 @@ gefahren):
   die Wache mit `:/src:ro` samt Modul-Cache-Volume, vier Nacharbeit-Läufe mit `:/work:ro`
   (**gemessen**, `Makefile` Zeilen 302, 314, 319, 332–336).
 - Das d-migrate-Image (`D_MIGRATE_IMAGE`, Digest `862dfb04…`) trägt `ENTRYPOINT ["d-migrate"]`,
-  `USER dmigrate` (uid 10001), `WORKDIR /work` (Verzeichnis gehört `dmigrate`), `sh`, `tar`, `cat`,
-  `cp`, `mkdir` (**gemessen**, `docker image inspect` und `docker run --entrypoint sh`). Ein
-  abgeleitetes Image mit `COPY` und ohne `RUN`-Schritt braucht kein Netz im Bau.
+  `USER dmigrate` (uid 10001), `WORKDIR /work` (Verzeichnis gehört `dmigrate`, `drwxr-xr-x`),
+  `sh`, `tar`, `cat`, `cp`, `mkdir` (**gemessen**, 2026-10-02 am Stand `3d10e8c6`:
+  `docker image inspect` und `docker run --rm --entrypoint sh <D_MIGRATE_IMAGE> -c 'id; pwd;
+  command -v tar'` ohne Mount; Ausgabe `uid=10001(dmigrate)`, `/work`, `/usr/bin/tar`). Dass
+  ein abgeleitetes Image mit `COPY` und ohne `RUN`-Schritt kein Netz im Bau braucht, ist
+  **hergeleitet**, nicht gefahren.
 - Die Wache `tools/schema/rolloutguard` importiert nur die Standardbibliothek (`encoding/json`,
-  `fmt`, `os`, `reflect`, `regexp`, `sort`, `strings`, `testing`; **gemessen**, `git grep` über
-  `tools/schema/rolloutguard/*.go`) und liest den Report aus `os.Args[1]` per `os.ReadFile`
-  (`main.go`); ob `/dev/stdin` als Argument unter `docker run -i` mit Dateiumleitung trägt, ist
-  **nicht gemessen** (zu belegen, §6).
+  `fmt`, `os`, `reflect`, `regexp`, `sort`, `strings`, `testing`; **gemessen**, 2026-10-02 am
+  Stand `3d10e8c6` durch `git grep` der Import-Zeilen über `tools/schema/rolloutguard/*.go`)
+  und liest den Report aus `os.Args[1]` per `os.ReadFile` (`main.go`). Dass `/dev/stdin` im
+  Toolchain-Image unter `docker run --rm -i --network none` mit Dateiumleitung den Inhalt
+  liefert, hat das Architect-Verdikt gemessen (`cat /dev/stdin`, `/dev/stdin ->
+  /proc/self/fd/0`); `os.ReadFile` auf diesem Weg ist **hergeleitet**, nicht gefahren
+  (zu belegen, §6).
 - Die Wurzel-`.dockerignore` ist eine Allow-Liste (`*`, dann `!cmd/`, `!internal/`, `!gen/`,
   `!proto/`, `!go.mod`, `!go.sum`, drei einzelne Dateien nach
   [`ADR-0085`](../../adr/0085-build-kontext-ausnahme-test-only-zweck.md)); `tools/schema/` ist
@@ -203,18 +230,19 @@ gefahren):
 - `AGENTS.md` nennt den Wrapper nicht: §3.1 verbietet Host-Toolchains und in-place-Schreiben, kein
   Mount-Verbot; die Treffer zu `schema-rollout` stehen in §3.14 (Rang-Zeiger) und im
   `ADR-0114`-Link (**gemessen**, Suchlauf unten). Es gibt also keinen Regeltext, der zu ändern
-  wäre — nur zu melden, falls der Architect eine Mount-Regel festschreibt (A2).
+  wäre; der Architect hat keine Mount-Regel festgeschrieben (A2, §4).
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `tools/schema/Dockerfile` (neu) | neu | Stufe `rollout` (`ARG D_MIGRATE_IMAGE`, kein Default; `COPY` des Schema-YAML nach `/work`) und Stufe `guard` (`ARG TOOLCHAIN_IMAGE`; `go build` der Wache, Endstufe mit dem Binary als `ENTRYPOINT`). Die Pins kommen als `--build-arg` aus dem `Makefile`: eine Quelle, `make pin-stale-dmigrate` bleibt zutreffend. |
+| `tools/schema/Dockerfile` (neu) | neu | Stufe `rollout` (`ARG D_MIGRATE_IMAGE`, kein Default; `COPY` des Schema-YAML nach `/work`) und Stufe `guard` (`ARG TOOLCHAIN_IMAGE`; `go build` der Wache mit `CGO_ENABLED=0`, Endstufe `FROM scratch` mit dem statischen Binary als `ENTRYPOINT`). Die Pins kommen als `--build-arg` aus dem `Makefile`: eine Quelle, **kein Digest im Dockerfile**, `make pin-stale-dmigrate` bleibt zutreffend. |
 | `tools/schema/Dockerfile.dockerignore` (neu) | neu | Allow-Liste des Kontexts (`*`, dann genau `tools/schema/schema.yaml`, `tools/schema/rolloutguard/`, `go.mod`, `go.sum`); jeder Eintrag nennt seinen Leser (Stufe), [`AGENTS.md`](../../../../AGENTS.md) §3.7. Die Wurzel-Ignore-Datei bleibt unberührt. |
-| `tools/schema/rollout.sh` (neu) | neu | Ablauf des Rollouts unter `bash`, `set -euo pipefail` bzw. gezielt gelesene Exit-Codes (Precheck-Exit und Wachen-Exit werden gelesen, nicht durchgereicht — Vertrag), Container-Verwaltung mit `trap`, Export per `docker cp … - \| tar -x`, Wache über stdin, Nacharbeit über stdin. Kopf-Kommentar nennt Kopplung: Reihenfolge der vier Dateien und `knownForeignObjects` in `guard.go`. |
+| `tools/schema/rollout.sh` (neu) | neu | Ablauf des Rollouts unter `bash`, `set -euo pipefail` bzw. gezielt gelesene Exit-Codes (Precheck-Exit und Wachen-Exit werden gelesen, nicht durchgereicht — Vertrag), Container-Verwaltung mit `trap`, Export per `docker cp … - \| tar -x --no-same-owner`, Pfad-Ausgabe von `SCHEMA_ARTEFACT_DIR` am Ende, Wache über stdin, Nacharbeit über stdin. Kopf-Kommentar nennt Kopplung: Reihenfolge der vier Dateien und `knownForeignObjects` in `guard.go`. |
 | `Makefile` (Zeilen 273–336) | update | `schema-validate` baut `--target rollout` und führt `schema validate` mit `--network none` ohne Mount; `schema-rollout` ruft `tools/schema/rollout.sh` mit den Variablen auf; `D_MIGRATE_RUN_USER` entfällt; `SCHEMA_ARTEFACT_DIR` neu; Kommentarblock oben trägt den Ist-Zustand. `help`-Text bleibt (kein Gate). |
-| `tools/schema/rollout-restore.sh`, `tools/harness/run-rollout-restore-tests.sh`, Makefile-Ziel `test-rollout-restore` | Entfall | ohne Schreiber in den Baum ohne Gegenstand (Liefer-Punkt 2, abhängig von A1). |
+| `tools/schema/rollout-restore.sh`, `tools/harness/run-rollout-restore-tests.sh`, Makefile-Ziel `test-rollout-restore` | Entfall | ohne Schreiber in den Baum ohne Gegenstand (Liefer-Punkt 2, `ADR-0142`). |
+| `tools/schema/plan.yaml`, `tools/schema/down.sql` | Entfall (`git rm`) | Testlauf-Erzeugnis gegen `cdc-test-postgres`, ohne Schreiber im Baum würden sie still altern (`ADR-0142` Festlegung 2); Commit nennt `ADR-0142`. |
 | `tools/schema/apply-rollout.sh`, `tools/harness/run-integration-tests.sh`, `tools/harness/run-sdk-csharp-integration-tests.sh`, `tools/harness/run-sdk-kotlin-integration-tests.sh`, `tools/harness/run-sdk-python-integration-tests.sh`, `tools/bench-lib.sh`, `examples/bootstrap.sh` | update | Aufrufzeile ohne `rollout-restore.sh`; Kommentare, die die Rücknahme nennen, tragen den Ist-Zustand. |
-| `tools/harness/run-schema-rollout-guard-test.sh` | update | Eigensicherung von `plan.yaml`/`down.sql` (Kopf, `ARTEFACT_BACKUP`, `cleanup`) entfällt; Läufe 1–6 unverändert; zusätzlich eine Prüfung `git status --short` des Arbeitsbaums nach Lauf 1. |
-| `.gitignore` | update | Eintrag `tools/schema/rollout-precheck.yaml` samt Kommentar: der Report liegt im Artefakt-Verzeichnis (durch `.tmp/` ausgenommen). |
+| `tools/harness/run-schema-rollout-guard-test.sh` | update | Eigensicherung von `plan.yaml`/`down.sql` (Kopf, `ARTEFACT_BACKUP`, `cleanup`) entfällt; Läufe 1–6 unverändert; zusätzlich prüft Lauf 1, dass `plan.yaml` und `down.sql` in `SCHEMA_ARTEFACT_DIR` liegen und `git status --short` des Arbeitsbaums leer ist. |
+| `.gitignore` | update | Eintrag `tools/schema/rollout-precheck.yaml` entfällt; der Kommentar (Zeilen 8–10, „der Beleg eines echten Rollouts bleibt `tools/schema/plan.yaml`“) nennt den neuen Ort: Report, Rollback-Artefakt und Precheck-Report liegen in `SCHEMA_ARTEFACT_DIR` (Default `.tmp/schema-rollout`, durch `.tmp/` ausgenommen). |
 | `harness/README.md` (Zeilen `make schema-validate`, `make schema-rollout`, `make test-rollout-restore`), `harness/targets/schema-rollout.md`, `docs/user/benutzerhandbuch.md` | update | Träger (Suchlauf unten). |
 
 **Ansatz — die vier Fragen des Auftrags, mit Wahl und Begründung:**
@@ -231,15 +259,16 @@ gefahren):
    Nebenfolge: `SCHEMA_SOURCE` wirkt nur auf Pfade, die die Allow-Liste zulässt; ein anderer
    Pfad scheitert laut am `COPY` (kein Aufrufer überschreibt die Variable, Suchlauf unten).
 2. **Rückweg der Erzeugnisse.** Gewählt: `docker create` / `start -a` / `docker cp <c>:<Pfad> - |
-   tar -x -C <Verzeichnis>` / `docker rm`. d-migrate schreibt drei Dateien: Precheck-Report
+   tar -x --no-same-owner -C <Verzeichnis>` / `docker rm`. d-migrate schreibt drei Dateien: Precheck-Report
    (`--plan-only --report`), Pflicht-Report (`--report`) und Rollback-Artefakt
    (`--rollback-output`). Die Erzeugnisse landen **nicht** im versionierten Baum, sondern in
-   `SCHEMA_ARTEFACT_DIR` (Vorschlag `.tmp/schema-rollout`); damit entfällt das Überschreiben
-   der committeten `tools/schema/plan.yaml` und `down.sql`. Ob und wo ein Betreiber den
-   Pflicht-Report als Beleg aufbewahrt, ist Architect-Frage A1 (der Vertrag nennt die zwei
-   Dateien heute „im Betrieb der Beleg des Rollouts"; [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md)
+   `SCHEMA_ARTEFACT_DIR` (Default `.tmp/schema-rollout`, festgelegt durch `ADR-0142`
+   Festlegung 1); die committeten `tools/schema/plan.yaml` und `down.sql` verlassen den Index.
+   Wo ein Betreiber den Pflicht-Report als Beleg aufbewahrt, ist seine Sache (Variable auf ein
+   Ziel je Rollout oder Kopie); [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md)
    sagt „je Rollout aufbewahrt", nennt aber keinen Ort — **gemessen**, Lesen von
-   `harness/targets/schema-rollout.md` §Erzeugnisse und [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md) Entscheidung 3).
+   [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md) Entscheidung 3 (auch vom
+   Architect bestätigt).
 3. **Eingabe der Wache.** Optionen: (W1) Stufe `guard` baut das Binary; der Precheck-Report
    kommt aus dem Export-Verzeichnis per Dateiumleitung auf stdin (`rolloutguard /dev/stdin`),
    kein Go-Code ändert sich; (W2) die Quellen der Wache werden als `tar` über stdin in den
@@ -272,18 +301,26 @@ gefahren):
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „`make schema-rollout`/`schema-validate`
 mounten den Arbeitsbaum", „der Rollout überschreibt `plan.yaml`/`down.sql`", „Aufrufer gehen
-durch `rollout-restore.sh`"; Parent ist `4a43f6ac`; die `diff`-Zeilen und die Befunde trägt der
+durch `rollout-restore.sh`"; Parent ist `3d10e8c6`; die `diff`-Zeilen und die Befunde trägt der
 Implementer ein; neue Dateien sind für den Stand `diff` mit `git add` im Index):**
 
 ```suchlauf
-4a43f6ac 33 -n -F 'rollout-restore' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
-4a43f6ac 6 -n -F 'test-rollout-restore' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
-4a43f6ac 5 -n -F 'D_MIGRATE_RUN_USER' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
-4a43f6ac 7 -n -E 'CURDIR[^:]*:/work' -- Makefile harness tools
-4a43f6ac 4 -n -E 'CURDIR[^:]*:/src:ro' -- Makefile
-4a43f6ac 5 -n -F 'rollout-precheck' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
-4a43f6ac 72 -n -E 'plan\.yaml|down\.sql' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+3d10e8c6 39 -n -F 'rollout-restore' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+3d10e8c6 7 -n -F 'test-rollout-restore' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+3d10e8c6 6 -n -F 'D_MIGRATE_RUN_USER' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+3d10e8c6 7 -n -E 'CURDIR[^:]*:/work' -- Makefile harness tools
+3d10e8c6 4 -n -E 'CURDIR[^:]*:/src:ro' -- Makefile
+3d10e8c6 6 -n -F 'rollout-precheck' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+3d10e8c6 80 -n -E 'plan\.yaml|down\.sql' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 ```
+
+Der Stand ist `3d10e8c6` (Parent der Umsetzung, **gemessen** am 2026-10-02 durch
+`make suchlauf-nachmessen`). Gegenüber `4a43f6ac` (Planstand: 33/6/5/7/4/5/72) bewegen sich die
+Zählungen durch `ADR-0142`, ihren Index-Eintrag und die Verweise darauf: `rollout-restore` +6,
+`test-rollout-restore` +1, `D_MIGRATE_RUN_USER` +1, `rollout-precheck` +1, `plan.yaml|down.sql` +8;
+die Mount-Zeilen sind unverändert. Die `diff`-Zeilen (Soll 0 für `…:/work`, 3 für `…:/src:ro`,
+Soll für `rollout-restore`, `test-rollout-restore`, `D_MIGRATE_RUN_USER` außerhalb der
+ausgenommenen Records 0) ergänzt der Implementer.
 
 Die Zeile `CURDIR[^:]*:/src:ro` zählt die Mounts, die **außerhalb** des Auftrags bleiben (Soll am
 Diff: 3, die Wache-Zeile entfällt); die Zeile `CURDIR[^:]*:/work` ist die bewegte Eigenschaft
@@ -291,16 +328,18 @@ Diff: 3, die Wache-Zeile entfällt); die Zeile `CURDIR[^:]*:/work` ist die beweg
 Beschreibungen des Vertrags); ihr Soll am Diff trägt der Implementer nach einer Lese-Durchsicht
 jedes Treffers ein.
 
-| Träger | Messung am Parent (`4a43f6ac`, gemessen am 2026-10-02) | Behandlung (am Diff vom Implementer zu bestätigen) |
+| Träger | Messung am Planstand (`4a43f6ac`, gemessen am 2026-10-02; Zählungen am Parent `3d10e8c6` siehe Block oben) | Behandlung (am Diff vom Implementer zu bestätigen) |
 |---|---|---|
 | `Makefile` Kommentarblock 273–311 und Rezepte | sieben Mount-Zeilen `…:/work`, vier `…:/src:ro` (Suchlauf-Zeilen 4 und 5); Kommentare nennen `D_MIGRATE_RUN_USER` und den Bind-Mount | umschreiben auf den Ist-Zustand; `D_MIGRATE_RUN_USER` und seinen Kommentar streichen |
 | `harness/README.md` §Sensors | Zeilen `make schema-validate` (160), `make schema-rollout` (162), `make test-rollout-restore` (159) und die Verweise der Aufrufer-Zeilen (`make test-store`, `make test-replication`, `make test-integration` … nennen `apply-rollout.sh`, nicht den Wrapper; Lesen) | nachziehen; Zeile `test-rollout-restore` entfernen |
 | `harness/targets/schema-rollout.md` | §Voraussetzungen (`D_MIGRATE_RUN_USER`, Toolchain-Container für die Wache), §Ablauf Schritte 2–3 (`rollout-precheck.yaml`), §Erzeugnisse in Test-, Bench- und Beispiel-Läufen (Wrapper, Rücknahme, Aufrufer-Prüfung), §Belege | nachziehen; der Abschnitt über den Wrapper entfällt oder wird zum Hinweis „der Baum bleibt unberührt" |
-| `docs/user/benutzerhandbuch.md` §Schema aktualisieren (Zeilen 1361–1362: „Der Lauf erzeugt einen Pflicht-Report (`tools/schema/plan.yaml`)") und die Erstanleitung (Zeile 57) | beide Treffer gelesen | Ablageort des Reports nach A1 nachziehen (Betreiber-Sicht) |
-| `.gitignore` Kommentar Zeilen 8–14 | nennt `tools/schema/rollout-precheck.yaml` als Laufzustand | nachziehen |
+| `docs/user/benutzerhandbuch.md` §Schema aktualisieren (Zeilen 1361–1362: „Der Lauf erzeugt einen Pflicht-Report (`tools/schema/plan.yaml`)") und die Erstanleitung (Zeile 57) | beide Treffer gelesen | Ablageort des Reports nachziehen (Betreiber-Sicht): `SCHEMA_ARTEFACT_DIR`, Default `.tmp/schema-rollout`; Hinweis, dass der Betreiber den Report selbst aufbewahrt (Variable auf ein Ziel je Rollout oder Kopie), `ADR-0142` Festlegung 1 |
+| `.gitignore` Kommentar Zeilen 8–14 | nennt `tools/schema/rollout-precheck.yaml` als Laufzustand und „der Beleg eines echten Rollouts bleibt `tools/schema/plan.yaml`“ | nachziehen: Ort `SCHEMA_ARTEFACT_DIR` (Default `.tmp/schema-rollout`), Eintrag `tools/schema/rollout-precheck.yaml` entfällt |
 | `AGENTS.md` | `schema-rollout` in §3.14 (Rang-Zeiger auf die entfallene Regel) und im Link auf [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md); **kein** Treffer zu `rollout-restore`, Bind-Mount-Regel oder `D_MIGRATE_RUN_USER` | **melden, nicht ändern**; keine Änderung nötig |
 | Register `BEO-PGC/test-schreibt-in-committete-datei` (`state.md`: „verkörpert → `rollout-restore.sh`") | Zustand nennt den entfallenden Träger | bei Closure nachtragen (§7) |
-| [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md) (Accepted, unberührbar) | Entscheidung 3: „Die Rollback-Artefakte (`plan.yaml`, `down.sql`) werden je Rollout aufbewahrt"; Fitness-Zeile: Pflicht-Report „wird aufbewahrt" | **melden an den Architect** (A1), nicht ändern |
+| Register `BEO-PGC/generierte-artefakte-ohne-sync-sensor` (`state.md` und `observation.md` nennen `plan.yaml`) | Eintrag führt die zwei Dateien als Kandidat eines Sync-Sensors | bei Closure „`ADR-0084` Trigger (b) eingelöst durch `ADR-0142`“ vermerken (§7) |
+| [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md) (Accepted, unberührbar) | Entscheidung 3: „Die Rollback-Artefakte (`plan.yaml`, `down.sql`) werden je Rollout aufbewahrt"; Fitness-Zeile: Pflicht-Report „wird aufbewahrt" | **beantwortet durch `ADR-0142`** (Auslegung des Orts, kein Supersedes); nicht ändern |
+| [`ADR-0084`](../../adr/0084-sync-gate-fuer-generierte-artefakte.md) (Accepted, unberührbar) | Festlegung 3 hält `plan.yaml`/`down.sql` als committetes Nebenprodukt; Trigger (b): „wenn ein Rollout-Lauf die committete Datei nicht mehr verändert“ | **Trigger (b) eingelöst** durch `ADR-0142` („Gegenstand weggefallen“); ADR bleibt unberührt, nur Meldung |
 
 Nichtgefunden am Parent (Lese-Befund): kein Workflow unter `.github/workflows/` ruft
 `schema-rollout`/`schema-validate` auf (`git grep` über `.github`: 0 Treffer, Parent `4a43f6ac`,
@@ -309,33 +348,27 @@ nicht. `compose.yaml` Zeile 164 nennt `make schema-rollout` nur in einem Komment
 
 ## 4. Trigger
 
-**Architect-Fragen (vor dem Start zu beantworten; der Planner entscheidet sie nicht):**
+**Architect-Fragen A1–A3 — beantwortet** durch das Architect-Verdikt
+[`architect-verdict-schema-rollout-ohne-bind-mount`](../../../reviews/architect-verdict-schema-rollout-ohne-bind-mount.md)
+und [`ADR-0142`](../../adr/0142-schema-rollout-erzeugnisse-ausserhalb-baum-eingabe-ohne-bind-mount.md)
+(`Accepted`, kein Supersedes):
 
-- **A1 — Ablageort und Aufbewahrung der Erzeugnisse; ADR nötig?** Der Plan unterstellt: die
-  Erzeugnisse (Pflicht-Report, Rollback-Artefakt, Precheck-Report) landen standardmäßig in
-  `SCHEMA_ARTEFACT_DIR` außerhalb des versionierten Baums; die committeten
-  `tools/schema/plan.yaml` und `down.sql` bleiben unberührt (sie zeigen einen Testlauf gegen
-  `cdc-test-postgres`, kein Betriebs-Rollout — Lesen des Kopfs von `plan.yaml`, **gemessen**).
-  Zu entscheiden: (a) Default-Ort und ob der Betreiber einen Aufbewahrungsort setzt
-  (Variable) oder ob das Target einen zweiten Ausgabeweg bekommt; (b) Schicksal der zwei
-  committeten Dateien (Bestand lassen, entfernen, als Beispiel kennzeichnen); (c) ob die
-  Verschiebung eine neue ADR braucht, weil [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md)
-  („je Rollout aufbewahrt", Accepted) berührt ist, oder ob eine Fortschreibung des Vertrags
-  `harness/targets/schema-rollout.md` genügt. Fällt A1 auf „committete Dateien bleiben das
-  Erzeugnis", entfällt der Gewinn „Arbeitsbaum unberührt" für den Betrieb, `rollout-restore.sh`
-  bleibt, und Liefer-Punkt 2 schrumpft auf die Doku.
-- **A2 — Mount-Regel als Regeltext?** Der Auftrag begrenzt den Slice auf zwei Ziele; die
-  `:ro`-Mounts von `make test` und der Sensoren bleiben. Zu entscheiden: ob der Zustand
-  „nur die Schema-Ziele sind mountfrei" eine ADR oder einen Satz in
-  [`AGENTS.md`](../../../../AGENTS.md) §3.1 braucht, oder ob er ein beschriebener Ist-Stand
-  bleibt (der Planner empfiehlt: Ist-Stand im Vertrag `harness/targets/schema-rollout.md`,
-  keine Regel, weil §3.1 heute kein Mount-Verbot enthält).
-- **A3 — Wache-Eingabe W1** (§3 Ansatz 3) und das eigene Dockerfile statt einer Stufe im
-  Wurzel-`Dockerfile`: der Planner wählt W1 und das eigene Dockerfile; Einspruch ist ein
-  Plan-Nachzug, keine Voraussetzung.
+- **A1 — Ablageort und Aufbewahrung; ADR nötig?** *Beantwortet: ja, `ADR-0142`.* Default
+  `SCHEMA_ARTEFACT_DIR=.tmp/schema-rollout`, Aufbewahrung je Rollout ist Sache des Betreibers
+  (Variable oder Kopie), die zwei committeten Dateien verlassen den Index (`git rm`). Die
+  ADR-Pflicht kommt aus `ADR-0084` (Festlegung 3, Option E, Trigger (b)); `ADR-0043`
+  Entscheidung 3 wird im Ort ausgelegt, nicht superseded. Die Rückführung „A1 fällt auf
+  committete Dateien bleiben Erzeugnis" tritt nicht ein.
+- **A2 — Mount-Regel als Regeltext?** *Beantwortet: nein.* Ist-Stand im Vertrag
+  `harness/targets/schema-rollout.md` und in `ADR-0142` Festlegung 3 („Geltung: nur diese zwei
+  Ziele"); keine Änderung an `AGENTS.md`.
+- **A3 — Wache-Eingabe W1 und eigenes Dockerfile.** *Beantwortet: bestätigt*, mit den
+  Schärfungen `FROM scratch` + `CGO_ENABLED=0`, kein Digest im Dockerfile,
+  `tar -x --no-same-owner` (DoD Liefer-Punkt 1).
 
-**Start** (`next` → `in-progress`): A1 ist beantwortet (bei „ADR nötig" liegt sie `Accepted`
-vor); Docker mit Netzzugang; kein anderer Slice liegt in `in-progress/` (WIP-Limit 1).
+**Start** (`next` → `in-progress`): die Startbedingung „A1 beantwortet, ADR `Accepted`" ist
+erfüllt (Verdikt und `ADR-0142` oben); verbleibend: Docker mit Netzzugang; kein anderer Slice
+liegt in `in-progress/` (WIP-Limit 1).
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
@@ -344,8 +377,7 @@ vor); Docker mit Netzzugang; kein anderer Slice liegt in `in-progress/` (WIP-Lim
   „Arbeitsbaum unberührt" allein über `git status --short`, mit dem Wrapper weiterhin an den
   Aufrufern.
 - `in-progress` → `open` (blockiert): `/dev/stdin` trägt die Wache nicht und der Rückfall (Kopie
-  im Container) verlängert den Ablauf über das Vertretbare, oder A1 fällt auf „committete Dateien
-  bleiben Erzeugnis" und der Zuschnitt ist zu überarbeiten. Ein Rot des Guard-Tests geht nie als
+  im Container) verlängert den Ablauf über das Vertretbare. Ein Rot des Guard-Tests geht nie als
   Anpassung der Erwartung in `done/`.
 
 ## 5. Closure-Trigger
@@ -365,11 +397,12 @@ geschrieben.
   Bauzeit warm und kalt im Bericht, Ursprung gemessen).
 - **d-migrate-Image-Besonderheiten.** `ENTRYPOINT ["d-migrate"]`, Lauf als uid 10001 und Schreiben
   nur in `/work` und `/tmp`; ob die Erzeugnis-Pfade (`--report`, `--rollback-output`) unter
-  diesem Nutzer außerhalb von `/work` schreibbar sind und `docker cp` aus einem beendeten
-  Container die Besitzer-Zuordnung auf dem Host sauber setzt, ist nicht gemessen. —
+  diesem Nutzer außerhalb von `/work` schreibbar sind, ist nicht gemessen (die Image-
+  Eigenschaften selbst sind gemessen, §3; die Besitzer-Zuordnung beim Export: nächster Punkt). —
   **Ausgang:** *zu entscheiden bei Closure*.
-- **Wache-Eingabe über `/dev/stdin`.** Siehe §3 Ansatz 3; nicht gemessen. — **Ausgang:** *zu
-  entscheiden bei Closure*.
+- **Wache-Eingabe über `/dev/stdin`.** Siehe §3 Ansatz 3; die Ebene darunter ist gemessen
+  (Verdikt), `os.ReadFile` auf diesem Weg und der Wache-Bau ohne Netz sind hergeleitet. —
+  **Ausgang:** *zu entscheiden bei Closure*.
 - **Stiller No-op bei fehlendem `-i`.** `psql -f -` ohne offenen stdin endet mit Exit 0 und
   tut nichts — die vier Nacharbeit-Schritte (Rollen, Views, Funktionen) würden still entfallen
   (hergeleitet aus dem Verhalten von `psql`, nicht gefahren). Eine Mutationsprobe (M3) belegt,
@@ -390,10 +423,17 @@ geschrieben.
   Mount-freier Rezeptur ändert die Aussage des Laufs, nicht seinen Aufbau. — **Ausgang:**
   *entfallen*, solange der Test den festen Alt-Stand `v0.4.0` führt (Lesen,
   `run-schema-rollout-guard-test.sh` Zeile 270).
-- **Verhaltensänderung für Betreiber.** Der Report liegt nicht mehr unter `tools/schema/` (nach
-  A1). — **Ausgang:** *zu entscheiden bei Closure*: Benutzerhandbuch nachgezogen; ob ein Hinweis
-  im nächsten Release-Text nötig ist, entscheidet der Auftraggeber (kein Release in diesem
-  Slice).
+- **Verhaltensänderung für Betreiber.** Der Report liegt nicht mehr unter `tools/schema/`,
+  sondern in `SCHEMA_ARTEFACT_DIR` (`ADR-0142` Festlegung 1). Das Handbuch nennt die Variable
+  und den Hinweis, dass der Betreiber den Report selbst aufbewahrt (Variable auf ein Ziel je
+  Rollout oder Kopie). — **Ausgang:** *zu entscheiden bei Closure*: Handbuch nachgezogen; ob ein
+  Hinweis im nächsten Release-Text nötig ist, entscheidet der Auftraggeber (kein Release in
+  diesem Slice).
+- **Besitzer-Zuordnung beim Export.** `docker cp` liefert die Dateien als uid 10001; läuft der
+  Rollout als root (CI), würde `tar -x` sonst chownen. Der Export nutzt
+  `tar -x --no-same-owner`. Das Verhalten ist **hergeleitet**, nicht gefahren (Verdikt A3
+  Schärfung 3). — **Ausgang:** *zu entscheiden bei Closure* (Besitzer der Dateien in
+  `SCHEMA_ARTEFACT_DIR` im Bericht lesen).
 
 ## 7. Closure-Notiz
 
