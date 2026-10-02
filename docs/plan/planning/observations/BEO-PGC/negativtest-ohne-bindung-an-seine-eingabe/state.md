@@ -37,7 +37,8 @@ Träger“ — eine Gegenentscheidung des Architects ist ein neues Verdikt):
   einer Abfrage-Eingabe; er ist im Slice gebunden (Test mit Run einer fremden Quelle,
   Mutation danach rot), der Reviewer fand ihn vor dem Merge.
 
-Zähler (abgeleitet): **24×** (evidence/slice-sdk-sse-client-schema-table-filter.md,
+Zähler (abgeleitet): **25×** (evidence/slice-meldungscodes-kennungsfreie-ausgaben.md,
+evidence/slice-sdk-sse-client-schema-table-filter.md,
 evidence/slice-routing-nats-subjekt.md,
 evidence/slice-routing-antragsweg.md,
 evidence/slice-capture-transient-wiederholung.md,
@@ -59,7 +60,14 @@ evidence/slice-sdk-kotlin-cloudsmith.md,
 evidence/slice-harness-suchlauf-nachmessen.md) —
 **Schwelle erreicht**; der Lese-Schritt der Closure von `welle-backfill-bestand`
 liest den Eintrag mit (11×), der Lese-Schritt der nächsten Welle-Closure
-(`welle-transformationen`) den zwölften bis neunzehnten Beleg. Der vierundzwanzigste Beleg
+(`welle-transformationen`) den zwölften bis neunzehnten Beleg. Der fünfundzwanzigste Beleg
+(`slice-meldungscodes-kennungsfreie-ausgaben`, Review F-1, HIGH, daher Datei trotz Deckel)
+trifft einen **Ausnahme-Zweig eines Wächter-Skripts**: die Shell-Kommentar-Ausnahme von
+`tools/harness/ausgabe-kennungen-check.sh` war im Tabellentest nicht ausgeübt (`skip_sh` wirkungslos:
+43 von 43 grün, die Go-Seite war gebunden); gebunden in der Fixrunde `1cead04f`, der Verifier sah
+vier Fälle rot; die Regel hat mit Reviewer und Verifier vor dem Merge gewirkt, kein Kandidat der
+Schärfung. F-2 (LOW) und F-3 (INFO) desselben Reviews: nach der Deckel-Regel ohne eigene Datei, in
+der Closure-Notiz genannt. Der vierundzwanzigste Beleg
 (`slice-sdk-sse-client-schema-table-filter`, Review F-1, MEDIUM, daher Datei trotz Deckel)
 trifft die **Verdrahtung Flag → Anfrage** der SSE-Beispiele: URL-Bau und Parser waren je für
 sich gebunden, ihre Verbindung nicht (Go: Entfernen des `-table`-Flags und `cfg.table` → `""`

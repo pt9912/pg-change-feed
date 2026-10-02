@@ -112,7 +112,7 @@ Nachgemessen am Code:
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Ziel-Form: Slice — **≤ 3 Liefer-Punkte**.
 
-- [ ] **(A) Ausgaben kennungsfrei.** Die 14 Go-Zeilen und die 3 `echo`-Zeilen tragen
+- [x] **(A) Ausgaben kennungsfrei.** Die 14 Go-Zeilen und die 3 `echo`-Zeilen tragen
       keine Kennung mehr; die Erwartungen in `diagnose_test.go`, `run-integration-tests.sh`,
       `run-schema-rollout-guard-test.sh`, `guard_test.go` und `harness/targets/schema-rollout.md`
       sind nachgezogen; im Benutzerhandbuch entfallen der Hinweissatz und der Platzhalter
@@ -124,7 +124,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       eines realen `diagnose`-Laufs im Closure-Bericht (**gemessen**, nicht übernommen) gegen
       das Handbuch-Beispiel; die Messung, ob die `description:`-Texte als Datenbank-Kommentar
       ankommen (z. B. `\d+` an einer gerollten Wegwerf-Datenbank, Befehl und Ausgabe im Bericht).
-- [ ] **(B) Gate `ausgabe-kennungen-check`.** Ein netzloses Gate (`bash`/`git`/`grep`, ERE,
+- [x] **(B) Gate `ausgabe-kennungen-check`.** Ein netzloses Gate (`bash`/`git`/`grep`, ERE,
       kein `-P`) mit dem zweistufigen Muster und der Reichweite aus
       [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md) Festlegung 10 steht
       in `GATE_CHECKS` und endet am Ist-Stand mit Exit 0; Tabellentest `make test-ausgabe-kennungen-check`
@@ -139,17 +139,18 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       Farbe im Bericht — in der ADR nur *hergeleitet*); `make gates` Exit 0 mit dem neuen Gate.
       Die Grenzen des Sensors (mehrzeiliges Raw-String-Literal wird nicht gelesen; nachgestelltes
       Kommentar-Zitat trifft) stehen im Vertrag ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)).
-- [ ] `make gates` grün (Exit-Code ungefiltert, [`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`), kein Self-Review.
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes
+- [x] `make gates` grün (Exit-Code ungefiltert, [`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`), kein Self-Review. Einschränkung: F-1 (HIGH) ist durch
+      die Fixrunde `1cead04f` behoben; ein Re-Review fand nicht statt (§7).
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes
       je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-meldungscodes-kennungsfreie-ausgaben.md`
       endet mit Exit 0.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine Beobachtung
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine Beobachtung
       angefallen“ in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
 
 Die Gate-Lockerung ist nicht berührt: das Gate ist neu, kein bestehendes wird
 gesenkt; [`AGENTS.md`](../../../../AGENTS.md) §3.6 ist durch
@@ -271,22 +272,32 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   entfallende Klammer (`(LH-FA-ADM-002)`), keinen Anker, den das Handbuch zusagt; die
   Handbuch-Abschnitte Diagnose und Rollout liest der Implementer dennoch gegen eine Textzusage
   (ADR: im Handbuch nicht nachgemessen) — findet er eine, geht der Slice zurück an den
-  Auftraggeber. — **Ausgang:** (bei Closure)
+  Auftraggeber. — **Ausgang:** nicht eingetreten (Stichprobe): Handbuch-Diagnose und -Rollout
+  sagen keinen Anker mit der entfallenden Klammer zu (Verifikation §7: nur die geänderten
+  Stellen gelesen, kein Voll-Lesen des Handbuchs).
 - **Tests erwarten Texte.** `diagnose_test.go`, `run-integration-tests.sh`,
   `run-schema-rollout-guard-test.sh`, `guard_test.go`: ein vergessener Läufer wird erst beim
   `make test-integration`-Lauf rot, der nicht in `make gates` liegt. Gegenmittel:
-  Suchlauf-Zeilen je Träger, vollständiger Lauf vor Closure. — **Ausgang:** (bei Closure)
+  Suchlauf-Zeilen je Träger, vollständiger Lauf vor Closure. — **Ausgang:** nicht eingetreten:
+  `make test`, `make test-store`, `make test-integration` und der Wache-Test liefen grün am
+  Stand `1cead04f` (Verifier gemessen; der Implementer fand die drei maskierten Erwartungen
+  im ersten Integrations-Lauf, §3).
 - **Datenbank-Metadaten (`COMMENT ON`) tragen Kennungen.** Offen bis T1: ungemessen, ob der
   Betreiber sie sieht; eine Änderung der `description:`-Felder ändert das Rollout-Ergebnis und
   die Schema-Identität (Rollout-Wache, `make test-store`). Regel der ADR: sichtbar → kennungsfrei,
-  sonst bleibt. — **Ausgang:** (bei Closure)
+  sonst bleibt. — **Ausgang:** entfallen: `pg_description` für das Schema `cdc` zählt 0
+  (Implementer und Verifier je gemessen); die 16 `description:`-Felder kommen beim Betreiber
+  nicht an und bleiben als Quelltext-Dokumentation.
 - **Wächter mit Falsch-Positiven oder -Negativen.** Eine zeilenbasierte Regel liest keine
   mehrzeiligen Literale und trifft ein nachgestelltes Kommentar-Zitat; beides ist als Grenze
   benannt und im Sensor-Vertrag zu nennen. Ein zu eng gelesenes Muster erzeugt falsche
   Sicherheit ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)); die
-  Mutationsprobe der ADR ist *hergeleitet*, der Implementer fährt sie. — **Ausgang:** (bei Closure)
+  Mutationsprobe der ADR ist *hergeleitet*, der Implementer fährt sie. — **Ausgang:**
+  eingetreten, benannt und gebunden: sechs Grenzen im Sensor-Vertrag, als Tabellenfälle
+  gebunden (Fixrunde `1cead04f`); die Mutationsprobe ist erprobt (Stelle `wiring.go:2232`
+  und `rollout.sh:139`, Instanz echter Gate-Lauf, Farben rot/grün/rot; Verifier M3 bis M5).
 - **Kollision mit parallelen Arbeiten am Handbuch.** Gegenmittel: Rebase auf `main`, nur
-  eigene Abschnitte committen. — **Ausgang:** (bei Closure)
+  eigene Abschnitte committen. — **Ausgang:** entfallen: kein Konflikt im Diff (Verifikation §7).
 
 ## 7. Closure-Notiz
 
@@ -294,12 +305,77 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register · `grundlagen-traceability.md` §Herkunfts-Anker für
 Steering-Loop-Regeln. Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
 
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** T2 `meldungscodes-registry-fehlerkopf`.
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** Der Suchlauf-Block (26 Zeilen, `make suchlauf-nachmessen` Exit 0
+  am Parent und am Diff) trug Gefundenes und Nichtgefundenes je Träger; die Mutationsprobe der
+  ADR (in der ADR nur *hergeleitet*) ist erprobt: Kennung in einem `fmt.Println`-Literal von
+  `wiring.go` rot, dieselbe Kennung als Kommentarzeile grün, Kennung in einem `echo` von
+  `rollout.sh` rot (Implementer an einer Scratchpad-Kopie, Verifier erneut als M3 bis M5).
+  Die Datenbank-Metadaten sind gemessen statt angenommen: `pg_description` zählt für das
+  Schema `cdc` 0 (Implementer **und** Verifier gemessen), die 16 `description:`-Felder
+  bleiben als Quelltext-Dokumentation. Der erste `make test-integration`-Lauf nach den neun
+  Klartext-Erwartungen deckte die drei maskierten (`\(LH-…\)`) auf — der Vollauf außerhalb
+  von `make gates` war der Fänger (Risiko „Tests erwarten Texte“).
+- **Was ging anders als geplant:** (1) Der Review fand F-1 (HIGH): die Shell-Kommentar-Ausnahme
+  (`skip_sh`) war im Tabellentest ungebunden, die Mutation blieb bei 43 von 43 Fällen grün.
+  Die Fixrunde `1cead04f` band sie (43 → 53 Fälle: Fälle zur Shell-Kommentar-Ausnahme je Skript-Wurzel
+  und „benannte Grenze“-Fälle zu F-2; dazu die Grenze 5 im Vertrag und die Gate-Zeile in
+  `harness/README.md`). **Ein Re-Review fand nicht
+  statt** — ehrliche Abweichung von der DoD-Zeile „Review durchgeführt“: der Verifier las den
+  Fixrunden-Diff selbst (drei Dateien, nur Tabellenfälle, Vertrag und Index; das Gate-Skript
+  `tools/harness/ausgabe-kennungen-check.sh` byte-gleich zum reviewten Stand) und fuhr die
+  Mutation `skip_sh` wirkungslos: genau 4 Fälle rot (Verifikation §3 M1, §4: ein weiterer
+  Reviewer-Durchgang ist keine Bedingung des Verdikts). Die Review-Reports bleiben
+  unverändert. (2) Zahlen mit Ursprung ([`AGENTS.md`](../../../../AGENTS.md) §3.12):
+  Tabellenfälle 53 (Verifier **gemessen**, `make test-ausgabe-kennungen-check`), 43 → 53 durch
+  die Fixrunde (Review gemessen, Fixrunde gezählt); Treffer vorher 17 (14 Go + 3 `echo`,
+  Implementer am Parent `ba60c7bc` **gemessen**); `pg_description` 0 (Implementer und
+  Verifier **gemessen**); 9 gegen 12 Läufer-Erwartungen (9 mit Klartext-Klammer, 3 maskiert) und
+  142 gegen 97 Testzeilen (Implementer **gemessen**, Review **nachgemessen**; die 142 des
+  Vorläufer-Plans bleiben nicht reproduziert); 33 `pg_class`-Objekte im Schema `cdc`
+  (Implementer **gemessen**, ohne Verifier-Nachmessung, **übernommen**); Handbuch 1.89.
+  (3) **Grenze der Belege:** die Blocker-Zeile mit Namen und Kennung (`Name (Kennung)`) erzeugte
+  kein realer `diagnose`-Lauf (weder Implementer noch Verifier; kein bestätigter Consumer im
+  Wegwerf-Lauf) — sie ist durch den Code (`%s (%s)` in `wiring.go`) und die grüne Erwartung in
+  `make test-integration` getragen, nicht durch eine gedruckte Zeile. (4) **Sechs benannte
+  Grenzen des Wächters** (Sensor-Vertrag `harness/sensors/ausgabe-kennungen-check.md`, als
+  Tabellenfälle gebunden): mehrzeiliges Raw-String-Literal, Heredoc und mehrzeiliges `echo`,
+  nachgestelltes Kommentar-Zitat, Block-Kommentar, einzeiliger Raw-String mit inneren
+  Anführungszeichen und Rune-Literal `'"'`, andere Ausgabewege. Der Wächter hat nach der
+  Fixrunde keinen offenen Fund. (5) **CI:** der T1-Stand ist nicht gepusht; ob das neue Gate
+  auf dem Runner grün läuft, ist **nicht gemessen** (Erwartung, Verifikation §7); der erste
+  Lauf nach dem Push ist zu beobachten ([`AGENTS.md`](../../../../AGENTS.md) §3.10 löst keine
+  Pflicht aus, es wurde kein Workflow berührt).
+- **Steering-Loop-Eintrag:** *Geschärfte Regel:* keine neue Regel — die verkörperte Regel
+  „Zusage ohne Bindung an ihre Eingabeseite“ (`.harness/skills/reviewer.md` HIGH,
+  `.claude/commands/implement-slice.md` Schritt 19) hat gewirkt: der Reviewer fand die
+  überlebende Mutation. *Ausprägung (Vermerk, kein neuer Wortlaut):* ein Wächter mit mehreren
+  Ausnahme-Zweigen (Go-Kommentar, Shell-Kommentar, Test-Datei, `*.pb.go`) braucht **je Zweig**
+  einen Tabellenfall, der ohne den Zweig rot wird; der Implementer hatte die Go-Seite gebunden
+  und die Shell-Seite mit einem Fall abgedeckt, der die Ausnahme nie ausübte (kein `echo` in
+  der Zeile). Dritte Anwendung der Klasse an einem Wächter-Skript (Vorläufer im Register:
+  `slice-harness-suchlauf-nachmessen` und `slice-harness-guard-inplace-textwerkzeug`).
+  *Neuer Sensor:* keiner — der Fänger ist die Mutation der Eingabeseite durch den Reviewer;
+  ein Mutations-Harness ist im Register verworfen. *Benannte Spec-Lücke:* keine; die
+  Meldungscodes (T2 bis T4) sind die nächste Stufe von
+  [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md).
+- **Beobachtungs-Register (`../observations/`):**
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` erhält den 25. Beleg
+  (`evidence/slice-meldungscodes-kennungsfreie-ausgaben.md`, Review F-1, HIGH, daher Datei
+  trotz Deckel), Zähler 24× → 25×, Ausgang unverändert *verkörpert*; F-2 (LOW, „Grenze nicht
+  benannt“) und F-3 (INFO, „Übernommener Messwert“) sind nach der Deckel-Regel ohne eigene
+  Datei, hier genannt und im selben Vorgang geschlossen (Vertrag-Grenze 5 und Tabellenfälle;
+  Verifier-Nachmessung `pg_description`). `BEO-PGC/intern-kennungen-in-ausgelieferten-texten`:
+  Zustandsfeld fortgeschrieben — das Gate `ausgabe-kennungen-check` ist Fangnetz für
+  Programm-Ausgaben mit den sechs benannten Grenzen; Zähler **1×** unverändert (kein neuer
+  Vorgang der Klasse).
+- **Folge-Slices:** T2 [`meldungscodes-registry-fehlerkopf`](../open/slice-meldungscodes-registry-fehlerkopf.md)
+  zuerst; danach T3 [`meldungscodes-warnungen-heartbeat-diagnose`](../open/slice-meldungscodes-warnungen-heartbeat-diagnose.md)
+  und T4 [`meldungscodes-http-grpc-fehlerkoerper`](../open/slice-meldungscodes-http-grpc-fehlerkoerper.md)
+  (untereinander unabhängig). Kein Release, keine Versionsänderung.
+- **Risiken aus §6:** Ausgaben-Stabilität: nicht eingetreten (Stichprobe); Tests erwarten
+  Texte: nicht eingetreten; Datenbank-Metadaten: entfallen (`pg_description` 0); Wächter mit
+  Falsch-Positiven/-Negativen: eingetreten, benannt und gebunden; Kollision mit parallelen
+  Handbuch-Arbeiten: entfallen. Kein Release: entfallen (Gegenstand lag außerhalb).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

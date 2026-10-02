@@ -24,6 +24,16 @@ Kennung bleibt grün). Die Texte, die das Repo verlassen, haben damit zwei Wäch
 Lesefehler als Exit 2; beim SDK-Wächter geschlossen am Commit `8f6430a0`
 (`docs/plan/planning/done/slice-sdk-public-doc-check-lesefehler-fail-closed.md`).
 
+**Fangnetz für Programm-Ausgaben:** `make ausgabe-kennungen-check` (Gate in `make gates`) prüft
+die Ausgabe-Literale des Go-Produktionscodes (`internal/`, `cmd/`, `tools/schema/`) und die
+`echo`/`printf`-Zeilen der Skripte unter `tools/schema/` und `examples/` auf eine interne
+Kennung. Sechs benannte Grenzen (Sensor-Vertrag `harness/sensors/ausgabe-kennungen-check.md`,
+als Tabellenfälle gebunden): mehrzeiliges Raw-String-Literal, Heredoc und mehrzeiliges `echo`,
+nachgestelltes Kommentar-Zitat, Block-Kommentar, einzeiliger Raw-String mit inneren
+Anführungszeichen und Rune-Literal `'"'`, andere Ausgabewege. Die Ausgaben sind seit
+`docs/plan/planning/done/slice-meldungscodes-kennungsfreie-ausgaben.md` kennungsfrei; die
+Meldungscodes folgen in T2 bis T4. Der Zähler bleibt **1×** (kein neuer Vorgang der Klasse).
+
 **Verwandt, nicht gleich:** `BEO-PGC/slice-chronik-in-code-kommentar` (Chronik in
 Code-Kommentaren, Leser ist der Entwickler im Repo) — hier ist der Leser ein
 Anwender außerhalb des Repos, und der Träger ist ein Paket.
