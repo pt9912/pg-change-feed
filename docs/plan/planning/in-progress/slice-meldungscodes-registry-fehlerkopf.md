@@ -136,6 +136,14 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | `docs/user/benutzerhandbuch.md` | update | Katalog, Satz zur Stabilität, Änderungshistorie. Rebase auf `main`, nur eigene Abschnitte committen. |
 | Gate-Skript unter `tools/harness/`, Tabellentest-Läufer, `harness/sensors/meldungscodes-check.md`, `harness/README.md` §Sensors, `harness/mk/doc-gate.mk`, `GATE_CHECKS` | neu / update | (B). |
 | `*_test.go` mit Erwartung `Fehlerklasse <klasse>:` (u. a. `internal/application/usecase/backfill/service_test.go`), Läufer unter `tools/harness/` | update | Erwartungen an den Kopf. |
+| `internal/domain/messagecode/{codes,messagecode,messagecode_test}.go` | neu (Umsetzung von Zeile 1) | `codes.go` ist die Tabelle (59 Codes: 7 Rückfälle `…000` der Fehlerklassen, 29 Einzelursachen-Codes der Fehlerklassen — die 28 Sentinels tragen 26 davon, drei Codes der Klasse `configuration` entstehen im Backfill-Run und im Rollout-Skript —, 23 Codes der Ablehnungen `E8…` mit dem Rückfall `E8000` und 22 Gründen); `messagecode.go` trägt Typ `Code`, `Class`, `Entry`, `Error` (Sentinel-Fehlerwert mit Kopf), `From`, `WithoutHead`, `RunMessage`, `RejectionMessage`; der Test prüft Form, erste Ziffer gegen Klasse, Dopplung, Rückfall je Klasse. Granularität (Maßnahme des Betreibers): ein Code je Speicher-Port (acht Codes für `storage`), weil der Betreiber an der Fehlerzeile erkennt, welcher Speicher (Change, Antrags-Queue, Backfill, Consumer-Stand, Diagnose, Heartbeat, Schema, Snapshot) gestört ist; die drei Stream-Ordnungs-Sentinels des Mappers teilen einen Code. |
+| `internal/domain/model/backfillrun.go` | update | `Run.Fail(at, code, cause)` — die Klasse folgt aus dem Code, `error_message` = `<Klasse> [<Code>]: <Ursache>`; ein Code ohne Fehlerklasse endet als `ErrInvalidErrorClass`. |
+| `internal/bootstrap/rejection.go`, `internal/bootstrap/messagecodes_internal_test.go` | neu | `administrationFailureText`/`rejectionCode`: Ablehnungs-Code je Grund (E8…), unerwartete Fehler tragen den Kopf `internal`; der Test bindet jeden Sentinel an Code und Klasse und jeden Ablehnungsgrund an seinen Code. |
+| `internal/adapters/driven/postgresstorage/sqlexec/translate.go` (`rejectionMessage`) | update | `abgelehnt [<Code>]: …` für die vom Antrags-Konstruktor verworfenen Zeilen (E8001 bis E8006, Rückfall E8000). |
+| `test/integration/{routing,transformation}_e2e_test.go`, `tools/harness/run-integration-tests.sh` | update | Erwartungen an `error_message` (Kopf `abgelehnt [<Code>]`, Run `schema [PCF-E4004]`, DDL-Fenster `storage [PCF-E5008]`/`transient [PCF-E1003]`) und an die Log-Zeile (Kopf mit Code im Container-Log, `docker logs`). |
+| `harness/targets/schema-rollout.md` | update | die `FEHLER`-Zeile trägt den Code. |
+| `tools/schema/rolloutguard/` | **nicht geändert** | seine Zeilen (`rolloutguard: …`) sind Diagnose der Wache, keine `FEHLER`-Zeilen des Rollout-Skripts; [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md) Festlegung 3 nennt dort nur `FEHLER [<code>]` des Skripts. Eine Reduktion gegenüber der Zeile oben, kein stilles Weglassen. |
+| `harness/sensors/meldungscodes-check.md`, `tools/harness/run-meldungscodes-check-tests.sh` | neu | Sensor-Vertrag und Tabellentest (63 Prüfungen) zu Liefer-Punkt (B). |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „der Fehlertext beginnt mit
 `Fehlerklasse <klasse>: `“; Parent ist `ba60c7bc`; die `diff`-Zeilen und die Befunde trägt der
@@ -150,17 +158,61 @@ ba60c7bc 36 -n -F 'Fehlerklasse' -- docs/user/benutzerhandbuch.md
 ba60c7bc 2 -n -E 'Fehlerklasse [a-z]+:' -- internal/application/usecase/backfill/service_test.go
 ba60c7bc 0 -n -F 'Fehlerklasse' -- sdks
 ba60c7bc 0 -n -F 'PCF-' -- internal tools sdks docs/user spec cmd examples
+diff 0 -n -E '"Fehlerklasse [a-z]+: ' -- '*.go' ':!*_test.go'
+diff 0 -n -F 'strings.Replace(cause.Error(), "Fehlerklasse "' -- internal/application/usecase/backfill/service.go
+diff 1 -n -F 'func classifyRunError' -- internal/bootstrap/wiring.go
+diff 0 -n -F 'der Fehlertext beginnt mit der Klasse' -- spec/pflichtenheft.md
+diff 43 -n -F 'Fehlerklasse' -- docs/user/benutzerhandbuch.md
+diff 0 -n -E 'Fehlerklasse [a-z]+:' -- internal/application/usecase/backfill/service_test.go
+diff 0 -n -F 'Fehlerklasse' -- sdks
+diff 0 -n -F 'PCF-' -- sdks
+diff 0 -n -F 'PCF-' -- examples
 ```
 
 | Träger | Messung am Parent (`ba60c7bc`, 2026-10-02) | Behandlung und Befund am Diff |
 |---|---|---|
-| `Fehlerklasse`-Literale in Produktions-Go | Zeile 1: 28 (die Tabellenzeile des Vorläufer-Plans gehört jetzt hierher, nicht zu T1) | Diff: Kopf mit Code; Soll je Literal die Konstante der Tabelle |
-| Textchirurgie, Klassifikation | Zeilen 2, 3: je 1 | Zeile 2 entfällt (Soll 0) |
-| Spec-Satz zum Kopf | Zeile 4: 1 | auf den Kopf nach Festlegung 3 umgeschrieben |
-| Handbuch | Zeile 5: 36 | Implementer sichtet jede Zeile auf Textzusage und Katalog-Bezug |
-| Tests | Zeile 6: 2 | Erwartungen mitgezogen |
-| SDKs | Zeile 7: 0 | Nichtgefunden belegt; ändert sich in diesem Slice nicht |
-| Code-Präfix im Baum | Zeile 8: 0 | Diff: nur Tabelle, Katalog, Quelltext-Konstanten |
+| `Fehlerklasse`-Literale in Produktions-Go | Zeile 1: 28 (die Tabellenzeile des Vorläufer-Plans gehört jetzt hierher, nicht zu T1) | Diff Zeile 9: 0 — alle 28 Sentinels sind `messagecode.New(<Konstante>, "<Ursache>")`, kein zweites Literal |
+| Textchirurgie, Klassifikation | Zeilen 2, 3: je 1 | Diff Zeile 10: 0 (die Textersetzung entfällt, `messagecode.WithoutHead` liest den Kopf des Fehlerwerts); Diff Zeile 11: 1 (`classifyRunError` bleibt, leitet die Klasse aus dem Code des Fehlerwerts ab) |
+| Spec-Satz zum Kopf | Zeile 4: 1 | Diff Zeile 12: 0 — auf Klasse und Meldungscode umgeschrieben (`SPEC-008` Absatz „Meldungscode“, `SPEC-029`, `SPEC-019`) |
+| Handbuch | Zeile 5: 36 | Diff Zeile 13: 43 = 36 + 6 Zeilen des Abschnitts „Meldungscodes“ + 1 Zeile der Änderungshistorie. Jede der 36 Zeilen gelesen: Textzusage des Fehlertexts (z. B. „beginnt mit der Klasse“) gefunden: **keine**; drei Zeilen zitieren einen Fehlertext und sind mitgezogen (Beispiele des Log-Texts `schema [PCF-E4005]`/`schema [PCF-E4003]`, Beschreibung von `error_message` in der Run-Statustabelle), zwei Tabellen mit Fehlertexten von Anträgen (Konflikte der Transformationsregeln, Prüfungen der Routing-Regeln) tragen den Kopf `abgelehnt [<Code>]: `, der Backfill-Hinweis `transient: …` trägt den Code |
+| Tests | Zeile 6: 2 | Diff Zeile 14: 0 — Erwartungen an Kopf und Code mitgezogen in `internal/application/usecase/backfill/{service,routing,transformation}_test.go`, `internal/bootstrap/{administration,routing,backfill}_internal_test.go`, `internal/bootstrap/{backfill_endtoend,backfill_routing_store_internal}_test.go`, `internal/adapters/driven/postgresstorage/{sqlexec/translate,sqlexec/rejection_internal,backfill*}_test.go`, `internal/domain/model/backfillrun_test.go`, `test/integration/{routing,transformation}_e2e_test.go` und `tools/harness/run-integration-tests.sh` |
+| SDKs | Zeile 7: 0 | Diff Zeile 15: 0 — Nichtgefunden belegt; auch kein SDK-Test oder Beispiel erwartet einen Servertext (`git grep` nach den Fehlertexten der Ablehnungen und Sentinels unter `sdks/` und `examples/`: 0 Treffer) |
+| Code-Präfix im Baum | Zeile 8: 0 | Diff: Treffer in Tabelle, Katalog, Tests und Läufern (Zahl nicht fortgeschrieben, sie bewegt sich mit jedem Test); Diff Zeilen 16 und 17: 0 unter `sdks` und `examples` |
+
+**Läufe des Implementers (Handoff-Stand, gemessen am Arbeitsbaum, Exit-Codes ungefiltert):**
+
+| Befehl | Exit | gedruckte Zeile |
+|---|---|---|
+| `make test` | 0 | 50 Pakete `ok`, darunter `internal/domain/messagecode`, `internal/bootstrap`, `internal/application/usecase/backfill` |
+| `make test-store` | 0 | `db-coverage: OK — DB-Adapter-Coverage 82.99% erfuellt Schwelle 80%` |
+| `make test-replication` | 0 | `ok  github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/receive 40.325s` (PostgreSQL 18.6) |
+| `make image`, `make test-integration` | 0 | `run-integration-tests: Lauf abgeschlossen — E2E-Abdeckungstabelle aus 21 Go-Zeilen und 53 Bash-Zeilen`; die Phase DDL-Fenster druckt `failed (storage [PCF-E5008]: Lesefehler im Tabellen-Snapshot …` |
+| `bash tools/harness/run-schema-rollout-guard-test.sh` | 0 | `run-schema-rollout-guard-test: OK — alle Belege real erbracht` |
+| `make schema-validate SCHEMA_SOURCE=tools/schema/does-not-exist.yaml` | 2 | `FEHLER [PCF-E2007]: tools/schema/does-not-exist.yaml fehlt — …` |
+| `docker run --rm --network none ghcr.io/pt9912/pg-change-feed:dev` | 2 | `pg-change-feed: Fehlerklasse configuration [PCF-E2001]: Verdrahtung ohne vollständige Vorbedingung: CDC_CAPTURE_DSN fehlt` (der Startfehler der Klasse `configuration` endet mit Ausgang 2, nicht 1) |
+| `make meldungscodes-check` | 0 | `meldungscodes-check: 59 Codes in Tabelle und Katalog gleich, Quelltext (124 Go-Dateien, 4 Skripte) nur mit Codes der Tabelle` |
+| `make test-meldungscodes-check` | 0 | `run-meldungscodes-check-tests: 63 Prüfungen bestanden` |
+| `make handbuch-public-doc-check` (mit Katalog) | 0 | `handbuch-public-doc-check: keine interne Kennung in 3 Nutzerdokumenten unter docs/user/` |
+| `make ausgabe-kennungen-check`, `make sdk-public-doc-check`, `make a-check`, `make fmt-check` | je 0 | `… 126 Go-Dateien und 4 Skripten`, `keine interne Kennung unter sdks`, `gesamt: 0 Befund(e)`, `328 Go-Dateien geprüft, alle formatiert` |
+
+**Mutationen (Zusage · mutierte Eingabe · gesehenes Rot; alle an Kopien im Scratchpad, der Arbeitsbaum bleibt unberührt):**
+
+| Zusage | mutierte Eingabe | Rot |
+|---|---|---|
+| Quelltext nur mit Codes der Tabelle | `tools/schema/rollout.sh`: `PCF-E2007` → `PCF-E2999` | `meldungscodes-check` Exit 1: `Code ohne Eintrag in der Tabelle internal/domain/messagecode/codes.go: tools/schema/rollout.sh:69:PCF-E2999` |
+| Tabelle gleich Katalog | Handbuch: Katalog-Zeile `PCF-E5005` entfernt | Exit 1: `Tabellen-Code ohne Katalog-Zeile in docs/user/benutzerhandbuch.md: PCF-E5005` |
+| erste Ziffer ist die Klasse | `codes.go`: Zeile `StorageFallback` mit Klasse `schema` | `TestTableClassMatchesFirstDigit` und `TestEveryClassHasItsFallback` rot |
+| Rückfall je Klasse | `codes.go`: Tabellenzeile `PermissionFallback` entfernt | `TestEveryClassHasItsFallback`: `Rückfall "PCF-E3000" der Klasse "permission" fehlt in der Tabelle` |
+| jeder Sentinel trägt Kopf und Code | `decode.ErrSchema` mit dem früheren Wortlaut ohne Code | `TestSentinelsCarryTheirCodeAndClass`, `TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes`, `TestReportFaultWritesClassifiedFaultOnNonNilError` rot |
+| Run-Code folgt der Einzelursache | `failureCode`: Zweig `ErrSnapshotPermission` liefert `SnapshotConfiguration` | `TestExecuteClassifiesFailures` rot |
+| Ablehnungs-Code je Grund (Antrag) | `rejectionCode`: `ErrColumnHasRule` liefert `RejectedRuleNameTaken` | `TestProcessAdministrationRequestsRuleViolationsFailWithSpecTexts`, `…MapValueTakesEffectLive`, `TestAdministrationFailureTextHasACodeForEveryFailure` rot |
+| Ablehnungs-Code je Grund (verworfene Zeile) | `rejectionMessage`: leere Quelle liefert `RejectedSchemaEmpty` | `TestReadPendingRequestsPassesRejectedRowsThrough` rot |
+| keine Textchirurgie, Kopf einmal | `WithoutHead` entfernt nichts | `TestExecuteFailureTextCarriesClassOnce`, `TestNewBindsCodeToClass` rot |
+| `error_message` des Runs trägt den Code | `RunMessage` ohne Code | `TestMessageForms`, `TestBackfillRunFields`, `TestExecuteRoutingStateChangeEndsRunAsConfiguration` rot |
+| Klasse folgt aus dem Code | `classifyRunError` liefert immer `internal` | `TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes`, `TestSentinelsCarryTheirCodeAndClass`, `TestRunStreamWithRetryGesamtfensterFuenfMinuten` rot |
+| Wächter-Logik: Tabelle gegen Katalog | Prüfling `comm -23 table.set table.set` (Kopie des Skripts) | `make test-meldungscodes-check` rot (u. a. `Tabellen-Code ohne Katalog-Zeile`, `Codes nur in Prosa`, `zurückgezogener Code fehlt im Katalog`) |
+| Wächter-Logik: Form | Prüfling mit `[0-9]{4,5}` statt `[0-9]{4}` | Tabellentest rot: Fall „fünf Ziffern“ (Meldung `a.go:3:PCF-E40010 ` fehlt) |
+| Wächter-Logik: Quelltext in Tabelle | Prüfling prüft nur das Handbuch, nicht den Quelltext | Tabellentest rot: Go-, cmd- und Skript-Fälle ohne Tabelle |
 
 ## 4. Trigger
 
