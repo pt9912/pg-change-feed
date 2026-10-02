@@ -1,0 +1,3 @@
+**Vorgang:** slice-sdk-sse-client-schema-table-filter-realserver
+
+**Fund:** Der `e2e`-Lauf 36983752407 am Push-Commit 4a43f6ac (Links-Nachzug nach `done/` dieses Slice, 2026-10-02) endete im Job `image + test-integration (PostgreSQL 18)` mit `failure` in der Phase „Routing-Nichtanwendbarkeit und Abhilfe (b)“ (letzte Zeilen: `make: *** [Makefile:227: test-integration] Error 1`, `##[error]Process completed with exit code 2`); `gh run rerun --failed` ergab `success` auf beiden Legs. Der Slice ist der abgeschlossene Vorgang des Push-Commits, nicht die Ursache: Der Slice änderte keinen Server-Code (gemessen: `git diff --stat 4e664547 HEAD -- internal cmd tools/harness/run-integration-tests.sh test` leer). Ursprung: gemessen vom Hauptlauf mit `gh run view`/`gh run list`.
