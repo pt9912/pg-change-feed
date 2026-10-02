@@ -60,35 +60,39 @@ Review `review-slice-routing-e2e` F-2), nicht reproduziert.
 
 ## 2. Definition of Done
 
-- [ ] Reproduktion versucht: `make test-replication` mehrfach an PostgreSQL 17 und
+- [x] Reproduktion versucht: `make test-replication` mehrfach an PostgreSQL 17 und
       an 18 (`PG_TEST_IMAGE` auf den Digest des Legs in `.github/workflows/e2e.yml`),
       die Lieferpositionen je Versuch gegen `haltedPosition` und `flushAtSecondStart`
       gedruckt; das Ergebnis (Zahl der Läufe, Zahl der Rot, gedruckte Positionen) steht
       im Bericht — auch wenn kein Rot entsteht. *Zu belegen durch:* die gedruckten
-      Zeilen je Lauf.
-- [ ] Die Erwartung des Tests folgt der Zusage: der Retry-Change wird genau einmal
+      Zeilen je Lauf. *Teil-Abweichung vom Wortlaut:* die zwölf Läufe fuhren als
+      Einzeltest unter `-v` in einem auf ihn verkürzten Runner (Kopie im Scratchpad),
+      nicht als Vollauf `make test-replication` (der druckt ohne `-v` keine Positionen);
+      die Vollläufe an 17 und 18 liefen daneben grün (Verifikation §1). Beleg: §3
+      „Belege des Implementers“.
+- [x] Die Erwartung des Tests folgt der Zusage: der Retry-Change wird genau einmal
       persistiert (Zahl der Zeilen in `cdc.change` und die Kennung der Retry-Change);
       eine Wiederzustellung der Halter-Transaktion im zweiten Versuch ist zulässig
       und färbt nicht rot; die Prüfung „gelieferte Position hinter dem Slot-Stand vor
       dem Aufbau" gilt für die Retry-Change. *Zu belegen durch:* `make test-replication`
       grün an PostgreSQL 17 und 18 (gedruckte Version).
-- [ ] Mutation der Eingabeseite: der Test färbt rot, wenn die Retry-Change nicht
+- [x] Mutation der Eingabeseite: der Test färbt rot, wenn die Retry-Change nicht
       oder zweimal persistiert wird (zwei Mutationen an einer Kopie im Scratchpad,
       gedruckte Farbe je Mutation); die Gegenrichtung (Wiederzustellung der
       Halter-Transaktion) bleibt grün. *Zu belegen durch:* die gedruckten Läufe im
       Bericht.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8). Report: [`review-slice-capture-retry-realtest-lieferzahl-lockern`](../../../reviews/review-slice-capture-retry-realtest-lieferzahl-lockern.md) (0 HIGH, 0 MEDIUM, keine Fixrunde).
-- [ ] §3.13-Suchlauf: das Feld in §3 trägt Gefundenes und Nichtgefundenes je Träger
+- [x] §3.13-Suchlauf: das Feld in §3 trägt Gefundenes und Nichtgefundenes je Träger
       (bewegte Eigenschaft: „genau eine Lieferung im zweiten Versuch" im Godoc, in
       Plänen und in der ADR-Fitness-Function-Zeile), beide Stände gemessen.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register fortgeschrieben
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register fortgeschrieben
       ([`test-strenger-als-die-zusage`](../observations/BEO-PGC/test-strenger-als-die-zusage/observation.md)).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
 
 ## 3. Plan (vor Code)
 
@@ -179,14 +183,38 @@ mit Lerneintrag geschrieben.
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
-
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** Die Erwartung des Tests bindet an die Ausgabe der
+  Persistierung (genau zwei Zeilen in `cdc.change`) und lässt die Lieferung als
+  Obermenge zu; die Mutationen „nicht persistiert“ und „zusätzlich persistiert“
+  färben rot, die Gegenrichtung (Halter-Wiederzustellung) bleibt grün — vom
+  Verifier selbst gefahren (Verifikation §3). Kein Produktivcode berührt.
+- **Was ging anders als geplant:** DoD 1 verlangte Läufe per `make test-replication`
+  mit gedruckten Positionen; `make test-replication` druckt ohne `-v` keine
+  Positionen, deshalb fuhren die zwölf Reproduktionsläufe (6 je Version, 12 von 12
+  grün) als Einzeltest unter `-v` in einem verkürzten Runner; der Vollauf lief
+  daneben an PostgreSQL 17 und 18 grün (Exit 0). Die Mutation „zweimal persistiert“
+  ist **übernommen** aus dem Review (dort gemessen, `AGENTS.md` §3.12), vom Verifier
+  nicht erneut gefahren. Review-F-3 bleibt Hinweis: die Zeile
+  `retryPosition <= flushAtSecondStart` färbt nur beobachtungsseitig rot, eine
+  Eingabe-Mutation (Retry-Change vor dem Halter-Ende) fällt an einer früheren Prüfung.
+- **Steering-Loop-Eintrag:** Neue benannte Lücke, keine neue Regel: Ein Rot, das nur
+  einmal gemeldet und nicht reproduziert ist, trägt als Lockerungsgrund die Zusage
+  ([`ADR-0012`](../../adr/0012-at-least-once.md)), nicht die Messung; die Ursache
+  bleibt *hergeleitet*. Ein Test, dessen Standardlauf seine Diagnose nicht druckt
+  (`go test` ohne `-v`), braucht für einen Reproduktions-Beleg einen eigenen
+  Einzeltest-Lauf — die DoD benennt künftig den Aufruf, der die Zeile druckt.
+- **Beobachtungs-Register (`../observations/`):**
+  [`test-strenger-als-die-zusage`](../observations/BEO-PGC/test-strenger-als-die-zusage/state.md)
+  fortgeschrieben (Zähler bleibt 1×, Ursache hergeleitet, Adresse auf `done/`).
+- **Folge-Slices:** keine.
+- **Risiken aus §6:**
+  - *Das Rot ist nicht reproduzierbar* — **eingetreten, Ausgang:** 12 Läufe, 0 Rot
+    (§3 „Belege des Implementers“); die Lockerung ist durch die Zusage
+    [`ADR-0012`](../../adr/0012-at-least-once.md) begründet, nicht durch die Messung;
+    die Ursache bleibt hergeleitet.
+  - *Die Lockerung verdeckt einen echten Fehler* — **geschlossen:** die Zahl der
+    Zeilen in `cdc.change` bleibt auf zwei gebunden; Mutation „zweimal persistiert“
+    färbt rot (§3, Review-Tabelle M2; übernommen aus dem Review).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
