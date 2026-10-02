@@ -29,11 +29,14 @@ import (
 // wiederholbar), der Wartezug gibt den Slot frei und der zweite Versuch
 // liefert die danach committete Change, Persist-before-ACK unberührt. Der Test
 // bindet die Ursache des ersten Fehlschlags (SQLSTATE 55006), genau zwei
-// Versuche, genau eine Lieferung im zweiten Versuch hinter dem Slot-Stand vor
-// seinem Aufbau und genau zwei persistierte Changes; der Zyklus ist
-// `runStreamCycle`. Grenze: die Start-Position des Adapters ist nicht gebunden
-// — setzt er vor `confirmed_flush_lsn` an, setzt der Server selbst dort an, der
-// Test bleibt grün.
+// Versuche, die Lieferung der Retry-Change hinter dem Slot-Stand vor dem
+// Aufbau des zweiten Versuchs und genau zwei persistierte Changes (die
+// Halter-Change und die Retry-Change je einmal); der Zyklus ist
+// `runStreamCycle`. Die Zustellung ist At-least-once: der zweite Versuch darf
+// die bereits persistierte Halter-Transaktion erneut liefern (die Persistierung
+// ist idempotent), das färbt den Test nicht rot. Grenze: die Start-Position des
+// Adapters ist nicht gebunden — setzt er vor `confirmed_flush_lsn` an, setzt
+// der Server selbst dort an, der Test bleibt grün.
 func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 	dsn := os.Getenv("CDC_REPLICATION_TEST_DSN")
 	if dsn == "" {
@@ -253,13 +256,39 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 		t.Fatalf("Retry-Zyklus endet nach Kontext-Ende nicht")
 	}
 
-	var count int
-	if err := pool.QueryRow(ctx,
-		"SELECT count(*) FROM cdc.change WHERE transaction_id IN (SELECT transaction_id FROM cdc.transaction WHERE source_id = $1)", source).Scan(&count); err != nil {
-		t.Fatalf("cdc.change zählen: %v", err)
+	// Persistiert: je eine Zeile für die Halter-Transaktion und für die
+	// Retry-Change, geordnet nach der Commit-Position ihrer Transaktion.
+	persisted, err := pool.Query(ctx,
+		"SELECT t.commit_position, c.change_id FROM cdc.change c JOIN cdc.transaction t ON t.transaction_id = c.transaction_id WHERE t.source_id = $1 ORDER BY t.commit_position, c.sequence", source)
+	if err != nil {
+		t.Fatalf("cdc.change lesen: %v", err)
 	}
-	if count != 2 {
-		t.Fatalf("cdc.change-Zeilen = %d, erwartet genau 2", count)
+	type persistedChange struct {
+		position uint64
+		changeID string
+	}
+	var changes []persistedChange
+	for persisted.Next() {
+		var position int64
+		var changeID string
+		if err := persisted.Scan(&position, &changeID); err != nil {
+			t.Fatalf("cdc.change-Zeile: %v", err)
+		}
+		changes = append(changes, persistedChange{position: uint64(position), changeID: changeID})
+	}
+	persisted.Close()
+	if err := persisted.Err(); err != nil {
+		t.Fatalf("cdc.change lesen: %v", err)
+	}
+	if len(changes) != 2 {
+		t.Fatalf("cdc.change-Zeilen = %v, erwartet genau 2 (Halter-Change und Retry-Change)", changes)
+	}
+	if changes[0].position != haltedPosition {
+		t.Fatalf("erste Change auf Position %d, erwartet die Halter-Position %d", changes[0].position, haltedPosition)
+	}
+	retryPosition := changes[1].position
+	if retryPosition <= haltedPosition {
+		t.Fatalf("Retry-Change %s auf Position %d liegt nicht hinter der Halter-Position %d", changes[1].changeID, retryPosition, haltedPosition)
 	}
 
 	// Ursache des ersten Fehlschlags: SQLSTATE 55006 an START_REPLICATION,
@@ -281,22 +310,35 @@ func TestRunStreamWithRetrySlotStillActive(t *testing.T) {
 		t.Fatalf("zweiter Versuch endet mit Fehler: %v", attempts[1].err)
 	}
 
-	// Lieferungen: der erste Versuch liefert nichts; der zweite genau die
-	// Retry-Transaktion, hinter dem Slot-Stand vor seinem Aufbau, und die
-	// Halter-Transaktion liegt auf oder vor diesem Stand.
+	// Lieferungen: der erste Versuch liefert nichts; der zweite liefert die
+	// Retry-Transaktion, hinter dem Slot-Stand vor seinem Aufbau. Die
+	// Halter-Transaktion liegt auf oder vor diesem Stand und darf erneut
+	// geliefert werden; jede andere Position ist unbekannt.
 	delivered := recorder.snapshot()
 	if len(delivered[1]) != 0 {
 		t.Fatalf("Lieferungen des ersten Versuchs = %v, erwartet keine", delivered[1])
 	}
-	if len(delivered[2]) != 1 {
-		t.Fatalf("Lieferungen des zweiten Versuchs = %v, erwartet genau eine", delivered[2])
-	}
 	flushAtSecondStart := attempts[1].flushAtStart
+	t.Logf("zweiter Versuch: Lieferungen %v, Halter-Position %d, Retry-Position %d, confirmed_flush_lsn vor dem Aufbau %d",
+		delivered[2], haltedPosition, retryPosition, flushAtSecondStart)
 	if haltedPosition > flushAtSecondStart {
 		t.Fatalf("Halter-Position %d liegt hinter confirmed_flush_lsn %d vor dem zweiten Versuch", haltedPosition, flushAtSecondStart)
 	}
-	if delivered[2][0] <= flushAtSecondStart {
-		t.Fatalf("gelieferte Position %d liegt nicht hinter confirmed_flush_lsn %d vor dem zweiten Versuch", delivered[2][0], flushAtSecondStart)
+	if retryPosition <= flushAtSecondStart {
+		t.Fatalf("Retry-Position %d liegt nicht hinter confirmed_flush_lsn %d vor dem zweiten Versuch", retryPosition, flushAtSecondStart)
+	}
+	retryDeliveries := 0
+	for _, position := range delivered[2] {
+		switch position {
+		case retryPosition:
+			retryDeliveries++
+		case haltedPosition:
+		default:
+			t.Fatalf("Lieferungen des zweiten Versuchs = %v, enthalten die unbekannte Position %d", delivered[2], position)
+		}
+	}
+	if retryDeliveries == 0 {
+		t.Fatalf("Lieferungen des zweiten Versuchs = %v, erwartet die Retry-Position %d", delivered[2], retryPosition)
 	}
 }
 
