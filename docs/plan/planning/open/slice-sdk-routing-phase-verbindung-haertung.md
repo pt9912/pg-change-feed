@@ -24,7 +24,7 @@ Festlegung 2 (Mechanik der SDK-Realserver-Tiers),
 Aussagen: erprobt gegen hergeleitet),
 [`ADR-0134`](../../adr/0134-sdk-public-doc-check-gate-make-gates.md) (keine interne
 Kennung unter `sdks/`). Vorgänger:
-[`slice-sdk-sse-filter-phase-verbindung-haertung`](../in-progress/slice-sdk-sse-filter-phase-verbindung-haertung.md)
+[`slice-sdk-sse-filter-phase-verbindung-haertung`](../done/slice-sdk-sse-filter-phase-verbindung-haertung.md)
 (dort §1 „Ausdrücklich NICHT“, Routing-Phase; Review F-4 und Verifikation §7 B-2 nennen die
 Meldung ohne Adresse — dieser Slice ist die Adresse).
 

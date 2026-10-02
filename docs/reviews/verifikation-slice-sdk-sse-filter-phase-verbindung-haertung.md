@@ -8,7 +8,7 @@ Plan-vs-Code-Diff + Gates, in frischem Kontext. Review-Artefakt:
 [`verifikation-slice-sdk-sse-client-schema-table-filter-realserver.md`](verifikation-slice-sdk-sse-client-schema-table-filter-realserver.md).
 
 **Gegenstand:** Slice-Plan
-[`slice-sdk-sse-filter-phase-verbindung-haertung`](../plan/planning/in-progress/slice-sdk-sse-filter-phase-verbindung-haertung.md)
+[`slice-sdk-sse-filter-phase-verbindung-haertung`](../plan/planning/done/slice-sdk-sse-filter-phase-verbindung-haertung.md)
 (wellenlos), Diff `e900e5c3..HEAD` (`bfea64f0`): Implementer-Commits `26e6a500`, `d0ed33d0`, Review-Commit `bfea64f0`.
 Bezug: [`LH-FA-SST-008`](../../spec/lastenheft.md), [`LH-FA-SST-009`](../../spec/lastenheft.md),
 [`ADR-0133`](../plan/adr/0133-tabellen-granulare-filterung-grpc-sse.md) Teilfrage 4,
