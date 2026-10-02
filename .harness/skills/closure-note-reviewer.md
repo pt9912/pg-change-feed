@@ -3,8 +3,8 @@
 * Status: Accepted
 * Bezug: die Lifecycle-Pflicht (`AGENTS.md` §3.7 Zustandsfelder; Baseline-Regelwerk
   Modul 5: der `→ done`-Übergang verlangt Lerneintrag und Risiko-Ausgänge) und
-  die auskommentierte fünfte structure-Regel in `.d-check.yml` (Closure-Notiz-
-  Gate; wird mit der ersten Closure in `done/` aktiviert),
+  die fünfte structure-Regel in `.d-check.yml` (Closure-Notiz-Gate; seit der
+  ersten Closure in `done/` aktiv),
   Modul 11 §Schritt 5, Modul 15 (Doku-Konsistenz-Agent) · <!-- d-check:ignore (Kurs-/ADR-Referenzen; Pfade gelten im Ziel-Repo) -->
 * Gilt für: den *inferentiellen* Nachlauf zum Struktur-Gate —
   greift dort, wo Struktur allein die Floskel nicht fängt

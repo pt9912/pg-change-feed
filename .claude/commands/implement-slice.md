@@ -189,6 +189,11 @@ ist eine Lifecycle-Rücksprungkante (11).
     der Planner-Closure zur Nacharbeit überlassen. Nur Punkte, die die Rollen-Sequenz
     zu diesem Zeitpunkt noch nicht durchlaufen haben (Review, Verifikation,
     Register-/Risiko-Ausgänge — Planner-Closure-Arbeit), bleiben regulär `[ ]`.
+    Eine DoD-Zeile, die einen Beleg zusagt („zu belegen durch …", „je eine Mutation
+    im Bericht"), wird erst abgehakt, wenn der **Plan-Text selbst** den Beleg trägt
+    (Befehl, gedruckte Ausgabezeile, Lauf, bei Mutationen Stelle und Farbe) oder auf
+    einen committeten Report verweist; der Bericht des Implementers ist kein Träger.
+    Herkunft: `BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker` (5×) · seit welle-routing.
     **Suchlauf nachmessen:** Trägt der
     Plan ein Suchlauf-Feld (Codeblöcke mit dem Etikett `suchlauf`,
     [`AGENTS.md`](../../AGENTS.md) §3.13 §Suchform), läuft
@@ -292,12 +297,20 @@ Hier endet die Implementation. Die übrigen Rollen laufen in **getrennten Kontex
     Reviewer-Findings einen bislang offenen DoD-Punkt auf (typischerweise „Review
     durchgeführt, … kein offenes HIGH"), wird die zugehörige Checkbox **im
     Fixrunden-Commit** mitgesetzt — nicht erst bei der Planner-Closure nachgetragen.
+    **Re-Review nach der Fixrunde:** Ändert die Fixrunde Produktionslogik oder eine
+    Norm (Spec-Zeile, ADR-Wortlaut), oder hat nach der Fixrunde kein anderer Kontext
+    sie ausgeführt, wird ein Re-Review verlangt, bevor die Closure läuft. Eine
+    Fixrunde, die nur Text, Kommentare oder Test-Code ändert und die der Verifier in
+    frischem Kontext ausgeführt hat (Lauf, Mutation), braucht keines; der Verifier
+    nennt im Report, was er ausgeführt hat. Herkunft:
+    `BEO-PGC/fixrunde-ohne-reviewer-lesung` (3×) · seit welle-routing.
 22. **→ Verifier (Modul 11):** in getrenntem Kontext die DoD-/Spec-Behauptung und den
     Plan-vs-Code-Diff **bestätigen**, dazu ADR-Konformität. Das fängt, was Tests übersehen und der
     Reviewer nicht sieht (DoD-Verletzung).
 23. **→ Validator (Modul 8):** falls der Slice End-Nutzer-Wert liefert, gegen den realen Bedarf
     validieren („das Richtige bauen"). Meist n/a bei interner Wartung — dann explizit sagen statt
-    still überspringen.
+    still überspringen. Verschiebt der Slice den Schritt auf den Wellen-Beleg, nennt die Notiz
+    den Abschnitt „Validator-Feststellung (Modul 8)" der Results-Notiz der Welle als Adresse.
 
 ## Closure — Planner-Rolle (Modul 8 + Modul 5)
 

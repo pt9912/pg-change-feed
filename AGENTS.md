@@ -152,7 +152,8 @@ Host-`python`/`python3` am Kopf unbedingt gesperrt seit slice-harness-guard-bloc
 
 Dieses Repo hat **keinen Linter** — kein `.golangci.yml`, kein
 `lint`-Target in `Makefile` oder `harness/mk/*.mk`. Inline-Suppression
-(`//nolint`) ist deshalb **ausnahmslos verboten**, nicht weil eine
+(`//nolint` in Go, `# noqa`, `# type: ignore` und `# pylint:` in Python) ist deshalb
+**ausnahmslos verboten**, nicht weil eine
 Ausnahmeliste sie einschränkt, sondern weil es kein Werkzeug gibt, dessen
 Warnung sie unterdrücken könnte — ein `//nolint` ohne Linter ist entweder
 tote Dekoration oder ein Vorgriff auf ein Profil, das noch niemand

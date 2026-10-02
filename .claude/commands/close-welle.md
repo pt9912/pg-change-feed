@@ -72,6 +72,12 @@ Wellen-Closure), Modul 7 (Carveouts), Modul 5 (Lifecycle). Bei Konflikt gilt der
    Erreicht kein Eintrag 3×, ist *„kein Eintrag über der Schwelle"* die Feststellung, die in die
    Results-Notiz gehört — Auslassen ist keine Antwort. Was **unter** 3× steht, liest diese Closure
    **nicht**; dafür ist der Sichtungs-Schritt der Slice-Planung zuständig (`/plan-welle`).
+   **Validator-Feststellung (Modul 8):** Die Results-Notiz trägt einen Abschnitt
+   „Validator-Feststellung (Modul 8)". Liefert die Welle End-Nutzer-Wert, nennt er, was am
+   realen Bedarf belegt ist („belegt so weit, Rest benannt") und die Adresse des Rests;
+   liefert sie keinen, steht „entfällt, weil …". Er ist der Träger für alle Slice-Notizen,
+   die den Validator-Schritt auf den Wellen-Beleg verschieben. Herkunft: Closure-Note-Reviews
+   zu welle-backfill-bestand, welle-transformationen, welle-routing (F-1, 3×) · seit welle-routing.
    **Zugleich gehört die Welle-Plan-Datei per `git mv` nach `done/`** — wegen der repo-lokalen Hard
    Rule 3.3 (Move ≠ Inhalt) als **eigener reiner Move-Commit** (s. Schritt 5). Der Move bricht die
    Inbound-Links (Roadmap + die Welle-Verweise der Slices) **und** die eigenen `../`-Links der Datei
