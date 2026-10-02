@@ -41,6 +41,7 @@ internal static class PhaseEnvironment
     internal static string RouteRegionNone => Required("PGCHANGEFEED_ROUTE_REGION_NONE");
     internal static int RouteQuietSeconds => int.Parse(Required("PGCHANGEFEED_ROUTE_QUIET_SECONDS"));
 
+    internal static string FilterSentinelSecond => Required("PGCHANGEFEED_FILTER_SENTINEL_SECOND");
     internal static string FilterSchemaA => Required("PGCHANGEFEED_FILTER_SCHEMA_A");
     internal static string FilterSchemaOther => Required("PGCHANGEFEED_FILTER_SCHEMA_OTHER");
     internal static string FilterTableA => Required("PGCHANGEFEED_FILTER_TABLE_A");

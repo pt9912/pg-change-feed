@@ -7,7 +7,10 @@ first schema and a table named like `A` in a second schema. A stream opened
 with `schema` and `table` of `A` receives exactly the changes of that table, a
 stream opened with the second `schema` alone receives exactly the changes of
 that schema, and a stream without a filter receives all three (checked over a
-quiet window after the unfiltered stream has them all).
+quiet window). The first group of three changes proves that every stream is
+connected (`SEEN`); the runner then commits a second group with its own
+sentinel, and the quiet window starts only after all three streams hold their
+rows of that second group (`SEEN_SECOND`).
 """
 
 from __future__ import annotations
@@ -27,6 +30,7 @@ from pgchangefeed.sse_client import PgChangeFeedSseClient
 _ADDR = os.environ["PGCHANGEFEED_HTTP_ADDR"]
 _TOKEN = os.environ["PGCHANGEFEED_API_TOKEN"]
 _SENTINEL = os.environ["PGCHANGEFEED_E2E_SENTINEL"]
+_SENTINEL_SECOND = os.environ["PGCHANGEFEED_FILTER_SENTINEL_SECOND"]
 _SCHEMA_A = os.environ["PGCHANGEFEED_FILTER_SCHEMA_A"]
 _SCHEMA_OTHER = os.environ["PGCHANGEFEED_FILTER_SCHEMA_OTHER"]
 _TABLE_A = os.environ["PGCHANGEFEED_FILTER_TABLE_A"]
@@ -94,8 +98,12 @@ class FilterCollector:
             self._stopped = True
 
 
-def _own(rows: list[FilterRow]) -> list[FilterRow]:
-    return [r for r in rows if r.name == _SENTINEL]
+def _own(rows: list[FilterRow], sentinel: str = _SENTINEL) -> list[FilterRow]:
+    return [r for r in rows if r.name == sentinel]
+
+
+def _own_any(rows: list[FilterRow]) -> list[FilterRow]:
+    return [r for r in rows if r.name in (_SENTINEL, _SENTINEL_SECOND)]
 
 
 def _is_table_a(r: FilterRow) -> bool:
@@ -110,8 +118,8 @@ def _is_other_schema(r: FilterRow) -> bool:
     return r.schema == _SCHEMA_OTHER
 
 
-def _has_all_three(rows: list[FilterRow]) -> bool:
-    own = _own(rows)
+def _has_all_three(rows: list[FilterRow], sentinel: str = _SENTINEL) -> bool:
+    own = _own(rows, sentinel)
     return any(map(_is_table_a, own)) and any(map(_is_table_b, own)) and any(map(_is_other_schema, own))
 
 
@@ -157,10 +165,24 @@ def test_realserver_streams_with_schema_and_table_filter_receive_only_their_sele
         time.sleep(0.1)
     print("SEEN", flush=True)
 
-    # The window starts only after the client without a filter received all
-    # three groups: the same delivery path has then demonstrably dispatched
-    # the foreign changes, so their absence at the filtered clients is no
-    # early cut-off.
+    # Every stream received a change, so every connection stands. The second
+    # group is committed after that point and reaches all three streams; the
+    # window starts once each holds its rows of that group, so the absence of
+    # foreign changes at the filtered clients is no early cut-off.
+    second_deadline = time.monotonic() + _POSITIVE_DEADLINE_SECONDS
+    while not (
+        any(map(_is_table_a, _own(f1.rows, _SENTINEL_SECOND)))
+        and any(map(_is_other_schema, _own(f2.rows, _SENTINEL_SECOND)))
+        and _has_all_three(unfiltered.rows, _SENTINEL_SECOND)
+    ):
+        _raise_on_failure(f1, f2, unfiltered)
+        assert time.monotonic() < second_deadline, (
+            "innerhalb der Frist weder die Change der Tabelle der zweiten Gruppe am Client mit Schema und Tabelle, "
+            "noch die des zweiten Schemas am Client mit Schema, noch alle drei der zweiten Gruppe am Client ohne Filter empfangen"
+        )
+        time.sleep(0.1)
+    print("SEEN_SECOND", flush=True)
+
     time.sleep(_QUIET_SECONDS)
     _raise_on_failure(f1, f2, unfiltered)
     f1.stop()
@@ -169,7 +191,7 @@ def test_realserver_streams_with_schema_and_table_filter_receive_only_their_sele
 
     f1_rows = f1.rows
     f2_rows = f2.rows
-    own_unfiltered = _own(unfiltered.rows)
+    own_unfiltered = _own_any(unfiltered.rows)
     f1_foreign = [r for r in f1_rows if not _is_table_a(r)]
     f2_foreign = [r for r in f2_rows if not _is_other_schema(r)]
     for r in f1_rows:
@@ -194,6 +216,9 @@ def test_realserver_streams_with_schema_and_table_filter_receive_only_their_sele
     assert not f2_foreign, "der Client mit Schema allein empfing fremde Changes: " + ", ".join(
         f"{r.change_id}({r.schema}.{r.table})" for r in f2_foreign
     )
-    assert _own(f1_rows), "der Client mit Schema und Tabelle empfing keine Change dieser Phase"
-    assert _own(f2_rows), "der Client mit Schema allein empfing keine Change dieser Phase"
-    assert _has_all_three(unfiltered.rows), "der Client ohne Filter sah nicht alle drei Gruppen"
+    assert _own_any(f1_rows), "der Client mit Schema und Tabelle empfing keine Change dieser Phase"
+    assert _own_any(f2_rows), "der Client mit Schema allein empfing keine Change dieser Phase"
+    assert _has_all_three(unfiltered.rows), "der Client ohne Filter sah nicht alle drei Tabellen der ersten Gruppe"
+    assert _has_all_three(
+        unfiltered.rows, _SENTINEL_SECOND
+    ), "der Client ohne Filter sah nicht alle drei Tabellen der zweiten Gruppe"

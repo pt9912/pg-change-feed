@@ -32,6 +32,7 @@ object PhaseEnvironment {
     val routeTargetB: String get() = required("PGCHANGEFEED_ROUTE_TARGET_B")
     val routeRegionNone: String get() = required("PGCHANGEFEED_ROUTE_REGION_NONE")
     val routeQuietSeconds: Long get() = required("PGCHANGEFEED_ROUTE_QUIET_SECONDS").toLong()
+    val filterSentinelSecond: String get() = required("PGCHANGEFEED_FILTER_SENTINEL_SECOND")
     val filterSchemaA: String get() = required("PGCHANGEFEED_FILTER_SCHEMA_A")
     val filterSchemaOther: String get() = required("PGCHANGEFEED_FILTER_SCHEMA_OTHER")
     val filterTableA: String get() = required("PGCHANGEFEED_FILTER_TABLE_A")

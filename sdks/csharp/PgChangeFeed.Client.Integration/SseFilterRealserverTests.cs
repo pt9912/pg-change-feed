@@ -62,8 +62,11 @@ internal sealed class FilterCollector
 /// <c>A</c> in a second schema. A stream opened with <c>schema</c> and
 /// <c>table</c> of <c>A</c> receives exactly the changes of that table, a
 /// stream opened with the second <c>schema</c> alone receives exactly the
-/// changes of that schema, and a stream without a filter receives all three
-/// (checked over a quiet window after the unfiltered stream has them all).
+/// changes of that schema, and a stream without a filter receives all three.
+/// The first group of three changes proves that every stream is connected
+/// (<c>SEEN</c>); the runner then commits a second group with its own sentinel,
+/// and the quiet window starts only after all three streams hold their rows of
+/// that second group (<c>SEEN_SECOND</c>).
 /// </summary>
 public sealed class SseFilterRealserverTests
 {
@@ -94,7 +97,7 @@ public sealed class SseFilterRealserverTests
 
         PhaseEnvironment.Print("READY");
         var deadline = DateTime.UtcNow + PositiveDeadline;
-        while (!(Own(f1.Rows).Any(IsTableA) && Own(f2.Rows).Any(IsOtherSchema) && HasAllThree(unfiltered.Rows)))
+        while (!(Own(f1.Rows).Any(IsTableA) && Own(f2.Rows).Any(IsOtherSchema) && HasAllThree(unfiltered.Rows, PhaseEnvironment.Sentinel)))
         {
             ThrowOnFailure(f1, f2, unfiltered);
             Assert.True(DateTime.UtcNow < deadline,
@@ -104,10 +107,24 @@ public sealed class SseFilterRealserverTests
         }
         PhaseEnvironment.Print("SEEN");
 
-        // The window starts only after the client without a filter received
-        // all three groups: the same delivery path has then demonstrably
-        // dispatched the foreign changes, so their absence at the filtered
-        // clients is no early cut-off.
+        // Every stream received a change, so every connection stands. The
+        // second group is committed after that point and reaches all three
+        // streams; the window starts once each holds its rows of that group,
+        // so the absence of foreign changes at the filtered clients is no
+        // early cut-off.
+        var second = PhaseEnvironment.FilterSentinelSecond;
+        var secondDeadline = DateTime.UtcNow + PositiveDeadline;
+        while (!(Own(f1.Rows, second).Any(IsTableA) && Own(f2.Rows, second).Any(IsOtherSchema)
+                 && HasAllThree(unfiltered.Rows, second)))
+        {
+            ThrowOnFailure(f1, f2, unfiltered);
+            Assert.True(DateTime.UtcNow < secondDeadline,
+                "innerhalb der Frist weder die Change der Tabelle der zweiten Gruppe am Client mit Schema und Tabelle, " +
+                "noch die des zweiten Schemas am Client mit Schema, noch alle drei der zweiten Gruppe am Client ohne Filter empfangen");
+            await Task.Delay(100);
+        }
+        PhaseEnvironment.Print("SEEN_SECOND");
+
         await Task.Delay(TimeSpan.FromSeconds(PhaseEnvironment.FilterQuietSeconds));
         ThrowOnFailure(f1, f2, unfiltered);
         stop.Cancel();
@@ -115,7 +132,7 @@ public sealed class SseFilterRealserverTests
 
         var f1Rows = f1.Rows;
         var f2Rows = f2.Rows;
-        var ownUnfiltered = Own(unfiltered.Rows).ToList();
+        var ownUnfiltered = OwnAny(unfiltered.Rows).ToList();
         var f1Foreign = f1Rows.Where(r => !IsTableA(r)).ToList();
         var f2Foreign = f2Rows.Where(r => !IsOtherSchema(r)).ToList();
         foreach (var row in f1Rows)
@@ -143,13 +160,22 @@ public sealed class SseFilterRealserverTests
         Assert.True(f2Foreign.Count == 0,
             "der Client mit Schema allein empfing fremde Changes: " +
             string.Join(", ", f2Foreign.Select(r => $"{r.ChangeId}({r.Schema}.{r.Table})")));
-        Assert.NotEmpty(Own(f1Rows));
-        Assert.NotEmpty(Own(f2Rows));
-        Assert.True(HasAllThree(unfiltered.Rows), "der Client ohne Filter sah nicht alle drei Gruppen");
+        Assert.NotEmpty(OwnAny(f1Rows));
+        Assert.NotEmpty(OwnAny(f2Rows));
+        Assert.True(HasAllThree(unfiltered.Rows, PhaseEnvironment.Sentinel),
+            "der Client ohne Filter sah nicht alle drei Tabellen der ersten Gruppe");
+        Assert.True(HasAllThree(unfiltered.Rows, second),
+            "der Client ohne Filter sah nicht alle drei Tabellen der zweiten Gruppe");
     }
 
+    private static IEnumerable<FilterRow> Own(IEnumerable<FilterRow> rows, string sentinel)
+        => rows.Where(r => r.Name == sentinel);
+
     private static IEnumerable<FilterRow> Own(IEnumerable<FilterRow> rows)
-        => rows.Where(r => r.Name == PhaseEnvironment.Sentinel);
+        => Own(rows, PhaseEnvironment.Sentinel);
+
+    private static IEnumerable<FilterRow> OwnAny(IEnumerable<FilterRow> rows)
+        => rows.Where(r => r.Name == PhaseEnvironment.Sentinel || r.Name == PhaseEnvironment.FilterSentinelSecond);
 
     private static bool IsTableA(FilterRow r)
         => r.Schema == PhaseEnvironment.FilterSchemaA && r.Table == PhaseEnvironment.FilterTableA;
@@ -159,9 +185,9 @@ public sealed class SseFilterRealserverTests
 
     private static bool IsOtherSchema(FilterRow r) => r.Schema == PhaseEnvironment.FilterSchemaOther;
 
-    private static bool HasAllThree(IEnumerable<FilterRow> rows)
+    private static bool HasAllThree(IEnumerable<FilterRow> rows, string sentinel)
     {
-        var own = Own(rows).ToList();
+        var own = Own(rows, sentinel).ToList();
         return own.Any(IsTableA) && own.Any(IsTableB) && own.Any(IsOtherSchema);
     }
 

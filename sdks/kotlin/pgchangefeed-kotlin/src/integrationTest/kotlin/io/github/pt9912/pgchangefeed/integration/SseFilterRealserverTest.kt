@@ -54,8 +54,10 @@ class FilterCollector {
  * second schema. A stream opened with `schema` and `table` of `A` receives
  * exactly the changes of that table, a stream opened with the second `schema`
  * alone receives exactly the changes of that schema, and a stream without a
- * filter receives all three (checked over a quiet window after the unfiltered
- * stream has them all).
+ * filter receives all three. The first group of three changes proves that
+ * every stream is connected (`SEEN`); the runner then commits a second group
+ * with its own sentinel, and the quiet window starts only after all three
+ * streams hold their rows of that second group (`SEEN_SECOND`).
  */
 class SseFilterRealserverTest {
     @Test
@@ -84,7 +86,8 @@ class SseFilterRealserverTest {
         println("READY")
         System.out.flush()
         val deadline = System.currentTimeMillis() + POSITIVE_DEADLINE_MILLIS
-        while (!(own(f1.rows).any { isTableA(it) } && own(f2.rows).any { isOtherSchema(it) } && hasAllThree(unfiltered.rows))) {
+        val first = PhaseEnvironment.sentinel
+        while (!(own(f1.rows, first).any { isTableA(it) } && own(f2.rows, first).any { isOtherSchema(it) } && hasAllThree(unfiltered.rows, PhaseEnvironment.sentinel))) {
             throwOnFailure(f1, f2, unfiltered)
             assertTrue(
                 System.currentTimeMillis() < deadline,
@@ -96,10 +99,25 @@ class SseFilterRealserverTest {
         println("SEEN")
         System.out.flush()
 
-        // The window starts only after the client without a filter received
-        // all three groups: the same delivery path has then demonstrably
-        // dispatched the foreign changes, so their absence at the filtered
-        // clients is no early cut-off.
+        // Every stream received a change, so every connection stands. The
+        // second group is committed after that point and reaches all three
+        // streams; the window starts once each holds its rows of that group,
+        // so the absence of foreign changes at the filtered clients is no
+        // early cut-off.
+        val second = PhaseEnvironment.filterSentinelSecond
+        val secondDeadline = System.currentTimeMillis() + POSITIVE_DEADLINE_MILLIS
+        while (!(own(f1.rows, second).any { isTableA(it) } && own(f2.rows, second).any { isOtherSchema(it) } && hasAllThree(unfiltered.rows, second))) {
+            throwOnFailure(f1, f2, unfiltered)
+            assertTrue(
+                System.currentTimeMillis() < secondDeadline,
+                "innerhalb der Frist weder die Change der Tabelle der zweiten Gruppe am Client mit Schema und Tabelle, " +
+                    "noch die des zweiten Schemas am Client mit Schema, noch alle drei der zweiten Gruppe am Client ohne Filter empfangen",
+            )
+            Thread.sleep(100)
+        }
+        println("SEEN_SECOND")
+        System.out.flush()
+
         Thread.sleep(PhaseEnvironment.filterQuietSeconds * 1000)
         throwOnFailure(f1, f2, unfiltered)
         f1.stop()
@@ -108,7 +126,7 @@ class SseFilterRealserverTest {
 
         val f1Rows = f1.rows
         val f2Rows = f2.rows
-        val ownUnfiltered = own(unfiltered.rows)
+        val ownUnfiltered = ownAny(unfiltered.rows)
         val f1Foreign = f1Rows.filterNot { isTableA(it) }
         val f2Foreign = f2Rows.filterNot { isOtherSchema(it) }
         f1Rows.forEach { println("RECEIVED_F1 change_id=${it.changeId} schema=${it.schema} table=${it.table}") }
@@ -133,15 +151,22 @@ class SseFilterRealserverTest {
             "der Client mit Schema allein empfing fremde Changes: " +
                 f2Foreign.joinToString(", ") { "${it.changeId}(${it.schema}.${it.table})" },
         )
-        assertTrue(own(f1Rows).isNotEmpty(), "der Client mit Schema und Tabelle empfing keine Change dieser Phase")
-        assertTrue(own(f2Rows).isNotEmpty(), "der Client mit Schema allein empfing keine Change dieser Phase")
-        assertTrue(hasAllThree(unfiltered.rows), "der Client ohne Filter sah nicht alle drei Gruppen")
+        assertTrue(ownAny(f1Rows).isNotEmpty(), "der Client mit Schema und Tabelle empfing keine Change dieser Phase")
+        assertTrue(ownAny(f2Rows).isNotEmpty(), "der Client mit Schema allein empfing keine Change dieser Phase")
+        assertTrue(
+            hasAllThree(unfiltered.rows, PhaseEnvironment.sentinel),
+            "der Client ohne Filter sah nicht alle drei Tabellen der ersten Gruppe",
+        )
+        assertTrue(hasAllThree(unfiltered.rows, second), "der Client ohne Filter sah nicht alle drei Tabellen der zweiten Gruppe")
     }
 
     private companion object {
         const val POSITIVE_DEADLINE_MILLIS = 90_000L
 
-        fun own(rows: List<FilterRow>): List<FilterRow> = rows.filter { it.name == PhaseEnvironment.sentinel }
+        fun own(rows: List<FilterRow>, sentinel: String): List<FilterRow> = rows.filter { it.name == sentinel }
+
+        fun ownAny(rows: List<FilterRow>): List<FilterRow> =
+            rows.filter { it.name == PhaseEnvironment.sentinel || it.name == PhaseEnvironment.filterSentinelSecond }
 
         fun isTableA(r: FilterRow): Boolean =
             r.schema == PhaseEnvironment.filterSchemaA && r.table == PhaseEnvironment.filterTableA
@@ -151,8 +176,8 @@ class SseFilterRealserverTest {
 
         fun isOtherSchema(r: FilterRow): Boolean = r.schema == PhaseEnvironment.filterSchemaOther
 
-        fun hasAllThree(rows: List<FilterRow>): Boolean {
-            val mine = own(rows)
+        fun hasAllThree(rows: List<FilterRow>, sentinel: String): Boolean {
+            val mine = own(rows, sentinel)
             return mine.any { isTableA(it) } && mine.any { isTableB(it) } && mine.any { isOtherSchema(it) }
         }
 
