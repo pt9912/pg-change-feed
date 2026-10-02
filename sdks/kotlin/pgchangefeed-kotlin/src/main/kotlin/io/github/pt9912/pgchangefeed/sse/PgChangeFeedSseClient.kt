@@ -83,9 +83,22 @@ class PgChangeFeedSseClient internal constructor(
      * target; left `null` (the default) the request carries no query and
      * delivers every change. A target no change carries delivers nothing and
      * raises no error.
+     *
+     * [schema] and [table] are each optional and independent, sent as the
+     * query parameters `schema` and `table` only when set: a set [schema]
+     * without [table] delivers every table of that schema, a set [table]
+     * without [schema] delivers every table of that name regardless of
+     * schema, both set delivers exactly one table. They combine with [target]
+     * as a conjunction. Pass the three by name.
      */
-    fun streamChanges(target: String? = null): Sequence<Change> = sequence {
-        val query = if (target == null) "" else "?target=" + percentEncode(target)
+    fun streamChanges(
+        target: String? = null,
+        schema: String? = null,
+        table: String? = null,
+    ): Sequence<Change> = sequence {
+        val params = listOf("schema" to schema, "table" to table, "target" to target)
+            .mapNotNull { (name, value) -> value?.let { "$name=" + percentEncode(it) } }
+        val query = if (params.isEmpty()) "" else "?" + params.joinToString("&")
         val request = TransportRequest(
             method = "GET",
             url = options.address.toString().trimEnd('/') + "/changes/stream" + query,

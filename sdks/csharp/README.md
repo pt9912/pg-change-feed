@@ -90,7 +90,7 @@ await foreach (var change in client.StreamChangesAsync())
 }
 ```
 
-The SSE stream takes one optional parameter, `target`, passed by name after the `CancellationToken`: `client.StreamChangesAsync(target: "eu")` delivers only the changes routed to that target, and leaving it out delivers every change. The SSE client of this package does not set `schema`/`table`; `target` is its only filter.
+The SSE stream takes three optional, independent parameters, `target`, `schema` and `table`, passed by name after the `CancellationToken`: `client.StreamChangesAsync(target: "eu")` delivers only the changes routed to that target, `client.StreamChangesAsync(schema: "public", table: "orders")` only the changes of that table, and leaving them out delivers every change. Combined, they act as a conjunction.
 
 NATS (the address is the NATS URL, the token is the NATS stream token checked when the connection is opened). The subject selects what you receive: `BuildSourceSubject` covers all tables of one source, `BuildSubject` one table, `BuildTargetSubject` one delivery target of a source (`cdc.route.<source>.<target>`), `BuildSourceTargetsSubject` every delivery target of a source, and without a subject you receive every source. A change routed to a target arrives on its table subject and, with the same payload, on the target subject; a change without a target arrives on the table subject only. The tokens are validated like those of `BuildSubject`; an empty or blank target is invalid (the builders have no "no filter" form, use `BuildSourceSubject` for that):
 
@@ -158,7 +158,7 @@ The live streams each have one method:
 | Class | Method | What it does |
 |---|---|---|
 | `PgChangeFeedGrpcClient(options)` | `StreamChangesAsync(schema, table, cancellationToken, target)` | Opens the gRPC stream and yields generated `Cdc.Stream.V1.Change` messages. `schema`/`table`/`target` are optional and independent, all left out delivers every change. The client owns its channel; dispose it when done. |
-| `PgChangeFeedSseClient(httpClient, options)` | `StreamChangesAsync(cancellationToken, target)` | Opens `GET /changes/stream` and yields `PgChangeFeed.Client.Sse.Models.Change` objects. `target` is optional, left out delivers every change. |
+| `PgChangeFeedSseClient(httpClient, options)` | `StreamChangesAsync(cancellationToken, target, schema, table)` | Opens `GET /changes/stream` and yields `PgChangeFeed.Client.Sse.Models.Change` objects. `target`/`schema`/`table` are optional and independent, pass them by name; all left out delivers every change. |
 | `PgChangeFeedNatsStreamClient(options)` | `StreamChangesAsync(subject, cancellationToken)` | Subscribes to a subject and yields `PgChangeFeed.Client.Nats.Models.Change` objects. Dispose the client when done. |
 
 `PgChangeFeedAdministrationClient(options)` wraps the eleven RPCs of the `Administration` gRPC service — the same capabilities as the HTTP table above, over gRPC. Requests and responses are the generated `Cdc.Administration.V1` protobuf messages, used directly (no separate model type):
@@ -250,7 +250,7 @@ A `PgChangeFeedAdministrationClient` call that the server answers with a non-`OK
 
 - **Reading over HTTP** (`ReadChangesAsync`) is asking: you name a range, the server answers from the changes it has stored. You can read the same range again, and with a registered consumer you can carry on after a restart exactly where you stopped. Changes stay readable until the retention removes them.
 - **The live streams** (gRPC, SSE, NATS) are pushing: you get every change committed after you connected, in commit order, with the full row content. There is no delivery guarantee and no replay. A change committed while you were disconnected, or while you read too slowly, does not arrive on the stream. Use the stream to react quickly and `ReadChangesAsync` to catch up on what it missed.
-- The gRPC stream can be filtered by schema, table and delivery target (`StreamChangesAsync(schema, table, target: ...)`); the SSE stream can be filtered by delivery target (`StreamChangesAsync(target: ...)`); on the NATS stream the subject chooses the source, the table or the delivery target.
+- The gRPC stream can be filtered by schema, table and delivery target (`StreamChangesAsync(schema, table, target: ...)`); the SSE stream can be filtered by delivery target, schema and table (`StreamChangesAsync(target: ..., schema: ..., table: ...)`); on the NATS stream the subject chooses the source, the table or the delivery target.
 
 ## More
 

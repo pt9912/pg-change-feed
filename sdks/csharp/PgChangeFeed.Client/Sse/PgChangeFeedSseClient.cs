@@ -70,16 +70,40 @@ public sealed class PgChangeFeedSseClient
     /// set value (sent as the query parameter <c>target</c>) delivers only
     /// changes routed to that target; left <c>null</c> (the default) the
     /// request carries no query and delivers every change. A target no change
-    /// carries delivers nothing and raises no error. Pass it by name: it is
-    /// the last parameter, after <paramref name="cancellationToken"/>.
+    /// carries delivers nothing and raises no error.
+    ///
+    /// <paramref name="schema"/> and <paramref name="table"/> are each
+    /// optional and independent, sent as the query parameters
+    /// <c>schema</c> and <c>table</c> only when set: a set
+    /// <paramref name="schema"/> without <paramref name="table"/> delivers
+    /// every table of that schema, a set <paramref name="table"/> without
+    /// <paramref name="schema"/> delivers every table of that name regardless
+    /// of schema, both set delivers exactly one table. They combine with
+    /// <paramref name="target"/> as a conjunction. Pass the three by name:
+    /// they come after <paramref name="cancellationToken"/>.
     /// </summary>
     public async IAsyncEnumerable<Change> StreamChangesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default,
-        string? target = null)
+        string? target = null,
+        string? schema = null,
+        string? table = null)
     {
-        var path = target is null
+        var query = new List<string>();
+        if (schema is not null)
+        {
+            query.Add($"schema={Uri.EscapeDataString(schema)}");
+        }
+        if (table is not null)
+        {
+            query.Add($"table={Uri.EscapeDataString(table)}");
+        }
+        if (target is not null)
+        {
+            query.Add($"target={Uri.EscapeDataString(target)}");
+        }
+        var path = query.Count == 0
             ? "/changes/stream"
-            : $"/changes/stream?target={Uri.EscapeDataString(target)}";
+            : "/changes/stream?" + string.Join("&", query);
         var uri = new Uri(_options.Address, path);
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiToken);

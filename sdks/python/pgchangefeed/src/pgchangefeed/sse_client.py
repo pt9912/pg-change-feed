@@ -15,7 +15,8 @@ independently configured instances at once.
 
 The stream is fire-and-forget and has no replay: the ``Last-Event-ID`` header
 is neither sent nor evaluated, and the stream can be filtered by delivery
-target only (``stream_changes(target=...)``), not by table.
+target, schema and table (``stream_changes(target=..., schema=...,
+table=...)``), each optional.
 ``PgChangeFeedHttpClient.read_changes`` is the way to catch up.
 
 Each event is a frame: an ``event: change`` line, one ``data:`` line with the
@@ -54,7 +55,12 @@ class PgChangeFeedSseClient:
         self._client = client
         self._options = options
 
-    def stream_changes(self, target: str | None = None) -> Iterator[StreamChange]:
+    def stream_changes(
+        self,
+        target: str | None = None,
+        schema: str | None = None,
+        table: str | None = None,
+    ) -> Iterator[StreamChange]:
         """Opens the SSE stream and yields one ``StreamChange`` per committed
         change, from connection time onward: fire-and-forget, no replay, one
         message per row change in commit order.
@@ -65,13 +71,24 @@ class PgChangeFeedSseClient:
         delivers every change. A target no change carries delivers nothing and
         raises no error.
 
+        ``schema`` and ``table`` are each optional and independent, sent as
+        the query parameters ``schema`` and ``table`` only when set: a set
+        ``schema`` without ``table`` delivers every table of that schema, a set
+        ``table`` without ``schema`` delivers every table of that name
+        regardless of schema, both set delivers exactly one table. They
+        combine with ``target`` as a conjunction.
+
         A missing or invalid bearer token, or any other non-success response,
         raises the same typed status-code error as the HTTP client (``401`` for
         a bad token); the stream is never silently empty.
         """
         url = f"{self._options.address.rstrip('/')}{_STREAM_PATH}"
         headers = {"Authorization": f"Bearer {self._options.api_token}"}
-        params = None if target is None else {"target": target}
+        params = {
+            name: value
+            for name, value in (("schema", schema), ("table", table), ("target", target))
+            if value is not None
+        } or None
         with self._client.stream("GET", url, headers=headers, params=params) as response:
             if not 200 <= response.status_code < 300:
                 response.read()

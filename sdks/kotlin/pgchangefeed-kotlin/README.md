@@ -150,7 +150,7 @@ fun main() {
 }
 ```
 
-The SSE stream takes one optional parameter, `target`: `client.streamChanges(target = "eu")` delivers only the changes routed to that target, and leaving it out delivers every change. The SSE client of this package does not set `schema`/`table`; `target` is its only filter.
+The SSE stream takes three optional, independent parameters, `target`, `schema` and `table`: `client.streamChanges(target = "eu")` delivers only the changes routed to that target, `client.streamChanges(schema = "public", table = "orders")` only the changes of that table, and leaving them out delivers every change. Combined, they act as a conjunction.
 
 NATS (the address is the NATS URL, the token is the NATS stream token checked when the connection is opened, so a rejected token fails in the constructor). The subject selects what you receive: `buildSourceSubject` covers all tables of one source, `buildSubject` one table, `buildTargetSubject` one delivery target of a source (`cdc.route.<source>.<target>`), `buildSourceTargetsSubject` every delivery target of a source, and without a subject you receive every source. A change routed to a target arrives on its table subject and, with the same payload, on the target subject; a change without a target arrives on the table subject only. The tokens are validated like those of `buildSubject`; an empty or blank target is invalid (the builders have no "no filter" form, use `buildSourceSubject` for that):
 
@@ -226,7 +226,7 @@ The live streams each have one method:
 | Class | Method | What it does |
 |---|---|---|
 | `PgChangeFeedGrpcClient(options)` | `streamChanges(schema, table, target)` | Opens the gRPC stream and returns a `Flow` of the generated `Change` messages. `schema`/`table`/`target` are optional and independent, all left `null` delivers every change. `close()` shuts down the channel the client owns. |
-| `PgChangeFeedSseClient(httpClient, options)` | `streamChanges(target)` | Opens `GET /changes/stream` and returns a `Sequence` of `io.github.pt9912.pgchangefeed.sse.model.Change` objects. `target` is optional, left `null` delivers every change. |
+| `PgChangeFeedSseClient(httpClient, options)` | `streamChanges(target, schema, table)` | Opens `GET /changes/stream` and returns a `Sequence` of `io.github.pt9912.pgchangefeed.sse.model.Change` objects. `target`/`schema`/`table` are optional and independent, all left `null` delivers every change. |
 | `PgChangeFeedNatsStreamClient(options)` | `streamChanges(subject)` | Subscribes to a subject and returns a `Sequence` of `io.github.pt9912.pgchangefeed.nats.model.Change` objects. `close()` closes the connection the client owns. |
 
 `PgChangeFeedAdministrationClient(options)` wraps the eleven RPCs of the `Administration` gRPC service — the same capabilities as the HTTP table above, over gRPC. Requests and responses are the generated `cdc.administration.v1` protobuf messages, used directly (no separate model type):
@@ -316,7 +316,7 @@ A `PgChangeFeedAdministrationClient` call that the server answers with a non-`OK
 
 - **Reading over HTTP** (`readChanges`) is asking: you name a range, the server answers from the changes it has stored. You can read the same range again, and with a registered consumer you can carry on after a restart exactly where you stopped. Changes stay readable until the retention removes them.
 - **The live streams** (gRPC, SSE, NATS) are pushing: you get every change committed after you connected, in commit order, with the full row content. There is no delivery guarantee and no replay. A change committed while you were disconnected, or while you read too slowly, does not arrive on the stream. Use the stream to react quickly and `readChanges` to catch up on what it missed.
-- The gRPC stream can be filtered by schema, table and delivery target (`streamChanges(schema, table, target)`); the SSE stream can be filtered by delivery target (`streamChanges(target)`); on the NATS stream the subject chooses the source, the table or the delivery target.
+- The gRPC stream can be filtered by schema, table and delivery target (`streamChanges(schema, table, target)`); the SSE stream can be filtered by delivery target, schema and table (`streamChanges(target, schema, table)`); on the NATS stream the subject chooses the source, the table or the delivery target.
 
 ## More
 

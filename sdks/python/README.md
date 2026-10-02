@@ -78,7 +78,7 @@ with grpc.insecure_channel(options.address) as channel:
 
 `schema`/`table`/`target` are each optional and independent: a set `schema` without `table` delivers every table of that schema, a set `table` without `schema` delivers every table of that name regardless of schema, both set delivers exactly one table, and leaving all out (the original, still valid call) delivers every change of every captured table. `target` selects the delivery target a change is routed to: a set value delivers only the changes routed to that target, combined with `schema`/`table` as a conjunction, and a target no change carries delivers nothing and raises no error: `client.stream_changes(target="eu")`. A server release that predates the parameter is expected to ignore it on the gRPC stream, which then stays unfiltered, and to answer `400` on the HTTP read path and the SSE stream; this follows from how the server reads its parameters and has not been run against such a release.
 
-Server-Sent Events (`address` is the HTTP base URL; the read timeout must be off for a long-lived stream). `stream_changes(target="eu")` delivers only the changes routed to that target, and leaving `target` out delivers every change; the SSE client of this package does not set `schema`/`table`, `target` is its only filter:
+Server-Sent Events (`address` is the HTTP base URL; the read timeout must be off for a long-lived stream). The SSE stream takes the same three optional, independent parameters, `target`, `schema` and `table`: `stream_changes(target="eu")` delivers only the changes routed to that target, `stream_changes(schema="public", table="orders")` only the changes of that table, and leaving them out delivers every change. Combined, they act as a conjunction:
 
 ```python
 import httpx
@@ -185,7 +185,7 @@ The live streams each have one method:
 | Class | Method | What it does |
 |---|---|---|
 | `PgChangeFeedGrpcClient(channel, options)` | `stream_changes(timeout=None, schema=None, table=None, target=None)` | Opens the gRPC stream and yields generated `Change` messages. `timeout` is the deadline of the whole call in seconds; `schema`/`table`/`target` filter the stream, each optional and independent. |
-| `PgChangeFeedSseClient(client, options)` | `stream_changes(target=None)` | Opens `GET /changes/stream` and yields `StreamChange` objects. `target` is optional, left out delivers every change. |
+| `PgChangeFeedSseClient(client, options)` | `stream_changes(target=None, schema=None, table=None)` | Opens `GET /changes/stream` and yields `StreamChange` objects. `target`/`schema`/`table` are optional and independent, all left out delivers every change. |
 | `PgChangeFeedNatsStreamClient(options, source_id)` | `stream_changes(timeout=None, target=None)` | Subscribes to all tables of one source, or to one delivery target of it when `target` is set, and yields `StreamChange` objects. `timeout` bounds the total consumption in seconds. |
 
 ## The change object
@@ -244,7 +244,7 @@ The gRPC stream reports a missing or unknown token as `grpc.RpcError` with statu
 
 - **Reading over HTTP** (`read_changes`) is asking: you name a range, the server answers from the changes it has stored. You can read the same range again, and with a registered consumer you can carry on after a restart exactly where you stopped. Changes stay readable until the retention removes them.
 - **The live streams** (gRPC, SSE, NATS) are pushing: you get every change committed after you connected, in commit order, with the full row content. There is no delivery guarantee and no replay. A change committed while you were disconnected, or while you read too slowly, does not arrive on the stream. Use the stream to react quickly and `read_changes` to catch up on what it missed.
-- The gRPC stream can be filtered by schema, table and delivery target; the SSE stream and the NATS stream can be filtered by delivery target only (`stream_changes(target=...)`); without a target the NATS stream covers all tables of one source.
+- The gRPC stream and the SSE stream can be filtered by schema, table and delivery target; the NATS stream can be filtered by delivery target only (`stream_changes(target=...)`); without a target the NATS stream covers all tables of one source.
 
 ## More
 

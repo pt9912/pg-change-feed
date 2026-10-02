@@ -9,10 +9,49 @@ import kotlin.test.assertEquals
  */
 class PgChangeFeedSseClientTargetTest {
 
-    private fun urlOf(target: String?): String {
+    private val base = "http://example.invalid:8080/changes/stream"
+
+    private fun urlOf(target: String?, schema: String? = null, table: String? = null): String {
         val (client, transport) = TestClientFactory.create { _ -> FakeSseTransport.lineResponse(200, "") }
-        if (target == null) client.streamChanges().toList() else client.streamChanges(target = target).toList()
+        client.streamChanges(target = target, schema = schema, table = table).toList()
         return transport.lastRequest!!.url
+    }
+
+    @Test
+    fun `streamChanges without filters requests the bare stream path`() {
+        assertEquals(base, urlOf(null, null, null))
+    }
+
+    @Test
+    fun `streamChanges sends schema as an escaped query parameter`() {
+        assertEquals("$base?schema=", urlOf(null, schema = ""))
+        assertEquals("$base?schema=eu", urlOf(null, schema = "eu"))
+        assertEquals("$base?schema=a%26b%3Dc", urlOf(null, schema = "a&b=c"))
+    }
+
+    @Test
+    fun `streamChanges sends table as an escaped query parameter`() {
+        assertEquals("$base?table=", urlOf(null, table = ""))
+        assertEquals("$base?table=eu", urlOf(null, table = "eu"))
+        assertEquals("$base?table=a%26b%3Dc", urlOf(null, table = "a&b=c"))
+    }
+
+    @Test
+    fun `streamChanges sends schema and table together`() {
+        assertEquals("$base?schema=public&table=orders", urlOf(null, schema = "public", table = "orders"))
+    }
+
+    @Test
+    fun `streamChanges combines table and target as a conjunction`() {
+        assertEquals("$base?table=orders&target=eu", urlOf("eu", table = "orders"))
+    }
+
+    @Test
+    fun `streamChanges combines schema table and target as a conjunction`() {
+        assertEquals(
+            "$base?schema=public&table=orders&target=eu",
+            urlOf("eu", schema = "public", table = "orders"),
+        )
     }
 
     @Test

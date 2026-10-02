@@ -131,6 +131,40 @@ def test_stream_changes_sends_target_as_an_escaped_query_parameter() -> None:
     assert _query_of_stream(target="a&b=c") == "target=a%26b%3Dc"
 
 
+# --- Schema and table: query parameters only when set ---
+
+
+def test_stream_changes_without_filters_requests_the_bare_path() -> None:
+    assert _query_of_stream(target=None, schema=None, table=None) == ""
+
+
+def test_stream_changes_sends_schema_as_an_escaped_query_parameter() -> None:
+    assert _query_of_stream(schema="") == "schema="
+    assert _query_of_stream(schema="eu") == "schema=eu"
+    assert _query_of_stream(schema="a&b=c") == "schema=a%26b%3Dc"
+
+
+def test_stream_changes_sends_table_as_an_escaped_query_parameter() -> None:
+    assert _query_of_stream(table="") == "table="
+    assert _query_of_stream(table="eu") == "table=eu"
+    assert _query_of_stream(table="a&b=c") == "table=a%26b%3Dc"
+
+
+def test_stream_changes_sends_schema_and_table_together() -> None:
+    assert _query_of_stream(schema="public", table="orders") == "schema=public&table=orders"
+
+
+def test_stream_changes_combines_table_and_target_as_a_conjunction() -> None:
+    assert _query_of_stream(target="eu", table="orders") == "table=orders&target=eu"
+
+
+def test_stream_changes_combines_schema_table_and_target_as_a_conjunction() -> None:
+    assert (
+        _query_of_stream(target="eu", schema="public", table="orders")
+        == "schema=public&table=orders&target=eu"
+    )
+
+
 # --- Frame parser (chunk boundaries, incomplete frames, non-change names) ---
 
 
