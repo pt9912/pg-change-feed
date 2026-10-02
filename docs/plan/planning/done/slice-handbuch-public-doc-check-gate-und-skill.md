@@ -499,7 +499,7 @@ Suchlauf-Feld (`make suchlauf-nachmessen`, 28 Zeilen) und den Register-Zählern 
   `BEO-PGC/intern-kennungen-in-ausgelieferten-texten` (das Gate als Fangnetz für
   `docs/user/`, Grenze „liest Kennungen, nicht Sinn“; Zähler bleibt **1×**).
 - **Folge-Slices:**
-  [`sdk-public-doc-check-lesefehler-fail-closed`](../open/slice-sdk-public-doc-check-lesefehler-fail-closed.md)
+  [`sdk-public-doc-check-lesefehler-fail-closed`](../in-progress/slice-sdk-public-doc-check-lesefehler-fail-closed.md)
   — ist eine Datei in `open/` (Architect-Frage, ob eine Folge-ADR nötig ist, steht in
   dessen §4).
 - **Risiken aus §6:** Falsch-positive entfallen (Grenzen benannt) · Gate-Fläche entfallen ·
