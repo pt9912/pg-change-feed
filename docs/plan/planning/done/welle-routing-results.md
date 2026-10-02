@@ -199,11 +199,11 @@ Closure-Note-Reviews); die Tabelle gibt sie wieder, die Register-`state.md` der 
 
 | Eintrag (`BEO-PGC/…`) | Zähler | Ausgang (Verdikt §0 und §3) | Kennung · Anker |
 |---|---|---|---|
-| `fixrunde-ohne-reviewer-lesung` | 3 (fünf weitere Gegenbelege ohne Datei) | **geplant**, **bedingt auf Freigabe V1**: Regel in der engeren Fassung (*Re-Review verlangen, wenn die Fixrunde Produktionslogik oder eine Norm ändert, oder wenn nach der Fixrunde kein anderer Kontext sie ausgeführt hat*), kein Sensor. Bei Ablehnung: *gestrichen* (akzeptiertes Negativ) | `slice-harness-lese-schritt-regeln-routing` — der Slice wird erst nach der Freigabe angelegt |
+| `fixrunde-ohne-reviewer-lesung` | 3 (fünf weitere Gegenbelege ohne Datei) | **verkörpert** (V1, Auftraggeber-Freigabe 2026-10-02): Regel in der engeren Fassung (*Re-Review verlangen, wenn die Fixrunde Produktionslogik oder eine Norm ändert, oder wenn nach der Fixrunde kein anderer Kontext sie ausgeführt hat*), kein Sensor | `.claude/commands/implement-slice.md` Schritt 21, Absatz „Re-Review nach der Fixrunde“; Anker `seit welle-routing`, Commit `f7d42312`; kein eigener Slice |
 | `test-runner-stiller-ausschluss` | 3 | **geplant** (Sensor ohne Regeländerung): jede `func TestE2E*` steht in einem `-run`-Argument von `run-integration-tests.sh`; der Eintrag wird mit dem Slice *verkörpert* | `slice-harness-integration-runner-vollstaendigkeit` (Datei in `open/`) |
 | `drei-sprachen-kopie-divergiert-am-randfall` | 3 | **gestrichen** (akzeptiertes Negativ): alle drei Belege LOW und vor dem Merge gefunden, Schaden klein, die Gegenmaßnahmen stehen in Code und Plan; Wiederaufnahme bei einem Divergenz-Fund nach dem Merge oder bei Schwere ab MEDIUM | Begründung in der `state.md` (Verdikt §3.3) |
 | `zwei-quellen-drift-handbuch-gegen-pflichtenheft` | 3 | **verkörpert**, steht bereits; die Ergänzung des Beispiels wird nicht beauftragt | `.harness/skills/reviewer.md`, Punkt „Zwei-Quellen-Drift“ (Zeile 259); Anker `seit welle-routing` |
-| `plan-zusage-erfuellung-ohne-committeten-anker` | 5 | **geplant**, **bedingt auf Freigabe V2**: ein Satz in `.claude/commands/implement-slice.md` Schritt 18. Bei Ablehnung: *gestrichen* (akzeptiertes Negativ), Trigger „ein Haken ohne Anker bis in `done/`“ | `slice-harness-lese-schritt-regeln-routing` — der Slice wird erst nach der Freigabe angelegt |
+| `plan-zusage-erfuellung-ohne-committeten-anker` | 5 | **verkörpert** (V2, Auftraggeber-Freigabe 2026-10-02): ein Satz am Absatz „DoD-Checkbox-Nachzug im selben Lauf“, kein Sensor | `.claude/commands/implement-slice.md` Schritt 18; Anker `seit welle-routing`, Commit `f7d42312`; kein eigener Slice |
 | `ein-instanz-annahme-ohne-erzwingung` | 3 | **verkörpert**, steht bereits | [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) §Re-Evaluierungs-Trigger; Anker `seit slice-backfill-run-store` |
 
 **Unter der Schwelle, in dieser Closure nicht gelesen** (Adresse: Sichtungs-Schritt der nächsten
@@ -220,7 +220,12 @@ festgehalten, aber keinem eine Kennung zugewiesen; das war die Auflage F-2 des
 Closure-Note-Reviews (Modul 6: kein Eintrag überlebt eine Closure ohne Ausgang). Die Ausgänge setzte
 anschließend das [Architect-Verdikt](../../../reviews/architect-verdict-welle-routing-lese-schritt.md)
 (Tabelle oben); zwei davon (`fixrunde-ohne-reviewer-lesung`, `plan-zusage-erfuellung-ohne-committeten-anker`)
-sind bis zur Freigabe des Auftraggebers *geplant*, nicht *verkörpert* (Offene Punkte). Alle übrigen
+sind nach der Freigabe des Auftraggebers (2026-10-02, V1 und V2) *verkörpert* (Commit `f7d42312`);
+V3 ist verkörpert in `.claude/commands/close-welle.md` Schritt 3 und `.claude/commands/implement-slice.md`
+Schritt 23 (Commit `f7d42312`), F-8 (Kopf von `.harness/skills/closure-note-reviewer.md`) ist
+korrigiert. `suppression-ohne-linter-in-testcode` ist *verkörpert* in `AGENTS.md` §3.2 (Python-Formen
+genannt, Freigabe 2026-10-02); der Alt-Tag-Lauf ist an den festen Alt-Stand `v0.4.0` gebunden
+(Commit `71b2b285`). Alle übrigen
 Einträge bei 3× oder darüber, die die Welle berührt, tragen einen Ausgang.
 
 ## Validator-Feststellung (Modul 8)
@@ -240,12 +245,19 @@ Notizen sind Records).
   Verletzungen R1 bis R6 mit Klartext) und Negative (nicht anwendbare Regel beendet den
   Erfassungspfad mit Klasse `schema`, Abhilfe) am laufenden Feed-Container, über Handbuch und
   SDK-Packages als Betreiber-Oberfläche.
-- **Stand:** der Validator-Lauf hat **nicht stattgefunden** und wird hier nicht nachgeholt (der
-  Planner darf ihn nicht selbst fahren, kein Self-Review). Die Beleglage in dieser Notiz (e2e-Lauf
-  `36933941965`, Verifikations-Reports der Slices) ist eine Belegsammlung des Planners und ersetzt
-  keinen Validator; es wird kein Ergebnis behauptet.
-- **Adresse:** Auftrag an den `validator`-Agenten nach dieser Closure; Frist: vor dem
-  Release-Entscheid (Zeile „Release-Entscheid“ in „Offene Punkte“).
+- **Stand (nachgetragen, 2026-10-02):** der Validator-Lauf hat nach der Closure stattgefunden
+  (`validator`-Agent, Wegwerf-Umgebung; Ursprung der Messungen: **gemessen** durch den
+  `validator`-Agenten, nicht durch den Planner): [`validierung-welle-routing`](../../../reviews/validierung-welle-routing.md).
+  Ergebnis: **bedarfsgerecht ja, mit Einschränkungen; Release-Blocker nein.** Die drei
+  Akzeptanzkriterien (Happy Path, Boundary, Negative) sind aus Betreibersicht am laufenden System
+  erfüllt, einschließlich der Abhilfe der Nichtanwendbarkeit (Ursache 1); Handbuch und gesehene
+  Ausgabe stimmen überein. Befunde (Auszug): F-1 die Lesart „Zustellen = Auswählbarkeit, kein aktives
+  Schieben an eine Senke“ (MEDIUM, bewusst ausgeklammert; vom Auftraggeber bestätigt, siehe A-3 in
+  „Offene Punkte“); F-4 die Abhilfe der Ursache 2 fehlt im Handbuch (vorbestehend, Adresse
+  `BEO-PGC/kein-admin-weg-schema-fehler-recovery`); F-9 Prozess-Drift: die Release-Freigabe kam vor dem
+  Validator-Lauf, die Frist („vor dem Release-Entscheid“) wurde verfehlt; der Lauf wurde vor dem Tag
+  nachgeholt, kein Einfluss auf das Ergebnis; künftig Validator-Auftrag zusammen mit der Closure.
+- **Adresse:** erledigt; der Report ist der Träger.
 
 ## Beobachtungs-Register (Zeiger)
 
@@ -267,8 +279,8 @@ Der Zähler steht in [`../observations/`](../observations/)
 Die Entscheidungen des Lese-Schritts stehen im
 [Architect-Verdikt](../../../reviews/architect-verdict-welle-routing-lese-schritt.md) (§5): ein Slice
 liegt in `open/` (`slice-harness-integration-runner-vollstaendigkeit`, Ausgang für
-`test-runner-stiller-ausschluss`); `slice-harness-lese-schritt-regeln-routing` (V1, V2, V3) entsteht
-erst nach der Freigabe des Auftraggebers (Offene Punkte).
+`test-runner-stiller-ausschluss`); die Regeländerungen V1, V2 und V3 sind nach der
+Freigabe des Auftraggebers direkt umgesetzt (Offene Punkte); ein eigener Slice dafür entsteht nicht.
 
 ## Offene Punkte (mit Adresse)
 
@@ -278,14 +290,14 @@ erst nach der Freigabe des Auftraggebers (Offene Punkte).
 | Last der Auswertung je Change (lineare Suche über die Regeln der Tabelle) | **nicht gemessen**, *erwartet* klein | Messträger ein Go-Benchmark im Paket `mapper` bei zehn und bei hundert Regeln; Trigger: erste beobachtete Verzögerung der Erfassung bei vielen Regeln je Tabelle oder Betriebsanforderung über zehn Regeln |
 | Abhilfe am Fall (a) „Bedingungsspalte entfernt“ | *hergeleitet* (die Spec führt sie so), nicht gefahren; allgemeiner Recovery-Weg für Schema-Fehler | `BEO-PGC/kein-admin-weg-schema-fehler-recovery` (2×), Out-of-Scope der Welle |
 | Server ohne den Parameter `target` | *hergeleitet*; die READMEs sagen es mit dem Ursprung | kein Träger (der Realserver-Slice läuft gegen den Stand des Repos); Beleg wäre ein Lauf gegen ein Release ohne den Parameter |
-| Validator-Lauf zum Bedarf (`LH-FA-CFG-008`) | **nicht gelaufen**, Feststellung im Abschnitt „Validator-Feststellung (Modul 8)“ | Auftrag an den `validator`-Agenten nach dieser Closure; Frist: vor dem Release-Entscheid |
-| Regeländerung V1 (Re-Review nach einer Fixrunde): `.claude/commands/implement-slice.md` Schritt 21, neuer Absatz | **Freigabe des Auftraggebers ausstehend** (Empfehlung des Architects: zustimmen); ohne Zustimmung Ausgang von `fixrunde-ohne-reviewer-lesung` *gestrichen* | Auftraggeber; Wortlaut und Folge in §4 V1 des [Architect-Verdikts](../../../reviews/architect-verdict-welle-routing-lese-schritt.md); danach Slice `slice-harness-lese-schritt-regeln-routing` |
-| Regeländerung V2 (Zusage-Anker beim Abhaken): `.claude/commands/implement-slice.md` Schritt 18, ein Satz am Absatz „DoD-Checkbox-Nachzug im selben Lauf“ | **Freigabe des Auftraggebers ausstehend** (Empfehlung: zustimmen); ohne Zustimmung Ausgang von `plan-zusage-erfuellung-ohne-committeten-anker` *gestrichen*, Trigger „ein Haken ohne Anker bis in `done/`“ | Auftraggeber; §4 V2 des Verdikts; danach derselbe Slice |
-| Regeländerung V3 (Validator-Feststellung als Pflichtabschnitt der Results-Notiz): `.claude/commands/close-welle.md` Schritt 3, dazu ein Halbsatz in `implement-slice.md` Schritt 23; zugleich Pflege des veralteten Skill-Kopfs `.harness/skills/closure-note-reviewer.md` (F-8: nennt die fünfte `structure`-Regel „auskommentiert“, sie ist aktiv) | **Freigabe des Auftraggebers ausstehend** (Empfehlung: Variante a, kein Sensor; dritte Wiederholung derselben Klasse „Validator-Schritt ohne Träger“: Backfill-Welle, Transformations-Welle, diese Welle); ohne Zustimmung gilt im Einzelfall „akzeptiert, Review fängt es“ | Auftraggeber; §4 V3 und §6 des Verdikts; Quelle [`closure-note-review-welle-routing.md`](../../../reviews/closure-note-review-welle-routing.md) F-1 und F-8; danach derselbe Slice |
+| Validator-Lauf zum Bedarf (`LH-FA-CFG-008`) | **erledigt** (2026-10-02, nach der Closure): bedarfsgerecht ja mit Einschränkungen, Release-Blocker nein; Abschnitt „Validator-Feststellung (Modul 8)“ | [`validierung-welle-routing`](../../../reviews/validierung-welle-routing.md); Prozess-Drift F-9 (Frist verfehlt) dort benannt |
+| Regeländerung V1 (Re-Review nach einer Fixrunde): `.claude/commands/implement-slice.md` Schritt 21, neuer Absatz | **erledigt**: Freigabe des Auftraggebers 2026-10-02, umgesetzt in Commit `f7d42312` | Wortlaut in §4 V1 des [Architect-Verdikts](../../../reviews/architect-verdict-welle-routing-lese-schritt.md); kein eigener Slice |
+| Regeländerung V2 (Zusage-Anker beim Abhaken): `.claude/commands/implement-slice.md` Schritt 18, ein Satz am Absatz „DoD-Checkbox-Nachzug im selben Lauf“ | **erledigt**: Freigabe des Auftraggebers 2026-10-02, umgesetzt in Commit `f7d42312` | §4 V2 des Verdikts; kein eigener Slice |
+| Regeländerung V3 (Validator-Feststellung als Pflichtabschnitt der Results-Notiz): `.claude/commands/close-welle.md` Schritt 3, dazu ein Halbsatz in `implement-slice.md` Schritt 23; zugleich Pflege des veralteten Skill-Kopfs `.harness/skills/closure-note-reviewer.md` (F-8: nennt die fünfte `structure`-Regel „auskommentiert“, sie ist aktiv) | **erledigt**: Freigabe des Auftraggebers 2026-10-02 (Variante a, kein Sensor; dritte Wiederholung derselben Klasse „Validator-Schritt ohne Träger“), umgesetzt in Commit `f7d42312` in `close-welle.md` Schritt 3 und `implement-slice.md` Schritt 23; der Skill-Kopf (F-8) ist korrigiert | §4 V3 und §6 des Verdikts; Quelle [`closure-note-review-welle-routing.md`](../../../reviews/closure-note-review-welle-routing.md) F-1 und F-8; kein eigener Slice |
 | Release-Entscheid | offen | Auftraggeber: Server-Release, SDK-Versionen; `target` ist in C# neuer letzter Parameter, in Kotlin neuer letzter Parameter mit Default `null` — quellkompatibel, **nicht** binärkompatibel; ein Java-Aufrufer von `PgChangeFeedSseClient.streamChanges` übersetzt nicht mehr ohne Argument |
-| `AGENTS.md` §3.2 und Python-`# noqa` | Entscheidung offen | Auftraggeber (Regeländerung); Register `suppression-ohne-linter-in-testcode` (1×) |
+| `AGENTS.md` §3.2 und Python-`# noqa` | **beantwortet**: Python-Formen in §3.2 genannt (Freigabe des Auftraggebers 2026-10-02, Commit `f7d42312`) | Register `suppression-ohne-linter-in-testcode` (*verkörpert*) |
 | Übersetzen der Integrationsprojekte | Lücke im Sensor-Satz | `BEO-PGC/integrationsprojekt-uebersetzt-nicht-unbemerkt` (1×); Aufnahme in `make gates` oder einen Workflow wäre eine Entscheidung (Netzbezug, [`AGENTS.md`](../../../../AGENTS.md) §3.10) |
-| Lastenheft-Lesart „Zustellung“ (A-3) | offen, beim Auftraggeber | Review `review-slice-routing-spec-nachzug` F-5; Lastenheft 0.14.0 trägt die Präzisierung des Happy-Path-Kriteriums |
+| Lastenheft-Lesart „Zustellung“ (A-3) | **bestätigt** (Auftraggeber, Lastenheft 0.14.0) | Review `review-slice-routing-spec-nachzug` F-5; Lastenheft 0.14.0 trägt die Präzisierung des Happy-Path-Kriteriums |
 
 ## Verifikation
 
@@ -419,10 +431,9 @@ Adresse beim Architect: F-2 (Ausgänge des Lese-Schritts mit Kennung), F-7 (Zita
 [`ADR-0140`](../../adr/0140-routing-nichtanwendbarkeit-erreichbarkeit-und-abhilfe-grenze.md)),
 Pflege-Regel zu F-1. Das [Architect-Verdikt](../../../reviews/architect-verdict-welle-routing-lese-schritt.md)
 beantwortet sie: F-2 durch die Ausgänge im Lese-Schritt, F-7 mit „stehen lassen“ (§3.7), die
-Pflege-Regel zu F-1 als Vorlage V3 (Freigabe des Auftraggebers ausstehend). F-8 (INFO) ist ein
-Hinweis: der Kopftext von `.harness/skills/closure-note-reviewer.md` nennt die fünfte
-`structure`-Regel noch „auskommentiert“, sie ist seit der ersten Closure aktiv; die Pflege liegt beim
-Besitzer der Skill-Datei und gehört zur Freigabe V3.
+Pflege-Regel zu F-1 als Vorlage V3 (freigegeben und umgesetzt, Offene Punkte). F-8 (INFO): der
+Kopftext von `.harness/skills/closure-note-reviewer.md` nannte die fünfte `structure`-Regel
+„auskommentiert“, sie ist seit der ersten Closure aktiv; der Kopf ist korrigiert (Commit `f7d42312`).
 
 **Erwartbare Abweichung in den Slice-Plänen:** die `suchlauf`-Zeilen am Stand `diff` in
 `slice-routing-kern-label` (4 von 12) und `slice-routing-e2e` (1 von 14) weichen bei
