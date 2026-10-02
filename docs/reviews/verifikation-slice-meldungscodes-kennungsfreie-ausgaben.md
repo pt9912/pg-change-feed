@@ -6,7 +6,7 @@
 Architect-Verdikt
 [`architect-verdict-meldungscodes-statt-interner-kennungen`](architect-verdict-meldungscodes-statt-interner-kennungen.md))
 + Plan-vs-Code-Diff. Plan:
-[`slice-meldungscodes-kennungsfreie-ausgaben`](../plan/planning/in-progress/slice-meldungscodes-kennungsfreie-ausgaben.md)
+[`slice-meldungscodes-kennungsfreie-ausgaben`](../plan/planning/done/slice-meldungscodes-kennungsfreie-ausgaben.md)
 (wellenlos, Teil 1 von 4). Review:
 [`review-slice-meldungscodes-kennungsfreie-ausgaben`](review-slice-meldungscodes-kennungsfreie-ausgaben.md)
 (1 HIGH F-1, 1 LOW F-2, 1 INFO F-3). Formvorbild:
