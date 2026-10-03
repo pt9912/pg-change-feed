@@ -30,7 +30,7 @@ Verdikt: [`architect-verdict-meldungscodes-statt-interner-kennungen`](../../../r
 
 **Teil-Slices der Umsetzung** ([`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md)
 Festlegung 9): **T1 (dieser Slice)** → [T2 `meldungscodes-registry-fehlerkopf`](slice-meldungscodes-registry-fehlerkopf.md)
-→ [T3 `meldungscodes-warnungen-heartbeat-diagnose`](../open/slice-meldungscodes-warnungen-heartbeat-diagnose.md)
+→ [T3 `meldungscodes-warnungen-heartbeat-diagnose`](../in-progress/slice-meldungscodes-warnungen-heartbeat-diagnose.md)
 und [T4 `meldungscodes-http-grpc-fehlerkoerper`](../open/slice-meldungscodes-http-grpc-fehlerkoerper.md)
 (T3 und T4 untereinander unabhängig).
 
@@ -369,7 +369,7 @@ Steering-Loop-Regeln. Wird bei der Closure gefüllt (vor dem `git mv` nach `done
   Programm-Ausgaben mit den sechs benannten Grenzen; Zähler **1×** unverändert (kein neuer
   Vorgang der Klasse).
 - **Folge-Slices:** T2 [`meldungscodes-registry-fehlerkopf`](slice-meldungscodes-registry-fehlerkopf.md)
-  zuerst; danach T3 [`meldungscodes-warnungen-heartbeat-diagnose`](../open/slice-meldungscodes-warnungen-heartbeat-diagnose.md)
+  zuerst; danach T3 [`meldungscodes-warnungen-heartbeat-diagnose`](../in-progress/slice-meldungscodes-warnungen-heartbeat-diagnose.md)
   und T4 [`meldungscodes-http-grpc-fehlerkoerper`](../open/slice-meldungscodes-http-grpc-fehlerkoerper.md)
   (untereinander unabhängig). Kein Release, keine Versionsänderung.
 - **Risiken aus §6:** Ausgaben-Stabilität: nicht eingetreten (Stichprobe); Tests erwarten

@@ -26,7 +26,7 @@ dieses Slice.
 
 **Reihenfolge:** nach [T2 `meldungscodes-registry-fehlerkopf`](../done/slice-meldungscodes-registry-fehlerkopf.md)
 (Tabelle, besonders die `E8…`-Ablehnungs-Codes); unabhängig von
-[T3](slice-meldungscodes-warnungen-heartbeat-diagnose.md).
+[T3](../in-progress/slice-meldungscodes-warnungen-heartbeat-diagnose.md).
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 

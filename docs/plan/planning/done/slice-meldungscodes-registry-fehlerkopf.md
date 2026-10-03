@@ -31,7 +31,7 @@ dieses Slice, nicht des Auftraggebers.
 
 **Reihenfolge:** nach [T1 `meldungscodes-kennungsfreie-ausgaben`](slice-meldungscodes-kennungsfreie-ausgaben.md)
 (sein Gate hält die Ausgaben bei 0, bevor dieser Slice die Fehlertext-Literale anfasst); vor
-[T3](../open/slice-meldungscodes-warnungen-heartbeat-diagnose.md) und
+[T3](../in-progress/slice-meldungscodes-warnungen-heartbeat-diagnose.md) und
 [T4](../open/slice-meldungscodes-http-grpc-fehlerkoerper.md), die an der Tabelle dieses Slice hängen.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
@@ -392,7 +392,7 @@ Steering-Loop-Regeln. Wird bei der Closure gefüllt (vor dem `git mv` nach `done
   ohne Bindung an Binärzeichen) trifft einen bekannten Träger-Typ (Wächter-Skript mit
   Tabellentest), vor dem Merge gefunden, Schwere ≤ LOW — nach der Deckel-Regel ohne eigene Datei,
   hier genannt.
-- **Folge-Slices:** T3 [`meldungscodes-warnungen-heartbeat-diagnose`](../open/slice-meldungscodes-warnungen-heartbeat-diagnose.md)
+- **Folge-Slices:** T3 [`meldungscodes-warnungen-heartbeat-diagnose`](../in-progress/slice-meldungscodes-warnungen-heartbeat-diagnose.md)
   und T4 [`meldungscodes-http-grpc-fehlerkoerper`](../open/slice-meldungscodes-http-grpc-fehlerkoerper.md)
   (beide in `open/`, untereinander unabhängig; Startbedingung: dieser Slice in `done/`). Kein
   Release, keine Versionsänderung.

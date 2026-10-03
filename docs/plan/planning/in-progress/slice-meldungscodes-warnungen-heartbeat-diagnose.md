@@ -27,7 +27,7 @@ Liefer-Punkt dieses Slice), die `Diagnose`-Zeile des gRPC-/HTTP-Vertrags (additi
 `error_code`) — jeweils die Stelle, die die Spalte bzw. das Feld heute beschreibt.
 
 **Reihenfolge:** nach [T2 `meldungscodes-registry-fehlerkopf`](../done/slice-meldungscodes-registry-fehlerkopf.md)
-(Tabelle, Katalog, Gate); unabhängig von [T4](slice-meldungscodes-http-grpc-fehlerkoerper.md).
+(Tabelle, Katalog, Gate); unabhängig von [T4](../open/slice-meldungscodes-http-grpc-fehlerkoerper.md).
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
