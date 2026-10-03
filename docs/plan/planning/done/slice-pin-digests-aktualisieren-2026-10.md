@@ -562,3 +562,19 @@ Sub-Area-Berührung entfällt **er** — nicht der Abschnitt.
 Alle berührten Sub-Areas GF (die Modus-Deklaration in
 [`harness/conventions.md`](../../../../harness/conventions.md) führt `*` als
 Greenfield).
+
+## Nachtrag — Post-Push-Läufe (2026-10-03)
+
+Der Stand `38c9ff93` ist gepusht. Gelesen wurde der reale Lauf auf dem Runner
+([`AGENTS.md`](../../../../AGENTS.md) §3.10):
+
+- `e2e.yml`, Lauf `37125336646`: `gh run view` nennt beide Matrix-Legs,
+  `image + test-integration (PostgreSQL 18) success` und
+  `image + test-integration (PostgreSQL 17) success`. `ci` und `examples`
+  desselben Stands: `success`.
+- `upstream-drift.yml`, Lauf `37126796088` (`workflow_dispatch`, Stand
+  `38c9ff93`): `success`, also ohne Drift auf P1 bis P9.
+
+Das CI-Matrix-Risiko aus §6 ist damit **entfallen**. Weiter offen bleibt allein
+die Sensor-Lücke des PG-17-Pins
+([`BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`](../observations/BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar/observation.md)).
