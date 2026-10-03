@@ -8,6 +8,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -36,7 +37,7 @@ func registerConsumerHandler(useCase inbound.RegisterConsumerUseCase, log outbou
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req registerConsumerRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeError(w, http.StatusBadRequest, "Request-Body ist kein gültiges JSON")
+			writeError(w, http.StatusBadRequest, "Request-Body ist kein gültiges JSON", messagecode.RejectedBodyInvalid)
 			return
 		}
 		result, err := useCase.Register(r.Context(), inbound.RegisterConsumerCommand{
@@ -45,11 +46,10 @@ func registerConsumerHandler(useCase inbound.RegisterConsumerUseCase, log outbou
 		})
 		if err != nil {
 			if errors.Is(err, domainerrors.ErrEmptyIdentifier) {
-				writeError(w, http.StatusBadRequest, "consumer_id und name sind Pflichtfelder")
+				writeError(w, http.StatusBadRequest, "consumer_id und name sind Pflichtfelder", messagecode.RejectedRequiredField)
 				return
 			}
-			log.Warn(r.Context(), "http: RegisterConsumer fehlgeschlagen", "error", err)
-			writeError(w, http.StatusInternalServerError, "interner Fehler")
+			writeInternalError(r.Context(), w, log, "RegisterConsumer", err)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")

@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -114,7 +114,7 @@ func readChangesHandler(useCase inbound.ReadChangesUseCase, log outbound.LogPort
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		query, err := parseReadChangesQuery(r.URL.Query())
 		if err != nil {
-			writeError(w, http.StatusBadRequest, err.Error())
+			writeBadRequest(w, err)
 			return
 		}
 		result, err := useCase.ReadChanges(r.Context(), query)
@@ -138,12 +138,12 @@ func readChangesHandler(useCase inbound.ReadChangesUseCase, log outbound.LogPort
 func parseReadChangesQuery(values url.Values) (inbound.ReadChangesQuery, error) {
 	for name := range values {
 		if !readChangesParams[name] {
-			return inbound.ReadChangesQuery{}, fmt.Errorf("unbekannter Query-Parameter %q", name)
+			return inbound.ReadChangesQuery{}, rejectParam(messagecode.RejectedParameterUnknown, "unbekannter Query-Parameter %q", name)
 		}
 	}
 	source := values.Get(readChangesParamSource)
 	if source == "" {
-		return inbound.ReadChangesQuery{}, fmt.Errorf("%s ist Pflichtfeld", readChangesParamSource)
+		return inbound.ReadChangesQuery{}, rejectParam(messagecode.RejectedRequiredField, "%s ist Pflichtfeld", readChangesParamSource)
 	}
 	start, err := readChangesPosition(source, readChangesParamFrom, values.Get(readChangesParamFrom))
 	if err != nil {
@@ -178,7 +178,7 @@ func readChangesPosition(source, name, raw string) (*model.SourcePosition, error
 	}
 	offset, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("%s ist keine Ganzzahl: %q", name, raw)
+		return nil, rejectParam(messagecode.RejectedValueInvalid, "%s ist keine Ganzzahl: %q", name, raw)
 	}
 	if offset < 1 {
 		return nil, domainerrors.ErrInvalidPosition
@@ -200,7 +200,7 @@ func readChangesLimit(raw string) (*int, error) {
 	}
 	limit, err := strconv.Atoi(raw)
 	if err != nil {
-		return nil, fmt.Errorf("%s ist keine Ganzzahl: %q", readChangesParamLimit, raw)
+		return nil, rejectParam(messagecode.RejectedValueInvalid, "%s ist keine Ganzzahl: %q", readChangesParamLimit, raw)
 	}
 	return &limit, nil
 }

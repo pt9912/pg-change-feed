@@ -6,6 +6,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -42,7 +43,7 @@ func enableTableHandler(useCase inbound.EnableTableUseCase, log outbound.LogPort
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req enableTableRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeError(w, http.StatusBadRequest, "Request-Body ist kein gültiges JSON")
+			writeError(w, http.StatusBadRequest, "Request-Body ist kein gültiges JSON", messagecode.RejectedBodyInvalid)
 			return
 		}
 		result, err := useCase.Enable(r.Context(), inbound.EnableTableCommand{
@@ -92,7 +93,7 @@ func disableTableHandler(useCase inbound.DisableTableUseCase, log outbound.LogPo
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req disableTableRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeError(w, http.StatusBadRequest, "Request-Body ist kein gültiges JSON")
+			writeError(w, http.StatusBadRequest, "Request-Body ist kein gültiges JSON", messagecode.RejectedBodyInvalid)
 			return
 		}
 		result, err := useCase.Disable(r.Context(), inbound.DisableTableCommand{
@@ -132,7 +133,7 @@ func getStatusHandler(useCase inbound.GetStatusUseCase, log outbound.LogPort) ht
 		q := r.URL.Query()
 		source, schema, table, publication := q.Get("source"), q.Get("schema"), q.Get("table"), q.Get("publication")
 		if source == "" || schema == "" || table == "" || publication == "" {
-			writeError(w, http.StatusBadRequest, "source, schema, table und publication sind Pflichtfelder")
+			writeError(w, http.StatusBadRequest, "source, schema, table und publication sind Pflichtfelder", messagecode.RejectedRequiredField)
 			return
 		}
 		result, err := useCase.Status(r.Context(), inbound.GetStatusQuery{
@@ -193,7 +194,7 @@ func listTablesHandler(useCase inbound.ListTablesUseCase, log outbound.LogPort) 
 		q := r.URL.Query()
 		source, publication := q.Get("source"), q.Get("publication")
 		if source == "" || publication == "" {
-			writeError(w, http.StatusBadRequest, "source und publication sind Pflichtfelder")
+			writeError(w, http.StatusBadRequest, "source und publication sind Pflichtfelder", messagecode.RejectedRequiredField)
 			return
 		}
 		result, err := useCase.ListTables(r.Context(), inbound.ListTablesQuery{

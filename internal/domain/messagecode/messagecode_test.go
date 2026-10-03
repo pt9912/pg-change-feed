@@ -75,7 +75,7 @@ func TestWarningCodesCarryTheirArea(t *testing.T) {
 		4: {
 			messagecode.WarnAdminWakeDisturbed, messagecode.WarnAdminRequestsRead, messagecode.WarnAdminPreflightExpiry,
 			messagecode.WarnAdminRequestFailed, messagecode.WarnAdminRequestRejected, messagecode.WarnAdminOutcomeNotKept,
-			messagecode.WarnAdminRowWithoutID,
+			messagecode.WarnAdminRowWithoutID, messagecode.WarnAPIRequestFailed,
 		},
 	}
 	inTable := 0

@@ -43,7 +43,7 @@ var streamChangesParams = map[string]bool{
 func parseStreamChangesFilter(values url.Values) (schema, table, target string, err error) {
 	for name := range values {
 		if !streamChangesParams[name] {
-			return "", "", "", fmt.Errorf("unbekannter Query-Parameter %q", name)
+			return "", "", "", rejectParam(messagecode.RejectedParameterUnknown, "unbekannter Query-Parameter %q", name)
 		}
 	}
 	return values.Get(streamChangesParamSchema), values.Get(streamChangesParamTable), values.Get(streamChangesParamTarget), nil
@@ -123,17 +123,17 @@ func toStreamChange(change *model.Change) streamChange {
 func streamChangesHandler(subscriber changeSubscriber, log outbound.LogPort) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if subscriber == nil {
-			writeError(w, http.StatusServiceUnavailable, "ChangeStream ohne Broadcaster verdrahtet")
+			writeError(w, http.StatusServiceUnavailable, "ChangeStream ohne Broadcaster verdrahtet", messagecode.WiringPrecondition)
 			return
 		}
 		schema, table, target, err := parseStreamChangesFilter(r.URL.Query())
 		if err != nil {
-			writeError(w, http.StatusBadRequest, err.Error())
+			writeBadRequest(w, err)
 			return
 		}
 		flusher, ok := w.(http.Flusher)
 		if !ok {
-			writeError(w, http.StatusInternalServerError, "Antwort-Writer trägt kein http.Flusher")
+			writeError(w, http.StatusInternalServerError, "Antwort-Writer trägt kein http.Flusher", messagecode.InternalFallback)
 			return
 		}
 		changes, cancel := subscriber.Subscribe()

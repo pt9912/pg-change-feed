@@ -15,12 +15,12 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	administrationv1 "github.com/pt9912/pg-change-feed/gen/cdc/administration/v1"
 	"github.com/pt9912/pg-change-feed/gen/cdc/stream/v1"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -158,7 +158,7 @@ type changeStreamService struct {
 // Lesezugriffsweg vorbehalten.
 func (s *changeStreamService) StreamChanges(req *streamv1.StreamChangesRequest, stream grpc.ServerStreamingServer[streamv1.Change]) error {
 	if s.subscriber == nil {
-		return status.Error(codes.Internal, "ChangeStream ohne Broadcaster verdrahtet")
+		return statusError(codes.Internal, "ChangeStream ohne Broadcaster verdrahtet", messagecode.WiringPrecondition)
 	}
 	changes, cancel := s.subscriber.Subscribe()
 	defer cancel()

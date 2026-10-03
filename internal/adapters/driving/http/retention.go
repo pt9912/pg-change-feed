@@ -6,6 +6,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -34,7 +35,7 @@ func runRetentionHandler(useCase inbound.RunRetentionUseCase, log outbound.LogPo
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req runRetentionRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeError(w, http.StatusBadRequest, "Request-Body ist kein gültiges JSON")
+			writeError(w, http.StatusBadRequest, "Request-Body ist kein gültiges JSON", messagecode.RejectedBodyInvalid)
 			return
 		}
 		minAge, err := model.NewDuration(req.MinAgeNanos)

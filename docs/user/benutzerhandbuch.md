@@ -2394,8 +2394,8 @@ benennt als die Fehlerklasse. Ein Code hat die Form `PCF-E4003`: der Buchstabe
 7 `internal`), die übrigen drei Ziffern die Ursache. Die Endung `000` ist der
 Rückfall einer Klasse: ein Fehler, dem keine einzelne Ursache zugeordnet ist,
 trägt den Rückfall seiner Klasse und nie keinen Code. Die erste Ziffer `8`
-kennzeichnet die Ablehnung einer Eingabe, etwa eines Antrags; sie trägt keine
-Fehlerklasse. Eine Warnung trägt den Buchstaben `W` (`PCF-W3002`); ihre erste
+kennzeichnet die Ablehnung einer Eingabe, etwa eines Antrags oder eines
+API-Aufrufs; sie trägt keine Fehlerklasse. Eine Warnung trägt den Buchstaben `W` (`PCF-W3002`); ihre erste
 Ziffer ist der Bereich (1 Erfassung und Replikation, 2 Backfill, 3 Retention und
 Speicher, 4 Verwaltung; ein Bereich 5 für Konfiguration und Start ist vorgesehen
 und trägt keine Warnung), eine Warnung trägt keine Fehlerklasse. Zeilen des
@@ -2413,6 +2413,8 @@ Der Code steht an diesen Stellen:
 | `cdc.administration_request.error_message` eines abgelehnten Antrags | `abgelehnt [PCF-E8021]: <Klartext>` |
 | `cdc.administration_request.error_message` eines Antrags, der an einem klassifizierten Fehler scheiterte | `Fehlerklasse internal [PCF-E7002]: <Ursache>` |
 | Meldungen von `make schema-rollout` | `FEHLER [PCF-E2007]: <Text>` |
+| Fehlerantwort der HTTP-API (`400`, `404`, `500`, `503`) | Feld `code` neben `error`: `{"error": "<Klartext>", "code": "PCF-E8051"}`; bei `401` und `403` fehlt das Feld |
+| Fehlerstatus der gRPC-API (`InvalidArgument`, `NotFound`, `Internal`) | Statusdetail `google.rpc.ErrorInfo`: `reason` ist der Code (`PCF-E8051`), `domain` ist `pg-change-feed`; `Unauthenticated` und `PermissionDenied` tragen kein Detail |
 
 **Der Text ist nicht Vertrag, der Code ist es.** Stabil sind der Code, die Klasse,
 das Wort `Fehlerklasse` am Anfang einer Fehlerzeile und der Ausgang des Prozesses; der Text
@@ -2490,6 +2492,14 @@ Entfällt eine Ursache, bleibt ihr Code in dieser Tabelle und trägt den Vermerk
 | `PCF-E8034` | Ablehnung | die Spalte trägt eine Routing-Bedingung und lässt sich nicht ausschließen | Routing-Regel zuerst entfernen |
 | `PCF-E8040` | Ablehnung | die Tabelle ist nicht aktiviert oder nicht Mitglied der Publication (Vorbedingung eines Backfills) | Tabelle aktivieren, Backfill erneut beantragen |
 | `PCF-E8041` | Ablehnung | für die Tabelle besteht bereits ein aktiver Backfill-Run | Ende des Runs abwarten |
+| `PCF-E8050` | Ablehnung | der Request-Body eines Aufrufs der HTTP-API ist kein gültiges JSON | Body prüfen |
+| `PCF-E8051` | Ablehnung | ein Pflichtfeld oder Pflichtparameter eines API-Aufrufs fehlt oder ist leer (Kennung des Consumers, Quelle, Schema, Tabelle, Publication) | die fehlende Angabe ergänzen |
+| `PCF-E8052` | Ablehnung | ein Query-Parameter liegt außerhalb der Menge, die der Endpunkt kennt | Parameternamen prüfen |
+| `PCF-E8053` | Ablehnung | ein Wert eines API-Aufrufs ist nicht lesbar oder liegt außerhalb des zulässigen Bereichs (keine Ganzzahl, negative Dauer, Version oder `limit` kleiner 1) | Wert korrigieren |
+| `PCF-E8054` | Ablehnung | eine Position ist kleiner als 1; eine Position 0 gibt es nicht | eine Position ab 1 angeben |
+| `PCF-E8055` | Ablehnung | die zu bestätigende Position liegt vor der bereits bestätigten Position des Consumers | eine Position hinter der bestätigten wählen; die bestätigte Position nennt `GET /consumers/position` bzw. der RPC `GetConsumerPosition` |
+| `PCF-E8056` | Ablehnung | die Endposition eines Lesebereichs liegt vor der Startposition | `from` und `to` prüfen |
+| `PCF-E8057` | Ablehnung | die Position gehört zu einer anderen Quelle als der Stand des Consumers | Quelle der Position prüfen |
 
 Warnungen stehen im Log des Feed-Containers mit dem Attribut `code`; eine Warnung
 beendet den Prozess nicht und trägt keine Fehlerklasse:
@@ -2518,6 +2528,7 @@ beendet den Prozess nicht und trägt keine Fehlerklasse:
 | `PCF-W4005` | Verwaltung | ein Antrag ist abgelehnt worden; `error_message` nennt den Code der Ablehnung | den Antrag nach dem Code der Ablehnung korrigieren und neu stellen |
 | `PCF-W4006` | Verwaltung | der Ausgang eines Antrags (`applied` oder `failed`) konnte nicht vermerkt werden; der Antrag bleibt `pending` und wird im nächsten Durchlauf erneut verarbeitet | Erreichbarkeit und Rechte der Rolle `cdc_admin` prüfen |
 | `PCF-W4007` | Verwaltung | eine Zeile der Antrags-Queue trägt keine Kennung und wird übersprungen; sie bleibt `pending` | Zeile in `cdc.administration_request` prüfen |
+| `PCF-W4008` | Verwaltung | ein Aufruf der HTTP- oder gRPC-API ist an einem unerwarteten Fehler gescheitert; der Aufrufer erhielt `500` bzw. `Internal` mit dem Code der Ursache, das Attribut `error` der Zeile nennt die Ursache | die Ursache nach dem Code der Antwort beheben, Aufruf wiederholen |
 
 ### Container startet nicht
 

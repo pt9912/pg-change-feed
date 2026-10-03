@@ -3,10 +3,12 @@ package grpc
 import (
 	"context"
 	stderrors "errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -28,20 +31,22 @@ import (
 // erwarteten Code, dieser Test färbt für genau diesen Fall rot.
 func TestAdministrationErrorBildetJedeFehlerklasseAufIhrenCodeAb(t *testing.T) {
 	tests := []struct {
-		name string
-		err  error
-		want codes.Code
+		name       string
+		err        error
+		want       codes.Code
+		wantReason messagecode.Code
 	}{
-		{"SourceTableMissing", inbound.ErrSourceTableMissing, codes.NotFound},
-		{"EmptyIdentifier", domainerrors.ErrEmptyIdentifier, codes.InvalidArgument},
-		{"InvalidPosition", domainerrors.ErrInvalidPosition, codes.InvalidArgument},
-		{"SourceMismatch", domainerrors.ErrSourceMismatch, codes.InvalidArgument},
-		{"PositionRegression", domainerrors.ErrPositionRegression, codes.InvalidArgument},
-		{"NegativeDuration", domainerrors.ErrNegativeDuration, codes.InvalidArgument},
-		{"NonPositiveVersion", domainerrors.ErrNonPositiveVersion, codes.InvalidArgument},
-		{"NonPositiveLimit", outbound.ErrNonPositiveLimit, codes.InvalidArgument},
-		{"RangeInverted", outbound.ErrRangeInverted, codes.InvalidArgument},
-		{"UnbekannterFehler", stderrors.New("etwas Unerwartetes"), codes.Internal},
+		{"SourceTableMissing", inbound.ErrSourceTableMissing, codes.NotFound, messagecode.RejectedTableMissing},
+		{"EmptyIdentifier", domainerrors.ErrEmptyIdentifier, codes.InvalidArgument, messagecode.RejectedRequiredField},
+		{"InvalidPosition", domainerrors.ErrInvalidPosition, codes.InvalidArgument, messagecode.RejectedPositionInvalid},
+		{"SourceMismatch", domainerrors.ErrSourceMismatch, codes.InvalidArgument, messagecode.RejectedPositionSource},
+		{"PositionRegression", domainerrors.ErrPositionRegression, codes.InvalidArgument, messagecode.RejectedPositionRegressed},
+		{"NegativeDuration", domainerrors.ErrNegativeDuration, codes.InvalidArgument, messagecode.RejectedValueInvalid},
+		{"NonPositiveVersion", domainerrors.ErrNonPositiveVersion, codes.InvalidArgument, messagecode.RejectedValueInvalid},
+		{"NonPositiveLimit", outbound.ErrNonPositiveLimit, codes.InvalidArgument, messagecode.RejectedValueInvalid},
+		{"RangeInverted", outbound.ErrRangeInverted, codes.InvalidArgument, messagecode.RejectedRangeInverted},
+		{"KlassifizierteUrsache", outbound.ErrStorage, codes.Internal, messagecode.ChangeStoreFailed},
+		{"UnbekannterFehler", stderrors.New("etwas Unerwartetes"), codes.Internal, messagecode.InternalFallback},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -49,7 +54,56 @@ func TestAdministrationErrorBildetJedeFehlerklasseAufIhrenCodeAb(t *testing.T) {
 			if status.Code(err) != tc.want {
 				t.Fatalf("administrationError(%v) = %v (Erwartung: %v)", tc.err, status.Code(err), tc.want)
 			}
+			info := errorInfoOf(t, err)
+			if info == nil || info.GetReason() != string(tc.wantReason) || info.GetDomain() != "pg-change-feed" {
+				t.Fatalf("ErrorInfo = %v, Erwartung reason %q domain pg-change-feed", info, tc.wantReason)
+			}
 		})
+	}
+}
+
+// errorInfoOf liest das Statusdetail `ErrorInfo` des Fehlers; ohne dieses
+// Detail ist das Ergebnis `nil`.
+func errorInfoOf(t *testing.T, err error) *errdetails.ErrorInfo {
+	t.Helper()
+	st, ok := status.FromError(err)
+	if !ok {
+		t.Fatalf("kein gRPC-Status: %v", err)
+	}
+	for _, detail := range st.Details() {
+		if info, ok := detail.(*errdetails.ErrorInfo); ok {
+			return info
+		}
+	}
+	return nil
+}
+
+// recordingWarnLog hält den Wert des Attributs `code` jeder Warnung fest.
+type recordingWarnLog struct{ codes []string }
+
+func (l *recordingWarnLog) Debug(context.Context, string, ...any) {}
+func (l *recordingWarnLog) Info(context.Context, string, ...any)  {}
+func (l *recordingWarnLog) Error(context.Context, string, ...any) {}
+func (l *recordingWarnLog) Warn(_ context.Context, _ string, attrs ...any) {
+	code := ""
+	for i := 0; i+1 < len(attrs); i += 2 {
+		if attrs[i] == messagecode.LogKey {
+			code = fmt.Sprint(attrs[i+1])
+		}
+	}
+	l.codes = append(l.codes, code)
+}
+
+// TestAdministrationErrorWarntNurBeiInternemFehlerMitDemCodeDerAnfrage trägt:
+// ein unerwarteter Fehler warnt mit `PCF-W4008` im Attribut `code`, eine
+// Ablehnung (`InvalidArgument`, `NotFound`) warnt nicht.
+func TestAdministrationErrorWarntNurBeiInternemFehlerMitDemCodeDerAnfrage(t *testing.T) {
+	log := &recordingWarnLog{}
+	_ = administrationError(context.Background(), log, "Test", stderrors.New("etwas Unerwartetes"))
+	_ = administrationError(context.Background(), log, "Test", inbound.ErrSourceTableMissing)
+	_ = administrationError(context.Background(), log, "Test", domainerrors.ErrEmptyIdentifier)
+	if len(log.codes) != 1 || log.codes[0] != string(messagecode.WarnAPIRequestFailed) {
+		t.Fatalf("Attribut code der Warnungen = %q, Erwartung genau %q", log.codes, messagecode.WarnAPIRequestFailed)
 	}
 }
 

@@ -9,16 +9,15 @@ package grpc
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	administrationv1 "github.com/pt9912/pg-change-feed/gen/cdc/administration/v1"
+	"github.com/pt9912/pg-change-feed/internal/application/port/apifault"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
-	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -43,25 +42,20 @@ type administrationService struct {
 
 // administrationError bildet einen Use-Case-Fehler auf einen `codes.*`-Wert
 // ab (`ADR-0130` Teilfrage 5): dieselbe Fehlerklassifikation wie
-// `internal/adapters/driving/http/errors.go`s `writeDomainError`, zwei
-// Zieldarstellungen. Ein JSON-Decode-Fehlerfall entfällt strukturell — das
-// Nachrichtenschema ist bereits typisiert (Protobuf).
+// `internal/adapters/driving/http/errors.go`s `writeDomainError`, beide über
+// `apifault.Classify`, zwei Zieldarstellungen. Jeder Status trägt das Detail
+// `ErrorInfo` mit dem Meldungscode der Ursache. Ein JSON-Decode-Fehlerfall
+// entfällt strukturell — das Nachrichtenschema ist bereits typisiert
+// (Protobuf).
 func administrationError(ctx context.Context, log outbound.LogPort, action string, err error) error {
-	switch {
-	case errors.Is(err, inbound.ErrSourceTableMissing):
-		return status.Error(codes.NotFound, err.Error())
-	case errors.Is(err, domainerrors.ErrEmptyIdentifier),
-		errors.Is(err, domainerrors.ErrInvalidPosition),
-		errors.Is(err, domainerrors.ErrSourceMismatch),
-		errors.Is(err, domainerrors.ErrPositionRegression),
-		errors.Is(err, domainerrors.ErrNegativeDuration),
-		errors.Is(err, domainerrors.ErrNonPositiveVersion),
-		errors.Is(err, outbound.ErrNonPositiveLimit),
-		errors.Is(err, outbound.ErrRangeInverted):
-		return status.Error(codes.InvalidArgument, err.Error())
+	switch kind, code := apifault.Classify(err); kind {
+	case apifault.NotFound:
+		return statusError(codes.NotFound, err.Error(), code)
+	case apifault.InvalidInput:
+		return statusError(codes.InvalidArgument, err.Error(), code)
 	default:
-		log.Warn(ctx, "grpc: "+action+" fehlgeschlagen", "error", err)
-		return status.Error(codes.Internal, "interner Fehler")
+		log.Warn(ctx, "grpc: "+action+" fehlgeschlagen", messagecode.LogKey, messagecode.WarnAPIRequestFailed, "error", err)
+		return statusError(codes.Internal, "interner Fehler", code)
 	}
 }
 

@@ -112,6 +112,20 @@ const (
 	RejectedRunActive          Code = "PCF-E8041"
 )
 
+// Bereich 8, Ablehnung eines Aufrufs der HTTP- und gRPC-API (`…805x`): der
+// Code steht im Feld `code` des HTTP-Fehlerkörpers und als `reason` des
+// gRPC-Statusdetails `ErrorInfo`.
+const (
+	RejectedBodyInvalid       Code = "PCF-E8050"
+	RejectedRequiredField     Code = "PCF-E8051"
+	RejectedParameterUnknown  Code = "PCF-E8052"
+	RejectedValueInvalid      Code = "PCF-E8053"
+	RejectedPositionInvalid   Code = "PCF-E8054"
+	RejectedPositionRegressed Code = "PCF-E8055"
+	RejectedRangeInverted     Code = "PCF-E8056"
+	RejectedPositionSource    Code = "PCF-E8057"
+)
+
 // Warnungen tragen keine Fehlerklasse; die erste Ziffer ist der Bereich:
 // 1 Erfassung und Replikation, 2 Backfill, 3 Retention und Speicher,
 // 4 Verwaltung (Anträge, Regeln), 5 Konfiguration und Start, 9 reserviert.
@@ -153,6 +167,7 @@ const (
 	WarnAdminRequestRejected Code = "PCF-W4005"
 	WarnAdminOutcomeNotKept  Code = "PCF-W4006"
 	WarnAdminRowWithoutID    Code = "PCF-W4007"
+	WarnAPIRequestFailed     Code = "PCF-W4008"
 )
 
 // Table führt jeden vergebenen Code genau einmal; die Klasse eines Eintrags
@@ -231,6 +246,14 @@ var Table = []Entry{
 	{RejectedColumnHasCondition, ClassNone, StatusActive},
 	{RejectedNotActivated, ClassNone, StatusActive},
 	{RejectedRunActive, ClassNone, StatusActive},
+	{RejectedBodyInvalid, ClassNone, StatusActive},
+	{RejectedRequiredField, ClassNone, StatusActive},
+	{RejectedParameterUnknown, ClassNone, StatusActive},
+	{RejectedValueInvalid, ClassNone, StatusActive},
+	{RejectedPositionInvalid, ClassNone, StatusActive},
+	{RejectedPositionRegressed, ClassNone, StatusActive},
+	{RejectedRangeInverted, ClassNone, StatusActive},
+	{RejectedPositionSource, ClassNone, StatusActive},
 
 	{WarnNotifyFailed, ClassNone, StatusActive},
 	{WarnStreamPublish, ClassNone, StatusActive},
@@ -257,4 +280,5 @@ var Table = []Entry{
 	{WarnAdminRequestRejected, ClassNone, StatusActive},
 	{WarnAdminOutcomeNotKept, ClassNone, StatusActive},
 	{WarnAdminRowWithoutID, ClassNone, StatusActive},
+	{WarnAPIRequestFailed, ClassNone, StatusActive},
 }

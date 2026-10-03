@@ -6,6 +6,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -33,7 +34,7 @@ func acknowledgeConsumerHandler(useCase inbound.AcknowledgeConsumerUseCase, log 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req acknowledgeConsumerRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeError(w, http.StatusBadRequest, "Request-Body ist kein gültiges JSON")
+			writeError(w, http.StatusBadRequest, "Request-Body ist kein gültiges JSON", messagecode.RejectedBodyInvalid)
 			return
 		}
 		result, err := useCase.Acknowledge(r.Context(), inbound.AcknowledgeConsumerCommand{
@@ -73,7 +74,7 @@ func getConsumerPositionHandler(useCase inbound.GetConsumerPositionUseCase, log 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		consumerID := r.URL.Query().Get("consumer_id")
 		if consumerID == "" {
-			writeError(w, http.StatusBadRequest, "consumer_id ist Pflichtfeld")
+			writeError(w, http.StatusBadRequest, "consumer_id ist Pflichtfeld", messagecode.RejectedRequiredField)
 			return
 		}
 		result, err := useCase.Position(r.Context(), inbound.GetConsumerPositionQuery{
@@ -115,7 +116,7 @@ func removeConsumerHandler(useCase inbound.RemoveConsumerUseCase, log outbound.L
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req removeConsumerRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeError(w, http.StatusBadRequest, "Request-Body ist kein gültiges JSON")
+			writeError(w, http.StatusBadRequest, "Request-Body ist kein gültiges JSON", messagecode.RejectedBodyInvalid)
 			return
 		}
 		result, err := useCase.Remove(r.Context(), inbound.RemoveConsumerCommand{

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 )
 
 // role trägt die zwei Rechtsklassen der Token-Middleware (`ADR-0057`
@@ -57,17 +59,20 @@ func bearerToken(r *http.Request) string {
 }
 
 // errorResponse trägt den JSON-Fehler-Body (`SPEC-018`) für
-// `400`/`401`/`403`/`500`.
+// `400`/`401`/`403`/`404`/`500`/`503`: den Klartext und, wo eine
+// Code-Zuordnung besteht, den Meldungscode. Ein leerer Code erscheint nicht
+// im Body (`401`, `403`).
 type errorResponse struct {
 	Error string `json:"error"`
+	Code  string `json:"code,omitempty"`
 }
 
 // writeError schreibt einen JSON-Fehler-Body mit dem übergebenen
-// Statuscode.
-func writeError(w http.ResponseWriter, status int, message string) {
+// Statuscode; `code` ist der Meldungscode der Ursache, leer ohne Zuordnung.
+func writeError(w http.ResponseWriter, status int, message string, code messagecode.Code) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(errorResponse{Error: message})
+	_ = json.NewEncoder(w).Encode(errorResponse{Error: message, Code: string(code)})
 }
 
 // withToken schützt einen Handler mit der Token-Middleware (`ADR-0057`
@@ -79,11 +84,11 @@ func withToken(readerToken, adminToken string, required role, next http.Handler)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callerRole := classifyToken(bearerToken(r), readerToken, adminToken)
 		if callerRole == roleNone {
-			writeError(w, http.StatusUnauthorized, "fehlender oder unbekannter Bearer-Token")
+			writeError(w, http.StatusUnauthorized, "fehlender oder unbekannter Bearer-Token", "")
 			return
 		}
 		if callerRole < required {
-			writeError(w, http.StatusForbidden, "Rechtsklasse unzureichend für diesen Endpunkt")
+			writeError(w, http.StatusForbidden, "Rechtsklasse unzureichend für diesen Endpunkt", "")
 			return
 		}
 		next.ServeHTTP(w, r)

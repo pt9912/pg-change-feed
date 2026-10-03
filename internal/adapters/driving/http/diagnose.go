@@ -2,12 +2,12 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -113,7 +113,7 @@ func diagnoseHandler(useCase inbound.DiagnoseUseCase, log outbound.LogPort) http
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		source, err := parseDiagnoseQuery(r.URL.Query())
 		if err != nil {
-			writeError(w, http.StatusBadRequest, err.Error())
+			writeBadRequest(w, err)
 			return
 		}
 		result, err := useCase.Diagnose(r.Context(), inbound.DiagnoseQuery{Source: source})
@@ -133,12 +133,12 @@ func diagnoseHandler(useCase inbound.DiagnoseUseCase, log outbound.LogPort) http
 func parseDiagnoseQuery(values url.Values) (model.SourceID, error) {
 	for name := range values {
 		if !diagnoseParams[name] {
-			return "", fmt.Errorf("unbekannter Query-Parameter %q", name)
+			return "", rejectParam(messagecode.RejectedParameterUnknown, "unbekannter Query-Parameter %q", name)
 		}
 	}
 	source := values.Get(diagnoseParamSource)
 	if source == "" {
-		return "", fmt.Errorf("%s ist Pflichtfeld", diagnoseParamSource)
+		return "", rejectParam(messagecode.RejectedRequiredField, "%s ist Pflichtfeld", diagnoseParamSource)
 	}
 	return model.SourceID(source), nil
 }
