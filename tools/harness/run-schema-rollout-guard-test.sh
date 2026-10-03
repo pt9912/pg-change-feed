@@ -40,7 +40,10 @@
 #      und `cdc.remove_route` allein für `cdc_admin` (nicht PUBLIC), und die
 #      Rechte der drei Rollen auf
 #      `cdc.changes` (`SELECT` allein für `cdc_reader`; `DROP VIEW` verwirft
-#      die Rechteliste). Die Zeile des Tags liest über `cdc.changes` mit
+#      die Rechteliste). Eine Heartbeat-Zeile des Tags mit Fehlerklasse liest
+#      nach dem Upgrade über `cdc.heartbeat` mit `error_code` NULL; die Spalte
+#      `error_code` ist angelegt (`text`, nullable) und steht als letzte Spalte
+#      der View hinter `age_seconds`, ohne Vorlauf der View. Die Zeile des Tags liest über `cdc.changes` mit
 #      `route_target` NULL. Der Stand des Tags trägt die Spalte `route_target`
 #      noch nicht (Vorbedingung); nach dem Upgrade
 #      trägt die Tabelle die zwei nullable Spalten (`text`, `jsonb`), eine
@@ -316,6 +319,13 @@ alt_kinds_sql="SELECT string_agg(k, ',' ORDER BY k) FROM (SELECT unnest(regexp_m
 # trägt in rule_name/rule_spec NULL.
 docker exec "$CONTAINER" psql -U "$USER" -d "$ALT_DB" -v ON_ERROR_STOP=1 \
   -c "INSERT INTO cdc.administration_request (administration_request_id, source_id, schema_name, table_name, column_name, request_kind, status) VALUES ('alttag-req', 'alttag-src', 'public', 't', 'a', 'exclude_column', 'applied')" >/dev/null
+# Eine Heartbeat-Zeile mit Fehlerzustand im Stand des Tags: der Stand trägt
+# die Spalte error_code nicht (Vorbedingung); nach dem Upgrade ist sie
+# nullable angelegt, die Alt-Zeile liest über cdc.heartbeat mit error_code NULL.
+[ "$(psql_q "$ALT_DB" "SELECT count(*) FROM information_schema.columns WHERE table_schema='cdc' AND table_name IN ('process_heartbeat', 'heartbeat') AND column_name = 'error_code'")" = "0" ] \
+  || fail "Lauf 5: Vorbedingung fehlgeschlagen, cdc.process_heartbeat oder cdc.heartbeat trägt im Stand von $ALT_TAG schon error_code"
+docker exec "$CONTAINER" psql -U "$USER" -d "$ALT_DB" -v ON_ERROR_STOP=1 \
+  -c "INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class) VALUES ('alttag-src', current_timestamp, 'schema')" >/dev/null
 run_rollout . "$ALT_TARGET"
 work_exit_1=$RUN_EXIT
 work_out_1=$RUN_OUT
@@ -328,6 +338,14 @@ work_exit_2=$RUN_EXIT
 [ "$(psql_q "$ALT_DB" "SELECT route_target IS NULL FROM cdc.changes WHERE change_id = 'alttag-ch'")" = "t" ] \
   || fail "Lauf 5: die Zeile aus dem Stand von $ALT_TAG trägt nach dem Upgrade über cdc.changes kein NULL in route_target"
 [ "$(view_signature "$ALT_DB")" = "$sig_ref" ] || fail "Lauf 5: die View trägt nach dem Upgrade nicht die Soll-Signatur"
+alt_error_code_column=$(psql_q "$ALT_DB" "SELECT data_type || ':' || is_nullable FROM information_schema.columns WHERE table_schema='cdc' AND table_name='process_heartbeat' AND column_name='error_code'")
+[ "$alt_error_code_column" = "text:YES" ] \
+  || fail "Lauf 5: cdc.process_heartbeat.error_code ist nach dem Upgrade über $ALT_TAG '$alt_error_code_column' statt text:YES"
+alt_heartbeat_view=$(psql_q "$ALT_DB" "SELECT string_agg(column_name, ',' ORDER BY ordinal_position) FROM information_schema.columns WHERE table_schema='cdc' AND table_name='heartbeat'")
+[ "$alt_heartbeat_view" = "source_id,heartbeat_at,error_class,age_seconds,error_code" ] \
+  || fail "Lauf 5: cdc.heartbeat trägt nach dem Upgrade über $ALT_TAG die Spalten '$alt_heartbeat_view' statt source_id,heartbeat_at,error_class,age_seconds,error_code"
+[ "$(psql_q "$ALT_DB" "SELECT error_class || '|' || COALESCE(error_code, '<NULL>') FROM cdc.heartbeat WHERE source_id = 'alttag-src'")" = "schema|<NULL>" ] \
+  || fail "Lauf 5: die Heartbeat-Zeile aus dem Stand von $ALT_TAG liest nach dem Upgrade über cdc.heartbeat nicht als schema|NULL"
 alt_privilege_count=0
 for expected in \
   "cdc_admin cdc.administration_request SELECT t" "cdc_admin cdc.administration_request UPDATE t" \
@@ -401,7 +419,7 @@ if grep -q "Vorlauf" <<<"$work_out_1"; then
 else
   alt_vorlauf="ohne Vorlauf"
 fi
-echo "run-schema-rollout-guard-test: Lauf 5 OK — Tag $ALT_TAG: Exit $alt_exit (Rollout des Tags), Exit $work_exit_1 (Arbeitsbaum, $alt_vorlauf), Exit $work_exit_2 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar, Soll-Signatur der View, route_target NULL (Spalte im Stand des Tags nicht vorhanden); $alt_privilege_count Tabellen-/View-Rechte der drei Rollen auf administration_request, backfill_run, backfill_status und cdc.changes, EXECUTE auf $alt_function_count Funktionen ($ALT_FUNCTION, $ALT_SET_FUNCTION, $ALT_REMOVE_FUNCTION, $ALT_SET_ROUTE_FUNCTION, $ALT_REMOVE_ROUTE_FUNCTION) allein für cdc_admin (nicht PUBLIC), Spalten $alt_rule_columns (Alt-Zeile alttag-req: NULL), request_kind-Menge $alt_kinds_after, cdc.set_transformation/cdc.remove_transformation/cdc.set_route/cdc.remove_route unter cdc_admin schreiben pending-Anträge, cdc_reader an cdc.set_transformation sowie cdc_reader und cdc_capture an cdc.set_route/cdc.remove_route: permission denied for function"
+echo "run-schema-rollout-guard-test: Lauf 5 OK — Tag $ALT_TAG: Exit $alt_exit (Rollout des Tags), Exit $work_exit_1 (Arbeitsbaum, $alt_vorlauf), Exit $work_exit_2 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar, Soll-Signatur der View, route_target NULL (Spalte im Stand des Tags nicht vorhanden), error_code $alt_error_code_column (im Stand des Tags nicht vorhanden), cdc.heartbeat mit den Spalten $alt_heartbeat_view und der Alt-Zeile schema|NULL; $alt_privilege_count Tabellen-/View-Rechte der drei Rollen auf administration_request, backfill_run, backfill_status und cdc.changes, EXECUTE auf $alt_function_count Funktionen ($ALT_FUNCTION, $ALT_SET_FUNCTION, $ALT_REMOVE_FUNCTION, $ALT_SET_ROUTE_FUNCTION, $ALT_REMOVE_ROUTE_FUNCTION) allein für cdc_admin (nicht PUBLIC), Spalten $alt_rule_columns (Alt-Zeile alttag-req: NULL), request_kind-Menge $alt_kinds_after, cdc.set_transformation/cdc.remove_transformation/cdc.set_route/cdc.remove_route unter cdc_admin schreiben pending-Anträge, cdc_reader an cdc.set_transformation sowie cdc_reader und cdc_capture an cdc.set_route/cdc.remove_route: permission denied for function"
 
 echo "run-schema-rollout-guard-test: Lauf 6/6 (unbekannte Blocker, müssen mit Exit 8 abbrechen)"
 echo "run-schema-rollout-guard-test: Lauf 6a (nicht deklarierte Funktion — die Wache lässt sie nicht unter --allow-destructive löschen)"

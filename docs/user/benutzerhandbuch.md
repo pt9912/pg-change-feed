@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.90
+Version: 1.91
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-10-03
 
@@ -1178,12 +1178,14 @@ intern `--healthcheck` ausführt und das Lebenszeichen der Quelle über
 `cdc.heartbeat`). Direkter SQL-Zugriff:
 
 ```sql
-SELECT source_id, heartbeat_at, age_seconds, error_class FROM cdc.heartbeat;
+SELECT source_id, heartbeat_at, age_seconds, error_class, error_code FROM cdc.heartbeat;
 ```
 
-**Ergebnis:** `error_class` ist `NULL` im Normalbetrieb; ein gesetzter
-Wert nennt die zuletzt beobachtete Fehlerklasse (siehe
-[Fehlerbehebung](#6-fehlerbehebung)). Ein Lebenszeichen gilt als
+**Ergebnis:** `error_class` und `error_code` sind `NULL` im Normalbetrieb; ein
+gesetzter Wert nennt die zuletzt beobachtete Fehlerklasse und den Meldungscode
+des Fehlerzustands (siehe [Fehlerbehebung](#6-fehlerbehebung) und
+[Meldungscodes](#meldungscodes)). `error_code` steht in der Sicht hinter
+`age_seconds`; der Code erscheint nur neben einer Klasse. Ein Lebenszeichen gilt als
 veraltet, wenn `age_seconds` mehr als das Dreifache des Schreibtakts
 (15 Sekunden bei einem Takt von 5 Sekunden) überschreitet.
 
@@ -1255,6 +1257,20 @@ pg-change-feed diagnose: Quelle "src-e2e"
       Fehler: permission: …
     public.events: completed, 4800000 Zeilen kopiert, geschätzt 4700000, Warnung Größe true, Warnung Dauer true
 ```
+
+Bei einem Fehlerzustand nennt die Zeile „Fehlerzustand“ die Fehlerklasse und
+den Meldungscode in eckigen Klammern (siehe [Meldungscodes](#meldungscodes));
+alle übrigen Zeilen des Berichts tragen keinen Code. *Ursprung:* gemessen mit
+dem Sondermodus `diagnose` gegen eine mit `make schema-rollout` ausgerollte
+Instanz, in der `error_class` und `error_code` direkt in
+`cdc.process_heartbeat` gesetzt waren:
+
+```text
+  Fehlerzustand: schema [PCF-E4003]
+```
+
+Trägt der Heartbeat nur eine Klasse (geschrieben von einer Version ohne
+Meldungscode), steht dort `Fehlerzustand: schema` (dieselbe Messung).
 
 Der Abschnitt „Backfill je Tabelle" liest die View `cdc.backfill_status` (siehe
 [Bestand als Backfill überführen](#bestand-als-backfill-überführen)): je
@@ -1365,7 +1381,10 @@ unverändert.
 **Reihenfolge beim Upgrade.** Rollen Sie das Schema **vor** dem Tausch des
 Feed-Containers aus, dann ersetzen Sie den Container durch die neue Version.
 Der neue Container erwartet das neue Schema (er schreibt zum Beispiel die
-Spalten `cdc.change.origin` und `cdc.change.route_target`); umgekehrt ist der Rollout vor dem Tausch für
+Spalten `cdc.change.origin`, `cdc.change.route_target` und
+`cdc.process_heartbeat.error_code`; ohne die letzte schlägt jeder Schreib-Zug
+des Lebenszeichens fehl, *abgeleitet* aus dem SQL-Text, nicht gegen ein Alt-Schema
+gefahren); umgekehrt ist der Rollout vor dem Tausch für
 den weiterlaufenden Container erwartungsgemäß unkritisch, weil neue Spalten
 nullable und neue Tabellen oder Views additiv sind (abgeleitet, nicht mit
 einem laufenden Alt-Container gemessen).
@@ -1539,7 +1558,9 @@ Fehlerzustand, CDC-Abstand, Verarbeitungsrückstand je Consumer, blockierender
 Consumer, Speicherverbrauch und der zuletzt beantragte Backfill-Run je
 Tabelle — strukturiert statt als Text. `source` ist Pflicht, ein Parameter
 außerhalb dieser einen Angabe endet `400`, ebenso wie bei `GET /changes`.
-Fehlende Werte stehen als `null` (`heartbeat_age_seconds`/`error_class`
+`error_code` trägt den Meldungscode des Fehlerzustands (siehe
+[Meldungscodes](#meldungscodes)) und ist wie `error_class` im Normalbetrieb `null`.
+Fehlende Werte stehen als `null` (`heartbeat_age_seconds`/`error_class`/`error_code`
 gemeinsam bei fehlendem Lebenszeichen, `retention_blocker` ohne Blocker,
 `lag`/`estimated_rows` bei unbekanntem Rückstand bzw. unbekannter Schätzung);
 `consumer_lags`/`backfill` sind ohne Treffer leere, gesetzte Listen. Ein
@@ -1859,7 +1880,10 @@ und `GET /diagnose` (siehe [Zugriff über die HTTP-/JSON-API](#zugriff-über-die
 `HeartbeatStatus`, `ConsumerLag`, `RetentionBlocker` und
 `BackfillTableStatus`; ein `known`/`present`/`*_known`-Feld auf `false`
 trägt dieselben Abwesenheits-Fälle wie der CLI-Text (kein Lebenszeichen,
-kein Blocker, unbekannte Schätzung/unbekannter Rückstand).
+kein Blocker, unbekannte Schätzung/unbekannter Rückstand). `HeartbeatStatus`
+trägt neben `error_class` das Feld `error_code` mit dem Meldungscode des
+Fehlerzustands (siehe [Meldungscodes](#meldungscodes)); beide Felder sind im
+Normalbetrieb leer.
 
 **Fehlerform:** Ein gRPC-Status ersetzt den jeweiligen HTTP-Statuscode:
 
@@ -2346,25 +2370,33 @@ zugeordnet werden kann, fällt auf `internal` zurück.
 
 Ein Fehler des Erfassungspfads jeder Klasse beendet den Container-Prozess mit Ausgang 1 (ein Fehler eines Backfill-Runs ist run-lokal und beendet ihn nicht); der
 zuletzt beobachtete Fehlerzustand wird zusätzlich in
-`cdc.heartbeat.error_class` festgehalten und bei einem erfolgreichen
-Neustart automatisch wieder gelöscht.
+`cdc.heartbeat.error_class` und sein Meldungscode in
+`cdc.heartbeat.error_code` festgehalten (siehe [Meldungscodes](#meldungscodes))
+und bei einem erfolgreichen Neustart automatisch wieder gelöscht.
 
 ### Meldungscodes
 
-Jeder klassifizierte Fehler und jede abgelehnte Eingabe trägt einen
-Meldungscode, der die Ursache feiner benennt als die Fehlerklasse. Ein Code hat
-die Form `PCF-E4003`: der Buchstabe `E` kennzeichnet einen Fehler, die erste
-Ziffer die Fehlerklasse (1 `transient`, 2 `configuration`, 3 `permission`,
-4 `schema`, 5 `storage`, 6 `replication`, 7 `internal`), die übrigen drei
-Ziffern die Ursache. Die Endung `000` ist der Rückfall einer Klasse: ein Fehler,
-dem keine einzelne Ursache zugeordnet ist, trägt den Rückfall seiner Klasse und
-nie keinen Code. Die erste Ziffer `8` kennzeichnet die Ablehnung einer
-Eingabe, etwa eines Antrags; sie trägt keine Fehlerklasse.
+Jeder klassifizierte Fehler, jede abgelehnte Eingabe und jede Warnung mit einer
+Maßnahme für den Betreiber trägt einen Meldungscode, der die Ursache feiner
+benennt als die Fehlerklasse. Ein Code hat die Form `PCF-E4003`: der Buchstabe
+`E` kennzeichnet einen Fehler, die erste Ziffer die Fehlerklasse (1 `transient`,
+2 `configuration`, 3 `permission`, 4 `schema`, 5 `storage`, 6 `replication`,
+7 `internal`), die übrigen drei Ziffern die Ursache. Die Endung `000` ist der
+Rückfall einer Klasse: ein Fehler, dem keine einzelne Ursache zugeordnet ist,
+trägt den Rückfall seiner Klasse und nie keinen Code. Die erste Ziffer `8`
+kennzeichnet die Ablehnung einer Eingabe, etwa eines Antrags; sie trägt keine
+Fehlerklasse. Eine Warnung trägt den Buchstaben `W` (`PCF-W3002`); ihre erste
+Ziffer ist der Bereich (1 Erfassung und Replikation, 2 Backfill, 3 Retention und
+Speicher, 4 Verwaltung), eine Warnung trägt keine Fehlerklasse. Zeilen des
+Berichts von `diagnose` mit Ausnahme der Zeile „Fehlerzustand“ tragen keinen Code.
 
 Der Code steht an diesen Stellen:
 
 | Stelle | Form |
 |---|---|
+| Log-Zeile einer Warnung | eigenes Attribut `code=PCF-W3002`; der Meldungstext trägt den Code nicht |
+| `cdc.heartbeat.error_code` | Meldungscode des Fehlerzustands neben `error_class`, `NULL` im Normalbetrieb |
+| Zeile „Fehlerzustand“ von `diagnose`, `GET /diagnose` (`error_code`) und RPC `Diagnose` (`error_code`) | `schema [PCF-E4003]` bzw. das Feld `error_code` |
 | Log-Zeile und Zeile beim Prozessende | `Fehlerklasse schema [PCF-E4003]: <Ursache>` |
 | `cdc.backfill_status.error_message` eines fehlgeschlagenen Runs | `schema [PCF-E4004]: <Ursache>` |
 | `cdc.administration_request.error_message` eines abgelehnten Antrags | `abgelehnt [PCF-E8021]: <Klartext>` |
@@ -2447,6 +2479,34 @@ Entfällt eine Ursache, bleibt ihr Code in dieser Tabelle und trägt den Vermerk
 | `PCF-E8034` | Ablehnung | die Spalte trägt eine Routing-Bedingung und lässt sich nicht ausschließen | Routing-Regel zuerst entfernen |
 | `PCF-E8040` | Ablehnung | die Tabelle ist nicht aktiviert oder nicht Mitglied der Publication (Vorbedingung eines Backfills) | Tabelle aktivieren, Backfill erneut beantragen |
 | `PCF-E8041` | Ablehnung | für die Tabelle besteht bereits ein aktiver Backfill-Run | Ende des Runs abwarten |
+
+Warnungen stehen im Log des Feed-Containers mit dem Attribut `code`; eine Warnung
+beendet den Prozess nicht und trägt keine Fehlerklasse:
+
+| Code | Bereich | Bedeutung | Maßnahme |
+|---|---|---|---|
+| `PCF-W1001` | Erfassung und Replikation | das Wecksignal über NATS konnte nicht veröffentlicht werden (bei der Erfassung oder bei einem Backfill-Run); die Änderungen sind erfasst und über SQL und HTTP lesbar | NATS-Server und `CDC_NATS_URL` prüfen |
+| `PCF-W1002` | Erfassung und Replikation | die Veröffentlichung einer Change im NATS-Vollinhalts-Stream ist fehlgeschlagen; die Change ist erfasst und über SQL lesbar, sie fehlt nur auf diesem Zustellweg | NATS-Server und Verbindung prüfen, die fehlende Change über `GET /changes` oder SQL lesen |
+| `PCF-W1003` | Erfassung und Replikation | eine Change wurde im NATS-Vollinhalts-Stream übersprungen, weil Schema- oder Tabellenname leer ist oder ein für NATS-Subjekte reserviertes Zeichen (`.`, `*`, `>`) oder Leerraum enthält | Namen von Schema und Tabelle prüfen, die Change über SQL oder HTTP lesen |
+| `PCF-W1004` | Erfassung und Replikation | der Zielname einer Change trägt ein reserviertes Zeichen oder Leerraum; die Change fehlt im Ziel-Subjekt, das Tabellen-Subjekt ist unberührt | Zielname der Routing-Regel korrigieren (siehe [Routing-Regel konfigurieren](#routing-regel-konfigurieren)) |
+| `PCF-W1005` | Erfassung und Replikation | eine Change ist nicht als JSON kodierbar und wird nicht zugestellt: im NATS-Vollinhalts-Stream übersprungen, im Server-Sent-Events-Stream endet die Verbindung des Clients | Log sichern, die Change über SQL lesen, den Support kontaktieren (siehe [Support und Kontakt](#support-und-kontakt)) |
+| `PCF-W1006` | Erfassung und Replikation | ein Zyklus des Replication-Streams ist an einer vorübergehenden Störung gescheitert und wird mit Backoff wiederholt | Erreichbarkeit der Quelle prüfen; dauert die Störung länger als das Wiederholungsfenster, endet der Prozess mit `PCF-E1002` (siehe [Neustart nach einem Fehler](#neustart-nach-einem-fehler)) |
+| `PCF-W2001` | Backfill | das Aufräumen eines Backfill-Runs (Snapshot schließen, Schreibtransaktion zurückrollen) ist fehlgeschlagen; der Run behält sein Ergebnis | Erreichbarkeit der Quelle prüfen |
+| `PCF-W2002` | Backfill | die wartenden Backfill-Runs konnten nicht gelesen werden; der Durchgang endet und wird wiederholt | Erreichbarkeit und Rechte der CDC-Datenbank prüfen |
+| `PCF-W2003` | Backfill | ein Backfill-Run ist nach seinem Versuch weiter `queued`; der Durchgang endet und wird wiederholt | Zeile des Runs in `cdc.backfill_status` prüfen, Erreichbarkeit der CDC-Datenbank prüfen |
+| `PCF-W2004` | Backfill | der Zustand eines Backfill-Runs konnte nicht festgehalten werden; der Durchgang endet und wird wiederholt | Erreichbarkeit und Rechte der CDC-Datenbank prüfen, `cdc.backfill_status` lesen |
+| `PCF-W2005` | Backfill | ein Backfill-Run ist fehlgeschlagen; `error_message` in `cdc.backfill_status` nennt Klasse und Meldungscode der Ursache | Fehlertext lesen, die Ursache nach ihrem Code beheben, Backfill neu beantragen |
+| `PCF-W2006` | Backfill | ein Backfill-Run ist unterbrochen: beim Prozessstart waren Runs im Zustand `running`, oder ein Run endete ohne Abschluss | Backfill neu beantragen |
+| `PCF-W3001` | Retention und Speicher | die periodische Messung des WAL-Rückstands ist fehlgeschlagen; die Erfassung läuft weiter, die nächste Messung folgt im Takt | Erreichbarkeit und Rechte der Quelle prüfen |
+| `PCF-W3002` | Retention und Speicher | der WAL-Rückstand des Capture-Slots liegt über der Warnschwelle; die Erfassung läuft kontrolliert weiter | Rückstand und Ursache prüfen (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)) |
+| `PCF-W3003` | Retention und Speicher | die periodische Bereinigung nach der Retention ist fehlgeschlagen; die Erfassung ist nicht betroffen, der nächste Takt versucht es erneut | Erreichbarkeit und Rechte der CDC-Datenbank prüfen |
+| `PCF-W4001` | Verwaltung | das Wecksignal der Antrags-Queue ist gestört; die Anträge werden weiter im Takt gelesen | Erreichbarkeit der CDC-Datenbank und `CDC_ADMIN_DSN` prüfen |
+| `PCF-W4002` | Verwaltung | die offenen Anträge konnten nicht gelesen werden; der nächste Durchlauf versucht es erneut | Erreichbarkeit der CDC-Datenbank und Rechte der Rolle `cdc_admin` prüfen |
+| `PCF-W4003` | Verwaltung | die Frist des Vorlaufs beim Prozessstart ist abgelaufen; der Antrag bleibt `pending` | die Sperre auf der Tabelle lösen; der Antrag wird im nächsten Durchlauf erneut verarbeitet |
+| `PCF-W4004` | Verwaltung | ein Antrag ist gescheitert und `failed` vermerkt; `error_message` in `cdc.administration_request` nennt Klasse und Meldungscode der Ursache | Fehlertext lesen, die Ursache nach ihrem Code beheben, den Antrag neu stellen |
+| `PCF-W4005` | Verwaltung | ein Antrag ist abgelehnt worden; `error_message` nennt den Code der Ablehnung | den Antrag nach dem Code der Ablehnung korrigieren und neu stellen |
+| `PCF-W4006` | Verwaltung | der Ausgang eines Antrags (`applied` oder `failed`) konnte nicht vermerkt werden; der Antrag bleibt `pending` und wird im nächsten Durchlauf erneut verarbeitet | Erreichbarkeit und Rechte der Rolle `cdc_admin` prüfen |
+| `PCF-W4007` | Verwaltung | eine Zeile der Antrags-Queue trägt keine Kennung und wird übersprungen; sie bleibt `pending` | Zeile in `cdc.administration_request` prüfen |
 
 ### Container startet nicht
 
@@ -2833,3 +2893,4 @@ MIT — siehe `LICENSE`.
 | 1.88 | 2026-10-02 | Die Erzeugnisse von `make schema-rollout` (Pflicht-Report, Rollback-Artefakt, Precheck-Report) liegen in `SCHEMA_ARTEFACT_DIR` (Standard `.tmp/schema-rollout`); die Aufbewahrung je Rollout liegt beim Betreiber; der Lauf mountet den Arbeitsbaum nicht |
 | 1.89 | 2026-10-03 | Die Ausgabe von `diagnose`, die Meldungen von `make schema-rollout` und der Fehlertext der Konfigurationsdatei tragen keine Anforderungs- oder Entscheidungskennung mehr; die Beispiele zeigen den tatsächlichen Ausgabetext |
 | 1.90 | 2026-10-03 | Neuer Abschnitt „Meldungscodes“ (Fehlerbehebung) mit dem Katalog aller Codes: Fehlerzeilen tragen jetzt `Fehlerklasse <Klasse> [<Code>]: …`, `error_message` von Backfill-Runs `<Klasse> [<Code>]: …` und abgelehnte Anträge `abgelehnt [<Code>]: …`, die Meldungen von `make schema-rollout` `FEHLER [<Code>]: …`; der Code ist stabil, der Text nicht; ein `grep` auf den bisherigen Wortlaut `Fehlerklasse schema:` greift nicht mehr, ein `grep` auf die Klasse oder den Code schon |
+| 1.91 | 2026-10-03 | Warnungen im Log tragen das Attribut `code` mit einem Meldungscode wie `PCF-W3002` (Katalog der Warnungen im Abschnitt „Meldungscodes“); `cdc.process_heartbeat` und `cdc.heartbeat` tragen die neue Spalte `error_code` mit dem Meldungscode des Fehlerzustands (in der Sicht hinter `age_seconds`, `NULL` im Normalbetrieb); die Zeile „Fehlerzustand“ von `diagnose` nennt Klasse und Code (`schema [PCF-E4003]`), `GET /diagnose` und der RPC `Diagnose` tragen das Feld `error_code`; die neue Spalte kommt mit dem Schema-Rollout vor dem Container-Tausch |

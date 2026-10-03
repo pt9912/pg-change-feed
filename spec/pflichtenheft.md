@@ -522,7 +522,7 @@ Vorgesehene Tabellen:
 | `cdc.consumer` | registrierte Consumer |
 | `cdc.consumer_position` | bestätigte Position je Consumer |
 | `cdc.schema_version` | Schema-Versionen (SPEC-004) |
-| `cdc.process_heartbeat` | Betriebs-/Capture-Zustand: periodisches Lebenszeichen des Capture-Prozesses ([`LH-FA-ADM-002`](lastenheft.md), [`LH-QA-OPS-002`](lastenheft.md)) |
+| `cdc.process_heartbeat` | Betriebs-/Capture-Zustand: periodisches Lebenszeichen des Capture-Prozesses ([`LH-FA-ADM-002`](lastenheft.md), [`LH-QA-OPS-002`](lastenheft.md)) und der zuletzt beobachtete Fehlerzustand als Klasse (`error_class`, `text`, nullable) und Meldungscode (`error_code`, `text`, nullable, ein Code der Klasse, `SPEC-008`); beide `NULL` im Normalbetrieb ([`LH-FA-ADM-003`](lastenheft.md)). Die View `cdc.heartbeat` projiziert beide Spalten, `error_code` als letzte Spalte hinter `age_seconds`, und zeigt den Code nur neben einer Klasse |
 | `cdc.backfill_run` | Run-Zustand eines Backfills des Tabellenbestands (`SPEC-029`, [`LH-FA-CAP-009`](lastenheft.md)) |
 
 ### SPEC-002 — `cdc.change`
@@ -714,7 +714,7 @@ interner Fehler (`500`).
 | `GetStatus` ([`LH-FA-CFG-003`](lastenheft.md)) | `GET /tables/status?source=<string>&schema=<string>&table=<string>&publication=<string>` | `reader` oder `admin` | alle vier Query-Parameter Pflicht | `200`: `{"enabled": <bool>, "retained": <bool>}` — beide `false` liest eine nie aktivierte Tabelle; physisch fehlende Tabelle an der Quelle → `404` |
 | `ListTables` ([`LH-FA-CFG-004`](lastenheft.md)) | `GET /tables?source=<string>&publication=<string>` | `reader` oder `admin` | beide Query-Parameter Pflicht | `200`: `{"tables": [{"table_id": "<string>", "source": "<string>", "schema": "<string>", "table": "<string>"}, …], "retained": [...]}` — ohne Aktivierung beide Listen leer |
 | `RunRetention` ([`LH-FA-RET-002`](lastenheft.md)…[`004`](lastenheft.md)) | `POST /retention/run` | `admin` | `{"source": "<string>", "min_age_nanos": <int64>}` — `source` Pflicht, `min_age_nanos` ≥ 0 | `200`: `{"deleted": <int>}` — Anzahl real gelöschter Changes |
-| `Diagnose` ([`LH-FA-SST-003`](lastenheft.md), deckt [`LH-FA-ADM-002`](lastenheft.md)…[`005`](lastenheft.md), [`LH-FA-RET-005`](lastenheft.md), [`LH-FA-RET-006`](lastenheft.md), [`LH-FA-CAP-009`](lastenheft.md)) | `GET /diagnose?source=<string>` | `reader` oder `admin` | Query-Parameter `source` Pflicht, **kein** weiterer Parameter zulässig (`400` sonst, strenger als die neun Bestandsendpunkte oben, dieselbe Begründung wie `GET /changes` in `SPEC-022`) | `200`: `{"heartbeat_age_seconds": <float64 \| null>, "error_class": "<string> \| null", "capture_lag": <float64>, "consumer_lags": [{"consumer_id": "<string>", "lag": <float64 \| null>}, …], "retention_blocker": {"consumer_id": "<string>", "name": "<string>", "acknowledged_position": <int64>, "backlog": <int64 \| null>} \| null, "storage_bytes": <float64>, "backfill": [{"schema": "<string>", "table": "<string>", "status": "<string>", "rows_copied": <int64>, "estimated_rows": <int64 \| null>, "warn_estimated_size": <bool>, "warn_duration": <bool>, "error_message": "<string>"}, …]}` — `heartbeat_age_seconds == null` bedeutet „kein Lebenszeichen"; in diesem Fall trägt `error_class` ebenfalls `null`; `retention_blocker == null` bedeutet „kein Blocker"; `consumer_lags`/`backfill` sind leere, gesetzte Listen ohne Treffer, nie `null`; ein Lesefehler an einer der Diagnose-Views → `500` |
+| `Diagnose` ([`LH-FA-SST-003`](lastenheft.md), deckt [`LH-FA-ADM-002`](lastenheft.md)…[`005`](lastenheft.md), [`LH-FA-RET-005`](lastenheft.md), [`LH-FA-RET-006`](lastenheft.md), [`LH-FA-CAP-009`](lastenheft.md)) | `GET /diagnose?source=<string>` | `reader` oder `admin` | Query-Parameter `source` Pflicht, **kein** weiterer Parameter zulässig (`400` sonst, strenger als die neun Bestandsendpunkte oben, dieselbe Begründung wie `GET /changes` in `SPEC-022`) | `200`: `{"heartbeat_age_seconds": <float64 \| null>, "error_class": "<string> \| null", "error_code": "<string> \| null", "capture_lag": <float64>, "consumer_lags": [{"consumer_id": "<string>", "lag": <float64 \| null>}, …], "retention_blocker": {"consumer_id": "<string>", "name": "<string>", "acknowledged_position": <int64>, "backlog": <int64 \| null>} \| null, "storage_bytes": <float64>, "backfill": [{"schema": "<string>", "table": "<string>", "status": "<string>", "rows_copied": <int64>, "estimated_rows": <int64 \| null>, "warn_estimated_size": <bool>, "warn_duration": <bool>, "error_message": "<string>"}, …]}` — `heartbeat_age_seconds == null` bedeutet „kein Lebenszeichen"; in diesem Fall tragen `error_class` und `error_code` ebenfalls `null`; `error_code` ist der Meldungscode des Fehlerzustands (`SPEC-008`) und wie `error_class` im Normalbetrieb `null`; `retention_blocker == null` bedeutet „kein Blocker"; `consumer_lags`/`backfill` sind leere, gesetzte Listen ohne Treffer, nie `null`; ein Lesefehler an einer der Diagnose-Views → `500` |
 
 ### SPEC-019 — `cdc.administration_request` (Antrags-Datensatz)
 
@@ -1308,7 +1308,11 @@ keine inhaltliche Abweichung.
 
 Hilfsnachrichten von `Diagnose`: `HeartbeatStatus` (`known` (`bool`),
 `age_seconds` (`double`, nur gültig wenn `known`), `error_class` — leer
-bedeutet Normalbetrieb, nur gültig wenn `known`); `ConsumerLag`
+bedeutet Normalbetrieb, nur gültig wenn `known`, `error_code` (Feldnummer 4) —
+der Meldungscode des Fehlerzustands (`SPEC-008`), leer im Normalbetrieb, nur
+gültig wenn `known`; ein Leser ohne das Feld ignoriert es, ein Server ohne das
+Feld lässt es leer, *abgeleitet* aus den Proto3-Regeln, nicht gegen einen alten
+Leser gefahren); `ConsumerLag`
 (`consumer_id`, `known` (`bool`), `lag` (`double`, nur gültig wenn
 `known`)); `RetentionBlocker` (`present` (`bool`), `consumer_id`, `name`,
 `acknowledged_position` (`int64`), `backlog_known` (`bool`), `backlog`
@@ -1468,17 +1472,30 @@ Fehler werden mindestens in die folgenden Klassen klassifiziert
 | `SPEC-008` | `replication` | Replication-Stream/Slot-Störung: **Stream-Ordnungsverletzung** (BEGIN/COMMIT/Change außerhalb der erwarteten Reihenfolge) oder **Transport-/Verbindungsstörung** (Verbindungsaufbau, Start, Keepalive, Quell-Bestätigung) | Stream-Ordnungsverletzung: sichtbarer Fehler, harter Abbruch, keine Fortsetzung im widersprüchlichen Stand; Transport-/Verbindungsstörung: Überwachung über Schwellen (§5, WAL-Rückstand); kontrollierte Fortsetzung |
 | `SPEC-008` | `internal` | unerwarteter interner Fehler | Sichtbarer Fehler; Restart-Strategie nach [`LH-QA-REL-002`](lastenheft.md) |
 
-**Meldungscode.** Jede klassifizierte Fehlerursache und jede Ablehnung einer
-Aufrufer-Eingabe trägt einen Meldungscode der Form `PCF-<S><NNNN>` (ERE
-`PCF-[EWI][0-9]{4}`); `S` ist die Schwere (`E` Fehler, `W` und `I` sind
+**Meldungscode.** Jede klassifizierte Fehlerursache, jede Ablehnung einer
+Aufrufer-Eingabe und jede Warnung mit einer Maßnahme für den Betreiber trägt
+einen Meldungscode der Form `PCF-<S><NNNN>` (ERE
+`PCF-[EWI][0-9]{4}`); `S` ist die Schwere (`E` Fehler, `W` Warnung, `I` ist
 reserviert). Bei Fehlern ist die erste Ziffer die Klasse der Tabelle oben
 (1 `transient`, 2 `configuration`, 3 `permission`, 4 `schema`, 5 `storage`,
 6 `replication`, 7 `internal`); die Ziffer 8 kennzeichnet die Ablehnung einer
 Aufrufer-Eingabe, etwa eines Antrags, und trägt keine Klasse. Die Endung `000`
 ist der Rückfall der Klasse: ein klassifizierter Fehler ohne Einzelursache
 trägt den Rückfall seiner Klasse, nie keinen Code. Die Klasse folgt aus dem
-Code; `cdc.process_heartbeat.error_class` und das Metrik-Label `class` bleiben
-die Klasse. Der Fehlertext (Fehlerwert, Zeile beim Prozessende, Attribut
+Code; trägt die Kette eines Fehlers Codes mehrerer Klassen, gilt die
+Vorrangfolge `transient`, `configuration`, `schema`, `permission`,
+`replication`, `storage`, `internal` und der erste Code der gewählten Klasse in
+der Kette; ein Fehler ohne Code ist `internal` mit dem Rückfall `PCF-E7000`.
+`cdc.process_heartbeat.error_class` und das Metrik-Label `class` bleiben die
+Klasse; `cdc.process_heartbeat.error_code` trägt den Code des Fehlerzustands
+(`NULL` im Normalbetrieb), `GET /diagnose` und der RPC `Diagnose` das Feld
+`error_code` (`SPEC-018`, `SPEC-031`), die Zeile „Fehlerzustand“ der
+CLI-Diagnose nennt Klasse und Code (`schema [<code>]`); die übrigen Zeilen des
+Berichts tragen keinen Code. Bei einer Warnung ist die erste Ziffer der
+Bereich (1 Erfassung und Replikation, 2 Backfill, 3 Retention und Speicher,
+4 Verwaltung, 5 Konfiguration und Start, 9 reserviert); sie trägt keine Klasse
+und steht als eigenes Log-Attribut `code`, der Meldungstext trägt keinen Code.
+Der Fehlertext (Fehlerwert, Zeile beim Prozessende, Attribut
 `error` einer Log-Zeile) beginnt mit dem Kopf
 `Fehlerklasse <klasse> [<code>]: <Ursache>`; der Prozessausgang bleibt unverändert,
 kein Code ändert ihn.
@@ -1630,3 +1647,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-01 | `SPEC-024` (Zusatz-Subjekt): Aussage zur Last der zweiten Veröffentlichung von „nicht gemessen" auf den gemessenen Umfang (Testcontainer, ohne Abonnent, ohne Schwelle) gezogen, ohne Zahl und ohne Last-Zusage |
 | 2026-10-01 | `LH-FA-CFG-008.a`, `SPEC-032`: die Aussagen zu `DELETE` ohne volle Replica-Identität und zur Erreichbarkeit der Nichtanwendbarkeit von „nicht gemessen" auf den gemessenen Stand gezogen (PostgreSQL 17 und 18, E2E-Messung); `SPEC-019`: Adressspalte der Zeilen `Regelname ist ungültig` und `Zielname ist ungültig` der Routing-Tabelle auf die Adressform der Prosa angeglichen |
 | 2026-10-03 | `SPEC-008`: Absatz „Meldungscode“ (Form `PCF-[EWI][0-9]{4}`, Klasse in der ersten Ziffer, Ziffer 8 für Ablehnungen, Rückfall `…000`, Kopf `Fehlerklasse <klasse> [<code>]: …`, Stabilität); der Satz zum Fehlertext-Beginn im Run (`schema: `) nennt Klasse und Code; `SPEC-029` (`error_message` des Runs) und `SPEC-019` (`error_message` des Antrags, Texte der Ablehnungen mit dem Kopf `abgelehnt [<Code>]: `) |
+| 2026-10-03 | `SPEC-008`: Warncodes (Schwere `W`, erste Ziffer der Bereich, Log-Attribut `code`), Vorrangfolge der Klassen bei mehreren Codes in einer Kette und der Code des Fehlerzustands in Heartbeat und Diagnose; Tabelle von `cdc.process_heartbeat` (Spalte `error_code`, View `cdc.heartbeat`); `SPEC-018` (`GET /diagnose`, Feld `error_code`) und `SPEC-031` (`HeartbeatStatus.error_code`, Feldnummer 4) |
