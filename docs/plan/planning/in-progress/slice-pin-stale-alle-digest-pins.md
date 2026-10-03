@@ -183,13 +183,13 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       Dokument eine führt) — gemeldete Träger fremder Dateien werden mit der
       Closure nachgezogen (§3 Suchlauf, [`AGENTS.md`](../../../../AGENTS.md)
       §3.13).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Zu tragen: der Zustand von
       [`BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`](../observations/BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar/observation.md)
       (Träger `ADR-0146` steht bereits in dessen `state.md`) wird mit dem
       ersten grünen Nachtlauf aktualisiert (Ausgang nur nach gelesenem Lauf).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist.
 
 ## 3. Plan (vor Code)
 
@@ -404,8 +404,20 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   ([`BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit`](../observations/BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit/observation.md),
   zwei Evidenz-Dateien am Planungsstand gezählt). Gegenmaßnahme ist die
   Startmessung (§4) und der Hebe-Commit vor dem Sensor (§3). —
-  **Ausgang:** offen bis Closure (zu belegen: `make pin-stale-all` Exit 0 am
-  Stand der Closure und `workflow_dispatch` `success`).
+  **Ausgang:** weiter offen. Am Arbeitsstand ist `make pin-stale-all` Exit 0
+  (15 OK, gemessen im Verifikations-Report §5); der Runner-Lauf ist nicht
+  gelesen. Dazu die Verifier-Feststellung V-1: neun der 15 Referenzen liegen
+  bei Docker Hub, das anonyme Abruflimit (HTTP 429) färbte am Messhost den
+  Sensor einmal auf `9 UNBESTIMMT`, Exit 2, ohne dass ein Pin driftete; ein
+  roter erster Runner-Lauf kann also am Limit liegen, nicht an Drift. Der
+  Re-Evaluierungs-Trigger „vier rote Nachtläufe“ von
+  [`ADR-0146`](../../adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md)
+  zählt Läufe, nicht Ursachen — ein 429-Rot ist beim Zählen auszunehmen und
+  zu benennen. Anker:
+  [`harness/sensors/pin-stale-all.md`](../../../../harness/sensors/pin-stale-all.md)
+  Grenze 5 (429 ist `UNBESTIMMT`) und
+  [`BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit`](../observations/BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit/observation.md);
+  der Hauptlauf liest den ersten Lauf und trägt Ursache und Ausgang nach.
 - **Die Muster-Form fängt eine Referenz nicht oder fängt zu viel**: ein Pin, den
   das Muster nicht trifft (Digest in einer zur Laufzeit zusammengesetzten
   Variablen), wird nicht gesehen (akzeptiertes Negativ der ADR); eine
@@ -413,34 +425,55 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   (Fixture, Beispiel in einem Skript-Kommentar), wird als Pin gelesen und endet
   für immer als `DRIFT` oder `UNBESTIMMT`. Der eigene Tabellentest und der
   Sensor-Vertrag tragen deshalb keine vollständige Referenz als Literal (§2
-  Liefer-Punkt 1). — **Ausgang:** offen bis Closure (zu belegen: die
-  Mengen-Messung aus §3 nennt jede Referenz als echten Pin).
+  Liefer-Punkt 1). — **Ausgang:** entfallen am Stand: die Mengen-Messung
+  (15 Referenzen, 20 Dateien) nennt jede Referenz als echten Pin, und die
+  Gegenprobe des Verifiers fand keine Referenz der Form `<image>@sha256:`
+  außerhalb des Musters (einzige Digest-Quelle außerhalb: `DCHECK_DIGEST`,
+  eigene Achse P7). Das akzeptierte Negativ der ADR (zur Laufzeit
+  zusammengesetzte Digests) bleibt als Grenze 3 im Sensor-Vertrag.
 - **Die Wiederverwendung ändert das Verhalten von `pin-stale.sh`** (eine
   Zeichenfolge der Meldung, ein Exit-Code), und `make pin-stale-dcheck` oder der
   Workflow-Parser liest sie anders: `tools/harness/pin-stale-dcheck.sh` ruft
-  `pin-stale.sh`. — **Ausgang:** offen bis Closure (zu belegen: gedruckte Zeilen
-  vor und nach dem Refactor gleich, §7).
+  `pin-stale.sh`. — **Ausgang:** entfallen: Ausgabe und Exit je Fall
+  byte-gleich (Implementer: fünf Fehlerpfade; Verifier: neun Stub-Fälle, alle
+  `SAME`; reale Läufe der sechs Ziele Exit 0). Ein Vorher/Nachher an der echten
+  Registry fuhr niemand — die Gleichheit trägt der Stub-Vergleich.
 - **Mutationsbeleg zu schmal**: drei Mutationen an drei Stellen am Tabellentest
   belegen nicht, dass alle Zweige tragen; die Verallgemeinerung steht als
   *hergeleitet*
-  ([`AGENTS.md`](../../../../AGENTS.md) §3.12). — **Ausgang:** offen bis Closure
-  (der Beleg nennt Stellen, Instanz und Farbe).
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.12). — **Ausgang:** entfallen: der
+  Beleg nennt Stellen, Instanz und Farbe; sechs Mutationen an sechs Stellen
+  (Implementer drei plus Zeitlimit, Verifier alle fünf nachgefahren plus
+  Deduplizierung und Exit bei `DRIFT`), alle rot. Der Rest bleibt *hergeleitet*
+  (`.harness/`-Ausschluss einzeln, Lesefehler von `git grep`, `UNBESTIMMT` ohne
+  `DRIFT`); die Instanz ist ein Stub-`docker`.
 - **Workflow-Änderung ist lokal unbeweisbar** ([`AGENTS.md`](../../../../AGENTS.md)
   §3.10): der zehnte Schritt, der Schritt-Name und die Make-Ziel-Namen müssen auf
   dem Runner stimmen; ein lokal grünes `make pin-stale-all` zeigt das nicht. —
-  **Ausgang:** offen bis der `workflow_dispatch`-Lauf gelesen ist; Träger bei
-  „weiter offen“:
+  **Ausgang:** weiter offen — der Push und der `workflow_dispatch`-Lauf von
+  `upstream-drift.yml` (zehn Schritte, `success`) folgen nach dieser Closure im
+  Hauptlauf (Nachtrag in §7); Liefer-Punkt 3 der DoD bleibt bis dahin offen.
+  Träger:
   [`BEO-PGC/github-actions-unverifizierbar-lokal`](../observations/BEO-PGC/github-actions-unverifizierbar-lokal/observation.md).
 - **Laufzeit des Sensors**: je Referenz ein Registry-Aufruf; der Job hat
   `timeout-minutes: 15` ([`upstream-drift.yml`](../../../../.github/workflows/upstream-drift.yml)),
   die übrigen neun Schritte laufen davor. Die Laufzeit des Sensors ist nicht
   gemessen; ein Netzhänger je Referenz ohne Zeitlimit des Aufrufs wäre ein
   Dauerhänger bis zum Job-Limit. — **Ausgang:** offen bis Closure (zu belegen: die
-  gemessene Laufzeit des realen Laufs, gedruckt in §7).
+  gemessene Laufzeit des realen Laufs, gedruckt in §7). —
+  **Ausgang:** entfallen: gemessen `real 0m28,845s` (Implementer) und
+  `real 0m34,461s` (Verifier) bei 15 Referenzen, `real 0m17,161s` bis
+  `0m17,491s` bei 9 Referenzen mit 429; das Zeitlimit je Aufruf
+  (`PIN_COMPARE_TIMEOUT`, Tabellenfall) ist belegt. Die Obergrenze 15 × 60 s
+  liegt nicht unter dem Job-Limit (Vertrag Grenze 6, *abgeleitet*) — benannt,
+  nicht behoben.
 - **Plattformabhängigkeit des Vergleichs**: der Index-Digest ist plattformunabhängig
   (Festlegung 2), ein Einzelplattform-Pin wird `DRIFT` — das ist gewollt, aber ein
   Pin, den eine Kopie bewusst als Einzelplattform trägt, wäre ein Dauer-Rot ohne
-  Hebe-Weg. — **Ausgang:** offen bis Closure.
+  Hebe-Weg. — **Ausgang:** entfallen am Stand: der PostgreSQL-17-Pin
+  (`.github/workflows/e2e.yml`) ist ein Index-Digest, alle 15 Referenzen `OK`
+  (Verifikations-Report §5); tritt ein bewusster Einzelplattform-Pin später auf,
+  ist das eine Entscheidung des Eigentümers, nicht dieses Slice.
 
 ## 7. Closure-Notiz
 
@@ -464,15 +497,69 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-- **Was hat funktioniert:** — (bei Closure)
-- **Was ging anders als geplant:** — (bei Closure)
-- **Steering-Loop-Eintrag:** — (bei Closure; Lerneintrag Pflicht, siehe §5)
-- **Beobachtungs-Register (`../observations/`):** — (bei Closure; Zustand von
-  [`BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`](../observations/BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar/observation.md)
-  nach dem ersten gelesenen grünen Nachtlauf)
-- **Folge-Slices:** — (bei Closure; keiner geplant)
-- **Risiken aus §6:** — (bei Closure: je Risiko genau ein Ausgang)
-- **Drei Paarungen:** — (bei Closure: Anker · Folge-Slice · Register, Ergebnis)
+Belege (Mengen-Messung, Refactor-Vergleich, Mutationsbeleg, Zeilen des realen
+Laufs, Laufzeit) stehen in §3 „Implementer-Beleg“ und in der Fixrunde; die
+unabhängige Nachmessung steht im
+[Verifikations-Report](../../../reviews/verifikation-slice-pin-stale-alle-digest-pins.md)
+(bestanden mit einer Bedingung: dem Runner-Lauf, DoD Liefer-Punkt 3).
+
+- **Was hat funktioniert:** Die Wiederverwendung statt Duplikat
+  (`lib-pin-compare.sh`) ließ `pin-stale.sh` byte-gleich in Ausgabe und Exit;
+  der Stub-`docker` machte den Tabellentest netzlos und die Mutationsläufe an
+  Kopien reproduzierbar (der Verifier fuhr sechs Mutationen, alle rot). Der
+  Review fand das fehlende Zeitlimit als MEDIUM, bevor es ein Lauf tat.
+- **Was ging anders als geplant:** Die Make-Ziele liegen im `Makefile`, nicht in
+  einem `*.mk`; `PIN_COMPARE_TIMEOUT` kam als Antwort auf das Laufzeit-Risiko
+  hinzu; das Abruflimit der Registry (429) färbte am Messhost einen Lauf auf
+  `9 UNBESTIMMT`, ein Fall, den der Plan als Risiko nicht trug (Vertrag
+  Grenze 5, §6 erstes Risiko). Der Runner-Lauf steht aus.
+- **Steering-Loop-Eintrag (neuer Sensor, Spec-Lücke benannt):** (1) Neuer Sensor
+  P10 `make pin-stale-all`: das Pin-Inventar ist eine quantifizierte Regel („jede
+  Digest-Referenz des Baums“), keine Liste; ein neuer Pin braucht keinen Eintrag
+  mehr, um gelesen zu werden. liegt in: `harness/sensors/pin-stale-all.md §Vertrag`. (2) Benannte Grenze, nicht Regel: ein Nachtlauf-Sensor, der viele
+  Aufrufe an ein anonymes Abruflimit richtet, kann ohne Drift rot werden, und
+  seine Ausgabe nennt die Ursache nicht (`Registry nicht erreichbar`, kein
+  Statuscode). Ein Zähler „rote Läufe in Folge“ muss deshalb Ursachen lesen, nicht
+  nur Farben; das trägt der Vertrag (Grenze 5) und §6, kein Sensor.
+- **Validator:** entfällt: der Slice liefert ein advisory Betreiber- und
+  Wartungswerkzeug ohne End-Nutzer-Wert (kein Produktverhalten, kein
+  SDK-/Image-Pin berührt).
+- **Release-Folge:** keine.
+- **Beobachtungs-Register (`../observations/`):**
+  [`BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`](../observations/BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar/observation.md):
+  Zustand bleibt **weiter offen**, Träger Sensor gebaut; er wird erst nach dem
+  gelesenen grünen Nachtlauf fortgeschrieben (Nachtrag im Hauptlauf).
+  [`BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit`](../observations/BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit/observation.md):
+  nicht gezählt — V-1 (429-Rot ohne Drift) zählt erst nach dem Runner-Lauf und
+  nur, wenn er eintritt. [`BEO-PGC/gate-prueft-existenz-nicht-passung`](../observations/BEO-PGC/gate-prueft-existenz-nicht-passung/observation.md):
+  **kein** Querbezug, kein Zähler — die Klasse ist die Zuordnung einer
+  Kennung zur Ursache der Stelle (Sinn einer vorhandenen Kennung); P10 prüft
+  die Aktualität eines Digests gegen die Registry, und die Aussage „Form, nicht
+  Sinn“ steht bereits als Grenze 1 im Vertrag. Ein Zähler aus einer
+  Verwandtschaft des Wortlauts verwässerte die Zählung (der Zähler folgt aus
+  `evidence/`-Dateien, und es gibt keine passende). V-2 (Ausgabe unterscheidet
+  429 nicht von „nicht erreichbar“, LOW): **keine** neue Beobachtung — Vertrag
+  Grenze 5 trägt es bereits; ein Eintrag wäre Doppelung, und eine
+  Beobachtung braucht ein reales Vorkommnis auf dem Runner. Tritt ein
+  429-Rot im Nachtlauf auf und kostet das Lesen der Ursache Zeit, legt der
+  Hauptlauf dann ein Register-Verzeichnis mit diesem Lauf als Evidenz an; kein
+  Folge-Slice. V-3 (INFO, Stub-Instanz) steht als *hergeleitet* im Beleg.
+- **Folge-Slices:** keiner.
+- **Risiken aus §6:** je ein Ausgang, an den Zeilen von §6 ablesbar: entfallen —
+  Muster zu eng/zu weit, Verhaltensänderung `pin-stale.sh`, Mutationsbeleg zu
+  schmal, Laufzeit, Einzelplattform-Pin; weiter offen — erster Lauf rot (mit
+  V-1, Anker: Vertrag Grenze 5 und die Alarmmüdigkeits-Beobachtung), Workflow
+  lokal unbeweisbar (Anker: `BEO-PGC/github-actions-unverifizierbar-lokal`).
+- **Drei Paarungen:** Anker — `liegt in: harness/sensors/pin-stale-all.md` ist
+  eine existierende Datei mit §Vertrag und §Grenze; Folge-Slice — keiner
+  geplant, nichts offen ohne Adresse (die beiden offenen Risiken tragen
+  Register-Anker); Register — alle genannten Kennungen existieren als
+  Verzeichnis mit `evidence/` (gemessen: `ls` am Endstand).
+- **Nachtrag (offen):** Push, `workflow_dispatch`-Lauf von `upstream-drift.yml`
+  (zehn Schritte, Gesamtlauf `success`, Laufzeit des Schritts P10, Ursache bei
+  einem Rot: Drift oder 429), danach der Zustand des Registers und der
+  Haken Liefer-Punkt 3 trägt der Hauptlauf nach
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.10).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
