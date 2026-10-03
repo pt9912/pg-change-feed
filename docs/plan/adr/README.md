@@ -158,3 +158,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0143 | Gate handbuch-public-doc-check, Nutzerdoku ohne Kennung (schärft ADR-0087) | Accepted | 2026-10-02 | [0143-handbuch-public-doc-check-gate-kennungsfreie-nutzerdoku.md](0143-handbuch-public-doc-check-gate-kennungsfreie-nutzerdoku.md) |
 | ADR-0144 | Meldungscodes statt interner Kennungen in Ausgaben (schärft ADR-0023/0049) | Accepted | 2026-10-02 | [0144-meldungscodes-nutzerseitige-kennungen.md](0144-meldungscodes-nutzerseitige-kennungen.md) |
 | ADR-0145 | SDK-Fehlertypen: Meldungscode als Eigenschaft (schärft ADR-0144) | Accepted | 2026-10-03 | [0145-sdk-meldungscodes-eigenschaft-der-fehlertypen.md](0145-sdk-meldungscodes-eigenschaft-der-fehlertypen.md) |
+| ADR-0146 | Pin-Inventar als Regel über alle Digest-Pins (schärft ADR-0051 Entscheidung 7) | Accepted | 2026-10-03 | [0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md](0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md) |
