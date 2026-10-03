@@ -154,7 +154,8 @@ Werkzeug ausgenommen; gemessen wird mit `make suchlauf-nachmessen PLAN=<Plan-Dat
       `docs/plan/adr/0123-…` trägt genau **eine** neue §Geschichte-Zeile (Datum, Ereignis,
       Commit-Kennung); die Commit-Message nennt `ADR-0073`; `0051` und `0143` tragen keine
       neue Zeile (keine Fundstelle geändert).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      Report: `docs/reviews/review-slice-maintainer-ordner-releasing-verschieben.md` (0 HIGH, 0 MEDIUM, keine Fixrunde).
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Doku-Update: `harness/README.md` (Gate-Zeile `make handbuch-public-doc-check`; Rang 6 nach
