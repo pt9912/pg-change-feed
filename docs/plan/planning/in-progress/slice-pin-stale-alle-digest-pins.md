@@ -103,7 +103,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **Sensor (Liefer-Punkt 1).** Ein Skript unter `tools/harness/`
+- [x] **Sensor (Liefer-Punkt 1).** Ein Skript unter `tools/harness/`
       (Arbeitsname `pin-stale-all.sh`) zählt die Referenzen auf
       ([`ADR-0146`](../../adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md)
       Festlegung 1: `git grep` mit dem Muster der ADR, Wertemenge dedupliziert,
@@ -123,7 +123,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       **vollständige** Referenz `<image>@sha256:<64 Hex>` als Literal (das
       Muster fände sie und meldete sie für immer als `DRIFT`); Fixture-Digests
       entstehen zur Laufzeit.
-- [ ] **Tabellentest und Mutationsbeleg (Liefer-Punkt 2).** Ein Tabellentest
+- [x] **Tabellentest und Mutationsbeleg (Liefer-Punkt 2).** Ein Tabellentest
       (Arbeitsname `tools/harness/run-pin-stale-all-tests.sh`,
       `make test-pin-stale-all`, netzlos über ein Stub-`docker` im
       Wegwerf-Repo im Temp-Verzeichnis) deckt je Zweig der Festlegungen 1 bis 4
@@ -167,14 +167,14 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0
       (`make docs-check` liest `harness/README.md`, den Sensor-Vertrag und diese
       Pläne: Kennungen verlinkt).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
+- [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (neue Zeile, Zeile zu `upstream-drift.yml` auf den neuen Umfang),
       [`docs/maintainer/releasing.md`](../../../maintainer/releasing.md) (Satz zum
       Umfang von `upstream-drift.yml`, samt Versionshistorie-Zeile, falls das
@@ -261,6 +261,61 @@ diff 5 -n -E 'pin-stale\.sh' -- Makefile harness/mk
   Symbolnamen und Zählwörter; ein Zeilen-Lokator oder eine Zählung in Prosa
   („neun“ in anderer Wortform) trifft es nicht — diese Hälfte bleibt Lese-Handlung
   des Reviewers ([`AGENTS.md`](../../../../AGENTS.md) §3.13 Grenze).
+
+### Implementer-Beleg (Stand der Lieferung, Parent `3eb60de6`)
+
+- **Plan-Nachzug (Abweichung vom Arbeitsnamen):** `pin-stale-all` und
+  `test-pin-stale-all` liegen im `Makefile` neben `pin-stale-actions` (kein
+  `*.mk`); der Vergleich eines Registry-Aufrufs ist über
+  `PIN_COMPARE_TIMEOUT` (Default 60 s im Sensor, ohne Wert unbegrenzt in
+  `pin-stale.sh`) begrenzt — Antwort auf das Laufzeit-Risiko aus §6. Die
+  Referenz mit Registry-Host samt Port ist eine benannte Grenze im
+  Sensor-Vertrag (das Muster der ADR beginnt mit `[a-z0-9]`, ein `:` vor dem
+  Namen trennt es).
+- **Menge (gemessen, Stand Arbeitsbaum nach Slice 1):** `git grep -ohE '…' -- .
+  ':!docs' ':!.harness' | sort -u | wc -l` ergibt 15 verschiedene Referenzen,
+  `git grep -lE` ergibt 20 Dateien — gleich den Messwerten der ADR am Stand
+  `28a6242a`. Jede der 15 ist ein echter Pin (die Zeilen des realen Laufs nennen
+  Fundort und Image); kein Fixture-Fund, keine Ausnahmeliste.
+- **Refactor-Vergleich (gemessen):** `make image-stale`,
+  `make pin-stale-race|-pgtest|-dmigrate|-acheck|-dcheck` vor und nach dem
+  Refactor an derselben Registry gefahren, Ausgabe je Ziel mit `cmp` byte-gleich
+  und Exit je Ziel 0 (gedruckte Zeile u. a. `OK          PG_TEST_IMAGE
+  (postgres:18-alpine) == sha256:77f58511…`). Die Fehlerpfade (`DRIFT`,
+  `UNBESTIMMT` bei Registry-Ausfall, Wert ohne Digest, Variable fehlt) sind mit
+  einem Stub-`docker` an der Fassung von `3eb60de6` und der neuen Fassung
+  verglichen: Ausgabe und Exit je Fall gleich (1, 0, 2, 2, 2).
+- **Realer Lauf (gemessen):** `make pin-stale-all` endet mit Exit 0, Laufzeit
+  `real 0m28,845s`, gedruckte Schlusszeile `pin-stale-all: 15 Referenzen — 15 OK,
+  0 DRIFT, 0 UNBESTIMMT`; darunter die PostgreSQL-17-Referenz am Fundort
+  `.github/workflows/e2e.yml:80` mit Index-Digest.
+- **Tabellentest:** `make test-pin-stale-all` endet mit Exit 0, gedruckte Zeile
+  `run-pin-stale-all-tests: alle 34 Prüfungen bestanden`.
+- **Mutationsbeleg (Instanz: der Tabellentest, Prüfling per `PROG=<Kopie im
+  Scratchpad>`, je **eine** Mutation, Eingabeseite des Sensors):**
+
+| Zusage | Stelle der Mutation | Instanz | gesehene Farbe |
+|---|---|---|---|
+| `docs/` ist ausgenommen (Festlegung 1) | Pathspec `':!docs'` aus dem `git grep`-Aufruf entfernt | `run-pin-stale-all-tests.sh` | rot, Exit 1: vier Prüfungen (Fall „docs/ und .harness/ ausgenommen“ Exit 2 statt 0, Referenz aus `docs/` gemeldet, Zusammenfassung, Meldung „einzige Referenz unter docs/“) |
+| leerer Gegenstand ist Exit 2 (Festlegung 4) | `exit 2` hinter der Meldung „leerer Gegenstand“ auf `exit 0` | `run-pin-stale-all-tests.sh` | rot, Exit 1: zwei Prüfungen (Fälle „keine Referenz im Baum“ und „einzige Referenz liegt unter docs/“ Exit 0 statt 2) |
+| Pin ohne Tag wird gegen `:latest` verglichen (Festlegung 3) | `target="$image:latest"` auf `target="$image"` | `run-pin-stale-all-tests.sh` | rot, Exit 1: vier Prüfungen (Exit 2 statt 0, Meldung ohne `:latest`, Registry-Aufruf mit `:latest` 0 statt 1, Aufruf ohne Tag 1 statt 0) |
+
+  *Hergeleitet, nicht gefahren* ([`AGENTS.md`](../../../../AGENTS.md) §3.12
+  Instanz B): dass die übrigen Zweige (Deduplizierung, `.harness/`-Ausschluss,
+  `DRIFT` neben `UNBESTIMMT`, Einzelplattform-Digest, Timeout) ebenso rot
+  färben; für sie liegt eine Prüfung im Tabellentest, aber keine gesehene Farbe.
+  Der Fall „`.harness/` ausgenommen“ teilt sich die Prüfung mit `docs/`
+  (Mutation 1 entfernt nur `docs`). Das Zeitlimit (`PIN_COMPARE_TIMEOUT`) hat
+  keinen Tabellenfall.
+- **Suchlauf (§3.13) — Gefundenes:** `make suchlauf-nachmessen PLAN=…` am Stand
+  der Lieferung: `suchlauf-nachmessen: 6 Zeilen stimmen`, die `diff`-Zeilen
+  (0, 0, 5) stimmen mit dem Soll. Nachgezogen, weil sie den alten Umfang
+  nannten: `.github/workflows/upstream-drift.yml` (Kopf-Kommentar, Job-`name:`),
+  `harness/README.md` (Zeile zu `upstream-drift.yml`),
+  `docs/maintainer/releasing.md` (§5, Version 1.14). **Nichtgefunden:** kein
+  Treffer in `spec/`, in `docs/user/` und im Quelltext außerhalb der genannten
+  Träger; kein weiterer Aufrufer von `pin-stale.sh` außer den fünf im
+  `Makefile` und `pin-stale-dcheck.sh`.
 
 ## 4. Trigger
 

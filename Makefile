@@ -59,13 +59,14 @@ endif
 image-stale: ## Advisory: FROM-Digests gegen Registry-Digests (Modul 14, braucht Netz)
 	@bash tools/harness/image-stale.sh
 
-# --- Upstream-Pin-Freshness P3-P9 (kein Gate; ADR-0051 Entscheidung 7, braucht Netz) ---
+# --- Upstream-Pin-Freshness P3-P10 (kein Gate; ADR-0051 Entscheidung 7, braucht Netz) ---
 # P1/P2 deckt das bestehende image-stale (Dockerfile-FROM-Zeilen); P3-P6
 # sind Makefile-/mk-Variablen mit demselben Digest-Pin-Muster, ueber das
 # gemeinsame tools/harness/pin-stale.sh; P7 (zwei Achsen), P8 und P9
 # tragen wegen abweichender Pin-Form (Kurs-Baseline-Version, GitHub-
-# Action-SHAs) je ein eigenes Skript.
-.PHONY: pin-stale-race pin-stale-pgtest pin-stale-dmigrate pin-stale-acheck pin-stale-dcheck pin-stale-baseline pin-stale-actions
+# Action-SHAs) je ein eigenes Skript. P10 zaehlt jede Digest-Pin-Referenz
+# des Baums per git grep auf (tools/harness/pin-stale-all.sh).
+.PHONY: pin-stale-race pin-stale-pgtest pin-stale-dmigrate pin-stale-acheck pin-stale-dcheck pin-stale-baseline pin-stale-actions pin-stale-all test-pin-stale-all
 pin-stale-race: ## Advisory P3: TOOLCHAIN_RACE_IMAGE gegen Registry-Digest (ADR-0051, braucht Netz)
 	@bash tools/harness/pin-stale.sh Makefile TOOLCHAIN_RACE_IMAGE
 
@@ -86,6 +87,12 @@ pin-stale-baseline: ## Advisory P8: adoptierte Kurs-Baseline-Version gegen den n
 
 pin-stale-actions: ## Advisory P9: alle uses:-SHA-Pins ueber .github/workflows/*.yml — Tag-Mutation UND Tag-Frische (ADR-0051, braucht Netz)
 	@bash tools/harness/pin-stale-actions.sh
+
+pin-stale-all: ## Advisory P10: jede <image>@sha256:-Referenz des Baums (ohne docs/, .harness/) gegen den Registry-Digest (ADR-0146, braucht Netz; harness/sensors/pin-stale-all.md)
+	@bash tools/harness/pin-stale-all.sh
+
+test-pin-stale-all: ## Tabellentest gegen tools/harness/pin-stale-all.sh (Stub-docker im Wegwerf-Repo, netzlos; harness/sensors/pin-stale-all.md)
+	@bash tools/harness/run-pin-stale-all-tests.sh
 
 .PHONY: image-cve
 # TRIVY_IMAGE traegt aquasec/trivy v0.75.0 (Digest-Pin auf den Index-Digest

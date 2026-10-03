@@ -1,6 +1,6 @@
 # Releasing: Release-Prozess für Maintainer
 
-Version: 1.13
+Version: 1.14
 Stand: 2026-10-03
 
 ## 1. Zweck und Zielgruppe
@@ -368,11 +368,13 @@ anderes Gate.
   `:latest`-Image. Scheitert strukturell, solange kein stabiler Release
   je gelaufen ist (kein `:latest`-Tag existiert dann).
 - **[`upstream-drift.yml`](../../.github/workflows/upstream-drift.yml)**:
-  fragt das vollständige Neun-Achsen-Pin-Inventar ab (Basis-Image-Digests,
+  fragt das Pin-Inventar ab: die neun benannten Achsen (Basis-Image-Digests,
   Test-/Werkzeug-Container-Pins, die adoptierte Kurs-Baseline-Version,
-  alle SHA-gepinnten GitHub-Action-`uses:`-Zeilen) — meldet gefundenen
-  Drift, hebt ihn nicht automatisch an. Eine Pin-Anhebung bleibt ein
-  bewusster, separater Commit.
+  alle SHA-gepinnten GitHub-Action-`uses:`-Zeilen) und als zehnte Achse jede
+  Referenz `<image>@sha256:<digest>` des Baums (`make pin-stale-all`, ohne
+  Liste von Fundorten, [`ADR-0146`](../plan/adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md))
+  — meldet gefundenen Drift, hebt ihn nicht automatisch an. Eine
+  Pin-Anhebung bleibt ein bewusster, separater Commit.
 
 ## 6. Rollback
 
@@ -399,3 +401,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.11 | 2026-09-25 | §4 Kotlin-Abschnitt an den Beleg-Stand gezogen (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): bewiesen ist der Publish nach GitHub Packages mit den Läufen von `sdk-kotlin-v0.2.0` und `sdk-kotlin-v0.2.1`, die Zwei-Job-Struktur mit Cloudsmith ist bis zu ihrem ersten Tag-Lauf unbewiesen; die Schrittnamen stehen wie im Workflow; `CLOUDSMITH_USERNAME` trägt überall den Service-Slug; die Versionen auf Cloudsmith stehen als nach dem ersten Tag-Lauf erwartet |
 | 1.12 | 2026-09-26 | §1 und §4 Kotlin-Abschnitt an den Lauf zu `sdk-kotlin-v0.2.2` gezogen (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): Lauf 36201941235 mit beiden Jobs `success`, anonymer Abruf der Cloudsmith-Artefakte HTTP 200, Service-Slug und Moduldatei angenommen; offen bleiben Paketseiten-Anzeige, Usage-Seite und Doppel-Upload; Hinweis zur Verarbeitungsverzögerung beim Abruf |
 | 1.13 | 2026-10-03 | Dokument von `docs/user/` nach `docs/maintainer/` verschoben (`ADR-0143`, `ADR-0051`): Zielgruppe in §1 auf Maintainer geschärft, Link auf `version.md` zeigt auf `../user/version.md`; Inhalt sonst unverändert |
+| 1.14 | 2026-10-03 | §5 Eintrag `upstream-drift.yml` an den Umfang gezogen: neben den neun benannten Achsen die zehnte `make pin-stale-all` über jede Digest-Pin-Referenz des Baums (`ADR-0146`, `ADR-0051`) |

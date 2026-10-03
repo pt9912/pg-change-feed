@@ -1,8 +1,9 @@
 ---
 name: upstream-drift
 
-# Upstream-Pin-Freshness (ADR-0051 Entscheidung 7): das vollstaendige
-# Neun-Achsen-Pin-Inventar (P1-P9) nachtaeglich abfragen. Advisory: ein
+# Upstream-Pin-Freshness (ADR-0051 Entscheidung 7): die neun benannten
+# Achsen und als zehnte Achse jede Digest-Pin-Referenz des Baums
+# (P10, `make pin-stale-all`) nachtaeglich abfragen. Advisory: ein
 # roter Lauf ist in der Actions-Uebersicht sichtbar, blockiert aber kein
 # Gate und keinen anderen Workflow (`ADR-0051` §Re-Evaluierungs-Trigger 5
 # verlangt fuer ein blockierendes Gate ausdruecklich eine eigene
@@ -39,7 +40,7 @@ permissions: {}
 
 jobs:
   upstream-drift:
-    name: Pin-Freshness P1-P9 gegen den jeweiligen Upstream-Stand
+    name: Pin-Freshness P1 bis P10 gegen den jeweiligen Upstream-Stand
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -79,3 +80,7 @@ jobs:
       - name: P9 — GitHub-Action-Pins (make pin-stale-actions)
         if: always()
         run: make pin-stale-actions
+
+      - name: P10 — jede Digest-Pin-Referenz des Baums (make pin-stale-all)
+        if: always()
+        run: make pin-stale-all

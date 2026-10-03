@@ -51,15 +51,7 @@ else
   fi
 fi
 
-current=$(docker buildx imagetools inspect "$target" --format '{{.Manifest.Digest}}' 2>/dev/null) || {
-  echo "UNBESTIMMT  $var — $target: Registry nicht erreichbar"
-  exit 2
-}
-
-if [ "$current" = "$pinned" ]; then
-  echo "OK          $var ($target) == $pinned"
-  exit 0
-fi
-
-echo "DRIFT       $var ($target): gepinnt $pinned, aktuell $current"
-exit 1
+# shellcheck source=tools/harness/lib-pin-compare.sh
+. "$(dirname "$0")/lib-pin-compare.sh"
+pin_compare_digest "$var" "$target" "$pinned"
+exit $?
