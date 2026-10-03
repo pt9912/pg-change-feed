@@ -75,7 +75,7 @@ Festlegungen 1–5).
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Ziel-Form: Slice — **≤ 3 Liefer-Punkte**.
 
-- [ ] **(A) Tabelle, Kopf und Wege.** Die Tabelle in `internal/domain` (Code, Schwere, Klasse,
+- [x] **(A) Tabelle, Kopf und Wege.** Die Tabelle in `internal/domain` (Code, Schwere, Klasse,
       Status) enthält die sieben Rückfall-Codes `PCF-E1000`…`PCF-E7000` und die Einzelursachen
       der Sentinels (Granularität: unterschiedliche Maßnahme des Betreibers,
       [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md) Festlegung 2) sowie
@@ -89,7 +89,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       Rückfall je Klasse; ein Code mit falscher Klasse färbt rot — in der ADR nur *hergeleitet*,
       der Implementer fährt die Probe und berichtet Stelle und Farbe); Suchlauf §3;
       `make test-integration` und `make test-store` grün nach `make image`.
-- [ ] **(B) Katalog und Gate.** Handbuch-Katalog (kennungsfrei: Code, Klasse bzw. Bereich,
+- [x] **(B) Katalog und Gate.** Handbuch-Katalog (kennungsfrei: Code, Klasse bzw. Bereich,
       Bedeutung, Maßnahme; zurückgezogene Codes mit Vermerk; der Satz „Der Text ist nicht
       Vertrag, der Code ist es“; Änderungshistorie in Betreibersicht); Gate `meldungscodes-check`
       in `GATE_CHECKS` (Mengengleichheit Quelltext/Tabelle/Katalog, nur `bash`/`git`/`grep`),
@@ -100,25 +100,25 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       beiden Mengen, saubere Menge → Exit 0) und `make handbuch-public-doc-check` grün **mit**
       Katalog (Gate-Lauf; in der ADR nur aus den Mustern *hergeleitet*, Festlegung 7);
       `make gates` Exit 0.
-- [ ] **(C) Textzusage und Bestand geprüft.** Der Implementer liest die Handbuch-Abschnitte
+- [x] **(C) Textzusage und Bestand geprüft.** Der Implementer liest die Handbuch-Abschnitte
       Diagnose, Fehlerklassen und Exit-Codes auf eine Zusage des Fehlertexts
       ([`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md) Konsequenzen: im Handbuch
       nicht nachgemessen); findet er eine, geht der Slice mit dieser Frage zurück an den
       Auftraggeber. Er misst außerdem, ob `sdks/` Servertexte der Form `Fehlerklasse …` in Tests
       erwartet (Messung am Parent: 0 Zeilen mit `Fehlerklasse` unter `sdks/`). *Zu belegen
       durch:* Befehle und Ergebnis im Bericht (§3.12: gemessen, nicht übernommen).
-- [ ] `make gates` grün (Exit-Code ungefiltert, [`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün (Exit-Code ungefiltert, [`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`), kein Self-Review; der Reviewer liest den Katalog
       gegen den Code (akzeptiertes Negativ der ADR: das Gate vergleicht Mengen, nicht Sinn).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes
       je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-meldungscodes-registry-fehlerkopf.md`
       endet mit Exit 0.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine Beobachtung
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine Beobachtung
       angefallen“ in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
 
 ## 3. Plan (vor Code)
 
@@ -261,21 +261,33 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 - **Präfix unbestätigt.** `PCF-` ist Empfehlung der ADR, nicht Auftraggeber-Entscheidung;
   nach diesem Slice ist es nur per Folge-ADR änderbar. Gegenmittel: §4-Startbedingung. —
-  **Ausgang:** (bei Closure)
+  **Ausgang:** entfallen — `PCF-` ist vom Auftraggeber am 2026-10-03 bestätigt (*Ursprung:*
+  Hauptlauf, Auftraggeber-Antwort in der Sitzung auf die Frage „Welches Präfix sollen die
+  nutzerseitigen Meldungscodes tragen?“, Option „PCF-E4003 (Recommended)“; **übernommen**, kein
+  committetes Artefakt trägt die Antwort außer dieser Zeile).
 - **Ausgaben-Stabilität für Betreiber.** Der Kopf ändert sich zu
   `Fehlerklasse <klasse> [<code>]: …`; ein `grep` auf `Fehlerklasse schema:` bricht. Ausgang der
   ADR: keine Übergangsregel, Text nicht Vertrag; das Handbuch wird hier gemessen (Liefer-Punkt C). —
-  **Ausgang:** (bei Closure)
+  **Ausgang:** eingetreten und aufgelöst — der Kopf ändert sich wie angekündigt; das Handbuch trägt
+  den Satz „Der Text ist nicht Vertrag, der Code ist es“ und eine Änderungshistorie in
+  Betreibersicht (Verifikation §2 (B), §9). Ob die sichtbare Änderung ein Server-Release braucht:
+  siehe unten, Auftraggeber.
 - **SDKs und Clients reichen Servertexte durch.** Ein SDK zeigt künftig den Code im Text mit;
   SDK-Tests, die den Wortlaut prüfen, wären betroffen. Gemessen am Parent: 0 Zeilen
   `Fehlerklasse` unter `sdks/`; Test-Erwartungen anderer Fehlertexte misst der Implementer. —
-  **Ausgang:** (bei Closure)
+  **Ausgang:** entfallen — 0 Treffer für `Fehlerklasse` unter `sdks` und für `PCF-` unter `sdks`
+  und `examples`, `sdks/` und `examples/` ohne Diff (Verifier **gemessen**, Verifikation §2 (C)).
 - **Granularität der Einzelursachen.** Zu feine Codes erzeugen Pflege ohne Nutzen, zu grobe
   verwischen die Maßnahme; Regel der ADR: Maßnahme des Betreibers. Gegenmittel: Rückfall
   `…000` garantiert, dass kein klassifizierter Fehler ohne Code bleibt; der Reviewer liest die
-  Zuordnung. — **Ausgang:** (bei Closure)
+  Zuordnung. — **Ausgang:** eingetreten, bewusst — für dieselbe Ursache existieren zwei Codes
+  (Run-Text `E5008`, Log und Prozessende `E7010`; analog sechs weitere Paare, Verifikation V-3),
+  das Handbuch erklärt es zeilenweise; Kehrseite von „Klassen unverändert“. Die Auflösung ist die
+  Auftraggeber-Frage zur Klasse der zehn Sentinels (unten).
 - **Handbuch-Gate mit Katalog.** Dass `make handbuch-public-doc-check` mit Codes grün bleibt,
-  ist aus den Mustern hergeleitet, nicht gelaufen. — **Ausgang:** (bei Closure)
+  ist aus den Mustern hergeleitet, nicht gelaufen. — **Ausgang:** entfallen — gelaufen, Exit 0 mit
+  Katalog (`handbuch-public-doc-check: keine interne Kennung in 3 Nutzerdokumenten unter
+  docs/user/`, Implementer und Verifier **gemessen**).
 - **Offene Frage an den Auftraggeber: Klasse der zehn Sentinels, die `classifyRunError` vor diesem
   Slice nicht kannte.** `outbound.ErrSchemaStoreStorage`, `ErrNotify`, `ErrAdministrationStorage`,
   `ErrBackfillStorage`, `ErrDiagnosticsStorage` und die fünf `ErrSnapshotPermission`,
@@ -291,16 +303,23 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   `transient`, jetzt `internal`), also in der Log- und der Prozessende-Zeile; `error_class` und
   Metrik-Label bleiben unverändert (*Ursprung:* Verifikation, gelesen am Diff gegen den Parent, nicht
   gefahren). —
-  **Ausgang:** (bei Closure)
+  **Ausgang:** weiter offen → Auftraggeber-Entscheidung, Anker dieser Abschnitt (Neuzuordnung
+  `E7001` bis `E7010` ändert `error_class` im Heartbeat und das Metrik-Label dieser Fälle; sie
+  wäre eine Betreiber-sichtbare Klassenänderung und braucht eine eigene Freigabe). Bis dahin
+  bleiben die zehn Sentinels `internal` (Verifier **gemessen**: 28 von 28 Sentinels, Klasse
+  vorher und nachher unverändert, Verifikation §5).
 - **Reserve ohne Verwender.** Die Rückfälle `E1000`, `E3000`, `E4000`, `E5000`, `E6000` und
   `messagecode.Fallback` haben im Produktionscode keinen Aufrufer (nur `E2000` und `E7000` werden
   emittiert), und `StatusWithdrawn` kennt weder Verhalten noch Test, solange kein Code
   zurückgezogen ist: bewusste Reserve nach [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md)
   Festlegung 1 (jede Klasse führt ihren Rückfall) und Festlegung 4 (zurückgezogen, nie neu
   belegt); der Test für den ersten zurückgezogenen Code entsteht mit diesem Code. —
-  **Ausgang:** (bei Closure)
+  **Ausgang:** weiter offen, bewusst — der erste Verwender in T3 oder T4 und der erste
+  zurückgezogene Code lösen es; Anker: Review F-4 und F-6.
 - **Kollision mit parallelen Arbeiten am Handbuch.** Rebase auf `main`, nur eigene Abschnitte
-  committen. — **Ausgang:** (bei Closure)
+  committen. — **Ausgang:** entfallen — kein Konflikt im Diff (Verifikation §9).
+- **Server-Release für die sichtbar geänderte Fehlerkopf-Form (§5).** — **Ausgang:** weiter
+  offen → Auftraggeber-Entscheidung; dieser Slice setzt weder Tag noch Version.
 
 ## 7. Closure-Notiz
 
@@ -308,12 +327,83 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register · `grundlagen-traceability.md` §Herkunfts-Anker für
 Steering-Loop-Regeln. Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
 
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** T3 `meldungscodes-warnungen-heartbeat-diagnose`, T4 `meldungscodes-http-grpc-fehlerkoerper`.
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** (1) Die Tabelle als einzige Quelle (66 Codes) mit dem Gate
+  `meldungscodes-check` als Mengenvergleich Quelltext / Tabelle / Katalog: Tabelle und Katalog
+  sind 66 zu 66 gleich (das Gate **gemessen**, `make meldungscodes-check` und `make gates`
+  Exit 0). Die 66 sind 7 Rückfälle + 26 Einzelursachen + 10 Codes der Klasse `internal`
+  (`E7001` bis `E7010`) + 23 Ablehnungen (`E8…`). (2) Der Vergleich gegen den Parent
+  (`git show cb8afd07:…`) in Review und Verifikation hat die Klassifikationsänderung gefunden
+  und danach die Gleichheit belegt: 28 von 28 Sentinels, `error_class` und Metrik-Label vorher
+  und nachher unverändert (Verifier **gemessen**, Verifikation §5); vier Go-Einzelmutationen
+  der Fixrunde (Verifier) färbten rot. (3) Reale Läufe (Verifier **gemessen**): der Start ohne
+  Umgebung druckt `pg-change-feed: Fehlerklasse configuration [PCF-E2001]: …` mit Ausgang 2,
+  `make schema-validate` mit fehlender Quelle `FEHLER [PCF-E2007]: …`; `make test-integration`
+  und `make test-store` grün. (4) Tabellentest des Gates: 73 Prüfungen (Implementer **gemessen**
+  nach der Kleinstkorrektur `f3cc6964`; 71 waren es bei der Verifikation vor ihr, Verifier
+  **gemessen**). `make gates` Exit 0 (Verifier **gemessen**, ungepiped).
+- **Was ging anders als geplant:** (1) **Review und Fixrunde:** der Review fand F-1 (MEDIUM): der
+  Umbau auf code-getriebene Klassen ordnete zehn Sentinels, die `classifyRunError` am Parent auf
+  `internal` fallen ließ, einer anderen Klasse zu. Behoben durch die Fixrunde `c080136a` (die
+  zehn tragen Codes der Klasse `internal`, `E7001` bis `E7010`; `classifyRunError` liest alle
+  Codes der Kette und wendet die Vorrangfolge des Parents an). **Ein Re-Review nach der
+  Fixrunde fand nicht statt** — ehrliche Abweichung vom Ablauf: der Verifier hat den
+  Fixrunden-Diff (16 Dateien) selbst gelesen, vier Go-Einzelmutationen gefahren (rot) und einen
+  weiteren Reviewer-Durchgang nicht für nötig befunden (Verifikation §4); die Review-Reports
+  bleiben unverändert und tragen den Stand vor der Fixrunde. F-2 (LOW, Binärzeichen und
+  Prozess-Substitution im Gate) in `fd155e1c` behoben, F-3 (LOW, Ursprungsangaben im Handbuch)
+  in `3399cdd5`; F-4 bis F-6 (INFO) sind benannt (Reserve ohne Verwender, „Ausgang 1“ der ADR,
+  `withdrawn` ohne Verhalten). Die Kleinstkorrektur `f3cc6964` nach der Verifikation: V-1 (Gate
+  meldet den `sort`-Fehler der Dateiliste), V-5 (zwei Ursprungsangaben der Routing-Tabelle im
+  Handbuch, `E8032` und `E8010`) und V-2 (Plan §6 nennt alle zehn Sentinels). Die Angaben zu
+  `E8032` und `E8010` im Handbuch stehen als **übernommen** aus der Verifikation, nicht neu
+  gefahren. (2) **Abweichung der ADR vom Code:** [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md)
+  sagt „Ausgang 1“; gemessen endet ein Startfehler der Klasse `configuration` mit Ausgang 2
+  (Bestand, `cmd/` ohne Diff, Verifikation §1); Handbuch und Spec sagen „Ausgang stabil“ und sind
+  wahr. Eine ADR-Änderung entfällt ([`AGENTS.md`](../../../../AGENTS.md) §3.5). (3) **Offene
+  Grenze (V-4):** der Spec-Satz „Die Klasse folgt aus dem Code“ ist enger als das Verhalten bei
+  mehreren Codes in einer Kette (Vorrangfolge); ein halber Satz bei der nächsten Berührung von
+  `SPEC-008` (T3). (4) **Pfad-Zitate in `ADR-0144` (V-6):** gemessen mit `git grep -n
+  "slice-meldungscodes" -- docs/plan/adr`: zwei Zeilen, beide auf
+  `done/slice-meldungscodes-kennungsfreie-ausgaben.md` (T1, bereits `done/`); zu T2 steht nur der
+  Name im Fließtext, kein Pfad — **keine Zitat-Korrektur** nach
+  [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) nötig. (5) **CI:**
+  das Gate `meldungscodes-check` ist neu und lief auf dem Runner noch nicht; kein Workflow
+  berührt, [`AGENTS.md`](../../../../AGENTS.md) §3.10 löst keine Pflicht aus; der erste Lauf nach
+  dem Push ist zu beobachten (Erwartung, nicht gemessen).
+- **Steering-Loop-Eintrag:** *Geschärfte Regel:* keine neue Regel im Wortlaut — Kandidat, 1×,
+  unter der Schwelle: **ein Umbau mit der Zusage „Verhalten unverändert“ braucht einen Vergleich
+  gegen den Parent über alle betroffenen Pfade, und der Plan nennt den Vergleichsbefehl.** Die
+  Zusage „Klassen unverändert“ ([`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md)
+  Festlegung 2) war verletzt, ohne dass ein Test, ein Plan-Satz oder die ADR die zehn Fälle
+  nannte; der Fänger war der Parent-Vergleich des Reviewers, nicht ein Sensor. *Neuer Sensor:*
+  keiner — die Fixrunde band die zehn Sentinels und die Vorrangfolge an einen Test
+  (`TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes`, `TestInternalSentinelCodesStayInternal`);
+  ein allgemeiner Parent-Vergleich ist ohne Wissen, welche Pfade betroffen sind, nicht
+  mechanisierbar. *Benannte Spec-Lücke:* V-4 (Vorrangfolge bei mehreren Codes steht in keiner
+  Spec-Aussage) und die Klassenfrage der zehn Sentinels (§6).
+- **Beobachtungs-Register (`../observations/`):** NEU
+  `BEO-PGC/umbau-aendert-still-beobachtbares-verhalten` (1×, offen — unter der Schwelle; Beleg
+  `evidence/slice-meldungscodes-registry-fehlerkopf.md`, Review F-1 und Fix `c080136a`).
+  `BEO-PGC/intern-kennungen-in-ausgelieferten-texten`: Zustandsfeld fortgeschrieben — das Fangnetz
+  für Programm-Ausgaben ist zweistufig (`ausgabe-kennungen-check` prüft Kennungsfreiheit,
+  `meldungscodes-check` gleicht Codes ab); Zähler **1×** unverändert (kein neuer Vorgang der
+  Klasse). Kein Beleg in `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`: F-1 ist eine
+  Verhaltensabweichung eines Umbaus, keine Bindungslücke eines Negativtests; F-2 (LOW, Gate
+  ohne Bindung an Binärzeichen) trifft einen bekannten Träger-Typ (Wächter-Skript mit
+  Tabellentest), vor dem Merge gefunden, Schwere ≤ LOW — nach der Deckel-Regel ohne eigene Datei,
+  hier genannt.
+- **Folge-Slices:** T3 [`meldungscodes-warnungen-heartbeat-diagnose`](../open/slice-meldungscodes-warnungen-heartbeat-diagnose.md)
+  und T4 [`meldungscodes-http-grpc-fehlerkoerper`](../open/slice-meldungscodes-http-grpc-fehlerkoerper.md)
+  (beide in `open/`, untereinander unabhängig; Startbedingung: dieser Slice in `done/`). Kein
+  Release, keine Versionsänderung.
+- **Risiken aus §6:** Präfix: entfallen (vom Auftraggeber am 2026-10-03 bestätigt, **übernommen**);
+  Ausgaben-Stabilität: eingetreten und aufgelöst; SDKs/Clients: entfallen (0 Treffer);
+  Granularität: eingetreten, bewusst (zwei Codes für dieselbe Ursache, Handbuch erklärt es);
+  Handbuch-Gate mit Katalog: entfallen (grün); **Klasse der zehn Sentinels: weiter offen →
+  Auftraggeber-Frage** (Neuzuordnung ändert `error_class` und Metrik-Label dieser Fälle); Reserve
+  ohne Verwender: weiter offen, bewusst; Kollision mit parallelen Handbuch-Arbeiten: entfallen;
+  **Server-Release für die geänderte Fehlerkopf-Form: weiter offen → Auftraggeber**, kein Tag in
+  diesem Slice.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

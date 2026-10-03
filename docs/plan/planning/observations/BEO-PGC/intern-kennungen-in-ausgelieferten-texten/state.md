@@ -34,6 +34,14 @@ Anführungszeichen und Rune-Literal `'"'`, andere Ausgabewege. Die Ausgaben sind
 `docs/plan/planning/done/slice-meldungscodes-kennungsfreie-ausgaben.md` kennungsfrei; die
 Meldungscodes folgen in T2 bis T4. Der Zähler bleibt **1×** (kein neuer Vorgang der Klasse).
 
+**Fangnetz für Programm-Ausgaben, zweistufig (seit T2):** `make meldungscodes-check` (Gate in
+`make gates`) gleicht die Meldungscodes `PCF-<S><NNNN>` im Quelltext, in der Tabelle
+`internal/domain/messagecode/codes.go` und im Handbuch-Katalog ab; er prüft Mengen, nicht Sinn
+(Sensor-Vertrag `harness/sensors/meldungscodes-check.md`). Die erste Stufe
+(`ausgabe-kennungen-check`) hält die Ausgaben kennungsfrei, die zweite lässt nur Codes der
+Tabelle zu. Siehe `docs/plan/planning/done/slice-meldungscodes-registry-fehlerkopf.md`. Der
+Zähler bleibt **1×** (kein neuer Vorgang der Klasse).
+
 **Verwandt, nicht gleich:** `BEO-PGC/slice-chronik-in-code-kommentar` (Chronik in
 Code-Kommentaren, Leser ist der Entwickler im Repo) — hier ist der Leser ein
 Anwender außerhalb des Repos, und der Träger ist ein Paket.
