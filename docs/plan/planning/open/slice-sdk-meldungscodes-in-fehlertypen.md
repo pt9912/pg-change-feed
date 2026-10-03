@@ -67,7 +67,7 @@ Je Sprache dieselbe Eingabetabelle (§3), dieselben Randfälle, derselbe Realser
 - **Versionsänderung, Tag und Release der Packages (0.6.0)** — jede Veröffentlichung ist
   eine Freigabe mit externen Konten (NuGet, PyPI, GitHub Packages, Cloudsmith); der
   Hauptlauf führt den Release als Folgeschritt **nach** der Verifikation aus
-  (`docs/user/releasing.md` §4, SDK-Release je Sprache). Der Slice ändert weder
+  (`docs/maintainer/releasing.md` §4, SDK-Release je Sprache). Der Slice ändert weder
   `PgChangeFeed.Client.csproj` (`<Version>`), `build.gradle.kts` (zwei Stellen) noch
   `pyproject.toml`; er nennt den Release als Folgeschritt und die Release-Hinweise (§6).
 - **Server-Änderungen** — der Server trägt die Codes seit `ADR-0144`; ein gefundener
@@ -383,7 +383,7 @@ Verifikation (nicht Teil des Slice, Hauptlauf):** Release-Notiz je Sprache nennt
 Eigenschaft, ohne Neukompilierungs-Hinweis (`ADR-0145` Festlegung 4); Versionsänderung auf 0.6.0 je Sprache
 (`PgChangeFeed.Client.csproj`, `build.gradle.kts` an zwei Stellen, `pyproject.toml`),
 Tags `sdk-csharp-v0.6.0`/`sdk-python-v0.6.0`/`sdk-kotlin-v0.6.0`, Beobachtung der drei
-Release-Workflows (`AGENTS.md` §3.10, `docs/user/releasing.md` §4).
+Release-Workflows (`AGENTS.md` §3.10, `docs/maintainer/releasing.md` §4).
 
 ## 6. Risiken und offene Punkte
 
