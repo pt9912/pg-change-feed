@@ -57,6 +57,7 @@ _HTTP_ROWS = [
     (403, b'{"error":"x"}', PgChangeFeedForbiddenError, None, "x"),
     (400, b'{"error":"x","code":"NO-PCF","extra":1}', PgChangeFeedBadRequestError, "NO-PCF", "x"),
     (502, b"Bad Gateway", PgChangeFeedUnexpectedStatusError, None, "Bad Gateway"),
+    (400, b'{"error":5,"code":"PCF-E8051"}', PgChangeFeedBadRequestError, "PCF-E8051", '{"error":5,"code":"PCF-E8051"}'),
 ]
 
 

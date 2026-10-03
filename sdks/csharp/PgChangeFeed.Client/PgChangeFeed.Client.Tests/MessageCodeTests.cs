@@ -39,6 +39,7 @@ public class MessageCodeTests
         { 403, """{"error":"x"}""", typeof(PgChangeFeedForbiddenException), null, "x" },
         { 400, """{"error":"x","code":"NO-PCF","extra":1}""", typeof(PgChangeFeedBadRequestException), "NO-PCF", "x" },
         { 502, "Bad Gateway", typeof(PgChangeFeedUnexpectedStatusException), null, "Bad Gateway" },
+        { 400, """{"error":5,"code":"PCF-E8051"}""", typeof(PgChangeFeedBadRequestException), "PCF-E8051", """{"error":5,"code":"PCF-E8051"}""" },
     };
 
     [Theory]

@@ -69,6 +69,7 @@ class MessageCodeTest {
         HttpRow(403, """{"error":"x"}""", PgChangeFeedForbiddenException::class, null, "x"),
         HttpRow(400, """{"error":"x","code":"NO-PCF","extra":1}""", PgChangeFeedBadRequestException::class, "NO-PCF", "x"),
         HttpRow(502, "Bad Gateway", PgChangeFeedUnexpectedStatusException::class, null, "Bad Gateway"),
+        HttpRow(400, """{"error":5,"code":"PCF-E8051"}""", PgChangeFeedBadRequestException::class, "PCF-E8051", """{"error":5,"code":"PCF-E8051"}"""),
     )
 
     @Test

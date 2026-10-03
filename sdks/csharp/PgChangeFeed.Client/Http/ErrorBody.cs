@@ -10,9 +10,10 @@ namespace PgChangeFeed.Client.Http;
 internal static class ErrorBody
 {
     /// <summary>
-    /// Returns the error text (the raw body when it carries no
-    /// <c>error</c> field) and the message code; only a non-empty JSON string
-    /// in <c>code</c> counts as a code. Never throws.
+    /// Returns the error text (the raw body when <c>error</c> is not a JSON
+    /// string) and the message code; only a non-empty JSON string in
+    /// <c>code</c> counts as a code, whatever the type of <c>error</c>.
+    /// Never throws.
     /// </summary>
     internal static (string Message, string? MessageCode) Parse(string body, JsonSerializerOptions options)
     {
@@ -25,7 +26,8 @@ internal static class ErrorBody
             }
 
             var code = error.Code.ValueKind == JsonValueKind.String ? error.Code.GetString() : null;
-            return (error.Error ?? body, string.IsNullOrEmpty(code) ? null : code);
+            var text = error.Error.ValueKind == JsonValueKind.String ? error.Error.GetString() : null;
+            return (text ?? body, string.IsNullOrEmpty(code) ? null : code);
         }
         catch (JsonException)
         {

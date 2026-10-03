@@ -217,7 +217,7 @@ class PgChangeFeedHttpClient internal constructor(
     }
 
     private fun buildException(statusCode: Int, body: String): PgChangeFeedException {
-        val (message, messageCode) = parseErrorBody(gson, body)
+        val (message, messageCode) = parseErrorBody(body)
         return when (statusCode) {
             400 -> PgChangeFeedBadRequestException(statusCode, message, messageCode)
             401 -> PgChangeFeedUnauthorizedException(statusCode, message, messageCode)

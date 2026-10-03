@@ -25,6 +25,10 @@ public sealed class ErrorCodeRealserverTests
 {
     private const string MissingTable = "sdk_error_code_missing_table";
 
+    // The server's code for enabling a table that is missing at the source
+    // (request: schema "public", table "sdk_error_code_missing_table").
+    private const string MissingTableCode = "PCF-E8025";
+
     private static HttpEnableTableRequest HttpEnableRequest() => new(
         PhaseEnvironment.SourceId, "public", MissingTable, "sdk-error-code", "sdk-error-code-v1", 1,
         PhaseEnvironment.HttpPublication);
@@ -61,9 +65,8 @@ public sealed class ErrorCodeRealserverTests
 
         Assert.Equal(404, httpException.StatusCode);
         Assert.Equal(StatusCode.NotFound, grpcException.StatusCode);
-        Assert.NotNull(httpException.MessageCode);
-        Assert.StartsWith("PCF-E", httpException.MessageCode);
-        Assert.Equal(httpException.MessageCode, grpcException.MessageCode);
+        Assert.Equal(MissingTableCode, httpException.MessageCode);
+        Assert.Equal(MissingTableCode, grpcException.MessageCode);
         PhaseEnvironment.Print(
             $"RECEIVED code={httpException.MessageCode} http={httpException.StatusCode} grpc={grpcException.StatusCode}");
     }

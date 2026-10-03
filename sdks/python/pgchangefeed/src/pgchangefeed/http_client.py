@@ -290,8 +290,9 @@ def _build_error(response: httpx.Response) -> PgChangeFeedError:
 
 
 def _extract_error(response: httpx.Response) -> tuple[str, str | None]:
-    """Returns the error text and the message code of an error body; only a
-    non-empty JSON string in ``code`` counts as a code."""
+    """Returns the error text (the raw body when ``error`` is not a JSON string)
+    and the message code; only a non-empty JSON string in ``code`` counts as a
+    code, whatever the type of ``error``."""
     try:
         body = response.json()
     except ValueError:
@@ -300,6 +301,5 @@ def _extract_error(response: httpx.Response) -> tuple[str, str | None]:
         return response.text, None
     code = body.get("code")
     message_code = code if isinstance(code, str) and code != "" else None
-    if "error" in body:
-        return str(body["error"]), message_code
-    return response.text, message_code
+    text = body.get("error")
+    return (text if isinstance(text, str) else response.text), message_code

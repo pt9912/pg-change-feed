@@ -41,6 +41,9 @@ _SOURCE = os.environ["PGCHANGEFEED_SOURCE_ID"]
 _PUBLICATION = os.environ["PGCHANGEFEED_HTTP_PUBLICATION"]
 
 _MISSING_TABLE = "sdk_error_code_missing_table"
+# The server's code for enabling a table that is missing at the source
+# (request: schema "public", table "sdk_error_code_missing_table").
+_MISSING_TABLE_CODE = "PCF-E8025"
 
 
 def _http_client(token: str) -> PgChangeFeedHttpClient:
@@ -97,8 +100,8 @@ def test_realserver_error_carries_the_message_code() -> None:
 
     assert http_status == 404
     assert grpc_status == grpc.StatusCode.NOT_FOUND
-    assert http_code is not None and http_code.startswith("PCF-E")
-    assert grpc_code == http_code
+    assert http_code == _MISSING_TABLE_CODE
+    assert grpc_code == _MISSING_TABLE_CODE
     print(f"RECEIVED code={http_code} http={http_status} grpc={grpc_status.name}", flush=True)
 
 

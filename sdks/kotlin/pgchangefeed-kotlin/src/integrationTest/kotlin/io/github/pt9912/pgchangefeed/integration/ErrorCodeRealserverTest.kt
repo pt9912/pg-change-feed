@@ -14,7 +14,6 @@ import kotlinx.coroutines.runBlocking
 import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -31,6 +30,10 @@ import kotlin.test.assertTrue
  */
 class ErrorCodeRealserverTest {
     private val missingTable = "sdk_error_code_missing_table"
+
+    // The server's code for enabling a table that is missing at the source
+    // (request: schema "public", table "sdk_error_code_missing_table").
+    private val missingTableCode = "PCF-E8025"
 
     private fun httpEnableRequest() = EnableTableRequest(
         PhaseEnvironment.sourceId, "public", missingTable, "sdk-error-code", "sdk-error-code-v1", 1,
@@ -73,9 +76,8 @@ class ErrorCodeRealserverTest {
         assertEquals(404, httpException.statusCode)
         assertEquals(Status.Code.NOT_FOUND, grpcException.statusCode)
         val code = httpException.messageCode
-        assertNotNull(code, "HTTP trägt keinen Meldungscode")
-        assertTrue(code.startsWith("PCF-E"), "unerwartete Form: $code")
-        assertEquals(code, grpcException.messageCode)
+        assertEquals(missingTableCode, code, "HTTP")
+        assertEquals(missingTableCode, grpcException.messageCode, "gRPC")
         println("RECEIVED code=$code http=${httpException.statusCode} grpc=${grpcException.statusCode}")
         System.out.flush()
     }

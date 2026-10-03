@@ -185,9 +185,9 @@ Je Sprache dieselbe Eingabetabelle (§3), dieselben Randfälle, derselbe Realser
 | `sdks/csharp/PgChangeFeed.Client.Integration/` (HTTP- und gRPC-Phase), `sdks/kotlin/pgchangefeed-kotlin/src/integrationTest/`, `sdks/python/pgchangefeed/integration/` (je Fläche eine Testdatei) | update | Realserver-Fall je Sprache und Zugriffsweg (unten); ein Fall am echten Wire, weil ein Test gegen Fake-Transport das Zusammenspiel von Server-Fehlerkörper und SDK-Parser nicht belegt. Der gRPC-Administrations-Client hat bislang keinen Realserver-Test (gemessen: `git grep -n AdministrationClient 81d0fa96 -- sdks/csharp/PgChangeFeed.Client.Integration sdks/python/pgchangefeed/integration sdks/kotlin/pgchangefeed-kotlin/src/integrationTest` druckt 0 Zeilen). |
 | `sdks/csharp/README.md`, `sdks/kotlin/pgchangefeed-kotlin/README.md`, `sdks/python/README.md` | update | Fehlerbehandlung je Sprache, kein „Upgrading“-Eintrag (die Änderung ist additiv, `ADR-0145` Festlegung 4); Englisch, nur `PCF-…`-Beispiele. |
 | `docs/user/benutzerhandbuch.md` (Fehlerantworten, Fehlerform der gRPC-API, Version, Änderungshistorie) | update | Nachzug; Satz bei „Fehlerform“ berichtigt. |
-| *Plan-Nachzug des Implementers (über die Zeilen oben hinaus):* `sdks/csharp/PgChangeFeed.Client/Http/ErrorBody.cs`, `sdks/kotlin/.../http/ErrorBody.kt` (neu, intern), Python `_extract_error` in `http_client.py` | neu / update | gemeinsame Fehlertext-Lesefunktion für HTTP- und SSE-Client je Sprache (statt zwei Kopien); die Fehlerbau-Stellen bleiben je Client. Das Feld `code` bleibt in C# ein `JsonElement` (`ErrorResponse`), in Kotlin liest `JsonParser` es neben dem unveränderten `ErrorResponse`. |
+| *Plan-Nachzug des Implementers (über die Zeilen oben hinaus):* `sdks/csharp/PgChangeFeed.Client/Http/ErrorBody.cs`, `sdks/kotlin/.../http/ErrorBody.kt` (neu, intern), Python `_extract_error` in `http_client.py` | neu / update | gemeinsame Fehlertext-Lesefunktion für HTTP- und SSE-Client je Sprache (statt zwei Kopien); die Fehlerbau-Stellen bleiben je Client. `error` und `code` sind in C# je ein `JsonElement` (`ErrorResponse`); in Kotlin liest `JsonParser` beide, `http/model/ErrorResponse.kt` entfällt (Fixrunde, Entscheidung unter der HTTP-Eingabetabelle). |
 | *Plan-Nachzug:* `sdks/csharp/.../Grpc/StatusDetail.cs`, `sdks/kotlin/.../grpc/StatusDetail.kt`, `sdks/python/pgchangefeed/src/pgchangefeed/_status_detail.py` (neu, intern) | neu | die je Sprache genau eine Statusdetail-Hilfsfunktion (Ansatz). |
-| *Plan-Nachzug:* `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.Tests/MessageCodeTests.cs`, `sdks/kotlin/.../test/.../MessageCodeTest.kt`, `sdks/python/pgchangefeed/tests/test_message_code.py` (neu) und die Test-Hilfen `FakeUnaryCallInvoker.cs`, `FakeAdministrationTransport.kt` (Trailer) | neu / update | die zwei Eingabetabellen (je 12 Zeilen), der Test des alten Konstruktors bzw. Aufrufs und die Diagnose-`error_code`-Tests je Sprache in einer Datei je Sprache. |
+| *Plan-Nachzug:* `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.Tests/MessageCodeTests.cs`, `sdks/kotlin/.../test/.../MessageCodeTest.kt`, `sdks/python/pgchangefeed/tests/test_message_code.py` (neu) und die Test-Hilfen `FakeUnaryCallInvoker.cs`, `FakeAdministrationTransport.kt` (Trailer) | neu / update | die zwei Eingabetabellen (HTTP je 13, gRPC je 12 Zeilen), der Test des alten Konstruktors bzw. Aufrufs und die Diagnose-`error_code`-Tests je Sprache in einer Datei je Sprache. |
 | *Plan-Nachzug, **Abweichung vom Plan-Vorschlag:*** `sdks/csharp/PgChangeFeed.Client.Integration/ErrorCodeRealserverTests.cs`, `sdks/kotlin/.../integrationTest/.../ErrorCodeRealserverTest.kt`, `sdks/python/pgchangefeed/integration/test_error_code_realserver.py` (neu) | neu | statt eines Falls in der HTTP-Phase und einer neuen Verwaltungs-Phase je Sprache **eine** neue Fehlercode-Phase, die beide Wege (HTTP und gRPC-Verwaltung) und die Gegenprobe trägt: der Runner-Mechanismus (`READY`/`RECEIVED`/`REJECTED`) bleibt unverändert, ein Bild des Falls je Sprache genügt. |
 | *Plan-Nachzug:* `tools/harness/run-sdk-csharp-integration-tests.sh`, `run-sdk-kotlin-integration-tests.sh`, `run-sdk-python-integration-tests.sh`, `harness/mk/sdk.mk`, `harness/README.md`, `docs/user/sdk-e2e-abdeckung.md` | update | die neue Phase (Aufruf, SQL-Variante `none`, Abdeckungszeile je Sprache, gedruckte Zeile `Fehlercode-Belege`), die Phasenzahl „dreizehn“ → „vierzehn“ in Hilfetext und Kopfkommentar, eine Zeile je Integrationsziel in `harness/README.md`; die Abdeckungsdatei schreibt der Runner. |
 
@@ -269,11 +269,23 @@ identisch).* Spalten: Status · Körper · erwarteter Typ · `MessageCode` · Fe
 | 10 | 403 | `{"error":"x"}` | Forbidden | leer | `x` |
 | 11 | 400 | `{"error":"x","code":"NO-PCF","extra":1}` | BadRequest | `NO-PCF` (durchgereicht) | `x` |
 | 12 | 502 | `Bad Gateway` (kein JSON) | UnexpectedStatus | leer | `Bad Gateway` |
+| 13 | 400 | `{"error":5,"code":"PCF-E8051"}` | BadRequest | `PCF-E8051` | `{"error":5,"code":"PCF-E8051"}` (roher Körper) |
 
 Zeile 5 trägt die Randfall-Divergenz (Gson und `str()` koerzieren die Zahl, `System.Text.Json`
 wirft): Soll ist in allen drei Sprachen „leer, Text bleibt `x`“. Zeilen 9 und 10 sind der
 Auth-Zweig; ein Server, der dort künftig einen Code sendet, wird durchgereicht (Zeile 11
 belegt das Durchreichen ohne Formatprüfung).
+
+*Entscheidung des Implementers zu Zeile 13 (Fixrunde zu Review F-2; `ADR-0145` und Plan
+trugen keine Regel):* Jedes der beiden Felder zählt nur als JSON-String, unabhängig vom
+anderen. Ein String-`code` ist der Code, was `error` auch ist; ein `error`, das kein
+JSON-String ist (Zahl, `null`, Objekt, fehlend), liefert denselben Fehlertext wie ein
+Körper ohne `error`-Feld: den rohen Körper (keine Koerzion zu `"5"`, kein leerer Text,
+weil ein leerer Fehlertext die Diagnose verlöre). In C# trägt `ErrorResponse` dafür beide
+Felder als `JsonElement`, in Kotlin liest `parseErrorBody` beide über `JsonParser` (die
+Klasse `ErrorResponse` entfällt), in Python prüft `_extract_error` `isinstance(…, str)`.
+HTTP- und SSE-Client lesen über dieselbe Funktion je Sprache und sind damit mitgezogen
+(die SSE-Tabellenfälle laufen über dieselbe `HttpRows`/`_HTTP_ROWS`-Tabelle).
 
 *Eingabetabelle gRPC-Statusdetail (Administrations-Client; je Sprache identisch).*
 Spalten: Status · Detail · erwarteter Typ · `MessageCode`.
@@ -334,10 +346,10 @@ de24629d 0 -n -E 'ErrorInfo|status-details' -- examples
 de24629d 1 -n -E 'SDKs dieses Projekts' -- docs/user
 de24629d 0 -n -i -E 'PgChangeFeed[A-Za-z]*(Exception|Error)|Fehlertyp' -- harness/README.md spec
 diff 47 -n -E 'class PgChangeFeed[A-Za-z]*(Exception|Error)\b' -- sdks ':!*Test*' ':!*test*' ':!*/obj/*' ':!dist'
-diff 19 -n -E 'BuildException|_build_error|mapException|_map_error|MapException|ExtractErrorMessage|_extract_error_message|ErrorResponse' -- sdks ':!*Test*' ':!*test*' ':!*/obj/*' ':!dist'
+diff 16 -n -E 'BuildException|_build_error|mapException|_map_error|MapException|ExtractErrorMessage|_extract_error_message|ErrorResponse' -- sdks ':!*Test*' ':!*test*' ':!*/obj/*' ':!dist'
 diff 13 -n -i -E 'error handling|^## Upgrading|raw .?grpc\.RpcError|StatusException' -- sdks/csharp/README.md sdks/python/README.md sdks/kotlin/pgchangefeed-kotlin/README.md
-diff 60 -n -E 'PCF-' -- sdks
-diff 16 -n -E 'error_code|ErrorCode' -- sdks ':!*/obj/*' ':!dist'
+diff 63 -n -E 'PCF-' -- sdks
+diff 19 -n -E 'error_code|ErrorCode' -- sdks ':!*/obj/*' ':!dist'
 diff 61 -n -E 'ErrorInfo|grpc-status-details|google\.rpc|StatusProto|grpcio-status|CommonProtos' -- sdks ':!*/obj/*' ':!dist'
 diff 0 -n -E 'ErrorInfo|status-details' -- examples
 diff 0 -n -E 'SDKs dieses Projekts' -- docs/user
@@ -351,12 +363,12 @@ diff 8 -n -E 'vierzehn( Phasen)?$|vierzehn Phasen|vierzehnte Phase' -- harness/m
 `git add`; die Zahlen sind am Stand `de24629d` die Zahlen des Plans).**
 
 *Gefunden und nachgezogen:* (1) Zeile 1 bleibt 47 — die Eigenschaft hängt an den vier
-Basen und den Blatt-Typen, es entsteht keine neue Fehlerklasse. (2) Zeile 2 von 28 auf 19:
+Basen und den Blatt-Typen, es entsteht keine neue Fehlerklasse. (2) Zeile 2 von 28 auf 16 (Fixrunde: die Kotlin-Klasse `ErrorResponse` entfällt):
 die beiden Textextraktions-Funktionen `ExtractErrorMessage` (C#, HTTP und SSE) und
 `extractErrorMessage` (Kotlin, HTTP und SSE) sind je Sprache durch eine gemeinsame
 interne Funktion (`ErrorBody.Parse`, `parseErrorBody`; Python `_extract_error`) ersetzt,
 der Fehlerbau steht weiter an allen sechs Orten und trägt den Code. (3) Zeile 4 von 0 auf
-60, Zeile 5 von 0 auf 16, Zeile 6 von 0 auf 61: README-Beispiele, Tests und die je
+63, Zeile 5 von 0 auf 19, Zeile 6 von 0 auf 61: README-Beispiele, Tests und die je
 Sprache genau eine Statusdetail-Hilfsdatei (`StatusDetail.cs`, `StatusDetail.kt`,
 `_status_detail.py`); `make sdk-public-doc-check` Exit 0. (4) Zeile 8 von 1 auf 0: der
 Handbuch-Satz ist berichtigt. (5) Zeile 9 von 0 auf 3: `harness/README.md` nennt in den
@@ -400,6 +412,7 @@ inhaltlich ergänzt, nicht ersetzt). Nicht gesucht: Handbuch-Zeilen außerhalb v
 
 Die Erwartung „`EnableTable` auf eine fehlende Tabelle liefert `404`/`NotFound` mit `PCF-E8025`“ ist damit am Server gemessen,
 an allen drei Sprachen, an HTTP und gRPC; der Code des Statusdetails und der Code des HTTP-Felds sind gleich. Die
+Die Realserver-Tests der Fehlercode-Phase halten seit der Fixrunde den Wert `PCF-E8025` fest (Anfrage der Phase: Schema `public`, Tabelle `sdk_error_code_missing_table`), je Sprache für HTTP und gRPC. Die übrigen Review-Befunde (F-1, F-4 bis F-7) bleiben Befunde ohne Textänderung des Plans; die Handbuch-Sätze zur SDK-Eigenschaft nennen seit der Fixrunde die Package-Version 0.6.0 (Handbuch 1.94).
 Wire-Annahmen (Feldnummern von `Status`/`Any`/`ErrorInfo`, Trailer `grpc-status-details-bin`, `domain`) sind damit am
 Server-Wire belegt. Nicht gemessen: ob `com.google.rpc.Status` über `grpc-protobuf` transitiv im Kotlin-Klassenpfad liegt
 (`./gradlew dependencies` nicht gefahren; der Plan bleibt bei der Eigenlesung).
