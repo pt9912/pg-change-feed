@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.92
+Version: 1.93
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-10-03
 
@@ -1499,7 +1499,9 @@ ohne verdrahteten Broadcaster für den Stream läuft (eine unvollständige
 Verdrahtung des Prozesses); das ist ein Fehler der Einrichtung, keiner der
 Eingabe.
 Die Statuscodes ändern sich nicht; ein Client, der nur `error` liest, arbeitet
-unverändert weiter. Gemessen am laufenden Feed-Container (`make test-integration`,
+unverändert weiter. Die SDK-Packages liefern `code` als Eigenschaft des
+Fehlertyps (siehe die Fehlerform der gRPC-Verwaltungs-API weiter unten).
+Gemessen am laufenden Feed-Container (`make test-integration`,
 gedruckte Zeile `run-integration-tests: Fehlerzustand-Code-Beleg (HTTP und gRPC) belegt`):
 
 ```text
@@ -1935,8 +1937,13 @@ Statusdetail `google.rpc.ErrorInfo`: `reason` ist der Meldungscode der Ursache
 `Unauthenticated` und `PermissionDenied` tragen kein Detail. Statuscode und
 Statustext bleiben unverändert; ein Client, der nur den Statuscode liest,
 arbeitet unverändert weiter. Ein Go-Client liest das Detail über
-`status.Convert(err).Details()`; die Beispiele und SDKs dieses Projekts werten es
-nicht aus.
+`status.Convert(err).Details()`. Die drei SDK-Packages (C#, Kotlin, Python)
+tragen den Code als Eigenschaft ihrer Fehlertypen (`MessageCode`, `messageCode`,
+`message_code`; leer, wenn der Server keinen Code sendet): beim HTTP- und beim
+SSE-Client aus dem Feld `code`, beim gRPC-Verwaltungs-Client aus dem Statusdetail;
+die gRPC-Stream-Clients lassen den Fehler der gRPC-Bibliothek unverändert durch,
+das Statusdetail bleibt dort über deren eigene Schnittstelle lesbar. Die
+Beispiele dieses Projekts werten es nicht aus.
 
 **Zustellsemantik:** wie die HTTP-API — synchrone Anfrage/Antwort je RPC,
 keine Warteschlange dazwischen.
@@ -2950,3 +2957,4 @@ MIT — siehe `LICENSE`.
 | 1.90 | 2026-10-03 | Neuer Abschnitt „Meldungscodes“ (Fehlerbehebung) mit dem Katalog aller Codes: Fehlerzeilen tragen jetzt `Fehlerklasse <Klasse> [<Code>]: …`, `error_message` von Backfill-Runs `<Klasse> [<Code>]: …` und abgelehnte Anträge `abgelehnt [<Code>]: …`, die Meldungen von `make schema-rollout` `FEHLER [<Code>]: …`; der Code ist stabil, der Text nicht; ein `grep` auf den bisherigen Wortlaut `Fehlerklasse schema:` greift nicht mehr, ein `grep` auf die Klasse oder den Code schon |
 | 1.91 | 2026-10-03 | Warnungen im Log tragen das Attribut `code` mit einem Meldungscode wie `PCF-W3002` (Katalog der Warnungen im Abschnitt „Meldungscodes“); `cdc.process_heartbeat` und `cdc.heartbeat` tragen die neue Spalte `error_code` mit dem Meldungscode des Fehlerzustands (in der Sicht hinter `age_seconds`, `NULL` im Normalbetrieb); die Zeile „Fehlerzustand“ von `diagnose` nennt Klasse und Code (`schema [PCF-E4003]`), `GET /diagnose` und der RPC `Diagnose` tragen das Feld `error_code`; die neue Spalte kommt mit dem Schema-Rollout vor dem Container-Tausch |
 | 1.92 | 2026-10-03 | Fehlerantworten der HTTP-API tragen das Feld `code` mit einem Meldungscode neben `error` (`401` und `403` ohne Feld); Fehlerstatus der gRPC-API (`InvalidArgument`, `NotFound`, `Internal`) tragen das Statusdetail `ErrorInfo` mit dem Code als `reason` und `pg-change-feed` als `domain`; der Katalog führt die neuen Codes `PCF-E8050` bis `PCF-E8057` für abgelehnte API-Aufrufe und `PCF-W4008` für die Warnung eines gescheiterten API-Aufrufs; Statuscodes und Fehlertexte bleiben unverändert |
+| 1.93 | 2026-10-03 | Die Fehlertypen der drei SDK-Packages (C#, Kotlin, Python) tragen den Meldungscode des Servers als Eigenschaft (`MessageCode`, `messageCode`, `message_code`): beim HTTP- und beim SSE-Client aus dem Feld `code`, beim gRPC-Verwaltungs-Client aus dem Statusdetail; ohne Code auf dem Draht ist die Eigenschaft leer; das Feld `error_code` der Diagnose kommt unverändert an |

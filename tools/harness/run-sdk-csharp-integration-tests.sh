@@ -2,17 +2,20 @@
 # run-sdk-csharp-integration-tests.sh — Realserver-Integrationstest der
 # C#-SDK-Zustellweg-Flächen (Mechanik-Klasse
 # ADR-0110 §Entscheidung Festlegung 2, gespiegelt vom Python-Vorbild
-# tools/harness/run-sdk-python-integration-tests.sh): dreizehn Phasen — die vier
+# tools/harness/run-sdk-python-integration-tests.sh): vierzehn Phasen — die vier
 # Flächen des Packages PgChangeFeed.Client (HTTP, gRPC, SSE
 # und NATS-Vollinhalt) prüfen ihre Protokoll-Annahmen je gegen
-# eine reale, laufende Server-Instanz ohne Regel, dieselben vier Flächen
+# eine reale, laufende Server-Instanz ohne Regel, eine Fehlercode-Phase (die
+# Aktivierung einer fehlenden Tabelle endet an HTTP und gRPC-Administration
+# mit dem Meldungscode des Servers als `MessageCode` des Fehlertyps), dieselben
+# vier Flächen
 # ein zweites Mal gegen eine Tabelle mit aktiver `rename_column`-Regel und
 # ein drittes Mal gegen eine Tabelle mit zwei Routing-Regeln (ein Client mit
 # `target` empfängt nur die Changes seines Ziels, ein Client ohne `target`
 # alle; Vorbereitung und Ablauf über tools/harness/lib-sdk-route-fixture.sh;
 # das Negativ der Stream-Flächen trägt eine zweite Dreiergruppe, die der Runner
 # nach beobachteter Verbindung committet)
-# und eine dreizehnte Phase, in der der SSE-Client mit `schema` und `table`
+# und eine vierzehnte Phase, in der der SSE-Client mit `schema` und `table`
 # sowie mit `schema` allein nur die Changes seiner Auswahl aus drei Tabellen in
 # zwei Schemas empfängt (Vorbereitung und Ablauf über
 # tools/harness/lib-sdk-filter-fixture.sh; das Negativ trägt eine zweite
@@ -295,7 +298,11 @@ SQL
     echo "run-sdk-csharp-integration-tests: $phase_name — die RECEIVED-Zeile trägt keine Identität: $test_output" >&2
     exit 1
   fi
-  if [ "$sql_kind" = "changes" ]; then
+  if [ "$sql_kind" = "none" ]; then
+    # Die Fehlercode-Phase hat keine Zeile im SQL-Lesezugriffsweg: ihre
+    # Identität ist der Meldungscode, belegt am Wire beider Zugriffswege.
+    captured=1
+  elif [ "$sql_kind" = "changes" ]; then
     captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
       "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$ident' AND table_name = '$table' AND new_data->>'name' = '$sentinel'")
   elif [ "$sql_kind" = "changes_renamed" ]; then
@@ -342,6 +349,18 @@ HTTP_IDENT=$(run_phase \
   "$HTTP_SENTINEL" 430 "REJECTED status=401" \
   "RECEIVED consumer_id=[^ ]+" \
   consumer "$TEST_TABLE" "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN_ADMIN=$API_TOKEN_ADMIN PGCHANGEFEED_API_TOKEN_READER=$API_TOKEN_READER PGCHANGEFEED_SOURCE_ID=$SOURCE_ID PGCHANGEFEED_HTTP_PUBLICATION=$HTTP_PUBLICATION")
+
+# --- Fehlercode-Phase (Meldungscode an den Fehlertypen) -------------------
+# Eine Aktivierung einer fehlenden Tabelle endet an HTTP und gRPC mit
+# NotFound und dem Meldungscode des Servers, den der SDK-Fehlertyp als
+# MessageCode trägt; ein Reader-Token gegen dieselbe Operation endet mit 403
+# bzw. PermissionDenied ohne Code. Kein SQL-Lesezugriff (sql_kind none).
+ERROR_CODE_TEST_NAME=ErrorCodeRealserverTests
+ERROR_CODE_IDENT=$(run_phase \
+  "Fehlercode-Fläche (HTTP und gRPC-Administration)" "$ERROR_CODE_TEST_NAME" \
+  "CsharpErrorCodeSdkE2ESentinel" 440 "REJECTED http=403 grpc=PermissionDenied code=none" \
+  "RECEIVED code=PCF-E[0-9]{4} http=404 grpc=NotFound" \
+  none "$TEST_TABLE" "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_GRPC_ADDR=pg-change-feed:9090 PGCHANGEFEED_API_TOKEN_ADMIN=$API_TOKEN_ADMIN PGCHANGEFEED_API_TOKEN_READER=$API_TOKEN_READER PGCHANGEFEED_SOURCE_ID=$SOURCE_ID PGCHANGEFEED_HTTP_PUBLICATION=$HTTP_PUBLICATION")
 
 # --- Regel-Phasen (slice-sdk-regel-realserver-e2e, ADR-0112) --------------
 # Dieselben vier Flächen, ein zweites Mal gegen die eigene Tabelle
@@ -470,6 +489,7 @@ abdeckung_csharp_abschnitt() {
     "| [\`LH-FA-CFG-007\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | eine aktive \`rename_column\`-Regel auf einer eigenen Tabelle: alle vier C#-SDK-Clients empfangen die danach erfasste Änderung mit dem umbenannten Schlüssel im opaken Bild-Modell (\`JsonElement\`, gRPC die Bytes als JSON) — Zielschlüssel trägt den Sentinel, Quellschlüssel fehlt; \`change_id\` je unabhängig über \`cdc.changes\` lesbar | \`GrpcRuleRealserverTests\`, \`SseRuleRealserverTests\`, \`NatsRuleRealserverTests\`, \`HttpRuleRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     "| [\`LH-FA-CFG-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | zwei aktive Routing-Regeln (Ziele \`eu\` und \`us\`) auf einer eigenen Tabelle: die vier C#-SDK-Flächen (gRPC-Stream, SSE-Stream, NATS-Zusatz-Subjekt \`cdc.route.<source_id>.<ziel>\`, HTTP-Lesezugriff) liefern mit \`target\` genau die Changes des Ziels \`eu\` und, auf den Stream-Flächen nach einer zweiten Dreiergruppe nach stehender Verbindung (Client mit \`target\` genau eine, Client ohne \`target\` genau drei Changes dieser Gruppe), im Ruhefenster keine Change eines anderen Ziels oder ohne Ziel (der HTTP-Lesezugriff liefert exakt die Ziel-Teilmenge der ungefilterten Lesung), ohne \`target\` alle; \`change_id\` je unabhängig über \`cdc.changes\` (\`route_target\`) gegengelesen | \`GrpcRouteRealserverTests\`, \`SseRouteRealserverTests\`, \`NatsRouteRealserverTests\`, \`HttpRouteRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | drei aktive Tabellen in zwei Schemas (zwei im Schema \`public\`, eine gleichnamige im zweiten Schema): der C#-SDK-Client \`PgChangeFeedSseClient\` empfängt mit \`schema\` und \`table\` genau die Changes seiner Tabelle, mit \`schema\` allein genau die Changes dieses Schemas, ohne Filter alle drei; nach beobachteter Verbindung (erste Dreiergruppe empfangen) committet der Runner eine zweite Dreiergruppe mit eigenem Sentinel, das Ruhefenster beginnt erst, wenn alle drei Clients ihre Zeilen der zweiten Gruppe haben, und in ihm empfängt kein gefilterter Client eine Change einer anderen Tabelle (zweite Gruppe: F1 genau eine, F2 genau eine, ohne Filter genau drei); \`change_id\` je unabhängig über \`cdc.changes\` (\`schema_name\`, \`table_name\`) gegengelesen | \`SseFilterRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-009\`](../../spec/lastenheft.md), [\`LH-FA-SST-006\`](../../spec/lastenheft.md) | die Aktivierung einer fehlenden Tabelle endet über \`PgChangeFeedHttpClient\` (404) und \`PgChangeFeedAdministrationClient\` (\`NotFound\`) am laufenden Feed-Container mit dem Meldungscode des Servers als \`MessageCode\` des Fehlertyps (HTTP-Feld \`code\`, gRPC-Statusdetail \`ErrorInfo\`); ein Reader-Token gegen dieselbe Operation endet mit 403 bzw. \`PermissionDenied\` und leerem Code | \`ErrorCodeRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     '<!-- pgchangefeed-sdk-e2e:csharp-end -->'
 }
 
@@ -523,4 +543,5 @@ abdeckung_schreiben
 echo "run-sdk-csharp-integration-tests: C#-SDK-Realserver-Belege (slice-sdk-csharp-reale2e, Mechanik-Klasse ADR-0110 Festlegung 2) grün — gRPC-Fläche (PgChangeFeedGrpcClient, pg-change-feed:9090, change_id=$GRPC_IDENT), SSE-Fläche (PgChangeFeedSseClient, pg-change-feed:8090, change_id=$SSE_IDENT) und NATS-Vollinhalts-Fläche (PgChangeFeedNatsStreamClient, nats://nats:4222, change_id=$NATS_IDENT) empfingen je eine danach committete Änderung (change_id je unabhängig über cdc.changes lesbar), die HTTP-Fläche (PgChangeFeedHttpClient) registrierte real einen Consumer (consumer_id=$HTTP_IDENT, unabhängig über cdc.consumer lesbar) und listete Tabellen; ein Aufruf ohne gültiges Token endete je mit gRPC-Status Unauthenticated, HTTP-Status 401 bzw. der laut ablehnenden NATS-Verbindungsablehnung"
 echo "run-sdk-csharp-integration-tests: Regel-Belege (slice-sdk-regel-realserver-e2e, ADR-0112) grün — eine aktive rename_column-Regel auf $SDK_RULE_TABLE, alle vier Flächen empfingen die danach erfasste Änderung mit dem umbenannten Schlüssel $SDK_RULE_TARGET_KEY (Quellschlüssel $SDK_RULE_SOURCE_KEY fehlt): gRPC change_id=$GRPC_RULE_IDENT, SSE change_id=$SSE_RULE_IDENT, NATS change_id=$NATS_RULE_IDENT, HTTP change_id=$HTTP_RULE_IDENT (je unabhängig über cdc.changes lesbar)"
 echo "run-sdk-csharp-integration-tests: Routing-Belege (ADR-0137 Teilfrage 5) grün — zwei Routing-Regeln auf $SDK_ROUTE_TABLE (Ziel $SDK_ROUTE_TARGET_A und $SDK_ROUTE_TARGET_B), je Fläche ein Client mit target und ein Client ohne target${SDK_ROUTE_REPORT}"
+echo "run-sdk-csharp-integration-tests: Fehlercode-Belege (ADR-0145) grün — die Aktivierung einer fehlenden Tabelle endete an HTTP (404) und gRPC (NotFound) mit dem Meldungscode $ERROR_CODE_IDENT als MessageCode des SDK-Fehlertyps, ein Reader-Token endete mit 403 bzw. PermissionDenied ohne Code"
 echo "run-sdk-csharp-integration-tests: Filter-Belege (ADR-0133 Teilfrage 4) grün — drei Tabellen in zwei Schemas, SSE-Client mit schema und table, mit schema allein und ohne Filter, zweite Dreiergruppe nach beobachteter Verbindung${SDK_FILTER_REPORT}"

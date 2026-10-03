@@ -94,7 +94,7 @@ Je Sprache dieselbe Eingabetabelle (§3), dieselben Randfälle, derselbe Realser
 
 ## 2. Definition of Done
 
-- [ ] [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (A) C#: `PgChangeFeedException`
+- [x] [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (A) C#: `PgChangeFeedException`
       (HTTP und SSE) und `PgChangeFeedGrpcException` tragen die Eigenschaft
       `MessageCode` (`string?`); Code aus dem Feld `code` des Fehlerkörpers bzw. aus
       `ErrorInfo.reason`; Tests für jede Zeile der Eingabetabelle (§3) mit Fake-Transport
@@ -107,21 +107,21 @@ Je Sprache dieselbe Eingabetabelle (§3), dieselben Randfälle, derselbe Realser
       im Bau; ein Lauf aus dem Docker-Schicht-Cache druckt keine Testzeile — Belegbefehl ist
       der Bau mit `--no-cache` der Test-Stufe oder eine Mutation, die den Test rot färbt),
       `make test-sdk-csharp-integration`, `make examples-csharp`.
-- [ ] [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (B) Kotlin:
+- [x] [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (B) Kotlin:
       `PgChangeFeedException` und `PgChangeFeedGrpcException` tragen `messageCode`
       (`String?`) über `@JvmOverloads` mit `messageCode: String? = null` am
       Primär-Konstruktor; Tests, Realserver-Fälle und README (ohne „Upgrading“-Eintrag)
       wie (A) mit derselben Eingabetabelle; ein Test, dass der Aufruf ohne `messageCode`
       weiter funktioniert und `messageCode` leer ist. *Zu belegen durch:* `make sdk-pack-kotlin` (gleiche Cache-Bedingung),
       `make test-sdk-kotlin-integration`, `make examples-kotlin`.
-- [ ] [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (C) Python: `PgChangeFeedError`
+- [x] [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (C) Python: `PgChangeFeedError`
       und `PgChangeFeedGrpcError` tragen `message_code` (`str | None`, keyword-only
       `*, message_code=None`; der vorhandene Name `PgChangeFeedGrpcError.code` bleibt der
       `grpc.StatusCode`); Tests, Realserver-Fälle und README wie (A) mit derselben
       Eingabetabelle; ein Test, dass der Aufruf ohne `message_code` weiter funktioniert
       und die Eigenschaft `None` ist; `test_readme_examples` bleibt grün. *Zu belegen durch:*
       `make sdk-pack-python` (gleiche Cache-Bedingung), `make test-sdk-python-integration`.
-- [ ] [`ADR-0134`](../../adr/0134-sdk-public-doc-check-gate-make-gates.md) und Nachzug:
+- [x] [`ADR-0134`](../../adr/0134-sdk-public-doc-check-gate-make-gates.md) und Nachzug:
       `make sdk-public-doc-check` Exit 0 (die Kennung `PCF-…` ist eine Anwender-Kennung
       und kein Treffer des Wächters; gemessen: das Muster
       `\b(SPEC|ADR|ARC)-[0-9]+|\bLH-(FA|QA)-[A-Z]{3}-[0-9]+|\b(slice|welle)-[a-z0-9]` in
@@ -133,7 +133,7 @@ Je Sprache dieselbe Eingabetabelle (§3), dieselben Randfälle, derselbe Realser
       Änderungshistorie in Betreibersicht ohne Kennung
       (`.harness/skills/nutzerdoku-schreiben.md`). *Zu belegen durch:*
       `make sdk-public-doc-check`, `make docs-check`, Suchlauf in §3.
-- [ ] Diagnose-`error_code` (Teil von (A)–(C)): je Sprache ein Test, dass eine
+- [x] Diagnose-`error_code` (Teil von (A)–(C)): je Sprache ein Test, dass eine
       `HeartbeatStatus` mit gesetztem und mit leerem `error_code` über den
       Administrations-Client unverändert ankommt (`ErrorCode`/`errorCode`/`error_code`),
       und ein README-Satz je Sprache. Kein Mapper-Code. *Zu belegen durch:* die
@@ -149,17 +149,17 @@ Je Sprache dieselbe Eingabetabelle (§3), dieselben Randfälle, derselbe Realser
       *hergeleitet*, „der Implementer fährt sie“ ist eine Erwartung, keine Erprobung
       (`AGENTS.md` §3.12, Verfasser-Regel). *Zu belegen durch:* Berichte von Implementer,
       Reviewer und Verifier.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert
       ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-sdk-meldungscodes-in-fehlertypen.md`
       endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: siehe (A)–(C) und der Nachzug-Punkt; kein SPEC-/ARC-Eintrag. Die
+- [x] Doku-Update: siehe (A)–(C) und der Nachzug-Punkt; kein SPEC-/ARC-Eintrag. Die
       Package-Versionen bleiben (Release ist Folgeschritt, §1).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
@@ -184,6 +184,11 @@ Je Sprache dieselbe Eingabetabelle (§3), dieselben Randfälle, derselbe Realser
 | `sdks/csharp/PgChangeFeed.Client.Integration/` (HTTP- und gRPC-Phase), `sdks/kotlin/pgchangefeed-kotlin/src/integrationTest/`, `sdks/python/pgchangefeed/integration/` (je Fläche eine Testdatei) | update | Realserver-Fall je Sprache und Zugriffsweg (unten); ein Fall am echten Wire, weil ein Test gegen Fake-Transport das Zusammenspiel von Server-Fehlerkörper und SDK-Parser nicht belegt. Der gRPC-Administrations-Client hat bislang keinen Realserver-Test (gemessen: `git grep -n AdministrationClient 81d0fa96 -- sdks/csharp/PgChangeFeed.Client.Integration sdks/python/pgchangefeed/integration sdks/kotlin/pgchangefeed-kotlin/src/integrationTest` druckt 0 Zeilen). |
 | `sdks/csharp/README.md`, `sdks/kotlin/pgchangefeed-kotlin/README.md`, `sdks/python/README.md` | update | Fehlerbehandlung je Sprache, kein „Upgrading“-Eintrag (die Änderung ist additiv, `ADR-0145` Festlegung 4); Englisch, nur `PCF-…`-Beispiele. |
 | `docs/user/benutzerhandbuch.md` (Fehlerantworten, Fehlerform der gRPC-API, Version, Änderungshistorie) | update | Nachzug; Satz bei „Fehlerform“ berichtigt. |
+| *Plan-Nachzug des Implementers (über die Zeilen oben hinaus):* `sdks/csharp/PgChangeFeed.Client/Http/ErrorBody.cs`, `sdks/kotlin/.../http/ErrorBody.kt` (neu, intern), Python `_extract_error` in `http_client.py` | neu / update | gemeinsame Fehlertext-Lesefunktion für HTTP- und SSE-Client je Sprache (statt zwei Kopien); die Fehlerbau-Stellen bleiben je Client. Das Feld `code` bleibt in C# ein `JsonElement` (`ErrorResponse`), in Kotlin liest `JsonParser` es neben dem unveränderten `ErrorResponse`. |
+| *Plan-Nachzug:* `sdks/csharp/.../Grpc/StatusDetail.cs`, `sdks/kotlin/.../grpc/StatusDetail.kt`, `sdks/python/pgchangefeed/src/pgchangefeed/_status_detail.py` (neu, intern) | neu | die je Sprache genau eine Statusdetail-Hilfsfunktion (Ansatz). |
+| *Plan-Nachzug:* `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.Tests/MessageCodeTests.cs`, `sdks/kotlin/.../test/.../MessageCodeTest.kt`, `sdks/python/pgchangefeed/tests/test_message_code.py` (neu) und die Test-Hilfen `FakeUnaryCallInvoker.cs`, `FakeAdministrationTransport.kt` (Trailer) | neu / update | die zwei Eingabetabellen (je 12 Zeilen), der Test des alten Konstruktors bzw. Aufrufs und die Diagnose-`error_code`-Tests je Sprache in einer Datei je Sprache. |
+| *Plan-Nachzug, **Abweichung vom Plan-Vorschlag:*** `sdks/csharp/PgChangeFeed.Client.Integration/ErrorCodeRealserverTests.cs`, `sdks/kotlin/.../integrationTest/.../ErrorCodeRealserverTest.kt`, `sdks/python/pgchangefeed/integration/test_error_code_realserver.py` (neu) | neu | statt eines Falls in der HTTP-Phase und einer neuen Verwaltungs-Phase je Sprache **eine** neue Fehlercode-Phase, die beide Wege (HTTP und gRPC-Verwaltung) und die Gegenprobe trägt: der Runner-Mechanismus (`READY`/`RECEIVED`/`REJECTED`) bleibt unverändert, ein Bild des Falls je Sprache genügt. |
+| *Plan-Nachzug:* `tools/harness/run-sdk-csharp-integration-tests.sh`, `run-sdk-kotlin-integration-tests.sh`, `run-sdk-python-integration-tests.sh`, `harness/mk/sdk.mk`, `harness/README.md`, `docs/user/sdk-e2e-abdeckung.md` | update | die neue Phase (Aufruf, SQL-Variante `none`, Abdeckungszeile je Sprache, gedruckte Zeile `Fehlercode-Belege`), die Phasenzahl „dreizehn“ → „vierzehn“ in Hilfetext und Kopfkommentar, eine Zeile je Integrationsziel in `harness/README.md`; die Abdeckungsdatei schreibt der Runner. |
 
 **Ansatz.**
 
@@ -327,7 +332,42 @@ de24629d 0 -n -E 'ErrorInfo|grpc-status-details|google\.rpc|StatusProto|grpcio-s
 de24629d 0 -n -E 'ErrorInfo|status-details' -- examples
 de24629d 1 -n -E 'SDKs dieses Projekts' -- docs/user
 de24629d 0 -n -i -E 'PgChangeFeed[A-Za-z]*(Exception|Error)|Fehlertyp' -- harness/README.md spec
+diff 47 -n -E 'class PgChangeFeed[A-Za-z]*(Exception|Error)\b' -- sdks ':!*Test*' ':!*test*' ':!*/obj/*' ':!dist'
+diff 19 -n -E 'BuildException|_build_error|mapException|_map_error|MapException|ExtractErrorMessage|_extract_error_message|ErrorResponse' -- sdks ':!*Test*' ':!*test*' ':!*/obj/*' ':!dist'
+diff 13 -n -i -E 'error handling|^## Upgrading|raw .?grpc\.RpcError|StatusException' -- sdks/csharp/README.md sdks/python/README.md sdks/kotlin/pgchangefeed-kotlin/README.md
+diff 60 -n -E 'PCF-' -- sdks
+diff 16 -n -E 'error_code|ErrorCode' -- sdks ':!*/obj/*' ':!dist'
+diff 61 -n -E 'ErrorInfo|grpc-status-details|google\.rpc|StatusProto|grpcio-status|CommonProtos' -- sdks ':!*/obj/*' ':!dist'
+diff 0 -n -E 'ErrorInfo|status-details' -- examples
+diff 0 -n -E 'SDKs dieses Projekts' -- docs/user
+diff 3 -n -i -E 'PgChangeFeed[A-Za-z]*(Exception|Error)|Fehlertyp' -- harness/README.md spec
+de24629d 8 -n -E 'dreizehn( Phasen)?$|dreizehn Phasen|dreizehnte Phase' -- harness/mk tools/harness harness/README.md
+diff 0 -n -E 'dreizehn( Phasen)?$|dreizehn Phasen|dreizehnte Phase' -- harness/mk tools/harness harness/README.md
+diff 8 -n -E 'vierzehn( Phasen)?$|vierzehn Phasen|vierzehnte Phase' -- harness/mk tools/harness harness/README.md
 ```
+
+**Befund am Diff (Implementer, gemessen mit den `diff`-Zeilen oben im Arbeitsbaum nach
+`git add`; die Zahlen sind am Stand `de24629d` die Zahlen des Plans).**
+
+*Gefunden und nachgezogen:* (1) Zeile 1 bleibt 47 — die Eigenschaft hängt an den vier
+Basen und den Blatt-Typen, es entsteht keine neue Fehlerklasse. (2) Zeile 2 von 28 auf 19:
+die beiden Textextraktions-Funktionen `ExtractErrorMessage` (C#, HTTP und SSE) und
+`extractErrorMessage` (Kotlin, HTTP und SSE) sind je Sprache durch eine gemeinsame
+interne Funktion (`ErrorBody.Parse`, `parseErrorBody`; Python `_extract_error`) ersetzt,
+der Fehlerbau steht weiter an allen sechs Orten und trägt den Code. (3) Zeile 4 von 0 auf
+60, Zeile 5 von 0 auf 16, Zeile 6 von 0 auf 61: README-Beispiele, Tests und die je
+Sprache genau eine Statusdetail-Hilfsdatei (`StatusDetail.cs`, `StatusDetail.kt`,
+`_status_detail.py`); `make sdk-public-doc-check` Exit 0. (4) Zeile 8 von 1 auf 0: der
+Handbuch-Satz ist berichtigt. (5) Zeile 9 von 0 auf 3: `harness/README.md` nennt in den
+drei Integrationszeilen die neue Fehlercode-Phase. (6) Eine **nicht im Plan stehende**
+Suche nach dem Zählwort der Phasen („dreizehn“) fand 8 Stellen (drei Hilfetexte in
+`harness/mk/sdk.mk`, fünf Zeilen in den Kopfkommentaren der drei Runner), die durch die neue
+Phase auf „vierzehn“ gehen; nachgezogen, Zeilen oben (8 am Parent, 0 und 8 im Diff).
+
+*Gesucht und nicht gefunden:* Zeile 7 bleibt 0 (Beispiele unverändert); Zeile 3 bleibt 13
+(die Abschnittsüberschriften und Stream-Grenz-Sätze stehen weiter, die README-Zeilen sind
+inhaltlich ergänzt, nicht ersetzt). Nicht gesucht: Handbuch-Zeilen außerhalb von
+`docs/user` und die Closure-Notizen unter `done/`, die die Phasenzahl historisch nennen.
 
 | Träger | Messung am Stand (`de24629d`, gemessen am 2026-10-03; Zeile 9 ergänzt) | Behandlung (Befund am Diff trägt der Implementer ein) |
 |---|---|---|
@@ -339,6 +379,45 @@ de24629d 0 -n -i -E 'PgChangeFeed[A-Za-z]*(Exception|Error)|Fehlertyp' -- harnes
 | Statusdetail-Leser | Zeile 6: 0 | je Sprache genau eine interne Hilfsfunktion. |
 | Beispiele | Zeile 7: 0 | bleibt 0 (Abgrenzung §1). |
 | Handbuch: „SDKs werten es nicht aus“ | Zeile 8: 1 (Zeile 1938, Absatz „Fehlerform“) | der Satz ist berichtigt; die Historienzeilen 1.33/1.35 („Fehlerklasse“) bleiben Historie. Nicht gesucht und nicht gefunden: weitere Träger in `spec/` und `harness/README.md` (Zeile 9: 0 Zeilen, gemessen; die Muster `Exception|Error` allein treffen dort nur fremde Zeilen). Das Muster von `tools/harness/sdk-public-doc-check.sh` (Zeile 30) trifft `PCF-E8025` nicht (gemessen mit `grep -c -E` auf diese Zeichenkette: 0). |
+
+**Belege des Implementers (gemessen am 2026-10-03, Exit-Codes ungefiltert gesichert, §3.9).**
+
+| Lauf | Exit | Gedruckte Zeile (Auszug) |
+|---|---|---|
+| `make sdk-pack-python` | 0 | `193 passed, 6 warnings in 0.65s` (Test-Stufe neu gebaut, Quelle geändert) |
+| `make sdk-pack-csharp` | 0 | `Passed!  - Failed:     0, Passed:   199, Skipped:     0, Total:   199` (Test-Stufe neu gebaut) |
+| `make sdk-pack-kotlin` | 0 | `> Task :test` ausgeführt (nicht `UP-TO-DATE`), `BUILD SUCCESSFUL`; Gradle druckt keine Testanzahl, die Wirkung belegen die roten Mutationen unten |
+| `make examples-csharp` / `make examples-kotlin` | 0 / 0 | letzte Zeilen `naming to docker.io/library/pg-change-feed-examples:csharp-nats-stream done` bzw. `…:kotlin-nats-stream done` |
+| `make image` | 0 | Bau des `:dev`-Images (Server unverändert) |
+| `make test-sdk-python-integration` | 0 | `Fehlercode-Belege (ADR-0145) grün — die Aktivierung einer fehlenden Tabelle endete an HTTP (404) und gRPC (NOT_FOUND) mit dem Meldungscode PCF-E8025 als message_code des SDK-Fehlertyps, ein Reader-Token endete mit 403 bzw. PERMISSION_DENIED ohne Code` |
+| `make test-sdk-csharp-integration` | 0 | dieselbe Zeile mit `(NotFound)`, `MessageCode`, `PermissionDenied`, Code `PCF-E8025` |
+| `make test-sdk-kotlin-integration` | 0 | dieselbe Zeile mit `(NOT_FOUND)`, `messageCode`, Code `PCF-E8025` |
+| `make gates` | 0 | ungefiltert in eine Log-Datei, Exit-Code danach gesondert gelesen; Zeilen u. a. `baseline-verify: v6.13.0 OK — 54 Dateien`, `generated-sync: OK`, `sdk-public-doc-check: keine interne Kennung unter sdks`, `gesamt: 0 Befund(e)` (a-check) |
+| `make docs-check` | 0 | `d-check: 1617 Datei(en) geprüft, 0 Befund(e)` |
+| `make suchlauf-nachmessen` / `make kommentar-kennungen DIFF=283d6175` | 0 / 0 | `suchlauf-nachmessen: 21 Zeilen stimmen` / keine Kandidaten (Diff ohne Go-Dateien: `make fmt-check` nicht Gegenstand, gelaufen: `fmt-check: 334 Go-Dateien geprüft, alle formatiert`) |
+| `make sdk-public-doc-check` / `make handbuch-public-doc-check` | 0 / 0 | `keine interne Kennung unter sdks` / `keine interne Kennung in 3 Nutzerdokumenten unter docs/user/` |
+
+Die Erwartung „`EnableTable` auf eine fehlende Tabelle liefert `404`/`NotFound` mit `PCF-E8025`“ ist damit am Server gemessen,
+an allen drei Sprachen, an HTTP und gRPC; der Code des Statusdetails und der Code des HTTP-Felds sind gleich. Die
+Wire-Annahmen (Feldnummern von `Status`/`Any`/`ErrorInfo`, Trailer `grpc-status-details-bin`, `domain`) sind damit am
+Server-Wire belegt. Nicht gemessen: ob `com.google.rpc.Status` über `grpc-protobuf` transitiv im Kotlin-Klassenpfad liegt
+(`./gradlew dependencies` nicht gefahren; der Plan bleibt bei der Eigenlesung).
+
+**Mutationsbeleg des Implementers** *(Zusage · mutierte Stelle · Instanz · gesehenes Rot; je Mutation auf einer Kopie
+im Scratchpad, Bau der Test-Stufe mit `docker build --build-context proto=proto --target build`; Rücknahme per `cp`)*:
+
+| Zusage | Mutation (Stelle, Eingabeseite) | Instanz | Gesehenes Rot |
+|---|---|---|---|
+| M1 HTTP-Fehlerbau trägt `code` | Python: `_build_error` ohne `message_code=`; C#: `PgChangeFeedHttpClient.BuildException` ohne `messageCode`; Kotlin: `PgChangeFeedHttpClient.buildException` ohne `messageCode` | Python-Test `test_http_client_error_carries_the_message_code` und `…sse…`; C# `MessageCodeTests.HttpClient_ErrorCarriesTheMessageCode`; Kotlin `MessageCodeTest > http client error carries the message code` | Python 10 Fälle rot (HTTP und SSE, Zeilen 1, 6, 7, 8, 11 je); C# 5 Fälle rot (Zeilen 1, 6, 7, 8, 11), SSE-Fälle grün; Kotlin 1 Test rot (`122 tests completed, 1 failed`) |
+| M2 Statusdetail prüft `domain` | `domain`-Vergleich entfernt: Python `_status_detail.py` (`domain != _SERVER_DOMAIN or`), C# `StatusDetail.ReadFromAny`, Kotlin `StatusDetail.readFromAny` | Python `test_administration_client_error_carries_the_message_code`; C# `AdministrationClient_ErrorCarriesTheMessageCode`; Kotlin `administration client error carries the message code` | Python 2 Fälle rot (Zeilen 7 und 11); C# 2 Fälle rot (`Failed: 2`, beide `InvalidArgument`); Kotlin 1 Test rot |
+| M3 SSE-Fehlerbau trägt `code` | C#: `PgChangeFeedSseClient.BuildException` ohne `messageCode`; Kotlin: `PgChangeFeedSseClient.buildException` ohne `messageCode`; Python: keine eigene Stelle (`sse_client.py` ruft `_build_error`, abgedeckt durch M1) | C# `SseClient_ErrorCarriesTheMessageCode`; Kotlin `sse client error carries the message code` | C# 5 Fälle rot, HTTP-Fälle grün; Kotlin 1 Test rot |
+| M4 Mapper übergibt den Code | Python `_map_error` ohne `message_code=`; C# `MapException` mit `messageCode = null`; Kotlin `mapException` mit `messageCode = null` | wie M2 | Python 5 Fälle rot (Zeilen 1, 2, 3, 11, 12); C# `Failed: 5`; Kotlin 1 Test rot |
+| Feldnummer des Statusdetails | Python: `_STATUS_DETAILS_FIELD` 3 → 4 | wie M2 | Python 5 Fälle rot (Zusatz-Mutation, nur Python gefahren) |
+
+Verallgemeinerungen darüber hinaus sind *hergeleitet*: bei Kotlin bricht die Schleife je Test an der ersten
+abweichenden Zeile ab, welche Zeilen im Einzelnen rot werden, ist dort nicht gemessen (Anzahl je Zeile *hergeleitet*
+aus der gleichen Tabelle in C# und Python); die Mutation der Feldnummer ist in C# und Kotlin nicht gefahren; M1 und M3
+sind in Python eine Stelle.
 
 ## 4. Trigger
 
