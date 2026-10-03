@@ -197,7 +197,7 @@ TOOLCHAIN_IMAGE ?= golang:1.27-alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d3
 # ohne Mutex/Kommando-Kanal ist das ein Data Race, go test -race"). Die
 # Produktions-Kompilierung (Dockerfile) bleibt CGO-frei — dieses Image trägt
 # ausschließlich den Testlauf.
-TOOLCHAIN_RACE_IMAGE ?= golang:1.27@sha256:b475798fb16158e6c38e8b5ca2d870fbeaa8b7fec0fc8ec64b3dc20966040635
+TOOLCHAIN_RACE_IMAGE ?= golang:1.27@sha256:e0174e51e81218523251d85d248a90d24c3d5e81543b4f07a5d66229397db190
 PG_TEST_IMAGE ?= postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8
 GO_MODCACHE_VOLUME ?= pg-change-feed-gomodcache
 
