@@ -136,14 +136,14 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | `docs/user/benutzerhandbuch.md` | update | Katalog, Satz zur Stabilität, Änderungshistorie. Rebase auf `main`, nur eigene Abschnitte committen. |
 | Gate-Skript unter `tools/harness/`, Tabellentest-Läufer, `harness/sensors/meldungscodes-check.md`, `harness/README.md` §Sensors, `harness/mk/doc-gate.mk`, `GATE_CHECKS` | neu / update | (B). |
 | `*_test.go` mit Erwartung `Fehlerklasse <klasse>:` (u. a. `internal/application/usecase/backfill/service_test.go`), Läufer unter `tools/harness/` | update | Erwartungen an den Kopf. |
-| `internal/domain/messagecode/{codes,messagecode,messagecode_test}.go` | neu (Umsetzung von Zeile 1) | `codes.go` ist die Tabelle (59 Codes: 7 Rückfälle `…000` der Fehlerklassen, 29 Einzelursachen-Codes der Fehlerklassen — die 28 Sentinels tragen 26 davon, drei Codes der Klasse `configuration` entstehen im Backfill-Run und im Rollout-Skript —, 23 Codes der Ablehnungen `E8…` mit dem Rückfall `E8000` und 22 Gründen); `messagecode.go` trägt Typ `Code`, `Class`, `Entry`, `Error` (Sentinel-Fehlerwert mit Kopf), `From`, `WithoutHead`, `RunMessage`, `RejectionMessage`; der Test prüft Form, erste Ziffer gegen Klasse, Dopplung, Rückfall je Klasse. Granularität (Maßnahme des Betreibers): ein Code je Speicher-Port (acht Codes für `storage`), weil der Betreiber an der Fehlerzeile erkennt, welcher Speicher (Change, Antrags-Queue, Backfill, Consumer-Stand, Diagnose, Heartbeat, Schema, Snapshot) gestört ist; die drei Stream-Ordnungs-Sentinels des Mappers teilen einen Code. |
+| `internal/domain/messagecode/{codes,messagecode,messagecode_test}.go` | neu (Umsetzung von Zeile 1) | `codes.go` ist die Tabelle (66 Codes: 7 Rückfälle `…000` der Fehlerklassen, 26 Einzelursachen-Codes der Klassen 1 bis 6, 10 Codes `E7001` bis `E7010` der Klasse `internal` — die zehn Sentinels, die `classifyRunError` vor diesem Slice nicht kannte und auf `internal` fielen, tragen sie, damit ihre Klasse unverändert `internal` bleibt, und der Text eines Runs trägt für dieselben Ursachen weiter die Codes der Klassen 1 bis 6 (`failureCode`) —, 23 Codes der Ablehnungen `E8…` mit dem Rückfall `E8000` und 22 Gründen); `messagecode.go` trägt Typ `Code`, `Class`, `Entry`, `Error` (Sentinel-Fehlerwert mit Kopf), `From`, `Codes` (alle Codes einer Kette, Grundlage der Vorrangfolge von `classifyRunError`), `WithoutHead`, `RunMessage`, `RejectionMessage`; der Test prüft Form, erste Ziffer gegen Klasse, Dopplung, Rückfall je Klasse. Granularität (Maßnahme des Betreibers): ein Code je Speicher-Port (sechs Codes für `storage`: Change, Backfill, Consumer-Stand, Heartbeat, Schema, Snapshot; Antrags-Queue und Diagnose tragen Codes der Klasse `internal`, `E7002`, `E7003`), weil der Betreiber an der Fehlerzeile erkennt, welcher Speicher gestört ist; die drei Stream-Ordnungs-Sentinels des Mappers teilen einen Code. |
 | `internal/domain/model/backfillrun.go` | update | `Run.Fail(at, code, cause)` — die Klasse folgt aus dem Code, `error_message` = `<Klasse> [<Code>]: <Ursache>`; ein Code ohne Fehlerklasse endet als `ErrInvalidErrorClass`. |
 | `internal/bootstrap/rejection.go`, `internal/bootstrap/messagecodes_internal_test.go` | neu | `administrationFailureText`/`rejectionCode`: Ablehnungs-Code je Grund (E8…), unerwartete Fehler tragen den Kopf `internal`; der Test bindet jeden Sentinel an Code und Klasse und jeden Ablehnungsgrund an seinen Code. |
 | `internal/adapters/driven/postgresstorage/sqlexec/translate.go` (`rejectionMessage`) | update | `abgelehnt [<Code>]: …` für die vom Antrags-Konstruktor verworfenen Zeilen (E8001 bis E8006, Rückfall E8000). |
 | `test/integration/{routing,transformation}_e2e_test.go`, `tools/harness/run-integration-tests.sh` | update | Erwartungen an `error_message` (Kopf `abgelehnt [<Code>]`, Run `schema [PCF-E4004]`, DDL-Fenster `storage [PCF-E5008]`/`transient [PCF-E1003]`) und an die Log-Zeile (Kopf mit Code im Container-Log, `docker logs`). |
 | `harness/targets/schema-rollout.md` | update | die `FEHLER`-Zeile trägt den Code. |
 | `tools/schema/rolloutguard/` | **nicht geändert** | seine Zeilen (`rolloutguard: …`) sind Diagnose der Wache, keine `FEHLER`-Zeilen des Rollout-Skripts; [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md) Festlegung 3 nennt dort nur `FEHLER [<code>]` des Skripts. Eine Reduktion gegenüber der Zeile oben, kein stilles Weglassen. |
-| `harness/sensors/meldungscodes-check.md`, `tools/harness/run-meldungscodes-check-tests.sh` | neu | Sensor-Vertrag und Tabellentest (63 Prüfungen) zu Liefer-Punkt (B). |
+| `harness/sensors/meldungscodes-check.md`, `tools/harness/run-meldungscodes-check-tests.sh` | neu | Sensor-Vertrag und Tabellentest (71 Prüfungen) zu Liefer-Punkt (B). |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „der Fehlertext beginnt mit
 `Fehlerklasse <klasse>: `“; Parent ist `ba60c7bc`; die `diff`-Zeilen und die Befunde trägt der
@@ -172,7 +172,7 @@ diff 0 -n -F 'PCF-' -- examples
 | Träger | Messung am Parent (`ba60c7bc`, 2026-10-02) | Behandlung und Befund am Diff |
 |---|---|---|
 | `Fehlerklasse`-Literale in Produktions-Go | Zeile 1: 28 (die Tabellenzeile des Vorläufer-Plans gehört jetzt hierher, nicht zu T1) | Diff Zeile 9: 0 — alle 28 Sentinels sind `messagecode.New(<Konstante>, "<Ursache>")`, kein zweites Literal |
-| Textchirurgie, Klassifikation | Zeilen 2, 3: je 1 | Diff Zeile 10: 0 (die Textersetzung entfällt, `messagecode.WithoutHead` liest den Kopf des Fehlerwerts); Diff Zeile 11: 1 (`classifyRunError` bleibt, leitet die Klasse aus dem Code des Fehlerwerts ab) |
+| Textchirurgie, Klassifikation | Zeilen 2, 3: je 1 | Diff Zeile 10: 0 (die Textersetzung entfällt, `messagecode.WithoutHead` liest den Kopf des Fehlerwerts); Diff Zeile 11: 1 (`classifyRunError` bleibt, leitet die Klasse aus den Codes der Kette ab, mit der Vorrangfolge der Klassen des Parents) |
 | Spec-Satz zum Kopf | Zeile 4: 1 | Diff Zeile 12: 0 — auf Klasse und Meldungscode umgeschrieben (`SPEC-008` Absatz „Meldungscode“, `SPEC-029`, `SPEC-019`) |
 | Handbuch | Zeile 5: 36 | Diff Zeile 13: 43 = 36 + 6 Zeilen des Abschnitts „Meldungscodes“ + 1 Zeile der Änderungshistorie. Jede der 36 Zeilen gelesen: Textzusage des Fehlertexts (z. B. „beginnt mit der Klasse“) gefunden: **keine**; drei Zeilen zitieren einen Fehlertext und sind mitgezogen (Beispiele des Log-Texts `schema [PCF-E4005]`/`schema [PCF-E4003]`, Beschreibung von `error_message` in der Run-Statustabelle), zwei Tabellen mit Fehlertexten von Anträgen (Konflikte der Transformationsregeln, Prüfungen der Routing-Regeln) tragen den Kopf `abgelehnt [<Code>]: `, der Backfill-Hinweis `transient: …` trägt den Code |
 | Tests | Zeile 6: 2 | Diff Zeile 14: 0 — Erwartungen an Kopf und Code mitgezogen in `internal/application/usecase/backfill/{service,routing,transformation}_test.go`, `internal/bootstrap/{administration,routing,backfill}_internal_test.go`, `internal/bootstrap/{backfill_endtoend,backfill_routing_store_internal}_test.go`, `internal/adapters/driven/postgresstorage/{sqlexec/translate,sqlexec/rejection_internal,backfill*}_test.go`, `internal/domain/model/backfillrun_test.go`, `test/integration/{routing,transformation}_e2e_test.go` und `tools/harness/run-integration-tests.sh` |
@@ -190,17 +190,27 @@ diff 0 -n -F 'PCF-' -- examples
 | `bash tools/harness/run-schema-rollout-guard-test.sh` | 0 | `run-schema-rollout-guard-test: OK — alle Belege real erbracht` |
 | `make schema-validate SCHEMA_SOURCE=tools/schema/does-not-exist.yaml` | 2 | `FEHLER [PCF-E2007]: tools/schema/does-not-exist.yaml fehlt — …` |
 | `docker run --rm --network none ghcr.io/pt9912/pg-change-feed:dev` | 2 | `pg-change-feed: Fehlerklasse configuration [PCF-E2001]: Verdrahtung ohne vollständige Vorbedingung: CDC_CAPTURE_DSN fehlt` (der Startfehler der Klasse `configuration` endet mit Ausgang 2, nicht 1) |
-| `make meldungscodes-check` | 0 | `meldungscodes-check: 59 Codes in Tabelle und Katalog gleich, Quelltext (124 Go-Dateien, 4 Skripte) nur mit Codes der Tabelle` |
-| `make test-meldungscodes-check` | 0 | `run-meldungscodes-check-tests: 63 Prüfungen bestanden` |
+| `make meldungscodes-check` | 0 | `meldungscodes-check: 66 Codes in Tabelle und Katalog gleich, Quelltext (124 Go-Dateien, 4 Skripte) nur mit Codes der Tabelle` (Fixrunde nach dem Review) |
+| `make test-meldungscodes-check` | 0 | `run-meldungscodes-check-tests: 71 Prüfungen bestanden` (Fixrunde nach dem Review) |
 | `make handbuch-public-doc-check` (mit Katalog) | 0 | `handbuch-public-doc-check: keine interne Kennung in 3 Nutzerdokumenten unter docs/user/` |
 | `make ausgabe-kennungen-check`, `make sdk-public-doc-check`, `make a-check`, `make fmt-check` | je 0 | `… 126 Go-Dateien und 4 Skripten`, `keine interne Kennung unter sdks`, `gesamt: 0 Befund(e)`, `328 Go-Dateien geprüft, alle formatiert` |
+
+**Läufe der Fixrunde nach dem Review (Arbeitsbaum, Exit-Codes ungefiltert):**
+
+| Befehl | Exit | gedruckte Zeile |
+|---|---|---|
+| `make test` | 0 | 50 Pakete `ok` |
+| `make test-store` | 0 | `db-coverage: OK — DB-Adapter-Coverage 82.99% erfuellt Schwelle 80%` |
+| `make image`, `make test-integration` | 0 | `run-integration-tests: Lauf abgeschlossen — E2E-Abdeckungstabelle aus 21 Go-Zeilen und 53 Bash-Zeilen`; das Container-Log trägt die Köpfe `Fehlerklasse schema [PCF-E4004]`, `[PCF-E4005]` und `[PCF-E4003]` (Prüfung des Läufers) |
+| `bash tools/harness/run-schema-rollout-guard-test.sh` | 0 | `run-schema-rollout-guard-test: OK — alle Belege real erbracht` |
+| `make fmt-check`, `make a-check` | je 0 | `328 Go-Dateien geprüft, alle formatiert`, `gesamt: 0 Befund(e)` |
 
 **Mutationen (Zusage · mutierte Eingabe · gesehenes Rot; alle an Kopien im Scratchpad, der Arbeitsbaum bleibt unberührt):**
 
 | Zusage | mutierte Eingabe | Rot |
 |---|---|---|
 | Quelltext nur mit Codes der Tabelle | `tools/schema/rollout.sh`: `PCF-E2007` → `PCF-E2999` | `meldungscodes-check` Exit 1: `Code ohne Eintrag in der Tabelle internal/domain/messagecode/codes.go: tools/schema/rollout.sh:69:PCF-E2999` |
-| Tabelle gleich Katalog | Handbuch: Katalog-Zeile `PCF-E5005` entfernt | Exit 1: `Tabellen-Code ohne Katalog-Zeile in docs/user/benutzerhandbuch.md: PCF-E5005` |
+| Tabelle gleich Katalog | Handbuch: Katalog-Zeile `PCF-E5004` entfernt (Fixrunde; `PCF-E5005` gibt es nicht mehr) | Exit 1: `Tabellen-Code ohne Katalog-Zeile in docs/user/benutzerhandbuch.md: PCF-E5004` |
 | erste Ziffer ist die Klasse | `codes.go`: Zeile `StorageFallback` mit Klasse `schema` | `TestTableClassMatchesFirstDigit` und `TestEveryClassHasItsFallback` rot |
 | Rückfall je Klasse | `codes.go`: Tabellenzeile `PermissionFallback` entfernt | `TestEveryClassHasItsFallback`: `Rückfall "PCF-E3000" der Klasse "permission" fehlt in der Tabelle` |
 | jeder Sentinel trägt Kopf und Code | `decode.ErrSchema` mit dem früheren Wortlaut ohne Code | `TestSentinelsCarryTheirCodeAndClass`, `TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes`, `TestReportFaultWritesClassifiedFaultOnNonNilError` rot |
@@ -213,6 +223,10 @@ diff 0 -n -F 'PCF-' -- examples
 | Wächter-Logik: Tabelle gegen Katalog | Prüfling `comm -23 table.set table.set` (Kopie des Skripts) | `make test-meldungscodes-check` rot (u. a. `Tabellen-Code ohne Katalog-Zeile`, `Codes nur in Prosa`, `zurückgezogener Code fehlt im Katalog`) |
 | Wächter-Logik: Form | Prüfling mit `[0-9]{4,5}` statt `[0-9]{4}` | Tabellentest rot: Fall „fünf Ziffern“ (Meldung `a.go:3:PCF-E40010 ` fehlt) |
 | Wächter-Logik: Quelltext in Tabelle | Prüfling prüft nur das Handbuch, nicht den Quelltext | Tabellentest rot: Go-, cmd- und Skript-Fälle ohne Tabelle |
+| Fixrunde: Klasse der zehn Sentinels bleibt `internal` | `codes.go` (Kopie): `SnapshotReadFault` auf `PCF-E5009` mit Klasse `storage` | `TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes/Snapshot_lesen` und `TestInternalSentinelCodesStayInternal` rot |
+| Fixrunde: Vorrangfolge der Klassen in einer Kette | `classifyRunError` (Kopie) liest nur den ersten Code der Kette | fünf Ketten-Fälle von `TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes` rot (`storage` vor `replication`, `replication` vor `configuration`, `internal` vor `storage`, `schema` vor `transient`, `errors.Join`) |
+| Fixrunde: Binärzeichen in einer gelesenen Datei | `meldungscodes-check.sh` (Kopie): `grep -aon` → `grep -on` | Tabellentest rot: Fall „Go-Datei mit NUL-Byte und Code ohne Tabelle“ (Exit 0 statt 1) und seine Meldungsbindung |
+| Fixrunde: Mengenvergleich ohne Auswertung | Kopien: `comm`-Zweig ohne `die2`; `sort -u` ohne `die2`; `sed`-Zweig ohne `die2` | je Tabellentest rot (Stub-`comm`/`sort`/`sed` mit Exit 2: Meldung `Lesefehler: Mengenvergleich …` bzw. `Mengenbildung der Tabelle …` fehlt) |
 
 ## 4. Trigger
 
@@ -262,6 +276,25 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   Zuordnung. — **Ausgang:** (bei Closure)
 - **Handbuch-Gate mit Katalog.** Dass `make handbuch-public-doc-check` mit Codes grün bleibt,
   ist aus den Mustern hergeleitet, nicht gelaufen. — **Ausgang:** (bei Closure)
+- **Offene Frage an den Auftraggeber: Klasse der zehn Sentinels, die `classifyRunError` vor diesem
+  Slice nicht kannte.** `outbound.ErrSchemaStoreStorage`, `ErrNotify`, `ErrAdministrationStorage`,
+  `ErrBackfillStorage`, `ErrDiagnosticsStorage` und die fünf `ErrSnapshotPermission`,
+  `ErrSnapshotConfiguration`, `ErrSnapshotTransient`, `ErrSnapshotReplication`, `ErrSnapshotStorage`
+  fielen am Parent (`cb8afd07:internal/bootstrap/wiring.go`) auf `internal`; sie bleiben `internal`
+  (Codes `E7001` bis `E7010`), weil [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md)
+  Festlegung 2 „Klassen unverändert“ sagt. Eine Neuzuordnung (etwa `ErrSchemaStoreStorage` zu
+  `storage`, `ErrNotify` zu `transient`) ist eine eigene Entscheidung des Auftraggebers und ändert
+  `error_class` im Heartbeat und das Metrik-Label dieser Fälle. Sichtbare Folge der heutigen
+  Zuordnung: der Kopf eines `failed` Antrags an der Antrags-Queue (`ErrAdministrationStorage`) lautet
+  `Fehlerklasse internal [PCF-E7002]`, am Parent stand im Text `Fehlerklasse storage:`. —
+  **Ausgang:** (bei Closure)
+- **Reserve ohne Verwender.** Die Rückfälle `E1000`, `E3000`, `E4000`, `E5000`, `E6000` und
+  `messagecode.Fallback` haben im Produktionscode keinen Aufrufer (nur `E2000` und `E7000` werden
+  emittiert), und `StatusWithdrawn` kennt weder Verhalten noch Test, solange kein Code
+  zurückgezogen ist: bewusste Reserve nach [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md)
+  Festlegung 1 (jede Klasse führt ihren Rückfall) und Festlegung 4 (zurückgezogen, nie neu
+  belegt); der Test für den ersten zurückgezogenen Code entsteht mit diesem Code. —
+  **Ausgang:** (bei Closure)
 - **Kollision mit parallelen Arbeiten am Handbuch.** Rebase auf `main`, nur eigene Abschnitte
   committen. — **Ausgang:** (bei Closure)
 

@@ -621,9 +621,10 @@ Tabelle verarbeitet wird, und die zuvor nicht bestätigte Transaktion erscheint
 danach über `cdc.changes` ohne Ziel (`route_target IS NULL`), ohne zweiten
 `schema`-Fehler. *Ursprung:* übernommen aus demselben E2E-Lauf (Antrag
 `pending`, nach dem Neustart `applied`) und gemessen in einer Compose-Umgebung
-(PostgreSQL 18.6, der Log-Text oben ohne den Meldungscode, der aus der Tabelle
-folgt, nach dem Neustart `applied`, die Zeile ohne Ziel, Feed-Container
-`healthy`).
+(PostgreSQL 18.6: nach dem Neustart `applied`, die Zeile ohne Ziel,
+Feed-Container `healthy`). Der Kopf mit Klasse und Meldungscode im Log-Text oben
+ist *gemessen* im Container-Log des E2E-Laufs von `make test-integration`, nicht
+in dieser Compose-Umgebung.
 
 **Ursache 2 — die Spalte wurde an der Quelle entfernt oder fehlt in der
 Relation, die Spaltenform der Tabelle ist bekannt.** Zwei Anlässe: die Spalte
@@ -638,9 +639,12 @@ die Spaltenform angelegt hat).
 Für die Spaltenliste gemessen in einer Compose-Umgebung (PostgreSQL 18.6, Feed
 als Superuser, Tabelle `public.orders` mit bekannter Spaltenform und einer Regel
 auf `region`): nach `ALTER PUBLICATION … SET TABLE public.orders (id, name)` und
-einer eingefügten Zeile endet der Prozess mit Exit 1, gedruckt `Fehlerklasse
-schema [PCF-E4003]: Relation-Änderung nicht sicher als Obermenge interpretierbar:
-public.orders`, `cdc.heartbeat.error_class` zeigt `schema`. **Das Entfernen der
+einer eingefügten Zeile endet der Prozess mit Exit 1, gedruckt „Relation-Änderung
+nicht sicher als Obermenge interpretierbar: public.orders“,
+`cdc.heartbeat.error_class` zeigt `schema`. Der Kopf mit Klasse und Meldungscode
+(`Fehlerklasse schema [PCF-E4003]: …`) ist für diese Fehlerart im Container-Log des
+E2E-Laufs von `make test-integration` *gemessen*, nicht in dieser
+Compose-Umgebung. **Das Entfernen der
 Regel genügt dort nicht:** nach dem Entfernen beider Regeln der Tabelle und einem
 Neustart endete die Erfassung am System mit demselben Text, ebenso nach dem
 Zurücksetzen der Publication auf die volle Spaltenliste (*Ursprung:* übernommen,
@@ -2362,7 +2366,7 @@ Der Code steht an diesen Stellen:
 | Log-Zeile und Zeile beim Prozessende | `Fehlerklasse schema [PCF-E4003]: <Ursache>` |
 | `cdc.backfill_status.error_message` eines fehlgeschlagenen Runs | `schema [PCF-E4004]: <Ursache>` |
 | `cdc.administration_request.error_message` eines abgelehnten Antrags | `abgelehnt [PCF-E8021]: <Klartext>` |
-| `cdc.administration_request.error_message` eines Antrags, der an einem klassifizierten Fehler scheiterte | `Fehlerklasse storage [PCF-E5002]: <Ursache>` |
+| `cdc.administration_request.error_message` eines Antrags, der an einem klassifizierten Fehler scheiterte | `Fehlerklasse internal [PCF-E7002]: <Ursache>` |
 | Meldungen von `make schema-rollout` | `FEHLER [PCF-E2007]: <Text>` |
 
 **Der Text ist nicht Vertrag, der Code ist es.** Stabil sind der Code, die Klasse,
@@ -2376,7 +2380,6 @@ Entfällt eine Ursache, bleibt ihr Code in dieser Tabelle und trägt den Vermerk
 | Code | Klasse | Bedeutung | Maßnahme |
 |---|---|---|---|
 | `PCF-E1000` | `transient` | vorübergehend nicht verfügbare Quelle oder nicht näher zugeordnete vorübergehende Störung (Rückfall) | Erreichbarkeit der Quelle und des Netzes prüfen, Container neu starten |
-| `PCF-E1001` | `transient` | das Wecksignal über NATS konnte nicht veröffentlicht werden; die Änderung selbst ist erfasst und über SQL lesbar | NATS-Server und `CDC_NATS_URL` prüfen |
 | `PCF-E1002` | `transient` | das Wiederholungsfenster (5 Minuten) bei einer vorübergehenden Störung am Quellzugriff ist erschöpft; der Prozess endet mit Ausgang 1 | Erreichbarkeit der Quelle prüfen, Container neu starten (siehe [Neustart nach einem Fehler](#neustart-nach-einem-fehler)) |
 | `PCF-E1003` | `transient` | die Quelle war für den Snapshot eines Backfills vorübergehend nicht verfügbar (Zeitlimit der Slot-Anlage, Verbindungsabbruch, Umschreiben der Tabelle zwischen Export und Import) | Backfill neu beantragen |
 | `PCF-E2000` | `configuration` | ungültige oder falsch gesetzte Konfiguration ohne nähere Zuordnung (Rückfall) | Konfiguration prüfen |
@@ -2398,10 +2401,8 @@ Entfällt eine Ursache, bleibt ihr Code in dieser Tabelle und trägt den Vermerk
 | `PCF-E4005` | `schema` | eine Routing-Regel ist auf die Änderung nicht anwendbar, im Backfill auf die Spalten des Snapshots | Regelstand ändern (siehe [Routing-Regel konfigurieren](#routing-regel-konfigurieren)) |
 | `PCF-E5000` | `storage` | Persistenzfehler ohne nähere Zuordnung (Rückfall) | Erreichbarkeit, Speicherplatz und Rechte der CDC-Datenbank prüfen |
 | `PCF-E5001` | `storage` | Persistenzfehler im Change-Speicher; es wird keine Quellposition bestätigt | Erreichbarkeit, Speicherplatz und Rechte der CDC-Datenbank prüfen |
-| `PCF-E5002` | `storage` | Persistenzfehler an der Antrags-Queue | Erreichbarkeit und Rechte der CDC-Datenbank prüfen, Antrag erneut stellen |
 | `PCF-E5003` | `storage` | Persistenzfehler im Backfill-Speicher | Erreichbarkeit und Rechte der CDC-Datenbank prüfen, Backfill neu beantragen |
 | `PCF-E5004` | `storage` | Persistenzfehler im Speicher der Consumer-Stände | Erreichbarkeit und Rechte der CDC-Datenbank prüfen |
-| `PCF-E5005` | `storage` | Lesefehler an den Diagnose-Views | Erreichbarkeit und Rechte der Rolle `cdc_reader` prüfen |
 | `PCF-E5006` | `storage` | Persistenzfehler im Heartbeat-Speicher | Erreichbarkeit und Rechte der CDC-Datenbank prüfen |
 | `PCF-E5007` | `storage` | Persistenzfehler im Schema-Speicher | Erreichbarkeit und Rechte der CDC-Datenbank prüfen |
 | `PCF-E5008` | `storage` | Lesefehler im Snapshot eines Backfills (etwa eine Spalte, die zwischen Export und Import entfernt wurde) | Tabelle prüfen, Backfill neu beantragen |
@@ -2411,6 +2412,16 @@ Entfällt eine Ursache, bleibt ihr Code in dieser Tabelle und trägt den Vermerk
 | `PCF-E6003` | `replication` | Verletzung der Stream-Ordnung (Änderung oder Commit ohne offene Transaktion, BEGIN bei offener Transaktion); sofortiger Abbruch | Log sichern, Container neu starten |
 | `PCF-E6004` | `replication` | Störung an Slot oder Replikationsverbindung beim Snapshot eines Backfills | Reserve von `max_replication_slots` prüfen, Backfill neu beantragen |
 | `PCF-E7000` | `internal` | unerwarteter interner Fehler, der keiner anderen Klasse zuzuordnen ist | Log sichern, Container neu starten |
+| `PCF-E7001` | `internal` | das Wecksignal über NATS konnte nicht veröffentlicht werden; die Änderung selbst ist erfasst und über SQL lesbar | NATS-Server und `CDC_NATS_URL` prüfen |
+| `PCF-E7002` | `internal` | Persistenzfehler an der Antrags-Queue | Erreichbarkeit und Rechte der CDC-Datenbank prüfen, Antrag erneut stellen |
+| `PCF-E7003` | `internal` | Lesefehler an den Diagnose-Views | Erreichbarkeit und Rechte der Rolle `cdc_reader` prüfen |
+| `PCF-E7004` | `internal` | Persistenzfehler im Backfill-Speicher in einer Meldung außerhalb des Fehlertexts eines Runs (dort steht `PCF-E5003`) | Erreichbarkeit und Rechte der CDC-Datenbank prüfen, Backfill neu beantragen |
+| `PCF-E7005` | `internal` | Persistenzfehler im Schema-Speicher in einer Meldung außerhalb des Fehlertexts eines Runs (dort steht `PCF-E5007`) | Erreichbarkeit und Rechte der CDC-Datenbank prüfen |
+| `PCF-E7006` | `internal` | fehlende Berechtigung für den Snapshot eines Backfills in einer Meldung außerhalb des Fehlertexts eines Runs (dort steht `PCF-E3002`) | `SELECT` auf die Tabelle und das `REPLICATION`-Attribut prüfen, Backfill neu beantragen |
+| `PCF-E7007` | `internal` | der Snapshot eines Backfills steht im falschen Stand der Konfiguration, in einer Meldung außerhalb des Fehlertexts eines Runs (dort steht `PCF-E2004`) | Tabelle und Einstellungen der Instanz prüfen, Backfill neu beantragen |
+| `PCF-E7008` | `internal` | die Quelle war für den Snapshot eines Backfills vorübergehend nicht verfügbar, in einer Meldung außerhalb des Fehlertexts eines Runs (dort steht `PCF-E1003`) | Backfill neu beantragen |
+| `PCF-E7009` | `internal` | Störung an Slot oder Replikationsverbindung beim Snapshot eines Backfills, in einer Meldung außerhalb des Fehlertexts eines Runs (dort steht `PCF-E6004`) | Reserve von `max_replication_slots` prüfen, Backfill neu beantragen |
+| `PCF-E7010` | `internal` | Lesefehler im Snapshot eines Backfills, in einer Meldung außerhalb des Fehlertexts eines Runs (dort steht `PCF-E5008`) | Tabelle prüfen, Backfill neu beantragen |
 | `PCF-E8000` | Ablehnung | ein Antrag ist ungültig, ohne dass eine nähere Ursache benannt ist (Rückfall der Ablehnungen) | Antrag prüfen und erneut stellen |
 | `PCF-E8001` | Ablehnung | die Antrags-Zeile trägt keine Kennung; sie bleibt `pending` und erscheint als Warnung im Log | Zeile in `cdc.administration_request` prüfen |
 | `PCF-E8002` | Ablehnung | die Quelle des Antrags ist leer | Quelle angeben |
