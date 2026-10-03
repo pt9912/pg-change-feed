@@ -151,10 +151,11 @@ Je Sprache dieselbe Eingabetabelle (§3), dieselben Randfälle, derselbe Realser
       Reviewer und Verifier.
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und gesondert
       ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
       HIGH/MEDIUM (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
+      Report: [`review-slice-sdk-meldungscodes-in-fehlertypen`](../../../reviews/review-slice-sdk-meldungscodes-in-fehlertypen.md).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-sdk-meldungscodes-in-fehlertypen.md`
