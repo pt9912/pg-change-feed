@@ -7,8 +7,9 @@
 # Commit, nicht in das Handbuch.
 #
 # Reichweite: zwei benannte Listen plus Vollstaendigkeitspruefung. Geprueft
-# werden die Dateien der Liste `checked`; `excluded` nennt Maintainer-Doku und
-# Runner-Erzeugnisse, deren Kennungen gewollt sind. Eine *.md unter docs/user/,
+# werden die Dateien der Liste `checked`; `excluded` nennt die von Runnern
+# geschriebenen Erzeugnisse, deren Kennungen gewollt sind (die Maintainer-Doku
+# liegt unter docs/maintainer/, ausserhalb des Gegenstands). Eine *.md unter docs/user/,
 # die in keiner Liste steht, und eine genannte, nicht vorhandene Datei enden
 # mit Exit 2: eine neue Datei erzwingt die Klassifikation.
 #
