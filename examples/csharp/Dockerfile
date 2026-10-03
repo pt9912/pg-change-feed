@@ -16,7 +16,7 @@
 #   mcr.microsoft.com/dotnet/sdk:10.0
 #     -> sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317
 #   mcr.microsoft.com/dotnet/runtime:10.0
-#     -> sha256:e6541e52aeab4e412012178d66a6637b65252cca2ad15ada7cd1849d7d702c3d
+#     -> sha256:b89586dc17781f25531909993658aa8161205ae38b8cec8847df4a8221a403d5
 # Pin-Hebung ist ein bewusster Commit (AGENTS.md §3.6/Modul 14), keine stille
 # Auflösung.
 
@@ -93,7 +93,7 @@ RUN dotnet publish nats-stream-client/nats-stream-client.csproj -c Release --no-
 # eigener, benannter Zielstufen-Tag statt eines dispatchenden ENTRYPOINTs im
 # `runtime`-Image — das hält den bereits dokumentierten Container-Aufruf des
 # HTTP-Clients (`pg-change-feed-examples:csharp`, unten) byte-gleich stehen.
-FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:e6541e52aeab4e412012178d66a6637b65252cca2ad15ada7cd1849d7d702c3d AS runtime-sse
+FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:b89586dc17781f25531909993658aa8161205ae38b8cec8847df4a8221a403d5 AS runtime-sse
 WORKDIR /app
 COPY --from=build /app/publish-sse ./
 ENTRYPOINT ["dotnet", "sse-client.dll"]
@@ -101,7 +101,7 @@ ENTRYPOINT ["dotnet", "sse-client.dll"]
 # Stufe `runtime-nats`: startbares Image des NATS-Clients (ADR-0090, LP1,
 # slice-101) — derselbe Grund für den eigenen, benannten Zielstufen-Tag wie
 # bei `runtime-sse`.
-FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:e6541e52aeab4e412012178d66a6637b65252cca2ad15ada7cd1849d7d702c3d AS runtime-nats
+FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:b89586dc17781f25531909993658aa8161205ae38b8cec8847df4a8221a403d5 AS runtime-nats
 WORKDIR /app
 COPY --from=build /app/publish-nats ./
 ENTRYPOINT ["dotnet", "nats-client.dll"]
@@ -112,7 +112,7 @@ ENTRYPOINT ["dotnet", "nats-client.dll"]
 # über die `build`-Stufe zustande und liegt bereits kompiliert in
 # `/app/publish-grpc` — diese Stufe kopiert kein Quell-Erzeugnis, nur die
 # fertige Assembly.
-FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:e6541e52aeab4e412012178d66a6637b65252cca2ad15ada7cd1849d7d702c3d AS runtime-grpc
+FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:b89586dc17781f25531909993658aa8161205ae38b8cec8847df4a8221a403d5 AS runtime-grpc
 WORKDIR /app
 COPY --from=build /app/publish-grpc ./
 ENTRYPOINT ["dotnet", "grpc-client.dll"]
@@ -121,7 +121,7 @@ ENTRYPOINT ["dotnet", "grpc-client.dll"]
 # dritten, vollinhaltstragenden NATS-Zustellweg (ADR-0100) — derselbe Grund
 # für den eigenen, benannten Zielstufen-Tag wie bei den übrigen
 # `runtime-*`-Stufen.
-FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:e6541e52aeab4e412012178d66a6637b65252cca2ad15ada7cd1849d7d702c3d AS runtime-nats-stream
+FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:b89586dc17781f25531909993658aa8161205ae38b8cec8847df4a8221a403d5 AS runtime-nats-stream
 WORKDIR /app
 COPY --from=build /app/publish-nats-stream ./
 ENTRYPOINT ["dotnet", "nats-stream-client.dll"]
@@ -130,7 +130,7 @@ ENTRYPOINT ["dotnet", "nats-stream-client.dll"]
 # die Startform ist ein Container-Aufruf, kein Host-`dotnet run`). Bleibt die
 # **letzte** Stufe der Datei, damit ein `docker build` ohne `--target`
 # (unverändert in `harness/mk/examples.mk`) weiterhin dieses Image liefert.
-FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:e6541e52aeab4e412012178d66a6637b65252cca2ad15ada7cd1849d7d702c3d AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:b89586dc17781f25531909993658aa8161205ae38b8cec8847df4a8221a403d5 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish-http ./
 ENTRYPOINT ["dotnet", "http-client.dll"]
