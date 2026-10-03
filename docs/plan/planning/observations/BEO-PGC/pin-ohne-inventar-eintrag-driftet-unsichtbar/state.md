@@ -11,5 +11,5 @@ Träger: [`ADR-0146`](../../../../adr/0146-pin-inventar-quantifizierte-regel-all
 Hebung der gedrifteten Pins trägt
 [`slice-pin-digests-aktualisieren-2026-10-b`](../../../done/slice-pin-digests-aktualisieren-2026-10-b.md),
 den Sensor
-[`slice-pin-stale-alle-digest-pins`](../../../in-progress/slice-pin-stale-alle-digest-pins.md);
+[`slice-pin-stale-alle-digest-pins`](../../../done/slice-pin-stale-alle-digest-pins.md);
 der Ausgang bleibt **weiter offen**, bis der Sensor im Nachtlauf läuft.

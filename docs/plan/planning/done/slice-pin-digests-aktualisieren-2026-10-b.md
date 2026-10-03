@@ -84,7 +84,7 @@ vorher.
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
 - **Der Sensor P10** — Folge-Slice
-  [`slice-pin-stale-alle-digest-pins`](../in-progress/slice-pin-stale-alle-digest-pins.md); die
+  [`slice-pin-stale-alle-digest-pins`](../done/slice-pin-stale-alle-digest-pins.md); die
   Reihenfolge „erst Hebung, dann Sensor“ ist Teil der Entscheidung
   ([`ADR-0146`](../../adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md)
   Frage (d)), der erste Lauf mit Sensor soll grün sein.
@@ -211,7 +211,7 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist. Die Folge-Slice-Adresse ist
-      [`slice-pin-stale-alle-digest-pins`](../in-progress/slice-pin-stale-alle-digest-pins.md)
+      [`slice-pin-stale-alle-digest-pins`](../done/slice-pin-stale-alle-digest-pins.md)
       (liegt in `open/`); sie nimmt die Sendung „erster Lauf mit Sensor grün“ an:
       ihr Plan trägt die Abhängigkeit „erst nach diesem Slice“.
 
@@ -355,7 +355,7 @@ Post-Push-Lauf von `e2e.yml` (beide Legs) ist gelesen, und die Closure-Notiz in
 §7 trägt einen Lerneintrag (geschärfte Regel, neuer Sensor oder benannte
 Spec-Lücke). Ein Gate, das am Stand der Closure rot ist, geht nur mit
 dokumentiertem Carveout nach `done/`. Der Slice
-[`slice-pin-stale-alle-digest-pins`](../in-progress/slice-pin-stale-alle-digest-pins.md) startet
+[`slice-pin-stale-alle-digest-pins`](../done/slice-pin-stale-alle-digest-pins.md) startet
 frühestens, wenn dieser in `done/` liegt.
 
 ## 6. Risiken und offene Punkte
@@ -392,7 +392,7 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   des Upstream zwischen Liefer-Punkt 1 und dem Post-Push-Lauf): die erste
   Messung des Folge-Slice wäre dann nicht grün. — **Ausgang:** weiter offen;
   Anker: der Folge-Slice
-  [`slice-pin-stale-alle-digest-pins`](../in-progress/slice-pin-stale-alle-digest-pins.md)
+  [`slice-pin-stale-alle-digest-pins`](../done/slice-pin-stale-alle-digest-pins.md)
   misst am Start neu und hebt einen frisch gedrifteten Pin zuerst.
 - **CI-Matrix `e2e.yml` PostgreSQL 17/18:** die Datei wird berührt (Pin-Wert und
   Kommentare, keine Struktur); ein lokal grüner Lauf zeigt nicht, dass der Runner
@@ -548,7 +548,7 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   [`BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`](../observations/BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar/observation.md)
   (Zähler aus den Dateien: 2). [`BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit`](../observations/BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit/observation.md)
   nicht gezählt: kein Nachtlauf gelesen. Keine weitere Beobachtung angefallen.
-- **Folge-Slices:** [`slice-pin-stale-alle-digest-pins`](../in-progress/slice-pin-stale-alle-digest-pins.md)
+- **Folge-Slices:** [`slice-pin-stale-alle-digest-pins`](../done/slice-pin-stale-alle-digest-pins.md)
   (Sensor P10) — ist eine Datei in `open/`
 - **Risiken aus §6:** sieben Ausgänge, am Linktext von §6 ablesbar: entfallen
   — Verhaltensänderung eines Laufs, Plattform des Bau-Hosts, Kopie auf altem
