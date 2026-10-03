@@ -148,9 +148,9 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       Digest-Treffer in `spec/`, `docs/user/`, `README.md`, `AGENTS.md`; erwartet — gemessen
       unter §Berührte Spec-Stellen: kein Digest in `spec/`, `docs/user/`);
       die Träger-Nachzüge stehen in der Liefer-Punkt-2-Zeile.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist.
 
 ## 3. Plan (vor Code)
@@ -286,18 +286,23 @@ Ausgangsform je Risiko: eingetreten (CO-NNN oder Folge-Slice) · entfallen
   hat; eine Meldungsform- oder Schlüsseländerung kann `.d-check.yml` brechen.
   Ein Befund ist Folge-Arbeit; die Gate-Schwelle bleibt
   ([`AGENTS.md`](../../../../AGENTS.md) §3.6). Der Pin der Achse bleibt dann
-  auf dem Parent. — **Ausgang:** offen bis Closure.
+  auf dem Parent. — **Ausgang:** entfallen: am Diff meldet weder `make a-check`
+  (`gesamt: 0 Befund(e)`) noch `make docs-check` (0 Befund(e), v0.79.0) einen
+  neuen Befund (Parent-Vergleich im Klon, Verifikationsbericht §5).
 - **Tag-Frische von `DCHECK_IMAGE` ohne Digest-Messung:** `pin-stale-dcheck`
   meldet den Tag; der zugehörige Digest ist eine eigene Messung. Ein Tag-Wechsel
   ohne neuen `DCHECK_DIGEST` bliebe wirkungslos (der Digest sticht den Tag,
-  `d-check.mk`). — **Ausgang:** offen bis Closure; Gegenprobe: `make docs-check`
-  druckt am Diff die Version, deren Digest gezogen wurde (der Implementer
-  nennt die gedruckte Zeile).
+  `d-check.mk`). — **Ausgang:** entfallen: `make pin-stale-dcheck` druckt
+  `OK … DCHECK_DIGEST (ghcr.io/pt9912/d-check:v0.79.0) == sha256:b4b8756b…` und
+  `OK … Tag-Frische (v0.79.0)` (Verifikationsbericht §1, eigener Lauf).
 - **Neue Patch-Version von PostgreSQL oder Go ändert ein Testverhalten**
   (`make test-store`, `make test-replication`, `make test-integration`, beide
   PostgreSQL-Versionen): ein roter Lauf am Diff, grün am Parent, ist ein
   Befund; das Zeitverhalten der Replikations-Tests (`wal_sender_timeout`-Fenster)
-  ist am wahrscheinlichsten betroffen. — **Ausgang:** offen bis Closure.
+  ist am wahrscheinlichsten betroffen. — **Ausgang:** entfallen: `make test`,
+  `make test-store`, `make test-replication` (PostgreSQL 18.6 und 17.11) und
+  `make test-integration` endeten am Diff mit Exit 0, beim Implementer und im
+  eigenen Lauf des Verifiers.
 - **CI-Matrix `e2e.yml` PG 17/18:** die Digests dort sind Pins des Workflows;
   ein lokal grüner Lauf zeigt nicht, dass der Runner grün läuft. Der Slice
   berührt `.github/workflows/e2e.yml` (Pin-Wert, keine Struktur) — nach
@@ -306,35 +311,45 @@ Ausgangsform je Risiko: eingetreten (CO-NNN oder Folge-Slice) · entfallen
   Post-Push-Lauf von `e2e.yml` (beide Matrix-Legs) wird dennoch gelesen
   (`gh run list --workflow e2e.yml`), weil sich die Pins ändern, gegen die die
   Matrix läuft. Der Push ist nicht Teil dieses Auftrags; der Lauf steht aus.
-  — **Ausgang:** weiter offen bis zum Post-Push-Lauf, dann Eintrag in §7.
+  Die Closure berührt `.github/workflows/e2e.yml` ein zweites Mal (nur
+  Kommentarzeilen zu `SPEC-012`, keine Struktur, kein Pin); der Post-Push-Lauf
+  deckt beides.
+  — **Ausgang:** weiter offen, bis der Post-Push-Lauf von `e2e.yml` (beide
+  Legs) und `upstream-drift.yml` gelesen ist (`gh run list --workflow
+  e2e.yml`, `gh run list --workflow upstream-drift.yml`;
+  [`AGENTS.md`](../../../../AGENTS.md) §3.10); Träger der Nachverfolgung ist
+  [`BEO-PGC/github-actions-unverifizierbar-lokal`](../observations/BEO-PGC/github-actions-unverifizierbar-lokal/observation.md).
 - **`image-stale`-Befund `P1` und `make image`:** der neue `golang:1.27-alpine`-Digest
   ändert das Toolchain-Image jedes Docker-only-Laufs
   ([`AGENTS.md`](../../../../AGENTS.md) §3.1); ein Rückfall auf den Parent-Digest
-  in einem der 9 Träger ließe zwei Toolchains koexistieren. — **Ausgang:** durch
-  den `diff`-Suchlauf aus §3 entfallen, wenn die Zahl der Treffer dort die
-  Erwartung trifft.
+  in einem der 9 Träger ließe zwei Toolchains koexistieren. — **Ausgang:**
+  entfallen: der `diff`-Suchlauf aus §3 trifft die
+  Erwartung (`make suchlauf-nachmessen`: 16 Zeilen stimmen), und die
+  Träger-Auszählung des Verifiers zeigt je Achse genau einen Wert.
 - **Offene Frage — Sensor-Lücke PG 17:** der Pin `postgres:17-alpine` in
   `e2e.yml` fehlt im Pin-Inventar von
   [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) und damit in
   `upstream-drift.yml`; die Drift dort bliebe unsichtbar.
   [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) ist `Accepted`;
   die Aufnahme ist eine Folge-ADR (Architect). Der Slice benennt sie, entscheidet
-  sie nicht. — **Ausgang:** weiter offen: Beobachtung im Register
-  (`BEO-PGC/...`, der Implementer legt den Eintrag an, falls die Handmessung
-  Drift zeigt, die der Sensor nicht gemeldet hätte).
+  sie nicht. — **Ausgang:** weiter offen:
+  [`BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`](../observations/BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar/observation.md)
+  (die Handmessung zeigte Drift, die der Sensor nicht gemeldet hätte); die
+  Folge-ADR ist eine Frage an den Architect.
 - **Offene Frage — stale Zitat:** [`harness/README.md`](../../../../harness/README.md)
   nennt für `make image-stale` die Bindung `ADR-0039` („Update =
   bewusster Digest-Commit“); der [ADR-Index](../../adr/README.md) führt diese
   Kennung als `Superseded` und mit anderem Gegenstand (Paketstruktur). Die tragende ADR für
   die Digest-Hebung ist [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md)
   Entscheidung 7. Der Slice zieht das nicht nach (fremde, nicht berührte
-  Zeile); gemeldet. — **Ausgang:** Folge-Slice oder Nachzug durch den Planner
-  mit der Closure.
+  Zeile); gemeldet. — **Ausgang:** eingetreten und mit der Closure nachgezogen
+  (Bindung `ADR-0051` Entscheidung 7 in `harness/README.md`, eigener Commit).
 - **Keine neue ADR nötig** — Begründung: Entscheidung 7 von
   [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) führt die
   Hebung ausdrücklich als „bewusster Commit“; der Slice ändert weder Tag noch
   Schwelle. Das gilt, solange die Messung keine Tag- oder Hauptversions-
-  Änderung zeigt. — **Ausgang:** entfallen, wenn §7 keine solche Änderung nennt.
+  Änderung zeigt. — **Ausgang:** entfallen: §7 nennt keine solche Änderung
+  (`go1.27.1` am alten wie am neuen Digest, PostgreSQL 18.6 und 17.11).
 
 ## 7. Closure-Notiz
 
@@ -366,9 +381,14 @@ hier abgekürzt zu übernehmen):
   `go version go1.27.1` am alten wie am neuen Digest (gemessen mit
   `docker run --entrypoint go … version` an beiden neuen Digests), PostgreSQL
   bleibt `18.6` (gedruckte Zeile des Replikations-Tests) und `17.11`.
-  P8/P9 ohne Drift, nicht angefasst. Der Blick in das Log des Laufs
-  `37112891025` (Plan-Erwartung zu `P9`) ist nicht erfolgt; `P9` ist am
-  Arbeitsstand `OK`, der Plan-Satz bleibt Erwartung.
+  P8/P9 ohne Drift, nicht angefasst. **P9 im Lauf `37112891025` (gemessen
+  in der Closure, Log des Jobs über `gh api repos/pt9912/pg-change-feed/actions/jobs/111174082159/logs`,
+  Repo-Stand des Laufs `7aa31562`):** der Schritt war `failure`, gedruckt
+  `DRIFT       astral-sh/setup-uv@v10.1.0 Tag-Frische: gepinnt v10.1.0, neuester
+  Release v10.2.0` und `make: *** [Makefile:88: pin-stale-actions] Error 1`; die
+  drei anderen Actions druckten je zwei `OK`. Die Plan-Erwartung trifft: der
+  Bump `06ffb834` auf `v10.2.0` liegt nach dem Stand des Laufs, am Arbeitsstand
+  ist `P9` `OK`.
 - **PG-17-Handmessung (gemessen, 2026-10-03):** `docker buildx imagetools
   inspect postgres:17-alpine --format '{{.Manifest.Digest}}'` druckte den
   Index-Digest `sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24`;
@@ -419,16 +439,30 @@ hier abgekürzt zu übernehmen):
   alter Digest in `Makefile`, `*.mk`, `Dockerfile`, `examples/`, `compose*.yaml`,
   `.github/workflows/`, `tools/`. Grenze: der Suchlauf liest Digest-Präfixe, keine
   Tag-Texte; das Makefile-Kommentar `go1.27.1` stimmt mit der Messung überein.
-- **Gemeldete Träger fremder Dateien:** `harness/README.md` nennt für
-  `make image-stale` die Bindung `ADR-0039` (stale, siehe §6) — nicht
-  geändert, Frist: Closure.
+- **Gemeldete Träger fremder Dateien:** `harness/README.md` nannte für
+  `make image-stale` die Bindung `ADR-0039` (stale, siehe §6) — mit der
+  Closure auf `ADR-0051` Entscheidung 7 nachgezogen (der ADR-Index führt
+  `ADR-0039` als `Superseded`, Gegenstand Paketstruktur).
+- **Folge-Befund Out-of-Scope-Pins (gelesen in der Verifikation, `git grep -E
+  '^FROM .*@sha256|image: .*@sha256'` über `sdks/`, `examples/` ohne
+  `examples/Dockerfile` und `examples/compose.yaml`, und `tools/schema/`;
+  Drift nicht gemessen):** fünf gepinnte Basis-Images ohne Sensor —
+  `mcr.microsoft.com/dotnet/sdk:10.0` (`sdks/csharp`, `examples/csharp`),
+  `mcr.microsoft.com/dotnet/runtime:10.0` (`examples/csharp`),
+  `eclipse-temurin:21-jdk` (`sdks/kotlin`, `examples/kotlin`),
+  `eclipse-temurin:21-jre` (`examples/kotlin`) und `python:3.14-slim`
+  (`sdks/python`). `tools/schema/Dockerfile` bezieht `D_MIGRATE_IMAGE` und
+  `TOOLCHAIN_IMAGE` als Build-Argument; sie wandern mit P1 und P5 mit. Adresse:
+  `BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`; eine Messung oder ein
+  Sensor ist Sache einer Folge-ADR (Frage an den Architect).
 - **Post-Push-Lauf `e2e.yml` (beide Legs) und `upstream-drift.yml`:** steht aus
   (kein Push). Der Slice berührt `.github/workflows/e2e.yml` (nur Pin-Werte und
   das Datum im Kommentar, keine Struktur); `AGENTS.md` §3.10 meldet: der
-  Post-Push-Lauf ist offen.
-- **Beobachtung (nicht angelegt):** Der PG-17-Pin driftete ohne Sensor
-  (Messung oben). Ein Register-Eintrag `BEO-PGC/…` ist Closure-Arbeit des
-  Planners (§6 benennt ihn).
+  Post-Push-Lauf ist offen. Die Closure ergänzt vier Kommentarzeilen in
+  `e2e.yml` (Z. 41ff. und die beiden `(Major nach SPEC-012)`-Zeilen), die
+  Digests und die Struktur bleiben.
+- **Beobachtung:** Der PG-17-Pin driftete ohne Sensor (Messung oben) — angelegt
+  als `BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`.
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register (vorhandene `BEO-<NNN>` **zitieren** statt neu
@@ -442,17 +476,51 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-- **Was hat funktioniert:** (mit der Closure)
-- **Was ging anders als geplant:** (mit der Closure)
-- **Steering-Loop-Eintrag:** (mit der Closure; Kandidaten für einen
-  Lerneintrag: die Sensor-Lücke PG 17 als benannte Spec-/ADR-Lücke, das stale
-  Zitat `ADR-0039` in `harness/README.md`, ein Befund eines gehobenen
-  Prüfwerkzeugs)
-- **Beobachtungs-Register (`../observations/`):** (mit der Closure; Sichtung
-  der Planung unter §8)
-- **Folge-Slices:** (mit der Closure)
-- **Risiken aus §6:** (mit der Closure, je Risiko genau ein Ausgang)
-- **Drei Paarungen:** (mit der Closure, von der Slice-Closure selbst getragen)
+- **Was hat funktioniert:** je Achse ein Commit mit engstem Lauf davor
+  machte jeden Lauf einer Achse zuordenbar; kein gehobenes Prüfwerkzeug
+  meldete einen neuen Befund (`a-check` und `d-check` am alten und neuen
+  Digest gleich, Parent-Vergleich im Klon des Verifiers); der unabhängige
+  Nachlauf des Verifiers bestätigte die Handmessung des PG-17-Pins.
+- **Was ging anders als geplant:** ein erster Lauf von `make test-integration`
+  brach am 30-Minuten-Limit des Hintergrund-Wrappers ab (kein Testfehler) und
+  lief mit längerer Frist grün. Der Plan-Satz zu `P9` blieb bis zur Closure
+  Erwartung; das Log des Laufs `37112891025` bestätigt ihn (§7 oben). Die
+  Nacharbeit-Schritte von `d-migrate` tragen auch am neuen Pin
+  ([`BEO-PGC/d-migrate-nacharbeit`](../observations/BEO-PGC/d-migrate-nacharbeit/observation.md):
+  kein neuer Beleg, keine neue Evidenz-Datei).
+- **Steering-Loop-Eintrag:** geschärfte Beobachtung, noch keine verkörperte
+  Regel: **Ein Pin ohne Zeile im Inventar hat keinen Leser und driftet
+  unsichtbar; eine Messung von Hand ist eine Momentaufnahme, kein Sensor.**
+  Der PG-17-Pin war gedriftet, während alle Sensoren grün oder nur an anderen
+  Achsen rot waren. Benannte ADR-Lücke: die Aufnahme des Pins und die Form
+  des Sensors (`pin-stale.sh` liest Makefile-Variablen, der Pin ist ein
+  YAML-Matrix-Wert); dazu die Inventar-Form, die Digest-Präfixe als Werte nennt
+  (sie veralten mit jeder Hebung; eine Folge-ADR verweist auf die Variable).
+  Zu zitierende Zahl: die Dateizahl von `d-check` nicht als Kennzahl führen —
+  sie ändert sich am HEAD mit jedem Report (1620 beim Implementer, 1621 beim
+  Verifier). Frage an den Architect (nicht angelegt): Folge-ADR zu
+  [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) Entscheidung 7.
+- **Beobachtungs-Register (`../observations/`):** neu
+  [`BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`](../observations/BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar/observation.md)
+  (Zähler 1). Zweite Evidenz-Datei zu
+  [`BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit`](../observations/BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit/observation.md)
+  (Zähler 2): die Klasse „advisory, nicht blockierend, rot ohne Reaktion“ trifft
+  den Nachtlauf `upstream-drift.yml`, dessen 14 Läufe seit 2026-09-20 alle
+  `failure` endeten (gemessen mit `gh run list`). Kein Eintrag erreicht 3×
+  über diesen Slice.
+- **Folge-Slices:** keiner angelegt. Die Hebung der fünf Basis-Images und ein
+  Sensor für den PG-17-Pin hängen an der Folge-ADR des Architects.
+- **Risiken aus §6:** je Risiko ein Ausgang in §6 (fünf entfallen, eines
+  eingetreten und nachgezogen, zwei weiter offen: CI-Matrix `e2e.yml` samt
+  `upstream-drift.yml` bis zum Post-Push-Lauf, Sensor-Lücke PG 17 mit
+  Register-Eintrag).
+- **Validator (Modul 8):** entfällt, weil der Slice Pflegearbeit an
+  Upstream-Pins ist und keinen End-Nutzer-Wert liefert (kein
+  Nutzerdokument, kein Vertrag berührt, gemessen am Diff).
+- **Drei Paarungen:** (a) Anker: kein Steering-Loop-Eintrag trägt das Feld
+  `liegt in`, nichts zu prüfen; (b) Folge-Slice: keiner genannt; (c) Register:
+  beide genannten `BEO-PGC/`-Verzeichnisse existieren, jedes mit nicht leerem
+  `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
