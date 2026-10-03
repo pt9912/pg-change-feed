@@ -128,8 +128,11 @@ src_rc=0
 sed -n 's/^|[[:space:]]*`\{0,1\}\(PCF-[EWI][0-9]\{4\}\).*/\1/p' "$root/$catalog_rel" > "$scratch/catalog.raw" 2> "$scratch/sed.err" || src_rc=$?
 [ "$src_rc" -eq 0 ] || die2 "$catalog_rel ($(head -n 1 "$scratch/sed.err"))"
 
-sort -u <(sed 's/^[^:]*:[0-9]*://' "$scratch/table.codes") > "$scratch/table.set"
-sort -u "$scratch/catalog.raw" > "$scratch/catalog.set"
+src_rc=0
+sed 's/^[^:]*:[0-9]*://' "$scratch/table.codes" > "$scratch/table.raw" 2> "$scratch/sed.err" || src_rc=$?
+[ "$src_rc" -eq 0 ] || die2 "Mengenbildung der Tabelle ($(head -n 1 "$scratch/sed.err"))"
+sort -u "$scratch/table.raw" > "$scratch/table.set" || die2 "Mengenbildung der Tabelle (sort)"
+sort -u "$scratch/catalog.raw" > "$scratch/catalog.set" || die2 "Mengenbildung des Katalogs (sort)"
 
 # 1. Form
 for kind in table src doc; do
@@ -154,12 +157,16 @@ for kind in src doc; do
 done
 
 # 3. Tabelle gleich Katalog
+comm -23 "$scratch/table.set" "$scratch/catalog.set" > "$scratch/only-table" 2> "$scratch/comm.err" ||
+  die2 "Mengenvergleich Tabelle gegen Katalog ($(head -n 1 "$scratch/comm.err"))"
+comm -13 "$scratch/table.set" "$scratch/catalog.set" > "$scratch/only-catalog" 2> "$scratch/comm.err" ||
+  die2 "Mengenvergleich Katalog gegen Tabelle ($(head -n 1 "$scratch/comm.err"))"
 while IFS= read -r code; do
   add_finding "Tabellen-Code ohne Katalog-Zeile in $catalog_rel: $code"
-done < <(comm -23 "$scratch/table.set" "$scratch/catalog.set")
+done < "$scratch/only-table"
 while IFS= read -r code; do
   add_finding "Katalog-Zeile ohne Eintrag in der Tabelle $table_rel: $code"
-done < <(comm -13 "$scratch/table.set" "$scratch/catalog.set")
+done < "$scratch/only-catalog"
 
 if [ -n "$findings" ]; then
   printf '%s' "$findings" >&2

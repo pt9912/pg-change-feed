@@ -250,6 +250,44 @@ fresh
 put tools/harness/x.sh 'echo "PCF-E4999"'
 check 0 "Läufer unter tools/harness nicht gelesen" "$(run)"
 
+# --- Datei mit NUL-Byte: grep liest sie als Text (-a) -----------------------
+fresh
+printf 'package x\n\0var e = "PCF-E4999"\n' > "$tmp/root/internal/a/a.go"
+check 1 "Go-Datei mit NUL-Byte und Code ohne Tabelle" "$(run)"
+msg "NUL-Byte-Datei" '^Code ohne Eintrag in der Tabelle internal/domain/messagecode/codes\.go: internal/a/a\.go:2:PCF-E4999$'
+
+# --- Mengenbildung und -vergleich: ein Fehler des Werkzeugs ist Exit 2 ------
+# Stubs vor dem echten Werkzeug im PATH; jeder lässt den Aufruf der Mengen-
+# bildung scheitern und alle übrigen Aufrufe durch.
+mkdir -p "$tmp/bin"
+REAL_SED=$(command -v sed)
+REAL_SORT=$(command -v sort)
+REAL_COMM=$(command -v comm)
+printf '#!/bin/sh\ncase "$1" in -n) exec %s "$@";; *) echo "sed: Stub-Fehler" >&2; exit 2;; esac\n' "$REAL_SED" > "$tmp/bin/sed"
+printf '#!/bin/sh\ncase "$1" in -zu) exec %s "$@";; *) echo "sort: Stub-Fehler" >&2; exit 2;; esac\n' "$REAL_SORT" > "$tmp/bin/sort"
+printf '#!/bin/sh\necho "comm: Stub-Fehler" >&2\nexit 2\n' > "$tmp/bin/comm"
+chmod +x "$tmp/bin/sed" "$tmp/bin/sort" "$tmp/bin/comm"
+stubbed() {
+  local only=$1 dir="$tmp/bin-$1"
+  rm -rf "${dir:?}"
+  mkdir -p "$dir"
+  cp "$tmp/bin/$only" "$dir/$only"
+  PATH="$dir:$PATH" bash "$CHECK" "$tmp/root" > "$tmp/out" 2>&1
+  echo $?
+}
+
+fresh
+check 2 "Mengenbildung der Tabelle: sed scheitert" "$(stubbed sed)"
+msg "sed der Tabellenmenge" '^meldungscodes-check: Lesefehler: Mengenbildung der Tabelle \(sed: Stub-Fehler\)$'
+
+fresh
+check 2 "Mengenbildung: sort scheitert" "$(stubbed sort)"
+msg "sort der Tabellenmenge" '^meldungscodes-check: Lesefehler: Mengenbildung der Tabelle \(sort\)$'
+
+fresh
+check 2 "Mengenvergleich: comm scheitert" "$(stubbed comm)"
+msg "comm Tabelle gegen Katalog" '^meldungscodes-check: Lesefehler: Mengenvergleich Tabelle gegen Katalog \(comm: Stub-Fehler\)$'
+
 # --- Lesefehler (Exit 2) ----------------------------------------------------
 check 2 "fehlende Wurzel" "$(bash "$CHECK" "$tmp/fehlt" > "$tmp/out" 2>&1; echo $?)"
 msg "fehlende Wurzel" '^meldungscodes-check: Lesefehler: Wurzel fehlt: '
