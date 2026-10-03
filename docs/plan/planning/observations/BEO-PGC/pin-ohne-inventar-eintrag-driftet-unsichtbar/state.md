@@ -9,7 +9,7 @@ evidence/slice-pin-digests-aktualisieren-2026-10-b.md).
 Träger: [`ADR-0146`](../../../../adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md)
 (Accepted; Pin-Inventar als Regel über alle Digest-Pins, Sensor P10). Die
 Hebung der gedrifteten Pins trägt
-[`slice-pin-digests-aktualisieren-2026-10-b`](../../../in-progress/slice-pin-digests-aktualisieren-2026-10-b.md),
+[`slice-pin-digests-aktualisieren-2026-10-b`](../../../done/slice-pin-digests-aktualisieren-2026-10-b.md),
 den Sensor
 [`slice-pin-stale-alle-digest-pins`](../../../open/slice-pin-stale-alle-digest-pins.md);
 der Ausgang bleibt **weiter offen**, bis der Sensor im Nachtlauf läuft.

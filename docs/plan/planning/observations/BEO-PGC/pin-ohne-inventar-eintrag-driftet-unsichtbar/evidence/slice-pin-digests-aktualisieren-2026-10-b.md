@@ -12,5 +12,5 @@ inspect` (amd64)“ als Gewinnungsweg. Der Beleg ist das Zweitauftreten der
 Klasse und das Erstauftreten für `nats`, `trivy` und die fünf SDK-/Beispiel-Basis-Images
 ([`ADR-0146`](../../../../../adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md)).
 Slice-Aufzeichnung: Closure-Notiz in
-[`slice-pin-digests-aktualisieren-2026-10-b`](../../../../in-progress/slice-pin-digests-aktualisieren-2026-10-b.md)
+[`slice-pin-digests-aktualisieren-2026-10-b`](../../../../done/slice-pin-digests-aktualisieren-2026-10-b.md)
 §7.
