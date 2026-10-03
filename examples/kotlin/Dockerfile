@@ -13,10 +13,10 @@
 # (harness/mk/examples.mk). Ohne ihn bricht der Bau an der COPY-Zeile ab —
 # kein stiller Fallback (ADR-0090 §Fitness Function).
 #
-# Basis-Digests real gemessen (`docker manifest inspect`, amd64/linux) am
-# Zeitpunkt dieses Zuges (2026-09-17):
+# Basis-Digests sind die Index-Digests der Tags (`docker buildx imagetools
+# inspect <Tag> --format '{{.Manifest.Digest}}'`):
 #   eclipse-temurin:21-jdk
-#     -> sha256:085eb93e049c7397f725bd8be31c4fd52ba4777a75168e851428508234aa224e
+#     -> sha256:3e3c176ffed168beb42c607be9bc1639b466cf00261a0fb04425562c9d0c5c2b
 #   eclipse-temurin:21-jre
 #     -> sha256:ca7551d4f36647207812e3c8c8596c89fd4e5226a061a5b8c8629839fe8969f6
 # Pin-Hebung ist ein bewusster Commit (AGENTS.md §3.6/Modul 14), keine stille
@@ -35,7 +35,7 @@
 # erzeugen `protoc-gen-grpc-java`/`protoc-gen-grpc-kotlin` den Stub aus der
 # über den Zusatzkontext gelesenen `.proto` während dieses Builds (ADR-0090
 # Festlegung 2/3) — der Stub selbst verlässt diese Stufe nie.
-FROM eclipse-temurin:21-jdk@sha256:085eb93e049c7397f725bd8be31c4fd52ba4777a75168e851428508234aa224e AS build
+FROM eclipse-temurin:21-jdk@sha256:3e3c176ffed168beb42c607be9bc1639b466cf00261a0fb04425562c9d0c5c2b AS build
 WORKDIR /src
 
 # Der Gradle-Wrapper und die Projekt-/Modul-Manifeste zuerst — sie ändern

@@ -24,13 +24,13 @@
 # JDK-Basis: `eclipse-temurin:21-jdk`, NICHT `25-jdk` (Gradle 8.14 unterstützt
 # JDK 25 nur als Toolchain-Ziel ab Gradle 9.1.0; das SDK bleibt bei derselben,
 # bereits real gebauten JDK-/Gradle-Kombination wie examples/kotlin/Dockerfile).
-# Basis-Digest gemessen (`docker buildx imagetools inspect`, linux/amd64,
-# 2026-09-20) — identisch mit dem in examples/kotlin/Dockerfile gepinnten
-# Kandidaten (dieselbe Basis):
+# Basis-Digest ist der Index-Digest des Tags (`docker buildx imagetools
+# inspect eclipse-temurin:21-jdk --format '{{.Manifest.Digest}}'`), identisch
+# mit dem in examples/kotlin/Dockerfile gepinnten Wert (dieselbe Basis):
 #   eclipse-temurin:21-jdk
-#     -> sha256:085eb93e049c7397f725bd8be31c4fd52ba4777a75168e851428508234aa224e
+#     -> sha256:3e3c176ffed168beb42c607be9bc1639b466cf00261a0fb04425562c9d0c5c2b
 # Pin-Hebung ist ein bewusster Commit, keine stille Auflösung.
-FROM eclipse-temurin:21-jdk@sha256:085eb93e049c7397f725bd8be31c4fd52ba4777a75168e851428508234aa224e AS build
+FROM eclipse-temurin:21-jdk@sha256:3e3c176ffed168beb42c607be9bc1639b466cf00261a0fb04425562c9d0c5c2b AS build
 WORKDIR /src
 
 # Das Projekt liegt unter pgchangefeed-kotlin/ (Bau-Kontext ist sdks/kotlin/
