@@ -571,7 +571,7 @@ schließt Mehrdeutigkeit aus, statt sie aufzulösen:
 | R3 — `when.column` ist keine ausgeschlossene Spalte | `abgelehnt [PCF-E8033]: Spalte ist ausgeschlossen: public.orders.name` |
 | R3 — umgekehrt: `cdc.exclude_column` gegen eine Spalte mit Routing-Bedingung | `abgelehnt [PCF-E8034]: Spalte trägt eine Routing-Bedingung: public.orders.region` |
 | R4 — höchstens eine Abschlussregel (ohne `when`) | `abgelehnt [PCF-E8032]: Regel ohne when bereits vorhanden: public.orders.rest` |
-| R4 — die Abschlussregel trägt die höchste `order` | `abgelehnt [PCF-E8032]: Regel ohne when trägt nicht die höchste order: public.orders.rest` (Text laut Spezifikation, am System nicht gefahren) |
+| R4 — die Abschlussregel trägt die höchste `order` | `abgelehnt [PCF-E8032]: Regel ohne when trägt nicht die höchste order: public.orders.rest` |
 | R4 — eine Regel mit `when` trägt keine höhere `order` als die Abschlussregel | `abgelehnt [PCF-E8032]: order liegt hinter der Regel ohne when: public.orders.rest` |
 | R5 — das Paar (`when.column`, `when.equals`) kommt je Tabelle einmal vor | `abgelehnt [PCF-E8031]: Bedingung bereits vergeben: public.orders.region` |
 | R6 — `cdc.remove_route` gegen einen unbekannten Regelnamen | `abgelehnt [PCF-E8023]: Regelname nicht geführt: public.orders.nope` |
@@ -581,10 +581,12 @@ ungültig`, `abgelehnt [PCF-E8011]: rule_spec ist ungültig`, `abgelehnt
 [PCF-E8011]: unbekannter Schlüssel in rule_spec` (Beispiel: `unbekannter
 Schlüssel in rule_spec: foo`, auch für einen Schlüssel innerhalb von `when`) und
 `abgelehnt [PCF-E8012]: Zielname ist ungültig`.
-Der Regelstand bleibt bei jedem `failed` unverändert. *Ursprung:* gemessen — Code
-und Text der Tabelle und der Formprüfungen sind die Ausgabe von `error_message`
-einer Compose-Umgebung (`make test-integration`, `cdc_admin`-Identität); die
-Adressen nennen die Namen des Beispiels.
+Der Regelstand bleibt bei jedem `failed` unverändert. *Ursprung:* übernommen — Code
+und Text der Tabelle sind die Ausgabe von `error_message`, die der E2E-Test von
+`make test-integration` gegen eine Compose-Umgebung (`cdc_admin`-Identität)
+erwartet; `PCF-E8010` (Regelname) ist im Store-Test von `make test-store` unter
+einem `cdc_admin`-Login belegt, nicht im E2E-Lauf. Beide Läufe wurden für diesen
+Absatz nicht neu gefahren; die Adressen nennen die Namen des Beispiels.
 
 **Lösung:** den betroffenen Namen oder die `order` ändern; bei R4 mit
 Abschlussregel: wer eine Regel mit höherer `order` als die Abschlussregel

@@ -286,7 +286,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   `storage`, `ErrNotify` zu `transient`) ist eine eigene Entscheidung des Auftraggebers und ändert
   `error_class` im Heartbeat und das Metrik-Label dieser Fälle. Sichtbare Folge der heutigen
   Zuordnung: der Kopf eines `failed` Antrags an der Antrags-Queue (`ErrAdministrationStorage`) lautet
-  `Fehlerklasse internal [PCF-E7002]`, am Parent stand im Text `Fehlerklasse storage:`. —
+  `Fehlerklasse internal [PCF-E7002]`, am Parent stand im Text `Fehlerklasse storage:`. Die Text-Folge
+  gilt für alle zehn Sentinels `E7001` bis `E7010` (etwa `ErrNotify`: im Fehlertext vorher
+  `transient`, jetzt `internal`), also in der Log- und der Prozessende-Zeile; `error_class` und
+  Metrik-Label bleiben unverändert (*Ursprung:* Verifikation, gelesen am Diff gegen den Parent, nicht
+  gefahren). —
   **Ausgang:** (bei Closure)
 - **Reserve ohne Verwender.** Die Rückfälle `E1000`, `E3000`, `E4000`, `E5000`, `E6000` und
   `messagecode.Fallback` haben im Produktionscode keinen Aufrufer (nur `E2000` und `E7000` werden

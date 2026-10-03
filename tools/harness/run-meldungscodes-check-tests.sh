@@ -266,12 +266,14 @@ REAL_COMM=$(command -v comm)
 printf '#!/bin/sh\ncase "$1" in -n) exec %s "$@";; *) echo "sed: Stub-Fehler" >&2; exit 2;; esac\n' "$REAL_SED" > "$tmp/bin/sed"
 printf '#!/bin/sh\ncase "$1" in -zu) exec %s "$@";; *) echo "sort: Stub-Fehler" >&2; exit 2;; esac\n' "$REAL_SORT" > "$tmp/bin/sort"
 printf '#!/bin/sh\necho "comm: Stub-Fehler" >&2\nexit 2\n' > "$tmp/bin/comm"
-chmod +x "$tmp/bin/sed" "$tmp/bin/sort" "$tmp/bin/comm"
+printf '#!/bin/sh\ncase "$1" in -zu) echo "sort: Stub-Fehler" >&2; exit 2;; *) exec %s "$@";; esac\n' "$REAL_SORT" > "$tmp/bin/sortz"
+chmod +x "$tmp/bin/sed" "$tmp/bin/sort" "$tmp/bin/comm" "$tmp/bin/sortz"
 stubbed() {
-  local only=$1 dir="$tmp/bin-$1"
+  local only=$1 dir="$tmp/bin-$1" tool=${1%z}
+  [ "$only" = sortz ] || tool=$only
   rm -rf "${dir:?}"
   mkdir -p "$dir"
-  cp "$tmp/bin/$only" "$dir/$only"
+  cp "$tmp/bin/$only" "$dir/$tool"
   PATH="$dir:$PATH" bash "$CHECK" "$tmp/root" > "$tmp/out" 2>&1
   echo $?
 }
@@ -283,6 +285,10 @@ msg "sed der Tabellenmenge" '^meldungscodes-check: Lesefehler: Mengenbildung der
 fresh
 check 2 "Mengenbildung: sort scheitert" "$(stubbed sort)"
 msg "sort der Tabellenmenge" '^meldungscodes-check: Lesefehler: Mengenbildung der Tabelle \(sort\)$'
+
+fresh
+check 2 "Dateiliste: sort -zu scheitert" "$(stubbed sortz)"
+msg "sort der Dateiliste" '^meldungscodes-check: Lesefehler: Sortieren der Dateiliste \(\*\.go\)$'
 
 fresh
 check 2 "Mengenvergleich: comm scheitert" "$(stubbed comm)"

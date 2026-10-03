@@ -68,7 +68,7 @@ list_files() {
       die2 "Durchsuchen von $r ($(head -n 1 "$scratch/find.err"))"
     fi
   done
-  sort -zu "$out.raw" > "$out"
+  sort -zu "$out.raw" > "$out" || die2 "Sortieren der Dateiliste ($name)"
 }
 
 findings=""
