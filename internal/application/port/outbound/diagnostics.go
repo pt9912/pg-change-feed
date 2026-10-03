@@ -7,7 +7,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
-// ErrDiagnosticsStorage trägt die Fehlerklasse `storage` dieses Ports
+// ErrDiagnosticsStorage trägt einen Code der Klasse `internal` dieses Ports
 // (`ADR-0132`): ein Lesefehler an einer der Diagnose-Views bleibt über
 // `errors.Is` klassifizierbar, ohne Treibertyp — dieselbe Übersetzungsform
 // wie `ErrHeartbeatStorage`/`ErrStorage`.

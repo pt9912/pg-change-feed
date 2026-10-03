@@ -6,32 +6,34 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 )
 
-// Fehlerklassen des Snapshot-Lesers (`ADR-0023`): jede
-// Störung endet als sichtbarer Fehler mit einer dieser Klassen. Der
-// Aufrufer klassifiziert über `errors.Is`; die technische Ursache bleibt
-// über die zweite Wrappung lesbar.
+// Fehlerursachen des Snapshot-Lesers (`ADR-0023`): jede
+// Störung endet als sichtbarer Fehler mit einer dieser Ursachen. Der
+// Aufrufer klassifiziert über `errors.Is` (`failureCode` ordnet sie dem Run
+// zu); die technische Ursache bleibt über die zweite Wrappung lesbar. Die
+// Codes dieser Sentinels gehören der Klasse `internal`, der Text eines Runs
+// trägt die Codes der Klassen 1 bis 6.
 var (
 	// ErrSnapshotPermission: der Capture-Login darf die Quelltabelle nicht
 	// lesen oder den temporären Slot nicht anlegen (`SELECT` und
 	// `REPLICATION` sind Betriebs-Vorbedingungen, `ADR-0047`).
-	ErrSnapshotPermission = messagecode.New(messagecode.SnapshotPermission, "fehlende Berechtigung für den Tabellen-Snapshot")
+	ErrSnapshotPermission = messagecode.New(messagecode.SnapshotPermissionFault, "fehlende Berechtigung für den Tabellen-Snapshot")
 
 	// ErrSnapshotConfiguration: die Anfrage oder die Quelle steht im
 	// falschen Stand — Tabelle nicht vorhanden, ungültige Kennung, keine
 	// Reserve in `max_replication_slots`/`max_wal_senders`.
-	ErrSnapshotConfiguration = messagecode.New(messagecode.SnapshotConfiguration, "Tabellen-Snapshot im falschen Stand der Konfiguration")
+	ErrSnapshotConfiguration = messagecode.New(messagecode.SnapshotConfigurationFault, "Tabellen-Snapshot im falschen Stand der Konfiguration")
 
 	// ErrSnapshotTransient: die Quelle war für den Snapshot vorübergehend
 	// nicht verfügbar — das Zeitlimit der Slot-Anlage ist abgelaufen, die
 	// Verbindung ist abgebrochen oder der Kontext endete.
-	ErrSnapshotTransient = messagecode.New(messagecode.SnapshotSourceUnavailable, "Quelle für den Tabellen-Snapshot vorübergehend nicht verfügbar")
+	ErrSnapshotTransient = messagecode.New(messagecode.SnapshotSourceFault, "Quelle für den Tabellen-Snapshot vorübergehend nicht verfügbar")
 
 	// ErrSnapshotReplication: die Störung liegt an Replication-Verbindung
 	// oder Slot-Anlage, ohne dass eine spezifischere Klasse zutrifft.
-	ErrSnapshotReplication = messagecode.New(messagecode.SnapshotSlotFailed, "Slot-/Replication-Störung beim Tabellen-Snapshot")
+	ErrSnapshotReplication = messagecode.New(messagecode.SnapshotSlotFault, "Slot-/Replication-Störung beim Tabellen-Snapshot")
 
 	// ErrSnapshotStorage: das Lesen der Zeilen im Snapshot ist gescheitert.
-	ErrSnapshotStorage = messagecode.New(messagecode.SnapshotReadFailed, "Lesefehler im Tabellen-Snapshot")
+	ErrSnapshotStorage = messagecode.New(messagecode.SnapshotReadFault, "Lesefehler im Tabellen-Snapshot")
 )
 
 // TableSnapshotPort trägt die Fähigkeit, den Bestand einer Tabelle als

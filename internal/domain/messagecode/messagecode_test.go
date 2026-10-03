@@ -138,6 +138,50 @@ func TestNewBindsCodeToClass(t *testing.T) {
 	}
 }
 
+// TestCodesReadsTheWholeChain trägt: `Codes` liefert die Codes aller
+// klassifizierten Fehlerwerte der Kette in der Reihenfolge des
+// Tiefendurchlaufs, auch hinter `errors.Join` und mehreren `%w`; ein Fehler
+// ohne Code liefert keinen. Färbt rot, sobald der Durchlauf nur dem ersten
+// `Unwrap`-Ziel folgt.
+func TestCodesReadsTheWholeChain(t *testing.T) {
+	a := messagecode.New(messagecode.DecodeUnreadable, "a")
+	b := messagecode.New(messagecode.ChangeStoreFailed, "b")
+	cases := []struct {
+		name string
+		err  error
+		want []messagecode.Code
+	}{
+		{"ohne Code", errors.New("x"), nil},
+		{"nil", nil, nil},
+		{"einer", fmt.Errorf("Zusatz: %w", a), []messagecode.Code{messagecode.DecodeUnreadable}},
+		{"zwei in Kettenfolge", fmt.Errorf("%w: %w", a, b), []messagecode.Code{messagecode.DecodeUnreadable, messagecode.ChangeStoreFailed}},
+		{"Join", errors.Join(b, a), []messagecode.Code{messagecode.ChangeStoreFailed, messagecode.DecodeUnreadable}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := messagecode.Codes(tc.err)
+			if fmt.Sprint(got) != fmt.Sprint(tc.want) {
+				t.Fatalf("Codes = %v, erwartet %v", got, tc.want)
+			}
+		})
+	}
+}
+
+// TestInternalSentinelCodesStayInternal trägt: die Codes `…001` bis `…010` der
+// Klasse 7 tragen die Klasse `internal` (erste Ziffer 7).
+func TestInternalSentinelCodesStayInternal(t *testing.T) {
+	for _, code := range []messagecode.Code{
+		messagecode.NotifyFailed, messagecode.RequestQueueFailed, messagecode.DiagnosticsReadFailed,
+		messagecode.BackfillStoreFault, messagecode.SchemaStoreFault, messagecode.SnapshotPermissionFault,
+		messagecode.SnapshotConfigurationFault, messagecode.SnapshotSourceFault, messagecode.SnapshotSlotFault,
+		messagecode.SnapshotReadFault,
+	} {
+		if got := messagecode.ClassOf(code); got != messagecode.ClassInternal {
+			t.Errorf("%q: Klasse %q, erwartet internal", code, got)
+		}
+	}
+}
+
 // TestMessageForms trägt die Textformen von Run und Antrag.
 func TestMessageForms(t *testing.T) {
 	if got := messagecode.RunMessage(messagecode.SnapshotReadFailed, "Ursache"); got != "storage [PCF-E5008]: Ursache" {

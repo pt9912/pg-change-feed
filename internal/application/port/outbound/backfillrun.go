@@ -7,10 +7,11 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
-// ErrBackfillStorage trägt die Fehlerklasse `storage` der Backfill-Ports
-// (`ADR-0023`): ein Persistenzfehler am Run-Zustand oder am
+// ErrBackfillStorage trägt einen Code der Klasse `internal` der Backfill-Ports
+// (`ADR-0023`; der Text eines Runs trägt für diese Ursache den Code der Klasse
+// `storage`, `failureCode`): ein Persistenzfehler am Run-Zustand oder am
 // Schreiber bleibt über `errors.Is` klassifizierbar, ohne Treibertyp.
-var ErrBackfillStorage = messagecode.New(messagecode.BackfillStoreFailed, "Persistenzfehler im Backfill-Speicher")
+var ErrBackfillStorage = messagecode.New(messagecode.BackfillStoreFault, "Persistenzfehler im Backfill-Speicher")
 
 // BackfillRunPort trägt die Fähigkeit, den Zustand eines angenommenen
 // Backfill-Runs fortzuschreiben (`ARC-004`, Fähigkeits-Port).

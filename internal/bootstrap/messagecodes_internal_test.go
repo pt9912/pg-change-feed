@@ -30,13 +30,13 @@ func TestSentinelsCarryTheirCodeAndClass(t *testing.T) {
 	}{
 		{"Wiederholung erschöpft", ErrTransientExhausted, messagecode.RetryExhausted},
 		{"Wecksignal", outbound.ErrNotify, messagecode.NotifyFailed},
-		{"Snapshot-Quelle", outbound.ErrSnapshotTransient, messagecode.SnapshotSourceUnavailable},
+		{"Snapshot-Quelle", outbound.ErrSnapshotTransient, messagecode.SnapshotSourceFault},
 		{"Verdrahtung", ErrConfiguration, messagecode.WiringPrecondition},
 		{"Replication-Konfiguration", receive.ErrConfiguration, messagecode.ReplicationConfiguration},
 		{"Aktivierungs-Bezeichner", postgresstorage.ErrActivationConfiguration, messagecode.ActivationIdentifier},
-		{"Snapshot-Konfiguration", outbound.ErrSnapshotConfiguration, messagecode.SnapshotConfiguration},
+		{"Snapshot-Konfiguration", outbound.ErrSnapshotConfiguration, messagecode.SnapshotConfigurationFault},
 		{"Replication-Berechtigung", receive.ErrPermission, messagecode.ReplicationPermission},
-		{"Snapshot-Berechtigung", outbound.ErrSnapshotPermission, messagecode.SnapshotPermission},
+		{"Snapshot-Berechtigung", outbound.ErrSnapshotPermission, messagecode.SnapshotPermissionFault},
 		{"Dekodierung", decode.ErrSchema, messagecode.DecodeUnreadable},
 		{"TRUNCATE", mapper.ErrTruncateUnsupported, messagecode.TruncateUnsupported},
 		{"Relation-Änderung", mapper.ErrIncompatibleSchemaChange, messagecode.SchemaChangeIncompatible},
@@ -44,18 +44,18 @@ func TestSentinelsCarryTheirCodeAndClass(t *testing.T) {
 		{"Routing-Regel", mapper.ErrRoutingNotApplicable, messagecode.RoutingInapplicable},
 		{"ChangeStore", outbound.ErrStorage, messagecode.ChangeStoreFailed},
 		{"Antrags-Queue", outbound.ErrAdministrationStorage, messagecode.RequestQueueFailed},
-		{"Backfill-Speicher", outbound.ErrBackfillStorage, messagecode.BackfillStoreFailed},
+		{"Backfill-Speicher", outbound.ErrBackfillStorage, messagecode.BackfillStoreFault},
 		{"Consumer-Stand", outbound.ErrConsumerStateStorage, messagecode.ConsumerStateFailed},
 		{"Diagnose-Views", outbound.ErrDiagnosticsStorage, messagecode.DiagnosticsReadFailed},
 		{"Heartbeat", outbound.ErrHeartbeatStorage, messagecode.HeartbeatStoreFailed},
-		{"Schema Store", outbound.ErrSchemaStoreStorage, messagecode.SchemaStoreFailed},
-		{"Snapshot lesen", outbound.ErrSnapshotStorage, messagecode.SnapshotReadFailed},
+		{"Schema Store", outbound.ErrSchemaStoreStorage, messagecode.SchemaStoreFault},
+		{"Snapshot lesen", outbound.ErrSnapshotStorage, messagecode.SnapshotReadFault},
 		{"Replication-Stream", receive.ErrReplication, messagecode.ReplicationStreamFailed},
 		{"Bestätigung", outbound.ErrReplication, messagecode.ReplicationAckFailed},
 		{"BEGIN fehlt", mapper.ErrChangeWithoutBegin, messagecode.StreamOrderViolated},
 		{"COMMIT ohne BEGIN", mapper.ErrCommitWithoutBegin, messagecode.StreamOrderViolated},
 		{"BEGIN doppelt", mapper.ErrBeginWithoutCommit, messagecode.StreamOrderViolated},
-		{"Snapshot-Slot", outbound.ErrSnapshotReplication, messagecode.SnapshotSlotFailed},
+		{"Snapshot-Slot", outbound.ErrSnapshotReplication, messagecode.SnapshotSlotFault},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -90,7 +90,7 @@ func TestAdministrationFailureTextHasACodeForEveryFailure(t *testing.T) {
 		err  error
 		want string
 	}{
-		{"klassifiziert", fmt.Errorf("%w: Grund", outbound.ErrAdministrationStorage), "Fehlerklasse storage [PCF-E5002]: Persistenzfehler an der Antrags-Queue: Grund"},
+		{"klassifiziert", fmt.Errorf("%w: Grund", outbound.ErrAdministrationStorage), "Fehlerklasse internal [PCF-E7002]: Persistenzfehler an der Antrags-Queue: Grund"},
 		{"unerwartet", stderrors.New("überraschung"), "Fehlerklasse internal [PCF-E7000]: überraschung"},
 		{"Regelname", domainerrors.ErrInvalidRuleName, "abgelehnt [PCF-E8010]: Regelname ist ungültig"},
 		{"Regelform", domainerrors.ErrInvalidRuleSpec, "abgelehnt [PCF-E8011]: rule_spec ist ungültig"},

@@ -14,7 +14,6 @@ package messagecode
 // Klasse 1, `transient`.
 const (
 	TransientFallback         Code = "PCF-E1000"
-	NotifyFailed              Code = "PCF-E1001"
 	RetryExhausted            Code = "PCF-E1002"
 	SnapshotSourceUnavailable Code = "PCF-E1003"
 )
@@ -50,15 +49,13 @@ const (
 
 // Klasse 5, `storage`.
 const (
-	StorageFallback       Code = "PCF-E5000"
-	ChangeStoreFailed     Code = "PCF-E5001"
-	RequestQueueFailed    Code = "PCF-E5002"
-	BackfillStoreFailed   Code = "PCF-E5003"
-	ConsumerStateFailed   Code = "PCF-E5004"
-	DiagnosticsReadFailed Code = "PCF-E5005"
-	HeartbeatStoreFailed  Code = "PCF-E5006"
-	SchemaStoreFailed     Code = "PCF-E5007"
-	SnapshotReadFailed    Code = "PCF-E5008"
+	StorageFallback      Code = "PCF-E5000"
+	ChangeStoreFailed    Code = "PCF-E5001"
+	BackfillStoreFailed  Code = "PCF-E5003"
+	ConsumerStateFailed  Code = "PCF-E5004"
+	HeartbeatStoreFailed Code = "PCF-E5006"
+	SchemaStoreFailed    Code = "PCF-E5007"
+	SnapshotReadFailed   Code = "PCF-E5008"
 )
 
 // Klasse 6, `replication`.
@@ -70,9 +67,22 @@ const (
 	SnapshotSlotFailed      Code = "PCF-E6004"
 )
 
-// Klasse 7, `internal`.
+// Klasse 7, `internal`. Die Codes `…001` bis `…010` tragen die Sentinels der
+// Ports, die der Capture-Pfad nicht einer Klasse zuordnet (`classifyRunError`
+// bildet sie auf `internal` ab); der Text eines Runs trägt für dieselben
+// Ursachen die Codes der Klassen 1 bis 6 (`failureCode`).
 const (
-	InternalFallback Code = "PCF-E7000"
+	InternalFallback           Code = "PCF-E7000"
+	NotifyFailed               Code = "PCF-E7001"
+	RequestQueueFailed         Code = "PCF-E7002"
+	DiagnosticsReadFailed      Code = "PCF-E7003"
+	BackfillStoreFault         Code = "PCF-E7004"
+	SchemaStoreFault           Code = "PCF-E7005"
+	SnapshotPermissionFault    Code = "PCF-E7006"
+	SnapshotConfigurationFault Code = "PCF-E7007"
+	SnapshotSourceFault        Code = "PCF-E7008"
+	SnapshotSlotFault          Code = "PCF-E7009"
+	SnapshotReadFault          Code = "PCF-E7010"
 )
 
 // Bereich 8, Ablehnung einer Aufrufer-Eingabe (keine Fehlerklasse).
@@ -106,7 +116,6 @@ const (
 // ist die der ersten Ziffer (`Entry.Class`, geprüft im Test des Pakets).
 var Table = []Entry{
 	{TransientFallback, ClassTransient, StatusActive},
-	{NotifyFailed, ClassTransient, StatusActive},
 	{RetryExhausted, ClassTransient, StatusActive},
 	{SnapshotSourceUnavailable, ClassTransient, StatusActive},
 
@@ -132,10 +141,8 @@ var Table = []Entry{
 
 	{StorageFallback, ClassStorage, StatusActive},
 	{ChangeStoreFailed, ClassStorage, StatusActive},
-	{RequestQueueFailed, ClassStorage, StatusActive},
 	{BackfillStoreFailed, ClassStorage, StatusActive},
 	{ConsumerStateFailed, ClassStorage, StatusActive},
-	{DiagnosticsReadFailed, ClassStorage, StatusActive},
 	{HeartbeatStoreFailed, ClassStorage, StatusActive},
 	{SchemaStoreFailed, ClassStorage, StatusActive},
 	{SnapshotReadFailed, ClassStorage, StatusActive},
@@ -147,6 +154,16 @@ var Table = []Entry{
 	{SnapshotSlotFailed, ClassReplication, StatusActive},
 
 	{InternalFallback, ClassInternal, StatusActive},
+	{NotifyFailed, ClassInternal, StatusActive},
+	{RequestQueueFailed, ClassInternal, StatusActive},
+	{DiagnosticsReadFailed, ClassInternal, StatusActive},
+	{BackfillStoreFault, ClassInternal, StatusActive},
+	{SchemaStoreFault, ClassInternal, StatusActive},
+	{SnapshotPermissionFault, ClassInternal, StatusActive},
+	{SnapshotConfigurationFault, ClassInternal, StatusActive},
+	{SnapshotSourceFault, ClassInternal, StatusActive},
+	{SnapshotSlotFault, ClassInternal, StatusActive},
+	{SnapshotReadFault, ClassInternal, StatusActive},
 
 	{RejectedFallback, ClassNone, StatusActive},
 	{RejectedIdentifierEmpty, ClassNone, StatusActive},

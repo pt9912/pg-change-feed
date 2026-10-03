@@ -162,6 +162,32 @@ func From(err error) (Code, bool) {
 	return "", false
 }
 
+// Codes liefert die Codes aller klassifizierten Fehlerwerte der Kette in der
+// Reihenfolge eines Tiefendurchlaufs; auch ein Fehler mit mehreren
+// `Unwrap`-Zielen (`errors.Join`, mehrere `%w`) wird ganz gelesen.
+func Codes(err error) []Code {
+	var out []Code
+	var walk func(error)
+	walk = func(e error) {
+		if e == nil {
+			return
+		}
+		if c, ok := e.(*Error); ok {
+			out = append(out, c.code)
+		}
+		switch u := e.(type) {
+		case interface{ Unwrap() error }:
+			walk(u.Unwrap())
+		case interface{ Unwrap() []error }:
+			for _, w := range u.Unwrap() {
+				walk(w)
+			}
+		}
+	}
+	walk(err)
+	return out
+}
+
 // WithoutHead liefert den Text des Fehlers ohne den Kopf seines Codes; trägt
 // die Kette keinen klassifizierten Fehlerwert, ist es der Text selbst.
 func WithoutHead(err error) string {

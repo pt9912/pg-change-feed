@@ -1856,17 +1856,27 @@ func reportFault(port outbound.HeartbeatPort, source model.SourceID, runErr *err
 }
 
 // classifyRunError übersetzt den Lauf-Fehler in eine der sieben stabilen
-// Kategorien aus `ADR-0023`: die Klasse ist die des Meldungscodes, den der
-// erste klassifizierte Fehlerwert der Kette trägt (`messagecode.From`); die
-// Sentinel-Fehler aller beteiligten Adapter tragen ihren Code selbst. Ein
-// Fehler ohne Code bleibt in der Kategorie `internal` („unerwarteter
-// interner Fehler").
+// Kategorien aus `ADR-0023`: die Klasse ist die des Meldungscodes, den ein
+// klassifizierter Fehlerwert der Kette trägt; die Sentinel-Fehler aller
+// beteiligten Adapter tragen ihren Code selbst. Trägt die Kette Codes
+// mehrerer Klassen, gilt die Vorrangfolge `transient`, `configuration`,
+// `schema`, `permission`, `replication`, `storage`, `internal` — nicht die
+// Reihenfolge der Kette. Ein Fehler ohne Code bleibt in der Kategorie
+// `internal` („unerwarteter interner Fehler").
 func classifyRunError(err error) model.ErrorClass {
-	code, ok := messagecode.From(err)
-	if !ok {
-		return model.ErrorClassInternal
+	precedence := []messagecode.Class{
+		messagecode.ClassTransient, messagecode.ClassConfiguration, messagecode.ClassSchema,
+		messagecode.ClassPermission, messagecode.ClassReplication, messagecode.ClassStorage,
 	}
-	return model.ErrorClass(messagecode.ClassOf(code))
+	codes := messagecode.Codes(err)
+	for _, class := range precedence {
+		for _, code := range codes {
+			if messagecode.ClassOf(code) == class {
+				return model.ErrorClass(class)
+			}
+		}
+	}
+	return model.ErrorClassInternal
 }
 
 // Die Backoff-Setzungen der Wiederholung (`ADR-0135` Festlegung 2):

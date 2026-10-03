@@ -6,8 +6,9 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 )
 
-// ErrNotify trägt die Fehlerklasse `transient` des Wecksignal-Pfads
-// (`ADR-0023`): eine unterbrochene NATS-Verbindung
+// ErrNotify trägt einen Code der Klasse `internal` des Wecksignal-Pfads
+// (`ADR-0023`; die Composition Root ordnet ihn keiner anderen Klasse zu): eine
+// unterbrochene NATS-Verbindung
 // oder ein fehlgeschlagener Publish-Aufruf ist strukturell dieselbe
 // Kategorie wie eine vorübergehend nicht verfügbare Quelle/Speicher — der
 // nats.go-Client trägt das für `transient` vorgesehene

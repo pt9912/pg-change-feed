@@ -7,8 +7,9 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
-// ErrAdministrationStorage trägt die Fehlerklasse `storage` dieses Ports
-// (`ADR-0023`): ein Persistenzfehler an der Antrags-Queue
+// ErrAdministrationStorage trägt einen Code der Klasse `internal`
+// (`ADR-0023`; die Composition Root ordnet ihn keiner anderen Klasse zu): ein
+// Persistenzfehler an der Antrags-Queue
 // bleibt über `errors.Is` klassifizierbar, ohne Treibertyp. Wie
 // `ErrHeartbeatStorage` trägt dieser Sentinel keine Klasse-Aktion am
 // Capture-Pfad — ein Lese- oder Vermerk-Fehler der Administrations-

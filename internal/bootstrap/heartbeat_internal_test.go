@@ -215,6 +215,25 @@ func TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes(t *testing.T) {
 		{"ChangeStore-Persistenzfehler", outbound.ErrStorage, model.ErrorClassStorage},
 		{"Heartbeat-Persistenzfehler", outbound.ErrHeartbeatStorage, model.ErrorClassStorage},
 		{"unbekannter Fehler", stderrors.New("überraschung"), model.ErrorClassInternal},
+		// Die zehn Sentinels, die der Capture-Pfad keiner Klasse zuordnet,
+		// bleiben `internal`.
+		{"Schema-Store-Persistenzfehler", outbound.ErrSchemaStoreStorage, model.ErrorClassInternal},
+		{"Wecksignal", outbound.ErrNotify, model.ErrorClassInternal},
+		{"Antrags-Queue", outbound.ErrAdministrationStorage, model.ErrorClassInternal},
+		{"Backfill-Speicher", outbound.ErrBackfillStorage, model.ErrorClassInternal},
+		{"Diagnose-Views", outbound.ErrDiagnosticsStorage, model.ErrorClassInternal},
+		{"Snapshot-Berechtigung", outbound.ErrSnapshotPermission, model.ErrorClassInternal},
+		{"Snapshot-Konfiguration", outbound.ErrSnapshotConfiguration, model.ErrorClassInternal},
+		{"Snapshot-Quelle", outbound.ErrSnapshotTransient, model.ErrorClassInternal},
+		{"Snapshot-Slot", outbound.ErrSnapshotReplication, model.ErrorClassInternal},
+		{"Snapshot lesen", outbound.ErrSnapshotStorage, model.ErrorClassInternal},
+		// Mehrere Klassen in einer Kette: es gilt die Vorrangfolge der
+		// Klassen, nicht die Reihenfolge der Kette.
+		{"storage vor replication in der Kette", fmt.Errorf("%w: %w", outbound.ErrStorage, receive.ErrReplication), model.ErrorClassReplication},
+		{"replication vor configuration in der Kette", fmt.Errorf("%w: %w", receive.ErrReplication, ErrConfiguration), model.ErrorClassConfiguration},
+		{"internal vor storage in der Kette", fmt.Errorf("%w: %w", outbound.ErrNotify, outbound.ErrStorage), model.ErrorClassStorage},
+		{"schema vor transient in der Kette", fmt.Errorf("%w: %w", decode.ErrSchema, ErrTransientExhausted), model.ErrorClassTransient},
+		{"Join: permission vor schema in der Kette", stderrors.Join(receive.ErrPermission, decode.ErrSchema), model.ErrorClassSchema},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
