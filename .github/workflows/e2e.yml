@@ -38,8 +38,9 @@ name: e2e
 # Tag-Kommentar. `fetch-depth: 0` ist hier nicht noetig — dieser Workflow
 # ruft `make commit-traceability` nicht auf, der Standard-Checkout reicht.
 #
-# PostgreSQL-Versionsmatrix (SPEC-012): zwei Matrix-Legs ueber die in SPEC-012 festgelegten Digests
-# (postgres:17-alpine, postgres:18-alpine), GitHub Actions fuehrt sie
+# PostgreSQL-Versionsmatrix (SPEC-012): zwei Matrix-Legs ueber die in SPEC-012
+# festgelegten Major-Versionen (17, 18); die Digests pinnt dieser Workflow
+# (postgres:17-alpine, postgres:18-alpine). GitHub Actions fuehrt sie
 # standardmaessig parallel aus (`fail-fast: false`, damit ein rotes Leg das
 # andere nicht abbricht — beide Ergebnisse bleiben sichtbar, der Workflow ist
 # ohnehin nicht-blockierend). Jedes Leg setzt PG_TEST_IMAGE auf Job-Ebene;
@@ -71,12 +72,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # PostgreSQL 17 (SPEC-012): Digest via
+          # PostgreSQL 17 (Major nach SPEC-012): Digest via
           # `docker manifest inspect postgres:17-alpine` (amd64, real
           # ermittelt 2026-10-03).
           - pg_major: "17"
             pg_test_image: postgres:17-alpine@sha256:aa90e97ee862e558111d34cfb8b2c4bec768c2b039fb791341686928560263b3
-          # PostgreSQL 18 (SPEC-012): derselbe Digest-Pin wie
+          # PostgreSQL 18 (Major nach SPEC-012): derselbe Digest-Pin wie
           # Makefile PG_TEST_IMAGE / compose.yaml-Default.
           - pg_major: "18"
             pg_test_image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
