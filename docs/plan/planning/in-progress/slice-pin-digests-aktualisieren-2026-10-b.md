@@ -141,7 +141,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Parent-Kennung stehen in §7; die Werte aus §1 sind **nicht** zu
       übernehmen. Zeigt die Messung einen Major-/Tag-Wechsel im Image
       (Stopp-Regel §4), endet der Slice dort.
-- [ ] **Hebung und Nachzug (Liefer-Punkt 2).** Je Pin ein eigener Commit
+- [x] **Hebung und Nachzug (Liefer-Punkt 2).** Je Pin ein eigener Commit
       (Betreff nennt
       [`ADR-0146`](../../adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md),
       keine `SPEC-`/`ARC-`-Kennung), jeder Pin auf den **Index-Digest** und an
@@ -284,7 +284,7 @@ diff 0 -n -E 'e6541e52' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!doc
 diff 7 -n -E '085eb93e' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline'
 diff 0 -n -E 'ca7551d4' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline'
 diff 0 -n -E 'caaf356f' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline'
-diff 0 -n -E '62b1e65e' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline'
+diff 1 -n -E '62b1e65e' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline'
 diff 1 -n -E 'aa90e97e' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline'
 diff 0 -n 'sha256:' -- spec docs/user README.md AGENTS.md
 diff 0 -n -E 'manifest inspect' -- . ':!docs' ':!.claude' ':!.harness' ':!tools/harness/image-stale.sh'
@@ -415,6 +415,57 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
+- **Implementer-Belege (Stand 2026-10-03, Parent `7bc4aadd`, Messhost `x86_64`, Linux 6.8.0-139-generic):**
+  Messung je Pin mit `docker buildx imagetools inspect <tag> --format '{{.Manifest.Digest}}'`
+  (Index-Digest des Tags) und `--raw` auf den gepinnten Wert (Form); Version mit
+  `docker run --rm --network none --entrypoint <Werkzeug> <image>@<Digest> --version`
+  (`--list-runtimes` für .NET Runtime):
+
+  | Pin | alt (Form) → neu | Version alt → neu | Lauf (Exit 0) |
+  |---|---|---|---|
+  | `nats:2-alpine` | `065e8355…ccc` (Einzelplattform, oci.image.manifest) → `ac8f88a6494bffc2c2a5289a0ca61cb28a9145c11ba5677cf24265d07f46d8d4` (Index) | nats-server v2.14.6 → v2.15.0 | `make test-notify` |
+  | `dotnet/sdk:10.0` | `60a2b223…93c` (Einzelplattform, docker.distribution.manifest.v2) → `e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317` | 10.0.401 → 10.0.401 | `make sdk-pack-csharp` (201 Tests) |
+  | `dotnet/runtime:10.0` | `e6541e52…c3d` (Einzelplattform, docker.distribution.manifest.v2) → `b89586dc17781f25531909993658aa8161205ae38b8cec8847df4a8221a403d5` | Microsoft.NETCore.App 10.0.12 → 10.0.12 | `make examples-csharp` (54+25+9+52+20 Tests) |
+  | `eclipse-temurin:21-jdk` | `085eb93e…24e` (Einzelplattform, oci.image.manifest) → `3e3c176ffed168beb42c607be9bc1639b466cf00261a0fb04425562c9d0c5c2b` | 21.0.12+8 → 21.0.12.1+1 | `make sdk-pack-kotlin` |
+  | `eclipse-temurin:21-jre` | `ca7551d4…9f6` (Einzelplattform, oci.image.manifest) → `cff19e6215689161eb6162c11b86b0c60ddf802164f2eaf48d570f8fb79a36c5` | 21.0.12+8 → 21.0.12.1+1 | `make examples-kotlin` |
+  | `python:3.14-slim` | `caaf356f…8a2` (bereits Index) → `0741d101873c12ab927e6f8653feb8862b9bd58771177acb1b885b95141f91b4` | Python 3.14.7 → 3.14.8 | `make sdk-pack-python` (195 Tests) |
+  | `aquasec/trivy` | `62b1e65e…969` (bereits Index) → `af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa` | Trivy 0.74.0 → 0.75.0 | `make image-cve` (debian 12.15: 0, gobinary: 0 Befunde) |
+  | `postgres:17-alpine` | `aa90e97e…3b3` (Einzelplattform, oci.image.manifest) → `b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24` (Index) | PostgreSQL 17.11 → 17.11 | `make test-replication PG_TEST_IMAGE=<neuer Pin>` (gedruckt: PostgreSQL 17.11), `make test-store` |
+
+  Kein Pin ändert die Hauptversion oder die vom Tag genannte Linie (Stopp-Regel
+  aus §3 nicht ausgelöst). Gesamtläufe am Endstand der Hebungen: `make image`
+  Exit 0; `make test-sdk-csharp-integration`, `make test-sdk-python-integration`,
+  `make test-sdk-kotlin-integration` je Exit 0 (gedruckt je „Filter-Belege …
+  grün“); `make test-integration` Exit 0 (gedruckt: „Lauf abgeschlossen —
+  E2E-Abdeckungstabelle aus 21 Go-Zeilen und 54 Bash-Zeilen“); `make
+  test-replication` mit Standard-Pin Exit 0 (gedruckt: PostgreSQL 18.6) und
+  `make test-store` Exit 0 (DB-Adapter-Coverage 83,03 %). Achsen P1 bis P9
+  (`make image-stale`, `make pin-stale-race|-pgtest|-dmigrate|-acheck|-dcheck|-baseline|-actions`)
+  nach der Hebung je `OK`, Exit 0; die acht Referenzen dieses Slice stimmen
+  nach der Hebung mit ihrem Index-Digest überein (Messung wie oben, je gleich
+  dem gepinnten Wert). Die Achsen-Messung vor der Hebung ist **nicht** vollständig
+  gefahren: der einzige Vorab-Lauf (`make image-stale`) endete mit Exit 2 durch das
+  Docker-Hub-Abruflimit für anonyme Abrufe (`UNBESTIMMT golang:1.27-alpine —
+  Registry nicht erreichbar`, `OK` für `distroless`); die sieben `make
+  pin-stale-*` liefen nur nach der Hebung. Die Drift der acht Pins ist dagegen
+  je mit `imagetools inspect` vorher gemessen (Zeilen oben); die
+  Plattform-Auflösung eines Index-Digests folgt dem Host (`x86_64`). Das
+  Abruflimit hat den Lauf von `postgres:17-alpine` verzögert (Pull wiederholt
+  bis zum Erfolg), kein Lauf wurde gelockert.
+  Suchlauf (`make suchlauf-nachmessen PLAN=…`, 24 Zeilen): Parent-Zeilen
+  stimmen; am `diff`-Stand stimmen 23 Zeilen mit der Erwartung, eine wich ab
+  (`62b1e65e`: erwartet 0, gemessen 1 — `ADR-0146` Zeile 24 trägt die
+  Kennung des alten Trivy-Pins als Zitat des Messbefunds; die Summenzeile mit
+  11 Resttreffern stimmt, weil dort mehrere Pins auf derselben Zeile liegen);
+  die Plan-Zeile ist auf 1 nachgezogen. Resttreffer sind ausschließlich
+  `Accepted` ADRs. Nicht gefunden: kein Digest in `spec/`, `docs/user/`,
+  `README.md`, `AGENTS.md`; kein verbliebenes „manifest inspect“ und kein
+  „amd64“ als Gewinnungsweg in einem lebenden Träger. Eine weitere Referenz der
+  Form `<image>@sha256:…` mit Drift außerhalb der acht Pins: nicht gefunden
+  (die übrigen Pins sind Pins von P1 bis P9, je `OK`).
+  Post-Push-Lauf von `e2e.yml` (beide Legs) und `upstream-drift.yml`
+  (`workflow_dispatch`): steht aus, der Push gehört nicht zu diesem Lauf
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.10).
 - **Was hat funktioniert:** — (bei Closure)
 - **Was ging anders als geplant:** — (bei Closure)
 - **Steering-Loop-Eintrag:** — (bei Closure; Lerneintrag Pflicht, siehe §5)
