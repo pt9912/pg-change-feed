@@ -32,7 +32,7 @@ dieses Slice, nicht des Auftraggebers.
 **Reihenfolge:** nach [T1 `meldungscodes-kennungsfreie-ausgaben`](slice-meldungscodes-kennungsfreie-ausgaben.md)
 (sein Gate hält die Ausgaben bei 0, bevor dieser Slice die Fehlertext-Literale anfasst); vor
 [T3](../done/slice-meldungscodes-warnungen-heartbeat-diagnose.md) und
-[T4](../in-progress/slice-meldungscodes-http-grpc-fehlerkoerper.md), die an der Tabelle dieses Slice hängen.
+[T4](../done/slice-meldungscodes-http-grpc-fehlerkoerper.md), die an der Tabelle dieses Slice hängen.
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
@@ -393,7 +393,7 @@ Steering-Loop-Regeln. Wird bei der Closure gefüllt (vor dem `git mv` nach `done
   Tabellentest), vor dem Merge gefunden, Schwere ≤ LOW — nach der Deckel-Regel ohne eigene Datei,
   hier genannt.
 - **Folge-Slices:** T3 [`meldungscodes-warnungen-heartbeat-diagnose`](../done/slice-meldungscodes-warnungen-heartbeat-diagnose.md)
-  und T4 [`meldungscodes-http-grpc-fehlerkoerper`](../in-progress/slice-meldungscodes-http-grpc-fehlerkoerper.md)
+  und T4 [`meldungscodes-http-grpc-fehlerkoerper`](../done/slice-meldungscodes-http-grpc-fehlerkoerper.md)
   (beide in `open/`, untereinander unabhängig; Startbedingung: dieser Slice in `done/`). Kein
   Release, keine Versionsänderung.
 - **Risiken aus §6:** Präfix: entfallen (vom Auftraggeber am 2026-10-03 bestätigt, **übernommen**);

@@ -6,7 +6,7 @@
 Architect-Verdikt
 [`architect-verdict-meldungscodes-statt-interner-kennungen`](architect-verdict-meldungscodes-statt-interner-kennungen.md))
 + Plan-vs-Code-Diff. Plan:
-[`slice-meldungscodes-http-grpc-fehlerkoerper`](../plan/planning/in-progress/slice-meldungscodes-http-grpc-fehlerkoerper.md)
+[`slice-meldungscodes-http-grpc-fehlerkoerper`](../plan/planning/done/slice-meldungscodes-http-grpc-fehlerkoerper.md)
 (wellenlos, Teil 4 von 4). Review:
 [`review-slice-meldungscodes-http-grpc-fehlerkoerper`](review-slice-meldungscodes-http-grpc-fehlerkoerper.md)
 (0 HIGH, 1 MEDIUM F-1, 3 LOW F-2/F-3/F-6, 3 INFO F-4/F-5/F-7). Formvorbild:

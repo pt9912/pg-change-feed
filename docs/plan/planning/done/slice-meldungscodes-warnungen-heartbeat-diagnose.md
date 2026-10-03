@@ -27,7 +27,7 @@ Liefer-Punkt dieses Slice), die `Diagnose`-Zeile des gRPC-/HTTP-Vertrags (additi
 `error_code`) — jeweils die Stelle, die die Spalte bzw. das Feld heute beschreibt.
 
 **Reihenfolge:** nach [T2 `meldungscodes-registry-fehlerkopf`](../done/slice-meldungscodes-registry-fehlerkopf.md)
-(Tabelle, Katalog, Gate); unabhängig von [T4](../in-progress/slice-meldungscodes-http-grpc-fehlerkoerper.md).
+(Tabelle, Katalog, Gate); unabhängig von [T4](../done/slice-meldungscodes-http-grpc-fehlerkoerper.md).
 
 **Verantwortlich:** — (gesetzt beim Übergang `open` → `next`).
 
@@ -362,7 +362,7 @@ Steering-Loop-Regeln. Wird bei der Closure gefüllt (vor dem `git mv` nach `done
   `harness/targets/schema-rollout.md`. **Offener Hinweis für den nächsten Architect-Zug:** die ADR
   sagt es an dieser einen Stelle ungenau. (4) **V-2 (LOW):** HTTP und gRPC sind im Fehlerzustand mit
   Code nur durch Unit-Tests gebunden, die Integration prüft dort nur den Normalbetrieb; Entscheidung
-  des Hauptlaufs: [T4](../in-progress/slice-meldungscodes-http-grpc-fehlerkoerper.md) bringt einen
+  des Hauptlaufs: [T4](../done/slice-meldungscodes-http-grpc-fehlerkoerper.md) bringt einen
   Live-Beleg mit (Liefer-Punkt dort ergänzt, Ursprung dieser Verifier-Befund). (5) **V-3 (INFO):** ein
   gescheiterter Antrag erzeugt zwei Warn-Zeilen mit `PCF-W4004` (Aufruf der Goroutine und Vermerk des
   Adapters); der Katalog-Wortlaut deckt beide, ein Filter auf den Code zählt je Antrag doppelt.
@@ -389,7 +389,7 @@ Steering-Loop-Regeln. Wird bei der Closure gefüllt (vor dem `git mv` nach `done
   Gruppierung eines neuen Verhaltens, keine Änderung eines bestehenden). `BEO-PGC/intern-kennungen-in-ausgelieferten-texten`:
   Zustandsfeld um einen Satz fortgeschrieben (Warn-Codes stehen jetzt im Katalog und im Gate);
   Zähler **1×** unverändert.
-- **Folge-Slices:** T4 [`meldungscodes-http-grpc-fehlerkoerper`](../in-progress/slice-meldungscodes-http-grpc-fehlerkoerper.md)
+- **Folge-Slices:** T4 [`meldungscodes-http-grpc-fehlerkoerper`](../done/slice-meldungscodes-http-grpc-fehlerkoerper.md)
   (in `open/`, Startbedingung erfüllt; trägt jetzt den Live-Beleg des Fehlerzustands aus V-2). Kein
   Release, keine Versionsänderung. Offen beim Auftraggeber: Bestätigung der Auslegung F-2 durch den
   Architect; Hinweis zur ADR-Zeile aus V-1; vor dem Release C#-/Kotlin-Pack und Beispiel-Bauten fahren.
