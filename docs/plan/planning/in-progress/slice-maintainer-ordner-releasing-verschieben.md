@@ -85,7 +85,26 @@ brechen `make docs-check` (`links`-Modul): `README.md` 1, `README.de.md` 1,
 81d0fa96 3 -E \]\([^)]*releasing\.md -- docs/reviews
 81d0fa96 3 -F 'Operations, Quality, Releasing' -- AGENTS.md harness/README.md docs/plan/adr/0051-cicd-pipeline-github-actions.md
 81d0fa96 1 -F excluded=(releasing.md -- tools/harness
+diff 0 -F excluded=(releasing.md -- tools/harness
+diff 3 -E \]\([^)]*releasing\.md -- docs/reviews
+diff 0 -E \]\([^)]*user/releasing\.md -- docs/reviews README.md README.de.md
+diff 0 -F 'Operations, Quality, Releasing' -- AGENTS.md harness/README.md
+diff 41 releasing\.md -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 22 -F docs/user/releasing.md -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 ```
+
+**Messung am Stand `diff` (Implementer, nach den Commits; Parent `de24629d`).**
+Von den 22 Klartext-Treffern `docs/user/releasing.md` im aktiven Baum liegen 1 in
+`ADR-0051` (Klartext, bleibt), 4 in `ADR-0123` (3 Linktexte mit korrigiertem Ziel,
+1 Klartext, bleiben), 1 in `ADR-0143` (Klartext, bleibt), 14 im
+Beobachtungs-Register (Klartext, bleiben; die lebende Adresse in
+`plattform-verhalten-nur-vom-betreiber-pruefbar/state.md` ist nachgezogen) und 2 in
+`docs/plan/planning/open/slice-sdk-meldungscodes-in-fehlertypen.md` (fremde Datei,
+nach dem Start dieses Slice angelegt: **gemeldet**, Frist die Closure dieses Slice;
+der Planner zieht nach). Die zwei Review-Links, die der Plan als dritten zählte
+(`verifikation-slice-release-doku-releasing.md`), sind Dateinamen-Links auf
+`review-slice-release-doku-releasing.md`, kein Pfad nach `releasing.md`; die Link-Form
+mit Ziel `…/user/releasing.md` hat 0 Treffer im Baum.
 
 (Die Zeile mit `-F Operations, …` zählt Rang-6-Zeilen von `AGENTS.md`,
 `harness/README.md` und [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) — gemessen am Stand: je 1. Die Plan-Datei ist vom
