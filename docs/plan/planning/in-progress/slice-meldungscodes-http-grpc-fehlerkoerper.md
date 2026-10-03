@@ -68,21 +68,21 @@ Fehler den Code ihrer Einzelursache oder den Rückfall der Klasse.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Ziel-Form: Slice — **≤ 3 Liefer-Punkte**.
 
-- [ ] **(0) Vorab-Messung (Startbedingung, vor Code).** Tolerieren die SDKs ein zusätzliches
+- [x] **(0) Vorab-Messung (Startbedingung, vor Code).** Tolerieren die SDKs ein zusätzliches
       JSON-Feld `code` im Fehlerkörper? Die ADR nennt die Toleranz *hergeleitet*, nicht
       nachgemessen. Gemessen wird an den Modellen und Tests der SDKs (`ErrorResponse` in C#
       und Kotlin, Python-HTTP-Client): Deserialisierung mit unbekanntem Feld (Strict-Modus?),
       Tests, die den Körper byte-gleich vergleichen. *Zu belegen durch:* Befehl und Ergebnis
       im Bericht; zeigt die Messung einen brechenden Leser, geht der Slice mit der Frage an
       den Auftraggeber zurück (Auftraggeber-Entscheidung, kein stilles Anpassen).
-- [ ] **(A) HTTP.** `code` im Fehlerkörper aller Fehlerpfade der HTTP-API (Tabellen-Konstanten,
+- [x] **(A) HTTP.** `code` im Fehlerkörper aller Fehlerpfade der HTTP-API (Tabellen-Konstanten,
       kein Literal); Spec-Nachzug `SPEC-018`; Handbuch (Fehlerantwort-Beispiel = echte Ausgabe,
       Katalog um neu vergebene Codes). *Zu belegen durch:* Unit-Tests je Fehlerpfad (Happy:
       Code im Körper; Boundary: Ablehnung `E8…` bei `400`/`404`; Negative: Auth-Fehler
       `401`/`403` — Code oder bewusst keiner, im Bericht begründet), `make test`,
       `make test-integration` (HTTP-API-Rundlauf: ein abgelehnter Aufruf gegen den laufenden
       Feed-Container zeigt den Code, Körper im Bericht **gemessen**).
-- [ ] **(B) gRPC.** `ErrorInfo` mit `reason`/`domain` an den Fehlerstellen von
+- [x] **(B) gRPC.** `ErrorInfo` mit `reason`/`domain` an den Fehlerstellen von
       `administration.go` und `server.go` (4 der 7 gRPC-Fehlerstellen); die drei Stellen
       des `interceptor.go` (`Unauthenticated`, `PermissionDenied`) und HTTP `401`/`403`
       tragen bewusst keinen Code (benannte Grenze, §3 „Entscheidung Auth-Statuswerte“, §6;
@@ -90,7 +90,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       Festlegung 1, `E8` = Ablehnung einer Aufrufer-Eingabe, `E9` reserviert); Spec-Nachzug `SPEC-031`; Unit-Tests
       (Details auslesen, `reason` gleich Tabellen-Code); Beispiel-/Wegwerf-Clients, die Status
       lesen, bleiben lauffähig. *Zu belegen durch:* `make test`, gRPC-Rundlauf in
-      `make test-integration` (Stream-Öffnung ohne Token → `Unauthenticated` mit `ErrorInfo`),
+      `make test-integration` (Gegenprobe: Stream-Öffnung ohne Token → `Unauthenticated`
+      ohne `ErrorInfo`, die Auth-Grenze),
       `make examples-csharp`/`make examples-kotlin`/`make example-run-go`-Bau soweit sie
       gRPC-Fehler auswerten.
       **Mitzuliefern (Ursprung: Verifikation von `meldungscodes-warnungen-heartbeat-diagnose`,
@@ -100,17 +101,17 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       leeres Feld); T4 setzt im Runner einen Fehlerzustand mit Code direkt in
       `cdc.process_heartbeat` (wie der CLI-Beleg) und liest Klasse und Code über HTTP und gRPC
       gegen den laufenden Feed-Container, Normalbetrieb mit `NULL` als Gegenprobe.
-- [ ] `make gates` grün (Exit-Code ungefiltert, [`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün (Exit-Code ungefiltert, [`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`), kein Self-Review.
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes
       je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-meldungscodes-http-grpc-fehlerkoerper.md`
       endet mit Exit 0.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine Beobachtung
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine Beobachtung
       angefallen“ in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
 
 ## 3. Plan (vor Code)
 
@@ -293,20 +294,28 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 - **SDKs lesen den Fehlerkörper.** `ErrorResponse` in den SDKs deserialisiert den Körper; ein
   unbekanntes Feld ist für tolerante Leser unschädlich (*hergeleitet*, nicht nachgemessen).
-  Gegenmittel: Liefer-Punkt 0 vor Code. — **Ausgang:** (bei Closure)
+  Gegenmittel: Liefer-Punkt 0 vor Code. — **Ausgang:** entfallen — C# vom Verifier
+  selbst nachgefahren (`Passed: 159`, Failed 0), Python (Review) gemessen, Kotlin (Implementer)
+  übernommen; `sdks/` ohne Diff.
 - **Code an der falschen Stelle.** Zwei Fehlerpfade könnten denselben Fehler mit verschiedenem
   Code melden. Gegenmittel: nur Tabellen-Konstanten, Test je Pfad, Reviewer liest die Zuordnung. —
-  **Ausgang:** (bei Closure)
+  **Ausgang:** eingetreten (klein) und aufgelöst — Statuszuordnung gegen den Parent unverändert
+  (Verifier, Tabelle vorher/nachher, durch zwei Statusmutationen gebunden); Grenzfall `PCF-E2001`
+  (Verifikation V-1) durch die Katalogzeile im Handbuch behoben, die beide Fälle nennt.
 - **Auth-Fehler ohne Klasse.** `401`/`403`/`Unauthenticated` sind weder Ablehnung einer
   Eingabe noch klassifizierter Fehler; ob sie einen Code tragen, ist im Bericht zu begründen
   (Vorschlag an den Architect, falls die Tabelle keine Stelle hat — keine stille Erweiterung
   der ADR). — **Ausgang:** weiter offen, benannte Grenze: `401`/`403`/`Unauthenticated`/`PermissionDenied`
   tragen keinen Code; keine Folge-ADR vor v0.6.0 (Entscheidung des Hauptlaufs nach Review F-2).
+  Anker: [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md) Festlegung 1 (`E8` =
+  Ablehnung einer Aufrufer-Eingabe, `E9` reserviert); zwei Codes im Bereich `E9` wären eine spätere
+  Entscheidung per Folge-ADR. Die Grenze steht in Spec, Handbuch und diesem Plan, ein Register-Eintrag
+  entfällt.
 - **Läufer-Erwartungen** an Fehlerkörper werden erst im `make test-integration`-Lauf rot, der
   nicht in `make gates` liegt. Gegenmittel: Suchlauf, vollständiger Lauf vor Closure. —
-  **Ausgang:** (bei Closure)
+  **Ausgang:** entfallen — `make test-integration` Exit 0 (Verifier gemessen).
 - **Kollision mit parallelen Arbeiten am Handbuch.** Rebase auf `main`, nur eigene Abschnitte
-  committen. — **Ausgang:** (bei Closure)
+  committen. — **Ausgang:** entfallen — kein Konflikt im Diff (Verifikation).
 
 - **Bereich von `PCF-W4008` (Review F-7).** Der Code bleibt im Bereich 4; der Katalog des Handbuchs nennt, dass
   Bereich 4 auch die Aufrufe der API umfasst. Die Bereichsnamen der ADR und der Spec bleiben unverändert.
@@ -323,12 +332,65 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register · `grundlagen-traceability.md` §Herkunfts-Anker für
 Steering-Loop-Regeln. Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
 
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** (1) Tabelle und Katalog tragen 97 Codes (88 + 9: `PCF-E8050` bis
+  `PCF-E8057`, `PCF-W4008`; Gate `meldungscodes-check` **gemessen**: `97 Codes in Tabelle und Katalog
+  gleich`). (2) 24 HTTP-Schreibstellen tragen einen Code (Review **gemessen**); 4 der 7 gRPC-Fehlerstellen
+  tragen `ErrorInfo`, die 3 Auth-Stellen des `interceptor.go` bewusst nicht. (3) Live-Beleg (Verifier selbst
+  gefahren, `make test-integration`, Zeile `run-integration-tests: Fehlerzustand-Code-Beleg (HTTP und gRPC)
+  belegt`): Normalbetrieb ohne Klasse und Code, Fehlerzustand `schema`/`PCF-E4003` über HTTP und gRPC,
+  `REJECTED` `PCF-E8051` (HTTP `400`, gRPC `InvalidArgument`), `401` ohne `code`, gRPC `Unauthenticated`
+  mit `details=none`. (4) SDK-Toleranz: C# vom Verifier selbst nachgefahren (159 passed), Python im Review
+  **gemessen**, Kotlin vom Implementer **übernommen**. (5) Statuscodes gegen den Parent unverändert
+  (Tabelle vorher/nachher, Verifier; zwei Statusmutationen färben rot). (6) Hintergrund-Schreiber der
+  Live-Phase: Trap-Messung am Muster 7 → 7 Ticks mit, 7 → 13 ohne Aufnahme im Trap (Verifier **gemessen**,
+  am Muster, nicht am echten Läufer). `make gates` Exit 0 (Verifier, ungepiped).
+- **Was ging anders als geplant:** (1) **Review und Fixrunde:** 0 HIGH, ein MEDIUM, 3 LOW, 3 INFO. F-1
+  (MEDIUM): zwei Godoc-Blöcke in `tools/harness/httpclient/main.go` standen an der falschen Funktion;
+  behoben durch die Fixrunde `198aff90` (dazu der Aufräum-Trap des Schreibers und der Handbuch-Absatz zu
+  `503`/`PCF-E7000`, `7ff2587c` erzeugte die E2E-Abdeckungstabelle neu). **Ein Re-Review nach der
+  Fixrunde fand nicht statt** — ehrliche Abweichung vom Ablauf: der Verifier hat den Fixrunden-Diff
+  (`git diff 6240852a HEAD`, nur Godoc, Trap, Handbuch, Plan, Erzeugnis; `git diff --name-only 6240852a HEAD
+  -- internal` leer) in der Reviewer-Haltung gelesen und einen weiteren Reviewer-Durchgang nicht für nötig
+  befunden; die Review-Reports bleiben unverändert und tragen den Stand vor der Fixrunde. (2) **V-1
+  (LOW):** `PCF-E2001` (`503`/gRPC `Internal` bei „Stream ohne Broadcaster“) passte nur teilweise zur
+  Katalogzeile (fehlende Umgebungsvariable beim Start); Entscheidung des Hauptlaufs: die Katalogzeile im
+  Handbuch (Version 1.92 bleibt) nennt jetzt beide Fälle, kein eigener Code; `make meldungscodes-check` und
+  `make handbuch-public-doc-check` Exit 0. (3) **V-2 (LOW):** die DoD (B) widersprach sich — der Kopf war
+  auf „4 der 7“ präzisiert, der Halbsatz der Belegform verlangte `Unauthenticated` mit `ErrorInfo`; der
+  Halbsatz ist jetzt die Gegenprobe (ohne `ErrorInfo`). (4) **V-3 (INFO), Zahl berichtigt:** der Review
+  nennt „acht“ Body-Decoder für `PCF-E8050`; gemessen sind es sechs `json.Decode`-Stellen (`git grep -n
+  NewDecoder -- internal/adapters/driving/http`, Verifier); der Review-Report bleibt unverändert.
+  (5) **Pfad-Zitate in `ADR-0144`:** `git grep -n 'meldungscodes-http-grpc-fehlerkoerper' -- docs/plan/adr`
+  nennt den Slice-Namen ohne Pfad (ADR Zeile 241, Verdikt Zeile 42) — keine Zitat-Korrektur nach
+  [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) nötig. (6) **CI:** der Slice
+  berührt keinen Workflow ([`AGENTS.md`](../../../../AGENTS.md) §3.10 löst keine Pflicht aus); die neue
+  Live-Phase läuft erst nach dem Push im Workflow `e2e.yml` (PostgreSQL 17 und 18) auf dem Runner —
+  Erwartung, nicht gemessen.
+- **Steering-Loop-Eintrag:** *Geschärfte Regel:* keine neue Regel im Wortlaut. Zwei Lehren, je ein
+  Vorkommen: (a) **wer eine DoD-Überschrift präzisiert, zieht ihre Unterpunkte nach** (V-2: Kopf „4 der 7“,
+  Belegform verlangte das Gegenteil); (b) **eine Klassifikation an einer Stelle zusammenzuführen
+  (`apifault`) ist ein Umbau mit Gleichheits-Zusage** — der Beleg ist die Statuscodes-Tabelle vor und nach
+  dem Umbau (Verifier) —, Anwendung der Regel aus `BEO-PGC/umbau-aendert-still-beobachtbares-verhalten`; das
+  Verhalten blieb gleich, also kein neues Vorkommen. *Neuer Sensor:* keiner; Passung von Code und Ursache
+  bleibt Lese-Handlung (Emittenten-Liste je Code im Plan, wie aus T3 vorgeschlagen — sie fand den Grenzfall
+  nicht im ersten, sondern erst im zweiten Lesen, V-1). *Benannte Spec-Lücke:* die Auth-Statuswerte
+  (`401`/`403`, `Unauthenticated`/`PermissionDenied`) tragen keinen Code; die Tabelle führt dafür keine
+  Stelle (§6).
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/gate-prueft-existenz-nicht-passung`: zweites
+  Vorkommen, **2×** (schwach, Beleg `evidence/slice-meldungscodes-http-grpc-fehlerkoerper.md`; Zustand und
+  Ausgang regelkonform, Schwelle 3× nicht erreicht). `BEO-PGC/intern-kennungen-in-ausgelieferten-texten`:
+  Zustandsfeld um einen Satz fortgeschrieben (Codes stehen auch in API-Fehlerkörpern und `ErrorInfo`);
+  Zähler **1×** unverändert. `BEO-PGC/umbau-aendert-still-beobachtbares-verhalten` und
+  `BEO-PGC/adr-aussage-breiter-als-ihre-messung`: kein neues Vorkommen.
+- **Folge-Slices:** keiner. Letzter Teil der Meldungscodes (T1 bis T4 in `done/`). Kein Release, keine
+  Versionsänderung in diesem Zug; der Server-Release `v0.6.0` ist ein eigener Schritt nach Push und CI
+  (Freigabe des Auftraggebers, `docs/user/version.md`, Tag, Release-Hinweise). Offen vor dem Release: Push
+  und Beobachtung von `ci.yml` und `e2e.yml` (PG 17 und 18, erste Läufe der Live-Phase); SDK-Pack und
+  Beispiel-Bau (`make sdk-pack-*`, `make examples-*`) sind vom Verifier nicht gefahren (**übernommen**).
+- **Risiken aus §6:** SDKs lesen den Fehlerkörper: entfallen; Code an der falschen Stelle: eingetreten
+  (klein), aufgelöst; Auth-Fehler ohne Klasse: weiter offen, benannte Grenze (Anker `ADR-0144`
+  Festlegung 1, `E9` reserviert); Läufer-Erwartungen: entfallen; Kollision am Handbuch: entfallen;
+  Bereich von `PCF-W4008`: entfallen; Hintergrund-Schreiber: entfallen.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

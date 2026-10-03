@@ -42,7 +42,8 @@ Meldungscodes folgen in T2 bis T4. Der Zähler bleibt **1×** (kein neuer Vorgan
 Tabelle zu. Siehe `docs/plan/planning/done/slice-meldungscodes-registry-fehlerkopf.md`. Der
 Zähler bleibt **1×** (kein neuer Vorgang der Klasse). Seit T3 gehören die Warn-Codes `PCF-W…`
 (Log-Attribut `code`) zur Menge, die das Gate abgleicht (88 Codes); die Passung eines Codes zu seiner
-Stelle prüft es nicht (`BEO-PGC/gate-prueft-existenz-nicht-passung`).
+Stelle prüft es nicht (`BEO-PGC/gate-prueft-existenz-nicht-passung`). Seit T4 stehen die Codes auch im
+Fehlerkörper der HTTP-API (`code`) und im `ErrorInfo` der gRPC-Fehler (97 Codes); Zähler **1×** unverändert.
 
 **Verwandt, nicht gleich:** `BEO-PGC/slice-chronik-in-code-kommentar` (Chronik in
 Code-Kommentaren, Leser ist der Entwickler im Repo) — hier ist der Leser ein
