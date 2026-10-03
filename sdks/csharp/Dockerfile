@@ -18,13 +18,13 @@
 # ein roter Test bricht den `docker build` mit Exit != 0 ab, bevor `pack` je
 # erreicht wird (kein stiller Fallback).
 #
-# Basis-Digest gemessen (`docker buildx imagetools inspect`, amd64/linux) —
-# identisch mit dem in examples/csharp/Dockerfile gepinnten Kandidaten
-# (dieselbe .NET-Generation):
+# Basis-Digest ist der Index-Digest des Tags (`docker buildx imagetools
+# inspect mcr.microsoft.com/dotnet/sdk:10.0 --format '{{.Manifest.Digest}}'`),
+# identisch mit dem in examples/csharp/Dockerfile gepinnten Wert:
 #   mcr.microsoft.com/dotnet/sdk:10.0
-#     -> sha256:60a2b2230a0d052bc54c0d453e97e331219ed503c5411470ee226859420e693c
+#     -> sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317
 # Pin-Hebung ist ein bewusster Commit, keine stille Auflösung.
-FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:60a2b2230a0d052bc54c0d453e97e331219ed503c5411470ee226859420e693c AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317 AS build
 WORKDIR /src
 
 # Die zentrale Paket-Pinnung und die Projektdateien zuerst — sie ändern sich

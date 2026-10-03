@@ -11,11 +11,10 @@
 # mit (harness/mk/examples.mk). Ohne ihn bricht der Bau an der COPY-Zeile ab
 # — kein stiller Fallback (ADR-0090 §Fitness Function).
 #
-# Basis-Digests real gemessen (`docker manifest inspect`, amd64/linux) am
-# Zeitpunkt dieses Zuges — deckungsgleich mit dem in ADR-0087 Festlegung 3
-# gemessenen Kandidaten:
+# Basis-Digests sind die Index-Digests der Tags (`docker buildx imagetools
+# inspect <Tag> --format '{{.Manifest.Digest}}'`):
 #   mcr.microsoft.com/dotnet/sdk:10.0
-#     -> sha256:60a2b2230a0d052bc54c0d453e97e331219ed503c5411470ee226859420e693c
+#     -> sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317
 #   mcr.microsoft.com/dotnet/runtime:10.0
 #     -> sha256:e6541e52aeab4e412012178d66a6637b65252cca2ad15ada7cd1849d7d702c3d
 # Pin-Hebung ist ein bewusster Commit (AGENTS.md §3.6/Modul 14), keine stille
@@ -31,7 +30,7 @@
 # `Grpc.Tools` den Stub aus der über den Zusatzkontext gelesenen `.proto`
 # während dieses Builds (ADR-0090 Festlegung 2/3) — der Stub
 # selbst verlässt diese Stufe nie.
-FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:60a2b2230a0d052bc54c0d453e97e331219ed503c5411470ee226859420e693c AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317 AS build
 WORKDIR /src
 
 # Die zentrale Paket-Pinnung und die Projektdateien zuerst — sie ändern sich
