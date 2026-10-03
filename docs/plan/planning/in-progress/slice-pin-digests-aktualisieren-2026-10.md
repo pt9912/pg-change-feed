@@ -140,8 +140,9 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make test` grün, `make
       docs-check` grün (Exit direkt); `make mod-download` nur, falls `go.mod`
       berührt wird — erwartet nicht.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      ([`review-slice-pin-digests-aktualisieren-2026-10`](../../../reviews/review-slice-pin-digests-aktualisieren-2026-10.md),
+      `.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update: kein öffentlicher Vertrag berührt (gemessen am Diff: kein
       Digest-Treffer in `spec/`, `docs/user/`, `README.md`, `AGENTS.md`; erwartet — gemessen
