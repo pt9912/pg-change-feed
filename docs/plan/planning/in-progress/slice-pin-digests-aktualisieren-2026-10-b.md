@@ -141,6 +141,15 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Parent-Kennung stehen in §7; die Werte aus §1 sind **nicht** zu
       übernehmen. Zeigt die Messung einen Major-/Tag-Wechsel im Image
       (Stopp-Regel §4), endet der Slice dort.
+      **Nicht erfüllt, Ausgang akzeptiert (Planner, Closure):** die Vorher-Messung
+      der Achsen P1 bis P9 liegt nicht vor (Docker-Hub-Abruflimit; der Drift ist
+      behoben, das Vorher nicht mehr herstellbar). Ersatz-Aussage: gemessen ist
+      die Drift der acht Pins vorher (je `imagetools inspect`, §7) und die Achsen
+      P1 bis P9 nachher (Implementer und Verifier, je `OK`); die Achsen P1 bis P9
+      vorher sind nicht gemessen. Der Haken bleibt bewusst leer; das Ziel des
+      Punkts (Drift der acht Pins belegt, Nachher-Zustand gemessen) ist über
+      diese Ersatz-Aussage getragen, und die Lücke gefährdet kein Closure-Kriterium
+      aus §5, weil §5 die Nachher-Messung verlangt.
 - [x] **Hebung und Nachzug (Liefer-Punkt 2).** Je Pin ein eigener Commit
       (Betreff nennt
       [`ADR-0146`](../../adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md),
@@ -177,6 +186,10 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`workflow_dispatch`) ist nach dem Push gelesen
       ([`AGENTS.md`](../../../../AGENTS.md) §3.10; der Push gehört nicht zu
       diesem Plan, die Lesung ist Closure-Pflicht).
+      **Weiter offen (Closure):** lokale Läufe sind belegt (§7, Verifier
+      bestätigt); der Post-Push-Lauf von `e2e.yml` und `upstream-drift.yml` folgt
+      nach dem Push im Hauptlauf und wird per Nachtrag in §7 eingetragen; der
+      Haken fällt erst dort.
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
@@ -194,10 +207,10 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       keinen der acht Pins als Einzelplattform-Lesung — der Implementer liest
       die Zeilen zu `make test-store`, `make test-replication`,
       `make test-notify` und `make image-cve` und zieht nach oder meldet.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist. Die Folge-Slice-Adresse ist
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist. Die Folge-Slice-Adresse ist
       [`slice-pin-stale-alle-digest-pins`](../open/slice-pin-stale-alle-digest-pins.md)
       (liegt in `open/`); sie nimmt die Sendung „erster Lauf mit Sensor grün“ an:
       ihr Plan trägt die Abhängigkeit „erst nach diesem Slice“.
@@ -362,38 +375,47 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   betroffen, danach die drei SDK-Integrationsläufe): ein Lauf, der am Parent grün
   und am Diff rot ist, ist ein Befund, die Schwelle bleibt
   ([`AGENTS.md`](../../../../AGENTS.md) §3.6); der Pin der Achse bleibt dann auf
-  dem Parent. — **Ausgang:** offen bis Closure.
+  dem Parent. — **Ausgang:** entfallen — kein Lauf am Diff rot; die fünf
+  Bauketten zusätzlich ohne Cache grün (Verifikationsbericht §1), der
+  Trivy-Befund gegen den Parent-Pin gleich (0/0).
 - **Ein Pin war bisher ein Einzelplattform-Digest und der Bau läuft
   auf einer anderen Plattform als die Messung:** ein Index-Digest löst auf die
   Plattform des Bau-Hosts auf; ein arm64-Host baute bisher amd64-Images oder
-  umgekehrt. — **Ausgang:** offen bis Closure (zu belegen: Plattform des
-  Messhosts in §7 genannt, `uname -m` am Lauf-Host).
+  umgekehrt. — **Ausgang:** entfallen — Messhost `x86_64` (`uname -m`, §7),
+  kein Plattform-Wechsel beobachtet; die Auflösung auf dem Runner ist nicht
+  gemessen und gehört zum Post-Push-Lauf des CI-Matrix-Risikos.
 - **Eine Kopie des Pins bleibt auf dem alten Digest** (zwei Toolchains
   koexistieren, der Sensor aus dem Folge-Slice meldete sie als `DRIFT`): —
-  **Ausgang:** offen bis Closure (zu belegen: der `diff`-Suchlauf aus §3 trifft
-  die Erwartung, `make suchlauf-nachmessen PLAN=…` Exit 0).
+  **Ausgang:** entfallen — je Image ein Wert an allen Trägern (Verifikationsbericht
+  §3), `make suchlauf-nachmessen` Exit 0 (24 Zeilen).
 - **Der Digest eines Tags bewegt sich zwischen Messung und Push** (Registry-Push
   des Upstream zwischen Liefer-Punkt 1 und dem Post-Push-Lauf): die erste
-  Messung des Folge-Slice wäre dann nicht grün. — **Ausgang:** offen bis
-  Closure; der Folge-Slice misst am Start neu und hebt einen frisch gedrifteten
-  Pin zuerst.
+  Messung des Folge-Slice wäre dann nicht grün. — **Ausgang:** weiter offen;
+  Anker: der Folge-Slice
+  [`slice-pin-stale-alle-digest-pins`](../open/slice-pin-stale-alle-digest-pins.md)
+  misst am Start neu und hebt einen frisch gedrifteten Pin zuerst.
 - **CI-Matrix `e2e.yml` PostgreSQL 17/18:** die Datei wird berührt (Pin-Wert und
   Kommentare, keine Struktur); ein lokal grüner Lauf zeigt nicht, dass der Runner
   grün läuft ([`AGENTS.md`](../../../../AGENTS.md) §3.10). Die Pins ändern sich,
   gegen die die Matrix läuft; der Post-Push-Lauf beider Legs wird gelesen
-  (`gh run list --workflow e2e.yml`, `gh run view`). — **Ausgang:** offen bis
-  der Post-Push-Lauf gelesen ist; Träger der Nachverfolgung bei „weiter offen“:
+  (`gh run list --workflow e2e.yml`, `gh run view`). — **Ausgang:** weiter
+  offen bis der Post-Push-Lauf gelesen ist (Nachtrag in §7 im Hauptlauf); Träger der Nachverfolgung bei „weiter offen“:
   [`BEO-PGC/github-actions-unverifizierbar-lokal`](../observations/BEO-PGC/github-actions-unverifizierbar-lokal/observation.md).
 - **`make image-cve` mit dem neuen `TRIVY_IMAGE`:** die README nennt das Ziel
   advisory und, bis zum ersten Release, strukturell scheiternd; seit dem Release
   `v0.2.0` ist das nicht mehr gemessen. Ein roter Lauf ist kein Gate-Rot. —
-  **Ausgang:** offen bis Closure (gedruckte Zeile und Exit in §7).
+  **Ausgang:** entfallen — `make image-cve` Exit 0, gedruckt `debian 12.15: 0`
+  und `gobinary: 0` Befunde, am Parent-Pin identisch (§7).
 - **Alarmmüdigkeit:** das Register führt
   [`BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit`](../observations/BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit/observation.md)
   mit zwei Evidenz-Dateien (gezählt am Planungsstand); ein weiterer roter
   Nachtlauf in der Zeit zwischen Hebung und Sensor-Einführung wäre eine dritte
   Datei und macht die Beobachtung zur Lücke mit eigenem Slice. —
-  **Ausgang:** offen bis Closure.
+  **Ausgang:** weiter offen; Anker:
+  [`BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit`](../observations/BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit/observation.md)
+  (Zähler unverändert 2, keine Evidenz-Datei hinzugefügt: der Nachtlauf von
+  `upstream-drift.yml` ist in diesem Slice nicht gelesen worden; die Beobachtung
+  wird erst gezählt, wenn der Lauf gelesen ist).
 
 ## 7. Closure-Notiz
 
@@ -433,6 +455,27 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   | `aquasec/trivy` | `62b1e65e…969` (bereits Index) → `af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa` | Trivy 0.74.0 → 0.75.0 | `make image-cve` (debian 12.15: 0, gobinary: 0 Befunde) |
   | `postgres:17-alpine` | `aa90e97e…3b3` (Einzelplattform, oci.image.manifest) → `b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24` (Index) | PostgreSQL 17.11 → 17.11 | `make test-replication PG_TEST_IMAGE=<neuer Pin>` (gedruckt: PostgreSQL 17.11), `make test-store` |
 
+  Herkunft der Spalten (Ursprung je Angabe, [`AGENTS.md`](../../../../AGENTS.md)
+  §3.12): die **neuen** Digests und neuen Versionen sind gemessen (Implementer,
+  vom Verifier reproduziert). Die **alten** Digests sind aus dem Parent
+  herstellbar und hier voll ausgeschrieben (`git show 7bc4aadd:<Datei>`):
+  `nats` `065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc`,
+  `dotnet/sdk` `60a2b2230a0d052bc54c0d453e97e331219ed503c5411470ee226859420e693c`,
+  `dotnet/runtime` `e6541e52aeab4e412012178d66a6637b65252cca2ad15ada7cd1849d7d702c3d`,
+  `temurin` JDK `085eb93e049c7397f725bd8be31c4fd52ba4777a75168e851428508234aa224e`,
+  `temurin` JRE `ca7551d4f36647207812e3c8c8596c89fd4e5226a061a5b8c8629839fe8969f6`,
+  `python` `caaf356f40667c496d405780745b9ac25771c189a51dfcc42430d531ea09f8a2`,
+  `trivy` `62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969`,
+  `postgres:17` `aa90e97ee862e558111d34cfb8b2c4bec768c2b039fb791341686928560263b3`.
+  **Übernommen** (nicht mehr herstellbar, am Endstand nicht nachgemessen): die
+  Alt-Form der Pins in der Spalte „alt (Form)“ (Einzelplattform bzw. Index,
+  `mediaType`) und die Alt-Versionen von .NET SDK/Runtime und JDK; sie stammen aus
+  der Messung des Implementers vor der Hebung. Zwei Parent-Kennungen: `39e27242`
+  ist der Planungsstand, an dem der Suchlauf (Parent-Zeilen) gemessen ist;
+  `7bc4aadd` ist der Parent der Implementer-Commits; dazwischen liegen nur
+  Dokument-Commits (drei Dateien unter `docs/plan/planning/`, kein Code, keine
+  Konfiguration).
+
   Kein Pin ändert die Hauptversion oder die vom Tag genannte Linie (Stopp-Regel
   aus §3 nicht ausgelöst). Gesamtläufe am Endstand der Hebungen: `make image`
   Exit 0; `make test-sdk-csharp-integration`, `make test-sdk-python-integration`,
@@ -467,18 +510,60 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   Post-Push-Lauf von `e2e.yml` (beide Legs) und `upstream-drift.yml`
   (`workflow_dispatch`): steht aus, der Push gehört nicht zu diesem Lauf
   ([`AGENTS.md`](../../../../AGENTS.md) §3.10).
-- **Was hat funktioniert:** — (bei Closure)
-- **Was ging anders als geplant:** — (bei Closure)
-- **Steering-Loop-Eintrag:** — (bei Closure; Lerneintrag Pflicht, siehe §5)
-- **Beobachtungs-Register (`../observations/`):** — (bei Closure; Kandidat:
-  eine weitere Evidenz-Datei zu
-  [`BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`](../observations/BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar/observation.md),
-  wenn die Messung zeigt, dass der Drift seit der letzten Hebung unbeobachtet
-  entstand)
+- **Was hat funktioniert:** Der Schnitt „ein Pin, ein Commit, davor der engste
+  Lauf“ ordnete jeden Befund einer Achse zu; keine Hebung brachte einen roten
+  Lauf. Die Unabhängigkeit der Rollen zahlte sich aus: Planner, Implementer und
+  Verifier maßen den Drift der acht Pins getrennt und kamen auf dieselben Werte;
+  der Verifier fuhr die fünf Bauketten zusätzlich ohne Cache und schloss damit
+  die Lücke „Cache-Treffer ist kein Testlauf“.
+- **Was ging anders als geplant:** Das Docker-Hub-Abruflimit für anonyme Abrufe
+  traf die Vorher-Messung der Achsen P1 bis P9; ihr Liefer-Punkt 1 bleibt
+  unerfüllt (Ersatz-Aussage in §2). Der `nats`-Pin hob die Minor-Linie
+  (v2.14.6 auf v2.15.0), innerhalb der vom Tag `2-alpine` genannten Linie; die
+  Stopp-Regel war damit nicht ausgelöst, ihre Wortlaut-Grenze („Minor-Linie, die
+  der Tag nennt“) war aber auslegungsbedürftig (Review F-4). Zwei Parent-Kennungen
+  (`39e27242`, `7bc4aadd`) liefen im Plan nebeneinander (Erklärung oben).
+- **Steering-Loop-Eintrag (geschärfte Regel):** (1) Ein Kommentar, der den
+  Gewinnungsweg eines Pins nennt, hält die Pin-Form am Leben: sieben lebende
+  Träger nannten „`docker manifest inspect` (amd64)“, einen Weg, der
+  Einzelplattform-Digests liefert, und kopierten so die falsche Form bei jeder
+  Hebung mit. Eine Hebung ändert deshalb Wert **und** Gewinnungsweg-Kommentar im
+  **selben Commit**; ein Pin-Wert allein ist eine halbe Hebung. (2) Die Messung
+  eines „Vorher“ liegt **vor** dem Abruflimit der Registry oder wird gesichert
+  (gedruckte Zeilen in §7 am Messtag, nicht nach den Läufen): ein Vorher, das
+  der Hebung zum Opfer fiel, ist nicht mehr herstellbar, und der Liefer-Punkt
+  bleibt unerfüllt. Benannte Grenze: der Sensor P10 des Folge-Slice liest Pin-Werte,
+  nicht den Wortlaut von Gewinnungsweg-Kommentaren; die Kommentar-Hälfte bleibt
+  Lese-Handlung des Reviewers. Kein Eintrag „liegt in“: mit diesem Slice ist
+  keine Regel in einen Träger verkörpert worden.
+- **Validator:** entfällt, weil der Slice Pflegearbeit an Basis-Image-Pins ist
+  und keinen End-Nutzer-Wert liefert (kein Verhalten des Produkts geändert; die
+  Hebungen der SDK-Dockerfiles wirken erst mit dem nächsten SDK-Release).
+- **Release-Folge (nur vermerkt):** die Pins in `sdks/csharp/Dockerfile`,
+  `sdks/python/Dockerfile` und `sdks/kotlin/Dockerfile` wirken erst mit dem
+  nächsten SDK-Release (`sdk-*-v*`-Tags); kein Versionsbump in diesem Slice,
+  keine Freigabe eines Release.
+- **Beobachtungs-Register (`../observations/`):** weitere Evidenz-Datei
+  `evidence/slice-pin-digests-aktualisieren-2026-10-b.md` zu
+  [`BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`](../observations/BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar/observation.md)
+  (Zähler aus den Dateien: 2). [`BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit`](../observations/BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit/observation.md)
+  nicht gezählt: kein Nachtlauf gelesen. Keine weitere Beobachtung angefallen.
 - **Folge-Slices:** [`slice-pin-stale-alle-digest-pins`](../open/slice-pin-stale-alle-digest-pins.md)
   (Sensor P10) — ist eine Datei in `open/`
-- **Risiken aus §6:** — (bei Closure: je Risiko genau ein Ausgang)
-- **Drei Paarungen:** — (bei Closure: Anker · Folge-Slice · Register, Ergebnis)
+- **Risiken aus §6:** sieben Ausgänge, am Linktext von §6 ablesbar: entfallen
+  — Verhaltensänderung eines Laufs, Plattform des Bau-Hosts, Kopie auf altem
+  Digest, `make image-cve`; weiter offen — Digest-Bewegung zwischen Messung und
+  Push (Anker: Folge-Slice), CI-Matrix `e2e.yml` (Anker:
+  [`BEO-PGC/github-actions-unverifizierbar-lokal`](../observations/BEO-PGC/github-actions-unverifizierbar-lokal/observation.md);
+  Post-Push-Nachtrag im Hauptlauf), Alarmmüdigkeit (Anker: Beobachtung, Zähler 2).
+- **Drei Paarungen:** Anker — kein `liegt in`-Feld gesetzt, nichts zu prüfen;
+  Folge-Slice — `slice-pin-stale-alle-digest-pins` existiert in `open/`;
+  Register — beide genannten Kennungen existieren als Verzeichnis, jedes mit
+  nicht leerem `evidence/` (gemessen: `ls` am Endstand).
+- **Nachtrag-Pflicht (offen):** Liefer-Punkt 3 (Belege) und das §6-Risiko
+  „CI-Matrix `e2e.yml`“ schließt der Hauptlauf nach Push und Lesung von
+  `e2e.yml` (beide Legs) und `upstream-drift.yml` per Nachtrags-Commit in diesem
+  Record.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
