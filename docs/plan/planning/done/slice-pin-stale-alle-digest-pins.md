@@ -144,7 +144,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Mutation Stelle, Instanz und die gesehene Farbe (rot erwartet). Jede
       Verallgemeinerung darüber hinaus („alle Zweige tragen“) steht als
       *hergeleitet* ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B).
-- [ ] **Verdrahtung und realer Lauf (Liefer-Punkt 3).** Make-Target
+- [x] **Verdrahtung und realer Lauf (Liefer-Punkt 3).** Make-Target
       (Arbeitsname `pin-stale-all`, neben den `pin-stale-*`-Zielen im
       `Makefile`, `.PHONY`, Hilfetext) und `make test-pin-stale-all` laufen; ein
       zehnter Schritt mit `if: always()` in
@@ -184,7 +184,7 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       Closure nachgezogen (§3 Suchlauf, [`AGENTS.md`](../../../../AGENTS.md)
       §3.13).
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Zu tragen: der Zustand von
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Zu tragen: der Zustand von
       [`BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`](../observations/BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar/observation.md)
       (Träger `ADR-0146` steht bereits in dessen `state.md`) wird mit dem
       ersten grünen Nachtlauf aktualisiert (Ausgang nur nach gelesenem Lauf).
@@ -404,9 +404,10 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   ([`BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit`](../observations/BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit/observation.md),
   zwei Evidenz-Dateien am Planungsstand gezählt). Gegenmaßnahme ist die
   Startmessung (§4) und der Hebe-Commit vor dem Sensor (§3). —
-  **Ausgang:** weiter offen. Am Arbeitsstand ist `make pin-stale-all` Exit 0
-  (15 OK, gemessen im Verifikations-Report §5); der Runner-Lauf ist nicht
-  gelesen. Dazu die Verifier-Feststellung V-1: neun der 15 Referenzen liegen
+  **Ausgang:** entfallen für den ersten Runner-Lauf — er ist gelesen (Nachtrag in §7:
+  15 OK, 0 UNBESTIMMT, kein 429); die 429-Möglichkeit bleibt benannte Grenze 5
+  des Sensor-Vertrags. Am Arbeitsstand ist `make pin-stale-all` Exit 0
+  (15 OK, gemessen im Verifikations-Report §5). Dazu die Verifier-Feststellung V-1: neun der 15 Referenzen liegen
   bei Docker Hub, das anonyme Abruflimit (HTTP 429) färbte am Messhost den
   Sensor einmal auf `9 UNBESTIMMT`, Exit 2, ohne dass ein Pin driftete; ein
   roter erster Runner-Lauf kann also am Limit liegen, nicht an Drift. Der
@@ -450,9 +451,9 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
 - **Workflow-Änderung ist lokal unbeweisbar** ([`AGENTS.md`](../../../../AGENTS.md)
   §3.10): der zehnte Schritt, der Schritt-Name und die Make-Ziel-Namen müssen auf
   dem Runner stimmen; ein lokal grünes `make pin-stale-all` zeigt das nicht. —
-  **Ausgang:** weiter offen — der Push und der `workflow_dispatch`-Lauf von
-  `upstream-drift.yml` (zehn Schritte, `success`) folgen nach dieser Closure im
-  Hauptlauf (Nachtrag in §7); Liefer-Punkt 3 der DoD bleibt bis dahin offen.
+  **Ausgang:** entfallen — der Push ist erfolgt und der
+  `workflow_dispatch`-Lauf von `upstream-drift.yml` (zehn Schritte, `success`)
+  ist gelesen (Nachtrag in §7); Liefer-Punkt 3 der DoD ist abgehakt.
   Träger:
   [`BEO-PGC/github-actions-unverifizierbar-lokal`](../observations/BEO-PGC/github-actions-unverifizierbar-lokal/observation.md).
 - **Laufzeit des Sensors**: je Referenz ein Registry-Aufruf; der Job hat
@@ -555,11 +556,22 @@ unabhängige Nachmessung steht im
   geplant, nichts offen ohne Adresse (die beiden offenen Risiken tragen
   Register-Anker); Register — alle genannten Kennungen existieren als
   Verzeichnis mit `evidence/` (gemessen: `ls` am Endstand).
-- **Nachtrag (offen):** Push, `workflow_dispatch`-Lauf von `upstream-drift.yml`
-  (zehn Schritte, Gesamtlauf `success`, Laufzeit des Schritts P10, Ursache bei
-  einem Rot: Drift oder 429), danach der Zustand des Registers und der
-  Haken Liefer-Punkt 3 trägt der Hauptlauf nach
-  ([`AGENTS.md`](../../../../AGENTS.md) §3.10).
+- **Nachtrag (erledigt, 2026-10-03):** Der Stand `eb4155e5` ist gepusht
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.10). Gelesen wurde der reale Lauf auf
+  dem Runner:
+  - `ci`, `e2e` (beide Legs) und `examples` desselben Stands: `success`.
+  - `upstream-drift.yml`, Lauf `37144584033` (`workflow_dispatch`, Stand
+    `eb4155e5`): Gesamtlauf `success`, alle zehn Schritte P1/P2 bis P10
+    `success`. Das Log von P10 druckt
+    `pin-stale-all: 15 Referenzen — 15 OK, 0 DRIFT, 0 UNBESTIMMT`; die
+    Zeitstempel des Logs (`Run make pin-stale-all` 18:33:04, Schlusszeile
+    18:33:25) ergeben rund 21 s. Kein HTTP 429 im Log.
+
+  Liefer-Punkt 3 und die Register-Zeile sind damit abgehakt, beide offenen
+  Risiken aus §6 für den ersten Runner-Lauf entfallen. Der Zustand von
+  [`BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar`](../observations/BEO-PGC/pin-ohne-inventar-eintrag-driftet-unsichtbar/observation.md)
+  ist im selben Zug fortgeschrieben. Ein Lauf per `workflow_dispatch` ist ein
+  Lauf; der erste planmäßige Nachtlauf (`schedule`) mit P10 ist nicht gelesen.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
