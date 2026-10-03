@@ -24,7 +24,7 @@
 # cross. Nur `runtime` (kein `--platform`) baut je Ziel-Plattform, die
 # buildx pro Durchlauf von `--platform linux/amd64,linux/arm64` vorgibt —
 # ohne eigene RUN-Schritte braucht das keine Emulation. ---
-FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS deps
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414 AS deps
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify

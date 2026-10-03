@@ -188,7 +188,7 @@ doc-ci-matrix: ## LH-QA-POR-001/002-Beleg: reale GitHub-Actions-Läufe abfragen,
 # CI-Versionsmatrix (.github/workflows/e2e.yml) überschreibt
 # dieselbe Variable je Leg, die compose.yaml per `${PG_TEST_IMAGE}`-
 # Interpolation liest — kein zweiter Mechanismus.
-TOOLCHAIN_IMAGE ?= golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125
+TOOLCHAIN_IMAGE ?= golang:1.27-alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414
 # TOOLCHAIN_RACE_IMAGE trägt denselben Go-Toolchain-Stand wie TOOLCHAIN_IMAGE
 # (`go1.27.1`, real geprüft), aber Debian statt Alpine: der Race-Detector
 # braucht einen C-Compiler zum Linken (`gcc`), den das Alpine-Image nicht

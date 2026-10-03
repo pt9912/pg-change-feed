@@ -10,7 +10,7 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 REPO="pt9912/pg-change-feed"
-TOOLCHAIN_IMAGE="${TOOLCHAIN_IMAGE:-golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125}"
+TOOLCHAIN_IMAGE="${TOOLCHAIN_IMAGE:-golang:1.27-alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414}"
 OUT=docs/user/ci-matrix-abdeckung.md
 
 # Fuehrt genau EINEN Container aus: installiert curl+jq (Netz ohnehin
