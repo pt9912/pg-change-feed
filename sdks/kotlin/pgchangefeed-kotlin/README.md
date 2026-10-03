@@ -294,12 +294,14 @@ fun listTablesReportingErrors(client: PgChangeFeedHttpClient) {
     } catch (e: PgChangeFeedForbiddenException) {
         println("token is not allowed to call this endpoint")
     } catch (e: PgChangeFeedException) {
-        println("${e.statusCode} ${e.message}")
+        println("${e.statusCode} ${e.messageCode} ${e.message}")
     }
 }
 ```
 
-The gRPC stream reports a missing or unknown token as an `io.grpc.StatusException` with status `UNAUTHENTICATED`, thrown while the `Flow` is collected. The NATS client passes on the exception of the NATS client library (`io.nats.client`) when the server rejects the token, and throws `PgChangeFeedNatsMalformedMessageException` when a message cannot be read.
+`messageCode` is the message code the server attaches to an error (`PCF-<E|W|I><4 digits>`, for example `PCF-E8025` for a table that does not exist in the source database), read from the `code` field of the error body and passed through unchanged. Match on it instead of parsing the message. It is `null` when the server sent no code: authentication errors (`401`, `403`) carry none, a server release that predates message codes sends none, and so does a body that is not JSON or whose `code` is not a non-empty string. The error text stays available either way.
+
+The gRPC stream reports a missing or unknown token as an `io.grpc.StatusException` with status `UNAUTHENTICATED`, thrown while the `Flow` is collected. The gRPC stream client passes on the plain `StatusException` for every failure; a message code sent with such an error stays readable through the status detail of the exception itself (a `google.rpc.ErrorInfo` entry of domain `pg-change-feed`, its `reason` is the code). The NATS client passes on the exception of the NATS client library (`io.nats.client`) when the server rejects the token, and throws `PgChangeFeedNatsMalformedMessageException` when a message cannot be read.
 
 A `PgChangeFeedAdministrationClient` call that the server answers with a non-`OK` gRPC status throws a subclass of the sealed class `PgChangeFeedGrpcException`, which carries the `io.grpc.Status.Code`; the original `io.grpc.StatusException` is always the `cause`.
 
@@ -311,6 +313,8 @@ A `PgChangeFeedAdministrationClient` call that the server answers with a non-`OK
 | `PgChangeFeedGrpcNotFoundException` | `NOT_FOUND` — the table does not exist in the source database (`enableTable`, `disableTable`, `getTableStatus`). |
 | `PgChangeFeedGrpcInternalException` | `INTERNAL` — unexpected error inside the server. |
 | `PgChangeFeedGrpcUnexpectedStatusException` | any other non-`OK` status. |
+
+Every one of these exceptions carries `messageCode`, the message code of the server read from the `reason` of the `google.rpc.ErrorInfo` status detail of domain `pg-change-feed`, whatever the status (`null` when the server sent none, as for `UNAUTHENTICATED` and `PERMISSION_DENIED`); for example `PgChangeFeedGrpcNotFoundException.messageCode` is `PCF-E8025` for `enableTable` on a table that does not exist. The `errorCode` field of the `diagnose` response (the message code of the process error state, empty in normal operation) arrives unchanged from the generated message.
 
 ## Reading versus streaming
 

@@ -232,13 +232,14 @@ class PgChangeFeedAdministrationClient private constructor(
 
         fun mapException(e: StatusException): PgChangeFeedGrpcException {
             val message = e.status.description ?: ""
+            val messageCode = StatusDetail.readMessageCode(e)
             return when (e.status.code) {
-                Status.Code.INVALID_ARGUMENT -> PgChangeFeedGrpcInvalidArgumentException(message, e)
-                Status.Code.UNAUTHENTICATED -> PgChangeFeedGrpcUnauthenticatedException(message, e)
-                Status.Code.PERMISSION_DENIED -> PgChangeFeedGrpcPermissionDeniedException(message, e)
-                Status.Code.NOT_FOUND -> PgChangeFeedGrpcNotFoundException(message, e)
-                Status.Code.INTERNAL -> PgChangeFeedGrpcInternalException(message, e)
-                else -> PgChangeFeedGrpcUnexpectedStatusException(e.status.code, message, e)
+                Status.Code.INVALID_ARGUMENT -> PgChangeFeedGrpcInvalidArgumentException(message, e, messageCode)
+                Status.Code.UNAUTHENTICATED -> PgChangeFeedGrpcUnauthenticatedException(message, e, messageCode)
+                Status.Code.PERMISSION_DENIED -> PgChangeFeedGrpcPermissionDeniedException(message, e, messageCode)
+                Status.Code.NOT_FOUND -> PgChangeFeedGrpcNotFoundException(message, e, messageCode)
+                Status.Code.INTERNAL -> PgChangeFeedGrpcInternalException(message, e, messageCode)
+                else -> PgChangeFeedGrpcUnexpectedStatusException(e.status.code, message, e, messageCode)
             }
         }
     }

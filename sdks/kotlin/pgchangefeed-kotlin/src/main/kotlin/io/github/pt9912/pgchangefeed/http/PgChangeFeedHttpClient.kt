@@ -10,7 +10,6 @@ import io.github.pt9912.pgchangefeed.http.model.DisableTableRequest
 import io.github.pt9912.pgchangefeed.http.model.DisableTableResponse
 import io.github.pt9912.pgchangefeed.http.model.EnableTableRequest
 import io.github.pt9912.pgchangefeed.http.model.EnableTableResponse
-import io.github.pt9912.pgchangefeed.http.model.ErrorResponse
 import io.github.pt9912.pgchangefeed.http.model.ListTablesResponse
 import io.github.pt9912.pgchangefeed.http.model.ReadChangesResponse
 import io.github.pt9912.pgchangefeed.http.model.RegisterConsumerRequest
@@ -218,23 +217,16 @@ class PgChangeFeedHttpClient internal constructor(
     }
 
     private fun buildException(statusCode: Int, body: String): PgChangeFeedException {
-        val message = extractErrorMessage(body)
+        val (message, messageCode) = parseErrorBody(gson, body)
         return when (statusCode) {
-            400 -> PgChangeFeedBadRequestException(statusCode, message)
-            401 -> PgChangeFeedUnauthorizedException(statusCode, message)
-            403 -> PgChangeFeedForbiddenException(statusCode, message)
-            404 -> PgChangeFeedNotFoundException(statusCode, message)
-            500 -> PgChangeFeedServerErrorException(statusCode, message)
-            else -> PgChangeFeedUnexpectedStatusException(statusCode, message)
+            400 -> PgChangeFeedBadRequestException(statusCode, message, messageCode)
+            401 -> PgChangeFeedUnauthorizedException(statusCode, message, messageCode)
+            403 -> PgChangeFeedForbiddenException(statusCode, message, messageCode)
+            404 -> PgChangeFeedNotFoundException(statusCode, message, messageCode)
+            500 -> PgChangeFeedServerErrorException(statusCode, message, messageCode)
+            else -> PgChangeFeedUnexpectedStatusException(statusCode, message, messageCode)
         }
     }
-
-    private fun extractErrorMessage(body: String): String =
-        try {
-            gson.fromJson(body, ErrorResponse::class.java)?.error ?: body
-        } catch (ex: JsonSyntaxException) {
-            body
-        }
 
     private fun encode(value: String): String = percentEncode(value)
 

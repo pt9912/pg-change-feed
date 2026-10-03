@@ -39,6 +39,7 @@ import io.grpc.StatusException
 internal class FakeAdministrationTransport private constructor(
     private val response: Any?,
     private val failureStatus: Status?,
+    private val failureTrailers: Metadata? = null,
 ) : AdministrationTransport {
 
     var lastRequest: Any? = null
@@ -49,7 +50,7 @@ internal class FakeAdministrationTransport private constructor(
     private fun record(request: Any, headers: Metadata) {
         lastRequest = request
         lastHeaders = headers
-        failureStatus?.let { throw StatusException(it) }
+        failureStatus?.let { throw StatusException(it, failureTrailers) }
     }
 
     override suspend fun registerConsumer(request: RegisterConsumerRequest, headers: Metadata): RegisterConsumerResponse {
@@ -123,6 +124,7 @@ internal class FakeAdministrationTransport private constructor(
          * [StatusException] from the suspend function itself) — the real
          * rejection is covered by the real-server integration test.
          */
-        fun withStatus(status: Status): FakeAdministrationTransport = FakeAdministrationTransport(null, status)
+        fun withStatus(status: Status, trailers: Metadata? = null): FakeAdministrationTransport =
+            FakeAdministrationTransport(null, status, trailers)
     }
 }
