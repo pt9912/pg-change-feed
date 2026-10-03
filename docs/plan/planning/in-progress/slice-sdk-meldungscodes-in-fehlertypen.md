@@ -138,7 +138,10 @@ Je Sprache dieselbe Eingabetabelle (§3), dieselben Randfälle, derselbe Realser
       Administrations-Client unverändert ankommt (`ErrorCode`/`errorCode`/`error_code`),
       und ein README-Satz je Sprache. Kein Mapper-Code. *Zu belegen durch:* die
       Testzeilen im `--no-cache`-Bau je Sprache.
-- [ ] Mutationsbeleg je Sprache (Eingabe wie Verdrahtung, `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`):
+- [x] Mutationsbeleg je Sprache (Eingabe wie Verdrahtung, `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`;
+      Abhaken der Closure: jede Zelle M1 bis M4 je Sprache trägt mindestens ein gesehenes Rot aus einem
+      Bericht — Ursprung je Zelle (gemessen · übernommen · hergeleitet) in der Tabelle unter §3 „Ursprung des
+      Mutationsbelegs“; M3 Python ist keine eigene Stelle, durch M1 abgedeckt, *hergeleitet*):
       (M1) die Zuweisung von `code` im HTTP-Fehlerbau entfernt → Test rot; (M2) die
       `domain`-Prüfung des Statusdetail-Parsers entfernt → Test rot; (M3) die Zuweisung im
       SSE-Fehlerbau entfernt → Test rot; (M4) der gRPC-Mapper übergibt den Code nicht →
@@ -162,13 +165,13 @@ Je Sprache dieselbe Eingabetabelle (§3), dieselben Randfälle, derselbe Realser
       endet mit Exit 0 ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: siehe (A)–(C) und der Nachzug-Punkt; kein SPEC-/ARC-Eintrag. Die
       Package-Versionen bleiben (Release ist Folgeschritt, §1).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
       Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo ohne
       Welle für diesen Slice hier geprüft.
@@ -394,11 +397,16 @@ inhaltlich ergänzt, nicht ersetzt). Nicht gesucht: Handbuch-Zeilen außerhalb v
 | Handbuch: „SDKs werten es nicht aus“ | Zeile 8: 1 (Zeile 1938, Absatz „Fehlerform“) | der Satz ist berichtigt; die Historienzeilen 1.33/1.35 („Fehlerklasse“) bleiben Historie. Nicht gesucht und nicht gefunden: weitere Träger in `spec/` und `harness/README.md` (Zeile 9: 0 Zeilen, gemessen; die Muster `Exception|Error` allein treffen dort nur fremde Zeilen). Das Muster von `tools/harness/sdk-public-doc-check.sh` (Zeile 30) trifft `PCF-E8025` nicht (gemessen mit `grep -c -E` auf diese Zeichenkette: 0). |
 
 **Belege des Implementers (gemessen am 2026-10-03, Exit-Codes ungefiltert gesichert, §3.9).**
+*Messzeitpunkt der Zahlen (Closure):* die Test- und Rot-Zahlen dieses Abschnitts und des
+Mutationsbelegs sind Stände **vor** der Fixrunde `6a589a19` (Tabellenzeile 13 und der
+Randfall nicht-String `error` fehlten dort noch); die Zahlen **nach** der Fixrunde sind
+im Verifier-Lauf am `HEAD` `ec89641f` gemessen und stehen je Zeile als „nach Fixrunde“
+(Quelle: Verifikations-Report [`verifikation-slice-sdk-meldungscodes-in-fehlertypen`](../../../reviews/verifikation-slice-sdk-meldungscodes-in-fehlertypen.md) §1 und §4, `docker build --no-cache --target build`).
 
 | Lauf | Exit | Gedruckte Zeile (Auszug) |
 |---|---|---|
-| `make sdk-pack-python` | 0 | `193 passed, 6 warnings in 0.65s` (Test-Stufe neu gebaut, Quelle geändert) |
-| `make sdk-pack-csharp` | 0 | `Passed!  - Failed:     0, Passed:   199, Skipped:     0, Total:   199` (Test-Stufe neu gebaut) |
+| `make sdk-pack-python` | 0 | `193 passed, 6 warnings in 0.65s` (Test-Stufe neu gebaut, Quelle geändert; Stand vor Fixrunde; nach Fixrunde `195 passed, 6 warnings`, gemessen vom Verifier) |
+| `make sdk-pack-csharp` | 0 | `Passed!  - Failed:     0, Passed:   199, Skipped:     0, Total:   199` (Test-Stufe neu gebaut; Stand vor Fixrunde; nach Fixrunde `Passed: 201, Total: 201`, gemessen vom Verifier) |
 | `make sdk-pack-kotlin` | 0 | `> Task :test` ausgeführt (nicht `UP-TO-DATE`), `BUILD SUCCESSFUL`; Gradle druckt keine Testanzahl, die Wirkung belegen die roten Mutationen unten |
 | `make examples-csharp` / `make examples-kotlin` | 0 / 0 | letzte Zeilen `naming to docker.io/library/pg-change-feed-examples:csharp-nats-stream done` bzw. `…:kotlin-nats-stream done` |
 | `make image` | 0 | Bau des `:dev`-Images (Server unverändert) |
@@ -411,7 +419,7 @@ inhaltlich ergänzt, nicht ersetzt). Nicht gesucht: Handbuch-Zeilen außerhalb v
 | `make sdk-public-doc-check` / `make handbuch-public-doc-check` | 0 / 0 | `keine interne Kennung unter sdks` / `keine interne Kennung in 3 Nutzerdokumenten unter docs/user/` |
 
 Die Erwartung „`EnableTable` auf eine fehlende Tabelle liefert `404`/`NotFound` mit `PCF-E8025`“ ist damit am Server gemessen,
-an allen drei Sprachen, an HTTP und gRPC; der Code des Statusdetails und der Code des HTTP-Felds sind gleich. Die
+an allen drei Sprachen, an HTTP und gRPC; der Code des Statusdetails und der Code des HTTP-Felds sind gleich.
 Die Realserver-Tests der Fehlercode-Phase halten seit der Fixrunde den Wert `PCF-E8025` fest (Anfrage der Phase: Schema `public`, Tabelle `sdk_error_code_missing_table`), je Sprache für HTTP und gRPC. Die übrigen Review-Befunde (F-1, F-4 bis F-7) bleiben Befunde ohne Textänderung des Plans; die Handbuch-Sätze zur SDK-Eigenschaft nennen seit der Fixrunde die Package-Version 0.6.0 (Handbuch 1.94).
 Wire-Annahmen (Feldnummern von `Status`/`Any`/`ErrorInfo`, Trailer `grpc-status-details-bin`, `domain`) sind damit am
 Server-Wire belegt. Nicht gemessen: ob `com.google.rpc.Status` über `grpc-protobuf` transitiv im Kotlin-Klassenpfad liegt
@@ -422,7 +430,7 @@ im Scratchpad, Bau der Test-Stufe mit `docker build --build-context proto=proto 
 
 | Zusage | Mutation (Stelle, Eingabeseite) | Instanz | Gesehenes Rot |
 |---|---|---|---|
-| M1 HTTP-Fehlerbau trägt `code` | Python: `_build_error` ohne `message_code=`; C#: `PgChangeFeedHttpClient.BuildException` ohne `messageCode`; Kotlin: `PgChangeFeedHttpClient.buildException` ohne `messageCode` | Python-Test `test_http_client_error_carries_the_message_code` und `…sse…`; C# `MessageCodeTests.HttpClient_ErrorCarriesTheMessageCode`; Kotlin `MessageCodeTest > http client error carries the message code` | Python 10 Fälle rot (HTTP und SSE, Zeilen 1, 6, 7, 8, 11 je); C# 5 Fälle rot (Zeilen 1, 6, 7, 8, 11), SSE-Fälle grün; Kotlin 1 Test rot (`122 tests completed, 1 failed`) |
+| M1 HTTP-Fehlerbau trägt `code` | Python: `_build_error` ohne `message_code=`; C#: `PgChangeFeedHttpClient.BuildException` ohne `messageCode`; Kotlin: `PgChangeFeedHttpClient.buildException` ohne `messageCode` | Python-Test `test_http_client_error_carries_the_message_code` und `…sse…`; C# `MessageCodeTests.HttpClient_ErrorCarriesTheMessageCode`; Kotlin `MessageCodeTest > http client error carries the message code` | Python 10 Fälle rot (HTTP und SSE, Zeilen 1, 6, 7, 8, 11 je); C# 5 Fälle rot (Zeilen 1, 6, 7, 8, 11), SSE-Fälle grün; Kotlin 1 Test rot (`122 tests completed, 1 failed`) — Stand vor Fixrunde; nach Fixrunde (Zeile 13 dazu, vom Verifier selbst gefahren): Python 12 rot, C# 6 rot, Kotlin 1 Test rot |
 | M2 Statusdetail prüft `domain` | `domain`-Vergleich entfernt: Python `_status_detail.py` (`domain != _SERVER_DOMAIN or`), C# `StatusDetail.ReadFromAny`, Kotlin `StatusDetail.readFromAny` | Python `test_administration_client_error_carries_the_message_code`; C# `AdministrationClient_ErrorCarriesTheMessageCode`; Kotlin `administration client error carries the message code` | Python 2 Fälle rot (Zeilen 7 und 11); C# 2 Fälle rot (`Failed: 2`, beide `InvalidArgument`); Kotlin 1 Test rot |
 | M3 SSE-Fehlerbau trägt `code` | C#: `PgChangeFeedSseClient.BuildException` ohne `messageCode`; Kotlin: `PgChangeFeedSseClient.buildException` ohne `messageCode`; Python: keine eigene Stelle (`sse_client.py` ruft `_build_error`, abgedeckt durch M1) | C# `SseClient_ErrorCarriesTheMessageCode`; Kotlin `sse client error carries the message code` | C# 5 Fälle rot, HTTP-Fälle grün; Kotlin 1 Test rot |
 | M4 Mapper übergibt den Code | Python `_map_error` ohne `message_code=`; C# `MapException` mit `messageCode = null`; Kotlin `mapException` mit `messageCode = null` | wie M2 | Python 5 Fälle rot (Zeilen 1, 2, 3, 11, 12); C# `Failed: 5`; Kotlin 1 Test rot |
@@ -432,6 +440,28 @@ Verallgemeinerungen darüber hinaus sind *hergeleitet*: bei Kotlin bricht die Sc
 abweichenden Zeile ab, welche Zeilen im Einzelnen rot werden, ist dort nicht gemessen (Anzahl je Zeile *hergeleitet*
 aus der gleichen Tabelle in C# und Python); die Mutation der Feldnummer ist in C# und Kotlin nicht gefahren; M1 und M3
 sind in Python eine Stelle.
+
+*Ursprung des Mutationsbelegs je Zelle (Closure, §3.12; Quelle der Verifier-Spalte:
+[Verifikations-Report](../../../reviews/verifikation-slice-sdk-meldungscodes-in-fehlertypen.md) §4):*
+
+| Mutation | C# | Kotlin | Python |
+|---|---|---|---|
+| M1 HTTP-Fehlerbau | gemessen (Implementer, Verifier nach Fixrunde: 6 rot) | gemessen (Implementer, Verifier: 1 Test rot) | gemessen (Implementer, Verifier nach Fixrunde: 12 rot) |
+| M2 `domain`-Prüfung | gemessen (Implementer), nicht vom Verifier nachgefahren | gemessen (Implementer, Verifier: 1 Test rot) | gemessen (Implementer), nicht vom Verifier nachgefahren |
+| M3 SSE-Fehlerbau | gemessen (Implementer) | gemessen (Implementer) | keine eigene Stelle (durch M1 abgedeckt, hergeleitet) |
+| M4 Mapper übergibt den Code | gemessen (Implementer) | gemessen (Implementer) | gemessen (Implementer) |
+| Feldnummer (Zusatz, nicht DoD) | gemessen (Verifier: 5 rot) | nicht gefahren, hergeleitet | gemessen (Implementer) |
+| F-2 (nicht-String `error`, Fixrunde) | gemessen (Verifier: 2 rot; Reviewer: Typprüfung-Mutation 2 rot) | gemessen (Verifier: 2 Tests rot) | gemessen (Verifier: 2 rot) |
+
+„Gemessen (Implementer)“ ist ein im Bericht des Implementers gesehenes Rot, im Plan mit
+Stelle, Instanz und Farbe eingetragen; vom Planner **übernommen**, nicht nachgefahren.
+
+**Benannte Grenze (Verifier V-1, hergeleitet, nicht gefahren):** das C#-Package liest die
+Feldnamen des Fehlerkörpers ohne Groß-/Kleinschreibung (`PropertyNameCaseInsensitive = true`
+in beiden C#-Clients), Kotlin und Python lesen sie mit; ein Körper `{"Error":"x","Code":"PCF-E8051"}`
+liefert in C# einen Code, in Kotlin und Python keinen. Der Server sendet die Feldnamen immer
+klein, die Eingabetabelle trägt keine Zeile dazu; das Verhalten für `error` galt schon vor
+diesem Slice. Zweiter Randfall der Drei-Sprachen-Kopie, ohne Wirkung am echten Server.
 
 ## 4. Trigger
 
@@ -481,9 +511,12 @@ Release-Workflows (`AGENTS.md` §3.10, `docs/maintainer/releasing.md` §4).
 ## 6. Risiken und offene Punkte
 
 - **Drei Sprachen, drei Parser, drei Lesarten** (Zahl statt String im Feld `code`; leer
-  gegen fehlend; Statusdetail mit fremder Domäne). — **Ausgang:** weiter offen bis zur
-  Closure: Dieselbe Tabelle je Sprache, Zeile 5 und die gRPC-Zeilen 7 bis 11 binden die
-  Randfälle (`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`).
+  gegen fehlend; Statusdetail mit fremder Domäne). — **Ausgang:** eingetreten, behoben
+  (Review F-2: `error` mit falschem JSON-Typ las `code` je Sprache verschieden; Fixrunde `6a589a19`,
+  Tabellenzeile 13 in drei Sprachen, Rot-Läufe des Verifiers); Rest-Randfall V-1 (Groß-/Kleinschreibung
+  der Feldnamen nur in C#) **weiter offen als benannte Grenze** (§3, gemessen nicht gefahren, ohne Wirkung am
+  echten Server). Dieselbe Tabelle je Sprache band Zeile 5 und die gRPC-Zeilen 7 bis 11
+  (`BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`).
 - **Binärkompatibilität.** — **Ausgang:** entfallen: `ADR-0145` Festlegung 4 (Überladung
   statt optionalem Parameter) erhält jede 0.5.x-Signatur; die Verdikt-Aussage ist
   *hergeleitet*, an einem Gast-Assembly nicht gemessen. Belegt wird der Erhalt durch je einen
@@ -503,9 +536,9 @@ Release-Workflows (`AGENTS.md` §3.10, `docs/maintainer/releasing.md` §4).
   ohne Code auf dem Draht liest die Eigenschaft leer, Text und Typ bleiben; am echten
   alten Server **nicht gelaufen** (hergeleitet aus der Tabelle).
 - **Test läuft nicht, Bau grün.** Ein Lauf aus dem Docker-Schicht-Cache druckt keine
-  Testzeile (`BEO-PGC/docker-cache-ueberspringt-tests-still`). — **Ausgang:** weiter offen
-  bis zur Closure: Belegbefehl ist `docker build --no-cache --target build` je Sprache oder
-  eine rote Mutation (DoD, Mutationsbeleg).
+  Testzeile (`BEO-PGC/docker-cache-ueberspringt-tests-still`). — **Ausgang:** entfallen:
+  der `--no-cache`-Bau des Verifiers druckt `195 passed` (Python) und `Passed: 201` (C#), Kotlin
+  `:test` ausgeführt; die Mutationen färben den Bau rot (gemessen, Verifikations-Report §1 und §4).
 - **Interne Kennung in öffentlichem Text.** README, Docstrings, KDoc, XML-Doku und
   Fehlertexte erreichen die Anwender über die Packages; `PCF-…` ist erlaubt, `ADR-0144`
   nicht. — **Ausgang:** entfallen mit `make sdk-public-doc-check` Exit 0 und
@@ -513,19 +546,92 @@ Release-Workflows (`AGENTS.md` §3.10, `docs/maintainer/releasing.md` §4).
 - **Realserver-Fall deckt den Fehlerweg des Streams nicht.** Die Stream-Clients bleiben roh
   (§1). — **Ausgang:** weiter offen, benannte Grenze: README sagt es; eine Typisierung wäre
   ein eigener Slice mit Architect-Entscheid (A3).
+- **Release-Bedingung (Verifier B-1/V-3, kein Risiko des Slice):** das Handbuch sagt an zwei
+  Stellen „ab Package-Version 0.6.0“; veröffentlicht ist 0.5.0. — **Ausgang:** weiter offen
+  bis zum SDK-Release: die Nummer je Sprache ist **0.6.0**, sonst wird die Handbuch-Aussage
+  vor dem Release berichtigt. Versionsstellen: `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj`
+  (`<Version>`), `sdks/python/pgchangefeed/pyproject.toml` (`version`),
+  `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` (Zeile 86 und 210),
+  `sdks/kotlin/pgchangefeed-kotlin/README.md` (Zeile 36); danach Tags
+  `sdk-csharp-v0.6.0`/`sdk-python-v0.6.0`/`sdk-kotlin-v0.6.0` und je ein realer grüner
+  Post-Push-Lauf (`AGENTS.md` §3.10).
 
 ## 7. Closure-Notiz
 
-Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`); Ursprung der Angaben
-(gemessen / übernommen) je Zeile, `AGENTS.md` §3.12.
+Gefüllt bei der Closure (vor dem `git mv` nach `done/`); Ursprung der Angaben
+(gemessen / übernommen / hergeleitet) je Zeile, `AGENTS.md` §3.12. Quellen:
+[Review](../../../reviews/review-slice-sdk-meldungscodes-in-fehlertypen.md) (0 HIGH/MEDIUM,
+F-1 bis F-3 LOW, F-4 bis F-7 INFO) und
+[Verifikations-Report](../../../reviews/verifikation-slice-sdk-meldungscodes-in-fehlertypen.md)
+(bestanden mit Bedingungen, `ec89641f`; V-1 und V-2 LOW, V-3 bis V-5 INFO; B-1 bis B-3).
 
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** — (SDK-Release 0.6.0 je Sprache ist ein Schritt des Hauptlaufs, kein Slice)
-- **Risiken aus §6:** —
-- **Drei Paarungen:** —
+- **Was hat funktioniert:** Dieselbe Eingabetabelle je Sprache (HTTP 13, gRPC 12 Zeilen; Statusdetails
+  der Tests mit der Protobuf-Laufzeit gebaut, nicht mit dem Parser) trug die Gleichheit der drei
+  Packages; der Realserver-Fall je Sprache belegte den Wire (Feldnummern, `domain`) am echten Server
+  (`PCF-E8025`, HTTP 404 und gRPC `NotFound`, Gegenprobe `403`/`PermissionDenied` ohne Code; gemessen
+  vom Verifier an allen drei Runnern, Exit 0). Keine neue Abhängigkeit (leere Diffs der vier
+  Abhängigkeitsdateien, gemessen). Die Mutationen färbten den Bau rot, auch die vom Verifier selbst
+  gefahrenen (§3 „Ursprung des Mutationsbelegs“). `make gates` Exit 0 (Verifier-Lauf am `ec89641f`).
+- **Was ging anders als geplant:** (1) Review F-2: die Eingabetabelle trug keine Zeile mit falsch
+  getyptem `error`; die drei Fehlerbau-Parser lasen `code` dort verschieden (C# warf, Python und Kotlin
+  koerzierten). Fixrunde `6a589a19` (Tabellenzeile 13, gemeinsame Lesefunktion je Sprache, Kotlin-Klasse
+  `ErrorResponse` entfällt); Review F-3 (Realserver-Test pinnt `PCF-E8025`) im selben Zug. (2) Eine
+  Fehlercode-Phase je Runner statt HTTP-Fall plus Verwaltungs-Phase (§3, Abweichung benannt).
+  (3) Stehende Zahlen des Plans waren Stände vor der Fixrunde ohne Messzeitpunkt (Verifier V-2),
+  jetzt gekennzeichnet; ein Tippfehler im Plan bereinigt. (4) Review F-1 (LOW): die ADR-Aussage
+  „jede 0.5.x-Signatur bleibt quellseitig erhalten“ ist an einer Stelle breiter als ihr Beleg — ein
+  Aufruf `base(status, text, null)` in einer außerhalb des Packages abgeleiteten C#-Klasse ist wegen
+  der zwei geschützten Konstruktoren der Basis mehrdeutig (hergeleitet, nicht kompiliert); die
+  öffentlichen Blatt-Konstruktoren sind nicht betroffen. Keine Berichtigung durch den Planner
+  (`Accepted`-ADR, `AGENTS.md` §3.5); die Folge-ADR, die `ADR-0145` Festlegung 4 berührt, trägt sie
+  als Klausel.
+- **Steering-Loop-Eintrag:** Benannte Lücke der Gegenmaßnahme, nicht verkörpert: „derselbe
+  Eingabesatz je Sprache im Plan“ band die Randfälle des *neuen* Felds (`code`: fehlend, leer,
+  `null`, Zahl), aber nicht die Typ-Achse des *Nachbarfelds* (`error` mit falschem JSON-Typ) — die
+  Tabelle lief an einer Eingabe ins Leere, die nicht in ihr stand. Erster Fund dieser Klasse an
+  **Produktivcode** (die früheren Belege waren Lesemodell, Doku-Satz und README); vom Reviewer vor
+  dem Merge gefunden, Eintrag am Beobachtungs-Register siehe unten. Lehre für künftige
+  Eingabetabellen einer Drei-Sprachen-Kopie: je Feld, das der Parser liest, die JSON-Typ-Achse
+  (String, Zahl, `null`, Objekt, fehlend) als Zeilen führen, nicht nur für das neue Feld. Kein Sensor
+  (Prosa über Eingabemengen, `AGENTS.md` §3.12 Grenze).
+- **Beobachtungs-Register (`../observations/`):** (a) `BEO-PGC/adr-aussage-breiter-als-ihre-messung`
+  (Zähler 11×, Deckel 10×, gemessen mit `ls evidence | wc -l`, Verifier §6): Review F-1
+  (`review-slice-sdk-meldungscodes-in-fehlertypen`, LOW, vor dem Merge vom Reviewer gefunden,
+  Träger ADR-Prosa-Aussage `ADR-0145` Festlegung 4) fällt unter den Deckel — Eintrag hier mit
+  Finding-Kennung, **keine neue `evidence/`-Datei**; Ausgang unverändert verkörpert, Zähler der
+  Datei unverändert. (b) `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall` (gestrichen, 3×):
+  Vermerk im `state.md` ohne neue Datei (Review F-2, Verifier V-1); der Wiederaufnahme-Trigger
+  (Divergenz-Fund **nach** dem Merge, oder Schwere ab MEDIUM) ist **nicht erfüllt** (LOW, vor dem
+  Merge, in der Fixrunde behoben; V-1 LOW, ohne Wirkung am Server); ein Architect-Zug ist
+  deshalb nicht nötig. `BEO-PGC/docker-cache-ueberspringt-tests-still` (offen): kein neues
+  Vorkommen — der `--no-cache`-Bau trug den Beleg; `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`:
+  kein neues Vorkommen. Stehende Zahlen ohne Messzeitpunkt (V-2) sind ein Fall der Instanz-A-Regel
+  ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)), kein eigener Eintrag.
+  Offen als Lesehinweis, nicht gemeldet: Verifier V-4 — der Fehlertext bei nicht-String `error`
+  ist jetzt der rohe Körper (vorher in Python `str(...)`, in Kotlin Gson-Koerzion); das Handbuch
+  nennt es, die drei READMEs tragen sonst keine Beschreibung des Fehlertexts bei fehlendem oder
+  falsch getyptem `error`-Feld (`git grep -i "raw body"` über die READMEs: 0 Treffer, gemessen vom
+  Verifier); der Planner ändert die READMEs nicht, ein README-Satz ohne Kennung wäre möglich und
+  bleibt Entscheidung des Auftraggebers.
+- **Benannte Grenzen:** V-1 (Feldnamen-Schreibung nur in C# tolerant, §3); der Fehlerweg der
+  gRPC-Stream-Clients bleibt roh (§1, README sagt es); Binärkompatibilität, Server alt/neu und
+  das Kotlin-`com.google.rpc.Status`-Klassenpfad-Thema *hergeleitet* bzw. nicht gemessen.
+- **Folge-Slices:** keiner angelegt. SDK-Release 0.6.0 je Sprache ist ein Schritt des Hauptlaufs,
+  kein Slice; Release-Bedingung und Versionsstellen stehen in §6.
+- **Risiken aus §6:** Drei Lesarten eingetreten (F-2, behoben) mit V-1 weiter offen als Grenze;
+  Binärkompatibilität, neue Abhängigkeit, Wire-Parser, Server alt/neu, Test läuft nicht, interne
+  Kennung entfallen (Server alt/neu und Binärkompatibilität *hergeleitet*); Fehlerweg des
+  gRPC-Streams weiter offen als benannte Grenze; Release-Bedingung 0.6.0 weiter offen bis zum
+  Release.
+- **Validator:** nicht nötig. Der Slice setzt eine bereits freigegebene Wire-Zusage
+  (`ADR-0144` Teilfrage 3) in den SDKs um und fügt keine Anforderung hinzu; der Nutzerbedarf
+  (Code als Eigenschaft statt Textparsen) ist vom Auftraggeber freigegeben (Autor-Zeile) und die
+  Wirkung am echten Server belegt. Ein Validator-Lauf mit Anwenderblick lohnt erst nach dem
+  Release 0.6.0, wenn Rückmeldung von Anwendern der Packages vorliegt.
+- **Drei Paarungen:** Anker: `ADR-0145` Festlegung 1 bis 5 und die drei SDK-READMEs (aufgelöst
+  durch `make docs-check`) · Folge-Slice: keiner, Folgeschritt SDK-Release 0.6.0 (Hauptlauf) ·
+  Register: `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall` (Vermerk, gestrichen 3×),
+  `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (Closure-Eintrag F-1, Deckel).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

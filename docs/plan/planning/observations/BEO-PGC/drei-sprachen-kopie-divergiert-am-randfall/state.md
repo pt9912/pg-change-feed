@@ -60,3 +60,15 @@ Plan nannte dieselbe Eingabetabelle je Sprache als Pflicht, die Fixrunde erweite
 bei **3×**, keine neue Datei.
 
 **Ausgang (Lese-Schritt der Closure von `welle-routing`, Architect-Verdikt 2026-10-02): gestrichen (akzeptiertes Negativ).** Der Zustand ist `gestrichen`. Begründung (Verdikt `architect-verdict-welle-routing-lese-schritt` §3.3): (a) alle drei Belege sind LOW und der Reviewer fand jeden vor dem Merge; das dritte Auftreten ist ein Satz der Python-README, enger als der Code, die Verhaltens-Differenz selbst (leeres Ziel am NATS-Stream) eine gewollte API-Form-Differenz. (b) Der mögliche Schaden ist eine zu enge Doku-Aussage oder ein Randwert, den der Server nicht sendet. (c) Die wirksamen Gegenmaßnahmen stehen im Code und im Plan der Slices und werden dort vom Reviewer gelesen: ein Pflicht-Eingabesatz je Sprache und eine Fixture-Quelle (`tools/harness/lib-sdk-route-fixture.sh`, `lib-sdk-rule-fixture.sh`). Eine Plan-Pflicht wäre Zeremonie bei kleinem Schaden. **Wiederaufnahme-Trigger:** ein Divergenz-Fund nach dem Merge, oder ein Fund mit Schwere ab MEDIUM. Kein Folge-Artefakt; die Alternative (Plan-Pflicht in `.claude/commands/plan-welle.md`) bleibt für den Auftraggeber verfügbar, der Architect empfiehlt sie nicht.
+
+**Vermerk, kein neuer Anfall nach Wiederaufnahme-Trigger (slice-sdk-meldungscodes-in-fehlertypen,
+Review F-2, Verifier V-1):** der erste Divergenz-Fund dieser Klasse an **Produktivcode** der drei
+SDK-Packages (die früheren Belege waren Lesemodell, Doku-Satz und README): bei `{"error":5,"code":"PCF-E8051"}`
+las C# den Code nicht (`System.Text.Json` wirft), Python und Kotlin koerzierten die Zahl. Die
+Gegenmaßnahme „derselbe Eingabesatz je Sprache im Plan“ lief hier an der Tabelle selbst ins Leere:
+sie führte die Randfälle des neuen Felds `code`, nicht die Typ-Achse des Nachbarfelds `error`.
+Behoben in der Fixrunde (Tabellenzeile 13, eine gemeinsame Lesefunktion je Sprache). Zweiter
+Randfall, ohne Wirkung am Server und ohne Tabellenzeile: Feldnamen werden in C# ohne
+Groß-/Kleinschreibung gelesen, in Kotlin und Python mit (V-1, benannte Grenze im Plan). Der
+Trigger (Fund **nach** dem Merge, oder ab MEDIUM) ist nicht erfüllt — beide LOW, vor dem Merge;
+Zustand bleibt `gestrichen`, Zähler 3×, keine neue Datei, kein Architect-Zug nötig.
