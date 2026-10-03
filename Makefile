@@ -280,7 +280,7 @@ proto-generate: ## Protobuf-/gRPC-Go-Code aus proto/cdc/stream/v1/changestream.p
 # (Netz cdc-feed-test aus compose.yaml); für ein Host-seitiges localhost-Ziel
 # trägt der Aufrufer `host`. Der Default `bridge` passt für ein DB-Ziel, das
 # selbst im Default-Brückennetz liegt.
-D_MIGRATE_IMAGE ?= ghcr.io/pt9912/d-migrate@sha256:862dfb04c34dd17278b1bab46961363c12eeb8d464cf1776565d6285603d2c89
+D_MIGRATE_IMAGE ?= ghcr.io/pt9912/d-migrate@sha256:af9d3eb323a6cfd13eb63f012823788e510f764509918933d2ff98c8e68e4212
 SCHEMA_SOURCE ?= tools/schema/schema.yaml
 SCHEMA_TARGET ?= db:postgres://postgres:postgres@localhost:5432/cdc?sslmode=disable
 SCHEMA_ROLLOUT_NETWORK ?= bridge

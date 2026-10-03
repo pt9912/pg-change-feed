@@ -15,7 +15,7 @@ set -euo pipefail
 # D_MIGRATE_IMAGE) — Pin-Hebung bleibt ein bewusster Commit (Modul 14).
 PG_TEST_IMAGE=${PG_TEST_IMAGE:-postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873}
 FEED_IMAGE=${FEED_IMAGE:-ghcr.io/pt9912/pg-change-feed:dev}
-D_MIGRATE_IMAGE=${D_MIGRATE_IMAGE:-ghcr.io/pt9912/d-migrate@sha256:862dfb04c34dd17278b1bab46961363c12eeb8d464cf1776565d6285603d2c89}
+D_MIGRATE_IMAGE=${D_MIGRATE_IMAGE:-ghcr.io/pt9912/d-migrate@sha256:af9d3eb323a6cfd13eb63f012823788e510f764509918933d2ff98c8e68e4212}
 
 bench::repo_root() { git rev-parse --show-toplevel; }
 
