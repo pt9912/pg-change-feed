@@ -11,4 +11,8 @@ der sie selbst träfe, wäre derselbe Kontext, der sie prüfen soll (Modul 8).
 Gelesen wird der Eintrag im Sichtungs-Schritt der Slice-Planung und im
 Lese-Schritt der nächsten Welle-Closure.
 
-Zähler (abgeleitet): **1×** (evidence/slice-harness-baseline-v6-13-0.md).
+Zähler (abgeleitet): **2×** (evidence/slice-harness-baseline-v6-13-0.md,
+evidence/slice-maintainer-ordner-releasing-verschieben.md — zweite Form:
+Ort des Referenten statt Versions-Segment, Stellen in §Entscheidung und
+§Konsequenzen von `ADR-0123`; die Folge-ADR zur Angleichung der
+Abschnitte-Liste ist benannt, nicht angelegt).

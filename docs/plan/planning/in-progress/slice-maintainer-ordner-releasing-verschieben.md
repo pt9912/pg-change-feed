@@ -90,7 +90,7 @@ diff 3 -E \]\([^)]*releasing\.md -- docs/reviews
 diff 0 -E \]\([^)]*user/releasing\.md -- docs/reviews README.md README.de.md
 diff 0 -F 'Operations, Quality, Releasing' -- AGENTS.md harness/README.md
 diff 41 releasing\.md -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
-diff 22 -F docs/user/releasing.md -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 17 -F docs/user/releasing.md -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 ```
 
 **Messung am Stand `diff` (Implementer, nach den Commits; Parent `de24629d`).**
@@ -105,6 +105,13 @@ der Planner zieht nach). Die zwei Review-Links, die der Plan als dritten zählte
 (`verifikation-slice-release-doku-releasing.md`), sind Dateinamen-Links auf
 `review-slice-release-doku-releasing.md`, kein Pfad nach `releasing.md`; die Link-Form
 mit Ziel `…/user/releasing.md` hat 0 Treffer im Baum.
+
+**Messung nach dem Nachzug der Closure (Stand `diff`, Parent `5c4474ae`).** Der
+Klartext-Treffer `docs/user/releasing.md` im aktiven Baum sinkt von 22 auf 17: die
+drei Linktexte in `ADR-0123` (Commit `1c90030f`, Zitat-Korrektur nach
+[`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)) und die zwei
+Nennungen im SDK-Plan sind nachgezogen; die Suchlauf-Zeile `diff 17` trägt den neuen Wert
+(gemessen mit `make suchlauf-nachmessen`).
 
 (Die Zeile mit `-F Operations, …` zählt Rang-6-Zeilen von `AGENTS.md`,
 `harness/README.md` und [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) — gemessen am Stand: je 1. Die Plan-Datei ist vom
@@ -122,11 +129,11 @@ Werkzeug ausgenommen; gemessen wird mit `make suchlauf-nachmessen PLAN=<Plan-Dat
 
 ## 2. Definition of Done
 
-- [ ] **(1) Verschiebung.** `docs/maintainer/` existiert; `docs/user/releasing.md` ist per
+- [x] **(1) Verschiebung.** `docs/maintainer/` existiert; `docs/user/releasing.md` ist per
       reinem `git mv` (eigener Commit, `AGENTS.md` §3.3) nach `docs/maintainer/releasing.md`
       verschoben. Zu belegen durch `git diff --stat -M <Parent>..<Move-Commit>` (Similarity
       100 %, kein Inhalt) und `git log --follow`.
-- [ ] **(2) Verweise nachgezogen** (eigene Commits, getrennt vom Move): die 8 Link-Form-Stellen
+- [x] **(2) Verweise nachgezogen** (eigene Commits, getrennt vom Move): die 8 Link-Form-Stellen
       (README.md, README.de.md, [`ADR-0123`](../../adr/0123-kotlin-sdk-zusaetzlich-auf-cloudsmith.md) ×3 per Zitat-Korrektur, `docs/reviews/` ×3 nur Linkziel),
       `releasing.md` selbst (Link auf `version.md` → `../user/version.md`, `docs/user/version.md`-Klartext
       bleibt wahr, Zweck/Zielgruppe §1 geschärft: Maintainer als Zielgruppe, Betreiber nur
@@ -137,7 +144,7 @@ Werkzeug ausgenommen; gemessen wird mit `make suchlauf-nachmessen PLAN=<Plan-Dat
       Klartext-Stellen in `docs/plan/adr/0051-…` (1) und `docs/plan/adr/0143-…`/`0123-…`
       (Klartext, nach Entscheidung je Datei oben) — die genaue Restzahl misst der Implementer
       und trägt sie als gemessen ein.
-- [ ] **(3) Handbuch-Gate bereinigt.** `excluded=(releasing.md …)` in
+- [x] **(3) Handbuch-Gate bereinigt.** `excluded=(releasing.md …)` in
       `tools/harness/handbuch-public-doc-check.sh` führt `releasing.md` nicht mehr (die Datei
       liegt nicht mehr in `docs/user/`; eine genannte, fehlende Datei endet mit Exit 2);
       Tabellentest `tools/harness/run-handbuch-public-doc-check-tests.sh` (`all_files`,
@@ -147,25 +154,25 @@ Werkzeug ausgenommen; gemessen wird mit `make suchlauf-nachmessen PLAN=<Plan-Dat
       durch `make handbuch-public-doc-check` Exit 0 und `make test-handbuch-public-doc-check`
       Exit 0. Gate-Verhalten bleibt unverändert (kein Lockern, `AGENTS.md` §3.6): geprüft
       sind weiter dieselben drei Dateien, ausgenommen die vier Erzeugnisse.
-- [ ] `make gates` grün (Exit direkt geprüft, `AGENTS.md` §3.9); `make docs-check` Exit 0;
+- [x] `make gates` grün (Exit direkt geprüft, `AGENTS.md` §3.9); `make docs-check` Exit 0;
       `make doc-immutable RANGE=<Parent>..HEAD` 0 Befunde;
       `make suchlauf-nachmessen PLAN=<diese Datei>` Exit 0.
-- [ ] Zitat-Korrektur nach [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md):
+- [x] Zitat-Korrektur nach [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md):
       `docs/plan/adr/0123-…` trägt genau **eine** neue §Geschichte-Zeile (Datum, Ereignis,
-      Commit-Kennung); die Commit-Message nennt `ADR-0073`; `0051` und `0143` tragen keine
+      Commit-Kennungen; in der Closure um die Linktexte erweitert, Commit `1c90030f`); die Commit-Message nennt `ADR-0073`; `0051` und `0143` tragen keine
       neue Zeile (keine Fundstelle geändert).
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       Report: `docs/reviews/review-slice-maintainer-ordner-releasing-verschieben.md` (0 HIGH, 0 MEDIUM, keine Fixrunde).
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` (Gate-Zeile `make handbuch-public-doc-check`; Rang 6 nach
+- [x] Doku-Update: `harness/README.md` (Gate-Zeile `make handbuch-public-doc-check`; Rang 6 nach
       Auftraggeber-Antwort), `README.md`/`README.de.md` (Link).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag. Kandidat: der Suchlauf trennt Link-Form (bricht
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Kandidat: der Suchlauf trennt Link-Form (bricht
       `docs-check`) von Klartext (bleibt Record); der Lerneintrag nennt, was die Messung trug.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben, oder „keine Beobachtung angefallen“
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem Repo (Greenfield).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben, oder „keine Beobachtung angefallen“
       in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die Roadmap
       führt keine offene Welle, deshalb trägt die Slice-Closure selbst die drei Paarungen
       (Modul 6 §Was der wellenlose Betrieb selbst auslöst).
@@ -281,20 +288,56 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Gegenstand:** <übernommen von `slice-<Kennung>` | entfallen: <Grund>>
-  *(nur beim Ausgang ohne Arbeit; sonst Zeile löschen)*
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-kennung-a>, <slice-kennung-b>, <slice-kennung-c> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-<Kennung>.md` | `evidence/slice-<Kennung>.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-<Kennung> (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der reine Move (Similarity 100 %, eigener Commit), das
+  Handbuch-Gate ohne Lockerung (Verifier-Mutationen 1 bis 4: eine fehlende genannte Datei
+  endet Exit 2, eine Kennung in `docs/maintainer/` bleibt außerhalb) und der Suchlauf mit
+  Nachmessen an beiden Ständen; er fand den Link-Bruch (`docs-check`) und trennte ihn vom
+  Klartext, der als Record stehen bleibt.
+- **Was ging anders als geplant:** Der Plan zählte 3 Review-Links, tatsächlich waren es
+  2 Linkziel-Änderungen: die dritte Fundstelle ist ein Dateiname-Link auf
+  `review-slice-release-doku-releasing.md`, kein Pfad nach `releasing.md`. Die
+  Zitat-Korrektur in `ADR-0123` brauchte einen zweiten Schritt: der Review (F-1) und der
+  Verifier (V-1, V-4) fanden, dass der sichtbare Linktext das Linkziel nicht begleitet hatte
+  und die §Geschichte-Zeile den Move statt der korrigierenden Commits nannte (Commits
+  `1c90030f`, `df503ad5`). Der Kopfkommentar des Gate-Skripts (V-2) war nach der
+  Listenänderung veraltet und ist im Commit `5c4474ae` bereinigt. Die zwei Klartext-Nennungen
+  im fremden SDK-Plan (gemeldet, Frist die Closure) sind in `1c90030f` nachgezogen.
+- **Steering-Loop-Eintrag:** Lehre, nicht verkörpert: ein Suchlauf über einen bewegten Pfad
+  zählt **Link-Form** (bricht `docs-check`) und **Klartext** (bleibt Record oder wird als
+  lebende Adresse nachgezogen) getrennt; wer die Fundstellen im Plan zählt, misst beide
+  Formen und die Linktexte neben den Linkzielen, sonst stimmt die Zahl der Korrekturen
+  nicht (hier 3 geplant, 2 tatsächlich) und der sichtbare Text bleibt stehen. Die Messung
+  trug das Ergebnis; ein neuer Sensor entsteht daraus nicht (Grenze der Suchform:
+  `AGENTS.md` §3.13). Nicht verkörpert, nur gezählt.
+- **Beobachtungs-Register (`../observations/`):**
+  `evidence/slice-maintainer-ordner-releasing-verschieben.md` in
+  `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform/` ergänzt — Zähler steht damit bei 2×.
+  `BEO-PGC/zitat-nennt-die-falsche-stelle`: kein Vorkommen (das Linkziel nannte die richtige
+  Datei, nur der sichtbare Text blieb stehen). „Sichtbarer Linktext gegen Linkziel" ist als
+  eigene Klasse ein erstes Vorkommen und hier vermerkt, kein eigener Eintrag. Die lebende
+  Adresse in `BEO-PGC/plattform-verhalten-nur-vom-betreiber-pruefbar/state.md` ist
+  nachgezogen, Zähler unverändert.
+- **Folge-Slices:** keiner angelegt. Benannt, nicht angelegt: eine Folge-ADR des Architect,
+  die die Abschnitte-Liste von
+  [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) §Entscheidung 1
+  an die Kurzform angleicht (Auslöser `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform`,
+  2×). Der SDK-Plan
+  [`slice-sdk-meldungscodes-in-fehlertypen`](../open/slice-sdk-meldungscodes-in-fehlertypen.md)
+  bleibt in `open/`.
+- **Validator:** nicht nötig. Der Slice ist Pflegearbeit an der Ablage: er ändert keine
+  Spec-Stelle (`git grep -n releasing spec` zählt 0 Treffer), keine Anforderung und kein
+  Verhalten des Produkts; das Gate behält seinen Gegenstand (keine Lockerung,
+  `AGENTS.md` §3.6). Die Abnahme gegen Anforderungen läuft über keine `LH-*`-Kennung, die
+  Review und Verifikation tragen die Prüfung.
+- **Risiken aus §6:** Externe Rückwärts-Links: weiter offen. Docker-Hub-Beschreibung: weiter
+  offen bis zum nächsten Release oder `workflow_dispatch`. Klartext-Pfade in Records und
+  `Accepted` ADRs: weiter offen (Nebenwirkung der Immutabilität). Gate-Ausnahme räumlich
+  bestätigt: entfallen. Reihenfolge Move/Gate: entfallen. Die Auftraggeber-Fragen 1 und 2
+  sind beantwortet (Rang-6-Wortlaut in `AGENTS.md` Z. 66 und `harness/README.md`
+  übernommen, `releasing.md` ungeteilt verschoben).
+- **Drei Paarungen:** Anker `docs/maintainer/releasing.md` (Datei, aufgelöst durch
+  `make docs-check`) · Folge-Slice: keiner, die Folge-ADR ist beim Architect benannt ·
+  Register: `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform` bei 2×.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
