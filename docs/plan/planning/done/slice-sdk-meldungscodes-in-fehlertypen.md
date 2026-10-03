@@ -173,7 +173,7 @@ Je Sprache dieselbe Eingabetabelle (§3), dieselben Randfälle, derselbe Realser
       Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo ohne
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo ohne
       Welle für diesen Slice hier geprüft.
 
 ## 3. Plan (vor Code)

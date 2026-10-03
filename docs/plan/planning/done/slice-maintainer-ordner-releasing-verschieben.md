@@ -322,7 +322,7 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) §Entscheidung 1
   an die Kurzform angleicht (Auslöser `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform`,
   2×). Der SDK-Plan
-  [`slice-sdk-meldungscodes-in-fehlertypen`](../in-progress/slice-sdk-meldungscodes-in-fehlertypen.md)
+  [`slice-sdk-meldungscodes-in-fehlertypen`](slice-sdk-meldungscodes-in-fehlertypen.md)
   bleibt in `open/`.
 - **Validator:** nicht nötig. Der Slice ist Pflegearbeit an der Ablage: er ändert keine
   Spec-Stelle (`git grep -n releasing spec` zählt 0 Treffer), keine Anforderung und kein

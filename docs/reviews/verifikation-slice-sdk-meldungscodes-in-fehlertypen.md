@@ -12,7 +12,7 @@ und Plan-vs-Code-Diff. Review-Artefakt:
 [`verifikation-slice-wal-fehlerschwelle-ausgangsklasse`](verifikation-slice-wal-fehlerschwelle-ausgangsklasse.md).
 
 **Gegenstand:** Plan
-[`slice-sdk-meldungscodes-in-fehlertypen`](../plan/planning/in-progress/slice-sdk-meldungscodes-in-fehlertypen.md)
+[`slice-sdk-meldungscodes-in-fehlertypen`](../plan/planning/done/slice-sdk-meldungscodes-in-fehlertypen.md)
 (wellenlos), Diff-Range `85f0506c..HEAD` (`6a589a19`): sechs Commits — `20ff9fe0` (C#), `5d8fe1af`
 (Kotlin), `7efea1fd` (Python), `a1947e8a` (Docs/Runner/Handbuch), Review `3ab233e5`, Fixrunde
 `6a589a19`. Die Fixrunde ändert Produktionslogik der drei Fehlerkörper-Parser und ist von mir voll

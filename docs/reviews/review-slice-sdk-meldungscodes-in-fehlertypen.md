@@ -9,7 +9,7 @@
 Implementierung `20ff9fe0` (C#), `5d8fe1af` (Kotlin), `7efea1fd` (Python), `a1947e8a`
 (Runner-Phase je Sprache, Abdeckungs-Träger, Handbuch 1.93, `harness/README.md`, `harness/mk/sdk.mk`,
 Plan-Nachzug); 38 geänderte Dateien. Plan:
-[`slice-sdk-meldungscodes-in-fehlertypen`](../plan/planning/in-progress/slice-sdk-meldungscodes-in-fehlertypen.md).
+[`slice-sdk-meldungscodes-in-fehlertypen`](../plan/planning/done/slice-sdk-meldungscodes-in-fehlertypen.md).
 
 **Skill:** `.harness/skills/reviewer.md` @ Fassung „geschärft 2026-09-09“, seither um weitere
 HIGH-/MEDIUM-Klassen ergänzt. **Modell:** claude-sonnet-5-5 · **Datum:** 2026-10-03.
