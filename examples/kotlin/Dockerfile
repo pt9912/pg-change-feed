@@ -18,7 +18,7 @@
 #   eclipse-temurin:21-jdk
 #     -> sha256:3e3c176ffed168beb42c607be9bc1639b466cf00261a0fb04425562c9d0c5c2b
 #   eclipse-temurin:21-jre
-#     -> sha256:ca7551d4f36647207812e3c8c8596c89fd4e5226a061a5b8c8629839fe8969f6
+#     -> sha256:cff19e6215689161eb6162c11b86b0c60ddf802164f2eaf48d570f8fb79a36c5
 # Pin-Hebung ist ein bewusster Commit (AGENTS.md §3.6/Modul 14), keine stille
 # Auflösung.
 
@@ -78,7 +78,7 @@ RUN ./gradlew --no-daemon :http-client:installDist :sse-client:installDist :nats
 # eigener, benannter Zielstufen-Tag statt eines dispatchenden ENTRYPOINTs im
 # `runtime`-Image — das hält den bereits dokumentierten Container-Aufruf des
 # HTTP-Clients (`pg-change-feed-examples:kotlin`, unten) byte-gleich stehen.
-FROM eclipse-temurin:21-jre@sha256:ca7551d4f36647207812e3c8c8596c89fd4e5226a061a5b8c8629839fe8969f6 AS runtime-sse
+FROM eclipse-temurin:21-jre@sha256:cff19e6215689161eb6162c11b86b0c60ddf802164f2eaf48d570f8fb79a36c5 AS runtime-sse
 WORKDIR /app
 COPY --from=build /src/sse-client/build/install/sse-client ./
 ENTRYPOINT ["/app/bin/sse-client"]
@@ -86,7 +86,7 @@ ENTRYPOINT ["/app/bin/sse-client"]
 # Stufe `runtime-nats`: startbares Image des NATS-Clients (ADR-0090, LP2,
 # slice-101) — derselbe Grund für den eigenen, benannten Zielstufen-Tag wie
 # bei `runtime-sse`.
-FROM eclipse-temurin:21-jre@sha256:ca7551d4f36647207812e3c8c8596c89fd4e5226a061a5b8c8629839fe8969f6 AS runtime-nats
+FROM eclipse-temurin:21-jre@sha256:cff19e6215689161eb6162c11b86b0c60ddf802164f2eaf48d570f8fb79a36c5 AS runtime-nats
 WORKDIR /app
 COPY --from=build /src/nats-client/build/install/nats-client ./
 ENTRYPOINT ["/app/bin/nats-client"]
@@ -97,7 +97,7 @@ ENTRYPOINT ["/app/bin/nats-client"]
 # über die `build`-Stufe zustande und liegt bereits kompiliert in
 # `/src/grpc-client/build/install/grpc-client` — diese Stufe kopiert kein
 # Quell-Erzeugnis, nur das fertig installierte Programm.
-FROM eclipse-temurin:21-jre@sha256:ca7551d4f36647207812e3c8c8596c89fd4e5226a061a5b8c8629839fe8969f6 AS runtime-grpc
+FROM eclipse-temurin:21-jre@sha256:cff19e6215689161eb6162c11b86b0c60ddf802164f2eaf48d570f8fb79a36c5 AS runtime-grpc
 WORKDIR /app
 COPY --from=build /src/grpc-client/build/install/grpc-client ./
 ENTRYPOINT ["/app/bin/grpc-client"]
@@ -106,7 +106,7 @@ ENTRYPOINT ["/app/bin/grpc-client"]
 # dritten, vollinhaltstragenden NATS-Zustellweg (ADR-0100) — derselbe Grund
 # für den eigenen, benannten Zielstufen-Tag wie bei den übrigen
 # `runtime-*`-Stufen.
-FROM eclipse-temurin:21-jre@sha256:ca7551d4f36647207812e3c8c8596c89fd4e5226a061a5b8c8629839fe8969f6 AS runtime-nats-stream
+FROM eclipse-temurin:21-jre@sha256:cff19e6215689161eb6162c11b86b0c60ddf802164f2eaf48d570f8fb79a36c5 AS runtime-nats-stream
 WORKDIR /app
 COPY --from=build /src/nats-stream-client/build/install/nats-stream-client ./
 ENTRYPOINT ["/app/bin/nats-stream-client"]
@@ -115,7 +115,7 @@ ENTRYPOINT ["/app/bin/nats-stream-client"]
 # die Startform ist ein Container-Aufruf, kein Host-`gradle run`). Bleibt die
 # **letzte** Stufe der Datei, damit ein `docker build` ohne `--target`
 # (unverändert in `harness/mk/examples.mk`) weiterhin dieses Image liefert.
-FROM eclipse-temurin:21-jre@sha256:ca7551d4f36647207812e3c8c8596c89fd4e5226a061a5b8c8629839fe8969f6 AS runtime
+FROM eclipse-temurin:21-jre@sha256:cff19e6215689161eb6162c11b86b0c60ddf802164f2eaf48d570f8fb79a36c5 AS runtime
 WORKDIR /app
 COPY --from=build /src/http-client/build/install/http-client ./
 ENTRYPOINT ["/app/bin/http-client"]
