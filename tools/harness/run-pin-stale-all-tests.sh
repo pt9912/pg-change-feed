@@ -27,6 +27,7 @@ printf '%s\n' \
   'echo "$4" >> "$STUB_LOG"' \
   'f="$STUB_TABLE/$(printf %s "$4" | tr "/:" "__")"' \
   '[ -f "$f" ] || exit 1' \
+  '[ -f "$f.sleep" ] && exec sleep "$(cat "$f.sleep")"' \
   'cat "$f"' > "$tmp/bin/docker"
 chmod +x "$tmp/bin/docker"
 
@@ -170,6 +171,52 @@ serve img-drift:1 "sha256:$B"
 check 1 "DRIFT neben UNBESTIMMT" "$(run)"
 msg "DRIFT bleibt sichtbar" '^DRIFT +a\.mk:1 \(img-drift:1\)'
 msg "UNBESTIMMT bleibt sichtbar" '^UNBESTIMMT +b\.mk:1 — img-down:1:'
+
+# --- Zeitlimit je Registry-Aufruf (Festlegung 4): Ablauf ist UNBESTIMMT ---
+# Der Stub der langsamen Referenz schläft 6 s (`exec`, damit `timeout` den
+# schlafenden Prozess selbst trifft); das Limit ist 1 s.
+fresh
+put a.mk "I ?= img-slow:1@sha256:$A"
+put b.mk "J ?= img-fast:1@sha256:$A"
+serve img-slow:1 "sha256:$A"
+printf '6\n' > "$STUB_TABLE/img-slow_1.sleep"
+serve img-fast:1 "sha256:$A"
+export PIN_COMPARE_TIMEOUT=1
+t0=$SECONDS
+rc=$(run)
+elapsed=$((SECONDS - t0))
+unset PIN_COMPARE_TIMEOUT
+check 2 "Registry-Aufruf überschreitet das Zeitlimit" "$rc"
+msg "Zeitüberschreitung ist UNBESTIMMT" '^UNBESTIMMT +a\.mk:1 — img-slow:1: Registry nicht erreichbar$'
+nomsg "Zeitüberschreitung ist kein OK" '^OK +a\.mk:1'
+nomsg "Zeitüberschreitung ist kein DRIFT" '^DRIFT'
+msg "schnelle Referenz bleibt OK" '^OK +b\.mk:1 \(img-fast:1\)'
+msg "Zusammenfassung Zeitlimit" '^pin-stale-all: 2 Referenzen — 1 OK, 0 DRIFT, 1 UNBESTIMMT$'
+cases=$((cases + 1))
+if [ "$elapsed" -ge 5 ]; then
+  echo "FEHLER: Lauf dauerte ${elapsed} s, das Limit von 1 s begrenzt den Aufruf nicht" >&2
+  fail=1
+fi
+
+# Gegenfall: gleiches Limit, Antwort ohne Verzögerung
+fresh
+put a.mk "I ?= img-fast:1@sha256:$A"
+serve img-fast:1 "sha256:$A"
+export PIN_COMPARE_TIMEOUT=1
+rc=$(run)
+unset PIN_COMPARE_TIMEOUT
+check 0 "Antwort innerhalb des Zeitlimits" "$rc"
+msg "Antwort innerhalb des Limits ist OK" '^OK +a\.mk:1 \(img-fast:1\)'
+
+# --- Registry-Adresse mit Port (Grenze 3 des Vertrags) ---
+# Der Treffer beginnt am Port selbst; das Abfrageziel ist der Rest ab dort.
+fresh
+put a.mk "I ?= localhost:5000/ns/img-port:1@sha256:$A"
+serve 5000/ns/img-port:1 "sha256:$A"
+check 0 "Referenz mit Registry-Port" "$(run)"
+msg "Treffer beginnt am Port" '^OK +a\.mk:1 \(5000/ns/img-port:1\) =='
+calls "Abfrageziel ohne Host" 5000/ns/img-port:1 1
+calls "Host mit Port wird nicht abgefragt" localhost:5000/ns/img-port:1 0
 
 # --- leerer Gegenstand (Festlegung 4): keine Referenz ist nicht bestanden ---
 fresh

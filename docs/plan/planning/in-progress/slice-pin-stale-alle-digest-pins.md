@@ -302,11 +302,41 @@ diff 5 -n -E 'pin-stale\.sh' -- Makefile harness/mk
 
   *Hergeleitet, nicht gefahren* ([`AGENTS.md`](../../../../AGENTS.md) §3.12
   Instanz B): dass die übrigen Zweige (Deduplizierung, `.harness/`-Ausschluss,
-  `DRIFT` neben `UNBESTIMMT`, Einzelplattform-Digest, Timeout) ebenso rot
+  `DRIFT` neben `UNBESTIMMT`, Einzelplattform-Digest) ebenso rot
   färben; für sie liegt eine Prüfung im Tabellentest, aber keine gesehene Farbe.
   Der Fall „`.harness/` ausgenommen“ teilt sich die Prüfung mit `docs/`
   (Mutation 1 entfernt nur `docs`). Das Zeitlimit (`PIN_COMPARE_TIMEOUT`) hat
-  keinen Tabellenfall.
+  seit der Fixrunde einen Tabellenfall (siehe dort).
+
+### Implementer-Beleg Fixrunde (Review `review-slice-pin-stale-alle-digest-pins`, F-1 bis F-4)
+
+- **F-1 Zeitlimit:** `run-pin-stale-all-tests.sh` trägt einen Fall mit
+  `PIN_COMPARE_TIMEOUT=1` und einem Stub, der 6 s schläft (`exec sleep`):
+  erwartet Exit 2, `UNBESTIMMT … Registry nicht erreichbar`, weder `OK` noch
+  `DRIFT` für diese Referenz, die schnelle Nachbarin bleibt `OK`, Gesamtdauer
+  unter 5 s; dazu ein Gegenfall mit demselben Limit ohne Verzögerung (Exit 0).
+  `make test-pin-stale-all` am Original: `run-pin-stale-all-tests: alle 47
+  Prüfungen bestanden` (Dauer 1,6 s).
+- **Mutation (Instanz: Tabellentest, Prüfling per `PROG=<Kopie im Scratchpad>`,
+  eine Stelle):** in `lib-pin-compare.sh` `limit=(timeout "$PIN_COMPARE_TIMEOUT")`
+  auf `limit=()`. Gesehene Farbe: rot, Exit 1, fünf Prüfungen (Exit 1 statt 2,
+  Zeile `DRIFT` statt `UNBESTIMMT`, „kein DRIFT“, Zusammenfassung, Lauf dauerte
+  6 s). Der Stub antwortet ohne Limit mit leerem Digest, deshalb `DRIFT`.
+- **F-2:** Grenze 3 im Vertrag benennt, dass der Treffer am Port beginnt; ein
+  Tabellenfall (Stub, `localhost:5000/…`) belegt Treffer `5000/…` und Aufruf
+  ohne Host. Die Antwort einer realen Registry darauf ist *hergeleitet*.
+- **F-3:** [`ADR-0146`](../../adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md) Festlegung 4 nennt „Registry nicht erreichbar“, nicht das
+  Zeitlimit; dass ein Zeitablauf darunter fällt (`UNBESTIMMT`, nicht `DRIFT`),
+  ist *hergeleitet* aus Festlegung 4 und durch den Tabellenfall aus F-1 am
+  Sensor belegt, nicht in der ADR festgeschrieben.
+- **F-4 / Grenze und Laufzeit:** Sensor-Vertrag Grenze 5 (Abruflimit 429 ist
+  `UNBESTIMMT`, Exit 2, färbt den Nachtschritt) und Grenze 6 (Obergrenze je
+  Referenz Limit mal Zahl, 15 × 60 s = 15 min *abgeleitet*, nicht unter dem
+  Job-Limit). Gemessen am 2026-10-03: `make pin-stale-all` Exit 2, `real
+  0m17,491s`, Zeile `pin-stale-all: 15 Referenzen — 6 OK, 0 DRIFT, 9
+  UNBESTIMMT`, Ursache `429 Too Many Requests` (Docker Hub, an diesem Host).
+  Der Lauf zum Plan-Beleg (28,845 s, 15 OK) war vorher; das Limit ist
+  zeitabhängig.
 - **Suchlauf (§3.13) — Gefundenes:** `make suchlauf-nachmessen PLAN=…` am Stand
   der Lieferung: `suchlauf-nachmessen: 6 Zeilen stimmen`, die `diff`-Zeilen
   (0, 0, 5) stimmen mit dem Soll. Nachgezogen, weil sie den alten Umfang

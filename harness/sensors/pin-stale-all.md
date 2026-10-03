@@ -66,7 +66,11 @@ Make-eigene Exit `2` an.
 3. **Was das Muster nicht trifft, sieht der Sensor nicht.** Ein Digest in einer
    zur Laufzeit zusammengesetzten Variablen oder ein Pin ohne `@sha256:` ist
    außerhalb; eine Registry-Adresse mit Port vor dem Namen trifft das Muster
-   erst ab dem Segment nach dem Port, das Ziel der Abfrage ist dann falsch.
+   erst ab dem Segment nach dem Port. Der Treffer beginnt am Port selbst
+   (`5000/<name>:<tag>@…`), das Abfrageziel ist dann die Referenz ohne Host
+   und damit falsch — an einer Stub-Instanz im Tabellentest gefahren (Treffer
+   `5000/…`, Aufruf ohne Host); wie eine reale Registry ein solches Ziel
+   beantwortet, ist *hergeleitet*, an keiner Instanz gefahren.
 4. **Eine referenz-ähnliche Zeichenkette ist ein Pin.** Ein Fixture oder
    Beispiel mit vollständigem Digest in einer getrackten Datei außerhalb von
    `docs/` und `.harness/` meldet der Sensor dauerhaft als `DRIFT` oder
@@ -74,13 +78,30 @@ Make-eigene Exit `2` an.
    Vertrag keine vollständige Referenz als Literal; die Fixture-Digests
    entstehen im Tabellentest zur Laufzeit. Eine Ausnahmeliste gibt es nicht
    (ein solcher Fund ist ein Befund für den Planner).
-5. **Das Abruflimit der Registry** (Docker Hub, anonym) macht Referenzen
-   `UNBESTIMMT`, nicht rot; ein Lauf mit `UNBESTIMMT` ohne `DRIFT` endet mit
-   Exit 2 und ist kein Beleg für „kein Drift“.
-6. **Überschneidungen** mit den neun benannten Achsen
+5. **Das Abruflimit der Registry** (Docker Hub, anonym, HTTP 429) macht
+   Referenzen `UNBESTIMMT`, nicht `DRIFT`; ein Lauf mit `UNBESTIMMT` ohne
+   `DRIFT` endet mit Exit 2 und ist kein Beleg für „kein Drift“, auch kein
+   für Drift. Der Exit 2 färbt den Schritt im nächtlichen Lauf rot (advisory,
+   blockiert nichts). Gemessen am Arbeitsplatz-Host am 2026-10-03:
+   `make pin-stale-all` endete mit Exit 2, gedruckte Zeile `pin-stale-all: 15
+   Referenzen — 6 OK, 0 DRIFT, 9 UNBESTIMMT`, die Registry antwortete mit `429
+   Too Many Requests`. Wie oft der gehostete Runner dieses Limit trifft, ist
+   nicht gemessen; das zeigt der erste `workflow_dispatch`-Lauf.
+6. **Zeitlimit und Gesamtdauer.** `PIN_COMPARE_TIMEOUT` begrenzt jeden
+   Registry-Aufruf (Default 60 s im Skript; `tools/harness/pin-stale.sh` setzt
+   keinen Wert, dort ist der Aufruf unbegrenzt); ein Ablauf ist `UNBESTIMMT`,
+   belegt im Tabellentest (Stub schläft länger als das Limit). Die Obergrenze
+   des Schritts ist je Referenz das Limit mal die Zahl der Referenzen (15 × 60
+   s = 15 min bei 15 Referenzen, *abgeleitet*) und liegt damit **nicht** unter
+   `timeout-minutes: 15` des Jobs, der außerdem neun weitere Schritte trägt: ein
+   Netzausfall aller Referenzen ließe den Job am Job-Limit enden, nicht am
+   Skript. Gemessen: `real 0m28,845s` bei 15 Referenzen im Normalfall
+   (Implementer-Beleg im Slice-Plan), `real 0m17,491s` am 2026-10-03 bei 9
+   Antworten mit `429`.
+7. **Überschneidungen** mit den neun benannten Achsen
    ([`ADR-0051`](../../docs/plan/adr/0051-cicd-pipeline-github-actions.md)
    Entscheidung 7) melden denselben Drift doppelt im selben Lauf.
-7. **Der Tabellentest ist Werkzeug, kein Gate**
+8. **Der Tabellentest ist Werkzeug, kein Gate**
    ([`ADR-0134`](../../docs/plan/adr/0134-sdk-public-doc-check-gate-make-gates.md)
    Teilfrage 2): `make test-pin-stale-all` läuft nicht in `make gates`; der
    Ort, an dem eine Änderung am Wächter gegen diesen Vertrag gelesen wird, ist
