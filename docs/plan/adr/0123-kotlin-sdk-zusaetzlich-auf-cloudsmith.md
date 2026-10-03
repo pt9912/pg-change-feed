@@ -347,7 +347,7 @@ der Slice erprobt sie.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-25 | Accepted — Nutzerentscheidung im Chat (Cloudsmith nur für Kotlin), Belege aus `docs.cloudsmith.com`, `central.sonatype.org` und `docs.github.com`, heute gelesen | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
-| 2026-10-03 | Zitat-Korrektur nach [`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md): Pfad von `releasing.md` (drei Linkziele und drei Linktexte) | Commits `36b311b4` (Linkziele), `b26460a3` (Move) und der Commit der Linktexte (`git log -- <diese Datei>`) |
+| 2026-10-03 | Zitat-Korrektur nach [`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md): Pfad von `releasing.md` (drei Linkziele und drei Linktexte) | Commits `36b311b4` (Linkziele), `1c90030f` (Linktexte); Anlass: Move `b26460a3` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
