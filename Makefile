@@ -182,8 +182,9 @@ doc-ci-matrix: ## LH-QA-POR-001/002-Beleg: reale GitHub-Actions-Läufe abfragen,
 
 # --- Tests (kein Gate; Docker-only, gepinnte Images) ---
 # Toolchain-Container = derselbe gepinnte Digest wie im Dockerfile; der
-# PostgreSQL-Testcontainer trägt seinen Digest aus `docker manifest inspect
-# postgres:18-alpine` (amd64). Caches leben in Docker-Volumes, Daten im
+# PostgreSQL-Testcontainer trägt den Index-Digest von `postgres:18-alpine`
+# (`docker buildx imagetools inspect postgres:18-alpine --format
+# '{{.Manifest.Digest}}'`). Caches leben in Docker-Volumes, Daten im
 # Container — nichts davon im Arbeitsbaum. PG_TEST_IMAGE bleibt hier auf
 # PostgreSQL 18 für lokale/manuelle Läufe (ADR-0058 Entscheidung 4); die
 # CI-Versionsmatrix (.github/workflows/e2e.yml) überschreibt

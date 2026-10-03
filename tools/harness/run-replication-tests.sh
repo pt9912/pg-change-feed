@@ -12,7 +12,8 @@
 # Der Pin der Datenbank ist über `PG_TEST_IMAGE` übersteuerbar; der Lauf an
 # PostgreSQL 17 nimmt den Digest aus `.github/workflows/e2e.yml`.
 # Beide Images sind per Digest gepinnt (Modul 14); der Pin der Datenbank
-# stammt aus `docker manifest inspect postgres:18-alpine` (amd64). Die
+# ist der Index-Digest von `postgres:18-alpine` (`docker buildx imagetools
+# inspect postgres:18-alpine --format '{{.Manifest.Digest}}'`). Die
 # Instanz startet mit wal_level=logical — der Logical-Replication-Slot
 # braucht ihn. DB-Daten bleiben im Container (kein Volume in den
 # Arbeitsbaum); der Testcontainer und das Docker-Netz werden in jedem

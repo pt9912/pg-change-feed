@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # run-store-tests — Adapter-Tests gegen reale PostgreSQL im Testcontainer
 # (ADR-0030). Beide Images sind per Digest gepinnt (Modul 14); der Pin der
-# Datenbank stammt aus `docker manifest inspect postgres:18-alpine` (amd64).
+# Datenbank ist der Index-Digest von `postgres:18-alpine` (`docker buildx
+# imagetools inspect postgres:18-alpine --format '{{.Manifest.Digest}}'`).
 # Die DB-Daten bleiben im Container (kein Volume in den Arbeitsbaum); der
 # Testcontainer und das Docker-Netz werden in jedem Ausgang abgeräumt, das
 # Modul-Cache-Volume bleibt als Vorbereitung für netzlose `make test`-Läufe
