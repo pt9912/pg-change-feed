@@ -6,7 +6,7 @@
 Architect-Verdikt
 [`architect-verdict-meldungscodes-statt-interner-kennungen`](architect-verdict-meldungscodes-statt-interner-kennungen.md))
 + Plan-vs-Code-Diff. Plan:
-[`slice-meldungscodes-registry-fehlerkopf`](../plan/planning/in-progress/slice-meldungscodes-registry-fehlerkopf.md)
+[`slice-meldungscodes-registry-fehlerkopf`](../plan/planning/done/slice-meldungscodes-registry-fehlerkopf.md)
 (wellenlos, Teil 2 von 4). Review:
 [`review-slice-meldungscodes-registry-fehlerkopf`](review-slice-meldungscodes-registry-fehlerkopf.md)
 (0 HIGH, 1 MEDIUM F-1, 2 LOW F-2/F-3, 3 INFO F-4 bis F-6). Formvorbild:

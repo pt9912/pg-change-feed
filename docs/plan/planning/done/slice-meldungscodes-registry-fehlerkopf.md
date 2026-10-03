@@ -29,7 +29,7 @@ Verdikt: [`architect-verdict-meldungscodes-statt-interner-kennungen`](../../../r
 [`SPEC-019`](../../../../spec/pflichtenheft.md) (`error_message` des Antrags) — Liefer-Punkt
 dieses Slice, nicht des Auftraggebers.
 
-**Reihenfolge:** nach [T1 `meldungscodes-kennungsfreie-ausgaben`](../done/slice-meldungscodes-kennungsfreie-ausgaben.md)
+**Reihenfolge:** nach [T1 `meldungscodes-kennungsfreie-ausgaben`](slice-meldungscodes-kennungsfreie-ausgaben.md)
 (sein Gate hält die Ausgaben bei 0, bevor dieser Slice die Fehlertext-Literale anfasst); vor
 [T3](../open/slice-meldungscodes-warnungen-heartbeat-diagnose.md) und
 [T4](../open/slice-meldungscodes-http-grpc-fehlerkoerper.md), die an der Tabelle dieses Slice hängen.
@@ -231,7 +231,7 @@ diff 0 -n -F 'PCF-' -- examples
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): kein anderer Slice liegt in `in-progress/` (WIP-Limit 1),
-`make image` ist ausgeführt, [T1](../done/slice-meldungscodes-kennungsfreie-ausgaben.md) liegt in
+`make image` ist ausgeführt, [T1](slice-meldungscodes-kennungsfreie-ausgaben.md) liegt in
 `done/`, **und das Code-Präfix `PCF-` ist vom Auftraggeber bestätigt oder geändert**
 ([`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md) Empfehlung 1 des
 Verdikts: bisher nicht bestätigt). Wird es geändert, entsteht vor dem Start eine Folge-ADR
