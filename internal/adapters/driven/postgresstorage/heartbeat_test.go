@@ -196,6 +196,14 @@ func TestHeartbeatViewProjectsAge(t *testing.T) {
 	}
 }
 
+// nullable liest einen NULL-fähigen Spaltenwert für eine Fehlermeldung.
+func nullable(value *string) string {
+	if value == nil {
+		return "<NULL>"
+	}
+	return *value
+}
+
 // TestFaultWritesErrorClass belegt den Happy Path (`LH-FA-ADM-003`):
 // der Fehlerzustand landet in derselben Zeile wie das
 // Lebenszeichen, unterscheidbar vom Normalbetrieb (NULL); Klasse und
@@ -216,10 +224,10 @@ func TestFaultWritesErrorClass(t *testing.T) {
 		t.Fatalf("process_heartbeat-Lesen: %v", err)
 	}
 	if errorClass == nil || *errorClass != string(model.ErrorClassStorage) {
-		t.Fatalf("error_class = %v, wollen %q", errorClass, model.ErrorClassStorage)
+		t.Fatalf("error_class = %s, wollen %q", nullable(errorClass), model.ErrorClassStorage)
 	}
 	if errorCode == nil || *errorCode != string(messagecode.ChangeStoreFailed) {
-		t.Fatalf("error_code = %v, wollen %q", errorCode, messagecode.ChangeStoreFailed)
+		t.Fatalf("error_code = %s, wollen %q", nullable(errorCode), messagecode.ChangeStoreFailed)
 	}
 }
 
@@ -338,10 +346,10 @@ func TestHeartbeatViewProjectsErrorClass(t *testing.T) {
 		t.Fatalf("cdc.heartbeat-Lesen: %v", err)
 	}
 	if errorClass == nil || *errorClass != string(model.ErrorClassPermission) {
-		t.Fatalf("cdc.heartbeat.error_class = %v, wollen %q", errorClass, model.ErrorClassPermission)
+		t.Fatalf("cdc.heartbeat.error_class = %s, wollen %q", nullable(errorClass), model.ErrorClassPermission)
 	}
 	if errorCode == nil || *errorCode != string(messagecode.ReplicationPermission) {
-		t.Fatalf("cdc.heartbeat.error_code = %v, wollen %q", errorCode, messagecode.ReplicationPermission)
+		t.Fatalf("cdc.heartbeat.error_code = %s, wollen %q", nullable(errorCode), messagecode.ReplicationPermission)
 	}
 
 	if err := adapter.Beat(ctx, heartbeatTestSource); err != nil {
@@ -353,7 +361,7 @@ func TestHeartbeatViewProjectsErrorClass(t *testing.T) {
 		t.Fatalf("cdc.heartbeat-Lesen nach Beat: %v", err)
 	}
 	if errorClass != nil || errorCode != nil {
-		t.Fatalf("cdc.heartbeat nach Beat: error_class=%v error_code=%v, wollen NULL und NULL", errorClass, errorCode)
+		t.Fatalf("cdc.heartbeat nach Beat: error_class=%s error_code=%s, wollen NULL und NULL", nullable(errorClass), nullable(errorCode))
 	}
 }
 
@@ -382,7 +390,7 @@ func TestHeartbeatViewHidesCodeWithoutClass(t *testing.T) {
 		t.Fatalf("cdc.heartbeat-Lesen: %v", err)
 	}
 	if errorClass != nil || errorCode != nil {
-		t.Fatalf("cdc.heartbeat: error_class=%v error_code=%v, wollen NULL und NULL", errorClass, errorCode)
+		t.Fatalf("cdc.heartbeat: error_class=%s error_code=%s, wollen NULL und NULL", nullable(errorClass), nullable(errorCode))
 	}
 }
 
