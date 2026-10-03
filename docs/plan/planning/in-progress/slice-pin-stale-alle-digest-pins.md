@@ -171,8 +171,10 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0
       (`make docs-check` liest `harness/README.md`, den Sensor-Vertrag und diese
       Pläne: Kennungen verlinkt).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      ([`review-slice-pin-stale-alle-digest-pins`](../../../reviews/review-slice-pin-stale-alle-digest-pins.md),
+      F-1 MEDIUM in der Fixrunde behoben;
+      `.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (neue Zeile, Zeile zu `upstream-drift.yml` auf den neuen Umfang),
