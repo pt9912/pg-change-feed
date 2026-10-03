@@ -1341,7 +1341,7 @@ abdeckung_declare "CLI-Diagnose-Beleg (Fehlerzustand)" "LH-FA-ADM-003,LH-QA-REL-
 # Funktionskommentar) — ein `docker exec` gegen einen bereits beendeten,
 # `restart: "no"`-Container ist danach nicht mehr möglich (slice-038 §6
 # Risiko 1). Dieser Beleg schreibt denselben Spaltenwert
-# (`cdc.process_heartbeat.error_class`), den der reale Fehlerpfad schriebe,
+# (`cdc.process_heartbeat.error_class` samt `error_code`), den der reale Fehlerpfad schriebe,
 # direkt über SQL — derselbe Lesepfad (View -> diagnose-Ausgabe), ohne den
 # laufenden Container zu beenden. Der periodische Heartbeat-Takt (5s,
 # `heartbeatInterval`) überschreibt `error_class` beim nächsten
@@ -1354,18 +1354,18 @@ diagnose_error_output=""
 diagnose_error_status=1
 for _ in $(seq 1 20); do
   docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
-    "UPDATE cdc.process_heartbeat SET heartbeat_at = current_timestamp, error_class = 'schema' WHERE source_id = 'src-e2e'" >/dev/null
+    "UPDATE cdc.process_heartbeat SET heartbeat_at = current_timestamp, error_class = 'schema', error_code = 'PCF-E4003' WHERE source_id = 'src-e2e'" >/dev/null
   set +e
   diagnose_error_output=$(exec_feed diagnose)
   diagnose_error_status=$?
   set -e
-  if [ "$diagnose_error_status" -eq 0 ] && printf '%s' "$diagnose_error_output" | grep -qF "Fehlerzustand: schema"; then
+  if [ "$diagnose_error_status" -eq 0 ] && printf '%s' "$diagnose_error_output" | grep -qF "Fehlerzustand: schema [PCF-E4003]"; then
     error_state_seen=1
     break
   fi
 done
 if [ "$error_state_seen" -ne 1 ]; then
-  echo "run-integration-tests: diagnose-Ausgabe zeigt den gesetzten Fehlerzustand 'schema' nicht innerhalb von 20 Versuchen (Boundary LH-FA-ADM-003, letzter Ausgang $diagnose_error_status): $diagnose_error_output" >&2
+  echo "run-integration-tests: diagnose-Ausgabe zeigt den gesetzten Fehlerzustand 'schema [PCF-E4003]' nicht innerhalb von 20 Versuchen (Boundary LH-FA-ADM-003, letzter Ausgang $diagnose_error_status): $diagnose_error_output" >&2
   exit 1
 fi
 if printf '%s' "$diagnose_error_output" | grep -qF "keiner (Normalbetrieb)"; then
@@ -1379,7 +1379,7 @@ if [ "$feed_running" != "true" ]; then
   exit 1
 fi
 
-echo "run-integration-tests: CLI-Diagnose-Beleg (Fehlerzustand) — 'schema' sichtbar und von Normalbetrieb unterscheidbar (LH-FA-ADM-003 Boundary), Feed-Container läuft unverändert weiter"
+echo "run-integration-tests: CLI-Diagnose-Beleg (Fehlerzustand) — 'schema [PCF-E4003]' sichtbar und von Normalbetrieb unterscheidbar (LH-FA-ADM-003 Boundary), Feed-Container läuft unverändert weiter"
 
 abdeckung_declare "SQL-Administration Live-Reload (enable)" "LH-FA-ADM-001,LH-FA-CFG-001,LH-FA-CFG-006" "eine bewusst nicht in der Bindungsliste geführte Tabelle wird über den SQL-Antrag aktiviert und vom bereits laufenden Feed-Container ohne Neustart erfasst — ihre eigene DDL (Spalten, Trigger) bleibt dabei real unverändert, keine Anwendungscode-Anpassung nötig" "SQL-Administration Live-Reload-Beleg (enable)"
 
@@ -2178,6 +2178,11 @@ if [ "$http_diagnose_cli_no_error" != "$http_diagnose_http_no_error" ]; then
   echo "run-integration-tests: HTTP-Diagnose-Querabgleich — Fehlerzustand widersprüchlich zwischen CLI (kein Fehler=$http_diagnose_cli_no_error) und GET /diagnose (kein Fehler=$http_diagnose_http_no_error): CLI=$http_diagnose_cli_output HTTP=$http_output" >&2
   exit 1
 fi
+# Im Normalbetrieb trägt die Antwort auch keinen Meldungscode.
+if [ "$http_diagnose_http_no_error" = 1 ] && ! printf '%s' "$http_output" | grep -qE 'DIAGNOSED body=.*"error_code":null'; then
+  echo "run-integration-tests: HTTP-Diagnose-Querabgleich — GET /diagnose trägt im Normalbetrieb kein \"error_code\":null: $http_output" >&2
+  exit 1
+fi
 
 echo "run-integration-tests: HTTP-Diagnose-Querabgleich (ADR-0132) belegt — GET /diagnose (reader-Token) und eine kontemporäre docker exec diagnose-Ausgabe tragen denselben Betriebsstatus: Lebenszeichen bekannt=$http_diagnose_http_known, kein Fehlerzustand=$http_diagnose_http_no_error"
 
@@ -2774,6 +2779,11 @@ else
 fi
 if [ "$grpc_admin_diagnose_cli_no_error" != "$grpc_admin_diagnose_grpc_no_error" ]; then
   echo "run-integration-tests: gRPC-Diagnose-Querabgleich — Fehlerzustand widersprüchlich zwischen CLI (kein Fehler=$grpc_admin_diagnose_cli_no_error) und gRPC (kein Fehler=$grpc_admin_diagnose_grpc_no_error): CLI=$grpc_admin_diagnose_cli_output GRPC=$grpc_admin_output" >&2
+  exit 1
+fi
+# Im Normalbetrieb trägt die Antwort auch keinen Meldungscode (leeres Feld).
+if [ "$grpc_admin_diagnose_grpc_no_error" = 1 ] && ! printf '%s' "$grpc_admin_output" | grep -qE 'heartbeat_error_code= '; then
+  echo "run-integration-tests: gRPC-Diagnose-Querabgleich — die Antwort trägt im Normalbetrieb einen Meldungscode: $grpc_admin_output" >&2
   exit 1
 fi
 

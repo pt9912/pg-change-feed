@@ -52,11 +52,14 @@ type BackfillTableStatus struct {
 // `HeartbeatAgeSeconds == nil` bedeutet „kein Lebenszeichen — Instanz hat
 // noch nie geschlagen"; in diesem Fall trägt `ErrorClass` ebenfalls `nil`,
 // gelesen als „unbekannt", nicht als „Normalbetrieb" — die Unterscheidung
-// liegt an `HeartbeatAgeSeconds`, nicht an einem dritten Feld.
+// liegt an `HeartbeatAgeSeconds`, nicht an einem dritten Feld. `ErrorCode`
+// ist der Meldungscode des Fehlerzustands und `nil` im Normalbetrieb sowie
+// bei einem Fehlerzustand ohne Code.
 // `RetentionBlocker == nil` bedeutet „kein Blocker".
 type DiagnoseResult struct {
 	HeartbeatAgeSeconds *float64
 	ErrorClass          *string
+	ErrorCode           *string
 	CaptureLag          float64
 	ConsumerLags        []ConsumerLag
 	RetentionBlocker    *RetentionBlocker

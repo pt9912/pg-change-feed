@@ -265,7 +265,7 @@ tables:
         expression: "status IN ('pending', 'applied', 'failed')"
 
   process_heartbeat:
-    description: "Lebenszeichen des Capture-Prozesses je Quelle (LH-FA-ADM-002, LH-QA-OPS-002). Eine Instanz trägt Quelle und CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft) — der periodische Schreib-Zug der Composition Root (ADR-0026) trägt genau eine Zeile je Quelle fort, kein eigenes Prozess-Kennungsfeld. error_class (LH-FA-ADM-003, LH-QA-REL-003) trägt den zuletzt beobachteten Fehlerzustand derselben Zeile — NULL ist Normalbetrieb, ein erfolgreicher Beat löscht die Spalte wieder."
+    description: "Lebenszeichen des Capture-Prozesses je Quelle (LH-FA-ADM-002, LH-QA-OPS-002). Eine Instanz trägt Quelle und CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft) — der periodische Schreib-Zug der Composition Root (ADR-0026) trägt genau eine Zeile je Quelle fort, kein eigenes Prozess-Kennungsfeld. error_class (LH-FA-ADM-003, LH-QA-REL-003) trägt den zuletzt beobachteten Fehlerzustand derselben Zeile — NULL ist Normalbetrieb, ein erfolgreicher Beat löscht die Spalte wieder. error_code trägt den Meldungscode des Fehlerzustands (Code der Klasse in error_class) und ist wie error_class NULL im Normalbetrieb."
     columns:
       source_id:
         type: text
@@ -273,6 +273,7 @@ tables:
         references: { table: source, column: source_id }
       heartbeat_at: { type: datetime, timezone: true, required: true, default: current_timestamp }
       error_class: { type: text }
+      error_code: { type: text }
     primary_key: [source_id]
 
   backfill_run:

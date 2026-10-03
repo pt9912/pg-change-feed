@@ -559,7 +559,7 @@ func (s *BackfillTableService) wake(ctx context.Context, run model.BackfillRun) 
 		return
 	}
 	if err := s.notify.Notify(ctx, string(run.Source), run.Schema, run.Table); err != nil {
-		s.log.Warn(ctx, "backfill: Wecksignal fehlgeschlagen", "error", err, "run_id", run.ID, "schema", run.Schema, "table", run.Table)
+		s.log.Warn(ctx, "backfill: Wecksignal fehlgeschlagen", messagecode.LogKey, messagecode.WarnNotifyFailed, "error", err, "run_id", run.ID, "schema", run.Schema, "table", run.Table)
 	}
 }
 
@@ -568,7 +568,7 @@ func (s *BackfillTableService) wake(ctx context.Context, run model.BackfillRun) 
 // Pfad).
 func (s *BackfillTableService) closeSnapshot(ctx context.Context, snapshot outbound.TableSnapshot) {
 	if err := snapshot.Close(context.WithoutCancel(ctx)); err != nil {
-		s.log.Warn(ctx, "backfill: Schließen des Snapshots fehlgeschlagen", "error", err)
+		s.log.Warn(ctx, "backfill: Schließen des Snapshots fehlgeschlagen", messagecode.LogKey, messagecode.WarnBackfillCleanup, "error", err)
 	}
 }
 
@@ -579,7 +579,7 @@ func (s *BackfillTableService) rollback(ctx context.Context, writer outbound.Bac
 		return
 	}
 	if err := writer.Rollback(context.WithoutCancel(ctx)); err != nil {
-		s.log.Warn(ctx, "backfill: Rollback der Schreibtransaktion fehlgeschlagen", "error", err)
+		s.log.Warn(ctx, "backfill: Rollback der Schreibtransaktion fehlgeschlagen", messagecode.LogKey, messagecode.WarnBackfillCleanup, "error", err)
 	}
 }
 

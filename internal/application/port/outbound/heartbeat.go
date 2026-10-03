@@ -38,6 +38,8 @@ type HeartbeatPort interface {
 	// (`LH-FA-ADM-003`): die Composition Root ruft ihn
 	// auf, bevor der Capture-Prozess auf einen Adapter-Fehler endet.
 	// Der Zeitstempel läuft mit fort (wie `Beat`) — ein
-	// Fehlerzustand ist damit ebenso ein Lebenszeichen, nur mit Klasse.
-	Fault(ctx context.Context, source model.SourceID, class model.ErrorClass) error
+	// Fehlerzustand ist damit ebenso ein Lebenszeichen, nur mit Klasse und
+	// Meldungscode. Der Code ist ein Code dieser Klasse (`messagecode.ClassOf`);
+	// ein Widerspruch erreicht keinen SQL-Aufruf.
+	Fault(ctx context.Context, source model.SourceID, class model.ErrorClass, code messagecode.Code) error
 }

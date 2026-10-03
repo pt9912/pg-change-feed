@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	stderrors "errors"
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/nats-io/nats.go"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -79,14 +81,23 @@ func testChange(t *testing.T) *model.Change {
 type recordingLog struct {
 	infos []string
 	warns []string
+	// codes trägt je Warnung den Wert des Attributs `code` (leer, wenn keins).
+	codes []string
 }
 
 func (l *recordingLog) Debug(context.Context, string, ...any) {}
 func (l *recordingLog) Info(_ context.Context, msg string, _ ...any) {
 	l.infos = append(l.infos, msg)
 }
-func (l *recordingLog) Warn(_ context.Context, msg string, _ ...any) {
+func (l *recordingLog) Warn(_ context.Context, msg string, attrs ...any) {
 	l.warns = append(l.warns, msg)
+	code := ""
+	for i := 0; i+1 < len(attrs); i += 2 {
+		if attrs[i] == messagecode.LogKey {
+			code = fmt.Sprint(attrs[i+1])
+		}
+	}
+	l.codes = append(l.codes, code)
 }
 func (l *recordingLog) Error(context.Context, string, ...any) {}
 
@@ -253,6 +264,9 @@ func TestPublishSkipsUnusableSubjectName(t *testing.T) {
 			if len(log.warns) != 1 || !strings.Contains(log.warns[0], testcase.wantWarning) {
 				t.Fatalf("Warn-Aufzeichnung: %q (Erwartung: Hinweis auf %q)", log.warns, testcase.wantWarning)
 			}
+			if got := log.codes[0]; got != string(messagecode.WarnStreamNameSkipped) {
+				t.Fatalf("Attribut code = %q, Erwartung %q", got, messagecode.WarnStreamNameSkipped)
+			}
 		})
 	}
 }
@@ -390,6 +404,9 @@ func TestPublishSkipsReservedRouteTarget(t *testing.T) {
 			if len(log.warns) != 1 || !strings.Contains(log.warns[0], "Zielname") {
 				t.Fatalf("Warn-Aufzeichnung: %q", log.warns)
 			}
+			if got := log.codes[0]; got != string(messagecode.WarnStreamTargetName) {
+				t.Fatalf("Attribut code = %q, Erwartung %q", got, messagecode.WarnStreamTargetName)
+			}
 		})
 	}
 }
@@ -477,6 +494,36 @@ func TestRouteFailureStaysLocal(t *testing.T) {
 	}
 	if len(log.warns) != 2 {
 		t.Fatalf("Warnungen = %d, Erwartung 2 (je Change eine)", len(log.warns))
+	}
+	for i, got := range log.codes {
+		if got != string(messagecode.WarnStreamPublish) {
+			t.Fatalf("Attribut code der Warnung %d = %q, Erwartung %q", i, got, messagecode.WarnStreamPublish)
+		}
+	}
+}
+
+// TestPublishSkipsUnencodableChangeWithCode trägt die Kodier-Grenze: ein
+// Change, dessen Row Image kein gültiges JSON ist, wird nicht veröffentlicht;
+// die Warnung trägt den Code ihrer Ursache. Die Eingabeseite ist das Row Image
+// des Changes.
+//
+// Rot färbende Mutation: in `publish` das `Warn` ohne Attribut `code` rufen —
+// der Test färbt rot; das Row Image `{kein-json` durch gültiges JSON ersetzen —
+// die Veröffentlichung läuft und die Warnung bleibt aus.
+func TestPublishSkipsUnencodableChangeWithCode(t *testing.T) {
+	conn := &recordingConn{}
+	log := &recordingLog{}
+	p := newRecordingPublisher(conn, log)
+	change := testChange(t)
+	change.NewImage = []byte("{kein-json")
+
+	p.publish(context.Background(), change)
+
+	if got := conn.attempts(); len(got) != 0 {
+		t.Fatalf("Veröffentlichungen = %q, Erwartung keine", got)
+	}
+	if len(log.codes) != 1 || log.codes[0] != string(messagecode.WarnChangeNotEncodable) {
+		t.Fatalf("Attribut code = %q, Erwartung genau %q", log.codes, messagecode.WarnChangeNotEncodable)
 	}
 }
 

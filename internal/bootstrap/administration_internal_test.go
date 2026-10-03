@@ -18,6 +18,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/removetransformation"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/setroute"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/settransformation"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -1123,6 +1124,8 @@ func TestProcessAdministrationRequestsFailsRejectedRowsInQueueOrder(t *testing.T
 	if !log.contains("WARN", "Zeile ohne Kennung übersprungen") {
 		t.Fatalf("die Zeile ohne Kennung trägt keine Warnung: %v", log.messages)
 	}
+	log.requireWarnCode(t, "Zeile ohne Kennung übersprungen", messagecode.WarnAdminRowWithoutID)
+	log.requireWarnCode(t, "Antrag verworfen", messagecode.WarnAdminRequestRejected)
 }
 
 // TestProcessAdministrationRequestsRejectedRowSurvivesMarkFailedError trägt den
@@ -1150,6 +1153,7 @@ func TestProcessAdministrationRequestsRejectedRowSurvivesMarkFailedError(t *test
 	if !log.contains("WARN", "Fehlschlag nicht vermerkt") {
 		t.Fatalf("der Fehler des Vermerks ist nicht protokolliert: %v", log.messages)
 	}
+	log.requireWarnCode(t, "Fehlschlag nicht vermerkt", messagecode.WarnAdminOutcomeNotKept)
 }
 
 // TestProcessAdministrationRequestsClassifiesADomainErrorAfterTheDeadlineAsAFailureNotAsATimeout
@@ -1193,6 +1197,7 @@ func TestProcessAdministrationRequestsClassifiesADomainErrorAfterTheDeadlineAsAF
 	if !log.contains("WARN", "Antrag fehlgeschlagen") {
 		t.Fatalf("kein Warn-Eintrag 'Antrag fehlgeschlagen': %v", log.messages)
 	}
+	log.requireWarnCode(t, "Antrag fehlgeschlagen", messagecode.WarnAdminRequestFailed)
 	if log.contains("WARN", "Vorlauf-Frist abgelaufen") {
 		t.Fatalf("der Log trägt fälschlich 'Vorlauf-Frist abgelaufen' — der Fehler hat nichts mit der Frist zu tun: %v", log.messages)
 	}
@@ -1544,6 +1549,7 @@ func TestRunAdministrationLogsWarnOnListenerErrorAndKeepsPolling(t *testing.T) {
 	if warns == 0 {
 		t.Fatal("kein Warn-Log für den gestörten Listener trotz Fehler auf jedem Wecksignal-Versuch")
 	}
+	log.requireWarnCode(t, "Wecksignal gestört", messagecode.WarnAdminWakeDisturbed)
 }
 
 // TestActivatedTableBindingsCarriesExcludedColumns trägt den Startpfad des

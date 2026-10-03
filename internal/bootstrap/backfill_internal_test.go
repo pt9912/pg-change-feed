@@ -12,6 +12,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -423,11 +424,35 @@ func TestBackfillWorkerWritesNoEndStateAndFilesNoRequestFromAFailedResult(t *tes
 	if requested != 0 {
 		t.Fatalf("der Worker stellte %d Antrag/Anträge, erwartet keinen", requested)
 	}
+	log.requireWarnCode(t, "Run fehlgeschlagen", messagecode.WarnBackfillRunFailed)
 	log.mu.Lock()
 	defer log.mu.Unlock()
 	if log.warns < 1 {
 		t.Fatalf("der fehlgeschlagene Run ist nicht protokolliert: %v", log.messages)
 	}
+}
+
+// Ein Run, der nicht abgeschlossen endet (`interrupted`), ist Berichtsinhalt
+// des Workers mit dem Code der Unterbrechung. Rot färbende Mutation
+// (Eingabeseite: der Status des Ergebnisses): den Code der Zeile im
+// `default`-Zweig von `logBackfillResult` ändern — der Test liest den falschen
+// Code.
+func TestBackfillWorkerLogsAnInterruptedRunWithItsCode(t *testing.T) {
+	runs := &fakeBackfillRunPort{}
+	runs.add(queuedRunOf(t, "run-interrupted", "orders_interrupted"))
+	useCase := &fakeBackfillUseCase{onExecute: func(command inbound.BackfillExecuteCommand) (model.BackfillRun, error) {
+		runs.setStatus(command.Run.ID, model.BackfillRunInterrupted)
+		interrupted := command.Run
+		interrupted.Status = model.BackfillRunInterrupted
+		return interrupted, nil
+	}}
+	log := &recordingLog{}
+	if failed := drainBackfillQueue(context.Background(), backfillWorkerDeps{
+		runs: runs, useCase: useCase, source: "src-backfill-worker", publication: "cdc_pub", log: log,
+	}); failed {
+		t.Fatal("drainBackfillQueue meldete einen Fehler für einen unterbrochenen Run")
+	}
+	log.requireWarnCode(t, "Run nicht abgeschlossen", messagecode.WarnBackfillRunInterrupt)
 }
 
 // Ein Fehler des Aufrufs von `Execute` („Endzustand nicht festgehalten“) beendet
@@ -448,9 +473,10 @@ func TestBackfillWorkerRetriesAfterAFailedPass(t *testing.T) {
 		}
 		return completesRuns(runs)(command)
 	}
+	workerLog := &recordingLog{}
 	startWorker(t, backfillWorkerDeps{
 		runs: runs, useCase: useCase, source: "src-backfill-worker", publication: "cdc_pub",
-		wake: newBackfillWake(), retryAfter: 20 * time.Millisecond, log: &recordingLog{},
+		wake: newBackfillWake(), retryAfter: 20 * time.Millisecond, log: workerLog,
 	})
 
 	waitUntil(t, "zweiter Versuch nach retryAfter", func() bool { return len(useCase.executedIDs()) >= 2 })
@@ -458,13 +484,16 @@ func TestBackfillWorkerRetriesAfterAFailedPass(t *testing.T) {
 	if got[0] != "run-retry" || got[1] != "run-retry" {
 		t.Fatalf("Versuche = %v, erwartet zweimal run-retry", got)
 	}
+	workerLog.requireWarnCode(t, "nicht abgeschlossen festgehalten", messagecode.WarnBackfillStateNotKept)
 
 	failing := &fakeBackfillRunPort{queuedErr: stderrors.New("Verbindung verloren")}
+	readLog := &recordingLog{}
 	if failed := drainBackfillQueue(context.Background(), backfillWorkerDeps{
-		runs: failing, useCase: &fakeBackfillUseCase{}, source: "src-backfill-worker", log: &recordingLog{},
+		runs: failing, useCase: &fakeBackfillUseCase{}, source: "src-backfill-worker", log: readLog,
 	}); !failed {
 		t.Fatal("drainBackfillQueue meldete keinen Fehler bei einem Lesefehler des Run-Zustands")
 	}
+	readLog.requireWarnCode(t, "queued-Runs lesen fehlgeschlagen", messagecode.WarnBackfillQueueRead)
 }
 
 // Bleibt ein Run nach seinem Versuch `queued`, endet der Durchgang (kein
@@ -479,12 +508,14 @@ func TestBackfillWorkerDoesNotSpinOnARunThatStaysQueued(t *testing.T) {
 	}}
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
+	log := &recordingLog{}
 	failed := drainBackfillQueue(ctx, backfillWorkerDeps{
-		runs: runs, useCase: useCase, source: "src-backfill-worker", publication: "cdc_pub", log: &recordingLog{},
+		runs: runs, useCase: useCase, source: "src-backfill-worker", publication: "cdc_pub", log: log,
 	})
 	if got := len(useCase.executedIDs()); got != 1 || !failed {
 		t.Fatalf("Execute-Aufrufe = %d, Durchgang mit Fehler = %v — erwartet genau ein Aufruf je Durchgang und ein Durchgang mit Fehler, obwohl der Run queued blieb", got, failed)
 	}
+	log.requireWarnCode(t, "weiter queued", messagecode.WarnBackfillRunNotAdvance)
 }
 
 // Der Abgleich beim Prozessstart ruft `InterruptRunning` für die Quelle mit
@@ -505,6 +536,7 @@ func TestReconcileBackfillRunsInterruptsRunningRunsOfTheSource(t *testing.T) {
 	if log.warns != 1 {
 		t.Fatalf("der Abgleich von 2 Runs ist nicht protokolliert: %v", log.messages)
 	}
+	log.requireWarnCode(t, "auf interrupted gesetzt", messagecode.WarnBackfillRunInterrupt)
 
 	broken := &fakeBackfillRunPort{interruptErr: stderrors.New("Speicher nicht erreichbar")}
 	if err := reconcileBackfillRuns(context.Background(), broken, clock, "src-backfill-worker", log); err == nil {

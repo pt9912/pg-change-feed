@@ -75,12 +75,14 @@ func TestDiagnoseOhneTokenEndetMit401(t *testing.T) {
 func TestDiagnoseReaderTokenLiestBericht(t *testing.T) {
 	age := 1.5
 	errorClass := "schema"
+	errorCode := "PCF-E4003"
 	lag := 3.0
 	backlog := int64(7)
 	estimated := int64(10)
 	useCase := &fakeDiagnoseUseCase{result: inbound.DiagnoseResult{
 		HeartbeatAgeSeconds: &age,
 		ErrorClass:          &errorClass,
+		ErrorCode:           &errorCode,
 		CaptureLag:          2.5,
 		ConsumerLags:        []inbound.ConsumerLag{{ConsumerID: "c-1", Lag: &lag}},
 		RetentionBlocker: &inbound.RetentionBlocker{
@@ -112,6 +114,9 @@ func TestDiagnoseReaderTokenLiestBericht(t *testing.T) {
 	}
 	if decoded.ErrorClass == nil || *decoded.ErrorClass != errorClass {
 		t.Fatalf("error_class = %v, wollen %v", decoded.ErrorClass, errorClass)
+	}
+	if decoded.ErrorCode == nil || *decoded.ErrorCode != errorCode {
+		t.Fatalf("error_code = %v, wollen %v", decoded.ErrorCode, errorCode)
 	}
 	if decoded.CaptureLag != 2.5 {
 		t.Fatalf("capture_lag = %v, wollen 2.5", decoded.CaptureLag)

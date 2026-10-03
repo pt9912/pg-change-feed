@@ -175,7 +175,7 @@ func TestDiagnoseReportsErrorState(t *testing.T) {
 	pool := newDiagnoseTestFixture(t)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx,
-		"INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class) VALUES ($1, current_timestamp, 'schema')",
+		"INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class, error_code) VALUES ($1, current_timestamp, 'schema', 'PCF-E4003')",
 		diagnoseTestSource,
 	); err != nil {
 		t.Fatalf("Lebenszeichen-Zeile mit Fehlerzustand: %v", err)
@@ -189,8 +189,8 @@ func TestDiagnoseReportsErrorState(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("Diagnose-Exit-Code = %d, wollen 0 (erfolgreicher Lesezugriff, der Fehlerzustand ist Berichtsinhalt)", code)
 	}
-	if !strings.Contains(output, "Fehlerzustand: schema") {
-		t.Fatalf("stdout = %q, wollen die Fehlerklasse 'schema' sichtbar und von Normalbetrieb unterscheidbar", output)
+	if !strings.Contains(output, "Fehlerzustand: schema [PCF-E4003]") {
+		t.Fatalf("stdout = %q, wollen Fehlerklasse und Meldungscode 'schema [PCF-E4003]' sichtbar und von Normalbetrieb unterscheidbar", output)
 	}
 	if strings.Contains(output, "keiner (Normalbetrieb)") {
 		t.Fatalf("stdout = %q, trägt fälschlich die Normalbetrieb-Zeile trotz gesetztem Fehlerzustand", output)

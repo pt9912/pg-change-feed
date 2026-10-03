@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -151,6 +152,7 @@ func TestRunRetentionCleanupContinuesAfterError(t *testing.T) {
 	if warns < 1 {
 		t.Fatalf("Warn-Log-Aufrufe = %d, wollen mindestens 1 (der simulierte Fehler)", warns)
 	}
+	log.requireWarnCode(t, "Bereinigung fehlgeschlagen", messagecode.WarnRetentionFailed)
 }
 
 // TestRunRetentionCleanupStopsOnContextCancel belegt, dass die Schleife auf

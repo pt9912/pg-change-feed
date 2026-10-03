@@ -1352,7 +1352,7 @@ func runWALRetentionCheck(ctx context.Context, checker walRetentionMeasurer, log
 		case <-ticker.C:
 			bytes, err := checker.Measure(ctx)
 			if err != nil {
-				log.Warn(ctx, "replication: WAL-Rückstand-Messung fehlgeschlagen", "error", err)
+				log.Warn(ctx, "replication: WAL-Rückstand-Messung fehlgeschlagen", messagecode.LogKey, messagecode.WarnWALMeasureFailed, "error", err)
 				continue
 			}
 			switch classifyWALRetention(bytes, warnBytes, errorBytes) {
@@ -1364,7 +1364,7 @@ func runWALRetentionCheck(ctx context.Context, checker walRetentionMeasurer, log
 				return
 			case walRetentionWarn:
 				log.Warn(ctx, "replication: WAL-Rückstand über Warnschwelle — kontrollierte Fortsetzung",
-					"metric", "cdc_wal_retention_bytes", "bytes", bytes, "threshold_bytes", warnBytes)
+					messagecode.LogKey, messagecode.WarnWALOverWarn, "metric", "cdc_wal_retention_bytes", "bytes", bytes, "threshold_bytes", warnBytes)
 			default:
 				log.Info(ctx, "replication: WAL-Rückstand gemessen", "metric", "cdc_wal_retention_bytes", "bytes", bytes)
 			}
@@ -1391,7 +1391,7 @@ func runRetentionCleanup(ctx context.Context, useCase inbound.RunRetentionUseCas
 		case <-ticker.C:
 			result, err := useCase.Run(ctx, inbound.RunRetentionCommand{Source: source, Policy: policy})
 			if err != nil {
-				log.Warn(ctx, "retention: Bereinigung fehlgeschlagen", "error", err)
+				log.Warn(ctx, "retention: Bereinigung fehlgeschlagen", messagecode.LogKey, messagecode.WarnRetentionFailed, "error", err)
 				continue
 			}
 			log.Info(ctx, "retention: Bereinigung gelaufen", "deleted", result.Deleted)
@@ -1521,7 +1521,7 @@ func runAdministration(ctx context.Context, deps administrationDeps) {
 			return
 		}
 		if err != nil && !errors.Is(err, context.DeadlineExceeded) {
-			deps.log.Warn(ctx, "administration: Wecksignal gestört — Fallback-Poll übernimmt", "error", err)
+			deps.log.Warn(ctx, "administration: Wecksignal gestört — Fallback-Poll übernimmt", messagecode.LogKey, messagecode.WarnAdminWakeDisturbed, "error", err)
 		}
 	}
 }
@@ -1551,7 +1551,7 @@ func runAdministration(ctx context.Context, deps administrationDeps) {
 func processAdministrationRequests(ctx context.Context, deps administrationDeps) {
 	pending, err := deps.requests.ListPending(ctx)
 	if err != nil {
-		deps.log.Warn(ctx, "administration: Anträge lesen fehlgeschlagen", "error", err)
+		deps.log.Warn(ctx, "administration: Anträge lesen fehlgeschlagen", messagecode.LogKey, messagecode.WarnAdminRequestsRead, "error", err)
 		return
 	}
 	for _, row := range pending {
@@ -1569,18 +1569,18 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 		if err := applyAdministrationRequest(ctx, deps, request); err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
 				deps.log.Warn(ctx, "administration: Vorlauf-Frist abgelaufen — Antrag bleibt pending",
-					"request_id", request.ID, "kind", request.Kind)
+					messagecode.LogKey, messagecode.WarnAdminPreflightExpiry, "request_id", request.ID, "kind", request.Kind)
 				return
 			}
 			deps.log.Warn(ctx, "administration: Antrag fehlgeschlagen",
-				"request_id", request.ID, "kind", request.Kind, "error", err)
+				messagecode.LogKey, messagecode.WarnAdminRequestFailed, "request_id", request.ID, "kind", request.Kind, "error", err)
 			if markErr := deps.requests.MarkFailed(ctx, request.ID, administrationFailureText(err)); markErr != nil {
-				deps.log.Warn(ctx, "administration: Fehlschlag nicht vermerkt", "request_id", request.ID, "error", markErr)
+				deps.log.Warn(ctx, "administration: Fehlschlag nicht vermerkt", messagecode.LogKey, messagecode.WarnAdminOutcomeNotKept, "request_id", request.ID, "error", markErr)
 			}
 			continue
 		}
 		if err := deps.requests.MarkApplied(ctx, request.ID); err != nil {
-			deps.log.Warn(ctx, "administration: Erfolg nicht vermerkt", "request_id", request.ID, "error", err)
+			deps.log.Warn(ctx, "administration: Erfolg nicht vermerkt", messagecode.LogKey, messagecode.WarnAdminOutcomeNotKept, "request_id", request.ID, "error", err)
 		}
 	}
 }
@@ -1592,12 +1592,12 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 // vermerkt sie erneut.
 func failRejectedAdministrationRequest(ctx context.Context, deps administrationDeps, rejected outbound.RejectedAdministrationRequest) {
 	if rejected.ID == "" {
-		deps.log.Warn(ctx, "administration: Zeile ohne Kennung übersprungen", "error", rejected.Message)
+		deps.log.Warn(ctx, "administration: Zeile ohne Kennung übersprungen", messagecode.LogKey, messagecode.WarnAdminRowWithoutID, "error", rejected.Message)
 		return
 	}
-	deps.log.Warn(ctx, "administration: Antrag verworfen", "request_id", rejected.ID, "error", rejected.Message)
+	deps.log.Warn(ctx, "administration: Antrag verworfen", messagecode.LogKey, messagecode.WarnAdminRequestRejected, "request_id", rejected.ID, "error", rejected.Message)
 	if markErr := deps.requests.MarkFailed(ctx, rejected.ID, rejected.Message); markErr != nil {
-		deps.log.Warn(ctx, "administration: Fehlschlag nicht vermerkt", "request_id", rejected.ID, "error", markErr)
+		deps.log.Warn(ctx, "administration: Fehlschlag nicht vermerkt", messagecode.LogKey, messagecode.WarnAdminOutcomeNotKept, "request_id", rejected.ID, "error", markErr)
 	}
 }
 
@@ -1852,7 +1852,8 @@ func reportFault(port outbound.HeartbeatPort, source model.SourceID, runErr *err
 	}
 	faultCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	_ = port.Fault(faultCtx, source, classifyRunError(*runErr))
+	class, code := classifyRunFault(*runErr)
+	_ = port.Fault(faultCtx, source, class, code)
 }
 
 // classifyRunError übersetzt den Lauf-Fehler in eine der sieben stabilen
@@ -1864,19 +1865,29 @@ func reportFault(port outbound.HeartbeatPort, source model.SourceID, runErr *err
 // Reihenfolge der Kette. Ein Fehler ohne Code bleibt in der Kategorie
 // `internal` („unerwarteter interner Fehler").
 func classifyRunError(err error) model.ErrorClass {
+	class, _ := classifyRunFault(err)
+	return class
+}
+
+// classifyRunFault liefert zur Klasse von `classifyRunError` den Meldungscode
+// des Fehlerzustands: den ersten Code dieser Klasse in der Kette; ein Fehler
+// ohne Code der Klasse `internal` trägt den Rückfall `internal`. Klasse und
+// Code gehören damit immer zusammen (`messagecode.ClassOf`).
+func classifyRunFault(err error) (model.ErrorClass, messagecode.Code) {
 	precedence := []messagecode.Class{
 		messagecode.ClassTransient, messagecode.ClassConfiguration, messagecode.ClassSchema,
 		messagecode.ClassPermission, messagecode.ClassReplication, messagecode.ClassStorage,
+		messagecode.ClassInternal,
 	}
 	codes := messagecode.Codes(err)
 	for _, class := range precedence {
 		for _, code := range codes {
 			if messagecode.ClassOf(code) == class {
-				return model.ErrorClass(class)
+				return model.ErrorClass(class), code
 			}
 		}
 	}
-	return model.ErrorClassInternal
+	return model.ErrorClassInternal, messagecode.InternalFallback
 }
 
 // Die Backoff-Setzungen der Wiederholung (`ADR-0135` Festlegung 2):
@@ -2031,7 +2042,7 @@ func runStreamWithRetry(ctx context.Context, log outbound.LogPort, clock outboun
 			windowStarted = true
 		}
 		attempts++
-		log.Warn(ctx, "pg-change-feed: Stream-Zyklus wiederholt (transient)", "versuch", attempts, "warteschritt", delay, "error", err)
+		log.Warn(ctx, "pg-change-feed: Stream-Zyklus wiederholt (transient)", messagecode.LogKey, messagecode.WarnStreamCycleRetry, "versuch", attempts, "warteschritt", delay, "error", err)
 		sleep(delay)
 		delay = min(delay*2, streamRetryMaxDelay)
 		if ctx.Err() != nil {
@@ -2210,6 +2221,20 @@ func Diagnose(ctx context.Context, dsn string, source model.SourceID) int {
 	return 0
 }
 
+// errorStateLine ist die Zeile „Fehlerzustand“ eines Berichts mit
+// Lebenszeichen: im Normalbetrieb „keiner“, sonst die Klasse, mit dem
+// Meldungscode in eckigen Klammern, wenn der Heartbeat einen trägt.
+func errorStateLine(result inbound.DiagnoseResult) string {
+	switch {
+	case result.ErrorClass == nil:
+		return "  Fehlerzustand: keiner (Normalbetrieb)"
+	case result.ErrorCode == nil:
+		return fmt.Sprintf("  Fehlerzustand: %s", *result.ErrorClass)
+	default:
+		return fmt.Sprintf("  Fehlerzustand: %s [%s]", *result.ErrorClass, *result.ErrorCode)
+	}
+}
+
 // printDiagnoseReport gibt den Diagnose-Bericht auf `stdout` aus — dieselbe
 // Textform, die vor dem Umbau auf `inbound.DiagnoseUseCase` (`ADR-0132`)
 // direkt aus den SQL-Zeilen entstand.
@@ -2219,11 +2244,7 @@ func printDiagnoseReport(result inbound.DiagnoseResult) {
 		fmt.Println("  Fehlerzustand: unbekannt (kein Lebenszeichen)")
 	} else {
 		fmt.Printf("  Betriebsstatus: Lebenszeichen vor %.3fs\n", *result.HeartbeatAgeSeconds)
-		if result.ErrorClass == nil {
-			fmt.Println("  Fehlerzustand: keiner (Normalbetrieb)")
-		} else {
-			fmt.Printf("  Fehlerzustand: %s\n", *result.ErrorClass)
-		}
+		fmt.Println(errorStateLine(result))
 	}
 
 	fmt.Printf("  CDC-Abstand cdc_capture_lag: %.3fs\n", result.CaptureLag)

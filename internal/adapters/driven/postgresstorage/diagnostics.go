@@ -66,8 +66,8 @@ func (a *PostgresDiagnosticsAdapter) Read(ctx context.Context, source model.Sour
 	var snapshot outbound.DiagnosticsSnapshot
 
 	var ageSeconds float64
-	var errorClass *string
-	switch err := a.db.QueryRow(ctx, queries.SelectDiagnosticsHeartbeat, string(source)).Scan(&ageSeconds, &errorClass); {
+	var errorClass, errorCode *string
+	switch err := a.db.QueryRow(ctx, queries.SelectDiagnosticsHeartbeat, string(source)).Scan(&ageSeconds, &errorClass, &errorCode); {
 	case sqlexec.IsAbsent(err):
 		// kein Lebenszeichen — Instanz hat noch nie geschlagen.
 	case err != nil:
@@ -75,6 +75,7 @@ func (a *PostgresDiagnosticsAdapter) Read(ctx context.Context, source model.Sour
 	default:
 		snapshot.HeartbeatAgeSeconds = &ageSeconds
 		snapshot.ErrorClass = errorClass
+		snapshot.ErrorCode = errorCode
 	}
 
 	if err := a.db.QueryRow(ctx, queries.SelectDiagnosticsCaptureLag).Scan(&snapshot.CaptureLag); err != nil {

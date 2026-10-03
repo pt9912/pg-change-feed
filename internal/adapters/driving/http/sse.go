@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -159,7 +160,7 @@ func streamChangesHandler(subscriber changeSubscriber, log outbound.LogPort) htt
 				}
 				payload, err := json.Marshal(toStreamChange(change))
 				if err != nil {
-					log.Warn(r.Context(), "http: SSE-Change nicht kodierbar", "error", err)
+					log.Warn(r.Context(), "http: SSE-Change nicht kodierbar", messagecode.LogKey, messagecode.WarnChangeNotEncodable, "error", err)
 					return
 				}
 				if _, err := fmt.Fprintf(w, "event: %s\ndata: %s\n\n", sseEventChange, payload); err != nil {

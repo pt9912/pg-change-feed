@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -716,11 +718,13 @@ func TestStreamNichtKodierbareChangeBeendetDenStream(t *testing.T) {
 	change.NewImage = []byte("{kein-json")
 	subscriber.changes <- &change
 
+	log := &warnCodeLog{}
 	srv := New(Config{
 		Addr:        "unused:0",
 		TokenReader: testReaderToken,
 		TokenAdmin:  testAdminToken,
 		Subscriber:  subscriber,
+		Log:         log,
 	})
 	req := httptest.NewRequest(http.MethodGet, "/changes/stream", nil)
 	req.Header.Set("Authorization", "Bearer "+testReaderToken)
@@ -740,6 +744,37 @@ func TestStreamNichtKodierbareChangeBeendetDenStream(t *testing.T) {
 	if body := rec.Body.String(); strings.Contains(body, "event:") {
 		t.Fatalf("Antwort trägt ein Event für eine nicht kodierbare Change: %q", body)
 	}
+	// Die Warnung trägt den Code ihrer Ursache; ohne Attribut `code` färbt der Test rot.
+	if codes := log.snapshot(); len(codes) != 1 || codes[0] != string(messagecode.WarnChangeNotEncodable) {
+		t.Fatalf("Attribut code der Warnungen = %q, Erwartung genau %q", codes, messagecode.WarnChangeNotEncodable)
+	}
+}
+
+// warnCodeLog hält den Wert des Attributs `code` jeder Warnung fest.
+type warnCodeLog struct {
+	mu    sync.Mutex
+	codes []string
+}
+
+func (l *warnCodeLog) Debug(context.Context, string, ...any) {}
+func (l *warnCodeLog) Info(context.Context, string, ...any)  {}
+func (l *warnCodeLog) Error(context.Context, string, ...any) {}
+func (l *warnCodeLog) Warn(_ context.Context, _ string, attrs ...any) {
+	code := ""
+	for i := 0; i+1 < len(attrs); i += 2 {
+		if attrs[i] == messagecode.LogKey {
+			code = fmt.Sprint(attrs[i+1])
+		}
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.codes = append(l.codes, code)
+}
+
+func (l *warnCodeLog) snapshot() []string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return append([]string(nil), l.codes...)
 }
 
 // TestStreamSchreibfehlerBeendetDenStream trägt dieselbe Grenze für den

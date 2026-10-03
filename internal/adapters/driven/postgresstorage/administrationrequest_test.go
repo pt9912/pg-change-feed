@@ -17,6 +17,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -433,10 +434,22 @@ func TestAdministrationRequestAdapterMarkAppliedIsIdempotent(t *testing.T) {
 type infoRecorder struct {
 	mu       sync.Mutex
 	messages []string
+	// warnCodes trägt je Warnung den Wert des Attributs `code` (leer, wenn keins).
+	warnCodes []string
 }
 
 func (r *infoRecorder) Debug(context.Context, string, ...any) {}
-func (r *infoRecorder) Warn(context.Context, string, ...any)  {}
+func (r *infoRecorder) Warn(_ context.Context, _ string, attrs ...any) {
+	code := ""
+	for i := 0; i+1 < len(attrs); i += 2 {
+		if attrs[i] == messagecode.LogKey {
+			code = fmt.Sprint(attrs[i+1])
+		}
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.warnCodes = append(r.warnCodes, code)
+}
 func (r *infoRecorder) Error(context.Context, string, ...any) {}
 func (r *infoRecorder) Info(_ context.Context, msg string, _ ...any) {
 	r.mu.Lock()
@@ -454,6 +467,37 @@ func (r *infoRecorder) count(msg string) int {
 		}
 	}
 	return n
+}
+
+// TestAdministrationRequestAdapterMarkFailedWarnsWithItsCode trägt die
+// Warnung des Vermerks eines gescheiterten Antrags: sie trägt den Code ihrer
+// Ursache im Attribut `code`. Rot färbende Mutation: das Attribut aus dem
+// `Warn`-Aufruf in `MarkFailed` streichen oder einen anderen Code eintragen.
+func TestAdministrationRequestAdapterMarkFailedWarnsWithItsCode(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+	log := &infoRecorder{}
+
+	adapter, err := postgresstorage.NewAdministrationRequest(ctx, dsn, postgresstorage.WithLog(log))
+	if err != nil {
+		t.Fatalf("NewAdministrationRequest: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+
+	var requestID string
+	if err := pool.QueryRow(ctx,
+		"SELECT cdc.enable_table($1, $2, $3)", administrationRequestSource, "public", "orders_adapter_warned",
+	).Scan(&requestID); err != nil {
+		t.Fatalf("cdc.enable_table: %v", err)
+	}
+	if err := adapter.MarkFailed(ctx, model.AdministrationRequestID(requestID), "Ursache"); err != nil {
+		t.Fatalf("MarkFailed: %v", err)
+	}
+	log.mu.Lock()
+	defer log.mu.Unlock()
+	if len(log.warnCodes) != 1 || log.warnCodes[0] != string(messagecode.WarnAdminRequestFailed) {
+		t.Fatalf("Attribut code der Warnungen = %q, erwartet genau %q", log.warnCodes, messagecode.WarnAdminRequestFailed)
+	}
 }
 
 // TestAdministrationRequestAdapterMarkAppliedLogsOnlyARequestItMarked trägt

@@ -41,12 +41,14 @@ func (f *fakeDiagnostics) Read(_ context.Context, source model.SourceID) (outbou
 func TestDiagnoseRuftPortMitDerQuelleAufUndUebersetztUnveraendert(t *testing.T) {
 	age := 1.5
 	errorClass := "schema"
+	errorCode := "PCF-E4003"
 	lag := 3.0
 	backlog := int64(7)
 	estimated := int64(100)
 	port := &fakeDiagnostics{snapshot: outbound.DiagnosticsSnapshot{
 		HeartbeatAgeSeconds: &age,
 		ErrorClass:          &errorClass,
+		ErrorCode:           &errorCode,
 		CaptureLag:          2.5,
 		ConsumerLags:        []outbound.ConsumerLagSnapshot{{ConsumerID: "c-1", Lag: &lag}},
 		RetentionBlocker: &outbound.RetentionBlockerSnapshot{
@@ -71,6 +73,9 @@ func TestDiagnoseRuftPortMitDerQuelleAufUndUebersetztUnveraendert(t *testing.T) 
 	}
 	if result.ErrorClass == nil || *result.ErrorClass != errorClass {
 		t.Fatalf("ErrorClass = %v, wollen %v", result.ErrorClass, errorClass)
+	}
+	if result.ErrorCode == nil || *result.ErrorCode != errorCode {
+		t.Fatalf("ErrorCode = %v, wollen %v", result.ErrorCode, errorCode)
 	}
 	if result.CaptureLag != 2.5 {
 		t.Fatalf("CaptureLag = %v, wollen 2.5", result.CaptureLag)

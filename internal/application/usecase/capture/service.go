@@ -11,6 +11,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -129,7 +130,7 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 	if s.notify != nil {
 		for _, table := range distinctTables(tx) {
 			if err := s.notify.Notify(ctx, string(position.SourceID), table.schema, table.table); err != nil {
-				s.log.Warn(ctx, "capture: Wecksignal fehlgeschlagen", "error", err, "source_id", position.SourceID, "schema", table.schema, "table", table.table)
+				s.log.Warn(ctx, "capture: Wecksignal fehlgeschlagen", messagecode.LogKey, messagecode.WarnNotifyFailed, "error", err, "source_id", position.SourceID, "schema", table.schema, "table", table.table)
 			}
 		}
 	}
@@ -147,7 +148,7 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 		changes := changesOfCommittedTransaction(tx)
 		for i := range changes {
 			if err := s.stream.Publish(ctx, &changes[i]); err != nil {
-				s.log.Warn(ctx, "capture: Stream-Publish fehlgeschlagen", "error", err, "change_id", changes[i].ID)
+				s.log.Warn(ctx, "capture: Stream-Publish fehlgeschlagen", messagecode.LogKey, messagecode.WarnStreamPublish, "error", err, "change_id", changes[i].ID)
 			}
 		}
 	}

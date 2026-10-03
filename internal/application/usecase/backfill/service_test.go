@@ -491,12 +491,23 @@ func (n *fakeNotifier) Notify(ctx context.Context, sourceID, schema, table strin
 	return n.err
 }
 
-type fakeLog struct{ warns []string }
+type fakeLog struct {
+	warns []string
+	// codes trägt je Warnung den Wert des Attributs `code` (leer, wenn keins).
+	codes []string
+}
 
 func (l *fakeLog) Debug(context.Context, string, ...any) {}
 func (l *fakeLog) Info(context.Context, string, ...any)  {}
-func (l *fakeLog) Warn(_ context.Context, msg string, _ ...any) {
+func (l *fakeLog) Warn(_ context.Context, msg string, attrs ...any) {
 	l.warns = append(l.warns, msg)
+	code := ""
+	for i := 0; i+1 < len(attrs); i += 2 {
+		if attrs[i] == messagecode.LogKey {
+			code = fmt.Sprint(attrs[i+1])
+		}
+	}
+	l.codes = append(l.codes, code)
 }
 func (l *fakeLog) Error(context.Context, string, ...any) {}
 
@@ -999,6 +1010,9 @@ func TestExecuteNotifyIsBestEffort(t *testing.T) {
 	}
 	if len(r.log.warns) != 1 {
 		t.Fatalf("Warnungen = %v, will genau eine", r.log.warns)
+	}
+	if got := r.log.codes[0]; got != string(messagecode.WarnNotifyFailed) {
+		t.Fatalf("Attribut code = %q, will %q", got, messagecode.WarnNotifyFailed)
 	}
 }
 
@@ -1609,6 +1623,11 @@ func TestExecuteCleanupFailuresAreLoggedNotFatal(t *testing.T) {
 	}
 	if len(r.log.warns) != 2 {
 		t.Fatalf("Warnungen = %v, will Rollback und Schließen", r.log.warns)
+	}
+	for i, got := range r.log.codes {
+		if got != string(messagecode.WarnBackfillCleanup) {
+			t.Fatalf("Attribut code der Warnung %d = %q, will %q", i, got, messagecode.WarnBackfillCleanup)
+		}
 	}
 }
 

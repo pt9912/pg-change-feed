@@ -12,6 +12,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -291,6 +292,7 @@ func TestRunStreamAfterAdministrationPassWithTimeoutLeavesRequestsPendingAfterTh
 	if !log.contains("WARN", "Vorlauf-Frist") {
 		t.Fatal("kein Warn-Eintrag zur abgelaufenen Frist")
 	}
+	log.requireWarnCode(t, "Vorlauf-Frist", messagecode.WarnAdminPreflightExpiry)
 }
 
 // TestRunSourceTextPassesStreamRunOnlyAsArgumentOfTheSequence bindet die

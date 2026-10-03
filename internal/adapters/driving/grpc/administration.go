@@ -323,7 +323,7 @@ func (s *administrationService) ReadChanges(ctx context.Context, req *administra
 
 // toHeartbeatStatus übersetzt den Betriebsstatus-Teil des Diagnose-Berichts
 // (`ADR-0132` Teilfrage 5): `Known = false` trägt „kein Lebenszeichen" —
-// `AgeSeconds`/`ErrorClass` sind dann ohne Bedeutung.
+// `AgeSeconds`/`ErrorClass`/`ErrorCode` sind dann ohne Bedeutung.
 func toHeartbeatStatus(result inbound.DiagnoseResult) *administrationv1.HeartbeatStatus {
 	if result.HeartbeatAgeSeconds == nil {
 		return &administrationv1.HeartbeatStatus{Known: false}
@@ -332,7 +332,11 @@ func toHeartbeatStatus(result inbound.DiagnoseResult) *administrationv1.Heartbea
 	if result.ErrorClass != nil {
 		errorClass = *result.ErrorClass
 	}
-	return &administrationv1.HeartbeatStatus{Known: true, AgeSeconds: *result.HeartbeatAgeSeconds, ErrorClass: errorClass}
+	errorCode := ""
+	if result.ErrorCode != nil {
+		errorCode = *result.ErrorCode
+	}
+	return &administrationv1.HeartbeatStatus{Known: true, AgeSeconds: *result.HeartbeatAgeSeconds, ErrorClass: errorClass, ErrorCode: errorCode}
 }
 
 // toConsumerLags übersetzt die Verarbeitungsrückstände je Consumer

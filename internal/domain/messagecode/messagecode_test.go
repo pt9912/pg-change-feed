@@ -18,7 +18,7 @@ var classes = []messagecode.Class{
 }
 
 // TestTableFormat trägt die Form jedes Codes der Tabelle: die ERE aus der
-// Festlegung, Schwere `E` (Warnungen kommen mit ihrem Weg), ein bekannter Status.
+// Festlegung, Schwere `E` oder `W` (`I` ist reserviert), ein bekannter Status.
 // Färbt rot, sobald ein Eintrag eine andere Form trägt.
 func TestTableFormat(t *testing.T) {
 	form := regexp.MustCompile(`^PCF-[EWI][0-9]{4}$`)
@@ -29,8 +29,8 @@ func TestTableFormat(t *testing.T) {
 		if !form.MatchString(string(e.Code)) || !messagecode.Valid(e.Code) {
 			t.Errorf("%q: Form verletzt", e.Code)
 		}
-		if e.Code[4] != 'E' {
-			t.Errorf("%q: Schwere %q, erwartet E", e.Code, e.Code[4])
+		if e.Code[4] != 'E' && e.Code[4] != 'W' {
+			t.Errorf("%q: Schwere %q, erwartet E oder W", e.Code, e.Code[4])
 		}
 		if e.Status != messagecode.StatusActive && e.Status != messagecode.StatusWithdrawn {
 			t.Errorf("%q: unbekannter Status %q", e.Code, e.Status)
@@ -42,6 +42,9 @@ func TestTableFormat(t *testing.T) {
 // die der ersten Ziffer. Eine Zeile mit falscher Klasse färbt den Test rot.
 func TestTableClassMatchesFirstDigit(t *testing.T) {
 	for _, e := range messagecode.Table {
+		if e.Code[4] == 'W' {
+			continue
+		}
 		want, ok := messagecode.DigitClass(e.Code)
 		if !ok {
 			t.Errorf("%q: erste Ziffer außerhalb 1 bis 8", e.Code)
@@ -50,6 +53,64 @@ func TestTableClassMatchesFirstDigit(t *testing.T) {
 		if e.Class != want {
 			t.Errorf("%q: Klasse %q, erste Ziffer nennt %q", e.Code, e.Class, want)
 		}
+	}
+}
+
+// TestWarningCodesCarryTheirArea trägt: jeder Warncode der Tabelle trägt keine
+// Fehlerklasse und einen Bereich 1 bis 5 in der ersten Ziffer, und jede
+// benannte Konstante liegt im Bereich ihres Namens (Bereich 1 Erfassung,
+// 2 Backfill, 3 Retention und Speicher, 4 Verwaltung). Färbt rot, sobald ein
+// Warncode in einen anderen Bereich oder mit einer Klasse eingetragen wird.
+func TestWarningCodesCarryTheirArea(t *testing.T) {
+	named := map[int][]messagecode.Code{
+		1: {
+			messagecode.WarnNotifyFailed, messagecode.WarnStreamPublish, messagecode.WarnStreamNameSkipped,
+			messagecode.WarnStreamTargetName, messagecode.WarnChangeNotEncodable, messagecode.WarnStreamCycleRetry,
+		},
+		2: {
+			messagecode.WarnBackfillCleanup, messagecode.WarnBackfillQueueRead, messagecode.WarnBackfillRunNotAdvance,
+			messagecode.WarnBackfillStateNotKept, messagecode.WarnBackfillRunFailed, messagecode.WarnBackfillRunInterrupt,
+		},
+		3: {messagecode.WarnWALMeasureFailed, messagecode.WarnWALOverWarn, messagecode.WarnRetentionFailed},
+		4: {
+			messagecode.WarnAdminWakeDisturbed, messagecode.WarnAdminRequestsRead, messagecode.WarnAdminPreflightExpiry,
+			messagecode.WarnAdminRequestFailed, messagecode.WarnAdminRequestRejected, messagecode.WarnAdminOutcomeNotKept,
+			messagecode.WarnAdminRowWithoutID,
+		},
+	}
+	inTable := 0
+	for _, e := range messagecode.Table {
+		if e.Code[4] != 'W' {
+			continue
+		}
+		inTable++
+		if _, ok := messagecode.Area(e.Code); !ok {
+			t.Errorf("%q: erste Ziffer außerhalb 1 bis 5", e.Code)
+		}
+		if e.Class != messagecode.ClassNone {
+			t.Errorf("%q: Warnung trägt die Klasse %q", e.Code, e.Class)
+		}
+	}
+	namedCount := 0
+	for area, codes := range named {
+		for _, code := range codes {
+			namedCount++
+			if got, ok := messagecode.Area(code); !ok || got != area {
+				t.Errorf("%q: Bereich %d, erwartet %d", code, got, area)
+			}
+			if _, ok := messagecode.Lookup(code); !ok {
+				t.Errorf("%q fehlt in der Tabelle", code)
+			}
+		}
+	}
+	if inTable != namedCount {
+		t.Errorf("Tabelle führt %d Warncodes, die Konstanten nennen %d", inTable, namedCount)
+	}
+	if _, ok := messagecode.Area(messagecode.DecodeUnreadable); ok {
+		t.Error("Area liest einen Fehlercode")
+	}
+	if _, ok := messagecode.Area("PCF-W9001"); ok {
+		t.Error("Area liest den reservierten Bereich 9")
 	}
 }
 

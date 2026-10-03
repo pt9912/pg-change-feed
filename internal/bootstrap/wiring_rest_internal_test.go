@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -175,6 +176,7 @@ func TestProcessAdministrationRequestsLesefehlerBeendetDurchlauf(t *testing.T) {
 	if !deps.log.(*recordingLog).contains("WARN", "Anträge lesen fehlgeschlagen") {
 		t.Fatal("Lesefehler der Antrags-Queue wird nicht protokolliert — der Durchlauf endet stumm")
 	}
+	deps.log.(*recordingLog).requireWarnCode(t, "Anträge lesen fehlgeschlagen", messagecode.WarnAdminRequestsRead)
 	if len(enableTables.calls) != 0 {
 		t.Fatalf("Enable-Aufrufe = %d, wollen 0 (kein Antrag gelesen)", len(enableTables.calls))
 	}
@@ -216,6 +218,8 @@ func TestProcessAdministrationRequestsVermerkfehlerBleibenBestEffort(t *testing.
 		if !deps.log.(*recordingLog).contains("WARN", "Fehlschlag nicht vermerkt") {
 			t.Fatal("gescheiterter MarkFailed wird nicht protokolliert — der Antrag bliebe pending und liefe jeden Durchlauf erneut")
 		}
+		deps.log.(*recordingLog).requireWarnCode(t, "Antrag fehlgeschlagen", messagecode.WarnAdminRequestFailed)
+		deps.log.(*recordingLog).requireWarnCode(t, "Fehlschlag nicht vermerkt", messagecode.WarnAdminOutcomeNotKept)
 		if requests.appliedCount() != 0 {
 			t.Fatalf("applied = %d, wollen 0 (der Antrag ist gescheitert)", requests.appliedCount())
 		}
@@ -248,6 +252,7 @@ func TestProcessAdministrationRequestsVermerkfehlerBleibenBestEffort(t *testing.
 		if !deps.log.(*recordingLog).contains("WARN", "Erfolg nicht vermerkt") {
 			t.Fatal("gescheiterter MarkApplied wird nicht protokolliert")
 		}
+		deps.log.(*recordingLog).requireWarnCode(t, "Erfolg nicht vermerkt", messagecode.WarnAdminOutcomeNotKept)
 	})
 }
 
@@ -418,6 +423,7 @@ func TestRunWALRetentionCheckProtokolliertMessfehlerUndLaeuftWeiter(t *testing.T
 		case <-time.After(time.Millisecond):
 		}
 	}
+	log.requireWarnCode(t, "WAL-Rückstand-Messung fehlgeschlagen", messagecode.WarnWALMeasureFailed)
 
 	if streamCtx.Err() != nil {
 		t.Fatal("stopStream wurde wegen eines Messfehlers aufgerufen — die Messung selbst bricht den Erfassungspfad nicht ab")

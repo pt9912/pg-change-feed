@@ -198,8 +198,8 @@ func diagnose(client administrationv1.AdministrationClient, readerToken, source 
 	if err != nil {
 		return fmt.Errorf("Diagnose (reader) fehlgeschlagen: %w", err)
 	}
-	fmt.Printf("DIAGNOSED heartbeat_known=%v heartbeat_error_class=%s capture_lag=%f consumer_lags=%d backfill=%d\n",
-		resp.GetHeartbeat().GetKnown(), resp.GetHeartbeat().GetErrorClass(), resp.GetCaptureLag(), len(resp.GetConsumerLags()), len(resp.GetBackfill()))
+	fmt.Printf("DIAGNOSED heartbeat_known=%v heartbeat_error_class=%s heartbeat_error_code=%s capture_lag=%f consumer_lags=%d backfill=%d\n",
+		resp.GetHeartbeat().GetKnown(), resp.GetHeartbeat().GetErrorClass(), resp.GetHeartbeat().GetErrorCode(), resp.GetCaptureLag(), len(resp.GetConsumerLags()), len(resp.GetBackfill()))
 	return nil
 }
 

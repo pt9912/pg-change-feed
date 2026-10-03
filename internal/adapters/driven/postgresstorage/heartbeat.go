@@ -2,6 +2,7 @@ package postgresstorage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/sqlexec"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -88,10 +90,11 @@ func (a *PostgresHeartbeatAdapter) Beat(ctx context.Context, source model.Source
 
 // Fault trägt den zuletzt beobachteten Fehlerzustand der Quelle fort
 // (`LH-FA-ADM-003`) — dieselbe Zeile und
-// derselbe Zeitstempel-Mechanismus wie Beat, nur mit Klasse. Eine leere
-// Quelle oder eine Klasse außerhalb der sieben stabilen Kategorien
-// erreicht keinen SQL-Aufruf (Port-Grenze, wie bei Beat).
-func (a *PostgresHeartbeatAdapter) Fault(ctx context.Context, source model.SourceID, class model.ErrorClass) error {
+// derselbe Zeitstempel-Mechanismus wie Beat, nur mit Klasse und Meldungscode.
+// Eine leere Quelle, eine Klasse außerhalb der sieben stabilen Kategorien und
+// ein Code, der nicht zur Klasse gehört, erreichen keinen SQL-Aufruf
+// (Port-Grenze, wie bei Beat).
+func (a *PostgresHeartbeatAdapter) Fault(ctx context.Context, source model.SourceID, class model.ErrorClass, code messagecode.Code) error {
 	if source == "" {
 		return domainerrors.ErrEmptyIdentifier
 	}
@@ -99,9 +102,12 @@ func (a *PostgresHeartbeatAdapter) Fault(ctx context.Context, source model.Sourc
 	if err != nil {
 		return err
 	}
-	if _, err := a.db.Exec(ctx, queries.UpsertHeartbeatFault, string(source), string(validated)); err != nil {
+	if entry, found := messagecode.Lookup(code); !found || string(entry.Class) != string(validated) {
+		return fmt.Errorf("%w: Code %q gehört nicht zur Klasse %q", domainerrors.ErrInvalidErrorClass, code, validated)
+	}
+	if _, err := a.db.Exec(ctx, queries.UpsertHeartbeatFault, string(source), string(validated), string(code)); err != nil {
 		return heartbeatStorageFailure(ctx, a.log, err)
 	}
-	a.log.Warn(ctx, "heartbeat: Fehlerzustand gemeldet", "source", source, "class", validated)
+	a.log.Warn(ctx, "heartbeat: Fehlerzustand gemeldet", messagecode.LogKey, code, "source", source, "class", validated)
 	return nil
 }

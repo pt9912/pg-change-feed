@@ -14,6 +14,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/receive"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/capture"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -44,7 +45,7 @@ func (b *blockingHeartbeat) Beat(ctx context.Context, source model.SourceID) err
 // Fault trägt hier nur die Interface-Erfüllung — dieser Test belegt den
 // Timer-Zug (`runHeartbeat`/`Beat`), nicht den Fehlerzustand-Pfad
 // (`reportFault`/`classifyRunError`, eigene Tests unten).
-func (b *blockingHeartbeat) Fault(ctx context.Context, source model.SourceID, class model.ErrorClass) error {
+func (b *blockingHeartbeat) Fault(ctx context.Context, source model.SourceID, class model.ErrorClass, code messagecode.Code) error {
 	return nil
 }
 
@@ -54,14 +55,16 @@ var _ outbound.HeartbeatPort = (*blockingHeartbeat)(nil)
 // (`LH-FA-ADM-003`) — Beat bleibt hier ungenutzt.
 type recordingHeartbeat struct {
 	faultClass model.ErrorClass
+	faultCode  messagecode.Code
 	faultCalls int
 }
 
 func (r *recordingHeartbeat) Beat(ctx context.Context, source model.SourceID) error { return nil }
 
-func (r *recordingHeartbeat) Fault(ctx context.Context, source model.SourceID, class model.ErrorClass) error {
+func (r *recordingHeartbeat) Fault(ctx context.Context, source model.SourceID, class model.ErrorClass, code messagecode.Code) error {
 	r.faultCalls++
 	r.faultClass = class
+	r.faultCode = code
 	return nil
 }
 
@@ -251,6 +254,39 @@ func TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes(t *testing.T) {
 	}
 }
 
+// TestClassifyRunFaultCodeBelongsToTheClass trägt: der Code des
+// Fehlerzustands ist der erste Code der Klasse, die die Vorrangfolge wählt,
+// nie der Code einer unterlegenen Klasse; ein Fehler ohne Code trägt den
+// Rückfall `internal`. Rot färbende Mutation: in `classifyRunFault` den Code
+// der ersten Kettenstelle statt des Codes der gewählten Klasse liefern — die
+// Fälle mit mehreren Klassen tragen den falschen Code.
+func TestClassifyRunFaultCodeBelongsToTheClass(t *testing.T) {
+	cases := []struct {
+		name  string
+		err   error
+		class model.ErrorClass
+		code  messagecode.Code
+	}{
+		{"einzelner Code", decode.ErrSchema, model.ErrorClassSchema, messagecode.DecodeUnreadable},
+		{"ohne Code", stderrors.New("überraschung"), model.ErrorClassInternal, messagecode.InternalFallback},
+		{"Klasse internal mit Code", outbound.ErrNotify, model.ErrorClassInternal, messagecode.NotifyFailed},
+		{"storage vor replication in der Kette", fmt.Errorf("%w: %w", outbound.ErrStorage, receive.ErrReplication), model.ErrorClassReplication, messagecode.ReplicationStreamFailed},
+		{"internal vor storage in der Kette", fmt.Errorf("%w: %w", outbound.ErrNotify, outbound.ErrStorage), model.ErrorClassStorage, messagecode.ChangeStoreFailed},
+		{"Join: permission vor schema", stderrors.Join(receive.ErrPermission, decode.ErrSchema), model.ErrorClassSchema, messagecode.DecodeUnreadable},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			class, code := classifyRunFault(tc.err)
+			if class != tc.class || code != tc.code {
+				t.Fatalf("classifyRunFault = %q, %q, wollen %q, %q", class, code, tc.class, tc.code)
+			}
+			if got := messagecode.ClassOf(code); string(got) != string(class) {
+				t.Fatalf("Code %q gehört zur Klasse %q, nicht zu %q", code, got, class)
+			}
+		})
+	}
+}
+
 // TestReportFaultWritesClassifiedFaultOnNonNilError belegt reportFault
 // (`LH-FA-ADM-003`): ein Lauf-Fehler erreicht den
 // Heartbeat-Port mit der klassifizierten Kategorie, ein regulärer
@@ -266,6 +302,9 @@ func TestReportFaultWritesClassifiedFaultOnNonNilError(t *testing.T) {
 	}
 	if rec.faultClass != model.ErrorClassSchema {
 		t.Fatalf("Fault-Klasse = %q, wollen %q", rec.faultClass, model.ErrorClassSchema)
+	}
+	if rec.faultCode != messagecode.DecodeUnreadable {
+		t.Fatalf("Fault-Code = %q, wollen %q", rec.faultCode, messagecode.DecodeUnreadable)
 	}
 
 	recNil := &recordingHeartbeat{}

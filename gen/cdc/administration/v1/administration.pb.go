@@ -1431,12 +1431,15 @@ func (x *ReadChangesResponse) GetChanges() []*ChangeRecord {
 
 // HeartbeatStatus mirrors the operational-status half of the diagnose report
 // (ADR-0132): known = false means no heartbeat has ever been written for the
-// source, in which case age_seconds/error_class carry no meaning.
+// source, in which case age_seconds/error_class/error_code carry no meaning.
+// error_code is the message code of the error state and empty in normal
+// operation (as error_class).
 type HeartbeatStatus struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Known         bool                   `protobuf:"varint,1,opt,name=known,proto3" json:"known,omitempty"`
 	AgeSeconds    float64                `protobuf:"fixed64,2,opt,name=age_seconds,json=ageSeconds,proto3" json:"age_seconds,omitempty"`
 	ErrorClass    string                 `protobuf:"bytes,3,opt,name=error_class,json=errorClass,proto3" json:"error_class,omitempty"`
+	ErrorCode     string                 `protobuf:"bytes,4,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1488,6 +1491,13 @@ func (x *HeartbeatStatus) GetAgeSeconds() float64 {
 func (x *HeartbeatStatus) GetErrorClass() string {
 	if x != nil {
 		return x.ErrorClass
+	}
+	return ""
+}
+
+func (x *HeartbeatStatus) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
 	}
 	return ""
 }
@@ -1991,13 +2001,15 @@ const file_cdc_administration_v1_administration_proto_rawDesc = "" +
 	"\fcommitted_at\x18\f \x01(\tR\vcommittedAt\x12\x16\n" +
 	"\x06origin\x18\r \x01(\tR\x06origin\"T\n" +
 	"\x13ReadChangesResponse\x12=\n" +
-	"\achanges\x18\x01 \x03(\v2#.cdc.administration.v1.ChangeRecordR\achanges\"i\n" +
+	"\achanges\x18\x01 \x03(\v2#.cdc.administration.v1.ChangeRecordR\achanges\"\x88\x01\n" +
 	"\x0fHeartbeatStatus\x12\x14\n" +
 	"\x05known\x18\x01 \x01(\bR\x05known\x12\x1f\n" +
 	"\vage_seconds\x18\x02 \x01(\x01R\n" +
 	"ageSeconds\x12\x1f\n" +
 	"\verror_class\x18\x03 \x01(\tR\n" +
-	"errorClass\"V\n" +
+	"errorClass\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x04 \x01(\tR\terrorCode\"V\n" +
 	"\vConsumerLag\x12\x1f\n" +
 	"\vconsumer_id\x18\x01 \x01(\tR\n" +
 	"consumerId\x12\x14\n" +

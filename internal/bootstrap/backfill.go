@@ -9,6 +9,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -106,7 +107,7 @@ func drainBackfillQueue(ctx context.Context, deps backfillWorkerDeps) (failed bo
 	for ctx.Err() == nil {
 		queued, err := deps.runs.Queued(ctx, deps.source)
 		if err != nil {
-			deps.log.Warn(ctx, "backfill: queued-Runs lesen fehlgeschlagen", "source", string(deps.source), "error", err)
+			deps.log.Warn(ctx, "backfill: queued-Runs lesen fehlgeschlagen", messagecode.LogKey, messagecode.WarnBackfillQueueRead, "source", string(deps.source), "error", err)
 			return true
 		}
 		if len(queued) == 0 {
@@ -114,14 +115,14 @@ func drainBackfillQueue(ctx context.Context, deps backfillWorkerDeps) (failed bo
 		}
 		run := queued[0]
 		if attempted[run.ID] {
-			deps.log.Warn(ctx, "backfill: Run nach seinem Versuch weiter queued — Durchgang endet", "run_id", run.ID, "table", run.QualifiedName())
+			deps.log.Warn(ctx, "backfill: Run nach seinem Versuch weiter queued — Durchgang endet", messagecode.LogKey, messagecode.WarnBackfillRunNotAdvance, "run_id", run.ID, "table", run.QualifiedName())
 			return true
 		}
 		attempted[run.ID] = true
 
 		result, err := deps.useCase.Execute(ctx, inbound.BackfillExecuteCommand{Run: run, Publication: deps.publication})
 		if err != nil {
-			deps.log.Warn(ctx, "backfill: Run nicht abgeschlossen festgehalten", "run_id", run.ID, "table", run.QualifiedName(), "error", err)
+			deps.log.Warn(ctx, "backfill: Run nicht abgeschlossen festgehalten", messagecode.LogKey, messagecode.WarnBackfillStateNotKept, "run_id", run.ID, "table", run.QualifiedName(), "error", err)
 			return true
 		}
 		logBackfillResult(ctx, deps.log, result.Run)
@@ -136,9 +137,9 @@ func logBackfillResult(ctx context.Context, log outbound.LogPort, run model.Back
 	case model.BackfillRunCompleted:
 		log.Info(ctx, "backfill: Run abgeschlossen", "run_id", run.ID, "table", run.QualifiedName(), "rows_copied", run.RowsCopied)
 	case model.BackfillRunFailed:
-		log.Warn(ctx, "backfill: Run fehlgeschlagen", "run_id", run.ID, "table", run.QualifiedName(), "error", run.ErrorMessage)
+		log.Warn(ctx, "backfill: Run fehlgeschlagen", messagecode.LogKey, messagecode.WarnBackfillRunFailed, "run_id", run.ID, "table", run.QualifiedName(), "error", run.ErrorMessage)
 	default:
-		log.Warn(ctx, "backfill: Run nicht abgeschlossen", "run_id", run.ID, "table", run.QualifiedName(), "status", run.Status)
+		log.Warn(ctx, "backfill: Run nicht abgeschlossen", messagecode.LogKey, messagecode.WarnBackfillRunInterrupt, "run_id", run.ID, "table", run.QualifiedName(), "status", run.Status)
 	}
 }
 
@@ -153,7 +154,7 @@ func reconcileBackfillRuns(ctx context.Context, runs outbound.BackfillRunPort, c
 		return err
 	}
 	if interrupted > 0 {
-		log.Warn(ctx, "backfill: laufende Runs beim Start auf interrupted gesetzt", "source", string(source), "runs", interrupted)
+		log.Warn(ctx, "backfill: laufende Runs beim Start auf interrupted gesetzt", messagecode.LogKey, messagecode.WarnBackfillRunInterrupt, "source", string(source), "runs", interrupted)
 	}
 	return nil
 }

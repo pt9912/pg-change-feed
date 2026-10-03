@@ -604,12 +604,14 @@ func TestReadChangesLeereTrefferlisteBleibtGesetzteListe(t *testing.T) {
 func TestDiagnoseRuftUseCaseMitDerQuelleAufUndUebersetztDenBericht(t *testing.T) {
 	age := 1.5
 	errorClass := "schema"
+	errorCode := "PCF-E4003"
 	lag := 3.0
 	backlog := int64(7)
 	estimated := int64(10)
 	fake := &fakeDiagnose{result: inbound.DiagnoseResult{
 		HeartbeatAgeSeconds: &age,
 		ErrorClass:          &errorClass,
+		ErrorCode:           &errorCode,
 		CaptureLag:          2.5,
 		ConsumerLags:        []inbound.ConsumerLag{{ConsumerID: "c-1", Lag: &lag}},
 		RetentionBlocker: &inbound.RetentionBlocker{
@@ -632,6 +634,9 @@ func TestDiagnoseRuftUseCaseMitDerQuelleAufUndUebersetztDenBericht(t *testing.T)
 	}
 	if !resp.GetHeartbeat().GetKnown() || resp.GetHeartbeat().GetAgeSeconds() != age || resp.GetHeartbeat().GetErrorClass() != errorClass {
 		t.Fatalf("Heartbeat = %+v", resp.GetHeartbeat())
+	}
+	if resp.GetHeartbeat().GetErrorCode() != errorCode {
+		t.Fatalf("Heartbeat.ErrorCode = %q, wollen %q", resp.GetHeartbeat().GetErrorCode(), errorCode)
 	}
 	if resp.GetCaptureLag() != 2.5 {
 		t.Fatalf("CaptureLag = %v, wollen 2.5", resp.GetCaptureLag())

@@ -272,12 +272,12 @@ DELETE FROM cdc.consumer WHERE consumer_id = $1`
 // Speicherseite trägt den Zeitstempel (`current_timestamp`) — der
 // Aufrufer übergibt keine Uhr. Eine bestehende Zeile aktualisiert ihren
 // Zeitstempel; je Quelle bleibt genau eine Zeile. Ein erfolgreicher Beat
-// löscht einen zuvor gemeldeten Fehlerzustand (`error_class`) wieder —
-// der Fehlerzustand endet dadurch selbst erkennbar.
+// löscht einen zuvor gemeldeten Fehlerzustand (`error_class` und
+// `error_code`) wieder — der Fehlerzustand endet dadurch selbst erkennbar.
 const UpsertHeartbeat = `
-INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class)
-VALUES ($1, current_timestamp, NULL)
-ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_class = NULL`
+INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class, error_code)
+VALUES ($1, current_timestamp, NULL, NULL)
+ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_class = NULL, error_code = NULL`
 
 // InsertTableSchemaColumn persistiert eine Spalten-Zeile einer
 // TableSchema-Version (`ADR-0015` Folgepflicht) — eine Zeile
@@ -312,14 +312,14 @@ const CountTableSchemaColumns = `
 SELECT count(*) FROM cdc.table_schema WHERE schema_version_id = $1`
 
 // UpsertHeartbeatFault trägt den zuletzt beobachteten Fehlerzustand der
-// Quelle fort (`cdc.process_heartbeat.error_class`, `LH-FA-ADM-003`):
-// dieselbe Zeile wie UpsertHeartbeat,
+// Quelle fort (`cdc.process_heartbeat.error_class` und `error_code`,
+// `LH-FA-ADM-003`): dieselbe Zeile wie UpsertHeartbeat,
 // derselbe fortlaufende Zeitstempel — ein Fehlerzustand ist ein
-// Lebenszeichen mit Klasse, keine zweite Tabelle.
+// Lebenszeichen mit Klasse und Meldungscode, keine zweite Tabelle.
 const UpsertHeartbeatFault = `
-INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class)
-VALUES ($1, current_timestamp, $2)
-ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_class = EXCLUDED.error_class`
+INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class, error_code)
+VALUES ($1, current_timestamp, $2, $3)
+ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_class = EXCLUDED.error_class, error_code = EXCLUDED.error_code`
 
 // SelectPendingAdministrationRequests liest die offenen Anträge der
 // Antrags-Queue (`cdc.administration_request`, `LH-FA-ADM-001`) in
@@ -542,11 +542,11 @@ INSERT INTO cdc.change
     (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version, origin, route_target)
 VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, $10)`
 
-// SelectDiagnosticsHeartbeat liest Alter und Fehlerzustand des letzten
-// Lebenszeichens der Quelle (`ADR-0132`, mechanisch aus dem bisherigen
-// CLI-Sondermodus übernommen); die Abwesenheit einer Zeile bedeutet „kein
-// Lebenszeichen — Instanz hat noch nie geschlagen".
-const SelectDiagnosticsHeartbeat = `SELECT age_seconds, error_class FROM cdc.heartbeat WHERE source_id = $1`
+// SelectDiagnosticsHeartbeat liest Alter und Fehlerzustand (Klasse und
+// Meldungscode) des letzten Lebenszeichens der Quelle (`ADR-0132`); die
+// Abwesenheit einer Zeile bedeutet „kein Lebenszeichen — Instanz hat noch
+// nie geschlagen".
+const SelectDiagnosticsHeartbeat = `SELECT age_seconds, error_class, error_code FROM cdc.heartbeat WHERE source_id = $1`
 
 // SelectDiagnosticsCaptureLag liest den quellenweiten CDC-Abstand
 // (`ADR-0132`).

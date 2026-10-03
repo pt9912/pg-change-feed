@@ -112,6 +112,49 @@ const (
 	RejectedRunActive          Code = "PCF-E8041"
 )
 
+// Warnungen tragen keine Fehlerklasse; die erste Ziffer ist der Bereich:
+// 1 Erfassung und Replikation, 2 Backfill, 3 Retention und Speicher,
+// 4 Verwaltung (Anträge, Regeln), 5 Konfiguration und Start, 9 reserviert.
+// Eine Warnung trägt den Code als Log-Attribut `code`.
+
+// Bereich 1, Erfassung und Replikation.
+const (
+	WarnNotifyFailed       Code = "PCF-W1001"
+	WarnStreamPublish      Code = "PCF-W1002"
+	WarnStreamNameSkipped  Code = "PCF-W1003"
+	WarnStreamTargetName   Code = "PCF-W1004"
+	WarnChangeNotEncodable Code = "PCF-W1005"
+	WarnStreamCycleRetry   Code = "PCF-W1006"
+)
+
+// Bereich 2, Backfill.
+const (
+	WarnBackfillCleanup       Code = "PCF-W2001"
+	WarnBackfillQueueRead     Code = "PCF-W2002"
+	WarnBackfillRunNotAdvance Code = "PCF-W2003"
+	WarnBackfillStateNotKept  Code = "PCF-W2004"
+	WarnBackfillRunFailed     Code = "PCF-W2005"
+	WarnBackfillRunInterrupt  Code = "PCF-W2006"
+)
+
+// Bereich 3, Retention und Speicher.
+const (
+	WarnWALMeasureFailed Code = "PCF-W3001"
+	WarnWALOverWarn      Code = "PCF-W3002"
+	WarnRetentionFailed  Code = "PCF-W3003"
+)
+
+// Bereich 4, Verwaltung.
+const (
+	WarnAdminWakeDisturbed   Code = "PCF-W4001"
+	WarnAdminRequestsRead    Code = "PCF-W4002"
+	WarnAdminPreflightExpiry Code = "PCF-W4003"
+	WarnAdminRequestFailed   Code = "PCF-W4004"
+	WarnAdminRequestRejected Code = "PCF-W4005"
+	WarnAdminOutcomeNotKept  Code = "PCF-W4006"
+	WarnAdminRowWithoutID    Code = "PCF-W4007"
+)
+
 // Table führt jeden vergebenen Code genau einmal; die Klasse eines Eintrags
 // ist die der ersten Ziffer (`Entry.Class`, geprüft im Test des Pakets).
 var Table = []Entry{
@@ -188,4 +231,30 @@ var Table = []Entry{
 	{RejectedColumnHasCondition, ClassNone, StatusActive},
 	{RejectedNotActivated, ClassNone, StatusActive},
 	{RejectedRunActive, ClassNone, StatusActive},
+
+	{WarnNotifyFailed, ClassNone, StatusActive},
+	{WarnStreamPublish, ClassNone, StatusActive},
+	{WarnStreamNameSkipped, ClassNone, StatusActive},
+	{WarnStreamTargetName, ClassNone, StatusActive},
+	{WarnChangeNotEncodable, ClassNone, StatusActive},
+	{WarnStreamCycleRetry, ClassNone, StatusActive},
+
+	{WarnBackfillCleanup, ClassNone, StatusActive},
+	{WarnBackfillQueueRead, ClassNone, StatusActive},
+	{WarnBackfillRunNotAdvance, ClassNone, StatusActive},
+	{WarnBackfillStateNotKept, ClassNone, StatusActive},
+	{WarnBackfillRunFailed, ClassNone, StatusActive},
+	{WarnBackfillRunInterrupt, ClassNone, StatusActive},
+
+	{WarnWALMeasureFailed, ClassNone, StatusActive},
+	{WarnWALOverWarn, ClassNone, StatusActive},
+	{WarnRetentionFailed, ClassNone, StatusActive},
+
+	{WarnAdminWakeDisturbed, ClassNone, StatusActive},
+	{WarnAdminRequestsRead, ClassNone, StatusActive},
+	{WarnAdminPreflightExpiry, ClassNone, StatusActive},
+	{WarnAdminRequestFailed, ClassNone, StatusActive},
+	{WarnAdminRequestRejected, ClassNone, StatusActive},
+	{WarnAdminOutcomeNotKept, ClassNone, StatusActive},
+	{WarnAdminRowWithoutID, ClassNone, StatusActive},
 }

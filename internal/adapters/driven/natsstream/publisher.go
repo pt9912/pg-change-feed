@@ -24,6 +24,7 @@ import (
 	"github.com/nats-io/nats.go"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -238,7 +239,7 @@ func routeSubjectFor(sourceID string, target model.RouteTarget) string {
 func (p *Publisher) publish(ctx context.Context, change *model.Change) {
 	payload, err := json.Marshal(toStreamMessage(change))
 	if err != nil {
-		p.log.Warn(ctx, "natsstream: Change nicht kodierbar — Publish übersprungen", "error", err)
+		p.log.Warn(ctx, "natsstream: Change nicht kodierbar — Publish übersprungen", messagecode.LogKey, messagecode.WarnChangeNotEncodable, "error", err)
 		return
 	}
 	if subject, ok := p.tableSubject(ctx, change); ok {
@@ -257,12 +258,12 @@ func (p *Publisher) publish(ctx context.Context, change *model.Change) {
 func (p *Publisher) tableSubject(ctx context.Context, change *model.Change) (string, bool) {
 	if change.Schema == "" || change.Table == "" {
 		p.log.Warn(ctx, "natsstream: Schema oder Tabelle leer — Publish übersprungen",
-			"schema", change.Schema, "table", change.Table)
+			messagecode.LogKey, messagecode.WarnStreamNameSkipped, "schema", change.Schema, "table", change.Table)
 		return "", false
 	}
 	if containsReservedSubjectToken(change.Schema) || containsReservedSubjectToken(change.Table) {
 		p.log.Warn(ctx, "natsstream: Schema/Tabelle trägt ein NATS-reserviertes Zeichen (.,*,>) oder Whitespace — Publish übersprungen",
-			"schema", change.Schema, "table", change.Table)
+			messagecode.LogKey, messagecode.WarnStreamNameSkipped, "schema", change.Schema, "table", change.Table)
 		return "", false
 	}
 	return subjectFor(p.sourceID, change.Schema, change.Table), true
@@ -275,7 +276,7 @@ func (p *Publisher) tableSubject(ctx context.Context, change *model.Change) (str
 func (p *Publisher) routeSubject(ctx context.Context, change *model.Change) (string, bool) {
 	if containsReservedSubjectToken(string(change.RouteTarget)) {
 		p.log.Warn(ctx, "natsstream: Zielname trägt ein NATS-reserviertes Zeichen (.,*,>) oder Whitespace — Publish übersprungen",
-			"target", string(change.RouteTarget))
+			messagecode.LogKey, messagecode.WarnStreamTargetName, "target", string(change.RouteTarget))
 		return "", false
 	}
 	return routeSubjectFor(p.sourceID, change.RouteTarget), true
@@ -285,7 +286,7 @@ func (p *Publisher) routeSubject(ctx context.Context, change *model.Change) (str
 // lokal (Warnung im Log).
 func (p *Publisher) send(ctx context.Context, subject string, payload []byte, change *model.Change) {
 	if err := p.conn.Publish(subject, payload); err != nil {
-		p.log.Warn(ctx, "natsstream: Publish fehlgeschlagen", "error", err, "subject", subject)
+		p.log.Warn(ctx, "natsstream: Publish fehlgeschlagen", messagecode.LogKey, messagecode.WarnStreamPublish, "error", err, "subject", subject)
 		return
 	}
 	p.log.Debug(ctx, "natsstream: Change publiziert", "subject", subject, "change_id", change.ID)

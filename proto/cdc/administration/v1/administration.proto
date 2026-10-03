@@ -162,11 +162,14 @@ message ReadChangesResponse {
 
 // HeartbeatStatus mirrors the operational-status half of the diagnose report
 // (ADR-0132): known = false means no heartbeat has ever been written for the
-// source, in which case age_seconds/error_class carry no meaning.
+// source, in which case age_seconds/error_class/error_code carry no meaning.
+// error_code is the message code of the error state and empty in normal
+// operation (as error_class).
 message HeartbeatStatus {
   bool known = 1;
   double age_seconds = 2;
   string error_class = 3;
+  string error_code = 4;
 }
 
 // ConsumerLag mirrors one row of the per-consumer processing lag report

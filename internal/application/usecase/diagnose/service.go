@@ -82,6 +82,7 @@ func toDiagnoseResult(snapshot outbound.DiagnosticsSnapshot) DiagnoseResult {
 	return DiagnoseResult{
 		HeartbeatAgeSeconds: snapshot.HeartbeatAgeSeconds,
 		ErrorClass:          snapshot.ErrorClass,
+		ErrorCode:           snapshot.ErrorCode,
 		CaptureLag:          snapshot.CaptureLag,
 		ConsumerLags:        consumerLags,
 		RetentionBlocker:    blocker,

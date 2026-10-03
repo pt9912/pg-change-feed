@@ -18,12 +18,20 @@
 -- zuletzt beobachteten Fehlerzustand derselben Zeile — NULL ist
 -- Normalbetrieb und von einer der sieben Kategorien
 -- unterscheidbar, kein eigenes Fehler-Log.
+--
+-- error_code projiziert den Meldungscode desselben Fehlerzustands. Die Spalte
+-- steht hinter age_seconds: CREATE OR REPLACE VIEW erlaubt nur angehängte
+-- Spalten, deshalb ändert die Signatur bestehende Spaltennamen und -reihenfolge
+-- nicht und kein DROP VIEW geht dem Rollout voraus. Der Code gilt nur neben
+-- einer Klasse: ein Beat eines Servers ohne error_code löscht nur error_class,
+-- die Sicht zeigt dann keinen Code ohne Klasse.
 CREATE OR REPLACE VIEW cdc.heartbeat AS
 SELECT
     source_id,
     heartbeat_at,
     error_class,
-    extract(epoch FROM (now() - heartbeat_at))::numeric AS age_seconds
+    extract(epoch FROM (now() - heartbeat_at))::numeric AS age_seconds,
+    CASE WHEN error_class IS NULL THEN NULL ELSE error_code END AS error_code
 FROM cdc.process_heartbeat;
 
 GRANT SELECT ON cdc.heartbeat TO cdc_reader;

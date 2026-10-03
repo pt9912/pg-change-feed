@@ -124,7 +124,7 @@ func TestDiagnosticsReadNormalOperation(t *testing.T) {
 		t.Fatalf("Consumer-Position-Zeile: %v", err)
 	}
 	if _, err := pool.Exec(ctx,
-		"INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class) VALUES ($1, current_timestamp, 'schema')",
+		"INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class, error_code) VALUES ($1, current_timestamp, 'schema', 'PCF-E4003')",
 		diagnosticsTestSource,
 	); err != nil {
 		t.Fatalf("Lebenszeichen-Zeile: %v", err)
@@ -151,6 +151,9 @@ func TestDiagnosticsReadNormalOperation(t *testing.T) {
 	}
 	if snapshot.ErrorClass == nil || *snapshot.ErrorClass != "schema" {
 		t.Fatalf("ErrorClass = %v, wollen \"schema\"", snapshot.ErrorClass)
+	}
+	if snapshot.ErrorCode == nil || *snapshot.ErrorCode != "PCF-E4003" {
+		t.Fatalf("ErrorCode = %v, wollen \"PCF-E4003\"", snapshot.ErrorCode)
 	}
 	if snapshot.CaptureLag < 0 {
 		t.Fatalf("CaptureLag = %v, wollen einen nichtnegativen Wert", snapshot.CaptureLag)

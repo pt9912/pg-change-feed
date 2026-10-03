@@ -12,6 +12,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -197,23 +198,75 @@ func TestHeartbeatViewProjectsAge(t *testing.T) {
 
 // TestFaultWritesErrorClass belegt den Happy Path (`LH-FA-ADM-003`):
 // der Fehlerzustand landet in derselben Zeile wie das
-// Lebenszeichen, unterscheidbar vom Normalbetrieb (NULL).
+// Lebenszeichen, unterscheidbar vom Normalbetrieb (NULL); Klasse und
+// Meldungscode stehen in ihren Spalten. Färbt rot, sobald `Fault` den Code
+// nicht schreibt.
 func TestFaultWritesErrorClass(t *testing.T) {
 	adapter, pool := newTestHeartbeat(t)
 	ctx := context.Background()
 
-	if err := adapter.Fault(ctx, heartbeatTestSource, model.ErrorClassStorage); err != nil {
+	if err := adapter.Fault(ctx, heartbeatTestSource, model.ErrorClassStorage, messagecode.ChangeStoreFailed); err != nil {
 		t.Fatalf("Fault: %v", err)
 	}
 
-	var errorClass *string
+	var errorClass, errorCode *string
 	if err := pool.QueryRow(ctx,
-		"SELECT error_class FROM cdc.process_heartbeat WHERE source_id = $1", heartbeatTestSource,
-	).Scan(&errorClass); err != nil {
+		"SELECT error_class, error_code FROM cdc.process_heartbeat WHERE source_id = $1", heartbeatTestSource,
+	).Scan(&errorClass, &errorCode); err != nil {
 		t.Fatalf("process_heartbeat-Lesen: %v", err)
 	}
 	if errorClass == nil || *errorClass != string(model.ErrorClassStorage) {
 		t.Fatalf("error_class = %v, wollen %q", errorClass, model.ErrorClassStorage)
+	}
+	if errorCode == nil || *errorCode != string(messagecode.ChangeStoreFailed) {
+		t.Fatalf("error_code = %v, wollen %q", errorCode, messagecode.ChangeStoreFailed)
+	}
+}
+
+// TestFaultLogsTheCodeOfTheFaultState trägt die Log-Zeile des gemeldeten
+// Fehlerzustands: sie nennt den Code des Zustands im Attribut `code`. Rot
+// färbende Mutation: das Attribut aus dem `Warn`-Aufruf in `Fault` streichen
+// oder die Klasse statt des Codes eintragen.
+func TestFaultLogsTheCodeOfTheFaultState(t *testing.T) {
+	newTestHeartbeat(t)
+	ctx := context.Background()
+	log := &infoRecorder{}
+	adapter, err := postgresstorage.NewHeartbeat(ctx, os.Getenv("CDC_STORE_TEST_DSN"), postgresstorage.WithLog(log))
+	if err != nil {
+		t.Fatalf("NewHeartbeat: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+
+	if err := adapter.Fault(ctx, heartbeatTestSource, model.ErrorClassSchema, messagecode.TruncateUnsupported); err != nil {
+		t.Fatalf("Fault: %v", err)
+	}
+	log.mu.Lock()
+	defer log.mu.Unlock()
+	if len(log.warnCodes) != 1 || log.warnCodes[0] != string(messagecode.TruncateUnsupported) {
+		t.Fatalf("Attribut code der Warnungen = %q, erwartet genau %q", log.warnCodes, messagecode.TruncateUnsupported)
+	}
+}
+
+// TestFaultRejectsCodeOfAnotherClass trägt die Port-Grenze für den Code: ein
+// Code außerhalb der Tabelle, eine Ablehnung und ein Code einer anderen Klasse
+// erreichen keinen SQL-Aufruf; die Zeile bleibt ohne Fehlerzustand.
+func TestFaultRejectsCodeOfAnotherClass(t *testing.T) {
+	adapter, pool := newTestHeartbeat(t)
+	ctx := context.Background()
+
+	for _, bad := range []messagecode.Code{"PCF-E9999", messagecode.RejectedSourceEmpty, messagecode.DecodeUnreadable, messagecode.WarnNotifyFailed} {
+		if err := adapter.Fault(ctx, heartbeatTestSource, model.ErrorClassStorage, bad); !stderrors.Is(err, domainerrors.ErrInvalidErrorClass) {
+			t.Errorf("Fault(storage, %q) = %v, wollen %v", bad, err, domainerrors.ErrInvalidErrorClass)
+		}
+	}
+	var rows int
+	if err := pool.QueryRow(ctx,
+		"SELECT count(*) FROM cdc.process_heartbeat WHERE source_id = $1", heartbeatTestSource,
+	).Scan(&rows); err != nil {
+		t.Fatalf("process_heartbeat-Lesen: %v", err)
+	}
+	if rows != 0 {
+		t.Fatalf("process_heartbeat trägt %d Zeilen nach abgewiesenen Fault-Aufrufen, wollen 0", rows)
 	}
 }
 
@@ -224,21 +277,24 @@ func TestBeatClearsPriorFault(t *testing.T) {
 	adapter, pool := newTestHeartbeat(t)
 	ctx := context.Background()
 
-	if err := adapter.Fault(ctx, heartbeatTestSource, model.ErrorClassReplication); err != nil {
+	if err := adapter.Fault(ctx, heartbeatTestSource, model.ErrorClassReplication, messagecode.ReplicationStreamFailed); err != nil {
 		t.Fatalf("Fault: %v", err)
 	}
 	if err := adapter.Beat(ctx, heartbeatTestSource); err != nil {
 		t.Fatalf("Beat: %v", err)
 	}
 
-	var errorClass *string
+	var errorClass, errorCode *string
 	if err := pool.QueryRow(ctx,
-		"SELECT error_class FROM cdc.process_heartbeat WHERE source_id = $1", heartbeatTestSource,
-	).Scan(&errorClass); err != nil {
+		"SELECT error_class, error_code FROM cdc.process_heartbeat WHERE source_id = $1", heartbeatTestSource,
+	).Scan(&errorClass, &errorCode); err != nil {
 		t.Fatalf("process_heartbeat-Lesen: %v", err)
 	}
 	if errorClass != nil {
 		t.Fatalf("error_class = %q nach Beat, wollen NULL (Fehlerzustand endet erkennbar)", *errorClass)
+	}
+	if errorCode != nil {
+		t.Fatalf("error_code = %q nach Beat, wollen NULL (Fehlerzustand endet erkennbar)", *errorCode)
 	}
 }
 
@@ -247,7 +303,7 @@ func TestBeatClearsPriorFault(t *testing.T) {
 func TestFaultRejectsEmptySource(t *testing.T) {
 	adapter, _ := newTestHeartbeat(t)
 
-	if err := adapter.Fault(context.Background(), "", model.ErrorClassInternal); !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
+	if err := adapter.Fault(context.Background(), "", model.ErrorClassInternal, messagecode.InternalFallback); !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
 		t.Fatalf("Fault(\"\", …) = %v, wollen %v", err, domainerrors.ErrEmptyIdentifier)
 	}
 }
@@ -259,42 +315,74 @@ func TestFaultRejectsEmptySource(t *testing.T) {
 func TestFaultRejectsUnknownClass(t *testing.T) {
 	adapter, _ := newTestHeartbeat(t)
 
-	if err := adapter.Fault(context.Background(), heartbeatTestSource, model.ErrorClass("unbekannt")); !stderrors.Is(err, domainerrors.ErrInvalidErrorClass) {
+	if err := adapter.Fault(context.Background(), heartbeatTestSource, model.ErrorClass("unbekannt"), messagecode.InternalFallback); !stderrors.Is(err, domainerrors.ErrInvalidErrorClass) {
 		t.Fatalf("Fault(…, \"unbekannt\") = %v, wollen %v", err, domainerrors.ErrInvalidErrorClass)
 	}
 }
 
 // TestHeartbeatViewProjectsErrorClass belegt die Lese-Seite
 // (`cdc.heartbeat`, `LH-FA-ADM-003`): die View projiziert den
-// Fehlerzustand ungefiltert, NULL bleibt NULL.
+// Fehlerzustand ungefiltert, NULL bleibt NULL; `error_code` folgt der Klasse.
 func TestHeartbeatViewProjectsErrorClass(t *testing.T) {
 	adapter, pool := newTestHeartbeat(t)
 	ctx := context.Background()
 
-	if err := adapter.Fault(ctx, heartbeatTestSource, model.ErrorClassPermission); err != nil {
+	if err := adapter.Fault(ctx, heartbeatTestSource, model.ErrorClassPermission, messagecode.ReplicationPermission); err != nil {
 		t.Fatalf("Fault: %v", err)
 	}
 
-	var errorClass *string
+	var errorClass, errorCode *string
 	if err := pool.QueryRow(ctx,
-		"SELECT error_class FROM cdc.heartbeat WHERE source_id = $1", heartbeatTestSource,
-	).Scan(&errorClass); err != nil {
+		"SELECT error_class, error_code FROM cdc.heartbeat WHERE source_id = $1", heartbeatTestSource,
+	).Scan(&errorClass, &errorCode); err != nil {
 		t.Fatalf("cdc.heartbeat-Lesen: %v", err)
 	}
 	if errorClass == nil || *errorClass != string(model.ErrorClassPermission) {
 		t.Fatalf("cdc.heartbeat.error_class = %v, wollen %q", errorClass, model.ErrorClassPermission)
+	}
+	if errorCode == nil || *errorCode != string(messagecode.ReplicationPermission) {
+		t.Fatalf("cdc.heartbeat.error_code = %v, wollen %q", errorCode, messagecode.ReplicationPermission)
 	}
 
 	if err := adapter.Beat(ctx, heartbeatTestSource); err != nil {
 		t.Fatalf("Beat: %v", err)
 	}
 	if err := pool.QueryRow(ctx,
-		"SELECT error_class FROM cdc.heartbeat WHERE source_id = $1", heartbeatTestSource,
-	).Scan(&errorClass); err != nil {
+		"SELECT error_class, error_code FROM cdc.heartbeat WHERE source_id = $1", heartbeatTestSource,
+	).Scan(&errorClass, &errorCode); err != nil {
 		t.Fatalf("cdc.heartbeat-Lesen nach Beat: %v", err)
 	}
-	if errorClass != nil {
-		t.Fatalf("cdc.heartbeat.error_class = %q nach Beat, wollen NULL", *errorClass)
+	if errorClass != nil || errorCode != nil {
+		t.Fatalf("cdc.heartbeat nach Beat: error_class=%v error_code=%v, wollen NULL und NULL", errorClass, errorCode)
+	}
+}
+
+// TestHeartbeatViewHidesCodeWithoutClass trägt die Leser-Zusage für einen
+// Schreiber ohne `error_code`: löscht er nur `error_class` (Beat eines älteren
+// Servers), zeigt die View keinen Code neben NULL. Färbt rot, sobald die View
+// `error_code` ungefiltert projiziert.
+func TestHeartbeatViewHidesCodeWithoutClass(t *testing.T) {
+	adapter, pool := newTestHeartbeat(t)
+	ctx := context.Background()
+
+	if err := adapter.Fault(ctx, heartbeatTestSource, model.ErrorClassSchema, messagecode.SchemaChangeIncompatible); err != nil {
+		t.Fatalf("Fault: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		"UPDATE cdc.process_heartbeat SET heartbeat_at = current_timestamp, error_class = NULL WHERE source_id = $1",
+		heartbeatTestSource,
+	); err != nil {
+		t.Fatalf("Beat ohne error_code: %v", err)
+	}
+
+	var errorClass, errorCode *string
+	if err := pool.QueryRow(ctx,
+		"SELECT error_class, error_code FROM cdc.heartbeat WHERE source_id = $1", heartbeatTestSource,
+	).Scan(&errorClass, &errorCode); err != nil {
+		t.Fatalf("cdc.heartbeat-Lesen: %v", err)
+	}
+	if errorClass != nil || errorCode != nil {
+		t.Fatalf("cdc.heartbeat: error_class=%v error_code=%v, wollen NULL und NULL", errorClass, errorCode)
 	}
 }
 

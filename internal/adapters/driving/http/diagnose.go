@@ -56,6 +56,7 @@ type diagnoseBackfillTableResponse struct {
 type diagnoseResponse struct {
 	HeartbeatAgeSeconds *float64                          `json:"heartbeat_age_seconds"`
 	ErrorClass          *string                           `json:"error_class"`
+	ErrorCode           *string                           `json:"error_code"`
 	CaptureLag          float64                           `json:"capture_lag"`
 	ConsumerLags        []diagnoseConsumerLagResponse     `json:"consumer_lags"`
 	RetentionBlocker    *diagnoseRetentionBlockerResponse `json:"retention_blocker"`
@@ -94,6 +95,7 @@ func toDiagnoseResponse(result inbound.DiagnoseResult) diagnoseResponse {
 	return diagnoseResponse{
 		HeartbeatAgeSeconds: result.HeartbeatAgeSeconds,
 		ErrorClass:          result.ErrorClass,
+		ErrorCode:           result.ErrorCode,
 		CaptureLag:          result.CaptureLag,
 		ConsumerLags:        consumerLags,
 		RetentionBlocker:    blocker,

@@ -19,8 +19,8 @@ func diagnose(client administrationv1.AdministrationClient, cfg config) (string,
 		return "", err
 	}
 
-	lines := []string{fmt.Sprintf("grpc-client: heartbeat_known=%v heartbeat_age_seconds=%f heartbeat_error_class=%s capture_lag=%f storage_bytes=%f",
-		resp.GetHeartbeat().GetKnown(), resp.GetHeartbeat().GetAgeSeconds(), resp.GetHeartbeat().GetErrorClass(),
+	lines := []string{fmt.Sprintf("grpc-client: heartbeat_known=%v heartbeat_age_seconds=%f heartbeat_error_class=%s heartbeat_error_code=%s capture_lag=%f storage_bytes=%f",
+		resp.GetHeartbeat().GetKnown(), resp.GetHeartbeat().GetAgeSeconds(), resp.GetHeartbeat().GetErrorClass(), resp.GetHeartbeat().GetErrorCode(),
 		resp.GetCaptureLag(), resp.GetStorageBytes())}
 
 	for _, cl := range resp.GetConsumerLags() {

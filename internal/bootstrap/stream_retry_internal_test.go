@@ -12,6 +12,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/receive"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -266,6 +267,9 @@ func TestRunStreamWithRetrySichtbarkeit(t *testing.T) {
 		}
 		if got := w.attr("warteschritt"); got != sleeper.waits[i] {
 			t.Errorf("WARN %d: warteschritt = %v, erwartet %v", i, got, sleeper.waits[i])
+		}
+		if got := w.attr(messagecode.LogKey); got != messagecode.WarnStreamCycleRetry {
+			t.Fatalf("WARN %d: Attribut code = %v, erwartet %v", i, got, messagecode.WarnStreamCycleRetry)
 		}
 		if w.attr("error") == nil {
 			t.Errorf("WARN %d: Fehlertext fehlt", i)

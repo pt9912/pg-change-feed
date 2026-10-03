@@ -13,6 +13,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/capture"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -811,6 +812,13 @@ func TestCaptureLoggtFehlschlaegeUeberDenInjiziertenPort(t *testing.T) {
 	}
 	if !strings.Contains(log.warnings[1], "Stream-Publish fehlgeschlagen") || !strings.Contains(log.warnings[1], "t-1-1") {
 		t.Fatalf("Stream-Warnzeile = %q, wollen Nachricht und Change-Kennung", log.warnings[1])
+	}
+	// Das Attribut `code` steht als Paar `code <Code>` in der Aufzeichnung.
+	if want := "code " + string(messagecode.WarnNotifyFailed); !strings.Contains(log.warnings[0], want) {
+		t.Fatalf("Wecksignal-Warnzeile = %q, wollen das Attribut %q", log.warnings[0], want)
+	}
+	if want := "code " + string(messagecode.WarnStreamPublish); !strings.Contains(log.warnings[1], want) {
+		t.Fatalf("Stream-Warnzeile = %q, wollen das Attribut %q", log.warnings[1], want)
 	}
 }
 

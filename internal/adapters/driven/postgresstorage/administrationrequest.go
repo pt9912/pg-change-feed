@@ -12,6 +12,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/sqlexec"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -104,7 +105,7 @@ func (a *AdministrationRequestAdapter) MarkFailed(ctx context.Context, id model.
 	if _, err := a.db.Exec(ctx, queries.UpdateAdministrationRequestFailed, string(id), message); err != nil {
 		return administrationStorageFailure(ctx, a.log, err)
 	}
-	a.log.Warn(ctx, "administrationrequest: Antrag gescheitert", "request_id", id, "error", message)
+	a.log.Warn(ctx, "administrationrequest: Antrag gescheitert", messagecode.LogKey, messagecode.WarnAdminRequestFailed, "request_id", id, "error", message)
 	return nil
 }
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 )
 
 // Whitebox-Test (`package bootstrap`, nicht `bootstrap_test`): der
@@ -135,7 +136,13 @@ type recordingLog struct {
 	errs     int
 	infos    int
 	messages []string
+	// warnCodes trägt je Warnung die Nachricht und den Wert des Attributs
+	// `code` (leer, wenn keins).
+	warnCodes []warnCode
 }
+
+// warnCode ist eine aufgezeichnete Warnung mit dem Wert ihres Attributs `code`.
+type warnCode struct{ msg, code string }
 
 func (r *recordingLog) Debug(ctx context.Context, msg string, args ...any) {}
 func (r *recordingLog) Info(ctx context.Context, msg string, args ...any) {
@@ -149,6 +156,31 @@ func (r *recordingLog) Warn(ctx context.Context, msg string, args ...any) {
 	defer r.mu.Unlock()
 	r.warns++
 	r.messages = append(r.messages, "WARN: "+msg)
+	code := ""
+	for i := 0; i+1 < len(args); i += 2 {
+		if args[i] == messagecode.LogKey {
+			code = fmt.Sprint(args[i+1])
+		}
+	}
+	r.warnCodes = append(r.warnCodes, warnCode{msg, code})
+}
+
+// requireWarnCode verlangt, dass die erste Warnung mit dem Fragment in der
+// Nachricht den Code im Attribut `code` trägt; eine fehlende Warnung oder ein
+// anderer Code färbt den Aufrufer rot.
+func (r *recordingLog) requireWarnCode(t *testing.T, fragment string, want messagecode.Code) {
+	t.Helper()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, entry := range r.warnCodes {
+		if strings.Contains(entry.msg, fragment) {
+			if entry.code != string(want) {
+				t.Fatalf("Warnung %q: Attribut code = %q, wollen %q", entry.msg, entry.code, want)
+			}
+			return
+		}
+	}
+	t.Fatalf("keine Warnung mit %q im Log (wollen Code %q): %v", fragment, want, r.messages)
 }
 func (r *recordingLog) Error(ctx context.Context, msg string, args ...any) {
 	r.mu.Lock()
@@ -216,6 +248,7 @@ func TestRunWALRetentionCheckContinuesBelowAndAtWarnLevel(t *testing.T) {
 	if err := fault.get(); err != nil {
 		t.Fatalf("fault = %v, wollen nil (Warnschwelle bricht nicht ab)", err)
 	}
+	log.requireWarnCode(t, "über Warnschwelle", messagecode.WarnWALOverWarn)
 	cancel()
 	<-done
 }

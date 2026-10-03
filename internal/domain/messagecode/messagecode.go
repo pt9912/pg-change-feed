@@ -2,8 +2,9 @@
 // Kennung `PCF-<S><NNNN>` je Fehler- und Ablehnungsursache, feiner als die
 // Fehlerklasse. Die Schwere `S` ist `E` (Fehler), `W` (Warnung) oder `I`
 // (Information, reserviert); bei Fehlern ist die erste Ziffer die
-// Fehlerklasse, `8` die Ablehnung einer Aufrufer-Eingabe. Die Tabelle
-// (`codes.go`) ist die Quelle der Wahrheit.
+// Fehlerklasse, `8` die Ablehnung einer Aufrufer-Eingabe; bei Warnungen
+// (`W`) ist sie der Bereich (`Area`). Die Tabelle (`codes.go`) ist die Quelle
+// der Wahrheit.
 package messagecode
 
 import (
@@ -83,6 +84,20 @@ func DigitClass(c Code) (Class, bool) {
 	default:
 		return ClassNone, false
 	}
+}
+
+// LogKey ist der Name des Log-Attributs, das den Code einer Warnung trägt.
+const LogKey = "code"
+
+// Area liest den Bereich aus der ersten Ziffer eines Warncodes (`W`):
+// 1 Erfassung und Replikation, 2 Backfill, 3 Retention und Speicher,
+// 4 Verwaltung, 5 Konfiguration und Start. Ein anderer Code und der
+// reservierte Bereich 9 liefern `false`.
+func Area(c Code) (int, bool) {
+	if !Valid(c) || c[4] != 'W' || c[5] < '1' || c[5] > '5' {
+		return 0, false
+	}
+	return int(c[5] - '0'), true
 }
 
 // Lookup liefert die Tabellenzeile eines Codes.
