@@ -309,7 +309,7 @@ berührt keinen Workflow (`git diff --name-only f9ece5ab HEAD -- .github` = 0 Ze
 (PostgreSQL 17 und 18); lokal gefahren ist nur der Standard-PostgreSQL-Digest von `make test-integration`.
 
 **(g) Release-Vorbereitung `v0.6.0` — nur gemeldet, nichts ausgeführt.** Nach
-[`releasing.md`](../user/releasing.md) §2 bis §4 ist vor dem Tag zu tun oder zu prüfen:
+[`releasing.md`](../maintainer/releasing.md) §2 bis §4 ist vor dem Tag zu tun oder zu prüfen:
 
 1. **Freigabe des Auftraggebers** für den Server-Release (jedes Release braucht eine neue Freigabe; keine liegt in
    diesem Auftrag vor).

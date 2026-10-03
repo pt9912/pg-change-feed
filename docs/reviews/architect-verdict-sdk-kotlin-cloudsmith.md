@@ -71,7 +71,7 @@ Services, zwei Repository-Secrets, keine Action.**
 - Auth: der API-Key eines **Services** (Konto ohne Nutzerbindung für CI/CD).
   Secrets `CLOUDSMITH_USERNAME` und `CLOUDSMITH_API_KEY`, vom Betreiber manuell
   angelegt wie `NUGET_API_KEY` und `PYPI_API_TOKEN`
-  ([`docs/user/releasing.md`](../user/releasing.md) §4).
+  ([`docs/user/releasing.md`](../maintainer/releasing.md) §4).
 - OIDC aus GitHub Actions ist dokumentiert, verlangt aber die Action
   `cloudsmith-io/cloudsmith-cli-action` (Pinning `AGENTS.md` §3.8) und eine
   Provider-Einstellung mit Manager-/Owner-Rolle; ob es im OSS-Angebot verfügbar
