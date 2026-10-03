@@ -45,7 +45,7 @@ aus `ADR-0109` §Kontext, dort live gegen
 `docs.github.com/…/working-with-the-gradle-registry` gelesen; hier nicht neu
 gelesen). Der Betreiber beobachtet zusätzlich: die GitHub-Paketseite zeigt zu
 einem Maven-Paket weder die README noch die POM-Beschreibung
-([`docs/user/releasing.md`](../../user/releasing.md) §4, Absatz „Beschreibung
+([`docs/user/releasing.md`](../../maintainer/releasing.md) §4, Absatz „Beschreibung
 der Kotlin-Paketseite"). Damit erfüllt der Vertriebsweg die Akzeptanz von
 `LH-FA-SST-009` (Bezug über den Paketmanager) nur mit einer Hürde, die NuGet.org
 (C#) und PyPI (Python) nicht haben. `ADR-0109` Re-Evaluierungs-Trigger 5 nennt
@@ -136,7 +136,7 @@ und Python (PyPI) bleiben unverändert.** Sieben Festlegungen:
 - Der Publish-Schritt liest `CLOUDSMITH_USERNAME` (Name des Services) und
   `CLOUDSMITH_API_KEY` (API-Key des Services) als Repository-Secrets; der
   Betreiber legt sie **manuell** an, wie `NUGET_API_KEY` und `PYPI_API_TOKEN`
-  ([`docs/user/releasing.md`](../../user/releasing.md) §4, Tabelle „Benötigte
+  ([`docs/user/releasing.md`](../../maintainer/releasing.md) §4, Tabelle „Benötigte
   Repository-Secrets").
 - Der Service bekommt Schreibrecht nur auf dieses eine Repository (die
   OIDC-Seite nennt „repository access controls" als Einstellung des Services,
@@ -301,7 +301,7 @@ Bedarf, D2/D3 koppeln die Ziele.
   2. **Träger-Nachzug** ([`AGENTS.md`](../../../AGENTS.md) §3.13): `spec/pflichtenheft.md`
      (`LH-FA-SST-009.a`, Absatz Kotlin; `SPEC-028`-Zeile, Vertriebsweg),
      `harness/README.md` (Zeile `sdk-kotlin-release.yml`),
-     [`docs/user/releasing.md`](../../user/releasing.md) §4 (Secret-Tabelle,
+     [`docs/user/releasing.md`](../../maintainer/releasing.md) §4 (Secret-Tabelle,
      Abschnitt „GitHub-Packages-Publish", Absatz zur Paketseite),
      `docs/user/benutzerhandbuch.md` (SDK-Hinweis zur Token-Pflicht),
      Kopfkommentare von Workflow und `build.gradle.kts`, die „kein externes
@@ -347,6 +347,7 @@ der Slice erprobt sie.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-25 | Accepted — Nutzerentscheidung im Chat (Cloudsmith nur für Kotlin), Belege aus `docs.cloudsmith.com`, `central.sonatype.org` und `docs.github.com`, heute gelesen | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
+| 2026-10-03 | Zitat-Korrektur nach [`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md): Pfad von `releasing.md` (drei Linkziele) | Commit `b26460a3` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
