@@ -15,7 +15,7 @@ dieses Slice (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei,
 `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht (Modul 6).
 
 **Abhängigkeit:** startet erst, wenn
-[`slice-pin-digests-aktualisieren-2026-10-b`](slice-pin-digests-aktualisieren-2026-10-b.md)
+[`slice-pin-digests-aktualisieren-2026-10-b`](../in-progress/slice-pin-digests-aktualisieren-2026-10-b.md)
 in `done/` liegt. Der Sensor färbt den Nachtlauf am Tag seiner Einführung rot,
 solange die dort gehobenen Pins driften
 ([`ADR-0146`](../../adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md)
@@ -71,7 +71,7 @@ Workflow-Schritt, Zeile in `harness/README.md` und Sensor-Vertrag.
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
 - **Die Hebung gedrifteter Pins** — Vorgänger-Slice
-  [`slice-pin-digests-aktualisieren-2026-10-b`](slice-pin-digests-aktualisieren-2026-10-b.md)
+  [`slice-pin-digests-aktualisieren-2026-10-b`](../in-progress/slice-pin-digests-aktualisieren-2026-10-b.md)
   (liegt vor diesem in `done/`); mischte dieser Slice beides, wäre der erste
   Sensorlauf rot und der Nachweis „P10 findet Drift“ nicht von „die Hebung ist
   unvollständig“ zu trennen. Zeigt die Startmessung einen frischen Drift, wird
@@ -269,7 +269,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 **Start** (`next` → `in-progress`): `in-progress/` trägt keinen anderen Slice
 (WIP-Limit 1), **und**
-[`slice-pin-digests-aktualisieren-2026-10-b`](slice-pin-digests-aktualisieren-2026-10-b.md)
+[`slice-pin-digests-aktualisieren-2026-10-b`](../in-progress/slice-pin-digests-aktualisieren-2026-10-b.md)
 liegt in `done/` **und** der Implementer hat die Startmessung aus §3 am
 aktuellen Arbeitsstand gefahren: `make image-stale` und alle `make
 pin-stale-*` enden mit Exit 0. (Ein frischer Drift seit der Hebung ist kein
