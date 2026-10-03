@@ -171,7 +171,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `docker buildx imagetools inspect` und die Index-Form gezogen — kein
       verbliebenes „`docker manifest inspect`“ und kein „amd64“ als Gewinnungsweg
       eines Pins in einem lebenden Träger (die Resttreffer-Erwartung steht in §3).
-- [ ] **Belege (Liefer-Punkt 3).** Je gehobene Achse läuft der engste
+- [x] **Belege (Liefer-Punkt 3).** Je gehobene Achse läuft der engste
       betroffene Lauf (§3 Reihenfolge) und seine Ausgabe wird gegen den Parent
       verglichen (Befunde, Meldungsform); `make sdk-pack-csharp`,
       `make sdk-pack-python`, `make sdk-pack-kotlin`, `make examples-csharp`,
@@ -398,8 +398,8 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   Kommentare, keine Struktur); ein lokal grüner Lauf zeigt nicht, dass der Runner
   grün läuft ([`AGENTS.md`](../../../../AGENTS.md) §3.10). Die Pins ändern sich,
   gegen die die Matrix läuft; der Post-Push-Lauf beider Legs wird gelesen
-  (`gh run list --workflow e2e.yml`, `gh run view`). — **Ausgang:** weiter
-  offen bis der Post-Push-Lauf gelesen ist (Nachtrag in §7 im Hauptlauf); Träger der Nachverfolgung bei „weiter offen“:
+  (`gh run list --workflow e2e.yml`, `gh run view`). — **Ausgang:** entfallen
+  — der Post-Push-Lauf ist gelesen (Nachtrag in §7: beide Legs `success`); Träger der früheren Nachverfolgung:
   [`BEO-PGC/github-actions-unverifizierbar-lokal`](../observations/BEO-PGC/github-actions-unverifizierbar-lokal/observation.md).
 - **`make image-cve` mit dem neuen `TRIVY_IMAGE`:** die README nennt das Ziel
   advisory und, bis zum ersten Release, strukturell scheiternd; seit dem Release
@@ -560,10 +560,19 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   Folge-Slice — `slice-pin-stale-alle-digest-pins` existiert in `open/`;
   Register — beide genannten Kennungen existieren als Verzeichnis, jedes mit
   nicht leerem `evidence/` (gemessen: `ls` am Endstand).
-- **Nachtrag-Pflicht (offen):** Liefer-Punkt 3 (Belege) und das §6-Risiko
-  „CI-Matrix `e2e.yml`“ schließt der Hauptlauf nach Push und Lesung von
-  `e2e.yml` (beide Legs) und `upstream-drift.yml` per Nachtrags-Commit in diesem
-  Record.
+- **Nachtrag (erledigt, 2026-10-03):** Der Stand `b7571b00` ist gepusht
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.10). Gelesen wurde der reale Lauf auf
+  dem Runner:
+  - `e2e.yml`, Lauf `37139484714`: `gh run view` nennt
+    `image + test-integration (PostgreSQL 17) success` und
+    `image + test-integration (PostgreSQL 18) success`; `ci` und `examples`
+    desselben Stands `success`.
+  - `upstream-drift.yml`, Lauf `37141125870` (`workflow_dispatch`, Stand
+    `b7571b00`): `success`, im Log des Jobs null Zeilen mit `DRIFT`.
+
+  Liefer-Punkt 3 (Belege) ist damit abgehakt, das §6-Risiko „CI-Matrix
+  `e2e.yml`“ entfallen. Weiter offen bleiben die Digest-Bewegung zwischen
+  Messung und Push (Anker: Folge-Slice) und die Alarmmüdigkeit.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
