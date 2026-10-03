@@ -46,7 +46,7 @@ services:
     # Digest-Pin (ADR-0055): Core NATS als reines Wecksignal, kein
     # JetStream — die Server-Version selbst ist unbeteiligt an dieser
     # Entscheidung (Re-Evaluierungs-Trigger dort).
-    image: nats:2-alpine@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc
+    image: nats:2-alpine@sha256:ac8f88a6494bffc2c2a5289a0ca61cb28a9145c11ba5677cf24265d07f46d8d4
     container_name: cdc-test-nats
     # -m 8222 aktiviert den HTTP-Monitor-Port ausschließlich für den
     # Healthcheck unten (/healthz); der Client-Port 4222 bleibt der

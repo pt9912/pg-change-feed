@@ -2,8 +2,9 @@
 # run-notify-tests — Adapter-Tests gegen einen echten NATS-Server im
 # Testcontainer (ADR-0055, `slice-052`s §6-Risiko: Docker-only-taugliche
 # NATS-Testumgebung analog zu `run-store-tests.sh`). Beide Images sind per
-# Digest gepinnt (Modul 14); der NATS-Pin steht bereits in `ADR-0055`
-# (`docker buildx imagetools inspect nats:2-alpine`, linux/amd64-Manifest).
+# Digest gepinnt (Modul 14); der NATS-Pin ist der Index-Digest von
+# `nats:2-alpine` (`docker buildx imagetools inspect nats:2-alpine --format
+# '{{.Manifest.Digest}}'`, `ADR-0055`).
 # Der Testcontainer und das Docker-Netz werden in jedem Ausgang abgeräumt,
 # das Modul-Cache-Volume bleibt als Vorbereitung für netzlose `make
 # test`-Läufe bestehen.
@@ -11,7 +12,7 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 TOOLCHAIN_IMAGE=${TOOLCHAIN_IMAGE:-golang:1.27-alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414}
-NATS_TEST_IMAGE=${NATS_TEST_IMAGE:-nats:2-alpine@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc}
+NATS_TEST_IMAGE=${NATS_TEST_IMAGE:-nats:2-alpine@sha256:ac8f88a6494bffc2c2a5289a0ca61cb28a9145c11ba5677cf24265d07f46d8d4}
 GO_MODCACHE_VOLUME=${GO_MODCACHE_VOLUME:-pg-change-feed-gomodcache}
 NETWORK=cdc-notify-test
 NATS_CONTAINER=cdc-notify-test-nats

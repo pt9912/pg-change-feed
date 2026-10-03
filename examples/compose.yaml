@@ -53,7 +53,7 @@ services:
     # denselben serverweiten Verbindungs-Token wie die Wurzel-compose.yaml
     # (ADR-0100 Teilfrage 4/5) — dieselbe Demo-Zugangsdaten-Klasse wie die
     # übrigen Werte in examples/.env, kein Secret.
-    image: nats:2-alpine@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc
+    image: nats:2-alpine@sha256:ac8f88a6494bffc2c2a5289a0ca61cb28a9145c11ba5677cf24265d07f46d8d4
     container_name: cdc-examples-nats
     command: ["-m", "8222", "--auth", "demo-nats-stream-token"]
     healthcheck:
