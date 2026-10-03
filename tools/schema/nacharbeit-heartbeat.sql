@@ -19,11 +19,12 @@
 -- Normalbetrieb und von einer der sieben Kategorien
 -- unterscheidbar, kein eigenes Fehler-Log.
 --
--- error_code projiziert den Meldungscode desselben Fehlerzustands. Die Spalte
--- steht hinter age_seconds: CREATE OR REPLACE VIEW erlaubt nur angehängte
--- Spalten, deshalb ändert die Signatur bestehende Spaltennamen und -reihenfolge
--- nicht und kein DROP VIEW geht dem Rollout voraus. Der Code gilt nur neben
--- einer Klasse: ein Beat eines Servers ohne error_code löscht nur error_class,
+-- error_code projiziert den Meldungscode desselben Fehlerzustands. Die View ist
+-- ein bekanntes Fremdobjekt der Wache (DropView in knownForeignObjects,
+-- tools/schema/rolloutguard/guard.go): der Rollout löscht sie vor dieser Datei
+-- und legt sie hier neu an, ein Vorlauf entfällt. Die Spalte steht hinter
+-- age_seconds, die bestehenden Spalten behalten Namen und Reihenfolge. Der Code
+-- gilt nur neben einer Klasse: ein Beat eines Servers ohne error_code löscht nur error_class,
 -- die Sicht zeigt dann keinen Code ohne Klasse.
 CREATE OR REPLACE VIEW cdc.heartbeat AS
 SELECT

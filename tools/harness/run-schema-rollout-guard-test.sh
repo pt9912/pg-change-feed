@@ -43,7 +43,9 @@
 #      die Rechteliste). Eine Heartbeat-Zeile des Tags mit Fehlerklasse liest
 #      nach dem Upgrade über `cdc.heartbeat` mit `error_code` NULL; die Spalte
 #      `error_code` ist angelegt (`text`, nullable) und steht als letzte Spalte
-#      der View hinter `age_seconds`, ohne Vorlauf der View. Die Zeile des Tags liest über `cdc.changes` mit
+#      der View hinter `age_seconds`; die View ist ein bekanntes Fremdobjekt,
+#      der Rollout löscht und legt sie neu an, der Lauf trennt das nicht von
+#      einem Anhängen an eine bestehende View. Die Zeile des Tags liest über `cdc.changes` mit
 #      `route_target` NULL. Der Stand des Tags trägt die Spalte `route_target`
 #      noch nicht (Vorbedingung); nach dem Upgrade
 #      trägt die Tabelle die zwei nullable Spalten (`text`, `jsonb`), eine

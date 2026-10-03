@@ -78,7 +78,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       Registry-Test (Ziffer gegen Bereich) grün. *Zu belegen durch:* Test je Warn-Code, der das
       Attribut einer ausgelösten Warnung liest (Happy), der Registry-Test; Suchlauf §3.
 - [ ] **(B) Heartbeat-Spalte und Diagnose.** Additive Spalte `error_code` in
-      `cdc.process_heartbeat` und `cdc.heartbeat` samt Rollout (Vorlauf bei View-Signatur-Änderung,
+      `cdc.process_heartbeat` und `cdc.heartbeat` samt Rollout (ein Vorlauf der View entfällt:
+      `cdc.heartbeat` ist Fremdobjekt der Wache und wird beim Rollout neu angelegt, siehe §3
+      „Nicht realisiert“ und §6; Klasse des Vorlaufs:
       [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)) und Schreib-/Lesepfad;
       `diagnose` in CLI, HTTP und gRPC: Zeile „Fehlerzustand“ mit Klasse und Code, Feld
       `error_code`; Proto-Erzeugnis (`make proto-generate`, committet), Handbuch-Beispiele =
@@ -114,7 +116,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 |---|---|---|
 | `internal/domain/` (Tabelle), Registry-Test | update | `W`-Codes (A). |
 | Log-Stellen der Betreiber-Warnungen (`internal/…`, `cmd/…`) | update | Attribut `code`. |
-| `tools/schema/schema.yaml`, `tools/schema/nacharbeit-heartbeat.sql`, `tools/schema/nacharbeit-observability.sql`, Rollout-Vorlauf | update | Spalte `error_code`, Views, View-Signatur-Vorlauf. |
+| `tools/schema/schema.yaml`, `tools/schema/nacharbeit-heartbeat.sql`, `tools/schema/nacharbeit-observability.sql` | update | Spalte `error_code`, Views; ein Rollout-Vorlauf entfällt (siehe „Nicht realisiert“). |
 | `internal/adapters/driven/postgresstorage/queries/queries.go`, Heartbeat-Port/-Adapter | update | Schreiben und Lesen der Spalte. |
 | `proto/cdc/administration/v1/administration.proto`, `gen/…` | update | Feld `error_code` im Diagnose-Ergebnis; Erzeugnis committet. |
 | `internal/bootstrap/wiring.go` (Diagnose-Ausgabe), `internal/adapters/driving/http/diagnose.go`, `tools/harness/grpcadminclient/main.go`, `examples/grpc-client/diagnose.go` | update | Zeile „Fehlerzustand“, Feld. |
@@ -127,7 +129,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | `internal/bootstrap/wiring.go` (`classifyRunFault`, `errorStateLine`) | update | Gelieferte Ergänzung: Code des Fehlerzustands aus der Kette nach der Vorrangfolge; Zeile „Fehlerzustand“ als eigene Funktion. |
 | `tools/harness/run-schema-rollout-guard-test.sh`, `harness/targets/schema-rollout.md`, `harness/README.md` (Zeile `make test-integration`) | update | Gelieferte Ergänzung: Alt-Tag-Lauf trägt die Spalte `error_code` und die View; Träger der bewegten Eigenschaft nachgezogen (`AGENTS.md` §3.13). |
 | Tests der Warn-Stellen (`natsstream`, `capture`, `backfill`, `bootstrap`, `http/sse`, `postgresstorage`) | update | Test je Warn-Code, der das Attribut `code` liest. |
-| **Nicht realisiert (Abweichung vom Plan):** `tools/schema/rolloutguard` und ein Vorlauf der View `cdc.heartbeat` | entfallen | `cdc.heartbeat` entsteht in `nacharbeit-heartbeat.sql` (Fremdobjekt der Wache, bereits in `knownForeignObjects`), nicht aus `schema.yaml`; `error_code` steht als letzte Spalte hinter `age_seconds`, `CREATE OR REPLACE VIEW` genügt ohne `DROP VIEW`. Beleg: `bash tools/harness/run-schema-rollout-guard-test.sh` Lauf 5. |
+| **Nicht realisiert (Abweichung vom Plan):** `tools/schema/rolloutguard` und ein Vorlauf der View `cdc.heartbeat` | entfallen | `cdc.heartbeat` entsteht in `nacharbeit-heartbeat.sql` (Fremdobjekt der Wache, bereits in `knownForeignObjects`), nicht aus `schema.yaml`; der Rollout löscht die View als `DropView` aus `knownForeignObjects` (`tools/schema/rolloutguard/guard.go`, `guard_test.go`: Report mit `DropView … heartbeat`) unter `--allow-destructive` und legt sie neu an; `error_code` steht als letzte Spalte hinter `age_seconds`. Die Begründung „`CREATE OR REPLACE VIEW` genügt, weil die Spalte angehängt wird“ war unvollständig (Review F-3): wirksam ist das Fremdobjekt, die Klasse „View-Signatur“ ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)) trifft die View nicht, weil sie nicht im neutralen Modell steht. Beleg: `bash tools/harness/run-schema-rollout-guard-test.sh` Lauf 5 (belegt das Ergebnis; trennt „neu angelegt“ nicht von „an eine bestehende View angehängt“ — benannte Grenze, auch in `harness/targets/schema-rollout.md`). |
 | **Nicht realisiert:** C#-/Kotlin-Beispiel-Clients (`examples/csharp/grpc-client`, `examples/kotlin/grpc-client`) | entfallen | Sie drucken `error_class` aus der generierten Antwort und ignorieren das neue Feld; Änderung ist nicht nötig, Bau-Probe im Bericht. |
 | **Nicht realisiert:** `Warn`-Stellen `grpc: … fehlgeschlagen`, `http: … fehlgeschlagen` (`grpc/administration.go`, `http/errors.go`, `http/registerconsumer.go`) | entfallen | Zeilen zu einem Fehlschlag einer einzelnen Anfrage an die API; ihr Code folgt mit dem Fehlerkörper in T4. |
 
@@ -142,20 +144,20 @@ ba60c7bc 0 -n -F 'error_code' -- '*.go' '*.sql' '*.yaml' '*.proto' ':!*_test.go'
 ba60c7bc 35 -n -E '\.Warn\(' -- internal cmd ':!*_test.go'
 a9767e87 0 -n -F 'messagecode.LogKey' -- internal ':!*_test.go'
 diff 9 -n -F 'error_class' -- tools/schema
-diff 11 -n -F 'error_class' -- docs/user/benutzerhandbuch.md
+diff 14 -n -F 'error_class' -- docs/user/benutzerhandbuch.md
 diff 15 -n -F 'error_class' -- '*.go' ':!*_test.go'
 diff 22 -n -F 'error_code' -- '*.go' '*.sql' '*.yaml' '*.proto' ':!*_test.go'
 diff 35 -n -E '\.Warn\(' -- internal cmd ':!*_test.go'
-diff 32 -n -F 'messagecode.LogKey' -- internal ':!*_test.go'
+diff 31 -n -F 'messagecode.LogKey' -- internal ':!*_test.go'
 ```
 
 | Träger | Messung am Parent (`ba60c7bc`, 2026-10-02) | Behandlung und Befund am Diff |
 |---|---|---|
 | Schema-Träger der Spalte | Zeile 1: 7 | Diff 9: `schema.yaml` (Beschreibung und Spalte), `nacharbeit-heartbeat.sql`, `nacharbeit-observability.sql` unverändert; `error_class` bleibt, `error_code` daneben (Kommentar und View-Spalte) |
-| Handbuch | Zeile 2: 7 | Diff 11: Beschreibung der Spalte, des Felds und der Diagnose-Zeile ergänzt (Abschnitte Betriebsstatus, Diagnose, HTTP, gRPC, Meldungscodes) |
+| Handbuch | Zeile 2: 7 | Diff 14: Beschreibung der Spalte, des Felds und der Diagnose-Zeile ergänzt (Abschnitte Betriebsstatus, Diagnose, HTTP, gRPC, Meldungscodes; drei weitere Treffer im Abschnitt „Rückweg auf eine ältere Version“ der Fixrunde) |
 | Go-Träger von `error_class` | Zeile 3: 14 | Diff 15: `error_code` daneben in `queries.go`, `http/diagnose.go`, `administration.pb.go` (Kommentar), `grpcadminclient`, `examples/grpc-client` |
 | `error_code` heute | Zeile 4: 0 | Nichtgefunden am Parent (0); Diff 22 Treffer, alle in den genannten Trägern: `queries.go`, `diagnose.go` (HTTP), Proto und `administration.pb.go`, `schema.yaml`, `nacharbeit-heartbeat.sql`, `grpcadminclient`, `examples/grpc-client` |
-| Warn-Aufrufe | Zeile 5: 35 | Diff 35 (unverändert, kein Aufruf entfällt). 31 Stellen tragen einen `W`-Code, eine (`heartbeat: Fehlerzustand gemeldet`) den `E`-Code des Fehlerzustands, drei bleiben ohne Code (`grpc: … fehlgeschlagen`, `http: … fehlgeschlagen`, `http: RegisterConsumer fehlgeschlagen`: Fehlschlag einer einzelnen Anfrage, Code folgt in T4). Die Zeile `a9767e87 0 … messagecode.LogKey` zählt 0 am Parent, `diff` 32 |
+| Warn-Aufrufe | Zeile 5: 35 | Diff 35 (unverändert, kein Aufruf entfällt). 30 Stellen tragen einen `W`-Code, eine (`heartbeat: Fehlerzustand gemeldet`) den `E`-Code des Fehlerzustands, vier bleiben ohne Code (`grpc: … fehlgeschlagen`, `http: … fehlgeschlagen`, `http: RegisterConsumer fehlgeschlagen`: Fehlschlag einer einzelnen Anfrage, Code folgt in T4; `capture: Stream-Publish fehlgeschlagen`: Fehlschlag des prozessinternen Broadcasters, keine Betreiber-Maßnahme). Die Zeile `a9767e87 0 … messagecode.LogKey` zählt 0 am Parent, `diff` 31 (eine Stelle weniger nach der Fixrunde zu Review F-1) |
 | **Nicht nachgezogene Träger (gemeldet):** `ADR-0132` (nennt `error_class` im Diagnose-Bericht) | Treffer in `docs/plan/adr/0132-…` | Accepted-ADR, unberührbar ([`AGENTS.md`](../../../../AGENTS.md) §3.5); das Feld `error_code` steht im Pflichtenheft (`SPEC-018`, `SPEC-031`). Adresse: keine Folge-ADR nötig, die Spec trägt die Aussage |
 | **Nicht nachgezogene Träger (gemeldet):** C#-/Kotlin-Beispiel-Clients | `examples/csharp/grpc-client/Format.cs`, `examples/kotlin/grpc-client/…/Format.kt` | Sie drucken `error_class` aus der generierten Antwort; `make examples-csharp` und `make examples-kotlin` bauen und testen mit dem neuen Feld grün, eine Ausgabe des Codes ist nicht zugesagt |
 
@@ -163,13 +165,17 @@ diff 32 -n -F 'messagecode.LogKey' -- internal ':!*_test.go'
 2026-10-03; jede Zeile ist ein gelaufener Befehl, keine Erwartung):
 
 - **Auswahl der Warn-Stellen (A).** Regel: eine Warnung trägt einen `W`-Code, wenn der Betreiber
-  eine Maßnahme hat; 35 `Warn`-Aufrufe in Produktions-Go, davon 31 mit `W`-Code (22 Codes: Bereich 1
+  eine Maßnahme hat; 35 `Warn`-Aufrufe in Produktions-Go, davon 30 mit `W`-Code (22 Codes: Bereich 1
   `W1001`…`W1006`, Bereich 2 `W2001`…`W2006`, Bereich 3 `W3001`…`W3003`, Bereich 4 `W4001`…`W4007`;
   Bereich 5 ohne Warnung im Bestand, ohne Code), einer (`heartbeat: Fehlerzustand gemeldet`) mit dem
-  `E`-Code des Fehlerzustands, drei ohne Code (Fehlschlag einer Anfrage an die API, Code folgt in T4).
-  Stellen mit gleicher Maßnahme teilen den Code: `W1001` (Wecksignal, Erfassung und Backfill),
-  `W1002` (Stream-Veröffentlichung, Adapter und Erfassung), `W1003` (zwei Namens-Prüfungen),
-  `W1005` (Kodierfehler, NATS und SSE), `W2001` (Snapshot schließen und Rollback), `W2006`
+  `E`-Code des Fehlerzustands (unter `code`: Auslegung der Festlegung 3, Entscheidung des Hauptlaufs
+  zu Review F-2; Spec `SPEC-008` und Katalog tragen einen Satz dazu), vier ohne Code (drei: Fehlschlag
+  einer Anfrage an die API, Code folgt in T4; eine: Broadcaster-Fehlschlag der Erfassung, keine
+  Betreiber-Maßnahme). Stellen mit gleicher Maßnahme teilen den Code: `W1001` (Wecksignal, Erfassung und Backfill),
+  `W1002` (Stream-Veröffentlichung im NATS-Adapter; die Erfassungs-Stelle `capture: Stream-Publish
+  fehlgeschlagen` ruft den prozessinternen Broadcaster auf, der NATS nicht berührt, und trägt
+  keinen Code, Review F-1), `W1003` (zwei Namens-Prüfungen),
+  `W1005` (Kodierfehler, NATS und SSE), `W2001` (Snapshot schließen an der Quelle und Rollback im CDC-Speicher; die Maßnahme nennt beide Seiten, Review F-8), `W2006`
   (unterbrochener Run, Abgleich beim Start und Endzustand), `W4004` (Antrag gescheitert, Aufruf der
   Goroutine und Vermerk des Adapters), `W4006` (drei Stellen „nicht vermerkt“).
 - **Gedruckte Läufe, Exit 0:** `make test`; `make test-store` (`db-coverage: OK — DB-Adapter-Coverage
@@ -226,13 +232,34 @@ diff 32 -n -F 'messagecode.LogKey' -- internal ':!*_test.go'
   Codes der Klasse · `TestClassifyRunFaultCodeBelongsToTheClass` rot;
   Warn-Code je Stelle · in einer Kopie je (Code, Datei) alle Verwendungen des Codes durch einen
   anderen Code der Tabelle ersetzt (`sed` nach stdout in die Kopie, Skript im Scratchpad) · 25 von 25
-  Paaren rot, je mit einem benannten Test (u. a. `TestRouteFailureStaysLocal` für `W1002`,
+  Paaren rot (24 Paare nach der Fixrunde: das Paar `W1002` in `capture/service.go` entfällt, *abgeleitet*, nicht neu gefahren), je mit einem benannten Test (u. a. `TestRouteFailureStaysLocal` für `W1002`,
   `TestBackfillWorkerDoesNotSpinOnARunThatStaysQueued` für `W2003`,
   `TestRunStreamWithRetrySichtbarkeit` für `W1006`); die beiden Stellen in `postgresstorage` (`W4004`
   im Adapter, Code des Fehlerzustands in `Fault`) je einzeln über `make test-store` rot
   (`TestAdministrationRequestAdapterMarkFailedWarnsWithItsCode`, `TestFaultLogsTheCodeOfTheFaultState`);
   Attribut `code` entfernt · in `natsstream/publisher.go` das Attribut der Zeile `Publish fehlgeschlagen`
   gestrichen · `TestRouteFailureStaysLocal` rot.
+- **Fixrunde zu Review F-1 bis F-6 (2026-10-03).** F-1: `PCF-W1002` entfällt an
+  `capture/service.go` (prozessinterner Broadcaster, kein NATS), bleibt im NATS-Adapter; Tabelle
+  weiter 88 Codes. Alle 30 `W`-Zuordnungen gegen den Aufrufer gelesen (Wecksignal-Port ist an beiden
+  Stellen der NATS-Notifier, `W4001` ist das LISTEN der CDC-Datenbank, `W4003` der Vorlauf-Timeout):
+  keine zweite Fehlzuordnung; `W2001` (Quelle und CDC-Speicher) trägt jetzt eine Maßnahme für beide
+  Seiten. F-2 bis F-4 und F-6 in Spec, Handbuch, Skript-Kommentar und `harness/targets/schema-rollout.md`
+  nachgezogen. Mutationen (Scratchpad-Kopien, einzeln): Zusage „Broadcaster-Fehlschlag trägt keinen
+  Code“ · `capture/service.go` mit `messagecode.LogKey, messagecode.WarnStreamPublish` zurückgesetzt ·
+  `make test` rot (`TestCaptureLoggtFehlschlaegeUeberDenInjiziertenPort`); Gate (Quelltext gegen
+  Tabelle) · Konstante und Tabellenzeile `PCF-W1002` entfernt, Literal im Adapter · `make
+  meldungscodes-check` Exit 2, `Code ohne Eintrag in der Tabelle`; Gate (Tabelle gegen Katalog) ·
+  Katalog-Zeile `PCF-W1002` entfernt · Exit 2, `Tabellen-Code ohne Katalog-Zeile`. Grenze: das Gate
+  liest die Konstanten, nicht die Liste `Table`; ein fehlender Tabelleneintrag allein färbt den
+  Registry-Test, nicht das Gate (an einer Kopie gesehen: Tabellenzeile allein entfernt, Gate grün).
+  Läufe der Fixrunde (gemessen, Exit 0): `make test`; `make test-store` (`db-coverage: OK —
+  DB-Adapter-Coverage 83.03% erfuellt Schwelle 80%`); `make image` und `make test-integration`
+  (`run-integration-tests: Lauf abgeschlossen — E2E-Abdeckungstabelle aus 21 Go-Zeilen und 53
+  Bash-Zeilen`); `bash tools/harness/run-schema-rollout-guard-test.sh` (`Lauf 5 OK — Tag v0.4.0:
+  Exit 0 (Rollout des Tags), Exit 0 (Arbeitsbaum, mit Vorlauf), Exit 0 (Arbeitsbaum, zweiter Lauf)`);
+  `make meldungscodes-check` (`88 Codes in Tabelle und Katalog gleich`); `make suchlauf-nachmessen`
+  (`12 Zeilen stimmen`).
 
 ## 4. Trigger
 
@@ -257,10 +284,23 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Offene Risiken werden bei Closure aufgelöst — jedes Risiko bekommt genau einen Ausgang
 (eingetreten: CO-NNN / slice-… | entfallen: Grund | weiter offen: → BEO-NNN).
 
-- **Schema-Rollout mit View-Signatur-Änderung.** Die Spalte ändert die Signatur von
-  `cdc.heartbeat`; ohne Vorlauf scheitert der Rollout gegen migrierte Ziele
-  ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)). Gegenmittel:
+- **Schema-Rollout mit neuer View-Spalte.** Die Spalte ändert die Signatur von
+  `cdc.heartbeat`; die View ist ein Fremdobjekt der Wache (`DropView`, wird beim Rollout
+  gelöscht und neu angelegt), deshalb braucht sie keinen Vorlauf der Klasse
+  [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) (siehe §3 „Nicht
+  realisiert“; Lauf 5 trennt beide Erklärungen nicht). Gegenmittel:
   Rollout-Wache-Lauf und zweiter Rollout gegen migriertes Ziel. — **Ausgang:** (bei Closure)
+- **Rückweg auf eine ältere Version.** Ein älterer Server überschreibt `error_class` und lässt
+  einen früher gesetzten `error_code` stehen; die View blendet ihn nur bei leerer Klasse aus.
+  Entscheidung der Fixrunde: Grenze im Handbuch („Rückweg auf eine ältere Version“, *abgeleitet*,
+  nicht gegen einen Alt-Server gefahren), keine Ziffern-Prüfung in der View (sie berührte Signatur
+  und Wache). — **Ausgang:** (bei Closure)
+- **Codes sind bis zum Release nicht stabil.** Die Warn-Codes dieses Slice stehen in
+  unveröffentlichten Commits; ein Code wird erst mit dem Release unveränderlich. Die Fixrunde
+  hat `PCF-W1002` von der Erfassungs-Stelle (prozessinterner Broadcaster) genommen; die Tabelle
+  bleibt bei 88 Codes, weil `PCF-W1002` im NATS-Adapter (`natsstream/publisher.go`) bleibt.
+  `PCF-W1004` ist über den Regelweg nicht erreichbar (Reserve, im Katalog vermerkt); Bereich 5
+  trägt keine Warnung (Hinweis im Handbuch). — **Ausgang:** (bei Closure)
 - **Proto-/Leser-Kompatibilität.** Ein additives Proto-Feld ist für Leser unschädlich
   (*hergeleitet*, nicht nachgemessen); Beispiel-Clients und Wegwerf-Clients lesen das
   Diagnose-Ergebnis. Gegenmittel: Liefer-Punkt C. — **Ausgang:** (bei Closure)

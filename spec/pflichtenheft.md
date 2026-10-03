@@ -1307,10 +1307,10 @@ Alle String-Felder tragen proto3-`string`; `snake_case` im `.proto` wird zu
 keine inhaltliche Abweichung.
 
 Hilfsnachrichten von `Diagnose`: `HeartbeatStatus` (`known` (`bool`),
-`age_seconds` (`double`, nur gültig wenn `known`), `error_class` — leer
-bedeutet Normalbetrieb, nur gültig wenn `known`, `error_code` (Feldnummer 4) —
-der Meldungscode des Fehlerzustands (`SPEC-008`), leer im Normalbetrieb, nur
-gültig wenn `known`; ein Leser ohne das Feld ignoriert es, ein Server ohne das
+`age_seconds` (`double`, nur gültig wenn `known`), `error_class` (leer
+bedeutet Normalbetrieb, nur gültig wenn `known`) und `error_code`
+(Feldnummer 4: der Meldungscode des Fehlerzustands (`SPEC-008`), leer im
+Normalbetrieb, nur gültig wenn `known`); ein Leser ohne das Feld ignoriert es, ein Server ohne das
 Feld lässt es leer, *abgeleitet* aus den Proto3-Regeln, nicht gegen einen alten
 Leser gefahren); `ConsumerLag`
 (`consumer_id`, `known` (`bool`), `lag` (`double`, nur gültig wenn
@@ -1495,6 +1495,9 @@ Berichts tragen keinen Code. Bei einer Warnung ist die erste Ziffer der
 Bereich (1 Erfassung und Replikation, 2 Backfill, 3 Retention und Speicher,
 4 Verwaltung, 5 Konfiguration und Start, 9 reserviert); sie trägt keine Klasse
 und steht als eigenes Log-Attribut `code`, der Meldungstext trägt keinen Code.
+Die Warn-Zeile des Heartbeat-Adapters, die einen Fehlerzustand meldet, trägt
+unter `code` den `E`-Code des Fehlerzustands; ein Filter auf `code=PCF-W…`
+erfasst sie nicht.
 Der Fehlertext (Fehlerwert, Zeile beim Prozessende, Attribut
 `error` einer Log-Zeile) beginnt mit dem Kopf
 `Fehlerklasse <klasse> [<code>]: <Ursache>`; der Prozessausgang bleibt unverändert,
@@ -1648,3 +1651,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-01 | `LH-FA-CFG-008.a`, `SPEC-032`: die Aussagen zu `DELETE` ohne volle Replica-Identität und zur Erreichbarkeit der Nichtanwendbarkeit von „nicht gemessen" auf den gemessenen Stand gezogen (PostgreSQL 17 und 18, E2E-Messung); `SPEC-019`: Adressspalte der Zeilen `Regelname ist ungültig` und `Zielname ist ungültig` der Routing-Tabelle auf die Adressform der Prosa angeglichen |
 | 2026-10-03 | `SPEC-008`: Absatz „Meldungscode“ (Form `PCF-[EWI][0-9]{4}`, Klasse in der ersten Ziffer, Ziffer 8 für Ablehnungen, Rückfall `…000`, Kopf `Fehlerklasse <klasse> [<code>]: …`, Stabilität); der Satz zum Fehlertext-Beginn im Run (`schema: `) nennt Klasse und Code; `SPEC-029` (`error_message` des Runs) und `SPEC-019` (`error_message` des Antrags, Texte der Ablehnungen mit dem Kopf `abgelehnt [<Code>]: `) |
 | 2026-10-03 | `SPEC-008`: Warncodes (Schwere `W`, erste Ziffer der Bereich, Log-Attribut `code`), Vorrangfolge der Klassen bei mehreren Codes in einer Kette und der Code des Fehlerzustands in Heartbeat und Diagnose; Tabelle von `cdc.process_heartbeat` (Spalte `error_code`, View `cdc.heartbeat`); `SPEC-018` (`GET /diagnose`, Feld `error_code`) und `SPEC-031` (`HeartbeatStatus.error_code`, Feldnummer 4) |
+| 2026-10-03 | `SPEC-008`: Warn-Zeile des Fehlerzustands trägt den `E`-Code unter `code`; `SPEC-031`: `error_code` als eigener Aufzählungspunkt von `HeartbeatStatus` |

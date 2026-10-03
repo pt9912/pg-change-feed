@@ -1389,6 +1389,16 @@ den weiterlaufenden Container erwartungsgemäß unkritisch, weil neue Spalten
 nullable und neue Tabellen oder Views additiv sind (abgeleitet, nicht mit
 einem laufenden Alt-Container gemessen).
 
+**Rückweg auf eine ältere Version.** Ein älterer Server kennt `error_code`
+nicht: bei einem Fehlerzustand schreibt er nur `error_class` und lässt einen
+früher von der neuen Version gesetzten `error_code` stehen. Die Sicht
+`cdc.heartbeat` blendet den Code nur aus, solange `error_class` leer ist; nach
+einem Fehlerzustand anderer Klasse kann sie Klasse und Code verschiedener
+Klassen zeigen. Maßgeblich ist dann `error_class`; ein Code, dessen erste
+Ziffer nicht zur Klasse passt (siehe [Meldungscodes](#meldungscodes)), ist ein
+Rest und zu ignorieren. Der nächste Fehlerzustand der neuen Version überschreibt
+ihn (abgeleitet aus den Schreib-Zügen, nicht gegen einen Alt-Server gefahren).
+
 **Additive Änderungen** — neue Tabelle, neue nullable Spalte, neue View —
 rollen ohne Zwischenschritt aus. Ein zweiter Lauf gegen ein bereits
 ausgerolltes Ziel endet ebenfalls mit Exit 0.
@@ -2387,14 +2397,15 @@ trägt den Rückfall seiner Klasse und nie keinen Code. Die erste Ziffer `8`
 kennzeichnet die Ablehnung einer Eingabe, etwa eines Antrags; sie trägt keine
 Fehlerklasse. Eine Warnung trägt den Buchstaben `W` (`PCF-W3002`); ihre erste
 Ziffer ist der Bereich (1 Erfassung und Replikation, 2 Backfill, 3 Retention und
-Speicher, 4 Verwaltung), eine Warnung trägt keine Fehlerklasse. Zeilen des
+Speicher, 4 Verwaltung; ein Bereich 5 für Konfiguration und Start ist vorgesehen
+und trägt keine Warnung), eine Warnung trägt keine Fehlerklasse. Zeilen des
 Berichts von `diagnose` mit Ausnahme der Zeile „Fehlerzustand“ tragen keinen Code.
 
 Der Code steht an diesen Stellen:
 
 | Stelle | Form |
 |---|---|
-| Log-Zeile einer Warnung | eigenes Attribut `code=PCF-W3002`; der Meldungstext trägt den Code nicht |
+| Log-Zeile einer Warnung | eigenes Attribut `code=PCF-W3002`; der Meldungstext trägt den Code nicht. Die Warn-Zeile `heartbeat: Fehlerzustand gemeldet` trägt unter `code` den Code des Fehlerzustands (ein Code mit `E`), ein Filter auf Warn-Codes erfasst sie nicht |
 | `cdc.heartbeat.error_code` | Meldungscode des Fehlerzustands neben `error_class`, `NULL` im Normalbetrieb |
 | Zeile „Fehlerzustand“ von `diagnose`, `GET /diagnose` (`error_code`) und RPC `Diagnose` (`error_code`) | `schema [PCF-E4003]` bzw. das Feld `error_code` |
 | Log-Zeile und Zeile beim Prozessende | `Fehlerklasse schema [PCF-E4003]: <Ursache>` |
@@ -2486,12 +2497,12 @@ beendet den Prozess nicht und trägt keine Fehlerklasse:
 | Code | Bereich | Bedeutung | Maßnahme |
 |---|---|---|---|
 | `PCF-W1001` | Erfassung und Replikation | das Wecksignal über NATS konnte nicht veröffentlicht werden (bei der Erfassung oder bei einem Backfill-Run); die Änderungen sind erfasst und über SQL und HTTP lesbar | NATS-Server und `CDC_NATS_URL` prüfen |
-| `PCF-W1002` | Erfassung und Replikation | die Veröffentlichung einer Change im NATS-Vollinhalts-Stream ist fehlgeschlagen; die Change ist erfasst und über SQL lesbar, sie fehlt nur auf diesem Zustellweg | NATS-Server und Verbindung prüfen, die fehlende Change über `GET /changes` oder SQL lesen |
+| `PCF-W1002` | Erfassung und Replikation | die Veröffentlichung einer Change im NATS-Vollinhalts-Stream ist fehlgeschlagen (Zeile des NATS-Adapters, mit dem Subjekt); die Change ist erfasst und über SQL lesbar, sie fehlt nur auf diesem Zustellweg | NATS-Server und Verbindung prüfen, die fehlende Change über `GET /changes` oder SQL lesen |
 | `PCF-W1003` | Erfassung und Replikation | eine Change wurde im NATS-Vollinhalts-Stream übersprungen, weil Schema- oder Tabellenname leer ist oder ein für NATS-Subjekte reserviertes Zeichen (`.`, `*`, `>`) oder Leerraum enthält | Namen von Schema und Tabelle prüfen, die Change über SQL oder HTTP lesen |
-| `PCF-W1004` | Erfassung und Replikation | der Zielname einer Change trägt ein reserviertes Zeichen oder Leerraum; die Change fehlt im Ziel-Subjekt, das Tabellen-Subjekt ist unberührt | Zielname der Routing-Regel korrigieren (siehe [Routing-Regel konfigurieren](#routing-regel-konfigurieren)) |
+| `PCF-W1004` | Erfassung und Replikation | der Zielname einer Change trägt ein reserviertes Zeichen oder Leerraum; die Change fehlt im Ziel-Subjekt, das Tabellen-Subjekt ist unberührt; Reserve: das erlaubte Alphabet der Zielnamen schließt diese Zeichen aus, über eine Routing-Regel ist die Warnung nicht erreichbar | Zielname der Routing-Regel korrigieren (siehe [Routing-Regel konfigurieren](#routing-regel-konfigurieren)) |
 | `PCF-W1005` | Erfassung und Replikation | eine Change ist nicht als JSON kodierbar und wird nicht zugestellt: im NATS-Vollinhalts-Stream übersprungen, im Server-Sent-Events-Stream endet die Verbindung des Clients | Log sichern, die Change über SQL lesen, den Support kontaktieren (siehe [Support und Kontakt](#support-und-kontakt)) |
 | `PCF-W1006` | Erfassung und Replikation | ein Zyklus des Replication-Streams ist an einer vorübergehenden Störung gescheitert und wird mit Backoff wiederholt | Erreichbarkeit der Quelle prüfen; dauert die Störung länger als das Wiederholungsfenster, endet der Prozess mit `PCF-E1002` (siehe [Neustart nach einem Fehler](#neustart-nach-einem-fehler)) |
-| `PCF-W2001` | Backfill | das Aufräumen eines Backfill-Runs (Snapshot schließen, Schreibtransaktion zurückrollen) ist fehlgeschlagen; der Run behält sein Ergebnis | Erreichbarkeit der Quelle prüfen |
+| `PCF-W2001` | Backfill | das Aufräumen eines Backfill-Runs (Snapshot schließen, Schreibtransaktion zurückrollen) ist fehlgeschlagen; der Run behält sein Ergebnis | beim Schließen des Snapshots die Erreichbarkeit der Quelle prüfen, beim Rollback der Schreibtransaktion Erreichbarkeit und Rechte der CDC-Datenbank; die Zeile im Log nennt, welcher der beiden Schritte gescheitert ist |
 | `PCF-W2002` | Backfill | die wartenden Backfill-Runs konnten nicht gelesen werden; der Durchgang endet und wird wiederholt | Erreichbarkeit und Rechte der CDC-Datenbank prüfen |
 | `PCF-W2003` | Backfill | ein Backfill-Run ist nach seinem Versuch weiter `queued`; der Durchgang endet und wird wiederholt | Zeile des Runs in `cdc.backfill_status` prüfen, Erreichbarkeit der CDC-Datenbank prüfen |
 | `PCF-W2004` | Backfill | der Zustand eines Backfill-Runs konnte nicht festgehalten werden; der Durchgang endet und wird wiederholt | Erreichbarkeit und Rechte der CDC-Datenbank prüfen, `cdc.backfill_status` lesen |

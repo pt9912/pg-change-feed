@@ -124,6 +124,13 @@ Blocker des Precheck-Reports zu einer von zwei bekannten Klassen gehört:
   d-migrate-Exit 5; deshalb tragen `set_transformation` und `set_route` einen
   `json`-Parameter,
   [`ADR-0125`](../../docs/plan/adr/0125-transformationen-parametertyp-regelform-json.md)).
+  Die View `heartbeat` fällt in diese Klasse, nicht in die der View-Signatur:
+  der Rollout löscht sie als Fremdobjekt (`DropView`) unter `--allow-destructive`
+  und legt sie in `nacharbeit-heartbeat.sql` neu an; die Spalte `error_code`
+  steht dabei als letzte Spalte, ein Vorlauf entfällt. Grenze: Lauf 5 belegt
+  das Ergebnis (Exit 0, Spalten in Soll-Reihenfolge, Alt-Zeile `error_code`
+  NULL), trennt aber nicht „Fremdobjekt wird neu angelegt“ von „Spalte an eine
+  bestehende View angehängt“, weil die View in jedem Lauf neu entsteht.
 - **View-Signatur** — Blocker `MANUAL_ACTION_REQUIRED` für eine Operation
   `ReplaceView` (Objekttyp `VIEW`) mit der Diagnose
   `VIEW_SIGNATURE_INCOMPATIBLE`; der View-Name muss ein einfacher
