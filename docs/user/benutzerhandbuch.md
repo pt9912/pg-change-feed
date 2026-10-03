@@ -1494,6 +1494,10 @@ ablehnt (`400`, `404`), trägt einen Code mit der Ziffer `8`
 (`PCF-E8050` bis `PCF-E8057`, `PCF-E8025` für eine an der Quelle fehlende
 Tabelle); ein `500` trägt den Code der Ursache, den Rückfall `PCF-E7000`, wenn
 keine nähere Ursache bekannt ist, und im Log steht dazu die Warnung `PCF-W4008`.
+`GET /changes/stream` antwortet mit `503` und `PCF-E2001`, wenn der Feed-Container
+ohne verdrahteten Broadcaster für den Stream läuft (eine unvollständige
+Verdrahtung des Prozesses); das ist ein Fehler der Einrichtung, keiner der
+Eingabe.
 Die Statuscodes ändern sich nicht; ein Client, der nur `error` liest, arbeitet
 unverändert weiter. Gemessen am laufenden Feed-Container (`make test-integration`,
 gedruckte Zeile `run-integration-tests: Fehlerzustand-Code-Beleg (HTTP und gRPC) belegt`):
@@ -2426,7 +2430,7 @@ trägt den Rückfall seiner Klasse und nie keinen Code. Die erste Ziffer `8`
 kennzeichnet die Ablehnung einer Eingabe, etwa eines Antrags oder eines
 API-Aufrufs; sie trägt keine Fehlerklasse. Eine Warnung trägt den Buchstaben `W` (`PCF-W3002`); ihre erste
 Ziffer ist der Bereich (1 Erfassung und Replikation, 2 Backfill, 3 Retention und
-Speicher, 4 Verwaltung; ein Bereich 5 für Konfiguration und Start ist vorgesehen
+Speicher, 4 Verwaltung einschließlich der Aufrufe der HTTP- und gRPC-API; ein Bereich 5 für Konfiguration und Start ist vorgesehen
 und trägt keine Warnung), eine Warnung trägt keine Fehlerklasse. Zeilen des
 Berichts von `diagnose` mit Ausnahme der Zeile „Fehlerzustand“ tragen keinen Code.
 
@@ -2487,7 +2491,7 @@ Entfällt eine Ursache, bleibt ihr Code in dieser Tabelle und trägt den Vermerk
 | `PCF-E6002` | `replication` | die Bestätigung der Position an der Quelle ist fehlgeschlagen, oder der WAL-Rückstand liegt über der Fehlerschwelle | WAL-Rückstand und Slot prüfen (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)) |
 | `PCF-E6003` | `replication` | Verletzung der Stream-Ordnung (Änderung oder Commit ohne offene Transaktion, BEGIN bei offener Transaktion); sofortiger Abbruch | Log sichern, Container neu starten |
 | `PCF-E6004` | `replication` | Störung an Slot oder Replikationsverbindung beim Snapshot eines Backfills | Reserve von `max_replication_slots` prüfen, Backfill neu beantragen |
-| `PCF-E7000` | `internal` | unerwarteter interner Fehler, der keiner anderen Klasse zuzuordnen ist | Log sichern, Container neu starten |
+| `PCF-E7000` | `internal` | unerwarteter interner Fehler, der keiner anderen Klasse zuzuordnen ist; auch der Rückfallcode eines API-Aufrufs mit `500`, dessen Ursache keine Fehlerklasse trägt | in der Log-Zeile der Warnung `PCF-W4008` steht die Ursache im Attribut `error`; Log sichern, Container neu starten, bei Wiederholung das Log dem Support übergeben |
 | `PCF-E7001` | `internal` | das Wecksignal über NATS konnte nicht veröffentlicht werden; die Änderung selbst ist erfasst und über SQL lesbar | NATS-Server und `CDC_NATS_URL` prüfen |
 | `PCF-E7002` | `internal` | Persistenzfehler an der Antrags-Queue | Erreichbarkeit und Rechte der CDC-Datenbank prüfen, Antrag erneut stellen |
 | `PCF-E7003` | `internal` | Lesefehler an den Diagnose-Views | Erreichbarkeit und Rechte der Rolle `cdc_reader` prüfen |

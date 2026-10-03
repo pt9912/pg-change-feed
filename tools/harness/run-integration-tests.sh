@@ -254,6 +254,10 @@ abdeckung_schreiben() {
 }
 
 cleanup() {
+  if [ -n "${fault_writer_pid:-}" ]; then
+    kill "$fault_writer_pid" 2>/dev/null || true
+    wait "$fault_writer_pid" 2>/dev/null || true
+  fi
   docker unpause "$FEED_CONTAINER" >/dev/null 2>&1 || true
   $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true
   rm -rf "${WAL_TMP:-}"
@@ -2903,6 +2907,7 @@ fault_grpc_state_status=$?
 set -e
 kill "$fault_writer_pid" 2>/dev/null || true
 wait "$fault_writer_pid" 2>/dev/null || true
+fault_writer_pid=""
 if [ "$fault_http_state_status" -ne 0 ] || [ "$fault_grpc_state_status" -ne 0 ]; then
   echo "run-integration-tests: Fehlerzustand-Code-Beleg — der Fehlerzustand mit Code $FAULT_CODE ist über HTTP und gRPC nicht lesbar (HTTP Ausgang $fault_http_state_status, gRPC Ausgang $fault_grpc_state_status): HTTP=$fault_http_state gRPC=$fault_grpc_state" >&2
   exit 1

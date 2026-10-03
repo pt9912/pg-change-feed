@@ -237,10 +237,6 @@ func runChangesFlow(args []string) {
 	}
 }
 
-// runPositionFlow liest `GET /consumers/position` mit dem reader-Token und
-// gibt den Antwort-Body aus (LH-FA-CON-005): die Anfangsposition eines
-// Consumers ohne Bestätigung ist ein Messwert des Aufrufers, keine Annahme
-// dieses Clients.
 // runFaultFlow liest `GET /diagnose` mit dem reader-Token, bis das Feld
 // `error_code` der Antwort den erwarteten Wert trägt (`none` heißt: kein
 // Fehlerzustand, `null`), und gibt den Körper als FAULT-Zeile aus. Der
@@ -320,6 +316,10 @@ func runRejectedFlow(args []string) {
 	}
 }
 
+// runPositionFlow liest `GET /consumers/position` mit dem reader-Token und
+// gibt den Antwort-Body aus (LH-FA-CON-005): die Anfangsposition eines
+// Consumers ohne Bestätigung ist ein Messwert des Aufrufers, keine Annahme
+// dieses Clients.
 func runPositionFlow(args []string) {
 	if len(args) != 3 {
 		fmt.Fprintln(os.Stderr, "usage: httpclient position <base-url> <reader-token> <consumer-id>")

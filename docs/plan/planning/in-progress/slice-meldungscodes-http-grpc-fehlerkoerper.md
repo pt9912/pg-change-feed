@@ -82,8 +82,12 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       `401`/`403` — Code oder bewusst keiner, im Bericht begründet), `make test`,
       `make test-integration` (HTTP-API-Rundlauf: ein abgelehnter Aufruf gegen den laufenden
       Feed-Container zeigt den Code, Körper im Bericht **gemessen**).
-- [ ] **(B) gRPC.** `ErrorInfo` mit `reason`/`domain` an allen Fehlerstellen von
-      `administration.go`, `interceptor.go`, `server.go`; Spec-Nachzug `SPEC-031`; Unit-Tests
+- [ ] **(B) gRPC.** `ErrorInfo` mit `reason`/`domain` an den Fehlerstellen von
+      `administration.go` und `server.go` (4 der 7 gRPC-Fehlerstellen); die drei Stellen
+      des `interceptor.go` (`Unauthenticated`, `PermissionDenied`) und HTTP `401`/`403`
+      tragen bewusst keinen Code (benannte Grenze, §3 „Entscheidung Auth-Statuswerte“, §6;
+      Grund: [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md)
+      Festlegung 1, `E8` = Ablehnung einer Aufrufer-Eingabe, `E9` reserviert); Spec-Nachzug `SPEC-031`; Unit-Tests
       (Details auslesen, `reason` gleich Tabellen-Code); Beispiel-/Wegwerf-Clients, die Status
       lesen, bleiben lauffähig. *Zu belegen durch:* `make test`, gRPC-Rundlauf in
       `make test-integration` (Stream-Öffnung ohne Token → `Unauthenticated` mit `ErrorInfo`),
@@ -173,9 +177,13 @@ diff 0 -n -F 'ErrorInfo' -- sdks examples
   `E8` als Ablehnung einer Aufrufer-Eingabe (`400`/`404`, `InvalidArgument`/`NotFound`) und `E9` als reserviert;
   eine Stelle für Token-Fehler führt die Tabelle nicht, eine stille Erweiterung der ADR scheidet aus (§6).
   Gebunden durch `TestFehlerkoerperOhneCodeZuordnungTraegtKeinFeldCode` und `TestAuthStatusTraegtKeinErrorInfo`.
-  **Vorschlag an den Architect:** zwei Codes im Bereich `E9` (fehlendes/unbekanntes Token, unzureichende
-  Rechtsklasse) per Folge-ADR, danach tragen alle 7 gRPC-Fehlerstellen ein `ErrorInfo`. Abweichung vom Wortlaut der
-  DoD (B) („an allen Fehlerstellen“): 4 der 7 Stellen tragen `ErrorInfo`, die 3 des `interceptor.go` nicht.
+  **Entscheidung des Hauptlaufs (nach Review F-2):** benannte Grenze, keine Folge-ADR vor v0.6.0; zwei Codes im
+  Bereich `E9` (fehlendes/unbekanntes Token, unzureichende Rechtsklasse) wären eine spätere Entscheidung, danach
+  trügen alle 7 gRPC-Fehlerstellen ein `ErrorInfo`. Die DoD (B) nennt die Grenze im Wortlaut: 4 der 7 Stellen tragen
+  `ErrorInfo`, die 3 des `interceptor.go` nicht.
+- **Bekannte Grenze `WithDetails`.** Schlägt `st.WithDetails` in `statusError` fehl (praktisch unerreichbar für ein
+  `ErrorInfo` mit gesetztem Statuscode ungleich `OK`), liefert der Aufruf den Status ohne Detail; kein Test bindet den
+  Zweig (Review F-4, INFO).
 - **Entscheidung Warn-Stellen der API.** Die drei Zeilen `grpc: … fehlgeschlagen`, `http: … fehlgeschlagen`,
   `http: RegisterConsumer fehlgeschlagen` tragen `PCF-W4008` (Bereich 4 Verwaltung; eine Maßnahme: die Ursache nach
   dem Code der Antwort beheben); die vierte Stelle ohne Code aus T3 (`capture: Stream-Publish fehlgeschlagen`)
@@ -292,12 +300,22 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 - **Auth-Fehler ohne Klasse.** `401`/`403`/`Unauthenticated` sind weder Ablehnung einer
   Eingabe noch klassifizierter Fehler; ob sie einen Code tragen, ist im Bericht zu begründen
   (Vorschlag an den Architect, falls die Tabelle keine Stelle hat — keine stille Erweiterung
-  der ADR). — **Ausgang:** (bei Closure)
+  der ADR). — **Ausgang:** weiter offen, benannte Grenze: `401`/`403`/`Unauthenticated`/`PermissionDenied`
+  tragen keinen Code; keine Folge-ADR vor v0.6.0 (Entscheidung des Hauptlaufs nach Review F-2).
 - **Läufer-Erwartungen** an Fehlerkörper werden erst im `make test-integration`-Lauf rot, der
   nicht in `make gates` liegt. Gegenmittel: Suchlauf, vollständiger Lauf vor Closure. —
   **Ausgang:** (bei Closure)
 - **Kollision mit parallelen Arbeiten am Handbuch.** Rebase auf `main`, nur eigene Abschnitte
   committen. — **Ausgang:** (bei Closure)
+
+- **Bereich von `PCF-W4008` (Review F-7).** Der Code bleibt im Bereich 4; der Katalog des Handbuchs nennt, dass
+  Bereich 4 auch die Aufrufe der API umfasst. Die Bereichsnamen der ADR und der Spec bleiben unverändert.
+  — **Ausgang:** entfallen: Entscheidung des Hauptlaufs, Katalog wahr benannt.
+- **Hintergrund-Schreiber der Live-Phase (Review F-3).** `cleanup` in `tools/harness/run-integration-tests.sh`
+  beendet den Schreiber (`fault_writer_pid`: `kill`, `wait`). **Gemessen** mit einem Scratch-Skript, das den
+  Muster-Trap fährt und den Läufer mit SIGTERM beendet: mit der Aufnahme im Trap steht der Schreiber (Ticks 6 → 6
+  im Abstand von 1,5 s), ohne sie schreibt er weiter (Ticks 6 → 12) — Mutation: die Aufnahme im Trap entfernt, rot.
+  — **Ausgang:** entfallen: behoben.
 
 ## 7. Closure-Notiz
 
