@@ -817,8 +817,10 @@ func TestCaptureLoggtFehlschlaegeUeberDenInjiziertenPort(t *testing.T) {
 	if want := "code " + string(messagecode.WarnNotifyFailed); !strings.Contains(log.warnings[0], want) {
 		t.Fatalf("Wecksignal-Warnzeile = %q, wollen das Attribut %q", log.warnings[0], want)
 	}
-	if want := "code " + string(messagecode.WarnStreamPublish); !strings.Contains(log.warnings[1], want) {
-		t.Fatalf("Stream-Warnzeile = %q, wollen das Attribut %q", log.warnings[1], want)
+	// Der Port ist der prozessinterne Broadcaster, kein NATS: die Zeile trägt
+	// kein Attribut `code` (ein NATS-Code stünde ohne Betreiber-Maßnahme da).
+	if strings.Contains(log.warnings[1], messagecode.LogKey) || strings.Contains(log.warnings[1], "PCF-W") {
+		t.Fatalf("Stream-Warnzeile = %q, wollen kein Attribut %q und keinen Warn-Code", log.warnings[1], messagecode.LogKey)
 	}
 }
 

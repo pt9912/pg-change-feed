@@ -148,7 +148,7 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 		changes := changesOfCommittedTransaction(tx)
 		for i := range changes {
 			if err := s.stream.Publish(ctx, &changes[i]); err != nil {
-				s.log.Warn(ctx, "capture: Stream-Publish fehlgeschlagen", messagecode.LogKey, messagecode.WarnStreamPublish, "error", err, "change_id", changes[i].ID)
+				s.log.Warn(ctx, "capture: Stream-Publish fehlgeschlagen", "error", err, "change_id", changes[i].ID)
 			}
 		}
 	}
