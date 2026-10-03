@@ -88,8 +88,9 @@ pin-stale-actions: ## Advisory P9: alle uses:-SHA-Pins ueber .github/workflows/*
 	@bash tools/harness/pin-stale-actions.sh
 
 .PHONY: image-cve
-# TRIVY_IMAGE traegt aquasec/trivy v0.74.0 (Digest-Pin, Modul 14).
-TRIVY_IMAGE ?= aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
+# TRIVY_IMAGE traegt aquasec/trivy v0.75.0 (Digest-Pin auf den Index-Digest
+# von :latest, Modul 14).
+TRIVY_IMAGE ?= aquasec/trivy@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
 # GHCR-Pakete, die per GITHUB_TOKEN gepusht werden, entstehen unabhaengig
 # von der Sichtbarkeit des Repos privat (GitHub-Verhalten) — GHCR_USERNAME/
 # GHCR_PASSWORD (optional) authentifizieren ausschliesslich den
