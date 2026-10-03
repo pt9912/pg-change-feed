@@ -102,7 +102,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **Messung (Liefer-Punkt 1).** Alle Achsen P1 bis P9 sind am Arbeitsstand
+- [x] **Messung (Liefer-Punkt 1).** Alle Achsen P1 bis P9 sind am Arbeitsstand
       des Implementers neu gemessen (`make image-stale`, `make pin-stale-race`,
       `make pin-stale-pgtest`, `make pin-stale-dmigrate`,
       `make pin-stale-acheck`, `make pin-stale-dcheck`,
@@ -111,7 +111,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Registry); die gedruckten Zeilen mit den vollen Digests und der Parent-
       Kennung stehen in §7. Zeigt `P9` oder `P8` Drift, steht der Befund samt
       Ausgang dort; eine Achse ohne Drift wird nicht angefasst.
-- [ ] **Hebung und Nachzug (Liefer-Punkt 2).** Je gedriftete Achse ein eigener
+- [x] **Hebung und Nachzug (Liefer-Punkt 2).** Je gedriftete Achse ein eigener
       Digest-Commit (Commit-Betreff nennt
       [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md), keine
       `SPEC-`/`ARC-`-Kennung): `golang:1.27-alpine` (`Dockerfile`, `Makefile`
@@ -123,7 +123,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`d-check.mk`, beide Zeilen in einem Commit). Der Suchlauf aus §3
       (`diff`-Stand) zeigt keinen alten Digest mehr in einem lebenden Träger;
       die verbleibenden Treffer sind die in §1 ausgeschlossenen Records.
-- [ ] **Belege (Liefer-Punkt 3).** Je gehobene Achse läuft der engste
+- [x] **Belege (Liefer-Punkt 3).** Je gehobene Achse läuft der engste
       betroffene Lauf aus §3 und die Ausgabe wird gegen den Parent verglichen
       (Befunde, Meldungsform); `make image` endet erfolgreich, `make
       test-store`, `make test-replication` an PostgreSQL 18 und mit
@@ -133,14 +133,18 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
-- [ ] `make gates` grün (Exit direkt ausgewertet,
+- [x] `make gates` grün (Exit direkt ausgewertet, Exit 0 am Endstand, Zeilen
+      `coverage-gate: OK — Coverage 82.40% erfüllt Schwelle 80%`,
+      `d-check: 1620 Datei(en) geprüft, 0 Befund(e)`, `gesamt: 0 Befund(e)`;
+      `make test` Exit 0 nach P3, `make docs-check` Exit 0;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make test` grün, `make
       docs-check` grün (Exit direkt); `make mod-download` nur, falls `go.mod`
       berührt wird — erwartet nicht.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: kein öffentlicher Vertrag berührt (erwartet — gemessen
+- [x] Doku-Update: kein öffentlicher Vertrag berührt (gemessen am Diff: kein
+      Digest-Treffer in `spec/`, `docs/user/`, `README.md`, `AGENTS.md`; erwartet — gemessen
       unter §Berührte Spec-Stellen: kein Digest in `spec/`, `docs/user/`);
       die Träger-Nachzüge stehen in der Liefer-Punkt-2-Zeile.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
@@ -165,7 +169,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `a-check.mk` (`A_CHECK_IMAGE`) | update | P6: neuer `a-check:latest`-Digest |
 | `d-check.mk` (`DCHECK_IMAGE`, `DCHECK_DIGEST`) | update | P7: Tag `v0.79.0` und der dazu gemessene Digest, beide Zeilen in einem Commit (der Digest sticht den Tag, ein Tag ohne neuen Digest wäre wirkungslos) |
 | `.d-check.yml` | update, nur falls der Lauf mit der neuen Version eine Schlüssel-/Modul-Änderung verlangt | eine Konfigurationsänderung ist ein Befund-Anlass (§6), keine stille Mitänderung |
-| `docs/plan/planning/open/slice-pin-digests-aktualisieren-2026-10.md` | update | §7 Messzeilen, Vergleich gegen den Parent |
+| `docs/plan/planning/in-progress/slice-pin-digests-aktualisieren-2026-10.md` | update | §7 Messzeilen, Vergleich gegen den Parent |
 
 - **Reihenfolge:** (1) messen und die Zeilen in §7 festhalten; (2) je Achse
   einen Digest hochziehen, den engsten Lauf fahren (P1/P3: `make test`, `make
@@ -204,6 +208,14 @@ e5820a030a2dea7e2deafc474fadbf973673cd6a 3 -n -E '862dfb04' -- . ':!docs/reviews
 e5820a030a2dea7e2deafc474fadbf973673cd6a 2 -n -E '34d3dfb5' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!.harness/baseline'
 e5820a030a2dea7e2deafc474fadbf973673cd6a 1 -n -E 'd-check:v0\.77\.0' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!.harness/baseline'
 e5820a030a2dea7e2deafc474fadbf973673cd6a 1 -n -E '7456ef82' -- . ':!docs/reviews' ':!docs/plan/planning/observations' ':!.harness/baseline' ':!docs/plan/planning/done'
+diff 10 -n -E 'cf6fca66|b475798f|63bdc97d|862dfb04|34d3dfb5' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!.harness/baseline'
+diff 5 -n -E 'cf6fca66' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!.harness/baseline'
+diff 1 -n -E 'b475798f' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!.harness/baseline'
+diff 2 -n -E '63bdc97d' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!.harness/baseline'
+diff 1 -n -E '862dfb04' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!.harness/baseline'
+diff 1 -n -E '34d3dfb5' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!.harness/baseline'
+diff 0 -n -E 'd-check:v0\.77\.0|3f84502b' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!.harness/baseline'
+diff 0 -n -E '7456ef82' -- . ':!docs/reviews' ':!docs/plan/planning/observations' ':!.harness/baseline' ':!docs/plan/planning/done'
 ```
 
   **Erwartung am `diff`-Stand nach der Hebung** (hergeleitet aus der
@@ -331,11 +343,91 @@ Planung (gemessen am Arbeitsstand `e5820a03`, 2026-10-03, volle Digests aus den
 gedruckten Zeilen in `harness/`-Ausgaben des Implementers einzutragen, nicht
 hier abgekürzt zu übernehmen):
 
-- Drift-Messung P1–P9 (Implementer): Befehl, gedruckte Zeile, Parent-Kennung.
-- PG-17-Handmessung (Implementer): Befehl, gedruckte Zeile.
-- Vergleich der Gate-/Lauf-Ausgaben Parent gegen Diff je gehobene Achse.
-- Ergebnis des `diff`-Suchlaufs aus §3, Gefundenes und Nichtgefundenes.
-- Post-Push-Lauf `e2e.yml` (beide Legs) und `upstream-drift.yml`, sobald gepusht.
+- **Drift-Messung P1–P9 (gemessen, 2026-10-03, Arbeitsstand `8aeec6f2`
+  (Parent des ersten Hebungs-Commits), Befehle `make image-stale` und
+  `make pin-stale-race|-pgtest|-dmigrate|-acheck|-dcheck|-baseline|-actions`,
+  Exit je `make` direkt gelesen):**
+
+  ```text
+  DRIFT golang:1.27-alpine: gepinnt sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125, aktuell sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414   (P1, Exit 2)
+  OK    gcr.io/distroless/static-debian12:nonroot == sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab   (P2)
+  DRIFT TOOLCHAIN_RACE_IMAGE (golang:1.27): gepinnt sha256:b475798fb16158e6c38e8b5ca2d870fbeaa8b7fec0fc8ec64b3dc20966040635, aktuell sha256:e0174e51e81218523251d85d248a90d24c3d5e81543b4f07a5d66229397db190   (P3, Exit 2)
+  DRIFT PG_TEST_IMAGE (postgres:18-alpine): gepinnt sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8, aktuell sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873   (P4, Exit 2)
+  DRIFT D_MIGRATE_IMAGE (ghcr.io/pt9912/d-migrate:latest): gepinnt sha256:862dfb04c34dd17278b1bab46961363c12eeb8d464cf1776565d6285603d2c89, aktuell sha256:af9d3eb323a6cfd13eb63f012823788e510f764509918933d2ff98c8e68e4212   (P5, Exit 2)
+  DRIFT A_CHECK_IMAGE (ghcr.io/pt9912/a-check:latest): gepinnt sha256:34d3dfb50e44d99ea735186a35e1040589c4681dcfa2a51ed0f2aaea718cdd2d, aktuell sha256:e8208764b119c606c92f82722813386277a65b12812d23b6107ea7a14dc25da1   (P6, Exit 2)
+  OK    DCHECK_DIGEST (ghcr.io/pt9912/d-check:v0.77.0) == sha256:3f84502b09af65246fff38b1c3893130050e50581943a0434da95bf68091e337
+  DRIFT DCHECK_IMAGE Tag-Frische: gepinnt v0.77.0, neuester Release v0.79.0   (P7, Exit 2)
+  OK    Kurs-Baseline v6.13.0 == neuester Release   (P8, Exit 0)
+  OK    actions/checkout@v7.0.1, docker/setup-buildx-action@v4.4.1, docker/login-action@v4.6.0, astral-sh/setup-uv@v10.2.0: Tag-Mutation und Tag-Frische je OK   (P9, Exit 0)
+  ```
+
+  Keine Tag- und keine Hauptversionsänderung: `golang:1.27` meldet
+  `go version go1.27.1` am alten wie am neuen Digest (gemessen mit
+  `docker run --entrypoint go … version` an beiden neuen Digests), PostgreSQL
+  bleibt `18.6` (gedruckte Zeile des Replikations-Tests) und `17.11`.
+  P8/P9 ohne Drift, nicht angefasst. Der Blick in das Log des Laufs
+  `37112891025` (Plan-Erwartung zu `P9`) ist nicht erfolgt; `P9` ist am
+  Arbeitsstand `OK`, der Plan-Satz bleibt Erwartung.
+- **PG-17-Handmessung (gemessen, 2026-10-03):** `docker buildx imagetools
+  inspect postgres:17-alpine --format '{{.Manifest.Digest}}'` druckte den
+  Index-Digest `sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24`;
+  der amd64-Eintrag (Form des bisherigen Pins, `docker manifest inspect
+  postgres:17-alpine`) trägt `sha256:aa90e97ee862e558111d34cfb8b2c4bec768c2b039fb791341686928560263b3`
+  (Annotation `17.11-alpine3.24`); der alte Pin
+  `sha256:7456ef82e5f5bc43d997f4781bbd7c0d6389bff397564649a356e206ba473aee`
+  ist ein Einzel-Manifest (`application/vnd.oci.image.manifest.v1+json`), also
+  ebenfalls amd64-Form. Die Drift ist real und vom Sensor von `upstream-drift`
+  nicht gemeldet worden (Inventar führt PG 17 nicht, siehe §6).
+- **Hebung (sieben Commits, je Achse einer):** P1 `cc93ca3b`, P3 `2d871258`,
+  P4 `f69ce37e`, PG-17-Pin `f3b904ec`, P5 `79e40cbf`, P6 `7b5865f0`, P7
+  `168db825`. DCHECK_DIGEST `sha256:b4b8756b40d3dcd2670a3f83526cb5e5d727d1a850571f73be31edba248abb40`
+  gemessen mit `docker buildx imagetools inspect ghcr.io/pt9912/d-check:v0.79.0
+  --format '{{.Manifest.Digest}}'`; das Image trägt das Label
+  `org.opencontainers.image.version` `0.79.0`; `make pin-stale-dcheck` druckt
+  danach `OK … DCHECK_DIGEST (ghcr.io/pt9912/d-check:v0.79.0) == sha256:b4b8756b…`
+  und `OK … Tag-Frische (v0.79.0)`, Exit 0.
+- **Läufe am Diff (Exit direkt):** `make test` nach P1 und nach P3 Exit 0
+  (zweiter Lauf 51 `ok`-Zeilen, kein `FAIL`); `make image` Exit 0 (nach P1 und
+  am Endstand); `make test-store` Exit 0 nach P4 und nach P5, gedruckt
+  `db-coverage: OK — DB-Adapter-Coverage 83.03% erfuellt Schwelle 80%`;
+  `make test-replication` Exit 0 an PostgreSQL 18 (`PostgreSQL 18.6: Keepalive
+  inmitten der Transaktion …`) und mit `PG_TEST_IMAGE=postgres:17-alpine@sha256:aa90e97e…`
+  Exit 0 (`PostgreSQL 17.11: Keepalive inmitten der Transaktion …`);
+  `make schema-validate` Exit 0 (`Validation passed: 0 warning(s)`) und
+  `bash tools/harness/run-schema-rollout-guard-test.sh` Exit 0 (`alle Belege
+  real erbracht … make-Exit 2/2 mit d-migrate-Exit 8`) mit dem neuen
+  d-migrate-Digest, die Nacharbeits-Schritte also weiter tragend;
+  `make a-check` Exit 0 mit `gesamt: 0 Befund(e)` am alten **und** am neuen
+  Digest; `make docs-check` Exit 0 mit `d-check: 1620 Datei(en) geprüft, 0
+  Befund(e)` am alten (v0.77.0) **und** am neuen (v0.79.0) Digest;
+  `make test-integration` Exit 0 am Endstand (`E2E-Abdeckungstabelle
+  unverändert`, `Lauf abgeschlossen`). Ein erster Lauf von
+  `make test-integration` wurde vom 30-Minuten-Limit des
+  Hintergrund-Wrappers abgebrochen (kein Testfehler, Abbruch in der
+  Upgrade-Phase, Container abgeräumt) und mit längerer Frist wiederholt. Der
+  Parent wurde nur dort gefahren, wo ein Diff-Rot zu vergleichen gewesen wäre
+  (`a-check`, `docs-check`); die übrigen Läufe sind am Diff grün, ein
+  Parent-Lauf entfällt mangels Rot.
+- **`diff`-Suchlauf (§3):** die acht `diff`-Zeilen des Blocks treffen die
+  Erwartung (10 = 5+1+2+1+1; `d-check:v0.77.0`/`3f84502b` 0; `7456ef82` 0).
+  Gefunden (alle Records bzw. Messkontext, bewusst nicht geändert):
+  `docs/plan/adr/0051-…` (fünf Zeilen Pin-Inventar), `0071-…` (zwei),
+  `0098-…` (eine), `0128-…` (eine), `harness/sensors/db-adapter-coverage.md`
+  Zeile 300 (Rot-/Grün-Beleg eines Laufs von `slice-081`; beschreibt den Stand
+  dieses Laufs, kein geltender Pin — nicht nachgezogen). Nichtgefunden: kein
+  alter Digest in `Makefile`, `*.mk`, `Dockerfile`, `examples/`, `compose*.yaml`,
+  `.github/workflows/`, `tools/`. Grenze: der Suchlauf liest Digest-Präfixe, keine
+  Tag-Texte; das Makefile-Kommentar `go1.27.1` stimmt mit der Messung überein.
+- **Gemeldete Träger fremder Dateien:** `harness/README.md` nennt für
+  `make image-stale` die Bindung `ADR-0039` (stale, siehe §6) — nicht
+  geändert, Frist: Closure.
+- **Post-Push-Lauf `e2e.yml` (beide Legs) und `upstream-drift.yml`:** steht aus
+  (kein Push). Der Slice berührt `.github/workflows/e2e.yml` (nur Pin-Werte und
+  das Datum im Kommentar, keine Struktur); `AGENTS.md` §3.10 meldet: der
+  Post-Push-Lauf ist offen.
+- **Beobachtung (nicht angelegt):** Der PG-17-Pin driftete ohne Sensor
+  (Messung oben). Ein Register-Eintrag `BEO-PGC/…` ist Closure-Arbeit des
+  Planners (§6 benennt ihn).
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register (vorhandene `BEO-<NNN>` **zitieren** statt neu
