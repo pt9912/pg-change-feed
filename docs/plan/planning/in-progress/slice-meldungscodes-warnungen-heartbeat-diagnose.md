@@ -72,12 +72,12 @@ noch Code** (Zustandsberichte, Festlegung 7 der ADR).
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Ziel-Form: Slice — **≤ 3 Liefer-Punkte**.
 
-- [ ] **(A) Warn-Codes.** Die Betreiber-Warnungen (Liste im Bericht, Auswahl begründet:
+- [x] **(A) Warn-Codes.** Die Betreiber-Warnungen (Liste im Bericht, Auswahl begründet:
       Maßnahme des Betreibers, Granularität wie in der ADR) tragen `code=<code>` als Attribut;
       Tabelle und Handbuch-Katalog um die `W`-Codes erweitert; `meldungscodes-check` und der
       Registry-Test (Ziffer gegen Bereich) grün. *Zu belegen durch:* Test je Warn-Code, der das
       Attribut einer ausgelösten Warnung liest (Happy), der Registry-Test; Suchlauf §3.
-- [ ] **(B) Heartbeat-Spalte und Diagnose.** Additive Spalte `error_code` in
+- [x] **(B) Heartbeat-Spalte und Diagnose.** Additive Spalte `error_code` in
       `cdc.process_heartbeat` und `cdc.heartbeat` samt Rollout (ein Vorlauf der View entfällt:
       `cdc.heartbeat` ist Fremdobjekt der Wache und wird beim Rollout neu angelegt, siehe §3
       „Nicht realisiert“ und §6; Klasse des Vorlaufs:
@@ -90,22 +90,22 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       grün, `make test-integration` (Fehlerzustand-Beleg: der direkt in `cdc.process_heartbeat`
       geschriebene Fehlerzustand erscheint mit Code, Normalbetrieb mit `NULL`), die gedruckten
       Zeilen eines realen `diagnose`-Laufs (**gemessen**) gegen das Handbuch.
-- [ ] **(C) Kompatibilität des Lesers.** Die Spalte und das Feld sind additiv: bestehende Leser
+- [x] **(C) Kompatibilität des Lesers.** Die Spalte und das Feld sind additiv: bestehende Leser
       (`cdc.heartbeat`-Konsumenten, SDKs, Beispiel-Clients) brechen nicht. *Zu belegen durch:*
       Messung der Leser mit Befehl im Bericht (`git grep` der Spalten-/Feldlisten in `sdks/`,
       `examples/`, `tools/harness/`; Ergebnis, nicht Erwartung), `make examples-*`-Bau soweit
       ein Beispiel-Client das Feld liest.
-- [ ] `make gates` grün (Exit-Code ungefiltert, [`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün (Exit-Code ungefiltert, [`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`), kein Self-Review.
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und** Nichtgefundenes
       je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=docs/plan/planning/<Verzeichnis>/slice-meldungscodes-warnungen-heartbeat-diagnose.md`
       endet mit Exit 0.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine Beobachtung
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine Beobachtung
       angefallen“ in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
 
 ## 3. Plan (vor Code)
 
@@ -289,29 +289,38 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   gelöscht und neu angelegt), deshalb braucht sie keinen Vorlauf der Klasse
   [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) (siehe §3 „Nicht
   realisiert“; Lauf 5 trennt beide Erklärungen nicht). Gegenmittel:
-  Rollout-Wache-Lauf und zweiter Rollout gegen migriertes Ziel. — **Ausgang:** (bei Closure)
+  Rollout-Wache-Lauf und zweiter Rollout gegen migriertes Ziel. — **Ausgang:** entfallen —
+  `cdc.heartbeat` ist Fremdobjekt der Wache, Wache-Lauf 5 und zweiter Rollout Exit 0 (Verifier
+  **gemessen**); die benannte Grenze (Lauf 5 trennt „neu angelegt“ nicht von „angehängt“) steht in
+  `harness/targets/schema-rollout.md`.
 - **Rückweg auf eine ältere Version.** Ein älterer Server überschreibt `error_class` und lässt
   einen früher gesetzten `error_code` stehen; die View blendet ihn nur bei leerer Klasse aus.
   Entscheidung der Fixrunde: Grenze im Handbuch („Rückweg auf eine ältere Version“, *abgeleitet*,
   nicht gegen einen Alt-Server gefahren), keine Ziffern-Prüfung in der View (sie berührte Signatur
-  und Wache). — **Ausgang:** (bei Closure)
+  und Wache). — **Ausgang:** eingetreten, bewusst — im Handbuch als Grenze benannt (*abgeleitet*,
+  kein Alt-Server gefahren); kein Folge-Slice.
 - **Codes sind bis zum Release nicht stabil.** Die Warn-Codes dieses Slice stehen in
   unveröffentlichten Commits; ein Code wird erst mit dem Release unveränderlich. Die Fixrunde
   hat `PCF-W1002` von der Erfassungs-Stelle (prozessinterner Broadcaster) genommen; die Tabelle
   bleibt bei 88 Codes, weil `PCF-W1002` im NATS-Adapter (`natsstream/publisher.go`) bleibt.
   `PCF-W1004` ist über den Regelweg nicht erreichbar (Reserve, im Katalog vermerkt); Bereich 5
-  trägt keine Warnung (Hinweis im Handbuch). — **Ausgang:** (bei Closure)
+  trägt keine Warnung (Hinweis im Handbuch). — **Ausgang:** weiter offen bis zum Release
+  (Freigabe des Auftraggebers); dieser Slice setzt weder Tag noch Version.
 - **Proto-/Leser-Kompatibilität.** Ein additives Proto-Feld ist für Leser unschädlich
   (*hergeleitet*, nicht nachgemessen); Beispiel-Clients und Wegwerf-Clients lesen das
-  Diagnose-Ergebnis. Gegenmittel: Liefer-Punkt C. — **Ausgang:** (bei Closure)
+  Diagnose-Ergebnis. Gegenmittel: Liefer-Punkt C. — **Ausgang:** entfallen — `sdks/` ohne Diff
+  (`git diff --name-only a9767e87 HEAD -- sdks` leer), `make sdk-pack-python` vom Verifier
+  **gemessen**; C#- und Kotlin-Pack und die Beispiel-Bauten **übernommen** aus dem Implementer-Bericht
+  (vor dem Release zu fahren).
 - **Zu viele oder zu wenige Warn-Codes.** Die Auswahl der 35 Warn-Stellen ist Urteil;
   Gegenmittel: Regel „Maßnahme des Betreibers“, Auswahl im Bericht, Reviewer liest sie. —
-  **Ausgang:** (bei Closure)
+  **Ausgang:** eingetreten und aufgelöst — Review F-1 (`PCF-W1002` an der falschen Stelle), Fixrunde
+  `7fb3dfc9`; der Verifier fand keine weitere Fehlzuordnung.
 - **Läufer-Erwartungen an die Diagnose-Zeile** werden erst im `make test-integration`-Lauf rot,
   der nicht in `make gates` liegt. Gegenmittel: Suchlauf, vollständiger Lauf vor Closure. —
-  **Ausgang:** (bei Closure)
+  **Ausgang:** entfallen — `make test-integration` Exit 0 (Verifier **gemessen**).
 - **Kollision mit parallelen Arbeiten am Handbuch.** Rebase auf `main`, nur eigene Abschnitte
-  committen. — **Ausgang:** (bei Closure)
+  committen. — **Ausgang:** entfallen — kein Konflikt im Diff (Verifikation).
 
 ## 7. Closure-Notiz
 
@@ -319,12 +328,75 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register · `grundlagen-traceability.md` §Herkunfts-Anker für
 Steering-Loop-Regeln. Wird bei der Closure gefüllt (vor dem `git mv` nach `done/`).
 
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register (`../observations/`):** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
+- **Was hat funktioniert:** (1) Tabelle und Katalog tragen 88 Codes (66 + 22 Warn-Codes; das Gate
+  `meldungscodes-check` **gemessen**: `88 Codes in Tabelle und Katalog gleich`); Tabellentest des Gates
+  73 Prüfungen (Verifier **gemessen**). (2) 35 `.Warn(`-Aufrufe in Produktion (Verifier **gemessen**) =
+  30 mit `W`-Code + 1 mit dem `E`-Code des Fehlerzustands + 4 ohne Code. (3) Der Warn-Code je Stelle
+  ist an einen Test gebunden: 24 Vertauschungen eines Codes gegen einen anderen färbten rot
+  (Implementer **gemessen**; der Verifier fuhr vier als Stichprobe), dazu 13 Einzelmutationen der
+  Fixrunde und der Diagnose-Kette (Verifier, alle rot). (4) Reale `diagnose`-Läufe (Verifier
+  **gemessen**, gleich dem Handbuch): `  Fehlerzustand: keiner (Normalbetrieb)`, `  Fehlerzustand:
+  schema [PCF-E4003]`, `  Fehlerzustand: schema` (nur Klasse). Der Alt-Tag-Lauf der Rollout-Wache
+  (`run-schema-rollout-guard-test.sh`, Lauf 5) endet grün (Verifier **gemessen**). `make gates`
+  Exit 0 (Verifier **gemessen**, ungepiped). (5) SDK-Bauten: `make sdk-pack-python` Verifier
+  **gemessen**; C#, Kotlin und die Beispiel-Bauten **übernommen** aus dem Implementer-Bericht (SDKs
+  und Beispiele ohne Diff, das Proto-Feld ist additiv).
+- **Was ging anders als geplant:** (1) **Review und Fixrunde:** 0 HIGH, ein MEDIUM, 5 LOW, 3 INFO.
+  F-1 (MEDIUM): `PCF-W1002` („Stream-Veröffentlichung im NATS-Adapter“) stand auch an der
+  Erfassungs-Stelle `capture/service.go`, die den prozessinternen Broadcaster aufruft; das Gate war
+  grün. Behoben durch die Fixrunde `7fb3dfc9` (`PCF-W1002` entfällt dort, bleibt am NATS-Publisher; die
+  Tabelle bleibt bei 88 Codes), Nachzug von Spec, Handbuch und Vertrag in `2d74dc6f`. **Ein
+  Re-Review nach der Fixrunde fand nicht statt** — ehrliche Abweichung vom Ablauf: der Verifier hat den
+  Fixrunden-Diff (`git diff 532614a3 HEAD`) in der Reviewer-Haltung gelesen, 13 Einzelmutationen gefahren
+  (alle rot) und einen weiteren Reviewer-Durchgang nicht für nötig befunden (nur nötig, wenn F-2 neu
+  entschieden wird); die Review-Reports bleiben unverändert und tragen den Stand vor der Fixrunde.
+  (2) **F-2, Auslegung des Hauptlaufs (offen, nicht blockierend):** die Warn-Zeile `heartbeat:
+  Fehlerzustand gemeldet` behält den `E`-Code des Fehlerzustands unter `code`; Spec (`SPEC-008`) und
+  Katalog tragen einen Satz dazu. Die Bestätigung des Architects steht aus. (3) **V-1 (LOW, Abweichung
+  der ADR vom Code):** [`ADR-0144`](../../adr/0144-meldungscodes-nutzerseitige-kennungen.md) nennt für
+  T3 einen „Rollout-Vorlauf“; umgesetzt ist keiner, weil `cdc.heartbeat` ein Fremdobjekt der Wache
+  (`DropView`) ist und beim Rollout neu entsteht. Das ist eine inhaltliche Aussage der ADR, keine
+  Zitat-Korrektur ([`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) trifft
+  nicht zu), die ADR ist unberührbar ([`AGENTS.md`](../../../../AGENTS.md) §3.5). Entscheidung des
+  Hauptlaufs: keine Folge-ADR; die Abweichung steht in §3 „Nicht realisiert“ und in
+  `harness/targets/schema-rollout.md`. **Offener Hinweis für den nächsten Architect-Zug:** die ADR
+  sagt es an dieser einen Stelle ungenau. (4) **V-2 (LOW):** HTTP und gRPC sind im Fehlerzustand mit
+  Code nur durch Unit-Tests gebunden, die Integration prüft dort nur den Normalbetrieb; Entscheidung
+  des Hauptlaufs: [T4](../open/slice-meldungscodes-http-grpc-fehlerkoerper.md) bringt einen
+  Live-Beleg mit (Liefer-Punkt dort ergänzt, Ursprung dieser Verifier-Befund). (5) **V-3 (INFO):** ein
+  gescheiterter Antrag erzeugt zwei Warn-Zeilen mit `PCF-W4004` (Aufruf der Goroutine und Vermerk des
+  Adapters); der Katalog-Wortlaut deckt beide, ein Filter auf den Code zählt je Antrag doppelt.
+  (6) **Pfad-Zitate in `ADR-0144`:** `git grep -n 'meldungscodes-warnungen-heartbeat-diagnose' --
+  docs/plan/adr` nennt nur den Slice-Namen ohne Pfad (Verifier **gemessen**) — keine Zitat-Korrektur
+  nach [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) nötig. (7) **CI:** der
+  Slice berührt keinen Workflow ([`AGENTS.md`](../../../../AGENTS.md) §3.10 löst keine Pflicht aus);
+  nach dem Push ist der Lauf zu beobachten (Erwartung, nicht gemessen).
+- **Steering-Loop-Eintrag:** *Geschärfte Regel:* keine neue Regel im Wortlaut — Kandidat, 1×,
+  unter der Schwelle: **ein Gate, das Mengen vergleicht, prüft Existenz, nicht Passung; ein neuer
+  Emittent eines Codes braucht den Kontext-Satz „Ursache dieser Stelle“ und der Reviewer liest die
+  Emittenten je Code.** F-1 war für `meldungscodes-check` grün und wurde nur durch Lesen gefunden.
+  *Neuer Sensor:* keiner — Passung von Code und Ursache steht in keiner maschinenlesbaren Form; die
+  Fixrunde band die Zusage „Broadcaster-Fehlschlag trägt keinen Code“ an einen Test
+  (`TestCaptureLoggtFehlschlaegeUeberDenInjiziertenPort`). *Benannte Spec-Lücke:* keine neue; die
+  Gate-Grenze (die Liste `Table` ist nicht Gegenstand des Gates, ein fehlender Tabelleneintrag allein
+  färbt den Registry-Test) ist im Sensor-Vertrag benannt. Für T4: die Emittenten-Liste je Code in den
+  Plan schreiben, wenn T4-Codes vergeben werden.
+- **Beobachtungs-Register (`../observations/`):** NEU `BEO-PGC/gate-prueft-existenz-nicht-passung`
+  (1×, offen — unter der Schwelle; Beleg `evidence/slice-meldungscodes-warnungen-heartbeat-diagnose.md`,
+  Review F-1 und Fix `7fb3dfc9`; `git grep` im Register nach Existenz/Passung fand keinen Eintrag
+  derselben Klasse). `BEO-PGC/umbau-aendert-still-beobachtbares-verhalten`: **kein neues Vorkommen**
+  (die Klassifikation ist gegen den Parent unverändert, Verifier **gemessen**; F-1 ist eine falsche
+  Gruppierung eines neuen Verhaltens, keine Änderung eines bestehenden). `BEO-PGC/intern-kennungen-in-ausgelieferten-texten`:
+  Zustandsfeld um einen Satz fortgeschrieben (Warn-Codes stehen jetzt im Katalog und im Gate);
+  Zähler **1×** unverändert.
+- **Folge-Slices:** T4 [`meldungscodes-http-grpc-fehlerkoerper`](../open/slice-meldungscodes-http-grpc-fehlerkoerper.md)
+  (in `open/`, Startbedingung erfüllt; trägt jetzt den Live-Beleg des Fehlerzustands aus V-2). Kein
+  Release, keine Versionsänderung. Offen beim Auftraggeber: Bestätigung der Auslegung F-2 durch den
+  Architect; Hinweis zur ADR-Zeile aus V-1; vor dem Release C#-/Kotlin-Pack und Beispiel-Bauten fahren.
+- **Risiken aus §6:** Schema-Rollout: entfallen; Rückweg auf eine ältere Version: eingetreten,
+  bewusst (im Handbuch als *abgeleitet*); Codes erst mit dem Release stabil: weiter offen bis zum
+  Release (Auftraggeber); Proto-/Leser-Kompatibilität: entfallen; Zahl der Warn-Codes: eingetreten und
+  aufgelöst (F-1); Läufer-Erwartungen: entfallen; Kollision am Handbuch: entfallen.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

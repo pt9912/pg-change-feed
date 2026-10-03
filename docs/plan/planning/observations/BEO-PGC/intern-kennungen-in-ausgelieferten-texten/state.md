@@ -40,7 +40,9 @@ Meldungscodes folgen in T2 bis T4. Der Zähler bleibt **1×** (kein neuer Vorgan
 (Sensor-Vertrag `harness/sensors/meldungscodes-check.md`). Die erste Stufe
 (`ausgabe-kennungen-check`) hält die Ausgaben kennungsfrei, die zweite lässt nur Codes der
 Tabelle zu. Siehe `docs/plan/planning/done/slice-meldungscodes-registry-fehlerkopf.md`. Der
-Zähler bleibt **1×** (kein neuer Vorgang der Klasse).
+Zähler bleibt **1×** (kein neuer Vorgang der Klasse). Seit T3 gehören die Warn-Codes `PCF-W…`
+(Log-Attribut `code`) zur Menge, die das Gate abgleicht (88 Codes); die Passung eines Codes zu seiner
+Stelle prüft es nicht (`BEO-PGC/gate-prueft-existenz-nicht-passung`).
 
 **Verwandt, nicht gleich:** `BEO-PGC/slice-chronik-in-code-kommentar` (Chronik in
 Code-Kommentaren, Leser ist der Entwickler im Repo) — hier ist der Leser ein

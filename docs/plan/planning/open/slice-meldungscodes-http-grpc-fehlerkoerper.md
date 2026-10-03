@@ -89,6 +89,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       `make test-integration` (Stream-Öffnung ohne Token → `Unauthenticated` mit `ErrorInfo`),
       `make examples-csharp`/`make examples-kotlin`/`make example-run-go`-Bau soweit sie
       gRPC-Fehler auswerten.
+      **Mitzuliefern (Ursprung: Verifikation von `meldungscodes-warnungen-heartbeat-diagnose`,
+      Befund V-2):** ein Live-Beleg des Fehlerzustands mit Code über beide Wege. Der Runner
+      `tools/harness/run-integration-tests.sh` prüft bei `GET /diagnose` (`error_code`) und beim
+      RPC `Diagnose` (`HeartbeatStatus.error_code`) bisher nur den Normalbetrieb (`"error_code":null`,
+      leeres Feld); T4 setzt im Runner einen Fehlerzustand mit Code direkt in
+      `cdc.process_heartbeat` (wie der CLI-Beleg) und liest Klasse und Code über HTTP und gRPC
+      gegen den laufenden Feed-Container, Normalbetrieb mit `NULL` als Gegenprobe.
 - [ ] `make gates` grün (Exit-Code ungefiltert, [`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`), kein Self-Review.
