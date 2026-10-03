@@ -25,12 +25,13 @@
 # (tools/harness/run-sdk-python-integration-tests.sh); sie braucht Netz und
 # DB-Zugang und ist deshalb kein Gate.
 #
-# Basis-Digest gemessen (`docker buildx imagetools inspect`,
-# Manifest-Index-Digest über alle Plattformen):
-#   python:3.14-slim (3.14.7-slim-trixie, aktuelle Python-Version)
-#     -> sha256:caaf356f40667c496d405780745b9ac25771c189a51dfcc42430d531ea09f8a2
+# Basis-Digest ist der Index-Digest des Tags über alle Plattformen
+# (`docker buildx imagetools inspect python:3.14-slim --format
+# '{{.Manifest.Digest}}'`):
+#   python:3.14-slim (Python 3.14.8, aktuelle Python-Version)
+#     -> sha256:0741d101873c12ab927e6f8653feb8862b9bd58771177acb1b885b95141f91b4
 # Pin-Hebung ist ein bewusster Commit, keine stille Auflösung.
-FROM python:3.14-slim@sha256:caaf356f40667c496d405780745b9ac25771c189a51dfcc42430d531ea09f8a2 AS build
+FROM python:3.14-slim@sha256:0741d101873c12ab927e6f8653feb8862b9bd58771177acb1b885b95141f91b4 AS build
 WORKDIR /src
 
 # pyproject.toml zuerst — es ändert sich seltener als der Quellcode und
