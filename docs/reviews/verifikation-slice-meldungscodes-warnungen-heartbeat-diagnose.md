@@ -6,7 +6,7 @@
 Architect-Verdikt
 [`architect-verdict-meldungscodes-statt-interner-kennungen`](architect-verdict-meldungscodes-statt-interner-kennungen.md))
 + Plan-vs-Code-Diff. Plan:
-[`slice-meldungscodes-warnungen-heartbeat-diagnose`](../plan/planning/in-progress/slice-meldungscodes-warnungen-heartbeat-diagnose.md)
+[`slice-meldungscodes-warnungen-heartbeat-diagnose`](../plan/planning/done/slice-meldungscodes-warnungen-heartbeat-diagnose.md)
 (wellenlos, Teil 3 von 4). Review:
 [`review-slice-meldungscodes-warnungen-heartbeat-diagnose`](review-slice-meldungscodes-warnungen-heartbeat-diagnose.md)
 (0 HIGH, 1 MEDIUM F-1, 5 LOW F-2 bis F-6, 3 INFO F-7 bis F-9). Formvorbild:
