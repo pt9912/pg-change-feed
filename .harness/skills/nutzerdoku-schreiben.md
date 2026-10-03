@@ -10,8 +10,8 @@
   `benutzerhandbuch-standard.md`, `version.md`); kein eigenes Make-Target —
   getragen vom Implementer (`.claude/commands/implement-slice.md` Schritt 17) und
   vom Reviewer (`.harness/skills/reviewer.md`, HIGH-Punkt Handbuch-Versionshistorie).
-  Nicht Gegenstand: `releasing.md` (Maintainer-Doku) und die vier von Runnern
-  geschriebenen `*-abdeckung.md`.
+  Nicht Gegenstand: die Maintainer-Doku unter `docs/maintainer/` und die vier von
+  Runnern geschriebenen `*-abdeckung.md`.
 
 Ein Skill, keine Rolle: er ergänzt keine Hard Rule in `AGENTS.md`, er verweist auf
 sie. Das Gate `make handbuch-public-doc-check` ist das Fangnetz (Vertrag:

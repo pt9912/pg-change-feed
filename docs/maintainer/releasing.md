@@ -1,7 +1,7 @@
-# Releasing: Release-Prozess für Betreiber und Maintainer
+# Releasing: Release-Prozess für Maintainer
 
-Version: 1.12
-Stand: 2026-09-26
+Version: 1.13
+Stand: 2026-10-03
 
 ## 1. Zweck und Zielgruppe
 
@@ -9,8 +9,9 @@ Dieses Dokument beschreibt den **Mechanismus**, mit dem ein Release von
 PG Change Feed entsteht: wie ein Release ausgelöst wird, was dabei
 automatisch passiert, und welche begleitenden, nicht-blockierenden
 Prüfungen laufen. Es richtet sich an Maintainer, die einen Release-Tag
-setzen, und an Betreiber, die verstehen wollen, woher ein bestimmtes
-Image auf GHCR oder Docker Hub stammt.
+setzen. Betreiber, die verstehen wollen, woher ein bestimmtes Image auf
+GHCR oder Docker Hub stammt, finden hier den Mechanismus; das Dokument
+liegt unter `docs/maintainer/`, nicht unter `docs/user/`.
 
 **Der Server-Release-Mechanismus ist End-zu-Ende mit echten
 Repository-Secrets bewiesen**, nicht nur implementiert: der Lauf zu
@@ -40,7 +41,7 @@ SQL-Zugriffe), dieses hier den Release-Prozess des Projekts selbst.
 
 ## 2. Versionierung
 
-Die aktuelle Version steht in [`docs/user/version.md`](version.md) —
+Die aktuelle Version steht in [`docs/user/version.md`](../user/version.md) —
 eine einzelne Zeile, reines SemVer 2.0 ohne führendes `v` (z. B. `0.1.0`).
 Diese Datei ist die **Quelle der Wahrheit** für die Version: der
 Release-Workflow (§4) gleicht sie gegen den gesetzten Git-Tag ab und
@@ -397,3 +398,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.10 | 2026-09-25 | §4 Kotlin-Abschnitt auf zwei Vertriebsziele gezogen (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): ein Job je Ziel (GitHub Packages, Cloudsmith) mit den Einzel-Aufgaben statt der Sammel-Aufgabe, Secret-Tabelle um `CLOUDSMITH_USERNAME` und `CLOUDSMITH_API_KEY` erweitert, Betreiber-Voraussetzungen, Wiederholung je Job und die Offen-Punkte bis zum ersten Tag-Lauf beschrieben; „Alle drei Secrets“ leitet die Zahl nicht mehr aus einem Zählwort ab |
 | 1.11 | 2026-09-25 | §4 Kotlin-Abschnitt an den Beleg-Stand gezogen (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): bewiesen ist der Publish nach GitHub Packages mit den Läufen von `sdk-kotlin-v0.2.0` und `sdk-kotlin-v0.2.1`, die Zwei-Job-Struktur mit Cloudsmith ist bis zu ihrem ersten Tag-Lauf unbewiesen; die Schrittnamen stehen wie im Workflow; `CLOUDSMITH_USERNAME` trägt überall den Service-Slug; die Versionen auf Cloudsmith stehen als nach dem ersten Tag-Lauf erwartet |
 | 1.12 | 2026-09-26 | §1 und §4 Kotlin-Abschnitt an den Lauf zu `sdk-kotlin-v0.2.2` gezogen (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): Lauf 36201941235 mit beiden Jobs `success`, anonymer Abruf der Cloudsmith-Artefakte HTTP 200, Service-Slug und Moduldatei angenommen; offen bleiben Paketseiten-Anzeige, Usage-Seite und Doppel-Upload; Hinweis zur Verarbeitungsverzögerung beim Abruf |
+| 1.13 | 2026-10-03 | Dokument von `docs/user/` nach `docs/maintainer/` verschoben (`ADR-0143`, `ADR-0051`): Zielgruppe in §1 auf Maintainer geschärft, Link auf `version.md` zeigt auf `../user/version.md`; Inhalt sonst unverändert |

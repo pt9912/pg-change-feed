@@ -27,7 +27,6 @@ Festlegung 1):
 | Liste | Dateien unter `docs/user/` | Grund |
 |---|---|---|
 | geprüft | `benutzerhandbuch.md`, `benutzerhandbuch-standard.md`, `version.md` | Nutzerdokumentation |
-| ausgenommen | `releasing.md` | Maintainer-Doku zum Release-Prozess, ihre Entscheidungs-Links sind gewollt |
 | ausgenommen | `bench-abdeckung.md`, `ci-matrix-abdeckung.md`, `e2e-abdeckung.md`, `sdk-e2e-abdeckung.md` | von Runnern geschriebene Erzeugnisse; die Kennung je Zeile ist ihr Inhalt und die Eingabe von `make doc-trace` |
 
 Jede `*.md` unter `docs/user/`, die in keiner Liste steht, und jede genannte,
@@ -60,8 +59,10 @@ Skript liest Zeilen.
    tragen der Skill `.harness/skills/nutzerdoku-schreiben.md` und der Reviewer.
 2. **Groß-/Kleinschreibung zählt.** Eine groß geschriebene Namensform
    (`Slice-1`) und Kennungsformen außerhalb der Muster bleiben grün.
-3. **`releasing.md` und die vier Erzeugnisse sind ausgenommen.** Eine Kennung
-   dort fängt nur der Reviewer. Verschiebt jemand eine Datei von „geprüft“ nach
+3. **Die vier Erzeugnisse sind ausgenommen, die Maintainer-Doku liegt außerhalb.**
+   Eine Kennung dort fängt nur der Reviewer; die Maintainer-Doku unter
+   `docs/maintainer/` (Release-Prozess) liegt außerhalb von `docs/user/` und
+   ist nie Gegenstand des Gates. Verschiebt jemand eine Datei von „geprüft“ nach
    „ausgenommen“, ist das eine Milderung und braucht eine eigene ADR
    ([`ADR-0143`](../../docs/plan/adr/0143-handbuch-public-doc-check-gate-kennungsfreie-nutzerdoku.md)
    Festlegung 9); eine **neue** Datei in einer Liste zu führen, ist der

@@ -27,7 +27,7 @@ fi
 dir="$root/docs/user"
 
 checked=(benutzerhandbuch.md benutzerhandbuch-standard.md version.md)
-excluded=(releasing.md bench-abdeckung.md ci-matrix-abdeckung.md
+excluded=(bench-abdeckung.md ci-matrix-abdeckung.md
           e2e-abdeckung.md sdk-e2e-abdeckung.md)
 
 # Muster P: Kennungen; Muster L: Links nach docs/plan/ und docs/reviews/.

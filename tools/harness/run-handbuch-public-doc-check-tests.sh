@@ -14,9 +14,9 @@ tmp=$(mktemp -d)
 : "${tmp:?}"
 trap 'chmod -R u+rwx "$tmp" 2>/dev/null; rm -rf "${tmp:?}"' EXIT
 
-all_files="benutzerhandbuch.md benutzerhandbuch-standard.md version.md releasing.md bench-abdeckung.md ci-matrix-abdeckung.md e2e-abdeckung.md sdk-e2e-abdeckung.md"
+all_files="benutzerhandbuch.md benutzerhandbuch-standard.md version.md bench-abdeckung.md ci-matrix-abdeckung.md e2e-abdeckung.md sdk-e2e-abdeckung.md"
 
-# fresh: Wurzel mit allen acht Dateien, sauberer Inhalt
+# fresh: Wurzel mit allen sieben Dateien, sauberer Inhalt
 fresh() {
   chmod -R u+rwx "${tmp:?}/root" 2>/dev/null
   rm -rf "${tmp:?}/root"
@@ -87,7 +87,6 @@ expect 0 "byte-slice ohne Treffer" benutzerhandbuch.md 'the byte-slice-x is a wo
 expect 0 "CO-2 Emissionen ohne Treffer" benutzerhandbuch.md 'CO-2 Emissionen'
 expect 0 "Slice-1 (Grossschreibung) ohne Treffer" benutzerhandbuch.md 'Slice-1'
 expect 0 "Tag-Muster sdk-csharp-v ohne Treffer" benutzerhandbuch.md 'Tag sdk-csharp-v0.2.0'
-expect 0 "Kennung in releasing.md ausgenommen" releasing.md 'ADR-0051 slice-x'
 expect 0 "Kennung in e2e-abdeckung.md ausgenommen" e2e-abdeckung.md 'LH-FA-SST-009'
 expect 0 "Kennung in bench-abdeckung.md ausgenommen" bench-abdeckung.md 'LH-QA-PER-001 docs/plan/x'
 expect 0 "Kennung in ci-matrix-abdeckung.md ausgenommen" ci-matrix-abdeckung.md 'LH-QA-POR-001'
@@ -113,7 +112,7 @@ check 2 "fehlende geprueft-genannte Datei" "$(run)"
 msg "fehlende Datei" '^handbuch-public-doc-check: genannte Datei fehlt: docs/user/version\.md$'
 
 fresh
-rm "$tmp/root/docs/user/releasing.md"
+rm "$tmp/root/docs/user/bench-abdeckung.md"
 check 2 "fehlende ausgenommen-genannte Datei" "$(run)"
 
 # Datei mit NUL-Byte: wird als Text gelesen, der Treffer bleibt sichtbar

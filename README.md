@@ -35,7 +35,7 @@ See:
 - [`docs/user/benutzerhandbuch.md`](docs/user/benutzerhandbuch.md) for usage (German).
 - [`sdks/csharp/`](sdks/csharp/) for the official C# client library ([`PgChangeFeed.Client`](https://www.nuget.org/packages/PgChangeFeed.Client) on NuGet.org).
 - [`sdks/python/`](sdks/python/) for the official Python client library ([`pgchangefeed`](https://pypi.org/project/pgchangefeed/) on PyPI).
-- [`docs/user/releasing.md`](docs/user/releasing.md) for the release process.
+- [`docs/maintainer/releasing.md`](docs/maintainer/releasing.md) for the release process.
 - [`spec/lastenheft.md`](spec/lastenheft.md) for requirements and acceptance criteria.
 - [`spec/pflichtenheft.md`](spec/pflichtenheft.md) for the technical specification.
 - [`docs/plan/adr/`](docs/plan/adr/) for architecture decisions.
