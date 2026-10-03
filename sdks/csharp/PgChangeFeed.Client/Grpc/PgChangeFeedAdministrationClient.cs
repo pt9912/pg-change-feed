@@ -238,13 +238,17 @@ public sealed class PgChangeFeedAdministrationClient : IDisposable
         }
     }
 
-    private static PgChangeFeedGrpcException MapException(RpcException ex) => ex.StatusCode switch
+    private static PgChangeFeedGrpcException MapException(RpcException ex)
     {
-        StatusCode.InvalidArgument => new PgChangeFeedGrpcInvalidArgumentException(ex.Status.Detail, ex),
-        StatusCode.Unauthenticated => new PgChangeFeedGrpcUnauthenticatedException(ex.Status.Detail, ex),
-        StatusCode.PermissionDenied => new PgChangeFeedGrpcPermissionDeniedException(ex.Status.Detail, ex),
-        StatusCode.NotFound => new PgChangeFeedGrpcNotFoundException(ex.Status.Detail, ex),
-        StatusCode.Internal => new PgChangeFeedGrpcInternalException(ex.Status.Detail, ex),
-        _ => new PgChangeFeedGrpcUnexpectedStatusException(ex.StatusCode, ex.Status.Detail, ex),
-    };
+        var messageCode = StatusDetail.ReadMessageCode(ex);
+        return ex.StatusCode switch
+        {
+            StatusCode.InvalidArgument => new PgChangeFeedGrpcInvalidArgumentException(ex.Status.Detail, ex, messageCode),
+            StatusCode.Unauthenticated => new PgChangeFeedGrpcUnauthenticatedException(ex.Status.Detail, ex, messageCode),
+            StatusCode.PermissionDenied => new PgChangeFeedGrpcPermissionDeniedException(ex.Status.Detail, ex, messageCode),
+            StatusCode.NotFound => new PgChangeFeedGrpcNotFoundException(ex.Status.Detail, ex, messageCode),
+            StatusCode.Internal => new PgChangeFeedGrpcInternalException(ex.Status.Detail, ex, messageCode),
+            _ => new PgChangeFeedGrpcUnexpectedStatusException(ex.StatusCode, ex.Status.Detail, ex, messageCode),
+        };
+    }
 }

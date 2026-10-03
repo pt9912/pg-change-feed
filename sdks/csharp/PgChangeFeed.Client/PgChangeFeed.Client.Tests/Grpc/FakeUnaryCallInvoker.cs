@@ -22,11 +22,14 @@ internal sealed class FakeUnaryCallInvoker : CallInvoker
     public CallOptions? LastCallOptions { get; private set; }
     public object? LastRequest { get; private set; }
 
-    private FakeUnaryCallInvoker(object? response, Status? failureStatus)
+    private FakeUnaryCallInvoker(object? response, Status? failureStatus, Metadata? failureTrailers = null)
     {
         _response = response;
         _failureStatus = failureStatus;
+        _failureTrailers = failureTrailers;
     }
+
+    private readonly Metadata? _failureTrailers;
 
     /// <summary>Builds a fake invoker whose unary call returns the given response — the happy path.</summary>
     public static FakeUnaryCallInvoker WithResponse<TResponse>(TResponse response) => new(response, failureStatus: null);
@@ -38,7 +41,7 @@ internal sealed class FakeUnaryCallInvoker : CallInvoker
     /// auth boundary, or a domain error mapped to <c>InvalidArgument</c>/
     /// <c>NotFound</c>/<c>Internal</c>).
     /// </summary>
-    public static FakeUnaryCallInvoker WithStatus(Status status) => new(null, status);
+    public static FakeUnaryCallInvoker WithStatus(Status status, Metadata? trailers = null) => new(null, status, trailers);
 
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(
         Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request)
@@ -48,7 +51,8 @@ internal sealed class FakeUnaryCallInvoker : CallInvoker
 
         if (_failureStatus is { } status && status.StatusCode != StatusCode.OK)
         {
-            var failed = Task.FromException<TResponse>(new RpcException(status));
+            var failed = Task.FromException<TResponse>(
+                _failureTrailers is null ? new RpcException(status) : new RpcException(status, _failureTrailers));
             return new AsyncUnaryCall<TResponse>(
                 failed,
                 Task.FromResult(new Metadata()),

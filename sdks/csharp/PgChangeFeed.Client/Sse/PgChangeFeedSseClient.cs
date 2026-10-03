@@ -158,28 +158,15 @@ public sealed class PgChangeFeedSseClient
 
     private static PgChangeFeedException BuildException(int statusCode, string body)
     {
-        var message = ExtractErrorMessage(body);
+        var (message, messageCode) = ErrorBody.Parse(body, JsonOptions);
         return statusCode switch
         {
-            400 => new PgChangeFeedBadRequestException(statusCode, message),
-            401 => new PgChangeFeedUnauthorizedException(statusCode, message),
-            403 => new PgChangeFeedForbiddenException(statusCode, message),
-            404 => new PgChangeFeedNotFoundException(statusCode, message),
-            500 => new PgChangeFeedServerErrorException(statusCode, message),
-            _ => new PgChangeFeedUnexpectedStatusException(statusCode, message),
+            400 => new PgChangeFeedBadRequestException(statusCode, message, messageCode),
+            401 => new PgChangeFeedUnauthorizedException(statusCode, message, messageCode),
+            403 => new PgChangeFeedForbiddenException(statusCode, message, messageCode),
+            404 => new PgChangeFeedNotFoundException(statusCode, message, messageCode),
+            500 => new PgChangeFeedServerErrorException(statusCode, message, messageCode),
+            _ => new PgChangeFeedUnexpectedStatusException(statusCode, message, messageCode),
         };
-    }
-
-    private static string ExtractErrorMessage(string body)
-    {
-        try
-        {
-            var error = JsonSerializer.Deserialize<PgChangeFeed.Client.Http.Models.ErrorResponse>(body, JsonOptions);
-            return error?.Error ?? body;
-        }
-        catch (JsonException)
-        {
-            return body;
-        }
     }
 }

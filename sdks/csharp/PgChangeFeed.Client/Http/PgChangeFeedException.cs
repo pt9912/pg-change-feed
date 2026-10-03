@@ -3,14 +3,23 @@ namespace PgChangeFeed.Client.Http;
 /// <summary>
 /// Base type for every typed error <see cref="PgChangeFeedHttpClient"/>
 /// throws for a non-success response. The HTTP error body
-/// (<c>{"error": "&lt;text&gt;"}</c>) becomes a typed exception instead of a
-/// result type mixed with the success path, consistent across every method
-/// on the client.
+/// (<c>{"error": "&lt;text&gt;", "code": "&lt;message code&gt;"}</c>) becomes a
+/// typed exception instead of a result type mixed with the success path,
+/// consistent across every method on the client.
 /// </summary>
 public abstract class PgChangeFeedException : Exception
 {
     /// <summary>The HTTP status code the server returned.</summary>
     public int StatusCode { get; }
+
+    /// <summary>
+    /// The message code of the server (<c>PCF-&lt;E|W|I&gt;&lt;4 digits&gt;</c>)
+    /// from the <c>code</c> field of the error body, passed through unchanged;
+    /// <see langword="null"/> when the server sent none (authentication errors,
+    /// a server without message codes, a body that is not JSON, a <c>code</c>
+    /// that is not a non-empty string).
+    /// </summary>
+    public string? MessageCode { get; }
 
     /// <summary>Creates the exception with the HTTP status code and the error text.</summary>
     protected PgChangeFeedException(int statusCode, string message)
@@ -25,6 +34,22 @@ public abstract class PgChangeFeedException : Exception
     {
         StatusCode = statusCode;
     }
+
+    /// <summary>Creates the exception with the HTTP status code, the error text and the message code.</summary>
+    protected PgChangeFeedException(int statusCode, string message, string? messageCode)
+        : base(message)
+    {
+        StatusCode = statusCode;
+        MessageCode = messageCode;
+    }
+
+    /// <summary>Creates the exception with the HTTP status code, the error text, the cause and the message code.</summary>
+    protected PgChangeFeedException(int statusCode, string message, Exception innerException, string? messageCode)
+        : base(message, innerException)
+    {
+        StatusCode = statusCode;
+        MessageCode = messageCode;
+    }
 }
 
 /// <summary>
@@ -35,6 +60,12 @@ public sealed class PgChangeFeedBadRequestException : PgChangeFeedException
     /// <summary>Creates the exception with the HTTP status code and the error text.</summary>
     public PgChangeFeedBadRequestException(int statusCode, string message)
         : base(statusCode, message)
+    {
+    }
+
+    /// <summary>Creates the exception with the HTTP status code, the error text and the message code.</summary>
+    public PgChangeFeedBadRequestException(int statusCode, string message, string? messageCode)
+        : base(statusCode, message, messageCode)
     {
     }
 }
@@ -50,6 +81,12 @@ public sealed class PgChangeFeedUnauthorizedException : PgChangeFeedException
         : base(statusCode, message)
     {
     }
+
+    /// <summary>Creates the exception with the HTTP status code, the error text and the message code.</summary>
+    public PgChangeFeedUnauthorizedException(int statusCode, string message, string? messageCode)
+        : base(statusCode, message, messageCode)
+    {
+    }
 }
 
 /// <summary>
@@ -61,6 +98,12 @@ public sealed class PgChangeFeedForbiddenException : PgChangeFeedException
     /// <summary>Creates the exception with the HTTP status code and the error text.</summary>
     public PgChangeFeedForbiddenException(int statusCode, string message)
         : base(statusCode, message)
+    {
+    }
+
+    /// <summary>Creates the exception with the HTTP status code, the error text and the message code.</summary>
+    public PgChangeFeedForbiddenException(int statusCode, string message, string? messageCode)
+        : base(statusCode, message, messageCode)
     {
     }
 }
@@ -77,6 +120,12 @@ public sealed class PgChangeFeedNotFoundException : PgChangeFeedException
         : base(statusCode, message)
     {
     }
+
+    /// <summary>Creates the exception with the HTTP status code, the error text and the message code.</summary>
+    public PgChangeFeedNotFoundException(int statusCode, string message, string? messageCode)
+        : base(statusCode, message, messageCode)
+    {
+    }
 }
 
 /// <summary><c>500</c> — an unexpected internal error of the server.</summary>
@@ -85,6 +134,12 @@ public sealed class PgChangeFeedServerErrorException : PgChangeFeedException
     /// <summary>Creates the exception with the HTTP status code and the error text.</summary>
     public PgChangeFeedServerErrorException(int statusCode, string message)
         : base(statusCode, message)
+    {
+    }
+
+    /// <summary>Creates the exception with the HTTP status code, the error text and the message code.</summary>
+    public PgChangeFeedServerErrorException(int statusCode, string message, string? messageCode)
+        : base(statusCode, message, messageCode)
     {
     }
 }
@@ -99,6 +154,12 @@ public sealed class PgChangeFeedUnexpectedStatusException : PgChangeFeedExceptio
         : base(statusCode, message)
     {
     }
+
+    /// <summary>Creates the exception with the HTTP status code, the error text and the message code.</summary>
+    public PgChangeFeedUnexpectedStatusException(int statusCode, string message, string? messageCode)
+        : base(statusCode, message, messageCode)
+    {
+    }
 }
 
 /// <summary>
@@ -106,7 +167,7 @@ public sealed class PgChangeFeedUnexpectedStatusException : PgChangeFeedExceptio
 /// expected response — either invalid JSON or a valid-but-empty/<c>null</c>
 /// body. It is distinct from the status-code exceptions above so a caller can
 /// still catch <see cref="PgChangeFeedException"/> uniformly across every
-/// method.
+/// method. It carries no message code.
 /// </summary>
 public sealed class PgChangeFeedMalformedResponseException : PgChangeFeedException
 {
