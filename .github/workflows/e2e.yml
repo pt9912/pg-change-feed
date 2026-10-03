@@ -46,7 +46,7 @@ name: e2e
 # `compose.yaml`s `${PG_TEST_IMAGE}`-Interpolation liest die Variable aus der
 # Prozessumgebung, `make image`/`make test-integration` laufen unveraendert.
 # Der PostgreSQL-17-Digest ist real ueber `docker manifest inspect
-# postgres:17-alpine` (amd64, ermittelt 2026-09-14) gepinnt — Pin-Hebung =
+# postgres:17-alpine` (amd64, ermittelt 2026-10-03) gepinnt — Pin-Hebung =
 # bewusster Commit (Modul 14).
 
 "on":
@@ -73,9 +73,9 @@ jobs:
         include:
           # PostgreSQL 17 (SPEC-012): Digest via
           # `docker manifest inspect postgres:17-alpine` (amd64, real
-          # ermittelt 2026-09-14).
+          # ermittelt 2026-10-03).
           - pg_major: "17"
-            pg_test_image: postgres:17-alpine@sha256:7456ef82e5f5bc43d997f4781bbd7c0d6389bff397564649a356e206ba473aee
+            pg_test_image: postgres:17-alpine@sha256:aa90e97ee862e558111d34cfb8b2c4bec768c2b039fb791341686928560263b3
           # PostgreSQL 18 (SPEC-012): derselbe Digest-Pin wie
           # Makefile PG_TEST_IMAGE / compose.yaml-Default.
           - pg_major: "18"
