@@ -19,11 +19,17 @@ class PgChangeFeedError(Exception):
 
     ``status_code`` is the HTTP status of the failed response (``200`` for a
     malformed SSE event or NATS message, which carries no status of its own).
+
+    ``message_code`` is the message code of the server (``PCF-<E|W|I><4 digits>``)
+    from the ``code`` field of the error body, passed through unchanged; it is
+    ``None`` when the server sent none (authentication errors, a server without
+    message codes, a body that is not JSON).
     """
 
-    def __init__(self, status_code: int, message: str) -> None:
+    def __init__(self, status_code: int, message: str, *, message_code: str | None = None) -> None:
         super().__init__(message)
         self.status_code = status_code
+        self.message_code = message_code
 
 
 class PgChangeFeedBadRequestError(PgChangeFeedError):
@@ -65,12 +71,16 @@ class PgChangeFeedGrpcError(Exception):
     raises for a non-``OK`` gRPC status.
 
     ``code`` is the ``grpc.StatusCode`` the server returned; the original
-    ``grpc.RpcError`` is always ``__cause__``.
+    ``grpc.RpcError`` is always ``__cause__``. ``message_code`` is the message
+    code of the server (``PCF-<E|W|I><4 digits>``), read from the ``reason`` of
+    the ``google.rpc.ErrorInfo`` status detail of domain ``pg-change-feed`` and
+    passed through unchanged; it is ``None`` when the server sent none.
     """
 
-    def __init__(self, code: grpc.StatusCode, message: str) -> None:
+    def __init__(self, code: grpc.StatusCode, message: str, *, message_code: str | None = None) -> None:
         super().__init__(message)
         self.code = code
+        self.message_code = message_code
 
 
 class PgChangeFeedGrpcInvalidArgumentError(PgChangeFeedGrpcError):

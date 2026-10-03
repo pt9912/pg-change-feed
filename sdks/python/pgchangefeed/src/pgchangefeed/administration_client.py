@@ -29,6 +29,7 @@ from typing import Callable, TypeVar
 
 import grpc
 
+from pgchangefeed._status_detail import message_code_from_trailers
 from pgchangefeed.exceptions import (
     PgChangeFeedGrpcError,
     PgChangeFeedGrpcInternalError,
@@ -178,4 +179,14 @@ def _map_error(error: grpc.RpcError) -> PgChangeFeedGrpcError:
     code = error.code()
     message = error.details() or ""
     error_cls = _CODE_TO_ERROR.get(code, PgChangeFeedGrpcUnexpectedStatusError)
-    return error_cls(code, message)
+    return error_cls(code, message, message_code=message_code_from_trailers(_trailers(error)))
+
+
+def _trailers(error: grpc.RpcError) -> object:
+    reader = getattr(error, "trailing_metadata", None)
+    if reader is None:
+        return None
+    try:
+        return reader()
+    except Exception:  # a custom RpcError without readable trailers carries no code
+        return None

@@ -284,16 +284,22 @@ def _drop_none(params: dict[str, Any]) -> dict[str, Any]:
 
 
 def _build_error(response: httpx.Response) -> PgChangeFeedError:
-    message = _extract_error_message(response)
+    message, message_code = _extract_error(response)
     error_cls = _STATUS_TO_ERROR.get(response.status_code, PgChangeFeedUnexpectedStatusError)
-    return error_cls(response.status_code, message)
+    return error_cls(response.status_code, message, message_code=message_code)
 
 
-def _extract_error_message(response: httpx.Response) -> str:
+def _extract_error(response: httpx.Response) -> tuple[str, str | None]:
+    """Returns the error text and the message code of an error body; only a
+    non-empty JSON string in ``code`` counts as a code."""
     try:
         body = response.json()
     except ValueError:
-        return response.text
-    if isinstance(body, dict) and "error" in body:
-        return str(body["error"])
-    return response.text
+        return response.text, None
+    if not isinstance(body, dict):
+        return response.text, None
+    code = body.get("code")
+    message_code = code if isinstance(code, str) and code != "" else None
+    if "error" in body:
+        return str(body["error"]), message_code
+    return response.text, message_code

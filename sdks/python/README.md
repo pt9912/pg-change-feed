@@ -159,6 +159,8 @@ A call that the server answers with a non-`OK` gRPC status raises a subclass of 
 | `PgChangeFeedGrpcInternalError` | `INTERNAL` — unexpected error inside the server. |
 | `PgChangeFeedGrpcUnexpectedStatusError` | any other non-`OK` status. |
 
+Every one of these errors carries `message_code`, the message code of the server read from the status detail (`None` when the server sent none, as for `UNAUTHENTICATED` and `PERMISSION_DENIED`); for example `PgChangeFeedGrpcNotFoundError.message_code` is `PCF-E8025` for `enable_table` on a table that does not exist.
+
 ## API overview
 
 `PgChangeFeedHttpClient(client, options)` wraps the HTTP API. The `httpx.Client` you pass in stays yours; the library never closes it.
@@ -233,12 +235,14 @@ except PgChangeFeedUnauthorizedError:
 except PgChangeFeedForbiddenError:
     print("token is not allowed to call this endpoint")
 except PgChangeFeedError as error:
-    print(error.status_code, error)
+    print(error.status_code, error.message_code, error)
 ```
 
-The gRPC stream reports a missing or unknown token as `grpc.RpcError` with status `UNAUTHENTICATED`. The NATS stream raises the connection error of the NATS client library when the server rejects the token.
+`message_code` is the message code the server attaches to an error (`PCF-<E|W|I><4 digits>`, for example `PCF-E8025` for a table that does not exist in the source database), read from the `code` field of the error body and passed through unchanged. Match on it instead of parsing the text. It is `None` when the server sent no code: authentication errors (`401`, `403`) carry none, a server release that predates message codes sends none, and so does a body that is not JSON or whose `code` is not a non-empty string. The error text stays available either way.
 
-`PgChangeFeedAdministrationClient` raises a subclass of `PgChangeFeedGrpcError` for a non-`OK` gRPC status instead of a raw `grpc.RpcError` -- see [Administration client over gRPC](#administration-client-over-grpc) for the class per status code; the original `grpc.RpcError` is always `__cause__`.
+The gRPC stream reports a missing or unknown token as `grpc.RpcError` with status `UNAUTHENTICATED`. The gRPC stream clients raise the plain `grpc.RpcError` for every failure; a message code sent with such an error stays readable through the status detail API of the gRPC client itself (a `google.rpc.ErrorInfo` entry of domain `pg-change-feed`, its `reason` is the code). The NATS stream raises the connection error of the NATS client library when the server rejects the token.
+
+`PgChangeFeedAdministrationClient` raises a subclass of `PgChangeFeedGrpcError` for a non-`OK` gRPC status instead of a raw `grpc.RpcError` -- see [Administration client over gRPC](#administration-client-over-grpc) for the class per status code; the original `grpc.RpcError` is always `__cause__`. `PgChangeFeedGrpcError` carries the message code the same way as `message_code` (`None` when absent); it is read from the `reason` of the `google.rpc.ErrorInfo` status detail of domain `pg-change-feed`, whatever the status, and `code` stays the `grpc.StatusCode`. The `error_code` field of the `diagnose` response (the message code of the process error state, empty in normal operation) arrives unchanged from the generated message.
 
 ## Reading versus streaming
 
