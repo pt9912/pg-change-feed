@@ -173,7 +173,7 @@ Werkzeug ausgenommen; gemessen wird mit `make suchlauf-nachmessen PLAN=<Plan-Dat
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben, oder „keine Beobachtung angefallen“
       in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die Roadmap
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die Roadmap
       führt keine offene Welle, deshalb trägt die Slice-Closure selbst die drei Paarungen
       (Modul 6 §Was der wellenlose Betrieb selbst auslöst).
 
