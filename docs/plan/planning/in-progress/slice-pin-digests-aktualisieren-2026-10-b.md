@@ -180,13 +180,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0,
       `make test` Exit 0.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: kein öffentlicher Vertrag berührt, zu belegen durch den
+- [x] Doku-Update: kein öffentlicher Vertrag berührt, zu belegen durch den
       `spec/`-/`docs/user/`-Suchlauf in §3 (Zeile 0 am `diff`-Stand);
       [`harness/README.md`](../../../../harness/README.md) §Sensors und die
       Sensor-Verträge unter `harness/sensors/` nennen die Digest-Gewinnung für
