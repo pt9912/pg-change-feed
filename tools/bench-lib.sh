@@ -13,7 +13,7 @@ set -euo pipefail
 
 # Dieselben Digest-Pins wie Makefile/compose.yaml (PG_TEST_IMAGE,
 # D_MIGRATE_IMAGE) — Pin-Hebung bleibt ein bewusster Commit (Modul 14).
-PG_TEST_IMAGE=${PG_TEST_IMAGE:-postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8}
+PG_TEST_IMAGE=${PG_TEST_IMAGE:-postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873}
 FEED_IMAGE=${FEED_IMAGE:-ghcr.io/pt9912/pg-change-feed:dev}
 D_MIGRATE_IMAGE=${D_MIGRATE_IMAGE:-ghcr.io/pt9912/d-migrate@sha256:862dfb04c34dd17278b1bab46961363c12eeb8d464cf1776565d6285603d2c89}
 

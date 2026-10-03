@@ -19,7 +19,7 @@ mkdir -p "$DB_COVERAGE_DIR"
 COVER_PKGS="$(bash tools/harness/db-coverage.sh --coverpkg)"
 
 TOOLCHAIN_IMAGE=${TOOLCHAIN_IMAGE:-golang:1.27-alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414}
-PG_TEST_IMAGE=${PG_TEST_IMAGE:-postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8}
+PG_TEST_IMAGE=${PG_TEST_IMAGE:-postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873}
 GO_MODCACHE_VOLUME=${GO_MODCACHE_VOLUME:-pg-change-feed-gomodcache}
 NETWORK=cdc-store-test
 PG_CONTAINER=cdc-store-test-pg

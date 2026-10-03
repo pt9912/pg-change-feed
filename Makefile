@@ -198,7 +198,7 @@ TOOLCHAIN_IMAGE ?= golang:1.27-alpine@sha256:8a5910f31396cd4d89662f56c68b3ae31d3
 # Produktions-Kompilierung (Dockerfile) bleibt CGO-frei — dieses Image trägt
 # ausschließlich den Testlauf.
 TOOLCHAIN_RACE_IMAGE ?= golang:1.27@sha256:e0174e51e81218523251d85d248a90d24c3d5e81543b4f07a5d66229397db190
-PG_TEST_IMAGE ?= postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8
+PG_TEST_IMAGE ?= postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
 GO_MODCACHE_VOLUME ?= pg-change-feed-gomodcache
 
 mod-download: ## Go-Module in den Volume-Cache laden (braucht Netz, Vorbereitung für netzlose Test-Läufe)
