@@ -696,12 +696,24 @@ die bei der Verdrahtung fixierte. Aktivierung optional über
 HTTP-Server, unverändertes Bestandsverhalten.
 
 **Fehler-Antwortform** (für alle Endpunkte gleich):
-`{"error": "<Klartext>"}` bei `400`/`401`/`403`/`404`/`500` — ungültiger
-JSON-Body oder eine verletzte Domänen-Invariante (`400`),
-fehlender/unbekannter Bearer-Token (`401`), bekanntes Token mit
-unzureichender Rechtsklasse (`403`), eine an der Quelle physisch fehlende
-Tabelle (`404`, nur `EnableTable`/`DisableTable`/`GetStatus`), unerwarteter
-interner Fehler (`500`).
+`{"error": "<Klartext>", "code": "<Meldungscode>"}` bei
+`400`/`401`/`403`/`404`/`500`/`503` — ungültiger JSON-Body oder eine verletzte
+Domänen-Invariante (`400`), fehlender/unbekannter Bearer-Token (`401`),
+bekanntes Token mit unzureichender Rechtsklasse (`403`), eine an der Quelle
+physisch fehlende Tabelle (`404`, nur `EnableTable`/`DisableTable`/`GetStatus`),
+unerwarteter interner Fehler (`500`), ein Stream ohne verdrahteten Broadcaster
+(`503`, nur `GET /changes/stream`). `code` ist additiv und der Meldungscode der
+Ursache (`SPEC-008`): eine Ablehnung einer Aufrufer-Eingabe (`400`, `404`) trägt
+einen Code des Bereichs `E8` (`PCF-E8050` Body kein gültiges JSON, `PCF-E8051`
+Pflichtfeld oder Pflichtparameter fehlt, `PCF-E8052` unbekannter
+Query-Parameter, `PCF-E8053` nicht lesbarer oder außerhalb des Bereichs liegender
+Wert, `PCF-E8054` Position unter 1, `PCF-E8055` Position rückt nicht vor,
+`PCF-E8056` Endposition vor Startposition, `PCF-E8057` Position einer anderen
+Quelle, `PCF-E8025` Tabelle fehlt an der Quelle); ein `500` trägt den Code der
+klassifizierten Ursache in der Fehlerkette, sonst den Rückfall `PCF-E7000`; das
+`503` trägt `PCF-E2001`. `401` und `403` tragen kein Feld `code`: die Tabelle der
+Codes führt für sie keinen Eintrag. Ein Leser, der nur `error` liest, bleibt
+unverändert lauffähig; die Statuscodes ändern sich nicht.
 
 | Fähigkeit | Endpunkt | Rechtsklasse | Request | Response |
 |---|---|---|---|---|
@@ -1048,7 +1060,7 @@ steht zusätzlich daneben — die API adressiert Tabellen an anderer Stelle
 |---|---|
 | Reihenfolge | deterministisch nach (`commit_position`, `transaction_id`, `sequence`) — [`LH-FA-REA-004`](lastenheft.md); die Fortsetzung ist `from = <letzte gelieferte commit_position> + 1`, wenn das Lesen die letzte Position vollständig erfasst hat; enthält sie mehr Changes als `limit`, gilt die Zeile „Position und `limit`" |
 | Leere Menge | `{"changes": []}`, nie `null` — ohne Treffer (unbekannte Quelle, unbekanntes Schema, unbekannte Tabelle, leerer Bereich) endet der Aufruf `200`; ein leerer Bestand ist kein Fehler ([`LH-FA-REA-006`](lastenheft.md) Boundary) |
-| Fehler-Antwortform | unverändert `{"error": "<Klartext>"}` (`SPEC-018`); `400` für ein fehlendes `source`, einen **Parameter außerhalb der Liste** (strenger als die neun Bestandsendpunkte — ein unbekannter *Filter* änderte den Ergebnisstand sonst still), eine nicht als Ganzzahl lesbare Zahl, `from`/`to` `< 1`, `limit` `< 1` ([`LH-FA-REA-003`](lastenheft.md) Negative) oder `from > to` ([`LH-FA-REA-001`](lastenheft.md) Negative); fehlender/unbekannter Bearer-Token `401`; Store-Fehler der Klasse `storage` `500`. Kein `404`-Pfad: das Lesen prüft nichts an der Quelle, es liest einen Bestand |
+| Fehler-Antwortform | `{"error": "<Klartext>", "code": "<Meldungscode>"}` wie in `SPEC-018` (Codes des Bereichs `E8` für die Ablehnungen); `400` für ein fehlendes `source`, einen **Parameter außerhalb der Liste** (strenger als die neun Bestandsendpunkte — ein unbekannter *Filter* änderte den Ergebnisstand sonst still), eine nicht als Ganzzahl lesbare Zahl, `from`/`to` `< 1`, `limit` `< 1` ([`LH-FA-REA-003`](lastenheft.md) Negative) oder `from > to` ([`LH-FA-REA-001`](lastenheft.md) Negative); fehlender/unbekannter Bearer-Token `401`; Store-Fehler der Klasse `storage` `500`. Kein `404`-Pfad: das Lesen prüft nichts an der Quelle, es liest einen Bestand |
 | Herkunft | `origin` trägt `wal` für einen über den Replication Stream erfassten Change und `backfill` für einen Bestands-Change (`SPEC-002`, `LH-FA-CAP-009.a`); ein gespeicherter Change ohne das Feld liest als `wal`. Der Abschnitt bietet keinen Filter auf `origin` |
 | Zustellziel | `target` ist ein optionaler Filter auf das Zustellziel der Change (`route_target`, `SPEC-002`): leer oder ohne den Parameter kein Filter, gesetzt nur Changes mit genau diesem Ziel, als Konjunktion mit `schema`/`table`. Ein Name, den keine Change trägt (auch einer außerhalb des Alphabets des Zielnamens, `SPEC-032`), ist bei sonst gültiger Anfrage kein `400`, sondern ein Filter ohne Treffer: `{"changes": []}`; das gilt auch für einen Wert mit dem Zeichen U+0000, weil der gemeinsame Use Case das Alphabet vor dem Speicherzugriff prüft und bei Verletzung die leere Liste liefert, ohne den Speicher anzufragen. Ein Fehler des Lese-Kontrakts (`limit`, Bereich, Quelle) hat Vorrang: er endet mit demselben Fehler wie ohne `target`. Der SQL-Zugriff `cdc.changes` ist davon ausgenommen: der Aufrufer bestimmt sein Prädikat auf `route_target` selbst. Das Ziel steht nicht in der Antwort; die View `cdc.changes` trägt es als Spalte |
 | Position und `limit` | Ein `limit` schneidet Zeilen, nicht Positionen: enthält eine Commit-Position mehr Changes als `limit`, liefert `from = <letzte gelieferte commit_position> + 1` den Rest dieser Position nicht, und ein Lesen ab derselben Position liefert wieder dieselben Zeilen. Ein Bestandsabzug legt alle seine Changes auf **eine** Position; er wird ohne `limit` gelesen (oder über den Schlüsselvergleich auf der View `cdc.changes`) |
@@ -1337,6 +1349,23 @@ typisiert):
 | `ReadChanges` ohne Treffer (unbekannte Quelle/Schema/Tabelle, leerer Bereich) | kein Fehler — `200`-Äquivalent mit leerer, gesetzter `changes`-Liste |
 | unerwarteter interner Fehler | `codes.Internal` |
 
+**Meldungscode im Status** (`SPEC-008`): ein Status mit `codes.InvalidArgument`,
+`codes.NotFound` oder `codes.Internal` trägt das Statusdetail
+`google.rpc.ErrorInfo` mit `reason` = Meldungscode der Ursache und `domain` =
+`pg-change-feed`. Die Zuordnung ist die der HTTP-API (`SPEC-018`): eine
+Ablehnung einer Aufrufer-Eingabe trägt einen Code des Bereichs `E8`
+(`PCF-E8025` Tabelle fehlt an der Quelle, `PCF-E8051` leere Kennung,
+`PCF-E8053` Wert außerhalb des Bereichs, `PCF-E8054` Position unter 1,
+`PCF-E8055` Position rückt nicht vor, `PCF-E8056` Endposition vor
+Startposition, `PCF-E8057` Position einer anderen Quelle), ein
+`codes.Internal` den Code der klassifizierten Ursache in der Fehlerkette, sonst
+den Rückfall `PCF-E7000`; ein `ChangeStream` ohne verdrahteten Broadcaster
+endet mit `codes.Internal` und `PCF-E2001`. `codes.Unauthenticated` und
+`codes.PermissionDenied` tragen kein Detail: die Tabelle der Codes führt für sie
+keinen Eintrag. Statuscode und Statustext bleiben unverändert; ein Client, der
+nur den Statuscode liest, bleibt lauffähig. Der generierte Code ändert sich
+nicht: `ErrorInfo` ist ein Detail des Status, kein Feld der Nachrichten.
+
 **Aktivierung:** optional über `CDC_GRPC_ADDR`, dieselbe Variable wie
 `ChangeStream` (`SPEC-020`); ungesetzt bedeutet deaktiviertes Feature, kein
 Listener, unverändertes Bestandsverhalten.
@@ -1497,7 +1526,10 @@ Bereich (1 Erfassung und Replikation, 2 Backfill, 3 Retention und Speicher,
 und steht als eigenes Log-Attribut `code`, der Meldungstext trägt keinen Code.
 Die Warn-Zeile des Heartbeat-Adapters, die einen Fehlerzustand meldet, trägt
 unter `code` den `E`-Code des Fehlerzustands; ein Filter auf `code=PCF-W…`
-erfasst sie nicht.
+erfasst sie nicht. Die Fehlerantwort der HTTP-API trägt den Code im Feld `code`
+des Körpers (`SPEC-018`), ein Fehlerstatus der gRPC-API im Statusdetail
+`ErrorInfo` (`SPEC-031`); die Warn-Zeile eines gescheiterten API-Aufrufs trägt
+`PCF-W4008`.
 Der Fehlertext (Fehlerwert, Zeile beim Prozessende, Attribut
 `error` einer Log-Zeile) beginnt mit dem Kopf
 `Fehlerklasse <klasse> [<code>]: <Ursache>`; der Prozessausgang bleibt unverändert,
@@ -1652,3 +1684,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-03 | `SPEC-008`: Absatz „Meldungscode“ (Form `PCF-[EWI][0-9]{4}`, Klasse in der ersten Ziffer, Ziffer 8 für Ablehnungen, Rückfall `…000`, Kopf `Fehlerklasse <klasse> [<code>]: …`, Stabilität); der Satz zum Fehlertext-Beginn im Run (`schema: `) nennt Klasse und Code; `SPEC-029` (`error_message` des Runs) und `SPEC-019` (`error_message` des Antrags, Texte der Ablehnungen mit dem Kopf `abgelehnt [<Code>]: `) |
 | 2026-10-03 | `SPEC-008`: Warncodes (Schwere `W`, erste Ziffer der Bereich, Log-Attribut `code`), Vorrangfolge der Klassen bei mehreren Codes in einer Kette und der Code des Fehlerzustands in Heartbeat und Diagnose; Tabelle von `cdc.process_heartbeat` (Spalte `error_code`, View `cdc.heartbeat`); `SPEC-018` (`GET /diagnose`, Feld `error_code`) und `SPEC-031` (`HeartbeatStatus.error_code`, Feldnummer 4) |
 | 2026-10-03 | `SPEC-008`: Warn-Zeile des Fehlerzustands trägt den `E`-Code unter `code`; `SPEC-031`: `error_code` als eigener Aufzählungspunkt von `HeartbeatStatus` |
+| 2026-10-03 | `SPEC-018` (Fehler-Antwortform, `SPEC-022` Zeile „Fehler-Antwortform“): additives Feld `code` im Fehlerkörper, Codes der Ablehnungen `PCF-E8050` bis `PCF-E8057`, `401`/`403` ohne Code; `SPEC-031`: Statusdetail `ErrorInfo` (`reason` Code, `domain` `pg-change-feed`), `Unauthenticated`/`PermissionDenied` ohne Detail; `SPEC-008`: Verweis auf die beiden Wege und `PCF-W4008` |

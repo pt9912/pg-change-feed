@@ -2832,6 +2832,143 @@ fi
 
 echo "run-integration-tests: gRPC-Administration-Rundlauf (ADR-0131) belegt — ein Wegwerf-Client (tools/harness/grpcadminclient) rief real über gRPC ListTables (reader-Token), ReadChanges (reader-Token, Bereich [$grpc_admin_read_position,$grpc_admin_read_to), change_id=$grpc_admin_read_change_id gegen cdc.changes gehalten), Diagnose (reader-Token, gRPC-Diagnose-Querabgleich siehe oben) und RegisterConsumer (admin-Token) gegen den laufenden Feed-Container ($GRPC_ADDR) auf, der registrierte Consumer ($GRPC_ADMIN_CONSUMER_ID) ist unabhängig über cdc.consumer lesbar; ein Aufruf ohne Token wurde mit Unauthenticated, ein reader-Token gegen RegisterConsumer mit PermissionDenied abgelehnt: $grpc_admin_output"
 
+abdeckung_declare "Fehlerzustand-Code über HTTP und gRPC" "LH-FA-ADM-003,LH-QA-REL-003,LH-FA-SST-006,LH-FA-SST-008" "ein direkt in die Heartbeat-Projektion geschriebener Fehlerzustand mit Meldungscode erscheint über GET /diagnose (error_code) und den RPC Diagnose (HeartbeatStatus.error_code) am laufenden Feed-Container, der Normalbetrieb als Gegenprobe trägt kein Feld; ein abgelehnter HTTP-Aufruf trägt das Feld code im Fehlerkörper, ein abgelehnter gRPC-Aufruf das Statusdetail ErrorInfo, 401 und Unauthenticated tragen keinen Code" "Fehlerzustand-Code-Beleg (HTTP und gRPC) belegt"
+
+# Fehlerzustand-Code-Beleg (LH-FA-ADM-003): derselbe
+# direkt in `cdc.process_heartbeat` geschriebene Fehlerzustand wie im
+# CLI-Beleg oben, hier über die beiden Netzwerk-Wege gelesen — `GET
+# /diagnose` (HTTP, reader-Token) und der RPC `Diagnose` (gRPC, reader-Token)
+# — gegen den laufenden Feed-Container. Der periodische Herzschlag (5s)
+# löscht den Fehlerzustand wieder; ein Schreiber im Hintergrund setzt ihn
+# alle 0,25 s neu (höchstens 240 Mal, endet dann von selbst), und die
+# Clients lesen wiederholt, bis die Antwort den Code trägt. Normalbetrieb ist
+# die Gegenprobe: vor dem Schreiber lesen beide Clients ein leeres Feld.
+# Zusätzlich lehnt der Server je einen Aufruf ab, und der Beleg liest den
+# Fehlerkörper (HTTP, Feld `code`) und das Statusdetail (gRPC, `ErrorInfo`);
+# ein Aufruf ohne Token endet mit 401 bzw. Unauthenticated ohne Code.
+FAULT_CODE=PCF-E4003
+
+run_fault_client() {
+  local program=$1
+  shift
+  docker run --rm --network "$NETWORK" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -w /src \
+    -e GOCACHE=/tmp/gocache \
+    "$TOOLCHAIN_IMAGE" go run "./tools/harness/$program" "$@" 2>&1
+}
+
+set +e
+fault_http_normal=$(run_fault_client httpclient fault "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" src-e2e none)
+fault_http_normal_status=$?
+fault_grpc_normal=$(run_fault_client grpcadminclient fault "$GRPC_ADDR" "$HTTP_TOKEN_READER" "$HTTP_TOKEN_ADMIN" src-e2e none)
+fault_grpc_normal_status=$?
+set -e
+if [ "$fault_http_normal_status" -ne 0 ] || [ "$fault_grpc_normal_status" -ne 0 ]; then
+  echo "run-integration-tests: Fehlerzustand-Code-Beleg — Normalbetrieb als Gegenprobe nicht lesbar (HTTP Ausgang $fault_http_normal_status, gRPC Ausgang $fault_grpc_normal_status): HTTP=$fault_http_normal gRPC=$fault_grpc_normal" >&2
+  exit 1
+fi
+case "$fault_http_normal" in
+  *'"error_class":null'*'"error_code":null'*) ;;
+  *)
+    echo "run-integration-tests: Fehlerzustand-Code-Beleg — GET /diagnose trägt im Normalbetrieb nicht \"error_class\":null und \"error_code\":null: $fault_http_normal" >&2
+    exit 1
+    ;;
+esac
+case "$fault_grpc_normal" in
+  *'FAULT want=none heartbeat_error_class="" heartbeat_error_code=""'*) ;;
+  *)
+    echo "run-integration-tests: Fehlerzustand-Code-Beleg — der RPC Diagnose trägt im Normalbetrieb kein leeres error_class/error_code: $fault_grpc_normal" >&2
+    exit 1
+    ;;
+esac
+
+fault_state_writer() {
+  local _
+  for _ in $(seq 1 240); do
+    docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -c \
+      "UPDATE cdc.process_heartbeat SET heartbeat_at = current_timestamp, error_class = 'schema', error_code = '$FAULT_CODE' WHERE source_id = 'src-e2e'" >/dev/null 2>&1 || true
+    sleep 0.25
+  done
+}
+fault_state_writer &
+fault_writer_pid=$!
+
+set +e
+fault_http_state=$(run_fault_client httpclient fault "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" src-e2e "$FAULT_CODE")
+fault_http_state_status=$?
+fault_grpc_state=$(run_fault_client grpcadminclient fault "$GRPC_ADDR" "$HTTP_TOKEN_READER" "$HTTP_TOKEN_ADMIN" src-e2e "$FAULT_CODE")
+fault_grpc_state_status=$?
+set -e
+kill "$fault_writer_pid" 2>/dev/null || true
+wait "$fault_writer_pid" 2>/dev/null || true
+if [ "$fault_http_state_status" -ne 0 ] || [ "$fault_grpc_state_status" -ne 0 ]; then
+  echo "run-integration-tests: Fehlerzustand-Code-Beleg — der Fehlerzustand mit Code $FAULT_CODE ist über HTTP und gRPC nicht lesbar (HTTP Ausgang $fault_http_state_status, gRPC Ausgang $fault_grpc_state_status): HTTP=$fault_http_state gRPC=$fault_grpc_state" >&2
+  exit 1
+fi
+case "$fault_http_state" in
+  *'"error_class":"schema"'*"\"error_code\":\"$FAULT_CODE\""*) ;;
+  *)
+    echo "run-integration-tests: Fehlerzustand-Code-Beleg — GET /diagnose trägt den Fehlerzustand schema/$FAULT_CODE nicht: $fault_http_state" >&2
+    exit 1
+    ;;
+esac
+case "$fault_grpc_state" in
+  *"FAULT want=$FAULT_CODE heartbeat_error_class=\"schema\" heartbeat_error_code=\"$FAULT_CODE\""*) ;;
+  *)
+    echo "run-integration-tests: Fehlerzustand-Code-Beleg — der RPC Diagnose trägt den Fehlerzustand schema/$FAULT_CODE nicht: $fault_grpc_state" >&2
+    exit 1
+    ;;
+esac
+
+# Ablehnungen: die Zeilen stehen in den Ausgaben der gRPC-Läufe oben und im
+# Lauf des HTTP-Modus `rejected`.
+set +e
+fault_http_rejected=$(run_fault_client httpclient rejected "$HTTP_BASE_URL" "$HTTP_TOKEN_READER")
+fault_http_rejected_status=$?
+set -e
+if [ "$fault_http_rejected_status" -ne 0 ]; then
+  echo "run-integration-tests: Fehlerzustand-Code-Beleg — httpclient rejected endete mit Ausgang $fault_http_rejected_status: $fault_http_rejected" >&2
+  exit 1
+fi
+case "$fault_http_rejected" in
+  *'REJECTED probe=missing-source status=400 body={"error":"source ist Pflichtfeld","code":"PCF-E8051"}'*) ;;
+  *)
+    echo "run-integration-tests: Fehlerzustand-Code-Beleg — GET /changes ohne source endete nicht mit 400 und code PCF-E8051: $fault_http_rejected" >&2
+    exit 1
+    ;;
+esac
+case "$fault_http_rejected" in
+  *'REJECTED probe=missing-token status=401 body={"error":"fehlender oder unbekannter Bearer-Token"}'*) ;;
+  *)
+    echo "run-integration-tests: Fehlerzustand-Code-Beleg — GET /changes ohne Token endete nicht mit 401 ohne Feld code: $fault_http_rejected" >&2
+    exit 1
+    ;;
+esac
+case "$fault_grpc_state" in
+  *'REJECTED status=InvalidArgument reason=PCF-E8051 domain=pg-change-feed'*) ;;
+  *)
+    echo "run-integration-tests: Fehlerzustand-Code-Beleg — RegisterConsumer mit leerer Kennung endete nicht mit InvalidArgument und ErrorInfo PCF-E8051: $fault_grpc_state" >&2
+    exit 1
+    ;;
+esac
+case "$fault_grpc_state" in
+  *'REJECTED-AUTH status=Unauthenticated details=none'*) ;;
+  *)
+    echo "run-integration-tests: Fehlerzustand-Code-Beleg — RegisterConsumer ohne Token endete nicht mit Unauthenticated ohne ErrorInfo: $fault_grpc_state" >&2
+    exit 1
+    ;;
+esac
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem Fehlerzustand-Code-Beleg nicht mehr weiter (der Fehlerzustand wurde direkt in cdc.process_heartbeat geschrieben, kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Fehlerzustand-Code-Beleg (HTTP und gRPC) belegt — Normalbetrieb: HTTP [$fault_http_normal]; Fehlerzustand $FAULT_CODE: HTTP [$fault_http_state]; Ablehnungen HTTP [$fault_http_rejected]; gRPC (Normalbetrieb, dann Fehlerzustand mit den Ablehnungen) [$fault_grpc_normal] [$fault_grpc_state]"
+
 abdeckung_declare "Direkter Zugriffsweg Live-Reload (gRPC enable)" "LH-FA-CFG-001" "EnableTable über den direkten gRPC-Zugriffsweg (ohne die SQL-Antragsqueue) aktualisiert den laufenden Assembler ohne Neustart — derselbe Live-Reload-Vertrag wie der SQL-Antragsqueue-Pfad, wegunabhängig" "Direkter gRPC-Zugriffsweg — EnableTable"
 abdeckung_declare "Direkter Zugriffsweg Live-Reload (gRPC disable)" "LH-FA-CFG-002" "derselbe direkte gRPC-Zugriffsweg spiegelbildlich: DisableTable beendet die Erfassung dieser Tabelle ohne Neustart, der Feed-Container läuft weiter" "Direkter gRPC-Zugriffsweg — DisableTable"
 abdeckung_declare "Direkter Zugriffsweg Live-Reload (HTTP enable)" "LH-FA-CFG-001" "derselbe Beleg über den direkten HTTP-Zugriffsweg — fachliche Gleichwertigkeit von HTTP und gRPC (\`LH-FA-SST-006\`)" "Direkter HTTP-Zugriffsweg — EnableTable"

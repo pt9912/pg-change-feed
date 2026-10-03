@@ -65,6 +65,14 @@ func main() {
 		runPositionFlow(os.Args[2:])
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "fault" {
+		runFaultFlow(os.Args[2:])
+		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "rejected" {
+		runRejectedFlow(os.Args[2:])
+		return
+	}
 	if len(os.Args) > 1 && os.Args[1] == "enable-table" {
 		runEnableTableFlow(os.Args[2:])
 		return
@@ -79,6 +87,8 @@ func main() {
 		fmt.Fprintln(os.Stderr, "   or: httpclient remove <base-url> <admin-token> <consumer-id>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient changes [-target <ziel>] <base-url> <reader-token> <source> <schema> <table> <from> <to>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient position <base-url> <reader-token> <consumer-id>")
+		fmt.Fprintln(os.Stderr, "   or: httpclient fault <base-url> <reader-token> <source> <error-code|none>")
+		fmt.Fprintln(os.Stderr, "   or: httpclient rejected <base-url> <reader-token>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient enable-table <base-url> <admin-token> <source> <schema> <table> <table-id> <schema-version-id> <publication>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient disable-table <base-url> <admin-token> <source> <schema> <table> <publication>")
 		os.Exit(2)
@@ -231,6 +241,85 @@ func runChangesFlow(args []string) {
 // gibt den Antwort-Body aus (LH-FA-CON-005): die Anfangsposition eines
 // Consumers ohne Bestätigung ist ein Messwert des Aufrufers, keine Annahme
 // dieses Clients.
+// runFaultFlow liest `GET /diagnose` mit dem reader-Token, bis das Feld
+// `error_code` der Antwort den erwarteten Wert trägt (`none` heißt: kein
+// Fehlerzustand, `null`), und gibt den Körper als FAULT-Zeile aus. Der
+// Aufrufer setzt den Fehlerzustand in `cdc.process_heartbeat`; der periodische
+// Herzschlag des Feed-Containers löscht ihn wieder, deshalb liest der Client
+// wiederholt, bis die Antwort den Zustand trägt. Ohne den erwarteten Wert
+// binnen der Frist endet der Prozess mit Ausgang 1.
+func runFaultFlow(args []string) {
+	if len(args) != 4 {
+		fmt.Fprintln(os.Stderr, "usage: httpclient fault <base-url> <reader-token> <source> <error-code|none>")
+		os.Exit(2)
+	}
+	baseURL, token, source, want := args[0], args[1], args[2], args[3]
+	client := &http.Client{Timeout: 10 * time.Second}
+	var last string
+	for attempt := 0; attempt < 60; attempt++ {
+		body, err := call(client, http.MethodGet, baseURL+"/diagnose?source="+url.QueryEscape(source), token, nil, http.StatusOK)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "httpclient: GET /diagnose (reader) fehlgeschlagen: %v\n", err)
+			os.Exit(1)
+		}
+		last = strings.TrimSpace(body)
+		var decoded struct {
+			ErrorClass *string `json:"error_class"`
+			ErrorCode  *string `json:"error_code"`
+		}
+		if err := json.Unmarshal([]byte(last), &decoded); err != nil {
+			fmt.Fprintf(os.Stderr, "httpclient: GET /diagnose: Antwort nicht lesbar: %v\n", err)
+			os.Exit(1)
+		}
+		if (want == "none" && decoded.ErrorCode == nil && decoded.ErrorClass == nil) ||
+			(want != "none" && decoded.ErrorCode != nil && *decoded.ErrorCode == want) {
+			fmt.Printf("FAULT want=%s body=%s\n", want, last)
+			return
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
+	fmt.Fprintf(os.Stderr, "httpclient: GET /diagnose trägt error_code %q nicht binnen der Frist: %s\n", want, last)
+	os.Exit(1)
+}
+
+// runRejectedFlow ruft zwei Endpunkte so auf, dass der Server ablehnt, und
+// gibt Status und Fehlerkörper je als REJECTED-Zeile aus: `GET /changes`
+// ohne `source` (`400`, mit Code) und `GET /changes` ohne Token (`401`, ohne
+// Code). Der Körper wird unverändert ausgegeben.
+func runRejectedFlow(args []string) {
+	if len(args) != 2 {
+		fmt.Fprintln(os.Stderr, "usage: httpclient rejected <base-url> <reader-token>")
+		os.Exit(2)
+	}
+	baseURL, token := args[0], args[1]
+	client := &http.Client{Timeout: 10 * time.Second}
+	for _, probe := range []struct {
+		name  string
+		token string
+	}{{"missing-source", token}, {"missing-token", ""}} {
+		req, err := http.NewRequest(http.MethodGet, baseURL+"/changes", nil)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "httpclient: %v\n", err)
+			os.Exit(1)
+		}
+		if probe.token != "" {
+			req.Header.Set("Authorization", "Bearer "+probe.token)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "httpclient: GET /changes (%s) fehlgeschlagen: %v\n", probe.name, err)
+			os.Exit(1)
+		}
+		payload, err := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "httpclient: GET /changes (%s): Körper nicht lesbar: %v\n", probe.name, err)
+			os.Exit(1)
+		}
+		fmt.Printf("REJECTED probe=%s status=%d body=%s\n", probe.name, resp.StatusCode, strings.TrimSpace(string(payload)))
+	}
+}
+
 func runPositionFlow(args []string) {
 	if len(args) != 3 {
 		fmt.Fprintln(os.Stderr, "usage: httpclient position <base-url> <reader-token> <consumer-id>")

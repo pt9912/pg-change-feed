@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"time"
 
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -38,8 +39,13 @@ func main() {
 	target := flag.String("target", "", "Zustellziel-Filter des RPC ReadChanges (leer = kein Filter)")
 	flag.Parse()
 	args := flag.Args()
+	if len(args) > 0 && args[0] == "fault" {
+		runFaultFlow(args[1:])
+		return
+	}
 	if len(args) != 11 {
 		fmt.Fprintln(os.Stderr, "usage: grpcadminclient [-target <ziel>] <addr> <reader-token> <admin-token> <consumer-id> <source> <publication> <read-schema> <read-table> <read-from> <read-to> <read-limit>")
+		fmt.Fprintln(os.Stderr, "   or: grpcadminclient fault <addr> <reader-token> <admin-token> <source> <error-code|none>")
 		os.Exit(2)
 	}
 	addr, readerToken, adminToken, consumerID, source, publication := args[0], args[1], args[2], args[3], args[4], args[5]
@@ -80,6 +86,77 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Println("REJECTED code=PermissionDenied")
+}
+
+// runFaultFlow liest den RPC `Diagnose` mit dem reader-Token, bis das Feld
+// `error_code` des Herzschlags den erwarteten Wert trägt (`none` heißt: kein
+// Fehlerzustand, leeres Feld), und gibt ihn als FAULT-Zeile aus. Der Aufrufer
+// setzt den Fehlerzustand in `cdc.process_heartbeat`; der periodische
+// Herzschlag des Feed-Containers löscht ihn wieder, deshalb liest der Client
+// wiederholt. Danach ruft er `RegisterConsumer` mit dem admin-Token und einer
+// leeren Consumer-Kennung auf und gibt den Status samt `ErrorInfo` als
+// REJECTED-Zeile aus; ein Aufruf ohne Token trägt als `Unauthenticated` kein
+// Detail (Zeile REJECTED-AUTH).
+func runFaultFlow(args []string) {
+	if len(args) != 5 {
+		fmt.Fprintln(os.Stderr, "usage: grpcadminclient fault <addr> <reader-token> <admin-token> <source> <error-code|none>")
+		os.Exit(2)
+	}
+	addr, readerToken, adminToken, source, want := args[0], args[1], args[2], args[3], args[4]
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "grpcadminclient: Verbindung (%s) fehlgeschlagen: %v\n", addr, err)
+		os.Exit(1)
+	}
+	defer func() { _ = conn.Close() }()
+	client := administrationv1.NewAdministrationClient(conn)
+
+	var last string
+	for attempt := 0; attempt < 60; attempt++ {
+		ctx, cancel := callCtx(readerToken)
+		resp, err := client.Diagnose(ctx, &administrationv1.DiagnoseRequest{Source: source})
+		cancel()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "grpcadminclient: Diagnose (reader) fehlgeschlagen: %v\n", err)
+			os.Exit(1)
+		}
+		class, code := resp.GetHeartbeat().GetErrorClass(), resp.GetHeartbeat().GetErrorCode()
+		last = fmt.Sprintf("heartbeat_error_class=%q heartbeat_error_code=%q", class, code)
+		if (want == "none" && class == "" && code == "") || (want != "none" && code == want) {
+			fmt.Printf("FAULT want=%s %s\n", want, last)
+			break
+		}
+		if attempt == 59 {
+			fmt.Fprintf(os.Stderr, "grpcadminclient: Diagnose trägt error_code %q nicht binnen der Frist: %s\n", want, last)
+			os.Exit(1)
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
+
+	ctx, cancel := callCtx(adminToken)
+	_, err = client.RegisterConsumer(ctx, &administrationv1.RegisterConsumerRequest{ConsumerId: "", Name: "grpcadminclient-fault"})
+	cancel()
+	fmt.Printf("REJECTED status=%s %s\n", status.Code(err), errorInfoText(err))
+
+	ctx, cancel = callCtx("")
+	_, err = client.RegisterConsumer(ctx, &administrationv1.RegisterConsumerRequest{ConsumerId: "grpcadminclient-fault", Name: "grpcadminclient-fault"})
+	cancel()
+	fmt.Printf("REJECTED-AUTH status=%s %s\n", status.Code(err), errorInfoText(err))
+}
+
+// errorInfoText beschreibt das Statusdetail `ErrorInfo` eines Fehlers als
+// `reason=<Code> domain=<Domäne>`; ohne dieses Detail steht `details=none`.
+func errorInfoText(err error) string {
+	st, ok := status.FromError(err)
+	if !ok {
+		return "details=none"
+	}
+	for _, detail := range st.Details() {
+		if info, ok := detail.(*errdetails.ErrorInfo); ok {
+			return fmt.Sprintf("reason=%s domain=%s", info.GetReason(), info.GetDomain())
+		}
+	}
+	return "details=none"
 }
 
 // callCtx trägt die Aufruf-Frist und, sofern ein Token übergeben ist, den
