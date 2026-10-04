@@ -152,7 +152,7 @@ Planungsstand hat keinen davon gefahren
 Instanz B). Die gedruckte Zeile bzw. der Exit-Code steht im Bericht des
 Implementers und in §7.
 
-- [ ] **TLS in beiden Servern, Konfiguration, Codes (Liefer-Punkt 1,
+- [x] **TLS in beiden Servern, Konfiguration, Codes (Liefer-Punkt 1,
       [`LH-FA-SST-011`](../../../../spec/lastenheft.md) Happy Path, Boundary,
       Negative).**
       (a) Konfiguration: `CDC_TLS_CERT_FILE`/`CDC_TLS_KEY_FILE` und die
@@ -198,7 +198,7 @@ Implementers und in §7.
       trotzdem ohne `tls.Config`). Die Verallgemeinerung auf den gRPC-Server ist
       **hergeleitet**, wo die Mutation nur am HTTP-Server gefahren ist; der Bericht
       nennt je Mutation Stelle und Instanz.
-- [ ] **Realserver-Beleg am laufenden Container (Liefer-Punkt 2,
+- [x] **Realserver-Beleg am laufenden Container (Liefer-Punkt 2,
       [`LH-FA-SST-011`](../../../../spec/lastenheft.md) Happy Path, Boundary,
       Negative).** Eine neue Phase von `tools/harness/run-integration-tests.sh`
       (`make test-integration`), über eine Compose-Override-Datei im Temp-Verzeichnis
@@ -234,7 +234,7 @@ Implementers und in §7.
       `docs/user/e2e-abdeckung.md` ist vom Runner neu geschrieben (Erzeugnis,
       committet); `make doc-trace` druckt die Zeile mit der Waisen-Zahl, und
       `LH-FA-SST-011` ist darin **keine** Waise (gedruckte Zeile im Bericht).
-- [ ] **Benutzerhandbuch und benannte Grenzen zu den Clients (Liefer-Punkt 3).**
+- [x] **Benutzerhandbuch und benannte Grenzen zu den Clients (Liefer-Punkt 3).**
       `docs/user/benutzerhandbuch.md`: Umgebungsvariablen-Tabelle (§5) um die zwei
       Variablen, die Datei-Felder `tls_cert_file`/`tls_key_file` samt
       YAML-Beispiel (und der Satz, dass es Pfade sind, keine Zugangsdaten — der
@@ -256,7 +256,7 @@ Implementers und in §7.
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0
       (Kennungen in diesem Plan verlinkt), `make test`, `make test-store`
       und `make test-integration` Exit 0, `make image` Exit 0 (der Zug ändert
@@ -264,11 +264,118 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
+- [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (Zeile `make test-integration`: ein Satz zum TLS-Rundlauf); gemeldete
       Träger fremder Dateien mit der Closure nachgezogen (§3 Suchlauf,
       [`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+
+**Beleg des Implementers** (Lauf am Arbeitsstand dieses Zuges; jede Angabe
+ist **gemessen** am genannten Befehl, die Verallgemeinerungen tragen das Wort
+*hergeleitet*; Review und Verifikation stehen aus):
+
+- **Liefer-Punkt 1.** `make test` Exit 0 (52 Pakete `ok`, darunter
+  `internal/adapters/driving/http`, `…/grpc`, `internal/bootstrap`,
+  `internal/domain/messagecode`); `make test-store` Exit 0, gedruckt
+  `db-coverage: OK — DB-Adapter-Coverage 83.03% erfuellt Schwelle 80%`;
+  `make gates` Exit 0, gedruckt `coverage-gate: OK — Coverage 83.10% erfüllt
+  Schwelle 80%`, `d-check: 1662 Datei(en) geprüft, 0 Befund(e)`,
+  `meldungscodes-check: 100 Codes in Tabelle und Katalog gleich`, `gesamt: 0
+  Befund(e)` (a-check); `make a-check` Exit 0 (`.a-check.yml` unverändert),
+  `make fmt-check` Exit 0 (`342 Go-Dateien geprüft, alle formatiert`).
+  Codes: `PCF-E2009` (unvollständiges Paar), `PCF-E2010` (nicht ladbar).
+  Gemessenes Verhalten von `net/http` und `grpc-go` gegenüber einem
+  Klartext-Client (Unit-Tests, Loopback): `net/http` antwortet auf einen
+  `http://`-Aufruf mit Status `400` und dem Text `Client sent an HTTP request to
+  an HTTPS server.` (eine Antwort des Servers, keine der API); `grpc-go` beendet
+  den Verbindungsaufbau, der RPC endet mit `Unavailable` (`error reading server
+  preface: connection reset by peer`; in der Runner-Phase `…: EOF`). Ein
+  TLS-1.1-Client scheitert mit `remote error: tls: protocol version not
+  supported` (am `httptest`-Server mit der gebauten Konfiguration; die zwei
+  Adapter tragen die Konfiguration unverändert, ein zweiter Aufbau am Draht
+  steht nicht aus — *hergeleitet*).
+- **Mutationen** (an einer Kopie im Scratchpad, Instanz: `go test -race` des
+  Pakets im Toolchain-Container mit der Kopie als Mount; je Mutation einzeln,
+  Datei danach per `cp` zurückgesetzt):
+
+  | Zusage | Stelle · mutierte Eingabe | Instanz | gesehenes Rot |
+  |---|---|---|---|
+  | nur Zertifikat gesetzt endet mit `PCF-E2009` | `validateTLSPair`, Fall 1 `&&` zu `\|\|` | `internal/bootstrap` | rot: `TestTLSPaarWirdGelesen`, `TestNewTLSConfigBautEineKonfiguration`, `TestNewTLSConfigMindestversionAmDraht`, `TestNewTLSConfigLadefehlerEndenMitConfiguration`, `TestNewTLSConfigPruftAblaufUndNamenNicht`, `TestRunLaedtTLSPaarVorJederVerbindung` |
+  | nur Schlüssel gesetzt endet mit `PCF-E2009` | `validateTLSPair`, Fall 2 zu `case false` | `internal/bootstrap` | rot: `TestTLSPaarUnvollstaendigEndetMitConfiguration` |
+  | Ladefehler beendet den Start vor jeder Verbindung | `Run`: Fehler von `newTLSConfig` verworfen (`tlsConfig = nil`) | `internal/bootstrap` | rot: `TestRunLaedtTLSPaarVorJederVerbindung` |
+  | Schlüsselpfad wird gelesen | `newTLSConfig`: `LoadX509KeyPair(certFile, certFile)` | `internal/bootstrap` | rot: `TestNewTLSConfigBautEineKonfiguration`, `…MindestversionAmDraht`, `…PruftAblaufUndNamenNicht`, `TestRunLaedtTLSPaarVorJederVerbindung` |
+  | Mindestversion TLS 1.2 explizit | `newTLSConfig`: `MinVersion` entfernt | `internal/bootstrap` | rot: nur `TestNewTLSConfigBautEineKonfiguration` (die Feldprüfung); der Draht-Test bleibt grün, weil `net/http` ohne `MinVersion` selbst TLS 1.2 verlangt — die Zusage „explizit“ hängt allein an der Feldprüfung |
+  | Mindestversion TLS 1.2 am Draht | `newTLSConfig`: `MinVersion` auf `tls.VersionTLS10` | `internal/bootstrap` | rot: `TestNewTLSConfigBautEineKonfiguration`, `TestNewTLSConfigMindestversionAmDraht` |
+  | Datei-Feld `tls_key_file` wirkt | `mergeConfig`: `cfg.TLSKeyFile` ohne Datei-Wert | `internal/bootstrap` | rot: `TestTLSPaarWirdGelesen`, `TestTLSPaarUnvollstaendigEndetMitConfiguration` |
+  | die zwei Datei-Schlüssel gehören nicht zur Zugangsdaten-Klasse | `forbiddenFileCredentialKeys` um `tls_key_file` ergänzt | `internal/bootstrap` | rot: `TestZugangsdatenKlasseCodeUndTestSindMengengleich`, `TestTLSDateiSchluesselGehoerenNichtZurZugangsdatenKlasse`, beide Paar-Tests |
+  | HTTP-Server bedient mit TLS-Konfiguration nur über TLS | `http.Server.serve`: Verzweigung `TLSConfig != nil` zu `false` (Klartext trotz Konfiguration) | `internal/adapters/driving/http` | rot: `TestServerTLSBedientJedeFaehigkeit`, `TestServerTLSLehntKlartextClientAb` (beide am Handshake der TLS-Gegenprobe) |
+  | HTTP-Server ohne Konfiguration im Klartext | `http.Server.serve`: Verzweigung zu `true` | `internal/adapters/driving/http` | rot: `TestServerOhneTLSKonfigurationBedientKlartext` |
+  | gRPC-Server bedient mit TLS-Konfiguration nur über TLS | `grpc.New`: Bedingung `cfg.TLSConfig != nil` zu `false` | `internal/adapters/driving/grpc` | rot: `TestServerTLSBedientStreamUndVerwaltung`, `TestServerTLSLehntKlartextClientAb` |
+
+  Die Mutation „Klartext-Pfad im HTTP-Server“ und die des gRPC-Servers sind
+  **je am eigenen Server** gefahren (keine Herleitung von HTTP auf gRPC).
+  Der Zweig „Klartext-Client bekommt eine Antwort“ von
+  `TestServerTLSLehntKlartextClientAb` färbt sich in beiden Paketen erst über
+  die TLS-Gegenprobe davor rot; die Klartext-Aussage allein (Status `2xx`) ist
+  an der Eingabeseite nicht einzeln mutiert — der Gegenfall liegt in
+  `TestServerOhneTLSKonfigurationBedientKlartext` (Klartext bedient, wenn keine
+  Konfiguration gesetzt ist).
+- **Liefer-Punkt 2.** `make image` Exit 0 (`ghcr.io/pt9912/pg-change-feed:dev`);
+  `make test-integration` Exit 0, gedruckt: `run-integration-tests: TLS der
+  HTTP-, SSE- und gRPC-Schnittstelle (LH-FA-SST-011) belegt — fünf Starts mit
+  einer Verletzung (nur Zertifikat, nur Schlüssel, nicht lesbarer Pfad, Datei
+  ohne PEM-Daten, nicht zusammenpassendes Paar) beendeten den Container mit
+  Fehlerklasse configuration und PCF-E2009 bzw. PCF-E2010 im Log, ohne Slot und
+  ohne Klartext-Antwort; … unter TLS (Umgebung) blieb --healthcheck gesund
+  (Ausgang 0, Zustand healthy), HTTP, gRPC, SSE (change_id=2365-1) und
+  gRPC-Stream (change_id=2369-1) wurden über TLS bedient …, der Klartext-Versuch
+  danach bekam keine Antwort der API (HTTP: `CLEARTEXT status=400
+  body="Client sent an HTTP request to an HTTPS server."`; gRPC: `CLEARTEXT
+  code=Unavailable message="connection error: desc = \"error reading server
+  preface: EOF\""`) …`. Der Ausgang der Starts ist 2 bei `PCF-E2009` (die
+  Konfiguration endet vor `Run`) und 1 bei `PCF-E2010` (`Run` lädt das Paar);
+  der Slot `slot_tls_neg` ist nach jedem der fünf Negativstarts abwesend, und
+  der Start mit gültigem Paar über die Datei-Schlüssel legt ihn an (Gegenprobe;
+  der Hilfs-Slot wird danach entfernt). Die Wiederherstellung ohne Override
+  bedient beide Adressen wieder im Klartext (`probe` auf `http://` und über
+  gRPC ohne Vertrauensanker). `git status --porcelain` nennt am Phasen-Ende
+  keine `.pem`-Datei. `make doc-trace`: `83 Anforderung(en), 1 Waise(n).`,
+  Zeile `LH-FA-SST-011 | … | E2E | ok`; die verbleibende Waise ist
+  `LH-FA-SST-010`. Die Zahl am Parent ist nicht nachgemessen.
+- **Liefer-Punkt 3.** Handbuch 1.96 (Umgebungsvariablen-Tabelle, Datei-Felder
+  samt YAML-Beispiel, Abschnitt „Schnittstellen mit TLS verschlüsseln“,
+  Katalogzeilen `PCF-E2009`/`PCF-E2010`, Fehlersuche, Änderungshistorie);
+  `make handbuch-public-doc-check` Exit 0 (`keine interne Kennung in 3
+  Nutzerdokumenten unter docs/user/`), `make ausgabe-kennungen-check` Exit 0,
+  `make meldungscodes-check` Exit 0. Die Aussage zu den Clients ist je Sprache
+  gemessen: `git grep -n -i -E 'tls|ssl|certificate'` über
+  `sdks/csharp/PgChangeFeed.Client/PgChangeFeedClientOptions.cs`,
+  `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/PgChangeFeedClientOptions.kt`
+  und `sdks/python/pgchangefeed/src/pgchangefeed/options.py` liefert Exit 1
+  (kein Treffer); `git grep -c -E 'insecure\.NewCredentials|usePlaintext|plaintext|Plaintext|Klartext'`
+  über `examples/grpc-client`, `examples/csharp/grpc-client`,
+  `examples/kotlin/grpc-client` trifft je Programm (Go 1, C# 2, Kotlin 4 in
+  `Main.kt` und 1 im Test). Die HTTP- und SSE-Beispiele tragen keinen
+  TLS-spezifischen Code (`git grep -i -E 'tls|https://|ssl'` in
+  `examples/http-client`, `examples/sse-client`: 0 Treffer); das Handbuch nennt
+  für sie nichts, weil ein Aufruf gegen einen TLS-Server nicht gefahren ist.
+- **Kommentar-Läufe (Schritt 20).** `make kommentar-kennungen DIFF=e1db9c30`
+  Exit 0 (kein Kandidat); der Chronik-Lauf trifft nichts (`xargs`/`grep` Exit
+  123 ohne Treffer); der Konjunktiv-Lauf trifft fünf Zeilen, jede geprüft:
+  zwei Mutationsbeschreibungen in Test-Godocs (`statt`), eine
+  Test-Godoc-Bindung („wäre die Reihenfolge anders, endete `Run` …“) und zwei
+  normale Zweige („sonst im Klartext“) — zulässig.
+- **Benannte Grenzen.** (1) Ablauf und Name des Zertifikats prüft der Server
+  beim Start nicht: `TestNewTLSConfigPruftAblaufUndNamenNicht` lädt ein
+  abgelaufenes Zertifikat ohne Fehler (Spec-Lücke zu „ungültig“, im Handbuch
+  benannt). (2) Ein Fehler beim Laden steht nicht im Heartbeat-Fehlerzustand:
+  `Run` endet vor dem Aufbau des Heartbeat-Adapters (wie jeder Fehler vor
+  diesem Punkt); der Betreiber liest ihn im Log. (3) Ein `Addr` ohne Wert
+  bindet über `net.Listen` einen zufälligen Port statt `:http`/`:https`; die
+  Verdrahtung ruft `Start` nur mit gesetzter Adresse. (4) Die Datei mit
+  Zertifikat und Kette ist nur an `crypto/tls` gemessen
+  (`TestNewTLSConfigLiestDieKetteDerZertifikatsdatei`: zwei Glieder), nicht an
+  einem Client mit Zwischenzertifikat.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist.
@@ -288,10 +395,12 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/bootstrap/wiring.go` | update | `Config`-Felder, Konstanten der zwei Variablen, `ConfigFromEnv`; Laden des Paars und Bau der `tls.Config` **vor** `NewStream` und vor den Servern; Übergabe an beide Adapter |
 | `internal/bootstrap/config_file.go` | update | `fileConfig` (`tls_cert_file`, `tls_key_file`), `mergeConfig`; **kein** Eintrag in `forbiddenFileCredentialKeys` |
 | `internal/bootstrap/config_file_internal_test.go`, `internal/bootstrap/wiring_test.go` | update | Paar-Fälle für beide Zugriffswege (keines, eines je Quelle, beide, gemischt Datei/Env), Ladefehler (nicht lesbar, kein PEM, nicht zusammenpassend) mit Gegenprobe des gültigen Paars, Beleg „kein Slot und kein Listener bei Ladefehler“ |
-| `internal/domain/messagecode/codes.go` (und der Test des Pakets, falls er die Menge zählt) | update | neue Codes der Klasse `configuration` (unvollständiges Paar; Laden fehlgeschlagen), Zuweisungsregel im Plan des Vorgängers |
+| `internal/bootstrap/tls.go` | neu (Implementer-Nachzug) | trägt `validateTLSPair` (die eine Funktion, die beide Konfigurations-Zugriffswege rufen), `newTLSConfig` (Laden und Bau der einen `tls.Config`, `MinVersion` TLS 1.2 explizit) und die zwei Sentinels `ErrTLSPairIncomplete`/`ErrTLSPairUnusable` samt `tlsConfigError` (Form wie `apiTokenListError`, ist zugleich `ErrConfiguration`); eigene Datei statt Einbau in `wiring.go` (2353 Zeilen) |
+| `internal/bootstrap/tls_internal_test.go`, `internal/bootstrap/messagecodes_internal_test.go`, `internal/adapters/driving/http/tls_test.go`, `internal/adapters/driving/grpc/tls_test.go` | neu / update (Implementer-Nachzug) | die Tests aus §2 (a) bis (c): Konfigurationswege, Ladefehler, `MinVersion`, Ablauf-Grenze, Reihenfolge in `Run`, TLS-Client je Fähigkeit und Klartext-Client je Server; die zwei Sentinels stehen in der Sentinel-Tabelle des Meldungscode-Tests |
+| `internal/domain/messagecode/codes.go` (und der Test des Pakets, falls er die Menge zählt) | update | neue Codes der Klasse `configuration` (unvollständiges Paar `PCF-E2009`; Laden fehlgeschlagen `PCF-E2010`), Zuweisungsregel im Plan des Vorgängers; der Test des Pakets zählt die Menge nicht |
 | `tools/harness/certgen/` (Arbeitsname) | neu | erzeugt Zertifikat und Schlüssel (Standardbibliothek), läuft im Toolchain-Container; `tooling`-Gruppe, keine Kante nach `internal/` |
-| `tools/harness/httpclient`, `sseclient`, `grpcclient`, `grpcadminclient` | update | TLS-Weg mit Vertrauensanker aus einer Datei; Aufrufform der bestehenden Phasen bleibt unverändert |
-| `tools/harness/run-integration-tests.sh` | update | neue Phase „TLS“, `abdeckung_declare` für [`LH-FA-SST-011`](../../../../spec/lastenheft.md); jede neue `func TestE2E*` stünde im `-run` (Vollständigkeits-Test `test/integration/runner_vollstaendigkeit_test.go`) |
+| `tools/harness/httpclient`, `sseclient`, `grpcclient`, `grpcadminclient` | update | TLS-Weg mit Vertrauensanker aus einer Datei (Umgebungsvariable `HARNESS_TLS_CA_FILE`; ohne sie bleibt die Aufrufform der bestehenden Phasen unverändert); dazu je ein Modus `cleartext` in `httpclient` und `grpcadminclient`, der einen Klartext-Aufruf mit gültigem Token sendet und die Antwort meldet |
+| `tools/harness/run-integration-tests.sh` | update | neue Phase „TLS“ (fünf Negativstarts statt drei: nur Zertifikat, nur Schlüssel, nicht lesbarer Pfad, Datei ohne PEM-Daten, nicht zusammenpassendes Paar; dazu ein Start über die Datei-Schlüssel mit frischem Slot als Gegenprobe zur Abwesenheit des Slots), `abdeckung_declare` für [`LH-FA-SST-011`](../../../../spec/lastenheft.md), Aufräumen des Temp-Verzeichnisses im `cleanup`-Trap; jede neue `func TestE2E*` stünde im `-run` (Vollständigkeits-Test `test/integration/runner_vollstaendigkeit_test.go`) — es entsteht keine |
 | `docs/user/e2e-abdeckung.md` | Erzeugnis | vom Runner geschrieben, committet |
 | `docs/user/benutzerhandbuch.md` | update | §2 Liefer-Punkt 3 |
 | `harness/README.md` | update | Zeile `make test-integration` |
@@ -349,13 +458,40 @@ a53f4e75ca51bdaa4319aeabba96f89c48b6448f 22 -n -E '\-\-healthcheck' -- . ':!docs
 a53f4e75ca51bdaa4319aeabba96f89c48b6448f 6 -n -E 'unverschlüsselt|ohne TLS|im Klartext' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 a53f4e75ca51bdaa4319aeabba96f89c48b6448f 5 -n -E 'tls_cert_file|tls_key_file|CDC_TLS_' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 a53f4e75ca51bdaa4319aeabba96f89c48b6448f 29 -n -E 'http://(cdc-test-feed|pg-change-feed)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 8 -n -E 'ListenAndServe|grpc\.NewServer|net\.Listen' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 9 -n -E 'insecure\.NewCredentials|WithInsecure' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 22 -n -E '\-\-healthcheck' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 6 -n -E 'unverschlüsselt|ohne TLS|im Klartext' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 5 -n -E 'tls_cert_file|tls_key_file|CDC_TLS_' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 29 -n -E 'http://(cdc-test-feed|pg-change-feed)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 12 -n -E 'ListenAndServe|grpc\.NewServer|net\.Listen' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 12 -n -E 'insecure\.NewCredentials|WithInsecure' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 30 -n -E '\-\-healthcheck' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 31 -n -E 'unverschlüsselt|ohne TLS|im Klartext' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 52 -n -E 'tls_cert_file|tls_key_file|CDC_TLS_' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 30 -n -E 'http://(cdc-test-feed|pg-change-feed)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 ```
+
+**Startmessung und Endstand (Implementer).** Am Start (Arbeitsstand `c45a3cca`
+ohne Änderung) wich genau eine der zwölf Zeilen ab: Zeile 8 der `diff`-Gruppe
+(`insecure.NewCredentials`) zählte 10 statt 9 — der Vorgänger-Slice hat dem
+Wegwerf-Client `grpcadminclient` den Modus `probe` hinzugefügt (ein dritter
+Aufbau der Verbindung); die Parent-Zeilen am Planungsstand stimmten alle. Am
+Endstand (Arbeitsbaum, `make suchlauf-nachmessen` mit den hier stehenden Zahlen)
+sind alle Trefferzeilen der sechs Muster gelesen: Zeile 1 (12) — `ListenAndServe`
+fällt aus `internal/adapters/driving/http/server.go`, dort und im gRPC-Adapter
+stehen `net.Listen` und `serve(listener net.Listener)`, dazu je ein Test pro
+Paket mit `net.Listen` auf Loopback; kein Träger außerhalb des Codes
+beschreibt den Annahmeweg. Zeile 2 (12) — hinzugekommen sind das Handbuch (die
+Messung der Beispiele), die zwei neuen gRPC-Tests und `grpcadminclient` mit
+dem Klartext-Modus und der Transportwahl; die Beispiele selbst sind
+unverändert. Zeile 3 (30) — die acht neuen Trefferzeilen sind neue Texte
+(Handbuch, `tls.go`, Kommentare, Runner); jeder bestehende Träger, der
+`--healthcheck` beschreibt, bleibt richtig und ist nicht umformuliert.
+Zeile 4 (31) — die 25 neuen Trefferzeilen sind die neuen Texte des Zuges
+(Handbuch, Kommentare, Tests, Runner, `harness/README.md` trägt `Klartext`
+nur in der neuen Sensors-Beschreibung); die Spec-Zeilen (`spec/lastenheft.md`,
+`spec/pflichtenheft.md`) sind unverändert und tragen die Aussage dieses
+Slice. Zeile 5 (52) — Handbuch, `config_file.go`, `wiring.go`, die Tests und
+der Runner; `spec/pflichtenheft.md` trägt die Namen wie zuvor. Zeile 6 (30) —
+eine Zeile mehr als erwartet: die Konstante `TLS_HTTP_URL` der neuen
+Runner-Phase (`http://pg-change-feed:8090` für den Klartext-Versuch); die
+übrigen Phasen und SDK-Läufe sprechen unverändert Klartext (der Boundary-Beleg
+„unverändert wie ohne diese Anforderung“).
 
 ## 4. Trigger
 

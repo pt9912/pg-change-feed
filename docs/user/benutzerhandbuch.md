@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.95
+Version: 1.96
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-10-04
 
@@ -1726,6 +1726,74 @@ Regeln für die Werte:
 Das Token des NATS-Vollinhalts-Zustellwegs (`CDC_NATS_STREAM_TOKEN`) gehört
 nicht dazu: der NATS-Server vergibt und wechselt es.
 
+### Schnittstellen mit TLS verschlüsseln
+
+Die HTTP-/JSON-API (einschließlich des SSE-Endpunkts `GET /changes/stream`)
+und die gRPC-Schnittstelle (Change-Stream und Verwaltungs-API) bedienen ohne
+Konfiguration unverschlüsselt. Mit einem TLS-Paar bedienen beide Schnittstellen
+verschlüsselt. Dasselbe Paar gilt für beide.
+
+**Einrichten:** Legen Sie Zertifikat und privaten Schlüssel als PEM-Dateien an
+(das Zertifikat mit dem Namen, unter dem Ihre Clients den Server erreichen),
+binden Sie beide lesend in den Container ein und setzen Sie beide Variablen —
+oder die beiden Datei-Felder `tls_cert_file` und `tls_key_file`:
+
+```yaml
+    environment:
+      CDC_TLS_CERT_FILE: /etc/cdc/tls/server.pem
+      CDC_TLS_KEY_FILE: /etc/cdc/tls/server-key.pem
+    volumes:
+      - ./tls:/etc/cdc/tls:ro
+```
+
+Der Prozess im Container läuft als unprivilegierter Benutzer; beide Dateien
+müssen für ihn lesbar sein.
+
+**Was gilt:**
+
+- Beide Schnittstellen sprechen mindestens TLS 1.2. Ein Client, der höchstens
+  TLS 1.1 spricht, kommt nicht zustande (gemessen: der Server beendet den
+  Verbindungsaufbau mit „protocol version not supported“).
+- Auf derselben Adresse gibt es keinen Klartext. Ein Klartext-Aufruf wird nicht
+  bedient, auch nicht mit gültigem Token: ein HTTP-Aufruf über `http://`
+  bekommt den Status `400` mit dem Text „Client sent an HTTP request to an
+  HTTPS server“ (gemessen), ein gRPC-Aufruf im Klartext endet mit dem Status
+  `Unavailable` (gemessen).
+- Der Server verlangt kein Client-Zertifikat. Die Authentifizierung bleibt das
+  Token (siehe [Zugriff über die HTTP-/JSON-API](#zugriff-über-die-http-json-api)).
+- Der Server liest Zertifikat und Schlüssel beim Start. Ein Zertifikatswechsel
+  ist ein Neustart; ein Neuladen zur Laufzeit gibt es nicht.
+- Der Server prüft beim Start weder das Ablaufdatum noch den Namen des
+  Zertifikats: ein abgelaufenes oder für einen anderen Namen ausgestelltes
+  Zertifikat startet den Server, und der Client lehnt die Verbindung ab. Prüfen
+  Sie Gültigkeit und Namen vor dem Einsatz.
+- Die Verbindung zu NATS und zu PostgreSQL bleibt unberührt: TLS für NATS stellen
+  Sie in der NATS-Konfiguration ein, TLS für PostgreSQL über die Parameter der
+  Verbindungs-URL.
+- `--healthcheck` (der Healthcheck des Containers) liest den Herzschlag in der
+  Datenbank und erreicht die beiden Schnittstellen nicht; er läuft mit und ohne
+  TLS gleich (gemessen: Ausgang 0 und Docker-Zustand `healthy` mit gesetztem
+  Paar).
+
+**Start-Fehler:** Beide Fälle enden ohne geöffneten Port und ohne angelegten
+Replication-Slot, mit der Fehlerklasse `configuration`:
+
+| Fall | Meldungscode | Prozessausgang |
+|---|---|---|
+| nur eine der beiden Angaben ist gesetzt (Umgebung und Datei zusammen gelesen) | `PCF-E2009` | 2 |
+| eine Datei ist nicht lesbar, enthält keine gültigen PEM-Daten, oder Zertifikat und Schlüssel gehören nicht zusammen | `PCF-E2010` | 1 |
+
+Die Fehlerzeile nennt die Variablen bzw. die Pfade und die Ursache, nie den
+Inhalt des Schlüssels.
+
+**Clients:** Die Optionen der drei Client-Pakete (C#, Kotlin, Python) tragen keine TLS-Einstellung (gemessen:
+`git grep -n -i -E 'tls|ssl|certificate'` über die drei Options-Dateien liefert
+keinen Treffer), und die gRPC-Beispielprogramme in Go, C# und Kotlin verbinden
+fest im Klartext (gemessen: `git grep` nach `insecure.NewCredentials`,
+`usePlaintext` und dem Klartext-Vermerk im C#-Beispiel trifft je Programm). Ein
+Client-Paket oder Beispielprogramm ohne TLS-Option spricht deshalb nur mit
+einem Server ohne TLS-Paar.
+
 ### Zugriff über den gRPC-Change-Stream
 
 **Erreichbarkeit:** aktiv, sobald `CDC_GRPC_ADDR` gesetzt ist (`host:port`);
@@ -2375,6 +2443,8 @@ dieselben vier Zugriffswege wie die C#-/Kotlin-Pendants ab. Siehe
 | `CDC_API_TOKENS_READER` | nein | Kommagetrennte Liste von Bearer-Token der lesenden Klasse; gültig ist die Vereinigung mit `CDC_API_TOKEN_READER`. Ein leeres Element oder ein Element mit Leerraum verhindert den Start (Fehlerklasse `configuration`, `PCF-E2008`); eine leere Variable gilt als nicht gesetzt. Nur in der Umgebung, nicht in der Konfigurationsdatei (siehe [API-Token in zwei Neustarts wechseln](#api-token-in-zwei-neustarts-wechseln)) |
 | `CDC_API_TOKENS_ADMIN` | nein | Kommagetrennte Liste von Bearer-Token der administrativen Klasse; gültig ist die Vereinigung mit `CDC_API_TOKEN_ADMIN`, dieselben Regeln wie bei `CDC_API_TOKENS_READER`. Steht ein Wert in beiden Klassen, gilt er als administrativ |
 | `CDC_GRPC_ADDR` | nein | Horch-Adresse des gRPC-Servers (`host:port`); aktiviert gemeinsam den Change-Stream (`ChangeStream`) und die Verwaltungs-API (`Administration`) auf demselben Port. Ungesetzt bleibt der Server vollständig deaktiviert — kein Listener. Wie `CDC_HTTP_ADDR` keine Start-Vorbedingung |
+| `CDC_TLS_CERT_FILE` | nein | Pfad zur Zertifikatsdatei (PEM, das Zertifikat und dahinter seine Kette) der HTTP- und der gRPC-Schnittstelle. Zertifikat und Schlüssel gehören zusammen: ist nur eine der beiden Variablen gesetzt, startet der Container nicht (Fehlerklasse `configuration`, `PCF-E2009`). Beide gesetzt verschlüsseln HTTP (einschließlich `GET /changes/stream`) und gRPC (siehe [Schnittstellen mit TLS verschlüsseln](#schnittstellen-mit-tls-verschlüsseln)); beide ungesetzt lassen beide Schnittstellen unverschlüsselt. Die Variable trägt einen Pfad, keine Zugangsdaten, und hat das Datei-Feld `tls_cert_file` |
+| `CDC_TLS_KEY_FILE` | nein | Pfad zur Datei mit dem privaten Schlüssel (PEM) zum Zertifikat; dieselben Regeln wie bei `CDC_TLS_CERT_FILE`. Der Schlüssel selbst steht weder in einer Umgebungsvariable noch in der Konfigurationsdatei; das Datei-Feld `tls_key_file` trägt nur den Pfad |
 | `CDC_CONFIG_FILE` | nein | Pfad zu einer optionalen YAML-Konfigurationsdatei (siehe unten) |
 
 Fehlt eine Pflichtvariable und liefert auch keine Konfigurationsdatei
@@ -2397,6 +2467,13 @@ Feld-für-Feld-Vorrang. Trägt keine der beiden Quellen eine Adresse, bleibt
 die jeweilige Oberfläche deaktiviert (dieselbe No-Op-Semantik wie bei der
 entsprechenden Umgebungsvariable oben).
 
+Die zwei Pfade des TLS-Paars sind ebenfalls Datei-Felder: `tls_cert_file` und
+`tls_key_file` entsprechen `CDC_TLS_CERT_FILE` bzw. `CDC_TLS_KEY_FILE`, mit
+demselben Feld-für-Feld-Vorrang der Umgebungsvariable. Es sind Pfade, keine
+Zugangsdaten; der private Schlüssel selbst steht in keiner Konfigurationsdatei.
+Beide Felder gehören zusammen (siehe [Schnittstellen mit TLS
+verschlüsseln](#schnittstellen-mit-tls-verschlüsseln)).
+
 ```yaml
 source_id: quelle-1
 publication: pub_quelle_1
@@ -2411,6 +2488,8 @@ tables:
 log_level: info
 http_addr: ":8090"
 grpc_addr: ":9090"
+tls_cert_file: /etc/cdc/tls/server.pem
+tls_key_file: /etc/cdc/tls/server-key.pem
 ```
 
 **Wichtig — Zugangsdaten bleiben env-var-exklusiv:** Die Schlüssel
@@ -2525,6 +2604,8 @@ Entfällt eine Ursache, bleibt ihr Code in dieser Tabelle und trägt den Vermerk
 | `PCF-E2006` | `configuration` | während des Backfill-Runs hat sich der Ausschluss- oder Regelstand der Tabelle geändert; der Run endet ohne Change | Änderung des Regelstands abschließen, Backfill neu beantragen |
 | `PCF-E2007` | `configuration` | die Schema-Quelldatei von `make schema-rollout` fehlt | Variable `SCHEMA_SOURCE` und Arbeitsbaum prüfen |
 | `PCF-E2008` | `configuration` | eine Token-Liste (`CDC_API_TOKENS_READER`, `CDC_API_TOKENS_ADMIN`) trägt ein leeres Element oder ein Element mit Leerraum; der Container startet nicht, die Zeile nennt Variable und Nummer des Elements | Liste prüfen (siehe [API-Token in zwei Neustarts wechseln](#api-token-in-zwei-neustarts-wechseln)) |
+| `PCF-E2009` | `configuration` | nur eine der beiden TLS-Angaben (`CDC_TLS_CERT_FILE`, `CDC_TLS_KEY_FILE` bzw. `tls_cert_file`, `tls_key_file`) ist gesetzt; der Container startet nicht (Prozessausgang 2), die Zeile nennt die gesetzte und die fehlende Angabe | beide Angaben setzen oder beide entfernen (siehe [Schnittstellen mit TLS verschlüsseln](#schnittstellen-mit-tls-verschlüsseln)) |
+| `PCF-E2010` | `configuration` | das TLS-Paar ist nicht ladbar: eine Datei ist nicht lesbar, trägt keine gültigen PEM-Daten, oder Zertifikat und Schlüssel gehören nicht zusammen; der Container startet nicht (Prozessausgang 1), die Zeile nennt die Pfade und die Ursache | Pfade, Dateirechte für den Benutzer des Containers und die Zusammengehörigkeit von Zertifikat und Schlüssel prüfen (siehe [Schnittstellen mit TLS verschlüsseln](#schnittstellen-mit-tls-verschlüsseln)) |
 | `PCF-E3000` | `permission` | fehlende Berechtigung ohne nähere Zuordnung (Rückfall) | Rechte der Rollen prüfen (siehe [Zugriff und Rollen](#zugriff-und-rollen)) |
 | `PCF-E3001` | `permission` | der Server weist den Replikationszugriff ab (SQLSTATE 42501 oder Klasse 28) | Rechte und `REPLICATION`-Attribut der Capture-Rolle prüfen |
 | `PCF-E3002` | `permission` | die Capture-Rolle darf die Quelltabelle eines Backfills nicht lesen oder den temporären Slot nicht anlegen | `SELECT` auf die Tabelle und das `REPLICATION`-Attribut prüfen, Backfill neu beantragen |
@@ -2632,7 +2713,11 @@ formatiert.
 3. Prüfen Sie die Token-Listen `CDC_API_TOKENS_READER` und
    `CDC_API_TOKENS_ADMIN`: kein leeres Element, kein Leerraum in einem
    Element (Meldungscode `PCF-E2008`).
-4. Starten Sie den Container erneut.
+4. Prüfen Sie bei gesetztem TLS-Paar beide Angaben (`CDC_TLS_CERT_FILE` und
+   `CDC_TLS_KEY_FILE`, Meldungscode `PCF-E2009`) und die beiden Dateien:
+   lesbar für den Benutzer des Containers, gültiges PEM, ein zusammengehöriges
+   Paar (Meldungscode `PCF-E2010`).
+5. Starten Sie den Container erneut.
 
 ### Container startet, erfasst aber keine Änderungen
 
@@ -3011,3 +3096,4 @@ MIT — siehe `LICENSE`.
 | 1.93 | 2026-10-03 | Die Fehlertypen der drei SDK-Packages (C#, Kotlin, Python) tragen den Meldungscode des Servers als Eigenschaft (`MessageCode`, `messageCode`, `message_code`): beim HTTP- und beim SSE-Client aus dem Feld `code`, beim gRPC-Verwaltungs-Client aus dem Statusdetail; ohne Code auf dem Draht ist die Eigenschaft leer; das Feld `error_code` der Diagnose kommt unverändert an |
 | 1.94 | 2026-10-03 | Die SDK-Eigenschaft für den Meldungscode gilt ab Package-Version 0.6.0 (Abschnitte zu Fehlerantworten und zur Fehlerform der gRPC-Verwaltungs-API); trägt ein Fehlerkörper `code` als String, aber `error` nicht als String, liefern alle drei SDKs den Code und den rohen Körper als Fehlertext |
 | 1.95 | 2026-10-04 | Mehrere API-Token je Klasse: die neuen Variablen `CDC_API_TOKENS_READER` und `CDC_API_TOKENS_ADMIN` (kommagetrennte Listen) gelten neben den bisherigen Variablen, auf HTTP und gRPC gleich; neuer Abschnitt „API-Token in zwei Neustarts wechseln“; eine Liste mit leerem Element oder Leerraum verhindert den Start (neuer Meldungscode `PCF-E2008`); die Zugangsdaten-Schlüssel der Konfigurationsdatei umfassen jetzt neun Schlüssel |
+| 1.96 | 2026-10-04 | Die HTTP- und die gRPC-Schnittstelle lassen sich mit einem gemeinsamen TLS-Paar verschlüsseln: die neuen Variablen `CDC_TLS_CERT_FILE` und `CDC_TLS_KEY_FILE` (Datei-Felder `tls_cert_file` und `tls_key_file`, Pfade ohne Zugangsdaten-Charakter), neuer Abschnitt „Schnittstellen mit TLS verschlüsseln“ (TLS ab Version 1.2, kein Klartext auf derselben Adresse, kein Client-Zertifikat, Zertifikatswechsel nur mit Neustart); ein unvollständiges oder nicht ladbares Paar verhindert den Start (neue Meldungscodes `PCF-E2009` und `PCF-E2010`); die Client-Pakete und die gRPC-Beispielprogramme sprechen nur mit einem Server ohne TLS-Paar |

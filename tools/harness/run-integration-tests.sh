@@ -260,7 +260,8 @@ cleanup() {
   fi
   docker unpause "$FEED_CONTAINER" >/dev/null 2>&1 || true
   $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true
-  rm -rf "${WAL_TMP:-}" "${TW_TMP:-}"
+  docker rm -fv cdc-e2e-tls-sse cdc-e2e-tls-grpc >/dev/null 2>&1 || true
+  rm -rf "${WAL_TMP:-}" "${TW_TMP:-}" "${TLS_TMP:-}"
 }
 trap cleanup EXIT
 
@@ -4548,6 +4549,278 @@ TW_PROBE_TOKENS=(e2e-reader-token e2e-admin-token tw-admin-neu)
 tw_expect_classes "nach der Wiederherstellung" reader admin none
 
 echo "run-integration-tests: API-Token-Wechsel (LH-FA-SST-012) belegt — Neustart 1 mit Singular und Liste: beide Token je Klasse wurden über HTTP (GET /tables, POST /consumers) und gRPC (ListTables, RegisterConsumer) bedient, ein Wert in beiden Klassen erreichte den administrativen Endpunkt, ein unbekanntes Token endete mit 401 bzw. Unauthenticated; Neustart 2 ohne die Singular-Token: die alten Token endeten mit 401 bzw. Unauthenticated, die Listen-Token wurden bedient; eine Liste mit leerem Element und eine mit Leerraum beendeten den Start mit Ausgang 2, Fehlerklasse configuration und PCF-E2008 im Log ohne Token-Wert; nach der Wiederherstellung galten wieder die Token der Compose-Umgebung"
+
+# --- TLS der HTTP- und gRPC-Schnittstelle (LH-FA-SST-011) ---------------------
+abdeckung_declare "TLS der HTTP-, SSE- und gRPC-Schnittstelle" "LH-FA-SST-011" "ein gemeinsames TLS-Paar am laufenden Feed-Container: HTTP, SSE und gRPC bedienen über TLS und nicht im Klartext auf derselben Adresse; ein unvollständiges oder nicht ladbares Paar beendet den Start mit der Fehlerklasse configuration, ohne Slot; --healthcheck bleibt gesund; ohne die Konfiguration bleibt der Klartext unverändert" "TLS_PHASE=\"TLS-Schnittstellen\""
+
+# Die Phase fährt den Feed-Container über eine Compose-Override-Datei im
+# Temp-Verzeichnis des Runners (`compose.yaml` bleibt unverändert, der
+# Container wird am Phasen-Ende ohne Override wiederhergestellt; das
+# Temp-Verzeichnis räumt `cleanup`). Zertifikat und Schlüssel erzeugt
+# `tools/harness/certgen` im Toolchain-Container in dieses Verzeichnis, nichts
+# davon liegt im Arbeitsbaum oder im Image. Reihenfolge: (1) vier Starts mit
+# je einer Verletzung beenden den Container mit Klasse und Code im Log, ohne
+# Slot und ohne Klartext-Antwort; (2) ein Start mit gültigem Paar über die
+# Konfigurationsdatei und einem frischen Slot legt den Slot an (die Gegenprobe
+# zur Abwesenheit in (1)), der Slot wird wieder entfernt; (3) der Start mit
+# gültigem Paar über die Umgebung: `--healthcheck` gesund, HTTP, SSE und gRPC
+# über TLS mit dem Zertifikat als Vertrauensanker; (4) erst danach der
+# Klartext-Versuch auf dieselben Adressen — der erfolgreiche TLS-Aufruf davor
+# belegt, dass der Server steht und die Abwesenheit einer Klartext-Antwort
+# eine Auswahl ist; (5) Wiederherstellung ohne Override, Klartext wieder
+# bedient.
+TLS_PHASE="TLS-Schnittstellen"
+TLS_TMP=$(mktemp -d)
+chmod 0755 "$TLS_TMP"
+TLS_MOUNT=/etc/cdc/tls
+TLS_NEG_SLOT=slot_tls_neg
+TLS_HTTPS_URL="https://pg-change-feed:8090"
+TLS_HTTP_URL="http://pg-change-feed:8090"
+TLS_STREAM_TABLE=feed_e2e_full
+TLS_STREAM_SENTINEL=TlsStreamE2ESentinel
+
+# tl_client <Client-Verzeichnis unter tools/harness> <Argumente>: ein
+# Wegwerf-Client im Toolchain-Container, Ausgabe auf stdout. TL_CA nennt das
+# Zertifikat als Vertrauensanker (leer: Klartext bzw. Standard-Speicher).
+TL_CA=/tls/good.pem
+tl_client() {
+  local output
+  if ! output=$(docker run --rm --network "$NETWORK" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -v "$TLS_TMP":/tls:ro \
+    -w /src \
+    -e GOCACHE=/tmp/gocache \
+    -e HARNESS_TLS_CA_FILE="$TL_CA" \
+    "$TOOLCHAIN_IMAGE" go run ./tools/harness/"$@" 2>&1); then
+    bf_fail "$TLS_PHASE — Client $1 endete mit einem Fehler: $output"
+  fi
+  printf '%s\n' "$output"
+}
+
+# tl_recreate <NAME=Wert>...: erzeugt den Feed-Container mit dem Temp-
+# Verzeichnis als Mount und den genannten Variablen neu.
+tl_recreate() {
+  local pair
+  {
+    printf 'services:\n  pg-change-feed:\n    environment:\n'
+    for pair in "$@"; do
+      printf '      %s: "%s"\n' "${pair%%=*}" "${pair#*=}"
+    done
+    printf '    volumes:\n      - %s:%s:ro\n' "$TLS_TMP" "$TLS_MOUNT"
+  } > "$TLS_TMP/override.yaml"
+  chmod 0644 "$TLS_TMP/override.yaml"
+  $COMPOSE -f "$TLS_TMP/override.yaml" up -d --force-recreate --no-deps pg-change-feed >/dev/null
+}
+
+# tl_await_stopped <Beschreibung>: wartet, bis der Feed-Container beendet ist.
+tl_await_stopped() {
+  local i
+  for ((i = 0; i < 60; i++)); do
+    [ "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" = false ] && return 0
+    sleep 1
+  done
+  bf_fail "$TLS_PHASE — der Feed-Container lief mit $1 60 s weiter"
+}
+
+# tl_expect_start_refused <Beschreibung> <Ausgang> <Code> <Text im Log> <NAME=Wert>...:
+# der Start mit der Verletzung endet mit dem erwarteten Ausgang, trägt Klasse,
+# Code und Text in der Log-Zeile und kein Schlüsselmaterial; es entsteht kein
+# Slot, und auf den Adressen antwortet kein Klartext-Server.
+tl_expect_start_refused() {
+  local what=$1 want_exit=$2 code=$3 want_text=$4 log cleartext
+  shift 4
+  tl_recreate "$@" CDC_SLOT="$TLS_NEG_SLOT"
+  tl_await_stopped "$what"
+  bf_expect "$(docker inspect --format '{{.State.ExitCode}}' "$FEED_CONTAINER")" "$want_exit" "$TLS_PHASE — Ausgang bei '$what'"
+  log=$(docker logs "$FEED_CONTAINER" 2>&1)
+  [[ "$log" == *"Fehlerklasse configuration [$code]: "*"$want_text"* ]] \
+    || bf_fail "$TLS_PHASE — das Log trägt für '$what' nicht 'Fehlerklasse configuration [$code]' mit '$want_text': $log"
+  [[ "$log" != *"PRIVATE KEY"* ]] || bf_fail "$TLS_PHASE — das Log trägt für '$what' Schlüsselmaterial: $log"
+  bf_expect "$(bf_sql "SELECT count(*) FROM pg_replication_slots WHERE slot_name = '$TLS_NEG_SLOT'")" 0 "$TLS_PHASE — Slot nach '$what'"
+  cleartext=$(tl_client httpclient cleartext "$TLS_HTTP_URL" "$HTTP_TOKEN_READER" src-e2e pub_pgc_e2e)
+  [[ "$cleartext" == *"CLEARTEXT transport_error="* ]] \
+    || bf_fail "$TLS_PHASE — nach '$what' antwortet die HTTP-Adresse: $cleartext"
+  cleartext=$(tl_client grpcadminclient cleartext "$GRPC_ADDR" "$HTTP_TOKEN_READER" src-e2e pub_pgc_e2e)
+  [[ "$cleartext" == "CLEARTEXT code=Unavailable "* ]] \
+    || bf_fail "$TLS_PHASE — nach '$what' antwortet die gRPC-Adresse: $cleartext"
+}
+
+# tl_expect_tls_logged: beide Server melden beim Start, dass sie über TLS
+# bedienen (die Konfiguration ist im Adapter angekommen).
+tl_expect_tls_logged() {
+  local log
+  log=$(docker logs "$FEED_CONTAINER" 2>&1)
+  printf '%s\n' "$log" | grep 'http: Adapter gestartet' | grep '"tls":true' >/dev/null \
+    || bf_fail "$TLS_PHASE — $1: der HTTP-Server meldet nicht, über TLS zu bedienen"
+  printf '%s\n' "$log" | grep 'grpc: Adapter gestartet' | grep '"tls":true' >/dev/null \
+    || bf_fail "$TLS_PHASE — $1: der gRPC-Server meldet nicht, über TLS zu bedienen"
+}
+
+# tl_stream <Container> <Client> <Adresse> <erste Zeilen-id> <REJECTED-Zeile>:
+# ein Stream-Client über TLS wartet auf READY, der Runner committet eindeutige
+# Zeilen, bis der Client eine empfangen hat; der Client schließt mit der
+# Ablehnung ohne Token ab. Tabelle, Operation und Wert stehen in der
+# RECEIVED-Zeile, die change_id ist über cdc.changes gelesen.
+tl_stream() {
+  local container=$1 client=$2 addr=$3 first=$4 rejected=$5 attempt i id out change_id captured received=0
+  docker rm -fv "$container" >/dev/null 2>&1 || true
+  docker run -d --name "$container" --network "$NETWORK" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -v "$TLS_TMP":/tls:ro \
+    -w /src \
+    -e GOCACHE=/tmp/gocache \
+    -e HARNESS_TLS_CA_FILE=/tls/good.pem \
+    "$TOOLCHAIN_IMAGE" go run ./tools/harness/"$client" "$addr" "$HTTP_TOKEN_READER" >/dev/null
+  for i in $(seq 1 60); do
+    [[ "$(docker logs "$container" 2>&1 || true)" == *READY* ]] && break
+    [ "$(docker inspect --format '{{.State.Running}}' "$container" 2>/dev/null || echo false)" = true ] || break
+    sleep 1
+  done
+  [[ "$(docker logs "$container" 2>&1 || true)" == *READY* ]] \
+    || bf_fail "$TLS_PHASE — $client über TLS wurde nicht bereit: $(docker logs "$container" 2>&1 || true)"
+  # Die Zustellung ist Fire-and-Forget ohne Replay: eine begrenzte Folge
+  # eindeutiger Zeilen, bis der Client eine davon empfangen hat.
+  for attempt in $(seq 1 5); do
+    id=$((first + attempt))
+    bf_sql "INSERT INTO public.$TLS_STREAM_TABLE (id, name) VALUES ($id, '$TLS_STREAM_SENTINEL')" >/dev/null
+    for i in $(seq 1 20); do
+      if [[ "$(docker logs "$container" 2>&1 || true)" == *RECEIVED* ]]; then
+        received=1
+        break
+      fi
+      [ "$(docker inspect --format '{{.State.Running}}' "$container" 2>/dev/null || echo false)" = true ] || break
+      sleep 0.5
+    done
+    [ "$received" -eq 1 ] && break
+  done
+  for i in $(seq 1 40); do
+    [[ "$(docker logs "$container" 2>&1 || true)" == *"$rejected"* ]] && break
+    [ "$(docker inspect --format '{{.State.Running}}' "$container" 2>/dev/null || echo false)" = true ] || break
+    sleep 0.5
+  done
+  for i in $(seq 1 20); do
+    [ "$(docker inspect --format '{{.State.Running}}' "$container" 2>/dev/null || echo false)" = true ] || break
+    sleep 0.5
+  done
+  out=$(docker logs "$container" 2>&1 || true)
+  bf_expect "$(docker inspect --format '{{.State.ExitCode}}' "$container" 2>/dev/null || echo unbekannt)" 0 "$TLS_PHASE — Ausgang von $client über TLS: $out"
+  docker rm -fv "$container" >/dev/null 2>&1 || true
+  printf '%s' "$out" | grep -qE "RECEIVED .*table=$TLS_STREAM_TABLE .*operation=INSERT .*new_image=.*$TLS_STREAM_SENTINEL" \
+    || bf_fail "$TLS_PHASE — $client über TLS: die RECEIVED-Zeile trägt nicht die erwartete Änderung: $out"
+  printf '%s' "$out" | grep -qF "$rejected" \
+    || bf_fail "$TLS_PHASE — $client über TLS: die Ablehnung ohne Token fehlt ($rejected): $out"
+  change_id=$(printf '%s' "$out" | grep -oE 'RECEIVED change_id=[^ ]+' | head -n1 | cut -d= -f2 || true)
+  [ -n "$change_id" ] || bf_fail "$TLS_PHASE — $client über TLS: die RECEIVED-Zeile trägt keine change_id: $out"
+  captured=$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$change_id' AND table_name = '$TLS_STREAM_TABLE' AND new_data->>'name' = '$TLS_STREAM_SENTINEL'")
+  bf_expect "$captured" 1 "$TLS_PHASE — $client über TLS: die empfangene change_id $change_id in cdc.changes"
+  TLS_LAST_CHANGE_ID=$change_id
+}
+
+# Zertifikat und Schlüssel: ein Paar (good), ein zweites für das nicht
+# zusammenpassende Paar (other) und eine Datei ohne PEM-Daten.
+for tl_name in good other; do
+  tl_out=$(docker run --rm --network none --user "$(id -u):$(id -g)" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -v "$TLS_TMP":/out \
+    -w /src \
+    -e GOCACHE=/tmp/gocache -e HOME=/tmp \
+    "$TOOLCHAIN_IMAGE" go run ./tools/harness/certgen /out "$tl_name" pg-change-feed cdc-test-feed localhost 127.0.0.1 2>&1) \
+    || bf_fail "$TLS_PHASE — certgen ($tl_name) endete mit einem Fehler: $tl_out"
+  bf_expect "$(printf '%s\n' "$tl_out" | grep -c '^CERTGEN ' || true)" 1 "$TLS_PHASE — certgen-Zeile ($tl_name)"
+done
+printf 'kein PEM\n' > "$TLS_TMP/kaputt.pem"
+chmod 0644 "$TLS_TMP"/*.pem
+bf_expect "$(git status --porcelain --untracked-files=all -- . | grep -c -E '\.pem$' || true)" 0 "$TLS_PHASE — Zertifikatsdateien im Arbeitsbaum"
+
+# (1) Vier Starts mit je einer Verletzung (Ausgang 2: die Konfiguration
+# endet vor `Run`, Ausgang 1: `Run` lädt das Paar und scheitert).
+tl_expect_start_refused "nur Zertifikat" 2 PCF-E2009 "CDC_TLS_CERT_FILE gesetzt, aber CDC_TLS_KEY_FILE fehlt" \
+  CDC_TLS_CERT_FILE="$TLS_MOUNT/good.pem"
+tl_expect_start_refused "nur Schlüssel" 2 PCF-E2009 "CDC_TLS_KEY_FILE gesetzt, aber CDC_TLS_CERT_FILE fehlt" \
+  CDC_TLS_KEY_FILE="$TLS_MOUNT/good-key.pem"
+tl_expect_start_refused "nicht lesbarer Pfad" 1 PCF-E2010 "$TLS_MOUNT/fehlt.pem" \
+  CDC_TLS_CERT_FILE="$TLS_MOUNT/fehlt.pem" CDC_TLS_KEY_FILE="$TLS_MOUNT/good-key.pem"
+tl_expect_start_refused "Datei ohne PEM-Daten" 1 PCF-E2010 "$TLS_MOUNT/kaputt.pem" \
+  CDC_TLS_CERT_FILE="$TLS_MOUNT/kaputt.pem" CDC_TLS_KEY_FILE="$TLS_MOUNT/good-key.pem"
+tl_expect_start_refused "Zertifikat und Schlüssel passen nicht zusammen" 1 PCF-E2010 "private key does not match public key" \
+  CDC_TLS_CERT_FILE="$TLS_MOUNT/good.pem" CDC_TLS_KEY_FILE="$TLS_MOUNT/other-key.pem"
+
+# (2) Gegenprobe zur Abwesenheit des Slots: das gültige Paar, hier über die
+# Konfigurationsdatei (Datei-Schlüssel), legt denselben frischen Slot an.
+printf 'tls_cert_file: %s/good.pem\ntls_key_file: %s/good-key.pem\n' "$TLS_MOUNT" "$TLS_MOUNT" > "$TLS_TMP/config.yaml"
+chmod 0644 "$TLS_TMP/config.yaml"
+tl_recreate CDC_CONFIG_FILE="$TLS_MOUNT/config.yaml" CDC_SLOT="$TLS_NEG_SLOT"
+bf_await_healthy "$TLS_PHASE — Start über die Konfigurationsdatei"
+tl_expect_tls_logged "Start über die Konfigurationsdatei"
+bf_expect "$(bf_sql "SELECT count(*) FROM pg_replication_slots WHERE slot_name = '$TLS_NEG_SLOT'")" 1 "$TLS_PHASE — Slot nach dem Start mit gültigem Paar"
+docker stop "$FEED_CONTAINER" >/dev/null
+tl_drop_ok=0
+for ((tl_i = 0; tl_i < 20; tl_i++)); do
+  if bf_sql "SELECT pg_drop_replication_slot('$TLS_NEG_SLOT')" >/dev/null 2>&1; then
+    tl_drop_ok=1
+    break
+  fi
+  sleep 1
+done
+[ "$tl_drop_ok" -eq 1 ] || bf_fail "$TLS_PHASE — der Hilfs-Slot $TLS_NEG_SLOT ließ sich nicht entfernen"
+bf_expect "$(bf_sql "SELECT count(*) FROM pg_replication_slots WHERE slot_name = '$TLS_NEG_SLOT'")" 0 "$TLS_PHASE — Slot nach dem Entfernen"
+
+# (3) Der Start mit gültigem Paar über die Umgebung, mit dem Slot von
+# compose.yaml.
+tl_recreate CDC_TLS_CERT_FILE="$TLS_MOUNT/good.pem" CDC_TLS_KEY_FILE="$TLS_MOUNT/good-key.pem"
+bf_await_healthy "$TLS_PHASE — Start über die Umgebung"
+tl_expect_tls_logged "Start über die Umgebung"
+# Der Healthcheck liest nur den Herzschlag in der Datenbank: Exit 0 unter TLS,
+# und der Docker-Gesundheitszustand ist healthy (bf_await_healthy oben).
+tl_hc=0
+docker exec "$FEED_CONTAINER" /pg-change-feed --healthcheck >/dev/null 2>&1 || tl_hc=$?
+bf_expect "$tl_hc" 0 "$TLS_PHASE — Ausgang von --healthcheck unter TLS"
+# HTTP: ein lesender und ein administrativer Endpunkt über TLS.
+tl_http=$(tl_client httpclient probe "$TLS_HTTPS_URL" src-e2e pub_pgc_e2e e2e-reader-token e2e-admin-token)
+bf_expect "$(printf '%s\n' "$tl_http" | grep '^PROBE ')" "PROBE index=1 reader_endpoint=200 admin_endpoint=403
+PROBE index=2 reader_endpoint=200 admin_endpoint=400" "$TLS_PHASE — HTTP über TLS (GET /tables, POST /consumers)"
+# gRPC: ein lesender und ein administrativer RPC über TLS.
+tl_grpc=$(tl_client grpcadminclient probe "$GRPC_ADDR" src-e2e pub_pgc_e2e e2e-reader-token e2e-admin-token)
+bf_expect "$(printf '%s\n' "$tl_grpc" | grep '^PROBE ')" "PROBE index=1 reader_rpc=OK admin_rpc=PermissionDenied
+PROBE index=2 reader_rpc=OK admin_rpc=InvalidArgument" "$TLS_PHASE — gRPC über TLS (ListTables, RegisterConsumer)"
+# SSE und gRPC-Stream: je ein Event einer danach committeten Änderung.
+tl_stream cdc-e2e-tls-sse sseclient "$TLS_HTTPS_URL" 8100 "REJECTED code=401"
+tl_sse_change_id=$TLS_LAST_CHANGE_ID
+tl_stream cdc-e2e-tls-grpc grpcclient "$GRPC_ADDR" 8110 "REJECTED code=Unauthenticated"
+tl_grpc_change_id=$TLS_LAST_CHANGE_ID
+
+# (4) Boundary: erst nach den erfolgreichen TLS-Aufrufen oben der Klartext-
+# Versuch auf dieselben Adressen, mit gültigem Token — keine Antwort der API.
+tl_cleartext_http=$(tl_client httpclient cleartext "$TLS_HTTP_URL" "$HTTP_TOKEN_READER" src-e2e pub_pgc_e2e | grep '^CLEARTEXT ' || true)
+if [[ "$tl_cleartext_http" == *"CLEARTEXT transport_error="* ]]; then
+  :
+elif [[ "$tl_cleartext_http" == "CLEARTEXT status=400 body="*"HTTPS server"* && "$tl_cleartext_http" != *'"tables"'* ]]; then
+  :
+else
+  bf_fail "$TLS_PHASE — der Klartext-Versuch auf die HTTP-Adresse bekam eine Antwort der API: $tl_cleartext_http"
+fi
+tl_cleartext_grpc=$(tl_client grpcadminclient cleartext "$GRPC_ADDR" "$HTTP_TOKEN_READER" src-e2e pub_pgc_e2e | grep '^CLEARTEXT ' || true)
+[[ "$tl_cleartext_grpc" == "CLEARTEXT code=Unavailable "* ]] \
+  || bf_fail "$TLS_PHASE — der Klartext-Versuch auf die gRPC-Adresse bekam eine Antwort der API: $tl_cleartext_grpc"
+# Der Server steht weiterhin und bedient TLS (die Abwesenheit oben war eine
+# Auswahl, kein Ausfall).
+tl_http=$(tl_client httpclient probe "$TLS_HTTPS_URL" src-e2e pub_pgc_e2e e2e-reader-token)
+bf_expect "$(printf '%s\n' "$tl_http" | grep '^PROBE ')" "PROBE index=1 reader_endpoint=200 admin_endpoint=403" "$TLS_PHASE — HTTP über TLS nach dem Klartext-Versuch"
+
+# (5) Wiederherstellung ohne Override: der Klartext wird wieder bedient — die
+# Boundary „ohne die Konfiguration unverändert“, am selben Container.
+$COMPOSE up -d --force-recreate --no-deps pg-change-feed >/dev/null
+bf_await_healthy "$TLS_PHASE — Wiederherstellung"
+tl_plain_http=$(TL_CA= tl_client httpclient probe "$HTTP_BASE_URL" src-e2e pub_pgc_e2e e2e-reader-token)
+bf_expect "$(printf '%s\n' "$tl_plain_http" | grep '^PROBE ')" "PROBE index=1 reader_endpoint=200 admin_endpoint=403" "$TLS_PHASE — HTTP im Klartext nach der Wiederherstellung"
+tl_plain_grpc=$(TL_CA= tl_client grpcadminclient probe "$GRPC_ADDR" src-e2e pub_pgc_e2e e2e-reader-token)
+bf_expect "$(printf '%s\n' "$tl_plain_grpc" | grep '^PROBE ')" "PROBE index=1 reader_rpc=OK admin_rpc=PermissionDenied" "$TLS_PHASE — gRPC im Klartext nach der Wiederherstellung"
+rm -rf "$TLS_TMP"
+
+echo "run-integration-tests: TLS der HTTP-, SSE- und gRPC-Schnittstelle (LH-FA-SST-011) belegt — fünf Starts mit einer Verletzung (nur Zertifikat, nur Schlüssel, nicht lesbarer Pfad, Datei ohne PEM-Daten, nicht zusammenpassendes Paar) beendeten den Container mit Fehlerklasse configuration und PCF-E2009 bzw. PCF-E2010 im Log, ohne Slot und ohne Klartext-Antwort; das gültige Paar legte über die Konfigurationsdatei den Slot an; unter TLS (Umgebung) blieb --healthcheck gesund (Ausgang 0, Zustand healthy), HTTP, gRPC, SSE (change_id=$tl_sse_change_id) und gRPC-Stream (change_id=$tl_grpc_change_id) wurden über TLS bedient (change_id je über cdc.changes gelesen), der Klartext-Versuch danach bekam keine Antwort der API (HTTP: $tl_cleartext_http; gRPC: $tl_cleartext_grpc); nach der Wiederherstellung ohne Override bedienten beide Adressen wieder im Klartext"
 
 # --- Transformations-Rundläufe (LH-FA-CFG-007) --------------------------------
 # Zwei Phasen am laufenden Feed-Container, ausschließlich über externe Wege:
