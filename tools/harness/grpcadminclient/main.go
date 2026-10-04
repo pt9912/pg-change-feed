@@ -43,9 +43,14 @@ func main() {
 		runFaultFlow(args[1:])
 		return
 	}
+	if len(args) > 0 && args[0] == "probe" {
+		runProbeFlow(args[1:])
+		return
+	}
 	if len(args) != 11 {
 		fmt.Fprintln(os.Stderr, "usage: grpcadminclient [-target <ziel>] <addr> <reader-token> <admin-token> <consumer-id> <source> <publication> <read-schema> <read-table> <read-from> <read-to> <read-limit>")
 		fmt.Fprintln(os.Stderr, "   or: grpcadminclient fault <addr> <reader-token> <admin-token> <source> <error-code|none>")
+		fmt.Fprintln(os.Stderr, "   or: grpcadminclient probe <addr> <source> <publication> <token>...")
 		os.Exit(2)
 	}
 	addr, readerToken, adminToken, consumerID, source, publication := args[0], args[1], args[2], args[3], args[4], args[5]
@@ -142,6 +147,38 @@ func runFaultFlow(args []string) {
 	_, err = client.RegisterConsumer(ctx, &administrationv1.RegisterConsumerRequest{ConsumerId: "grpcadminclient-fault", Name: "grpcadminclient-fault"})
 	cancel()
 	fmt.Printf("REJECTED-AUTH status=%s %s\n", status.Code(err), errorInfoText(err))
+}
+
+// runProbeFlow ordnet jedes übergebene Token einer Rechtsklasse zu, wie der
+// Server sie am gRPC-Status zeigt (LH-FA-SST-012): `ListTables` (lesende RPC)
+// und `RegisterConsumer` mit leerer Consumer-Kennung (administrative RPC; die
+// Rechteprüfung steht vor der Eingabeprüfung, es entsteht kein Consumer). Je
+// Token eine PROBE-Zeile mit der Position des Tokens und beiden Status — der
+// Wert des Tokens steht nie in der Ausgabe. Ein Aufruf wartet bis zur Frist
+// auf die Verbindung (der Server startet noch), ein Status wird nie
+// wiederholt.
+func runProbeFlow(args []string) {
+	if len(args) < 4 {
+		fmt.Fprintln(os.Stderr, "usage: grpcadminclient probe <addr> <source> <publication> <token>...")
+		os.Exit(2)
+	}
+	addr, source, publication, tokens := args[0], args[1], args[2], args[3:]
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "grpcadminclient: Verbindung (%s) fehlgeschlagen: %v\n", addr, err)
+		os.Exit(1)
+	}
+	defer func() { _ = conn.Close() }()
+	client := administrationv1.NewAdministrationClient(conn)
+	for i, token := range tokens {
+		ctx, cancel := callCtx(token)
+		_, listErr := client.ListTables(ctx, &administrationv1.ListTablesRequest{Source: source, Publication: publication}, grpc.WaitForReady(true))
+		cancel()
+		ctx, cancel = callCtx(token)
+		_, registerErr := client.RegisterConsumer(ctx, &administrationv1.RegisterConsumerRequest{ConsumerId: "", Name: "grpcadminclient-probe"}, grpc.WaitForReady(true))
+		cancel()
+		fmt.Printf("PROBE index=%d reader_rpc=%s admin_rpc=%s\n", i+1, status.Code(listErr), status.Code(registerErr))
+	}
 }
 
 // errorInfoText beschreibt das Statusdetail `ErrorInfo` eines Fehlers als

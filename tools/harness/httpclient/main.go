@@ -73,6 +73,10 @@ func main() {
 		runRejectedFlow(os.Args[2:])
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "probe" {
+		runProbeFlow(os.Args[2:])
+		return
+	}
 	if len(os.Args) > 1 && os.Args[1] == "enable-table" {
 		runEnableTableFlow(os.Args[2:])
 		return
@@ -89,6 +93,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "   or: httpclient position <base-url> <reader-token> <consumer-id>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient fault <base-url> <reader-token> <source> <error-code|none>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient rejected <base-url> <reader-token>")
+		fmt.Fprintln(os.Stderr, "   or: httpclient probe <base-url> <source> <publication> <token>...")
 		fmt.Fprintln(os.Stderr, "   or: httpclient enable-table <base-url> <admin-token> <source> <schema> <table> <table-id> <schema-version-id> <publication>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient disable-table <base-url> <admin-token> <source> <schema> <table> <publication>")
 		os.Exit(2)
@@ -357,6 +362,63 @@ func runEnableTableFlow(args []string) {
 		os.Exit(1)
 	}
 	fmt.Printf("ENABLED body=%s\n", body)
+}
+
+// runProbeFlow ordnet jedes übergebene Token einer Rechtsklasse zu, wie der
+// Server sie am Statuscode zeigt (LH-FA-SST-012): `GET /tables` (lesender
+// Endpunkt) und `POST /consumers` mit leerem Körper (administrativer
+// Endpunkt; die Rechteprüfung steht vor der Eingabeprüfung, es entsteht kein
+// Consumer). Je Token eine PROBE-Zeile mit der Position des Tokens und beiden
+// Statuscodes — der Wert des Tokens steht nie in der Ausgabe. Eine
+// Transportstörung (der Server startet noch) wird bis zu 30 Sekunden
+// wiederholt, ein Statuscode nie.
+func runProbeFlow(args []string) {
+	if len(args) < 4 {
+		fmt.Fprintln(os.Stderr, "usage: httpclient probe <base-url> <source> <publication> <token>...")
+		os.Exit(2)
+	}
+	baseURL, source, publication, tokens := args[0], args[1], args[2], args[3:]
+	client := &http.Client{Timeout: 10 * time.Second}
+	listURL := fmt.Sprintf("%s/tables?source=%s&publication=%s", baseURL, url.QueryEscape(source), url.QueryEscape(publication))
+	for i, token := range tokens {
+		reader, err := probeStatus(client, http.MethodGet, listURL, token, "")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "httpclient: probe GET /tables (Token %d): %v\n", i+1, err)
+			os.Exit(1)
+		}
+		admin, err := probeStatus(client, http.MethodPost, baseURL+"/consumers", token, "{}")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "httpclient: probe POST /consumers (Token %d): %v\n", i+1, err)
+			os.Exit(1)
+		}
+		fmt.Printf("PROBE index=%d reader_endpoint=%d admin_endpoint=%d\n", i+1, reader, admin)
+	}
+}
+
+// probeStatus sendet eine Anfrage mit Bearer-Token und liefert den
+// Statuscode; ein Transportfehler wird bis zu 30 Sekunden wiederholt.
+func probeStatus(client *http.Client, method, target, token, body string) (int, error) {
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		req, err := http.NewRequest(method, target, strings.NewReader(body))
+		if err != nil {
+			return 0, err
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+		if body != "" {
+			req.Header.Set("Content-Type", "application/json")
+		}
+		resp, err := client.Do(req)
+		if err == nil {
+			_, _ = io.Copy(io.Discard, resp.Body)
+			_ = resp.Body.Close()
+			return resp.StatusCode, nil
+		}
+		if time.Now().After(deadline) {
+			return 0, err
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
 }
 
 // runDisableTableFlow trägt DisableTable real per HTTP mit dem Admin-Token

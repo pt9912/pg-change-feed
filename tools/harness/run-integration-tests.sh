@@ -4419,6 +4419,136 @@ bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND t
 
 echo "run-integration-tests: Fehlerschwelle beendet den Container (LH-QA-REL-001, LH-QA-REL-003) belegt — bei gehaltener Persistierung (cdc.change exklusiv gesperrt, wartende Persistierung in pg_stat_activity) lief der Feed-Container über eine Nullprobe von ${WAL_WAIT_SECONDS} s weiter; ein Schreiber auf die nicht aktivierte Tabelle $WAL_STOP_FOREIGN erzeugte $wal_stop_bytes B WAL, der Container endete $wal_stop_seconds s danach (höchstens ${WAL_STOP_WAIT_SECONDS} s gewartet) mit Ausgang 1, die Abbruch-Zeile nannte einen Rückstand von $wal_stop_logged B (Fehlerschwelle $WAL_ERROR_BYTES B), cdc.process_heartbeat trug die Klasse $wal_stop_class; nach dem Neustart ohne Konfigurationsdatei war die wartende Transaktion über cdc.changes lesbar"
 
+# --- API-Token-Wechsel (LH-FA-SST-012) ----------------------------------------
+abdeckung_declare "API-Token-Wechsel in zwei Neustarts" "LH-FA-SST-012" "mehrere gleichzeitig gültige API-Token je Klasse am laufenden Feed-Container: neben den Singular-Token gelten die Listen-Variablen auf HTTP und gRPC gleich, ein Wert in beiden Klassen erreicht die administrative Klasse; nach dem Neustart ohne die alten Token enden sie mit 401 bzw. Unauthenticated und die neuen werden bedient; eine Liste mit leerem Element oder Leerraum verhindert den Start mit Fehlerklasse configuration und Meldungscode im Log" "API-Token-Wechsel (LH-FA-SST-012) belegt"
+
+# Der Wechsel in zwei Neustarts am Feed-Container, über eine
+# Compose-Override-Datei im Temp-Verzeichnis des Runners (`compose.yaml`
+# bleibt unverändert, der Container wird am Phasen-Ende ohne Override
+# wiederhergestellt): (1) das Singular-Token bleibt, das neue Token steht in
+# der Liste — beide werden bedient, ein Wert in beiden Klassen erreicht die
+# administrative Klasse; (2) Neustart ohne die Singular-Token — die alten
+# Token enden mit 401 bzw. Unauthenticated, die neuen werden bedient;
+# (3) eine Liste mit leerem Element und eine mit Leerraum verhindern den
+# Start (Ausgang 2, Klasse configuration, Code PCF-E2008 im Log). Die Klasse
+# eines Tokens lesen die Wegwerf-Clients am Statuscode zweier Endpunkte
+# (`probe`-Modus von httpclient und grpcadminclient): die Rechteprüfung
+# steht vor der Eingabeprüfung, es entsteht kein Consumer. Beide Clients
+# warten auf die Verbindung des neu gestarteten Servers, bevor sie einen
+# Status lesen.
+TW_PHASE="API-Token-Wechsel"
+TW_TMP=$(mktemp -d)
+chmod 0755 "$TW_TMP"
+
+# tw_recreate <Reader-Singular> <Reader-Liste> <Admin-Singular> <Admin-Liste>:
+# erzeugt den Feed-Container mit den vier Token-Variablen neu und liest sie aus
+# der Container-Konfiguration zurück.
+tw_recreate() {
+  cat > "$TW_TMP/override.yaml" <<YAML
+services:
+  pg-change-feed:
+    environment:
+      CDC_API_TOKEN_READER: "$1"
+      CDC_API_TOKENS_READER: "$2"
+      CDC_API_TOKEN_ADMIN: "$3"
+      CDC_API_TOKENS_ADMIN: "$4"
+YAML
+  chmod 0644 "$TW_TMP/override.yaml"
+  $COMPOSE -f "$TW_TMP/override.yaml" up -d --force-recreate --no-deps pg-change-feed >/dev/null
+  local env_dump
+  env_dump=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$FEED_CONTAINER")
+  for tw_pair in "CDC_API_TOKEN_READER=$1" "CDC_API_TOKENS_READER=$2" "CDC_API_TOKEN_ADMIN=$3" "CDC_API_TOKENS_ADMIN=$4"; do
+    printf '%s\n' "$env_dump" | grep -qxF -- "$tw_pair" \
+      || bf_fail "$TW_PHASE — Container-Konfiguration trägt '${tw_pair%%=*}' nicht mit dem erwarteten Wert"
+  done
+}
+
+# tw_client <Client-Verzeichnis unter tools/harness> <Argumente>: ein
+# Wegwerf-Client im Toolchain-Container, Ausgabe auf stdout.
+tw_client() {
+  local output
+  if ! output=$(docker run --rm --network "$NETWORK" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -w /src \
+    -e GOCACHE=/tmp/gocache \
+    "$TOOLCHAIN_IMAGE" go run ./tools/harness/"$@" 2>&1); then
+    bf_fail "$TW_PHASE — Client $1 endete mit einem Fehler: $output"
+  fi
+  printf '%s\n' "$output"
+}
+
+# tw_expect_classes <Beschreibung> <Klasse je Token ...> mit den Token in der
+# Reihenfolge von TW_PROBE_TOKENS; Klasse ist reader, admin oder none. Die
+# gelesenen Statuscodes beider Schnittstellen müssen genau der Klasse
+# entsprechen.
+tw_expect_classes() {
+  local what=$1 http_want="" grpc_want="" index=0 class actual
+  shift
+  for class in "$@"; do
+    index=$((index + 1))
+    case "$class" in
+      reader) http_want+="PROBE index=$index reader_endpoint=200 admin_endpoint=403"$'\n'; grpc_want+="PROBE index=$index reader_rpc=OK admin_rpc=PermissionDenied"$'\n' ;;
+      admin) http_want+="PROBE index=$index reader_endpoint=200 admin_endpoint=400"$'\n'; grpc_want+="PROBE index=$index reader_rpc=OK admin_rpc=InvalidArgument"$'\n' ;;
+      none) http_want+="PROBE index=$index reader_endpoint=401 admin_endpoint=401"$'\n'; grpc_want+="PROBE index=$index reader_rpc=Unauthenticated admin_rpc=Unauthenticated"$'\n' ;;
+      *) bf_fail "$TW_PHASE — unbekannte Klasse '$class'" ;;
+    esac
+  done
+  actual=$(tw_client httpclient probe "$HTTP_BASE_URL" src-e2e pub_pgc_e2e "${TW_PROBE_TOKENS[@]}" | grep '^PROBE ')$'\n'
+  [ "$actual" = "$http_want" ] || bf_fail "$TW_PHASE — $what: HTTP gelesen '$actual', erwartet '$http_want'"
+  actual=$(tw_client grpcadminclient probe "$GRPC_ADDR" src-e2e pub_pgc_e2e "${TW_PROBE_TOKENS[@]}" | grep '^PROBE ')$'\n'
+  [ "$actual" = "$grpc_want" ] || bf_fail "$TW_PHASE — $what: gRPC gelesen '$actual', erwartet '$grpc_want'"
+}
+
+# tw_expect_start_refused <Variable> <Wert> <Text im Log>: der Container startet
+# mit der ungültigen Liste nicht — Ausgang 2, Klasse und Code im Log, kein
+# Token-Wert im Log.
+tw_expect_start_refused() {
+  local variable=$1 value=$2 want=$3 log
+  case "$variable" in
+    CDC_API_TOKENS_READER) tw_recreate e2e-reader-token "$value" e2e-admin-token "" ;;
+    CDC_API_TOKENS_ADMIN) tw_recreate e2e-reader-token "" e2e-admin-token "$value" ;;
+  esac
+  local i
+  for ((i = 0; i < 60; i++)); do
+    [ "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" = false ] && break
+    sleep 1
+  done
+  [ "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" = false ] \
+    || bf_fail "$TW_PHASE — der Feed-Container lief mit ungültiger Liste ($want) 60 s weiter"
+  bf_expect "$(docker inspect --format '{{.State.ExitCode}}' "$FEED_CONTAINER")" 2 "$TW_PHASE — Ausgang bei ungültiger Liste ($want)"
+  log=$(docker logs "$FEED_CONTAINER" 2>&1)
+  [[ "$log" == *"Fehlerklasse configuration [PCF-E2008]: API-Token-Liste ungültig: $variable: $want"* ]] \
+    || bf_fail "$TW_PHASE — das Log trägt die erwartete Zeile für $variable ($want) nicht: $log"
+  [[ "$log" != *"e2e-reader-token"* && "$log" != *"e2e-admin-token"* && "$log" != *"tw-"* ]] \
+    || bf_fail "$TW_PHASE — das Log trägt einen Token-Wert: $log"
+}
+
+TW_PROBE_TOKENS=(e2e-reader-token tw-reader-neu e2e-admin-token tw-admin-neu tw-beide tw-unbekannt)
+
+# (1) Singular bleibt, neues Token in der Liste; tw-beide steht in beiden Listen.
+tw_recreate e2e-reader-token "tw-reader-neu,tw-beide" e2e-admin-token "tw-admin-neu,tw-beide"
+bf_await_healthy "$TW_PHASE — Neustart 1"
+tw_expect_classes "Neustart 1 (altes und neues Token)" reader reader admin admin admin none
+
+# (2) Neustart ohne die Singular-Token und ohne tw-beide in der Admin-Liste.
+tw_recreate "" "tw-reader-neu,tw-beide" "" "tw-admin-neu"
+bf_await_healthy "$TW_PHASE — Neustart 2"
+tw_expect_classes "Neustart 2 (altes Token entfernt)" none reader none admin reader none
+
+# (3) Ungültige Listen verhindern den Start.
+tw_expect_start_refused CDC_API_TOKENS_READER "tw-a,,tw-b" "Element 2 ist leer"
+tw_expect_start_refused CDC_API_TOKENS_ADMIN "tw-a, tw-b" "Element 2 enthält Leerraum"
+
+# Der Container läuft danach wieder mit der Konfiguration von compose.yaml.
+$COMPOSE up -d --force-recreate --no-deps pg-change-feed >/dev/null
+bf_await_healthy "$TW_PHASE — Wiederherstellung"
+rm -rf "$TW_TMP"
+TW_PROBE_TOKENS=(e2e-reader-token e2e-admin-token tw-admin-neu)
+tw_expect_classes "nach der Wiederherstellung" reader admin none
+
+echo "run-integration-tests: API-Token-Wechsel (LH-FA-SST-012) belegt — Neustart 1 mit Singular und Liste: beide Token je Klasse wurden über HTTP (GET /tables, POST /consumers) und gRPC (ListTables, RegisterConsumer) bedient, ein Wert in beiden Klassen erreichte den administrativen Endpunkt, ein unbekanntes Token endete mit 401 bzw. Unauthenticated; Neustart 2 ohne die Singular-Token: die alten Token endeten mit 401 bzw. Unauthenticated, die Listen-Token wurden bedient; eine Liste mit leerem Element und eine mit Leerraum beendeten den Start mit Ausgang 2, Fehlerklasse configuration und PCF-E2008 im Log ohne Token-Wert; nach der Wiederherstellung galten wieder die Token der Compose-Umgebung"
+
 # --- Transformations-Rundläufe (LH-FA-CFG-007) --------------------------------
 # Zwei Phasen am laufenden Feed-Container, ausschließlich über externe Wege:
 # SQL-Funktionen und Views, HTTP, die drei Stream-Clients und `docker restart`.
