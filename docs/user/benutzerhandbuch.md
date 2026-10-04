@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.97
+Version: 1.98
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-10-04
 
@@ -1199,7 +1199,8 @@ Verfügbare Kennzahlen: `cdc_transactions_total`, `cdc_changes_processed`,
 `cdc_oldest_change_age_seconds`, `cdc_capture_lag` (Abstand zwischen der
 letzten Quelländerung und der CDC-Verfügbarkeit, gemessen über den
 Commit-Zeitstempel aus dem WAL), `cdc_consumer_position` und
-`cdc_consumer_lag` je registriertem Consumer, `cdc_changes_pending`
+`cdc_consumer_lag` je registriertem Consumer (WAL-Strecke in Bytes, nicht
+Datenvolumen), `cdc_changes_pending`
 (Label = Consumer-ID, Wert = Anzahl noch nicht
 bestätigter Changes dieses Consumers), `cdc_errors_total`
 (Label = Fehlerklasse aus `cdc.process_heartbeat.error_class`, Wert =
@@ -1245,9 +1246,26 @@ der Pfad `/v1/metrics` kommt zur Basis-URL hinzu, mit oder ohne abschließenden
 Schrägstrich. Ein Pfadanteil der Basis-URL bleibt erhalten. Ein Status `2xx`
 gilt als angenommen; jeder andere Status, eine abgewiesene Verbindung und eine
 überschrittene Frist gelten als Fehlschlag. Eine Weiterleitung (`3xx`) wird nicht
-verfolgt und ist ein Fehlschlag. Ob ein `https`-Empfänger erreichbar ist, hängt
-vom Vertrauensspeicher des Container-Images ab; eine eigene Zertifizierungsstelle,
-ein Client-Zertifikat und Proxy-Einstellungen sind nicht konfigurierbar.
+verfolgt und ist ein Fehlschlag.
+
+**`https`-Empfänger.** Das Container-Image enthält ein CA-Zertifikatsbündel
+(`/etc/ssl/certs/ca-certificates.crt`). Ein `https`-Empfänger mit einem
+selbstsignierten Zertifikat wird erreicht, wenn die Umgebungsvariable
+`SSL_CERT_FILE` des Containers auf die Zertifikatsdatei des Empfängers zeigt
+(die Datei wird in den Container eingebunden); ohne sie bleibt die Verbindung
+aus, der Container warnt (`PCF-W6001`), läuft weiter und überträgt nichts.
+Gemessen mit OpenTelemetry-Collector 0.162.0 und einem selbstsignierten
+Zertifikat; über Zertifizierungsstellen öffentlicher Empfänger macht diese
+Messung keine Aussage. Ein Client-Zertifikat, eine eigene Zertifizierungsstelle
+als Einstellung des Exports und Proxy-Einstellungen sind nicht konfigurierbar.
+
+**Zugangsdaten in der Endpunkt-URL.** Ein Benutzerteil der URL
+(`http://benutzer:passwort@host:4318`) wird nicht abgelehnt: der Container sendet
+ihn als `Authorization: Basic …`. Setzt `CDC_OTLP_HEADERS` selbst einen
+`Authorization`-Header, gilt dieser. Weder ein Log-Eintrag noch ein Fehlertext
+des Exports nennt die URL, den Benutzerteil oder einen Header-Wert. Endpunkt und
+Header gehören zu den Angaben mit Zugangsdaten-Charakter und stehen nur in der
+Umgebung des Containers, nicht in der Konfigurationsdatei.
 
 **Header.** Das Komma trennt die Header, das **erste** `=` trennt Schlüssel und
 Wert; ein Wert darf weitere `=` tragen (etwa die Auffüllung einer
@@ -1273,7 +1291,7 @@ nicht gemessen, entfällt genau dieser Datenpunkt.
 | `cdc_oldest_change_age_seconds` | `s` | — |
 | `cdc_capture_lag` | `s` | — |
 | `cdc_consumer_position` | `1` | `consumer` |
-| `cdc_consumer_lag` | `1` | `consumer` |
+| `cdc_consumer_lag` | `By` | `consumer` |
 | `cdc_changes_pending` | `1` | `consumer` |
 | `cdc_errors_total` | `1` | `class` |
 | `cdc_storage_bytes` | `By` | — |
@@ -1281,7 +1299,10 @@ nicht gemessen, entfällt genau dieser Datenpunkt.
 
 Die Resource trägt die Attribute `service.name` mit dem Wert `pg-change-feed`
 und `cdc.source_id` mit der Kennung der Quelle des Containers; jeder Datenpunkt
-trägt den Zeitpunkt seiner Messung. Zähler, Positionen und Byte-Zahlen gehen als
+trägt den Zeitpunkt seiner Messung. `cdc_consumer_lag` ist die
+Strecke im WAL in Bytes zwischen der letzten Commit-Position und der bestätigten
+Position des Consumers — eine WAL-Strecke in Bytes, nicht das Datenvolumen der noch
+nicht bestätigten Changes. Zähler, Positionen und Byte-Zahlen gehen als
 ganze Zahlen hinaus und behalten ihre volle 64-Bit-Genauigkeit; die Kennzahlen mit
 Einheit `s` gehen als Fließkommazahlen hinaus.
 
@@ -1411,7 +1432,9 @@ Consumer ohne je bestätigte Position erscheint nicht in der Rückstands-Liste
 (dieselbe Grenze wie bei `cdc_consumer_lag` in [Metriken
 lesen](#metriken-lesen)); ein Consumer mit bestätigter Position, dessen
 Quelle noch nie eine Transaktion trug, erscheint mit dem Text „unbekannt"
-statt einem irreführenden Rückstand von 0. Der blockierende Consumer und
+statt einem irreführenden Rückstand von 0. Der Rückstand je Consumer ist die
+WAL-Strecke in Bytes, nicht das Datenvolumen der noch nicht bestätigten Changes.
+Der blockierende Consumer und
 `cdc_storage_bytes` folgen derselben Lese-Disziplin wie [Blockierende
 Consumer erkennen](#blockierende-consumer-erkennen) und [Metriken
 lesen](#metriken-lesen) — keine neue Berechnung, nur dieselben Sichten über
@@ -3238,3 +3261,4 @@ MIT — siehe `LICENSE`.
 | 1.95 | 2026-10-04 | Mehrere API-Token je Klasse: die neuen Variablen `CDC_API_TOKENS_READER` und `CDC_API_TOKENS_ADMIN` (kommagetrennte Listen) gelten neben den bisherigen Variablen, auf HTTP und gRPC gleich; neuer Abschnitt „API-Token in zwei Neustarts wechseln“; eine Liste mit leerem Element oder Leerraum verhindert den Start (neuer Meldungscode `PCF-E2008`); die Zugangsdaten-Schlüssel der Konfigurationsdatei umfassen jetzt neun Schlüssel |
 | 1.96 | 2026-10-04 | Die HTTP- und die gRPC-Schnittstelle lassen sich mit einem gemeinsamen TLS-Paar verschlüsseln: die neuen Variablen `CDC_TLS_CERT_FILE` und `CDC_TLS_KEY_FILE` (Datei-Felder `tls_cert_file` und `tls_key_file`, Pfade ohne Zugangsdaten-Charakter), neuer Abschnitt „Schnittstellen mit TLS verschlüsseln“ (TLS ab Version 1.2, kein Klartext auf derselben Adresse, kein Client-Zertifikat, Zertifikatswechsel nur mit Neustart); ein unvollständiges oder nicht ladbares Paar verhindert den Start (neue Meldungscodes `PCF-E2009` und `PCF-E2010`); die gRPC-Beispielprogramme verbinden im Klartext und die Optionen der Client-Pakete bieten keine TLS-Einstellung |
 | 1.97 | 2026-10-04 | Der Feed-Container kann seine Kennzahlen periodisch per OpenTelemetry-Protokoll (OTLP/HTTP, Protobuf) an einen Empfänger übertragen: die neuen Variablen `CDC_OTLP_ENDPOINT`, `CDC_OTLP_HEADERS` und `CDC_OTLP_INTERVAL_SECONDS` (Datei-Feld `otlp_interval` für den Takt), neuer Abschnitt „Metriken per OTLP übertragen“ mit Kennzahlen, Einheiten und dem Hinweis, dass alle Kennzahlen Momentstände (Gauge) sind, auch die mit dem Namensteil `_total`; ohne Endpunkt bleibt der Export aus; ein Ausfall des Empfängers beeinträchtigt Erfassung und Health nicht und erzeugt die Warnungen `PCF-W6001` und `PCF-W6002` (neuer Warn-Bereich 6 „Beobachtbarkeit und Transport“); eine ungültige Export-Konfiguration verhindert den Start (neue Meldungscodes `PCF-E2011` bis `PCF-E2014`; die Meldung nennt nie den Wert von Endpunkt oder Header, beim Takt den eingegebenen Wert); die zugangsdaten-tragenden Schlüssel der Konfigurationsdatei, die dort nicht stehen dürfen, wachsen von neun auf elf (`otlp_endpoint`, `otlp_headers`) |
+| 1.98 | 2026-10-04 | Metrik-Export gegen einen echten OpenTelemetry-Collector gemessen: die Einheit von `cdc_consumer_lag` ist `By` (WAL-Strecke in Bytes, nicht Datenvolumen; Abschnitte „Metriken lesen“, „Metriken per OTLP übertragen“ und die Diagnose-Beschreibung); der Abschnitt zum Export nennt den `https`-Empfänger (CA-Bündel im Image, selbstsigniertes Zertifikat über `SSL_CERT_FILE`, ohne sie Warnung `PCF-W6001`) und den Benutzerteil der Endpunkt-URL (wird als Basic-Authorization gesendet, ein `Authorization`-Header aus `CDC_OTLP_HEADERS` gewinnt, keine Zugangsdaten in Log oder Fehlertext) |
