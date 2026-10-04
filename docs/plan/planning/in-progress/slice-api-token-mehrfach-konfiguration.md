@@ -162,7 +162,7 @@ Planungsstand hat keinen davon gefahren
 Instanz B). Die gedruckte Zeile bzw. der Exit-Code steht im Bericht des
 Implementers und in §7.
 
-- [ ] **Klassifikator, Konfiguration, Zugangsdaten-Klasse (Liefer-Punkt 1,
+- [x] **Klassifikator, Konfiguration, Zugangsdaten-Klasse (Liefer-Punkt 1,
       [`LH-FA-SST-012`](../../../../spec/lastenheft.md) Happy Path, Boundary,
       Negative).**
       (a) *Ein* Klassifikator: das gemeinsame Paket (§3) trägt Rollen-Typ,
@@ -216,7 +216,7 @@ Implementers und in §7.
       Prüfung ist als *Erwartung* geführt (die Umsetzung vergleicht gegen alle
       Token ohne Abbruch beim ersten Treffer; ein Test misst keine Laufzeit, die
       Lesung des Reviewers trägt sie, §6).
-- [ ] **Realserver-Beleg des Wechselablaufs (Liefer-Punkt 2,
+- [x] **Realserver-Beleg des Wechselablaufs (Liefer-Punkt 2,
       [`LH-FA-SST-012`](../../../../spec/lastenheft.md) Happy Path und Negative am
       laufenden Prozess).** Eine neue Phase von
       `tools/harness/run-integration-tests.sh` (`make test-integration`) fährt den
@@ -240,7 +240,7 @@ Implementers und in §7.
       `LH-FA-SST-012` ist darin **keine** Waise (gedruckte Zeile im Bericht).
       Läuft die Phase auf dem Stack nicht (Runner-Struktur), bleibt der
       Befund im Bericht, keine stille Auslassung.
-- [ ] **Benutzerhandbuch (Liefer-Punkt 3).** `docs/user/benutzerhandbuch.md`:
+- [x] **Benutzerhandbuch (Liefer-Punkt 3).** `docs/user/benutzerhandbuch.md`:
       Umgebungsvariablen-Tabelle (§5) um die zwei Plural-Variablen (Form, Vereinigung
       mit dem Singular, Fehlerfälle, Vorrang `admin`), der Absatz
       „Authentifizierung“ der HTTP-/JSON-API (kein Satz mehr, der „ein Token je
@@ -254,7 +254,7 @@ Implementers und in §7.
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0
       (Kennungen in diesem Plan verlinkt), `make test`, `make test-store`
       (die Verdrahtungs-Tests von `internal/bootstrap`) und
@@ -272,6 +272,74 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist.
 
+**Belege des Implementers (Arbeitsstand 2026-10-04, Exit je Befehl direkt
+gelesen, [`AGENTS.md`](../../../../AGENTS.md) §3.9).** Gemessen, soweit nicht
+als *hergeleitet* oder *Erwartung* gekennzeichnet.
+
+- `make test` Exit 0; gedruckt `ok  github.com/pt9912/pg-change-feed/internal/application/port/apiauth`,
+  `…/internal/adapters/driving/http`, `…/internal/adapters/driving/grpc`,
+  `…/internal/bootstrap`, `…/internal/domain/messagecode`.
+- `make test-store` Exit 0 (`ok  …/internal/bootstrap`, gedruckt
+  `db-coverage: OK — DB-Adapter-Coverage 83.03% erfuellt Schwelle 80%`).
+- `make image` Exit 0; `make test-integration` Exit 0; gedruckt für die neue
+  Phase `run-integration-tests: API-Token-Wechsel (LH-FA-SST-012) belegt — Neustart 1 mit Singular und Liste: …`
+  und `run-integration-tests: E2E-Abdeckungstabelle geschrieben — docs/user/e2e-abdeckung.md`
+  (`Lauf abgeschlossen — … aus 21 Go-Zeilen und 55 Bash-Zeilen`).
+- `make doc-trace`: `83 Anforderung(en), 2 Waise(n).`; die Zeile
+  `| LH-FA-SST-012 | Unterbrechungsfreier Wechsel der API-Token | ADR-0150 | — | E2E | ok |`
+  zeigt den Nachweis `E2E`, die zwei Waisen sind `LH-FA-SST-010` und
+  `LH-FA-SST-011` (Gegenstand der zwei Folge-Slices).
+- `make a-check`: `gesamt: 0 Befund(e)`; `make fmt-check`:
+  `337 Go-Dateien geprüft, alle formatiert`; `make meldungscodes-check`:
+  `98 Codes in Tabelle und Katalog gleich`; `make handbuch-public-doc-check`
+  und `make ausgabe-kennungen-check` Exit 0 (je „keine interne Kennung“);
+  `make kommentar-kennungen DIFF=430cc97f` Exit 0 ohne Kandidat.
+- **Mutationen** (an Kopien im Scratchpad, Instanz: `go test` des Pakets im
+  Toolchain-Container mit der Kopie als Mount; jede Mutation einzeln, danach
+  zurückgenommen). Je Zeile: Zusage · Stelle · mutierte Eingabe · gesehene Farbe.
+  1. admin gewinnt bei Gleichheit · die zwei `if`-Zweige am Ende von
+     `apiauth.Classifier.Classify` vertauscht · derselbe Wert in beiden Mengen ·
+     rot: `TestClassify` (zwei Fälle „derselbe Wert“), im HTTP-Test
+     `TestMehrereTokenJeKlasse/Wert_in_beiden_Klassen`, im gRPC-Test
+     `TestAuthInterceptorMehrereTokenJeKlasse/Wert_in_beiden_Klassen,_administrative_RPC`.
+  2. leerer Wert nie gültig · Wache `token == ""` in `Classify` entfernt ·
+     leeres Aufruf-Token gegen ein leeres Element der Reader- bzw. Admin-Menge ·
+     rot: `TestClassify` (zwei Fälle), `TestLeereTokenKonfigurationLaesstKeinenAufrufDurch`
+     (HTTP), `TestStreamChangesLeereTokenKonfigurationEndetMitUnauthenticated`
+     (gRPC). Der Fall „beide Klassen leer“ blieb dabei grün (leere Mengen).
+  3. Leerraum im Element · `unicode.IsSpace`-Prüfung in `parseAPITokenList`
+     entfernt · Listenwert mit Leerzeichen/Tabulator/Zeilenumbruch ·
+     rot: 16 Fälle von `TestAPITokenListeUngueltigEndetMitConfiguration`
+     (vier Eingaben, zwei Variablen, zwei Zugriffswege); die Fälle „leeres
+     Element“ blieben grün.
+  4. Zugangsdaten-Klasse neun · `api_tokens_admin` aus
+     `forbiddenFileCredentialKeys` gestrichen · Datei mit `api_tokens_admin:` ·
+     rot: `TestZugangsdatenKlasseCodeUndTestSindMengengleich` und
+     `TestConfigFromFileLehntZugangsdatenAb/api_tokens_admin`.
+  5. beide Zugriffswege · in `mergeConfig` `applyAPITokens` durch die zwei
+     Singular-Zuweisungen ersetzt · Listenwert unter geladener Datei ·
+     rot: `TestAPITokenListenWerdenGelesen/ConfigFromEnvAndFile/…` (drei Fälle)
+     und der Negativfall „leeres Element in der Mitte“ über `ConfigFromEnvAndFile`.
+  6. Konfiguration → Adapter · im HTTP-`New` die Admin-Liste nicht an
+     `apiauth.FromConfig` gereicht · Admin-Listen-Token ·
+     rot: `TestMehrereTokenJeKlasse/Admin-Liste` und `…/Wert_in_beiden_Klassen`.
+  7. dasselbe im gRPC-`New` für die Reader-Liste ·
+     rot: `TestStreamChangesListenTokenOeffnetStream/Reader-Liste`.
+  8. Start-Ablehnung am Binary · Leerraum-Prüfung entfernt, Mutations-Image
+     (`make image-mutation`, Tag `leerraum`, danach `make image-mutation-rm`) ·
+     `docker run` mit `CDC_API_TOKENS_ADMIN="tw-a, tw-b"`: das reguläre Image
+     endet mit Ausgang 2 und der Zeile `Fehlerklasse configuration [PCF-E2008]: API-Token-Liste ungültig: CDC_API_TOKENS_ADMIN: Element 2 enthält Leerraum`,
+     das Mutations-Image läuft weiter bis zum Verbindungsfehler der Datenbank
+     (Ausgang 1, kein `PCF-E2008`) — genau die zwei Beobachtungen, die
+     `tw_expect_start_refused` des Runners verlangt.
+  Nicht erprobt: der Klassen-Teil der Runner-Phase gegen ein Mutations-Image
+  (der Runner mountet `:dev`, `make image` mit mutiertem Baum ist verboten);
+  dort trägt der Beleg, dass zwei verschiedene erwartete Tabellen — dieselben
+  Token als bediente Klasse in Neustart 1, als `401`/`Unauthenticated` in
+  Neustart 2 — beide gelesen wurden. Die Verallgemeinerung von den
+  gefahrenen Stellen auf alle ist *hergeleitet*; die **Zeitkonstanz** bleibt
+  *Erwartung* (Lesung des Reviewers, §6).
+
 ## 3. Plan (vor Code)
 
 Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
@@ -281,15 +349,17 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/application/port/apiauth/apiauth.go` (Arbeitsname) | neu | der gemeinsame Klassifikator: Rollen-Typ, Konstruktion aus zwei Token-Mengen, Zuordnung `Token → Rolle`; Vergleich zeitkonstant gegen alle Token beider Klassen (`crypto/subtle`) ohne Abbruch beim ersten Treffer; leerer Wert nie gültig, `admin` gewinnt |
+| `internal/application/port/apiauth/apiauth.go` | neu | der gemeinsame Klassifikator (Ort laut Auftrag des Hauptlaufs bestätigt, Vorbild `apifault`): Rollen-Typ `Role`, Konstruktion `New` aus zwei Token-Mengen und `FromConfig` aus Singular plus Liste je Klasse (beide Adapter bilden ihre Konfiguration über diese eine Stelle ab), Zuordnung `Classify`; Vergleich über SHA-256-Werte gleicher Länge mit `crypto/subtle` gegen alle Token beider Klassen ohne Abbruch beim ersten Treffer; leerer Wert nie gültig (eine Wache in `Classify`), `admin` gewinnt |
+| `internal/bootstrap/apitokens_test.go` | neu (über den Plan hinaus) | Tabellentests beider Zugriffswege (`ConfigFromEnv`, `ConfigFromEnvAndFile`) für Liste, Vereinigung, Singular mit Komma, leere Zeichenkette und die Negativfälle mit Meldungscode, Variable und Elementnummer, Gegenprobe `a,b` |
+| `tools/harness/httpclient/main.go`, `tools/harness/grpcadminclient/main.go` | update (über den Plan hinaus) | Modus `probe`: ordnet je Token die Klasse am Status eines lesenden und eines administrativen Endpunkts bzw. einer RPC zu (ohne einen Consumer anzulegen, der Wert des Tokens steht nie in der Ausgabe); wartet auf die Verbindung des neu gestarteten Servers — Träger der Runner-Phase |
 | `internal/application/port/apiauth/apiauth_test.go` | neu | Tabellentest je Fall aus §2 (Happy: zwei Token; Boundary: Singular allein, derselbe Wert in beiden Klassen, Komma im Singular; Negative: entfernt, leer, unbekannt) — nach [`LH-FA-SST-012`](../../../../spec/lastenheft.md) |
-| `internal/adapters/driving/http/middleware.go`, `server.go` | update | `withToken` ruft den gemeinsamen Klassifikator; lokale `role`/`classifyToken` und der Kommentar zur zweiten Fassung entfallen; `Config` trägt je Klasse die Menge |
-| `internal/adapters/driving/grpc/interceptor.go`, `server.go` | update | Stream-Interceptor und `administrationRPCRoles` auf denselben Rollen-Typ; lokale Fassung und Kommentar entfallen |
+| `internal/adapters/driving/http/middleware.go`, `server.go` | update | `withToken` ruft den gemeinsamen Klassifikator; lokale `role`/`classifyToken` und der Kommentar zur zweiten Fassung entfallen; `Config` behält `TokenReader`/`TokenAdmin` (Singular) und trägt zusätzlich `TokensReader`/`TokensAdmin` (Liste) — die Felder wachsen, statt ersetzt zu werden (Abweichung vom Wortlaut „je Klasse die Menge“ des Plans: die 99 Trefferzeilen der Testmigration entfallen, der Singular bleibt ein eigenes Feld) |
+| `internal/adapters/driving/grpc/interceptor.go`, `server.go` | update | Stream- und Unary-Interceptor und `administrationRPCRoles` auf denselben Rollen-Typ und den Klassifikator als Argument; lokale Fassung und Kommentar entfallen; `Config` wie beim HTTP-Adapter |
 | `internal/adapters/driving/http/*_test.go`, `internal/adapters/driving/grpc/*_test.go` | update | mechanische Migration der `Config`-Felder (am Parent 99 Trefferzeilen in 17 Dateien, §3 Suchlauf Zeile 1 zählt die Symbole) plus je ein Fall „zweites Token“ und „entferntes Token“ |
-| `internal/bootstrap/wiring.go` | update | `Config`-Felder, Konstanten der zwei Plural-Variablen, `ConfigFromEnv`, Übergabe an beide Server; Kommentare, die „ein Token je Klasse“ nennen |
+| `internal/bootstrap/wiring.go` | update | `Config`-Felder `APITokensReader`/`APITokensAdmin`, Konstanten der zwei Plural-Variablen, `parseAPITokenList` und `applyAPITokens` (eine Funktion für beide Zugriffswege), Übergabe an beide Server; Kommentare, die „ein Token je Klasse“ nennen. Der Fehler einer ungültigen Liste ist der Typ `apiTokenListError`: sein Text trägt den Kopf des neuen Codes (`ErrAPITokenList`, `PCF-E2008`), und er ist zugleich `ErrConfiguration` (`Unwrap() []error`) — beides, wie §2 (c) es verlangt, ohne zwei Köpfe im Text |
 | `internal/bootstrap/config_file.go` | update | `mergeConfig` (zweiter Zugriffsweg), `forbiddenFileCredentialKeys` (7 → 9) samt Kommentar |
 | `internal/bootstrap/config_file_internal_test.go`, `internal/bootstrap/wiring_test.go` | update | `TestConfigFromFileLehntZugangsdatenAb` auf neun, Mengengleichheit-Test, Parser-Fälle (leeres Element, Leerraum, nur Trennzeichen, leere Zeichenkette) für beide Zugriffswege |
-| `internal/domain/messagecode/codes.go` (und der Test des Pakets, falls er die Menge zählt) | update | neuer(r) Code(s) der Klasse `configuration`, Zuweisungsregel in diesem Abschnitt |
+| `internal/domain/messagecode/codes.go` (und der Test des Pakets, falls er die Menge zählt) | update | ein neuer Code der Klasse `configuration`: `APITokenListInvalid` = `PCF-E2008` (nächste freie Nummer, gemessen am Arbeitsstand: `git grep -n 'PCF-E20' -- internal/domain/messagecode` nannte `PCF-E2000` bis `PCF-E2007`); der Test des Pakets zählt die Menge nicht, `internal/bootstrap/messagecodes_internal_test.go` bindet den Sentinel an Code und Klasse |
 | `tools/harness/run-integration-tests.sh` | update | neue Phase „Token-Wechsel“, `abdeckung_declare` für [`LH-FA-SST-012`](../../../../spec/lastenheft.md); jede neue `func TestE2E*` stünde im `-run` (Vollständigkeits-Test `test/integration/runner_vollstaendigkeit_test.go`) |
 | `docs/user/e2e-abdeckung.md` | Erzeugnis | vom Runner geschrieben, committet |
 | `docs/user/benutzerhandbuch.md` | update | §2 Liefer-Punkt 3 |
@@ -366,11 +436,11 @@ a53f4e75ca51bdaa4319aeabba96f89c48b6448f 4 -n -E 'zweite, wortgleiche Fassung|ei
 a53f4e75ca51bdaa4319aeabba96f89c48b6448f 17 -n -E 'beiden Token-Klassen|zwei Token-Klassen|zwei Rechtsklassen|beiden konfigurierten Klassen' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 a53f4e75ca51bdaa4319aeabba96f89c48b6448f 9 -n -E 'sieben Schlüssel|sieben Zugangsdaten|nats_stream_token' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 a53f4e75ca51bdaa4319aeabba96f89c48b6448f 131 -n -E 'CDC_API_TOKEN_(READER|ADMIN)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 27 -n -E 'classifyToken' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 4 -n -E 'zweite, wortgleiche Fassung|eigene Fassung derselben Zuordnung' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 17 -n -E 'beiden Token-Klassen|zwei Token-Klassen|zwei Rechtsklassen|beiden konfigurierten Klassen' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 9 -n -E 'sieben Schlüssel|sieben Zugangsdaten|nats_stream_token' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 131 -n -E 'CDC_API_TOKEN_(READER|ADMIN)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 0 -n -E 'classifyToken' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 0 -n -E 'zweite, wortgleiche Fassung|eigene Fassung derselben Zuordnung' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 15 -n -E 'beiden Token-Klassen|zwei Token-Klassen|zwei Rechtsklassen|beiden konfigurierten Klassen' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 8 -n -E 'sieben Schlüssel|sieben Zugangsdaten|nats_stream_token' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 139 -n -E 'CDC_API_TOKEN_(READER|ADMIN)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 ```
 
 ## 4. Trigger

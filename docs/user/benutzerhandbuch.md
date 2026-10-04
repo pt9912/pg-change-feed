@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.94
+Version: 1.95
 Software-Version: siehe `docs/user/version.md`
-Stand: 2026-10-03
+Stand: 2026-10-04
 
 ## 1. Einleitung
 
@@ -1477,10 +1477,12 @@ siehe [Konfiguration](#5-konfiguration)); ungesetzt bleibt sie vollständig
 deaktiviert — kein Server, kein Port.
 
 **Authentifizierung:** Jeder Aufruf trägt den Header
-`Authorization: Bearer <token>`. Es gibt zwei Token-Klassen:
-`CDC_API_TOKEN_READER` (lesend) und `CDC_API_TOKEN_ADMIN`
-(administrativ/schreibend), wobei das Admin-Token die lesende Klasse implizit
-mit abdeckt. Ein fehlender oder keinem konfigurierten Token entsprechender
+`Authorization: Bearer <token>`. Es gibt zwei Token-Klassen: lesend
+(`CDC_API_TOKEN_READER`, `CDC_API_TOKENS_READER`) und administrativ/schreibend
+(`CDC_API_TOKEN_ADMIN`, `CDC_API_TOKENS_ADMIN`), wobei ein Admin-Token die
+lesende Klasse implizit mit abdeckt. Je Klasse können mehrere Token gleichzeitig
+gültig sein (siehe [API-Token in zwei Neustarts wechseln](#api-token-in-zwei-neustarts-wechseln)).
+Ein fehlender oder keinem konfigurierten Token entsprechender
 Wert endet `401`, ein bekanntes Token mit unzureichender Klasse `403`. Die
 Token-Klassen entscheiden an der API-Schicht, welche Fähigkeit erreichbar
 ist; die Datenbankverbindung darunter trägt weiterhin die bei der Verdrahtung
@@ -1684,6 +1686,46 @@ JSON-`null` liest das Package als `wal`, jeden anderen Wert des Servers (auch
 einen leeren oder unbekannten) gibt es unverändert weiter. Die Live-Wege
 (gRPC, SSE, NATS-Vollinhalt) tragen kein `origin`.
 
+### API-Token in zwei Neustarts wechseln
+
+Die Token der HTTP- und der gRPC-Schnittstelle gelten je Klasse (lesend,
+administrativ) als Menge: gültig ist jedes Token der Menge, auf beiden
+Schnittstellen gleich. Die Menge einer Klasse besteht aus dem einen Token der
+Variable `CDC_API_TOKEN_READER` bzw. `CDC_API_TOKEN_ADMIN` und den Token der
+Liste in `CDC_API_TOKENS_READER` bzw. `CDC_API_TOKENS_ADMIN` (kommagetrennt,
+siehe [Umgebungsvariablen des Feed-Containers](#umgebungsvariablen-des-feed-containers)).
+So lässt sich ein Token ersetzen, ohne dass ein Client in der Zwischenzeit
+abgewiesen wird. Der Server liest die Token beim Start; ein Neuladen zur
+Laufzeit gibt es nicht, der Wechsel besteht aus zwei Neustarts:
+
+1. **Neues Token ergänzen.** Tragen Sie das neue Token in die Liste der Klasse
+   ein (`CDC_API_TOKENS_READER=neues-token`) und lassen Sie das alte Token
+   unverändert. Starten Sie den Container neu: beide Token werden bedient.
+2. **Clients umstellen.** Stellen Sie jeden Client auf das neue Token um.
+3. **Altes Token entfernen.** Nehmen Sie das alte Token aus der Konfiguration
+   (die Variable leeren oder löschen) und starten Sie den Container erneut.
+   Ein Aufruf mit dem alten Token endet danach auf der HTTP-API mit `401` und
+   auf der gRPC-API mit `Unauthenticated`; das neue Token wird weiter bedient.
+
+Regeln für die Werte:
+
+- Die Variablen `CDC_API_TOKEN_READER` und `CDC_API_TOKEN_ADMIN` tragen genau
+  ein Token; ein Komma gehört dort zum Token. Die Liste trennt am Komma, ein
+  Token mit Komma lässt sich in der Liste nicht ausdrücken.
+- Ein leeres Element der Liste (`a,,b`, ein Komma am Anfang oder am Ende) und
+  ein Element mit Leerraum (Leerzeichen, Tabulator, Zeilenumbruch) verhindern
+  den Start: der Container endet mit der Fehlerklasse `configuration` und dem
+  Meldungscode `PCF-E2008`; die Zeile nennt die Variable und die Nummer des
+  Elements, nie den Wert.
+- Eine leere Variable gilt als nicht gesetzt.
+- Ein leeres Token ist in keiner Klasse gültig. Steht derselbe Wert in der
+  lesenden und der administrativen Klasse, gilt er als administrativ.
+- Alle vier Variablen gehören zu den Zugangsdaten: sie stehen ausschließlich in
+  der Umgebung, nicht in der Konfigurationsdatei.
+
+Das Token des NATS-Vollinhalts-Zustellwegs (`CDC_NATS_STREAM_TOKEN`) gehört
+nicht dazu: der NATS-Server vergibt und wechselt es.
+
 ### Zugriff über den gRPC-Change-Stream
 
 **Erreichbarkeit:** aktiv, sobald `CDC_GRPC_ADDR` gesetzt ist (`host:port`);
@@ -1854,7 +1896,8 @@ Server/Port. Ungesetzt bleibt auch diese Fläche vollständig deaktiviert.
 **Authentifizierung:** derselbe Mechanismus wie beim gRPC-Change-Stream —
 Bearer-Token im gRPC-Metadata-Eintrag `authorization` in der Form
 `Bearer <token>`, dieselben zwei Token-Klassen (`CDC_API_TOKEN_READER`,
-`CDC_API_TOKEN_ADMIN`) wie bei der HTTP-API. Ein fehlender oder keinem
+`CDC_API_TOKEN_ADMIN` mit den Listen `CDC_API_TOKENS_READER`,
+`CDC_API_TOKENS_ADMIN`) wie bei der HTTP-API. Ein fehlender oder keinem
 konfigurierten Token entsprechender Wert endet mit dem gRPC-Status
 `Unauthenticated`, ein bekanntes Token mit unzureichender Klasse mit
 `PermissionDenied`.
@@ -2327,8 +2370,10 @@ dieselben vier Zugriffswege wie die C#-/Kotlin-Pendants ab. Siehe
 | `CDC_NATS_URL` | nein | NATS-Server-URL für das Change-Notification-Wecksignal (`cdc.changes.<source_id>.<schema>.<table>`, tabellen-granular, leerer Payload); ungesetzt bleibt das Feature vollständig deaktiviert, gesetzt ist eine erfolgreiche Verbindung Vorbedingung des Starts (Fehlerklasse `configuration`). Zusammen mit `CDC_NATS_STREAM_TOKEN` aktiviert dieselbe Variable zusätzlich den dritten, vollinhaltstragenden NATS-Zustellweg (siehe [Zugriff über den NATS-Vollinhalts-Stream](#zugriff-über-den-nats-vollinhalts-stream)) |
 | `CDC_NATS_STREAM_TOKEN` | nein | Verbindungs-Token des dritten, vollinhaltstragenden NATS-Zustellwegs; wirkt nur zusammen mit gesetztem `CDC_NATS_URL` — ist nur `CDC_NATS_STREAM_TOKEN` gesetzt, aber `CDC_NATS_URL` leer, startet der Container nicht (Fehlerklasse `configuration`). Ein gesetzter Wert verlangt vom NATS-Server denselben Token **serverweit**, auch für die Wecksignal-Verbindung (siehe dortiger Abschnitt) |
 | `CDC_HTTP_ADDR` | nein | Horch-Adresse der HTTP-/JSON-API (`host:port`); ungesetzt bleibt die API vollständig deaktiviert — kein Server, keine zusätzliche Verbindung. Anders als `CDC_NATS_URL` ist die Adresse **keine** Start-Vorbedingung: Ist sie gesetzt, öffnet der Prozess den Server in eigener Goroutine und läuft unverändert weiter; scheitert das Binden der Adresse (z. B. belegter Port), meldet er das im Log und der Erfassungsbetrieb bleibt davon unberührt |
-| `CDC_API_TOKEN_READER` | nein | Bearer-Token der lesenden Rechtsklasse der HTTP- und gRPC-API; ungesetzt (leer) ist die Klasse nicht konfiguriert — ein Aufruf mit einem Token, das keiner konfigurierten Klasse entspricht, endet `401` |
-| `CDC_API_TOKEN_ADMIN` | nein | Bearer-Token der administrativen Rechtsklasse der HTTP- und gRPC-API (deckt die lesende Klasse implizit mit ab); leer bedeutet dieselbe Deaktivierung wie bei `CDC_API_TOKEN_READER` |
+| `CDC_API_TOKEN_READER` | nein | Genau ein Bearer-Token der lesenden Rechtsklasse der HTTP- und gRPC-API (ein Komma gehört zum Token); ungesetzt (leer) trägt das Singular kein Token — ein Aufruf mit einem Token, das keiner konfigurierten Klasse entspricht, endet `401` |
+| `CDC_API_TOKEN_ADMIN` | nein | Genau ein Bearer-Token der administrativen Rechtsklasse der HTTP- und gRPC-API (deckt die lesende Klasse implizit mit ab); leer bedeutet dasselbe wie bei `CDC_API_TOKEN_READER` |
+| `CDC_API_TOKENS_READER` | nein | Kommagetrennte Liste von Bearer-Token der lesenden Klasse; gültig ist die Vereinigung mit `CDC_API_TOKEN_READER`. Ein leeres Element oder ein Element mit Leerraum verhindert den Start (Fehlerklasse `configuration`, `PCF-E2008`); eine leere Variable gilt als nicht gesetzt. Nur in der Umgebung, nicht in der Konfigurationsdatei (siehe [API-Token in zwei Neustarts wechseln](#api-token-in-zwei-neustarts-wechseln)) |
+| `CDC_API_TOKENS_ADMIN` | nein | Kommagetrennte Liste von Bearer-Token der administrativen Klasse; gültig ist die Vereinigung mit `CDC_API_TOKEN_ADMIN`, dieselben Regeln wie bei `CDC_API_TOKENS_READER`. Steht ein Wert in beiden Klassen, gilt er als administrativ |
 | `CDC_GRPC_ADDR` | nein | Horch-Adresse des gRPC-Servers (`host:port`); aktiviert gemeinsam den Change-Stream (`ChangeStream`) und die Verwaltungs-API (`Administration`) auf demselben Port. Ungesetzt bleibt der Server vollständig deaktiviert — kein Listener. Wie `CDC_HTTP_ADDR` keine Start-Vorbedingung |
 | `CDC_CONFIG_FILE` | nein | Pfad zu einer optionalen YAML-Konfigurationsdatei (siehe unten) |
 
@@ -2370,7 +2415,8 @@ grpc_addr: ":9090"
 
 **Wichtig — Zugangsdaten bleiben env-var-exklusiv:** Die Schlüssel
 `capture_dsn`, `admin_dsn`, `reader_dsn`, `api_token_reader`,
-`api_token_admin`, `nats_url` und `nats_stream_token` dürfen in dieser
+`api_token_admin`, `api_tokens_reader`, `api_tokens_admin`, `nats_url` und
+`nats_stream_token` — neun Schlüssel — dürfen in dieser
 Datei **nicht** vorkommen. Ein Treffer bricht das Laden mit einer eigenen,
 den Grund nennenden Zeile ab (Fehlerklasse `configuration`) — eine
 Konfigurationsdatei landet typischerweise in Kanälen (Repository,
@@ -2378,12 +2424,13 @@ ConfigMap, Backup), die für Zugangsdaten nicht vorgesehen sind. Die Grenze
 ist die **Form** des Feldes, nicht sein Wert: `http_addr`/`grpc_addr` sind
 `host:port` und können keine Zugangsdaten tragen, `nats_url` ist eine URL
 und kann Benutzer sowie Passwort einbetten (`nats://benutzer:passwort@host:4222`),
-`nats_stream_token` trägt denselben Zugangsdaten-Charakter wie die beiden
-API-Token-Schlüssel. Ein unbekannter Schlüssel bricht das
+`nats_stream_token` und die vier API-Token-Schlüssel tragen denselben
+Zugangsdaten-Charakter. Ein unbekannter Schlüssel bricht das
 Laden ebenfalls ab (striktes Decoding).
 
 Die env-exklusiven Variablen `CDC_NATS_URL`, `CDC_NATS_STREAM_TOKEN`,
-`CDC_API_TOKEN_READER` und `CDC_API_TOKEN_ADMIN` werden **auch unter
+`CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`, `CDC_API_TOKENS_READER` und
+`CDC_API_TOKENS_ADMIN` werden **auch unter
 geladener Datei** aus der Umgebung gelesen — sie haben kein
 Datei-Gegenstück, ihre Herkunft ist die Umgebungsvariable auf beiden Wegen;
 die Datei kann sie weder setzen noch überschreiben.
@@ -2477,6 +2524,7 @@ Entfällt eine Ursache, bleibt ihr Code in dieser Tabelle und trägt den Vermerk
 | `PCF-E2005` | `configuration` | der Backfill-Run fand bei der Ausführung keine Aktivierung der Tabelle (Bindung oder Mitgliedschaft in der Publication fehlt) | Tabelle aktivieren, Backfill neu beantragen |
 | `PCF-E2006` | `configuration` | während des Backfill-Runs hat sich der Ausschluss- oder Regelstand der Tabelle geändert; der Run endet ohne Change | Änderung des Regelstands abschließen, Backfill neu beantragen |
 | `PCF-E2007` | `configuration` | die Schema-Quelldatei von `make schema-rollout` fehlt | Variable `SCHEMA_SOURCE` und Arbeitsbaum prüfen |
+| `PCF-E2008` | `configuration` | eine Token-Liste (`CDC_API_TOKENS_READER`, `CDC_API_TOKENS_ADMIN`) trägt ein leeres Element oder ein Element mit Leerraum; der Container startet nicht, die Zeile nennt Variable und Nummer des Elements | Liste prüfen (siehe [API-Token in zwei Neustarts wechseln](#api-token-in-zwei-neustarts-wechseln)) |
 | `PCF-E3000` | `permission` | fehlende Berechtigung ohne nähere Zuordnung (Rückfall) | Rechte der Rollen prüfen (siehe [Zugriff und Rollen](#zugriff-und-rollen)) |
 | `PCF-E3001` | `permission` | der Server weist den Replikationszugriff ab (SQLSTATE 42501 oder Klasse 28) | Rechte und `REPLICATION`-Attribut der Capture-Rolle prüfen |
 | `PCF-E3002` | `permission` | die Capture-Rolle darf die Quelltabelle eines Backfills nicht lesen oder den temporären Slot nicht anlegen | `SELECT` auf die Tabelle und das `REPLICATION`-Attribut prüfen, Backfill neu beantragen |
@@ -2581,7 +2629,10 @@ formatiert.
    Fehlermeldung nennt die betroffene Variable.
 2. Prüfen Sie das Format von `CDC_TABLES`
    (`schema.tabelle=tabelle-id:schema-version-id`, kommagetrennt).
-3. Starten Sie den Container erneut.
+3. Prüfen Sie die Token-Listen `CDC_API_TOKENS_READER` und
+   `CDC_API_TOKENS_ADMIN`: kein leeres Element, kein Leerraum in einem
+   Element (Meldungscode `PCF-E2008`).
+4. Starten Sie den Container erneut.
 
 ### Container startet, erfasst aber keine Änderungen
 
@@ -2959,3 +3010,4 @@ MIT — siehe `LICENSE`.
 | 1.92 | 2026-10-03 | Fehlerantworten der HTTP-API tragen das Feld `code` mit einem Meldungscode neben `error` (`401` und `403` ohne Feld); Fehlerstatus der gRPC-API (`InvalidArgument`, `NotFound`, `Internal`) tragen das Statusdetail `ErrorInfo` mit dem Code als `reason` und `pg-change-feed` als `domain`; der Katalog führt die neuen Codes `PCF-E8050` bis `PCF-E8057` für abgelehnte API-Aufrufe und `PCF-W4008` für die Warnung eines gescheiterten API-Aufrufs; Statuscodes und Fehlertexte bleiben unverändert |
 | 1.93 | 2026-10-03 | Die Fehlertypen der drei SDK-Packages (C#, Kotlin, Python) tragen den Meldungscode des Servers als Eigenschaft (`MessageCode`, `messageCode`, `message_code`): beim HTTP- und beim SSE-Client aus dem Feld `code`, beim gRPC-Verwaltungs-Client aus dem Statusdetail; ohne Code auf dem Draht ist die Eigenschaft leer; das Feld `error_code` der Diagnose kommt unverändert an |
 | 1.94 | 2026-10-03 | Die SDK-Eigenschaft für den Meldungscode gilt ab Package-Version 0.6.0 (Abschnitte zu Fehlerantworten und zur Fehlerform der gRPC-Verwaltungs-API); trägt ein Fehlerkörper `code` als String, aber `error` nicht als String, liefern alle drei SDKs den Code und den rohen Körper als Fehlertext |
+| 1.95 | 2026-10-04 | Mehrere API-Token je Klasse: die neuen Variablen `CDC_API_TOKENS_READER` und `CDC_API_TOKENS_ADMIN` (kommagetrennte Listen) gelten neben den bisherigen Variablen, auf HTTP und gRPC gleich; neuer Abschnitt „API-Token in zwei Neustarts wechseln“; eine Liste mit leerem Element oder Leerraum verhindert den Start (neuer Meldungscode `PCF-E2008`); die Zugangsdaten-Schlüssel der Konfigurationsdatei umfassen jetzt neun Schlüssel |
