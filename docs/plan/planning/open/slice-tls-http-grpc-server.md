@@ -16,7 +16,7 @@ Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht
 (Modul 6).
 
 **Abhängigkeit:** startet erst, wenn
-[`slice-api-token-mehrfach-konfiguration`](slice-api-token-mehrfach-konfiguration.md)
+[`slice-api-token-mehrfach-konfiguration`](../in-progress/slice-api-token-mehrfach-konfiguration.md)
 in `done/` liegt — **nicht** aus fachlichem Grund (TLS und Token-Wechsel sind
 unabhängig), sondern wegen des Konfigurationsgleichlaufs: beide Slices ändern
 `internal/bootstrap/wiring.go` (`Config`, `ConfigFromEnv`),
@@ -164,7 +164,7 @@ Implementers und in §7.
       gesetzt → unverschlüsselt wie bisher; **nur eines** gesetzt (auch: Zertifikat
       aus der Datei, Schlüssel fehlt in beiden Quellen) → `ErrConfiguration` mit neuem
       Meldungscode (nächste freie Nummer ab `PCF-E2008`, Zuweisungsregel im Plan von
-      [`slice-api-token-mehrfach-konfiguration`](slice-api-token-mehrfach-konfiguration.md)
+      [`slice-api-token-mehrfach-konfiguration`](../in-progress/slice-api-token-mehrfach-konfiguration.md)
       §3). Beide Zugriffswege (`ConfigFromEnv`, `mergeConfig`) tragen die
       Prüfung aus **einer** Funktion.
       (b) Laden: ein Pfad nicht lesbar, keine gültigen PEM-Daten oder Zertifikat
@@ -364,7 +364,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 **Start** (`next` → `in-progress`): `in-progress/` trägt keinen anderen Slice
 (WIP-Limit 1), **und**
-[`slice-api-token-mehrfach-konfiguration`](slice-api-token-mehrfach-konfiguration.md)
+[`slice-api-token-mehrfach-konfiguration`](../in-progress/slice-api-token-mehrfach-konfiguration.md)
 liegt in `done/` (Konfigurationsgleichlauf, Nummernvergabe der Codes), **und**
 der Implementer hat die Startmessung gefahren: die Suchlauf-Zeilen aus §3 am
 Arbeitsstand neu gemessen (neue Commit-Kennung als Parent, `make

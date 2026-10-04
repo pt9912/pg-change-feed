@@ -16,7 +16,7 @@ Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht
 (Modul 6).
 
 **Abhängigkeit:** startet erst, wenn
-[`slice-api-token-mehrfach-konfiguration`](slice-api-token-mehrfach-konfiguration.md)
+[`slice-api-token-mehrfach-konfiguration`](../in-progress/slice-api-token-mehrfach-konfiguration.md)
 in `done/` liegt: dieser Slice hebt die Zugangsdaten-Klasse der
 Konfigurationsdatei von neun auf elf Schlüssel und setzt auf der Zahl auf, die der
 Vorgänger gesetzt hat (Schnitt und Begründung im Plan des Vorgängers, §1); die
@@ -110,7 +110,7 @@ ohne Endpunkt bleibt alles unverändert. Der Slice belegt das gegen einen
 **Schnitt der Zugangsdaten-Klasse.** Dieser Slice trägt `otlp_endpoint` und
 `otlp_headers` in `forbiddenFileCredentialKeys` ein und hebt Test und Handbuch
 von **neun auf elf** — genau seine zwei Schlüssel; die zwei anderen trägt
-[`slice-api-token-mehrfach-konfiguration`](slice-api-token-mehrfach-konfiguration.md)
+[`slice-api-token-mehrfach-konfiguration`](../in-progress/slice-api-token-mehrfach-konfiguration.md)
 (Begründung dort, §1). `otlp_interval` ist ein **zulässiges** Datei-Feld und kein
 Klassenmitglied (eine Zahl trägt keine Zugangsdaten).
 
@@ -155,7 +155,7 @@ vom Runner geschrieben.
   Wiederholung und Typ).
 - **TLS des eigenen Servers und der Token-Wechsel** —
   [`slice-tls-http-grpc-server`](slice-tls-http-grpc-server.md) und
-  [`slice-api-token-mehrfach-konfiguration`](slice-api-token-mehrfach-konfiguration.md);
+  [`slice-api-token-mehrfach-konfiguration`](../in-progress/slice-api-token-mehrfach-konfiguration.md);
   andere Anforderungen, andere Eingriffsstellen.
 - **Die Änderung des WAL-Prüfzugs** (`runWALRetentionCheck`): sein
   Schwellenverhalten und seine Abbruchpfade bleiben; der Slice liest nur den
@@ -196,7 +196,7 @@ Implementers und in §7.
       leerem Schlüssel und einem `=`. Ungültig endet mit `ErrConfiguration` und
       einem **neuen** Meldungscode (nächste freie Nummer ab `PCF-E2008` zum
       Zeitpunkt der Arbeit, Zuweisungsregel im Plan von
-      [`slice-api-token-mehrfach-konfiguration`](slice-api-token-mehrfach-konfiguration.md)
+      [`slice-api-token-mehrfach-konfiguration`](../in-progress/slice-api-token-mehrfach-konfiguration.md)
       §3): Endpunkt mit Schema `ftp`, ohne Host, leer-aber-gesetzt-Fälle der
       Umgebung wie „ungesetzt“; Intervall 4, 3601, `abc`, `60.5`; Header ohne `=`,
       mit leerem Schlüssel. Jeder Negativfall prüft den Code **und** den Klartext
@@ -383,7 +383,7 @@ Aussagen-Berührung steht hier gar nicht.
   [`ADR-0149`](../../adr/0149-otlp-metrik-export-mechanismus.md) Festlegung 7
   benannt; die Konstanten-Namen legt der Implementer fest. Die Konfigurationscodes
   folgen der Zuweisungsregel im Plan von
-  [`slice-api-token-mehrfach-konfiguration`](slice-api-token-mehrfach-konfiguration.md)
+  [`slice-api-token-mehrfach-konfiguration`](../in-progress/slice-api-token-mehrfach-konfiguration.md)
   §3 (nächste freie Nummer ab `PCF-E2008`, am Arbeitsstand gemessen). Die Zahl der
   Codes ist offen: ein Code für „Endpunkt ungültig“, einer für „Header ungültig“,
   einer für „Intervall außerhalb“ ist ein Vorschlag, kein Soll.
@@ -450,7 +450,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 **Start** (`next` → `in-progress`): `in-progress/` trägt keinen anderen Slice
 (WIP-Limit 1), **und**
-[`slice-api-token-mehrfach-konfiguration`](slice-api-token-mehrfach-konfiguration.md)
+[`slice-api-token-mehrfach-konfiguration`](../in-progress/slice-api-token-mehrfach-konfiguration.md)
 liegt in `done/`, **und** der Implementer hat die Startmessung gefahren: die
 Suchlauf-Zeilen aus §3 am Arbeitsstand neu gemessen (neue Commit-Kennung als
 Parent, `make suchlauf-nachmessen PLAN=` mit diesem Plan Exit 0 nach Anpassung
