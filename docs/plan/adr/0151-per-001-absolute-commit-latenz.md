@@ -43,7 +43,7 @@ des Medians ohne CDC. Auf dem Messhost von `slice-backfill-bench-richtgroesse` e
 |---|---|---|
 | 5.000 Einzeltransaktionen ohne CDC | 15.870 ms | gemessen, `tools/bench-source-impact.sh`, Median von 5 |
 | dieselbe Last mit CDC | 30.885 ms (94,6 %) | gemessen |
-| `fdatasync` | 2.956 µs je Operation | gemessen, `pg_test_fsync` |
+| `fdatasync` | 2,956 ms (2.956 µs) je Operation | gemessen, `pg_test_fsync` |
 | Commit-Latenz ohne CDC | 3,17 ms | abgeleitet (15.870 / 5.000) |
 | Commit-Latenz mit CDC | 6,18 ms | abgeleitet (30.885 / 5.000) |
 | zusätzliche Latenz je Transaktion | 3,00 ms | abgeleitet ((30.885 − 15.870) / 5.000) |
@@ -75,7 +75,7 @@ Quelltransaktion, gültig nur in einer benannten Messumgebung**.
    0,085 ms (*abgeleitet, nicht erprobt*). Der Wert bleibt Vorschlag, bis die
    Referenzumgebung real gemessen ist; bis dahin bleibt diese ADR `Proposed`.
 4. **Außerhalb der Umgebung** (der Messhost von `slice-backfill-bench-richtgroesse` ist
-   *außerhalb*, `fdatasync` 2,956 ms) druckt das Skript die Messung samt Verhältnis zu
+   *außerhalb*, `fdatasync` 2,956 ms = 2.956 µs) druckt das Skript die Messung samt Verhältnis zu
    `fdatasync` und trägt **kein Verdikt**; es endet dort nicht rot.
 5. Das Lastenheft nennt nur die Form („absolute Obergrenze, Wert in `SPEC-025`/`SPEC-036`“),
    nicht die Zahl (Muster `LH-QA-PER-002`/`LH-QA-PER-004`).
@@ -85,6 +85,27 @@ senken, etwa Store-Commits über mehrere Quelltransaktionen zu bündeln oder den
 CDC-Store auf eine andere Instanz oder einen anderen Datenträger zu legen. Beides
 berührt `ADR-0011` (Persist-before-ACK) und `ADR-0010` und ist eine eigene spätere
 Entscheidung.
+
+## Offener Widerspruch (Bestätigung durch den Auftraggeber ausstehend)
+
+Drei Aussagen dieser ADR sind nicht gegeneinander hergeleitet:
+
+- **Modell** (Kontext, *hergeleitet*, ein Punkt, ein Host): zusätzliche Latenz
+  ≈ 1,02 × `fdatasync`.
+- **Band** (Entscheidung 2): `fdatasync` bis 0,5 ms ist in der Umgebung
+  zulässig. Nach dem Modell läge die zusätzliche Latenz an dieser Grenze bei
+  ≈ 0,5 ms (*hergeleitet*), nicht bei ≤ 0,10 ms.
+- **Altzahl** (Entscheidung 3): 0,10 ms stammt aus der Obergrenze 0,085 ms eines
+  Hosts, dessen `fdatasync` unbekannt ist (*übernommen*); die Grenze 0,5 ms
+  stammt aus keiner Messung.
+
+Mit dem Modell wäre ≤ 0,10 ms nur bei einem `fdatasync` von etwa 0,1 ms
+einzuhalten; das Band ließe das Fünffache zu. Welche der drei Aussagen
+nachgibt (Band enger, Wert höher, oder Modell verworfen), entscheidet erst die
+Messung der Referenzumgebung (Folgepflicht 1), und die Wahl liegt beim
+Auftraggeber. Die Zahlen bleiben in dieser ADR, in `SPEC-025` und in
+`SPEC-036` unverändert als Vorschlag stehen; die ADR wird nicht `Accepted`,
+solange die Frage offen ist.
 
 ## Verglichene Alternativen
 
@@ -104,10 +125,19 @@ Entscheidung.
   `LH-QA-PER-001` (akzeptiert, begründet in Entscheidung 4).
 - Folgepflicht: (1) die Referenzumgebung real messen (zusätzliche Latenz,
   `fdatasync`, Median von 5) und den Wert bestätigen oder korrigieren — danach
-  `Accepted`; (2) Slice `bench-source-impact-absolut` (Code-Name ohne Link):
-  `tools/bench-source-impact.sh`, `docs/user/bench-abdeckung.md`,
-  `harness/README.md` §Sensors (Zeile `make bench`) und
-  `harness/sensors`-Verträge auf die neue Messgröße ziehen; (3) die Index-Zeile von
+  `Accepted`; (2) Slice `bench-source-impact-absolut` (Code-Name ohne Link, noch
+  ohne Plan-Datei): `tools/bench-source-impact.sh` (Schwelle `THRESHOLD_PCT=35`
+  und Meldetexte), der Hilfetext des Ziels `bench` im `Makefile`
+  (`LH-QA-PER-001…003 mit Schwelle`), `tools/bench-lib.sh` (zwei Kommentar- und
+  Kopfzeilen-Verweise auf `ADR-0104` als Quelle der Schwellen, die der
+  Generator von `docs/user/bench-abdeckung.md` schreibt),
+  `docs/user/bench-abdeckung.md`, `harness/README.md` §Sensors (Zeile
+  `make bench`) und die `harness/sensors`-Verträge auf die neue Messgröße
+  ziehen; [`ADR-0105`](0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md) (`Accepted`)
+  verweist auf `ADR-0104` und `make bench` und bleibt unverändert. **Bekannte
+  Lücke bis zu diesem Slice:** `tools/bench-source-impact.sh` prüft weiter die
+  relative 35-%-Schwelle von `ADR-0104`; das widerspricht der neu gefassten
+  `SPEC-025` und ist ein benannter Zwischenstand, kein Versehen. (3) die Index-Zeile von
   `ADR-0104` trägt den Zusatz „→ ADR-0151, teilweise“, die Datei von `ADR-0104`
   bleibt unverändert.
 
@@ -129,6 +159,7 @@ eine Entscheidung zu Bündelung oder Store-Trennung ändert die Latenz.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-10-04 | Proposed — Anlass: Auftraggeber-Entscheidung zu einer absoluten Zielgröße je Transaktion; Daten reichen für eine einzelne Zahl nicht | `LH-QA-PER-001` |
+| 2026-10-04 | Review-Nachzug (Proposed, editiert): Abschnitt „Offener Widerspruch“, Folgepflicht 2 um `Makefile`, `tools/bench-lib.sh`, `ADR-0105` und die bekannte Lücke ergänzt, Einheit von `fdatasync` einheitlich | Review Spec 0.15.0 F-1, F-2, F-7 |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
