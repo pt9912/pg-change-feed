@@ -1487,7 +1487,10 @@ Vertrags; die Drahtform ist es.
 **Quelle der Werte.** Die Zeilen der Sicht `cdc.metrics`, gelesen über
 `CDC_READER_DSN` (Rolle `cdc_reader`, keine zusätzlichen Rechte), und der
 zuletzt im Prozess gemessene `cdc_wal_retention_bytes` (`SPEC-009`); ist noch
-keiner gemessen, entfällt dieser Datenpunkt.
+keiner gemessen, entfällt dieser Datenpunkt. Gleichheit mit der Sicht gilt je
+Messzeitpunkt: `cdc_oldest_change_age_seconds` und `cdc_capture_lag` hängen an
+`now()` der Abfrage und weichen um den Abstand der Messzeitpunkte ab;
+`cdc_wal_retention_bytes` steht nicht in der Sicht.
 
 **Kennzahlen.** Namen sind die der Sicht (`SPEC-009`). Alle sind OTLP-`Gauge`,
 auch die mit dem Namensteil `_total`: ein Wert der Sicht ist ein
