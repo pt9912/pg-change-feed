@@ -10,7 +10,7 @@ frischem Kontext. Der Verifier repariert nichts und setzt keine DoD-Häkchen.
 `845b32b8` ([`review-slice-api-token-mehrfach-konfiguration`](review-slice-api-token-mehrfach-konfiguration.md):
 0 HIGH, 0 MEDIUM, F-1 LOW, F-2 bis F-4 INFO), Fix `4ac7faf4` (F-1), Review-Haken
 `ba491f8c`. Plan:
-[`slice-api-token-mehrfach-konfiguration`](../plan/planning/in-progress/slice-api-token-mehrfach-konfiguration.md);
+[`slice-api-token-mehrfach-konfiguration`](../plan/planning/done/slice-api-token-mehrfach-konfiguration.md);
 Spec-Stellen [`SPEC-035`](../../spec/pflichtenheft.md),
 [`SPEC-016`](../../spec/pflichtenheft.md); Entscheidungen
 [`ADR-0150`](../plan/adr/0150-tls-und-mehrfach-token.md),

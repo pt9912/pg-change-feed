@@ -3,7 +3,7 @@
 **Review-Art:** Code — geprüft gegen Plan, ADRs und `AGENTS.md` Hard Rules (Modul 10). Kein DoD-Abgleich (Verifier).
 
 **Gegenstand:** Slice
-[`slice-api-token-mehrfach-konfiguration`](../plan/planning/in-progress/slice-api-token-mehrfach-konfiguration.md)
+[`slice-api-token-mehrfach-konfiguration`](../plan/planning/done/slice-api-token-mehrfach-konfiguration.md)
 (wellenlos), Diff `430cc97f..HEAD` (`HEAD` = `be0f4f9d`, 25 Dateien, +1095/−264). Implementer-Lauf: `38adefd4` (Code),
 `425682ec` (Runner-Phase, Wegwerf-Clients), `88209377` (Handbuch, Plan, `harness/README.md`, Erzeugnis
 `docs/user/e2e-abdeckung.md`), `be0f4f9d` (Suchlauf-Zeilen).
