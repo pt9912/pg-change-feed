@@ -21,7 +21,7 @@ in `done/` liegt: dieser Slice hebt die Zugangsdaten-Klasse der
 Konfigurationsdatei von neun auf elf Schlüssel und setzt auf der Zahl auf, die der
 Vorgänger gesetzt hat (Schnitt und Begründung im Plan des Vorgängers, §1); die
 Nummern der neuen Meldungscodes folgen der Zuweisungsregel dort (§3).
-[`slice-tls-http-grpc-server`](../in-progress/slice-tls-http-grpc-server.md) ist **keine**
+[`slice-tls-http-grpc-server`](../done/slice-tls-http-grpc-server.md) ist **keine**
 fachliche Voraussetzung; die empfohlene Reihenfolge A → B → C hält die gemeinsam
 berührten Dateien (`wiring.go`, `config_file.go`, Code-Tabelle, Handbuch) ohne
 Konflikt, und das WIP-Limit 1 serialisiert ohnehin. **Messstand:** die
@@ -154,7 +154,7 @@ vom Runner geschrieben.
   [`ADR-0149`](../../adr/0149-otlp-metrik-export-mechanismus.md) liest nur
   Wiederholung und Typ).
 - **TLS des eigenen Servers und der Token-Wechsel** —
-  [`slice-tls-http-grpc-server`](../in-progress/slice-tls-http-grpc-server.md) und
+  [`slice-tls-http-grpc-server`](../done/slice-tls-http-grpc-server.md) und
   [`slice-api-token-mehrfach-konfiguration`](../done/slice-api-token-mehrfach-konfiguration.md);
   andere Anforderungen, andere Eingriffsstellen.
 - **Die Änderung des WAL-Prüfzugs** (`runWALRetentionCheck`): sein

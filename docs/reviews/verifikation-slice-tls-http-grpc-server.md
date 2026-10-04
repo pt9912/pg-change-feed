@@ -8,7 +8,7 @@ Fixrunde. Kein Reparieren, kein Setzen von DoD-Häkchen.
 **Gegenstand:** `git diff c45a3cca HEAD` — `8e3fa08b` (Code), `08a796f2`
 (Runner, Handbuch, Plan), `eca155ad` (Review), `aaa3ed3c` (Fixrunde),
 `0115485d` (Review-Haken). Plan:
-[`slice-tls-http-grpc-server`](../plan/planning/in-progress/slice-tls-http-grpc-server.md);
+[`slice-tls-http-grpc-server`](../plan/planning/done/slice-tls-http-grpc-server.md);
 Review: [`review-slice-tls-http-grpc-server`](review-slice-tls-http-grpc-server.md)
 (0 HIGH, F-1/F-2 MEDIUM in der Fixrunde behoben, F-3/F-4 LOW, F-5/F-6 INFO).
 Bezug: [`SPEC-034`](../../spec/pflichtenheft.md),
@@ -216,7 +216,7 @@ dem Folge-Slice `sdk-tls-optionen` überlassen.
 
 **Slice C `otlp-metrik-export`:** [`slice-otlp-metrik-export`](../plan/planning/open/slice-otlp-metrik-export.md)
 liegt in `open/`; seine zwei Verweise auf
-[`slice-tls-http-grpc-server`](../plan/planning/in-progress/slice-tls-http-grpc-server.md)
+[`slice-tls-http-grpc-server`](../plan/planning/done/slice-tls-http-grpc-server.md)
 lösen auf (`make docs-check` Exit 0). Beim `git mv` nach `done/` sind sie
 nachzuziehen.
 

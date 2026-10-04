@@ -16,7 +16,7 @@ Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht
 (Modul 6).
 
 **Abhängigkeit:** keine harte. Der Server-TLS-Weg liegt mit
-[`slice-tls-http-grpc-server`](../in-progress/slice-tls-http-grpc-server.md) vor. Die
+[`slice-tls-http-grpc-server`](../done/slice-tls-http-grpc-server.md) vor. Die
 Beispiele sind eigenständige Programme mit eigenem gRPC-Aufbau und hängen
 **nicht** an den SDK-Packages; die TLS-Optionen der Packages sind ein eigener,
 noch nicht angelegter Folge-Slice (`sdk-tls-optionen`, wartet auf eine
@@ -47,7 +47,7 @@ den Plan; zwei Felder, zwei Fragen. Kein Statuswert: der Zustand bleibt das
 Verzeichnis. Kein Sensor prüft das Feld — es ist Deklaration. -->
 
 **Autor:** Planner-Agent, bei der Closure von
-[`slice-tls-http-grpc-server`](../in-progress/slice-tls-http-grpc-server.md) angelegt
+[`slice-tls-http-grpc-server`](../done/slice-tls-http-grpc-server.md) angelegt
 (Review F-5 und Verifikation nennen den Beispiel-Nachzug als Adresse; kein
 Architect: keine neue Entscheidung, die Beispiele folgen
 [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)). **Datum:** 2026-10-04.
