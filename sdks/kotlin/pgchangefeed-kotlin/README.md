@@ -61,11 +61,12 @@ dependencyResolutionManagement {
 
 ### Dependencies of the library
 
-Apart from the Kotlin standard library, the library's own dependencies are not passed on to your compile classpath. Add the ones whose types you use — the coroutines library for the gRPC `Flow`, protobuf for the gRPC row images (`ByteString`), Gson for the JSON row images (`JsonElement`) — with the versions the library is built with:
+Apart from the Kotlin standard library, the library's own dependencies are not passed on to your compile classpath. Add the ones whose types you use — the coroutines library for the gRPC `Flow`, `grpc-api` for `Status`, `StatusException` and `Channel` (the gRPC error types and both gRPC clients use them in their public signatures), protobuf for the gRPC row images (`ByteString`), Gson for the JSON row images (`JsonElement`) — with the versions the library is built with:
 
 ```kotlin
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+    implementation("io.grpc:grpc-api:1.84.0")
     implementation("com.google.protobuf:protobuf-java:4.36.2")
     implementation("com.google.code.gson:gson:2.14.0")
 }
