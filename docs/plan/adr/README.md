@@ -116,7 +116,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0101 | Zugangsdaten-Klasse — sieben Schlüssel (Supers. ADR-0088/0091/0092, teilw.) | Accepted | 2026-09-18 | [0101-zugangsdaten-klasse-sieben-schluessel.md](0101-zugangsdaten-klasse-sieben-schluessel.md) |
 | ADR-0102 | Zugangsdaten-Klasse — Supersede-Liste vervollständigt (Supers. ADR-0101, teilw.) | Accepted | 2026-09-18 | [0102-zugangsdaten-klasse-supersede-liste-vervollstaendigt.md](0102-zugangsdaten-klasse-supersede-liste-vervollstaendigt.md) |
 | ADR-0103 | `image-hash.txt` lokal statt committet (Supers. ADR-0044, teilweise) | Accepted | 2026-09-18 | [0103-image-hash-lokal-statt-committet.md](0103-image-hash-lokal-statt-committet.md) |
-| ADR-0104 | Benchmark-Schwellen PER-001/002/003 (Supers. ADR-0054, teilweise) | Accepted | 2026-09-19 | [0104-benchmark-schwellen-per-001-002-003.md](0104-benchmark-schwellen-per-001-002-003.md) |
+| ADR-0104 | Bench-Schwellen PER-001/002/003 (Supers. ADR-0054; → ADR-0151, teilw.) | Accepted | 2026-09-19 | [0104-benchmark-schwellen-per-001-002-003.md](0104-benchmark-schwellen-per-001-002-003.md) |
 | ADR-0105 | CI-Matrix-RTM-Sichtbarkeit POR-001/002 | Accepted | 2026-09-19 | [0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md](0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md) |
 | ADR-0106 | C#/NuGet als erstes SDK-Package für `LH-FA-SST-009` | Accepted | 2026-09-19 | [0106-csharp-nuget-erstes-sdk-package.md](0106-csharp-nuget-erstes-sdk-package.md) |
 | ADR-0107 | Python/PyPI als zweites SDK-Package für `LH-FA-SST-009` (→ ADR-0108/0110) | Accepted | 2026-09-19 | [0107-python-pypi-zweites-sdk-package.md](0107-python-pypi-zweites-sdk-package.md) |
@@ -161,3 +161,6 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0146 | Pin-Inventar als Regel über alle Digest-Pins (schärft ADR-0051 Entscheidung 7) | Accepted | 2026-10-03 | [0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md](0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md) |
 | ADR-0147 | C#-SDK: null-Literal-Ausnahme an der Basis (schärft ADR-0145 F. 4) | Accepted | 2026-10-04 | [0147-sdk-csharp-http-basis-null-literal-einschraenkung.md](0147-sdk-csharp-http-basis-null-literal-einschraenkung.md) |
 | ADR-0148 | Kotlin-SDK: grpc-api im README; Upgrade-Trigger erfüllt (schärft ADR-0064) | Accepted | 2026-10-04 | [0148-kotlin-sdk-grpc-api-readme-und-upgrade-trigger-erfuellt.md](0148-kotlin-sdk-grpc-api-readme-und-upgrade-trigger-erfuellt.md) |
+| ADR-0149 | OTLP-Metrik-Export als zweiter Zugriffsweg auf die Kennzahlen | Accepted | 2026-10-04 | [0149-otlp-metrik-export-mechanismus.md](0149-otlp-metrik-export-mechanismus.md) |
+| ADR-0150 | TLS der HTTP-/gRPC-Schnittstellen und mehrere API-Token je Klasse | Accepted | 2026-10-04 | [0150-tls-und-mehrfach-token.md](0150-tls-und-mehrfach-token.md) |
+| ADR-0151 | PER-001 als absolute Commit-Latenz (Supersedes ADR-0104, teilweise) | Proposed | 2026-10-04 | [0151-per-001-absolute-commit-latenz.md](0151-per-001-absolute-commit-latenz.md) |
