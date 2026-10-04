@@ -165,3 +165,5 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0150 | TLS der HTTP-/gRPC-Schnittstellen und mehrere API-Token je Klasse | Accepted | 2026-10-04 | [0150-tls-und-mehrfach-token.md](0150-tls-und-mehrfach-token.md) |
 | ADR-0151 | PER-001 als absolute Commit-Latenz (Supersedes ADR-0104, teilweise) | Proposed | 2026-10-04 | [0151-per-001-absolute-commit-latenz.md](0151-per-001-absolute-commit-latenz.md) |
 | ADR-0152 | Zugangsdaten-Klasse — elf Schlüssel (Supers. ADR-0101/0102, teilweise) | Accepted | 2026-10-04 | [0152-zugangsdaten-klasse-elf-schluessel.md](0152-zugangsdaten-klasse-elf-schluessel.md) |
+| ADR-0153 | OTLP-Einheit `cdc_consumer_lag` ist `By` (Supers. ADR-0149, teilw.) | Accepted | 2026-10-04 | [0153-otlp-einheit-consumer-lag-byte.md](0153-otlp-einheit-consumer-lag-byte.md) |
+| ADR-0154 | Spec-Lücken OTLP, TLS, API-Token: Ist-Zustand festgeschrieben | Accepted | 2026-10-04 | [0154-spec-luecken-otlp-tls-token-ist-zustand.md](0154-spec-luecken-otlp-tls-token-ist-zustand.md) |
