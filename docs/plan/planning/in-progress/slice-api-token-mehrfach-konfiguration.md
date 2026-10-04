@@ -440,7 +440,7 @@ diff 0 -n -E 'classifyToken' -- . ':!docs/reviews' ':!docs/plan/planning/done' '
 diff 0 -n -E 'zweite, wortgleiche Fassung|eigene Fassung derselben Zuordnung' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 diff 15 -n -E 'beiden Token-Klassen|zwei Token-Klassen|zwei Rechtsklassen|beiden konfigurierten Klassen' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 diff 8 -n -E 'sieben Schlüssel|sieben Zugangsdaten|nats_stream_token' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 139 -n -E 'CDC_API_TOKEN_(READER|ADMIN)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 141 -n -E 'CDC_API_TOKEN_(READER|ADMIN)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 ```
 
 ## 4. Trigger
