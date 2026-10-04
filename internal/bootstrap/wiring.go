@@ -25,6 +25,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -122,13 +123,18 @@ const (
 	// konstruiert (additiv, kein Breaking Change für bestehende
 	// Deployments, analog zu `envNatsURL`).
 	envHTTPAddr = "CDC_HTTP_ADDR"
-	// envAPITokenReader und envAPITokenAdmin tragen die beiden
-	// Rechtsklassen der Token-Middleware (`ADR-0057` Teilfrage 3); beide
-	// bleiben optional wie
-	// `envHTTPAddr` — ein leerer Wert deaktiviert die jeweilige Klasse
-	// (`internal/adapters/driving/http`, `classifyToken`).
+	// envAPITokenReader und envAPITokenAdmin tragen das Singular-Token der
+	// beiden Rechtsklassen der Token-Middleware (`ADR-0057` Teilfrage 3);
+	// beide bleiben optional wie `envHTTPAddr` — ein leerer Wert ist kein
+	// gültiges Token (`internal/application/port/apiauth`).
 	envAPITokenReader = "CDC_API_TOKEN_READER"
 	envAPITokenAdmin  = "CDC_API_TOKEN_ADMIN"
+	// envAPITokensReader und envAPITokensAdmin tragen die kommagetrennte
+	// Liste je Klasse (`ADR-0150` Festlegung 2); gültig ist die Vereinigung
+	// mit dem Singular. Beide sind Zugangsdaten und env-var-exklusiv
+	// (`parseAPITokenList`).
+	envAPITokensReader = "CDC_API_TOKENS_READER"
+	envAPITokensAdmin  = "CDC_API_TOKENS_ADMIN"
 	// envGRPCAddr trägt die optionale Horch-Adresse des
 	// gRPC-Streaming-Driving-Adapters (`ADR-0060`): wie
 	// `envHTTPAddr` ist sie keine Start-Vorbedingung — ungesetzt bleibt der
@@ -264,13 +270,17 @@ type Config struct {
 	// Datei-Feld `http_addr`, mit Feld-für-Feld-Vorrang der
 	// Umgebungsvariable.
 	HTTPAddr string
-	// APITokenReader und APITokenAdmin tragen die beiden Rechtsklassen
-	// der Token-Middleware (`envAPITokenReader`/`envAPITokenAdmin`,
-	// `ADR-0057` Teilfrage 3); leer heißt die jeweilige Klasse
-	// deaktiviert. Beide sind Zugangsdaten und damit auf beiden
-	// Ladepfaden env-var-exklusiv.
-	APITokenReader string
-	APITokenAdmin  string
+	// APITokenReader und APITokenAdmin tragen das Singular-Token der beiden
+	// Rechtsklassen der Token-Middleware (`envAPITokenReader`/
+	// `envAPITokenAdmin`, `ADR-0057` Teilfrage 3); APITokensReader und
+	// APITokensAdmin die Liste je Klasse (`envAPITokensReader`/
+	// `envAPITokensAdmin`). Gültig ist je Klasse die Vereinigung beider; leer
+	// heißt die jeweilige Klasse ohne Token. Alle vier sind Zugangsdaten und
+	// damit auf beiden Ladepfaden env-var-exklusiv (`applyAPITokens`).
+	APITokenReader  string
+	APITokenAdmin   string
+	APITokensReader []string
+	APITokensAdmin  []string
 	// GRPCAddr trägt die optionale Horch-Adresse des
 	// gRPC-Streaming-Driving-Adapters; leer heißt Feature deaktiviert —
 	// derselbe additive Zuschnitt wie `HTTPAddr`, mit derselben Herkunft
@@ -324,8 +334,9 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	cfg.LogLevel = parseLogLevel(getenv(envLogLevel))
 	cfg.NatsURL = getenv(envNatsURL)
 	cfg.HTTPAddr = getenv(envHTTPAddr)
-	cfg.APITokenReader = getenv(envAPITokenReader)
-	cfg.APITokenAdmin = getenv(envAPITokenAdmin)
+	if err := applyAPITokens(&cfg, getenv); err != nil {
+		return Config{}, err
+	}
 	cfg.GRPCAddr = getenv(envGRPCAddr)
 	cfg.NatsStreamToken = getenv(envNatsStreamToken)
 	if err := validateNatsStreamTokenRequiresURL(cfg.NatsURL, cfg.NatsStreamToken); err != nil {
@@ -346,6 +357,60 @@ func validateNatsStreamTokenRequiresURL(natsURL, natsStreamToken string) error {
 	if natsStreamToken != "" && natsURL == "" {
 		return fmt.Errorf("%w: %s gesetzt, aber %s fehlt", ErrConfiguration, envNatsStreamToken, envNatsURL)
 	}
+	return nil
+}
+
+// ErrAPITokenList trägt die Fehlerklasse `configuration` einer ungültigen
+// Token-Liste (`envAPITokensReader`/`envAPITokensAdmin`): ein leeres Element
+// oder ein Element mit Leerraum. Der Text nennt Variable und Position des
+// Elements, nie den Wert — ein Token ist ein Zugangsdatum.
+var ErrAPITokenList = messagecode.New(messagecode.APITokenListInvalid, "API-Token-Liste ungültig")
+
+// apiTokenListError ist der Fehler einer ungültigen Token-Liste: sein Text
+// trägt den Code `ErrAPITokenList`, und er ist zugleich ein
+// `ErrConfiguration` (Start-Hindernis der Verdrahtung).
+type apiTokenListError struct{ detail string }
+
+func (e *apiTokenListError) Error() string { return ErrAPITokenList.Error() + ": " + e.detail }
+
+func (e *apiTokenListError) Unwrap() []error { return []error{ErrAPITokenList, ErrConfiguration} }
+
+// parseAPITokenList zerlegt eine kommagetrennte Token-Liste. Eine leere
+// Zeichenkette ist die ungesetzte Variable und liefert keine Token; jedes
+// Element bleibt unverändert, ein leeres Element und ein Element mit
+// Leerraum (Zeichen mit `unicode.IsSpace`) sind Fehler, kein Rauschen.
+func parseAPITokenList(name, raw string) ([]string, error) {
+	if raw == "" {
+		return nil, nil
+	}
+	elements := strings.Split(raw, ",")
+	for i, element := range elements {
+		if element == "" {
+			return nil, &apiTokenListError{detail: fmt.Sprintf("%s: Element %d ist leer", name, i+1)}
+		}
+		if strings.IndexFunc(element, unicode.IsSpace) >= 0 {
+			return nil, &apiTokenListError{detail: fmt.Sprintf("%s: Element %d enthält Leerraum", name, i+1)}
+		}
+	}
+	return elements, nil
+}
+
+// applyAPITokens liest die vier Token-Variablen in die Konfiguration. Beide
+// Zugriffswege (`ConfigFromEnv`, `mergeConfig`) rufen diese eine Funktion: die
+// Variablen sind env-var-exklusiv und wirken auch unter geladener Datei.
+func applyAPITokens(cfg *Config, getenv func(string) string) error {
+	cfg.APITokenReader = getenv(envAPITokenReader)
+	cfg.APITokenAdmin = getenv(envAPITokenAdmin)
+	readers, err := parseAPITokenList(envAPITokensReader, getenv(envAPITokensReader))
+	if err != nil {
+		return err
+	}
+	admins, err := parseAPITokenList(envAPITokensAdmin, getenv(envAPITokensAdmin))
+	if err != nil {
+		return err
+	}
+	cfg.APITokensReader = readers
+	cfg.APITokensAdmin = admins
 	return nil
 }
 
@@ -1013,6 +1078,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			Addr:                cfg.HTTPAddr,
 			TokenReader:         cfg.APITokenReader,
 			TokenAdmin:          cfg.APITokenAdmin,
+			TokensReader:        cfg.APITokensReader,
+			TokensAdmin:         cfg.APITokensAdmin,
 			RegisterConsumer:    registerConsumerUseCase,
 			AcknowledgeConsumer: acknowledgeConsumerUseCase,
 			GetConsumerPosition: getConsumerPositionUseCase,
@@ -1052,6 +1119,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			Addr:                cfg.GRPCAddr,
 			TokenReader:         cfg.APITokenReader,
 			TokenAdmin:          cfg.APITokenAdmin,
+			TokensReader:        cfg.APITokensReader,
+			TokensAdmin:         cfg.APITokensAdmin,
 			Subscriber:          changeBroadcaster,
 			RegisterConsumer:    registerConsumerUseCase,
 			AcknowledgeConsumer: acknowledgeConsumerUseCase,

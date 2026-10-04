@@ -18,6 +18,7 @@ import (
 
 	administrationv1 "github.com/pt9912/pg-change-feed/gen/cdc/administration/v1"
 	"github.com/pt9912/pg-change-feed/gen/cdc/stream/v1"
+	"github.com/pt9912/pg-change-feed/internal/application/port/apiauth"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
@@ -39,12 +40,15 @@ type Config struct {
 	// Addr trägt die Horch-Adresse (`CDC_GRPC_ADDR`); die Composition Root
 	// entscheidet über den Start, dieser Typ trägt nur die Adresse.
 	Addr string
-	// TokenReader und TokenAdmin tragen die beiden Rechtsklassen
-	// (`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN`); ein leerer Wert
-	// deaktiviert die jeweilige Klasse, statt ihn als gültiges Token zu
-	// behandeln (`interceptor.go`, `classifyToken`).
-	TokenReader string
-	TokenAdmin  string
+	// TokenReader und TokenAdmin tragen das Singular-Token je Rechtsklasse
+	// (`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN`), TokensReader und
+	// TokensAdmin die Liste je Klasse (`CDC_API_TOKENS_READER`/
+	// `CDC_API_TOKENS_ADMIN`); gültig ist die Vereinigung beider. Ein leerer
+	// Wert ist kein gültiges Token (`apiauth.Classifier`).
+	TokenReader  string
+	TokenAdmin   string
+	TokensReader []string
+	TokensAdmin  []string
 	// Subscriber trägt den Broadcaster, von dem der Stream seine Changes
 	// liest. Ohne ihn öffnet kein Stream — der RPC endet sichtbar statt
 	// still leer (`StreamChanges`).
@@ -88,9 +92,10 @@ func New(cfg Config) *Server {
 	if log == nil {
 		log = outbound.NoopLog
 	}
+	tokens := apiauth.FromConfig(cfg.TokenReader, cfg.TokensReader, cfg.TokenAdmin, cfg.TokensAdmin)
 	grpcServer := grpc.NewServer(
-		grpc.StreamInterceptor(authStreamInterceptor(cfg.TokenReader, cfg.TokenAdmin)),
-		grpc.UnaryInterceptor(authUnaryInterceptor(cfg.TokenReader, cfg.TokenAdmin, administrationRPCRoles)),
+		grpc.StreamInterceptor(authStreamInterceptor(tokens)),
+		grpc.UnaryInterceptor(authUnaryInterceptor(tokens, administrationRPCRoles)),
 	)
 	streamv1.RegisterChangeStreamServer(grpcServer, &changeStreamService{subscriber: cfg.Subscriber, log: log})
 	administrationv1.RegisterAdministrationServer(grpcServer, &administrationService{

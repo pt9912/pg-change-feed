@@ -5,50 +5,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/pt9912/pg-change-feed/internal/application/port/apiauth"
 	"github.com/pt9912/pg-change-feed/internal/domain/messagecode"
 )
 
-// role trägt die zwei Rechtsklassen der Token-Middleware (`ADR-0057`
-// Teilfrage 3): `roleAdmin` deckt implizit `roleReader` ab — dieselbe
-// Hierarchie wie zwischen `cdc_admin` und `cdc_reader`.
-// `roleNone` trägt sowohl den fehlenden als auch den unbekannten Token —
-// beide enden über denselben `401`-Pfad (`withToken`).
-type role int
-
-const (
-	roleNone role = iota
-	roleReader
-	roleAdmin
-)
-
-// classifyToken ordnet einen Bearer-Token einer Rechtsklasse zu. Ein
-// leer konfiguriertes Token (`readerToken`/`adminToken` ungesetzt) trifft
-// nie ein Aufruf-Token — sonst würde ein fehlender Header (leerer Token)
-// gegen eine ebenfalls ungesetzte Token-Klasse eine dritte, implizite
-// Rechtsklasse eröffnen.
-//
-// Diese Funktion steht als zweite, wortgleiche Fassung in
-// `internal/adapters/driving/grpc/interceptor.go` (`role`, die drei
-// Konstanten und `classifyToken`). Das `.a-check.yml`-Schichtenmodell führt
-// keine `adapters→adapters`-Kante, deshalb trägt jeder Driving-Adapter seine
-// eigene Fassung derselben Zuordnung; beide Fassungen sind zusammen zu
-// ändern.
-func classifyToken(token, readerToken, adminToken string) role {
-	if token == "" {
-		return roleNone
-	}
-	if adminToken != "" && token == adminToken {
-		return roleAdmin
-	}
-	if readerToken != "" && token == readerToken {
-		return roleReader
-	}
-	return roleNone
-}
-
 // bearerToken liest den Token aus dem `Authorization`-Header; ein
 // fehlendes oder falsch geformtes Schema trägt einen leeren Token zurück
-// — `classifyToken` behandelt ihn wie einen fehlenden Token.
+// — `apiauth.Classifier.Classify` behandelt ihn wie einen fehlenden Token.
 func bearerToken(r *http.Request) string {
 	const prefix = "Bearer "
 	header := r.Header.Get("Authorization")
@@ -80,10 +43,10 @@ func writeError(w http.ResponseWriter, status int, message string, code messagec
 // Bearer-Token endet mit `401`; ein bekanntes Token unterhalb der
 // geforderten Rechtsklasse endet mit `403` — beides sichtbar, nicht still
 // verworfen.
-func withToken(readerToken, adminToken string, required role, next http.Handler) http.Handler {
+func withToken(tokens *apiauth.Classifier, required apiauth.Role, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		callerRole := classifyToken(bearerToken(r), readerToken, adminToken)
-		if callerRole == roleNone {
+		callerRole := tokens.Classify(bearerToken(r))
+		if callerRole == apiauth.None {
 			writeError(w, http.StatusUnauthorized, "fehlender oder unbekannter Bearer-Token", "")
 			return
 		}

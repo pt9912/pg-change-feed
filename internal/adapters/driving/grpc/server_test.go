@@ -60,12 +60,19 @@ func startTestServer(t *testing.T, subscriber changeSubscriber) streamv1.ChangeS
 // Konfiguration (`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN`).
 func startTestServerMitTokenKonfiguration(t *testing.T, subscriber changeSubscriber, readerToken, adminToken string) streamv1.ChangeStreamClient {
 	t.Helper()
-	srv := New(Config{
+	return startTestServerMitConfig(t, Config{
 		Addr:        "unused:0",
 		TokenReader: readerToken,
 		TokenAdmin:  adminToken,
 		Subscriber:  subscriber,
 	})
+}
+
+// startTestServerMitConfig startet den Server mit der übergebenen
+// Konfiguration über `bufconn`.
+func startTestServerMitConfig(t *testing.T, cfg Config) streamv1.ChangeStreamClient {
+	t.Helper()
+	srv := New(cfg)
 	listener := bufconn.Listen(1024 * 1024)
 	go func() { _ = srv.serve(listener) }()
 
@@ -180,6 +187,50 @@ func TestStreamChangesReaderTokenOeffnetTraegtChange(t *testing.T) {
 // Streaming-Fähigkeit ab (`ADR-0060` Teilfrage 4).
 func TestStreamChangesAdminTokenOeffnetTraegtChange(t *testing.T) {
 	traegtTokenOeffnetStreamUndTraegtChange(t, testAdminToken)
+}
+
+// TestStreamChangesListenTokenOeffnetStream trägt `LH-FA-SST-012` am
+// laufenden Adapter: das Singular-Token und die Tokens der Liste öffnen den
+// Stream je Klasse, ein nicht konfiguriertes Token endet mit
+// `Unauthenticated`. Die Eingabeseite sind die Felder `TokensReader`/
+// `TokensAdmin` der Konfiguration.
+// Rot färbende Mutation: in `New` das Argument `cfg.TokensReader` aus dem
+// Aufruf `apiauth.FromConfig` streichen — der Fall „Reader-Liste“ färbt rot.
+func TestStreamChangesListenTokenOeffnetStream(t *testing.T) {
+	cases := []struct {
+		name  string
+		token string
+		want  codes.Code
+	}{
+		{"Singular Reader", "reader-1", codes.OK},
+		{"Reader-Liste", "reader-2", codes.OK},
+		{"Admin-Liste", "admin-2", codes.OK},
+		{"entferntes Token", "reader-0", codes.Unauthenticated},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			subscriber := newFakeSubscriber()
+			client := startTestServerMitConfig(t, Config{
+				Addr:         "unused:0",
+				TokenReader:  "reader-1",
+				TokensReader: []string{"reader-2"},
+				TokensAdmin:  []string{"admin-2"},
+				Subscriber:   subscriber,
+			})
+			stream := streamMitToken(t, client, bearerPrefix+tc.token)
+			if tc.want == codes.Unauthenticated {
+				if _, err := recvChange(t, stream); status.Code(err) != codes.Unauthenticated {
+					t.Fatalf("Token %q: Status %v (Erwartung: %v)", tc.token, status.Code(err), codes.Unauthenticated)
+				}
+				return
+			}
+			select {
+			case <-subscriber.ready:
+			case <-time.After(3 * time.Second):
+				t.Fatalf("Token %q: der Stream hat sich nicht am Broadcaster registriert", tc.token)
+			}
+		})
+	}
 }
 
 func traegtTokenOeffnetStreamUndTraegtChange(t *testing.T, token string) {

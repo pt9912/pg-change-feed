@@ -13,6 +13,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/pt9912/pg-change-feed/internal/application/port/apiauth"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 )
@@ -27,12 +28,15 @@ type Config struct {
 	// Addr trägt die Horch-Adresse (`CDC_HTTP_ADDR`); die Composition
 	// Root entscheidet über den Start, dieser Typ trägt nur die Adresse.
 	Addr string
-	// TokenReader und TokenAdmin tragen die beiden Rechtsklassen
-	// (`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN`); ein leerer Wert
-	// deaktiviert die jeweilige Klasse, statt ihn als gültiges Token zu
-	// behandeln (`middleware.go`, `classifyToken`).
-	TokenReader string
-	TokenAdmin  string
+	// TokenReader und TokenAdmin tragen das Singular-Token je Rechtsklasse
+	// (`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN`), TokensReader und
+	// TokensAdmin die Liste je Klasse (`CDC_API_TOKENS_READER`/
+	// `CDC_API_TOKENS_ADMIN`); gültig ist die Vereinigung beider. Ein leerer
+	// Wert ist kein gültiges Token (`apiauth.Classifier`).
+	TokenReader  string
+	TokenAdmin   string
+	TokensReader []string
+	TokensAdmin  []string
 	// RegisterConsumer trägt die Registrierung eines Consumers
 	// (`LH-FA-CON-001`).
 	RegisterConsumer inbound.RegisterConsumerUseCase
@@ -82,30 +86,31 @@ func New(cfg Config) *Server {
 	if log == nil {
 		log = outbound.NoopLog
 	}
+	tokens := apiauth.FromConfig(cfg.TokenReader, cfg.TokensReader, cfg.TokenAdmin, cfg.TokensAdmin)
 	mux := http.NewServeMux()
-	mux.Handle("POST /consumers", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
+	mux.Handle("POST /consumers", withToken(tokens, apiauth.Admin,
 		registerConsumerHandler(cfg.RegisterConsumer, log)))
-	mux.Handle("POST /consumers/acknowledge", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
+	mux.Handle("POST /consumers/acknowledge", withToken(tokens, apiauth.Admin,
 		acknowledgeConsumerHandler(cfg.AcknowledgeConsumer, log)))
-	mux.Handle("GET /consumers/position", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
+	mux.Handle("GET /consumers/position", withToken(tokens, apiauth.Reader,
 		getConsumerPositionHandler(cfg.GetConsumerPosition, log)))
-	mux.Handle("POST /consumers/remove", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
+	mux.Handle("POST /consumers/remove", withToken(tokens, apiauth.Admin,
 		removeConsumerHandler(cfg.RemoveConsumer, log)))
-	mux.Handle("POST /tables/enable", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
+	mux.Handle("POST /tables/enable", withToken(tokens, apiauth.Admin,
 		enableTableHandler(cfg.EnableTable, log)))
-	mux.Handle("POST /tables/disable", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
+	mux.Handle("POST /tables/disable", withToken(tokens, apiauth.Admin,
 		disableTableHandler(cfg.DisableTable, log)))
-	mux.Handle("GET /tables/status", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
+	mux.Handle("GET /tables/status", withToken(tokens, apiauth.Reader,
 		getStatusHandler(cfg.GetStatus, log)))
-	mux.Handle("GET /tables", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
+	mux.Handle("GET /tables", withToken(tokens, apiauth.Reader,
 		listTablesHandler(cfg.ListTables, log)))
-	mux.Handle("POST /retention/run", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
+	mux.Handle("POST /retention/run", withToken(tokens, apiauth.Admin,
 		runRetentionHandler(cfg.RunRetention, log)))
-	mux.Handle("GET /changes", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
+	mux.Handle("GET /changes", withToken(tokens, apiauth.Reader,
 		readChangesHandler(cfg.ReadChanges, log)))
-	mux.Handle("GET /changes/stream", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
+	mux.Handle("GET /changes/stream", withToken(tokens, apiauth.Reader,
 		streamChangesHandler(cfg.Subscriber, log)))
-	mux.Handle("GET /diagnose", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
+	mux.Handle("GET /diagnose", withToken(tokens, apiauth.Reader,
 		diagnoseHandler(cfg.Diagnose, log)))
 	return &Server{
 		httpServer: &http.Server{Addr: cfg.Addr, Handler: mux},

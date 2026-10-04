@@ -32,6 +32,7 @@ func TestSentinelsCarryTheirCodeAndClass(t *testing.T) {
 		{"Wecksignal", outbound.ErrNotify, messagecode.NotifyFailed},
 		{"Snapshot-Quelle", outbound.ErrSnapshotTransient, messagecode.SnapshotSourceFault},
 		{"Verdrahtung", ErrConfiguration, messagecode.WiringPrecondition},
+		{"API-Token-Liste", ErrAPITokenList, messagecode.APITokenListInvalid},
 		{"Replication-Konfiguration", receive.ErrConfiguration, messagecode.ReplicationConfiguration},
 		{"Aktivierungs-Bezeichner", postgresstorage.ErrActivationConfiguration, messagecode.ActivationIdentifier},
 		{"Snapshot-Konfiguration", outbound.ErrSnapshotConfiguration, messagecode.SnapshotConfigurationFault},

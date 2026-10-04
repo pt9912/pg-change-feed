@@ -10,19 +10,69 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pt9912/pg-change-feed/gen/cdc/stream/v1"
+	"github.com/pt9912/pg-change-feed/internal/application/port/apiauth"
 )
 
-// TestClassifyTokenLeereKonfigurationTrifftKeinToken trägt die Grenze der
-// Token-Konfiguration (`ADR-0060` Teilfrage 4): ein leer konfiguriertes
-// Token darf kein Aufruf-Token treffen — sonst würde ein fehlendes
-// `authorization` (leerer Token) gegen eine ebenfalls ungesetzte
-// Token-Klasse eine dritte, implizite Rechtsklasse eröffnen.
-func TestClassifyTokenLeereKonfigurationTrifftKeinToken(t *testing.T) {
-	if got := classifyToken("", "", ""); got != roleNone {
-		t.Fatalf("classifyToken(\"\", \"\", \"\") = %v (Erwartung: roleNone)", got)
+// testTokens trägt den Klassifikator der Tests: je ein Token je Klasse.
+func testTokens() *apiauth.Classifier {
+	return apiauth.FromConfig(testReaderToken, nil, testAdminToken, nil)
+}
+
+// TestAuthInterceptorMehrereTokenJeKlasse trägt die Zuordnung der
+// Interceptoren für mehrere Token je Klasse (`LH-FA-SST-012`): beide Token
+// einer Klasse werden gleich bedient, ein entferntes Token endet mit
+// `Unauthenticated`, ein Wert in beiden Klassen erreicht die administrative RPC.
+//
+// Rot färbende Mutation: in `authUnaryInterceptor` den Rückgabewert von
+// `tokens.Classify` durch `apiauth.Reader` ersetzen — die Fälle „entferntes
+// Token“ und „administrative RPC“ färben rot.
+func TestAuthInterceptorMehrereTokenJeKlasse(t *testing.T) {
+	tokens := apiauth.New(
+		[]string{"reader-1", "reader-2", "beide"},
+		[]string{"admin-1", "admin-2", "beide"},
+	)
+	unary := authUnaryInterceptor(tokens, administrationRPCRoles)
+	stream := authStreamInterceptor(tokens)
+	streamInfo := &grpc.StreamServerInfo{FullMethod: streamv1.ChangeStream_StreamChanges_FullMethodName}
+	const adminRPC = "/cdc.administration.v1.Administration/RegisterConsumer"
+	const readerRPC = "/cdc.administration.v1.Administration/ListTables"
+
+	cases := []struct {
+		name       string
+		token      string
+		method     string
+		wantStatus codes.Code
+	}{
+		{"erstes Reader-Token, lesende RPC", "reader-1", readerRPC, codes.OK},
+		{"zweites Reader-Token, lesende RPC", "reader-2", readerRPC, codes.OK},
+		{"zweites Reader-Token, administrative RPC", "reader-2", adminRPC, codes.PermissionDenied},
+		{"erstes Admin-Token, administrative RPC", "admin-1", adminRPC, codes.OK},
+		{"zweites Admin-Token, administrative RPC", "admin-2", adminRPC, codes.OK},
+		{"Wert in beiden Klassen, administrative RPC", "beide", adminRPC, codes.OK},
+		{"entferntes Token, lesende RPC", "reader-0", readerRPC, codes.Unauthenticated},
+		{"entferntes Token, administrative RPC", "admin-0", adminRPC, codes.Unauthenticated},
 	}
-	if got := classifyToken("beliebig", "", ""); got != roleNone {
-		t.Fatalf("classifyToken(\"beliebig\", \"\", \"\") = %v (Erwartung: roleNone)", got)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			gerufen, handler := unaryHandlerAufruf()
+			_, err := unary(unaryCtxMitToken(bearerPrefix+tc.token), nil, &grpc.UnaryServerInfo{FullMethod: tc.method}, handler)
+			if status.Code(err) != tc.wantStatus {
+				t.Fatalf("Token %q, %s: Status %v, erwartet %v", tc.token, tc.method, status.Code(err), tc.wantStatus)
+			}
+			if *gerufen != (tc.wantStatus == codes.OK) {
+				t.Fatalf("Token %q, %s: Handler erreicht = %v bei Status %v", tc.token, tc.method, *gerufen, tc.wantStatus)
+			}
+		})
+	}
+
+	for token, want := range map[string]codes.Code{
+		"reader-2": codes.OK, "admin-2": codes.OK, "beide": codes.OK, "reader-0": codes.Unauthenticated,
+	} {
+		ctx := unaryCtxMitToken(bearerPrefix + token)
+		err := stream(nil, &fakeServerStream{ctx: ctx}, streamInfo, func(any, grpc.ServerStream) error { return nil })
+		if status.Code(err) != want {
+			t.Fatalf("Stream mit Token %q: Status %v, erwartet %v", token, status.Code(err), want)
+		}
 	}
 }
 
@@ -55,15 +105,15 @@ func TestStreamChangesLeereTokenKonfigurationEndetMitUnauthenticated(t *testing.
 //
 // Rot färbende Mutation: in `credentialToken` an der Stelle ohne eingehende
 // Metadata einen **gültigen** Token-Wert statt `""` zurückgeben
-// (`return "reader-token"`) — dann ordnet `classifyToken` den Aufruf
-// `roleReader` zu, der Handler wird erreicht und dieser Test färbt rot. Ein
+// (`return "reader-token"`) — dann ordnet `Classify` den Aufruf
+// `apiauth.Reader` zu, der Handler wird erreicht und dieser Test färbt rot. Ein
 // **unbekannter** Wert an derselben Stelle färbt ihn nicht rot:
-// `classifyToken` ordnet ihn `roleNone` zu wie den leeren Token, der Handler
+// `Classify` ordnet ihn `apiauth.None` zu wie den leeren Token, der Handler
 // bleibt unerreicht. Das bloße Entfernen des `!ok`-Zweigs färbt diesen Test
 // ebenfalls **nicht** rot: der Nullwert der Metadata trägt die leere Kennung
 // auf demselben Weg.
 func TestAuthStreamInterceptorOhneEingehendeMetadataEndetMitUnauthenticated(t *testing.T) {
-	interceptor := authStreamInterceptor(testReaderToken, testAdminToken)
+	interceptor := authStreamInterceptor(testTokens())
 	info := &grpc.StreamServerInfo{FullMethod: streamv1.ChangeStream_StreamChanges_FullMethodName}
 
 	gerufen := false
@@ -108,10 +158,10 @@ func unaryCtxMitToken(authorization string) context.Context {
 // mit `Unauthenticated`, der Handler wird nicht erreicht.
 //
 // Rot färbende Mutation: in `authUnaryInterceptor` den `caller ==
-// roleNone`-Zweig entfernen — dann erreicht auch ein Aufruf ohne Token den
+// apiauth.None`-Zweig entfernen — dann erreicht auch ein Aufruf ohne Token den
 // Handler, dieser Test färbt rot.
 func TestAuthUnaryInterceptorOhneOderUnbekanntemTokenEndetMitUnauthenticated(t *testing.T) {
-	interceptor := authUnaryInterceptor(testReaderToken, testAdminToken, administrationRPCRoles)
+	interceptor := authUnaryInterceptor(testTokens(), administrationRPCRoles)
 	info := &grpc.UnaryServerInfo{FullMethod: "/cdc.administration.v1.Administration/ListTables"}
 	for _, authorization := range []string{"", bearerPrefix, bearerPrefix + "unbekannt"} {
 		gerufen, handler := unaryHandlerAufruf()
@@ -127,14 +177,14 @@ func TestAuthUnaryInterceptorOhneOderUnbekanntemTokenEndetMitUnauthenticated(t *
 
 // TestAuthUnaryInterceptorReaderTokenGegenAdminRPCEndetMitPermissionDenied
 // trägt die zweite Hälfte der Fitness Function: ein gültiges `reader`-Token
-// gegen eine `roleAdmin`-RPC (`RegisterConsumer`) endet mit
+// gegen eine `apiauth.Admin`-RPC (`RegisterConsumer`) endet mit
 // `PermissionDenied`, der Handler wird nicht erreicht.
 //
 // Rot färbende Mutation: in `administrationRPCRoles` den Eintrag
-// `"RegisterConsumer": roleAdmin` auf `roleReader` ändern — dann erreicht das
+// `"RegisterConsumer": apiauth.Admin` auf `apiauth.Reader` ändern — dann erreicht das
 // `reader`-Token den Handler, dieser Test färbt rot.
 func TestAuthUnaryInterceptorReaderTokenGegenAdminRPCEndetMitPermissionDenied(t *testing.T) {
-	interceptor := authUnaryInterceptor(testReaderToken, testAdminToken, administrationRPCRoles)
+	interceptor := authUnaryInterceptor(testTokens(), administrationRPCRoles)
 	info := &grpc.UnaryServerInfo{FullMethod: "/cdc.administration.v1.Administration/RegisterConsumer"}
 	gerufen, handler := unaryHandlerAufruf()
 	_, err := interceptor(unaryCtxMitToken(bearerPrefix+testReaderToken), nil, info, handler)
@@ -148,9 +198,9 @@ func TestAuthUnaryInterceptorReaderTokenGegenAdminRPCEndetMitPermissionDenied(t 
 
 // TestAuthUnaryInterceptorAdminTokenErreichtBeideRechtsklassen trägt die
 // dritte Hälfte der Fitness Function: ein gültiges `admin`-Token erreicht
-// sowohl eine `roleReader`- als auch eine `roleAdmin`-RPC.
+// sowohl eine `apiauth.Reader`- als auch eine `apiauth.Admin`-RPC.
 func TestAuthUnaryInterceptorAdminTokenErreichtBeideRechtsklassen(t *testing.T) {
-	interceptor := authUnaryInterceptor(testReaderToken, testAdminToken, administrationRPCRoles)
+	interceptor := authUnaryInterceptor(testTokens(), administrationRPCRoles)
 	for _, method := range []string{"RegisterConsumer", "ListTables"} {
 		info := &grpc.UnaryServerInfo{FullMethod: "/cdc.administration.v1.Administration/" + method}
 		gerufen, handler := unaryHandlerAufruf()
@@ -167,9 +217,9 @@ func TestAuthUnaryInterceptorAdminTokenErreichtBeideRechtsklassen(t *testing.T) 
 // des zehnten RPC (`ADR-0131` Teilfrage 4): ein Aufruf ohne oder mit
 // unbekanntem Token endet mit `Unauthenticated`; ein gültiges `reader`-Token
 // erreicht `ReadChanges`, ein gültiges `admin`-Token ebenfalls
-// (`roleAdmin ≥ roleReader`).
+// (`apiauth.Admin ≥ apiauth.Reader`).
 func TestAuthUnaryInterceptorReadChangesRechtsklasse(t *testing.T) {
-	interceptor := authUnaryInterceptor(testReaderToken, testAdminToken, administrationRPCRoles)
+	interceptor := authUnaryInterceptor(testTokens(), administrationRPCRoles)
 	info := &grpc.UnaryServerInfo{FullMethod: "/cdc.administration.v1.Administration/ReadChanges"}
 
 	for _, authorization := range []string{"", bearerPrefix, bearerPrefix + "unbekannt"} {
@@ -198,9 +248,9 @@ func TestAuthUnaryInterceptorReadChangesRechtsklasse(t *testing.T) {
 // des elften RPC (`ADR-0132` Teilfrage 6): ein Aufruf ohne oder mit
 // unbekanntem Token endet mit `Unauthenticated`; ein gültiges `reader`-Token
 // erreicht `Diagnose`, ein gültiges `admin`-Token ebenfalls
-// (`roleAdmin ≥ roleReader`).
+// (`apiauth.Admin ≥ apiauth.Reader`).
 func TestAuthUnaryInterceptorDiagnoseRechtsklasse(t *testing.T) {
-	interceptor := authUnaryInterceptor(testReaderToken, testAdminToken, administrationRPCRoles)
+	interceptor := authUnaryInterceptor(testTokens(), administrationRPCRoles)
 	info := &grpc.UnaryServerInfo{FullMethod: "/cdc.administration.v1.Administration/Diagnose"}
 
 	for _, authorization := range []string{"", bearerPrefix, bearerPrefix + "unbekannt"} {
@@ -227,20 +277,20 @@ func TestAuthUnaryInterceptorDiagnoseRechtsklasse(t *testing.T) {
 
 // TestAuthUnaryInterceptorUnbekannteMethodeFaelltFailClosedAufRoleAdmin
 // trägt den Fail-closed-Zweig: ein Methodenname ohne Eintrag in der
-// Rechtsklassen-Tabelle fällt auf `roleAdmin` — ein `reader`-Token erreicht
+// Rechtsklassen-Tabelle fällt auf `apiauth.Admin` — ein `reader`-Token erreicht
 // ihn nicht.
 //
 // Rot färbende Mutation: in `authUnaryInterceptor` den `!ok`-Zweig
-// entfernen — der Nullwert von `role` ist `roleNone` (nicht `roleAdmin`),
+// entfernen — der Nullwert von `apiauth.Role` ist `apiauth.None` (nicht `apiauth.Admin`),
 // jedes bekannte Token würde die dann implizit offene RPC erreichen, dieser
 // Test färbt rot.
 func TestAuthUnaryInterceptorUnbekannteMethodeFaelltFailClosedAufRoleAdmin(t *testing.T) {
-	interceptor := authUnaryInterceptor(testReaderToken, testAdminToken, administrationRPCRoles)
+	interceptor := authUnaryInterceptor(testTokens(), administrationRPCRoles)
 	info := &grpc.UnaryServerInfo{FullMethod: "/cdc.administration.v1.Administration/UnbekannteMethode"}
 	gerufen, handler := unaryHandlerAufruf()
 	_, err := interceptor(unaryCtxMitToken(bearerPrefix+testReaderToken), nil, info, handler)
 	if status.Code(err) != codes.PermissionDenied {
-		t.Fatalf("Status: %v (Erwartung: %v, fail-closed auf roleAdmin)", status.Code(err), codes.PermissionDenied)
+		t.Fatalf("Status: %v (Erwartung: %v, fail-closed auf apiauth.Admin)", status.Code(err), codes.PermissionDenied)
 	}
 	if *gerufen {
 		t.Fatal("der Handler wurde für eine unbekannte Methode mit reader-Token erreicht")

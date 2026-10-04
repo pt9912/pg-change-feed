@@ -207,28 +207,64 @@ func TestRegisterConsumerInternerFehlerEndetMit500(t *testing.T) {
 	}
 }
 
-// TestClassifyTokenLeereKonfigurationTrifftKeinToken trägt das §6-Risiko
-// dieses Slice: Ein leer konfiguriertes Token darf kein Aufruf-Token
-// treffen — sonst würde ein fehlender Header (leerer Token) gegen eine
-// ebenfalls ungesetzte Token-Klasse eine dritte, implizite Rechtsklasse
-// eröffnen.
-func TestClassifyTokenLeereKonfigurationTrifftKeinToken(t *testing.T) {
-	if got := classifyToken("", "", ""); got != roleNone {
-		t.Fatalf("classifyToken(\"\", \"\", \"\") = %v (Erwartung: roleNone)", got)
-	}
-	if got := classifyToken("beliebig", "", ""); got != roleNone {
-		t.Fatalf("classifyToken(\"beliebig\", \"\", \"\") = %v (Erwartung: roleNone)", got)
+// TestLeereTokenKonfigurationLaesstKeinenAufrufDurch trägt das §6-Risiko
+// des Token-Klassifikators: ein leer konfiguriertes Token darf kein
+// Aufruf-Token treffen: ein fehlender Header (leerer Token) bleibt gegen eine
+// ungesetzte Token-Klasse unbekannt und endet mit `401`.
+// Rot färbende Mutation: in `apiauth.Classifier.Classify` die Wache
+// `token == ""` entfernen — der Aufruf ohne Header erreicht den Handler.
+func TestLeereTokenKonfigurationLaesstKeinenAufrufDurch(t *testing.T) {
+	srv := New(Config{Addr: "unused:0", RegisterConsumer: newFakeRegisterConsumerUseCase()})
+	ts := httptest.NewServer(srv.Handler())
+	t.Cleanup(ts.Close)
+	for _, token := range []string{"", "beliebig"} {
+		resp := postConsumer(t, ts, token, `{"consumer_id":"c1","name":"Consumer 1"}`)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("Token %q bei ungesetzten Klassen: Status %d (Erwartung: 401)", token, resp.StatusCode)
+		}
 	}
 }
 
-// TestClassifyTokenAdminDecktReaderAb trägt die Hierarchie aus `ADR-0057`
-// Teilfrage 3.
-func TestClassifyTokenAdminDecktReaderAb(t *testing.T) {
-	if got := classifyToken(testAdminToken, testReaderToken, testAdminToken); got != roleAdmin {
-		t.Fatalf("classifyToken(admin) = %v (Erwartung: roleAdmin)", got)
+// TestMehrereTokenJeKlasse trägt `LH-FA-SST-012` am laufenden Adapter: das
+// Singular-Token und die Tokens der Liste gelten je Klasse gleichzeitig, ein
+// entferntes Token endet mit `401`, ein Wert in beiden Klassen erreicht den
+// administrativen Endpunkt, ein Reader-Token erhält `403`. Eingabeseite sind
+// die Felder `TokensReader`/`TokensAdmin` der Konfiguration.
+// Rot färbende Mutation: in `New` das Argument `cfg.TokensAdmin` aus dem Aufruf
+// `apiauth.FromConfig` streichen — die Fälle mit Admin-Listen-Token färben rot.
+func TestMehrereTokenJeKlasse(t *testing.T) {
+	srv := New(Config{
+		Addr:             "unused:0",
+		TokenReader:      "reader-1",
+		TokensReader:     []string{"reader-2", "beide"},
+		TokenAdmin:       "admin-1",
+		TokensAdmin:      []string{"admin-2", "beide"},
+		RegisterConsumer: newFakeRegisterConsumerUseCase(),
+	})
+	ts := httptest.NewServer(srv.Handler())
+	t.Cleanup(ts.Close)
+
+	cases := []struct {
+		name  string
+		token string
+		want  int
+	}{
+		{"Singular Reader", "reader-1", http.StatusForbidden},
+		{"Reader-Liste", "reader-2", http.StatusForbidden},
+		{"Singular Admin", "admin-1", http.StatusCreated},
+		{"Admin-Liste", "admin-2", http.StatusCreated},
+		{"Wert in beiden Klassen", "beide", http.StatusCreated},
+		{"entferntes Token", "reader-0", http.StatusUnauthorized},
 	}
-	if roleAdmin < roleReader {
-		t.Fatalf("roleAdmin trägt nicht die höhere Rechtsklasse")
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			resp := postConsumer(t, ts, tc.token, `{"consumer_id":"c1","name":"Consumer 1"}`)
+			resp.Body.Close()
+			if resp.StatusCode != tc.want {
+				t.Fatalf("Token %q: Status %d (Erwartung: %d)", tc.token, resp.StatusCode, tc.want)
+			}
+		})
 	}
 }
 

@@ -52,12 +52,12 @@ func TestStreamOhneBroadcasterTraegtDenCodeDerVerdrahtung(t *testing.T) {
 // Meldungscodes führt für sie keinen Eintrag. Eingabeseite: die drei
 // Interceptor-Pfade (Stream, unär ohne Token, unär mit unzureichendem Token).
 func TestAuthStatusTraegtKeinErrorInfo(t *testing.T) {
-	streamInterceptor := authStreamInterceptor(testReaderToken, testAdminToken)
+	streamInterceptor := authStreamInterceptor(testTokens())
 	streamErr := streamInterceptor(nil, &fakeServerStream{ctx: context.Background()},
 		&grpc.StreamServerInfo{FullMethod: streamv1.ChangeStream_StreamChanges_FullMethodName},
 		func(any, grpc.ServerStream) error { return nil })
 
-	unary := authUnaryInterceptor(testReaderToken, testAdminToken, administrationRPCRoles)
+	unary := authUnaryInterceptor(testTokens(), administrationRPCRoles)
 	info := &grpc.UnaryServerInfo{FullMethod: "/cdc.administration.v1.Administration/RegisterConsumer"}
 	handler := func(context.Context, any) (any, error) { return nil, nil }
 	_, unauthenticated := unary(context.Background(), nil, info, handler)

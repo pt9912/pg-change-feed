@@ -31,19 +31,19 @@ const envConfigFile = "CDC_CONFIG_FILE"
 // forbiddenFileCredentialKeys trägt die Schlüssel der
 // zugangsdaten-tragenden Klasse, die in der Konfigurationsdatei nicht
 // vorkommen dürfen (`ADR-0088` Festlegung 1: Secrets bleiben
-// env-var-exklusiv). Die Klasse umfasst
-// die drei DSN-Schlüssel, die drei Token-Schlüssel und `nats_url` — dessen
+// env-var-exklusiv). Die Klasse umfasst neun Schlüssel:
+// die drei DSN-Schlüssel, die vier API-Token-Schlüssel (Singular und Liste je
+// Klasse), `nats_stream_token` — den Verbindungs-Token des dritten,
+// vollinhaltstragenden NATS-Zustellwegs — und `nats_url`, dessen
 // URL-Form Benutzer und Passwort einbetten kann; `http_addr`/`grpc_addr`
 // gehören ihr nicht an, weil `host:port` keine Zugangsdaten tragen kann.
-// `nats_stream_token` trägt den Verbindungs-Token des dritten,
-// vollinhaltstragenden NATS-Zustellwegs — derselbe Zugangsdaten-Charakter
-// wie die
-// beiden API-Token-Schlüssel. Ein Treffer bricht das Laden mit einer
+// Ein Treffer bricht das Laden mit einer
 // eigenen, den Grund benennenden Fehlerzeile ab, statt nur als generischer
 // „unbekannter Schlüssel" des strikten Decodings unten zu erscheinen.
 var forbiddenFileCredentialKeys = []string{
 	"capture_dsn", "admin_dsn", "reader_dsn",
-	"api_token_reader", "api_token_admin", "nats_url", "nats_stream_token",
+	"api_token_reader", "api_token_admin", "api_tokens_reader", "api_tokens_admin",
+	"nats_url", "nats_stream_token",
 }
 
 // fileTableBinding trägt eine einzelne Tabellen-Aktivierung der
@@ -57,7 +57,7 @@ type fileTableBinding struct {
 
 // fileConfig trägt die in der Konfigurationsdatei zulässigen Felder
 // (`ADR-0088` Festlegung 2): nur die nicht credential-tragenden Felder.
-// Die DSNs, die drei Token-Schlüssel und `nats_url` bleiben
+// Die DSNs, die fünf Token-Schlüssel und `nats_url` bleiben
 // env-var-exklusiv und haben hier bewusst kein Gegenstück — ein Treffer auf
 // einen dieser Schlüssel wird vor dem Decoding in diesen Typ abgefangen
 // (`forbiddenFileCredentialKeys`).
@@ -162,8 +162,8 @@ func overrideString(fileValue, envValue string) string {
 // Vorbedingung danach — dieselben sechs Pflichtfelder wie `ConfigFromEnv`,
 // hier über beide Quellen hinweg geprüft. Die zugangsdaten-tragenden
 // Schlüssel bleiben env-var-exklusiv: die drei
-// DSNs, die drei Token-Klassen (`APITokenReader`/`APITokenAdmin`/
-// `NatsStreamToken`) und `NatsURL` haben kein Datei-Gegenstück
+// DSNs, die Token-Felder (`APITokenReader`/`APITokenAdmin`/
+// `APITokensReader`/`APITokensAdmin`/`NatsStreamToken`) und `NatsURL` haben kein Datei-Gegenstück
 // und werden auf beiden Pfaden direkt aus der Umgebung gelesen
 // — „kein Datei-Feld" heißt nicht „die
 // Umgebungsvariable wird ignoriert". `HTTPAddr`/`GRPCAddr` tragen ein
@@ -220,8 +220,9 @@ func mergeConfig(file fileConfig, getenv func(string) string) (Config, error) {
 	// geladener Datei: ihr Wert kommt aus der Umgebung, die Datei kann ihn
 	// weder setzen noch überschreiben (`ADR-0088` Festlegung 1/3).
 	cfg.NatsURL = getenv(envNatsURL)
-	cfg.APITokenReader = getenv(envAPITokenReader)
-	cfg.APITokenAdmin = getenv(envAPITokenAdmin)
+	if err := applyAPITokens(&cfg, getenv); err != nil {
+		return Config{}, err
+	}
 	cfg.NatsStreamToken = getenv(envNatsStreamToken)
 	if err := validateNatsStreamTokenRequiresURL(cfg.NatsURL, cfg.NatsStreamToken); err != nil {
 		return Config{}, err

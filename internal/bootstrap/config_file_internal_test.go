@@ -49,8 +49,53 @@ func TestConfigFromFileStriktesDecoding(t *testing.T) {
 	}
 }
 
+// credentialKeysUnderTest ist die Liste der neun Schlüssel der
+// Zugangsdaten-Klasse, wie der Test sie erwartet; sie steht unabhängig von
+// `forbiddenFileCredentialKeys`, damit die Mengengleichheit etwas vergleicht.
+var credentialKeysUnderTest = []string{
+	"capture_dsn", "admin_dsn", "reader_dsn",
+	"api_token_reader", "api_token_admin", "api_tokens_reader", "api_tokens_admin",
+	"nats_url", "nats_stream_token",
+}
+
+// TestZugangsdatenKlasseCodeUndTestSindMengengleich hält die Liste des Codes
+// und die des Tests in beiden Richtungen gleich: ein Schlüssel nur im Code
+// oder nur im Test, ein doppelter Eintrag und eine abweichende Zahl färben ihn
+// rot (Schutz gegen eine Halbänderung von Liste und Test).
+// Rot färbende Mutation: `api_tokens_admin` aus `forbiddenFileCredentialKeys`
+// streichen — der Test nennt den Schlüssel als „im Test, nicht im Code“.
+func TestZugangsdatenKlasseCodeUndTestSindMengengleich(t *testing.T) {
+	inCode := map[string]bool{}
+	for _, key := range forbiddenFileCredentialKeys {
+		if inCode[key] {
+			t.Errorf("Schlüssel %q steht doppelt in forbiddenFileCredentialKeys", key)
+		}
+		inCode[key] = true
+	}
+	inTest := map[string]bool{}
+	for _, key := range credentialKeysUnderTest {
+		if inTest[key] {
+			t.Errorf("Schlüssel %q steht doppelt in der Test-Liste", key)
+		}
+		inTest[key] = true
+	}
+	for key := range inTest {
+		if !inCode[key] {
+			t.Errorf("Schlüssel %q steht im Test, nicht im Code", key)
+		}
+	}
+	for key := range inCode {
+		if !inTest[key] {
+			t.Errorf("Schlüssel %q steht im Code, nicht im Test", key)
+		}
+	}
+	if len(inCode) != 9 {
+		t.Errorf("Zugangsdaten-Klasse trägt %d Schlüssel, erwartet 9", len(inCode))
+	}
+}
+
 // TestConfigFromFileLehntZugangsdatenAb trägt `ADR-0088` Festlegung 1/4 —
-// die zugangsdaten-tragende Klasse: jeder ihrer sieben Schlüssel in der Datei
+// die zugangsdaten-tragende Klasse: jeder ihrer neun Schlüssel in der Datei
 // bricht das Laden ab, unabhängig vom strikten Decoding. Die Fehlerzeile
 // benennt den Schlüssel **und** den Grund; damit ist sie von der
 // generischen „unbekannter Schlüssel"-Meldung des strikten Decodings
@@ -61,10 +106,7 @@ func TestConfigFromFileStriktesDecoding(t *testing.T) {
 // Decoding zurück, die Meldung verliert den Grund und genau dieser Fall
 // wird rot.
 func TestConfigFromFileLehntZugangsdatenAb(t *testing.T) {
-	for _, key := range []string{
-		"capture_dsn", "admin_dsn", "reader_dsn",
-		"api_token_reader", "api_token_admin", "nats_url", "nats_stream_token",
-	} {
+	for _, key := range credentialKeysUnderTest {
 		t.Run(key, func(t *testing.T) {
 			path := writeConfigFile(t, key+": sollte-nicht-hier-stehen\n")
 			_, err := ConfigFromFile(path)
