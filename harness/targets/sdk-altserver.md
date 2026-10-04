@@ -30,6 +30,13 @@ die drei bestehenden Runner bleiben unverändert. Schritte:
 | B1 | Rohdraht-Probe der HTTP-Seite ohne SDK (`tools/harness/sdk-kompat/altserver/rohdraht.py`, per `python -` im Python-Image des SDK im Compose-Netz): die Aktivierung einer fehlenden Tabelle endet mit Status 404, der Körper trägt kein Feld `code` | `ALTSERVER B1: BODY <roher Körper>`, `STATUS 404`, `TEXT <Fehlertext>` |
 | B2 | Je Sprache eine Test-Klasse (`ErrorCodeAltServerTests` C#, `ErrorCodeAltServerTest` Kotlin, `test_error_code_altserver.py` Python) im bestehenden Integrations-Quellsatz: HTTP und gRPC enden mit dem typisierten `NotFound`-Fehler, der Meldungscode ist leer, der Fehlertext ist nicht leer (HTTP: gleich dem Text aus B1); ein Reader-Token endet mit 403 bzw. `PermissionDenied` ohne Code; die Diagnose (gRPC) liefert den Bericht ohne Absturz mit leerem `error_code` — im Normalbetrieb und in einem Fehlerzustand (`error_class = 'schema'` ohne `error_code`), den der Runner nach dem Marker `NORMAL_DONE` in `cdc.process_heartbeat` schreibt (der periodische Heartbeat setzt ihn zurück, der Runner schreibt wiederholt, bis der Test endet) | `ALTSERVER B2 <sprache>: RECEIVED code=none http=404 grpc=NOT_FOUND text=<n> diag_error_code=leer (Exit 0)` |
 | B3 | Negativprobe: `SDK_ALTSERVER_IMAGE=ghcr.io/pt9912/pg-change-feed:dev` (der geladene 0.6.0-Bau, `make image` vorher) färbt den Lauf an B1 rot | `ALTSERVER B1 FEHLER: der Fehlerkörper trägt das Feld code …`, Exit ≠ 0 |
+| U | Versionswechsel bei konstantem Schema ([`ADR-0148`](../../docs/plan/adr/0148-kotlin-sdk-grpc-api-readme-und-upgrade-trigger-erfuellt.md)), läuft zuletzt: der Server 0.5.0 erfasst INSERT, UPDATE und DELETE auf `feed_e2e_full` (volle Replica-Identität, Zeile `id=9101`); vom Datenstand der Quelle über `cdc.changes` (Zeilenzahl und `md5` über `change_id`, `commit_position`, `old_data`, `new_data` in der Reihenfolge von `change_id`) wird eine Momentaufnahme gehalten. Ein `$COMPOSE up -d --force-recreate --no-deps pg-change-feed` mit einer Override-Datei **ohne** `image:`-Zeile ersetzt den Container durch das Image des Dienstes in `compose.yaml` (`:dev`). Geprüft: Container-ID neu, `postgres`/`nats` unberührt, Image-Referenz und Image-ID des neuen Containers gleich dem geladenen Ziel-Image und verschieden vom Start-Image, Health `healthy`, Datenstand gleich der Momentaufnahme, eine danach eingefügte Zeile (`id=9102`) über `cdc.changes` erfasst, Slot da mit nicht kleinerer `confirmed_flush_lsn`, Zeilenzahl der Quelle danach genau eine mehr. Ist die Start-Referenz gleich der Ziel-Referenz (B3), entfällt der Tausch | `ALTSERVER U: Tausch <ID alt> -> <ID neu>, Image <Referenz alt> -> <Referenz neu>, Datenstand vor dem Tausch (<n> Zeilen, Prüfsumme <h>) identisch lesbar, danach eingefügte Zeile erfasst (Position <p>), Phase U <s> s`; bei Start gleich Ziel `ALTSERVER U ÜBERSPRUNGEN: …` |
+
+Das Ziel-Image des Tauschs steht in `compose.yaml`; der Runner liest es dort
+(`docker compose config`) und führt kein zweites Image-Literal. Vor jedem Start
+prüft er, dass es geladen ist; fehlt es, endet der Lauf mit Exit 1 und der Meldung
+„make image vorher“ (kein Überspringschalter). Ein veraltetes `:dev`-Image ist
+ein gültiges Ziel, das der Runner nicht prüft.
 
 Die gRPC-Seite hat keine Rohdraht-Probe: dass der Server vor 0.6.0 kein
 `ErrorInfo` setzt, ist aus dem Quelltext abgeleitet (`git grep` auf `ErrorInfo`
@@ -50,12 +57,13 @@ vor und nach dem Lauf gleich).
 ## Aufruf
 
 ```text
+make image                                                                                            # Vorbedingung: das geladene :dev-Image
 make test-sdk-altserver
 SDK_ALTSERVER_IMAGE=ghcr.io/pt9912/pg-change-feed:dev make test-sdk-altserver                          # B3
 SDK_ALTSERVER_WEITER=1 SDK_ALTSERVER_IMAGE=ghcr.io/pt9912/pg-change-feed:dev make test-sdk-altserver   # B3, alle Phasen
 ```
 
-Host-Werkzeuge: `bash`, `git`, `mktemp`, `sed` (ohne `-i`) und `docker`
+Host-Werkzeuge: `bash`, `git`, `mktemp`, `awk`, `sed` (ohne `-i`) und `docker`
 ([`AGENTS.md`](../../AGENTS.md) §3.1). Alles andere (`dotnet`, `gradle`,
 `python`) läuft im Container.
 
@@ -70,8 +78,8 @@ Host-Werkzeuge: `bash`, `git`, `mktemp`, `sed` (ohne `-i`) und `docker`
 
 | Exit | Bedeutung |
 |---|---|
-| 0 | B0 bis B2 grün: der Server trägt kein `code`, die Eigenschaft bleibt in allen drei Sprachen leer |
-| 1 | ein Schritt ist rot (Meldung nennt Schritt und Befund), oder ein Container- bzw. Netzname der anderen Runner ist belegt (Abbruch vor jedem Start, aufgeräumt wird nur, was der Runner selbst angelegt hat) |
+| 0 | B0 bis B2 und U grün: der Server trägt kein `code`, die Eigenschaft bleibt in allen drei Sprachen leer, der Tausch auf das Ziel-Image erhält den Datenstand (bei Start gleich Ziel: U übersprungen, gedruckt) |
+| 1 | ein Schritt ist rot (Meldung nennt Schritt und Befund), das Ziel-Image ist nicht geladen („make image vorher“, vor jedem Start), oder ein Container- bzw. Netzname der anderen Runner ist belegt (Abbruch vor jedem Start, aufgeräumt wird nur, was der Runner selbst angelegt hat) |
 
 Über `make` kommt jeder Ausgang ≠ 0 als 2 an. Kein Gate: der Lauf braucht DB-Zugang,
 Docker-Pulls und Netz; das Ziel steht in keinem Gate-Bündel (`make gates`,
@@ -102,6 +110,13 @@ Docker-Pulls und Netz; das Ziel steht in keinem Gate-Bündel (`make gates`,
 5. **Registry.** Die Pulls von `postgres` und `nats` (Docker Hub) und des
    Altserver-Images (ghcr) müssen möglich sein; ein Abruflimit endet als Docker-Fehler,
    nicht als grüner Lauf.
+6. **Phase U: Schema konstant, ein Alt-Stand, keine Zeilen während des Tauschs.**
+   Das Schema stammt aus dem Arbeitsbaum (Grenze 2); ein Schemawechsel über Versionen
+   ist ungemessen ([`ADR-0148`](../../docs/plan/adr/0148-kotlin-sdk-grpc-api-readme-und-upgrade-trigger-erfuellt.md),
+   akzeptiertes Negativ). Während des Tauschs läuft kein Schreiber; die Fortsetzung ab
+   `confirmed_flush_lsn` trägt der Neustart-Rundlauf von `make test-integration`. Die
+   Übertragung der Aussage auf andere Tabellen und Operationen als `feed_e2e_full`
+   mit INSERT, UPDATE und DELETE ist *hergeleitet*.
 
 ## Test
 
@@ -112,6 +127,19 @@ Server) und das gesehene Rot:
 |---|---|---|
 | der Fehlerkörper des Servers vor 0.6.0 trägt kein `code` (B1) | Feed-Image `:dev` (Server mit Meldungscodes) statt 0.5.0 | B1: `ALTSERVER B1 FEHLER: der Fehlerkörper trägt das Feld code`, Exit ≠ 0 |
 | die Eigenschaft bleibt leer, in allen drei Sprachen (B2) | Feed-Image `:dev` mit `SDK_ALTSERVER_WEITER=1` | B2 C#, Kotlin und Python rot (Marker `NORMAL_DONE` blieb aus: die Prüfung `MessageCode` leer scheitert vor ihm), Exit ≠ 0 |
+
+Phase U (Mutationen an Kopien des Runners im Scratchpad, Instanz: die PostgreSQL und
+der Docker-Daemon des Runners, gesehen am Lauf von `slice-upgrade-versionswechsel-alt-image`):
+
+| Zusage | mutierte Eingabe | gesehenes Rot |
+|---|---|---|
+| der Datenstand ist nach dem Tausch identisch lesbar | eine Zeile von `cdc.change` wird nach dem Tausch geändert (`UPDATE cdc.change SET new_data = …`, als Superuser, kein Schutz hielt ab) | `U ROT — der Datenstand der Quelle über cdc.changes ist nach dem Tausch nicht identisch`, Exit 1 |
+| die Erfassung setzt nach dem Tausch fort | `docker stop` des Feed-Containers nach dem Tausch | `U ROT — die nach dem Tausch eingefügte Zeile (id=9102) erscheint nicht über cdc.changes`, Exit 1 |
+| der Tausch wechselt den Build | der Override des Tauschs trägt weiter `image: <SDK_ALTSERVER_IMAGE>` | `U ROT — der neue Container läuft nicht den Ziel-Build`, Exit 1 |
+
+Die Negativprobe B3 (`SDK_ALTSERVER_IMAGE` gleich dem Ziel) bleibt an B1 rot; mit
+`SDK_ALTSERVER_WEITER=1` druckt Phase U `ÜBERSPRUNGEN`. Ein Lauf je Mutation; die
+Übertragung auf andere Tabellen und Operationen ist *hergeleitet*.
 
 Die Diagnose-Prüfung (`error_code` leer) hat keine Mutation, die sie rot färbt: auch
 am `:dev`-Server bleibt sie grün (Absturzfreiheit, keine Aussage über den Server).

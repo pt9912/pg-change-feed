@@ -23,6 +23,13 @@
 #       B1 rot; mit SDK_ALTSERVER_WEITER=1 läuft der Runner nach einem roten B1
 #       weiter und zeigt, dass auch die Test-Klassen von B2 am neuen Server rot
 #       werden
+#   U   Versionswechsel bei konstantem Schema (`ADR-0148`): INSERT, UPDATE und
+#       DELETE auf feed_e2e_full erfasst der Server 0.5.0; ein
+#       `--force-recreate` ersetzt ihn durch das Ziel-Image aus compose.yaml
+#       (`:dev`, `make image` vorher); der Datenstand der Quelle über
+#       cdc.changes bleibt gleich (Zeilenzahl und Prüfsumme), eine danach
+#       eingefügte Zeile wird erfasst. Ist die Start-Referenz gleich der
+#       Ziel-Referenz (B3), entfällt der Tausch.
 #
 # Der Runner schreibt nichts in den Arbeitsbaum (kein Abdeckungs-Träger). Er
 # bricht ab, wenn die Container- oder Netznamen der anderen Runner belegt sind;
@@ -90,6 +97,21 @@ for name in "$PG_CONTAINER" "$NATS_CONTAINER" "$FEED_CONTAINER" "$TEST_CONTAINER
 done
 if docker network inspect "$NETWORK" >/dev/null 2>&1; then
   echo "$PREFIX: das Netz $NETWORK existiert bereits — ein anderer Runner läuft oder ein früherer Lauf ist nicht abgeräumt" >&2
+  exit 1
+fi
+
+# Das Ziel-Image der Phase U ist das Image des Dienstes in compose.yaml; es muss
+# vor jedem Start geladen sein.
+ziel_referenz=$(docker compose -f compose.yaml config | awk '
+  /^  pg-change-feed:/ { dienst = 1; next }
+  dienst && /^  [^ ]/ { dienst = 0 }
+  dienst && /^    image:/ { print $2; exit }')
+if [ -z "$ziel_referenz" ]; then
+  echo "$PREFIX: compose.yaml nennt kein Image für pg-change-feed" >&2
+  exit 1
+fi
+if ! docker image inspect "$ziel_referenz" >/dev/null 2>&1; then
+  echo "$PREFIX: das Ziel-Image $ziel_referenz ist nicht geladen — make image vorher" >&2
   exit 1
 fi
 
@@ -259,8 +281,133 @@ if [ "$feed_running" != "true" ]; then
   befund "der Feed-Container lief nach den Phasen nicht mehr weiter (kein Neustart erwartet)"
 fi
 
+# u_zustand — Zeilenzahl und Prüfsumme der Quelle über cdc.changes: change_id,
+# commit_position und beide Bilder, in der Reihenfolge von change_id.
+u_zustand() {
+  psql_exec -tAc "SELECT count(*) || ' ' || coalesce(md5(string_agg(concat_ws('|', change_id, commit_position, old_data::text, new_data::text), E'\n' ORDER BY change_id)), 'leer') FROM cdc.changes WHERE source_id = '$SOURCE_ID'"
+}
+
+# u_warte_changes <Zahl> — wartet, bis die Zeile id=9101 von feed_e2e_full über
+# cdc.changes <Zahl> Changes trägt.
+u_warte_changes() {
+  local soll=$1 ist=""
+  for _ in $(seq 1 120); do
+    ist=$(psql_exec -tAc "SELECT count(*) FROM cdc.changes WHERE source_id = '$SOURCE_ID' AND table_name = 'feed_e2e_full' AND coalesce(new_data, old_data)->>'id' = '9101'")
+    if [ "$ist" = "$soll" ]; then
+      return 0
+    fi
+    sleep 0.25
+  done
+  return 1
+}
+
+# phase_u — Der Tausch des Server-Builds (Vertrag: harness/targets/sdk-altserver.md).
+phase_u() {
+  local start_zeit=$SECONDS start_ref start_id feed_alt pg_alt nats_alt slot_lsn_alt
+  local ziel_id feed_neu pg_neu nats_neu neu_ref neu_id health gesund zustand_alt zustand_neu
+  local position n h zustand_ende
+
+  start_ref=$(docker inspect --format '{{.Config.Image}}' "$FEED_CONTAINER")
+  if [ "$start_ref" = "$ziel_referenz" ]; then
+    echo "ALTSERVER U ÜBERSPRUNGEN: die Start-Referenz $start_ref ist die Ziel-Referenz, es gibt keinen Versionswechsel zu messen"
+    u_satz="Phase U übersprungen (Start-Referenz gleich Ziel-Referenz)"
+    return 0
+  fi
+
+  psql_exec -c "INSERT INTO public.feed_e2e_full (id, name) VALUES (9101, 'altserver-u-ins')" >/dev/null
+  psql_exec -c "UPDATE public.feed_e2e_full SET name = 'altserver-u-upd' WHERE id = 9101" >/dev/null
+  psql_exec -c "DELETE FROM public.feed_e2e_full WHERE id = 9101" >/dev/null
+  if ! u_warte_changes 3; then
+    befund "U ROT — INSERT, UPDATE und DELETE von feed_e2e_full (id=9101) erscheinen am Server $start_ref nicht als drei Changes über cdc.changes"
+    return 0
+  fi
+
+  zustand_alt=$(u_zustand)
+  n=${zustand_alt%% *}
+  h=${zustand_alt#* }
+  slot_lsn_alt=$(psql_exec -tAc "SELECT confirmed_flush_lsn FROM pg_replication_slots WHERE slot_name = '$SLOT'")
+  start_id=$(docker inspect --format '{{.Image}}' "$FEED_CONTAINER")
+  feed_alt=$(docker inspect --format '{{.Id}}' "$FEED_CONTAINER")
+  pg_alt=$(docker inspect --format '{{.Id}}' "$PG_CONTAINER")
+  nats_alt=$(docker inspect --format '{{.Id}}' "$NATS_CONTAINER")
+
+  # Das Ziel-Image kommt aus compose.yaml: der Override des Tausches trägt keine image:-Zeile.
+  printf 'services: {}\n' >"$workdir/override.yaml"
+  $COMPOSE up -d --force-recreate --no-deps pg-change-feed >/dev/null
+
+  feed_neu=$(docker inspect --format '{{.Id}}' "$FEED_CONTAINER")
+  if [ "$feed_neu" = "$feed_alt" ]; then
+    befund "U ROT — die Container-ID des Feed-Containers ist nach --force-recreate unverändert ($feed_neu)"
+    return 0
+  fi
+  pg_neu=$(docker inspect --format '{{.Id}}' "$PG_CONTAINER")
+  nats_neu=$(docker inspect --format '{{.Id}}' "$NATS_CONTAINER")
+  if [ "$pg_neu" != "$pg_alt" ] || [ "$nats_neu" != "$nats_alt" ]; then
+    befund "U ROT — postgres oder nats wurden trotz --no-deps ersetzt"
+    return 0
+  fi
+
+  neu_ref=$(docker inspect --format '{{.Config.Image}}' "$FEED_CONTAINER")
+  neu_id=$(docker inspect --format '{{.Image}}' "$FEED_CONTAINER")
+  ziel_id=$(docker image inspect --format '{{.Id}}' "$ziel_referenz")
+  if [ "$neu_ref" != "$ziel_referenz" ] || [ "$neu_id" != "$ziel_id" ] || [ "$neu_id" = "$start_id" ]; then
+    befund "U ROT — der neue Container läuft nicht den Ziel-Build (Referenz $neu_ref, Image-ID $neu_id; Ziel $ziel_referenz, $ziel_id; Start $start_id)"
+    return 0
+  fi
+
+  gesund=0
+  for _ in $(seq 1 60); do
+    health=$(docker inspect --format '{{.State.Health.Status}}' "$FEED_CONTAINER" 2>/dev/null || echo fehlt)
+    if [ "$health" = "healthy" ]; then
+      gesund=1
+      break
+    fi
+    sleep 1
+  done
+  if [ "$gesund" -ne 1 ]; then
+    befund "U ROT — der Feed-Container meldet nach dem Tausch Health ${health:-fehlt}, wollen healthy; Log: $(docker logs "$FEED_CONTAINER" 2>&1 | tail -n 5)"
+    return 0
+  fi
+
+  zustand_neu=$(u_zustand)
+  if [ "$zustand_neu" != "$zustand_alt" ]; then
+    befund "U ROT — der Datenstand der Quelle über cdc.changes ist nach dem Tausch nicht identisch (vorher: $zustand_alt, nachher: $zustand_neu)"
+    return 0
+  fi
+
+  psql_exec -c "INSERT INTO public.feed_e2e_full (id, name) VALUES (9102, 'altserver-u-nach-tausch')" >/dev/null
+  position=""
+  for _ in $(seq 1 120); do
+    position=$(psql_exec -tAc "SELECT commit_position FROM cdc.changes WHERE source_id = '$SOURCE_ID' AND table_name = 'feed_e2e_full' AND new_data->>'id' = '9102'")
+    if [ -n "$position" ]; then
+      break
+    fi
+    sleep 0.25
+  done
+  if [ -z "$position" ]; then
+    befund "U ROT — die nach dem Tausch eingefügte Zeile (id=9102) erscheint nicht über cdc.changes, die Erfassung setzt nicht fort"
+    return 0
+  fi
+
+  if [ "$(psql_exec -tAc "SELECT (confirmed_flush_lsn >= '$slot_lsn_alt'::pg_lsn) FROM pg_replication_slots WHERE slot_name = '$SLOT'")" != "t" ]; then
+    befund "U ROT — der Slot $SLOT fehlt nach dem Tausch oder seine bestätigte Position liegt vor $slot_lsn_alt"
+    return 0
+  fi
+  zustand_ende=$(u_zustand)
+  if [ "${zustand_ende%% *}" != "$((n + 1))" ]; then
+    befund "U ROT — nach der Zeile id=9102 trägt die Quelle ${zustand_ende%% *} Changes, wollen $((n + 1))"
+    return 0
+  fi
+
+  echo "ALTSERVER U: Tausch ${feed_alt:0:12} -> ${feed_neu:0:12}, Image $start_ref -> $neu_ref, Datenstand vor dem Tausch ($n Zeilen, Prüfsumme $h) identisch lesbar, danach eingefügte Zeile erfasst (Position $position), Phase U $((SECONDS - start_zeit)) s"
+  u_satz="der Tausch auf $ziel_referenz erhält den Datenstand (U)"
+}
+
+u_satz="Phase U ohne Ergebnis"
+phase_u
+
 if [ "$rot" -ne 0 ]; then
   echo "$PREFIX: Altserver-Messung ROT (Feed-Image $laufende_referenz)" >&2
   exit 1
 fi
-echo "$PREFIX: Altserver-Messung grün — Feed-Image $laufende_referenz: kein code im Fehlerkörper (B1), die Eigenschaft bleibt in allen drei Sprachen leer (B2)"
+echo "$PREFIX: Altserver-Messung grün — Feed-Image $laufende_referenz: kein code im Fehlerkörper (B1), die Eigenschaft bleibt in allen drei Sprachen leer (B2), $u_satz"

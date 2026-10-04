@@ -180,7 +180,9 @@ test-sdk-kompat: ## SDK 0.6.0 gegen 0.5.0: Gast-Programme je Sprache, Binär- un
 # (Override-Datei im Temp-Verzeichnis, `compose.yaml` bleibt unverändert;
 # SDK_ALTSERVER_IMAGE übersteuert das Image). Belegt: der Fehlerkörper trägt
 # kein `code` (B1), die Eigenschaft bleibt in allen drei Sprachen leer (B2).
+# Die Phase U ersetzt den Feed-Container danach durch das `:dev`-Image und misst
+# den Datenstand; `make image` läuft vorher.
 # Kein Gate (DB-Zugang, Docker, Netz). Vertrag: harness/targets/sdk-altserver.md.
 .PHONY: test-sdk-altserver
-test-sdk-altserver: ## SDK 0.6.0 gegen den Server 0.5.0: Fehlertypen ohne Meldungscode, Rohdraht-Probe (compose + integration-Stufen; Werkzeug, kein Gate; ADR-0145)
+test-sdk-altserver: ## SDK 0.6.0 gegen den Server 0.5.0: Fehlertypen ohne Meldungscode, Rohdraht-Probe, Tausch auf :dev (make image vorher; Werkzeug, kein Gate; ADR-0145)
 	@bash tools/harness/run-sdk-altserver-tests.sh
