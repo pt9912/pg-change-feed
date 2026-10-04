@@ -260,7 +260,7 @@ cleanup() {
   fi
   docker unpause "$FEED_CONTAINER" >/dev/null 2>&1 || true
   $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true
-  rm -rf "${WAL_TMP:-}"
+  rm -rf "${WAL_TMP:-}" "${TW_TMP:-}"
 }
 trap cleanup EXIT
 
