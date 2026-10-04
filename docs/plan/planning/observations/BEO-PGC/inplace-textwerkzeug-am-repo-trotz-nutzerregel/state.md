@@ -28,7 +28,9 @@ des nächsten Slice, dessen Läufe unter diesem Guard liefen; eingetreten mit de
 Repo-Pfad **mit Wirkung** auf eine Repo-Datei) ist nicht eingetreten. Die Neubewertung der nicht gelisteten
 Namen trägt der Auflösungs-Trigger von `MR-004`. Die Scratchpad-Ausnahme für
 `sed -i` ist entschieden: keine, der Guard blockt unbedingt.
-Zähler (abgeleitet): 8× (evidence/slice-backfill-speicher-untersuchung.md,
+Zähler (abgeleitet): 10× (zehn Dateien unter `evidence/`; die Aufzählung nennt die ersten acht, der neunte
+Beleg `slice-routing-sdk-beispiel-target` und der zehnte `slice-sdk-0-6-kompatibilitaet-messen` stehen unten;
+evidence/slice-backfill-speicher-untersuchung.md,
 evidence/slice-transformationen-antragsweg-usecase.md,
 evidence/slice-transformationen-backfill-pfad.md,
 evidence/slice-antragsqueue-lesefehler-failed.md,
@@ -71,3 +73,7 @@ und prüfte danach `git status --short` leer. Die Fassung `AGENTS.md` §3.1 („
 auf einer Kopie“) galt; was fehlte, war die Absicherung des Verzeichniswechsels. Beobachtung, keine neue
 Regel: eine Mutationsreihe nennt absolute Pfade und prüft `git status` nach jedem Lauf. Kein Beleg für
 das erste Neubewertungs-Kriterium (kein Host-Interpreter am Kopf).
+Der zehnte Beleg (`slice-sdk-0-6-kompatibilitaet-messen`, evidence/slice-sdk-0-6-kompatibilitaet-messen.md)
+ist die Umleitungs-Hälfte in der Rolle Architect: `echo >>` und `git apply` aus einer Patch-Datei beim
+Schreiben von `ADR-0147`, vom Architect im Bericht selbst gemeldet, Inhalt korrekt, Ursprung *übernommen*
+(nicht am Guard gemessen). Kein neuer Mechanismus; die Regel in `AGENTS.md` §3.1 galt.

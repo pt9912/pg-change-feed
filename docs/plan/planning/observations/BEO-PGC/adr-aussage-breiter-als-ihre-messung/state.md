@@ -95,6 +95,14 @@ liefert zwei Treffer.
   nicht, an der sie geprüft war; sie löste im Review `slice-routing-backfill-pfad` ein HIGH aus
   (F-1) und im Re-Review ein MEDIUM (F-N1), eine Fixrunde wurde zurückgenommen.
 
+- `ADR-0145` Festlegung 4 („jede 0.5.x-Signatur bleibt binär und quellseitig erhalten“; gemessen
+  in `slice-sdk-0-6-kompatibilitaet-messen`: „binär erhalten“ trägt in drei Sprachen, „quellseitig
+  erhalten“ trägt für 13 von 14 C#-Fällen, nicht für ein `null`-Literal an der protected
+  HTTP-Basis, `CS0121`): **berichtigt als Schärfung** mit `ADR-0147` (kein Supersedes; die
+  Einschränkung ist angenommen, der Hinweis steht im C#-README und in der Release-Notiz des
+  nächsten C#-Releases). Die Aussage stand schon im Review als hergeleitet (F-1); die Messung
+  bestätigt die Herleitung. Schwere MEDIUM, deshalb eine Evidenz-Datei trotz Deckel.
+
 Verwandt, nicht doppelt gezählt: `BEO-PGC/architect-verdikt-rollen-scope-luecke`.
 
 **Deckel bei 10× (seit welle-backfill-bestand):** weitere Auftreten, die vor dem Merge vom
@@ -103,4 +111,4 @@ Träger-Typ (ADR-Fitness-Function-Zeile, ADR-Prosa-Aussage) treffen, bekommen ke
 `evidence/`-Datei, sondern stehen mit Finding-Kennung in der Closure-Notiz des Slice
 (`../../README.md`). Ausgang unverändert **verkörpert**.
 
-Zähler: 11× (Dateien unter `evidence/`, gemessen mit `ls evidence | wc -l`).
+Zähler: 12× (Dateien unter `evidence/`, gemessen mit `ls evidence | wc -l`).

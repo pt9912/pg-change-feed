@@ -33,8 +33,15 @@ die drei bestehenden Runner bleiben unverändert. Schritte:
 
 Die gRPC-Seite hat keine Rohdraht-Probe: dass der Server vor 0.6.0 kein
 `ErrorInfo` setzt, ist aus dem Quelltext abgeleitet (`git grep` auf `ErrorInfo`
-am Tag `v0.5.0` unter `internal` und `cmd`) und durch das Paar B2/B3 getragen —
-das SDK liest am Server 0.6.0 den Code, am Server 0.5.0 nicht.
+am Tag `v0.5.0` unter `internal` und `cmd`). Gemessen sind drei Aussagen, mit
+unterschiedlicher Trägerschaft: HTTP (B1 am Rohdraht, B2 am SDK) und der gRPC-Fehler
+`NotFound` (B2; die Probe, die alle `message_code`-Prüfungen bis auf die gRPC-Prüfung
+entfernt, färbt B2 am `:dev`-Server rot) tragen als *gemessen*. Die Diagnose trägt nur
+als „das SDK stürzt bei leerem `error_code` nicht ab“ (*gemessen*); dass der Server vor
+0.6.0 den `error_code` nicht setzt, ist *hergeleitet* (Schema- und Quelltext-Diff): der
+Runner schreibt den Fehlerzustand selbst ohne `error_code`, und der Normalzustand trägt auch
+am `:dev`-Server keinen, die Prüfung der Diagnose kann an keinem Server rot werden, den der
+Runner so fährt (Probe des Verifiers, nur in Python gefahren, für C# und Kotlin *hergeleitet*).
 
 Der Runner schreibt nichts in den Arbeitsbaum, insbesondere nicht den
 Abdeckungs-Träger `docs/user/sdk-e2e-abdeckung.md` (`git status --porcelain` ist
@@ -105,6 +112,9 @@ Server) und das gesehene Rot:
 |---|---|---|
 | der Fehlerkörper des Servers vor 0.6.0 trägt kein `code` (B1) | Feed-Image `:dev` (Server mit Meldungscodes) statt 0.5.0 | B1: `ALTSERVER B1 FEHLER: der Fehlerkörper trägt das Feld code`, Exit ≠ 0 |
 | die Eigenschaft bleibt leer, in allen drei Sprachen (B2) | Feed-Image `:dev` mit `SDK_ALTSERVER_WEITER=1` | B2 C#, Kotlin und Python rot (Marker `NORMAL_DONE` blieb aus: die Prüfung `MessageCode` leer scheitert vor ihm), Exit ≠ 0 |
+
+Die Diagnose-Prüfung (`error_code` leer) hat keine Mutation, die sie rot färbt: auch
+am `:dev`-Server bleibt sie grün (Absturzfreiheit, keine Aussage über den Server).
 
 Menge der Erprobung: das Image `:dev` als einzige Mutation der Eingabe; ein
 Server, der nur das `ErrorInfo` (gRPC) oder nur `error_code` (Diagnose) trägt,
