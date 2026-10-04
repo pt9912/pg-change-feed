@@ -11,6 +11,8 @@ package http
 
 import (
 	"context"
+	"crypto/tls"
+	"net"
 	"net/http"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/apiauth"
@@ -28,6 +30,11 @@ type Config struct {
 	// Addr trägt die Horch-Adresse (`CDC_HTTP_ADDR`); die Composition
 	// Root entscheidet über den Start, dieser Typ trägt nur die Adresse.
 	Addr string
+	// TLSConfig trägt die fertige TLS-Konfiguration (`ADR-0150`): gesetzt
+	// bedient der Server — einschließlich des SSE-Endpunkts — ausschließlich
+	// über TLS, ohne Klartext auf derselben Adresse; `nil` lässt ihn im
+	// Klartext. Bau und Mindestversion liegen in `internal/bootstrap`.
+	TLSConfig *tls.Config
 	// TokenReader und TokenAdmin tragen das Singular-Token je Rechtsklasse
 	// (`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN`), TokensReader und
 	// TokensAdmin die Liste je Klasse (`CDC_API_TOKENS_READER`/
@@ -113,7 +120,7 @@ func New(cfg Config) *Server {
 	mux.Handle("GET /diagnose", withToken(tokens, apiauth.Reader,
 		diagnoseHandler(cfg.Diagnose, log)))
 	return &Server{
-		httpServer: &http.Server{Addr: cfg.Addr, Handler: mux},
+		httpServer: &http.Server{Addr: cfg.Addr, Handler: mux, TLSConfig: cfg.TLSConfig},
 		log:        log,
 	}
 }
@@ -133,8 +140,25 @@ func (s *Server) Handler() http.Handler {
 // ruft `Start` nicht auf — das No-Op bei fehlender Adresse bleibt Sache
 // der Composition Root, nicht dieses Adapters.
 func (s *Server) Start() error {
-	s.log.Info(context.Background(), "http: Adapter gestartet", "addr", s.httpServer.Addr)
-	if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	listener, err := net.Listen("tcp", s.httpServer.Addr)
+	if err != nil {
+		return err
+	}
+	return s.serve(listener)
+}
+
+// serve trägt den Server-Lauf auf einem fertigen Listener: `Start` bindet
+// darüber die konfigurierte Adresse, der Test einen Loopback-Listener auf
+// Port 0. Mit gesetzter `TLSConfig` bedient er über TLS, sonst im Klartext.
+func (s *Server) serve(listener net.Listener) error {
+	s.log.Info(context.Background(), "http: Adapter gestartet", "addr", s.httpServer.Addr, "tls", s.httpServer.TLSConfig != nil)
+	var err error
+	if s.httpServer.TLSConfig != nil {
+		err = s.httpServer.ServeTLS(listener, "", "")
+	} else {
+		err = s.httpServer.Serve(listener)
+	}
+	if err != nil && err != http.ErrServerClosed {
 		return err
 	}
 	return nil

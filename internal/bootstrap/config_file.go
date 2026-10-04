@@ -82,6 +82,11 @@ type fileConfig struct {
 	// SPEC-013-Startwert selbst.
 	WALRetentionWarnBytes  int64 `yaml:"wal_retention_warn_bytes"`
 	WALRetentionErrorBytes int64 `yaml:"wal_retention_error_bytes"`
+	// TLSCertFile und TLSKeyFile tragen die Pfade des TLS-Paars (`SPEC-016`);
+	// ein Pfad ist keine Zugangsdaten, der Schlüssel selbst steht in keiner
+	// Konfigurationsdatei. Dieselbe Feld-für-Feld-Precedence wie `http_addr`.
+	TLSCertFile string `yaml:"tls_cert_file"`
+	TLSKeyFile  string `yaml:"tls_key_file"`
 }
 
 // ConfigFromFile lädt die optionale Konfigurationsdatei. Ein Schlüssel der
@@ -215,6 +220,11 @@ func mergeConfig(file fileConfig, getenv func(string) string) (Config, error) {
 
 	cfg.HTTPAddr = overrideString(file.HTTPAddr, getenv(envHTTPAddr))
 	cfg.GRPCAddr = overrideString(file.GRPCAddr, getenv(envGRPCAddr))
+	cfg.TLSCertFile = overrideString(file.TLSCertFile, getenv(envTLSCertFile))
+	cfg.TLSKeyFile = overrideString(file.TLSKeyFile, getenv(envTLSKeyFile))
+	if err := validateTLSPair(cfg.TLSCertFile, cfg.TLSKeyFile); err != nil {
+		return Config{}, err
+	}
 
 	// Die env-exklusive Klasse der Oberflächen-Variablen wirkt auch unter
 	// geladener Datei: ihr Wert kommt aus der Umgebung, die Datei kann ihn

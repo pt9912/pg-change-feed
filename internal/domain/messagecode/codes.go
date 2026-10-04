@@ -29,6 +29,8 @@ const (
 	BackfillStateChanged      Code = "PCF-E2006"
 	SchemaSourceMissing       Code = "PCF-E2007"
 	APITokenListInvalid       Code = "PCF-E2008"
+	TLSPairIncomplete         Code = "PCF-E2009"
+	TLSPairUnusable           Code = "PCF-E2010"
 )
 
 // Klasse 3, `permission`.
@@ -187,6 +189,8 @@ var Table = []Entry{
 	{BackfillStateChanged, ClassConfiguration, StatusActive},
 	{SchemaSourceMissing, ClassConfiguration, StatusActive},
 	{APITokenListInvalid, ClassConfiguration, StatusActive},
+	{TLSPairIncomplete, ClassConfiguration, StatusActive},
+	{TLSPairUnusable, ClassConfiguration, StatusActive},
 
 	{PermissionFallback, ClassPermission, StatusActive},
 	{ReplicationPermission, ClassPermission, StatusActive},

@@ -310,7 +310,7 @@ func TestServerStartMeldetBindfehler(t *testing.T) {
 // geordneten `Shutdown`, keine Fehlerklasse (`SPEC-008`). Ein vor dem Start
 // beendeter Server kehrt aus `Start` deshalb ohne Fehler zurück — der Test
 // braucht dafür keinen Socket und keinen zweiten Lauf.
-// Rot färbende Mutation: in `Start` `err != nil` statt
+// Rot färbende Mutation: in `serve` `err != nil` statt
 // `err != http.ErrServerClosed` prüfen — dann wird `ErrServerClosed` als
 // Fehler zurückgegeben.
 func TestServerShutdownVorStartIstRegulaererAusgang(t *testing.T) {

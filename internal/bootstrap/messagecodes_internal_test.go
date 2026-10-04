@@ -33,6 +33,8 @@ func TestSentinelsCarryTheirCodeAndClass(t *testing.T) {
 		{"Snapshot-Quelle", outbound.ErrSnapshotTransient, messagecode.SnapshotSourceFault},
 		{"Verdrahtung", ErrConfiguration, messagecode.WiringPrecondition},
 		{"API-Token-Liste", ErrAPITokenList, messagecode.APITokenListInvalid},
+		{"TLS-Paar unvollständig", ErrTLSPairIncomplete, messagecode.TLSPairIncomplete},
+		{"TLS-Paar nicht ladbar", ErrTLSPairUnusable, messagecode.TLSPairUnusable},
 		{"Replication-Konfiguration", receive.ErrConfiguration, messagecode.ReplicationConfiguration},
 		{"Aktivierungs-Bezeichner", postgresstorage.ErrActivationConfiguration, messagecode.ActivationIdentifier},
 		{"Snapshot-Konfiguration", outbound.ErrSnapshotConfiguration, messagecode.SnapshotConfigurationFault},

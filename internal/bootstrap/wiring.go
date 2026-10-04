@@ -144,6 +144,14 @@ const (
 	// unten); ein Startfehler wird dort über `log.Error` gemeldet und geht
 	// nicht in das Ergebnis von `Run` ein.
 	envGRPCAddr = "CDC_GRPC_ADDR"
+	// envTLSCertFile und envTLSKeyFile tragen die Pfade des gemeinsamen
+	// TLS-Paars der HTTP- und der gRPC-Schnittstelle (`ADR-0150`
+	// Festlegung 1). Beide sind Pfade, keine Zugangsdaten, und haben deshalb
+	// ein Datei-Gegenstück (`tls_cert_file`/`tls_key_file`); beide gesetzt
+	// aktivieren TLS, keine gesetzt lässt beide Server im Klartext, genau
+	// eine gesetzt ist ein Konfigurationsfehler (`validateTLSPair`).
+	envTLSCertFile = "CDC_TLS_CERT_FILE"
+	envTLSKeyFile  = "CDC_TLS_KEY_FILE"
 )
 
 // ErrConfiguration trägt die Fehlerklasse `configuration` der Verdrahtung
@@ -288,6 +296,14 @@ type Config struct {
 	// dieselben beiden Token-Klassen wie der HTTP-Adapter (`ADR-0060`
 	// Teilfrage 4).
 	GRPCAddr string
+	// TLSCertFile und TLSKeyFile tragen die Pfade des TLS-Paars
+	// (`envTLSCertFile`/`envTLSKeyFile`); beide leer heißt: beide Server
+	// bedienen im Klartext. Herkunft ist die Umgebungsvariable oder das
+	// Datei-Feld, mit Feld-für-Feld-Vorrang der Umgebungsvariable. `Run` lädt
+	// das Paar (`newTLSConfig`); die Konfiguration prüft nur seine
+	// Vollständigkeit.
+	TLSCertFile string
+	TLSKeyFile  string
 	// NatsStreamToken trägt den optionalen NATS-Verbindungs-Token des
 	// dritten, vollinhaltstragenden Zustellwegs (`envNatsStreamToken`,
 	// `ADR-0100` Teilfrage 4/5); leer heißt der dritte Weg deaktiviert. Er
@@ -338,6 +354,11 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		return Config{}, err
 	}
 	cfg.GRPCAddr = getenv(envGRPCAddr)
+	cfg.TLSCertFile = getenv(envTLSCertFile)
+	cfg.TLSKeyFile = getenv(envTLSKeyFile)
+	if err := validateTLSPair(cfg.TLSCertFile, cfg.TLSKeyFile); err != nil {
+		return Config{}, err
+	}
 	cfg.NatsStreamToken = getenv(envNatsStreamToken)
 	if err := validateNatsStreamTokenRequiresURL(cfg.NatsURL, cfg.NatsStreamToken); err != nil {
 		return Config{}, err
@@ -601,6 +622,15 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		}
 		log.Info(ctx, "pg-change-feed: Lauf regulär beendet")
 	}()
+
+	// Das TLS-Paar wird vor jeder Verbindung und vor `NewStream` geladen: ein
+	// Ladefehler beendet den Start, ohne dass ein Port offen oder ein
+	// Replication-Slot angelegt ist. Beide Server erhalten dieselbe fertige
+	// `tls.Config` (`nil` heißt Klartext).
+	tlsConfig, err := newTLSConfig(cfg.TLSCertFile, cfg.TLSKeyFile)
+	if err != nil {
+		return err
+	}
 
 	store, err := postgresstorage.New(ctx, cfg.CaptureDSN, postgresstorage.WithLog(log))
 	if err != nil {
@@ -1076,6 +1106,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	if cfg.HTTPAddr != "" {
 		httpServer = apihttp.New(apihttp.Config{
 			Addr:                cfg.HTTPAddr,
+			TLSConfig:           tlsConfig,
 			TokenReader:         cfg.APITokenReader,
 			TokenAdmin:          cfg.APITokenAdmin,
 			TokensReader:        cfg.APITokensReader,
@@ -1117,6 +1148,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	if cfg.GRPCAddr != "" {
 		grpcServer = apigrpc.New(apigrpc.Config{
 			Addr:                cfg.GRPCAddr,
+			TLSConfig:           tlsConfig,
 			TokenReader:         cfg.APITokenReader,
 			TokenAdmin:          cfg.APITokenAdmin,
 			TokensReader:        cfg.APITokensReader,

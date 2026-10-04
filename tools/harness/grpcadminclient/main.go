@@ -7,7 +7,9 @@
 // `Unauthenticated`, ein reader-Token gegen die admin-RPC RegisterConsumer
 // mit `PermissionDenied`. Träger ist tools/harness/run-integration-tests.sh
 // — der Aufrufer liest die stdout-Zeilen dieses Prozesses über
-// `docker logs`, analog zu tools/harness/grpcclient.
+// `docker logs`, analog zu tools/harness/grpcclient. Gegen einen Server mit
+// TLS nennt `HARNESS_TLS_CA_FILE` das Zertifikat als Vertrauensanker; der
+// Modus `cleartext` verbindet bewusst im Klartext und meldet den Ausgang.
 package main
 
 import (
@@ -21,6 +23,7 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -33,6 +36,9 @@ import (
 const (
 	authorizationMetadataKey = "authorization"
 	bearerPrefix             = "Bearer "
+	// envTLSCAFile benennt die Umgebungsvariable mit dem Pfad eines
+	// PEM-Zertifikats, dem der Client als Vertrauensanker traut.
+	envTLSCAFile = "HARNESS_TLS_CA_FILE"
 )
 
 func main() {
@@ -47,16 +53,21 @@ func main() {
 		runProbeFlow(args[1:])
 		return
 	}
+	if len(args) > 0 && args[0] == "cleartext" {
+		runCleartextFlow(args[1:])
+		return
+	}
 	if len(args) != 11 {
 		fmt.Fprintln(os.Stderr, "usage: grpcadminclient [-target <ziel>] <addr> <reader-token> <admin-token> <consumer-id> <source> <publication> <read-schema> <read-table> <read-from> <read-to> <read-limit>")
 		fmt.Fprintln(os.Stderr, "   or: grpcadminclient fault <addr> <reader-token> <admin-token> <source> <error-code|none>")
 		fmt.Fprintln(os.Stderr, "   or: grpcadminclient probe <addr> <source> <publication> <token>...")
+		fmt.Fprintln(os.Stderr, "   or: grpcadminclient cleartext <addr> <reader-token> <source> <publication>")
 		os.Exit(2)
 	}
 	addr, readerToken, adminToken, consumerID, source, publication := args[0], args[1], args[2], args[3], args[4], args[5]
 	readSchema, readTable, readFrom, readTo, readLimit := args[6], args[7], args[8], args[9], args[10]
 
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(transportCredentials()))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "grpcadminclient: Verbindung (%s) fehlgeschlagen: %v\n", addr, err)
 		os.Exit(1)
@@ -108,7 +119,7 @@ func runFaultFlow(args []string) {
 		os.Exit(2)
 	}
 	addr, readerToken, adminToken, source, want := args[0], args[1], args[2], args[3], args[4]
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(transportCredentials()))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "grpcadminclient: Verbindung (%s) fehlgeschlagen: %v\n", addr, err)
 		os.Exit(1)
@@ -163,7 +174,7 @@ func runProbeFlow(args []string) {
 		os.Exit(2)
 	}
 	addr, source, publication, tokens := args[0], args[1], args[2], args[3:]
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(transportCredentials()))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "grpcadminclient: Verbindung (%s) fehlgeschlagen: %v\n", addr, err)
 		os.Exit(1)
@@ -179,6 +190,55 @@ func runProbeFlow(args []string) {
 		cancel()
 		fmt.Printf("PROBE index=%d reader_rpc=%s admin_rpc=%s\n", i+1, status.Code(listErr), status.Code(registerErr))
 	}
+}
+
+// transportCredentials wählt den Transport: nennt `HARNESS_TLS_CA_FILE` ein
+// PEM-Zertifikat, vertraut der Client ihm als Anker und spricht TLS, sonst
+// Klartext.
+func transportCredentials() credentials.TransportCredentials {
+	caFile := os.Getenv(envTLSCAFile)
+	if caFile == "" {
+		return insecure.NewCredentials()
+	}
+	creds, err := credentials.NewClientTLSFromFile(caFile, "")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "grpcadminclient: %s: %v\n", envTLSCAFile, err)
+		os.Exit(2)
+	}
+	return creds
+}
+
+// runCleartextFlow ruft `ListTables` mit einem gültigen reader-Token über eine
+// Klartext-Verbindung auf und meldet den Ausgang in einer CLEARTEXT-Zeile
+// (Statuscode und Meldung). Der Aufruf wartet nicht auf die Verbindung und
+// wird nicht wiederholt: der Aufrufer belegt vorher, dass der Server steht,
+// und wertet die Zeile aus. Die Umgebungsvariable `HARNESS_TLS_CA_FILE` wirkt
+// hier nicht.
+func runCleartextFlow(args []string) {
+	if len(args) != 4 {
+		fmt.Fprintln(os.Stderr, "usage: grpcadminclient cleartext <addr> <reader-token> <source> <publication>")
+		os.Exit(2)
+	}
+	addr, token, source, publication := args[0], args[1], args[2], args[3]
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "grpcadminclient: Verbindung (%s) fehlgeschlagen: %v\n", addr, err)
+		os.Exit(1)
+	}
+	defer func() { _ = conn.Close() }()
+	ctx, cancel := callCtx(token)
+	defer cancel()
+	_, err = administrationv1.NewAdministrationClient(conn).ListTables(ctx, &administrationv1.ListTablesRequest{Source: source, Publication: publication})
+	fmt.Printf("CLEARTEXT code=%s message=%q\n", status.Code(err), errorMessage(err))
+}
+
+// errorMessage liefert die Meldung eines Fehlers, bei `nil` die leere
+// Zeichenkette.
+func errorMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+	return status.Convert(err).Message()
 }
 
 // errorInfoText beschreibt das Statusdetail `ErrorInfo` eines Fehlers als

@@ -10,12 +10,16 @@
 // beobachtbar sein muss. Das Flag `-target` setzt den Query-Parameter `target`
 // (Zustellziel), `-count` die Zahl der Changes, die der Client vor dem
 // Token-Test empfängt, `-window` ein Ruhefenster, in dem er danach weitere
-// Changes zählt ("RECEIVED") und mit "WINDOW-END" endet.
+// Changes zählt ("RECEIVED") und mit "WINDOW-END" endet. Gegen einen Server
+// mit TLS nennt `HARNESS_TLS_CA_FILE` das Zertifikat als Vertrauensanker, die
+// Basis-Adresse beginnt mit `https://`.
 package main
 
 import (
 	"bufio"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -25,6 +29,32 @@ import (
 	"strings"
 	"time"
 )
+
+// envTLSCAFile benennt die Umgebungsvariable mit dem Pfad eines PEM-Zertifikats,
+// dem der Client bei `https://`-Adressen als Vertrauensanker traut; ohne sie
+// gilt der Standard-Vertrauensspeicher des Prozesses.
+const envTLSCAFile = "HARNESS_TLS_CA_FILE"
+
+// init setzt den Vertrauensanker für alle Aufrufe über `http.DefaultClient`.
+func init() {
+	caFile := os.Getenv(envTLSCAFile)
+	if caFile == "" {
+		return
+	}
+	pem, err := os.ReadFile(caFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "sseclient: %s: %v\n", envTLSCAFile, err)
+		os.Exit(2)
+	}
+	pool := x509.NewCertPool()
+	if !pool.AppendCertsFromPEM(pem) {
+		fmt.Fprintf(os.Stderr, "sseclient: %s: keine gültigen PEM-Daten in %s\n", envTLSCAFile, caFile)
+		os.Exit(2)
+	}
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}
+	http.DefaultTransport = transport
+}
 
 // sseChange trägt die für die Auswertung nötigen Felder eines Change-Events
 // (SPEC-018): Kennung, Tabelle, Operation und das neue Row Image.

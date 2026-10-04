@@ -19,10 +19,16 @@
 // Kennung, Operation, Commit-Position, Row Image und `origin` aus;
 // `position` liest `GET /consumers/position` und gibt den Antwort-Body als
 // POSITION-Zeile aus.
+//
+// Gegen einen Server mit TLS verbindet jeder Modus über `https://`, sobald
+// `HARNESS_TLS_CA_FILE` das Zertifikat als Vertrauensanker nennt; der Modus
+// `cleartext` sendet bewusst im Klartext und meldet die Antwort.
 package main
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -34,6 +40,32 @@ import (
 	"strings"
 	"time"
 )
+
+// envTLSCAFile benennt die Umgebungsvariable mit dem Pfad eines PEM-Zertifikats,
+// dem der Client bei `https://`-Adressen als Vertrauensanker traut; ohne sie
+// gilt der Standard-Vertrauensspeicher des Prozesses.
+const envTLSCAFile = "HARNESS_TLS_CA_FILE"
+
+// init setzt den Vertrauensanker für alle Aufrufe über `http.DefaultTransport`.
+func init() {
+	caFile := os.Getenv(envTLSCAFile)
+	if caFile == "" {
+		return
+	}
+	pem, err := os.ReadFile(caFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "httpclient: %s: %v\n", envTLSCAFile, err)
+		os.Exit(2)
+	}
+	pool := x509.NewCertPool()
+	if !pool.AppendCertsFromPEM(pem) {
+		fmt.Fprintf(os.Stderr, "httpclient: %s: keine gültigen PEM-Daten in %s\n", envTLSCAFile, caFile)
+		os.Exit(2)
+	}
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}
+	http.DefaultTransport = transport
+}
 
 // readChange trägt die für die inhaltliche Auswertung nötigen Felder eines
 // gelesenen Change (`SPEC-022`): Kennung, Klartext-Identität der Tabelle,
@@ -77,6 +109,10 @@ func main() {
 		runProbeFlow(os.Args[2:])
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "cleartext" {
+		runCleartextFlow(os.Args[2:])
+		return
+	}
 	if len(os.Args) > 1 && os.Args[1] == "enable-table" {
 		runEnableTableFlow(os.Args[2:])
 		return
@@ -94,6 +130,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "   or: httpclient fault <base-url> <reader-token> <source> <error-code|none>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient rejected <base-url> <reader-token>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient probe <base-url> <source> <publication> <token>...")
+		fmt.Fprintln(os.Stderr, "   or: httpclient cleartext <http-base-url> <reader-token> <source> <publication>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient enable-table <base-url> <admin-token> <source> <schema> <table> <table-id> <schema-version-id> <publication>")
 		fmt.Fprintln(os.Stderr, "   or: httpclient disable-table <base-url> <admin-token> <source> <schema> <table> <publication>")
 		os.Exit(2)
@@ -393,6 +430,37 @@ func runProbeFlow(args []string) {
 		}
 		fmt.Printf("PROBE index=%d reader_endpoint=%d admin_endpoint=%d\n", i+1, reader, admin)
 	}
+}
+
+// runCleartextFlow sendet `GET /tables` mit einem gültigen reader-Token im
+// Klartext (`http://`) und meldet, was zurückkommt, in einer CLEARTEXT-Zeile:
+// den Statuscode samt Anfang des Körpers oder den Transportfehler. Es gibt
+// keinen Wiederholungsversuch — der Aufrufer belegt vorher, dass der Server
+// steht (ein erfolgreicher TLS-Aufruf), und wertet die Zeile aus. Der Client
+// benutzt einen eigenen Transport ohne den Vertrauensanker aus
+// `HARNESS_TLS_CA_FILE`.
+func runCleartextFlow(args []string) {
+	if len(args) != 4 {
+		fmt.Fprintln(os.Stderr, "usage: httpclient cleartext <http-base-url> <reader-token> <source> <publication>")
+		os.Exit(2)
+	}
+	baseURL, token, source, publication := args[0], args[1], args[2], args[3]
+	client := &http.Client{Timeout: 10 * time.Second, Transport: &http.Transport{DisableKeepAlives: true}}
+	target := fmt.Sprintf("%s/tables?source=%s&publication=%s", baseURL, url.QueryEscape(source), url.QueryEscape(publication))
+	req, err := http.NewRequest(http.MethodGet, target, nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "httpclient: %v\n", err)
+		os.Exit(1)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("CLEARTEXT transport_error=%q\n", err.Error())
+		return
+	}
+	defer resp.Body.Close()
+	payload, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+	fmt.Printf("CLEARTEXT status=%d body=%q\n", resp.StatusCode, strings.TrimSpace(string(payload)))
 }
 
 // probeStatus sendet eine Anfrage mit Bearer-Token und liefert den

@@ -10,7 +10,9 @@
 // beobachtbar sein muss. Das Flag `-target` wählt ein Zustellziel
 // (`StreamChangesRequest.target`), `-count` die Zahl der Changes, die der
 // Client vor dem Token-Test empfängt, `-window` ein Ruhefenster, in dem er
-// danach weitere Changes zählt ("RECEIVED") und mit "WINDOW-END" endet.
+// danach weitere Changes zählt ("RECEIVED") und mit "WINDOW-END" endet. Gegen
+// einen Server mit TLS nennt `HARNESS_TLS_CA_FILE` das Zertifikat als
+// Vertrauensanker; ohne die Variable verbindet der Client im Klartext.
 package main
 
 import (
@@ -22,6 +24,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -35,6 +38,9 @@ import (
 const (
 	authorizationMetadataKey = "authorization"
 	bearerPrefix             = "Bearer "
+	// envTLSCAFile benennt die Umgebungsvariable mit dem Pfad eines
+	// PEM-Zertifikats, dem der Client als Vertrauensanker traut.
+	envTLSCAFile = "HARNESS_TLS_CA_FILE"
 )
 
 func main() {
@@ -55,7 +61,15 @@ func main() {
 		schema, table = args[2], args[3]
 	}
 
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	creds := credentials.TransportCredentials(insecure.NewCredentials())
+	if caFile := os.Getenv(envTLSCAFile); caFile != "" {
+		var credsErr error
+		if creds, credsErr = credentials.NewClientTLSFromFile(caFile, ""); credsErr != nil {
+			fmt.Fprintf(os.Stderr, "grpcclient: %s: %v\n", envTLSCAFile, credsErr)
+			os.Exit(2)
+		}
+	}
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "grpcclient: Verbindung (%s) fehlgeschlagen: %v\n", addr, err)
 		os.Exit(1)

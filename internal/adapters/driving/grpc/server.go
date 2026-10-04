@@ -9,12 +9,14 @@ package grpc
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 
 	administrationv1 "github.com/pt9912/pg-change-feed/gen/cdc/administration/v1"
 	"github.com/pt9912/pg-change-feed/gen/cdc/stream/v1"
@@ -40,6 +42,11 @@ type Config struct {
 	// Addr trägt die Horch-Adresse (`CDC_GRPC_ADDR`); die Composition Root
 	// entscheidet über den Start, dieser Typ trägt nur die Adresse.
 	Addr string
+	// TLSConfig trägt die fertige TLS-Konfiguration (`ADR-0150`): gesetzt
+	// bedient der Server ausschließlich über TLS, ohne Klartext auf
+	// derselben Adresse; `nil` lässt ihn im Klartext. Bau und Mindestversion
+	// liegen in `internal/bootstrap`.
+	TLSConfig *tls.Config
 	// TokenReader und TokenAdmin tragen das Singular-Token je Rechtsklasse
 	// (`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN`), TokensReader und
 	// TokensAdmin die Liste je Klasse (`CDC_API_TOKENS_READER`/
@@ -78,6 +85,7 @@ type Config struct {
 type Server struct {
 	grpcServer *grpc.Server
 	addr       string
+	tls        bool
 	log        outbound.LogPort
 }
 
@@ -93,10 +101,14 @@ func New(cfg Config) *Server {
 		log = outbound.NoopLog
 	}
 	tokens := apiauth.FromConfig(cfg.TokenReader, cfg.TokensReader, cfg.TokenAdmin, cfg.TokensAdmin)
-	grpcServer := grpc.NewServer(
+	options := []grpc.ServerOption{
 		grpc.StreamInterceptor(authStreamInterceptor(tokens)),
 		grpc.UnaryInterceptor(authUnaryInterceptor(tokens, administrationRPCRoles)),
-	)
+	}
+	if cfg.TLSConfig != nil {
+		options = append(options, grpc.Creds(credentials.NewTLS(cfg.TLSConfig)))
+	}
+	grpcServer := grpc.NewServer(options...)
 	streamv1.RegisterChangeStreamServer(grpcServer, &changeStreamService{subscriber: cfg.Subscriber, log: log})
 	administrationv1.RegisterAdministrationServer(grpcServer, &administrationService{
 		registerConsumer:    cfg.RegisterConsumer,
@@ -112,7 +124,7 @@ func New(cfg Config) *Server {
 		diagnose:            cfg.Diagnose,
 		log:                 log,
 	})
-	return &Server{grpcServer: grpcServer, addr: cfg.Addr, log: log}
+	return &Server{grpcServer: grpcServer, addr: cfg.Addr, tls: cfg.TLSConfig != nil, log: log}
 }
 
 // Start bindet die konfigurierte Adresse und blockiert, bis der Server über
@@ -134,7 +146,7 @@ func (s *Server) Start() error {
 // darüber die konfigurierte Adresse, der Whitebox-Test einen
 // In-Memory-Listener (`bufconn`).
 func (s *Server) serve(listener net.Listener) error {
-	s.log.Info(context.Background(), "grpc: Adapter gestartet", "addr", listener.Addr().String())
+	s.log.Info(context.Background(), "grpc: Adapter gestartet", "addr", listener.Addr().String(), "tls", s.tls)
 	if err := s.grpcServer.Serve(listener); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 		return err
 	}
