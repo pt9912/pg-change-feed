@@ -260,8 +260,9 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       (die Verdrahtungs-Tests von `internal/bootstrap`) und
       `make test-integration` Exit 0, `make image` Exit 0 (der Zug ändert
       Build-Kontext-Dateien).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      ([`review-slice-api-token-mehrfach-konfiguration`](../../../reviews/review-slice-api-token-mehrfach-konfiguration.md);
+      `.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (Zeile `make test-integration`: ein Satz zum neuen Rundlauf);
