@@ -170,9 +170,11 @@ Implementers und in §7.
       (b) Laden: ein Pfad nicht lesbar, keine gültigen PEM-Daten oder Zertifikat
       und Schlüssel bilden kein Paar → `ErrConfiguration` mit neuem Code, **vor** dem
       ersten Listener und vor dem Anlegen des Replication-Slots (der Ort des Ladens
-      in `internal/bootstrap` ist so gewählt, dass bei einem Ladefehler weder ein
-      Port offen noch ein Slot angelegt ist; zu belegen durch den Verdrahtungs-Test
-      und die Runner-Phase, nicht durch eine Lesung). `--healthcheck` lädt die
+      in `internal/bootstrap` ist so gewählt, dass bei einem Ladefehler weder eine
+      Datenbankverbindung entstanden noch ein Slot angelegt ist; zu belegen durch
+      den Verdrahtungs-Test und die Runner-Phase, nicht durch eine Lesung; zu einem
+      geöffneten Port macht der Plan nach der Fixrunde keine Aussage, siehe den
+      Fixrunden-Beleg in diesem Abschnitt). `--healthcheck` lädt die
       Dateien **nicht**.
       (c) Betrieb: HTTP (`ListenAndServeTLS`-Weg, einschließlich SSE) und gRPC
       (Server-Credentials) bedienen mit einer `tls.Config` mit explizit gesetzter
@@ -225,8 +227,10 @@ Implementers und in §7.
       drei Starts mit je einer Verletzung — nur ein Pfad gesetzt, ein nicht lesbarer
       Pfad, ein nicht zusammenpassendes Paar — beenden den Container mit der
       Fehlerklasse `configuration` und dem jeweiligen Meldungscode in der Log-Zeile
-      (per `docker logs` gelesen), und auf der HTTP-Adresse hört kein Klartext-Server
-      (Verbindungsaufbau scheitert) — die Gegenprobe ist der Start mit dem
+      (per `docker logs` gelesen), und es entsteht kein Slot (die Prüfung der
+      HTTP-Adresse nach einem beendeten Container entfällt, siehe den
+      Fixrunden-Beleg in diesem Abschnitt) — die
+      Gegenprobe ist der Start mit dem
       gültigen Paar aus (2); (6) ohne die Konfiguration laufen **alle** übrigen
       Phasen unverändert im Klartext (sie sind der Boundary-Beleg „unverändert wie
       ohne diese Anforderung“). Die Phase trägt eine `abdeckung_declare`-Zeile für
@@ -325,8 +329,8 @@ ist **gemessen** am genannten Befehl, die Verallgemeinerungen tragen das Wort
   HTTP-, SSE- und gRPC-Schnittstelle (LH-FA-SST-011) belegt — fünf Starts mit
   einer Verletzung (nur Zertifikat, nur Schlüssel, nicht lesbarer Pfad, Datei
   ohne PEM-Daten, nicht zusammenpassendes Paar) beendeten den Container mit
-  Fehlerklasse configuration und PCF-E2009 bzw. PCF-E2010 im Log, ohne Slot und
-  ohne Klartext-Antwort; … unter TLS (Umgebung) blieb --healthcheck gesund
+  Fehlerklasse configuration und PCF-E2009 bzw. PCF-E2010 im Log, ohne Slot;
+  … unter TLS (Umgebung) blieb --healthcheck gesund
   (Ausgang 0, Zustand healthy), HTTP, gRPC, SSE (change_id=2365-1) und
   gRPC-Stream (change_id=2369-1) wurden über TLS bedient …, der Klartext-Versuch
   danach bekam keine Antwort der API (HTTP: `CLEARTEXT status=400
@@ -359,6 +363,11 @@ ist **gemessen** am genannten Befehl, die Verallgemeinerungen tragen das Wort
   TLS-spezifischen Code (`git grep -i -E 'tls|https://|ssl'` in
   `examples/http-client`, `examples/sse-client`: 0 Treffer); das Handbuch nennt
   für sie nichts, weil ein Aufruf gegen einen TLS-Server nicht gefahren ist.
+  Gemessen sind nur die zwei Befunde der `git grep`-Läufe (Optionen ohne
+  TLS-Einstellung, gRPC-Beispiele fest im Klartext); sie sind Entwicklersicht
+  und stehen im Handbuch nicht als Beleg. Der Handbuch-Absatz sagt nach der
+  Fixrunde nur, dass die gRPC-Beispiele nicht mit einem TLS-Server verbinden,
+  und sagt für die Client-Pakete und für HTTP-/SSE-Clients nichts zu.
 - **Kommentar-Läufe (Schritt 20).** `make kommentar-kennungen DIFF=e1db9c30`
   Exit 0 (kein Kandidat); der Chronik-Lauf trifft nichts (`xargs`/`grep` Exit
   123 ohne Treffer); der Konjunktiv-Lauf trifft fünf Zeilen, jede geprüft:
@@ -376,6 +385,32 @@ ist **gemessen** am genannten Befehl, die Verallgemeinerungen tragen das Wort
   Zertifikat und Kette ist nur an `crypto/tls` gemessen
   (`TestNewTLSConfigLiestDieKetteDerZertifikatsdatei`: zwei Glieder), nicht an
   einem Client mit Zwischenzertifikat.
+- **Fixrunde (Review `review-slice-tls-http-grpc-server`).** F-1: der
+  Clients-Absatz des Handbuchs und die Historie-Zeile 1.96 sagen nur noch, was
+  gemessen ist (gRPC-Beispiele im Klartext, Optionen der Pakete ohne
+  TLS-Einstellung), und treffen für Client-Pakete und HTTP-/SSE-Clients keine
+  Aussage; ein Lauf der SDK-HTTP-Clients gegen einen TLS-Server ist nicht
+  gefahren (*offen*, keine Behauptung). F-2: die Prüfung „kein Klartext-Server“
+  in `tl_expect_start_refused` las einen bereits beendeten Container und konnte
+  an keiner Eingabe rot werden; sie entfällt, und mit ihr die Aussage „ohne
+  geöffneten Port“ in Plan, Handbuch, `harness/README.md` und Runner-Zeile.
+  Getragen bleibt: Ausgang, Fehlerklasse, Code und Text im Log, kein
+  Schlüsselmaterial, kein Slot; in `Run` entsteht vor dem Laden keine
+  Datenbankverbindung. Die Aussage „vor der Datenbankverbindung“ steht im Code-
+  Kommentar von `Run` (angepasst). Mutation (Kopie im Scratchpad, Instanz
+  `go test -race -run TestRunLaedtTLSPaarVorJederVerbindung ./internal/bootstrap`
+  im Toolchain-Container, **gemessen**): `Run` lädt das Paar erst nach
+  `postgresstorage.New` → rot: `tls_internal_test.go:421: Run mit nicht ladbarem
+  Paar: Fehlerklasse storage [PCF-E5001] …, erwartet ErrTLSPairUnusable ohne
+  Datenbankfehler`. Der Slot-Zähler des Runners färbt sich bei *dieser*
+  Mutation nicht rot (der Slot entsteht erst in `NewStream`); er ist nur an
+  einer Mutation gebunden, die das Laden hinter `NewStream` zieht — diese ist am
+  Runner nicht gefahren, *hergeleitet*. F-3: Zahl der Starts in den
+  Runner-Kommentaren auf fünf. F-4: `chmod 0644` auf die `*.pem` bleibt, weil
+  der Container als `nonroot` läuft und der Besitzer der Dateien der
+  Host-Benutzer ist (der Kommentar im Runner nennt den Grund; Schlüssel sind
+  Wegwerf-Material). F-5: die Kommentare der C#- und Kotlin-gRPC-Beispiele
+  nennen den Server als TLS-fähig und das Beispiel als Klartext-Client.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist.
@@ -410,8 +445,8 @@ Aussagen-Berührung steht hier gar nicht.
   auch der Lauf `--healthcheck`, der dieselbe `ConfigFromEnvAndFile` ruft und die
   Dateien nicht braucht), das **Laden** (`tls.LoadX509KeyPair`) macht die
   Verdrahtung ganz am Anfang von `Run`, bevor `NewStream` den Slot anlegt
-  (`internal/bootstrap/wiring.go`) — ein Ladefehler beendet den Start, ohne Port
-  und ohne Slot. Der Implementer misst die Reihenfolge am Arbeitsstand
+  (`internal/bootstrap/wiring.go`) — ein Ladefehler beendet den Start, ohne
+  Datenbankverbindung und ohne Slot. Der Implementer misst die Reihenfolge am Arbeitsstand
   (`git grep -n 'NewStream' -- internal/bootstrap/wiring.go`) und belegt sie mit
   dem Test aus §2 (b).
 - **Die zwei Adapter teilen keine TLS-Fassung.** Beide nehmen eine fertige
@@ -459,9 +494,9 @@ a53f4e75ca51bdaa4319aeabba96f89c48b6448f 6 -n -E 'unverschlüsselt|ohne TLS|im K
 a53f4e75ca51bdaa4319aeabba96f89c48b6448f 5 -n -E 'tls_cert_file|tls_key_file|CDC_TLS_' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 a53f4e75ca51bdaa4319aeabba96f89c48b6448f 29 -n -E 'http://(cdc-test-feed|pg-change-feed)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 diff 12 -n -E 'ListenAndServe|grpc\.NewServer|net\.Listen' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 12 -n -E 'insecure\.NewCredentials|WithInsecure' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 11 -n -E 'insecure\.NewCredentials|WithInsecure' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 diff 30 -n -E '\-\-healthcheck' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 31 -n -E 'unverschlüsselt|ohne TLS|im Klartext' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 30 -n -E 'unverschlüsselt|ohne TLS|im Klartext' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 diff 52 -n -E 'tls_cert_file|tls_key_file|CDC_TLS_' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 diff 30 -n -E 'http://(cdc-test-feed|pg-change-feed)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 ```
@@ -476,13 +511,12 @@ sind alle Trefferzeilen der sechs Muster gelesen: Zeile 1 (12) — `ListenAndSer
 fällt aus `internal/adapters/driving/http/server.go`, dort und im gRPC-Adapter
 stehen `net.Listen` und `serve(listener net.Listener)`, dazu je ein Test pro
 Paket mit `net.Listen` auf Loopback; kein Träger außerhalb des Codes
-beschreibt den Annahmeweg. Zeile 2 (12) — hinzugekommen sind das Handbuch (die
-Messung der Beispiele), die zwei neuen gRPC-Tests und `grpcadminclient` mit
+beschreibt den Annahmeweg. Zeile 2 (11) — hinzugekommen sind die zwei neuen gRPC-Tests und `grpcadminclient` mit
 dem Klartext-Modus und der Transportwahl; die Beispiele selbst sind
 unverändert. Zeile 3 (30) — die acht neuen Trefferzeilen sind neue Texte
 (Handbuch, `tls.go`, Kommentare, Runner); jeder bestehende Träger, der
 `--healthcheck` beschreibt, bleibt richtig und ist nicht umformuliert.
-Zeile 4 (31) — die 25 neuen Trefferzeilen sind die neuen Texte des Zuges
+Zeile 4 (30) — die 24 neuen Trefferzeilen sind die neuen Texte des Zuges
 (Handbuch, Kommentare, Tests, Runner, `harness/README.md` trägt `Klartext`
 nur in der neuen Sensors-Beschreibung); die Spec-Zeilen (`spec/lastenheft.md`,
 `spec/pflichtenheft.md`) sind unverändert und tragen die Aussage dieses

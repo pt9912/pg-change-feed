@@ -46,10 +46,11 @@ internal static class Program
             return 2;
         }
 
-        // Der Feed-Container spricht Klartext-gRPC (kein TLS, dieselbe Wahl
-        // wie der Go-Client mit `insecure.NewCredentials()`) — der Switch
-        // erlaubt HTTP/2 ohne Transportverschlüsselung (h2c) für den
-        // `HttpClient`, den `GrpcChannel.ForAddress` intern benutzt.
+        // Der Feed-Container spricht TLS, wenn ein Zertifikatspaar konfiguriert
+        // ist; dieses Beispiel verbindet im Klartext (dieselbe Wahl wie der
+        // Go-Client mit `insecure.NewCredentials()`) — der Switch erlaubt
+        // HTTP/2 ohne Transportverschlüsselung (h2c) für den `HttpClient`,
+        // den `GrpcChannel.ForAddress` intern benutzt.
         AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
         using var channel = GrpcChannel.ForAddress($"http://{cfg.Addr}");

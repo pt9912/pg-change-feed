@@ -53,8 +53,9 @@ fun main(args: Array<String>): Unit = runBlocking {
         exitProcess(2)
     }
 
-    // Der Feed-Container spricht Klartext-gRPC (kein TLS, dieselbe Wahl wie
-    // der Go-Client mit `insecure.NewCredentials()` und der C#-Client mit dem
+    // Der Feed-Container spricht TLS, wenn ein Zertifikatspaar konfiguriert
+    // ist; dieses Beispiel verbindet im Klartext (dieselbe Wahl wie der
+    // Go-Client mit `insecure.NewCredentials()` und der C#-Client mit dem
     // h2c-Switch) — `usePlaintext()` erlaubt den Kanal ohne
     // Transportverschlüsselung.
     val channel = ManagedChannelBuilder.forTarget(cfg.addr).usePlaintext().build()

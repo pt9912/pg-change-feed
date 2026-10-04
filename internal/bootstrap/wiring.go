@@ -623,9 +623,10 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		log.Info(ctx, "pg-change-feed: Lauf regulär beendet")
 	}()
 
-	// Das TLS-Paar wird vor jeder Verbindung und vor `NewStream` geladen: ein
-	// Ladefehler beendet den Start, ohne dass ein Port offen oder ein
-	// Replication-Slot angelegt ist. Beide Server erhalten dieselbe fertige
+	// Das TLS-Paar wird vor jeder Datenbankverbindung und vor `NewStream`
+	// geladen: ein Ladefehler beendet den Start, ohne dass eine Verbindung
+	// entsteht oder ein Replication-Slot angelegt ist; die Server binden ihre
+	// Adressen erst danach. Beide Server erhalten dieselbe fertige
 	// `tls.Config` (`nil` heißt Klartext).
 	tlsConfig, err := newTLSConfig(cfg.TLSCertFile, cfg.TLSKeyFile)
 	if err != nil {

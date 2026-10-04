@@ -1775,8 +1775,9 @@ müssen für ihn lesbar sein.
   TLS gleich (gemessen: Ausgang 0 und Docker-Zustand `healthy` mit gesetztem
   Paar).
 
-**Start-Fehler:** Beide Fälle enden ohne geöffneten Port und ohne angelegten
-Replication-Slot, mit der Fehlerklasse `configuration`:
+**Start-Fehler:** Beide Fälle beenden den Prozess vor dem Aufbau der
+Datenbank-Verbindungen, ohne angelegten Replication-Slot, mit der
+Fehlerklasse `configuration`:
 
 | Fall | Meldungscode | Prozessausgang |
 |---|---|---|
@@ -1786,13 +1787,11 @@ Replication-Slot, mit der Fehlerklasse `configuration`:
 Die Fehlerzeile nennt die Variablen bzw. die Pfade und die Ursache, nie den
 Inhalt des Schlüssels.
 
-**Clients:** Die Optionen der drei Client-Pakete (C#, Kotlin, Python) tragen keine TLS-Einstellung (gemessen:
-`git grep -n -i -E 'tls|ssl|certificate'` über die drei Options-Dateien liefert
-keinen Treffer), und die gRPC-Beispielprogramme in Go, C# und Kotlin verbinden
-fest im Klartext (gemessen: `git grep` nach `insecure.NewCredentials`,
-`usePlaintext` und dem Klartext-Vermerk im C#-Beispiel trifft je Programm). Ein
-Client-Paket oder Beispielprogramm ohne TLS-Option spricht deshalb nur mit
-einem Server ohne TLS-Paar.
+**Clients:** Die gRPC-Beispielprogramme in Go, C# und Kotlin verbinden fest im
+Klartext, und die Optionen der drei Client-Pakete (C#, Kotlin, Python) bieten
+keine TLS-Einstellung. Die gRPC-Beispiele verbinden deshalb nicht mit einem
+Server, der ein TLS-Paar trägt. Für die Client-Pakete und für HTTP- und
+SSE-Clients gegen einen solchen Server ist hier nichts zugesagt.
 
 ### Zugriff über den gRPC-Change-Stream
 
@@ -3096,4 +3095,4 @@ MIT — siehe `LICENSE`.
 | 1.93 | 2026-10-03 | Die Fehlertypen der drei SDK-Packages (C#, Kotlin, Python) tragen den Meldungscode des Servers als Eigenschaft (`MessageCode`, `messageCode`, `message_code`): beim HTTP- und beim SSE-Client aus dem Feld `code`, beim gRPC-Verwaltungs-Client aus dem Statusdetail; ohne Code auf dem Draht ist die Eigenschaft leer; das Feld `error_code` der Diagnose kommt unverändert an |
 | 1.94 | 2026-10-03 | Die SDK-Eigenschaft für den Meldungscode gilt ab Package-Version 0.6.0 (Abschnitte zu Fehlerantworten und zur Fehlerform der gRPC-Verwaltungs-API); trägt ein Fehlerkörper `code` als String, aber `error` nicht als String, liefern alle drei SDKs den Code und den rohen Körper als Fehlertext |
 | 1.95 | 2026-10-04 | Mehrere API-Token je Klasse: die neuen Variablen `CDC_API_TOKENS_READER` und `CDC_API_TOKENS_ADMIN` (kommagetrennte Listen) gelten neben den bisherigen Variablen, auf HTTP und gRPC gleich; neuer Abschnitt „API-Token in zwei Neustarts wechseln“; eine Liste mit leerem Element oder Leerraum verhindert den Start (neuer Meldungscode `PCF-E2008`); die Zugangsdaten-Schlüssel der Konfigurationsdatei umfassen jetzt neun Schlüssel |
-| 1.96 | 2026-10-04 | Die HTTP- und die gRPC-Schnittstelle lassen sich mit einem gemeinsamen TLS-Paar verschlüsseln: die neuen Variablen `CDC_TLS_CERT_FILE` und `CDC_TLS_KEY_FILE` (Datei-Felder `tls_cert_file` und `tls_key_file`, Pfade ohne Zugangsdaten-Charakter), neuer Abschnitt „Schnittstellen mit TLS verschlüsseln“ (TLS ab Version 1.2, kein Klartext auf derselben Adresse, kein Client-Zertifikat, Zertifikatswechsel nur mit Neustart); ein unvollständiges oder nicht ladbares Paar verhindert den Start (neue Meldungscodes `PCF-E2009` und `PCF-E2010`); die Client-Pakete und die gRPC-Beispielprogramme sprechen nur mit einem Server ohne TLS-Paar |
+| 1.96 | 2026-10-04 | Die HTTP- und die gRPC-Schnittstelle lassen sich mit einem gemeinsamen TLS-Paar verschlüsseln: die neuen Variablen `CDC_TLS_CERT_FILE` und `CDC_TLS_KEY_FILE` (Datei-Felder `tls_cert_file` und `tls_key_file`, Pfade ohne Zugangsdaten-Charakter), neuer Abschnitt „Schnittstellen mit TLS verschlüsseln“ (TLS ab Version 1.2, kein Klartext auf derselben Adresse, kein Client-Zertifikat, Zertifikatswechsel nur mit Neustart); ein unvollständiges oder nicht ladbares Paar verhindert den Start (neue Meldungscodes `PCF-E2009` und `PCF-E2010`); die gRPC-Beispielprogramme verbinden im Klartext und die Optionen der Client-Pakete bieten keine TLS-Einstellung |

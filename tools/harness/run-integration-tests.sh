@@ -4558,9 +4558,9 @@ abdeckung_declare "TLS der HTTP-, SSE- und gRPC-Schnittstelle" "LH-FA-SST-011" "
 # Container wird am Phasen-Ende ohne Override wiederhergestellt; das
 # Temp-Verzeichnis räumt `cleanup`). Zertifikat und Schlüssel erzeugt
 # `tools/harness/certgen` im Toolchain-Container in dieses Verzeichnis, nichts
-# davon liegt im Arbeitsbaum oder im Image. Reihenfolge: (1) vier Starts mit
+# davon liegt im Arbeitsbaum oder im Image. Reihenfolge: (1) fünf Starts mit
 # je einer Verletzung beenden den Container mit Klasse und Code im Log, ohne
-# Slot und ohne Klartext-Antwort; (2) ein Start mit gültigem Paar über die
+# Slot; (2) ein Start mit gültigem Paar über die
 # Konfigurationsdatei und einem frischen Slot legt den Slot an (die Gegenprobe
 # zur Abwesenheit in (1)), der Slot wird wieder entfernt; (3) der Start mit
 # gültigem Paar über die Umgebung: `--healthcheck` gesund, HTTP, SSE und gRPC
@@ -4626,9 +4626,10 @@ tl_await_stopped() {
 # tl_expect_start_refused <Beschreibung> <Ausgang> <Code> <Text im Log> <NAME=Wert>...:
 # der Start mit der Verletzung endet mit dem erwarteten Ausgang, trägt Klasse,
 # Code und Text in der Log-Zeile und kein Schlüsselmaterial; es entsteht kein
-# Slot, und auf den Adressen antwortet kein Klartext-Server.
+# Slot. Zu einem geöffneten Port macht die Prüfung keine Aussage: sie liest
+# einen bereits beendeten Container.
 tl_expect_start_refused() {
-  local what=$1 want_exit=$2 code=$3 want_text=$4 log cleartext
+  local what=$1 want_exit=$2 code=$3 want_text=$4 log
   shift 4
   tl_recreate "$@" CDC_SLOT="$TLS_NEG_SLOT"
   tl_await_stopped "$what"
@@ -4638,12 +4639,6 @@ tl_expect_start_refused() {
     || bf_fail "$TLS_PHASE — das Log trägt für '$what' nicht 'Fehlerklasse configuration [$code]' mit '$want_text': $log"
   [[ "$log" != *"PRIVATE KEY"* ]] || bf_fail "$TLS_PHASE — das Log trägt für '$what' Schlüsselmaterial: $log"
   bf_expect "$(bf_sql "SELECT count(*) FROM pg_replication_slots WHERE slot_name = '$TLS_NEG_SLOT'")" 0 "$TLS_PHASE — Slot nach '$what'"
-  cleartext=$(tl_client httpclient cleartext "$TLS_HTTP_URL" "$HTTP_TOKEN_READER" src-e2e pub_pgc_e2e)
-  [[ "$cleartext" == *"CLEARTEXT transport_error="* ]] \
-    || bf_fail "$TLS_PHASE — nach '$what' antwortet die HTTP-Adresse: $cleartext"
-  cleartext=$(tl_client grpcadminclient cleartext "$GRPC_ADDR" "$HTTP_TOKEN_READER" src-e2e pub_pgc_e2e)
-  [[ "$cleartext" == "CLEARTEXT code=Unavailable "* ]] \
-    || bf_fail "$TLS_PHASE — nach '$what' antwortet die gRPC-Adresse: $cleartext"
 }
 
 # tl_expect_tls_logged: beide Server melden beim Start, dass sie über TLS
@@ -4732,10 +4727,13 @@ for tl_name in good other; do
   bf_expect "$(printf '%s\n' "$tl_out" | grep -c '^CERTGEN ' || true)" 1 "$TLS_PHASE — certgen-Zeile ($tl_name)"
 done
 printf 'kein PEM\n' > "$TLS_TMP/kaputt.pem"
+# Der Container läuft als `nonroot` (Laufzeit-Image), der Besitzer der Dateien
+# ist der Host-Benutzer: Zertifikate und Schlüssel brauchen Leserechte für
+# andere. Die Schlüssel sind Wegwerf-Material dieses Temp-Verzeichnisses.
 chmod 0644 "$TLS_TMP"/*.pem
 bf_expect "$(git status --porcelain --untracked-files=all -- . | grep -c -E '\.pem$' || true)" 0 "$TLS_PHASE — Zertifikatsdateien im Arbeitsbaum"
 
-# (1) Vier Starts mit je einer Verletzung (Ausgang 2: die Konfiguration
+# (1) Fünf Starts mit je einer Verletzung (Ausgang 2: die Konfiguration
 # endet vor `Run`, Ausgang 1: `Run` lädt das Paar und scheitert).
 tl_expect_start_refused "nur Zertifikat" 2 PCF-E2009 "CDC_TLS_CERT_FILE gesetzt, aber CDC_TLS_KEY_FILE fehlt" \
   CDC_TLS_CERT_FILE="$TLS_MOUNT/good.pem"
@@ -4820,7 +4818,7 @@ tl_plain_grpc=$(TL_CA= tl_client grpcadminclient probe "$GRPC_ADDR" src-e2e pub_
 bf_expect "$(printf '%s\n' "$tl_plain_grpc" | grep '^PROBE ')" "PROBE index=1 reader_rpc=OK admin_rpc=PermissionDenied" "$TLS_PHASE — gRPC im Klartext nach der Wiederherstellung"
 rm -rf "$TLS_TMP"
 
-echo "run-integration-tests: TLS der HTTP-, SSE- und gRPC-Schnittstelle (LH-FA-SST-011) belegt — fünf Starts mit einer Verletzung (nur Zertifikat, nur Schlüssel, nicht lesbarer Pfad, Datei ohne PEM-Daten, nicht zusammenpassendes Paar) beendeten den Container mit Fehlerklasse configuration und PCF-E2009 bzw. PCF-E2010 im Log, ohne Slot und ohne Klartext-Antwort; das gültige Paar legte über die Konfigurationsdatei den Slot an; unter TLS (Umgebung) blieb --healthcheck gesund (Ausgang 0, Zustand healthy), HTTP, gRPC, SSE (change_id=$tl_sse_change_id) und gRPC-Stream (change_id=$tl_grpc_change_id) wurden über TLS bedient (change_id je über cdc.changes gelesen), der Klartext-Versuch danach bekam keine Antwort der API (HTTP: $tl_cleartext_http; gRPC: $tl_cleartext_grpc); nach der Wiederherstellung ohne Override bedienten beide Adressen wieder im Klartext"
+echo "run-integration-tests: TLS der HTTP-, SSE- und gRPC-Schnittstelle (LH-FA-SST-011) belegt — fünf Starts mit einer Verletzung (nur Zertifikat, nur Schlüssel, nicht lesbarer Pfad, Datei ohne PEM-Daten, nicht zusammenpassendes Paar) beendeten den Container mit Fehlerklasse configuration und PCF-E2009 bzw. PCF-E2010 im Log, ohne Slot; das gültige Paar legte über die Konfigurationsdatei den Slot an; unter TLS (Umgebung) blieb --healthcheck gesund (Ausgang 0, Zustand healthy), HTTP, gRPC, SSE (change_id=$tl_sse_change_id) und gRPC-Stream (change_id=$tl_grpc_change_id) wurden über TLS bedient (change_id je über cdc.changes gelesen), der Klartext-Versuch danach bekam keine Antwort der API (HTTP: $tl_cleartext_http; gRPC: $tl_cleartext_grpc); nach der Wiederherstellung ohne Override bedienten beide Adressen wieder im Klartext"
 
 # --- Transformations-Rundläufe (LH-FA-CFG-007) --------------------------------
 # Zwei Phasen am laufenden Feed-Container, ausschließlich über externe Wege:
