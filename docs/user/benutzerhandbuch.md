@@ -1252,8 +1252,9 @@ verfolgt und ist ein Fehlschlag.
 (`/etc/ssl/certs/ca-certificates.crt`). Ein `https`-Empfänger mit einem
 selbstsignierten Zertifikat wird erreicht, wenn die Umgebungsvariable
 `SSL_CERT_FILE` des Containers auf die Zertifikatsdatei des Empfängers zeigt
-(die Datei wird in den Container eingebunden); ohne sie bleibt die Verbindung
-aus, der Container warnt (`PCF-W6001`), läuft weiter und überträgt nichts.
+(die Datei wird in den Container eingebunden); ohne sie scheitert der
+TLS-Aufbau zum Empfänger, weil dessen Zertifikat nicht vertrauenswürdig ist; der
+Container warnt mit `PCF-W6001`, läuft weiter, und es kommt kein Export an.
 Gemessen mit OpenTelemetry-Collector 0.162.0 und einem selbstsignierten
 Zertifikat; über Zertifizierungsstellen öffentlicher Empfänger macht diese
 Messung keine Aussage. Ein Client-Zertifikat, eine eigene Zertifizierungsstelle

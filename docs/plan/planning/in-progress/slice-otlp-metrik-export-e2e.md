@@ -237,8 +237,8 @@ unten tragen die geltende Form):
       `cdc_oldest_change_age_seconds` (hängen an `now()`) nennt der Test mit Zahl und
       Grund (Abstand der Messzeitpunkte, höchstens ein Takt plus Frist), alle anderen
       Werte sind **exakt gleich**, `cdc_wal_retention_bytes` wird gegen die Messung des
-      Prozesses gehalten, nicht gegen die Sicht (der Weg der Gegenlesung —
-      `pg_replication_slots` des Slots — steht im Bericht). Eine **gemessene**
+      Prozesses gehalten, nicht gegen die Sicht (die Messreihe des Prozesses
+      aus seinem Log, siehe Abweichung (3)). Eine **gemessene**
       Einheit von `cdc_consumer_lag` wird gedruckt und in die Abdeckungszeile
       übernommen. Gegenprobe zum Header: ohne Header (zweiter Start, Collector mit
       Authentifizierung) antwortet der Collector abweisend und der Container warnt mit
@@ -490,7 +490,7 @@ Zertifizierungsstellen verifiziert werden, ist **nicht** gemessen.
 
 | Zusage | mutierte Eingabe | gesehenes Rot |
 |---|---|---|
-| Wertgleichheit mit der Sicht | `otlpcheck`-Soll: Wert der Sicht um 1 verschoben, Instanz: Phase 1, Start mit Header | `sechs Versuche ohne bestandene Prüfung … Export 1, Sicht 1` |
+| Wertgleichheit mit der Sicht | `otlpcheck`-Soll: Wert der Sicht um 1 verschoben (Soll = Sicht + 1), Instanz: Phase 1, Start mit Header | `sechs Versuche ohne bestandene Prüfung, letzter Befund` der Wertgleichheit; die gedruckten Zahlen des Befunds sind im Bericht nicht festgehalten, die Verschiebung Soll gegen gelesen ist hergeleitet, nicht gemessen |
 | Einheit je Name | `otlpcheck`-Soll: Einheit von `cdc_storage_bytes` `By` zu `1` | `Einheit "By", erwartet "1"` |
 | Datenpunkt-Attribut | `otlpcheck`-Soll: Attribut von `cdc_errors_total` `class` zu `consumer` | `Attribut consumer fehlt` |
 | Header-Gegenprobe trägt | Collector setzt `http.authorization` unbedingt: „Start mit Header“ bleibt grün (erwartet, bestätigt), „Start ohne Header“ rot | `Resource-Attribut http.authorization ist vorhanden … erwartet abwesend` |
