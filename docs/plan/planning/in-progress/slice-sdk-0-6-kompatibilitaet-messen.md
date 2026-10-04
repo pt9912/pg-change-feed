@@ -155,7 +155,7 @@ Jede gedruckte Zahl und jede Aussage der Belege trägt ihren Ursprung
 [`AGENTS.md`](../../../../AGENTS.md) §3.12); eine nicht gefahrene Verallgemeinerung
 (zum Beispiel „gilt für Kotlin und Python wie für C#“) steht als *hergeleitet*.
 
-- [ ] **Messung A — Kompatibilität (Liefer-Punkt 1).** `make test-sdk-kompat`
+- [x] **Messung A — Kompatibilität (Liefer-Punkt 1).** *(Belege und Abweichungen von A3/A4: §7, „Messung am Implementer-Stand“ und „Befund-Nachtrag (A)“.)* `make test-sdk-kompat`
       (Docker-only, Netz für NuGet/PyPI/Cloudsmith/Maven Central; kein Gate) fährt je
       Sprache (C#, Kotlin, Python) ein **Gast-Programm**, das jede öffentliche
       Konstruktor-/Aufrufform der 0.5.x-Fehlertypen beider Hierarchien (HTTP, gRPC)
@@ -187,7 +187,7 @@ Jede gedruckte Zahl und jede Aussage der Belege trägt ihren Ursprung
       Python: ein positionales drittes Argument am Fehlertyp muss unter 0.6.0
       `TypeError` liefern (keyword-only gemessen). Ein Ergebnis gegen die Erwartung ist
       ein **Befund** (§7), kein Anlass, die Probe anzupassen.
-- [ ] **Messung B — Server vor 0.6.0 (Liefer-Punkt 2).** `make test-sdk-altserver`
+- [x] **Messung B — Server vor 0.6.0 (Liefer-Punkt 2).** *(Belege: §7, „Messung am Implementer-Stand“ und „Befund-Nachtrag (B)“.)* `make test-sdk-altserver`
       (neuer Runner `tools/harness/run-sdk-altserver-tests.sh`, Docker-only, Netz für
       Pulls und NuGet/PyPI/Maven-Restore; kein Gate) fährt dieselbe Compose-Umgebung wie
       die drei Realserver-Runner, **nur der Feed-Container ist das Image
@@ -224,7 +224,7 @@ Jede gedruckte Zahl und jede Aussage der Belege trägt ihren Ursprung
       `ErrorInfo` am Server 0.5.0 ist aus dem Quelltext **abgeleitet** (§1, 0 Zeilen) und
       durch das Paar B2/B3 (SDK liest am 0.6.0-Server den Code, am 0.5.0-Server nicht)
       getragen.
-- [ ] **Verträge, Verdrahtung und Befund (Liefer-Punkt 3).**
+- [x] **Verträge, Verdrahtung und Befund (Liefer-Punkt 3).**
       `harness/targets/sdk-kompat.md` und
       `harness/targets/sdk-altserver.md` (Form der Nachbarn unter `harness/targets/`:
       Aufruf, Eingaben, Ausgänge, Exit-Tabelle, Overrides, Grenze) tragen je Target den
@@ -246,12 +246,12 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: kein öffentlicher Vertrag berührt (die Handbücher und SDK-READMEs
+- [x] Doku-Update: kein öffentlicher Vertrag berührt (die Handbücher und SDK-READMEs
       bleiben unverändert, zu belegen: der Diff trägt keine Datei unter `docs/user/`
       und keine README unter `sdks/`); `harness/README.md` und die zwei
       Target-Verträge sind Teil von Liefer-Punkt 3.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben: eine weitere Datei
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben: eine weitere Datei
       `evidence/slice-sdk-0-6-kompatibilitaet-messen.md` in
       [`BEO-PGC/kein-echter-versionswechsel-upgrade-test`](../observations/BEO-PGC/kein-echter-versionswechsel-upgrade-test/state.md)
       (Zähler damit 2×, gezählt am Planungsstand: 1 Datei — der Slice liefert den ersten
@@ -291,7 +291,13 @@ solange alles unter `tools/harness/sdk-kompat/` liegt.
 | `harness/mk/sdk.mk` | update | zwei Ziele `test-sdk-kompat`, `test-sdk-altserver` mit `.PHONY` und `##`-Text, nicht in `GATE_CHECKS` |
 | `harness/targets/sdk-kompat.md`, `harness/targets/sdk-altserver.md` | neu | Verträge der Targets (Form der Nachbarn `harness/targets/image-mutation.md`, `harness/targets/bench-backfill.md`) |
 | `harness/README.md` | update | je Target eine Zeile in der Werkzeug-Tabelle, Bindung auf den Vertrag und `ADR-0145` |
+| `tools/harness/sdk-kompat/csharp/Gast/` (Projekt, Quelltexte `alt` und `neu`), `NullMatrix/`, `nuget-registry.config`, `nuget-dist.config`, `run.sh` | neu (Zuschnitt des Implementers) | Gast-Projekt mit zwei Quelltexten (0.5.x-Formen · Formen mit Code), die null-Matrix als reine Übersetzung, zwei NuGet-Konfigurationen (Modus `registry` und `dist` mit Quell-Zuordnung), Treiber der Schritte im Container (`LH-FA-SST-009`) |
+| `tools/harness/sdk-kompat/kotlin/` (`settings.gradle.kts`, `build.gradle.kts`, `src/alt`, `src/neu`, `run.sh`, Dockerfile) und `tools/harness/sdk-kompat/python/` (`gast_alt.py`, `gast_neu.py`, `quelle.py`, `run.sh`, Dockerfile) | neu (Zuschnitt des Implementers) | Gast-Projekte der beiden anderen Sprachen und ihre Treiber; Python trägt die Quellseite A5 als eigenes Skript (`quelle.py`, `inspect.signature`) |
+| `tools/harness/sdk-kompat/altserver/rohdraht.py` | neu (Zuschnitt des Implementers) | B1: die Rohdraht-Probe der HTTP-Seite, per `python -` im Python-Image des SDK |
+| `sdks/csharp/PgChangeFeed.Client.Integration/PhaseEnvironment.cs`, `sdks/kotlin/pgchangefeed-kotlin/src/integrationTest/kotlin/io/github/pt9912/pgchangefeed/integration/PhaseEnvironment.kt` | update | je eine Zeile für den rohen HTTP-Fehlertext aus B1 (`PGCHANGEFEED_ALTSERVER_HTTP_TEXT`); Test-Quelle, kein Package-Inhalt |
+| `tools/harness/run-sdk-altserver-tests.sh` — Diagnose-Schalter `SDK_ALTSERVER_WEITER` | neu (über den Plan hinaus) | lässt B3 die Test-Klassen von B2 am `:dev`-Server zeigen (B1 bricht sonst vor B2 ab) |
 | `docs/plan/planning/observations/BEO-PGC/kein-echter-versionswechsel-upgrade-test/evidence/slice-sdk-0-6-kompatibilitaet-messen.md` | neu | Register-Fortschreibung (§2) |
+| `docs/plan/planning/observations/BEO-PGC/adr-aussage-breiter-als-ihre-messung/evidence/slice-sdk-0-6-kompatibilitaet-messen.md` | neu | Register-Fortschreibung bei Befund gegen `ADR-0145` (§2: „quellseitig erhalten“ trägt an einem Fall nicht) |
 
 - **Messort ist der Container, der Host liefert nur Docker, `make`, `bash`, `git`
   und `mktemp`** ([`AGENTS.md`](../../../../AGENTS.md) §3.1). Keine
@@ -350,7 +356,13 @@ ff97a91059f6f706b16cb16b0681a1563a064d83 2 -n -E 'quellseitig' -- docs/plan/adr
 diff 4 -n -i -E 'binärkompat|binär und quellseitig|binary compat' -- docs/plan/adr
 diff 2 -n -E 'quellseitig' -- docs/plan/adr
 diff 86 -n -E '@sha256:' -- . ':!docs' ':!.harness'
+diff 6 -n -i -E 'binärkompat|binär und quellseitig|binary compat' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline'
+diff 4 -n -E 'quellseitig' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline'
 ```
+
+  Die zwei letzten `diff`-Zeilen sind vom Implementer ergänzt: der neue Träger
+  `harness/targets/sdk-kompat.md` zitiert die Aussage der ADR zweimal, der ganze
+  Baum trägt damit 6 bzw. 4 Trefferzeilen (Parent 4 bzw. 2, gemessen).
 
   **Erwartung am `diff`-Stand** (hergeleitet): die Treffer der ersten zwei
   Parent-Zeilen liegen in den `Accepted` ADRs
@@ -479,8 +491,31 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 
 - **Was hat funktioniert:** wird mit der Closure gefüllt.
 - **Was ging anders als geplant:** wird mit der Closure gefüllt.
-- **Befund-Nachtrag (A, Kompatibilität):** wird mit der Closure gefüllt.
-- **Befund-Nachtrag (B, Server vor 0.6.0):** wird mit der Closure gefüllt.
+- **Messung am Implementer-Stand** (Läufe am Arbeitsbaum auf dem Parent `5b0ad92a`, nach den Commits `f238bc3e` und `6aa987db`, Messhost `x86_64`; jede Zeile *gemessen*, gedruckt von `make test-sdk-kompat` bzw. `make test-sdk-altserver`, Exit direkt gelesen):
+  - `make test-sdk-kompat` (Modus `dist`, Standard) endet mit Exit 0, Schlusszeile `run-sdk-kompat-tests: Kompatibilitätsmessung (dist) grün für: csharp kotlin python`; `SDK_KOMPAT_NEU=registry` dasselbe (Exit 0, `… (registry) grün für: csharp kotlin python`).
+  - A1/A2 (Zeilen `KOMPAT <sprache> A1|A2: <n> Aufrufe ok`): C# 53 Aufrufe an beiden Schritten (`A2: Bibliothek 0.6.0 (Artefakt PgChangeFeed.Client.0.6.0.nupkg) f8e6415b23e5 ersetzt 0.5.0 6a4992f3f08f` — die Dateien sind verschieden, der Austausch geschah; im Modus `registry` trägt die 0.6.0-Datei dieselbe Kurz-Prüfsumme `f8e6415b23e5`), Kotlin 45 (`A2: Bibliothek 0.6.0 (Artefakt pgchangefeed-kotlin-0.6.0.jar) 2f600c1e671c ersetzt 0.5.0 4380d0d0664b`; die `javap`-Zeile des Gasts nennt den gebundenen Deskriptor `PgChangeFeedBadRequestException."<init>":(ILjava/lang/String;)V`, den die Bibliothek 0.6.0 neben `(ILjava/lang/String;Ljava/lang/String;)V` weiter trägt), Python 45 (`A2: Bibliothek pgchangefeed 0.6.0 (Artefakt pgchangefeed-0.6.0-py3-none-any.whl) ersetzt 0.5.0`, dieselbe virtuelle Umgebung).
+  - A3: Grundlage `A3-Grundlage: 2 Aufrufe ok` je Sprache; Gegenrichtung gegen 0.5.0 scheitert — C# `Ausnahme FileNotFoundException: Could not load file or assembly 'PgChangeFeed.Client, Version=0.6.0.0 …'`, Kotlin `Ausnahme NoSuchMethodError: 'void io.github.pt9912.pgchangefeed.http.PgChangeFeedBadRequestException.<init>(int, java.lang.String, java.lang.String)'`, Python `Ausnahme TypeError: PgChangeFeedError.__init__() got an unexpected keyword argument 'message_code'`.
+  - A5: C# und Kotlin übersetzen den Gast-Quelltext (0.5.x-Formen) gegen 0.5.0 und gegen 0.6.0 (`A5 quelle 0.5.0|0.6.0: … übersetzt`); die Abhängigkeitsmengen sind gleich (C# `A5 abhaengigkeiten: 0.5.0 und 0.6.0 gleich (3 Zeilen)`, Kotlin `… gleich (28 Jars)`); Python liest 15 Typen unter 0.5.0 und unter 0.6.0 (`A5 signatur 0.6.0 <Typ>: 0.5.x-Form bindet=True, drittes Positional bindet=False, message_code keyword-only=True, Standard None=True wie-erwartet`). Die C#-null-Matrix (14 Fälle, je Version): 13 Fälle `0.5.0 ok, 0.6.0 ok`, der Fall `http-basis-3-argumente-null-literal` `0.5.0 ok, 0.6.0 CS0121`.
+  - `make test-sdk-altserver` endet mit Exit 0: `ALTSERVER B0: healthy, Slot slot_pgc_e2e, change_id=812-1, Feed-Image ghcr.io/pt9912/pg-change-feed:0.5.0@sha256:f99a77ff…` (Digest im Lauf voll gedruckt, hier gekürzt: dieser Plan trägt kein zweites Digest-Literal), B1 `BODY {"error":"Tabelle existiert nicht an der Quelle: public.sdk_error_code_missing_table"}`, `STATUS 404`; B2 je Sprache `RECEIVED code=none http=404 grpc=NOT_FOUND text=74 diag_error_code=leer (Exit 0)` (C#, Kotlin, Python). `git status --porcelain` ist vor und nach dem Lauf gleich (gemessen: zwei Ausgaben, `cmp` ohne Abweichung).
+  - B3: `SDK_ALTSERVER_IMAGE=ghcr.io/pt9912/pg-change-feed:dev make test-sdk-altserver` endet mit Exit ≠ 0 (über `make` 2): `ALTSERVER B1: BODY {"error":"Tabelle existiert nicht an der Quelle: public.sdk_error_code_missing_table","code":"PCF-E8025"}`, `run-sdk-altserver-tests: B1 ROT — der Fehlerkörper der Aktivierung einer fehlenden Tabelle ist nicht der eines Servers ohne Meldungscodes (Ausgang 1)`; mit `SDK_ALTSERVER_WEITER=1` zusätzlich `B2 csharp ROT`, `B2 kotlin ROT`, `B2 python ROT` (je „Marker NORMAL_DONE blieb aus“) und Exit ≠ 0.
+  - `make pin-stale-all`: die Zeile `OK          tools/harness/run-sdk-altserver-tests.sh:35 (ghcr.io/pt9912/pg-change-feed:0.5.0) == sha256:f99a77ff…` (gemessen); der Gesamtlauf endet mit Exit ≠ 0 wegen eines fremden `DRIFT` (`sdks/python/Dockerfile:34 (python:3.14-slim)`, Pin unverändert durch diesen Slice, `15 OK, 1 DRIFT, 0 UNBESTIMMT`) — Hinweis an den Planner, kein Befund dieses Slice.
+- **Mutationen (Zusage · mutierte Eingabe · gesehenes Rot; Instanz je Zeile; Kopien im Scratchpad, Bau über `docker build --target pack-export` der Kopie, Messung über `SDK_KOMPAT_DIST_<SPRACHE>`):**
+
+  | Zusage | mutierte Eingabe | Instanz | gesehenes Rot |
+  |---|---|---|---|
+  | A4 C#: der 0.5.x-Konstruktor bleibt binär erhalten | `PgChangeFeedBadRequestException(int, string)` aus der Kopie der Bibliothek entfernt (Test der Kopie angepasst) | C#-Bibliothek 0.6.0, Kopie von `sdks/csharp` | `KOMPAT csharp A2: Ausnahme MissingMethodException: Method not found: 'Void PgChangeFeed.Client.Http.PgChangeFeedBadRequestException..ctor(Int32, System.String)'`, Exit 2 über `make` |
+  | A4 Kotlin: die JVM-Signatur `(int, String)` bleibt erhalten | `@JvmOverloads` an `PgChangeFeedBadRequestException` entfernt | Kotlin-Bibliothek 0.6.0, Kopie von `sdks/kotlin` | `KOMPAT kotlin A2: Ausnahme IllegalAccessError: class kompat.GastKt tried to access private method 'void io.github.pt9912.pgchangefeed.http.PgChangeFeedException.<init>(int, java.lang.String)'`, Exit 2 |
+  | A4 Python: die 0.5.x-Aufrufform bleibt gültig | `PgChangeFeedBadRequestError.__init__` verlangt `message_code` ohne Standard | Python-Bibliothek 0.6.0, Kopie von `sdks/python` | `KOMPAT python A2: Ausnahme TypeError: PgChangeFeedBadRequestError.__init__() missing 1 required keyword-only argument: 'message_code'` und `A5 signatur 0.6.0 PgChangeFeedBadRequestError: 0.5.x-Form bindet=False … ROT`, Exit 2 |
+  | B1: der Server trägt kein `code` | Feed-Image `:dev` statt 0.5.0 | Server mit Meldungscodes | `ALTSERVER B1 FEHLER: der Fehlerkörper trägt das Feld code`, Exit 2 |
+  | B2: die Eigenschaft bleibt leer, in allen drei Sprachen | Feed-Image `:dev`, `SDK_ALTSERVER_WEITER=1` | Server mit Meldungscodes | B2 C#, Kotlin, Python je ROT, Exit 2 |
+
+  Menge: je eine Mutation je Sprache und eine Server-Mutation, je einmal gefahren; die Übertragung auf andere Blatt-Typen und auf die gRPC-Hierarchie ist *hergeleitet*. Die erste Python-Mutation (Pflicht-`message_code` an der Basis) färbte schon den Unit-Lauf im Docker-Bau rot (`TypeError … missing 1 required keyword-only argument` in `http_client.py`), bevor der Gast lief; sie wurde auf das Blatt `PgChangeFeedBadRequestError` verlegt. Die Mutation der Kotlin-Bibliothek endet mit `IllegalAccessError`, nicht mit dem erwarteten `NoSuchMethodError`.
+- **Suchlauf nachgemessen** (`make suchlauf-nachmessen PLAN=<diese Datei>`, Exit 0, `suchlauf-nachmessen: 11 Zeilen stimmen`, am Stand nach `6aa987db` mit den zwei ergänzten `diff`-Zeilen): `@sha256:` am `diff` 86 (erwartet 86, genau ein neuer Treffer — `tools/harness/run-sdk-altserver-tests.sh`); ADR-Pfad `docs/plan/adr` 4 und 2 (unverändert); die Neuzeile der Digest-Referenz in `harness/targets/`: 0 Treffer (die Verträge nennen den Tag). **Gefunden:** der neue Träger der Aussage „binär und quellseitig erhalten“ ist `harness/targets/sdk-kompat.md` (2 Zeilen, ein Zitat der Aussage der ADR und ein Verweis auf sie; am ganzen Baum ohne den Plan 6 bzw. 4 Trefferzeilen); **nicht gefunden:** weitere Träger der Aussage in `sdks/*/README`, `docs/user/` und `spec/` (die Treffer des ganzen Baums liegen in `docs/plan/adr/` und in `harness/targets/sdk-kompat.md`).
+- **Befund-Nachtrag (A, Kompatibilität):**
+  - *„binär erhalten“* — **trägt**, gemessen in drei Sprachen: dieselben Gast-Binärdateien (C#-Assembly, Kotlin-Class-Files, Python-Skript) laufen ohne Neubau gegen die Bibliothek 0.6.0 (A2, Zeilen oben, beide Modi); die Mutation einer entfernten Signatur färbt A2 rot (A4, drei Sprachen). Für Python gilt Aufruf-Kompatibilität (keine Binärdatei).
+  - *„quellseitig erhalten“* — **trägt mit Einschränkung:** C# und Kotlin übersetzen den Gast-Quelltext (0.5.x-Formen) gegen beide Versionen, Python bindet die 0.5.x-Form; **eine** Form trägt nicht: ein `base(status, text, null)` einer fremden Unterklasse der abstrakten HTTP-Basis `PgChangeFeedException` übersetzt unter 0.5.0 und scheitert unter 0.6.0 mit `CS0121` (gedruckt `A5 null-matrix http-basis-3-argumente-null-literal: 0.5.0 ok, 0.6.0 CS0121`; Befund `F-1` des Reviews zum SDK-Slice, jetzt gemessen). Die Umgehung mit Cast oder benanntem Argument übersetzt unter beiden (Zeilen `…-null-cast-exception`, `…-benannt-innerException-null`); die öffentlichen Blatt-Konstruktoren und die gRPC-Basis sind nicht betroffen. **Berührte Entscheidung:** `ADR-0145` Festlegung 4 (Satz „quellseitig erhalten“, `Accepted`); nur benannt — Fix, Folge-ADR (`Supersedes`) oder Annahme der Einschränkung liegt beim Planner/Architect, dieser Slice ändert weder ADR noch SDK.
+  - *Abweichungen von den Erwartungen des Plans* (ungeglättet): (1) A3 in C# endet mit `FileNotFoundException`, nicht mit der erwarteten `MissingMethodException` — die Laufzeit weist die Assembly 0.5.0 wegen ihrer kleineren Version ab, bevor sie die Signatur sucht; die `MissingMethodException` zeigt erst die Mutation A4 bei gleicher Version. Das Kriterium von A3 steht deshalb als Alternative (`MissingMethodException|FileNotFoundException|FileLoadException`); der Plan-Satz „muss mit `MissingMethodException` scheitern“ gilt nicht wörtlich. (2) A4 in Kotlin endet mit `IllegalAccessError`, nicht mit `NoSuchMethodError`. (3) Die Übersetzung des Kotlin-Gasts braucht `io.grpc:grpc-api` ausdrücklich: die Fehlertypen tragen `io.grpc.Status` in ihrer Signatur, die Bibliothek veröffentlicht die gRPC-Abhängigkeiten nur für die Laufzeit (`implementation`) — dieselbe Eigenschaft in 0.5.0 und 0.6.0, kein Befund der Versionen, aber eine Information für Anwender (Hinweis an den Planner). (4) Das Kotlin-Jar der Registry und das Artefakt aus `make sdk-pack-kotlin` haben verschiedene Prüfsummen (`660d7b9db9ba` und `2f600c1e671c`, gemessen in den zwei Modi), das C#-Paket dieselbe: A2 trägt in beiden Modi.
+- **Befund-Nachtrag (B, Server vor 0.6.0):** **trägt**, in drei Sprachen gemessen: gegen das veröffentlichte Image 0.5.0 (Index-Digest aus dem Plan, im Lauf gedruckt) enden HTTP und gRPC mit dem typisierten `NotFound`-Fehler, der Meldungscode ist `null`/`None`, der Fehlertext ist da (HTTP: gleich dem rohen Text aus B1, Länge 74), das Reader-Token endet mit 403 bzw. `PermissionDenied` ohne Code, die Diagnose liefert den Bericht ohne Absturz mit leerem `error_code` im Normalbetrieb und im Fehlerzustand (Zeilen oben). B0 trägt: der Server 0.5.0 läuft gegen das Schema des Arbeitsbaums (die Aussage „additive nullable Spalte“ ist damit für diese Paarung gemessen, nicht mehr hergeleitet). Die gRPC-Seite hat keine Rohdraht-Probe: die Abwesenheit des `ErrorInfo` am Server 0.5.0 ist aus dem Quelltext abgeleitet (`git grep -n -E 'errdetails|ErrorInfo' v0.5.0 -- internal cmd ':!*_test.go'` druckt 0 Zeilen, gemessen) und durch das Paar B2/B3 getragen. Der Plan nennt am Tag `v0.6.0` 2 Dateien; die Nachmessung (ohne Test-Dateien) trifft 3 (`internal/adapters/driving/grpc/administration.go`, `…/errors.go`, `internal/domain/messagecode/codes.go`) — kein Einfluss auf die Aussage.
 - **Steering-Loop-Eintrag:** wird mit der Closure gefüllt (Kandidat: die zwei Targets als
   neue Sensoren, die zwei *hergeleiteten* Aussagen auf *gemessen* heben; liegt in dem
   Makefile-Ziel und dem Vertrag unter `harness/targets/`).
