@@ -319,7 +319,7 @@ unten tragen die geltende Form):
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0,
       `make test-integration` Exit 0 (der Runner trägt die neue Phase; die
       gedruckte Schlusszeile mit der Zeilenzahl der Abdeckungstabelle steht im
@@ -474,6 +474,13 @@ Lauf abgeschlossen — E2E-Abdeckungstabelle aus 21 Go-Zeilen und 59 Bash-Zeilen
 
 Die gemessene Einheit von `cdc_consumer_lag` am Draht ist `By`; `make doc-trace`
 druckt `83 Anforderung(en), 0 Waise(n).` (am Parent: 1 Waise, `LH-FA-SST-010`).
+Exit-Codes der Läufe am Stand der vier Commits des Slice (je Aufruf ungefiltert, der Exit
+direkt gelesen): `make gates` 0 (darin `docs-check` 0 mit `d-check: 1675 Datei(en) geprüft,
+0 Befund(e)`, `coverage-gate: OK — Coverage 83.30% erfüllt Schwelle 80%`),
+`make test-integration` 0, `make test` 0, `make test-store` 0, `make doc-trace` 0,
+`make pin-stale-all` 0, `make fmt-check` 0 (`357 Go-Dateien geprüft, alle formatiert`),
+`make handbuch-public-doc-check` 0, `make suchlauf-nachmessen PLAN=` 0 (`12 Zeilen
+stimmen`), `make kommentar-kennungen DIFF=<Parent>` 0 ohne Kandidat.
 Gesamtzeit von `make test-integration`: 1037 s; die Gesamtzeit ohne die Phasen wurde
 nicht gemessen, der Vergleich vor und nach (§6) bleibt offen. Collector-Version, CA-Bündel
 und die Wirkung von `SSL_CERT_FILE` sind an Version 0.162.0 gemessen; ob öffentliche
