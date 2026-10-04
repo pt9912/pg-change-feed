@@ -609,8 +609,10 @@ Least-Privilege/Secret-Trennung — eine Konfigurationsdatei ist für andere
 Aufbewahrungs-/Verteilwege bestimmt als eine Umgebungsvariable). Die
 Klasse umfasst die drei DSN-Schlüssel (`capture_dsn`/`admin_dsn`/
 `reader_dsn`), die drei Token-Schlüssel (`api_token_reader`/
-`api_token_admin`/`nats_stream_token`) und `nats_url`: die URL-Formen
-dieser Klasse können Benutzer/Passwort einbetten, und die Abwesenheit von
+`api_token_admin`/`nats_stream_token`), `nats_url`, `otlp_endpoint`,
+`otlp_headers` und die beiden Token-Listen (`api_tokens_reader`/
+`api_tokens_admin`): die URL-Formen dieser Klasse können Benutzer/Passwort
+einbetten, Header und Listen tragen Token, und die Abwesenheit von
 Zugangsdaten in einem konkreten Wert ist keine Eigenschaft des Feldes.
 `nats_stream_token` trägt den Verbindungs-Token des dritten,
 vollinhaltstragenden NATS-Zustellwegs (`SPEC-024`) — derselbe
@@ -626,6 +628,9 @@ Decoding (jeder andere unbekannte Schlüssel → Fehlerklasse `configuration`).
 | `log_level` | string (`debug`/`info`/`warn`/`error`) | `CDC_LOG_LEVEL` | nein, Default `info` |
 | `http_addr` | string (`host:port`) | `CDC_HTTP_ADDR` | nein — ungesetzt bleibt die HTTP-/JSON-API deaktiviert |
 | `grpc_addr` | string (`host:port`) | `CDC_GRPC_ADDR` | nein — ungesetzt bleibt der gRPC-Stream deaktiviert |
+| `tls_cert_file` | string (Dateipfad) | `CDC_TLS_CERT_FILE` | nein — nur zusammen mit `tls_key_file` (`SPEC-034`) |
+| `tls_key_file` | string (Dateipfad) | `CDC_TLS_KEY_FILE` | nein — nur zusammen mit `tls_cert_file` (`SPEC-034`) |
+| `otlp_interval` | ganze Zahl (Sekunden, 5 bis 3600) | `CDC_OTLP_INTERVAL_SECONDS` | nein, Default 60 (`SPEC-033`) |
 | `wal_retention_warn_bytes` | int64 | — (kein Env-Gegenstück) | nein, Default SPEC-013 |
 | `wal_retention_error_bytes` | int64 | — (kein Env-Gegenstück) | nein, Default SPEC-013 |
 
@@ -652,8 +657,9 @@ bedeutet kein Dateizugriff, der bestehende Env-only-Pfad bleibt unverändert
 Default.
 
 Die env-exklusiven Variablen (`CDC_NATS_URL`, `CDC_NATS_STREAM_TOKEN`,
-`CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`) werden auch unter geladener
-Datei aus der Umgebung gelesen — sie haben kein Datei-Gegenstück, ihre
+`CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`, `CDC_API_TOKENS_READER`,
+`CDC_API_TOKENS_ADMIN`, `CDC_OTLP_ENDPOINT`, `CDC_OTLP_HEADERS`) werden auch
+unter geladener Datei aus der Umgebung gelesen — sie haben kein Datei-Gegenstück, ihre
 Herkunft ist die Umgebungsvariable auf beiden Pfaden.
 
 ### SPEC-017 — NATS-Wecksignal (Subjekt- und Nachrichtenform)
@@ -688,7 +694,7 @@ bleibt außerhalb.
 `403`; ein bekanntes `admin`-Token erreicht jeden Endpunkt (`admin` deckt
 implizit die lesende Klasse ab). Token-Umgebungsvariablen:
 `CDC_API_TOKEN_READER` (lesende Rechtsklasse), `CDC_API_TOKEN_ADMIN`
-(schreibend/administrativ) — orthogonal zum DB-Rollenmodell der
+(schreibend/administrativ); mehrere Token je Klasse: `SPEC-035`, TLS: `SPEC-034` — orthogonal zum DB-Rollenmodell der
 Verdrahtung: die API-Token-Prüfung entscheidet an der HTTP-Schicht, welcher
 Use Case erreichbar ist; welche DSN der Adapter darunter benutzt, bleibt
 die bei der Verdrahtung fixierte. Aktivierung optional über
@@ -1463,6 +1469,124 @@ und Regel `rest` mit `rule_spec` `{"target": "sonstige", "order": 100}`):
   wird `region` aus der Tabelle entfernt, endet der Pfad zuerst als
   inkompatible Schemaänderung, und es entsteht keine Zeile.
 
+### SPEC-033 — OTLP-Metrik-Export (Drahtform, Konfiguration, Verhalten)
+
+Technische Ausgestaltung von [`LH-FA-SST-010`](lastenheft.md). Die SQL-Sicht
+`cdc.metrics` ([`LH-FA-SST-004`](lastenheft.md), [`LH-QA-OPS-003`](lastenheft.md))
+bleibt unverändert; der Export ist ein zweiter Zugriffsweg auf dieselben
+Kennzahlen, ergänzt um `cdc_wal_retention_bytes`.
+
+**Drahtform (bindend).** OTLP/HTTP mit Protobuf-Körper: `POST
+<endpoint>/v1/metrics`, `Content-Type: application/x-protobuf`, Nachricht
+`ExportMetricsServiceRequest`. `<endpoint>` ist die Basis-URL aus
+`CDC_OTLP_ENDPOINT` ohne den Pfad `/v1/metrics`. Ein Status `2xx` gilt als
+angenommen, jeder andere Status und jeder Verbindungs- oder Zeitfehler als
+Fehlschlag. Welche Bibliothek die Nachricht erzeugt, ist nicht Teil des
+Vertrags; die Drahtform ist es.
+
+**Quelle der Werte.** Die Zeilen der Sicht `cdc.metrics`, gelesen über
+`CDC_READER_DSN` (Rolle `cdc_reader`, keine zusätzlichen Rechte), und der
+zuletzt im Prozess gemessene `cdc_wal_retention_bytes` (`SPEC-009`); ist noch
+keiner gemessen, entfällt dieser Datenpunkt.
+
+**Kennzahlen.** Namen sind die der Sicht (`SPEC-009`). Alle sind OTLP-`Gauge`,
+auch die mit dem Namensteil `_total`: ein Wert der Sicht ist ein
+Momentstand und kein monoton wachsender Zähler (hergeleitet aus dem SQL-Text
+der Sicht: die Zahl der Changes fällt bei einer Retention-Löschung, die Zahl der
+Fehler zählt die Quellen im Fehlerzustand).
+
+| Metrik | Einheit | Datenpunkt-Attribut |
+|---|---|---|
+| `cdc_transactions_total` | `1` | — |
+| `cdc_changes_processed` | `1` | — |
+| `cdc_oldest_change_age_seconds` | `s` | — |
+| `cdc_capture_lag` | `s` | — |
+| `cdc_consumer_position` | `1` | `consumer` |
+| `cdc_consumer_lag` | `1` | `consumer` |
+| `cdc_changes_pending` | `1` | `consumer` |
+| `cdc_errors_total` | `1` | `class` |
+| `cdc_storage_bytes` | `By` | — |
+| `cdc_wal_retention_bytes` | `By` | — |
+
+Resource-Attribute: `service.name` = `pg-change-feed`, `cdc.source_id` = die
+Quellkennung des Prozesses.
+
+**Konfiguration.**
+
+| Variable | Bedeutung | Gültig |
+|---|---|---|
+| `CDC_OTLP_ENDPOINT` | Basis-URL des Empfängers; gesetzt aktiviert den Export, ungesetzt ist er aus | Schema `http` oder `https`, Host vorhanden |
+| `CDC_OTLP_HEADERS` | zusätzliche Header je Anfrage, Form `k=v,k2=v2` | jedes Element mit nicht leerem Schlüssel und einem `=` |
+| `CDC_OTLP_INTERVAL_SECONDS` | Takt der Übertragung in Sekunden, Default 60 | ganze Zahl von 5 bis 3600 |
+
+Die Konfigurationsdatei (`SPEC-016`) trägt nur den Takt (`otlp_interval`);
+Endpunkt und Header sind env-exklusiv, weil sie Zugangsdaten tragen können. Ein
+ungültiger Wert endet den Start mit der Fehlerklasse `configuration`.
+
+**Verhalten.** Der Export läuft in einer eigenen Goroutine und blockiert weder
+Erfassung, Persistierung noch Bestätigung. Jeder Versuch hat eine Frist von
+`min(Takt, 10 s)`. Es gibt keine Warteschlange: der nächste Takt ist die
+Wiederholung, ein ausgefallener Takt wird nicht nachgeholt. Der erste
+Fehlschlag seit dem Start oder seit der letzten Wiederaufnahme erzeugt eine Warnung, weitere
+Fehlschläge höchstens alle 5 Minuten eine erneute; die Wiederaufnahme erzeugt
+eine Info-Zeile. Der Export beeinflusst weder den Health-Zustand noch
+`error_class` des Heartbeats. Ein Fehlschlag der Übertragung und ein
+Fehlschlag beim Lesen der Sicht tragen je einen eigenen Warn-Meldungscode im
+Bereich 6 (`SPEC-008`); die Zuweisung der Codes liegt in der Code-Tabelle im
+Quelltext.
+
+### SPEC-034 — TLS der HTTP- und gRPC-Schnittstellen
+
+Technische Ausgestaltung von [`LH-FA-SST-011`](lastenheft.md).
+
+| Variable | Datei-Schlüssel (`SPEC-016`) | Bedeutung |
+|---|---|---|
+| `CDC_TLS_CERT_FILE` | `tls_cert_file` | Pfad der PEM-Datei mit Zertifikat und Kette |
+| `CDC_TLS_KEY_FILE` | `tls_key_file` | Pfad der PEM-Datei mit dem privaten Schlüssel |
+
+Beide Pfade sind Dateinamen, keine Zugangsdaten; der private Schlüssel selbst
+steht nie in einer Umgebungsvariable oder Konfigurationsdatei. Ein Paar gilt
+für HTTP (einschließlich `GET /changes/stream`, `SPEC-021`) und gRPC
+(`SPEC-020`, `SPEC-031`) gemeinsam.
+
+- Keines der beiden gesetzt: beide Schnittstellen laufen unverschlüsselt wie
+  bisher.
+- Nur eines gesetzt, ein Pfad nicht lesbar oder die beiden Dateien bilden kein
+  Paar: Fehlerklasse `configuration`, kein Start.
+- Beide gesetzt und ladbar: jede der Schnittstellen, die über ihre Adresse
+  (`CDC_HTTP_ADDR`, `CDC_GRPC_ADDR`) aktiviert ist, wird nur über TLS bedient;
+  die Mindestversion ist TLS 1.2, explizit gesetzt. Ein Klartext-Zugriff auf
+  dieselbe Adresse wird nicht bedient.
+- Kein Neuladen: Zertifikat und Schlüssel werden beim Start gelesen.
+- Kein Client-Zertifikat wird verlangt oder geprüft.
+- Die Verbindung zu NATS bleibt unberührt (Sache der NATS-Konfiguration); ein
+  Fehler beim Binden der Adresse bleibt wie bisher ein Log-Eintrag.
+
+### SPEC-035 — Mehrere API-Token je Klasse
+
+Technische Ausgestaltung von [`LH-FA-SST-012`](lastenheft.md) für die Token
+der HTTP- und gRPC-Schnittstellen (`SPEC-018`, `SPEC-031`).
+
+| Variable | Klasse | Form |
+|---|---|---|
+| `CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN` | lesend, administrativ | genau ein Token, unverändert (kein Trennzeichen, ein Komma gehört zum Token) |
+| `CDC_API_TOKENS_READER`, `CDC_API_TOKENS_ADMIN` | lesend, administrativ | kommagetrennte Liste |
+
+Die wirksame Menge einer Klasse ist die Vereinigung des Singulars mit der
+Liste. Alle vier Variablen sind env-exklusiv (`SPEC-016`).
+
+- Ein leeres Element der Liste oder ein Element mit Leerraum (Whitespace) ist
+  ein Fehler der Klasse `configuration`, kein Start.
+- Ein leeres Token ist nie gültig, in keiner Klasse.
+- Steht derselbe Wert in beiden Klassen, gilt `admin`.
+- Die Prüfung vergleicht den vorgelegten Wert zeitkonstant gegen alle Token
+  beider Klassen, ohne beim ersten Treffer abzubrechen (Erwartung an die
+  Umsetzung).
+- HTTP und gRPC bilden die Klasse eines Tokens aus derselben Menge und
+  gleich.
+- Ein Wechsel besteht aus zwei Neustarts: das neue Token ergänzen, die Clients
+  umstellen, das alte Token entfernen. Ein Neuladen zur Laufzeit gibt es nicht.
+
 ---
 
 ## 3. Defaults und Konstanten
@@ -1479,7 +1603,23 @@ eine ADR nur den ganzen Abschnitt nennen.
 | `SPEC-012` | `PG_MAJOR_VERSIONS` | 17, 18 | Vorschlagsregel: die zwei neuesten aktiven Major-Versionen (Stand 2026-09-09; PostgreSQL 19 unmittelbar vor Release — Aufnahme als spätere Ausweitung) |
 | `SPEC-013` | `CDC_THRESHOLDS` | Capture-Lag p95 ≤ 1 s · Warn > 5 s · Fehler > 60 s; WAL-Rückstand Warn > 100 MiB · Fehler > 1 GiB | Initialwerte Commit→CDC-Verfügbarkeit ([`LH-QA-PER-004`](lastenheft.md), `cdc_capture_lag`) und WAL-Wachstum inaktiver Slots ([`LH-QA-REL-003`](lastenheft.md), `cdc_wal_retention_bytes`); über ADR schärfbar |
 | `SPEC-014` | `LOAD_TIERS` | klein: ≤ 10 Changes/s · mittel: 100 Changes/s über 30 min · groß: 1.000 Changes/s über 60 min | Benchmark-Stufen für die Skalierbarkeits-Prüfung ([`LH-QA-PER-002`](lastenheft.md)): von kleinen Datenbanken bis zu kontinuierlichen Änderungsvolumina; über ADR schärfbar |
-| `SPEC-025` | `CDC_BENCH_THRESHOLDS` | Quell-Overhead ≤ 35 % · Batch-Vorteil ≥ 10× | Pass/Fail für [`LH-QA-PER-001`](lastenheft.md)/[`LH-QA-PER-003`](lastenheft.md); [`LH-QA-PER-002`](lastenheft.md) nutzt `SPEC-013`; über ADR schärfbar |
+| `SPEC-025` | `CDC_BENCH_THRESHOLDS` | Zusätzliche Commit-Latenz je Quelltransaktion ≤ 0,10 ms in `SPEC-036` (Vorschlag) · Batch-Vorteil ≥ 10× | Pass/Fail für [`LH-QA-PER-001`](lastenheft.md)/[`LH-QA-PER-003`](lastenheft.md); [`LH-QA-PER-002`](lastenheft.md) nutzt `SPEC-013`; Einzelheiten unter der Tabelle; über ADR schärfbar |
+| `SPEC-036` | `BENCH_SOURCE_ENV` | PostgreSQL 18 · Feed co-located · N = 5000, Median von 5 · `fdatasync` ≤ 0,5 ms | Messumgebung der Obergrenze `SPEC-025`; Einzelheiten unter der Tabelle; über ADR schärfbar |
+
+**Zu `SPEC-025`.** Die Latenz ist die Differenz der Gesamtdauern von N einzeln
+committeten Quelltransaktionen mit und ohne Feed, geteilt durch N. Der Wert
+0,10 ms ist ein Vorschlag zur Bestätigung durch die Messung in der Umgebung
+`SPEC-036` (abgeleitet aus der Obergrenze früherer Messungen, nicht erprobt).
+Außerhalb der Umgebung druckt die Messung ihren Wert samt Verhältnis zur
+gemessenen Latenz des Festschreibens (`fdatasync`) ohne Verdikt.
+
+**Zu `SPEC-036`.** PostgreSQL 18 im Digest-Pin des Bench-Skripts; der
+Feed-Container läuft auf demselben Host wie die Quelle; N = 5000 einzeln
+committete `INSERT`s, Median von 5 Läufen je Phase; die Latenz einer
+`fdatasync`-Operation auf dem Datenträger des Datenverzeichnisses liegt bei
+höchstens 0,5 ms (gemessen mit `pg_test_fsync`). Die Latenz je Commit hängt am
+Festschreiben auf dem Datenträger, deshalb gilt die absolute Zahl nur in dieser
+Umgebung.
 
 ---
 
@@ -1522,7 +1662,8 @@ Klasse; `cdc.process_heartbeat.error_code` trägt den Code des Fehlerzustands
 CLI-Diagnose nennt Klasse und Code (`schema [<code>]`); die übrigen Zeilen des
 Berichts tragen keinen Code. Bei einer Warnung ist die erste Ziffer der
 Bereich (1 Erfassung und Replikation, 2 Backfill, 3 Retention und Speicher,
-4 Verwaltung, 5 Konfiguration und Start, 9 reserviert); sie trägt keine Klasse
+4 Verwaltung, 5 Konfiguration und Start, 6 Beobachtbarkeit und Transport,
+9 reserviert); sie trägt keine Klasse
 und steht als eigenes Log-Attribut `code`, der Meldungstext trägt keinen Code.
 Die Warn-Zeile des Heartbeat-Adapters, die einen Fehlerzustand meldet, trägt
 unter `code` den `E`-Code des Fehlerzustands; ein Filter auf `code=PCF-W…`
@@ -1570,8 +1711,8 @@ Keine Credentials in Logs.
 ## 5. Metriken und Tracing-Felder
 
 Regeln dieser Sektion: verbindliche Felder der Betriebsschnittstelle
-(vorgesehen: Prometheus/OpenTelemetry-Adapter). Inhalt deckt
-[`LH-QA-OPS-003`](lastenheft.md) ab.
+(Zugriffswege: die SQL-Sicht `cdc.metrics` und der OTLP-Export, `SPEC-033`).
+Inhalt deckt [`LH-QA-OPS-003`](lastenheft.md) ab.
 
 | ID | Metrik | Inhalt | Quelle |
 |---|---|---|---|
@@ -1584,7 +1725,7 @@ Regeln dieser Sektion: verbindliche Felder der Betriebsschnittstelle
 | `SPEC-009` | `cdc_consumer_position` | bestätigte Position je Consumer, roh ([`LH-QA-OPS-003`](lastenheft.md)) | ConsumerState |
 | `SPEC-009` | `cdc_wal_retention_bytes` | WAL-Rückstand/Replication-Slot-Zustand: das vom Feed noch nicht bestätigte WAL (aktuelles WAL-Ende der Instanz minus `confirmed_flush_lsn` des Slots); WAL ohne Inhalt für die Publication bestätigt der Feed im Leerlauf, es hält den Rückstand nicht | Replication Stream |
 | `SPEC-009` | `cdc_storage_bytes` | Speicherverbrauch der CDC-Daten | ChangeStore |
-| `SPEC-009` | `cdc_oldest_change_age` | Alter des ältesten aufbewahrten Changes | ChangeStore |
+| `SPEC-009` | `cdc_oldest_change_age_seconds` | Alter des ältesten aufbewahrten Changes | ChangeStore |
 
 Warn- und Fehlerschwellen für WAL-Rückstand und Capture-Lag sind
 konfigurierbar; Initialwerte: SPEC-013. Replication-Slot-Zustand,
@@ -1606,6 +1747,7 @@ WAL-Rückstand und Capture-Lag werden überwacht.
 | `SPEC-026` | `PgChangeFeed.Client` NuGet-Package (C#/.NET, erstes SDK-Package für `LH-FA-SST-009`) | SemVer 2.0, `0.x.y` (aktuell `0.2.1`) | `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj` als Metadaten-Quelle (`<PackageId>`/`<Version>`) — kein eigener §2-Eintrag, das Package deckt bereits dokumentierte Drahtverträge (`SPEC-018`, `SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-024`) |
 | `SPEC-027` | `pgchangefeed` PyPI-Package (Python, zweites SDK-Package für `LH-FA-SST-009`) | PEP 440, `0.x.y` (aktuell `0.2.1`) | `sdks/python/pgchangefeed/pyproject.toml` als Metadaten-Quelle (`[project] name`/`version`) — kein eigener §2-Eintrag, das Package deckt bereits dokumentierte Drahtverträge (`SPEC-018`, `SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-024`) |
 | `SPEC-028` | `pgchangefeed-kotlin` Gradle-/Maven-Package auf Cloudsmith und GitHub Packages (Kotlin, drittes SDK-Package für `LH-FA-SST-009`) | SemVer 2.0, `0.x.y` (aktuell `0.2.2`) | `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` als Metadaten-Quelle (`group`/`version`, ein Repository je Vertriebsziel) — kein eigener §2-Eintrag, das Package deckt bereits dokumentierte Drahtverträge (`SPEC-018`, `SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-024`) |
+| `SPEC-033` | OTLP/HTTP (Protobuf), Metrik-Signal | OpenTelemetry-Protokoll, `POST /v1/metrics`; Typen aus `go.opentelemetry.io/proto/otlp` bevorzugt (nach Kenntnisstand, ungeprüft) | — (Vertrag steht in diesem Dokument, §2 SPEC-033) |
 
 ---
 
@@ -1685,3 +1827,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-03 | `SPEC-008`: Warncodes (Schwere `W`, erste Ziffer der Bereich, Log-Attribut `code`), Vorrangfolge der Klassen bei mehreren Codes in einer Kette und der Code des Fehlerzustands in Heartbeat und Diagnose; Tabelle von `cdc.process_heartbeat` (Spalte `error_code`, View `cdc.heartbeat`); `SPEC-018` (`GET /diagnose`, Feld `error_code`) und `SPEC-031` (`HeartbeatStatus.error_code`, Feldnummer 4) |
 | 2026-10-03 | `SPEC-008`: Warn-Zeile des Fehlerzustands trägt den `E`-Code unter `code`; `SPEC-031`: `error_code` als eigener Aufzählungspunkt von `HeartbeatStatus` |
 | 2026-10-03 | `SPEC-018` (Fehler-Antwortform, `SPEC-022` Zeile „Fehler-Antwortform“): additives Feld `code` im Fehlerkörper, Codes der Ablehnungen `PCF-E8050` bis `PCF-E8057`, `401`/`403` ohne Code; `SPEC-031`: Statusdetail `ErrorInfo` (`reason` Code, `domain` `pg-change-feed`), `Unauthenticated`/`PermissionDenied` ohne Detail; `SPEC-008`: Verweis auf die beiden Wege und `PCF-W4008` |
+| 2026-10-04 | `SPEC-033` (OTLP-Metrik-Export), `SPEC-034` (TLS der HTTP- und gRPC-Schnittstellen), `SPEC-035` (mehrere API-Token je Klasse) neu; `SPEC-036` (Messumgebung `BENCH_SOURCE_ENV`) neu in §3; `SPEC-025` neu gefasst (absolute Obergrenze der zusätzlichen Commit-Latenz je Quelltransaktion als Vorschlag, Verhalten außerhalb der Messumgebung); `SPEC-016`: Schlüssel `tls_cert_file`, `tls_key_file`, `otlp_interval`, ausgeschlossene Klasse um `otlp_endpoint`, `otlp_headers` und die zwei Token-Listen erweitert, env-exklusive Liste ergänzt; `SPEC-008`: Warn-Bereich 6 „Beobachtbarkeit und Transport“; `SPEC-009`: `cdc_oldest_change_age` heißt `cdc_oldest_change_age_seconds` (Name der Sicht); §5 Kopfsatz auf die beiden Zugriffswege gezogen; §6: `SPEC-033` als externer Vertrag; `SPEC-018`: Verweise auf `SPEC-034`/`SPEC-035` |
