@@ -14,7 +14,7 @@ Die ohne den vollen Integrationslauf prüfbaren Plan-Behauptungen sind durch eig
 |---|---|
 | `make gates` | Exit 0; d-check 1676 Dateien, 0 Befunde; Coverage 83,30 % bei Schwelle 80 %; übrige Gates grün |
 | `make suchlauf-nachmessen` | Exit 0, 12 Zeilen stimmen (Parent 0/0/56/1/1/2, diff 67/12/59/2/1/1) |
-| `make doc-trace` | Exit 0, `83 Anforderung(en), 0 Waise(n).`, LH-FA-SST-010 mit Nachweis E2E |
+| `make doc-trace` | Exit 0, `83 Anforderung(en), 0 Waise(n).`, die Anforderung zu OTLP-Export mit Nachweis E2E |
 | `make pin-stale-all` | Exit 0, 17 OK, 0 DRIFT, 0 UNBESTIMMT; Collector-Pin an genau einer Stelle |
 | `make handbuch-public-doc-check` | Exit 0 |
 | `make doc-commits`/`make doc-immutable` mit `RANGE` | Exit 0, 0 Befunde |
