@@ -214,7 +214,7 @@ dem Folge-Slice `sdk-tls-optionen` überlassen.
   [`ADR-0150`](../plan/adr/0150-tls-und-mehrfach-token.md) §Konsequenzen; Adresse ist
   die Closure-Notiz §7 „Folge-Slices“, wie der Plan sie schon nennt.
 
-**Slice C `otlp-metrik-export`:** [`slice-otlp-metrik-export`](../plan/planning/open/slice-otlp-metrik-export.md)
+**Slice C `otlp-metrik-export`:** [`slice-otlp-metrik-export`](../plan/planning/in-progress/slice-otlp-metrik-export.md)
 liegt in `open/`; seine zwei Verweise auf
 [`slice-tls-http-grpc-server`](../plan/planning/done/slice-tls-http-grpc-server.md)
 lösen auf (`make docs-check` Exit 0). Beim `git mv` nach `done/` sind sie

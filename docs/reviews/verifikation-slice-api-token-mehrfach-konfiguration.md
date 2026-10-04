@@ -139,7 +139,7 @@ Zusätze über den Plan hinaus. Ich fand keine unbenannte Abweichung.
 
 1. **Link-Nachzug beim `git mv` nach `done/`.** Die beiden Folge-Slices
    [`slice-tls-http-grpc-server`](../plan/planning/done/slice-tls-http-grpc-server.md)
-   und [`slice-otlp-metrik-export`](../plan/planning/open/slice-otlp-metrik-export.md)
+   und [`slice-otlp-metrik-export`](../plan/planning/in-progress/slice-otlp-metrik-export.md)
    verweisen auf `../in-progress/slice-api-token-mehrfach-konfiguration.md`
    (aktuell auflösbar, `make docs-check` Exit 0); beim Verschieben brechen
    sie. Der Nachzug gehört in die Closure (Frist laut
