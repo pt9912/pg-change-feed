@@ -186,7 +186,7 @@ Planungsstand hat keinen davon gefahren
 Instanz B). Die gedruckte Zeile bzw. der Exit-Code steht im Bericht des
 Implementers und in §7.
 
-- [ ] **Konfiguration, Meldungscodes, Zugangsdaten-Klasse elf (Liefer-Punkt 1,
+- [x] **Konfiguration, Meldungscodes, Zugangsdaten-Klasse elf (Liefer-Punkt 1,
       [`LH-FA-SST-010`](../../../../spec/lastenheft.md) Boundary und Negative).**
       (a) `CDC_OTLP_ENDPOINT` und `CDC_OTLP_HEADERS` sind env-exklusiv,
       `CDC_OTLP_INTERVAL_SECONDS` schlägt das Datei-Feld `otlp_interval` (Default
@@ -236,7 +236,7 @@ Implementers und in §7.
       (von Hand nachgezählt,
       [`ADR-0152`](../../adr/0152-zugangsdaten-klasse-elf-schluessel.md) Fitness
       Function).
-- [ ] **Export-Pipeline (Liefer-Punkt 2, [`LH-FA-SST-010`](../../../../spec/lastenheft.md)
+- [x] **Export-Pipeline (Liefer-Punkt 2, [`LH-FA-SST-010`](../../../../spec/lastenheft.md)
       Happy Path, Boundary).**
       (a) **Bibliothek-Prüfpunkt als erster Schritt**
       ([`ADR-0149`](../../adr/0149-otlp-metrik-export-mechanismus.md) Festlegung 1:
@@ -313,7 +313,7 @@ Implementers und in §7.
       trotzdem ausgegeben (der Fall „noch keiner gemessen“). Die Verallgemeinerung
       auf weitere Stellen ist **hergeleitet**, nicht erprobt; der Bericht nennt je
       Mutation Stelle und Instanz.
-- [ ] **Benutzerhandbuch (Liefer-Punkt 3).** `docs/user/benutzerhandbuch.md`:
+- [x] **Benutzerhandbuch (Liefer-Punkt 3).** `docs/user/benutzerhandbuch.md`:
       Umgebungsvariablen-Tabelle (§5) um `CDC_OTLP_ENDPOINT`,
       `CDC_OTLP_HEADERS`, `CDC_OTLP_INTERVAL_SECONDS` (Gültigkeit, Default, Fehlerfall
       mit Klasse `configuration`, ohne Endpunkt kein Export und keine Verbindung);
@@ -334,7 +334,7 @@ Implementers und in §7.
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9; darin `make coverage-gate` für die
       neue, netzlos prüfbare Fläche, `make a-check`, `make meldungscodes-check`),
       `make docs-check` Exit 0 (Kennungen in diesem Plan verlinkt), `make test`,
@@ -377,6 +377,12 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/domain/messagecode/codes.go`, `messagecode.go`, `messagecode_test.go` | update | Warn-Bereich 6: Konstanten und Tabelle, `Area`, Kommentare, benannte Menge im Test; neue `configuration`-Codes |
 | `docs/user/benutzerhandbuch.md` | update | §2 Liefer-Punkt 3 |
 | `harness/README.md` | update | Zeile `make test-store` |
+| `internal/application/port/inbound/exportmetrics.go` | neu (über den Plan hinaus) | Inbound-Port `ExportMetricsUseCase` — die Sequenz der Architektur-Sicht lässt den Bootstrap-Takt den Use Case rufen; die anderen Use Cases tragen ihren Inbound-Port ebenso |
+| `internal/bootstrap/otlp.go`, `internal/bootstrap/otlp_internal_test.go` | neu (über den Plan hinaus) | die Prüfung der drei Konfigurationswerte (`applyOTLP`, ein Aufruf aus beiden Zugriffswegen), die vier Konfigurations-Sentinels, der Halter des WAL-Rückstands samt Mess-Hülle, der Takt (`runMetricExport`) und die Start-Funktion; liegt in einer eigenen Datei, damit `wiring.go` (2386 Zeilen am Start) nur Konstanten, Felder und den Aufruf trägt; der Test trägt Konfiguration, Takt, Log ohne Zugangsdaten, Frist und Verdrahtung |
+| `internal/adapters/driven/postgresstorage/diagnostics_metrics_test.go`, `internal/adapters/driven/postgresstorage/metrics_internal_test.go` | neu (über den Plan hinaus) | Test des Lese-Adapters; die Datei heißt `diagnostics_metrics_test.go`, damit sie vor `diagnostics_test.go` und damit vor den Neuaufbauten des Schemas durch spätere Testdateien läuft (Kopplung wie dort beschrieben) |
+| `internal/application/port/outbound/` (Dateien `metricsread.go`, `metricexport.go`) | neu, wie geplant | Namen der Arbeitsnamen übernommen; dazu `FailureDetail` (Text der Log-Zeile ohne URL und Header-Wert) und der Halter-Port `WALRetentionSource` |
+| `internal/adapters/driven/otlpexport/exporter_test.go`, `internal/application/usecase/exportmetrics/service_test.go` | neu, wie geplant | Tests gegen `httptest` bzw. Fakes mit Fake-Uhr |
+| `internal/bootstrap/config_file_internal_test.go` | update, wie geplant | Zugangsdaten-Klasse auf elf |
 
 - **Zuweisung der Codes.** `PCF-W6001` (Übertragung fehlgeschlagen) und
   `PCF-W6002` (Lesen der Sicht fehlgeschlagen) sind durch
@@ -409,6 +415,139 @@ Aussagen-Berührung steht hier gar nicht.
   (4) Use Case, Verdrahtung, Konfiguration, Codes, Warn-Bereich 6,
   Zugangsdaten-Klasse; (5) Mutationsläufe an Kopien; (6) `make test-store`,
   `make test-integration`, `make image`; (7) Handbuch, README, `make gates`.
+- **Bibliothek-Prüfpunkt (Messung des Implementers, 2026-10-04; Container-Läufe
+  im Toolchain-Image an einer Scratchpad-Kopie von `go.mod`/`go.sum`, Arbeitsstand
+  `5fcb556f`).** (i) `go list -m -versions go.opentelemetry.io/proto/otlp` nennt
+  als letzte Version `v1.11.1` (`go list -m -json …@latest`: `Time`
+  2026-09-30, `GoVersion` 1.26.0); das Paket
+  `go.opentelemetry.io/proto/otlp/collector/metrics/v1` trägt die Nachricht
+  `ExportMetricsServiceRequest`, `…/metrics/v1` den `Gauge` (ein Probe-Programm mit
+  beiden baut und läuft). (ii) `go get go.opentelemetry.io/proto/otlp@v1.11.1`
+  druckt `upgraded golang.org/x/net v0.58.0 => v0.59.0` und `upgraded
+  google.golang.org/genproto/googleapis/rpc v0.0.0-20260706201446-f0a921348800 =>
+  v0.0.0-20260928230214-8a89bd6388cc`; neu hinzu kommen `github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0`
+  (das Paket `collector/metrics/v1` enthält `metrics_service.pb.gw.go`) und
+  `google.golang.org/genproto/googleapis/api`; `google.golang.org/grpc v1.84.0` und
+  `google.golang.org/protobuf v1.36.12` bleiben unverändert (der Generator-Pin
+  `protoc-gen-go@v1.36.12` im `Dockerfile` bleibt gültig; `make generated-sync`
+  endet mit Exit 0, gedruckt `generated-sync: OK`). (iii) `go.sum` 64 → 70 Zeilen
+  nach `go mod tidy`; Produktions-Binary (`CGO_ENABLED=0 go build -trimpath
+  -ldflags="-s -w" ./cmd/pg-change-feed`, Kopie): 19677344 → 20013216 Bytes
+  (+335872 Bytes, +1,7 %, mit einem Aufruf der Nachricht im Programm; `go list -deps`
+  nennt drei `grpc-gateway`-Pakete im Binary). (iv) Aufnahme per
+  Container-`go get` und `go mod tidy` an der Kopie, das Ergebnis per `cp` nach
+  `go.mod`/`go.sum`; `make mod-download` Exit 0. **Entscheidung:** Typen-Bibliothek
+  mit `net/http` — (i) bis (iii) tragen keinen Befund, der als Grund gegen sie
+  stünde (keine Anhebung von `grpc` oder `protobuf`, Fußabdruck unter 2 %); der
+  Rückfall auf das offizielle SDK war nicht nötig. Die Anhebung von
+  `golang.org/x/net` und der Pseudo-Version `genproto/googleapis/rpc` ist
+  mitgetragen (`make test`, `make test-store`, `make test-integration`,
+  `make image`, `make gates` laufen am Endstand, siehe unten).
+- **Festlegungen des Implementers, wo Plan und Spec schweigen** (zusätzlich zu den
+  Festlegungen oben; jede als Spec-Lücke-Kandidat für die Closure): (1) Einheit
+  von `cdc_consumer_lag` ist `1`, wie [`SPEC-033`](../../../../spec/pflichtenheft.md)
+  und [`ADR-0149`](../../adr/0149-otlp-metrik-export-mechanismus.md) Festlegung 4
+  („bewusst `1`“) es nennen; der SQL-Kommentar in
+  `tools/schema/nacharbeit-observability.sql` nennt den Wert „LSN-Byte-Abstand“
+  (`cdc_consumer_lag` = `latest_commit_position - acknowledged_position`, beide
+  `bigint`) — **Befund**, nicht still geändert: ob `By` stimmt, ist eine Frage an
+  Planner/Architect (eine Folge-ADR, weil die Spec-Tabelle und `ADR-0149`
+  `Accepted` sind). (2) Zahlenform: Zähler, Positionen und Byte-Zahlen gehen als
+  OTLP-`as_int` hinaus (volle 64-Bit-Genauigkeit; ein `double` rundet ab 2^53, ein
+  Test liest `9007199254740993` exakt zurück), Kennzahlen mit Einheit `s` immer als
+  `as_double` (kein Typwechsel der Reihe bei einem ganzzahligen Wert); die Spec
+  nennt nur „Gauge“. (3) Frist je Versuch: sie gilt für Lesen und Übertragen eines
+  Zyklus zusammen (ein Kontext je Zyklus). (4) Header-Schlüssel müssen ein
+  gültiger HTTP-Header-Name sein (ein Zeichen wie `:` im Schlüssel endet mit
+  `PCF-E2012`), ein Steuerzeichen im Wert ist ein Fehler — ein Wert, der nie
+  gesendet werden könnte, wird beim Start abgelehnt statt bei jedem Zyklus. (5)
+  Ein Name der Sicht außerhalb der Tabelle von `SPEC-033` wird nicht übertragen. (6)
+  Eine Weiterleitung (`3xx`) wird nicht verfolgt (Fehlschlag), damit kein Header
+  einen anderen Host erreicht. (7) Das Datei-Feld `otlp_interval` ist eine
+  Zeichenkette (Fehlerpfad mit eigenem Code für `abc`/`60.5`), eine leere Zeichenkette
+  gilt wie ungesetzt. (8) Meldungscodes: `PCF-E2011` Endpunkt, `PCF-E2012` Header,
+  `PCF-E2013` Takt, `PCF-E2014` Header ohne Endpunkt; `PCF-W6001`/`PCF-W6002`.
+  (9) Der Lese-Pool verbindet erst beim ersten Lesen (kein Ping beim Start): eine
+  nicht erreichbare Datenbank oder fehlende Leserolle ist ein Zyklus-Fehlschlag
+  (`PCF-W6002`), kein Start-Hindernis.
+- **Mutationsproben (Implementer, Scratchpad-Kopien, Instanz: Go-Test des
+  Pakets im Toolchain-Image; je Zeile Zusage · mutierte Stelle · gesehene Farbe).**
+  Die Plan-Mutationen (e): `Gauge` → `Sum` in `buildRequest` (Ausgabe-Typ der
+  Zusage „Gauge“) rot in `TestExportCarriesAllTenMetricsAsGauges`; Frist entfernt
+  (`context.WithTimeout` im Use Case, Eingabe: der Kontext des Aufrufs) rot in
+  `TestExportEndsAtTheDeadline` und in der Verdrahtung
+  (`WithTimeout` weggelassen) rot in
+  `TestUnresponsiveReceiverDoesNotHoldHeartbeatAndEndsAtDeadline`; Drosselung
+  entfernt (Abstandsprüfung in `failed`, Eingabe: Zeitabstand der Fake-Uhr) rot in
+  `TestWarningIsThrottledToFiveMinutes` und am echten Takt in
+  `TestMetricExportThrottlesWarningsAcrossCycles`; untere Intervallgrenze 5 → 4
+  (Eingabewert `4`) rot in `TestOTLPKonfigurationUngueltigEndetMitConfiguration`;
+  WAL-Datenpunkt ohne gemessenen Wert (Bedingung `ok` am Halter, Eingabe: Halter
+  leer) rot in `TestExportOmitsWALDatapointUntilMeasured`. Weitere, je einmal
+  rot gesehen: Obergrenze von `Area` `'6'` → `'5'` (`TestWarningCodesCarryTheirArea`);
+  leere Metrik bei fehlendem Datenpunkt
+  (`TestExportWithoutWALMeasurementCarriesNineNames`); Einheit `By` → `1` und
+  Attribut `class` → `consumer` (beide `TestExportCarriesAllTenMetricsAsGauges`);
+  `!spec.float` entfernt und beide Zahlenzweige vertauscht
+  (`TestExportKeepsValuesExactAndByUnit`); `JoinPath` durch Verkettung
+  (`TestExportBuildsExactlyOneMetricsPath`); Statusgrenze `> 299` → `> 399` und
+  `!= 200` (`TestExportStatusClasses`); Content-Type vor den Headern
+  (`TestExportSendsConfiguredHeadersButKeepsContentType`); Anfrage ohne Kontext
+  (`TestExportExceedsDeadlineFails`); `CheckRedirect` entfernt
+  (`TestExportDoesNotFollowRedirects`); Transportfehler im Text
+  (`TestExportErrorsCarryNoCredentials`, und mit rohem Fehlertext im Use Case
+  zusammen `TestMetricExportLogsCarryNoCredentials`); Zeitpunkt der Zeilen der
+  Sicht und der WAL-Messung (`TestExportAddsTheLastWALMeasurementWithItsOwnTime`);
+  der Code der Lesestufe durch den der Übertragung ersetzt und der rohe Fehlertext
+  in der Warn-Zeile (`TestFailureCodesFollowTheStage`); `<` → `<=` an der Drossel-Grenze
+  (`TestWarningIsThrottledToFiveMinutes`); die Prüfung des Eltern-Kontexts entfernt
+  (`TestShutdownIsNoFailure`); Datei-Takt verworfen und Header am letzten `=`
+  geteilt (`TestOTLPKonfigurationWirdGelesen`); Schema-Prüfung entfernt, leerer
+  Schlüssel erlaubt, Header ohne Endpunkt erlaubt
+  (`TestOTLPKonfigurationUngueltigEndetMitConfiguration`); `otlp_interval` in die
+  Klasse aufgenommen (`TestOTLPIntervalGehoertNichtZurZugangsdatenKlasse`);
+  `otlp_headers` aus der Klasse gestrichen
+  (`TestZugangsdatenKlasseCodeUndTestSindMengengleich`,
+  `TestConfigFromFileLehntZugangsdatenAb`); Mess-Hülle hält einen Fehlschlag fest
+  (`TestRecordingWALMeasurerHoldsOnlySuccessfulMeasurements`); doppelter Aufruf bei
+  Fehler (`TestRunMetricExportTicksCallsOncePerTick`); Endpunkt-Bedingung in
+  `startMetricExport` entfernt
+  (`TestStartMetricExportWithoutEndpointStartsNothing`); Ganzzahl-Lesung entfernt
+  (`TestParseMetricValue`). Gegen die reale Datenbank (Kopie des Arbeitsbaums,
+  Testcontainer, Rollout wie `make test-store`): Label verworfen und Ganzzahl-Lesung
+  entfernt rot in `TestMetricsReadEqualsTheView`; leerer WAL-Halter und verworfene
+  Zeilen der Sicht rot in `TestStartMetricExportDeliversTheValuesOfTheView`.
+  **Ohne Rot:** der rohe Fehlertext allein im Use Case lässt
+  `TestMetricExportLogsCarryNoCredentials` grün, weil der Adapter nur sichere Texte
+  erzeugt (zwei getrennte Schutzschichten; der Test färbt sich bei einem Leck im
+  Adapter oder in beiden). Die Verallgemeinerung auf weitere Stellen ist
+  **hergeleitet**, nicht erprobt.
+- **Läufe des Implementers (Exit-Code je Lauf direkt ausgewertet,
+  [`AGENTS.md`](../../../../AGENTS.md) §3.9; gedruckte Zeilen).** `make test`
+  Exit 0 (`go test -race ./...`; darin `ok` für `otlpexport`, `exportmetrics`,
+  `messagecode`, `postgresstorage` und `bootstrap`; die neuen zeitabhängigen Tests
+  fünfzehnmal mit `-race` stabil). `make test-store` Exit 0, gedruckt
+  `db-coverage: OK — DB-Adapter-Coverage 83.28% erfuellt Schwelle 80%`; die neuen
+  Datenbank-Tests laufen und überspringen sich nicht (verbose, gleicher Aufbau wie
+  `make test-store`): `--- PASS: TestMetricsReadEqualsTheView`,
+  `TestMetricsReadWithoutReaderMembershipFailsAsReadError`,
+  `TestStartMetricExportDeliversTheValuesOfTheView`. `make image` Exit 0.
+  `make test-integration` Exit 0, gedruckt `run-integration-tests: Lauf
+  abgeschlossen — E2E-Abdeckungstabelle aus 21 Go-Zeilen und 56 Bash-Zeilen` (der
+  Container läuft ohne Endpunkt unverändert; die Abdeckungstabelle blieb
+  unverändert). `make gates` Exit 0, gedruckt `coverage-gate: OK — Coverage 83.30%
+  erfüllt Schwelle 80%`, `db-package-lists-check: OK — … nennen dieselben 4
+  Pakete`, `generated-sync: OK`, `d-check: 1669 Datei(en) geprüft, 0 Befund(e)`,
+  `gesamt: 0 Befund(e)` (`a-check`). Einzeln: `make fmt-check` (`354 Go-Dateien
+  geprüft, alle formatiert`), `make handbuch-public-doc-check`, `make
+  ausgabe-kennungen-check`, `make meldungscodes-check` (`106 Codes in Tabelle und
+  Katalog gleich`) je Exit 0; `make kommentar-kennungen DIFF=d45ac9cb` Exit 0
+  (nach dem Kürzen einer Paket-Doc auf eine Kennung). `make doc-trace` Exit 0,
+  gedruckt `83 Anforderung(en), 1 Waise(n)`: `LH-FA-SST-010` bleibt Waise (Zeile
+  „WAISE“ mit Spalte `ADR-0149`), bis der Folge-Slice die
+  Abdeckungszeile des Realserver-Belegs liefert; der Nachweis dieses Slice ist
+  Unit-/`httptest`-Ebene. `make pin-stale-all` lief nicht: dieser Zug berührt keinen
+  `@sha256:`-Pin (`go.mod`/`go.sum` sind kein Image-Digest).
 - **Suchlauf (§3.13 der Regeln, [`AGENTS.md`](../../../../AGENTS.md)).** Bewegte
   Eigenschaften: die **Menge der Warn-Bereiche** (Zählwort „1 bis 5“, „Bereich 5“,
   `c[5] > '5'`), die **Zugangsdaten-Klasse** (Symbole `otlp_endpoint`,
@@ -429,6 +568,23 @@ Aussagen-Berührung steht hier gar nicht.
   die 6); Zeile 2 wächst um Code, Test, Handbuch; Zeile 3 um Adapter und Doku; Zeile 4
   um Adapter und Test; Zeile 5 um Adapter, Abbildung und Handbuch. Jede
   Trefferzeile wird gelesen, nicht gezählt.
+- **Suchlauf-Ergebnis des Implementers.** Startmessung am Arbeitsstand `5fcb556f`
+  (`make suchlauf-nachmessen`, vor der ersten Änderung): alle zehn Zeilen stimmen
+  unverändert (die Vorgänger-Slices haben diese fünf Eigenschaften nicht bewegt, die
+  `diff`-Zeilen trugen den Planungsstand). Endstand, `diff`-Zeilen auf die
+  Messung gesetzt (Parent-Zeilen unverändert): Zeile 1 **4** — die vier Träger der
+  Bereichsmenge tragen die 6 (`codes.go`, `messagecode.go`,
+  `spec/pflichtenheft.md`; `benutzerhandbuch.md` nennt den Bereich 5 weiter als
+  „vorgesehen“ und die 6 daneben); `messagecode_test.go` trägt „1 bis 6“ und steht
+  nicht mehr in der Menge. Zeile 2 **105** (Code, Tests, Handbuch, Spec): die Trefferzeilen der
+  Nicht-Test-Dateien gelesen — keine nennt `otlp_endpoint` oder `otlp_headers` als
+  zulässigen Datei-Schlüssel, `otlp_interval` ist das einzige zulässige Feld. Zeile 3
+  **317**, Zeile 4 **44**, Zeile 5 **42**: je Datei gezählt (`git grep -c`) und die
+  Fundstellen der Nicht-Test-Dateien gelesen; die Mehrung gegenüber dem Parent liegt
+  in `internal/bootstrap/otlp*.go`, den Tests, dem Adapter und dem Handbuch. **Nicht gefunden:** kein Träger der Bereichsmenge „1 bis 5“,
+  keiner der neun Schlüssel („neun“ im Handbuch) und keine Zusage „kein
+  OTLP-Bezug im Baum“ blieb stehen. Fremde Dateien: keine gemeldet — die Spec-Texte
+  (`SPEC-033`, `SPEC-016`, `SPEC-008`, `SPEC-009`) tragen den Endstand bereits.
 
 ```suchlauf
 a53f4e75ca51bdaa4319aeabba96f89c48b6448f 7 -n -E "Bereich 1 bis 5|1 bis 5 in der ersten|Bereich 5 für Konfiguration|außerhalb 1 bis 5|5 Konfiguration und Start|c\[5\] > '5'" -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
@@ -436,11 +592,11 @@ a53f4e75ca51bdaa4319aeabba96f89c48b6448f 10 -n -E 'otlp_endpoint|otlp_headers|CD
 a53f4e75ca51bdaa4319aeabba96f89c48b6448f 23 -n -i -E 'otlp|opentelemetry' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 a53f4e75ca51bdaa4319aeabba96f89c48b6448f 27 -n -E 'cdc_wal_retention_bytes' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 a53f4e75ca51bdaa4319aeabba96f89c48b6448f 26 -n -E 'cdc_oldest_change_age_seconds|cdc_consumer_lag' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 7 -n -E "Bereich 1 bis 5|1 bis 5 in der ersten|Bereich 5 für Konfiguration|außerhalb 1 bis 5|5 Konfiguration und Start|c\[5\] > '5'" -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 10 -n -E 'otlp_endpoint|otlp_headers|CDC_OTLP_|otlp_interval' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 23 -n -i -E 'otlp|opentelemetry' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 27 -n -E 'cdc_wal_retention_bytes' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
-diff 26 -n -E 'cdc_oldest_change_age_seconds|cdc_consumer_lag' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 4 -n -E "Bereich 1 bis 5|1 bis 5 in der ersten|Bereich 5 für Konfiguration|außerhalb 1 bis 5|5 Konfiguration und Start|c\[5\] > '5'" -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 105 -n -E 'otlp_endpoint|otlp_headers|CDC_OTLP_|otlp_interval' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 317 -n -i -E 'otlp|opentelemetry' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 44 -n -E 'cdc_wal_retention_bytes' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
+diff 42 -n -E 'cdc_oldest_change_age_seconds|cdc_consumer_lag' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/open' ':!.harness/baseline' ':!docs/plan/adr'
 ```
 
 ## 4. Trigger

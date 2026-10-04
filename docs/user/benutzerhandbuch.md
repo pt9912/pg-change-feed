@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.96
+Version: 1.97
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-10-04
 
@@ -74,7 +74,7 @@ Gruppenrolle zuweisen:
 |---|---|---|
 | `cdc_capture` | Erfassungspfad des Feed-Containers (Store-Adapter, Replication-Stream) und Ausführung eines Backfills (Run-Zustand fortschreiben, Bestand im Snapshot lesen und schreiben, siehe [Bestand als Backfill überführen](#bestand-als-backfill-überführen)) | `CDC_CAPTURE_DSN` |
 | `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`, Retention-Löschausführung, Verarbeitung der Antrags-Queue `cdc.administration_request` — offene Anträge lesen und ihren Ausgang vermerken, ohne Anträge selbst anzulegen oder zu löschen —, Annahme eines Backfill-Antrags, die die Run-Zeile in `cdc.backfill_run` anlegt; `cdc.backfill_table`, `cdc.set_transformation`/`cdc.remove_transformation` (siehe [Transformationsregel konfigurieren](#transformationsregel-konfigurieren)), `cdc.set_route`/`cdc.remove_route` (siehe [Routing-Regel konfigurieren](#routing-regel-konfigurieren)) und die übrigen Antragsfunktionen ruft nur diese Rolle auf) | `CDC_ADMIN_DSN` |
-| `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`, `cdc.retention_blockers`, `cdc.backfill_status`) — trägt auch `--healthcheck` und `diagnose` (siehe [Diagnose ausführen](#diagnose-ausführen)) | `CDC_READER_DSN` |
+| `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`, `cdc.retention_blockers`, `cdc.backfill_status`) — trägt auch `--healthcheck`, `diagnose` (siehe [Diagnose ausführen](#diagnose-ausführen)) und das Lesen für den OTLP-Export (siehe [Metriken per OTLP übertragen](#metriken-per-otlp-übertragen)) | `CDC_READER_DSN` |
 
 ```sql
 CREATE ROLE feed_capture_login LOGIN PASSWORD '<geheim>' IN ROLE cdc_capture;
@@ -1212,7 +1212,118 @@ wachsenden Tabelle).
 steht **nicht** in `cdc.metrics`: Die Erhebung braucht Systemkatalog-Zugriffe
 außerhalb des `cdc`-Schemas (`pg_replication_slots`, `IDENTIFY_SYSTEM`), die
 die Least-Privilege-Fläche von `cdc_reader` unnötig erweitern würden — siehe
-[WAL-Rückstand prüfen](#wal-rückstand-prüfen).
+[WAL-Rückstand prüfen](#wal-rückstand-prüfen). Der OTLP-Export (nächster
+Abschnitt) überträgt ihn zusätzlich zu den Zeilen der Sicht.
+
+### Metriken per OTLP übertragen
+
+Statt die Sicht abzufragen, kann der Feed-Container seine Kennzahlen aktiv an
+einen OpenTelemetry-Empfänger übertragen (Push), etwa an einen
+OpenTelemetry-Collector. Der Export ist **aus**, solange `CDC_OTLP_ENDPOINT`
+nicht gesetzt ist: dann baut der Container keine Verbindung zu einem Empfänger
+auf, und die SQL-Sicht `cdc.metrics` sowie der Betrieb bleiben unverändert. Die
+Sicht bleibt auch mit Export bestehen; der Export ersetzt sie nicht.
+
+| Variable | Bedeutung | Gültig |
+|---|---|---|
+| `CDC_OTLP_ENDPOINT` | Basis-URL des Empfängers; gesetzt schaltet den Export ein | Schema `http` oder `https` und ein Host |
+| `CDC_OTLP_HEADERS` | zusätzliche Header jeder Anfrage, Form `Schlüssel=Wert`, mehrere durch Komma getrennt | jedes Element mit nicht leerem Schlüssel und einem `=` |
+| `CDC_OTLP_INTERVAL_SECONDS` | Takt der Übertragung in Sekunden, Default 60 | ganze Zahl von 5 bis 3600 |
+
+```yaml
+services:
+  pg-change-feed:
+    environment:
+      CDC_OTLP_ENDPOINT: "http://otel-collector:4318"
+      CDC_OTLP_HEADERS: "Authorization=Bearer <token>"
+      CDC_OTLP_INTERVAL_SECONDS: "30"
+```
+
+Der Container sendet OTLP über HTTP mit Protobuf-Körper
+(`POST <CDC_OTLP_ENDPOINT>/v1/metrics`, Inhaltstyp `application/x-protobuf`);
+der Pfad `/v1/metrics` kommt zur Basis-URL hinzu, mit oder ohne abschließenden
+Schrägstrich. Ein Pfadanteil der Basis-URL bleibt erhalten. Ein Status `2xx`
+gilt als angenommen; jeder andere Status, eine abgewiesene Verbindung und eine
+überschrittene Frist gelten als Fehlschlag. Eine Weiterleitung (`3xx`) wird nicht
+verfolgt und ist ein Fehlschlag. Ob ein `https`-Empfänger erreichbar ist, hängt
+vom Vertrauensspeicher des Container-Images ab; eine eigene Zertifizierungsstelle,
+ein Client-Zertifikat und Proxy-Einstellungen sind nicht konfigurierbar.
+
+**Header.** Das Komma trennt die Header, das **erste** `=` trennt Schlüssel und
+Wert; ein Wert darf weitere `=` tragen (etwa die Auffüllung einer
+Base64-Zeichenkette) und kein Komma. Der Schlüssel ist ein gültiger
+Header-Name ohne Leerraum; Leerraum im Wert bleibt erhalten
+(`Authorization=Bearer abc`). Ein Element ohne `=`, mit leerem Schlüssel, mit
+Leerraum oder einem unzulässigen Zeichen im Schlüssel oder mit einem
+Steuerzeichen im Wert verhindert den Start. Header ohne Endpunkt verhindern den
+Start ebenso: ein Wert, der ohne Endpunkt nie wirkt, bleibt nicht stillschweigend
+stehen. Die Header können Zugangsdaten tragen und stehen in keinem Log-Eintrag.
+Der Takt ohne Endpunkt ist zulässig (die Konfigurationsdatei darf ihn tragen).
+
+**Kennzahlen.** Übertragen werden die Zeilen der Sicht `cdc.metrics` — der
+Container liest sie über `CDC_READER_DSN` (Rolle `cdc_reader`, ohne zusätzliche
+Rechte) — und der zuletzt vom Container gemessene `cdc_wal_retention_bytes`
+(siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)). Ist der WAL-Rückstand noch
+nicht gemessen, entfällt genau dieser Datenpunkt.
+
+| Kennzahl | Einheit | Attribut des Datenpunkts |
+|---|---|---|
+| `cdc_transactions_total` | `1` | — |
+| `cdc_changes_processed` | `1` | — |
+| `cdc_oldest_change_age_seconds` | `s` | — |
+| `cdc_capture_lag` | `s` | — |
+| `cdc_consumer_position` | `1` | `consumer` |
+| `cdc_consumer_lag` | `1` | `consumer` |
+| `cdc_changes_pending` | `1` | `consumer` |
+| `cdc_errors_total` | `1` | `class` |
+| `cdc_storage_bytes` | `By` | — |
+| `cdc_wal_retention_bytes` | `By` | — |
+
+Die Resource trägt die Attribute `service.name` mit dem Wert `pg-change-feed`
+und `cdc.source_id` mit der Kennung der Quelle des Containers; jeder Datenpunkt
+trägt den Zeitpunkt seiner Messung. Zähler, Positionen und Byte-Zahlen gehen als
+ganze Zahlen hinaus und behalten ihre volle 64-Bit-Genauigkeit; die Kennzahlen mit
+Einheit `s` gehen als Fließkommazahlen hinaus.
+
+**Alle Kennzahlen sind Momentstände (Gauge), auch die mit dem Namensteil
+`_total`.** Ein Wert ist kein monoton wachsender Zähler: die Zahl der Changes fällt
+bei einer Löschung nach der Aufbewahrung, `cdc_errors_total` zählt die Quellen, die
+aktuell in einer Fehlerklasse stehen. Ein Werkzeug, das den Namensteil `_total` als
+Zähler liest, darf darauf keine Zählerfunktionen wie `rate()` oder `increase()`
+anwenden; ein Gauge wird als Momentwert gelesen.
+
+**Wert der Sicht.** Ein übertragener Wert entspricht dem Wert, den die SQL-Sicht
+zum Zeitpunkt seiner Messung liefert. `cdc_oldest_change_age_seconds` und
+`cdc_capture_lag` hängen an der Uhr der Abfrage und weichen um den Abstand beider
+Messzeitpunkte ab; `cdc_wal_retention_bytes` steht nicht in der Sicht, übertragen
+wird der zuletzt gemessene Wert.
+
+**Takt, Frist und Ausfall.** Der erste Versuch folgt nach einem vollen Takt, nicht
+beim Start. Jeder Versuch hat eine Frist von der Länge des Taktes, höchstens
+10 Sekunden. Es gibt keine Warteschlange: der nächste Takt ist die Wiederholung,
+ein ausgefallener Takt wird nicht nachgeholt, und der nächste Takt überträgt den
+dann aktuellen Stand. Der Export läuft unabhängig von der Erfassung in einem
+eigenen Ablauf des Prozesses und hält weder die Erfassung noch die Persistierung
+noch die Bestätigung auf; ein Empfänger, der
+nicht erreichbar ist oder nicht antwortet, ändert weder den Health-Zustand noch
+`error_class` des Lebenszeichens. Die Übertragung setzt ein, sobald der Empfänger
+wieder antwortet.
+
+Ein Fehlschlag steht im Log als Warnung: `PCF-W6001` für die Übertragung,
+`PCF-W6002` für das Lesen der Sicht. Die erste Warnung seit dem Start oder seit der
+letzten Wiederaufnahme steht sofort, weitere höchstens alle 5 Minuten; die
+Wiederaufnahme erzeugt eine Info-Zeile. Die Zeile nennt Code und Stufe sowie —
+bei der Übertragung — den Status oder die Art des Fehlers, nie eine URL oder einen
+Header-Wert.
+
+```json
+{"level": "WARN", "msg": "metrics-export: Zyklus fehlgeschlagen", "code": "PCF-W6001", "stage": "Übertragung", "detail": "Status 503"}
+```
+
+**Ungültige Konfiguration.** Ein ungültiger Endpunkt, Header oder Takt beendet
+den Start mit der Fehlerklasse `configuration`; die Zeile nennt Variable und
+Position, nie einen Wert: `PCF-E2011` (Endpunkt), `PCF-E2012` (Header),
+`PCF-E2013` (Takt), `PCF-E2014` (Header ohne Endpunkt).
 
 ### Diagnose ausführen
 
@@ -2428,7 +2539,7 @@ dieselben vier Zugriffswege wie die C#-/Kotlin-Pendants ab. Siehe
 |---|---|---|
 | `CDC_CAPTURE_DSN` | ja | Verbindung über die Rolle `cdc_capture` (Store-Adapter, Replication-Stream, Ausführung eines Backfills) |
 | `CDC_ADMIN_DSN` | ja | Verbindung über die Rolle `cdc_admin` (Tabellen-Aktivierung, Heartbeat, Verarbeitung der Antrags-Queue, Annahme eines Backfill-Antrags, `register-consumer`/`acknowledge-consumer`) |
-| `CDC_READER_DSN` | ja | Verbindung über die Rolle `cdc_reader` (`--healthcheck`, `diagnose`) |
+| `CDC_READER_DSN` | ja | Verbindung über die Rolle `cdc_reader` (`--healthcheck`, `diagnose`, Lesen der Sicht für den OTLP-Export) |
 | `CDC_SOURCE_ID` | ja | Kennung der Quelle (muss in `cdc.source` registriert sein) |
 | `CDC_PUBLICATION` | ja | Name der PostgreSQL-Publication |
 | `CDC_SLOT` | ja | Name des Logical-Replication-Slots |
@@ -2444,6 +2555,9 @@ dieselben vier Zugriffswege wie die C#-/Kotlin-Pendants ab. Siehe
 | `CDC_GRPC_ADDR` | nein | Horch-Adresse des gRPC-Servers (`host:port`); aktiviert gemeinsam den Change-Stream (`ChangeStream`) und die Verwaltungs-API (`Administration`) auf demselben Port. Ungesetzt bleibt der Server vollständig deaktiviert — kein Listener. Wie `CDC_HTTP_ADDR` keine Start-Vorbedingung |
 | `CDC_TLS_CERT_FILE` | nein | Pfad zur Zertifikatsdatei (PEM, das Zertifikat und dahinter seine Kette) der HTTP- und der gRPC-Schnittstelle. Zertifikat und Schlüssel gehören zusammen: ist nur eine der beiden Variablen gesetzt, startet der Container nicht (Fehlerklasse `configuration`, `PCF-E2009`). Beide gesetzt verschlüsseln HTTP (einschließlich `GET /changes/stream`) und gRPC (siehe [Schnittstellen mit TLS verschlüsseln](#schnittstellen-mit-tls-verschlüsseln)); beide ungesetzt lassen beide Schnittstellen unverschlüsselt. Die Variable trägt einen Pfad, keine Zugangsdaten, und hat das Datei-Feld `tls_cert_file` |
 | `CDC_TLS_KEY_FILE` | nein | Pfad zur Datei mit dem privaten Schlüssel (PEM) zum Zertifikat; dieselben Regeln wie bei `CDC_TLS_CERT_FILE`. Der Schlüssel selbst steht weder in einer Umgebungsvariable noch in der Konfigurationsdatei; das Datei-Feld `tls_key_file` trägt nur den Pfad |
+| `CDC_OTLP_ENDPOINT` | nein | Basis-URL des OpenTelemetry-Empfängers (Schema `http` oder `https`, ein Host); gesetzt schaltet den periodischen Export der Kennzahlen ein, ungesetzt bleibt er aus — keine Verbindung zu einem Empfänger, Betrieb und SQL-Sicht unverändert. Ein Wert mit anderem Schema oder ohne Host verhindert den Start (Fehlerklasse `configuration`, `PCF-E2011`). Die URL kann Zugangsdaten tragen und steht nur in der Umgebung, nicht in der Konfigurationsdatei (siehe [Metriken per OTLP übertragen](#metriken-per-otlp-übertragen)) |
+| `CDC_OTLP_HEADERS` | nein | Zusätzliche Header jeder Export-Anfrage, Form `Schlüssel=Wert`, mehrere durch Komma getrennt (geteilt am ersten `=`). Ein Element ohne `=`, mit leerem Schlüssel oder Leerraum im Schlüssel verhindert den Start (Fehlerklasse `configuration`, `PCF-E2012`); ohne `CDC_OTLP_ENDPOINT` gesetzt ebenso (`PCF-E2014`). Trägt Zugangsdaten und steht nur in der Umgebung |
+| `CDC_OTLP_INTERVAL_SECONDS` | nein | Takt der Übertragung in Sekunden, ganze Zahl von 5 bis 3600, Default 60; ein Wert außerhalb oder keine ganze Zahl verhindert den Start (Fehlerklasse `configuration`, `PCF-E2013`). Hat das Datei-Feld `otlp_interval`; die Umgebungsvariable schlägt es |
 | `CDC_CONFIG_FILE` | nein | Pfad zu einer optionalen YAML-Konfigurationsdatei (siehe unten) |
 
 Fehlt eine Pflichtvariable und liefert auch keine Konfigurationsdatei
@@ -2473,6 +2587,13 @@ Zugangsdaten; der private Schlüssel selbst steht in keiner Konfigurationsdatei.
 Beide Felder gehören zusammen (siehe [Schnittstellen mit TLS
 verschlüsseln](#schnittstellen-mit-tls-verschlüsseln)).
 
+Der Takt des Metrik-Exports ist ein Datei-Feld: `otlp_interval` trägt die
+Sekunden (5 bis 3600) und entspricht `CDC_OTLP_INTERVAL_SECONDS`, mit demselben
+Feld-für-Feld-Vorrang der Umgebungsvariable und dem Default 60. Eine Zahl trägt
+keine Zugangsdaten. Endpunkt und Header des Exports (`CDC_OTLP_ENDPOINT`,
+`CDC_OTLP_HEADERS`) haben kein Datei-Feld (siehe [Metriken per OTLP
+übertragen](#metriken-per-otlp-übertragen)).
+
 ```yaml
 source_id: quelle-1
 publication: pub_quelle_1
@@ -2489,13 +2610,14 @@ http_addr: ":8090"
 grpc_addr: ":9090"
 tls_cert_file: /etc/cdc/tls/server.pem
 tls_key_file: /etc/cdc/tls/server-key.pem
+otlp_interval: 60
 ```
 
 **Wichtig — Zugangsdaten bleiben env-var-exklusiv:** Die Schlüssel
 `capture_dsn`, `admin_dsn`, `reader_dsn`, `api_token_reader`,
-`api_token_admin`, `api_tokens_reader`, `api_tokens_admin`, `nats_url` und
-`nats_stream_token` — neun Schlüssel — dürfen in dieser
-Datei **nicht** vorkommen. Ein Treffer bricht das Laden mit einer eigenen,
+`api_token_admin`, `api_tokens_reader`, `api_tokens_admin`, `nats_url`,
+`nats_stream_token`, `otlp_endpoint` und `otlp_headers` — elf Schlüssel — dürfen
+in dieser Datei **nicht** vorkommen. Ein Treffer bricht das Laden mit einer eigenen,
 den Grund nennenden Zeile ab (Fehlerklasse `configuration`) — eine
 Konfigurationsdatei landet typischerweise in Kanälen (Repository,
 ConfigMap, Backup), die für Zugangsdaten nicht vorgesehen sind. Die Grenze
@@ -2503,12 +2625,14 @@ ist die **Form** des Feldes, nicht sein Wert: `http_addr`/`grpc_addr` sind
 `host:port` und können keine Zugangsdaten tragen, `nats_url` ist eine URL
 und kann Benutzer sowie Passwort einbetten (`nats://benutzer:passwort@host:4222`),
 `nats_stream_token` und die vier API-Token-Schlüssel tragen denselben
-Zugangsdaten-Charakter. Ein unbekannter Schlüssel bricht das
+Zugangsdaten-Charakter, `otlp_endpoint` ist wie `nats_url` eine URL, die
+Benutzer und Passwort einbetten kann, und `otlp_headers` trägt Zugangsdaten als
+Header-Werte (`otlp_interval` ist eine Zahl und kein Mitglied dieser Klasse). Ein unbekannter Schlüssel bricht das
 Laden ebenfalls ab (striktes Decoding).
 
 Die env-exklusiven Variablen `CDC_NATS_URL`, `CDC_NATS_STREAM_TOKEN`,
-`CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`, `CDC_API_TOKENS_READER` und
-`CDC_API_TOKENS_ADMIN` werden **auch unter
+`CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`, `CDC_API_TOKENS_READER`,
+`CDC_API_TOKENS_ADMIN`, `CDC_OTLP_ENDPOINT` und `CDC_OTLP_HEADERS` werden **auch unter
 geladener Datei** aus der Umgebung gelesen — sie haben kein
 Datei-Gegenstück, ihre Herkunft ist die Umgebungsvariable auf beiden Wegen;
 die Datei kann sie weder setzen noch überschreiben.
@@ -2562,8 +2686,9 @@ trägt den Rückfall seiner Klasse und nie keinen Code. Die erste Ziffer `8`
 kennzeichnet die Ablehnung einer Eingabe, etwa eines Antrags oder eines
 API-Aufrufs; sie trägt keine Fehlerklasse. Eine Warnung trägt den Buchstaben `W` (`PCF-W3002`); ihre erste
 Ziffer ist der Bereich (1 Erfassung und Replikation, 2 Backfill, 3 Retention und
-Speicher, 4 Verwaltung einschließlich der Aufrufe der HTTP- und gRPC-API; ein Bereich 5 für Konfiguration und Start ist vorgesehen
-und trägt keine Warnung), eine Warnung trägt keine Fehlerklasse. Zeilen des
+Speicher, 4 Verwaltung einschließlich der Aufrufe der HTTP- und gRPC-API, 6 Beobachtbarkeit und Transport; ein
+Bereich 5 für Konfiguration und Start ist vorgesehen und trägt keine Warnung), eine
+Warnung trägt keine Fehlerklasse. Zeilen des
 Berichts von `diagnose` mit Ausnahme der Zeile „Fehlerzustand“ tragen keinen Code.
 
 Der Code steht an diesen Stellen:
@@ -2605,6 +2730,10 @@ Entfällt eine Ursache, bleibt ihr Code in dieser Tabelle und trägt den Vermerk
 | `PCF-E2008` | `configuration` | eine Token-Liste (`CDC_API_TOKENS_READER`, `CDC_API_TOKENS_ADMIN`) trägt ein leeres Element oder ein Element mit Leerraum; der Container startet nicht, die Zeile nennt Variable und Nummer des Elements | Liste prüfen (siehe [API-Token in zwei Neustarts wechseln](#api-token-in-zwei-neustarts-wechseln)) |
 | `PCF-E2009` | `configuration` | nur eine der beiden TLS-Angaben (`CDC_TLS_CERT_FILE`, `CDC_TLS_KEY_FILE` bzw. `tls_cert_file`, `tls_key_file`) ist gesetzt; der Container startet nicht (Prozessausgang 2), die Zeile nennt die gesetzte und die fehlende Angabe | beide Angaben setzen oder beide entfernen (siehe [Schnittstellen mit TLS verschlüsseln](#schnittstellen-mit-tls-verschlüsseln)) |
 | `PCF-E2010` | `configuration` | das TLS-Paar ist nicht ladbar: eine Datei ist nicht lesbar, trägt keine gültigen PEM-Daten, oder Zertifikat und Schlüssel gehören nicht zusammen; der Container startet nicht (Prozessausgang 1), die Zeile nennt die Pfade und die Ursache | Pfade, Dateirechte für den Benutzer des Containers und die Zusammengehörigkeit von Zertifikat und Schlüssel prüfen (siehe [Schnittstellen mit TLS verschlüsseln](#schnittstellen-mit-tls-verschlüsseln)) |
+| `PCF-E2011` | `configuration` | `CDC_OTLP_ENDPOINT` ist keine URL mit Schema `http` oder `https` und einem Host; der Container startet nicht (Prozessausgang 2), die Zeile nennt die Variable und den Grund, nie die URL | Basis-URL des Empfängers prüfen (siehe [Metriken per OTLP übertragen](#metriken-per-otlp-übertragen)) |
+| `PCF-E2012` | `configuration` | `CDC_OTLP_HEADERS` trägt ein Element ohne `=`, mit leerem Schlüssel, mit Leerraum oder unzulässigem Zeichen im Schlüssel oder mit einem Steuerzeichen im Wert; der Container startet nicht, die Zeile nennt Variable und Nummer des Elements, nie dessen Inhalt | Form `Schlüssel=Wert,Schlüssel2=Wert2` prüfen |
+| `PCF-E2013` | `configuration` | der Takt des Exports (`CDC_OTLP_INTERVAL_SECONDS` oder `otlp_interval`) ist keine ganze Zahl von 5 bis 3600; der Container startet nicht, die Zeile nennt Quelle und Wert | Takt auf eine ganze Zahl von 5 bis 3600 setzen |
+| `PCF-E2014` | `configuration` | `CDC_OTLP_HEADERS` ist gesetzt, aber `CDC_OTLP_ENDPOINT` fehlt; der Container startet nicht | Endpunkt setzen oder die Header entfernen |
 | `PCF-E3000` | `permission` | fehlende Berechtigung ohne nähere Zuordnung (Rückfall) | Rechte der Rollen prüfen (siehe [Zugriff und Rollen](#zugriff-und-rollen)) |
 | `PCF-E3001` | `permission` | der Server weist den Replikationszugriff ab (SQLSTATE 42501 oder Klasse 28) | Rechte und `REPLICATION`-Attribut der Capture-Rolle prüfen |
 | `PCF-E3002` | `permission` | die Capture-Rolle darf die Quelltabelle eines Backfills nicht lesen oder den temporären Slot nicht anlegen | `SELECT` auf die Tabelle und das `REPLICATION`-Attribut prüfen, Backfill neu beantragen |
@@ -2697,6 +2826,8 @@ beendet den Prozess nicht und trägt keine Fehlerklasse:
 | `PCF-W4006` | Verwaltung | der Ausgang eines Antrags (`applied` oder `failed`) konnte nicht vermerkt werden; der Antrag bleibt `pending` und wird im nächsten Durchlauf erneut verarbeitet | Erreichbarkeit und Rechte der Rolle `cdc_admin` prüfen |
 | `PCF-W4007` | Verwaltung | eine Zeile der Antrags-Queue trägt keine Kennung und wird übersprungen; sie bleibt `pending` | Zeile in `cdc.administration_request` prüfen |
 | `PCF-W4008` | Verwaltung | ein Aufruf der HTTP- oder gRPC-API ist an einem unerwarteten Fehler gescheitert; der Aufrufer erhielt `500` bzw. `Internal` mit dem Code der Ursache, das Attribut `error` der Zeile nennt die Ursache | die Ursache nach dem Code der Antwort beheben, Aufruf wiederholen |
+| `PCF-W6001` | Beobachtbarkeit und Transport | die Übertragung der Kennzahlen an den OTLP-Empfänger ist fehlgeschlagen (Status außerhalb `2xx`, Verbindung abgewiesen, Frist überschritten); Erfassung, Persistierung und Bestätigung laufen unverändert, der nächste Takt versucht es erneut; die Warnung steht beim ersten Fehlschlag und danach höchstens alle 5 Minuten | Erreichbarkeit, Adresse und Header des Empfängers prüfen (siehe [Metriken per OTLP übertragen](#metriken-per-otlp-übertragen)) |
+| `PCF-W6002` | Beobachtbarkeit und Transport | die Sicht `cdc.metrics` konnte für den Export nicht gelesen werden; der Zyklus entfällt, der nächste Takt versucht es erneut | Erreichbarkeit der CDC-Datenbank und `CDC_READER_DSN` prüfen |
 
 ### Container startet nicht
 
@@ -2716,7 +2847,11 @@ formatiert.
    `CDC_TLS_KEY_FILE`, Meldungscode `PCF-E2009`) und die beiden Dateien:
    lesbar für den Benutzer des Containers, gültiges PEM, ein zusammengehöriges
    Paar (Meldungscode `PCF-E2010`).
-5. Starten Sie den Container erneut.
+5. Prüfen Sie bei gesetztem Export die drei Angaben `CDC_OTLP_ENDPOINT`
+   (Schema `http` oder `https`, ein Host; `PCF-E2011`), `CDC_OTLP_HEADERS`
+   (`Schlüssel=Wert`, durch Komma getrennt; `PCF-E2012`, ohne Endpunkt
+   `PCF-E2014`) und den Takt (ganze Zahl von 5 bis 3600; `PCF-E2013`).
+6. Starten Sie den Container erneut.
 
 ### Container startet, erfasst aber keine Änderungen
 
@@ -2818,6 +2953,10 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   Fehlerschwelle 1 GiB — betrifft ausschließlich die Fehlerklasse
   `replication`, Unterart Transport-/Verbindungsstörung (siehe
   [Fehlerklassen](#fehlerklassen)).
+- OTLP-Export (festgelegt, nicht gemessen): Takt Default 60 Sekunden, erlaubt
+  5 bis 3600; Frist je Versuch die Länge des Taktes, höchstens 10 Sekunden; die
+  Warnung bei einem andauernden Fehlschlag höchstens alle 5 Minuten (siehe
+  [Metriken per OTLP übertragen](#metriken-per-otlp-übertragen)).
 - Ein Container-Lauf bindet genau eine Quelle.
 - Zielname einer Routing-Regel (`target`): 1 bis 63 Zeichen, das
   erste aus `a`–`z` und `0`–`9`, die übrigen aus `a`–`z`, `0`–`9`, `_` und `-`
@@ -3096,3 +3235,4 @@ MIT — siehe `LICENSE`.
 | 1.94 | 2026-10-03 | Die SDK-Eigenschaft für den Meldungscode gilt ab Package-Version 0.6.0 (Abschnitte zu Fehlerantworten und zur Fehlerform der gRPC-Verwaltungs-API); trägt ein Fehlerkörper `code` als String, aber `error` nicht als String, liefern alle drei SDKs den Code und den rohen Körper als Fehlertext |
 | 1.95 | 2026-10-04 | Mehrere API-Token je Klasse: die neuen Variablen `CDC_API_TOKENS_READER` und `CDC_API_TOKENS_ADMIN` (kommagetrennte Listen) gelten neben den bisherigen Variablen, auf HTTP und gRPC gleich; neuer Abschnitt „API-Token in zwei Neustarts wechseln“; eine Liste mit leerem Element oder Leerraum verhindert den Start (neuer Meldungscode `PCF-E2008`); die Zugangsdaten-Schlüssel der Konfigurationsdatei umfassen jetzt neun Schlüssel |
 | 1.96 | 2026-10-04 | Die HTTP- und die gRPC-Schnittstelle lassen sich mit einem gemeinsamen TLS-Paar verschlüsseln: die neuen Variablen `CDC_TLS_CERT_FILE` und `CDC_TLS_KEY_FILE` (Datei-Felder `tls_cert_file` und `tls_key_file`, Pfade ohne Zugangsdaten-Charakter), neuer Abschnitt „Schnittstellen mit TLS verschlüsseln“ (TLS ab Version 1.2, kein Klartext auf derselben Adresse, kein Client-Zertifikat, Zertifikatswechsel nur mit Neustart); ein unvollständiges oder nicht ladbares Paar verhindert den Start (neue Meldungscodes `PCF-E2009` und `PCF-E2010`); die gRPC-Beispielprogramme verbinden im Klartext und die Optionen der Client-Pakete bieten keine TLS-Einstellung |
+| 1.97 | 2026-10-04 | Der Feed-Container kann seine Kennzahlen periodisch per OpenTelemetry-Protokoll (OTLP/HTTP, Protobuf) an einen Empfänger übertragen: die neuen Variablen `CDC_OTLP_ENDPOINT`, `CDC_OTLP_HEADERS` und `CDC_OTLP_INTERVAL_SECONDS` (Datei-Feld `otlp_interval` für den Takt), neuer Abschnitt „Metriken per OTLP übertragen“ mit Kennzahlen, Einheiten und dem Hinweis, dass alle Kennzahlen Momentstände (Gauge) sind, auch die mit dem Namensteil `_total`; ohne Endpunkt bleibt der Export aus; ein Ausfall des Empfängers beeinträchtigt Erfassung und Health nicht und erzeugt die Warnungen `PCF-W6001` und `PCF-W6002` (neuer Warn-Bereich 6 „Beobachtbarkeit und Transport“); eine ungültige Export-Konfiguration verhindert den Start (neue Meldungscodes `PCF-E2011` bis `PCF-E2014`); die zugangsdaten-tragenden Schlüssel der Konfigurationsdatei, die dort nicht stehen dürfen, wachsen von neun auf elf (`otlp_endpoint`, `otlp_headers`) |
