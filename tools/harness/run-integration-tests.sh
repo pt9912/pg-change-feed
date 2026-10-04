@@ -5185,9 +5185,17 @@ bf_expect "$(printf '%s' "$ot_warn_lines" | grep -c . || true)" 1 "$OT_PHASE —
 ot_expect_no_secrets "angehaltener Collector"
 
 # (b) Wiederaufnahme: ein Export je Takt, kein Nachholen der ausgefallenen Takte.
-ot_n_stop=$(ot_count)
+# Der Collector legt die Datei bei jedem Start neu an (leer); der Stand vor dem
+# Stopp ist deshalb kein Vergleichswert. Der Vergleich beginnt an der Datei des
+# neu gestarteten Collectors, nachdem er bereit meldet.
+ot_start_at=$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)
 docker start "$OT_CONTAINER" >/dev/null
-ot_await_count_above "${ot_n_stop:-0}" 40 "Wiederaufnahme nach docker start"
+for ((ot_i = 0; ot_i < 40; ot_i++)); do
+  docker logs --since "$ot_start_at" "$OT_CONTAINER" 2>&1 | grep -F "Everything is ready" >/dev/null && break
+  sleep 0.5
+done
+ot_n_start=$(ot_count)
+ot_await_count_above "${ot_n_start:-0}" 40 "Wiederaufnahme nach docker start"
 ot_resume_n=$ot_now
 docker logs "$FEED_CONTAINER" 2>&1 | grep -F '"msg":"metrics-export: Übertragung wieder aufgenommen"' | grep -v '"code"' >/dev/null \
   || bf_fail "$OT_PHASE — das Log trägt die Wiederaufnahme-Zeile ohne Meldungscode nicht"
