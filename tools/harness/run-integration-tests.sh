@@ -260,8 +260,8 @@ cleanup() {
   fi
   docker unpause "$FEED_CONTAINER" >/dev/null 2>&1 || true
   $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true
-  docker rm -fv cdc-e2e-tls-sse cdc-e2e-tls-grpc >/dev/null 2>&1 || true
-  rm -rf "${WAL_TMP:-}" "${TW_TMP:-}" "${TLS_TMP:-}"
+  docker rm -fv cdc-e2e-tls-sse cdc-e2e-tls-grpc cdc-e2e-otel >/dev/null 2>&1 || true
+  rm -rf "${WAL_TMP:-}" "${TW_TMP:-}" "${TLS_TMP:-}" "${OT_TMP:-}"
 }
 trap cleanup EXIT
 
@@ -4819,6 +4819,446 @@ bf_expect "$(printf '%s\n' "$tl_plain_grpc" | grep '^PROBE ')" "PROBE index=1 re
 rm -rf "$TLS_TMP"
 
 echo "run-integration-tests: TLS der HTTP-, SSE- und gRPC-Schnittstelle (LH-FA-SST-011) belegt — fünf Starts mit einer Verletzung (nur Zertifikat, nur Schlüssel, nicht lesbarer Pfad, Datei ohne PEM-Daten, nicht zusammenpassendes Paar) beendeten den Container mit Fehlerklasse configuration und PCF-E2009 bzw. PCF-E2010 im Log, ohne Slot; das gültige Paar legte über die Konfigurationsdatei den Slot an; unter TLS (Umgebung) blieb --healthcheck gesund (Ausgang 0, Zustand healthy), HTTP, gRPC, SSE (change_id=$tl_sse_change_id) und gRPC-Stream (change_id=$tl_grpc_change_id) wurden über TLS bedient (change_id je über cdc.changes gelesen), der Klartext-Versuch danach bekam keine Antwort der API (HTTP: $tl_cleartext_http; gRPC: $tl_cleartext_grpc); nach der Wiederherstellung ohne Override bedienten beide Adressen wieder im Klartext"
+
+# --- OTLP-Metrik-Export gegen einen echten Collector (LH-FA-SST-010) ----------
+abdeckung_declare "OTLP-Export: Kennzahlen, Header und Benutzerteil am echten Collector" "LH-FA-SST-010" "der laufende Feed-Container überträgt per OTLP an einen echten OpenTelemetry-Collector: alle zehn Kennzahlen kommen als Gauge mit Einheit, Datenpunkt-Attributen und Resource-Attributen an, die Werte sind gleich der SQL-Sicht (zeitabhängige mit benannter Toleranz, der WAL-Rückstand gegen die Gegenlesung des Slots), der konfigurierte Header und der Benutzerteil der Endpunkt-URL kommen am Empfänger an, ohne Header kommt keiner an; die Einheit von cdc_consumer_lag am Draht ist By" "OT-Phase 1: "
+abdeckung_declare "OTLP-Export: Ausfall, Wiederaufnahme und ungültige Konfiguration" "LH-FA-SST-010" "ein angehaltener Collector und ein abweisender Pfad lassen den Container laufen (Erfassung, Health und Heartbeat unverändert, genau eine Warnung je Fenster, kein Zugangsdatum im Log), nach dem Neustart des Collectors setzt die Übertragung mit einem Export je Takt wieder ein; ein ungültiger Endpunkt, ein ungültiger Header, ein Takt außerhalb der Grenzen und Header ohne Endpunkt beenden den Start mit Fehlerklasse configuration und Meldungscode, ohne Slot" "OT-Phase 2: "
+abdeckung_declare "OTLP-Export: https-Empfänger und Vertrauensspeicher" "LH-FA-SST-010" "ein Collector mit TLS-Empfänger und selbstsigniertem Zertifikat: ohne Vertrauensanker warnt der Container und es kommt nichts an, mit dem Zertifikat über die Umgebungsvariable SSL_CERT_FILE kommt der Export an und die Werte sind gleich der Sicht" "OT-Phase 3: "
+
+# Die Phase fährt einen gepinnten OpenTelemetry-Collector im Compose-Netz und
+# den Feed-Container über eine Compose-Override-Datei im Temp-Verzeichnis des
+# Runners (`compose.yaml` bleibt unverändert; der Feed-Container wird am Ende
+# ohne Override wiederhergestellt, der Collector entfernt). Der Collector
+# schreibt jeden empfangenen Export als eine JSON-Zeile in eine Datei
+# (`file`-Exporter) und bildet den Anfrage-Header `Authorization` als
+# Resource-Attribut `http.authorization` (`resource`-Prozessor mit
+# `from_context`, Empfänger mit `include_metadata`): so ist am Ausgang des
+# Empfängers sichtbar, was als Header ankam. Das Werkzeug
+# `tools/harness/otlpcheck` liest die Datei und die Zeilen der Sicht.
+#
+# OT-Phase 1 belegt Wire-Form und Werte (vier Starts: mit Header, ohne Header,
+# Benutzerteil der URL, Benutzerteil mit Header), OT-Phase 2 Ausfall,
+# Wiederaufnahme und die ungültigen Konfigurationen, OT-Phase 3 `https`.
+OT_PHASE="OTLP-Metrik-Export"
+OTLP_COLLECTOR_IMAGE=${OTLP_COLLECTOR_IMAGE:-otel/opentelemetry-collector:0.162.0@sha256:310a800ad69ee430e7c541796852a242c9c7db97aaad4daa5ccf843c525fbdb2}
+OT_CONTAINER=cdc-e2e-otel
+OT_URL="http://otel-collector:4318"
+OT_TOKEN="Bearer ot-e2e-token"
+OT_USERINFO="ot-user:ot-pass"
+OT_NEG_SLOT=slot_ot_neg
+OT_START=$SECONDS
+OT_TMP=$(mktemp -d)
+chmod 0755 "$OT_TMP"
+mkdir "$OT_TMP/conf" "$OT_TMP/conf/tls" "$OT_TMP/out"
+chmod 0755 "$OT_TMP/conf" "$OT_TMP/conf/tls"
+chmod 0777 "$OT_TMP/out"
+
+# ot_tool <Argumente von otlpcheck>: das Werkzeug im Toolchain-Container, ohne
+# Netz; Ausgabe auf stdout, Befund auf stderr.
+ot_tool() {
+  docker run --rm --network none -v "$OT_TMP":/ot:ro "$TOOLCHAIN_IMAGE" /ot/otlpcheck "$@"
+}
+
+# ot_count: die Zahl der vollständigen Exporte in der Datei des Collectors.
+ot_count() {
+  ot_tool count -collector /ot/out/metrics.jsonl 2>/dev/null | sed -n 's/^COUNT //p'
+}
+
+# ot_await_count_above <Zahl> <Sekunden> <Beschreibung>: wartet auf einen
+# Export über der Zahl und setzt ot_now auf den neuen Stand.
+ot_await_count_above() {
+  local i
+  for ((i = 0; i < $2 * 2; i++)); do
+    ot_now=$(ot_count)
+    [ "${ot_now:-0}" -gt "$1" ] && return 0
+    sleep 0.5
+  done
+  bf_fail "$OT_PHASE — $3: innerhalb von $2 s kam kein Export an (Stand ${ot_now:-leer}, Collector-Log: $(docker logs --tail 5 "$OT_CONTAINER" 2>&1 || true))"
+}
+
+# ot_write_collector http|https: schreibt die Konfiguration des Collectors.
+ot_write_collector() {
+  local tls=""
+  if [ "$1" = https ]; then
+    tls=$'        tls:\n          cert_file: /etc/otel/tls/good.pem\n          key_file: /etc/otel/tls/good-key.pem\n'
+  fi
+  cat > "$OT_TMP/conf/collector.yaml" <<YAML
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+        include_metadata: true
+${tls}processors:
+  resource:
+    attributes:
+      - key: http.authorization
+        from_context: authorization
+        action: upsert
+exporters:
+  file:
+    path: /out/metrics.jsonl
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [resource]
+      exporters: [file]
+YAML
+  chmod 0644 "$OT_TMP/conf/collector.yaml"
+}
+
+# ot_override <NAME=Wert>...: schreibt die Override-Datei mit dem Collector und
+# den genannten Variablen für den Feed-Container.
+ot_override() {
+  local pair
+  {
+    printf 'services:\n  otel-collector:\n    image: %s\n    container_name: %s\n' "$OTLP_COLLECTOR_IMAGE" "$OT_CONTAINER"
+    printf '    command: ["--config", "/etc/otel/collector.yaml"]\n'
+    printf '    volumes:\n      - %s:/etc/otel:ro\n      - %s:/out\n    networks:\n      - cdc-test\n' "$OT_TMP/conf" "$OT_TMP/out"
+    printf '  pg-change-feed:\n    volumes:\n      - %s:/etc/cdc/otlp-tls:ro\n' "$OT_TMP/conf/tls"
+    if [ "$#" -gt 0 ]; then
+      printf '    environment:\n'
+      for pair in "$@"; do
+        printf '      %s: "%s"\n' "${pair%%=*}" "${pair#*=}"
+      done
+    fi
+  } > "$OT_TMP/override.yaml"
+  chmod 0644 "$OT_TMP/override.yaml"
+}
+
+# ot_collector_up: erzeugt den Collector neu und wartet, bis er bereit meldet.
+ot_collector_up() {
+  local i
+  ot_override
+  $COMPOSE -f "$OT_TMP/override.yaml" up -d --force-recreate --no-deps otel-collector >/dev/null
+  for ((i = 0; i < 40; i++)); do
+    if docker logs "$OT_CONTAINER" 2>&1 | grep -F "Everything is ready" >/dev/null; then
+      return 0
+    fi
+    sleep 0.5
+  done
+  bf_fail "$OT_PHASE — der Collector meldete nicht bereit: $(docker logs --tail 10 "$OT_CONTAINER" 2>&1 || true)"
+}
+
+# ot_feed <NAME=Wert>...: erzeugt den Feed-Container mit den Variablen neu.
+ot_feed() {
+  ot_override "$@"
+  $COMPOSE -f "$OT_TMP/override.yaml" up -d --force-recreate --no-deps pg-change-feed >/dev/null
+}
+
+# ot_fault_writer: hält einen Fehlerzustand im Heartbeat, damit die Sicht eine
+# Zeile `cdc_errors_total` mit Label trägt.
+ot_fault_writer() {
+  while :; do
+    docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -c \
+      "UPDATE cdc.process_heartbeat SET heartbeat_at = current_timestamp, error_class = 'schema', error_code = 'PCF-E4003' WHERE source_id = 'src-e2e'" >/dev/null 2>&1 || true
+    sleep 0.25
+  done
+}
+
+# ot_stop_writers: beendet den Schreiber des Fehlerzustands.
+ot_stop_writers() {
+  kill "$fault_writer_pid" 2>/dev/null || true
+  wait "$fault_writer_pid" 2>/dev/null || true
+  fault_writer_pid=""
+}
+
+# ot_check <Beschreibung> <erwarteter Wert von http.authorization, leer: abwesend>:
+# wartet auf einen neuen Export, liest die Sicht und die Messungen des
+# WAL-Rückstands aus dem Log des Prozesses und prüft den letzten Export mit
+# otlpcheck; ein Versuch kann an einem Schreibvorgang zwischen Export und Lesen
+# scheitern, deshalb höchstens sechs Versuche. Setzt ot_line auf die gedruckte
+# Zeile.
+ot_check() {
+  local what=$1 want_auth=$2 attempt before err=""
+  fault_writer_pid=""
+  ot_fault_writer &
+  fault_writer_pid=$!
+  sleep 1
+  for ((attempt = 1; attempt <= 6; attempt++)); do
+    before=$(ot_count)
+    ot_await_count_above "${before:-0}" 40 "$what"
+    bf_sql "SELECT metric_name, label, value FROM cdc.metrics ORDER BY 1, 2" > "$OT_TMP/view.txt"
+    docker logs "$FEED_CONTAINER" 2>&1 | grep -F '"msg":"replication: WAL-Rückstand gemessen"' | grep -o '"bytes":[0-9]*' | cut -d: -f2 > "$OT_TMP/wal.txt" || true
+    if ot_line=$(ot_tool check -collector /ot/out/metrics.jsonl -view /ot/view.txt -source src-e2e \
+        -tolerance-seconds 12 -wal-log /ot/wal.txt \
+        -auth-attr http.authorization -auth-value "$want_auth" 2>"$OT_TMP/err.txt"); then
+      ot_stop_writers
+      bf_sql "UPDATE cdc.process_heartbeat SET error_class = NULL, error_code = NULL WHERE source_id = 'src-e2e'" >/dev/null
+      ot_line="$ot_line gemessen_im_prozess=$(sort -n "$OT_TMP/wal.txt" | tail -n1)"
+      return 0
+    fi
+    err=$(cat "$OT_TMP/err.txt")
+  done
+  ot_stop_writers
+  bf_fail "$OT_PHASE — $what: sechs Versuche ohne bestandene Prüfung, letzter Befund: $err; Ende der Collector-Datei: $(tail -c 400 "$OT_TMP/out/metrics.jsonl" 2>/dev/null || true)"
+}
+
+# ot_expect_no_secrets <Beschreibung>: kein Zugangsdatum im Log des
+# Feed-Containers (Token, Benutzerteil, Passwort, Basic-Wert).
+ot_expect_no_secrets() {
+  local log pattern
+  log=$(docker logs "$FEED_CONTAINER" 2>&1)
+  for pattern in "ot-e2e-token" "ot-user" "ot-pass" "$(printf '%s' "$OT_USERINFO" | base64)"; do
+    [[ "$log" != *"$pattern"* ]] || bf_fail "$OT_PHASE — $1: das Log trägt das Zugangsdatum '$pattern'"
+  done
+}
+
+# ot_expect_start_refused <Beschreibung> <Code> <Text im Log> <NAME=Wert>...:
+# der Start mit der Verletzung endet mit Ausgang 2, trägt Klasse, Code und Text
+# in der Log-Zeile und kein Zugangsdatum; es entsteht kein Slot.
+ot_expect_start_refused() {
+  local what=$1 code=$2 want_text=$3 log i
+  shift 3
+  ot_feed "$@" CDC_SLOT="$OT_NEG_SLOT"
+  for ((i = 0; i < 60; i++)); do
+    [ "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" = false ] && break
+    sleep 1
+  done
+  bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER")" false "$OT_PHASE — '$what': der Container lief mit der ungültigen Konfiguration weiter"
+  bf_expect "$(docker inspect --format '{{.State.ExitCode}}' "$FEED_CONTAINER")" 2 "$OT_PHASE — Ausgang bei '$what'"
+  log=$(docker logs "$FEED_CONTAINER" 2>&1)
+  [[ "$log" == *"Fehlerklasse configuration [$code]: "*"$want_text"* ]] \
+    || bf_fail "$OT_PHASE — das Log trägt für '$what' nicht 'Fehlerklasse configuration [$code]' mit '$want_text': $log"
+  bf_expect "$(bf_sql "SELECT count(*) FROM pg_replication_slots WHERE slot_name = '$OT_NEG_SLOT'")" 0 "$OT_PHASE — Slot nach '$what'"
+}
+
+# ot_expect_start_ok <Beschreibung> <NAME=Wert>...: die Gegenprobe zu einem
+# abgelehnten Start — derselbe Aufbau mit gültigem Wert startet, legt den Slot
+# an und wird gesund; danach wird der Hilfs-Slot entfernt.
+ot_expect_start_ok() {
+  local what=$1 i dropped=0
+  shift 1
+  ot_feed "$@" CDC_SLOT="$OT_NEG_SLOT"
+  bf_await_healthy "$OT_PHASE — Gegenprobe '$what'"
+  bf_expect "$(bf_sql "SELECT count(*) FROM pg_replication_slots WHERE slot_name = '$OT_NEG_SLOT'")" 1 "$OT_PHASE — Slot der Gegenprobe '$what'"
+  docker stop "$FEED_CONTAINER" >/dev/null
+  for ((i = 0; i < 20; i++)); do
+    if bf_sql "SELECT pg_drop_replication_slot('$OT_NEG_SLOT')" >/dev/null 2>&1; then
+      dropped=1
+      break
+    fi
+    sleep 1
+  done
+  [ "$dropped" -eq 1 ] || bf_fail "$OT_PHASE — der Hilfs-Slot $OT_NEG_SLOT ließ sich nach '$what' nicht entfernen"
+}
+
+# --- Vorbereitung: Image, Komponenten, Vertrauensspeicher, Werkzeug -----------
+docker pull "$OTLP_COLLECTOR_IMAGE" >/dev/null 2>&1 \
+  || bf_fail "$OT_PHASE — das Collector-Image $OTLP_COLLECTOR_IMAGE ließ sich nicht abrufen (Registry oder Abruflimit), keine Aussage über den Export"
+ot_components=$(docker run --rm "$OTLP_COLLECTOR_IMAGE" components 2>&1)
+for ot_component in otlp file resource; do
+  printf '%s\n' "$ot_components" | grep -E "^    - name: $ot_component\$" >/dev/null \
+    || bf_fail "$OT_PHASE — das Collector-Image trägt die Komponente '$ot_component' nicht"
+done
+ot_version=$(docker run --rm "$OTLP_COLLECTOR_IMAGE" --version 2>&1)
+echo "run-integration-tests: $OT_PHASE — Collector $ot_version (Komponenten otlp, file, resource vorhanden)"
+
+# Vertrauensspeicher des Runtime-Images, gemessen am Dateisystem des Images
+# (Export ohne Start, kein Netz).
+ot_feed_image=$(docker inspect --format '{{.Config.Image}}' "$FEED_CONTAINER")
+ot_probe=$(docker create "$ot_feed_image")
+ot_files=$(docker export "$ot_probe" | tar -t 2>/dev/null | grep -E '(^|/)(ca-certificates\.crt|ca-bundle\.crt|cert\.pem)$' || true)
+docker rm "$ot_probe" >/dev/null
+if [ -n "$ot_files" ]; then
+  ot_ca_state="CA-Bündel im Image: $(printf '%s' "$ot_files" | paste -sd' ')"
+else
+  ot_ca_state="CA-Bündel im Image: keines"
+fi
+echo "run-integration-tests: $OT_PHASE — $ot_ca_state"
+
+# Wegwerf-Zertifikat für OT-Phase 3 und das Werkzeug.
+docker run --rm --network none --user "$(id -u):$(id -g)" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -v "$OT_TMP/conf/tls":/out \
+  -w /src \
+  -e GOCACHE=/tmp/gocache -e HOME=/tmp \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/certgen /out good otel-collector localhost 127.0.0.1 >/dev/null \
+  || bf_fail "$OT_PHASE — certgen endete mit einem Fehler"
+chmod 0644 "$OT_TMP/conf/tls"/*.pem
+bf_expect "$(git status --porcelain --untracked-files=all -- . | grep -c -E '\.pem$' || true)" 0 "$OT_PHASE — Zertifikatsdateien im Arbeitsbaum"
+docker run --rm --network "$NETWORK" --user "$(id -u):$(id -g)" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -v "$OT_TMP":/ot \
+  -w /src \
+  -e GOCACHE=/tmp/gocache -e HOME=/tmp -e CGO_ENABLED=0 \
+  "$TOOLCHAIN_IMAGE" go build -o /ot/otlpcheck ./tools/harness/otlpcheck \
+  || bf_fail "$OT_PHASE — der Bau von otlpcheck endete mit einem Fehler"
+# Die Datei des Collectors liegt in einem Verzeichnis, das der Prozess des
+# Collectors (fremder Benutzer im Image) beschreiben können muss; eine Probe
+# als dieser Benutzer vor dem Beleg.
+docker run --rm --network none --user 10001:10001 -v "$OT_TMP/out":/out "$TOOLCHAIN_IMAGE" \
+  sh -c 'echo probe > /out/probe && rm /out/probe' \
+  || bf_fail "$OT_PHASE — der Ausgabe-Ordner des Collectors ist für seinen Benutzer nicht beschreibbar"
+
+# OT-Phase 1: Wire-Form und Werte
+# Vorbedingung der Sicht: eine erfasste Change und ein Consumer mit bestätigter
+# Position, damit die Zeilen mit Label (Consumer-Kennzahlen) vorhanden sind.
+bf_sql "INSERT INTO public.feed_e2e_full (id, name) VALUES (9700, 'OtlpBestand')" >/dev/null
+bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = 'feed_e2e_full' AND new_data->>'id' = '9700'" 1 30 "$OT_PHASE — erfasste Change vor dem Beleg"
+OT_CONSUMER=otlp-e2e-consumer
+docker exec "$FEED_CONTAINER" /pg-change-feed register-consumer "$OT_CONSUMER" >/dev/null \
+  || bf_fail "$OT_PHASE — register-consumer ($OT_CONSUMER) endete mit einem Fehler"
+docker exec "$FEED_CONTAINER" /pg-change-feed acknowledge-consumer "$OT_CONSUMER" 1 >/dev/null \
+  || bf_fail "$OT_PHASE — acknowledge-consumer ($OT_CONSUMER, Position 1) endete mit einem Fehler"
+bf_await_sql "SELECT count(*) FROM cdc.metrics WHERE metric_name = 'cdc_consumer_lag' AND label = '$OT_CONSUMER'" 1 30 "$OT_PHASE — Zeile cdc_consumer_lag des Consumers"
+ot_write_collector http
+ot_collector_up
+
+# (1) Mit Header: Takt 5, Authorization-Header. Eine Sitzung hält die
+# Persistierung an (SHARE-Sperre auf cdc.change: die Anweisung der Persistierung
+# wartet, die Sicht bleibt lesbar), und 30.000 Zeilen in einer nicht aktivierten
+# Tabelle bilden den WAL-Rückstand des Capture-Slots, den der Prozess misst und
+# der Export als Byte-Zahl überträgt: die Messreihe des Prozesses ist nicht null.
+ot_feed CDC_OTLP_ENDPOINT="$OT_URL" CDC_OTLP_HEADERS="Authorization=$OT_TOKEN" CDC_OTLP_INTERVAL_SECONDS=5
+bf_await_healthy "$OT_PHASE — Start mit Header"
+docker logs "$FEED_CONTAINER" 2>&1 | grep -F '"msg":"metrics-export: gestartet"' | grep -F '"interval_ms":5000' >/dev/null \
+  || bf_fail "$OT_PHASE — das Log meldet den Export nicht mit Takt 5000 ms"
+OT_HOLD=otlp-persist-hold
+bf_hold_start "$OT_HOLD" "BEGIN; LOCK TABLE cdc.change IN SHARE MODE; SELECT pg_sleep(300);"
+bf_await_sql "SELECT count(*) FROM pg_locks l JOIN pg_stat_activity a ON a.pid = l.pid WHERE a.application_name = '$OT_HOLD' AND l.mode = 'ShareLock' AND l.granted" 1 15 "$OT_PHASE — Sperre der haltenden Sitzung"
+bf_sql "INSERT INTO public.feed_e2e_full (id, name) VALUES (9702, 'OtlpWalHalt')" >/dev/null
+bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND application_name <> '$OT_HOLD' AND query LIKE '%INSERT INTO cdc.change%'" 1 30 "$OT_PHASE — wartende Persistierung"
+bf_sql "CREATE TABLE public.feed_e2e_otlp_wal AS SELECT g AS id, repeat('x', 100) AS pad FROM generate_series(1, 30000) g" >/dev/null
+ot_check "Start mit Header" "$OT_TOKEN"
+ot_line_header=$ot_line
+bf_hold_end "$OT_HOLD"
+wait "$bf_hold_pid" 2>/dev/null || true
+bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = 'feed_e2e_full' AND new_data->>'id' = '9702'" 1 60 "$OT_PHASE — Persistierung nach der Freigabe"
+bf_sql "DROP TABLE public.feed_e2e_otlp_wal" >/dev/null
+ot_wal_peak=${ot_line_header##*gemessen_im_prozess=}
+[ "$ot_wal_peak" -ge 1048576 ] || bf_fail "$OT_PHASE — die größte Messung des WAL-Rückstands im Prozess ist $ot_wal_peak B, erwartet mindestens 1 MiB bei gehaltener Persistierung"
+case "$ot_line_header" in
+  *"consumer_lag_unit=By "*"auth=present gemessen_im_prozess="*) ;;
+  *) bf_fail "$OT_PHASE — Zeile des Belegs mit Header: $ot_line_header" ;;
+esac
+ot_expect_no_secrets "Start mit Header"
+
+# (2) Gegenprobe zum Header: ohne CDC_OTLP_HEADERS kommt kein Header an.
+ot_feed CDC_OTLP_ENDPOINT="$OT_URL" CDC_OTLP_INTERVAL_SECONDS=5
+bf_await_healthy "$OT_PHASE — Start ohne Header"
+ot_check "Start ohne Header" ""
+ot_line_noheader=$ot_line
+case "$ot_line_noheader" in
+  *"auth=absent gemessen_im_prozess="*) ;;
+  *) bf_fail "$OT_PHASE — Zeile des Belegs ohne Header: $ot_line_noheader" ;;
+esac
+
+# (3) Benutzerteil der Endpunkt-URL: Basic-Authorization aus user:pass.
+ot_basic="Basic $(printf '%s' "$OT_USERINFO" | base64)"
+ot_feed CDC_OTLP_ENDPOINT="http://$OT_USERINFO@otel-collector:4318" CDC_OTLP_INTERVAL_SECONDS=5
+bf_await_healthy "$OT_PHASE — Start mit Benutzerteil"
+ot_check "Start mit Benutzerteil" "$ot_basic"
+ot_expect_no_secrets "Start mit Benutzerteil"
+
+# (4) Benutzerteil und Header: der Header der Konfiguration gewinnt.
+ot_feed CDC_OTLP_ENDPOINT="http://$OT_USERINFO@otel-collector:4318" CDC_OTLP_HEADERS="Authorization=$OT_TOKEN" CDC_OTLP_INTERVAL_SECONDS=5
+bf_await_healthy "$OT_PHASE — Start mit Benutzerteil und Header"
+ot_check "Start mit Benutzerteil und Header" "$OT_TOKEN"
+ot_expect_no_secrets "Start mit Benutzerteil und Header"
+
+echo "run-integration-tests: OTLP-Export Kennzahlen, Header und Benutzerteil (LH-FA-SST-010) belegt — am echten Collector ($ot_version) kamen alle zehn Kennzahlen als Gauge mit Einheit, Attributen und Resource-Attributen an, die Werte sind gleich der Sicht; mit Header: $ot_line_header; ohne Header: $ot_line_noheader; Benutzerteil der URL als $ot_basic, bei gesetztem Header gewinnt der Header"
+
+# OT-Phase 2: Ausfall, Wiederaufnahme, ungültige Konfiguration
+# Mit Benutzerteil und Header: die Prüfung auf Zugangsdaten im Log deckt beide.
+ot_feed CDC_OTLP_ENDPOINT="http://$OT_USERINFO@otel-collector:4318" CDC_OTLP_HEADERS="Authorization=$OT_TOKEN" CDC_OTLP_INTERVAL_SECONDS=5
+bf_await_healthy "$OT_PHASE — Start für den Ausfall"
+ot_n0=$(ot_count)
+ot_await_count_above "${ot_n0:-0}" 40 "Empfänger steht vor dem Ausfall"
+
+# (a) Collector angehalten, Beobachtung über mehr als zwei Takte plus Frist.
+ot_stop_at=$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)
+docker stop "$OT_CONTAINER" >/dev/null
+sleep 25
+bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER")" true "$OT_PHASE — Feed-Container bei angehaltenem Collector"
+ot_hc=0
+docker exec "$FEED_CONTAINER" /pg-change-feed --healthcheck >/dev/null 2>&1 || ot_hc=$?
+bf_expect "$ot_hc" 0 "$OT_PHASE — Ausgang von --healthcheck bei angehaltenem Collector"
+bf_sql "INSERT INTO public.feed_e2e_full (id, name) VALUES (9701, 'OtlpAusfall')" >/dev/null
+bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = 'feed_e2e_full' AND new_data->>'id' = '9701'" 1 30 "$OT_PHASE — Erfassung bei angehaltenem Collector"
+bf_expect "$(bf_sql "SELECT coalesce(error_class, '') FROM cdc.process_heartbeat WHERE source_id = 'src-e2e'")" "" "$OT_PHASE — error_class im Heartbeat bei angehaltenem Collector"
+ot_warn_lines=$(docker logs --since "$ot_stop_at" "$FEED_CONTAINER" 2>&1 | grep -F '"code":"PCF-W6001"' || true)
+bf_expect "$(printf '%s' "$ot_warn_lines" | grep -c . || true)" 1 "$OT_PHASE — Warn-Zeilen PCF-W6001 im Beobachtungsfenster ($ot_warn_lines)"
+ot_expect_no_secrets "angehaltener Collector"
+
+# (b) Wiederaufnahme: ein Export je Takt, kein Nachholen der ausgefallenen Takte.
+ot_n_stop=$(ot_count)
+docker start "$OT_CONTAINER" >/dev/null
+ot_await_count_above "${ot_n_stop:-0}" 40 "Wiederaufnahme nach docker start"
+ot_resume_n=$ot_now
+docker logs "$FEED_CONTAINER" 2>&1 | grep -F '"msg":"metrics-export: Übertragung wieder aufgenommen"' | grep -v '"code"' >/dev/null \
+  || bf_fail "$OT_PHASE — das Log trägt die Wiederaufnahme-Zeile ohne Meldungscode nicht"
+sleep 16
+ot_window=$(( $(ot_count) - ot_resume_n ))
+if [ "$ot_window" -lt 3 ] || [ "$ot_window" -gt 4 ]; then
+  bf_fail "$OT_PHASE — in 16 s nach der Wiederaufnahme kamen $ot_window Exporte an, erwartet 3 oder 4 (ein Export je Takt von 5 s, kein Nachholen)"
+fi
+
+# (c) Antwort außerhalb von 2xx: ein Pfad, den der Collector nicht kennt (404).
+ot_feed CDC_OTLP_ENDPOINT="$OT_URL/falsch" CDC_OTLP_HEADERS="Authorization=$OT_TOKEN" CDC_OTLP_INTERVAL_SECONDS=5
+bf_await_healthy "$OT_PHASE — Start mit abweisendem Pfad"
+ot_n_404=$(ot_count)
+ot_404=""
+for ((ot_i = 0; ot_i < 60; ot_i++)); do
+  ot_404=$(docker logs "$FEED_CONTAINER" 2>&1 | grep -F '"code":"PCF-W6001"' || true)
+  [ -n "$ot_404" ] && break
+  sleep 1
+done
+[[ "$ot_404" == *'"detail":"Status 404"'* ]] || bf_fail "$OT_PHASE — keine Warnung PCF-W6001 mit Status 404 bei abweisendem Pfad: ${ot_404:-leer}"
+bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER")" true "$OT_PHASE — Feed-Container bei abweisendem Pfad"
+sleep 12
+bf_expect "$(ot_count)" "$ot_n_404" "$OT_PHASE — Zahl der Exporte bei abweisendem Pfad"
+
+# (d) Ungültige Konfiguration, je mit Gegenprobe mit gültigem Wert.
+ot_expect_start_refused "Endpunkt mit Schema ftp" PCF-E2011 "CDC_OTLP_ENDPOINT" CDC_OTLP_ENDPOINT="ftp://otel-collector:4318"
+ot_expect_start_ok "Endpunkt mit Schema http" CDC_OTLP_ENDPOINT="$OT_URL"
+ot_expect_start_refused "Header ohne Gleichheitszeichen" PCF-E2012 "CDC_OTLP_HEADERS" CDC_OTLP_ENDPOINT="$OT_URL" CDC_OTLP_HEADERS="OhneGleichheitszeichen"
+ot_expect_start_ok "Header mit Gleichheitszeichen" CDC_OTLP_ENDPOINT="$OT_URL" CDC_OTLP_HEADERS="X-Probe=1"
+ot_expect_start_refused "Takt 4" PCF-E2013 "CDC_OTLP_INTERVAL_SECONDS" CDC_OTLP_ENDPOINT="$OT_URL" CDC_OTLP_INTERVAL_SECONDS=4
+ot_expect_start_ok "Takt 5" CDC_OTLP_ENDPOINT="$OT_URL" CDC_OTLP_INTERVAL_SECONDS=5
+ot_expect_start_refused "Header ohne Endpunkt" PCF-E2014 "CDC_OTLP_HEADERS" CDC_OTLP_HEADERS="X-Probe=1"
+ot_expect_start_ok "Header mit Endpunkt" CDC_OTLP_ENDPOINT="$OT_URL" CDC_OTLP_HEADERS="X-Probe=1"
+
+echo "run-integration-tests: OTLP-Export Ausfall, Wiederaufnahme und ungültige Konfiguration (LH-FA-SST-010) belegt — bei angehaltenem Collector lief der Container weiter (Health 0, Erfassung, kein error_class), das Beobachtungsfenster trug genau eine Warnung PCF-W6001, nach docker start kamen $ot_window Exporte in 16 s an, ein abweisender Pfad endete in Status 404 mit Warnung, vier ungültige Konfigurationen beendeten den Start mit Ausgang 2 ohne Slot (PCF-E2011 bis PCF-E2014), jede mit Gegenprobe"
+
+# OT-Phase 3: https mit selbstsigniertem Zertifikat
+ot_write_collector https
+ot_collector_up
+OT_HTTPS_URL="https://otel-collector:4318"
+
+# Ohne Vertrauensanker: der Container warnt, es kommt nichts an.
+ot_feed CDC_OTLP_ENDPOINT="$OT_HTTPS_URL" CDC_OTLP_HEADERS="Authorization=$OT_TOKEN" CDC_OTLP_INTERVAL_SECONDS=5
+bf_await_healthy "$OT_PHASE — https ohne Vertrauensanker"
+ot_n_tls=$(ot_count)
+ot_tls_warn=""
+for ((ot_i = 0; ot_i < 60; ot_i++)); do
+  ot_tls_warn=$(docker logs "$FEED_CONTAINER" 2>&1 | grep -F '"code":"PCF-W6001"' || true)
+  [ -n "$ot_tls_warn" ] && break
+  sleep 1
+done
+[ -n "$ot_tls_warn" ] || bf_fail "$OT_PHASE — https ohne Vertrauensanker: keine Warnung PCF-W6001"
+sleep 12
+bf_expect "$(ot_count)" "$ot_n_tls" "$OT_PHASE — Zahl der Exporte bei https ohne Vertrauensanker"
+bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER")" true "$OT_PHASE — Feed-Container bei https ohne Vertrauensanker"
+
+# Mit dem Zertifikat als Vertrauensanker über die Umgebung des Prozesses.
+ot_feed CDC_OTLP_ENDPOINT="$OT_HTTPS_URL" CDC_OTLP_HEADERS="Authorization=$OT_TOKEN" CDC_OTLP_INTERVAL_SECONDS=5 SSL_CERT_FILE=/etc/cdc/otlp-tls/good.pem
+bf_await_healthy "$OT_PHASE — https mit Vertrauensanker"
+ot_check "https mit Vertrauensanker" "$OT_TOKEN"
+ot_line_tls=$ot_line
+bf_expect "$(docker logs "$FEED_CONTAINER" 2>&1 | grep -c -F '"code":"PCF-W6001"' || true)" 0 "$OT_PHASE — Warnungen bei https mit Vertrauensanker"
+
+echo "run-integration-tests: OTLP-Export https (LH-FA-SST-010) belegt — $ot_ca_state; ohne Vertrauensanker warnte der Container (PCF-W6001) und es kam kein Export an, mit SSL_CERT_FILE auf das Zertifikat des Collectors kamen Exporte an: $ot_line_tls"
+
+# Wiederherstellung ohne Override, der Collector wird entfernt.
+$COMPOSE up -d --force-recreate --no-deps pg-change-feed >/dev/null
+docker rm -fv "$OT_CONTAINER" >/dev/null
+bf_await_healthy "$OT_PHASE — Wiederherstellung"
+rm -rf "$OT_TMP"
+echo "run-integration-tests: $OT_PHASE — Laufzeit der drei OTLP-Phasen $((SECONDS - OT_START)) s"
 
 # --- Transformations-Rundläufe (LH-FA-CFG-007) --------------------------------
 # Zwei Phasen am laufenden Feed-Container, ausschließlich über externe Wege:
