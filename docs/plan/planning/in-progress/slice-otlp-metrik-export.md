@@ -433,13 +433,43 @@ Aussagen-Berührung steht hier gar nicht.
   endet mit Exit 0, gedruckt `generated-sync: OK`). (iii) `go.sum` 64 → 70 Zeilen
   nach `go mod tidy`; Produktions-Binary (`CGO_ENABLED=0 go build -trimpath
   -ldflags="-s -w" ./cmd/pg-change-feed`, Kopie): 19677344 → 20013216 Bytes
-  (+335872 Bytes, +1,7 %, mit einem Aufruf der Nachricht im Programm; `go list -deps`
-  nennt drei `grpc-gateway`-Pakete im Binary). (iv) Aufnahme per
+  (+335872 Bytes, +1,7 %; **Probe-Aufruf**: ein Programm mit einem Aufruf der
+  Nachricht, nicht der fertige Code; `go list -deps` nennt drei
+  `grpc-gateway`-Pakete im Binary). **Am fertigen Code nachgemessen** (Fixrunde,
+  gemessen, `git archive` von Parent `5fcb556f` und von `HEAD` `25dec84a` im
+  Scratchpad, je
+  `docker run --rm --network none -v pg-change-feed-gomodcache:/go/pkg/mod -e CGO_ENABLED=0 -e GOFLAGS=-mod=mod <TOOLCHAIN_IMAGE> sh -c 'go build -trimpath -ldflags="-s -w" -o /src/out.bin ./cmd/pg-change-feed && stat -c %s /src/out.bin'`,
+  gedruckt `19677344` und `20512928`): **+835584 Bytes, +4,2 %** (der Review-Lauf
+  maß dieselben Zahlen). **Vergleich mit dem Rückfall, gemessen** (Scratchpad-Kopie
+  des Parents mit einem Aufruf von `otlpmetrichttp.New` und einer `Int64ObservableGauge`
+  im Programm; `go get go.opentelemetry.io/otel/sdk/metric
+  go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp
+  go.opentelemetry.io/otel/metric` und `go mod tidy` im Toolchain-Image, gleicher
+  Bau-Befehl): Binary `22413472` Bytes (+2736128 Bytes, +13,9 % gegen den Parent),
+  `go.sum` 64 → 98 Zeilen (Typen-Bibliothek: 64 → 70), dazu die Anhebung von
+  `go.opentelemetry.io/otel` und `sdk` 1.44.0 → 1.47.0; auch dort zieht
+  `grpc-gateway/v2` in das Binary (drei Pakete, gemessen). Der Rückfall ist an
+  jeder gemessenen Größe größer; der Probe-Bau ist nicht der fertige Code (kein
+  Wiring), die Rangfolge trägt die Größenordnung (3,3-fach). (iv) Aufnahme per
   Container-`go get` und `go mod tidy` an der Kopie, das Ergebnis per `cp` nach
-  `go.mod`/`go.sum`; `make mod-download` Exit 0. **Entscheidung:** Typen-Bibliothek
-  mit `net/http` — (i) bis (iii) tragen keinen Befund, der als Grund gegen sie
-  stünde (keine Anhebung von `grpc` oder `protobuf`, Fußabdruck unter 2 %); der
-  Rückfall auf das offizielle SDK war nicht nötig. Die Anhebung von
+  `go.mod`/`go.sum`; `make mod-download` Exit 0. **Lizenzen der neuen
+  transitiven Module, gemessen** (Datei `LICENSE` im Modul-Cache,
+  `docker run --network none -v pg-change-feed-gomodcache:/go/pkg/mod`):
+  `go.opentelemetry.io/proto/otlp v1.11.1` Apache License 2.0;
+  `google.golang.org/genproto/googleapis/api` (Pseudo-Version `…-8a89bd6388cc`)
+  Apache License 2.0; `github.com/grpc-ecosystem/grpc-gateway/v2 v2.31.0`
+  BSD-artige Lizenz (Gengo, Inc.: Weitergabe in Quell- und Binärform mit
+  Urheberrechtshinweis, kein Name zu Werbezwecken); keine davon schließt die
+  Verwendung im Binary aus, die Aufnahme der Hinweise in eine Weitergabe ist
+  Sache des Releasings (nicht Teil dieses Slice). **Entscheidung:** Typen-Bibliothek
+  mit `net/http`. Die Entscheidungsregel (§2 (a)) kennt **keine Zahlenschwelle**:
+  sie wählt die Typen-Bibliothek, wenn (i) bis (iii) keinen Befund tragen, den der
+  Bericht als Grund gegen sie nennt. „Fußabdruck unter 2 %“ war eine
+  Eigenzusatz-Schwelle des Implementers (ohne Rückhalt im Plan) und entfällt als
+  Begründung. Nach der Regel: +4,2 % und die drei `grpc-gateway`-Pakete im Binary
+  sind **kein** Grund gegen die Typen-Bibliothek, weil der Rückfall an beiden
+  Größen schlechter ist (+13,9 %, dieselben drei Pakete, 34 statt 6 neue
+  `go.sum`-Zeilen); keine Anhebung von `grpc` oder `protobuf`. Die Anhebung von
   `golang.org/x/net` und der Pseudo-Version `genproto/googleapis/rpc` ist
   mitgetragen (`make test`, `make test-store`, `make test-integration`,
   `make image`, `make gates` laufen am Endstand, siehe unten).
@@ -452,7 +482,11 @@ Aussagen-Berührung steht hier gar nicht.
   (`cdc_consumer_lag` = `latest_commit_position - acknowledged_position`, beide
   `bigint`) — **Befund**, nicht still geändert: ob `By` stimmt, ist eine Frage an
   Planner/Architect (eine Folge-ADR, weil die Spec-Tabelle und `ADR-0149`
-  `Accepted` sind). (2) Zahlenform: Zähler, Positionen und Byte-Zahlen gehen als
+  `Accepted` sind). **Adresse (Übergabe an den Architect, Frist: Closure dieses
+  Slice):** Frage an den Architect — `1` gewollt (dann den SQL-Kommentar in
+  `tools/schema/nacharbeit-observability.sql` nachziehen) oder `By` (Folge-ADR,
+  weil `ADR-0149` `Accepted` ist); bis zum Verdikt bleibt der Code bei `1`, wie die
+  Spec es nennt. (2) Zahlenform: Zähler, Positionen und Byte-Zahlen gehen als
   OTLP-`as_int` hinaus (volle 64-Bit-Genauigkeit; ein `double` rundet ab 2^53, ein
   Test liest `9007199254740993` exakt zurück), Kennzahlen mit Einheit `s` immer als
   `as_double` (kein Typwechsel der Reihe bei einem ganzzahligen Wert); die Spec
@@ -460,7 +494,12 @@ Aussagen-Berührung steht hier gar nicht.
   Zyklus zusammen (ein Kontext je Zyklus). (4) Header-Schlüssel müssen ein
   gültiger HTTP-Header-Name sein (ein Zeichen wie `:` im Schlüssel endet mit
   `PCF-E2012`), ein Steuerzeichen im Wert ist ein Fehler — ein Wert, der nie
-  gesendet werden könnte, wird beim Start abgelehnt statt bei jedem Zyklus. (5)
+  gesendet werden könnte, wird beim Start abgelehnt statt bei jedem Zyklus.
+  **Spec-Lücke-Kandidat mit Adresse:** [`SPEC-033`](../../../../spec/pflichtenheft.md)
+  (Konfiguration) verlangt nur einen nicht leeren Schlüssel und ein `=`; die
+  strengeren Regeln stehen allein im Handbuch (Rang 6 gegen Rang 2, die Spec
+  gewinnt) — Spec-Zug des Auftraggebers/Architects, Frist: Closure dieses Slice;
+  bis dahin gilt der Code. (5)
   Ein Name der Sicht außerhalb der Tabelle von `SPEC-033` wird nicht übertragen. (6)
   Eine Weiterleitung (`3xx`) wird nicht verfolgt (Fehlschlag), damit kein Header
   einen anderen Host erreicht. (7) Das Datei-Feld `otlp_interval` ist eine
@@ -517,6 +556,12 @@ Aussagen-Berührung steht hier gar nicht.
   Testcontainer, Rollout wie `make test-store`): Label verworfen und Ganzzahl-Lesung
   entfernt rot in `TestMetricsReadEqualsTheView`; leerer WAL-Halter und verworfene
   Zeilen der Sicht rot in `TestStartMetricExportDeliversTheValuesOfTheView`.
+  **Fixrunde (Review F-5):** die Typ-Zusicherung in
+  `TestExportKeepsValuesExactAndByUnit` ist eine geprüfte (`ok`-Form, `t.Fatalf`);
+  `Gauge` → `Sum` in `buildRequest` (Scratchpad-Kopie des Arbeitsbaums, Instanz
+  Go-Test des Pakets `otlpexport` im Toolchain-Race-Image) färbt beide Tests rot mit
+  Assertionstext, gesehen `cdc_changes_processed: Typ *v1.Metric_Sum, wollen Gauge`
+  (keine Panik mehr), Exit 1.
   **Ohne Rot:** der rohe Fehlertext allein im Use Case lässt
   `TestMetricExportLogsCarryNoCredentials` grün, weil der Adapter nur sichere Texte
   erzeugt (zwei getrennte Schutzschichten; der Test färbt sich bei einem Leck im
@@ -728,6 +773,14 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 - **Folge-Slices:** `otlp-metrik-export-e2e` — Realserver-Beleg des Exports
   (Gegenstand im Übergabe-Block §1); **noch keine Datei**, der Planner legt sie
   mit der Closure dieses Slice an (DoD §2, Gate- und Lauf-Pflichten)
+- **Offene Adressen an Architect/Auftraggeber (Review-Befunde, Frist: Closure):**
+  (a) Frage an den Architect: Einheit von `cdc_consumer_lag` — `1` gewollt
+  (SQL-Kommentar in `tools/schema/nacharbeit-observability.sql` nachziehen) oder
+  `By` (Folge-ADR, weil `ADR-0149` `Accepted`); (b) Spec-Lücke-Kandidat: die
+  Header-Regeln von `otlp_headers` (Schlüssel als gültiger HTTP-Header-Name,
+  Steuerzeichen im Wert) stehen nur im Handbuch, nicht in `SPEC-033` — Spec-Zug
+  des Auftraggebers/Architects; Herkunft beider:
+  `docs/reviews/review-slice-otlp-metrik-export.md` (F-2, F-4).
 - **Risiken aus §6:** (bei der Closure zu füllen, je genau ein Ausgang)
 - **Drei Paarungen:** (bei der Closure zu füllen: Anker · Folge-Slice · Register)
 
