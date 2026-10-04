@@ -190,7 +190,7 @@ unten tragen die geltende Form):
 > distroless-Image CA-Zertifikate, ungeprüft); (5) eine `abdeckung_declare`-Zeile für
 > `LH-FA-SST-010`, `docs/user/e2e-abdeckung.md` vom Runner geschrieben.
 
-- [ ] **Collector-Prüfpunkt, Pin und Happy Path (Liefer-Punkt 1,
+- [x] **Collector-Prüfpunkt, Pin und Happy Path (Liefer-Punkt 1,
       [`LH-FA-SST-010`](../../../../spec/lastenheft.md) Happy Path).**
       (a) **Prüfpunkt als erster Schritt, bevor Runner-Code entsteht** (alle Aussagen
       über den Collector sind bis dahin *nach Kenntnisstand, ungeprüft*): welches
@@ -257,7 +257,7 @@ unten tragen die geltende Form):
       Header zählt als Erfolg: der Test bleibt grün, weil die Gegenprobe fehlt — das
       belegt, dass sie trägt; **erwartet**, im Lauf zu bestätigen). Die Verallgemeinerung
       auf weitere Stellen ist **hergeleitet**, nicht erprobt.
-- [ ] **Ausfall, Wiederaufnahme und ungültige Konfiguration (Liefer-Punkt 2,
+- [x] **Ausfall, Wiederaufnahme und ungültige Konfiguration (Liefer-Punkt 2,
       [`LH-FA-SST-010`](../../../../spec/lastenheft.md) Negative, Boundary).**
       (a) *Collector angehalten:* `docker stop` des Collectors bei laufendem
       Container: der Container bleibt `running` über eine Beobachtung von mindestens
@@ -289,7 +289,7 @@ unten tragen die geltende Form):
       Beobachtungsfrist ohne den Ausfall (der Collector bleibt oben: die Prüfung auf
       `PCF-W6001` muss rot werden) und die Gegenprobe des Konfigurationsfalls
       (gültiger Wert wird abgelehnt: rot). Instanz und Farbe im Bericht.
-- [ ] **`https`, Handbuch und Abdeckung (Liefer-Punkt 3).**
+- [x] **`https`, Handbuch und Abdeckung (Liefer-Punkt 3).**
       (a) *CA-Bündel im Image, gemessen:* die Aussage „das Runtime-Image enthält
       CA-Zertifikate“ wird am gebauten `:dev`-Image gelesen (Export des
       Dateisystems ohne Start; der Pfad der Bündel-Datei und ein Treffer im Export,
@@ -353,11 +353,12 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `tools/harness/run-integration-tests.sh` | update | neue Phase(n) mit `abdeckung_declare`, Pin-Variable des Collector-Images, Temp-Verzeichnis im `cleanup`-Trap (Muster `TLS_TMP`), Wiederherstellung am Phasen-Ende |
-| `tools/harness/<Werkzeug>/` (Arbeitsname `otlpcheck`) | neu | Wegwerf-Werkzeug: liest die Ausgabe des Collectors und die Zeilen der Sicht, prüft Namen, Typ, Einheit, Attribute, Resource-Attribute, Wertgleichheit samt Toleranz; Muster der anderen Wegwerf-Clients unter `tools/harness/` |
-| Collector-Konfiguration (Temp-Verzeichnis des Runners, im Runner als Text erzeugt) | neu, nicht im Baum | Empfänger, Exporter, Authentifizierung; kein Dateiname im Arbeitsbaum |
+| `tools/harness/otlpcheck/` (`main.go`, `check.go`, `check_test.go`) | neu | Wegwerf-Werkzeug: liest die Ausgabe des Collectors und die Zeilen der Sicht, prüft Namen, Typ, Einheit, Attribute, Resource-Attribute, Wertgleichheit samt Toleranz; Muster der anderen Wegwerf-Clients unter `tools/harness/`; die Tabellentests laufen in `make test` |
+| Collector-Konfiguration (Temp-Verzeichnis des Runners, im Runner als Text erzeugt) | neu, nicht im Baum | Empfänger, Exporter, Header-Beobachtung; kein Dateiname im Arbeitsbaum |
 | `docs/user/e2e-abdeckung.md` | update (Erzeugnis des Runners) | die Zeilen für `LH-FA-SST-010`; **kein** Lauf-Beleg |
-| `docs/user/benutzerhandbuch.md` | update, bedingt | nur falls der Beleg etwas Neues zeigt (§2 Liefer-Punkt 3 (c)) |
+| `docs/user/benutzerhandbuch.md` | update (nicht bedingt) | der Beleg zeigt Neues (CA-Bündel, `SSL_CERT_FILE`, Einheit `By`, Benutzerteil der URL), §2 Liefer-Punkt 3 (c); Version 1.98 |
 | `harness/README.md` | update | Zeile `make test-integration`: ein Satz zur neuen Phase |
+| `internal/adapters/driven/otlpexport/exporter.go` und `exporter_test.go` | update (Auftrag des Auftraggebers nach Spec-Stand, nicht im ursprünglichen Plan) | die Einheit von `cdc_consumer_lag` ist `By`; ein Test für den Benutzerteil der Endpunkt-URL (`Authorization: Basic …`, ein Header der Konfiguration gewinnt) — die Entscheidung liegt in den Folge-ADRs zu Einheit und Spec-Lücken, dieser Slice führt sie aus |
 
 - **Reihenfolge:** (1) Startmessung: Suchlauf unten am Arbeitsstand neu (die
   Slices davor bewegen Handbuch und Runner); (2) Collector-Prüfpunkt (§2 Liefer-Punkt 1
@@ -380,12 +381,12 @@ Aussagen-Berührung steht hier gar nicht.
 5e75d923c2ff2d38a4fcdf839a66f813c1b2db74 1 -n -E '@sha256:[0-9a-f]{64}' -- tools/harness/run-integration-tests.sh
 5e75d923c2ff2d38a4fcdf839a66f813c1b2db74 1 -n -E 'Waise' -- harness/README.md
 5e75d923c2ff2d38a4fcdf839a66f813c1b2db74 2 -n -E 'Vertrauensspeicher|otel-collector' -- docs/user/benutzerhandbuch.md
-diff 0 -n -i -E 'otlp|opentelemetry' -- tools/harness compose.yaml examples/compose.yaml .github Makefile harness/mk
-diff 0 -n 'LH-FA-SST-010' -- docs/user harness tools .d-check.yml
-diff 56 -n -E '^abdeckung_declare "' -- tools/harness/run-integration-tests.sh
-diff 1 -n -E '@sha256:[0-9a-f]{64}' -- tools/harness/run-integration-tests.sh
+diff 67 -n -i -E 'otlp|opentelemetry' -- tools/harness compose.yaml examples/compose.yaml .github Makefile harness/mk
+diff 12 -n 'LH-FA-SST-010' -- docs/user harness tools .d-check.yml
+diff 59 -n -E '^abdeckung_declare "' -- tools/harness/run-integration-tests.sh
+diff 2 -n -E '@sha256:[0-9a-f]{64}' -- tools/harness/run-integration-tests.sh
 diff 1 -n -E 'Waise' -- harness/README.md
-diff 2 -n -E 'Vertrauensspeicher|otel-collector' -- docs/user/benutzerhandbuch.md
+diff 1 -n -E 'Vertrauensspeicher|otel-collector' -- docs/user/benutzerhandbuch.md
 ```
 
 - **Suchlauf (§3.13 der Regeln, [`AGENTS.md`](../../../../AGENTS.md)).** Bewegte
@@ -410,6 +411,92 @@ diff 2 -n -E 'Vertrauensspeicher|otel-collector' -- docs/user/benutzerhandbuch.m
   Handbuch mitzieht. Jede Trefferzeile wird gelesen, nicht gezählt; der Implementer
   misst beim Start am Arbeitsstand neu (neue Commit-Kennung als Parent, Abweichung mit
   Ursache im Bericht).
+
+### Umsetzungsnachzug (Implementer)
+
+Alle Angaben stammen aus Läufen dieses Slice am Arbeitsstand (gemessen); wo eine
+Aussage über den Lauf hinausgeht, steht sie als *hergeleitet*.
+
+**Auftrag über den Plan hinaus** (Entscheidung des Auftraggebers nach den Folge-ADRs zu
+Einheit und Spec-Lücken; die Ausschlüsse in §1 „Entscheidung über die Einheit“ und
+„Änderung am Export-Code“ sind damit für genau diese Punkte überholt, der Rest von §1
+gilt): die Einheit von `cdc_consumer_lag` ist `By` in `exporter.go` und
+`exporter_test.go`; ein Go-Test für den Benutzerteil der Endpunkt-URL
+(`TestExportSendsBasicAuthorizationFromEndpointUserinfo`); das Handbuch zieht nach
+(Einheit `By`, WAL-Strecke in Bytes, `https`, Benutzerteil der URL, Version 1.98).
+
+**Collector-Prüfpunkt (Liefer-Punkt 1 (a)).** `docker run --rm otel/opentelemetry-collector:0.162.0 components`
+nennt den Empfänger `otlp`, die Exporter `file` und `debug`, die Prozessoren `resource` und
+`attributes` und als Erweiterungen nur `health_check`, `pprof` und `zpages` — **keine**
+Authentifizierungs-Erweiterung. Entscheidung: das Kern-Image (126 578 012 Byte,
+`docker image inspect`), nach der Entscheidungsregel das kleinste, das Empfänger,
+auslesbaren Exporter und einen Weg zur Header-Beobachtung trägt: der Empfänger mit
+`include_metadata: true` und der `resource`-Prozessor mit `from_context: authorization`
+bilden den Anfrage-Header als Resource-Attribut `http.authorization`, das der
+`file`-Exporter mitschreibt. Das Contrib-Image wurde nicht abgerufen und nicht gemessen.
+Folge für den Plan: eine abweisende Authentifizierung (Plan (d) Gegenprobe, (c) Status
+`500`) gibt es in diesem Image nicht; die Gegenprobe zum Header ist das **Fehlen** des
+Attributs ohne `CDC_OTLP_HEADERS`, die abweisende Antwort ein unbekannter Pfad
+(Status `404`, `detail` der Warnung `Status 404`).
+
+**Pin (Liefer-Punkt 1 (b)).** Der Index-Digest ist mit
+`docker buildx imagetools inspect otel/opentelemetry-collector:0.162.0 --format '{{.Manifest.Digest}}'`
+gemessen und steht an genau einer Stelle: Variable `OTLP_COLLECTOR_IMAGE` mit Default im
+Runner. `make pin-stale-all`: `pin-stale-all: 17 Referenzen — 17 OK, 0 DRIFT, 0 UNBESTIMMT`
+(Exit 0, die Zeile des Pins `OK`).
+
+**Abweichungen vom Plan.** (1) Die Phase hängt **nach** der TLS-Phase, nicht am Ende der
+Reihe: der letzte Rundlauf (Routing-Nichtanwendbarkeit) lässt den Erfassungspfad beendet
+stehen, die Phase braucht einen gesunden Container. (2) Die Header-Beobachtung und die
+abweisende Antwort wie oben. (3) `cdc_wal_retention_bytes` steht nicht in der Sicht; die
+Gegenlesung ist die **Messreihe des Prozesses** (die Log-Zeilen `replication: WAL-Rückstand
+gemessen`): der exportierte Wert ist exakt eine dieser Messungen. Damit die Reihe nicht
+trivial null ist, hält eine Sitzung die Persistierung an (SHARE-Sperre auf `cdc.change`,
+die Sicht bleibt lesbar) und 30.000 Zeilen in einer nicht aktivierten Tabelle bilden den
+Rückstand; der Runner verlangt eine größte Messung von mindestens 1 MiB. (4) Phase 1 fährt
+vier Starts (mit Header, ohne Header, Benutzerteil der URL, Benutzerteil und Header). (5)
+Ein Consumer mit bestätigter Position und eine erfasste Change sind Vorbedingung der Sicht
+und werden von der Phase angelegt. (6) Der Ausgang `Laufzeit der drei OTLP-Phasen` steht in
+der Ausgabe des Runners.
+
+**Gedruckte Zeilen des Laufs `make test-integration` (Exit 0).**
+
+```text
+OTLP-Metrik-Export — Collector otelcol version 0.162.0 (Komponenten otlp, file, resource vorhanden)
+OTLP-Metrik-Export — CA-Bündel im Image: etc/ssl/certs/ca-certificates.crt
+mit Header: OTLPCHECK names=10 points=19 consumer_lag_unit=By wal=4831552 errors_labels=schema auth=present gemessen_im_prozess=4831552
+ohne Header: OTLPCHECK names=10 points=19 consumer_lag_unit=By wal=0 errors_labels=schema auth=absent gemessen_im_prozess=0
+https mit Vertrauensanker: OTLPCHECK names=10 points=19 consumer_lag_unit=By wal=0 errors_labels=schema auth=present gemessen_im_prozess=0
+nach docker start kamen 3 Exporte in 16 s an
+Laufzeit der drei OTLP-Phasen 252 s
+Lauf abgeschlossen — E2E-Abdeckungstabelle aus 21 Go-Zeilen und 59 Bash-Zeilen
+```
+
+Die gemessene Einheit von `cdc_consumer_lag` am Draht ist `By`; `make doc-trace`
+druckt `83 Anforderung(en), 0 Waise(n).` (am Parent: 1 Waise, `LH-FA-SST-010`).
+Gesamtzeit von `make test-integration`: 1037 s; die Gesamtzeit ohne die Phasen wurde
+nicht gemessen, der Vergleich vor und nach (§6) bleibt offen. Collector-Version, CA-Bündel
+und die Wirkung von `SSL_CERT_FILE` sind an Version 0.162.0 gemessen; ob öffentliche
+Zertifizierungsstellen verifiziert werden, ist **nicht** gemessen.
+
+**Mutationen (Zusage · mutierte Eingabe · gesehenes Rot), an Kopien im Scratchpad.**
+
+| Zusage | mutierte Eingabe | gesehenes Rot |
+|---|---|---|
+| Wertgleichheit mit der Sicht | `otlpcheck`-Soll: Wert der Sicht um 1 verschoben, Instanz: Phase 1, Start mit Header | `sechs Versuche ohne bestandene Prüfung … Export 1, Sicht 1` |
+| Einheit je Name | `otlpcheck`-Soll: Einheit von `cdc_storage_bytes` `By` zu `1` | `Einheit "By", erwartet "1"` |
+| Datenpunkt-Attribut | `otlpcheck`-Soll: Attribut von `cdc_errors_total` `class` zu `consumer` | `Attribut consumer fehlt` |
+| Header-Gegenprobe trägt | Collector setzt `http.authorization` unbedingt: „Start mit Header“ bleibt grün (erwartet, bestätigt), „Start ohne Header“ rot | `Resource-Attribut http.authorization ist vorhanden … erwartet abwesend` |
+| Ausfall-Fenster | `docker stop` des Collectors entfernt | `Warn-Zeilen PCF-W6001 im Beobachtungsfenster () — erwartet '1', gelesen '0'` |
+| Konfigurations-Gegenprobe | gültiger Endpunkt der Gegenprobe durch `ftp://…` ersetzt | `Gegenprobe 'Endpunkt mit Schema http' — … unhealthy, wollen healthy` |
+| Basic aus dem Benutzerteil | Go-Test: `base.User = nil` in `New` | `Authorization = "", wollen Basic dXNlcjpwYXNz` |
+| Vorrang des Konfigurations-Headers | Go-Test: `Authorization` aus den Headern der Konfiguration verworfen | `Authorization = "Basic dXNlcjpwYXNz", wollen Bearer abc` |
+| Einheit `By` | Go-Test: Einheit von `cdc_consumer_lag` zu `1` | `cdc_consumer_lag: Einheit "1", wollen "By"` |
+| Fehlertext ohne Benutzerteil | Go-Test: roher Transportfehler im Detail | `TestExportErrorsCarryNoCredentials` rot |
+
+Nicht erprobt (hergeleitet): die Gegenprobe der `https`-Phase (Vertrauensanker), die
+Untergrenze von 1 MiB und die Beobachtungsfenster von 16 s; die Verallgemeinerung auf
+weitere Stellen eines Werkzeugs ist hergeleitet.
 
 ## 4. Trigger
 
