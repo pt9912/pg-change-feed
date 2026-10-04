@@ -1,6 +1,6 @@
 # Architektur — PG Change Feed
 
-**Status:** Aktiv. **Letzte Änderung:** 2026-09-26.
+**Status:** Aktiv. **Letzte Änderung:** 2026-10-04.
 
 **Rolle:** Sicht-Stratum — *keine* eigenen Anforderungen, derivativ. Regeln:
 Baseline-Regelwerk `modul-03-spec.md` §Ziel-Form: Architektur-Sicht.
@@ -95,7 +95,7 @@ System (Baseline-Regelwerk `grundlagen-source-precedence.md` §ID-Schema als Kla
 | `ARC-008` | PostgreSQL Logical Replication (`pgoutput`) | Änderungsquelle: der Replication Stream ist der Driving Adapter des Capture-Pfads | Output-Plugin als Standard ohne zusätzliche Extension; konkrete Bibliothek ist Infrastrukturdetail |
 | `ARC-009` | PostgreSQL (Store) | persistenter CDC-Speicher (Referenzimplementierung des ChangeStore) | über den Outbound Port substituierbar; kein externer Broker für den Grundbetrieb erforderlich |
 | `ARC-010` | Dateisystem | Spool für große offene Transaktionen | über den Outbound Port substituierbar; Crash-Verhalten testpflichtig |
-| `ARC-011` | Telemetrie-Backend (Prometheus/OpenTelemetry) | Metriken und strukturierte Logs | über den Outbound Port substituierbar; Frameworks bleiben Infrastruktur |
+| `ARC-011` | OTLP-Empfänger (OpenTelemetry-Protokoll) | Metriken (Push) und strukturierte Logs | über den Outbound Port substituierbar; Frameworks bleiben Infrastruktur |
 | `ARC-012` | Systemzeit | Zeitquelle für zeitbasierte Retention, Change-Alter und CDC-Lag-Messung | über den Outbound Port substituierbar; Fake Clock in Application-Tests |
 | `ARC-013` | NATS (Core, kein JetStream) | tabellen-granulares Wecksignal und optionaler Vollinhalts-Stream für neue Changes, additiv zum Lesezugriffsweg | über den Outbound Port substituierbar; optional — ohne konfigurierte Verbindung bleibt die Fähigkeit deaktiviert, kein Ersatz für die Nachvollziehbarkeit des bestehenden Zugriffswegs |
 
@@ -424,6 +424,37 @@ unberührt.
 Backfill-Changes gehen nicht in den Live-Stream: sie werden über den
 bestehenden Lesezugriffsweg gelesen; das Wecksignal nach dem Commit wird über
 denselben Port gesendet wie das der WAL-Changes.
+
+### Use-Case: LH-FA-SST-010 — Metrik-Export (periodisch)
+
+```mermaid
+sequenceDiagram
+    participant B as Bootstrap-Takt (ARC-007)
+    participant EUC as ExportMetricsUseCase (ARC-002)
+    participant MP as MetricsReadPort (ARC-004)
+    participant MA as PostgresMetricsAdapter (ARC-006)
+    participant XP as MetricExportPort (ARC-004)
+    participant OA as OtlpAdapter (ARC-006)
+    participant OC as OTLP-Empfänger (ARC-011)
+
+    B->>EUC: Takt, in eigener Goroutine
+    EUC->>MP: Kennzahlen lesen
+    MP->>MA: Sicht der Betriebsschnittstelle lesen (Leserolle)
+    MA-->>MP: Kennzahlen
+    EUC->>XP: Kennzahlen samt zuletzt gemessenem WAL-Rückstand übertragen
+    XP->>OA: übertragen, mit Frist
+    OA->>OC: Metrik-Anfrage
+    OC-->>OA: angenommen oder Fehlschlag
+    OA-->>EUC: Ergebnis
+    EUC-->>B: Ergebnis (nur Log-Eintrag)
+```
+
+Der Export ist **nie blockierend**: er läuft in einer eigenen Goroutine,
+hat je Versuch eine Frist und keine Warteschlange — der nächste Takt ist die
+Wiederholung. Ein Fehlschlag, beim Lesen wie beim Übertragen, wird nur
+protokolliert; Erfassungspfad, Persistierung, Bestätigung und Health-Zustand
+bleiben unberührt. TLS und Token-Prüfung der Netzwerk-Schnittstellen sind
+Eigenschaften der Driving Adapters (`ARC-005`), keine eigene Komponente.
 
 ## 5. Fehlermodelle und Resilienz
 
