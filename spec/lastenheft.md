@@ -1154,8 +1154,11 @@ Kennzahlen, die die SQL-Sicht der Betriebsschnittstelle liefert
 
 - **Happy Path:** Given ein OTLP-Empfänger ist konfiguriert, when das System
   läuft, then erhält der Empfänger die Kennzahlen wiederkehrend, und ein
-  übertragener Wert entspricht dem Wert, den die SQL-Sicht im selben Moment
-  liefert.
+  übertragener Wert entspricht dem Wert, den die SQL-Sicht zum Zeitpunkt seiner
+  Messung liefert; bei den zeitabhängigen Kennzahlen (Alter und Rückstand in
+  Sekunden) bis auf den Abstand beider Messzeitpunkte, beim WAL-Rückstand, den
+  die SQL-Sicht nicht führt, ist der zuletzt im Prozess gemessene Wert der
+  übertragene.
 - **Boundary:** Given kein Empfänger ist konfiguriert, when das System läuft,
   then baut es keine Verbindung zu einem Empfänger auf, und Betrieb und
   SQL-Sicht sind unverändert. Given der Empfänger ist nicht erreichbar oder
