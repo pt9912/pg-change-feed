@@ -114,8 +114,8 @@ von **neun auf elf** — genau seine zwei Schlüssel; die zwei anderen trägt
 (Begründung dort, §1). `otlp_interval` ist ein **zulässiges** Datei-Feld und kein
 Klassenmitglied (eine Zahl trägt keine Zugangsdaten).
 
-**Übergabe-Block an `otlp-metrik-export-e2e`** (Folge-Slice, **noch keine Datei**;
-Adresse ist die Closure dieses Slice, in der der Planner ihn anlegt — §7). Der
+**Übergabe-Block an [`otlp-metrik-export-e2e`](../open/slice-otlp-metrik-export-e2e.md)**
+(Folge-Slice, mit der Closure dieses Slice angelegt — §7). Der
 Gegenstand, den der Realserver-Beleg dort tragen muss und den dieser Slice
 **nicht** trägt: (1) ein Wegwerf-Empfänger im Compose-Netz nimmt `POST /v1/metrics`
 des laufenden Feed-Containers entgegen, und ein übertragener Wert ist gleich dem
@@ -346,18 +346,23 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       F-1 HIGH in der Fixrunde behoben;
       `.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
+- [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (Zeile `make test-store`: ein Satz zum Lese-Adapter und zum
-      Verdrahtungs-Test, `ADR-0149` Folgepflicht); gemeldete Träger fremder
-      Dateien mit der Closure nachgezogen (§3 Suchlauf,
-      [`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Der Folge-Slice `otlp-metrik-export-e2e` ist als Datei in `open/` angelegt
-      (Planner, mit der Closure) und trägt den Übergabe-Block aus §1 als
+      Verdrahtungs-Test, `ADR-0149` Folgepflicht; vom Verifier gelesen, Verifikation
+      §3); gemeldete Träger fremder Dateien: keine still mitgeändert — die
+      Träger sind als Adressen in §7 benannt (Einheit von `cdc_consumer_lag` im
+      SQL-Kommentar von `tools/schema/nacharbeit-observability.sql` und in
+      [`SPEC-033`](../../../../spec/pflichtenheft.md): Architect-Frage; Header-Regeln und
+      Benutzerteil der Endpunkt-URL in `SPEC-033`: Spec-Zug; Frist beider: vor dem
+      Release) (§3 Suchlauf, [`AGENTS.md`](../../../../AGENTS.md) §3.13).
+- [x] Der Folge-Slice `otlp-metrik-export-e2e` ist als Datei in `open/` angelegt
+      ([`slice-otlp-metrik-export-e2e`](../open/slice-otlp-metrik-export-e2e.md);
+      Planner, mit der Closure) und trägt den Übergabe-Block aus §1 als
       committeten Text in seinem §2 — kein Verweis auf diesen Plan allein.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. (Eine weitere Datei, §7.)
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist (§7; Messung nach dem `git mv`).
 
 ## 3. Plan (vor Code)
 
@@ -713,42 +718,63 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   Festlegung 1); eine Aufnahme kann `google.golang.org/grpc` oder
   `google.golang.org/protobuf` anheben und damit SDK-Tiers, Generator-Pins und den
   `generated-sync`-Lauf berühren. Gegenmaßnahme: der Prüfpunkt vor dem Code (§2),
-  `make generated-sync` im Gate-Lauf. — **Ausgang:** offen bis Closure.
+  `make generated-sync` im Gate-Lauf. — **Ausgang:** eingetreten und gelöst, ohne
+  Folge-Slice: die Annahme trägt (Modul, Version `v1.11.1`, Nachricht und Gauge
+  vorhanden); die transitive Anhebung trifft nur `golang.org/x/net` und
+  `genproto/googleapis/rpc`, `grpc` und `protobuf` bleiben unverändert;
+  `make generated-sync` Exit 0 (Verifikation §1, §5; der Fußabdruck am fertigen Code
+  +835584 Byte, +4,2 %, vom Verifier nachgemessen).
 - **Spec-Lücken, die der Plan festlegt** (Header-Teilung am ersten `=`, Leerraum,
   Header ohne Endpunkt, Zeitpunkt des ersten Versuchs, gemeinsamer Fehlerzustand
   für Lesen und Übertragen): die Spec nennt sie nicht; jede Festlegung kann der
   Reviewer anders lesen, und eine Spec-Klarstellung wäre ein Zug des
-  Planners/Architect, kein Zug dieses Slice. — **Ausgang:** offen bis Closure
-  (Kandidat: benannte Spec-Lücke im Lerneintrag).
+  Planners/Architect, kein Zug dieses Slice. — **Ausgang:** weiter offen: benannte
+  Spec-Lücke im Lerneintrag (§7), Adresse: Spec-Zug des Auftraggebers oder
+  Architects, Frist **vor dem Release** für die Header-Regeln und den Benutzerteil
+  der Endpunkt-URL; die übrigen Festlegungen (Zeitpunkt des ersten Versuchs,
+  gemeinsamer Fehlerzustand) bleiben als Plan-Festlegung gelesen, ohne Frist.
 - **Ein Wert des Exports weicht von der Sicht ab, ohne dass ein Test es merkt**
   (Skalierung, Einheit, Attribut): der Test am Wire liest den Körper zurück und
   vergleicht gegen die Sicht derselben Datenbank, nicht gegen ein
   Test-Literal derselben Quelle
   ([`BEO-PGC/e2e-metrik-boundary-nur-reviewer-belegt`](../observations/BEO-PGC/e2e-metrik-boundary-nur-reviewer-belegt/observation.md)
-  nennt die Form; der Realserver-Beleg ist der Folge-Slice). — **Ausgang:** offen
-  bis Closure.
+  nennt die Form; der Realserver-Beleg ist der Folge-Slice). — **Ausgang:** auf
+  Unit- und Datenbank-Ebene entfallen (`TestMetricsReadEqualsTheView`,
+  `TestStartMetricExportDeliversTheValuesOfTheView` laufen und überspringen sich
+  nicht, Verifikation §1); die Realserver-Hälfte weiter offen und übergeben an
+  [`slice-otlp-metrik-export-e2e`](../open/slice-otlp-metrik-export-e2e.md) (gegen
+  einen echten Collector).
 - **Die Warnung trägt eine Zugangsdaten-Information** (Header-Wert, Userinfo
   der URL im Fehlertext des HTTP-Clients: `net/http` nennt die URL im Fehler): die
   Log-Zeile wird aus Code und Klasse gebaut, nicht aus dem rohen Fehlertext
-  der Bibliothek; ein Test (§2) belegt die Abwesenheit. — **Ausgang:** offen bis
-  Closure.
+  der Bibliothek; ein Test (§2) belegt die Abwesenheit. — **Ausgang:** entfallen
+  (zwei getrennte Schutzschichten, Mutationen an Adapter und Use Case rot,
+  `git grep` nach Log-Aufrufen mit Endpunkt oder Header ohne Treffer; Verifikation
+  §2, §7). Eine unbenannte Eigenschaft bleibt: der Benutzerteil der Endpunkt-URL
+  (§7, Spec-Zug).
 - **Die Aufzählung der Warn-Bereiche bleibt an einem Träger bei 1 bis 5**
   (`Area`, Kommentar, Test oder Handbuch): dann färbt der Test rot oder, schlimmer,
   der Code `PCF-W6001` gilt als kein Warncode. Gegenmaßnahme: der Suchlauf
-  Zeile 1 und `make meldungscodes-check`. — **Ausgang:** offen bis Closure.
+  Zeile 1 und `make meldungscodes-check`. — **Ausgang:** entfallen (alle vier Träger
+  tragen die 6; `make meldungscodes-check` Exit 0; die `Area`-Mutation färbte rot;
+  Verifikation §3).
 - **Der Slice ist größer als drei Punkte tragen** (Konfiguration plus Pipeline plus
   Bibliothek-Prüfpunkt): Rückführung nach §4 mit dem benannten
-  Teilungsvorschlag. — **Ausgang:** offen bis Closure.
+  Teilungsvorschlag. — **Ausgang:** entfallen (drei Liefer-Punkte geliefert, keine
+  Rückführung; Verifikation §3).
 - **Das Runtime-Image trägt für `https` keine CA-Zertifikate** (distroless;
   *nach Kenntnisstand* enthalten, ungeprüft): im Folge-Slice zu messen (Übergabe-Block
   Punkt 4); dieser Slice liefert dazu keine Aussage und das Handbuch nennt für
-  `https` keine Zusage. — **Ausgang:** offen bis Closure (übergeben an
-  `otlp-metrik-export-e2e`).
+  `https` keine Zusage. — **Ausgang:** weiter offen, übergeben an
+  [`slice-otlp-metrik-export-e2e`](../open/slice-otlp-metrik-export-e2e.md)
+  (Liefer-Punkt 3: das CA-Bündel am Image gemessen, nicht übernommen).
 - **Das Handbuch zieht nicht mit** (Betreiber-Oberfläche wächst um drei
   Variablen, ein Datei-Feld, zwei Codes und einen Bereich):
   [`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`](../observations/BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche/observation.md)
   (drei Evidenz-Dateien am Planungsstand) — eigener Liefer-Punkt in §2. —
-  **Ausgang:** offen bis Closure.
+  **Ausgang:** entfallen (Handbuch 1.97, `make handbuch-public-doc-check` Exit 0;
+  Verifikation §8). Die Review-Befunde F-3 (Widerspruch zu Werten in
+  Konfigurationsfehlern) sind in der Fixrunde behoben.
 
 ## 7. Closure-Notiz
 
@@ -767,24 +793,116 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 *Der Plan füllt diese Sektion nicht; sie wird bei der Closure vor dem
 `git mv` nach `done/` geschrieben (§2: die Paarungs-Zeile nach dem `git mv`).*
 
-- **Was hat funktioniert:** (bei der Closure zu füllen)
-- **Was ging anders als geplant:** (bei der Closure zu füllen)
-- **Steering-Loop-Eintrag:** (bei der Closure zu füllen; Kandidaten §5)
-- **Beobachtungs-Register (`../observations/`):** (bei der Closure zu füllen;
-  zu lesen sind die in §6 und §8 genannten Einträge)
-- **Folge-Slices:** `otlp-metrik-export-e2e` — Realserver-Beleg des Exports
-  (Gegenstand im Übergabe-Block §1); **noch keine Datei**, der Planner legt sie
-  mit der Closure dieses Slice an (DoD §2, Gate- und Lauf-Pflichten)
-- **Offene Adressen an Architect/Auftraggeber (Review-Befunde, Frist: Closure):**
-  (a) Frage an den Architect: Einheit von `cdc_consumer_lag` — `1` gewollt
-  (SQL-Kommentar in `tools/schema/nacharbeit-observability.sql` nachziehen) oder
-  `By` (Folge-ADR, weil `ADR-0149` `Accepted`); (b) Spec-Lücke-Kandidat: die
-  Header-Regeln von `otlp_headers` (Schlüssel als gültiger HTTP-Header-Name,
-  Steuerzeichen im Wert) stehen nur im Handbuch, nicht in `SPEC-033` — Spec-Zug
-  des Auftraggebers/Architects; Herkunft beider:
-  `docs/reviews/review-slice-otlp-metrik-export.md` (F-2, F-4).
-- **Risiken aus §6:** (bei der Closure zu füllen, je genau ein Ausgang)
-- **Drei Paarungen:** (bei der Closure zu füllen: Anker · Folge-Slice · Register)
+- **Was hat funktioniert:** Der Schnitt trug: Konfiguration, Lese-Port, Sender und
+  Takt sind auf Unit-, `httptest`- und Datenbank-Ebene belegt, der Container ohne
+  Endpunkt läuft unverändert (`make test-integration` Exit 0, die
+  Abdeckungstabelle blieb unverändert). Der Bibliothek-Prüfpunkt vor dem Code
+  erprobte die „ungeprüfte“ Annahme von
+  [`ADR-0149`](../../adr/0149-otlp-metrik-export-mechanismus.md) Festlegung 1: sie
+  hielt (Modul `go.opentelemetry.io/proto/otlp v1.11.1`, `grpc` und `protobuf`
+  unverändert; gemessen vom Implementer, vom Verifier an Parent und `HEAD`
+  nachgemessen). Die Mutationen je Zusage (die Plan-Zeilen und weitere, dazu acht
+  des Verifiers) färbten rot; der Reviewer fand durch Nachmessen die driftende
+  Probe-Zahl (F-1) und durch eine eigene Mutation die Panik statt der Aussage
+  (F-5), beides vor dem Merge. Die Fixrunde (`ce6b69af`, `9812f141`) hielt der
+  Verifier voll mit (Verifikation §6).
+- **Was ging anders als geplant:** (1) Die Entscheidung der Typen-Bibliothek stand
+  zunächst auf „Fußabdruck unter 2 %“ — eine Eigenzusatz-Schwelle des
+  Implementers ohne Rückhalt im Plan, gemessen am Probe-Aufruf (+1,7 %); der fertige
+  Code misst +4,2 % (Review F-1, HIGH). Die Entscheidung trägt jetzt allein den
+  Vergleich mit dem Rückfall (SDK +13,9 %, im Probe-Bau gemessen), die
+  Entscheidungsregel des Plans kennt keine Zahlenschwelle. (2) Der Plan sah keine
+  Datei `otlp.go` und keinen Inbound-Port vor; beide entstanden (§3, im Plan
+  nachgetragen, Muster im Bestand: `retention.go`, `idleconfirmation.go`,
+  `backfill.go`). (3) Das Handbuch widersprach sich zu Werten in
+  Konfigurationsfehlern (F-3), behoben. (4) Die Einheit von `cdc_consumer_lag`
+  ist in Spec und SQL-Kommentar verschieden benannt (F-2): der Code folgt der Spec
+  (`1`), die Frage steht als Adresse unten.
+- **Steering-Loop-Eintrag:** Benannte Spec-Lücken, keine verkörperte Regel (ohne
+  `liegt in`): [`SPEC-033`](../../../../spec/pflichtenheft.md) nennt für
+  `CDC_OTLP_HEADERS` nur „nicht leerer Schlüssel und ein `=`“; der Code ist strenger
+  (Schlüssel als gültiger HTTP-Header-Name, Steuerzeichen im Wert, Teilung am
+  **ersten** `=`, Header ohne Endpunkt ist ein Konfigurationsfehler), die strengeren
+  Regeln stehen nur im Handbuch (Rang 6 gegen Rang 2; die Spec gewinnt) — dazu
+  schweigt die Spec zum Zeitpunkt des ersten Versuchs (nach einem vollen Takt) und
+  zum gemeinsamen Fehlerzustand von Lesen und Übertragen. Neu aus der Verifikation:
+  `validateOTLPEndpoint` lehnt einen Benutzerteil in `CDC_OTLP_ENDPOINT`
+  (`http://user:pass@host`) nicht ab; `net/http` sendet ihn nach Herleitung als
+  `Authorization: Basic` (**hergeleitet, nicht gefahren**); weder Spec noch
+  Handbuch benennen das als Verhalten. Zweiter Lerninhalt, **gemessen**: eine
+  Probe-Messung des Fußabdrucks (ein Aufruf der Bibliothek) ist nicht der fertige
+  Code — am fertigen Code mehr als doppelt (+1,7 % gegen +4,2 %); ein
+  Entscheidungsgrund mit Zahl wird nach der Verdrahtung neu gemessen (Datei im Register,
+  unten). Adresse der Spec-Lücken: Spec-Zug des Auftraggebers oder Architects,
+  Frist **vor dem Release**; der Planner schreibt die Spec nicht.
+- **Beobachtungs-Register (`../observations/`):** Weitere Datei
+  `evidence/slice-otlp-metrik-export.md` in
+  [`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`](../observations/BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/observation.md)
+  (Review F-1, HIGH, daher Datei trotz Deckel von ≤ LOW; **neue Träger-Form**: die
+  Zahl eines Probe-Aufrufs trägt eine Entscheidungsbegründung, und der fertige
+  Code bewegt sie); der Zähler folgt aus den Dateien und steht bei 30
+  (`ls evidence`, gemessen). Die Schwester-Klasse
+  [`BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`](../observations/BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung/observation.md)
+  bekommt **keine** Datei: die Eigenzusatz-Schwelle „unter 2 %“ ist eine
+  Schwelle ohne Rückhalt, keine falsche Tatsachenbehauptung über den Gegenstand;
+  der Querbezug steht in der neuen Datei, ein erneutes Auftreten wäre der Anlass
+  für einen eigenen Eintrag. F-2 und F-4 sind Spec-Lücken mit Adresse (oben), F-3 ist
+  in der Fixrunde behoben, F-5 (LOW, Test färbt über Panik) trifft keinen
+  bestehenden Eintrag und bleibt als einzelner LOW-Befund im Review-Report
+  dokumentiert, ohne neues Verzeichnis. Die in §8 genannten Einträge mit mindestens
+  drei Dateien sind mit diesem Slice berührt und haben ihre Gegenmaßnahme getragen;
+  kein Eintrag mit `evidence/` ≥ 3 ist durch diese Closure neu über die Schwelle
+  gewachsen (der Lese-Schritt der Welle-Closure entfällt: wellenlos).
+- **Validator-Feststellung (Modul 8):** Der Slice liefert Betreiber-Wert (ein
+  OpenTelemetry-Empfänger erhält die Kennzahlen des Feed-Containers,
+  [`LH-FA-SST-010`](../../../../spec/lastenheft.md)), aber nur auf Unit-, `httptest`-
+  und Datenbank-Ebene belegt; ob ein echter Collector die Nachricht liest, ist der
+  Beleg des Folge-Slice. Der Nutzerbedarf selbst (ein Betreiber ohne eigene
+  Übersetzung der SQL-Sicht) ist **nicht** am realen Bedarf geprüft: ein
+  Validator-Lauf ist nach dem Release sinnvoll, mit Token-Wechsel und TLS
+  (Betreiber-Oberfläche als Ganzes).
+- **Folge-Slices:**
+  [`slice-otlp-metrik-export-e2e`](../open/slice-otlp-metrik-export-e2e.md) —
+  Realserver-Beleg des Exports gegen einen **echten OpenTelemetry-Collector**
+  (Entscheidung des Auftraggebers), Datei in `open/`; der Übergabe-Block aus §1
+  steht dort als committeter Text in §2. Er ist **Voraussetzung des Server-Releases**
+  (Auftraggeber: erst der Beleg, dann der Release 0.7.0; ein Release braucht die
+  Freigabe des Auftraggebers; der Lizenzhinweis von `grpc-gateway/v2`
+  (BSD-artig, Urheberrechtshinweis bei Weitergabe, Verifikation §5) gehört ins
+  Releasing, nicht in einen Slice).
+- **Offene Adressen an Architect/Auftraggeber (Frist: **vor dem Release**):**
+  (a) *Frage an den Architect:* Einheit von `cdc_consumer_lag` — `1` gewollt
+  (dann den SQL-Kommentar in `tools/schema/nacharbeit-observability.sql`
+  nachziehen) oder `By` (Folge-ADR, weil
+  [`ADR-0149`](../../adr/0149-otlp-metrik-export-mechanismus.md) `Accepted` ist, die
+  Tabelle von [`SPEC-033`](../../../../spec/pflichtenheft.md) müsste mitziehen); die
+  Einheit ist eine **veröffentlichte Wire-Aussage** des Releases, der Code trägt bis
+  zum Verdikt `1`; der Folge-Slice misst die Einheit am Collector, er entscheidet
+  sie nicht. (b) *Spec-Zug des Auftraggebers oder Architects:* die Header-Regeln von
+  `otlp_headers` und die Behandlung eines Benutzerteils in `CDC_OTLP_ENDPOINT` in
+  [`SPEC-033`](../../../../spec/pflichtenheft.md). Herkunft:
+  `docs/reviews/review-slice-otlp-metrik-export.md` (F-2, F-4) und
+  `docs/reviews/verifikation-slice-otlp-metrik-export.md` §7 und §10.
+- **Risiken aus §6:** acht, je ein Ausgang in §6 selbst: Bibliothek ungeprüft
+  eingetreten und gelöst (Annahme trägt) · Spec-Lücken weiter offen (Lerneintrag,
+  Adresse mit Frist vor dem Release) · Wert weicht von der Sicht ab entfallen auf
+  Unit- und Datenbank-Ebene, Realserver-Hälfte übergeben an den Folge-Slice ·
+  Warnung trägt Zugangsdaten entfallen (zweischichtig belegt) · Warn-Bereiche bei
+  1 bis 5 entfallen · Slice zu groß entfallen · `https`/CA-Zertifikate weiter offen,
+  übergeben an den Folge-Slice · Handbuch zieht nicht mit entfallen.
+- **Drei Paarungen:** (a) *Anker* — kein Eintrag trägt `liegt in` (nichts
+  verkörpert); entfällt. (b) *Folge-Slice* —
+  [`slice-otlp-metrik-export-e2e`](../open/slice-otlp-metrik-export-e2e.md) existiert
+  in `open/` (Datei, nicht nur ein Name). (c) *Register* —
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (30 `evidence/`-Dateien, die
+  neue nicht leer),
+  `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` und die in §6 und §8
+  genannten Kennungen existieren als Verzeichnisse mit nicht leerem `evidence/`
+  (Messung nach dem `git mv`). Träger fremder Dateien: der Suchlauf (§3) ist am
+  Endstand gelesen (Verifikation §1, 10 Zeilen stimmen); die Links der Verweise auf
+  diese Datei sind im Reconcile-Commit nach dem Move nachgezogen
+  (`done/slice-api-token-mehrfach-konfiguration.md`, `done/slice-tls-http-grpc-server.md`,
+  `open/slice-examples-grpc-tls.md`, die Reports der drei Slices und der neue Plan).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

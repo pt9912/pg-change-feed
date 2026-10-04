@@ -37,7 +37,12 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **29×** (evidence/slice-routing-betriebsdoku.md —
+Zähler (abgeleitet): **30×** (evidence/slice-otlp-metrik-export.md —
+neue Form, HIGH (Review F-1): die Zahl eines Probe-Aufrufs (+335872 Byte, +1,7 %)
+trug als „unter 2 %“ eine Entscheidungsbegründung des Plans, der fertige Code maß
++835584 Byte (+4,2 %), vom Reviewer und vom Verifier nachgemessen; gezogen durch
+`9812f141`, Datei trotz Deckel wegen HIGH und neuer Form;
+evidence/slice-routing-betriebsdoku.md —
 neue Form, LOW (Verifikation V-1, Review F-1): der Ursprung ist genannt, aber für
 den Leser des Handbuchs nicht auflösbar („gemessen und abgeleitet in diesem
 Handbuch-Zug“, Berichte ohne Link, eine gedruckte Zeile in keinem committeten
