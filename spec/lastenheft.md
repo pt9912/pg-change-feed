@@ -1,7 +1,7 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.15.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.15.1 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
 **Autor:** pt9912, **Datum:** 2026-09-12
@@ -1197,14 +1197,16 @@ und privater Schlüssel stellt der Betreiber bereit.
   Adresse zugreift, then wird er nicht bedient — es gibt keinen stillen
   Rückfall auf unverschlüsselten Betrieb.
 - **Negative:** Given das konfigurierte Zertifikat oder der konfigurierte
-  Schlüssel ist nicht lesbar, ungültig oder passt nicht zusammen, when das
+  Schlüssel ist nicht lesbar, nicht als PEM-Zertifikat bzw. -Schlüssel ladbar
+  oder passt nicht zusammen, when das
   System startet, then scheitert der Start sichtbar mit einem
   Konfigurationsfehler, und das System läuft nie im unverschlüsselten Stand
   weiter, obwohl TLS konfiguriert wurde.
 
 **Out-of-Scope:** Client-Zertifikate (gegenseitige Authentisierung), Neuladen
 von Zertifikat und Schlüssel ohne Neustart, Beschaffung und Erneuerung der
-Zertifikate. Die Verbindung zu NATS (`LH-FA-SST-007`, `LH-FA-SST-008`) und die
+Zertifikate, die Prüfung von Gültigkeitszeitraum, Namen und Kette des
+Zertifikats beim Start (der Client prüft sie beim Verbinden). Die Verbindung zu NATS (`LH-FA-SST-007`, `LH-FA-SST-008`) und die
 Verbindungen zur PostgreSQL-Instanz sind nicht Gegenstand dieser Anforderung;
 die Verschlüsselung der NATS-Verbindung ist Sache der NATS-Konfiguration. Die
 TLS-Optionen der Client-Bibliotheken (`LH-FA-SST-009`) sind eine eigene,
@@ -1485,3 +1487,4 @@ in dieser Tabelle (Decken-Regel).
 | 0.13.0 | 2026-09-23 | `LH-FA-CFG-007` auf Transformationen begrenzt (Titel, Beschreibung, Boundary-Kriterium auf die Auflösung mehrerer Transformationen, Out-of-Scope-Verweis); das Routing auf Zustellziele als eigene Anforderung `LH-FA-CFG-008` herausgelöst — die Beschreibung von `LH-FA-CFG-007` verband beides mit „und/oder", sein Boundary-Kriterium nannte aber nur Routing-Regeln, sodass eine Abnahme nur für Transformationen nicht eindeutig war; dieselbe Draft-Regel wie bei 0.4.0–0.12.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.14.0 | 2026-10-01 | `LH-FA-CFG-008`: das Happy-Path-Kriterium sagt, was „zugestellt“ heißt — die Change ist über die Zugriffswege des Systems (Abruf oder Abonnement) unter dem Zustellziel auswählbar; die Anforderung wird inhaltlich nicht erweitert, die Klarstellung hält die Lesart fest, auf der die Abnahme beruht; dieselbe Draft-Regel wie bei 0.4.0–0.13.0, eigener Commit vor dem E2E-Slice der Routing-Welle | — |
 | 0.15.0 | 2026-10-04 | `LH-FA-SST-010` (Metrik-Export über OpenTelemetry/OTLP als aktiver Push, zusätzlich zur SQL-Sicht), `LH-FA-SST-011` (TLS der HTTP- und gRPC-Schnittstellen) und `LH-FA-SST-012` (mehrere gleichzeitig gültige API-Token je Klasse für einen unterbrechungsfreien Wechsel) neu ergänzt; `LH-QA-PER-001` von „minimiert“ auf eine absolute Obergrenze der zusätzlichen Commit-Latenz je Quelltransaktion in einer benannten Messumgebung gefasst (Wert und Umgebung im Pflichtenheft); §5: Zukunftsliste „Produktionsreife Observability“ neu gefasst, zwei Nicht-Anforderungen ergänzt; `LH-QA-OPS-003` und `LH-FA-SST-004` bleiben unverändert; dieselbe Draft-Regel wie bei 0.4.0–0.14.0, eigener Commit vor jedem umsetzenden Slice | — |
+| 0.15.1 | 2026-10-04 | `LH-FA-SST-011`: Negative nennt „ungültig“ als „nicht als PEM-Zertifikat bzw. -Schlüssel ladbar“, Out-of-Scope um die Prüfung von Gültigkeitszeitraum, Namen und Kette beim Start ergänzt — hält die Lesart fest, auf der die Umsetzung beruht (Lockerung gegenüber der weitesten Lesart von „ungültig“, bestätigt vom Auftraggeber); dieselbe Draft-Regel wie bei 0.4.0–0.15.0, eigener Commit vor dem Pflichtenheft-Nachzug | — |
