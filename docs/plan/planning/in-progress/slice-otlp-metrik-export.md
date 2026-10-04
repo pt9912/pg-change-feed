@@ -341,8 +341,10 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       `make test-store` und `make test-integration` Exit 0 (der Container ohne
       Endpunkt läuft unverändert — Boundary am echten Prozess), `make image`
       Exit 0 (der Zug ändert `go.mod` und Build-Kontext-Dateien).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      ([`review-slice-otlp-metrik-export`](../../../reviews/review-slice-otlp-metrik-export.md),
+      F-1 HIGH in der Fixrunde behoben;
+      `.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (Zeile `make test-store`: ein Satz zum Lese-Adapter und zum
