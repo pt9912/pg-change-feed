@@ -1505,11 +1505,23 @@ Fehler zählt die Quellen im Fehlerzustand).
 | `cdc_oldest_change_age_seconds` | `s` | — |
 | `cdc_capture_lag` | `s` | — |
 | `cdc_consumer_position` | `1` | `consumer` |
-| `cdc_consumer_lag` | `1` | `consumer` |
+| `cdc_consumer_lag` | `By` | `consumer` |
 | `cdc_changes_pending` | `1` | `consumer` |
 | `cdc_errors_total` | `1` | `class` |
 | `cdc_storage_bytes` | `By` | — |
 | `cdc_wal_retention_bytes` | `By` | — |
+
+`cdc_consumer_lag` ist der Abstand zwischen der letzten gespeicherten
+Commit-Position der Quelle und der bestätigten Position des Consumers als
+WAL-Strecke in Bytes (beide Positionen sind PostgreSQL-LSNs, `SPEC-003`), nicht
+das Datenvolumen der Changes: das WAL trägt auch Änderungen nicht erfasster
+Tabellen. `cdc_consumer_position` ist eine Position und trägt `1`.
+
+Zahlenform: eine Kennzahl geht als ganze Zahl hinaus, wenn ihr Wert in der Sicht
+eine ist und ihre Einheit nicht `s` ist; die zwei Kennzahlen mit Einheit `s`
+(`cdc_oldest_change_age_seconds`, `cdc_capture_lag`) gehen immer als
+Fließkommazahl. Eine Zeile der Sicht mit einem Namen außerhalb der Tabelle wird
+nicht übertragen.
 
 Resource-Attribute: `service.name` = `pg-change-feed`, `cdc.source_id` = die
 Quellkennung des Prozesses.
@@ -1519,19 +1531,44 @@ Quellkennung des Prozesses.
 | Variable | Bedeutung | Gültig |
 |---|---|---|
 | `CDC_OTLP_ENDPOINT` | Basis-URL des Empfängers; gesetzt aktiviert den Export, ungesetzt ist er aus | Schema `http` oder `https`, Host vorhanden |
-| `CDC_OTLP_HEADERS` | zusätzliche Header je Anfrage, Form `k=v,k2=v2` | jedes Element mit nicht leerem Schlüssel und einem `=` |
+| `CDC_OTLP_HEADERS` | zusätzliche Header je Anfrage, Form `k=v,k2=v2` | jedes Element mit einem gültigen Header-Namen als Schlüssel und einem `=` (Regeln unten) |
 | `CDC_OTLP_INTERVAL_SECONDS` | Takt der Übertragung in Sekunden, Default 60 | ganze Zahl von 5 bis 3600 |
 
 Die Konfigurationsdatei (`SPEC-016`) trägt nur den Takt (`otlp_interval`);
 Endpunkt und Header sind env-exklusiv, weil sie Zugangsdaten tragen können. Ein
 ungültiger Wert endet den Start mit der Fehlerklasse `configuration`.
 
+- **Header.** Das Komma trennt die Elemente, das erste `=` Schlüssel und Wert
+  (der Wert darf weitere `=` tragen). Der Schlüssel ist ein gültiger
+  HTTP-Header-Name: Ziffern, ASCII-Buchstaben und die Zeichen
+  ``!#$%&'*+-.^_`|~``; Leerraum im Schlüssel ist ein Fehler. Der Wert trägt kein
+  Steuerzeichen (`U+0000` bis `U+001F` ohne Tabulator, `U+007F`); Leerraum im
+  Wert bleibt erhalten. Eine leere Zeichenkette liefert keine Header. Der
+  Fehlertext nennt die Position des Elements, nie dessen Inhalt.
+- **Header ohne Endpunkt.** `CDC_OTLP_HEADERS` gesetzt bei nicht gesetztem
+  `CDC_OTLP_ENDPOINT` endet den Start mit der Fehlerklasse `configuration`; ein
+  Takt ohne Endpunkt ist zulässig. Eine leer gesetzte Variable gilt als nicht
+  gesetzt.
+- **Benutzerteil der Endpunkt-URL.** `http://benutzer:passwort@host` wird nicht
+  abgelehnt und geht als `Authorization: Basic` hinaus; setzt
+  `CDC_OTLP_HEADERS` selbst einen `Authorization`-Header, gilt dieser. Weder ein
+  Log-Eintrag noch ein Fehlertext des Exports nennt die URL, den Benutzerteil
+  oder einen Header-Wert.
+- **Datei-Feld.** `otlp_interval` unterliegt derselben Prüfung (5 bis 3600) wie
+  die Variable; die Variable geht vor.
+
 **Verhalten.** Der Export läuft in einer eigenen Goroutine und blockiert weder
-Erfassung, Persistierung noch Bestätigung. Jeder Versuch hat eine Frist von
-`min(Takt, 10 s)`. Es gibt keine Warteschlange: der nächste Takt ist die
-Wiederholung, ein ausgefallener Takt wird nicht nachgeholt. Der erste
+Erfassung, Persistierung noch Bestätigung. Der erste Versuch folgt einen vollen
+Takt nach dem Start, nicht beim Start. Jeder Versuch hat eine Frist von
+`min(Takt, 10 s)`, die für das Lesen der Sicht und die Übertragung zusammen
+gilt. Es gibt keine Warteschlange: der nächste Takt ist die
+Wiederholung, ein ausgefallener Takt wird nicht nachgeholt. Eine Weiterleitung
+(`3xx`) wird nicht verfolgt und ist ein Fehlschlag, damit kein Header einen
+anderen Host erreicht. Der erste
 Fehlschlag seit dem Start oder seit der letzten Wiederaufnahme erzeugt eine Warnung, weitere
-Fehlschläge höchstens alle 5 Minuten eine erneute; die Wiederaufnahme erzeugt
+Fehlschläge höchstens alle 5 Minuten eine erneute; Lesen und Übertragen teilen
+diesen Zustand, und die Wiederaufnahme ist ein Versuch, in dem beide gelungen
+sind; sie erzeugt
 eine Info-Zeile. Der Export beeinflusst weder den Health-Zustand noch
 `error_class` des Heartbeats. Ein Fehlschlag der Übertragung und ein
 Fehlschlag beim Lesen der Sicht tragen je einen eigenen Warn-Meldungscode im
@@ -1556,6 +1593,11 @@ für HTTP (einschließlich `GET /changes/stream`, `SPEC-021`) und gRPC
   bisher.
 - Nur eines gesetzt, ein Pfad nicht lesbar oder die beiden Dateien bilden kein
   Paar: Fehlerklasse `configuration`, kein Start.
+- „Ladbar“ ist die ganze Prüfung beim Start: beide Dateien sind lesbares PEM
+  und der Schlüssel gehört zum Zertifikat. Der Start prüft nicht den
+  Gültigkeitszeitraum, nicht die Namen (Hostname, SAN) und nicht die Kette zu
+  einer Wurzel; ein abgelaufenes oder für den Namen unpassendes Zertifikat
+  startet den Server, und der Client lehnt es beim Verbinden ab.
 - Beide gesetzt und ladbar: jede der Schnittstellen, die über ihre Adresse
   (`CDC_HTTP_ADDR`, `CDC_GRPC_ADDR`) aktiviert ist, wird nur über TLS bedient;
   die Mindestversion ist TLS 1.2, explizit gesetzt. Ein Klartext-Zugriff auf
@@ -1580,6 +1622,11 @@ Liste. Alle vier Variablen sind env-exklusiv (`SPEC-016`).
 
 - Ein leeres Element der Liste oder ein Element mit Leerraum (Whitespace) ist
   ein Fehler der Klasse `configuration`, kein Start.
+- Eine leer gesetzte Variable gilt als ungesetzt, in der Liste wie im Singular.
+- Ein Komma im Token ist in der Liste nicht ausdrückbar (das Komma trennt); ein
+  Token mit Komma steht im Singular.
+- Die Prüfung auf Leerraum gilt für jedes Element der zwei Listen-Variablen;
+  der Singular wird nicht auf Leerraum geprüft.
 - Ein leeres Token ist nie gültig, in keiner Klasse.
 - Steht derselbe Wert in beiden Klassen, gilt `admin`.
 - Die Prüfung vergleicht den vorgelegten Wert zeitkonstant gegen alle Token
@@ -1724,7 +1771,7 @@ Inhalt deckt [`LH-QA-OPS-003`](lastenheft.md) ab.
 | `SPEC-009` | `cdc_transactions_total` | persistierte Transaktionen | ChangeStore |
 | `SPEC-009` | `cdc_errors_total{class}` | Fehler je Klasse (§4) | Application |
 | `SPEC-009` | `cdc_capture_lag` | Abstand Quelländerung → CDC-Verfügbarkeit ([`LH-FA-ADM-004`](lastenheft.md)) | Capture |
-| `SPEC-009` | `cdc_consumer_lag` | Rückstand je Consumer ([`LH-FA-ADM-005`](lastenheft.md)) | ConsumerState |
+| `SPEC-009` | `cdc_consumer_lag` | Rückstand je Consumer als WAL-Strecke in Bytes zwischen letzter Commit-Position und bestätigter Position ([`LH-FA-ADM-005`](lastenheft.md)) | ConsumerState |
 | `SPEC-009` | `cdc_consumer_position` | bestätigte Position je Consumer, roh ([`LH-QA-OPS-003`](lastenheft.md)) | ConsumerState |
 | `SPEC-009` | `cdc_wal_retention_bytes` | WAL-Rückstand/Replication-Slot-Zustand: das vom Feed noch nicht bestätigte WAL (aktuelles WAL-Ende der Instanz minus `confirmed_flush_lsn` des Slots); WAL ohne Inhalt für die Publication bestätigt der Feed im Leerlauf, es hält den Rückstand nicht | Replication Stream |
 | `SPEC-009` | `cdc_storage_bytes` | Speicherverbrauch der CDC-Daten | ChangeStore |
@@ -1831,3 +1878,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-03 | `SPEC-008`: Warn-Zeile des Fehlerzustands trägt den `E`-Code unter `code`; `SPEC-031`: `error_code` als eigener Aufzählungspunkt von `HeartbeatStatus` |
 | 2026-10-03 | `SPEC-018` (Fehler-Antwortform, `SPEC-022` Zeile „Fehler-Antwortform“): additives Feld `code` im Fehlerkörper, Codes der Ablehnungen `PCF-E8050` bis `PCF-E8057`, `401`/`403` ohne Code; `SPEC-031`: Statusdetail `ErrorInfo` (`reason` Code, `domain` `pg-change-feed`), `Unauthenticated`/`PermissionDenied` ohne Detail; `SPEC-008`: Verweis auf die beiden Wege und `PCF-W4008` |
 | 2026-10-04 | `SPEC-033` (OTLP-Metrik-Export), `SPEC-034` (TLS der HTTP- und gRPC-Schnittstellen), `SPEC-035` (mehrere API-Token je Klasse) neu; `SPEC-036` (Messumgebung `BENCH_SOURCE_ENV`) neu in §3; `SPEC-025` neu gefasst (absolute Obergrenze der zusätzlichen Commit-Latenz je Quelltransaktion als Vorschlag, Verhalten außerhalb der Messumgebung); `SPEC-016`: Schlüssel `tls_cert_file`, `tls_key_file`, `otlp_interval`, ausgeschlossene Klasse um `otlp_endpoint`, `otlp_headers` und die zwei Token-Listen erweitert, env-exklusive Liste ergänzt; `SPEC-008`: Warn-Bereich 6 „Beobachtbarkeit und Transport“; `SPEC-009`: `cdc_oldest_change_age` heißt `cdc_oldest_change_age_seconds` (Name der Sicht); §5 Kopfsatz auf die beiden Zugriffswege gezogen; §6: `SPEC-033` als externer Vertrag; `SPEC-018`: Verweise auf `SPEC-034`/`SPEC-035` |
+| 2026-10-04 | `SPEC-033`: Einheit von `cdc_consumer_lag` ist `By` (WAL-Strecke), Zahlenform, Header-Regeln, Header ohne Endpunkt, Benutzerteil der Endpunkt-URL, erster Versuch nach einem vollen Takt, Frist für Lesen und Übertragen gemeinsam, gemeinsamer Fehlerzustand, keine Weiterleitung; `SPEC-034`: Prüfung beim Start auf das Laden des Paares begrenzt (Ablauf, Namen, Kette nicht geprüft); `SPEC-035`: leere Variable, Komma im Token, Leerraum nur in den Listen; `SPEC-009`: Bedeutung von `cdc_consumer_lag` — schreibt den Ist-Zustand fest, kein neues Verhalten außer der Einheit |

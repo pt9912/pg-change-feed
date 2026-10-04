@@ -25,7 +25,8 @@
 -- reale Anzahl noch nicht bestätigter Change-Zeilen seiner Quelle
 -- (`commit_position` der Transaktion über der bestätigten Position) —
 -- ein Zeilen-Zähler, anders als `cdc_consumer_lag`, das den
--- LSN-Byte-Abstand der Positionen trägt: dieselbe
+-- LSN-Byte-Abstand der Positionen trägt (WAL-Strecke in Bytes, auch mit
+-- WAL nicht erfasster Tabellen, kein Datenvolumen der Changes): dieselbe
 -- Quellzahl-Differenz kann bei wenigen großen oder vielen kleinen
 -- Transaktionen sehr unterschiedliche Change-Zahlen bedeuten.
 --
