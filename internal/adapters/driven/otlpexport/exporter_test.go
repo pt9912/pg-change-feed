@@ -170,7 +170,7 @@ func TestExportCarriesAllTenMetricsAsGauges(t *testing.T) {
 		{"cdc_oldest_change_age_seconds", "s", ""},
 		{"cdc_capture_lag", "s", ""},
 		{"cdc_consumer_position", "1", "consumer"},
-		{"cdc_consumer_lag", "1", "consumer"},
+		{"cdc_consumer_lag", "By", "consumer"},
 		{"cdc_changes_pending", "1", "consumer"},
 		{"cdc_errors_total", "1", "class"},
 		{"cdc_storage_bytes", "By", ""},
@@ -313,6 +313,37 @@ func TestExportSendsConfiguredHeadersButKeepsContentType(t *testing.T) {
 	if got.contentType != "application/x-protobuf" {
 		t.Errorf("Content-Type = %q, wollen application/x-protobuf", got.contentType)
 	}
+}
+
+// TestExportSendsBasicAuthorizationFromEndpointUserinfo belegt den Benutzerteil
+// der Endpunkt-URL: er geht als `Authorization: Basic <base64(user:pass)>`
+// hinaus; ein `Authorization`-Header der Konfiguration gewinnt. Dass ein
+// Fehlschlag den Benutzerteil nicht nennt, belegt `TestExportErrorsCarryNoCredentials`.
+// Rot färbende Mutationen: in `New` den Benutzerteil der Basis-URL entfernen
+// (`base.User = nil`) — der Basic-Fall wird rot; in `Export` die Header der
+// Konfiguration vor dem Senden verwerfen — der Vorrang-Fall wird rot.
+func TestExportSendsBasicAuthorizationFromEndpointUserinfo(t *testing.T) {
+	t.Run("Basic aus dem Benutzerteil", func(t *testing.T) {
+		rec := newRecorder(t, http.StatusOK)
+		exporter := newExporter(t, strings.Replace(rec.server.URL, "http://", "http://user:pass@", 1))
+		if err := exporter.Export(context.Background(), fullBatch()); err != nil {
+			t.Fatalf("Export: %v", err)
+		}
+		if got := rec.all()[0].header.Get("Authorization"); got != "Basic dXNlcjpwYXNz" {
+			t.Fatalf("Authorization = %q, wollen Basic dXNlcjpwYXNz", got)
+		}
+	})
+	t.Run("Header der Konfiguration gewinnt", func(t *testing.T) {
+		rec := newRecorder(t, http.StatusOK)
+		exporter := newExporter(t, strings.Replace(rec.server.URL, "http://", "http://user:pass@", 1),
+			otlpexport.Header{Key: "Authorization", Value: "Bearer abc"})
+		if err := exporter.Export(context.Background(), fullBatch()); err != nil {
+			t.Fatalf("Export: %v", err)
+		}
+		if got := rec.all()[0].header.Get("Authorization"); got != "Bearer abc" {
+			t.Fatalf("Authorization = %q, wollen Bearer abc", got)
+		}
+	})
 }
 
 // TestExportBuildsExactlyOneMetricsPath belegt die Basis-URL mit und ohne

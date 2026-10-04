@@ -65,7 +65,7 @@ var specs = []metricSpec{
 	{name: "cdc_oldest_change_age_seconds", unit: "s", float: true},
 	{name: "cdc_capture_lag", unit: "s", float: true},
 	{name: "cdc_consumer_position", unit: "1", attr: "consumer"},
-	{name: "cdc_consumer_lag", unit: "1", attr: "consumer"},
+	{name: "cdc_consumer_lag", unit: "By", attr: "consumer"},
 	{name: "cdc_changes_pending", unit: "1", attr: "consumer"},
 	{name: "cdc_errors_total", unit: "1", attr: "class"},
 	{name: "cdc_storage_bytes", unit: "By"},
