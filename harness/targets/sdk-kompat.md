@@ -1,0 +1,141 @@
+# `make test-sdk-kompat` — Kompatibilität der SDK-Packages 0.6.0 gegenüber 0.5.0
+
+## Vertrag
+
+`make test-sdk-kompat` misst, ob ein gegen 0.5.0 gebautes Gast-Programm ohne
+Neukompilierung gegen die Bibliothek 0.6.0 läuft und ob die Quellseite der
+0.5.x-Fehlertypen trägt. Gegenstand sind die Fehlertypen beider Hierarchien
+(HTTP und gRPC-Administration) der drei SDK-Packages (C#, Kotlin, Python), die
+[`ADR-0145`](../../docs/plan/adr/0145-sdk-meldungscodes-eigenschaft-der-fehlertypen.md)
+Festlegung 4 additiv um einen Meldungscode erweitert („jede 0.5.x-Signatur
+bleibt binär und quellseitig erhalten“). Das Ziel ersetzt diese Aussage durch
+eine Messung; es ändert weder ein SDK noch den Server.
+
+Je Sprache fährt ein Gast-Programm unter `tools/harness/sdk-kompat/<sprache>/`
+jede öffentliche Konstruktor- und Lesefläche der 0.5.x-Fehlertypen (alle
+Blatt-Typen, die geschützten Basis-Konstruktoren über eine fremde Unterklasse,
+das Fangen über die Basis). Schritte:
+
+| Schritt | Messung | Erwartung |
+|---|---|---|
+| A1 | Gast gegen das veröffentlichte 0.5.0 gebaut und gelaufen (Grundlinie) | Exit 0, Zeile `KOMPAT <sprache> A1: <n> Aufrufe ok` |
+| A2 | dieselben Gast-Binärdateien, die Bibliothek ist die aus 0.6.0 (Austausch der Bibliotheksdatei bzw. des Pakets, kein Neubau) | Exit 0, Zeile `… A2: <n> Aufrufe ok` |
+| A3 | Gegenrichtung: ein gegen 0.6.0 gebauter Gast (Konstruktor mit Code, `message_code`) gegen die Bibliothek 0.5.0; Grundlage `A3-Grundlage`: derselbe Gast gegen 0.6.0 läuft | Exit ≠ 0 mit einer Bindungsausnahme (C#: `MissingMethodException`, `FileNotFoundException` oder `FileLoadException`; Kotlin: `NoSuchMethodError`; Python: `TypeError`) |
+| A4 | Mutationsprobe (siehe unten): A2 mit einer mutierten Bibliothek 0.6.0 | A2 rot |
+| A5 | Quellseite: derselbe Gast-Quelltext gegen 0.5.0 und gegen 0.6.0 übersetzt (C#, Kotlin; Kotlin mit erschöpfendem `when` über die versiegelte Basis) bzw. die Signaturen gelesen (Python, `inspect.signature`); in C# die null-Matrix, 14 Übersetzungsfälle je Version (gezählt an den `CASE`-Marken in `NullMatrix.cs`) (fremde Unterklassen der HTTP- und gRPC-Basis und Blatt-Typen, mit `null`-Literal, Cast und benanntem Argument); die Abhängigkeitsmengen der zwei Versionen werden gedruckt | Übersetzung beider Versionen ohne Fehler; Python: die 0.5.x-Form bindet, ein drittes Positional nicht, `message_code` ist keyword-only mit Standard `None`; null-Matrix je Fall `0.5.0 ok`, `0.6.0 ok` — außer dem Fall `http-basis-3-argumente-null-literal` (Erwartung `CS0121`, *hergeleitet*, gemessen im Lauf) |
+
+Jede gedruckte Zeile ist ein Messwert (`KOMPAT <sprache> <schritt>: …`); der Lauf
+geht nach einer Abweichung bis zum Ende weiter, der Ausgang ist 1, sobald ein
+Schritt von seiner Erwartung abweicht. Ein Schritt ohne gedruckte Zeile ist rot.
+Eine Abweichung ist ein **Befund**; die Erwartung wird nicht angepasst, damit
+der Lauf grün wird.
+
+**Aufbau.** Die Basis jeder Sprache ist das lokal getaggte Image der Stufe
+`build` des SDK-Dockerfiles (`pg-change-feed:sdk-kompat-base-<sprache>`); das
+Gast-Dockerfile baut darauf auf und trägt kein eigenes Digest-Literal. Der
+Docker-Bau übersetzt nur und löst die Pakete auf (C#: `dotnet publish` gegen das
+Package 0.5.0 bzw. 0.6.0; Kotlin: Gradle-Projekt gegen die veröffentlichte
+Bibliothek, Laufzeit-Jars je Version; Python: Wheel-Sammlung je Version); jeder
+Schritt läuft per `docker run`, nie in einer `RUN`-Schicht: der Schicht-Cache
+überspringt einen Lauf im Bau still.
+
+**Quellen der Bibliothek 0.5.0 (Gast-Grundlage).** NuGet (`PgChangeFeed.Client`),
+PyPI (`pgchangefeed`) und das öffentliche Cloudsmith-Repository
+(`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`, der Pfad der
+Installationsanleitung des Kotlin-SDK; der Pfad `maven.cloudsmith.io` verlangt
+Anmeldung und wird nicht verwendet). GitHub Packages verlangt Anmeldung und wird
+nicht verwendet.
+
+**Quelle der Bibliothek 0.6.0.** `SDK_KOMPAT_NEU=dist` (Standard): die
+Artefakte von `make sdk-pack-csharp` / `-kotlin` / `-python` aus
+`sdks/<sprache>/dist/` ersetzen die Bibliothek im Schritt A2. Die Übersetzungen
+der Gegenrichtung (A3) und der Quellseite (A5) lesen immer das veröffentlichte
+Paket. `SDK_KOMPAT_NEU=registry`: A2 nutzt die veröffentlichten 0.6.0-Pakete.
+
+## Aufruf
+
+```text
+make test-sdk-kompat
+make test-sdk-kompat SDK_KOMPAT_NEU=registry
+SDK_KOMPAT_SPRACHEN=csharp make test-sdk-kompat
+SDK_KOMPAT_DIST_CSHARP=<Verzeichnis> make test-sdk-kompat   # Mutationsprobe A4
+```
+
+Host-Werkzeuge: `bash`, `git`, `mktemp`, `tr` und `docker`
+([`AGENTS.md`](../../AGENTS.md) §3.1, Klasse „Host-Werkzeug ohne Installation“).
+Alles andere (`dotnet`, `java`, `gradle`, `python`, `pip`) läuft im Container.
+
+## Overrides
+
+| Variable | Bedeutung | Standard |
+|---|---|---|
+| `SDK_KOMPAT_NEU` | `dist` (Artefakte von `make sdk-pack-*`) oder `registry` (veröffentlichte 0.6.0-Pakete) | `dist` |
+| `SDK_KOMPAT_SPRACHEN` | Teilmenge der Sprachen, durch Leerzeichen getrennt | `csharp kotlin python` |
+| `SDK_KOMPAT_DIST_CSHARP`, `SDK_KOMPAT_DIST_KOTLIN`, `SDK_KOMPAT_DIST_PYTHON` | Verzeichnis mit den Artefakten der Sprache statt `sdks/<sprache>/dist` (Eingang der Mutationsprobe) | `sdks/<sprache>/dist` |
+
+## Ausgänge
+
+| Exit | Bedeutung |
+|---|---|
+| 0 | jede Sprache hat jeden Schritt wie erwartet bestanden; jeder Schritt hat eine gedruckte Zeile |
+| 1 | mindestens ein Schritt weicht von der Erwartung ab (die Zeile mit `ROT` nennt Schritt und Ausgang), oder eine Sprache druckt für einen Schritt keine Zeile |
+| 2 | Eingabefehler: unbekanntes `SDK_KOMPAT_NEU` oder unbekannte Sprache, im Modus `dist` kein Artefakt im Verzeichnis (Hinweis auf `make sdk-pack-<sprache>`); über `make` kommt jeder Ausgang ≠ 0 als 2 an |
+
+Kein Gate. Das Ziel steht in keinem Gate-Bündel (`make gates`), weil der
+Paketbezug Netz braucht; die Aufnahme als Gate braucht eine ADR
+([`AGENTS.md`](../../AGENTS.md) §3.6, §4).
+
+## Mutationsprobe A4
+
+Eine Kopie der SDK-Quelle im Scratchpad trägt die Mutation (Edit/Write auf der
+Kopie, nie am Arbeitsbaum); `docker build --build-context proto=proto --target
+pack-export <Kopie>` baut daraus die Artefakte (der Bau fährt die Unit-Tests der
+Kopie mit), `docker run --rm --network none <Image> | tar -x -C <Verzeichnis>`
+legt sie ab, und `SDK_KOMPAT_DIST_<SPRACHE>=<Verzeichnis> make test-sdk-kompat`
+misst sie. Die Mutation entfernt eine 0.5.x-Signatur eines Blatt-Typs; A2 muss
+rot werden.
+
+## Wer es aufruft
+
+- **Implementer** der SDK-Packages vor einer neuen Version, die Fehlertypen
+  berührt; **Reviewer, Verifier** als Probe der Aussage „binär und quellseitig
+  erhalten“.
+
+## Grenze
+
+1. **Die Erwartung ist gelesen, nicht bewiesen für alle Aufrufer.** Das
+   Gast-Programm trägt die Aufrufformen, die der Autor der Messung aus den
+   0.5.0-Quellen aufgezählt hat; eine Form, die er nicht aufgezählt hat, bleibt
+   ungemessen. Die null-Matrix deckt nur die dort stehenden Fälle.
+2. **A3 trägt in C# die Version, nicht die Signatur.** Die Laufzeit weist die
+   Bibliothek 0.5.0 ab, weil ihre Assembly-Version unter der referenzierten liegt
+   (`FileNotFoundException`); dass eine fehlende Signatur bei gleicher
+   Assembly-Version als `MissingMethodException` endet, zeigt allein A4.
+3. **Kotlin: die Übersetzung braucht `io.grpc:grpc-api` ausdrücklich.** Die
+   Fehlertypen tragen `io.grpc.Status` in ihrer Signatur; die Bibliothek
+   veröffentlicht die gRPC-Abhängigkeiten nur für die Laufzeit. Das Gast-Projekt
+   deklariert `grpc-api` selbst.
+4. **Der Docker-Bau-Cache gilt für Pakete, nicht für Läufe.** Ein Wechsel der
+   Artefakte in `SDK_KOMPAT_DIST_*` verändert den Bau-Kontext `neu` und baut die
+   betroffene Schicht neu; ein unveränderter Bau liefert unveränderte
+   Gast-Binärdateien, jeder Lauf druckt seine Zeilen neu.
+5. **Netz und Registry.** NuGet, PyPI, Cloudsmith und Maven Central müssen
+   erreichbar sein; ein Ausfall endet im Bau mit einem Docker-Fehler, nicht als
+   grüner Lauf.
+
+## Test
+
+Das Ziel ist selbst die Messung; es gibt keinen Tabellentest des Treibers. Je
+Zusage die Mutation ihrer Eingabeseite (die Bibliothek 0.6.0) und das gesehene
+Rot, an Kopien im Scratchpad gefahren:
+
+| Zusage | mutierte Eingabe | gesehenes Rot |
+|---|---|---|
+| C#: der 0.5.x-Konstruktor `PgChangeFeedBadRequestException(int, string)` bleibt binär erhalten | der Konstruktor aus der Kopie der C#-Bibliothek entfernt (Test der Kopie angepasst), über `SDK_KOMPAT_DIST_CSHARP` | A2: `MissingMethodException: Method not found: 'Void …PgChangeFeedBadRequestException..ctor(Int32, System.String)'`, Exit 2 über `make` |
+| Kotlin: die JVM-Signatur `(int, String)` des Blatt-Typs bleibt erhalten | `@JvmOverloads` an `PgChangeFeedBadRequestException` entfernt | A2: `IllegalAccessError` (Zugriff auf den privaten Basis-Konstruktor, weil die Signatur im Blatt-Typ fehlt), Exit 2 |
+| Python: die 0.5.x-Aufrufform `PgChangeFeedBadRequestError(status, text)` bleibt gültig | `message_code` an `PgChangeFeedBadRequestError.__init__` ohne Standardwert | A2: `TypeError: … missing 1 required keyword-only argument: 'message_code'`, und A5: `PgChangeFeedBadRequestError … 0.5.x-Form bindet=False … ROT`, Exit 2 |
+| A3 prüft die Gegenrichtung | (kein Mutations-Fall: A3 erwartet das Scheitern; die Grundlage `A3-Grundlage` belegt, dass derselbe Gast gegen 0.6.0 läuft) | — |
+
+Menge der Erprobung: je eine Mutation je Sprache, je einmal gefahren; die
+Übertragung auf die übrigen Blatt-Typen und die gRPC-Hierarchie ist
+*hergeleitet*.
