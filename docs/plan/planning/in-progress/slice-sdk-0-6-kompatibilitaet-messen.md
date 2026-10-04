@@ -238,7 +238,7 @@ Jede gedruckte Zahl und jede Aussage der Belege trägt ihren Ursprung
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand — gemessen: `make gates` Exit 0, `make docs-check` `d-check: 1640 Datei(en) geprüft, 0 Befund(e)`, `make sdk-public-doc-check` `keine interne Kennung unter sdks`, `make suchlauf-nachmessen` `11 Zeilen stimmen`, `make kommentar-kennungen DIFF=5b0ad92a` Exit 0 ohne Kandidat, `make fmt-check` und `make test` Exit 0;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0,
       `make sdk-public-doc-check` Exit 0 (die neuen Test-Klassen unter `sdks/` tragen keine
       interne Kennung), `make suchlauf-nachmessen PLAN=<diese Datei>` Exit 0,
