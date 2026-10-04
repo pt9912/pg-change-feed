@@ -17,7 +17,7 @@ Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht
 
 **Abhängigkeit:** keine. Dieser Slice ist der **erste** der drei
 Umsetzungs-Slices zur Spec 0.15.0; er geht
-[`slice-tls-http-grpc-server`](../open/slice-tls-http-grpc-server.md) und
+[`slice-tls-http-grpc-server`](../in-progress/slice-tls-http-grpc-server.md) und
 [`slice-otlp-metrik-export`](../open/slice-otlp-metrik-export.md) voraus, weil alle drei
 dieselben Dateien der Konfiguration (`internal/bootstrap/wiring.go`,
 `internal/bootstrap/config_file.go`), die Code-Tabelle der Meldungscodes und
@@ -115,7 +115,7 @@ gehören nicht zur Klasse.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
-- **TLS** — [`slice-tls-http-grpc-server`](../open/slice-tls-http-grpc-server.md): andere
+- **TLS** — [`slice-tls-http-grpc-server`](../in-progress/slice-tls-http-grpc-server.md): andere
   Anforderung ([`LH-FA-SST-011`](../../../../spec/lastenheft.md)), andere
   Eingriffsstellen (Listener statt Token-Prüfung); ein gemeinsamer Slice machte
   den Wechsel-Beleg vom Transport abhängig.
@@ -628,7 +628,7 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   Validator-Lauf ist nach dem nächsten Release sinnvoll, mit TLS und OTLP aus den
   zwei Folge-Slices (Betreiber-Oberfläche als Ganzes); Release-Folge dieser Closure:
   keine, ein Release braucht eine Freigabe.
-- **Folge-Slices:** [`slice-tls-http-grpc-server`](../open/slice-tls-http-grpc-server.md)
+- **Folge-Slices:** [`slice-tls-http-grpc-server`](../in-progress/slice-tls-http-grpc-server.md)
   (TLS, nach diesem Slice) und
   [`slice-otlp-metrik-export`](../open/slice-otlp-metrik-export.md) (hebt die
   Zugangsdaten-Klasse von neun auf elf) — beides Dateien in `open/`
@@ -641,7 +641,7 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   `internal/bootstrap/config_file_internal_test.go` existiert und trägt den Test
   (`git grep -n TestZugangsdatenKlasseCodeUndTestSindMengengleich`); die Herkunft
   steht hier als `seit slice-api-token-mehrfach-konfiguration`. (b) *Folge-Slice* —
-  [`slice-tls-http-grpc-server`](../open/slice-tls-http-grpc-server.md) und
+  [`slice-tls-http-grpc-server`](../in-progress/slice-tls-http-grpc-server.md) und
   [`slice-otlp-metrik-export`](../open/slice-otlp-metrik-export.md) existieren in
   `open/`. (c) *Register* — `BEO-PGC/zeitkonstanz-erwartung-ohne-messung`,
   `BEO-PGC/ready-ist-nicht-verbunden` und die in §6/§8 genannten Kennungen existieren
