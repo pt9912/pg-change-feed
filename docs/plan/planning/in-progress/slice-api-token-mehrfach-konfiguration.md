@@ -264,14 +264,14 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       ([`review-slice-api-token-mehrfach-konfiguration`](../../../reviews/review-slice-api-token-mehrfach-konfiguration.md);
       `.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
+- [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (Zeile `make test-integration`: ein Satz zum neuen Rundlauf);
       gemeldete Träger fremder Dateien mit der Closure nachgezogen (§3 Suchlauf,
       [`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist.
 
 **Belege des Implementers (Arbeitsstand 2026-10-04, Exit je Befehl direkt
 gelesen, [`AGENTS.md`](../../../../AGENTS.md) §3.9).** Gemessen, soweit nicht
@@ -505,37 +505,52 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   [`SPEC-035`](../../../../spec/pflichtenheft.md) führen sie als Erwartung; kein
   Test misst Laufzeit, und `subtle.ConstantTimeCompare` verdeckt die Länge nicht.
   Der Reviewer liest den Vergleich (kein früher Abbruch), der Kommentar der
-  Funktion nennt die Grenze. — **Ausgang:** offen bis Closure.
+  Funktion nennt die Grenze. — **Ausgang:** weiter offen
+  ([`BEO-PGC/zeitkonstanz-erwartung-ohne-messung`](../observations/BEO-PGC/zeitkonstanz-erwartung-ohne-messung/observation.md)).
+  Erwartung, kein Test misst Laufzeit; gelesen von Reviewer (kein früher Abbruch,
+  `apiauth.go`, Review F-2 nennt die Kommentar-Grenze) und Verifier.
 - **Halbänderung der Zugangsdaten-Klasse zwischen den zwei Slices** (Code und
   Test stehen bei neun, `SPEC-016` bei elf, bis der OTLP-Slice schließt): der
   Mengengleichheit-Test (§2) fängt eine Abweichung von Code und Test, nicht
   die von Handbuch und Code — die Paarung bleibt von Hand
   ([`ADR-0089`](../../adr/0089-feldmengen-paarung-kein-sensor-review-waechter.md)).
-  — **Ausgang:** offen bis Closure.
+  — **Ausgang:** weiter offen, Anker
+  [`slice-otlp-metrik-export`](../open/slice-otlp-metrik-export.md) (hebt die Klasse von
+  neun auf elf; bis dahin nennt `SPEC-016` elf, der Code neun — der Umsetzungsrückstand
+  aus §1, keine halb gebliebene Änderung: Code und Test sind gleich, Handbuch und Code
+  tragen neun).
 - **Spec-Lücke zur Plural-Variable:** [`SPEC-035`](../../../../spec/pflichtenheft.md)
   sagt nicht, ob eine leere Zeichenkette als „ungesetzt“ oder als
   leeres Element gilt, und nicht, wie ein Token mit Komma in der Liste auszudrücken ist
   (es gibt keinen Weg: das Komma ist Trenner). Der Plan legt „leer = ungesetzt“
   fest und nennt die Grenze im Handbuch; eine Spec-Klarstellung wäre ein
-  Zug des Planners/Architect, kein Zug dieses Slice. — **Ausgang:** offen bis
-  Closure (Kandidat: benannte Spec-Lücke im Lerneintrag).
+  Zug des Planners/Architect, kein Zug dieses Slice. — **Ausgang:** weiter offen
+  als benannte Spec-Lücke (Lerneintrag in §7; Adresse: Spec-Zug des Auftraggebers
+  oder Architects an `SPEC-035`).
 - **Zwei Konfigurationswege lesen verschieden:** `ConfigFromEnv` und
   `mergeConfig` bilden die Konfiguration getrennt; liest nur einer die
   Plural-Variable, bleibt das im Unit-Test eines Weges unsichtbar
   ([`BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke`](../observations/BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke/observation.md),
   fünf Evidenz-Dateien am Planungsstand gezählt). Gegenmaßnahme: Test je Weg und
   die Runner-Phase (der Container liest über `ConfigFromEnvAndFile`). —
-  **Ausgang:** offen bis Closure.
+  **Ausgang:** entfallen: Mutation 5 (§2 Belege) rot an `mergeConfig`, die Runner-Phase
+  liest über `ConfigFromEnvAndFile` und hat die Listen am laufenden Container belegt
+  (Verifikationsreport, Exit 0).
 - **Die neue Runner-Phase stört die Folge-Phasen** (Container mit Override
   neu erzeugt, Zustand muss am Phasen-Ende ohne Override wiederhergestellt sein;
   `run-integration-tests.sh` hat über 5000 Zeilen, Reihenfolge der Phasen
-  ist Teil des Belegs). — **Ausgang:** offen bis Closure.
+  ist Teil des Belegs). — **Ausgang:** entfallen: Gesamtlauf `make test-integration`
+  Exit 0 (§2 Belege), Wiederherstellung ohne Override belegt; die eine Lücke (das
+  Temp-Verzeichnis der Phase fehlte im `cleanup`-Trap, Review F-1) ist mit `4ac7faf4`
+  behoben.
 - **Das Handbuch zieht nicht mit** (Betreiber-Oberfläche wächst um zwei
   Variablen):
   [`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`](../observations/BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche/observation.md)
   (drei Evidenz-Dateien am Planungsstand, also eine Lücke und keine Notiz) —
   deshalb ein eigener Liefer-Punkt in §2, nicht ein Anhang. — **Ausgang:**
-  offen bis Closure.
+  entfallen: Handbuch trägt Tabelle, Abschnitt „API-Token in zwei Neustarts wechseln“,
+  Katalogzeile `PCF-E2008` und Historienzeile 1.95; `make handbuch-public-doc-check`
+  Exit 0 (Verifikationsreport).
 
 ## 7. Closure-Notiz
 
@@ -554,17 +569,88 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 *Der Plan füllt diese Sektion nicht; sie wird bei der Closure vor dem
 `git mv` nach `done/` geschrieben (§2: die Paarungs-Zeile nach dem `git mv`).*
 
-- **Was hat funktioniert:** (bei der Closure zu füllen)
-- **Was ging anders als geplant:** (bei der Closure zu füllen)
-- **Steering-Loop-Eintrag:** (bei der Closure zu füllen; Kandidaten §5)
-- **Beobachtungs-Register (`../observations/`):** (bei der Closure zu füllen;
-  zu lesen sind die in §6 genannten Einträge)
+- **Was hat funktioniert:** Der gemeinsame Klassifikator unter
+  `internal/application/port/apiauth` löste die zwei wortgleichen Fassungen ab, ohne
+  Kante in `.a-check.yml` (`make a-check` 0 Befunde). Die acht Mutationen in §2 fanden
+  je ihre Stelle rot, darunter die Start-Ablehnung am Binary über ein Mutations-Image
+  (`make image-mutation`). Die Runner-Phase las das Negativ über den Status je Token
+  (`401`/`Unauthenticated`), nicht über Abwesenheit in einem Fenster. Review ohne
+  HIGH/MEDIUM; die eine LOW-Lücke (F-1) war ein Handgriff im `cleanup`-Trap
+  (`4ac7faf4`).
+- **Was ging anders als geplant:** `Config` führt Singular und Liste nebeneinander
+  statt je Klasse eine Menge (im Plan §3 benannt: 99 Trefferzeilen der
+  Testmigration entfallen); `apitokens_test.go` und der Modus `probe` der
+  Wegwerf-Clients sind Zusätze über den Plan hinaus.
+  **Gleichbleibende Eigenschaft (Review F-3, vom Verifier gefahren):** `--healthcheck`,
+  `diagnose`, `register-consumer` und `acknowledge-consumer` enden bei einer
+  ungültigen Token-Liste mit Exit 1 und der Zeile `PCF-E2008`, der reguläre Lauf mit
+  Exit 2 — dieselbe Vorbedingungsprüfung teilen die Modi bei jedem Konfigurationsfehler
+  (`cmd/pg-change-feed/main.go`). Entscheidung zum Handbuch: **kein** zusätzlicher
+  Satz. Die Sondermodi laufen per `docker exec` in der Umgebung des Containers, der
+  mit der ungültigen Liste nicht startet; das Handbuch nennt die Ausgänge der
+  Sondermodi auch für keinen anderen Konfigurationsfehler, und der Schritt
+  „Container startet nicht“ nennt Meldung und Code. Ein Satz nur für diese
+  Variable wäre eine Sonderform ohne Betreiber-Bedarf.
+- **Steering-Loop-Eintrag:** Zwei Einträge. (1) *Neuer Sensor — gegen die
+  Halbänderung einer Listen-Klasse:* `TestZugangsdatenKlasseCodeUndTestSindMengengleich`
+  hält die Liste des Codes und die des Tests in beiden Richtungen gleich; Mutation 4
+  (Streichen von `api_tokens_admin`) war damit rot (gesehen, §2 Belege); liegt in
+  `internal/bootstrap/config_file_internal_test.go` (`TestZugangsdatenKlasseCodeUndTestSindMengengleich`) · seit slice-api-token-mehrfach-konfiguration.
+  Grenze: der Test fängt die Abweichung von Code und Test, nicht die von Handbuch und
+  Code ([`ADR-0089`](../../adr/0089-feldmengen-paarung-kein-sensor-review-waechter.md));
+  der OTLP-Slice hebt beide Listen gemeinsam auf elf. (2) *Benannte Spec-Lücke zu
+  [`SPEC-035`](../../../../spec/pflichtenheft.md):* die Spec sagt nicht, dass eine
+  leere Plural-Variable als ungesetzt gilt (Festlegung dieses Plans, im Handbuch
+  genannt), nicht, dass ein Token mit Komma in der Liste nicht ausdrückbar ist
+  (Handbuch nennt es; Singular trägt das Komma), und der Singular wird nicht auf
+  Leerraum geprüft (laut Verifikationsreport; Asymmetrie zur Liste, in der Spec nicht
+  benannt; übernommen, nicht von dieser Closure nachgemessen). Ein Spec-Nachtrag ist ein Zug des Auftraggebers oder des
+  Architects, nicht dieser Closure; die Adresse ist die Meldung im Bericht an den
+  Hauptlauf.
+- **Beobachtungs-Register (`../observations/`):** Neu angelegt
+  [`BEO-PGC/zeitkonstanz-erwartung-ohne-messung`](../observations/BEO-PGC/zeitkonstanz-erwartung-ohne-messung/observation.md)
+  (1×, Ausgang des Risikos „weiter offen“). Kein Zuwachs bei
+  [`BEO-PGC/ready-ist-nicht-verbunden`](../observations/BEO-PGC/ready-ist-nicht-verbunden/observation.md)
+  (bleibt 2×: die Phase belegt ihr Negativ über den Status je Aufruf, nicht über
+  Abwesenheit in einem Stream-Fenster; Verifikationsreport). Die in §8 genannten
+  Einträge mit mindestens drei Dateien sind mit diesem Slice berührt und haben ihre
+  Gegenmaßnahme getragen (Mutation 5 und die Runner-Phase für
+  `adapter-unittest-verdeckt-bootstrap-luecke`, ein Parser für beide Wege für
+  `lese-doppelquelle`, Gegenprobe `a,b` je Negativfall für
+  `negativtest-ohne-bindung-an-seine-eingabe`, Handbuch-Liefer-Punkt samt
+  Historienzeile 1.95); es entstand für sie keine weitere `evidence/`-Datei, weil
+  keiner der Fälle in diesem Slice neu auftrat (kein Auftreten gefunden). Kein
+  Eintrag mit `evidence/` ≥ 3 ist neu über die Schwelle gewachsen.
+- **Validator-Feststellung (Modul 8):** Der Slice liefert Betreiber-Wert (Token-Wechsel
+  ohne Ausfall, `LH-FA-SST-012`). Belegt am Realserver (Runner-Phase, Verifier) und im
+  Handbuch geprüft; der Nutzerbedarf selbst (ein Betreiber wechselt ein Token ohne
+  abgewiesene Clients im eigenen Betrieb) ist **nicht** am realen Bedarf geprüft. Ein
+  Validator-Lauf ist nach dem nächsten Release sinnvoll, mit TLS und OTLP aus den
+  zwei Folge-Slices (Betreiber-Oberfläche als Ganzes); Release-Folge dieser Closure:
+  keine, ein Release braucht eine Freigabe.
 - **Folge-Slices:** [`slice-tls-http-grpc-server`](../open/slice-tls-http-grpc-server.md)
   (TLS, nach diesem Slice) und
   [`slice-otlp-metrik-export`](../open/slice-otlp-metrik-export.md) (hebt die
   Zugangsdaten-Klasse von neun auf elf) — beides Dateien in `open/`
-- **Risiken aus §6:** (bei der Closure zu füllen, je genau ein Ausgang)
-- **Drei Paarungen:** (bei der Closure zu füllen: Anker · Folge-Slice · Register)
+- **Risiken aus §6:** sechs, je ein Ausgang in §6 selbst: Zeitkonstanz weiter offen
+  (BEO angelegt) · Halbänderung Klasse neun/elf weiter offen (Anker
+  [`slice-otlp-metrik-export`](../open/slice-otlp-metrik-export.md)) · Spec-Lücke
+  Plural-Variable weiter offen (Lerneintrag) · zwei Konfigurationswege entfallen ·
+  Runner-Phase stört Folge-Phasen entfallen · Handbuch zieht nicht mit entfallen.
+- **Drei Paarungen:** (a) *Anker* — `liegt in`:
+  `internal/bootstrap/config_file_internal_test.go` existiert und trägt den Test
+  (`git grep -n TestZugangsdatenKlasseCodeUndTestSindMengengleich`); die Herkunft
+  steht hier als `seit slice-api-token-mehrfach-konfiguration`. (b) *Folge-Slice* —
+  [`slice-tls-http-grpc-server`](../open/slice-tls-http-grpc-server.md) und
+  [`slice-otlp-metrik-export`](../open/slice-otlp-metrik-export.md) existieren in
+  `open/`. (c) *Register* — `BEO-PGC/zeitkonstanz-erwartung-ohne-messung`,
+  `BEO-PGC/ready-ist-nicht-verbunden` und die in §6/§8 genannten Kennungen existieren
+  als Verzeichnisse mit nicht leerem `evidence/`. Träger fremder Dateien: gelesen
+  `git grep` nach „ein Token je Klasse“ am Baum (ohne Records, Reviews, ADRs,
+  Baseline): `spec/pflichtenheft.md` (Singular „genau ein Token“, bleibt richtig),
+  ein Test-Kommentar im gRPC-Paket (richtig: der Test-Klassifikator trägt je ein
+  Token) und dieser Plan; kein Träger zu ziehen. Die Links der zwei Folge-Slices auf
+  diese Datei sind im Reconcile-Commit nach dem Move nachgezogen.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
