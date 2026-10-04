@@ -95,7 +95,7 @@ System (Baseline-Regelwerk `grundlagen-source-precedence.md` §ID-Schema als Kla
 | `ARC-008` | PostgreSQL Logical Replication (`pgoutput`) | Änderungsquelle: der Replication Stream ist der Driving Adapter des Capture-Pfads | Output-Plugin als Standard ohne zusätzliche Extension; konkrete Bibliothek ist Infrastrukturdetail |
 | `ARC-009` | PostgreSQL (Store) | persistenter CDC-Speicher (Referenzimplementierung des ChangeStore) | über den Outbound Port substituierbar; kein externer Broker für den Grundbetrieb erforderlich |
 | `ARC-010` | Dateisystem | Spool für große offene Transaktionen | über den Outbound Port substituierbar; Crash-Verhalten testpflichtig |
-| `ARC-011` | OTLP-Empfänger (OpenTelemetry-Protokoll) | Metriken (Push) und strukturierte Logs | über den Outbound Port substituierbar; Frameworks bleiben Infrastruktur |
+| `ARC-011` | OTLP-Empfänger (OpenTelemetry-Protokoll) | Metriken (Push); keine Traces, keine Logs | über den Outbound Port substituierbar; Frameworks bleiben Infrastruktur |
 | `ARC-012` | Systemzeit | Zeitquelle für zeitbasierte Retention, Change-Alter und CDC-Lag-Messung | über den Outbound Port substituierbar; Fake Clock in Application-Tests |
 | `ARC-013` | NATS (Core, kein JetStream) | tabellen-granulares Wecksignal und optionaler Vollinhalts-Stream für neue Changes, additiv zum Lesezugriffsweg | über den Outbound Port substituierbar; optional — ohne konfigurierte Verbindung bleibt die Fähigkeit deaktiviert, kein Ersatz für die Nachvollziehbarkeit des bestehenden Zugriffswegs |
 
