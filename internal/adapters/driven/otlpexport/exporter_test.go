@@ -240,7 +240,11 @@ func TestExportKeepsValuesExactAndByUnit(t *testing.T) {
 	}
 	byName := map[string]*metricspb.NumberDataPoint{}
 	for _, m := range metricsOf(t, decode(t, rec.all()[0].body)) {
-		byName[m.Name] = m.Data.(*metricspb.Metric_Gauge).Gauge.DataPoints[0]
+		gauge, ok := m.Data.(*metricspb.Metric_Gauge)
+		if !ok {
+			t.Fatalf("%s: Typ %T, wollen Gauge", m.Name, m.Data)
+		}
+		byName[m.Name] = gauge.Gauge.DataPoints[0]
 	}
 	if v, ok := byName["cdc_consumer_position"].Value.(*metricspb.NumberDataPoint_AsInt); !ok || v.AsInt != 9007199254740993 {
 		t.Errorf("cdc_consumer_position = %v, wollen as_int 9007199254740993", byName["cdc_consumer_position"].Value)
