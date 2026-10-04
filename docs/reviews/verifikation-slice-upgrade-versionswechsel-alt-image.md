@@ -10,7 +10,7 @@ Review-Commit `1c359505` ([Review](review-slice-upgrade-versionswechsel-alt-imag
 [`ADR-0064`](../plan/adr/0064-lh-qa-ops-005-testansatz-korrektur.md),
 [`ADR-0146`](../plan/adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md);
 Anforderung [`LH-QA-OPS-005`](../../spec/lastenheft.md).
-Plan: [`slice-upgrade-versionswechsel-alt-image`](../plan/planning/in-progress/slice-upgrade-versionswechsel-alt-image.md).
+Plan: [`slice-upgrade-versionswechsel-alt-image`](../plan/planning/done/slice-upgrade-versionswechsel-alt-image.md).
 
 **Verdikt: bestanden** — mit den Bedingungen und offenen Punkten in §6 (keine blockierende).
 Alle Läufe wurden in diesem Kontext selbst gefahren, Exit direkt (nie durch eine Pipe, §3.9), je als
