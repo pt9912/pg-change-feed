@@ -258,6 +258,7 @@ Every one of these exceptions carries `MessageCode`, the message code of the ser
 
 ## Upgrading
 
+- **0.6.0** — The exception types gained `MessageCode`. An assembly that was compiled against an earlier version keeps running without recompiling, and every public constructor keeps its signature. One call form of the abstract base class `PgChangeFeedException` no longer compiles: a class of yours that derives from it and passes the literal `null` as the third argument to `base(...)` fails with `CS0121`, because the protected constructors `(int, string, Exception)` and `(int, string, string?)` both accept it. Cast the literal to the type you mean, for example `(string?)null`, or name the argument.
 - **0.5.0** — `StreamChangesAsync` of the SSE client gained the optional parameters `schema` and `table` after `target`. Source code that calls it keeps compiling unchanged. An assembly that was compiled against an earlier version calls the old method signature, which no longer exists, and has to be recompiled against 0.5.0.
 
 ## More
