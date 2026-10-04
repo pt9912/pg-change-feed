@@ -171,7 +171,7 @@ eine nicht gefahrene Verallgemeinerung steht als *hergeleitet*.
       Image-Referenz rot. Die Übertragung auf andere Tabellen und Operationen ist *hergeleitet*.
       Dazu die Negativprobe B3 (`SDK_ALTSERVER_IMAGE=ghcr.io/pt9912/pg-change-feed:dev`) weiter
       rot an B1 (Exit ≠ 0, der Lauf kommt nicht bis U).
-- [ ] **Verträge, Verdrahtung und Register (Liefer-Punkt 3).**
+- [x] **Verträge, Verdrahtung und Register (Liefer-Punkt 3).**
       `harness/targets/sdk-altserver.md` trägt Phase U (Vertragstabelle, Aufruf mit
       `make image` als Vorbedingung, Ausgänge, Grenze: Schema konstant, ein Alt-Stand, keine
       Zeilen während des Tauschs, Mutationstabelle); `harness/README.md` §Sensors zieht die
@@ -188,37 +188,37 @@ eine nicht gefahrene Verallgemeinerung steht als *hergeleitet*.
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand,
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand,
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0 (Exit direkt
       gelesen, nicht durch eine Pipe), `make suchlauf-nachmessen PLAN=<diese Datei>` Exit 0,
       `make fmt-check` und `make test` unberührt (kein Go-Diff, zu belegen: der Diff trägt keine
       `*.go`), `make kommentar-kennungen DIFF=<Parent>` ohne Kandidat im geänderten Skript.
-- [ ] **P10-Klausel:** `make pin-stale-all` endet mit Exit 0 am Endstand (braucht Netz); die
+- [x] **P10-Klausel:** `make pin-stale-all` endet mit Exit 0 am Endstand (braucht Netz); die
       Zeile zum Altserver-Runner nennt `OK` und der Diff trägt **kein neues `@sha256:`-Literal**
       (Suchlauf §3, Soll 86 gleich Parent) — der neue Pfad nutzt den einen vorhandenen Pin; ein
       dauerhafter Drift durch diesen Slice ist ausgeschlossen, solange nichts hinzukommt. Ein
       fremder `DRIFT` anderer Achsen wird gemeldet, nicht von diesem Slice behoben.
-- [ ] `make test-sdk-altserver` Exit 0 am Endstand, die gedruckte Zeile `ALTSERVER U: …` und
+- [x] `make test-sdk-altserver` Exit 0 am Endstand, die gedruckte Zeile `ALTSERVER U: …` und
       die Schlusszeile in §7 (nach `make image`, weil Phase U `:dev` braucht); der Lauf lässt
       keinen Container und kein Netz `cdc-*` zurück (gemessen: `docker ps -a`,
       `docker network ls` danach) und schreibt nichts in den Arbeitsbaum (`git status
       --porcelain` vor und nach dem Lauf gleich).
-- [ ] `make test-integration` ist **nicht** Teil dieses Slice (der Runner bleibt unverändert,
+- [x] `make test-integration` ist **nicht** Teil dieses Slice (der Runner bleibt unverändert,
       §1); ein Lauf ist nur nötig, wenn der Implementer gegen die Aussage handelt und
       `run-integration-tests.sh` doch berührt (dann Rückführung nach §4).
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       ([`review-slice-upgrade-versionswechsel-alt-image`](../../../reviews/review-slice-upgrade-versionswechsel-alt-image.md);
       `.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: kein öffentlicher Vertrag berührt (zu belegen: der Diff trägt keine Datei
+- [x] Doku-Update: kein öffentlicher Vertrag berührt (zu belegen: der Diff trägt keine Datei
       unter `docs/user/`, `spec/` und keine README unter `sdks/`); `harness/README.md`, der
       Target-Vertrag und `harness/mk/sdk.mk` gehören zu Liefer-Punkt 3.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben: siehe Liefer-Punkt 3; keine
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben: siehe Liefer-Punkt 3; keine
       weitere Beobachtung erwartet (ein Fund wird in §7 benannt und dem Register zugeordnet).
       **Kein Zähler wird gesetzt**, er folgt aus den Dateien.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt und „die
       nächste Welle-Closure“ damit keine Adresse ist.
 
@@ -395,29 +395,43 @@ trägt jedes Risiko den Platzhalter **Ausgang: offen bis zur Closure**.
   Server 0.5.0 läuft gegen das aktuelle Schema, ein Tausch auf `:dev` ändert am Schema nichts,
   beides *hergeleitet* für den Tausch). Tritt das Gegenteil ein (der Alt-Build erfasst nicht,
   der Datenstand ist nach dem Tausch verändert, `:dev` übernimmt den Slot nicht), ist es ein
-  Befund über Betriebs-Upgrades. — **Ausgang:** offen bis zur Closure.
+  Befund über Betriebs-Upgrades. — **Ausgang:** entfallen — die Erwartung traf zu (gemessen:
+  Implementer-Lauf und Verifier-Lauf, beide `make test-sdk-altserver` Exit 0 mit der Zeile
+  `ALTSERVER U: …`). Begrenzt: eine Quelle, eine Tabelle, ein Alt-Stand, Schema konstant;
+  der Schemawechsel bleibt ungemessen (akzeptiertes Negativ, Option C von
+  [`ADR-0148`](../../adr/0148-kotlin-sdk-grpc-api-readme-und-upgrade-trigger-erfuellt.md)).
 - **Die Phase ist trivial grün** (der Tausch wechselt den Build nicht, weil der Override nicht
-  greift; der Datenstand-Vergleich kann nicht rot werden). — **Ausgang:** offen bis zur Closure;
-  getragen von M3 (Image-Referenz und Image-ID) und M1 (Prüfsumme), je mit gesehenem Rot.
+  greift; der Datenstand-Vergleich kann nicht rot werden). — **Ausgang:** entfallen, getragen von
+  M3 (Image-Referenz und Image-ID) und M1 (Prüfsumme), je mit gesehenem Rot (Implementer, vom
+  Verifier nachgefahren).
 - **Docker-Hub-Abruflimit und ghcr-Pull** (`postgres`, `nats`, das Image 0.5.0; die Läufe
   des Vorgänger-Slice zogen aus dem lokalen Cache, ein Limit ist damit nicht widerlegt). —
-  **Ausgang:** offen bis zur Closure.
+  **Ausgang:** weiter offen — in drei bis fünf Läufen kein Limit gesehen, die Cache-Herkunft
+  der Images ist nicht gemessen (nicht widerlegt). Anker: Grenze 5 im Vertrag
+  [`sdk-altserver`](../../../../harness/targets/sdk-altserver.md) (ein Abruflimit endet als
+  Docker-Fehler); kein Register-Eintrag, weil kein Auftreten.
 - **Laufzeit:** Phase U verlängert `make test-sdk-altserver` um einen Tausch mit Health-Poll
   (Zeitzuwachs *erwartet*, nicht gemessen; der Implementer druckt die Dauer von Phase U). —
-  **Ausgang:** offen bis zur Closure.
+  **Ausgang:** entfallen — Phase U 7 s (gedruckt, *gemessen*, ein Lauf); der Gesamtlauf
+  etwa 2,5 bis 3 Minuten (*geschätzt* aus Dateizeitstempeln der Läufe, nicht gestoppt).
 - **Container- und Netzkollision mit anderen Runnern** (`cdc-test-feed`, `cdc-feed-test`
   werden von `make test-integration` und den SDK-Realserver-Runnern geteilt; die Vorprüfung des
-  Runners deckt den Start, nicht den Tausch mitten im Lauf). — **Ausgang:** offen bis zur
-  Closure.
+  Runners deckt den Start, nicht den Tausch mitten im Lauf). — **Ausgang:** weiter offen —
+  *hergeleitet* aus dem Runner, kein paralleler Runner gefahren, kein Befund. Anker: Grenze 4
+  im Vertrag [`sdk-altserver`](../../../../harness/targets/sdk-altserver.md); Wiederöffnung bei
+  einem beobachteten Kollisionsfall.
 - **`make test-sdk-altserver` braucht nun `:dev`** (bisher nur B3); wer es ohne `make image`
   aufruft, bekommt Exit 1 mit der Meldung. Die Vorprüfung ist eine Zusage der Phase, kein Schutz
   vor einem veralteten `:dev`-Image (ein altes Image ist ein gültiges Ziel, das der Runner nicht
-  prüft). — **Ausgang:** offen bis zur Closure.
+  prüft). — **Ausgang:** getragen — die Vorprüfung mit der Meldung „make image vorher“ steht im
+  Runner und im Vertrag; ein veraltetes `:dev` bleibt ein gültiges Ziel (im Vertrag benannt).
+  Der negative Pfad „Image fehlt, Exit 1“ ist *hergeleitet* aus dem Runner, nicht gefahren.
 - **Der Aufräum-`trap` trifft nach dem Wechsel der Override-Datei das richtige Projekt**
-  (siehe §3). — **Ausgang:** offen bis zur Closure; getragen von der Messung `docker ps -a` und
-  `docker network ls` nach dem Lauf.
+  (siehe §3). — **Ausgang:** entfallen — Messung `docker ps -a` und `docker network ls` nach
+  allen fünf Läufen des Verifiers ohne `cdc-*`.
 - **Das `.dockerignore`-Verhalten** ist nicht berührt: es entsteht kein neuer Bau-Kontext
-  (zu belegen: der Diff trägt kein Dockerfile). — **Ausgang:** offen bis zur Closure.
+  (zu belegen: der Diff trägt kein Dockerfile). — **Ausgang:** entfallen — der Diff trägt kein
+  Dockerfile (Verifier, Diff-Stat).
 
 ## 7. Closure-Notiz
 
@@ -442,17 +456,65 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-- **Was hat funktioniert:** — (offen bis zur Closure)
-- **Was ging anders als geplant:** — (offen bis zur Closure)
-- **Steering-Loop-Eintrag:** — (offen bis zur Closure; `liegt in` nur, wenn etwas verkörpert
-  wurde — erwartet `harness/targets/sdk-altserver.md` und
-  `tools/harness/run-sdk-altserver-tests.sh`)
-- **Beobachtungs-Register (`../observations/`):** — (offen bis zur Closure; erwartet:
-  `evidence/slice-upgrade-versionswechsel-alt-image.md` in
-  [`kein-echter-versionswechsel-upgrade-test`](../observations/BEO-PGC/kein-echter-versionswechsel-upgrade-test/state.md))
-- **Folge-Slices:** — (offen bis zur Closure)
-- **Risiken aus §6:** — (jedes mit genau einem Ausgang, siehe §6)
-- **Drei Paarungen:** — (offen bis zur Closure; getragen von der Slice-Closure selbst)
+Der Beleg der Phase U, die Mutationstabelle M1 bis M3 (Zusage · mutierte Eingabe · Instanz ·
+gesehenes Rot), die Nachmessung des Suchlaufs (gefunden: die Soll-Zeilen 2, 86, 4, 1 stimmen, die
+Zeile zu „versionswechsel“ steht bei 8 statt 5 wegen Slice-Name, Kopfkommentar und Meldung des
+Runners; nicht gefunden: ein Träger außerhalb von `harness/` und `tools/harness/`, der den
+Upgrade-Tausch als „derselbe Bau“ beschreibt) und die Entscheidung zum Ziel-Image (aus
+`compose.yaml`, keine Konstante `DEV_IMAGE`, weil `config --images` das Ziel nennt und der Tausch
+damit endete) stehen oben in §3 und gelten unverändert.
+
+- **Gedruckte Zeile (gemessen, Implementer-Lauf am Arbeitsstand, Parent `8d61e8c6`, nach
+  `make image` Exit 0; Verifier-Lauf am Stand `1383d75e` Exit 0 mit demselben Ergebnis):**
+  `ALTSERVER U: Tausch 4fb31016dd0c -> affaa35ae5b7, Image
+  ghcr.io/pt9912/pg-change-feed:0.5.0@sha256:f99a77ff… -> ghcr.io/pt9912/pg-change-feed:dev,
+  Datenstand vor dem Tausch (4 Zeilen, Prüfsumme 2e5ff42113514778710c1e905ddd4e3a) identisch
+  lesbar, danach eingefügte Zeile erfasst (Position 30850624), Phase U 7 s`.
+- **Begrenzung (gilt für jeden Zitierenden der Zeile):** „Datenstand“ ist die Zeilenzahl plus
+  `md5` über alle `cdc.changes` der Quelle, ein Alt-Stand (0.5.0), ein Lauf-Paar (0.5.0 auf
+  `:dev`), eine Tabelle (`feed_e2e_full`); der Schemawechsel über Versionen ist ungemessen
+  (akzeptiertes Negativ, Option C von
+  [`ADR-0148`](../../adr/0148-kotlin-sdk-grpc-api-readme-und-upgrade-trigger-erfuellt.md)).
+- **Was hat funktioniert:** die Zuschnitts-Entscheidung (Phase im Altserver-Runner: ein Pin, keine
+  Änderung am Integrations-Runner, kein neues `@sha256:`-Literal, 86 gleich Parent); das Ziel-Image
+  aus `compose.yaml` statt eines zweiten Literals; die drei Mutationen färbten die Phase je an der
+  erwarteten Stelle rot, der Verifier fuhr sie unabhängig nach; die Erwartung (0.5.0 übersteht den
+  Tausch bei konstantem Schema) traf zu, kein Befund.
+- **Was ging anders als geplant:** die Suchlauf-Zeile zu „versionswechsel“ stand bei 8 statt 5
+  (Muster trifft den eigenen Slice-Namen; benannt, kein Träger-Drift). Der Review fand
+  `make pin-stale-all` zunächst mit Exit 2 (F-1), am Verifier-Stand Exit 0 mit 16 OK. Die
+  Zeile `ALTSERVER U` trägt keine Mengenangabe (Review F-3, vom Verifier als durch die Begrenzung
+  oben ausreichend gewertet).
+- **Steering-Loop-Eintrag:** neuer Sensor — die Phase U macht „ein anderer Server-Build liest
+  den Datenstand und setzt die Erfassung fort“ von *hergeleitet* auf *gemessen*, mit Probe, die
+  rot wird (M1 bis M3). Geschärfte Regel dazu: eine Zeile, die als Beleg zitiert wird, trägt ihre
+  Begrenzung (Menge, Stand, Lauf-Paar) im Vertrag (Grenze 6) und in der Closure-Notiz —
+  liegt in `harness/targets/sdk-altserver.md` Zeile der Phase U (Vertragstabelle, Grenze 6) ·
+  seit slice-upgrade-versionswechsel-alt-image; liegt in `tools/harness/run-sdk-altserver-tests.sh`
+  (Phase U, Vorprüfung `:dev`) · seit slice-upgrade-versionswechsel-alt-image (der Anker mit
+  `seit` steht im Vertrag der Phase U und in `harness/README.md` Zeile `make test-sdk-altserver`).
+- **Validator-Feststellung (Modul 8):** entfällt — der Slice liefert ein Mess- und
+  Wartungswerkzeug (Phase eines Harness-Runners), keinen Wert für End-Nutzer.
+- **Release-Folge:** keine (kein Produkt-, SDK- oder Doku-Diff unter `docs/user/`, `internal/`,
+  `sdks/`).
+- **Beobachtungs-Register (`../observations/`):** Eintrag
+  [`kein-echter-versionswechsel-upgrade-test`](../observations/BEO-PGC/kein-echter-versionswechsel-upgrade-test/state.md)
+  mit `evidence/slice-upgrade-versionswechsel-alt-image.md`; Zähler 3× (abgeleitet aus den
+  Dateien). Ausgang **verkörpert** → Phase U, seit diesem Slice, **mit Begrenzung**: der
+  Schemawechsel über Versionen ist ungemessen; Wiederöffnung bei einem beobachteten
+  Betriebs-Upgrade-Fehler, der am konstanten Schema vorbeiläuft. Begründung gegen *geplant*: die
+  Lücke der Beobachtung („alt“ und „neu“ sind dasselbe Image) ist für konstantes Schema
+  geschlossen, der Sensor steht im Baum; der offene Rest ist ein bewusst akzeptiertes Negativ der
+  ADR, kein zugesagter Folge-Slice.
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** je ein Ausgang in §6 gesetzt — entfallen: Alt-Build mit konstantem Schema,
+  trivial grün, Laufzeit, Aufräum-`trap`, Dockerfile; getragen: `:dev` als Vorbedingung (negativer
+  Pfad hergeleitet, nicht gefahren); weiter offen: Docker-Hub-/ghcr-Limit (Anker Vertrag Grenze 5),
+  Container-/Netzkollision beim Tausch mitten im Lauf (Anker Vertrag Grenze 4, hergeleitet).
+- **Drei Paarungen:** (a) Anker: `liegt in`-Zielorte existieren und tragen
+  `seit slice-upgrade-versionswechsel-alt-image` (Vertrag der Phase U, README-Zeile); (b)
+  Folge-Slice: keiner genannt; (c) Register: `BEO-PGC/kein-echter-versionswechsel-upgrade-test`
+  existiert, `evidence/` führt drei Dateien. Getragen von der Slice-Closure selbst.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
