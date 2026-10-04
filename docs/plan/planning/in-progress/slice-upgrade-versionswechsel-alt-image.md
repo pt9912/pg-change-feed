@@ -206,8 +206,9 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 - [ ] `make test-integration` ist **nicht** Teil dieses Slice (der Runner bleibt unverändert,
       §1); ein Lauf ist nur nötig, wenn der Implementer gegen die Aussage handelt und
       `run-integration-tests.sh` doch berührt (dann Rückführung nach §4).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      ([`review-slice-upgrade-versionswechsel-alt-image`](../../../reviews/review-slice-upgrade-versionswechsel-alt-image.md);
+      `.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Doku-Update: kein öffentlicher Vertrag berührt (zu belegen: der Diff trägt keine Datei
       unter `docs/user/`, `spec/` und keine README unter `sdks/`); `harness/README.md`, der
