@@ -567,6 +567,11 @@ SELECT consumer_id, name, acknowledged_position, backlog FROM cdc.retention_bloc
 // SelectDiagnosticsStorageBytes liest den Speicherverbrauch (`ADR-0132`).
 const SelectDiagnosticsStorageBytes = `SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_storage_bytes'`
 
+// SelectMetrics liest alle Zeilen der Sicht der Betriebsschnittstelle; der
+// Wert geht als Text zurück, damit eine ganze Zahl jenseits von 2^53 ohne
+// Rundung ankommt (`MetricsAdapter.Read`).
+const SelectMetrics = `SELECT metric_name, label, value::text FROM cdc.metrics`
+
 // SelectDiagnosticsBackfillStatus liest den zuletzt beantragten Backfill-Run
 // je Tabelle der Quelle; eine unbekannte Schätzung bleibt `NULL`, nie `0`
 // (`ADR-0132`).

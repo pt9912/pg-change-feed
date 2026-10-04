@@ -31,6 +31,10 @@ const (
 	APITokenListInvalid       Code = "PCF-E2008"
 	TLSPairIncomplete         Code = "PCF-E2009"
 	TLSPairUnusable           Code = "PCF-E2010"
+	OTLPEndpointInvalid       Code = "PCF-E2011"
+	OTLPHeadersInvalid        Code = "PCF-E2012"
+	OTLPIntervalInvalid       Code = "PCF-E2013"
+	OTLPHeadersNoEndpoint     Code = "PCF-E2014"
 )
 
 // Klasse 3, `permission`.
@@ -131,7 +135,8 @@ const (
 
 // Warnungen tragen keine Fehlerklasse; die erste Ziffer ist der Bereich:
 // 1 Erfassung und Replikation, 2 Backfill, 3 Retention und Speicher,
-// 4 Verwaltung (Anträge, Regeln), 5 Konfiguration und Start, 9 reserviert.
+// 4 Verwaltung (Anträge, Regeln), 5 Konfiguration und Start,
+// 6 Beobachtbarkeit und Transport, 9 reserviert.
 // Eine Warnung trägt den Code als Log-Attribut `code`.
 
 // Bereich 1, Erfassung und Replikation.
@@ -173,6 +178,12 @@ const (
 	WarnAPIRequestFailed     Code = "PCF-W4008"
 )
 
+// Bereich 6, Beobachtbarkeit und Transport.
+const (
+	WarnExportFailed      Code = "PCF-W6001"
+	WarnMetricsReadFailed Code = "PCF-W6002"
+)
+
 // Table führt jeden vergebenen Code genau einmal; die Klasse eines Eintrags
 // ist die der ersten Ziffer (`Entry.Class`, geprüft im Test des Pakets).
 var Table = []Entry{
@@ -191,6 +202,10 @@ var Table = []Entry{
 	{APITokenListInvalid, ClassConfiguration, StatusActive},
 	{TLSPairIncomplete, ClassConfiguration, StatusActive},
 	{TLSPairUnusable, ClassConfiguration, StatusActive},
+	{OTLPEndpointInvalid, ClassConfiguration, StatusActive},
+	{OTLPHeadersInvalid, ClassConfiguration, StatusActive},
+	{OTLPIntervalInvalid, ClassConfiguration, StatusActive},
+	{OTLPHeadersNoEndpoint, ClassConfiguration, StatusActive},
 
 	{PermissionFallback, ClassPermission, StatusActive},
 	{ReplicationPermission, ClassPermission, StatusActive},
@@ -287,4 +302,7 @@ var Table = []Entry{
 	{WarnAdminOutcomeNotKept, ClassNone, StatusActive},
 	{WarnAdminRowWithoutID, ClassNone, StatusActive},
 	{WarnAPIRequestFailed, ClassNone, StatusActive},
+
+	{WarnExportFailed, ClassNone, StatusActive},
+	{WarnMetricsReadFailed, ClassNone, StatusActive},
 }

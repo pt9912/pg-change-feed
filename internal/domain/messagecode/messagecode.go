@@ -91,10 +91,10 @@ const LogKey = "code"
 
 // Area liest den Bereich aus der ersten Ziffer eines Warncodes (`W`):
 // 1 Erfassung und Replikation, 2 Backfill, 3 Retention und Speicher,
-// 4 Verwaltung, 5 Konfiguration und Start. Ein anderer Code und der
-// reservierte Bereich 9 liefern `false`.
+// 4 Verwaltung, 5 Konfiguration und Start, 6 Beobachtbarkeit und Transport.
+// Ein anderer Code und der reservierte Bereich 9 liefern `false`.
 func Area(c Code) (int, bool) {
-	if !Valid(c) || c[4] != 'W' || c[5] < '1' || c[5] > '5' {
+	if !Valid(c) || c[4] != 'W' || c[5] < '1' || c[5] > '6' {
 		return 0, false
 	}
 	return int(c[5] - '0'), true

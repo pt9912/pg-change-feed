@@ -57,10 +57,13 @@ func TestTableClassMatchesFirstDigit(t *testing.T) {
 }
 
 // TestWarningCodesCarryTheirArea trägt: jeder Warncode der Tabelle trägt keine
-// Fehlerklasse und einen Bereich 1 bis 5 in der ersten Ziffer, und jede
+// Fehlerklasse und einen Bereich 1 bis 6 in der ersten Ziffer, und jede
 // benannte Konstante liegt im Bereich ihres Namens (Bereich 1 Erfassung,
-// 2 Backfill, 3 Retention und Speicher, 4 Verwaltung). Färbt rot, sobald ein
-// Warncode in einen anderen Bereich oder mit einer Klasse eingetragen wird.
+// 2 Backfill, 3 Retention und Speicher, 4 Verwaltung, 6 Beobachtbarkeit und
+// Transport). Färbt rot, sobald ein Warncode in einen anderen Bereich oder mit
+// einer Klasse eingetragen wird. Rot färbende Mutation: die Grenze
+// `c[5] > '6'` in `Area` auf `'5'` setzen — beide Codes des Bereichs 6 werden
+// nicht mehr gelesen.
 func TestWarningCodesCarryTheirArea(t *testing.T) {
 	named := map[int][]messagecode.Code{
 		1: {
@@ -77,6 +80,7 @@ func TestWarningCodesCarryTheirArea(t *testing.T) {
 			messagecode.WarnAdminRequestFailed, messagecode.WarnAdminRequestRejected, messagecode.WarnAdminOutcomeNotKept,
 			messagecode.WarnAdminRowWithoutID, messagecode.WarnAPIRequestFailed,
 		},
+		6: {messagecode.WarnExportFailed, messagecode.WarnMetricsReadFailed},
 	}
 	inTable := 0
 	for _, e := range messagecode.Table {
@@ -85,7 +89,7 @@ func TestWarningCodesCarryTheirArea(t *testing.T) {
 		}
 		inTable++
 		if _, ok := messagecode.Area(e.Code); !ok {
-			t.Errorf("%q: erste Ziffer außerhalb 1 bis 5", e.Code)
+			t.Errorf("%q: erste Ziffer außerhalb 1 bis 6", e.Code)
 		}
 		if e.Class != messagecode.ClassNone {
 			t.Errorf("%q: Warnung trägt die Klasse %q", e.Code, e.Class)
