@@ -15,7 +15,7 @@ dieses Slice (gemessen: `ls docs/plan/planning/*.md` am Planungsstand nennt nur
 Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht
 (Modul 6).
 
-**Abhängigkeit:** [`slice-otlp-metrik-export`](../in-progress/slice-otlp-metrik-export.md)
+**Abhängigkeit:** [`slice-otlp-metrik-export`](../done/slice-otlp-metrik-export.md)
 (Teil a) liegt in `done/` — Konfiguration, Lese-Port, Sender und Takt sind dort
 geliefert und auf Unit- und `httptest`-Ebene belegt. **Dieser Slice ist
 Voraussetzung des Server-Releases** (Entscheidung des Auftraggebers: erst der
@@ -171,7 +171,7 @@ Instanz B). Die gedruckte Zeile bzw. der Exit-Code steht im Bericht des
 Implementers und in §7.
 
 **Übergabe-Block des Vorgängers** (aus
-[`slice-otlp-metrik-export`](../in-progress/slice-otlp-metrik-export.md) §1,
+[`slice-otlp-metrik-export`](../done/slice-otlp-metrik-export.md) §1,
 als committeter Text übernommen; Punkt (1) und (4) sind durch die Entscheidung des
 Auftraggebers und die Festlegung zu `https` in §1 konkretisiert, die Liefer-Punkte
 unten tragen die geltende Form):
@@ -418,7 +418,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 **Start** (`next` → `in-progress`): `in-progress/` trägt keinen anderen Slice
 (WIP-Limit 1), **und**
-[`slice-otlp-metrik-export`](../in-progress/slice-otlp-metrik-export.md) liegt in
+[`slice-otlp-metrik-export`](../done/slice-otlp-metrik-export.md) liegt in
 `done/`, **und** der Implementer hat die Startmessung gefahren (die Suchlauf-Zeilen
 am Arbeitsstand neu gemessen, `make suchlauf-nachmessen PLAN=` mit diesem Plan
 Exit 0 nach Anpassung von Parent und Soll), **und** der Collector-Prüfpunkt (§2

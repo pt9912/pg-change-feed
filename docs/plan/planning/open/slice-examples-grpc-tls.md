@@ -259,7 +259,7 @@ Suchlauf-Zeilen aus §3 am Arbeitsstand neu gemessen (neue Commit-Kennung als
 Parent, `make suchlauf-nachmessen PLAN=` mit diesem Plan Exit 0 nach Anpassung
 von Parent und Soll; jede Abweichung mit Ursache im Bericht). Eine harte
 Abhängigkeit zu einem anderen offenen Slice besteht nicht; die Reihenfolge zu
-[`slice-otlp-metrik-export`](../in-progress/slice-otlp-metrik-export.md) ist frei (andere
+[`slice-otlp-metrik-export`](../done/slice-otlp-metrik-export.md) ist frei (andere
 Dateien).
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**

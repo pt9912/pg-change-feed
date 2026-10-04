@@ -761,7 +761,7 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   `git mv`). Träger fremder Dateien: der Suchlauf (§3) ist am Endstand gelesen und
   vom Implementer berichtet; die Links der Verweise auf diese Datei sind im
   Reconcile-Commit nach dem Move nachgezogen (Slice
-  [`slice-otlp-metrik-export`](../in-progress/slice-otlp-metrik-export.md), Plan und
+  [`slice-otlp-metrik-export`](../done/slice-otlp-metrik-export.md), Plan und
   Verifikation des Vorgängers `slice-api-token-mehrfach-konfiguration`, deren
   Review/Verifikation).
 

@@ -4,7 +4,7 @@
 Behauptungen ([`AGENTS.md`](../../AGENTS.md) §3.12 Instanz B). Frischer Kontext, kein Reparieren, keine DoD-Häkchen.
 
 **Gegenstand:** Slice `otlp-metrik-export` (wellenlos), Plan
-[`slice-otlp-metrik-export`](../plan/planning/in-progress/slice-otlp-metrik-export.md); Diff `git diff 5fcb556f HEAD`
+[`slice-otlp-metrik-export`](../plan/planning/done/slice-otlp-metrik-export.md); Diff `git diff 5fcb556f HEAD`
 (25 Dateien, +3391/−53). Commits: Implementer `da239a2a` (Adapter, Lese-Adapter, Use Case, Ports, Codes, `go.mod`),
 `6c0008cf` (Konfiguration, Verdrahtung, Klasse elf), `ddcfa6d8` (Handbuch 1.97, `harness/README.md`, Plan); Review
 `25dec84a` ([`review-slice-otlp-metrik-export`](review-slice-otlp-metrik-export.md)); Fixrunde `ce6b69af` (Test) und

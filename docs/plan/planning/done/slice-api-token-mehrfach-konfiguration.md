@@ -18,7 +18,7 @@ Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht
 **Abhängigkeit:** keine. Dieser Slice ist der **erste** der drei
 Umsetzungs-Slices zur Spec 0.15.0; er geht
 [`slice-tls-http-grpc-server`](slice-tls-http-grpc-server.md) und
-[`slice-otlp-metrik-export`](../in-progress/slice-otlp-metrik-export.md) voraus, weil alle drei
+[`slice-otlp-metrik-export`](../done/slice-otlp-metrik-export.md) voraus, weil alle drei
 dieselben Dateien der Konfiguration (`internal/bootstrap/wiring.go`,
 `internal/bootstrap/config_file.go`), die Code-Tabelle der Meldungscodes und
 den Konfigurationsteil des Benutzerhandbuchs berühren und die Zugangsdaten-Klasse
@@ -95,7 +95,7 @@ am laufenden Container belegt und im Benutzerhandbuch beschrieben.
 der Konfigurationsdatei ([`ADR-0152`](../../adr/0152-zugangsdaten-klasse-elf-schluessel.md)
 Festlegung 1) wächst um vier Schlüssel: `api_tokens_reader`, `api_tokens_admin`
 (dieser Slice) und `otlp_endpoint`, `otlp_headers`
-([`slice-otlp-metrik-export`](../in-progress/slice-otlp-metrik-export.md)). Jeder Slice trägt
+([`slice-otlp-metrik-export`](../done/slice-otlp-metrik-export.md)). Jeder Slice trägt
 **genau seine zwei** Schlüssel ein: dieser Slice hebt die Klasse von **sieben auf
 neun**, der OTLP-Slice von neun auf elf. Begründung: (1) das Handbuch beschreibt
 den Ist-Zustand — `otlp_endpoint` in einer Verbotsliste, bevor es die Funktion
@@ -120,7 +120,7 @@ gehören nicht zur Klasse.
   Eingriffsstellen (Listener statt Token-Prüfung); ein gemeinsamer Slice machte
   den Wechsel-Beleg vom Transport abhängig.
 - **Die Schlüssel `otlp_endpoint` und `otlp_headers` in der Zugangsdaten-Klasse**
-  — [`slice-otlp-metrik-export`](../in-progress/slice-otlp-metrik-export.md) (Begründung oben,
+  — [`slice-otlp-metrik-export`](../done/slice-otlp-metrik-export.md) (Begründung oben,
   Punkt 1); die Adresse nimmt die Sendung an: der Plan dort nennt beide
   Schlüssel in §2.
 - **Neuladen der Token zur Laufzeit, Ablauffristen, Rotation, Hash-Form** —
@@ -515,7 +515,7 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   die von Handbuch und Code — die Paarung bleibt von Hand
   ([`ADR-0089`](../../adr/0089-feldmengen-paarung-kein-sensor-review-waechter.md)).
   — **Ausgang:** weiter offen, Anker
-  [`slice-otlp-metrik-export`](../in-progress/slice-otlp-metrik-export.md) (hebt die Klasse von
+  [`slice-otlp-metrik-export`](../done/slice-otlp-metrik-export.md) (hebt die Klasse von
   neun auf elf; bis dahin nennt `SPEC-016` elf, der Code neun — der Umsetzungsrückstand
   aus §1, keine halb gebliebene Änderung: Code und Test sind gleich, Handbuch und Code
   tragen neun).
@@ -630,11 +630,11 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   keine, ein Release braucht eine Freigabe.
 - **Folge-Slices:** [`slice-tls-http-grpc-server`](slice-tls-http-grpc-server.md)
   (TLS, nach diesem Slice) und
-  [`slice-otlp-metrik-export`](../in-progress/slice-otlp-metrik-export.md) (hebt die
+  [`slice-otlp-metrik-export`](../done/slice-otlp-metrik-export.md) (hebt die
   Zugangsdaten-Klasse von neun auf elf) — beides Dateien in `open/`
 - **Risiken aus §6:** sechs, je ein Ausgang in §6 selbst: Zeitkonstanz weiter offen
   (BEO angelegt) · Halbänderung Klasse neun/elf weiter offen (Anker
-  [`slice-otlp-metrik-export`](../in-progress/slice-otlp-metrik-export.md)) · Spec-Lücke
+  [`slice-otlp-metrik-export`](../done/slice-otlp-metrik-export.md)) · Spec-Lücke
   Plural-Variable weiter offen (Lerneintrag) · zwei Konfigurationswege entfallen ·
   Runner-Phase stört Folge-Phasen entfallen · Handbuch zieht nicht mit entfallen.
 - **Drei Paarungen:** (a) *Anker* — `liegt in`:
@@ -642,7 +642,7 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   (`git grep -n TestZugangsdatenKlasseCodeUndTestSindMengengleich`); die Herkunft
   steht hier als `seit slice-api-token-mehrfach-konfiguration`. (b) *Folge-Slice* —
   [`slice-tls-http-grpc-server`](slice-tls-http-grpc-server.md) und
-  [`slice-otlp-metrik-export`](../in-progress/slice-otlp-metrik-export.md) existieren in
+  [`slice-otlp-metrik-export`](../done/slice-otlp-metrik-export.md) existieren in
   `open/`. (c) *Register* — `BEO-PGC/zeitkonstanz-erwartung-ohne-messung`,
   `BEO-PGC/ready-ist-nicht-verbunden` und die in §6/§8 genannten Kennungen existieren
   als Verzeichnisse mit nicht leerem `evidence/`. Träger fremder Dateien: gelesen

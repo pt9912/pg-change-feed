@@ -4,7 +4,7 @@
 (Verifier).
 
 **Gegenstand:** Slice `otlp-metrik-export` (wellenlos), Plan
-[`slice-otlp-metrik-export`](../plan/planning/in-progress/slice-otlp-metrik-export.md); Diff `5fcb556f..ddcfa6d8`
+[`slice-otlp-metrik-export`](../plan/planning/done/slice-otlp-metrik-export.md); Diff `5fcb556f..ddcfa6d8`
 (3 Commits, 24 Dateien, +3162/−51): `da239a2a` (OTLP-Adapter, Lese-Adapter, Use Case, Ports, Code-Tabelle, `go.mod`),
 `6c0008cf` (Konfiguration, Wiring, Zugangsdaten-Klasse elf), `ddcfa6d8` (Handbuch 1.97, `harness/README.md`, Plan).
 
