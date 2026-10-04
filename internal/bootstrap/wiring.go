@@ -36,6 +36,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/grpcstream"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/natsnotify"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/natsstream"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/otlpexport"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresack"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgressnapshot"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
@@ -152,6 +153,15 @@ const (
 	// eine gesetzt ist ein Konfigurationsfehler (`validateTLSPair`).
 	envTLSCertFile = "CDC_TLS_CERT_FILE"
 	envTLSKeyFile  = "CDC_TLS_KEY_FILE"
+	// envOTLPEndpoint, envOTLPHeaders und envOTLPInterval tragen die
+	// Konfiguration des OTLP-Metrik-Exports (`ADR-0149`): ein gesetzter
+	// Endpunkt schaltet den Export ein, ungesetzt bleibt er aus (kein
+	// Adapter, keine Verbindung). Endpunkt und Header können Zugangsdaten
+	// tragen und sind env-var-exklusiv; der Takt hat das Datei-Gegenstück
+	// `otlp_interval` (`applyOTLP`).
+	envOTLPEndpoint = "CDC_OTLP_ENDPOINT"
+	envOTLPHeaders  = "CDC_OTLP_HEADERS"
+	envOTLPInterval = "CDC_OTLP_INTERVAL_SECONDS"
 )
 
 // ErrConfiguration trägt die Fehlerklasse `configuration` der Verdrahtung
@@ -304,6 +314,14 @@ type Config struct {
 	// Vollständigkeit.
 	TLSCertFile string
 	TLSKeyFile  string
+	// OTLPEndpoint ist die Basis-URL des OTLP-Empfängers (`envOTLPEndpoint`);
+	// leer heißt Export aus. OTLPHeaders sind die zusätzlichen Header je
+	// Anfrage, OTLPInterval der Takt (ab dem Laden immer gesetzt; ein Wert bis
+	// null gilt als Default). Endpunkt und Header sind Zugangsdaten und auf
+	// beiden Ladepfaden env-var-exklusiv, der Takt hat ein Datei-Feld.
+	OTLPEndpoint string
+	OTLPHeaders  []otlpexport.Header
+	OTLPInterval time.Duration
 	// NatsStreamToken trägt den optionalen NATS-Verbindungs-Token des
 	// dritten, vollinhaltstragenden Zustellwegs (`envNatsStreamToken`,
 	// `ADR-0100` Teilfrage 4/5); leer heißt der dritte Weg deaktiviert. Er
@@ -361,6 +379,9 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	}
 	cfg.NatsStreamToken = getenv(envNatsStreamToken)
 	if err := validateNatsStreamTokenRequiresURL(cfg.NatsURL, cfg.NatsStreamToken); err != nil {
+		return Config{}, err
+	}
+	if err := applyOTLP(&cfg, getenv, ""); err != nil {
 		return Config{}, err
 	}
 	return cfg, nil
@@ -1193,6 +1214,18 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		_ = walRetention.Close(closeCtx)
 	}()
 
+	// Der OTLP-Metrik-Export (`ADR-0149`) entsteht nur mit gesetztem
+	// Endpunkt und läuft in einer eigenen Goroutine über einen eigenen
+	// Lese-Pool: er blockiert weder Erfassung noch Heartbeat noch
+	// Bestätigung. Seine Konstruktion steht vor allen weiteren Goroutinen, weil
+	// ein Fehler hier den Start beendet; danach folgt bis zum Ende des
+	// Stream-Laufs kein früher Rücksprung mehr.
+	walGauge := &walRetentionGauge{}
+	stopMetricExport, _, err := startMetricExport(ctx, cfg, log, clock, walGauge)
+	if err != nil {
+		return err
+	}
+
 	// Der Heartbeat-Zug läuft in einer eigenen Goroutine über den eigenen
 	// Pool (oben) — kein Eingriff in die kritische Sektion des
 	// Capture-Persist-ACK-Pfads (`LH-QA-REL-001.a`). `heartbeatCtx` endet
@@ -1220,12 +1253,20 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 
 	warnBytes, errorBytes := resolveWALRetentionThresholds(cfg.WALRetentionWarnBytes, cfg.WALRetentionErrorBytes)
 	var walFault walRetentionFault
+	// Der Prüfzug misst über `walMeasurer`: mit gesetztem OTLP-Endpunkt hält
+	// der Halter jede erfolgreiche Messung fest, die der Export als
+	// `cdc_wal_retention_bytes` überträgt; ohne Endpunkt ist es der Checker
+	// selbst.
+	var walMeasurer walRetentionMeasurer = walRetention
+	if cfg.OTLPEndpoint != "" {
+		walMeasurer = recordingWALMeasurer{inner: walRetention, gauge: walGauge, clock: clock}
+	}
 	walRetentionCtx, stopWALRetention := context.WithCancel(ctx)
 	var walRetentionDone sync.WaitGroup
 	walRetentionDone.Add(1)
 	go func() {
 		defer walRetentionDone.Done()
-		runWALRetentionCheck(walRetentionCtx, walRetention, log, heartbeatInterval, warnBytes, errorBytes, stopStream, &walFault)
+		runWALRetentionCheck(walRetentionCtx, walMeasurer, log, heartbeatInterval, warnBytes, errorBytes, stopStream, &walFault)
 	}()
 
 	// Der Stream-Zyklus (`ADR-0135` Festlegung 1): Neuaufbau von
@@ -1272,6 +1313,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	heartbeatDone.Wait()
 	stopWALRetention()
 	walRetentionDone.Wait()
+	stopMetricExport()
 	stopAdministration()
 	administrationDone.Wait()
 	stopBackfill()

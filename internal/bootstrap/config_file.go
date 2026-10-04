@@ -31,12 +31,15 @@ const envConfigFile = "CDC_CONFIG_FILE"
 // forbiddenFileCredentialKeys trägt die Schlüssel der
 // zugangsdaten-tragenden Klasse, die in der Konfigurationsdatei nicht
 // vorkommen dürfen (`ADR-0088` Festlegung 1: Secrets bleiben
-// env-var-exklusiv). Die Klasse umfasst neun Schlüssel:
+// env-var-exklusiv). Die Klasse umfasst elf Schlüssel:
 // die drei DSN-Schlüssel, die vier API-Token-Schlüssel (Singular und Liste je
 // Klasse), `nats_stream_token` — den Verbindungs-Token des dritten,
-// vollinhaltstragenden NATS-Zustellwegs — und `nats_url`, dessen
-// URL-Form Benutzer und Passwort einbetten kann; `http_addr`/`grpc_addr`
-// gehören ihr nicht an, weil `host:port` keine Zugangsdaten tragen kann.
+// vollinhaltstragenden NATS-Zustellwegs —, `nats_url`, dessen
+// URL-Form Benutzer und Passwort einbetten kann, und die beiden Schlüssel des
+// OTLP-Exports `otlp_endpoint` (dieselbe URL-Form) und `otlp_headers` (trägt
+// Zugangsdaten als Header-Werte); `http_addr`/`grpc_addr` und `otlp_interval`
+// gehören ihr nicht an, weil `host:port` und eine Zahl keine Zugangsdaten
+// tragen können.
 // Ein Treffer bricht das Laden mit einer
 // eigenen, den Grund benennenden Fehlerzeile ab, statt nur als generischer
 // „unbekannter Schlüssel" des strikten Decodings unten zu erscheinen.
@@ -44,6 +47,7 @@ var forbiddenFileCredentialKeys = []string{
 	"capture_dsn", "admin_dsn", "reader_dsn",
 	"api_token_reader", "api_token_admin", "api_tokens_reader", "api_tokens_admin",
 	"nats_url", "nats_stream_token",
+	"otlp_endpoint", "otlp_headers",
 }
 
 // fileTableBinding trägt eine einzelne Tabellen-Aktivierung der
@@ -57,10 +61,9 @@ type fileTableBinding struct {
 
 // fileConfig trägt die in der Konfigurationsdatei zulässigen Felder
 // (`ADR-0088` Festlegung 2): nur die nicht credential-tragenden Felder.
-// Die DSNs, die fünf Token-Schlüssel und `nats_url` bleiben
-// env-var-exklusiv und haben hier bewusst kein Gegenstück — ein Treffer auf
-// einen dieser Schlüssel wird vor dem Decoding in diesen Typ abgefangen
-// (`forbiddenFileCredentialKeys`).
+// Die Schlüssel von `forbiddenFileCredentialKeys` bleiben env-var-exklusiv und
+// haben hier bewusst kein Gegenstück — ein Treffer auf
+// einen dieser Schlüssel wird vor dem Decoding in diesen Typ abgefangen.
 type fileConfig struct {
 	SourceID    string                      `yaml:"source_id"`
 	Publication string                      `yaml:"publication"`
@@ -87,6 +90,11 @@ type fileConfig struct {
 	// Konfigurationsdatei. Dieselbe Feld-für-Feld-Precedence wie `http_addr`.
 	TLSCertFile string `yaml:"tls_cert_file"`
 	TLSKeyFile  string `yaml:"tls_key_file"`
+	// OTLPInterval trägt den Takt des OTLP-Exports in Sekunden. Er ist eine
+	// Zeichenkette, damit ein Wert wie `abc` oder `60.5` die Prüfung des
+	// Taktes erreicht (`parseOTLPInterval`, eigener Meldungscode); `nil` heißt
+	// nicht gesetzt.
+	OTLPInterval *string `yaml:"otlp_interval"`
 }
 
 // ConfigFromFile lädt die optionale Konfigurationsdatei. Ein Schlüssel der
@@ -168,7 +176,8 @@ func overrideString(fileValue, envValue string) string {
 // hier über beide Quellen hinweg geprüft. Die zugangsdaten-tragenden
 // Schlüssel bleiben env-var-exklusiv: die drei
 // DSNs, die Token-Felder (`APITokenReader`/`APITokenAdmin`/
-// `APITokensReader`/`APITokensAdmin`/`NatsStreamToken`) und `NatsURL` haben kein Datei-Gegenstück
+// `APITokensReader`/`APITokensAdmin`/`NatsStreamToken`), `NatsURL`,
+// `OTLPEndpoint` und `OTLPHeaders` haben kein Datei-Gegenstück
 // und werden auf beiden Pfaden direkt aus der Umgebung gelesen
 // — „kein Datei-Feld" heißt nicht „die
 // Umgebungsvariable wird ignoriert". `HTTPAddr`/`GRPCAddr` tragen ein
@@ -235,6 +244,13 @@ func mergeConfig(file fileConfig, getenv func(string) string) (Config, error) {
 	}
 	cfg.NatsStreamToken = getenv(envNatsStreamToken)
 	if err := validateNatsStreamTokenRequiresURL(cfg.NatsURL, cfg.NatsStreamToken); err != nil {
+		return Config{}, err
+	}
+	var fileInterval string
+	if file.OTLPInterval != nil {
+		fileInterval = *file.OTLPInterval
+	}
+	if err := applyOTLP(&cfg, getenv, fileInterval); err != nil {
 		return Config{}, err
 	}
 

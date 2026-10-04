@@ -49,13 +49,14 @@ func TestConfigFromFileStriktesDecoding(t *testing.T) {
 	}
 }
 
-// credentialKeysUnderTest ist die Liste der neun Schlüssel der
+// credentialKeysUnderTest ist die Liste der elf Schlüssel der
 // Zugangsdaten-Klasse, wie der Test sie erwartet; sie steht unabhängig von
 // `forbiddenFileCredentialKeys`, damit die Mengengleichheit etwas vergleicht.
 var credentialKeysUnderTest = []string{
 	"capture_dsn", "admin_dsn", "reader_dsn",
 	"api_token_reader", "api_token_admin", "api_tokens_reader", "api_tokens_admin",
 	"nats_url", "nats_stream_token",
+	"otlp_endpoint", "otlp_headers",
 }
 
 // TestZugangsdatenKlasseCodeUndTestSindMengengleich hält die Liste des Codes
@@ -89,13 +90,13 @@ func TestZugangsdatenKlasseCodeUndTestSindMengengleich(t *testing.T) {
 			t.Errorf("Schlüssel %q steht im Code, nicht im Test", key)
 		}
 	}
-	if len(inCode) != 9 {
-		t.Errorf("Zugangsdaten-Klasse trägt %d Schlüssel, erwartet 9", len(inCode))
+	if len(inCode) != 11 {
+		t.Errorf("Zugangsdaten-Klasse trägt %d Schlüssel, erwartet 11", len(inCode))
 	}
 }
 
 // TestConfigFromFileLehntZugangsdatenAb trägt `ADR-0088` Festlegung 1/4 —
-// die zugangsdaten-tragende Klasse: jeder ihrer neun Schlüssel in der Datei
+// die zugangsdaten-tragende Klasse: jeder ihrer elf Schlüssel in der Datei
 // bricht das Laden ab, unabhängig vom strikten Decoding. Die Fehlerzeile
 // benennt den Schlüssel **und** den Grund; damit ist sie von der
 // generischen „unbekannter Schlüssel"-Meldung des strikten Decodings
