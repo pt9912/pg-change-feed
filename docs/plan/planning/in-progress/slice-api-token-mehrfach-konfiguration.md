@@ -17,8 +17,8 @@ Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht
 
 **Abhängigkeit:** keine. Dieser Slice ist der **erste** der drei
 Umsetzungs-Slices zur Spec 0.15.0; er geht
-[`slice-tls-http-grpc-server`](slice-tls-http-grpc-server.md) und
-[`slice-otlp-metrik-export`](slice-otlp-metrik-export.md) voraus, weil alle drei
+[`slice-tls-http-grpc-server`](../open/slice-tls-http-grpc-server.md) und
+[`slice-otlp-metrik-export`](../open/slice-otlp-metrik-export.md) voraus, weil alle drei
 dieselben Dateien der Konfiguration (`internal/bootstrap/wiring.go`,
 `internal/bootstrap/config_file.go`), die Code-Tabelle der Meldungscodes und
 den Konfigurationsteil des Benutzerhandbuchs berühren und die Zugangsdaten-Klasse
@@ -95,7 +95,7 @@ am laufenden Container belegt und im Benutzerhandbuch beschrieben.
 der Konfigurationsdatei ([`ADR-0152`](../../adr/0152-zugangsdaten-klasse-elf-schluessel.md)
 Festlegung 1) wächst um vier Schlüssel: `api_tokens_reader`, `api_tokens_admin`
 (dieser Slice) und `otlp_endpoint`, `otlp_headers`
-([`slice-otlp-metrik-export`](slice-otlp-metrik-export.md)). Jeder Slice trägt
+([`slice-otlp-metrik-export`](../open/slice-otlp-metrik-export.md)). Jeder Slice trägt
 **genau seine zwei** Schlüssel ein: dieser Slice hebt die Klasse von **sieben auf
 neun**, der OTLP-Slice von neun auf elf. Begründung: (1) das Handbuch beschreibt
 den Ist-Zustand — `otlp_endpoint` in einer Verbotsliste, bevor es die Funktion
@@ -115,12 +115,12 @@ gehören nicht zur Klasse.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
-- **TLS** — [`slice-tls-http-grpc-server`](slice-tls-http-grpc-server.md): andere
+- **TLS** — [`slice-tls-http-grpc-server`](../open/slice-tls-http-grpc-server.md): andere
   Anforderung ([`LH-FA-SST-011`](../../../../spec/lastenheft.md)), andere
   Eingriffsstellen (Listener statt Token-Prüfung); ein gemeinsamer Slice machte
   den Wechsel-Beleg vom Transport abhängig.
 - **Die Schlüssel `otlp_endpoint` und `otlp_headers` in der Zugangsdaten-Klasse**
-  — [`slice-otlp-metrik-export`](slice-otlp-metrik-export.md) (Begründung oben,
+  — [`slice-otlp-metrik-export`](../open/slice-otlp-metrik-export.md) (Begründung oben,
   Punkt 1); die Adresse nimmt die Sendung an: der Plan dort nennt beide
   Schlüssel in §2.
 - **Neuladen der Token zur Laufzeit, Ablauffristen, Rotation, Hash-Form** —
@@ -488,9 +488,9 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 - **Steering-Loop-Eintrag:** (bei der Closure zu füllen; Kandidaten §5)
 - **Beobachtungs-Register (`../observations/`):** (bei der Closure zu füllen;
   zu lesen sind die in §6 genannten Einträge)
-- **Folge-Slices:** [`slice-tls-http-grpc-server`](slice-tls-http-grpc-server.md)
+- **Folge-Slices:** [`slice-tls-http-grpc-server`](../open/slice-tls-http-grpc-server.md)
   (TLS, nach diesem Slice) und
-  [`slice-otlp-metrik-export`](slice-otlp-metrik-export.md) (hebt die
+  [`slice-otlp-metrik-export`](../open/slice-otlp-metrik-export.md) (hebt die
   Zugangsdaten-Klasse von neun auf elf) — beides Dateien in `open/`
 - **Risiken aus §6:** (bei der Closure zu füllen, je genau ein Ausgang)
 - **Drei Paarungen:** (bei der Closure zu füllen: Anker · Folge-Slice · Register)
