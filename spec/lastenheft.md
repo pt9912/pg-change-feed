@@ -1,7 +1,7 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.14.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.15.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
 **Autor:** pt9912, **Datum:** 2026-09-12
@@ -1141,6 +1141,105 @@ bestehenden Wegwerf-/Beispielprogramme unter `examples/` erfüllen diese
 Anforderung nicht — sie sind unversioniert und nicht als eigenständiges,
 von Dritten konsumierbares Package veröffentlicht.
 
+### LH-FA-SST-010 — Metrik-Export über OpenTelemetry (OTLP)
+
+**Beschreibung:** Das System muss seine Betriebskennzahlen zusätzlich zur
+SQL-Sicht (`LH-FA-SST-004`) per OpenTelemetry-Protokoll (OTLP) aktiv an einen
+konfigurierten Empfänger übertragen können (Push). Übertragen werden dieselben
+Kennzahlen, die die SQL-Sicht der Betriebsschnittstelle liefert
+(`LH-QA-OPS-003`), ergänzt um den WAL-Rückstand des Capture-Slots
+(`LH-QA-REL-003`).
+
+**Akzeptanzkriterien:**
+
+- **Happy Path:** Given ein OTLP-Empfänger ist konfiguriert, when das System
+  läuft, then erhält der Empfänger die Kennzahlen wiederkehrend, und ein
+  übertragener Wert entspricht dem Wert, den die SQL-Sicht im selben Moment
+  liefert.
+- **Boundary:** Given kein Empfänger ist konfiguriert, when das System läuft,
+  then baut es keine Verbindung zu einem Empfänger auf, und Betrieb und
+  SQL-Sicht sind unverändert. Given der Empfänger ist nicht erreichbar oder
+  lehnt die Übertragung ab, when Änderungen erfasst werden, then laufen
+  Erfassung, Persistierung und Bestätigung unbeeinträchtigt weiter, der
+  Fehlschlag ist sichtbar, und die Übertragung setzt ein, sobald der Empfänger
+  wieder antwortet.
+- **Negative:** Given eine Export-Konfiguration, die nicht als gültig gelesen
+  werden kann, when das System startet, then scheitert der Start sichtbar mit
+  einem Konfigurationsfehler, nicht stillschweigend ohne Export.
+
+**Out-of-Scope:** Die SQL-Sicht und ihre Anforderung (`LH-FA-SST-004`,
+`LH-QA-OPS-003`) bleiben unverändert bestehen; der Export ersetzt sie nicht.
+Protokollvariante von OTLP, Bibliothek, Übertragungstakt, Namen und Einheiten
+der Kennzahlen sind Architektur- (ADR) bzw. Spezifikationsfragen (`SPEC-*`).
+Nicht gefordert: ein Pull-Endpunkt eines bestimmten Monitoring-Systems (etwa
+ein Scrape-Endpunkt), die Übertragung von Traces oder Logs, Dashboards und
+Alarmierung.
+
+### LH-FA-SST-011 — Transportverschlüsselung (TLS) der Netzwerk-Schnittstellen
+
+**Beschreibung:** Die Netzwerk-Schnittstellen des Systems für HTTP (einschließlich
+des SSE-Streams) und gRPC müssen über TLS betreibbar sein; Server-Zertifikat
+und privater Schlüssel stellt der Betreiber bereit.
+
+**Akzeptanzkriterien:**
+
+- **Happy Path:** Given TLS ist für die Netzwerk-Schnittstellen konfiguriert,
+  when ein Client das Server-Zertifikat als vertrauenswürdig führt und sich
+  verbindet, then ist die Verbindung verschlüsselt, und die Fähigkeiten der
+  Schnittstellen (`LH-FA-SST-006`, `LH-FA-SST-008`) sind fachlich gleichwertig
+  zum Betrieb ohne TLS nutzbar.
+- **Boundary:** Given TLS ist nicht konfiguriert, when das System startet,
+  then verhält es sich unverändert wie ohne diese Anforderung (unverschlüsselt).
+  Given TLS ist konfiguriert, when ein Client unverschlüsselt auf dieselbe
+  Adresse zugreift, then wird er nicht bedient — es gibt keinen stillen
+  Rückfall auf unverschlüsselten Betrieb.
+- **Negative:** Given das konfigurierte Zertifikat oder der konfigurierte
+  Schlüssel ist nicht lesbar, ungültig oder passt nicht zusammen, when das
+  System startet, then scheitert der Start sichtbar mit einem
+  Konfigurationsfehler, und das System läuft nie im unverschlüsselten Stand
+  weiter, obwohl TLS konfiguriert wurde.
+
+**Out-of-Scope:** Client-Zertifikate (gegenseitige Authentisierung), Neuladen
+von Zertifikat und Schlüssel ohne Neustart, Beschaffung und Erneuerung der
+Zertifikate. Die Verbindung zu NATS (`LH-FA-SST-007`, `LH-FA-SST-008`) und die
+Verbindungen zur PostgreSQL-Instanz sind nicht Gegenstand dieser Anforderung;
+die Verschlüsselung der NATS-Verbindung ist Sache der NATS-Konfiguration. Die
+TLS-Optionen der Client-Bibliotheken (`LH-FA-SST-009`) sind eine eigene,
+nachgelagerte Anforderung.
+
+### LH-FA-SST-012 — Unterbrechungsfreier Wechsel der API-Token
+
+**Beschreibung:** Je Token-Klasse der HTTP- und gRPC-Schnittstellen
+(lesend, administrativ) müssen mehrere Token gleichzeitig gültig sein können,
+damit ein Token gewechselt werden kann, ohne dass ein Client mit einem gültigen
+Token abgewiesen wird. Die bisherige Konfiguration mit je einem Token bleibt
+unverändert gültig.
+
+**Akzeptanzkriterien:**
+
+- **Happy Path:** Given je Token-Klasse sind ein bisheriges und ein neues Token
+  gültig, when Clients sich mit dem einen oder dem anderen anmelden, then
+  werden beide gleich bedient; given das bisherige Token wird danach aus der
+  Konfiguration entfernt, when ein Client es noch verwendet, then wird er
+  abgelehnt.
+- **Boundary:** Given nur die bisherige Konfiguration mit einem Token je
+  Klasse, when das System startet, then gilt dieses Token unverändert, ohne
+  jede neue Einstellung. Given derselbe Wert ist in beiden Klassen
+  konfiguriert, when er verwendet wird, then gilt die höhere Rechtsklasse. Ein
+  leerer Wert ist nie ein gültiges Token.
+- **Negative:** Given ein unbekanntes oder entferntes Token, when es verwendet
+  wird, then wird der Aufruf abgelehnt wie bisher, nicht stillschweigend
+  zugelassen. Given eine Token-Konfiguration, die nicht als gültig gelesen
+  werden kann, when das System startet, then scheitert der Start sichtbar mit
+  einem Konfigurationsfehler.
+
+**Out-of-Scope:** Ein Wechsel ist ein Konfigurationswechsel mit Neustart des
+Dienstes; das Neuladen der Token zur Laufzeit ist nicht gefordert. Ablauffristen,
+automatische Rotation, ein Token-Verwaltungsdienst und das Speichern von Token
+in Hash-Form sind nicht gefordert. Der Verbindungs-Token des NATS-Zustellwegs
+(`LH-FA-SST-008`) wird vom NATS-Server vergeben und gewechselt und ist nicht
+Gegenstand dieser Anforderung.
+
 ---
 
 ## 4. Nichtfunktionale Anforderungen
@@ -1192,9 +1291,14 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 ### LH-QA-PER-001 — Geringe Auswirkung auf die Quelle
 
 - **Anforderung:** Die Auswirkung auf schreibende Quelltransaktionen soll
-  minimiert werden.
-- **Messmethode:** Benchmark: Schreibdurchsatz/-latenz der Quelle mit und
-  ohne aktivierte CDC im Vergleich.
+  minimiert werden und eine festgelegte absolute Obergrenze nicht
+  überschreiten: die zusätzliche Commit-Latenz je Quelltransaktion durch
+  aktivierte CDC, in Millisekunden, gemessen in einer benannten Messumgebung.
+- **Messmethode:** Benchmark: dieselbe Folge einzeln committeter
+  Quelltransaktionen der Quelle mit und ohne aktivierte CDC; die zusätzliche
+  Commit-Latenz ist die Differenz der Gesamtdauern geteilt durch die Zahl der
+  Transaktionen. Wert und Messumgebung sind in `spec/pflichtenheft.md` §3
+  festgelegt ([`SPEC-025`](pflichtenheft.md), [`SPEC-036`](pflichtenheft.md)).
 
 ### LH-QA-PER-002 — Skalierbarkeit
 
@@ -1313,6 +1417,9 @@ Explizite Nicht-Anforderungen, die für das Gesamtsystem gelten:
 - TRUNCATE-Erfassung ist nicht gefordert.
 - Kein generisches Exactly-Once über externe Systeme hinweg
   (LH-QA-REL-004).
+- Kein Pull-Endpunkt eines bestimmten Monitoring-Systems (LH-FA-SST-010) und
+  keine gegenseitige TLS-Authentisierung der Netzwerk-Schnittstellen
+  (LH-FA-SST-011).
 
 Vorgesehene zukünftige Erweiterungen — die genannten Anforderungen bleiben
 bindend; zurückgestellt ist jeweils ihre Produktionsreife bzw. Ausbaustufe
@@ -1325,8 +1432,9 @@ bindend; zurückgestellt ist jeweils ihre Produktionsreife bzw. Ausbaustufe
 - Schema Evolution (LH-FA-SCH-001 ff. — Erkennung und definiertes Verhalten
   sind gefordert; eine darüber hinausgehende Evolutions-Behandlung ist
   zukünftige Erweiterung).
-- Produktionsreife Observability (LH-QA-OPS-001 ff. — Fähigkeiten
-  gefordert; ihre Betriebshärtung in Produktionsumgebungen steht aus).
+- Produktionsreife Observability (LH-QA-OPS-001 ff. und LH-FA-SST-010 —
+  Fähigkeiten gefordert; ihre Betriebshärtung in Produktionsumgebungen steht
+  aus, ebenso Dashboards, Alarmierung und die Übertragung von Traces).
 - High Availability (keine Anforderung dieses Lastenhefts).
 - Exportadapter, beispielsweise Kafka, RabbitMQ, HTTP/Webhooks oder
   Object Storage (keine Anforderung dieses Lastenhefts). NATS ausgenommen —
@@ -1373,3 +1481,4 @@ in dieser Tabelle (Decken-Regel).
 | 0.12.0 | 2026-09-19 | `LH-FA-SST-009` (offizielle, versionierte Client-Bibliotheken/SDKs für die bestehenden Zustellwege) neu ergänzt — abgegrenzt gegen die bereits bestehenden, unversionierten Wegwerf-Beispielprogramme unter `examples/` (erfüllen diese Anforderung nicht) und gegen eine bestimmte Sprachmatrix (Architektur-/Spezifikationsfrage); dieselbe Draft-Regel wie bei 0.4.0–0.11.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.13.0 | 2026-09-23 | `LH-FA-CFG-007` auf Transformationen begrenzt (Titel, Beschreibung, Boundary-Kriterium auf die Auflösung mehrerer Transformationen, Out-of-Scope-Verweis); das Routing auf Zustellziele als eigene Anforderung `LH-FA-CFG-008` herausgelöst — die Beschreibung von `LH-FA-CFG-007` verband beides mit „und/oder", sein Boundary-Kriterium nannte aber nur Routing-Regeln, sodass eine Abnahme nur für Transformationen nicht eindeutig war; dieselbe Draft-Regel wie bei 0.4.0–0.12.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.14.0 | 2026-10-01 | `LH-FA-CFG-008`: das Happy-Path-Kriterium sagt, was „zugestellt“ heißt — die Change ist über die Zugriffswege des Systems (Abruf oder Abonnement) unter dem Zustellziel auswählbar; die Anforderung wird inhaltlich nicht erweitert, die Klarstellung hält die Lesart fest, auf der die Abnahme beruht; dieselbe Draft-Regel wie bei 0.4.0–0.13.0, eigener Commit vor dem E2E-Slice der Routing-Welle | — |
+| 0.15.0 | 2026-10-04 | `LH-FA-SST-010` (Metrik-Export über OpenTelemetry/OTLP als aktiver Push, zusätzlich zur SQL-Sicht), `LH-FA-SST-011` (TLS der HTTP- und gRPC-Schnittstellen) und `LH-FA-SST-012` (mehrere gleichzeitig gültige API-Token je Klasse für einen unterbrechungsfreien Wechsel) neu ergänzt; `LH-QA-PER-001` von „minimiert“ auf eine absolute Obergrenze der zusätzlichen Commit-Latenz je Quelltransaktion in einer benannten Messumgebung gefasst (Wert und Umgebung im Pflichtenheft); §5: Zukunftsliste „Produktionsreife Observability“ neu gefasst, zwei Nicht-Anforderungen ergänzt; `LH-QA-OPS-003` und `LH-FA-SST-004` bleiben unverändert; dieselbe Draft-Regel wie bei 0.4.0–0.14.0, eigener Commit vor jedem umsetzenden Slice | — |
