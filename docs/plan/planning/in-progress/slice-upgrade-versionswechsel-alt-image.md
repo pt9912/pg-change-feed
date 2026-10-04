@@ -134,7 +134,7 @@ Jede gedruckte Zahl und jede Aussage der Belege trägt ihren Ursprung (*gemessen
 und gedruckter Zeile · *übernommen* · *abgeleitet*, [`AGENTS.md`](../../../../AGENTS.md) §3.12);
 eine nicht gefahrene Verallgemeinerung steht als *hergeleitet*.
 
-- [ ] **Phase U im Altserver-Runner (Liefer-Punkt 1).** `make test-sdk-altserver` fährt nach
+- [x] **Phase U im Altserver-Runner (Liefer-Punkt 1).** `make test-sdk-altserver` fährt nach
       B2 und der Schlussprüfung „Feed-Container läuft noch“ die Phase **U**: (1) Vorprüfung vor
       jedem Start: das `:dev`-Image ist geladen, sonst Exit 1 mit der Meldung „make image
       vorher“ (kein stiller Überspringschalter); ist die Start-Referenz gleich der Ziel-Referenz
@@ -157,7 +157,7 @@ eine nicht gefahrene Verallgemeinerung steht als *hergeleitet*.
       Runners nennt die Phase. *Erwartung (§3.12, nicht erprobt):* der Server 0.5.0 läuft mit
       konstantem Schema durch den Tausch; ein anderes Ergebnis ist ein **Befund**, kein Anlass,
       die Probe anzupassen.
-- [ ] **Negativ- und Mutationsproben (Liefer-Punkt 2).** Je Zusage eine Probe, die rot wird,
+- [x] **Negativ- und Mutationsproben (Liefer-Punkt 2).** Je Zusage eine Probe, die rot wird,
       mit Stelle, Instanz und gesehener Farbe (§3.12) in §7; mutiert wird nur an **Kopien des
       Runners im Scratchpad** (Edit/Write auf der Kopie, Aufruf `bash <Kopie>`; der Runner
       wechselt mit `cd "$(git rev-parse --show-toplevel)"` in die Repo-Wurzel). Erwartet:
@@ -281,9 +281,49 @@ Implementer misst nach und trägt Gefundenes und Nichtgefundenes in §7 ein:
 diff 2 -n -E 'sdk-altserver' -- harness/README.md
 diff 86 -n -E '@sha256:' -- . ':!docs' ':!.harness'
 diff 4 -n -E 'ghcr.io/pt9912/pg-change-feed:0\.5\.0' -- . ':!docs/reviews' ':!docs/plan' ':!.harness/baseline'
-diff 5 -n -i -E 'versionswechsel|desselben .?:dev|desselben Images' -- docs/user tools/harness harness/README.md
+diff 8 -n -i -E 'versionswechsel|desselben .?:dev|desselben Images' -- docs/user tools/harness harness/README.md
 diff 1 -n -E 'run-integration-tests' -- harness/targets harness/mk
 ```
+
+  **Nachmessung am `diff`-Stand (Implementer, gemessen):** die Zeile zu „desselben Images“ steht
+  bei 8 statt 5, weil das Muster das Wort „versionswechsel“ trifft: der Slice-Name im
+  Herkunftsanker der README-Zeile `make test-sdk-altserver`, der Kopfkommentar der Phase U und die
+  Meldung `ALTSERVER U ÜBERSPRUNGEN` des Runners (`git grep -n -i -E 'versionswechsel|desselben .?:dev|desselben Images' -- docs/user tools/harness harness/README.md`).
+  Kein Träger zu „desselben Images“ kam hinzu: `docs/user/e2e-abdeckung.md` und
+  `tools/harness/run-integration-tests.sh` sind unverändert (`git diff 8d61e8c6b8a13fd4b1284126e836fe07d2d2b08f --stat -- docs/user tools/harness/run-integration-tests.sh` leer);
+  der Satz in der README-Zeile `make test-integration` wiederholt die Wörter nicht. Gefunden:
+  die vier übrigen Soll-Zeilen am `diff`-Stand stimmen (2, 86, 4, 1); nicht gefunden: ein
+  Träger außerhalb von `harness/` und `tools/harness/`, der den Upgrade-Tausch als „derselbe
+  Bau“ beschreibt und nicht schon vor dem Slice dort stand.
+
+**Entscheidung zum Ziel-Image (Implementer, gemessen):** `compose.yaml` trägt das Ziel. Probe:
+`docker compose -f compose.yaml -f <Override mit services: {}> config --images` nennt
+`ghcr.io/pt9912/pg-change-feed:dev`; der Tausch mit diesem Override endete im Lauf mit dem Image
+`:dev` (gedruckte Zeile unten, Image-ID des neuen Containers gleich der des Ziel-Images). Die
+Konstante `DEV_IMAGE` entfällt; der Runner liest das Ziel vor jedem Start aus
+`docker compose -f compose.yaml config` (`awk` auf dem Block des Dienstes), es entsteht weder ein
+`@sha256:`- noch ein Tag-Literal.
+
+**Beleg der Phase U (Implementer, gemessen am Arbeitsstand, Parent `8d61e8c6`, nach `make image`
+mit Exit 0):** `make test-sdk-altserver` Exit 0, gedruckt `ALTSERVER U: Tausch 4fb31016dd0c ->
+affaa35ae5b7, Image ghcr.io/pt9912/pg-change-feed:0.5.0@sha256:f99a77ff335a5fa2e84937771337d03711b6ad4b4ac9fb038dd6e310778707ce
+-> ghcr.io/pt9912/pg-change-feed:dev, Datenstand vor dem Tausch (4 Zeilen, Prüfsumme
+2e5ff42113514778710c1e905ddd4e3a) identisch lesbar, danach eingefügte Zeile erfasst (Position
+30850624), Phase U 7 s`, Schlusszeile `Altserver-Messung grün — … der Tausch auf
+ghcr.io/pt9912/pg-change-feed:dev erhält den Datenstand (U)`. Die Erwartung (Server 0.5.0
+übersteht den Tausch bei konstantem Schema) trat ein; kein Befund.
+
+| Zusage | mutierte Eingabe (Kopie des Runners im Scratchpad) | Instanz | gesehenes Rot |
+|---|---|---|---|
+| M1 Datenstand identisch | `UPDATE cdc.change SET new_data = …` auf die B0-Zeile nach dem Tausch (als Superuser, kein Schutz hielt ab, kein Rückfall nötig) | PostgreSQL des Runners | Exit 1, `U ROT — der Datenstand der Quelle über cdc.changes ist nach dem Tausch nicht identisch (vorher: 4 68c4027e…, nachher: 4 c80fd640…)` |
+| M2 Erfassung setzt fort | `docker stop` des Feed-Containers nach dem Tausch | Docker-Daemon des Runners | Exit 1, `U ROT — die nach dem Tausch eingefügte Zeile (id=9102) erscheint nicht über cdc.changes, die Erfassung setzt nicht fort` |
+| M3 Tausch wechselt den Build | Override des Tauschs trägt weiter `image: <SDK_ALTSERVER_IMAGE>` | Docker-Daemon des Runners | Exit 1, `U ROT — der neue Container läuft nicht den Ziel-Build (Referenz …:0.5.0@sha256:f99a77ff…, Image-ID sha256:af59013f… ; Ziel …:dev, sha256:f2ab8eb9…)` |
+
+B3: `SDK_ALTSERVER_IMAGE=ghcr.io/pt9912/pg-change-feed:dev make test-sdk-altserver` endet mit
+Exit 2 über `make` (Runner Exit 1) an `B1 ROT`, der Lauf kommt nicht bis U; mit
+`SDK_ALTSERVER_WEITER=1` zusätzlich B2 rot in allen drei Sprachen und `ALTSERVER U ÜBERSPRUNGEN:
+die Start-Referenz ghcr.io/pt9912/pg-change-feed:dev ist die Ziel-Referenz …`. Die Übertragung
+der Mutationen auf andere Tabellen und Operationen ist *hergeleitet*.
 
   **Erwartung am `diff`-Stand** (hergeleitet): `harness/README.md` nennt `sdk-altserver` in
   einer Zeile mehr (der Satz in der Zeile `make test-integration`); `@sha256:` bleibt bei 86
