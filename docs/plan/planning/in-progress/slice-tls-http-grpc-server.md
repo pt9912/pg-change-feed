@@ -274,7 +274,7 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       (Zeile `make test-integration`: ein Satz zum TLS-Rundlauf); gemeldete
       Träger fremder Dateien mit der Closure nachgezogen (§3 Suchlauf,
       [`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7: benannte Spec-Lücke).
 
 **Beleg des Implementers** (Lauf am Arbeitsstand dieses Zuges; jede Angabe
 ist **gemessen** am genannten Befehl, die Verallgemeinerungen tragen das Wort
@@ -413,8 +413,8 @@ ist **gemessen** am genannten Befehl, die Verallgemeinerungen tragen das Wort
   Host-Benutzer ist (der Kommentar im Runner nennt den Grund; Schlüssel sind
   Wegwerf-Material). F-5: die Kommentare der C#- und Kotlin-gRPC-Beispiele
   nennen den Server als TLS-fähig und das Beispiel als Klartext-Client.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt (gemessen: `docs/plan/planning/` trägt keine flache Welle-Datei) und „die nächste Welle-Closure“ damit keine Adresse ist.
 
 ## 3. Plan (vor Code)
@@ -588,41 +588,72 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   oder einen Verbindungsabbruch geben; „nicht bedient“
   ([`LH-FA-SST-011`](../../../../spec/lastenheft.md)) heißt: keine Antwort der API,
   auch nicht mit gültigem Token. Das konkrete Verhalten ist *nach Kenntnisstand*,
-  die Unit-Tests und die Runner-Phase messen es. — **Ausgang:** offen bis
-  Closure.
+  die Unit-Tests und die Runner-Phase messen es. — **Ausgang: entfallen.**
+  Gemessen: `net/http` antwortet auf `http://` mit `400` und dem Text „Client sent
+  an HTTP request to an HTTPS server.“ (Antwort des Servers, keine der API),
+  `grpc-go` endet mit `Unavailable`; Beleg: die Klartext-Unit-Tests beider
+  Pakete, die gedruckte Zeile `CLEARTEXT …` des Runners und der eigene Lauf der
+  Verifikation (§1, `make test-integration` Exit 0).
 - **Der Negativ-Beleg „kein Klartext“ trifft einen noch nicht bereiten Server**
   und belegt dann eine Abwesenheit statt einer Auswahl
   ([`BEO-PGC/ready-ist-nicht-verbunden`](../observations/BEO-PGC/ready-ist-nicht-verbunden/observation.md),
   zwei Evidenz-Dateien am Planungsstand gezählt): gegen den Vorsatz steht die
-  Reihenfolge in §2 (3), TLS-Erfolg zuerst. — **Ausgang:** offen bis Closure.
+  Reihenfolge in §2 (3), TLS-Erfolg zuerst. — **Ausgang: entfallen.** Der
+  Klartext-Versuch folgt im Runner dem belegten TLS-Erfolg (Runner gelesen, eigener
+  Lauf der Verifikation grün); die Prüfung „Port nach beendetem Container“ ist in
+  der Fixrunde entfernt (Review F-2, das Register trägt die Klasse als weiteren
+  Beleg bei `negativtest-ohne-bindung-an-seine-eingabe`).
 - **Zertifikat im Image oder im Repo:** ein erzeugter privater Schlüssel landet
   in einer getrackten Datei oder im Image. Gegenmaßnahme: `certgen` schreibt in
   das Temp-Verzeichnis des Runners, nichts davon wird committet; der Reviewer
-  prüft `git status` am Ende der Phase. — **Ausgang:** offen bis Closure.
+  prüft `git status` am Ende der Phase. — **Ausgang: entfallen.** Der
+  Runner-Zähler der `.pem`-Dateien im Arbeitsbaum steht auf 0, und
+  `git status --porcelain` ist nach dem Lauf der Verifikation leer.
 - **Der Prozess liest die Zertifikatsdateien nicht** (Dateirechte, Benutzer des
   distroless-Images): die Runner-Phase scheitert dann am Start, nicht an der
   Spec. Die Rechte der Hilfsdateien folgen dem Muster der
-  Konfigurationsdatei der Leerlauf-Phasen (`chmod`). — **Ausgang:** offen bis
-  Closure.
+  Konfigurationsdatei der Leerlauf-Phasen (`chmod`). — **Ausgang: entfallen.** `chmod 0644` auf die Wegwerf-Dateien
+  (der Container läuft als `nonroot`, Kommentar im Runner); der Start mit gültigem
+  Paar lief im Container bis `healthy` (Lauf der Verifikation).
 - **Spec-Lücke zu „ungültig“:** ein abgelaufenes oder für den falschen Namen
   ausgestelltes Zertifikat lädt `tls.LoadX509KeyPair`; der Server startet, der
   Client lehnt ab. Der Plan nennt die Grenze (§1), die Spec benennt „ungültig“
-  nicht näher. — **Ausgang:** offen bis Closure (Kandidat: benannte Spec-Lücke
-  im Lerneintrag).
+  nicht näher. — **Ausgang: weiter offen** als benannte Spec-Lücke (Lerneintrag in §7;
+  Handbuch und der Test `TestNewTLSConfigPruftAblaufUndNamenNicht` nennen die
+  Grenze). Ein Spec-Nachtrag zu „ungültig“ ist ein Zug des Auftraggebers oder des
+  Architects; die Adresse ist die Meldung im Bericht dieser Closure.
 - **Zwei Konfigurationswege lesen verschieden:** `ConfigFromEnv` und
   `mergeConfig` bilden die Konfiguration getrennt; die Paar-Prüfung steht in
   **einer** Funktion, beide Wege rufen sie
   ([`BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke`](../observations/BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke/observation.md),
   fünf Evidenz-Dateien am Planungsstand; der Container-Start der Runner-Phase
-  ist der Beleg über den echten Weg). — **Ausgang:** offen bis Closure.
+  ist der Beleg über den echten Weg). — **Ausgang: entfallen.** Eine Funktion
+  `validateTLSPair` in `internal/bootstrap/tls.go`, von beiden Wegen gerufen; die
+  Mutation `&&` zu `||` färbt beide Wege rot (Verifikation M1), und der Runner
+  startet den Container über die Umgebung **und** über die Datei.
 - **Die SDK- und Beispiel-Aussage im Handbuch ist breiter als ihre Messung:**
   „die Client-Packages bieten keine TLS-Einstellung“ gälte für drei Sprachen;
   §2 Liefer-Punkt 3 verlangt je Sprache eine Messung
   ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
-  Instanz B). — **Ausgang:** offen bis Closure.
+  Instanz B). — **Ausgang: entfallen.** Das Handbuch ist in der Fixrunde auf das
+  Gemessene zurückgenommen (Review F-1); der Schluss „die gRPC-Beispiele
+  verbinden deshalb nicht mit einem TLS-Server“ steht als *hergeleitet*, für
+  Client-Pakete und HTTP-/SSE-Clients trifft es keine Aussage. Der Beispiel-Nachzug
+  ist der Folge-Slice
+  [`slice-examples-grpc-tls`](../open/slice-examples-grpc-tls.md).
 - **Die neue Runner-Phase stört die Folge-Phasen** (Container mit Override neu
   erzeugt; Zustand muss am Phasen-Ende ohne Override wiederhergestellt sein). —
-  **Ausgang:** offen bis Closure.
+  **Ausgang: entfallen.** Alle Folge-Phasen liefen im Lauf der Verifikation grün
+  im Klartext, der Container ist ohne Override wiederhergestellt
+  (`make test-integration` Exit 0, keine `cdc-*`-Reste).
+- **Die Bindung des Slot-Zählers der Runner-Phase ist hergeleitet** (in der
+  Fixrunde und der Verifikation sichtbar geworden, kein Risiko des Planungsstands):
+  die Mutation „Laden hinter `NewStream`“ ist am Runner nicht gefahren; die Zusage
+  „kein Slot bei Ladefehler“ ruht auf dem Code-Aufbau und dem Unit-Test hinter der
+  gefahrenen Mutation (`Run` lädt nach `postgresstorage.New`: rot). —
+  **Ausgang: weiter offen**
+  ([`BEO-PGC/runner-zaehler-ohne-gefahrene-mutation`](../observations/BEO-PGC/runner-zaehler-ohne-gefahrene-mutation/observation.md),
+  1×).
 
 ## 7. Closure-Notiz
 
@@ -638,22 +669,101 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-*Der Plan füllt diese Sektion nicht; sie wird bei der Closure vor dem
-`git mv` nach `done/` geschrieben (§2: die Paarungs-Zeile nach dem `git mv`).*
-
-- **Was hat funktioniert:** (bei der Closure zu füllen)
-- **Was ging anders als geplant:** (bei der Closure zu füllen)
-- **Steering-Loop-Eintrag:** (bei der Closure zu füllen; Kandidaten §5)
-- **Beobachtungs-Register (`../observations/`):** (bei der Closure zu füllen;
-  zu lesen sind die in §6 und §8 genannten Einträge)
-- **Folge-Slices:** `sdk-tls-optionen` — **keine Datei**: er wartet auf die
-  Folge-Anforderung für die SDK-TLS-Optionen
-  ([`ADR-0150`](../../adr/0150-tls-und-mehrfach-token.md) §Konsequenzen) und wird
-  erst dann angelegt; bis dahin ist die Adresse dieses Aufschubs die
-  Slice-Closure selbst (der Planner legt ihn an oder benennt den Träger mit
-  Adresse)
-- **Risiken aus §6:** (bei der Closure zu füllen, je genau ein Ausgang)
-- **Drei Paarungen:** (bei der Closure zu füllen: Anker · Folge-Slice · Register)
+- **Was hat funktioniert:** Der Schnitt trug: TLS ist Sache von Bootstrap und
+  Driving Adaptern, `.a-check.yml` blieb unverändert, die Adapter nehmen eine
+  fertige `*tls.Config`. Die Mutationen je Zusage (zehn Zeilen in §2, dazu die
+  sieben der Verifikation, HTTP und gRPC je am eigenen Server) färbten rot; der
+  Reviewer fand mit einer eigenen Mutation die Prüfung, die an keiner Eingabe rot
+  werden konnte (F-2), vor dem Merge. Die Reihenfolge „erst TLS-Erfolg, dann
+  Klartext-Versuch“ im Runner hielt die Klasse
+  [`BEO-PGC/ready-ist-nicht-verbunden`](../observations/BEO-PGC/ready-ist-nicht-verbunden/observation.md)
+  fern (vermieden, nicht eingetreten; keine neue Datei, bleibt 2×).
+- **Was ging anders als geplant:** (1) Der Plan sagte „ohne geöffneten Port“ zu;
+  die Prüfung las einen beendeten Container und entfiel in der Fixrunde samt der
+  Aussage in Plan, Handbuch, `harness/README.md` und Runner-Zeile (Review F-2).
+  (2) Das Handbuch trug zunächst eine Verallgemeinerung über Client-Pakete und
+  HTTP-/SSE-Clients, die nicht gemessen war; es sagt nach der Fixrunde nur das
+  Gemessene (Review F-1). (3) Die Datei `internal/bootstrap/tls.go` entstand statt
+  eines Einbaus in `wiring.go` (§3, Implementer-Nachzug). (4) Der Beispiel-Nachzug
+  (Review F-5) war im Plan nicht als Slice benannt; er steht jetzt als Datei.
+  Die Verifikation fuhr die Runner-Mutation „Laden hinter `NewStream`“ nicht
+  (rund fünfzehn Minuten); sie bleibt *hergeleitet*.
+- **Steering-Loop-Eintrag:** Benannte Spec-Lücke, keine verkörperte Regel (ohne
+  `liegt in`): [`SPEC-034`](../../../../spec/pflichtenheft.md) nennt ein
+  Zertifikat „nicht lesbar, ungültig oder passt nicht zusammen“, sagt aber nicht,
+  ob Ablauf und Name beim Start geprüft werden; `tls.LoadX509KeyPair` prüft
+  beides nicht (gemessen: `TestNewTLSConfigPruftAblaufUndNamenNicht` lädt ein
+  abgelaufenes Zertifikat ohne Fehler), der Server startet, der Client lehnt ab.
+  Handbuch und Plan nennen die Grenze. Ein Spec-Nachtrag ist ein Zug des
+  Auftraggebers oder des Architects, nicht dieser Closure; die Adresse ist die
+  Meldung im Bericht an den Hauptlauf. Zweiter Lerninhalt, **gemessen** (Unit-Tests
+  und Runner): `net/http` beantwortet einen Klartext-Aufruf auf einem TLS-Port mit
+  `400` und Text, `grpc-go` beendet den Verbindungsaufbau (`Unavailable`) — „nicht
+  bedient“ heißt hier „keine Antwort der API“, nicht „keine Antwort“.
+- **Beobachtungs-Register (`../observations/`):** Weitere Datei
+  `evidence/slice-tls-http-grpc-server.md` in
+  [`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`](../observations/BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe/observation.md)
+  (Review F-2, MEDIUM, daher Datei trotz Deckel; **neue Form**: Abwesenheits-Prüfung
+  gegen einen beendeten Container, ein Beleg über einen Gegenstand, der beim Lesen
+  nicht mehr existiert; der Mechanismus ist derselbe wie dort — eine Aussage ohne
+  Bindung an ihre Eingabeseite —, ein eigenes Verzeichnis würde die Klasse
+  spalten); der Zähler folgt aus den Dateien und steht bei 26 (`ls evidence`).
+  Neu angelegt
+  [`BEO-PGC/runner-zaehler-ohne-gefahrene-mutation`](../observations/BEO-PGC/runner-zaehler-ohne-gefahrene-mutation/observation.md)
+  (1×, Ausgang des Risikos „weiter offen“). Kein Zuwachs bei
+  [`BEO-PGC/ready-ist-nicht-verbunden`](../observations/BEO-PGC/ready-ist-nicht-verbunden/observation.md)
+  (bleibt 2×, siehe oben). Die in §8 genannten Einträge mit mindestens drei
+  Dateien sind mit diesem Slice berührt und haben ihre Gegenmaßnahme getragen
+  (Container-Start der Runner-Phase für `adapter-unittest-verdeckt-bootstrap-luecke`,
+  Gegenprobe je Negativfall für `negativtest-ohne-bindung-an-seine-eingabe`,
+  Handbuch-Liefer-Punkt samt Historienzeile 1.96); für sie entstand keine weitere
+  Datei, außer der genannten. Der Eintrag `negativtest-ohne-bindung-an-seine-eingabe`
+  war schon vor dieser Closure über der Schwelle (Ausgang *verkörpert*); die Closure
+  eines Slice liest ihn nicht neu, kein Kandidat der Schärfung. Kein Eintrag mit
+  `evidence/` ≥ 3 ist neu über die Schwelle gewachsen.
+- **Validator-Feststellung (Modul 8):** Der Slice liefert Betreiber-Wert
+  (verschlüsselte HTTP-/gRPC-Schnittstelle, [`LH-FA-SST-011`](../../../../spec/lastenheft.md)).
+  Belegt am Realserver (Runner-Phase, Verifikation: TLS-Erfolg, Klartext nicht
+  bedient, `--healthcheck` gesund, fünf Negativstarts mit Code im Log). Der
+  Nutzerbedarf selbst (ein Betreiber betreibt den Server hinter eigenem
+  Zertifikat, ohne Proxy) ist **nicht** am realen Bedarf geprüft; ein
+  Validator-Lauf ist nach dem nächsten Release sinnvoll, mit Token-Wechsel und
+  OTLP (Betreiber-Oberfläche als Ganzes). Release-Folge dieser Closure: keine
+  (kein SDK-Zug, ein Release braucht eine Freigabe).
+- **Folge-Slices:**
+  [`slice-examples-grpc-tls`](../open/slice-examples-grpc-tls.md) (TLS-fähige
+  gRPC-Beispiele in Go, C# und Kotlin; Review F-5 und Verifikation) — Datei in
+  `open/`, keine harte Abhängigkeit, kein SDK-Release; die Beispiele bauen ihren
+  Kanal selbst, deshalb muss er nicht auf den SDK-Slice warten. Und
+  `sdk-tls-optionen` — **keine Datei**: er wartet auf eine Folge-Anforderung im
+  Lastenheft für die TLS-Optionen der SDK-Packages
+  ([`ADR-0150`](../../adr/0150-tls-und-mehrfach-token.md) §Konsequenzen; das
+  Lastenheft nennt sie „eigene, nachgelagerte Anforderung“). Voraussetzung: dieser
+  Slice als Server-Beleg (erfüllt) und die Anforderung selbst — ein Spec-Zug des
+  Auftraggebers oder des Architects, den der Planner nicht anlegt. Adresse dieses
+  Aufschubs ist diese Notiz; der Slice wird mit der Anforderung als Datei in
+  `open/` angelegt.
+- **Risiken aus §6:** neun, je ein Ausgang in §6 selbst: Klartext-Verhalten
+  entfallen (gemessen) · Negativ trifft nicht bereiten Server entfallen ·
+  Zertifikat im Repo entfallen · Dateirechte entfallen · Spec-Lücke Ablauf und Name
+  weiter offen (Lerneintrag) · zwei Konfigurationswege entfallen · SDK-/Beispiel-Aussage
+  entfallen (Folge-Slice `examples-grpc-tls`) · Runner-Phase stört Folge-Phasen
+  entfallen · Runner-Slot-Zähler hergeleitet weiter offen (BEO angelegt).
+- **Drei Paarungen:** (a) *Anker* — kein Eintrag trägt `liegt in`
+  (nichts verkörpert); entfällt. (b) *Folge-Slice* —
+  [`slice-examples-grpc-tls`](../open/slice-examples-grpc-tls.md) existiert in
+  `open/`; `sdk-tls-optionen` ist als Aufschub mit Adresse benannt, **keine**
+  Datei, und trägt deshalb keine Paarung. (c) *Register* —
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`,
+  `BEO-PGC/runner-zaehler-ohne-gefahrene-mutation`,
+  `BEO-PGC/ready-ist-nicht-verbunden` und die in §6/§8 genannten Kennungen
+  existieren als Verzeichnisse mit nicht leerem `evidence/` (Messung nach dem
+  `git mv`). Träger fremder Dateien: der Suchlauf (§3) ist am Endstand gelesen und
+  vom Implementer berichtet; die Links der Verweise auf diese Datei sind im
+  Reconcile-Commit nach dem Move nachgezogen (Slice
+  [`slice-otlp-metrik-export`](../open/slice-otlp-metrik-export.md), Plan und
+  Verifikation des Vorgängers `slice-api-token-mehrfach-konfiguration`, deren
+  Review/Verifikation).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

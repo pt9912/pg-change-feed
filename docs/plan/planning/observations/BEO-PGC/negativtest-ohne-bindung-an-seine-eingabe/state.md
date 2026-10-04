@@ -37,7 +37,8 @@ Träger“ — eine Gegenentscheidung des Architects ist ein neues Verdikt):
   einer Abfrage-Eingabe; er ist im Slice gebunden (Test mit Run einer fremden Quelle,
   Mutation danach rot), der Reviewer fand ihn vor dem Merge.
 
-Zähler (abgeleitet): **25×** (evidence/slice-meldungscodes-kennungsfreie-ausgaben.md,
+Zähler (abgeleitet): **26×** (evidence/slice-tls-http-grpc-server.md,
+evidence/slice-meldungscodes-kennungsfreie-ausgaben.md,
 evidence/slice-sdk-sse-client-schema-table-filter.md,
 evidence/slice-routing-nats-subjekt.md,
 evidence/slice-routing-antragsweg.md,
@@ -60,7 +61,14 @@ evidence/slice-sdk-kotlin-cloudsmith.md,
 evidence/slice-harness-suchlauf-nachmessen.md) —
 **Schwelle erreicht**; der Lese-Schritt der Closure von `welle-backfill-bestand`
 liest den Eintrag mit (11×), der Lese-Schritt der nächsten Welle-Closure
-(`welle-transformationen`) den zwölften bis neunzehnten Beleg. Der fünfundzwanzigste Beleg
+(`welle-transformationen`) den zwölften bis neunzehnten Beleg. Der sechsundzwanzigste Beleg
+(`slice-tls-http-grpc-server`, Review F-2, MEDIUM, daher Datei trotz Deckel) trifft eine
+**Abwesenheits-Prüfung gegen einen beendeten Container**: „kein Klartext-Server auf der
+Adresse“ wurde gelesen, nachdem der Prozess endete, und konnte an keiner Eingabe rot werden;
+die Fixrunde nahm die Prüfung und die Aussage „ohne geöffneten Port“ zurück (Ausprägung: die
+Eingabeseite einer Abwesenheits-Aussage ist ein **lebender Gegenstand** zum Zeitpunkt des
+Lesens). Neue Form (anderer Träger-Typ: Runner-Phase, kein Fake); die Regel hat mit dem
+Reviewer vor dem Merge gewirkt, kein Kandidat der Schärfung. Der fünfundzwanzigste Beleg
 (`slice-meldungscodes-kennungsfreie-ausgaben`, Review F-1, HIGH, daher Datei trotz Deckel)
 trifft einen **Ausnahme-Zweig eines Wächter-Skripts**: die Shell-Kommentar-Ausnahme von
 `tools/harness/ausgabe-kennungen-check.sh` war im Tabellentest nicht ausgeübt (`skip_sh` wirkungslos:
