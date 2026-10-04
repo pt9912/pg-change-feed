@@ -33,6 +33,7 @@ internal static class PhaseEnvironment
     internal static string NatsStreamToken => Required("PGCHANGEFEED_NATS_STREAM_TOKEN");
     internal static string SourceId => Required("PGCHANGEFEED_SOURCE_ID");
     internal static string HttpPublication => Required("PGCHANGEFEED_HTTP_PUBLICATION");
+    internal static string AltServerHttpText => Required("PGCHANGEFEED_ALTSERVER_HTTP_TEXT");
     internal static string RuleSourceKey => Required("PGCHANGEFEED_RULE_SOURCE_KEY");
     internal static string RuleTargetKey => Required("PGCHANGEFEED_RULE_TARGET_KEY");
 

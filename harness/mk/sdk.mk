@@ -160,3 +160,27 @@ test-sdk-csharp-integration: ## C#-SDK-Realserver-Integrationstest (compose + in
 .PHONY: test-sdk-python-integration
 test-sdk-python-integration: ## Python-SDK-Realserver-Integrationstest (compose + integration-Stufe, vierzehn Phasen — vier ohne Regel, eine mit Fehlercode, vier mit rename_column-Regel, vier mit Routing-Regeln, eine mit Tabellenfilter; Werkzeug, kein Gate; ADR-0110)
 	@bash tools/harness/run-sdk-python-integration-tests.sh
+
+# `test-sdk-kompat` misst die Kompatibilität der veröffentlichten SDK-Packages
+# 0.6.0 gegenüber 0.5.0 (ADR-0145): je Sprache ein Gast-Programm unter
+# tools/harness/sdk-kompat/, das jede Konstruktor- und Aufrufform der
+# 0.5.x-Fehlertypen benutzt — gebaut und gelaufen gegen 0.5.0 (A1), dieselben
+# Binärdateien gegen 0.6.0 (A2), die Gegenrichtung (A3) und die Quellseite
+# samt null-Matrix (A5). Docker-only; Basis ist die Stufe `build` des
+# SDK-Dockerfiles. Kein Gate (Paketbezug braucht Netz, `make gates` bleibt
+# netzlos); SDK_KOMPAT_NEU=registry misst die veröffentlichten Pakete statt
+# der Artefakte von `make sdk-pack-*`. Vertrag: harness/targets/sdk-kompat.md.
+.PHONY: test-sdk-kompat
+test-sdk-kompat: ## SDK 0.6.0 gegen 0.5.0: Gast-Programme je Sprache, Binär- und Quellkompatibilität der Fehlertypen (Werkzeug, kein Gate; ADR-0145)
+	@bash tools/harness/run-sdk-kompat-tests.sh
+
+# `test-sdk-altserver` fährt die drei Realserver-Fehlerfälle der 0.6.0-SDKs
+# gegen einen Server vor 0.6.0 (ADR-0145): dieselbe Compose-Umgebung wie die
+# SDK-Realserver-Runner, nur der Feed-Container ist das Image 0.5.0
+# (Override-Datei im Temp-Verzeichnis, `compose.yaml` bleibt unverändert;
+# SDK_ALTSERVER_IMAGE übersteuert das Image). Belegt: der Fehlerkörper trägt
+# kein `code` (B1), die Eigenschaft bleibt in allen drei Sprachen leer (B2).
+# Kein Gate (DB-Zugang, Docker, Netz). Vertrag: harness/targets/sdk-altserver.md.
+.PHONY: test-sdk-altserver
+test-sdk-altserver: ## SDK 0.6.0 gegen den Server 0.5.0: Fehlertypen ohne Meldungscode, Rohdraht-Probe (compose + integration-Stufen; Werkzeug, kein Gate; ADR-0145)
+	@bash tools/harness/run-sdk-altserver-tests.sh

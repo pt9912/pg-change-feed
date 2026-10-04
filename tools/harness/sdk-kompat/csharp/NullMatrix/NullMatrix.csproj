@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Übersetzungs-Matrix der Aufrufe mit dem null-Literal (nur Übersetzung,
+       kein Lauf): derselbe Quelltext gegen $(PgcfVersion). -->
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PgcfVersion Condition="'$(PgcfVersion)' == ''">0.5.0</PgcfVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PgChangeFeed.Client" Version="$(PgcfVersion)" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Gast-Programm der Kompatibilitätsmessung (make test-sdk-kompat): bindet
+       das veröffentlichte Package PgChangeFeed.Client in der Version
+       $(PgcfVersion) und übersetzt den Quelltext $(GastQuelle)/Program.cs —
+       alt: nur Formen der 0.5.x-Fehlertypen, neu: Formen mit Meldungscode. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>Gast</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <PgcfVersion Condition="'$(PgcfVersion)' == ''">0.5.0</PgcfVersion>
+    <GastQuelle Condition="'$(GastQuelle)' == ''">alt</GastQuelle>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(GastQuelle)/Program.cs" />
+    <PackageReference Include="PgChangeFeed.Client" Version="$(PgcfVersion)" />
+  </ItemGroup>
+
+</Project>
