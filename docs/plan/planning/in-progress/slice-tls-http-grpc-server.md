@@ -265,8 +265,10 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       (Kennungen in diesem Plan verlinkt), `make test`, `make test-store`
       und `make test-integration` Exit 0, `make image` Exit 0 (der Zug ändert
       Build-Kontext-Dateien), `make a-check` Exit 0.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      ([`review-slice-tls-http-grpc-server`](../../../reviews/review-slice-tls-http-grpc-server.md),
+      F-1 und F-2 MEDIUM in der Fixrunde behoben;
+      `.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (Zeile `make test-integration`: ein Satz zum TLS-Rundlauf); gemeldete
