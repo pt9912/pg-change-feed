@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# bench-source-impact.sh — LH-QA-PER-001-Beleg: Schreibdurchsatz/-latenz derselben Insert-Last
-# auf dieselbe Quelltabelle, einmal ohne jeden Replication-Slot/Capture-
-# Prozess (Phase "ohne CDC") und einmal mit aktivem Slot und laufendem
-# Feed-Container (Phase "mit CDC"). Je Phase mehrere Läufe, Median als
-# Kennzahl (Vorbild: d-checks bench-fixture.sh).
-# Verdikt (ADR-0155, SPEC-025): die zusätzliche Latenz je Quelltransaktion
+# bench-source-impact.sh — Schreiblatenz derselben Insert-Last auf dieselbe
+# Quelltabelle, einmal ohne jeden Replication-Slot/Capture-Prozess (Phase
+# "ohne CDC") und einmal mit aktivem Slot und laufendem Feed-Container
+# (Phase "mit CDC"). Je Phase mehrere Läufe, Median als Kennzahl (Vorbild:
+# d-checks bench-fixture.sh).
+# Verdikt: die zusätzliche Latenz je Quelltransaktion
 # Δ = (mit CDC − ohne CDC) / N darf max(0,10 ms; 1,5 × t_sync) nicht
-# überschreiten; t_sync ist die im selben Lauf mit pg_test_fsync gemessene
-# Festschreib-Latenz des Datenträgers der Messinstanz. Exit 1 bei Δ über der
-# Grenze, Exit 2 wenn t_sync nicht messbar ist (kein Rückfall auf eine
+# überschreiten; t_sync ist der Median von T_SYNC_SAMPLES im selben Lauf mit
+# pg_test_fsync gemessenen Festschreib-Latenzen (ADR-0155). Exit 1 bei Δ über
+# der Grenze, Exit 2 wenn t_sync nicht messbar ist (kein Rückfall auf eine
 # relative Schwelle).
 # N und RUNS sind bewusst groß gewählt: Jede einzelne Insert-Anweisung
 # läuft als eigene, separat committete Transaktion (siehe gen_inserts
@@ -31,6 +31,7 @@ FACTOR=1.5
 MIN_MS=0.10
 N=${BENCH_SOURCE_IMPACT_N:-5000}
 RUNS=5
+T_SYNC_SAMPLES=3
 TABLE=bench_source_impact
 SOURCE_ID=src-bench-impact
 SLOT=slot_bench_impact
@@ -80,15 +81,13 @@ run_phase_median() {
   echo "$(bench::median_of "${samples[@]}")|${joined}"
 }
 
-# measure_t_sync liefert die Festschreib-Latenz in ms auf stdout: Zeile der
-# von `SHOW wal_sync_method` genannten Methode im Abschnitt „one 8kB write“
-# der Ausgabe von `pg_test_fsync -s 2`, ausgeführt im PostgreSQL-Container
-# auf einer Datei im Datenverzeichnis. Nicht messbar: keine Ausgabe, Exit 1.
-measure_t_sync() {
-  local pg method out usecs
-  pg=$(bench::pg_container)
-  method=$(bench::psql_scalar "SHOW wal_sync_method" | tr -d '[:space:]') || return 1
-  [ -n "$method" ] || return 1
+# measure_t_sync_once liefert ein Sample der Festschreib-Latenz in ms auf
+# stdout: Zeile der Methode $2 (aus `SHOW wal_sync_method`) im Abschnitt
+# „one 8kB write“ der Ausgabe von `pg_test_fsync -s 2`, ausgeführt im
+# PostgreSQL-Container $1 auf einer Datei im Datenverzeichnis. Nicht
+# messbar: keine Ausgabe, Exit 1.
+measure_t_sync_once() {
+  local pg=$1 method=$2 out usecs
   out=$(docker exec "$pg" sh -c 'f="${PGDATA:-/var/lib/postgresql/data}/bench-sync-probe.tmp"; pg_test_fsync -s 2 -f "$f"; rc=$?; rm -f "$f"; exit $rc' 2>/dev/null) || return 1
   usecs=$(printf '%s\n' "$out" | LC_ALL=C awk -v m="$method" '$1 == m && /usecs\/op/ { print $(NF-1); exit }')
   case "$usecs" in
@@ -97,11 +96,29 @@ measure_t_sync() {
   LC_ALL=C awk -v u="$usecs" 'BEGIN { if (u + 0 <= 0) exit 1; printf "%.3f", u / 1000.0 }'
 }
 
-if ! t_sync_ms=$(measure_t_sync); then
-  echo "bench-source-impact: t_sync nicht messbar (pg_test_fsync im PostgreSQL-Container fehlt oder seine Zeile ist nicht lesbar) — kein Verdikt (LH-QA-PER-001, ADR-0155)" >&2
+# measure_t_sync liefert "Median|Sample1,Sample2,…" (ms) über T_SYNC_SAMPLES
+# Samples; ein nicht messbares Sample macht die ganze Messung nicht messbar
+# (Exit 1, keine Ausgabe).
+measure_t_sync() {
+  local pg method s i
+  local -a samples=()
+  pg=$(bench::pg_container) || return 1
+  method=$(bench::psql_scalar "SHOW wal_sync_method" | tr -d '[:space:]') || return 1
+  [ -n "$method" ] || return 1
+  for i in $(seq 1 "$T_SYNC_SAMPLES"); do
+    s=$(measure_t_sync_once "$pg" "$method") || return 1
+    samples+=("$s")
+  done
+  echo "$(LC_ALL=C bench::median_of "${samples[@]}")|$(IFS=,; echo "${samples[*]}")"
+}
+
+if ! t_sync_result=$(measure_t_sync); then
+  echo "bench-source-impact: t_sync nicht messbar (pg_test_fsync im PostgreSQL-Container fehlt oder eine Sample-Zeile ist nicht lesbar) — kein Verdikt (LH-QA-PER-001, ADR-0155)" >&2
   exit 2
 fi
-echo "bench-source-impact: t_sync ${t_sync_ms} ms (pg_test_fsync, Methode aus wal_sync_method)"
+t_sync_ms=${t_sync_result%%|*}
+t_sync_samples=${t_sync_result#*|}
+echo "bench-source-impact: t_sync ${t_sync_ms} ms (Median von $T_SYNC_SAMPLES pg_test_fsync-Samples: ${t_sync_samples} ms; Methode aus wal_sync_method)"
 
 echo "bench-source-impact: Phase 1 — ohne CDC (kein Replication-Slot aktiv), $RUNS Läufe …"
 without_result=$(run_phase_median 0 "$N")

@@ -81,7 +81,7 @@ auf jedem Host, ohne die alte 35-%-Schwelle.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `tools/bench-source-impact.sh` | update | `t_sync` vor Phase 1 messen: `docker exec <pg> pg_test_fsync -s 2 -f <Datei im Datenverzeichnis>`, Zeile der Methode aus `SHOW wal_sync_method` (Regelfall `fdatasync`), Wert `usecs/op` in ms; Grenze und Vergleich per `awk` (Gleitkomma); Exit 1/2 wie `ADR-0155` Entscheidung 5/6; `bench::record_row`-Schwelle-Text auf „Zusatzlatenz je Commit ≤ max(0,10 ms; 1,5 × Festschreib-Latenz) (`SPEC-025`)“ — [`LH-QA-PER-001`](../../../../spec/lastenheft.md) |
+| `tools/bench-source-impact.sh` | update | `t_sync` vor Phase 1 als Median von drei Samples (Fixrunde zu F-1) messen: je Sample `docker exec <pg> pg_test_fsync -s 2 -f <Datei im Datenverzeichnis>`, Zeile der Methode aus `SHOW wal_sync_method` (Regelfall `fdatasync`), Wert `usecs/op` in ms; Grenze und Vergleich per `awk` (Gleitkomma); Exit 1/2 wie `ADR-0155` Entscheidung 5/6; `bench::record_row`-Schwelle-Text auf „Zusatzlatenz je Commit ≤ max(0,10 ms; 1,5 × Festschreib-Latenz) (`SPEC-025`)“ — [`LH-QA-PER-001`](../../../../spec/lastenheft.md) |
 | `tools/bench-lib.sh` | update | Kommentar Zeile 160 und Generator-Kopf (Zeile 190, `docs/user/bench-abdeckung.md`): Quelle der PER-001-Schwelle nennt `ADR-0155`, die Quellen der PER-002/003-Schwellen bleiben `ADR-0104`. **Kein Helfer** `bench::sync_latency_ms`: die Messfunktion `measure_t_sync` steht im Skript selbst (Reduktion, damit die Mutationsprobe an einer Scratchpad-Kopie des einen Skripts greift) |
 | `Makefile` | update | Hilfetext des Ziels `bench` (Zeile 246) nennt die neue Messgröße statt „mit Schwelle“ allein, falls er die 35 % trägt |
 | `docs/user/bench-abdeckung.md` | neu erzeugt | vom Lauf geschrieben (Zeile PER-001, Kopf); nicht von Hand ändern; die Datei ist Nutzerdokument — Kennungsfreiheit prüft `make handbuch-public-doc-check`? Nein: die Datei ist ausgenommen (Bestand), die Kennungen in der Generator-Zeile bleiben wie bisher |
@@ -101,18 +101,20 @@ Ausweg).
 71c6a886 2 -E '35[ -]?%' -- . :!docs/reviews :!docs/plan/planning/done :!docs/plan/planning/observations :!.harness/baseline :!docs/plan/adr
 71c6a886 1 -i -E 'fdatasync|pg_test_fsync' -- tools Makefile harness docs/user
 diff 0 -E 'THRESHOLD_PCT|35 ?-?%|SCHWELLE ÜBERSCHRITTEN' -- tools/bench-source-impact.sh
-diff 5 -E 'ADR-0104|ADR-0151' -- tools Makefile harness docs/user
+diff 4 -E 'ADR-0104|ADR-0151' -- tools Makefile harness docs/user
 diff 1 -E '35[ -]?%' -- . :!docs/reviews :!docs/plan/planning/done :!docs/plan/planning/observations :!.harness/baseline :!docs/plan/adr
 diff 6 -i -E 'fdatasync|pg_test_fsync' -- tools Makefile harness docs/user
 ```
 
 Die `diff`-Zeilen sind der Stand nach dem Nachzug: das Skript trägt keine
-Prozent-Schwelle mehr (0); die fünf `ADR-0104`-Zeilen sind Quellen der
-PER-002/003-Schwellen bzw. benannte Herkunft (Generator-Kopf, README, drei
-Kommentar-/Kopfzeilen der Bibliothek, davon zwei mit `ADR-0155` daneben); die
+Prozent-Schwelle mehr (0); die vier `ADR-0104`-Zeilen sind Quellen der
+PER-002/003-Schwellen bzw. benannte Herkunft (je eine Zeile in `docs/user/bench-abdeckung.md`
+und `harness/README.md`, in `tools/bench-lib.sh` der Kommentar zu `bench::record_row`
+und der Generator-Kopf; die Zeilen in der Abdeckungsdatei und im Generator-Kopf
+tragen `ADR-0155` daneben); die
 eine `35 %`-Zeile ist die als **übernommen** gekennzeichnete Herkunftsangabe des
 früheren Verdikts in `harness/README.md`; die sechs `fdatasync`-/`pg_test_fsync`-Zeilen
-sind das neue Verdikt (fünf im Skript, eine in `harness/README.md`).
+sind das neue Verdikt (fünf im Skript, eine in `harness/README.md`; Stand nach der Fixrunde, `t_sync` als Median von drei Samples).
 
 **Messung (Implementer-Lauf, 2026-10-05, Host Linux 6.8.0-139-generic,
 `postgres:18-alpine` aus dem Pin `PG_TEST_IMAGE`, `wal_sync_method` = `fdatasync`,
@@ -130,18 +132,40 @@ bench-source-impact: Ergebnis (LH-QA-PER-001) — ohne CDC 10400 ms (Median von 
 bench-source-impact: Zusatzlatenz Δ 1.809 ms je Transaktion, t_sync 2.795 ms, Verhältnis Δ/t_sync 0.647, Grenze max(0.10 ms; 1.5 × t_sync) = 4.192 ms
 ```
 
+Läufe 1 und 2 maßen `t_sync` als Einzelwert (Stand vor der Fixrunde zu F-1 des
+Reviews). Nach der Fixrunde misst das Skript `t_sync` als Median von drei
+`pg_test_fsync`-Samples (`T_SYNC_SAMPLES=3`) und druckt alle Samples; gleicher Host,
+`bash tools/bench-source-impact.sh` direkt, gedruckte Zeilen:
+
+```text
+Lauf 3 (Exit 0):
+bench-source-impact: t_sync 1.821 ms (Median von 3 pg_test_fsync-Samples: 1.785,3.571,1.821 ms; Methode aus wal_sync_method)
+bench-source-impact: Zusatzlatenz Δ 1.750 ms je Transaktion, t_sync 1.821 ms, Verhältnis Δ/t_sync 0.961, Grenze max(0.10 ms; 1.5 × t_sync) = 2.732 ms
+Lauf 4 (Exit 0):
+bench-source-impact: t_sync 1.811 ms (Median von 3 pg_test_fsync-Samples: 1.811,2.034,1.807 ms; Methode aus wal_sync_method)
+bench-source-impact: Zusatzlatenz Δ 1.791 ms je Transaktion, t_sync 1.811 ms, Verhältnis Δ/t_sync 0.989, Grenze max(0.10 ms; 1.5 × t_sync) = 2.716 ms
+```
+
 Abweichung gegen die Erwartung der DoD (Δ ≈ 3 ms, `t_sync` ≈ 2,9 ms, übernommen aus
-`ADR-0155`): auf diesem Lauf ist Δ ≈ 1,8 ms und `t_sync` 1,78 ms bzw. 2,80 ms
-(gemessen); das Verhältnis liegt zwischen 0,65 und 0,99, also unter 1,5. `t_sync`
-streut zwischen zwei Läufen desselben Hosts um den Faktor 1,6; die Grenze folgt ihm.
+`ADR-0155`): auf diesem Host ist Δ ≈ 1,75 bis 1,81 ms und `t_sync` 1,78 bis 2,80 ms
+(gemessen); das Verhältnis liegt zwischen 0,65 und 0,99, also unter 1,5. Einzelne
+Samples streuen um den Faktor 2 (Lauf 3: 1,785 bis 3,571 ms); der Median von drei
+dämpft einen einzelnen Ausreißer, die Grenze folgt dem Median.
+
+Konkretisierung gegenüber `ADR-0155`: Entscheidung 2 nennt `t_sync` als im selben
+Lauf gemessen, ohne Stückzahl der Samples; Median von drei ist eine Umsetzungsform
+innerhalb dieses Wortlauts, kein Widerspruch zur `Accepted`-ADR (`ADR-0155` bleibt
+unverändert).
 
 **Mutationsprobe** (Scratchpad-Kopien des Skripts, erzeugt mit `sed … > Kopie`, Aufruf
 `bash <Kopie>`; je Zusage die mutierte Eingabe und die gesehene Farbe):
 
 | Zusage | mutierte Eingabe | gesehenes Ergebnis |
 |---|---|---|
-| Δ über Grenze → Exit 1 | Zeile `FACTOR=1.5` → `FACTOR=0.5` (Grenze 0.882 ms bei Δ 1.837 ms, t_sync 1.765 ms) | Exit 1, Meldung `GRENZE ÜBERSCHRITTEN …` |
-| `t_sync` nicht messbar → Exit 2, kein Rückfall | `pg_test_fsync` → `pg_test_fsync_fehlt` im `docker exec`-Aufruf | Exit 2, Meldung `t_sync nicht messbar …`, vor Phase 1 |
+| Δ über Grenze → Exit 1 | Zeile `FACTOR=1.5` → `FACTOR=0.5` | Exit 1, Meldung `GRENZE ÜBERSCHRITTEN …`; Mutation, Wert nicht festgehalten (die gedruckte Zeile steht nicht im Plan) |
+| `t_sync` nicht messbar → Exit 2, kein Rückfall | `pg_test_fsync` → `pg_test_fsync_fehlt` im `docker exec`-Aufruf | Exit 2, Meldung `t_sync nicht messbar …`, vor Phase 1 (Stand vor der Fixrunde) |
+| ein nicht messbares Sample macht die ganze Messung nicht messbar (Exit 2) | Kopie `mutA.sh`: im zweiten der drei Samples die Methode `nomethod` statt `fdatasync` (Sample 1 und 3 gültig) | Exit 2, Meldung `t_sync nicht messbar (… eine Sample-Zeile ist nicht lesbar)` |
+| Median statt Einzelwert/Mittel (`bench::median_of`) | Kopie der Bibliothek mit `sort -n` → `cat`; Eingabe `3.571 1.785 1.821` | Original `1.821`, mutiert `1.785` (Median fällt auf das zweite Element der unsortierten Eingabe, Test an der Funktion, nicht am Gesamtlauf) |
 | Untergrenze 0,10 ms (`MIN_MS`) | nicht gefahren: greift nur bei `t_sync` < 0,067 ms; auf diesem Host nicht erreichbar — **hergeleitet** | — |
 | Zeilenwahl der Methode (`SHOW wal_sync_method`) | nicht gefahren — **hergeleitet** (Lauf gegen `fdatasync`, die Zeile ist der erste Treffer des Abschnitts „one 8kB write“) | — |
 
@@ -153,7 +177,7 @@ Suchraum: Baum ohne `docs/reviews/**`, `done/`, `observations/` (Records),
 `.harness/baseline/**`, ADRs (immutabel). Die Zahlen sind am Parent `71c6a886`
 zu messen.
 Stand der Zeilen: **gemessen** am Parent `71c6a886` mit
-`bash tools/harness/suchlauf-nachmessen.sh <Plan-Datei>` (vier Zeilen stimmen, Exit 0);
+`make suchlauf-nachmessen PLAN=<Plan-Datei>` (alle acht Zeilen des Blocks stimmen, Exit 0, nach der Fixrunde);
 die Vollständigkeit von Suchraum und Muster ist Lese-Handlung des Reviewers.
 
 ## 4. Trigger
@@ -182,6 +206,13 @@ Closure-Notiz mit Lerneintrag geschrieben.
   roter Lauf auf dem Entwicklungshost nach der Umstellung wäre ein Befund gegen
   den Faktor 1,5 — **Ausgang:** weiter offen bis zum Lauf; tritt er ein, Folge-ADR
   mit `Supersedes ADR-0155` (Re-Evaluierungs-Trigger dort).
+- Streuung der Verdikt-Eingabe: einzelne `pg_test_fsync`-Samples streuen auf dem
+  Entwicklungshost um den Faktor 2 (1,785 bis 3,571 ms in einem Lauf); ein
+  Einzelwert könnte die Grenze um diesen Faktor verschieben und das Verdikt bei
+  unveränderter Software kippen — **Ausgang:** eingetreten und gemindert: `t_sync`
+  ist der Median von drei Samples (Review-Befund F-1). Restrisiko: der Faktor 1,5
+  stützt sich auf wenige Messpunkte (`ADR-0155`: ein gemessener Punkt, ein Host) —
+  **weiter offen** über den Re-Evaluierungs-Trigger von `ADR-0155`.
 - Der Suchlauf der Träger fängt Symbolnamen, nicht verschobene Zahlen
   (`AGENTS.md` §3.13 Grenze) — **Ausgang:** Lese-Handlung des Reviewers.
 - Die Zahlen des Verdikts in `harness/README.md` (87,5 % bis 95,8 %, 94,6 %)
