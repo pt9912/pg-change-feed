@@ -90,7 +90,9 @@ je SDK belegt es gegen ein Zertifikat, das nicht im Systemspeicher steht.
 - [x] `make gates` grün (inkl. `make sdk-public-doc-check`: keine interne Kennung in
       Quellen, Tests, README der SDKs). Beleg: §3 „Belege des Implementers“,
       Punkt „Gates“.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein Self-Review.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein Self-Review
+      (`docs/reviews/review-slice-sdk-tls-optionen-fixrunde.md`, Folgelauf zu
+      `docs/reviews/review-slice-sdk-tls-optionen.md`).
 - [x] Doku-Update: README der drei Packages (Englisch, Abschnitt zu TLS; die
       Ist-Aussagen „plaintext gRPC“ in Docstrings und README werden nachgezogen),
       Benutzerhandbuch nur, falls es die SDK-Nutzung beschreibt (es tut es an einer
