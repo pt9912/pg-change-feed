@@ -186,11 +186,11 @@ Implementers und in §7.
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0,
       `make test`, `make examples-csharp` und `make examples-kotlin` Exit 0,
       `make a-check` Exit 0, `make fmt-check` Exit 0.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
@@ -198,10 +198,10 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       `make example-run-go`: je ein Satz zur TLS-Option); gemeldete Träger
       fremder Dateien mit der Closure nachgezogen (§3 Suchlauf,
       [`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, solange die Roadmap unter *Offene Wellen* keine Welle führt.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, solange die Roadmap unter *Offene Wellen* keine Welle führt.
 
 ## 3. Plan (vor Code)
 
@@ -308,6 +308,16 @@ Aussagen-Berührung steht hier gar nicht.
   Code geändert; ein Pfad, auf dem `build()` nach bestandener Vorprüfung wirft,
   ist nicht bekannt.
 
+**Nachzug zu `verifikation-slice-examples-grpc-tls` (V-1).** Das Handbuch sagte,
+ohne Angabe ende jedes Beispiel mit Ausgang 1; gemessen ist das nur für Go. Der
+Satz ist auf das für alle drei Gemessene begrenzt (Fehlermeldung zum nicht
+aufgebauten Kanal, keine Antwort des Servers); der Ausgang 1 steht dort nur für
+das Go-Beispiel, für C# und Kotlin als „nicht gemessen“. Nachgemessen ist er
+nicht: der Lauf bräuchte einen TLS-Feed-Container samt Compose-Override
+(Aufwand eines eigenen Realserver-Laufs), die Begrenzung ist die kleinere
+Aussage. Die Historienzeile 1.99 nennt die Grenze; keine neue Version.
+`make handbuch-public-doc-check` Exit 0 (gemessen im Zug).
+
 - **Zertifikat im Test.** Der Go-Test erzeugt es mit `crypto/x509` zur Laufzeit;
   C# und Kotlin erzeugen es mit der Bibliothek der Sprache im Test oder lesen
   eine zur Laufzeit geschriebene Datei im Temp-Verzeichnis. Kein Zertifikat und
@@ -413,27 +423,46 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 dasteht.
 
 Ausgangsform je Risiko: eingetreten (CO-NNN oder Folge-Slice) · entfallen
-(Grund) · weiter offen (BEO-Eintrag im Register). Alle Ausgänge sind bis zur
-Closure **offen**.
+(Grund) · weiter offen (BEO-Eintrag im Register). Die Ausgänge stehen je Risiko.
 
 - **Die Wahl „Anker gesetzt → TLS“ ist an den Optionswert nicht gebunden:** ein
   Test mit einem Fake, der unabhängig von der Option antwortet, bleibt grün
   ([`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`](../observations/BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe/observation.md)).
   Gegenmaßnahme: je Sprache eine Mutation der Wahl, gesehene Farbe im Bericht. —
-  **Ausgang:** offen bis Closure.
+  **Ausgang:** eingetreten für die Namensprüfung (Review F-1: kein Test mit
+  Namensfehler), in der Fixrunde `cac8e38b` je Sprache gebunden; Wahl und Anker
+  waren von Anfang an durch Mutationen gebunden (§3). Der Beleg steht im
+  Register (Datei `slice-examples-grpc-tls.md`).
 - **Der Bau-Beleg von `make examples-csharp`/`make examples-kotlin` ist ein
   Cache-Treffer** (am Verifikationslauf des Server-Slice beobachtet) und belegt
   den Compile nicht frisch. Gegenmaßnahme: die Tests laufen im Bau; der Bericht
-  nennt, ob die Schichten gebaut oder aus dem Cache kamen. — **Ausgang:** offen
-  bis Closure.
+  nennt, ob die Schichten gebaut oder aus dem Cache kamen. — **Ausgang:**
+  entfallen: C# und Kotlin liefen frisch (C# ohne Cache, 61 Tests; Kotlin
+  Test-Schicht frisch), die Verifikation fuhr beide erneut frisch (§3, Belege).
 - **Ein Zertifikat oder Schlüssel landet im Repo oder im Image.** Gegenmaßnahme:
   Zertifikat im Test zur Laufzeit, im Realserver-Lauf in einem Temp-Verzeichnis;
-  der Reviewer prüft `git status`. — **Ausgang:** offen bis Closure.
+  der Reviewer prüft `git status`. — **Ausgang:** entfallen: `git status
+  --porcelain --untracked-files=all` am Ende des Realserver-Laufs ohne `*.pem`
+  (Implementer-Bericht, **übernommen**); die Verifikation maß selbst: kein
+  Zertifikat im Repo.
 - **Das Handbuch sagt über die Beispiele mehr, als gemessen ist** (HTTP- und
   SSE-Beispiele gegen `https://` sind nicht gefahren). Gegenmaßnahme: nur das
   Gemessene, je Beispiel mit Aufruf
   ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) Instanz B). —
-  **Ausgang:** offen bis Closure.
+  **Ausgang:** eingetreten und behoben: die Verifikation (V-1) fand, dass das
+  Handbuch „Ausgang 1“ für alle drei Beispiele als gemessen führte, gemessen ist
+  er nur für Go; das Handbuch ist auf das Gemessene begrenzt (§3, Nachzug V-1).
+  Die Grenze zwischen Gemessenem und Hergeleitetem bleibt benannt (C#-Kette ohne
+  gesendete Zwischenzertifikate, Review F-4; Realserver-Läufe sind Implementer-
+  Bericht, **übernommen**, nicht neu gefahren).
+- **Der Realserver-Beleg ist nicht neu gefahren** (Implementer-Bericht, vom
+  Verifier übernommen). **Ausgang:** weiter offen als benannte Grenze, kein
+  Register-Eintrag: eine Runner-Phase ist laut §4 ein eigener Liefer-Punkt und
+  nicht beauftragt; die Unit-Tests je Sprache gegen Loopback-TLS tragen die Wahl.
+- **Der Runner-Commit `71c6a886` (lokales Image statt Pull von Docker Hub)** ist
+  Auftrag des Auftraggebers, nicht Slice-Umfang. **Ausgang:** entfallen: im selben
+  Zug vor dem Slice committet, vom Reviewer ohne Befund geprüft (`docker image
+  inspect` vor `docker pull`).
 
 ## 7. Closure-Notiz
 
@@ -452,13 +481,54 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 *Der Plan füllt diese Sektion nicht; sie wird bei der Closure vor dem
 `git mv` nach `done/` geschrieben.*
 
-- **Was hat funktioniert:** (bei der Closure zu füllen)
-- **Was ging anders als geplant:** (bei der Closure zu füllen)
-- **Steering-Loop-Eintrag:** (bei der Closure zu füllen)
-- **Beobachtungs-Register (`../observations/`):** (bei der Closure zu füllen)
-- **Folge-Slices:** (bei der Closure zu füllen)
-- **Risiken aus §6:** (bei der Closure zu füllen, je genau ein Ausgang)
-- **Drei Paarungen:** (bei der Closure zu füllen: Anker · Folge-Slice · Register)
+- **Was hat funktioniert:** Der Schnitt trug: die Beispiele bauen ihren Kanal
+  selbst, keine Änderung an Server, SDKs oder Runner. Die Mutationen je Zusage
+  (Wahl und Anker, drei Sprachen, §3) färbten rot. Der Reviewer fand die
+  ungebundene Namensprüfung (F-1) vor dem Merge; der Test mit Namensfehler als
+  Eingabe bindet sie je Sprache. Der Verifier maß Gates, Suchlauf und frische
+  Bau-Läufe eigenhändig und fand die zu weite Handbuch-Aussage (V-1).
+- **Was ging anders als geplant:** (1) Die Kanal-Wahl liegt je Sprache in einer
+  testbaren `ChannelFactory` statt in `Program.cs`/`Main.kt` (§3, Plan-Nachzug).
+  (2) Review F-1 verlangte eine Fixrunde (`cac8e38b`). (3) Review F-5 (Kotlin,
+  DER-Datei) ist durch einen Test widerlegt (`derAnchorIsAcceptedAndReachesTlsServer`);
+  kein Code geändert. (4) Das Handbuch führte „Ausgang 1“ für alle drei Beispiele
+  als gemessen, gemessen war nur Go (V-1); begrenzt statt nachgemessen, weil ein
+  Nachmessen einen eigenen TLS-Realserver-Lauf verlangt. (5) Der Nachzug des
+  Review-Findings F-4 (C#-Kette ohne Zwischenzertifikate) blieb als benannte
+  Grenze in Handbuch und `examples/README.md`.
+- **Steering-Loop-Eintrag:** Geschärfte Lese-Regel, ohne neuen Träger
+  (kein `liegt in`): Die Namensprüfung eines **eigenen Validierungs-Callbacks**
+  braucht einen Test mit dem Namensfehler als Eingabe (Kette stimmt, Name nicht);
+  ein Happy-Path-Test mit passendem Namen bindet sie nicht. Das ist die Ausprägung
+  der verkörperten Regel „mutiere den Eingabewert“ für TLS-Prüfungen; sie steht
+  als Beleg im Register. Zweiter Lerninhalt, **gemessen** (Test): ein widerlegter
+  Befund gehört durch einen Test widerlegt, nicht durch Lesen — F-5 (DER-Anker)
+  war hergeleitet und der Test `derAnchorIsAcceptedAndReachesTlsServer` zeigte das
+  Gegenteil. Dritter Lerninhalt: eine Handbuch-Aussage „jedes Beispiel“ trägt nur
+  so weit, wie jedes Beispiel gemessen ist (V-1, [`AGENTS.md`](../../../../AGENTS.md)
+  §3.12 Instanz B). Der Befund, wie die drei Bibliotheken einen Vertrauensanker
+  aus einer Datei nehmen: Go `credentials.NewTLS` mit `RootCAs`, C#
+  `HttpClientHandler` mit eigenem Validierungs-Callback und `CustomRootTrust`,
+  Kotlin `TlsChannelCredentials` mit `trustManager(File)` (§3, gemessen).
+- **Beobachtungs-Register (`../observations/`):** Weitere Datei
+  `evidence/slice-examples-grpc-tls.md` in
+  [`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`](../observations/BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe/observation.md)
+  (Review F-1, MEDIUM, daher Datei trotz Deckel; Ausprägung: Namensprüfung); der
+  Zähler folgt aus den Dateien und steht bei 27 (`ls evidence`). Kein neues
+  Verzeichnis: der Mechanismus ist derselbe. Die in §8 genannten Einträge:
+  `handbuch-versionshistorie-uebersprungen` (Zeile 1.99 folgt auf 1.98, kein
+  Sprung, keine neue Datei) und `kommentar-herkunft-als-kette` (kein neuer
+  Befund) sind berührt und haben ihre Gegenmaßnahme getragen.
+- **Folge-Slices:** keine neu angelegt. `sdk-tls-optionen` (TLS-Optionen der
+  SDK-Packages) liegt bereits unter `open/` und wartet auf seine Anforderung; HTTP-
+  und SSE-Beispiele gegen `https://` bleiben ungemessen und ohne Handbuch-Aussage.
+- **Risiken aus §6:** je genau ein Ausgang, siehe §6 (Wahl gebunden: eingetreten
+  für die Namensprüfung, behoben · Cache-Treffer: entfallen · Zertifikat im Repo:
+  entfallen · Handbuch weiter als gemessen: eingetreten, behoben · Realserver nicht
+  neu gefahren: weiter offen als benannte Grenze · Runner-Commit: entfallen).
+- **Drei Paarungen:** Anker: Handbuch und `examples/README.md` nennen Aufrufform und
+  Grenzen (auflösbar). Folge-Slice: keiner nötig, Adresse für den SDK-Teil ist
+  `sdk-tls-optionen`. Register: die Datei oben.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
