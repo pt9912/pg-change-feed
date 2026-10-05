@@ -74,7 +74,8 @@ Jedes Finding:
 
 - `kategorie`: HIGH | MEDIUM | LOW | INFO
 - `quelle`: `<ADR-NNNN>` | `Closure-Inhaltspflicht (a/b/c)`
-- `pfad`: `docs/plan/planning/done/<slice>.md`:<Zeile>
+- `pfad`: `docs/plan/planning/done/<slice>.md` · wörtliches Kurzzitat der Stelle
+  als Anker; die Zeile darf als Lesehilfe dazu, ist aber nicht der Anker
 - `befund`: *welcher* der drei Pflicht-Inhalte fehlt, 1–2 Sätze, beobachtbar,
   ohne Formulierungs-Vorschlag
 - `verifizierbar`: nein — Floskel-Erkennung ist inferentiell;

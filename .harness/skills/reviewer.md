@@ -329,8 +329,9 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   [`review-slice-leerlauf-phase-last-in-stuecken.md`](../../docs/reviews/review-slice-leerlauf-phase-last-in-stuecken.md)
   F-3 · seit slice-harness-mutationsbild-und-verweigerte-aktion.
 
-**LOW** — stilistisch unschön ohne semantische Auswirkung, einmalige Tippfehler,
-unbenutzte Imports, eine Go-Datei, die `make fmt-check` meldet
+**LOW** — *mit Konventions-Anker* (ADR, Hard Rule, Linter-Regel, Eintrag in
+diesem Skill): stilistisch unschön ohne semantische Auswirkung, einmalige
+Tippfehler, unbenutzte Imports, eine Go-Datei, die `make fmt-check` meldet
 (`BEO-PGC/formatierungs-drift-ohne-gate`; der Implementer meldet den Lauf im
 Bericht, der Reviewer liest ihn nach —
 [`harness/sensors/fmt-check.md`](../../harness/sensors/fmt-check.md)).
@@ -353,6 +354,10 @@ indirekt ab“ — erstes Auftreten: Review F-9, 2026-09-09).
 - Kein Refactoring-Vorschlag, der über den Diff hinausgeht.
 - Keine Verifikation gegen DoD — das ist Verifier-Aufgabe (Modul 11).
 - Keine Validation gegen reale Bedürfnisse — das ist Validator-Aufgabe.
+- **Kein Stil-Polizist:** Formatierung oder Benennung ohne Konventions-Anker ist
+  kein Finding.
+- **Kein HIGH- oder MEDIUM-Finding ohne Failure-Szenario:** was sich nicht als
+  konkretes Versagen erzählen lässt, wird nicht als HIGH oder MEDIUM gemeldet.
 
 Wenn etwas auffällt, das in diese Kategorien gehört: ein INFO-Finding mit Verweis
 auf die zuständige Rolle.
@@ -363,15 +368,20 @@ Jedes Finding:
 
 - `kategorie`: HIGH | MEDIUM | LOW | INFO
 - `quelle`: ADR-ID, `LH-*`-ID, Hard-Rule-Name oder „Maintainability“
-- `pfad`: Datei:Zeile
+- `pfad`: Datei · wörtliches, in der Datei eindeutig auffindbares Kurzzitat
+  der Stelle als Anker; die Zeile darf als Lesehilfe dazu, ist aber nicht der Anker
 - `befund`: 1–2 Sätze, beobachtbar, ohne Lösungsvorschlag
 - `verifizierbar`: ja/nein — gibt es einen Gate-Lauf, der es bestätigen würde?
 - `klasse`: stabile Kurz-Bezeichnung des Fehlermusters, z. B. „Delegation ohne
   Entsprechung“ — speist den Steering-Loop-Zähler (siehe §Pflege)
 
+Im Report stehen die Findings als Tabelle (eine Zeile je Finding, Spalten
+ID · Kategorie · Befund · Quelle · Pfad · Verifizierbar · Klasse).
+
 Zusätzlich am Ende: eine Zeile „geprüft, ohne Befund“ pro betrachtetem
-Verzeichnis (Negativbefund-Zeile — sonst ist „keine Findings“ nicht von „nicht
-geprüft“ unterscheidbar). Report-Gerüst für den ganzen Lauf:
+Verzeichnis, als Tabelle Bereich · Ergebnis (Negativbefund-Zeile — sonst ist
+„keine Findings“ nicht von „nicht geprüft“ unterscheidbar). Report-Gerüst für
+den ganzen Lauf:
 `.harness/baseline/v6.14.0/templates/docs/reviews/review-report.template.md`, ein Report pro Lauf, Folgeläufe als
 neue Datei statt Überschreibung.
 
