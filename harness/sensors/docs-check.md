@@ -196,6 +196,15 @@ Reparatur-Pfad: `make doc-repair` (konservativ, nur `id-unlinked`/
 - Exit 2 bei Config-Fehler (unbekannter Schlüssel in `.d-check.yml`,
   `versions.current-from` unlesbar) — kein stiller Rückfall auf Defaults.
 
+## `make doc-tracked`
+
+Isolierter Einzel-Lauf des `tracked`-Moduls (Getrackt-Status auflösbarer,
+existierender Link-/Bild-Ziele gegen den git-Index): `--enable tracked`, alle
+anderen Module `--disable` (`d-check.mk`). Das Modul läuft im `modules:`-Bündel
+mit und damit in `make docs-check`/`make gates` (Grenze 3); dieses Ziel steht
+daneben als isoliertes Diagnose-Werkzeug, kein Gate, netzlos, braucht `.git` im
+Mount.
+
 ## Bindung
 
 `harness/conventions.md` MR-000 (ID-Schema als Linkpflicht) · Decken-Regel
@@ -222,11 +231,3 @@ git-Index (`tracked` in `modules`, Konfiguration `.d-check.yml` §tracked,
 (`structure`-Modul-Aktivierung, 2026-09-09), siehe
 [`docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md`](../../docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md)
 · seit slice-d-check-tracked-modul).
-
-## Fassung im Gate-Index
-
-Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher. Der Text darunter ist der wortgleich umgezogene Index-Text, kein eigener Vertrag: weicht er von dieser Datei ab, gilt [§Vertrag](#vertrag) mit den Abschnitten bis zu diesem.
-
-### `make doc-tracked`
-
-isolierter Einzel-Lauf des `tracked`-Moduls (Getrackt-Status auflösbarer, existierender Link-/Bild-Ziele gegen den git-Index, `--enable tracked` mit allen anderen Modulen `--disable`) — das Modul läuft bereits im `modules:`-Bündel mit und damit in `make docs-check`/`make gates`; dieses Ziel bleibt daneben als isoliertes Diagnose-Werkzeug bestehen, netzlos, braucht `.git` im Mount

@@ -22,13 +22,16 @@ ist dann als Quelle nicht mehr unverändert reproduzierbar.
    [`harness/targets/pin-stale.md`](../targets/pin-stale.md#bump-ablauf-vergleich-vor-dem-löschen-der-alten-baseline).
    Permanent.
 3. **Upstream-Drift des Baseline-Stands** — ob es einen neueren
-   Baseline-Tag gibt, meldet dieser Sensor nicht (siehe `harness/README.md`
-   §Nicht behauptet). Permanent, bis ein Freshness-Audit (Modul 2) läuft.
+   Baseline-Tag gibt, meldet dieser Sensor nicht; das meldet das Werkzeug
+   `make pin-stale-baseline` (P8,
+   [`harness/targets/pin-stale.md`](../targets/pin-stale.md#make-pin-stale-baseline)),
+   braucht Netz und ist kein Gate. Permanent für diesen Sensor.
 
 **Wie groß der Ausschnitt ist, sagt das Kommando, nicht diese Datei:**
 `sha256sum -c` über die `SHA256SUMS` plus Bestandsabgleich; der Lauf meldet
-die Zahl als „54 Dateien“ (Stand der Adoption) — sie sagt etwas über den
-Baseline-Ausschnitt, nicht über das Repo.
+die Zahl (gemessen 2026-10-05 mit `make baseline-verify`, Exit 0, gedruckte
+Zeile `baseline-verify: v6.14.0 OK — 54 Dateien (Integritaet + Vollstaendigkeit, netzlos)`)
+— sie sagt etwas über den Baseline-Ausschnitt, nicht über das Repo.
 
 ## Ausgabe und Ausgänge
 

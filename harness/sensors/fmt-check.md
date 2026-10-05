@@ -131,15 +131,3 @@ rot wird“ nennt die Teilprüfung):
 | das Verzeichnis liegt lesend unter `/src` | `:ro` aus dem Mount entfernt | Docker-Argument lesender Mount |
 | das Image ist der Wert von `TOOLCHAIN_IMAGE` | ein fest eingetragenes Image statt der Variable | Docker-Argument Image · Docker-Fehler |
 | ein `.go`-Symlink zählt und wird genannt | die Zählung nimmt nur reguläre Dateien (`-type f`) | Symlink mit Endung `.go` |
-
-## Fassung im Gate-Index
-
-Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher. Der Text darunter ist der wortgleich umgezogene Index-Text, kein eigener Vertrag: weicht er von dieser Datei ab, gilt [§Vertrag](#vertrag) mit den Abschnitten bis zu diesem.
-
-### `make fmt-check`
-
-meldet jede Go-Datei des Baums, die `gofmt -l` im gepinnten `TOOLCHAIN_IMAGE` nicht als formatiert führt (Docker-only, `--network none`, Verzeichnis lesend gemountet, schreibt nichts, Host-Werkzeuge `bash`/`git`/`realpath`). `gofmt -l` endet auch bei Abweichung mit Exit 0, deshalb wertet das Werkzeug die Ausgabe aus: Exit 0 formatiert, Exit 1 mindestens eine Datei weicht ab (Pfade auf stdout), Exit 2 Syntaxfehler, Docker-Fehler oder Verzeichnis ohne Go-Datei (leer ist nicht bestanden); über `make` kommt jeder Exit ≠ 0 als Exit 2 an. Prüft Formatierung, nicht Semantik; Trigger der Gate-Aufnahme im Vertrag. Aufrufer: Schritt 18 des Implementer-Ablaufs, Reviewer (Probe)
-
-### `make test-fmt-check`
-
-Tabellentest gegen `tools/harness/fmt-check.sh` (`tools/harness/run-fmt-check-tests.sh`: formatierte und unformatierte Datei, nur die abweichende von zwei Dateien genannt, Unterverzeichnis, Syntaxfehler, Verzeichnis ohne Go-Datei, Eingabe byte-gleich, Pfad mit Leerzeichen, `.go`-Symlink, Eingabefehler, Docker-Fehler, Argumente des Docker-Aufrufs; echte Docker-Läufe gegen Wegwerf-Verzeichnisse, Container ohne Netz); Docker-only

@@ -203,11 +203,3 @@ Menge der Erprobung: je eine Mutation je Sprache, je einmal gefahren; die
 *hergeleitet*. Die Zeilen zur Version-Datei: je eine Mutation an der genannten
 Sprache, die Übertragung auf die übrigen zwei ist *hergeleitet* (dieselbe
 Funktion `version_lesen` bzw. `neu_verzeichnis` im Runner).
-
-## Fassung im Gate-Index
-
-Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher. Der Text darunter ist der wortgleich umgezogene Index-Text, kein eigener Vertrag: weicht er von dieser Datei ab, gilt [§Vertrag](#vertrag) mit den Abschnitten bis zu diesem.
-
-### `make test-sdk-kompat`
-
-misst die Kompatibilität der SDK-Packages des Arbeitsstands gegenüber 0.5.0 (Fehlertypen beider Hierarchien, HTTP und gRPC-Administration, je Sprache C#, Kotlin, Python): ein Gast-Programm unter `tools/harness/sdk-kompat/` benutzt jede Konstruktor- und Lesefläche der 0.5.x-Fehlertypen — A1 gebaut und gelaufen gegen 0.5.0, A2 dieselben Binärdateien gegen die neue Bibliothek (Austausch der Bibliotheksdatei, kein Neubau), A3 Gegenrichtung (ein gegen die Bibliothek mit Meldungscode gebauter Gast gegen 0.5.0 muss scheitern), A5 Quellseite (derselbe Quelltext gegen beide Versionen übersetzt bzw. die Signaturen gelesen, in C# die null-Matrix); A4 ist dieselbe Messung mit einer mutierten Bibliothek über `SDK_KOMPAT_DIST_<SPRACHE>`. Docker-only, Basis ist die Stufe `build` des SDK-Dockerfiles, jeder Schritt per `docker run`, nie in einer `RUN`-Schicht. `SDK_KOMPAT_NEU=dist` (Standard, Artefakte von `make sdk-pack-*` in der Version aus der Version-Datei des SDK) oder `registry` (veröffentlichte Pakete der Version `REGISTRY_VERSION`). Braucht Netz (NuGet, PyPI, Cloudsmith, Maven Central), deshalb Werkzeug statt Gate

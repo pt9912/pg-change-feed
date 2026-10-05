@@ -114,21 +114,21 @@ Make-eigene Exit `2` an.
   kein Schreibzugriff auf den Baum. Braucht Netz; der Tabellentest ist netzlos
   (Stub-`docker`).
 
+## Tabellentest
+
+`make test-pin-stale-all` (`tools/harness/run-pin-stale-all-tests.sh`, netzlos)
+fährt den Prüfling in einem Wegwerf-Repo mit Stub-`docker`, die
+Fixture-Digests entstehen zur Laufzeit (Grenze 4), der Prüfling ist per
+`PROG=<Datei>` übersteuerbar (§Overrides). Fälle, je mit Meldungstext: Treffer
+in Workflow-YAML, Shell-Default und `compose.yaml`, Digest gleich und
+abweichend, Einzelplattform-Digest als `DRIFT`, Pin mit und ohne Tag, `docs/`
+und `.harness/` ausgenommen, dieselbe Referenz an zwei Fundorten als ein
+Eintrag, Registry-Ausfall ohne Abbruch der übrigen, `DRIFT` neben
+`UNBESTIMMT`, leerer Gegenstand.
+
 ## Bindung
 
 [`ADR-0146`](../../docs/plan/adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md)
 (Festlegung 1 bis 6) · `tools/harness/pin-stale-all.sh` ·
 `tools/harness/lib-pin-compare.sh` · `tools/harness/run-pin-stale-all-tests.sh`
 · `.github/workflows/upstream-drift.yml` · seit slice-pin-stale-alle-digest-pins.
-
-## Fassung im Gate-Index
-
-Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher. Der Text darunter ist der wortgleich umgezogene Index-Text, kein eigener Vertrag: weicht er von dieser Datei ab, gilt [§Vertrag](#vertrag) mit den Abschnitten bis zu diesem.
-
-### `make pin-stale-all`
-
-Upstream-Pin-Freshness P10 ([`ADR-0146`](../../docs/plan/adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md)): jede Referenz `<image>[:<tag>]@sha256:<digest>` in einer getrackten Datei außerhalb von `docs/` und `.harness/` (Aufzählung per `git grep`, Wertemenge dedupliziert, keine Liste von Fundorten) gegen den **Index**-Digest der Registry (`docker buildx imagetools inspect`, dieselbe Vergleichslogik `tools/harness/lib-pin-compare.sh` wie `make pin-stale-*`); ein Pin ohne Tag wird gegen `:latest` verglichen, ein Einzelplattform-Digest meldet `DRIFT`. Je Referenz `OK`/`DRIFT`/`UNBESTIMMT` mit erstem Fundort und beiden Digests; fail-open je Referenz (Registry-Ausfall oder Abruflimit ist `UNBESTIMMT`, nicht Rot der übrigen); Exit 1 bei mindestens einem `DRIFT`, 2 bei `UNBESTIMMT` ohne `DRIFT` und bei leerem Gegenstand, sonst 0. Meldet Überschneidungen mit den neun benannten Achsen doppelt. Liest die Form, nicht den Sinn: ein Tag-Wechsel (neuer Major) und ein zur Laufzeit zusammengesetzter Digest liegen außerhalb. Braucht Netz (`bash`, `git`, `docker`), advisory — nicht in `GATE_CHECKS`
-
-### `make test-pin-stale-all`
-
-Tabellentest gegen `tools/harness/pin-stale-all.sh` (`tools/harness/run-pin-stale-all-tests.sh`: Treffer in Workflow-YAML, Shell-Default und `compose.yaml`, Digest gleich und abweichend, Einzelplattform-Digest als `DRIFT`, Pin mit und ohne Tag, `docs/` und `.harness/` ausgenommen, dieselbe Referenz an zwei Fundorten als ein Eintrag, Registry-Ausfall ohne Abbruch der übrigen, `DRIFT` neben `UNBESTIMMT`, leerer Gegenstand; je Fall mit Meldungstext; Stub-`docker` im Wegwerf-Repo, Fixture-Digests zur Laufzeit erzeugt, der Prüfling per `PROG=<Datei>` übersteuerbar); netzlos

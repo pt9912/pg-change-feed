@@ -17,8 +17,15 @@ Der Bau ist genau:
 docker buildx build --load -t pg-change-feed-mutation:<TAG> <SRC>
 ```
 
+Das Entfernen ist genau:
+
+```text
+docker rmi pg-change-feed-mutation:<TAG>
+```
+
 `SRC` wird vor dem Aufruf zu einem absoluten Pfad aufgelöst und steht als
-letztes Argument. Beide Ziele rufen `tools/harness/image-mutation.sh`
+letztes Argument. `harness/image-hash.txt`, `harness/image-hash.raw` und `:dev`
+bleiben unberührt. Beide Ziele rufen `tools/harness/image-mutation.sh`
 (Verben `build`/`rm`); jede Eingabeprüfung läuft **vor** dem jeweiligen
 Docker-Aufruf, ein Docker-Fehler endet mit Exit 1 und einer Zeile, die
 seinen Exit-Code nennt.
@@ -118,8 +125,13 @@ fährt einen Tabellentest mit einem Stub-`docker` in einem Wegwerf-Repo im
 Temp-Verzeichnis (netzlos, kein echter Bau); die Argumente des
 Docker-Aufrufs hält der Stub fest — der Fall belegt, was der Aufrufer
 übergibt, nicht, dass der Daemon es einhält (Vorbild:
-[`harness/sensors/fmt-check.md`](../sensors/fmt-check.md) §Test). Je Zusage
-die Mutation ihrer Eingabeseite, gesehenes Rot:
+[`harness/sensors/fmt-check.md`](../sensors/fmt-check.md) §Test). Fälle:
+gültige Argumente inkl. `SRC` mit Leerzeichen, `harness/image-hash.txt` und
+`harness/image-hash.raw` bleiben unverändert, `TAG`-Zeichenklasse und
+reservierte Namen, `SRC`-Eingabefehler (fehlt, kein Verzeichnis, ohne
+`Dockerfile`, ohne `go.mod`, Repo-Wurzel, unter der Wurzel), Exit-Weitergabe
+eines Docker-Fehlers, `rm` mit genau einem `rmi`-Argument, Make-Ebene ohne
+`SRC`/`TAG`. Je Zusage die Mutation ihrer Eingabeseite, gesehenes Rot:
 
 | Zusage | Mutation am Werkzeug | Fall, der rot wird |
 |---|---|---|
@@ -150,15 +162,3 @@ existierte weder vorher noch nachher, `make image-mutation-rm TAG=mutprobe1`
 entfernte das Image danach (`docker image ls` nennt den Tag nicht mehr), die
 Zahl der dangling Volumes blieb bei 36 (vorher/nachher gemessen, kein
 `prune`).
-
-## Fassung im Gate-Index
-
-Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher. Der Text darunter ist der wortgleich umgezogene Index-Text, kein eigener Vertrag: weicht er von dieser Datei ab, gilt [§Vertrag](#vertrag) mit den Abschnitten bis zu diesem.
-
-### `make image-mutation` / `make image-mutation-rm`
-
-baut bzw. entfernt ein Mutations-Image mit eigenem Repository-Namen und Tag (`pg-change-feed-mutation:<TAG>`), getrennt vom Lauf-Beleg-Pfad: `make image-mutation SRC=<Verzeichnis> TAG=<Tag>` ruft genau `docker buildx build --load -t pg-change-feed-mutation:<TAG> <SRC>` auf (kein `--metadata-file`, kein `-t` auf `:dev`, kein `--push`), `make image-mutation-rm TAG=<Tag>` genau `docker rmi pg-change-feed-mutation:<TAG>` (kein `-f`, kein `prune`); jede Eingabeprüfung (`TAG`-Zeichenklasse, `dev`/`latest` reserviert, `SRC` mit `Dockerfile`+`go.mod`, `SRC` nicht die Repo-Wurzel oder darunter) läuft vor dem Docker-Aufruf, Exit 2. Ohne `SRC`/`TAG` bricht das Makefile-Ziel mit `$(error …)` ab. `harness/image-hash.txt`, `harness/image-hash.raw` und `:dev` bleiben unberührt
-
-### `make test-image-mutation`
-
-Tabellentest gegen `tools/harness/image-mutation.sh` (`tools/harness/run-image-mutation-tests.sh`): gültige Argumente inkl. SRC mit Leerzeichen, `harness/image-hash.txt`/`.raw` bleiben unverändert, TAG-Zeichenklasse und reservierte Namen, SRC-Eingabefehler (fehlt/kein Verzeichnis/ohne Dockerfile/ohne go.mod/Repo-Wurzel/unter der Wurzel), Exit-Weitergabe eines Docker-Fehlers, `rm` mit genau einem `rmi`-Argument, Make-Ebene ohne SRC/TAG; Stub-`docker` in einem Wegwerf-Repo im Temp-Verzeichnis, netzlos

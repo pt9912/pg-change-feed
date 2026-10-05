@@ -7,7 +7,9 @@ Wird dieses Target rot, trägt eines der geprüften Nutzerdokumente eine
 (`tools/harness/handbuch-public-doc-check.sh`). Die Nutzerdokumentation ist die
 Betreiber- und Integrator-Sicht ([`LH-QA-OPS-001`](../../spec/lastenheft.md));
 Kennungen der Spezifikations-, Entscheidungs- und Anforderungsdokumente sowie
-Slice-, Welle- und Register-Namen gehören in Plan und Commit.
+Slice-, Welle- und Register-Namen gehören in Plan und Commit. Das Muster `P`
+unten fängt `LH-FA-…`, `LH-QA-…` (und `LH-RB-…`), `ADR-…`, `SPEC-…`, `ARC-…`,
+`BEO-…`, `MR-…`, `CO-…` und Slice-/Welle-Namen, das Muster `L` die Links.
 
 **Muster** (ERE, zeilenweise `grep -InE`, kein `grep -P`):
 
@@ -80,10 +82,29 @@ Skript liest Zeilen.
 ## Sperren
 
 - **Host-Werkzeuge:** `bash`, `git`, `grep`, `find`, `sort`, `sed`, `head`,
-  `mktemp` (`AGENTS.md` §3.1, POSIX-/coreutils-Basis). Kein Docker, kein Netz;
+  `mktemp` (`AGENTS.md` §3.1, POSIX-/coreutils-Basis). Netzlos und schnell
+  (reines `grep`), kein Docker;
   das Skript steigt über `git rev-parse --show-toplevel` auf die Wurzel und
   legt ein Temp-Verzeichnis an, das es beim Ende entfernt. Der Wächter liest
   den Arbeitsbaum, nicht den Index.
+
+## Tabellentest
+
+`make test-handbuch-public-doc-check` fährt den Tabellentest gegen
+`tools/harness/handbuch-public-doc-check.sh`
+(`tools/harness/run-handbuch-public-doc-check-tests.sh`, netzlos): je
+Kennungsart und je Link-Klasse ein Treffer, Wortrand-Fälle ohne Treffer, saubere
+Wurzel, je ein Fall für die vier ausgenommenen Dateien der Liste oben,
+unklassifizierte und fehlende Datei mit Exit 2. Die Zahl vier ist gemessen
+(2026-10-05): die Liste `excluded=` in `tools/harness/handbuch-public-doc-check.sh`
+trägt vier Namen, der Tabellentest je einen Fall „… ausgenommen“ für jede
+(`grep -c '^expect 0 ".*ausgenommen"' tools/harness/run-handbuch-public-doc-check-tests.sh`
+druckt `4`), `make test-handbuch-public-doc-check` endet mit
+Exit 0 und der Zeile `run-handbuch-public-doc-check-tests: alle 41 Fälle bestanden`.
+Der Tabellentest bleibt Werkzeug — der Gegenstand des Gates ist der Bestand der
+Nutzerdokumente, nicht die Wächter-Logik
+([`ADR-0143`](../../docs/plan/adr/0143-handbuch-public-doc-check-gate-kennungsfreie-nutzerdoku.md)
+Festlegung 5; Grenze 4).
 
 ## Bindung
 
@@ -92,15 +113,3 @@ Skript liest Zeilen.
 [`LH-QA-OPS-001`](../../spec/lastenheft.md) (Dokumentation für Betreiber) ·
 `tools/harness/handbuch-public-doc-check.sh` · `harness/mk/doc-gate.mk` · seit
 slice-handbuch-public-doc-check-gate-und-skill.
-
-## Fassung im Gate-Index
-
-Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher. Der Text darunter ist der wortgleich umgezogene Index-Text, kein eigener Vertrag: weicht er von dieser Datei ab, gilt [§Vertrag](#vertrag) mit den Abschnitten bis zu diesem.
-
-### `make handbuch-public-doc-check`
-
-prüft mit `grep`, dass die Nutzerdokumente unter `docs/user/` (geprüft: `benutzerhandbuch.md`, `benutzerhandbuch-standard.md`, `version.md`) keine interne Kennung (`LH-FA-…`, `LH-QA-…`, `ADR-…`, `SPEC-…`, `ARC-…`, `BEO-…`, `MR-…`, `CO-…`, Slice-/Welle-Name) und keinen Link nach `docs/plan/` oder `docs/reviews/` tragen (`tools/harness/handbuch-public-doc-check.sh`, Muster und Wortrand im Vertrag). Ausgenommen sind die vier von Runnern geschriebenen `*-abdeckung.md` (die Maintainer-Doku liegt unter `docs/maintainer/`, außerhalb des Gegenstands); jede andere `*.md` unter `docs/user/` und jede genannte, fehlende Datei endet mit Exit 2 (neue Datei erzwingt die Klassifikation). Netzlos und schnell (reines `grep`, kein Docker). Das Gate liest Kennungen, nicht Sinn: Chronik-Sprache ohne Kennung bleibt grün (Lese-Hälfte: Skill `.harness/skills/nutzerdoku-schreiben.md` und Reviewer)
-
-### `make test-handbuch-public-doc-check`
-
-fährt den Tabellentest gegen `tools/harness/handbuch-public-doc-check.sh` (`tools/harness/run-handbuch-public-doc-check-tests.sh`: je Kennungsart und je Link-Klasse ein Treffer, Wortrand-Fälle ohne Treffer, saubere Wurzel, die fünf ausgenommenen Dateien, unklassifizierte und fehlende Datei mit Exit 2); der Tabellentest bleibt Werkzeug — der Gegenstand des Gates ist der Bestand der Nutzerdokumente, nicht die Wächter-Logik (`ADR-0143` Festlegung 5); netzlos

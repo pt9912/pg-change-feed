@@ -3,14 +3,14 @@ name: ci
 
 # PR-/Push-CI (ADR-0051 Entscheidung 2): laeuft auf jeden Pull Request und
 # jeden Branch-Push. Tag-Pushes sind ausgenommen (`tags-ignore: ['**']`) —
-# sie loesen ausschliesslich den (noch nicht existierenden) Release-Workflow
-# aus, kein Doppellauf.
+# sie loesen ausschliesslich die Release-Workflows aus (`release.yml`,
+# `sdk-*-release.yml`), kein Doppellauf.
 #
 # Ruft ausschliesslich bestehende `make`-Targets auf (AGENTS.md §3.1,
-# Docker-only): `make gates` deckt baseline-verify, docs-check, a-check,
-# commit-traceability, coverage-gate und generated-sync ab
-# (harness/README.md §Sensors), `make test` ergaenzt
-# den Race-Detector-Unit-Test-Lauf (kein Gate, ADR-0030). Kein Workflow-
+# Docker-only): `make gates` deckt jedes Ziel aus `GATE_CHECKS` ab
+# (Liste: harness/README.md §Sensors, Zeile `make gates`, Vertrag
+# harness/sensors/gates.md), `make test` ergaenzt
+# den Race-Detector-Unit-Test-Lauf (kein Gate). Kein Workflow-
 # Schritt enthaelt Inline-Shell-Logik, die eines dieser Ziele umgeht oder
 # dupliziert.
 #

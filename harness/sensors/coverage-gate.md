@@ -384,11 +384,3 @@ Schwelle 70%`, Exit 0).
 · [`ADR-0054`](../../docs/plan/adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
 · `tools/coverage-gate.sh` · `tools/harness/db-package-lists-check.sh` ·
 `harness/mk/coverage.mk` · seit slice-049.
-
-## Fassung im Gate-Index
-
-Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher. Der Text darunter ist der wortgleich umgezogene Index-Text, kein eigener Vertrag: weicht er von dieser Datei ab, gilt [§Vertrag](#vertrag) mit den Abschnitten bis zu diesem.
-
-### `make coverage-gate`
-
-Go-Test-Coverage über die netzlos prüfbare Fläche (`./internal/...`+`./cmd/...`+`./gen/...` ohne die Pakete, deren Testlauf einen externen Dienst voraussetzt) gegen `THRESHOLD` — bootstrap-aware Gate, Rampe Einstieg 70 % → Endstufe 80 %; geltende Stufe in [`harness/mk/coverage.mk`](../mk/coverage.mk); vor dem Bau hält `tools/harness/db-package-lists-check.sh` die namentlichen Paketlisten des ausgenommenen Gegenstands gleich (Exit ≠ 0 färbt das Ziel rot)
