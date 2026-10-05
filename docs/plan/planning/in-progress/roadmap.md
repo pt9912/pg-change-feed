@@ -38,10 +38,6 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-Nichts in Arbeit — kein Slice liegt in `in-progress/` (WIP-Limit 1 gilt je
-Slice, nicht je offener Welle-Datei; mehrere gleichzeitig eröffnete Wellen sind
-kein Verstoß).
-
 ## Nächste Wellen
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
