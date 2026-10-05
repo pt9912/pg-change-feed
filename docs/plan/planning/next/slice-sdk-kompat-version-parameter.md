@@ -20,7 +20,7 @@ Harness-Werkzeug, kein Produkt.
 
 **Berührte Spec-Stellen:** — (keine).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** pt9912 (Implementer-Agent im Auftrag).
 
 **Autor:** pt9912 (Planner, Meldung mit Frist aus der Closure von
 `slice-sdk-tls-optionen`). **Datum:** 2026-10-05.
