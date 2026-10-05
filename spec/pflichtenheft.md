@@ -1637,6 +1637,40 @@ Liste. Alle vier Variablen sind env-exklusiv (`SPEC-016`).
 - Ein Wechsel besteht aus zwei Neustarts: das neue Token ergänzen, die Clients
   umstellen, das alte Token entfernen. Ein Neuladen zur Laufzeit gibt es nicht.
 
+### SPEC-037 — TLS-Optionen der Client-Bibliotheken
+
+Technische Ausgestaltung von [`LH-FA-SST-013`](lastenheft.md) für die drei
+SDK-Packages (`SPEC-026`, `SPEC-027`, `SPEC-028`) und die Flächen HTTP
+(`SPEC-018`), SSE (`SPEC-021`), gRPC-Stream und gRPC-Verwaltung (`SPEC-020`,
+`SPEC-031`). Die NATS-Fläche (`SPEC-024`) bleibt unberührt.
+
+- **Eine Option je SDK** gibt einen Vertrauensanker an: den Pfad einer
+  PEM-Datei mit einem oder mehreren Zertifikaten (Aussteller oder Server). Die
+  Form der Option (Konstruktorparameter, Optionsobjekt) bestimmt die Sprache;
+  ihr Inhalt ist in allen drei SDKs derselbe und gilt für alle vier Flächen
+  eines Clients gemeinsam.
+- **Mit Anker:** die Verbindung vertraut genau diesen Zertifikaten; die
+  Vertrauensanker des Betriebssystems gelten für diese Verbindung nicht
+  zusätzlich. **Ohne Anker:** die Vertrauensanker des Betriebssystems bzw. der
+  Laufzeit der Sprache.
+- **TLS-Wahl:** HTTP und SSE über das Schema der Adresse (`https://` verlangt
+  TLS, `http://` bleibt unverschlüsselt); gRPC über die Entsprechung der Sprache
+  (die Adresse bzw. der Kanal verlangt TLS), nie über einen stillen Rückfall.
+- **Prüfung:** Zertifikatskette, Gültigkeitszeitraum und Servername (Host der
+  Adresse) werden immer geprüft; es gibt keine Einstellung, die das abschaltet,
+  und kein Überschreiben des Servernamens. Ein Verstoß ist ein
+  Verbindungsfehler der Fläche, ohne Meldungscode des Servers (der Server wurde
+  nicht erreicht); kein Retry auf Klartext.
+- **Prüfung der Option beim Erzeugen des Clients:** ein nicht lesbarer Pfad oder
+  eine Datei ohne PEM-Zertifikat ist ein Konfigurationsfehler des Aufrufers,
+  sichtbar beim Erzeugen, nicht erst bei der ersten Anfrage.
+- **Abgrenzung:** kein Client-Zertifikat, kein Neuladen des Ankers, keine
+  Einstellung für Mindestversion oder Cipher; die Mindestversion des Servers
+  ist TLS 1.2 (`SPEC-034`). Eine bereits vorhandene Übergabe eines fertig
+  konfigurierten Kanals oder HTTP-Clients (Aufrufer baut die TLS-Konfiguration
+  selbst) bleibt unverändert zulässig und ist kein Ersatz für diese Option.
+- **Versionsgrenze:** die Option ist additiv; SemVer-Minor je SDK-Package.
+
 ---
 
 ## 3. Defaults und Konstanten
@@ -1653,23 +1687,32 @@ eine ADR nur den ganzen Abschnitt nennen.
 | `SPEC-012` | `PG_MAJOR_VERSIONS` | 17, 18 | Vorschlagsregel: die zwei neuesten aktiven Major-Versionen (Stand 2026-09-09; PostgreSQL 19 unmittelbar vor Release — Aufnahme als spätere Ausweitung) |
 | `SPEC-013` | `CDC_THRESHOLDS` | Capture-Lag p95 ≤ 1 s · Warn > 5 s · Fehler > 60 s; WAL-Rückstand Warn > 100 MiB · Fehler > 1 GiB | Initialwerte Commit→CDC-Verfügbarkeit ([`LH-QA-PER-004`](lastenheft.md), `cdc_capture_lag`) und WAL-Wachstum inaktiver Slots ([`LH-QA-REL-003`](lastenheft.md), `cdc_wal_retention_bytes`); über ADR schärfbar |
 | `SPEC-014` | `LOAD_TIERS` | klein: ≤ 10 Changes/s · mittel: 100 Changes/s über 30 min · groß: 1.000 Changes/s über 60 min | Benchmark-Stufen für die Skalierbarkeits-Prüfung ([`LH-QA-PER-002`](lastenheft.md)): von kleinen Datenbanken bis zu kontinuierlichen Änderungsvolumina; über ADR schärfbar |
-| `SPEC-025` | `CDC_BENCH_THRESHOLDS` | Zusätzliche Commit-Latenz je Quelltransaktion ≤ 0,10 ms in `SPEC-036` (Vorschlag) · Batch-Vorteil ≥ 10× | Pass/Fail für [`LH-QA-PER-001`](lastenheft.md)/[`LH-QA-PER-003`](lastenheft.md); [`LH-QA-PER-002`](lastenheft.md) nutzt `SPEC-013`; Einzelheiten unter der Tabelle; über ADR schärfbar |
-| `SPEC-036` | `BENCH_SOURCE_ENV` | PostgreSQL 18 · Feed co-located · N = 5000, Median von 5 · `fdatasync` ≤ 0,5 ms | Messumgebung der Obergrenze `SPEC-025`; Einzelheiten unter der Tabelle; über ADR schärfbar |
+| `SPEC-025` | `CDC_BENCH_THRESHOLDS` | Zusatz-Commit-Latenz Δ ≤ max(0,10 ms ; 1,5 × `t_sync`), `t_sync` nach `SPEC-036` · Batch-Vorteil ≥ 10× | Pass/Fail für [`LH-QA-PER-001`](lastenheft.md)/[`LH-QA-PER-003`](lastenheft.md); [`LH-QA-PER-002`](lastenheft.md) nutzt `SPEC-013`; Einzelheiten unter der Tabelle; über ADR schärfbar |
+| `SPEC-036` | `BENCH_SOURCE_ENV` | PostgreSQL 18 · Feed co-located · N = 5000, Median von 5 · `t_sync` im selben Lauf gemessen | Messvorschrift der Grenze `SPEC-025`; Einzelheiten unter der Tabelle; über ADR schärfbar |
 
-**Zu `SPEC-025`.** Die Latenz ist die Differenz der Gesamtdauern von N einzeln
-committeten Quelltransaktionen mit und ohne Feed, geteilt durch N. Der Wert
-0,10 ms ist ein Vorschlag zur Bestätigung durch die Messung in der Umgebung
-`SPEC-036` (abgeleitet aus der Obergrenze früherer Messungen, nicht erprobt).
-Außerhalb der Umgebung druckt die Messung ihren Wert samt Verhältnis zur
-gemessenen Latenz des Festschreibens (`fdatasync`) ohne Verdikt.
+**Zu `SPEC-025`.** Die zusätzliche Latenz Δ ist die Differenz der Gesamtdauern
+von N einzeln committeten Quelltransaktionen mit und ohne Feed, geteilt durch
+N. Die Grenze ist max(0,10 ms ; 1,5 × `t_sync`) mit der Festschreib-Latenz
+`t_sync` nach `SPEC-036`; das Verdikt gilt auf jedem Host. Die Messung druckt in
+jedem Lauf Δ, `t_sync`, das Verhältnis Δ / `t_sync` und die Grenze. Ist `t_sync`
+nicht messbar, endet die Messung ohne Verdikt mit einem Fehlerausgang, ohne
+Rückfall auf einen anderen Wert. Herkunft der Zahlen: der Faktor 1,5 ist eine
+Festlegung; an einem Messhost (Linux 6.8.0-139-generic, `fdatasync`
+2,956 ms) ist Δ = 3,00 ms und das Verhältnis Δ / `t_sync` ≈ 1,0 (abgeleitet:
+Läufe zwischen 0,94 und 1,03), der Faktor lässt darüber 46 % Spielraum. Die
+Untergrenze 0,10 ms ist eine Festlegung, übernommen aus einer früheren
+Obergrenze von 0,085 ms eines anderen Hosts, dessen `fdatasync` unbekannt ist;
+sie greift nur bei `t_sync` unter 0,067 ms (abgeleitet).
 
 **Zu `SPEC-036`.** PostgreSQL 18 im Digest-Pin des Bench-Skripts; der
 Feed-Container läuft auf demselben Host wie die Quelle; N = 5000 einzeln
-committete `INSERT`s, Median von 5 Läufen je Phase; die Latenz einer
-`fdatasync`-Operation auf dem Datenträger des Datenverzeichnisses liegt bei
-höchstens 0,5 ms (gemessen mit `pg_test_fsync`). Die Latenz je Commit hängt am
-Festschreiben auf dem Datenträger, deshalb gilt die absolute Zahl nur in dieser
-Umgebung.
+committete `INSERT`s, Median von 5 Läufen je Phase. `t_sync` ist die Latenz
+einer Festschreib-Operation auf dem Datenträger des Datenverzeichnisses der
+Messinstanz, im selben Lauf vor den Phasen mit `pg_test_fsync` im
+PostgreSQL-Container gemessen, und zwar die Zeile der Methode, die die Instanz
+nutzt (`wal_sync_method`; unter Linux im Regelfall `fdatasync`). Die Latenz je
+Commit hängt am Festschreiben auf dem Datenträger, deshalb wird die Grenze aus
+`SPEC-025` an `t_sync` gebunden statt an einen festen Wert.
 
 ---
 
@@ -1879,3 +1922,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-03 | `SPEC-018` (Fehler-Antwortform, `SPEC-022` Zeile „Fehler-Antwortform“): additives Feld `code` im Fehlerkörper, Codes der Ablehnungen `PCF-E8050` bis `PCF-E8057`, `401`/`403` ohne Code; `SPEC-031`: Statusdetail `ErrorInfo` (`reason` Code, `domain` `pg-change-feed`), `Unauthenticated`/`PermissionDenied` ohne Detail; `SPEC-008`: Verweis auf die beiden Wege und `PCF-W4008` |
 | 2026-10-04 | `SPEC-033` (OTLP-Metrik-Export), `SPEC-034` (TLS der HTTP- und gRPC-Schnittstellen), `SPEC-035` (mehrere API-Token je Klasse) neu; `SPEC-036` (Messumgebung `BENCH_SOURCE_ENV`) neu in §3; `SPEC-025` neu gefasst (absolute Obergrenze der zusätzlichen Commit-Latenz je Quelltransaktion als Vorschlag, Verhalten außerhalb der Messumgebung); `SPEC-016`: Schlüssel `tls_cert_file`, `tls_key_file`, `otlp_interval`, ausgeschlossene Klasse um `otlp_endpoint`, `otlp_headers` und die zwei Token-Listen erweitert, env-exklusive Liste ergänzt; `SPEC-008`: Warn-Bereich 6 „Beobachtbarkeit und Transport“; `SPEC-009`: `cdc_oldest_change_age` heißt `cdc_oldest_change_age_seconds` (Name der Sicht); §5 Kopfsatz auf die beiden Zugriffswege gezogen; §6: `SPEC-033` als externer Vertrag; `SPEC-018`: Verweise auf `SPEC-034`/`SPEC-035` |
 | 2026-10-04 | `SPEC-033`: Einheit von `cdc_consumer_lag` ist `By` (WAL-Strecke), Zahlenform, Header-Regeln, Header ohne Endpunkt, Benutzerteil der Endpunkt-URL, erster Versuch nach einem vollen Takt, Frist für Lesen und Übertragen gemeinsam, gemeinsamer Fehlerzustand, keine Weiterleitung; `SPEC-034`: Prüfung beim Start auf das Laden des Paares begrenzt (Ablauf, Namen, Kette nicht geprüft); `SPEC-035`: leere Variable, Komma im Token, Leerraum nur in den Listen; `SPEC-009`: Bedeutung von `cdc_consumer_lag` — schreibt den Ist-Zustand fest, kein neues Verhalten außer der Einheit |
+| 2026-10-05 | `SPEC-025`: Grenze der Zusatzlatenz ist max(0,10 ms ; 1,5 × `t_sync`) mit im selben Lauf gemessener Festschreib-Latenz, Verdikt auf jedem Host, Fehlerausgang bei nicht messbarem `t_sync`; `SPEC-036`: Messvorschrift für `t_sync` statt Band `fdatasync` ≤ 0,5 ms; `SPEC-037` neu (TLS-Optionen der Client-Bibliotheken: ein Vertrauensanker je SDK für HTTP, SSE und gRPC) |
