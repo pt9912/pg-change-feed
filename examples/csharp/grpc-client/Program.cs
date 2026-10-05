@@ -47,13 +47,20 @@ internal static class Program
         }
 
         // Der Feed-Container spricht TLS, wenn ein Zertifikatspaar konfiguriert
-        // ist; dieses Beispiel verbindet im Klartext (dieselbe Wahl wie der
-        // Go-Client mit `insecure.NewCredentials()`) — der Switch erlaubt
-        // HTTP/2 ohne Transportverschlüsselung (h2c) für den `HttpClient`,
-        // den `GrpcChannel.ForAddress` intern benutzt.
-        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+        // ist: mit `--ca-file` verbindet das Beispiel über TLS, ohne im Klartext
+        // (`ChannelFactory`).
+        GrpcChannel channel;
+        try
+        {
+            channel = ChannelFactory.Create(cfg);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            return 2;
+        }
 
-        using var channel = GrpcChannel.ForAddress($"http://{cfg.Addr}");
+        using var _ = channel;
 
         if (cfg.Verb == "stream")
         {

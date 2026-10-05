@@ -18,6 +18,7 @@ public static class Cli
         var addr = getEnv("CDC_GRPC_ADDR") ?? "";
         var token = getEnv("CDC_API_TOKEN_READER") ?? "";
         var adminToken = getEnv("CDC_API_TOKEN_ADMIN") ?? "";
+        var caFile = getEnv("CDC_TLS_CA_FILE") ?? "";
         var verb = "stream";
         var schema = "";
         var table = "";
@@ -62,6 +63,9 @@ public static class Cli
                     break;
                 case "--admin-token":
                     adminToken = NextValue();
+                    break;
+                case "--ca-file":
+                    caFile = NextValue();
                     break;
                 case "--verb":
                     verb = NextValue();
@@ -122,7 +126,7 @@ public static class Cli
             ConsumerId: consumerId, Name: name, Offset: offset,
             TableId: tableId, SchemaVersionId: schemaVersionId, Version: version,
             Source: source, Publication: publication,
-            From: from, To: to, Limit: limit, MinAgeNanos: minAgeNanos, Target: target);
+            From: from, To: to, Limit: limit, MinAgeNanos: minAgeNanos, Target: target, CaFile: caFile);
     }
 
     private static ulong ParseUInt64(string flagName, string value)

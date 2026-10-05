@@ -7,7 +7,9 @@ package cdcexamples.grpc
  * nötigen Felder. `schema`/`table` dienen doppelt: als optionaler
  * Stream-Filter (`ADR-0133`) und als Tabellen-Identität der
  * Verwaltungs-RPCs; `target` (`--target`) wählt das Zustellziel einer Change im
- * Stream und in `read-changes`, leer ist kein Filter. Form-Vorbild: `examples/csharp/grpc-client/Config.cs`,
+ * Stream und in `read-changes`, leer ist kein Filter; `caFile` (`--ca-file`,
+ * `CDC_TLS_CA_FILE`) nennt das Zertifikat (PEM) als Vertrauensanker — gesetzt
+ * spricht der Kanal TLS, leer Klartext ([ChannelFactory]). Form-Vorbild: `examples/csharp/grpc-client/Config.cs`,
  * `config` in `examples/grpc-client/main.go`.
  */
 data class Config(
@@ -30,4 +32,5 @@ data class Config(
     val limit: Long,
     val minAgeNanos: Long,
     val target: String = "",
+    val caFile: String = "",
 )

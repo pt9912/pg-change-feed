@@ -16,6 +16,7 @@ object Cli {
         var addr = getEnv("CDC_GRPC_ADDR") ?: ""
         var token = getEnv("CDC_API_TOKEN_READER") ?: ""
         var adminToken = getEnv("CDC_API_TOKEN_ADMIN") ?: ""
+        var caFile = getEnv("CDC_TLS_CA_FILE") ?: ""
         var verb = "stream"
         var schema = ""
         var table = ""
@@ -52,6 +53,7 @@ object Cli {
                 "--addr" -> addr = nextValue()
                 "--token" -> token = nextValue()
                 "--admin-token" -> adminToken = nextValue()
+                "--ca-file" -> caFile = nextValue()
                 "--verb" -> verb = nextValue()
                 "--schema" -> schema = nextValue()
                 "--table" -> table = nextValue()
@@ -80,7 +82,7 @@ object Cli {
             tableId = tableId, schemaVersionId = schemaVersionId, version = version,
             source = source, publication = publication,
             from = from, to = to, limit = limit, minAgeNanos = minAgeNanos,
-            target = target,
+            target = target, caFile = caFile,
         )
     }
 

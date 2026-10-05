@@ -3,7 +3,6 @@ package cdcexamples.grpc
 import cdc.administration.v1.AdministrationGrpcKt
 import cdc.stream.v1.ChangeStreamGrpcKt
 import io.grpc.ManagedChannel
-import io.grpc.ManagedChannelBuilder
 import io.grpc.StatusException
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
@@ -54,11 +53,14 @@ fun main(args: Array<String>): Unit = runBlocking {
     }
 
     // Der Feed-Container spricht TLS, wenn ein Zertifikatspaar konfiguriert
-    // ist; dieses Beispiel verbindet im Klartext (dieselbe Wahl wie der
-    // Go-Client mit `insecure.NewCredentials()` und der C#-Client mit dem
-    // h2c-Switch) — `usePlaintext()` erlaubt den Kanal ohne
-    // Transportverschlüsselung.
-    val channel = ManagedChannelBuilder.forTarget(cfg.addr).usePlaintext().build()
+    // ist: mit `--ca-file` verbindet das Beispiel über TLS, ohne im Klartext
+    // (`ChannelFactory`).
+    val channel = try {
+        ChannelFactory.create(cfg)
+    } catch (ex: IllegalArgumentException) {
+        System.err.println(ex.message)
+        exitProcess(2)
+    }
     try {
         if (cfg.verb == "stream") {
             runStream(channel, cfg)

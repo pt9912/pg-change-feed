@@ -43,6 +43,16 @@ public class CliTests
     }
 
     [Fact]
+    public void Parse_CaFileFromEnvironmentAndFlag()
+    {
+        var env = EnvFrom(new Dictionary<string, string> { ["CDC_TLS_CA_FILE"] = "/env.pem" });
+
+        Assert.Equal("", Cli.Parse([], NoEnv).CaFile);
+        Assert.Equal("/env.pem", Cli.Parse([], env).CaFile);
+        Assert.Equal("/flag.pem", Cli.Parse(["--ca-file=/flag.pem"], env).CaFile);
+    }
+
+    [Fact]
     public void Parse_FlagOverridesEnvironment()
     {
         var env = EnvFrom(new Dictionary<string, string>

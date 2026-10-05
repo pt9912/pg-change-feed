@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.98
+Version: 1.99
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-10-04
 
@@ -1924,11 +1924,33 @@ Fehlerklasse `configuration`:
 Die Fehlerzeile nennt die Variablen bzw. die Pfade und die Ursache, nie den
 Inhalt des Schlüssels.
 
-**Clients:** Die gRPC-Beispielprogramme in Go, C# und Kotlin verbinden fest im
-Klartext, und die Optionen der drei Client-Pakete (C#, Kotlin, Python) bieten
-keine TLS-Einstellung. Die gRPC-Beispiele verbinden deshalb nicht mit einem
-Server, der ein TLS-Paar trägt. Für die Client-Pakete und für HTTP- und
-SSE-Clients gegen einen solchen Server ist hier nichts zugesagt.
+**Clients:** Die gRPC-Beispielprogramme in Go, C# und Kotlin verbinden über TLS,
+wenn ihnen ein Vertrauensanker genannt wird: das Flag `-ca-file <Pfad>` (Go) bzw.
+`--ca-file <Pfad>` (C#, Kotlin) oder die Umgebungsvariable `CDC_TLS_CA_FILE`
+nennt das Zertifikat des Servers als PEM-Datei. Das Beispiel prüft dann Kette
+und Namen des Serverzertifikats gegen diese Datei und überspringt die Prüfung
+nie; ohne Angabe verbindet es im Klartext wie bisher. Eine nicht lesbare Datei
+und eine Datei ohne PEM-Zertifikat enden mit Ausgang 2 und einer Fehlermeldung,
+bevor eine Verbindung entsteht. Die Datei muss im Container des Beispiels
+liegen, zum Beispiel für das Go-Beispiel mit dem Stream als Verb:
+
+```text
+docker run --rm --network cdc-examples --env-file examples/.env \
+  -v <Pfad zum Zertifikat>:/tls/ca.pem:ro -e CDC_TLS_CA_FILE=/tls/ca.pem \
+  pg-change-feed-examples:go-grpc
+```
+
+Das Image `pg-change-feed-examples:go-grpc` entsteht mit `make example-run-go
+SURFACE=grpc`, die Images `pg-change-feed-examples:csharp-grpc` und
+`pg-change-feed-examples:kotlin-grpc` mit `make examples-csharp` bzw.
+`make examples-kotlin`. Gemessen gegen einen Feed-Container mit TLS-Paar: alle
+drei Beispiele empfangen im Verb `stream` mit `CDC_TLS_CA_FILE` eine danach
+committete Änderung (dieselbe Kennung wie in `cdc.changes`); ohne Angabe endet
+jedes Beispiel mit Ausgang 1 und einer Fehlermeldung zum nicht aufgebauten
+Kanal, ohne eine Antwort des Servers. Die übrigen Verben der Beispiele sind
+nicht gegen einen TLS-Server gefahren. Die Optionen der drei Client-Pakete (C#,
+Kotlin, Python) bieten keine TLS-Einstellung; für die Client-Pakete und für
+HTTP- und SSE-Clients gegen einen solchen Server ist hier nichts zugesagt.
 
 ### Zugriff über den gRPC-Change-Stream
 
@@ -2007,7 +2029,10 @@ der Stream ersetzt diesen Zugriffsweg nicht.
 **Beispiele:** Jede Sprache öffnet denselben Server-Streaming-RPC
 `ChangeStream/StreamChanges` und gibt jede empfangene Nachricht aus; Adresse
 und Token liest jedes Beispiel aus `CDC_GRPC_ADDR` und `CDC_API_TOKEN_READER`
-und lässt sich per Flag übersteuern.
+und lässt sich per Flag übersteuern. Gegen einen Server mit TLS-Paar nimmt jedes
+Beispiel das Zertifikat über `-ca-file`/`--ca-file` oder `CDC_TLS_CA_FILE`
+entgegen (siehe [Schnittstellen mit TLS
+verschlüsseln](#schnittstellen-mit-tls-verschlüsseln)).
 
 - **Go:** `examples/grpc-client` — Container-Aufruf über
   `make example-run-go SURFACE=grpc` (baut bei Bedarf
@@ -3263,3 +3288,4 @@ MIT — siehe `LICENSE`.
 | 1.96 | 2026-10-04 | Die HTTP- und die gRPC-Schnittstelle lassen sich mit einem gemeinsamen TLS-Paar verschlüsseln: die neuen Variablen `CDC_TLS_CERT_FILE` und `CDC_TLS_KEY_FILE` (Datei-Felder `tls_cert_file` und `tls_key_file`, Pfade ohne Zugangsdaten-Charakter), neuer Abschnitt „Schnittstellen mit TLS verschlüsseln“ (TLS ab Version 1.2, kein Klartext auf derselben Adresse, kein Client-Zertifikat, Zertifikatswechsel nur mit Neustart); ein unvollständiges oder nicht ladbares Paar verhindert den Start (neue Meldungscodes `PCF-E2009` und `PCF-E2010`); die gRPC-Beispielprogramme verbinden im Klartext und die Optionen der Client-Pakete bieten keine TLS-Einstellung |
 | 1.97 | 2026-10-04 | Der Feed-Container kann seine Kennzahlen periodisch per OpenTelemetry-Protokoll (OTLP/HTTP, Protobuf) an einen Empfänger übertragen: die neuen Variablen `CDC_OTLP_ENDPOINT`, `CDC_OTLP_HEADERS` und `CDC_OTLP_INTERVAL_SECONDS` (Datei-Feld `otlp_interval` für den Takt), neuer Abschnitt „Metriken per OTLP übertragen“ mit Kennzahlen, Einheiten und dem Hinweis, dass alle Kennzahlen Momentstände (Gauge) sind, auch die mit dem Namensteil `_total`; ohne Endpunkt bleibt der Export aus; ein Ausfall des Empfängers beeinträchtigt Erfassung und Health nicht und erzeugt die Warnungen `PCF-W6001` und `PCF-W6002` (neuer Warn-Bereich 6 „Beobachtbarkeit und Transport“); eine ungültige Export-Konfiguration verhindert den Start (neue Meldungscodes `PCF-E2011` bis `PCF-E2014`; die Meldung nennt nie den Wert von Endpunkt oder Header, beim Takt den eingegebenen Wert); die zugangsdaten-tragenden Schlüssel der Konfigurationsdatei, die dort nicht stehen dürfen, wachsen von neun auf elf (`otlp_endpoint`, `otlp_headers`) |
 | 1.98 | 2026-10-04 | Metrik-Export gegen einen echten OpenTelemetry-Collector gemessen: die Einheit von `cdc_consumer_lag` ist `By` (WAL-Strecke in Bytes, nicht Datenvolumen; Abschnitte „Metriken lesen“, „Metriken per OTLP übertragen“ und die Diagnose-Beschreibung); der Abschnitt zum Export nennt den `https`-Empfänger (CA-Bündel im Image, selbstsigniertes Zertifikat über `SSL_CERT_FILE`, ohne sie Warnung `PCF-W6001`) und den Benutzerteil der Endpunkt-URL (wird als Basic-Authorization gesendet, ein `Authorization`-Header aus `CDC_OTLP_HEADERS` gewinnt, keine Zugangsdaten in Log oder Fehlertext) |
+| 1.99 | 2026-10-05 | Die gRPC-Beispielprogramme in Go, C# und Kotlin verbinden über TLS, wenn ihnen ein Vertrauensanker genannt wird (Flag `-ca-file` bzw. `--ca-file`, Umgebungsvariable `CDC_TLS_CA_FILE`; ohne Angabe Klartext wie bisher); der Abschnitt „Schnittstellen mit TLS verschlüsseln“ nennt die Aufrufform und die Messung gegen einen Feed-Container mit TLS-Paar |

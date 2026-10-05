@@ -7,7 +7,10 @@ namespace CdcExamples.Grpc;
 /// tatsächlich nötigen Felder. <c>Schema</c>/<c>Table</c> dienen doppelt: als
 /// optionaler Stream-Filter (<c>ADR-0133</c>) und als Tabellen-Identität der
 /// Verwaltungs-RPCs; <c>Target</c> (<c>--target</c>) wählt das Zustellziel einer
-/// Change im Stream und in <c>read-changes</c>, leer ist kein Filter. Form-Vorbild: <c>examples/grpc-client</c> (Go),
+/// Change im Stream und in <c>read-changes</c>, leer ist kein Filter;
+/// <c>CaFile</c> (<c>--ca-file</c>, <c>CDC_TLS_CA_FILE</c>) nennt das
+/// Zertifikat (PEM) als Vertrauensanker — gesetzt spricht der Kanal TLS, leer
+/// Klartext (<see cref="ChannelFactory"/>). Form-Vorbild: <c>examples/grpc-client</c> (Go),
 /// <c>config</c> in <c>main.go</c>.
 /// </summary>
 public sealed record Config(
@@ -29,4 +32,5 @@ public sealed record Config(
     ulong To,
     long Limit,
     long MinAgeNanos,
-    string Target = "");
+    string Target = "",
+    string CaFile = "");

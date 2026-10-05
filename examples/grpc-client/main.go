@@ -17,12 +17,15 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
 	"os"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
@@ -53,6 +56,7 @@ type config struct {
 	token      string
 	adminToken string
 	verb       string
+	caFile     string
 
 	schema string
 	table  string
@@ -99,7 +103,12 @@ func main() {
 		os.Exit(2)
 	}
 
-	conn, err := grpc.NewClient(cfg.addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	creds, err := transportCredentials(cfg.caFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "grpc-client: %v\n", err)
+		os.Exit(2)
+	}
+	conn, err := grpc.NewClient(cfg.addr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "grpc-client: Verbindung (%s) fehlgeschlagen: %v\n", cfg.addr, err)
 		os.Exit(1)
@@ -120,6 +129,25 @@ func main() {
 	fmt.Println(out)
 }
 
+// transportCredentials wählt den Transport: nennt caFile ein PEM-Zertifikat,
+// vertraut der Client ihm als Anker und spricht TLS (Kette und Name werden
+// geprüft); ohne Angabe spricht er Klartext. Eine nicht lesbare Datei oder
+// eine Datei ohne PEM-Zertifikat ist ein Fehler vor dem Verbindungsaufbau.
+func transportCredentials(caFile string) (credentials.TransportCredentials, error) {
+	if caFile == "" {
+		return insecure.NewCredentials(), nil
+	}
+	pem, err := os.ReadFile(caFile)
+	if err != nil {
+		return nil, fmt.Errorf("Vertrauensanker %s nicht lesbar: %w", caFile, err)
+	}
+	pool := x509.NewCertPool()
+	if !pool.AppendCertsFromPEM(pem) {
+		return nil, fmt.Errorf("Vertrauensanker %s enthält kein PEM-Zertifikat", caFile)
+	}
+	return credentials.NewTLS(&tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}), nil
+}
+
 // parseFlags liest die Flag-Werte und füllt fehlende Felder aus den im
 // Handbuch dokumentierten Umgebungsvariablen (`ADR-0076` Festlegung 1).
 func parseFlags() config {
@@ -127,6 +155,7 @@ func parseFlags() config {
 	flag.StringVar(&cfg.addr, "addr", os.Getenv("CDC_GRPC_ADDR"), "Horch-Adresse des gRPC-Servers, host:port (Default: CDC_GRPC_ADDR)")
 	flag.StringVar(&cfg.token, "token", os.Getenv("CDC_API_TOKEN_READER"), "Bearer-Token der lesenden Rechtsklasse (Default: CDC_API_TOKEN_READER)")
 	flag.StringVar(&cfg.adminToken, "admin-token", os.Getenv("CDC_API_TOKEN_ADMIN"), "Bearer-Token der administrativen Rechtsklasse (Default: CDC_API_TOKEN_ADMIN)")
+	flag.StringVar(&cfg.caFile, "ca-file", os.Getenv("CDC_TLS_CA_FILE"), "Zertifikat (PEM) als Vertrauensanker; gesetzt verbindet das Programm über TLS, ungesetzt im Klartext (Default: CDC_TLS_CA_FILE)")
 	flag.StringVar(&cfg.verb, "verb", "stream", "Aufgerufene Fähigkeit: stream|register-consumer|acknowledge-consumer|get-consumer-position|remove-consumer|enable-table|disable-table|get-table-status|list-tables|run-retention|read-changes|diagnose")
 
 	flag.StringVar(&cfg.schema, "schema", "", "Schema (Stream-Filter, optional; sonst Pflichtfeld der Tabellen-RPCs)")

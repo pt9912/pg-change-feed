@@ -31,6 +31,14 @@ class CliTest {
     }
 
     @Test
+    fun parseCaFileFromEnvironmentAndFlag() {
+        val env: (String) -> String? = { name -> if (name == "CDC_TLS_CA_FILE") "/env.pem" else null }
+        assertEquals("", Cli.parse(emptyArray(), emptyEnv).caFile)
+        assertEquals("/env.pem", Cli.parse(emptyArray(), env).caFile)
+        assertEquals("/flag.pem", Cli.parse(arrayOf("--ca-file=/flag.pem"), env).caFile)
+    }
+
+    @Test
     fun parseDefaultVerbIsStream() {
         val got = Cli.parse(emptyArray(), emptyEnv)
         assertEquals("stream", got.verb)

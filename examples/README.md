@@ -182,6 +182,21 @@ mit `--source`, `nats-stream-client` (Subjekt `cdc.route.<source_id>.<ziel>`).
 `sse-client` nimmt zusätzlich `--schema` und `--table` entgegen (leer ist kein
 Filter); alle drei Flags wirken zusammen als Konjunktion.
 
+## TLS der gRPC-Beispiele
+
+Die drei gRPC-Beispiele (`grpc-client`, `csharp/grpc-client`,
+`kotlin/grpc-client`) verbinden über TLS, wenn ihnen ein Vertrauensanker genannt
+wird: `-ca-file <Pfad>` (Go) bzw. `--ca-file <Pfad>` (C#, Kotlin) oder die
+Umgebungsvariable `CDC_TLS_CA_FILE` nennt das Zertifikat des Servers als
+PEM-Datei; ohne Angabe verbinden sie im Klartext. Die Standard-Prüfung der
+Bibliothek (Kette und Name) bleibt, die Prüfung wird nicht übersprungen; eine
+nicht lesbare oder PEM-lose Datei endet mit Exit 2 vor dem Verbindungsaufbau. Die
+Datei muss im Container des Beispiels liegen (`docker run … -v
+<Zertifikat>:/tls/ca.pem:ro -e CDC_TLS_CA_FILE=/tls/ca.pem`); die Demo-Umgebung
+unter `examples/compose.yaml` bleibt im Klartext. Die Aufrufform und die Messung
+gegen einen Feed-Container mit TLS-Paar stehen im
+[Benutzerhandbuch](../docs/user/benutzerhandbuch.md#schnittstellen-mit-tls-verschlüsseln).
+
 ## Abgrenzung
 
 Die Wegwerf-Clients unter [`tools/harness/`](../tools/harness) (`httpclient`,

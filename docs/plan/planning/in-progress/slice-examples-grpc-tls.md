@@ -136,7 +136,7 @@ Planungsstand hat keinen davon gefahren
 Instanz B). Die gedruckte Zeile bzw. der Exit-Code steht im Bericht des
 Implementers und in §7.
 
-- [ ] **Go-Beispiel mit TLS-Wahl (Liefer-Punkt 1,
+- [x] **Go-Beispiel mit TLS-Wahl (Liefer-Punkt 1,
       [`LH-FA-SST-011`](../../../../spec/lastenheft.md) Happy Path, Boundary,
       Negative).** `examples/grpc-client` bekommt eine Option für die
       Vertrauensanker-Datei (Flag und Umgebungsvariable nach dem Muster der
@@ -152,7 +152,7 @@ Implementers und in §7.
       Datei) färben je einen Test rot; die Eingabeseite ist der Optionswert, nicht
       der Fake
       ([`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`](../observations/BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe/observation.md)).
-- [ ] **C#- und Kotlin-Beispiel mit TLS-Wahl (Liefer-Punkt 2,
+- [x] **C#- und Kotlin-Beispiel mit TLS-Wahl (Liefer-Punkt 2,
       [`LH-FA-SST-011`](../../../../spec/lastenheft.md) Happy Path, Boundary,
       Negative).** Dieselbe Option je Programm: C# `HttpClientHandler` mit dem
       Anker als Vertrauensquelle und ohne den h2c-Switch, wenn gesetzt; Kotlin
@@ -165,7 +165,7 @@ Implementers und in §7.
       Mutation und gesehener Farbe im Bericht. Der Bau-Beleg ist als Cache-Treffer
       zu kennzeichnen, wo er einer ist
       ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)).
-- [ ] **Realserver-Beleg und Handbuch (Liefer-Punkt 3,
+- [x] **Realserver-Beleg und Handbuch (Liefer-Punkt 3,
       [`LH-FA-SST-011`](../../../../spec/lastenheft.md) Happy Path, Negative).**
       Die drei Beispiele laufen gegen einen Feed-Container mit TLS (Compose-Override
       im Temp-Verzeichnis, Zertifikat mit dem vorhandenen Hilfsprogramm
@@ -193,7 +193,7 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
+- [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (Zeilen `make examples-csharp`, `make examples-kotlin`,
       `make example-run-go`: je ein Satz zur TLS-Option); gemeldete Träger
       fremder Dateien mit der Closure nachgezogen (§3 Suchlauf,
@@ -217,6 +217,59 @@ Aussagen-Berührung steht hier gar nicht.
 | `examples/kotlin/grpc-client/src/main/kotlin/cdcexamples/grpc/Main.kt`, `Cli.kt` (Name nach Bestand), `src/test/…` | update | Option, `SslContext` aus dem Anker statt `usePlaintext()`, wenn gesetzt (Liefer-Punkt 2) |
 | `docs/user/benutzerhandbuch.md` | update | Satz zu den Beispielen nach Messung, Historienzeile (Liefer-Punkt 3) |
 | `examples/README.md`, `harness/README.md` | update | Option je Sprache; Sensors-Zeilen |
+| `examples/grpc-client/tls_test.go` | neu | Tests des Go-Weges (Plan-Nachzug): `transportCredentials` gegen Health-Server mit und ohne TLS, fremder Anker, fehlende und PEM-lose Datei, Zertifikat zur Laufzeit |
+| `examples/csharp/grpc-client/ChannelFactory.cs`, `GrpcClient.Tests/ChannelFactoryTests.cs`, `GrpcClient.Tests/CliTests.cs` | neu / update | Plan-Nachzug: die Kanal-Wahl liegt in `ChannelFactory` (testbar), `Program.cs` ruft sie; Handler-Test gegen `TcpListener`+`SslStream`, `Cli`-Test für Flag und Umgebung |
+| `examples/kotlin/grpc-client/src/main/kotlin/cdcexamples/grpc/ChannelFactory.kt`, `src/test/…/ChannelFactoryTest.kt`, `CliTest.kt` | neu / update | Plan-Nachzug: `Grpc.newChannelBuilder` mit `TlsChannelCredentials` (grpc-api, keine Änderung an `build.gradle.kts`); Test gegen einen Server mit zur Laufzeit erzeugtem Zertifikat (`keytool` des JDK) |
+| `tools/harness/run-integration-tests.sh` | update, **eigener Commit vor dem Slice** | Auftrag des Auftraggebers (Finding des OTLP-e2e-Slice): ein lokal vorhandenes Collector-Image wird nicht erneut gepullt; kein Teil dieses Slice-Umfangs, kein Runner-Eingriff für den Realserver-Beleg dieses Slice |
+
+**Belege des Implementers (Zusagen aus §2, gemessen am Arbeitsstand).**
+
+- Go, `make test`-Form am Paket (`go test -race ./examples/grpc-client/` im
+  gepinnten Race-Image, netzlos): `ok  github.com/pt9912/pg-change-feed/examples/grpc-client`.
+  Mutationen an einer Kopie im Scratchpad, je Eingabeseite: Bedingung
+  `caFile == ""` negiert → fünf Tests rot (`…WithAnchorReachesTLSServer`,
+  `…WithoutAnchorReachesPlaintextServer`, `…WithAnchorFailsAgainstPlaintextServer`,
+  `…RejectsUnreadableAndPEMlessAnchor`, `…DefaultIsInsecure`); gelesene Datei
+  `os.ReadFile(os.Args[0])` statt `caFile` → zwei Tests rot
+  (`…WithAnchorReachesTLSServer`, `…RejectsUnreadableAndPEMlessAnchor`).
+- C#, frischer Lauf ohne Cache (`docker build --no-cache --target build`): `Passed!
+  Failed: 0, Passed: 60 … GrpcClient.Tests.dll`; `make examples-csharp` Exit 0
+  (Cache-Treffer für die Schichten, die der frische Lauf zuvor gebaut hatte).
+  Mutationen an einer Kopie: `Address` mit vertauschtem `https`/`http` und die
+  negierte Bedingung in `Create` → drei Tests rot (`Address_UsesHttpsOnlyWithAnchor`,
+  `Create_WithoutAnchor_BuildsPlaintextChannel`, `Create_WithAnchor_ReadsTheFile`);
+  gelesene Datei `Environment.ProcessPath` statt `caFile` → vier Tests rot
+  (`TlsHandler_WithAnchor_ReachesTlsServer`, `TlsHandler_WithForeignAnchor_FailsHandshake`,
+  `TlsHandler_RejectsMissingFile`, `Create_WithAnchor_ReadsTheFile`).
+- Kotlin: `make examples-kotlin` Exit 0, die Test-Schicht (`BUILD SUCCESSFUL in 37s`,
+  `:grpc-client:test`) lief frisch (kein Cache-Treffer: die Quellen waren neu).
+  Mutationen an einer Kopie: `isEmpty()` → `isNotEmpty()` → fünf Tests rot
+  (`anchorFailsAgainstPlaintextServer`, `withoutAnchorPlaintextFailsAgainstTlsServer`,
+  `anchorReachesTlsServer`, `missingAndPemlessAnchorFailBeforeConnecting`,
+  `withoutAnchorReachesPlaintextServer`); `trustManager(File(<java.home>/release))`
+  statt des Ankers → drei Tests rot (`anchorFailsAgainstPlaintextServer`,
+  `anchorReachesTlsServer`, `foreignAnchorFailsChainCheck`). Die Form der
+  Bibliothek (gemessen): `io.grpc.Grpc.newChannelBuilder(target, TlsChannelCredentials)`
+  mit `trustManager(File)`; die Datei prüft der Test selbst vorab mit
+  `CertificateFactory`, weil `trustManager(File)` eine PEM-lose Datei erst beim
+  Kanalbau mit `ProviderNotFoundException` meldet.
+- Realserver (je Sprache ein Lauf, keine Runner-Phase; Entscheidung: die
+  Demo-Umgebung `make example-demo-up` trug den Feed-Container, `docker compose
+  -f examples/compose.yaml -f <Override im Scratchpad>` setzte `CDC_TLS_CERT_FILE`
+  und `CDC_TLS_KEY_FILE` mit einem von `tools/harness/certgen` erzeugten Paar;
+  Logzeilen `"tls":true` für HTTP und gRPC, Health `healthy`). Mit
+  `CDC_TLS_CA_FILE` empfingen alle drei die danach eingefügte Zeile:
+  `change_id=822-1` (Go), `833-1` (C#), `843-1` (Kotlin), je `table=public.orders
+  operation=INSERT` und der eindeutige Wert in `customer`; alle drei Kennungen
+  sind in `cdc.changes` gelesen. Ohne Angabe endete Go mit Ausgang 1 und
+  `StreamChanges fehlgeschlagen: … Unavailable … error reading server preface:
+  EOF`, C# mit `Status(StatusCode="Unavailable", … HTTP/2 handshake …)`, Kotlin
+  mit `Status{code=UNAVAILABLE, description=Network closed for unknown reason}`.
+  Eine nicht lesbare und eine PEM-lose Datei endeten in allen drei mit Ausgang 2
+  und der Meldung `Vertrauensanker … nicht lesbar` bzw. `… enthält kein
+  PEM-Zertifikat`. `git status --porcelain --untracked-files=all` am Ende: 0
+  Dateien `*.pem`. Die HTTP- und SSE-Beispiele sind **nicht** gegen den
+  TLS-Container gefahren (kein Aufruf, keine Aussage im Handbuch).
 
 - **Zertifikat im Test.** Der Go-Test erzeugt es mit `crypto/x509` zur Laufzeit;
   C# und Kotlin erzeugen es mit der Bibliothek der Sprache im Test oder lesen
@@ -246,7 +299,34 @@ Aussagen-Berührung steht hier gar nicht.
 53c65763ee4bd7a45840ef74e2b87a6e04d79d5f 7 -n -E 'insecure\.NewCredentials|usePlaintext|Http2UnencryptedSupport' -- examples
 53c65763ee4bd7a45840ef74e2b87a6e04d79d5f 2 -n -E 'gRPC-Beispiele' -- docs/user
 53c65763ee4bd7a45840ef74e2b87a6e04d79d5f 4 -n -E 'Klartext' -- examples
+71c6a8865133e8894c36ca5a0f10bdd5bf3c92dc 7 -n -E 'insecure\.NewCredentials|usePlaintext|Http2UnencryptedSupport' -- examples
+71c6a8865133e8894c36ca5a0f10bdd5bf3c92dc 2 -n -E 'gRPC-Beispiele' -- docs/user
+71c6a8865133e8894c36ca5a0f10bdd5bf3c92dc 4 -n -E 'Klartext' -- examples
+diff 4 -n -E 'insecure\.NewCredentials|usePlaintext|Http2UnencryptedSupport' -- examples
+diff 1 -n -E 'gRPC-Beispiele' -- docs/user
+diff 21 -n -E 'Klartext' -- examples
 ```
+
+**Startmessung und Endstand des Implementers.** Die ersten drei Zeilen gelten am
+Planungsstand, die Zeilen 4 bis 6 am Arbeitsstand vor der Arbeit
+(Commit-Kennung `71c6a886…`, Zählung gleich), die Zeilen 7 bis 9 am Endstand
+(Arbeitsbaum). Jede Trefferzeile des Endstands ist gelesen:
+
+- Zeile 7 (4 statt 7): `examples/grpc-client/main.go` (die Wahl
+  `transportCredentials` liefert ohne Anker `insecure.NewCredentials`),
+  `examples/csharp/grpc-client/ChannelFactory.cs` (der h2c-Switch im
+  Klartext-Zweig), `examples/grpc-client/tls_test.go` (der Test der
+  Klartext-Credentials) und `DispatcherTest.kt` (ein nie kontaktierter Kanal im
+  Test, unverändert). Die Klartext-Wege von `Program.cs` und `Main.kt` sind in
+  die Wahl der drei `ChannelFactory`-Stellen gewandert.
+- Zeile 8 (1 statt 2): der Satz „verbinden deshalb nicht“ ist durch die
+  gemessene Aussage ersetzt; der verbleibende Treffer ist die Aufzählung der
+  Beispiele ohne `Diagnose` (Bestand, unverändert).
+- Zeile 9 (21 statt 4): alle Treffer beschreiben „Klartext ohne Anker, TLS mit
+  Anker“ (`README.md` im neuen Abschnitt, die Kommentare der drei
+  `ChannelFactory`-Stellen, `Config`, `Program.cs`, `Main.kt`, die Test-Namen
+  und Test-Kommentare), dazu `examples/.env` und der Kopfkommentar der
+  Compose-Datei in `README.md` (Bestand, unberührt).
 
 ## 4. Trigger
 
