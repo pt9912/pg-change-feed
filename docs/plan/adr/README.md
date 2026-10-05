@@ -116,7 +116,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0101 | Zugangsdaten-Klasse — sieben Schlüssel (Supers. ADR-0088/0091/0092; → ADR-0152) | Accepted | 2026-09-18 | [0101-zugangsdaten-klasse-sieben-schluessel.md](0101-zugangsdaten-klasse-sieben-schluessel.md) |
 | ADR-0102 | Zugangsdaten-Klasse — Supersede-Liste vervollständigt (Supers. ADR-0101, teilw.) | Accepted | 2026-09-18 | [0102-zugangsdaten-klasse-supersede-liste-vervollstaendigt.md](0102-zugangsdaten-klasse-supersede-liste-vervollstaendigt.md) |
 | ADR-0103 | `image-hash.txt` lokal statt committet (Supers. ADR-0044, teilweise) | Accepted | 2026-09-18 | [0103-image-hash-lokal-statt-committet.md](0103-image-hash-lokal-statt-committet.md) |
-| ADR-0104 | Benchmark-Schwellen PER-001/002/003 (Supers. ADR-0054; → ADR-0151, teilw.) | Accepted | 2026-09-19 | [0104-benchmark-schwellen-per-001-002-003.md](0104-benchmark-schwellen-per-001-002-003.md) |
+| ADR-0104 | Benchmark-Schwellen PER-001/002/003 (Supers. ADR-0054; → ADR-0155, teilw.) | Accepted | 2026-09-19 | [0104-benchmark-schwellen-per-001-002-003.md](0104-benchmark-schwellen-per-001-002-003.md) |
 | ADR-0105 | CI-Matrix-RTM-Sichtbarkeit POR-001/002 | Accepted | 2026-09-19 | [0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md](0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md) |
 | ADR-0106 | C#/NuGet als erstes SDK-Package für `LH-FA-SST-009` | Accepted | 2026-09-19 | [0106-csharp-nuget-erstes-sdk-package.md](0106-csharp-nuget-erstes-sdk-package.md) |
 | ADR-0107 | Python/PyPI als zweites SDK-Package für `LH-FA-SST-009` (→ ADR-0108/0110) | Accepted | 2026-09-19 | [0107-python-pypi-zweites-sdk-package.md](0107-python-pypi-zweites-sdk-package.md) |
@@ -163,7 +163,8 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0148 | Kotlin-SDK: grpc-api im README; Upgrade-Trigger erfüllt (schärft ADR-0064) | Accepted | 2026-10-04 | [0148-kotlin-sdk-grpc-api-readme-und-upgrade-trigger-erfuellt.md](0148-kotlin-sdk-grpc-api-readme-und-upgrade-trigger-erfuellt.md) |
 | ADR-0149 | OTLP-Metrik-Export als zweiter Zugriffsweg auf die Kennzahlen | Accepted | 2026-10-04 | [0149-otlp-metrik-export-mechanismus.md](0149-otlp-metrik-export-mechanismus.md) |
 | ADR-0150 | TLS der HTTP-/gRPC-Schnittstellen und mehrere API-Token je Klasse | Accepted | 2026-10-04 | [0150-tls-und-mehrfach-token.md](0150-tls-und-mehrfach-token.md) |
-| ADR-0151 | PER-001 als absolute Commit-Latenz (Supersedes ADR-0104, teilweise) | Proposed | 2026-10-04 | [0151-per-001-absolute-commit-latenz.md](0151-per-001-absolute-commit-latenz.md) |
+| ADR-0151 | PER-001 als absolute Commit-Latenz (Supersedes ADR-0104, teilweise; → ADR-0155) | Superseded | 2026-10-04 | [0151-per-001-absolute-commit-latenz.md](0151-per-001-absolute-commit-latenz.md) |
 | ADR-0152 | Zugangsdaten-Klasse — elf Schlüssel (Supers. ADR-0101/0102, teilweise) | Accepted | 2026-10-04 | [0152-zugangsdaten-klasse-elf-schluessel.md](0152-zugangsdaten-klasse-elf-schluessel.md) |
 | ADR-0153 | OTLP-Einheit `cdc_consumer_lag` ist `By` (Supers. ADR-0149, teilw.) | Accepted | 2026-10-04 | [0153-otlp-einheit-consumer-lag-byte.md](0153-otlp-einheit-consumer-lag-byte.md) |
 | ADR-0154 | Spec-Lücken OTLP, TLS, API-Token: Ist-Zustand festgeschrieben | Accepted | 2026-10-04 | [0154-spec-luecken-otlp-tls-token-ist-zustand.md](0154-spec-luecken-otlp-tls-token-ist-zustand.md) |
+| ADR-0155 | PER-001 relativ zur Festschreib-Latenz (Supers. ADR-0151, ADR-0104 teilw.) | Accepted | 2026-10-05 | [0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md](0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md) |

@@ -1,6 +1,8 @@
 # ADR-0151: PER-001 als absolute Commit-Latenz in einer benannten Messumgebung — Supersedes ADR-0104 (nur die PER-001-Schwelle)
 
-**Status:** Proposed — Supersedes [`ADR-0104`](0104-benchmark-schwellen-per-001-002-003.md)
+**Status:** Superseded by [`ADR-0155`](0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md)
+(nie `Accepted`; der Widerspruch des Abschnitts „Offener Widerspruch“ ist dort aufgelöst) —
+ursprünglich Proposed, Supersedes [`ADR-0104`](0104-benchmark-schwellen-per-001-002-003.md)
 (nur deren Schwelle für `LH-QA-PER-001`, den Quell-Overhead ≤ 35 %; die Schwellen für
 `LH-QA-PER-002` und `LH-QA-PER-003` und das Pass/Fail-Prinzip aus `ADR-0104` bleiben
 unverändert bestehen). Wird `Accepted`, sobald die Referenzumgebung gemessen ist
@@ -160,6 +162,7 @@ eine Entscheidung zu Bündelung oder Store-Trennung ändert die Latenz.
 |---|---|---|
 | 2026-10-04 | Proposed — Anlass: Auftraggeber-Entscheidung zu einer absoluten Zielgröße je Transaktion; Daten reichen für eine einzelne Zahl nicht | `LH-QA-PER-001` |
 | 2026-10-04 | Review-Nachzug (Proposed, editiert): Abschnitt „Offener Widerspruch“, Folgepflicht 2 um `Makefile`, `tools/bench-lib.sh`, `ADR-0105` und die bekannte Lücke ergänzt, Einheit von `fdatasync` einheitlich | Review Spec 0.15.0 F-1, F-2, F-7 |
+| 2026-10-05 | Superseded by ADR-0155 (nie Accepted) — Modell, Band und Altzahl durch Bindung der Grenze an die gemessene Festschreib-Latenz aufgelöst | `ADR-0155` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
