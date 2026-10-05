@@ -162,8 +162,10 @@ Regel zählt Zeilen.
     §Sensors (Feedback-Gates) unter ihrer Höchstlänge; ob der Satz die Zeile
     trägt, ob die Bindung die ausführliche Datei unter `harness/sensors/` bzw.
     `harness/targets/` verlinkt und ob diese Datei den Inhalt führt, prüft sie
-    nicht — das bleibt Review. Eine neue Tabelle im Abschnitt mit einem
-    anderen Spaltennamen fällt aus der Regel. Gemessen an einer Kopie im
+    nicht — das bleibt Review. Die Spalte `Bindung` hat keine Höchstlänge.
+    Eine neue Tabelle im Abschnitt mit einem anderen Spaltennamen fällt aus
+    der Regel (hergeleitet aus der Adressierung über den Kopfzeilen-Namen,
+    nicht gemessen). Gemessen an einer Kopie im
     Scratchpad: eine Zelle `Tut was` mit 121 Zeichen und eine Zelle `Vertrag`
     mit 222 Zeichen enden mit `section-cell-oversized` (Exit 2), eine leere
     Zelle `Tut was` mit `section-cell-undersized`, eine Zelle mit 120 Zeichen
@@ -219,7 +221,7 @@ git-Index (`tracked` in `modules`, Konfiguration `.d-check.yml` §tracked,
 
 ## Fassung im Gate-Index
 
-Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher. Der Text darunter ist der wortgleich umgezogene Index-Text, kein eigener Vertrag: weicht er von dieser Datei ab, gilt [§Vertrag](#vertrag) mit den Abschnitten bis zu diesem.
 
 ### `make doc-tracked`
 
