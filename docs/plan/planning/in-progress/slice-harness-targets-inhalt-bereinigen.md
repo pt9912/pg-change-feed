@@ -90,9 +90,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       Tabelle „Liefer-Punkt 2“ in §3 Umsetzung.
 - [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8). —
+      Beleg: [`review-slice-harness-targets-inhalt-bereinigen.md`](../../../reviews/review-slice-harness-targets-inhalt-bereinigen.md)
+      (0 HIGH, 0 MEDIUM, keine Fixrunde).
 - [ ] Doku-Update: Träger, die `§Fassung im Gate-Index` oder eine berichtigte
       Zahl zitieren, sind nachgezogen (Suchlauf, `AGENTS.md` §3.13).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
