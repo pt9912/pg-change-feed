@@ -1,0 +1,8 @@
+**Vorgang:** slice-harness-readme-zellen-kuerzen (Review F-1, MEDIUM, und F-3, LOW; neunzehnte Datei des Eintrags)
+
+**Fund:** Der Slice zog die ausführlichen Zellen der `harness/README.md` wortgleich in Sensor- und Target-Dateien um. In 15 bestehende Dateien kam die Zelle als Abschnitt `## Fassung im Gate-Index` neben den eigenen Vertrag, ohne dass einer der beiden Teile den anderen als maßgeblich nannte; in `harness/sensors/handbuch-public-doc-check.md` stand damit „Die vier Erzeugnisse sind ausgenommen“ (Grenze 3) neben „die fünf ausgenommenen Dateien“ (F-1). Der Plan-Nachzug 1 (ganze Zelle statt „soweit fehlt“) stand in §3, die Abgrenzung in §1 behielt den alten Wortlaut ohne Verweis (F-3). Die Fixrunde (`6bafc8a6`, `138a9a4c`) setzte in jede Fassung einen Vorrang-Satz (bei Abweichung gilt §Vertrag) und in §1 den Verweis auf den Nachzug; der Verifier las beides am Text (`verify-slice-harness-readme-zellen-kuerzen.md` §6).
+
+**Form (Ausprägung):** eine **neue Form** dieser Klasse — kein Nachzug lässt eine überholte Aussage stehen, sondern ein Umzug, der den Wortlaut nicht ändern darf, legt zwei Fassungen desselben Gegenstands in einen Träger (Sensor-Datei). Die inhaltliche Zusammenführung bleibt Folgearbeit (`slice-harness-targets-inhalt-bereinigen`); bis dahin ordnet der Vorrang-Satz den Rang. F-3 ist die bekannte Form am Träger Slice-Plan und zählt im selben Vorgang nicht ein zweites Mal. Schwere MEDIUM, daher eine Datei trotz Deckel bei 10×; vor dem Merge gefunden, Ausgang unverändert **verkörpert**.
+
+Quelle: `docs/reviews/review-slice-harness-readme-zellen-kuerzen.md` (F-1, F-3) <!-- d-check:status-provenance -->
+· `docs/reviews/verify-slice-harness-readme-zellen-kuerzen.md` (§6). <!-- d-check:status-provenance -->

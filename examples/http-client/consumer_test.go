@@ -31,8 +31,8 @@ func TestConsumerPositionURLEscapesReservedCharacters(t *testing.T) {
 
 // TestRegisterConsumerParsesSuccessResponse prüft die Erfolgs-Antwort von
 // `POST /consumers` gegen einen netzlosen In-Prozess-Server (loopback,
-// dieselbe Grenze wie beim `natsnotify`-Adapter, `harness/README.md`
-// §Sensors, `make test-notify`).
+// dieselbe Grenze wie beim `natsnotify`-Adapter,
+// `harness/targets/tier-tests.md`, `make test-notify`).
 func TestRegisterConsumerParsesSuccessResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/consumers" {

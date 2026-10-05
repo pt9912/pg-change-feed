@@ -147,15 +147,15 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Verifikation durch den Verifier (Belege, nicht Behauptung): Wortlaut-Gegenprobe
+- [x] Verifikation durch den Verifier (Belege, nicht Behauptung): Wortlaut-Gegenprobe
       und Mutationsprobe der Regel unabhängig nachgefahren.
-- [ ] Doku-Update: `harness/README.md` ist der Gegenstand;
+- [x] Doku-Update: `harness/README.md` ist der Gegenstand;
       [`AGENTS.md`](../../../../AGENTS.md) §4 und die Träger aus dem Suchlauf
       bleiben konsistent (gemeldete Träger fremder Dateien mit der Closure
       nachgezogen).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, solange die Roadmap unter *Offene Wellen* keine Welle führt.
 
 ## 3. Plan (vor Code)
@@ -233,6 +233,14 @@ und in der neuen Regel in `.d-check.yml`. Die stehenden Treffer sind gelesen;
 die, die eine bewegte Eigenschaft behaupten, stehen unter „Träger-Meldungen“ in
 §3 Umsetzung.
 
+**Nach dem Träger-Nachzug der Closure** (gemessen am Arbeitsbaum vor dem
+Closure-Commit, `make suchlauf-nachmessen`; die `diff`-Zeilen unten tragen diesen
+Stand): Zeile 5 sinkt von 148 auf 144 (je ein Treffer weniger in `AGENTS.md`
+§3.14, im Bump-Slice, in den drei Test-Kommentaren unter `examples/`, in
+`harness/mk/coverage.mk` und `tools/coverage-gate.sh`; drei neue im Folge-Slice
+`slice-harness-targets-inhalt-bereinigen`), Zeile 6 von 81 auf 75 (dieselben
+Träger ohne Bump- und Folge-Slice).
+
 ```suchlauf
 b61412ac838199028c81a33b217b7991b52189d4 15 -n -E '^.{2001,}$' -- harness/README.md
 b61412ac838199028c81a33b217b7991b52189d4 57 -n -E '^\| `[^|]*\| [^|]{121,} \| ' -- harness/README.md
@@ -244,8 +252,8 @@ diff 0 -n -E '^.{2001,}$' -- harness/README.md
 diff 6 -n -E '^\| `[^|]*\| [^|]{121,} \| ' -- harness/README.md
 diff 0 -n -E '^\| `[^|]*\| [^|]{221,} \| ' -- harness/README.md
 diff 18 -n -E '^# `' -- harness/targets/*.md
-diff 148 -n -F 'harness/README.md' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations :!docs/plan/planning/in-progress/slice-harness-readme-zellen-kuerzen.md
-diff 81 -n -E 'Sensors \(Feedback-Gates\)|§Sensors' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations :!docs/plan/planning/in-progress/slice-harness-readme-zellen-kuerzen.md
+diff 144 -n -F 'harness/README.md' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations :!docs/plan/planning/in-progress/slice-harness-readme-zellen-kuerzen.md
+diff 75 -n -E 'Sensors \(Feedback-Gates\)|§Sensors' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations :!docs/plan/planning/in-progress/slice-harness-readme-zellen-kuerzen.md
 ```
 
 ### Umsetzung (Implementer, 2026-10-05)
@@ -344,7 +352,10 @@ im Scratchpad aus den Zellen erzeugten Entwurf (`cmp`, 13 Target-, 2
 Sensor-Dateien) und jede ergänzte Datei byte-gleich mit „alter Inhalt +
 Leerzeile + Abschnitt“ (`cmp`, 15 Dateien). Mutationsprobe der Gegenprobe (Kopie
 im Scratchpad, `harness/targets/bench.md`: „vier eigenständige Bench-Skripte“ →
-„vier Bench-Skripte“): `FEHLT 166 targets/bench.md`, `Fehler: 1`, Exit 1.
+„vier Bench-Skripte“): `FEHLT 166 targets/bench.md`, `Fehler: 1`, Exit 0 —
+das Skript endet mit `rm -rf "$T"` und gibt dessen Status zurück; das Rot-Signal
+ist allein die gedruckte Zeile `Fehler: 1` (Berichtigung bei der Closure, gemessen
+vom Verifier, `verify-slice-harness-readme-zellen-kuerzen.md` V-1).
 
 **Zellen und Zeilen (Liefer-Punkt 2).** Längste Zelle `Vertrag`: 162 Zeichen
 (`make commit-traceability`); längste Zelle `Tut was`: 113 Zeichen
@@ -539,26 +550,39 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   26 KB; beim Umkopieren fällt ein Satz, eine Zahl oder ein Herkunftsvermerk weg.
   Gegenmaßnahme: Zeichenzahl-Gegenprobe je Zelle und Suchlauf der Eigennamen
   (§2 Liefer-Punkt 1), Review prüft Stichprobe Wort für Wort. —
-  **Ausgang:** offen bis zur Closure.
+  **Ausgang:** entfallen — nicht eingetreten: Gegenprobe 63/63 `OK` und die
+  Wort-Multimenge ohne Verlust (alt 11.485, neu 11.490 Wörter), gemessen vom
+  Verifier (`verify-slice-harness-readme-zellen-kuerzen.md` §2, §9).
 - **Abhängigkeit zu `baseline-6-14-0-dokumente-nachziehen`:** beide lesen oder
   berühren `harness/README.md` (der Bump-Slice den Abgleich und die Zeile
   `make pin-stale-baseline`). Gegenmaßnahme: Reihenfolge ist benannt (§1 und §4),
-  kein gleichzeitiger Lauf (WIP-Limit 1). — **Ausgang:** offen bis zur Closure.
+  kein gleichzeitiger Lauf (WIP-Limit 1). — **Ausgang:** entfallen — der
+  Bump-Slice liegt in `open/` und lief nicht gleichzeitig; sein Plan verweist seit
+  dieser Closure für `make pin-stale-baseline` auf `harness/targets/pin-stale.md`
+  (Träger-Nachzug, §7).
 - **Parallele Slices ändern README-Zeilen:** `slice-sdk-tls-optionen` läuft in
   `in-progress/` und kann Zeilen der Tabellen berühren (neue Target-Beschreibung);
   ein Rebase in einen umgebauten Block erzeugt Konflikte oder lässt eine lange
   Zelle zurück, die die neue Regel rot färbt. Gegenmaßnahme: Start erst nach dessen
-  Closure (§4); die Regel kommt zuletzt. — **Ausgang:** offen bis zur Closure.
+  Closure (§4); die Regel kommt zuletzt. — **Ausgang:** entfallen —
+  `slice-sdk-tls-optionen` lag vor dem Start in `done/`, `in-progress/` trug
+  keinen weiteren Slice, und `make docs-check` ist am Endstand mit der Regel grün
+  (Verify §1, §9).
 - **Die Schwellen 120/220 sind Vorschlag** (angelehnt an andere Register-Regeln in
   `.d-check.yml`, nicht gemessen als passend): zu knapp führt zu Pflichterfüllung
   durch Satzzerhacken. Gegenmaßnahme: der Implementer nennt die längste verbleibende
-  Zelle; Review liest, ob der Satz die Zeile trägt. — **Ausgang:** offen bis zur
-  Closure.
+  Zelle; Review liest, ob der Satz die Zeile trägt. — **Ausgang:** entfallen —
+  die längsten Zellen haben 162 (`Vertrag`) und 113 Zeichen (`Tut was`), gemessen
+  vom Verifier (Verify §3); der Review fand keinen zerhackten Satz. Dass die Regel
+  die Länge misst und nicht den Satz, steht als Grenze 11 in
+  `harness/sensors/docs-check.md`.
 - **Der Auftraggeber-Wert „Regel adressiert beide Tabellen“ ist hergeleitet:**
   adressiert die Regel nur die erste Tabelle des Abschnitts, ist die Werkzeuge-Tabelle
   ungeschützt. Gegenmaßnahme: Mutationsprobe auf der Kopie (§2 Liefer-Punkt 3);
   sonst eine zweite Regel mit eigenem Abschnitt oder eine Unterüberschrift. —
-  **Ausgang:** offen bis zur Closure.
+  **Ausgang:** entfallen — die Regel erfasst beide Tabellen, gemessen vom
+  Implementer (63 Befunde auf der ungekürzten README) und vom Verifier (M1 in der
+  Werkzeuge-, M3 in der Gate-Tabelle, M6 umbenannte Spalte rot; Verify §4).
 
 ## 7. Closure-Notiz
 
@@ -568,8 +592,95 @@ formulieren) · `grundlagen-traceability.md` §Herkunfts-Anker für
 Steering-Loop-Regeln. Ging der Gegenstand an einen anderen Slice oder entfiel er,
 trägt diese Sektion die Zeile `Gegenstand:` mit Kennung oder Grund.
 
-*Der Plan füllt diese Sektion nicht; sie wird bei der Closure vor dem
-`git mv` nach `done/` geschrieben.*
+- **Geliefert:** 13 neue Dateien unter `harness/targets/`, 2 neue unter
+  `harness/sensors/` (`commit-traceability.md`, `gates.md`), 15 bestehende Dateien
+  mit dem Abschnitt `## Fassung im Gate-Index`; jede Zelle `Vertrag` der
+  Sensors-Tabelle ≤ 220, jede Zelle `Tut was` ≤ 120 Zeichen (längste 162 bzw. 113),
+  70 Index-Zeilen vorher wie nachher; `harness/README.md` von 136.970 auf 34.679
+  Byte bei 265 Zeilen; eine `structure`-Regel in `.d-check.yml`, die beide Tabellen
+  des Abschnitts hält. Review `docs/reviews/review-slice-harness-readme-zellen-kuerzen.md`
+  (0 HIGH, 1 MEDIUM, 2 LOW, 4 INFO; Fixrunde `6bafc8a6`, `138a9a4c`), Verifikation
+  `docs/reviews/verify-slice-harness-readme-zellen-kuerzen.md` (DoD bestätigt, V-1 LOW,
+  V-2 und V-3 INFO).
+- **Was hat funktioniert:** Die Gegenprobe als Skript im Plan (jeder umgeformte
+  Absatz der alten Zelle als ganze Zeile in der Zieldatei) machte „wortgleich
+  umgezogen“ zu einer Messung statt einer Behauptung; der Verifier fuhr sie
+  unverändert nach und ergänzte sie um eine Gegenrichtung mit eigener Methode
+  (Wort-Multimenge). Die Regel kam zuletzt, und die Mutationsproben von
+  Implementer und Verifier lagen an verschiedenen Stellen, darunter eine Zeile, die
+  der Slice nicht geändert hatte. Die Befund-Liste hielt die Grenze des §1: nichts
+  wurde im Umzug still berichtigt.
+- **Was ging anders als geplant:** (1) Plan-Nachzug 1: bestehende Dateien bekamen
+  die ganze Zelle statt nur des fehlenden Teils; Folge war die Doppelung in 15
+  Dateien (Review F-1, MEDIUM), in der Fixrunde mit einem Vorrang-Satz geordnet,
+  die Zusammenführung ist Folgearbeit. (2) Die Träger-Meldungen waren unvollständig
+  (F-2: `AGENTS.md` §3.14 und `harness/mk/coverage.mk` fehlten), in der Fixrunde
+  ergänzt. (3) Die Abgrenzung in §1 blieb neben dem Plan-Nachzug stehen (F-3),
+  in der Fixrunde mit Verweis versehen. (4) V-1: der Plan behauptete für die
+  mutierte Gegenprobe „Exit 1“, gemessen ist `Fehler: 1` bei Exit 0; bei der
+  Closure in §3 berichtigt, das Skript bleibt unverändert (das Rot-Signal ist die
+  gedruckte Zeile).
+- **Re-Review:** nicht nötig. Die Fixrunde änderte nur Text (15 Vorrang-Sätze, zwei
+  Bindung-Zellen, Grenze 11, Plan) und keine Norm; der Verifier hat sie in frischem
+  Kontext ausgeführt — Gegenprobe, Gegenrichtung, acht Mutationsläufe und F-1 bis
+  F-7 einzeln am Endstand nach der Fixrunde (Verify, Abschnitt „Zur Fixrunde“ und
+  §6). Regel: `.claude/commands/implement-slice.md` Schritt 21.
+- **Träger-Nachzug bei der Closure** (`AGENTS.md` §3.13, Frist Closure; Verify V-3):
+  nachgezogen `tools/coverage-gate.sh` (Kopfkommentar nennt `harness/mk/coverage.mk`
+  und `harness/sensors/coverage-gate.md`), `harness/mk/coverage.mk`
+  (Kalibrierungs-Bindung zeigt auf die Sensor-Datei, eine Kennung im Block), die drei
+  Test-Kommentare in `examples/http-client/consumer_test.go`,
+  `examples/http-client/request_test.go` und
+  `examples/csharp/http-client/HttpClient.Tests/TablesClientTests.cs` (Loopback-Grenze
+  in `harness/targets/tier-tests.md`), [`AGENTS.md`](../../../../AGENTS.md) §4 (Index
+  mit Kurzvertrag, ausführlicher Vertrag in der verlinkten Datei) und §3.14 (Link auf
+  `harness/targets/schema-rollout.md`), der Bump-Slice
+  `slice-baseline-6-14-0-dokumente-nachziehen` (drei Stellen: `make pin-stale-baseline`
+  steht in `harness/targets/pin-stale.md`). Benannt, nicht nachgezogen: die
+  `Accepted`-ADRs, die eine Tabellenzeile zitieren (eingefroren, `AGENTS.md` §3.5).
+  `make fmt-check` Exit 0 (358 Go-Dateien formatiert), `make kommentar-kennungen
+  DIFF=06bc4df8` Exit 0 ohne Kandidat. Dazu V-2: Grenze 11 in
+  `harness/sensors/docs-check.md` nennt den Satz zur zusätzlichen Tabelle jetzt als
+  gemessen (Verify M6, M7).
+- **Befund-Liste** (aus §3 Umsetzung, nicht im Umzug berichtigt): (1) unmaskiertes `|`
+  in der Zelle `make proto-generate` — mit dem Umzug erledigt; (2) `make image-cve`
+  „kein `:latest` vorhanden“, vermutlich veraltet, dazu Chronik-Sprache; (3)
+  `hub-description.yml` „bis zum ersten echten Release unbewiesen“; (4)
+  Artefakt-Namen 0.2.x in `targets/sdk-pack.md`; (5) Drift-Messung `make pin-stale-*`
+  ohne Datum und Lauf; (6) Satz zum Python-HTTP-Abschnitt in der Kotlin-Zeile,
+  vermutlich Kopierfehler; (7) „vier“ gegen „fünf“ ausgenommene Dateien beim
+  Handbuch-Gate; (8) Positionsverweis „`make schema-rollout`-Zeile oben“ in
+  `targets/examples.md`; (9) Doppelung Vertrag und Fassung in 15 Dateien; (10)
+  Vorbestand: `baseline-verify.md` Grenze 3 nennt einen README-Abschnitt, den es
+  nicht gibt, und der Kopfkommentar von `.github/workflows/ci.yml` zählt sechs Gates;
+  (11) Chronik-Sprache in `targets/test-integration.md` und `targets/image.md`.
+  Punkte 2 bis 11 übernimmt `slice-harness-targets-inhalt-bereinigen`.
+- **Steering-Loop-Eintrag:** neuer Sensor: die `structure`-Regel hält die Zellen
+  `Vertrag` (≤ 220) und `Tut was` (≤ 120) des Gate-Index — liegt in `harness/sensors/docs-check.md §Vertrag`.
+  Grenze, benannt in Grenze 11 derselben Datei: sie misst Länge, nicht ob der Satz
+  die Zeile trägt, ob die Bindung die Datei verlinkt und ob die Datei den Inhalt
+  führt; die Spalte `Bindung` hat keine Höchstlänge; eine Tabelle mit anderem
+  Spaltennamen fällt aus der Regel (gemessen). Auslöser: der Auftrag, kein
+  Register-Eintrag. Dazu ein Lernpunkt ohne neue Regel: ein Umzug, der den Wortlaut
+  nicht ändern darf, erzeugt in einem Ziel mit eigenem Inhalt zwei Fassungen; der
+  Plan benennt beim Schnitt, welche gilt, statt das der Review-Fixrunde zu
+  überlassen (gezählt unter `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`).
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-harness-readme-zellen-kuerzen.md`
+  in `BEO-PGC/nachzug-laesst-ueberholten-text-stehen/` ergänzt (F-1 MEDIUM, neue Form,
+  dazu F-3 im selben Vorgang) — Zähler 19×, Ausgang unverändert verkörpert. Unter dem
+  Deckel für verkörperte Einträge ab 10× (`../observations/README.md`), ohne Datei,
+  mit Finding-Kennung: F-2 (LOW) in `BEO-PGC/arbeit-ueberholt-stehenden-traeger`
+  (Träger-Meldung unvollständig, Deckel bei 32×) und V-1 (LOW) in
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (der genannte Befehl liefert nicht
+  den behaupteten Exit, Deckel bei 14×). `BEO-PGC/bindung-spalte-uneinheitlich-tief`
+  ist nicht erneut aufgetreten (1×). Kein Eintrag erreicht mit diesem Slice die
+  Schwelle 3× neu; kein Lese-Schritt fällig.
+- **Folge-Slices:** `slice-harness-targets-inhalt-bereinigen` (die Sensor- und
+  Target-Dateien tragen ihren Inhalt einmal und im Ist-Zustand; Befunde 2 bis 11) —
+  ist eine Datei in `open/`.
+- **Risiken aus §6:** je ein Ausgang, siehe §6 — alle fünf entfallen (Wortlaut-Verlust
+  nicht eingetreten, Bump-Slice nicht gleichzeitig, kein paralleler Slice, längste
+  Zellen 162/113, Regel erfasst beide Tabellen gemessen).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

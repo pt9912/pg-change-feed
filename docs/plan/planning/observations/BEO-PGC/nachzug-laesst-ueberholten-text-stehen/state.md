@@ -12,7 +12,14 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 18× (Dateien unter `evidence/`; die achtzehnte,
+Zähler: 19× (Dateien unter `evidence/`; die neunzehnte,
+`evidence/slice-harness-readme-zellen-kuerzen.md`, trägt F-1 (MEDIUM) und F-3 (LOW) und
+eine **neue Form**: ein wortgleicher Umzug legte die Fassung des Gate-Index neben den
+eigenen Vertrag derselben Datei, ohne Rang (zwei Zahlen für dieselbe Ausnahme-Menge), und
+die Abgrenzung des Plans blieb neben dem Plan-Nachzug stehen (Träger-Typen Sensor-Datei
+und Slice-Plan); vor dem Merge gefunden, in der Fixrunde mit einem Vorrang-Satz bzw.
+Verweis behoben, die inhaltliche Bereinigung ist `slice-harness-targets-inhalt-bereinigen`,
+Ausgang unverändert **verkörpert**; die achtzehnte,
 `evidence/slice-routing-lesewege.md`, trägt F-2 (MEDIUM) und F-N2 (LOW): der Godoc eines Use
 Case sagte „unverändert“ neben einer hinzugefügten Zusage, die es für ein ungültiges Ziel
 nicht trug, und der Plan hielt nach der Fixrunde „Spec unberührt“ und eine unqualifizierte

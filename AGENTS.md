@@ -660,8 +660,8 @@ nicht durch ein Gate · seit welle-20 · geschärft seit welle-d-check
 Diese Nummer trug bis `schema-rollout-zentrale-idempotenz-wache` die Regel
 „Ein Aufrufer von `make schema-rollout` trägt seine eigene
 Idempotenz-Wache". Die zentrale Wache im Makefile-Target `schema-rollout`
-(`tools/schema/rolloutguard`, siehe `harness/README.md` §Sensors,
-`make schema-rollout`-Zeile) deckt den Fall jetzt vollständig ab; diese
+(`tools/schema/rolloutguard`, siehe
+[`harness/targets/schema-rollout.md`](harness/targets/schema-rollout.md)) deckt den Fall jetzt vollständig ab; diese
 Sektion trägt keine eigene Regel mehr. Die Nummer bleibt reserviert, weil
 [`ADR-0100`](docs/plan/adr/0100-nats-dritter-vollinhalts-zustellweg.md)
 §Teilfrage 4 (`Accepted`, unberührbar) „`AGENTS.md` §3.14" namentlich als
@@ -708,8 +708,10 @@ slice-harness-mutationsbild-und-verweigerte-aktion.
 ## 4. Quality Gates
 
 **Der Gate-Index steht einmal, und zwar in [`harness/README.md`](harness/README.md)
-§Sensors** — dort stehen Target, Vertrag und Bindung (inkl. ADR-Links,
-Schwellen, Carveout-Verweise) vollständig, keine Zweitliste hier. Diese
+§Sensors** — dort steht je Target eine Zeile mit Kurzvertrag und Bindung
+(inkl. ADR-Links, Carveout-Verweise); der ausführliche Vertrag samt Schwellen
+steht in der verlinkten Datei unter `harness/sensors/` oder `harness/targets/`,
+keine Zweitliste hier. Diese
 Sektion trägt nur die Regel: **kein behauptetes Gate ohne Deckung dort.**
 Ein Target, das in `harness/README.md` §Sensors nicht als real im Makefile
 existierendes Ziel geführt wird, ist halluziniert — die häufigste Form von

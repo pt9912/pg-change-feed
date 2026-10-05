@@ -61,7 +61,7 @@ func TestDoRequestJSONFailsOnUnexpectedStatus(t *testing.T) {
 // TestDoRequestJSONFailsOnUnreachableHost prüft den Fehlerpfad ohne
 // erreichbaren Host — netzlos: die Verbindung zu einem Loopback-Port ohne
 // Listener scheitert sofort, ohne echtes Netz zu brauchen (dieselbe Grenze
-// wie beim `natsnotify`-Adapter, `harness/README.md` §Sensors,
+// wie beim `natsnotify`-Adapter, `harness/targets/tier-tests.md`,
 // `make test-notify`).
 func TestDoRequestJSONFailsOnUnreachableHost(t *testing.T) {
 	client := &http.Client{Timeout: requestTimeout}

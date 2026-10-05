@@ -150,7 +150,9 @@ Planungsstand hat keinen der Läufe gefahren
       Baseline `diff` alte ↔ neue Baseline und jede inhaltliche Änderung gegen die
       Repo-Dokumente prüfen“ — in `harness/sensors/baseline-verify.md` und/oder an
       der Stelle des Bump-Ablaufs (Regelwerk `modul-02-harness-bootstrap.md`
-      §Freshness-Audit, `harness/README.md` Zeile `make pin-stale-baseline`; der
+      §Freshness-Audit, `harness/targets/pin-stale.md` Abschnitt
+      `make pin-stale-baseline` — die Index-Zeile in `harness/README.md` ist ein
+      Satz und bleibt ≤ 120 Zeichen, `structure`-Regel in `.d-check.yml`; der
       Implementer nennt die Stelle nach Lesung). Entsteht ein Gate, endet der Slice
       an dieser Stelle mit der Übergabe an den Architect; die Verfahrensregel ist
       der Mindestumfang und braucht keine ADR.
@@ -165,9 +167,11 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Verifikation durch den Verifier (Belege, nicht Behauptung); Liefer-Punkt 2
       prüft er unabhängig von Agent `ab8c3e73293b11d22`.
-- [ ] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors,
-      falls Liefer-Punkt 3 die Zeile `make pin-stale-baseline` oder
-      `make baseline-verify` berührt; gemeldete Träger fremder Dateien mit der
+- [ ] Doku-Update: [`harness/targets/pin-stale.md`](../../../../harness/targets/pin-stale.md)
+      bzw. [`harness/sensors/baseline-verify.md`](../../../../harness/sensors/baseline-verify.md),
+      falls Liefer-Punkt 3 `make pin-stale-baseline` oder `make baseline-verify`
+      berührt (die Index-Zeile in [`harness/README.md`](../../../../harness/README.md)
+      §Sensors nur, wenn sich ihr Kurzsatz ändert); gemeldete Träger fremder Dateien mit der
       Closure nachgezogen (§3 Suchlauf, [`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -188,7 +192,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `.harness/skills/reviewer.md`, `.harness/skills/closure-note-reviewer.md`, `.claude/agents/reviewer.md`, `.claude/agents/verifier.md`, `docs/reviews/` (sechs Reports) | nur lesen | Verifikation der Arbeit von Agent `ab8c3e73293b11d22` (Liefer-Punkt 2a) |
 | `.claude/hooks/span-emit.sh`, `.claude/settings.json` | nur lesen | Abgleich Audit-Span-Schema (Liefer-Punkt 2b) |
 | `harness/README.md`, `harness/conventions.md`, `docs/plan/adr/README.md`, `docs/plan/carveouts/` | nur lesen | Bestandsaufnahme gegen die Vorlagen (Liefer-Punkt 2c) |
-| `harness/sensors/baseline-verify.md` und/oder `harness/README.md` (Zeile `make pin-stale-baseline`) | update | Pflichtschritt „diff alte ↔ neue Baseline“ (Liefer-Punkt 3) |
+| `harness/sensors/baseline-verify.md` und/oder `harness/targets/pin-stale.md` (Abschnitt `make pin-stale-baseline`) | update | Pflichtschritt „diff alte ↔ neue Baseline“ (Liefer-Punkt 3) |
 | `tools/harness/…` (Vergleichs-Werkzeug) | neu, **nur falls** die Entscheidung auf Werkzeug fällt | Docker-only, netzlos; Gate-Aufnahme geht an den Architect |
 
 **Entscheidung Werkzeug vs. Verfahrensregel (Vorab-Position, vom Implementer zu

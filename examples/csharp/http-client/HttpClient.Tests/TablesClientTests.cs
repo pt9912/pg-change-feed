@@ -7,7 +7,7 @@ namespace CdcExamples.Http.Tests;
 /// einem Loopback-Port ohne Listener scheitert sofort (Connection refused),
 /// ohne echtes Netz zu brauchen. Dieselbe Grenze wie beim
 /// <c>natsnotify</c>-Adapter (Verbindungsfehler bleiben auf Loopback, auch
-/// unter <c>--network none</c>, siehe <c>harness/README.md</c> §Sensors,
+/// unter <c>--network none</c>, siehe <c>harness/targets/tier-tests.md</c>,
 /// <c>make test-notify</c>).
 /// </summary>
 public class TablesClientTests

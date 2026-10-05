@@ -164,8 +164,9 @@ Regel zählt Zeilen.
     `harness/targets/` verlinkt und ob diese Datei den Inhalt führt, prüft sie
     nicht — das bleibt Review. Die Spalte `Bindung` hat keine Höchstlänge.
     Eine neue Tabelle im Abschnitt mit einem anderen Spaltennamen fällt aus
-    der Regel (hergeleitet aus der Adressierung über den Kopfzeilen-Namen,
-    nicht gemessen). Gemessen an einer Kopie im
+    der Regel (gemessen vom Verifier an einem Klon: eine dritte Tabelle mit
+    Spalte `Macht was` und 300 Zeichen bleibt grün; eine umbenannte Kopfzelle
+    `Tut was` meldet `section-column-missing`). Gemessen an einer Kopie im
     Scratchpad: eine Zelle `Tut was` mit 121 Zeichen und eine Zelle `Vertrag`
     mit 222 Zeichen enden mit `section-cell-oversized` (Exit 2), eine leere
     Zelle `Tut was` mit `section-cell-undersized`, eine Zelle mit 120 Zeichen
