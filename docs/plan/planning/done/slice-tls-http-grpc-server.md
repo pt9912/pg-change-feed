@@ -640,7 +640,7 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   verbinden deshalb nicht mit einem TLS-Server“ steht als *hergeleitet*, für
   Client-Pakete und HTTP-/SSE-Clients trifft es keine Aussage. Der Beispiel-Nachzug
   ist der Folge-Slice
-  [`slice-examples-grpc-tls`](../in-progress/slice-examples-grpc-tls.md).
+  [`slice-examples-grpc-tls`](slice-examples-grpc-tls.md).
 - **Die neue Runner-Phase stört die Folge-Phasen** (Container mit Override neu
   erzeugt; Zustand muss am Phasen-Ende ohne Override wiederhergestellt sein). —
   **Ausgang: entfallen.** Alle Folge-Phasen liefen im Lauf der Verifikation grün
@@ -731,7 +731,7 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   OTLP (Betreiber-Oberfläche als Ganzes). Release-Folge dieser Closure: keine
   (kein SDK-Zug, ein Release braucht eine Freigabe).
 - **Folge-Slices:**
-  [`slice-examples-grpc-tls`](../in-progress/slice-examples-grpc-tls.md) (TLS-fähige
+  [`slice-examples-grpc-tls`](slice-examples-grpc-tls.md) (TLS-fähige
   gRPC-Beispiele in Go, C# und Kotlin; Review F-5 und Verifikation) — Datei in
   `open/`, keine harte Abhängigkeit, kein SDK-Release; die Beispiele bauen ihren
   Kanal selbst, deshalb muss er nicht auf den SDK-Slice warten. Und
@@ -751,7 +751,7 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   entfallen · Runner-Slot-Zähler hergeleitet weiter offen (BEO angelegt).
 - **Drei Paarungen:** (a) *Anker* — kein Eintrag trägt `liegt in`
   (nichts verkörpert); entfällt. (b) *Folge-Slice* —
-  [`slice-examples-grpc-tls`](../in-progress/slice-examples-grpc-tls.md) existiert in
+  [`slice-examples-grpc-tls`](slice-examples-grpc-tls.md) existiert in
   `open/`; `sdk-tls-optionen` ist als Aufschub mit Adresse benannt, **keine**
   Datei, und trägt deshalb keine Paarung. (c) *Register* —
   `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`,

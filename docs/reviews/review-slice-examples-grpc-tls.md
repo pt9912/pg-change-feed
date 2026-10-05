@@ -5,7 +5,7 @@
 **Skill:** `.harness/skills/reviewer.md` · **Modell:** Sonnet 5.5
 
 **Eingangs-Kontext:**
-- Plan [`slice-examples-grpc-tls`](../plan/planning/in-progress/slice-examples-grpc-tls.md)
+- Plan [`slice-examples-grpc-tls`](../plan/planning/done/slice-examples-grpc-tls.md)
 - [`ADR-0150`](../plan/adr/0150-tls-und-mehrfach-token.md)
 - [`LH-FA-SST-011`](../../spec/lastenheft.md)
 - [`AGENTS.md`](../../AGENTS.md) §3.1, §3.7, §3.12, §3.13

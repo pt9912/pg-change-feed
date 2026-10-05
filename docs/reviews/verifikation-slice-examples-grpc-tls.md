@@ -1,6 +1,6 @@
 # Verifikation slice-examples-grpc-tls (Modul 11)
 
-**Gegenstand:** [Slice-Plan](../plan/planning/in-progress/slice-examples-grpc-tls.md), Commits 71c6a886 (Runner-Pull), 5c614d7f (Slice), cac8e38b (Fixrunde), gegen [ADR-0150](../plan/adr/0150-tls-und-mehrfach-token.md) und [LH-FA-SST-011](../../spec/lastenheft.md); Eingang ist der [Review-Report](review-slice-examples-grpc-tls.md).
+**Gegenstand:** [Slice-Plan](../plan/planning/done/slice-examples-grpc-tls.md), Commits 71c6a886 (Runner-Pull), 5c614d7f (Slice), cac8e38b (Fixrunde), gegen [ADR-0150](../plan/adr/0150-tls-und-mehrfach-token.md) und [LH-FA-SST-011](../../spec/lastenheft.md); Eingang ist der [Review-Report](review-slice-examples-grpc-tls.md).
 
 Der Report-Text stammt vom Verifier-Lauf (Rollenvorgabe: keine Report-Dateien); der Planner hat ihn hier angelegt.
 
