@@ -102,7 +102,7 @@ je SDK belegt es gegen ein Zertifikat, das nicht im Systemspeicher steht.
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register fortgeschrieben oder „keine Beobachtung“ in §7.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen (§7).
 
 (Liefer-Punkte: drei — je SDK Option, Tests, Realserver-Phase.)
 
@@ -455,7 +455,12 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Exit 0 (Exit direkt gelesen, ohne Pipe; ein erster Lauf endete an einem `matrix`-Befund in
   der neuen Beobachtung, behoben und wiederholt). Der Lauf nach den Commits der Closure steht
   im Bericht der Sitzung, nicht in diesem Plan.
-- **Drei Paarungen:** — (nach dem `git mv`)
+- **Drei Paarungen:** nach dem `git mv` gemessen — (a) *Anker:* kein Feld `liegt in` in diesem
+  §7, nichts verkörpert, die Paarung ist leer; (b) *Folge-Slice:*
+  `slice-sdk-kompat-version-parameter` ist eine Datei in `open/`; (c) *Register:* die drei
+  genannten Verzeichnisse (`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`,
+  `BEO-PGC/sdk-tls-zusage-hergeleitet-ohne-test`, `BEO-PGC/report-nicht-aus-baseline-vorlage`)
+  existieren, jedes mit nicht leerem `evidence/` (12, 1, 1 Dateien). Ergebnis: getragen.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
