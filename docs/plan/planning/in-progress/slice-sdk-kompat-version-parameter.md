@@ -116,7 +116,10 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | `tools/harness/sdk-kompat/python/run.sh` (A2) | update — **Nachzug** | über den Plan hinaus: der Austausch auf die neue Bibliothek ist geprüft (pip-Exit und installierte Version); vor dem Fix lief A2 nach gescheitertem `pip install` still gegen 0.5.0 grün (Rotbefund unten) |
 | `tools/harness/sdk-kompat/csharp/run.sh` (A2) | update — **Nachzug** | trägt `/neu` das Artefakt der neuen Version und fehlt die daraus gewonnene DLL, ist A2 rot statt auf die veröffentlichte DLL zu fallen |
 | `harness/targets/sdk-kompat.md` §Versionen, §Grenze 6/7, §Test | update — **Nachzug** | neuer Abschnitt zur Quelle der Versionen; Grenzen „Dateiname, nicht Inhalt“ und „`REGISTRY_VERSION` zieht niemand nach“; drei Mutations-Zeilen; der Satz „A3 und A5 lesen immer das veröffentlichte Paket“ gilt gemessen nur für C# und Kotlin (Python: `A3-Grundlage` und zweite Signatur-Lesung laufen unter der Bibliothek aus A2) und ist entsprechend berichtigt |
-| `harness/mk/sdk.mk` (Ziel `test-sdk-altserver`) | **nicht geändert — gemeldet** | Kommentar und Hilfetext nennen „0.6.0-SDKs“ bzw. „SDK 0.6.0“, das Ziel fährt aber die SDK-Quelle des Arbeitsstands (0.6.1); anderes Ziel, anderer Vertrag (`harness/targets/sdk-altserver.md`) — Frist: Closure dieses Slice, der Planner zieht nach oder benennt den Träger mit Adresse |
+| `harness/mk/sdk.mk` (Ziel `test-sdk-altserver`), `harness/targets/sdk-altserver.md` (Titel), `tools/harness/run-sdk-altserver-tests.sh` (Kopfkommentar) | **nicht geändert — gemeldet** | Kommentar und Hilfetext in `sdk.mk`, der Titel des Vertrags und der Kopf des Runners nennen „0.6.0-SDKs“ bzw. „SDK 0.6.0“, das Ziel fährt aber die SDK-Quelle des Arbeitsstands (0.6.1); anderes Ziel, anderer Vertrag — Frist: Closure dieses Slice, der Planner zieht nach oder benennt den Träger mit Adresse (die zwei letzten ergänzt in der Fixrunde, Review F-2) |
+| `tools/harness/run-sdk-kompat-tests.sh` (`version_lesen`) | update — **Fixrunde** | strikt `X.Y.Z` ohne Suffix, Meldung „…, nur Ziffern ohne Suffix“ (Review F-1) |
+| `tools/harness/sdk-kompat/{csharp,kotlin}/{Dockerfile,run.sh}`, `python/{Dockerfile,run.sh}` | update — **Fixrunde** | Bezeichner nach Rolle statt Version: `alt06`→`altreg`, `neu06`→`neureg`, `LIB06`→`LIBREG`, `d06`→`dreg`, `/wheels/06`→`/wheels/neu`; Kennzeichnung des über den Runner nicht erreichbaren C#-Zweigs (Review F-5, F-6) |
+| `harness/targets/sdk-kompat.md` (§Versionen, §Ausgänge, §Grenze 8/9, §Test) | update — **Fixrunde** | Form `X.Y.Z` ohne Suffix samt PEP-440-Hinweis; Grenzen „A2 tauscht nicht die Abhängigkeiten“ und „Kotlin: nur die oberste `version`-Zeile“; Mutations-Zeile zum Suffix (Review F-1, F-3, F-4) |
 
 ```suchlauf
 3e028ee3 39 -n 0\.6\.0 -- tools/harness/sdk-kompat
@@ -125,6 +128,8 @@ diff 1 -n 0\.6\.0 -- tools/harness/run-sdk-kompat-tests.sh
 3b173e28 5 -n 0\.6\.0 -- tools/harness/run-sdk-kompat-tests.sh
 3b173e28 17 -n -e Bibliothek.0\.6\.0 -e Packages.0\.6\.0 -e 0\.6\.0-Pakete -- harness tools/harness
 diff 0 -n -e Bibliothek.0\.6\.0 -e Packages.0\.6\.0 -e 0\.6\.0-Pakete -- harness tools/harness
+diff 4 -n -e 0\.6\.0-SDKs -e SDK.0\.6\.0 -- harness tools/harness
+diff 0 -n -e alt06 -e neu06 -e LIB06 -e wheels/06 -- tools/harness/sdk-kompat
 ```
 
 Stand der ersten Zeile: **gemessen** mit `git grep -n` am Parent `3e028ee3` (neun Dateien,
@@ -207,6 +212,51 @@ gesehenes Rot; die Läufe an einem Klon des Repos im Scratchpad (Stand
   die verschiedenen Prüfsummen belegt (dist `e5fa52ed7181`, Registry `f8e6415b23e5`);
   dass eine entfernte Signatur mit der neuen Versionsführung weiter rot wird, ist
   *hergeleitet*.
+
+### Fixrunde (Review `review-slice-sdk-kompat-version-parameter`, Code-Stand `a8e9ddf0`)
+
+- **F-1 (HIGH) — Zusage „Form X.Y.Z“ nicht getragen.** Der Code wurde bewegt, nicht
+  die Zusage: `version_lesen` verlangt `^[0-9]+\.[0-9]+\.[0-9]+$`. Alle drei Packages
+  tragen heute diese Form, und für eine Version mit Suffix stimmte der
+  Python-Dateiname nicht mit dem Artefakt überein, das der Pack schreibt (PEP-440-Normalform).
+  Die Meldung lautet jetzt „… trägt nicht genau eine Version der Form X.Y.Z, nur
+  Ziffern ohne Suffix (gelesen: …)“, Kommentar und Vertrag (§Versionen, §Ausgänge)
+  sagen dasselbe. **Mutation (gemessen)** an einem Klon (Stand `a8e9ddf0`) im
+  Scratchpad: `<Version>0.7.0-rc.1</Version>` in der `.csproj` mit einem Verzeichnis
+  `PgChangeFeed.Client.0.7.0-rc.1.nupkg` über `SDK_KOMPAT_DIST_CSHARP` → Exit 2,
+  `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj trägt nicht genau eine
+  Version der Form X.Y.Z, nur Ziffern ohne Suffix (gelesen: 0.7.0-rc.1)`, **rot**;
+  `version = "0.7.0-rc.1"` in `pyproject.toml` mit `pgchangefeed-0.7.0-rc.1-py3-none-any.whl`
+  über `SDK_KOMPAT_DIST_PYTHON` → Exit 2, dieselbe Meldung für `pyproject.toml`,
+  **rot**. **Gegenprobe** mit `0.6.1` (Arbeitsstand, `make test-sdk-kompat`, dist):
+  Exit 0, **grün** (unten).
+- **F-2 (LOW) — Träger-Meldung unvollständig.** Ergänzt in der §3-Tabelle:
+  `harness/targets/sdk-altserver.md` (Titel) und `tools/harness/run-sdk-altserver-tests.sh`
+  (Kopf), nur gemeldet, Frist Closure; Suchlauf-Zeile 7 (4 Treffer in drei Dateien).
+- **F-3 (INFO) — Laufzeit-Abhängigkeiten in A2.** Als §Grenze 8 im Vertrag.
+- **F-4 (INFO) — Kotlin-Versionszeile.** Als §Grenze 9 im Vertrag; §Versionen
+  sagt „die nicht eingerückte Zeile“.
+- **F-5 (INFO) — nicht erreichbarer C#-Zweig.** Behalten und im Kommentar als über
+  den Runner nicht erreichbar gekennzeichnet, mit der Kopplung an die RUN-Schicht
+  `lib-dist` im Dockerfile. Grund: ohne den Zweig liefe A2 bei einer künftigen
+  Änderung dieser Schicht mit der 0.5.0-DLL aus `alt05` weiter — derselbe stille
+  Rückfall, den der Slice in Python beseitigt. Keine Mutation (über den Runner keine
+  erreichbare Eingabe); dass der Zweig rot färbt, ist *hergeleitet*.
+- **F-6 (INFO) — Version im Bezeichner.** Umbenannt: `alt06`→`altreg`,
+  `neu06`→`neureg`, `LIB06`→`LIBREG`, `d06`→`dreg`, `/wheels/06`→`/wheels/neu`;
+  die gedruckte Zeile `KOMPAT kotlin javap Bibliothek 06` heißt `… Bibliothek REG`.
+  Suchlauf-Zeile 8: 0 Treffer.
+
+**Läufe am Endstand der Fixrunde (Code `a8e9ddf0`, gemessen).**
+`make test-sdk-kompat` (dist): Exit 0, Schlusszeile
+`run-sdk-kompat-tests: Kompatibilitätsmessung (dist) grün für: csharp kotlin python`,
+keine Zeile `ROT`, A2 je Sprache `Bibliothek 0.6.1 (Artefakt …)` mit denselben
+Prüfsummen wie oben. `SDK_KOMPAT_NEU=registry make test-sdk-kompat`: Exit 0,
+Schlusszeile `… (registry) grün für: csharp kotlin python`, keine Zeile `ROT`
+(gefahren, weil die Umbenennung die Pfade beider Modi berührt).
+`make kommentar-kennungen DIFF=dad07666`: Exit 0, kein Kandidat; der
+Konjunktiv-Kandidatenlauf (Schritt 20) über `*.sh` und die Gast-Dockerfiles seit
+`dad07666`: kein Treffer.
 
 ## 4. Trigger
 
