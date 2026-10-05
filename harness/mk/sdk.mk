@@ -124,8 +124,8 @@ sdk-pack-python: sdk-public-doc-check ## Python-SDK bauen+testen+paketieren (sdk
 # Der Runner schreibt den Kotlin-Abschnitt des Abdeckungs-
 # Traegers docs/user/sdk-e2e-abdeckung.md aus derselben Messung.
 .PHONY: test-sdk-kotlin-integration
-test-sdk-kotlin-integration: ## Kotlin-SDK-Realserver-Integrationstest (compose + integration-Stufe, vierzehn Phasen — vier ohne Regel, eine mit Fehlercode, vier mit rename_column-Regel, vier mit Routing-Regeln, eine mit Tabellenfilter; Werkzeug, kein Gate; slice-sdk-kotlin-reale2e)
-	@bash tools/harness/run-sdk-kotlin-integration-tests.sh
+test-sdk-kotlin-integration: ## Kotlin-SDK-Realserver-Integrationstest (compose + integration-Stufe, achtzehn Phasen — vier ohne Regel, eine mit Fehlercode, vier mit rename_column-Regel, vier mit Routing-Regeln, eine mit Tabellenfilter, vier über TLS; Werkzeug, kein Gate; slice-sdk-kotlin-reale2e)
+	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" GO_MODCACHE_VOLUME="$(GO_MODCACHE_VOLUME)" bash tools/harness/run-sdk-kotlin-integration-tests.sh
 
 # `test-sdk-csharp-integration` ist der Realserver-Integrationstest der
 # C#-SDK-Zustellweg-Flaechen (slice-sdk-csharp-reale2e, Mechanik-Klasse
@@ -142,8 +142,8 @@ test-sdk-kotlin-integration: ## Kotlin-SDK-Realserver-Integrationstest (compose 
 # build:-Block). Der Runner schreibt den C#-Abschnitt des
 # Abdeckungs-Traegers docs/user/sdk-e2e-abdeckung.md aus derselben Messung.
 .PHONY: test-sdk-csharp-integration
-test-sdk-csharp-integration: ## C#-SDK-Realserver-Integrationstest (compose + integration-Stufe, vierzehn Phasen — vier ohne Regel, eine mit Fehlercode, vier mit rename_column-Regel, vier mit Routing-Regeln, eine mit Tabellenfilter; Werkzeug, kein Gate; slice-sdk-csharp-reale2e)
-	@bash tools/harness/run-sdk-csharp-integration-tests.sh
+test-sdk-csharp-integration: ## C#-SDK-Realserver-Integrationstest (compose + integration-Stufe, achtzehn Phasen — vier ohne Regel, eine mit Fehlercode, vier mit rename_column-Regel, vier mit Routing-Regeln, eine mit Tabellenfilter, vier über TLS; Werkzeug, kein Gate; slice-sdk-csharp-reale2e)
+	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" GO_MODCACHE_VOLUME="$(GO_MODCACHE_VOLUME)" bash tools/harness/run-sdk-csharp-integration-tests.sh
 
 # `test-sdk-python-integration` ist der Realserver-Integrationstest der
 # Python-SDK-Zustellweg-Flaechen (ADR-0110 §Entscheidung Festlegung
@@ -158,8 +158,8 @@ test-sdk-csharp-integration: ## C#-SDK-Realserver-Integrationstest (compose + in
 # `make test-integration`); setzt ein geladenes :dev-Image voraus
 # (`make image` vorher, compose.yaml traegt keinen build:-Block).
 .PHONY: test-sdk-python-integration
-test-sdk-python-integration: ## Python-SDK-Realserver-Integrationstest (compose + integration-Stufe, vierzehn Phasen — vier ohne Regel, eine mit Fehlercode, vier mit rename_column-Regel, vier mit Routing-Regeln, eine mit Tabellenfilter; Werkzeug, kein Gate; ADR-0110)
-	@bash tools/harness/run-sdk-python-integration-tests.sh
+test-sdk-python-integration: ## Python-SDK-Realserver-Integrationstest (compose + integration-Stufe, achtzehn Phasen — vier ohne Regel, eine mit Fehlercode, vier mit rename_column-Regel, vier mit Routing-Regeln, eine mit Tabellenfilter, vier über TLS; Werkzeug, kein Gate; ADR-0110)
+	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" GO_MODCACHE_VOLUME="$(GO_MODCACHE_VOLUME)" bash tools/harness/run-sdk-python-integration-tests.sh
 
 # `test-sdk-kompat` misst die Kompatibilität der veröffentlichten SDK-Packages
 # 0.6.0 gegenüber 0.5.0 (ADR-0145): je Sprache ein Gast-Programm unter

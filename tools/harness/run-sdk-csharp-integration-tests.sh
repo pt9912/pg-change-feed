@@ -2,7 +2,7 @@
 # run-sdk-csharp-integration-tests.sh — Realserver-Integrationstest der
 # C#-SDK-Zustellweg-Flächen (Mechanik-Klasse
 # ADR-0110 §Entscheidung Festlegung 2, gespiegelt vom Python-Vorbild
-# tools/harness/run-sdk-python-integration-tests.sh): vierzehn Phasen — die vier
+# tools/harness/run-sdk-python-integration-tests.sh): achtzehn Phasen — die vier
 # Flächen des Packages PgChangeFeed.Client (HTTP, gRPC, SSE
 # und NATS-Vollinhalt) prüfen ihre Protokoll-Annahmen je gegen
 # eine reale, laufende Server-Instanz ohne Regel, eine Fehlercode-Phase (die
@@ -19,7 +19,12 @@
 # sowie mit `schema` allein nur die Changes seiner Auswahl aus drei Tabellen in
 # zwei Schemas empfängt (Vorbereitung und Ablauf über
 # tools/harness/lib-sdk-filter-fixture.sh; das Negativ trägt eine zweite
-# Dreiergruppe, die der Runner nach beobachteter Verbindung committet) —
+# Dreiergruppe, die der Runner nach beobachteter Verbindung committet) und
+# vier TLS-Phasen (HTTP, SSE, gRPC-Stream, gRPC-Verwaltung gegen einen
+# Feed-Container mit einem dem System unbekannten Zertifikat, mit
+# Vertrauensanker der Optionen; ohne Anker, mit fremdem Anker und mit einem
+# Servernamen außerhalb des Zertifikats scheitert dieselbe Verbindung an der
+# TLS-Prüfung; tools/harness/lib-sdk-tls-fixture.sh) —
 # der Prüfling ist die
 # kompilierte Client-Assembly, der Integrationstest importiert
 # PgChangeFeed.Client direkt (kein Wegwerf-Duplikat-Client daneben).
@@ -70,6 +75,14 @@ source tools/harness/lib-sdk-rule-fixture.sh
 source tools/harness/lib-sdk-route-fixture.sh
 # shellcheck source=tools/harness/lib-sdk-filter-fixture.sh
 source tools/harness/lib-sdk-filter-fixture.sh
+# shellcheck source=tools/harness/lib-sdk-tls-fixture.sh
+source tools/harness/lib-sdk-tls-fixture.sh
+
+TOOLCHAIN_IMAGE=${TOOLCHAIN_IMAGE:?TOOLCHAIN_IMAGE fehlt (das Makefile setzt es)}
+GO_MODCACHE_VOLUME=${GO_MODCACHE_VOLUME:?GO_MODCACHE_VOLUME fehlt (das Makefile setzt es)}
+# Zusätzliche Argumente des `docker run` je Phase (die TLS-Phasen hängen das
+# Verzeichnis mit den Zertifikaten ein); leer für alle anderen Phasen.
+RUN_PHASE_DOCKER_ARGS=()
 
 COMPOSE=${COMPOSE:-docker compose -f compose.yaml}
 NETWORK=${NETWORK:-cdc-feed-test}
@@ -106,6 +119,7 @@ HTTP_SENTINEL=CsharpHttpSdkE2ESentinel
 cleanup() {
   docker rm -fv "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
   $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true
+  rm -rf "${SDK_TLS_TMP:-}"
 }
 trap cleanup EXIT
 
@@ -203,6 +217,7 @@ run_phase() {
 
   docker rm -fv "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
   docker run -d --name "$SDK_TEST_CONTAINER" --network "$NETWORK" \
+    "${RUN_PHASE_DOCKER_ARGS[@]}" \
     "${env_args[@]}" \
     -e PGCHANGEFEED_TEST_NAME="$test_name" \
     -e PGCHANGEFEED_E2E_TABLE="$table" \
@@ -453,6 +468,46 @@ sdk_filter_phase "run-sdk-csharp-integration-tests" \
   "PGCHANGEFEED_TEST_NAME=SseFilterRealserverTests" \
   "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN=$API_TOKEN"
 
+# --- TLS-Phasen (LH-FA-SST-013) --------------------------------------------
+# Der Feed-Container läuft mit einem Zertifikat, das dem System unbekannt ist
+# (tools/harness/lib-sdk-tls-fixture.sh, Override-Datei im Temp-Verzeichnis).
+# Je Fläche (HTTP, SSE, gRPC-Stream, gRPC-Verwaltung) eine Phase: mit dem
+# Vertrauensanker arbeitet der Client über TLS; ohne Anker, mit fremdem Anker
+# und mit einem Servernamen außerhalb des Zertifikats scheitert dieselbe
+# Verbindung an der TLS-Prüfung (REJECTED-Zeile). Am Ende läuft der Container
+# wieder ohne Override.
+sdk_tls_fixture_setup "run-sdk-csharp-integration-tests"
+RUN_PHASE_DOCKER_ARGS=(-v "$SDK_TLS_TMP":"$SDK_TLS_TEST_MOUNT":ro)
+TLS_REJECT="REJECTED tls no_anchor=ok foreign_anchor=ok name_mismatch=ok"
+TLS_ENV="PGCHANGEFEED_TLS_CA_FILE=$SDK_TLS_CA_FILE PGCHANGEFEED_TLS_FOREIGN_CA_FILE=$SDK_TLS_FOREIGN_CA_FILE PGCHANGEFEED_TLS_MISMATCH_HOST=$SDK_TLS_MISMATCH_HOST"
+
+HTTP_TLS_IDENT=$(run_phase \
+  "HTTP-TLS-Fläche (SPEC-018, SPEC-037)" HttpTlsRealserverTests \
+  CsharpHttpTlsSdkE2ESentinel 1100 "$TLS_REJECT" \
+  "RECEIVED consumer_id=[^ ]+" \
+  consumer "$TEST_TABLE" "PGCHANGEFEED_HTTP_ADDR=$SDK_TLS_HTTP_ADDR PGCHANGEFEED_API_TOKEN_ADMIN=$API_TOKEN_ADMIN PGCHANGEFEED_API_TOKEN_READER=$API_TOKEN_READER PGCHANGEFEED_SOURCE_ID=$SOURCE_ID PGCHANGEFEED_HTTP_PUBLICATION=$HTTP_PUBLICATION $TLS_ENV")
+
+SSE_TLS_IDENT=$(run_phase \
+  "SSE-TLS-Fläche (SPEC-021, SPEC-037)" SseTlsRealserverTests \
+  CsharpSseTlsSdkE2ESentinel 1110 "$TLS_REJECT" \
+  "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*CsharpSseTlsSdkE2ESentinel" \
+  changes "$TEST_TABLE" "PGCHANGEFEED_HTTP_ADDR=$SDK_TLS_HTTP_ADDR PGCHANGEFEED_API_TOKEN=$API_TOKEN $TLS_ENV")
+
+GRPC_TLS_IDENT=$(run_phase \
+  "gRPC-TLS-Fläche (SPEC-020, SPEC-037)" GrpcTlsRealserverTests \
+  CsharpGrpcTlsSdkE2ESentinel 1120 "$TLS_REJECT" \
+  "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*CsharpGrpcTlsSdkE2ESentinel" \
+  changes "$TEST_TABLE" "PGCHANGEFEED_GRPC_ADDR=$SDK_TLS_GRPC_ADDR PGCHANGEFEED_API_TOKEN=$API_TOKEN $TLS_ENV")
+
+ADMIN_TLS_IDENT=$(run_phase \
+  "gRPC-Verwaltungs-TLS-Fläche (SPEC-031, SPEC-037)" AdministrationTlsRealserverTests \
+  CsharpAdminTlsSdkE2ESentinel 1130 "$TLS_REJECT" \
+  "RECEIVED consumer_id=[^ ]+" \
+  consumer "$TEST_TABLE" "PGCHANGEFEED_GRPC_ADDR=$SDK_TLS_GRPC_ADDR PGCHANGEFEED_API_TOKEN_ADMIN=$API_TOKEN_ADMIN PGCHANGEFEED_API_TOKEN_READER=$API_TOKEN_READER PGCHANGEFEED_SOURCE_ID=$SOURCE_ID PGCHANGEFEED_HTTP_PUBLICATION=$HTTP_PUBLICATION $TLS_ENV")
+
+RUN_PHASE_DOCKER_ARGS=()
+sdk_tls_fixture_restore "run-sdk-csharp-integration-tests"
+
 # --- Abdeckungs-Träger (docs/user/sdk-e2e-abdeckung.md) -------------------
 # Der C#-Abschnitt entsteht aus derselben Messung, die ihn belegt: je Phase
 # ihre Kennungen und der ident-Behalt des Laufs; geschrieben wird nur bei
@@ -490,6 +545,7 @@ abdeckung_csharp_abschnitt() {
     "| [\`LH-FA-CFG-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | zwei aktive Routing-Regeln (Ziele \`eu\` und \`us\`) auf einer eigenen Tabelle: die vier C#-SDK-Flächen (gRPC-Stream, SSE-Stream, NATS-Zusatz-Subjekt \`cdc.route.<source_id>.<ziel>\`, HTTP-Lesezugriff) liefern mit \`target\` genau die Changes des Ziels \`eu\` und, auf den Stream-Flächen nach einer zweiten Dreiergruppe nach stehender Verbindung (Client mit \`target\` genau eine, Client ohne \`target\` genau drei Changes dieser Gruppe), im Ruhefenster keine Change eines anderen Ziels oder ohne Ziel (der HTTP-Lesezugriff liefert exakt die Ziel-Teilmenge der ungefilterten Lesung), ohne \`target\` alle; \`change_id\` je unabhängig über \`cdc.changes\` (\`route_target\`) gegengelesen | \`GrpcRouteRealserverTests\`, \`SseRouteRealserverTests\`, \`NatsRouteRealserverTests\`, \`HttpRouteRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | drei aktive Tabellen in zwei Schemas (zwei im Schema \`public\`, eine gleichnamige im zweiten Schema): der C#-SDK-Client \`PgChangeFeedSseClient\` empfängt mit \`schema\` und \`table\` genau die Changes seiner Tabelle, mit \`schema\` allein genau die Changes dieses Schemas, ohne Filter alle drei; nach beobachteter Verbindung (erste Dreiergruppe empfangen) committet der Runner eine zweite Dreiergruppe mit eigenem Sentinel, das Ruhefenster beginnt erst, wenn alle drei Clients ihre Zeilen der zweiten Gruppe haben, und in ihm empfängt kein gefilterter Client eine Change einer anderen Tabelle (zweite Gruppe: F1 genau eine, F2 genau eine, ohne Filter genau drei); \`change_id\` je unabhängig über \`cdc.changes\` (\`schema_name\`, \`table_name\`) gegengelesen | \`SseFilterRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     "| [\`LH-FA-SST-009\`](../../spec/lastenheft.md), [\`LH-FA-SST-006\`](../../spec/lastenheft.md) | die Aktivierung einer fehlenden Tabelle endet über \`PgChangeFeedHttpClient\` (404) und \`PgChangeFeedAdministrationClient\` (\`NotFound\`) am laufenden Feed-Container mit dem Meldungscode des Servers als \`MessageCode\` des Fehlertyps (HTTP-Feld \`code\`, gRPC-Statusdetail \`ErrorInfo\`); ein Reader-Token gegen dieselbe Operation endet mit 403 bzw. \`PermissionDenied\` und leerem Code | \`ErrorCodeRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-013\`](../../spec/lastenheft.md), [\`LH-FA-SST-011\`](../../spec/lastenheft.md) | der Feed-Container läuft mit einem Zertifikat, das dem System unbekannt ist: die vier C#-SDK-Flächen (\`PgChangeFeedHttpClient\`, \`PgChangeFeedSseClient\`, \`PgChangeFeedGrpcClient\`, \`PgChangeFeedAdministrationClient\`) arbeiten über TLS mit \`TrustAnchorFile\` (Consumer-Registrierung und Tabellenliste bzw. eine danach committete Änderung; \`change_id\` und \`consumer_id\` unabhängig über \`cdc.changes\` bzw. \`cdc.consumer\` gelesen); ohne Anker, mit fremdem Anker und mit einem Servernamen außerhalb des Zertifikats scheitert dieselbe Verbindung an der TLS-Prüfung (\`AuthenticationException\` in der Fehlerkette) | \`HttpTlsRealserverTests\`, \`SseTlsRealserverTests\`, \`GrpcTlsRealserverTests\`, \`AdministrationTlsRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     '<!-- pgchangefeed-sdk-e2e:csharp-end -->'
 }
 
@@ -545,3 +601,4 @@ echo "run-sdk-csharp-integration-tests: Regel-Belege (slice-sdk-regel-realserver
 echo "run-sdk-csharp-integration-tests: Routing-Belege (ADR-0137 Teilfrage 5) grün — zwei Routing-Regeln auf $SDK_ROUTE_TABLE (Ziel $SDK_ROUTE_TARGET_A und $SDK_ROUTE_TARGET_B), je Fläche ein Client mit target und ein Client ohne target${SDK_ROUTE_REPORT}"
 echo "run-sdk-csharp-integration-tests: Fehlercode-Belege (ADR-0145) grün — die Aktivierung einer fehlenden Tabelle endete an HTTP (404) und gRPC (NotFound) mit dem Meldungscode $ERROR_CODE_IDENT als MessageCode des SDK-Fehlertyps, ein Reader-Token endete mit 403 bzw. PermissionDenied ohne Code"
 echo "run-sdk-csharp-integration-tests: Filter-Belege (ADR-0133 Teilfrage 4) grün — drei Tabellen in zwei Schemas, SSE-Client mit schema und table, mit schema allein und ohne Filter, zweite Dreiergruppe nach beobachteter Verbindung${SDK_FILTER_REPORT}"
+echo "run-sdk-csharp-integration-tests: TLS-Belege (LH-FA-SST-013, ADR-0150) grün — der Feed-Container lief mit einem dem System unbekannten Zertifikat; HTTP (consumer_id=$HTTP_TLS_IDENT), SSE (change_id=$SSE_TLS_IDENT), gRPC-Stream (change_id=$GRPC_TLS_IDENT) und gRPC-Verwaltung (consumer_id=$ADMIN_TLS_IDENT) arbeiteten über TLS mit TrustAnchorFile (je unabhängig über cdc.changes bzw. cdc.consumer lesbar); ohne Anker, mit fremdem Anker und mit einem Servernamen außerhalb des Zertifikats scheiterte dieselbe Verbindung an der TLS-Prüfung"
