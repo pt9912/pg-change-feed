@@ -2,7 +2,10 @@
 
 The package offers five clients and one shared configuration class:
 
-- ``ClientOptions`` -- server address and token, shared by all clients.
+- ``ClientOptions`` -- server address, token and optional TLS trust anchor,
+  shared by all clients.
+- ``create_http_client`` and ``create_grpc_channel`` -- the HTTP client and
+  the gRPC channel that connect over TLS with the trust anchor of the options.
 - ``PgChangeFeedHttpClient`` -- the HTTP API: manage consumers, enable and
   disable captured tables, run the retention and read stored changes.
 - ``PgChangeFeedGrpcClient`` -- a live gRPC stream of changes.
@@ -42,9 +45,12 @@ from pgchangefeed.models import StreamChange
 from pgchangefeed.nats_stream_client import PgChangeFeedNatsStreamClient
 from pgchangefeed.options import ClientOptions
 from pgchangefeed.sse_client import PgChangeFeedSseClient
+from pgchangefeed.tls import create_grpc_channel, create_http_client
 
 __all__ = [
     "ClientOptions",
+    "create_http_client",
+    "create_grpc_channel",
     "PgChangeFeedHttpClient",
     "PgChangeFeedGrpcClient",
     "PgChangeFeedSseClient",

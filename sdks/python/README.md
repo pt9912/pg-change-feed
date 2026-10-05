@@ -22,7 +22,7 @@ Requires Python 3.14 or newer.
 
 ## Quick start
 
-A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server. The server does not serve TLS itself, so the examples use unencrypted addresses.
+A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server. The examples use unencrypted addresses; a server that runs with a TLS certificate is reached over `https` addresses, see [Connect over TLS](#connect-over-tls).
 
 ### Read changes and remember your position
 
@@ -160,6 +160,46 @@ A call that the server answers with a non-`OK` gRPC status raises a subclass of 
 | `PgChangeFeedGrpcUnexpectedStatusError` | any other non-`OK` status. |
 
 Every one of these errors carries `message_code`, the message code of the server read from the status detail (`None` when the server sent none, as for `UNAUTHENTICATED` and `PERMISSION_DENIED`); for example `PgChangeFeedGrpcNotFoundError.message_code` is `PCF-E8025` for `enable_table` on a table that does not exist.
+
+## Connect over TLS
+
+A server that runs with a TLS certificate is reached over `https` addresses (HTTP and SSE) and, for gRPC, over an `https://host:port` address. When the issuer of the certificate is not among the trust anchors of the runtime, name the certificate with the trust anchor option of `ClientOptions`: `trust_anchor_file`, the path of a PEM file with one or more certificates, the certificate of the issuer or of the server itself. `create_http_client(options)` builds the `httpx.Client` for the HTTP and SSE clients and `create_grpc_channel(options)` the `grpc.Channel` for the gRPC stream client and the administration client, both with that anchor:
+
+```python
+from pgchangefeed import ClientOptions, PgChangeFeedSseClient, create_http_client
+
+options = ClientOptions(
+    address="https://feed.example.com:8090",
+    api_token="<reader token>",
+    trust_anchor_file="/etc/pg-change-feed/ca.pem",
+)
+with create_http_client(options) as http:
+    client = PgChangeFeedSseClient(http, options)
+    for change in client.stream_changes():
+        print(change.operation, change.schema, change.table)
+```
+
+```python
+from pgchangefeed import ClientOptions, PgChangeFeedGrpcClient, create_grpc_channel
+
+options = ClientOptions(
+    address="https://feed.example.com:9090",
+    api_token="<reader token>",
+    trust_anchor_file="/etc/pg-change-feed/ca.pem",
+)
+with create_grpc_channel(options) as channel:
+    client = PgChangeFeedGrpcClient(channel, options)
+    for change in client.stream_changes():
+        print(change.operation, change.schema, change.table)
+```
+
+- With the option the connection trusts exactly the certificates in the file; the default trust of the runtime does not apply in addition. Without the option the default trust of `httpx` and `grpc` applies.
+- The certificate chain, the validity period and the server name are always checked. The server name is the host of the address, so the server certificate must name that host. There is no setting that turns the check off and none that overrides the server name.
+- A failed check is a connection error and never a retry in plaintext: an `httpx.ConnectError` for the HTTP and SSE clients, a `grpc.RpcError` with status `UNAVAILABLE` for the gRPC stream client, and a `PgChangeFeedGrpcUnexpectedStatusError` without a message code for the administration client (the server was not reached).
+- A path that cannot be read, or a file without a PEM certificate, raises a `ValueError` when `ClientOptions` is created. A trust anchor together with an `http` address raises a `ValueError` in `create_http_client` and `create_grpc_channel`.
+- `create_grpc_channel` reads the address as `host:port` or as a URL: `https://host:port` connects over TLS, `http://host:port` in plaintext, and `host:port` over TLS when a trust anchor is set and in plaintext otherwise.
+- A client or channel you build yourself keeps its own TLS setup: the trust anchor option is read only by `create_http_client` and `create_grpc_channel`.
+- The NATS client is not covered by the option; TLS for NATS is configured with the NATS server and its URL.
 
 ## API overview
 

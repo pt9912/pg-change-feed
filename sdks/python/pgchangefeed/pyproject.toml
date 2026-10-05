@@ -36,7 +36,7 @@ Repository = "https://github.com/pt9912/pg-change-feed"
 Issues = "https://github.com/pt9912/pg-change-feed/issues"
 
 [project.optional-dependencies]
-test = ["pytest>=8", "grpcio-tools>=1.75"]
+test = ["pytest>=8", "grpcio-tools>=1.75", "cryptography>=43"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
