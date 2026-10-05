@@ -40,15 +40,27 @@ sind vergleichbar.
    Repo nicht“ mit Grund. Dazu der Durchgang durch die Adaptionen in
    `harness/conventions.md` mit ihren fünf Ausgängen.
 2. **Stichprobe gegen den Bestand.** Unabhängig vom Delta, weil eine nie
-   übernommene, seither unveränderte Vorlagen-Klausel kein Delta erzeugt: die
-   aus Vorlagen abgeleiteten Repo-Dokumente (`AGENTS.md`, `harness/README.md`,
+   übernommene, seither unveränderte Vorlagen-Klausel kein Delta erzeugt. Für
+   die aus Vorlagen abgeleiteten Repo-Dokumente (`AGENTS.md`, `harness/README.md`,
    `harness/conventions.md`, `docs/plan/planning/README.md`,
    `docs/plan/planning/in-progress/roadmap.md`, `docs/plan/adr/README.md`,
-   `docs/plan/carveouts/`) gegen ihre Vorlage — Gliederung per
-   `diff <(grep -E '^#{1,4} ' <Vorlage>) <(grep -E '^#{1,4} ' <Datei>)` und
-   stehengebliebene Platzhalter per `grep -n -E '<…>|<z\. B\.'`; je Bump
-   zusätzlich ein Dokument rotierend per vollem `diff` gegen seine Vorlage
-   (feste Klauseln, Tabellenzellen).
+   `docs/plan/carveouts/`) drei Prüfungen:
+   - **Gliederung** gegen die Vorlage:
+     `diff <(grep -E '^#{1,4} ' <Vorlage>) <(grep -E '^#{1,4} ' <Datei>)`.
+   - **Stehengebliebene Platzhalter**, mit zwei Mustern, jede Trefferzeile
+     beurteilt: die Platzhalter der Vorlage selbst,
+     `grep -n -F -f <(grep -o -E '<[^<>]+>' <Vorlage> | sort -u) <Datei>`, und
+     die Formen, die eine ältere Vorlage hinterlassen hat,
+     `grep -n -E '<…>|<z\. B\.|<zuerst|<dann|<bei Bedarf|<mover>|<messung>|<vorschau>|<make-target>|<Pfad oder URL>|<Datum>|<repo-spezifischer|<NNN>|<Pfade zu' <Datei>`.
+   - **Voller `diff`** gegen die versions-normalisierte Vorlage, jede
+     Abweichung beurteilt, für jedes Dokument, dessen Vorlage im Delta aus
+     Schritt 1 steht oder von einer Regel des Deltas berührt ist, und immer für
+     `docs/plan/planning/README.md`: ihre Zeilen sind feste Klauseln der
+     Vorlage, eine fehlende Klausel ändert weder Gliederung noch Platzhalter.
+
+   Grenze: Diese Stichprobe läuft nur beim Bump. Die Stichprobe bei aktuellem
+   Pin — je Baseline-Regel, ob sie im ausgefüllten Artefakt steht — trägt
+   weiter der Drift-Audit nach `AGENTS.md` §1.
 3. **Ergebnis je Dokument.** „entspricht“ oder „Abweichung mit Beleg“; jede
    Abweichung wird im Bump-Slice behoben oder als Folge-Slice benannt. Bestehende
    Instanzen wiederkehrender Vorlagen (ADR, Slice, Welle, Review-Report, `MR`)
