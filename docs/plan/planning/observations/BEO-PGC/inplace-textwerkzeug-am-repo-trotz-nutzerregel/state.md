@@ -77,3 +77,6 @@ Der zehnte Beleg (`slice-sdk-0-6-kompatibilitaet-messen`, evidence/slice-sdk-0-6
 ist die Umleitungs-Hälfte in der Rolle Architect: `echo >>` und `git apply` aus einer Patch-Datei beim
 Schreiben von `ADR-0147`, vom Architect im Bericht selbst gemeldet, Inhalt korrekt, Ursprung *übernommen*
 (nicht am Guard gemessen). Kein neuer Mechanismus; die Regel in `AGENTS.md` §3.1 galt.
+Der elfte Beleg (`slice-otlp-metrik-export-e2e`, evidence/slice-otlp-metrik-export-e2e.md) ist die
+Umleitungs-Hälfte in der Rolle Implementer: `cat >>` an `check_test.go`, selbst gemeldet, im Review als
+F-1 (HIGH, nicht verifizierbar) geführt, Inhalt geprüft; Ursprung *übernommen*. Kein neuer Mechanismus.

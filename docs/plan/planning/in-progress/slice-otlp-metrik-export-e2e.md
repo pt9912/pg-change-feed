@@ -326,22 +326,22 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       Bericht), `make doc-trace` Exit 0 mit 0 Waisen, `make pin-stale-all` für den
       neuen Pin ohne `DRIFT`, `make fmt-check` Exit 0 für das Wegwerf-Werkzeug,
       `make test` Exit 0 (das Werkzeug läuft in `make test`, wenn es Tests trägt).
-- [ ] **Realer Post-Push-Lauf** ([`AGENTS.md`](../../../../AGENTS.md) §3.10): der
+- [x] **Realer Post-Push-Lauf** ([`AGENTS.md`](../../../../AGENTS.md) §3.10): der
       Runner ändert den Inhalt von `e2e.yml`s Ziel, nicht die Datei; der Lauf holt in
       beiden PostgreSQL-Legs ein zusätzliches Image von Docker Hub und läuft länger.
       Das Risiko (§6) bleibt **offen**, bis ein Lauf von `e2e.yml` am Stand der
       Closure beide Legs `success` zeigt (`gh run list --workflow e2e.yml`); der
       Ausgang wird nachgetragen, bevor Closure erfolgt.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update (siehe Liefer-Punkt 3 (c), (d)); gemeldete Träger fremder Dateien
+- [x] Doku-Update (siehe Liefer-Punkt 3 (c), (d)); gemeldete Träger fremder Dateien
       mit der Closure nachgezogen (§3 Suchlauf,
       [`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, weil die Roadmap unter *Offene Wellen* keine Welle führt.
 
 ## 3. Plan (vor Code)
 
@@ -567,19 +567,32 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   anonymer Abruf kann am Limit scheitern, der Lauf endet dann rot ohne Aussage über
   den Export. Gegenmaßnahme: das kleinste tragende Image (Entscheidungsregel §2),
   Pin mit Digest (ein Abruf je Lauf), der Fehlschlag des Abrufs ist im Runner eine
-  eigene Meldung, nicht ein Fehlschlag der Belege. — **Ausgang:** offen bis Closure.
+  eigene Meldung, nicht ein Fehlschlag der Belege. — **Ausgang:** weiter offen als
+  benanntes Restrisiko. Der Kern-Collector ist klein (126 578 012 Byte, gemessen), der Pin
+  hält einen Abruf je Lauf, die Meldung des Runners nennt das Limit; die zwei Läufe von
+  `e2e.yml` am Stand `759d2f2f` holten ihn in beiden Legs ohne Limit-Fehlschlag. Offen
+  bleibt, dass `docker pull` auch bei gecachtem Image abbricht, wenn die Registry nicht
+  antwortet (Review F-5, Report
+  [`review-slice-otlp-metrik-export-e2e`](../../../reviews/review-slice-otlp-metrik-export-e2e.md));
+  Adresse: dieser Review-Befund, Beobachtung beim ersten Limit-Fehlschlag in `e2e.yml`.
 - **Laufzeit des Runners:** der Runner ist bereits lang; die neue Phase (Takt 5 s,
   mehrere Takte je Beobachtung, zwei Neustarts des Feed-Containers) fügt Minuten
   hinzu, und eine Verlängerung von `e2e.yml` über ein Job-Limit hinaus wäre ein
   Fehlschlag ohne Bezug zum Export. Gegenmaßnahme: Fristen statt fester Schlafzeiten,
   die Gesamtzeit der Phase im Bericht (gemessen, Lauf), Vergleich der Gesamtzeit
-  vor und nach (gedruckte Zeilen). — **Ausgang:** offen bis Closure.
+  vor und nach (gedruckte Zeilen). — **Ausgang:** entfallen. Gemessen am Lauf
+  `37254000299` (Stand `759d2f2f`): Job-Dauer PostgreSQL 17 etwa 27 min, PostgreSQL 18
+  etwa 29 min, bei einem Job-Limit von 60 min; die drei OTLP-Phasen brauchten lokal 252 s
+  (gedruckte Zeile). Der Vergleich der Gesamtzeit vor und nach dem Slice wurde nicht
+  gemessen; das Limit wird nicht berührt.
 - **Das Ausgabeformat des Collectors ist ungeprüft** (`file`-Exporter: JSON-Form,
   Zahlentypen als Zeichenkette oder Zahl, Zeitstempel; `debug`: Textform, die sich
   zwischen Versionen ändert): der Pin hält die Version, das Werkzeug liest nur,
   was der Prüfpunkt an der gepinnten Version gemessen hat; ein
   Versionswechsel durch `make pin-stale-all` und Hebung ist ein bewusster Commit mit
-  erneutem Lauf. — **Ausgang:** offen bis Closure.
+  erneutem Lauf. — **Ausgang:** entfallen. Das `file`-Format wurde an Version 0.162.0
+  gelesen und trägt das Werkzeug (die gedruckten Zeilen `OTLPCHECK names=10 …`); der
+  Pin hält die Version.
 - **Port-/Netz-Kollision und Dateirechte:** der Collector läuft im Netz
   `cdc-feed-test`; ein Port auf dem Host wird nicht veröffentlicht (der Zugriff
   erfolgt über das Compose-Netz), die Ausgabe-Datei des Collector-Prozesses (ein
@@ -588,37 +601,56 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   Container-Namen einer Vorphase oder ein nicht beschreibbares Verzeichnis ließe die
   Phase ohne Aussage enden. Gegenmaßnahme: eigener Container-Name mit Präfix der Phase
   im `cleanup`-Trap, Rechte im Runner gesetzt und gelesen (der Test schreibt vor dem
-  Beleg eine Probe). — **Ausgang:** offen bis Closure.
+  Beleg eine Probe). — **Ausgang:** entfallen. Kein Befund in den Läufen des Slice
+  (lokal `make test-integration` Exit 0, beide Legs von `e2e.yml` am Stand `759d2f2f`
+  `success`).
 - **Die Einheit von `cdc_consumer_lag` ist offen** (`1` laut
   [`SPEC-033`](../../../../spec/pflichtenheft.md) und
   [`ADR-0149`](../../adr/0149-otlp-metrik-export-mechanismus.md), „LSN-Byte-Abstand“ im
   SQL-Kommentar der Sicht): der Beleg misst nur, was am Wire ankommt, er entscheidet
   nicht. **Adresse:** Architect-Frage mit Frist **vor dem Release** (§7 des Vorgängers
-  trägt dieselbe Adresse). — **Ausgang:** offen bis Closure (übergeben an den Architect).
+  trägt dieselbe Adresse). — **Ausgang:** eingetreten und erledigt: die gemessene Einheit am
+  Draht ist `By` (gedruckte Zeile `consumer_lag_unit=By`); die Entscheidung trägt
+  [`ADR-0153`](../../adr/0153-otlp-einheit-consumer-lag-byte.md), der Export-Code zieht
+  im Slice nach.
 - **Spec-Lücken, die im Vorgänger offen blieben:** die Header-Regeln von
   `otlp_headers` und der Benutzerteil der Endpunkt-URL (`http://user:pass@host`: wird
   nicht abgelehnt; `net/http` sendet ihn nach Herleitung als Basic-Authorization, **nicht
   gefahren**). Der Beleg dieses Slice kann das Letzte belegen oder widerlegen, **wenn**
   der Prüfpunkt es mit dem Collector (Authentifizierung `basicauth`) kostengünstig
   erlaubt; sonst bleibt es hergeleitet. **Adresse:** Spec-Zug des Auftraggebers/Architects,
-  Frist **vor dem Release**. — **Ausgang:** offen bis Closure.
+  Frist **vor dem Release**. — **Ausgang:** eingetreten und erledigt: die Entscheidung
+  trägt [`ADR-0154`](../../adr/0154-spec-luecken-otlp-tls-token-ist-zustand.md); der Benutzerteil
+  der URL wird im Go-Test `TestExportSendsBasicAuthorizationFromEndpointUserinfo` belegt, im
+  Runner mit zwei Starts (Benutzerteil, Benutzerteil und Header).
 - **Der Collector bedient `https` nicht mit dem erzeugten Zertifikat oder die
   Umgebungsvariable `SSL_CERT_FILE` wirkt nicht** (beides *nach Kenntnisstand*):
   dann bleibt die Grenze benannt statt gestrichen (§1 Festlegung zu `https`). —
-  **Ausgang:** offen bis Closure.
+  **Ausgang:** entfallen. Beides gemessen: das Image trägt `etc/ssl/certs/ca-certificates.crt`,
+  und mit `SSL_CERT_FILE` überträgt der Sender an den TLS-Collector (Zeile `https mit
+  Vertrauensanker: OTLPCHECK …`); die Gegenprobe ohne Anker endet mit `PCF-W6001`. Öffentliche
+  Zertifizierungsstellen bleiben nicht gemessen (Nicht-Ziel, §1).
 - **Ein Befund am Wire** (der Collector liest eine Zahlenform anders, eine Einheit
   weicht ab, ein Attribut fehlt): der Beleg ist dafür da; Folge ist ein Fix-Slice
-  (§4), kein Weiterschreiben. — **Ausgang:** offen bis Closure.
+  (§4), kein Weiterschreiben. — **Ausgang:** entfallen. Kein Produktbefund am Wire; der
+  einzige Rotlauf (e2e.yml `37225751324`, Leg PostgreSQL 18) war ein Zählfehler des Runners
+  (§7), Produktfehler am Collector 0.162.0 gemessen ausgeschlossen.
 - **Der Post-Push-Lauf von `e2e.yml` bleibt unbestätigt** (§3.10 von
   [`AGENTS.md`](../../../../AGENTS.md), Klasse
   [`BEO-PGC/github-actions-unverifizierbar-lokal`](../observations/BEO-PGC/github-actions-unverifizierbar-lokal/observation.md)):
   ein lokaler grüner Lauf sagt nichts über den Runner mit Docker-Hub-Zugriff und
-  Zeitlimit. — **Ausgang:** offen bis Closure (nachzutragen mit dem Lauf).
+  Zeitlimit. — **Ausgang:** eingetreten und aufgelöst. Der erste Lauf `37225751324`
+  (Commit `19e83251`) war am Leg PostgreSQL 18 rot, Phase „Wiederaufnahme nach docker
+  start“; behoben mit `a19c28cc`. Am Stand `759d2f2f`: ci, examples und e2e `success`,
+  e2e-Lauf `37254000299` beide Legs `success` (`gh run list --workflow e2e.yml`).
 - **Das Handbuch zieht nicht mit** (die `https`- und Einheits-Aussage):
   [`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`](../observations/BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche/observation.md)
-  — eigener Liefer-Punkt 3 (c), bedingt. — **Ausgang:** offen bis Closure.
+  — eigener Liefer-Punkt 3 (c), bedingt. — **Ausgang:** entfallen. Das Handbuch zog mit
+  (Version 1.98: Einheit `By`, `https`, Benutzerteil der URL); Review F-4 schärfte den
+  `https`-Satz.
 - **Der Slice ist größer als drei Punkte tragen:** Rückführung nach §4 mit dem
-  benannten Teilungsvorschlag. — **Ausgang:** offen bis Closure.
+  benannten Teilungsvorschlag. — **Ausgang:** entfallen. Der Slice lief als einer; die
+  Liefer-Punkte blieben bei drei.
 
 ## 7. Closure-Notiz
 
@@ -637,16 +669,59 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 *Der Plan füllt diese Sektion nicht; sie wird bei der Closure vor dem
 `git mv` nach `done/` geschrieben (§2: die Paarungs-Zeile nach dem `git mv`).*
 
-- **Was hat funktioniert:** (bei der Closure zu füllen)
-- **Was ging anders als geplant:** (bei der Closure zu füllen)
-- **Steering-Loop-Eintrag:** (bei der Closure zu füllen; Kandidaten §5)
-- **Beobachtungs-Register (`../observations/`):** (bei der Closure zu füllen;
-  zu lesen sind die in §6 und §8 genannten Einträge)
-- **Validator-Feststellung (Modul 8):** (bei der Closure zu füllen; der Slice
-  liefert Betreiber-Wert, ein Validator-Lauf ist nach dem Release sinnvoll)
-- **Folge-Slices:** (bei der Closure zu füllen)
-- **Risiken aus §6:** (bei der Closure zu füllen, je genau ein Ausgang)
-- **Drei Paarungen:** (bei der Closure zu füllen: Anker · Folge-Slice · Register)
+- **Was hat funktioniert:** Der Prüfpunkt vor dem Runner-Code (Collector-Komponenten am
+  gepinnten Image gemessen) trug die Entscheidung für das Kern-Image und für die
+  Header-Beobachtung über ein Resource-Attribut; die „nach Kenntnisstand“-Annahmen zu CA-Bündel
+  und `SSL_CERT_FILE` wurden gemessen statt übernommen. Das Wegwerf-Werkzeug mit Tabellentests
+  und die Mutationsproben an Kopien (Tabelle in §3) fanden die Soll-Abweichungen. Der
+  Post-Push-Lauf fand, was lokal verdeckt blieb (siehe unten); Review und Verifikation
+  (`docs/reviews/review-slice-otlp-metrik-export-e2e.md`,
+  `docs/reviews/verifikation-slice-otlp-metrik-export-e2e.md`) trennten Befund (2 HIGH, 2 LOW,
+  2 INFO) von der Behebung: F-2, F-3, F-4 in `fcb5e9ee` behoben.
+- **Was ging anders als geplant:** (1) Auftrag über den Plan hinaus: Einheit `By`, Benutzerteil
+  der URL, Handbuch 1.98 (siehe Umsetzungsnachzug). (2) Kein Collector-Auth-Baustein im Kern-Image;
+  die Gegenprobe zum Header ist das Fehlen des Attributs, die abweisende Antwort ein `404`.
+  (3) **Der erste Post-Push-Lauf war rot:** e2e.yml `37225751324` (Commit `19e83251`), Leg
+  PostgreSQL 18, Phase „Wiederaufnahme nach docker start“. Ursache (gemessen am Collector
+  0.162.0): der Collector legt die Datei seines file-Exporters bei jedem Start leer neu an; der
+  Runner verglich gegen die Zeilenzahl vor dem Stopp (10) und brauchte mindestens 11 Exporte zu je
+  5 s, mehr als das 40-s-Fenster. Ein Produktfehler ist ausgeschlossen (Exporter mit IP-Wechsel
+  gemessen). Behoben mit `a19c28cc` (Runner wartet auf „Everything is ready“ per
+  `docker logs --since`, Basis an der neuen Datei); lokal danach `make test-integration` Exit 0
+  (3 Exporte in 16 s), Abdeckungstabelle neu geschrieben in `759d2f2f`. Am Stand `759d2f2f`:
+  ci, examples, e2e `success`; e2e `37254000299` beide Legs `success` (PostgreSQL 17 etwa 27 min,
+  PostgreSQL 18 etwa 29 min, Limit 60 min). (4) Review F-1: ein Text-Anhang per `cat >>` an
+  `tools/harness/otlpcheck/check_test.go` (Verfahrensverstoß gegen `AGENTS.md` §3.1; Inhalt
+  geprüft, am Repo nicht verifizierbar).
+- **Steering-Loop-Eintrag:** drei Lernpunkte, kein neuer Sensor, keine neue Regel im Text:
+  (a) *Zählbasis nach Neustart:* wer nach dem Neustart eines Dienstes „es kommt wieder Ausgabe“
+  über das Wachstum einer Datei belegt, nimmt die Basis an der **neuen** Datei nach dem
+  Bereitschaftssignal, nicht vor dem Stopp, sobald der Dienst die Ausgabe zurücksetzt —
+  Beobachtung `BEO-PGC/zaehlbasis-nach-neustart-ruecksetzende-ausgabe` (1×, Träger behoben).
+  (b) *Ein lokaler Grünlauf eines Runners mit Zeitfenstern belegt kein Verhalten am gehosteten
+  Runner:* `AGENTS.md` §3.10 hielt (Risiko offen, Rotlauf vor Closure behoben); vierter Beleg
+  unter `BEO-PGC/github-actions-unverifizierbar-lokal`. (c) *Rollen-Verfahren:* Review und
+  Verifikation fanden die Aussage-Lücken (F-2 „Gegenlesung des Slots“ trug der Beleg nicht), die
+  der Implementer-Lauf selbst nicht fand; der Umleitungs-Anhang (F-1) zeigt, dass der Guard
+  Umleitungen nicht liest, die Regel trägt der Lauf (`MR-003`). Geschärfte Regel: keine neue; die
+  Wirkung steht in den genannten Beobachtungen.
+- **Beobachtungs-Register (`../observations/`):** neu `BEO-PGC/zaehlbasis-nach-neustart-ruecksetzende-ausgabe`
+  (1×, mit evidence); weitere Beleg-Dateien `BEO-PGC/github-actions-unverifizierbar-lokal/evidence/slice-otlp-metrik-export-e2e.md`
+  und `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel/evidence/slice-otlp-metrik-export-e2e.md`
+  (F-1, elfter Beleg; Ausgang `verkörpert` besteht, Ursprung der Angabe *übernommen*). Einträge über
+  der Schwelle mit zugewiesenem Ausgang: keine neue Zuweisung nötig (beide bestehenden tragen ihn).
+- **Validator-Feststellung (Modul 8):** entfällt für diesen Slice; er liefert Betreiber-Wert
+  (Export an einen echten Collector), ein Validator-Lauf am realen Bedarf steht aus und ist nach dem
+  Release sinnvoll; Adresse: Planner nach dem Server-Release.
+- **Folge-Slices:** keine angelegt. Das Restrisiko Docker-Hub (§6) bleibt als Beobachtung
+  beim ersten Limit-Fehlschlag; der Pull-Pfad ohne Cache (Review F-5) ist INFO.
+- **Risiken aus §6:** je ein Ausgang, an den Risiken selbst eingetragen (zehn entfallen oder
+  erledigt, eines — Docker-Hub-Abruflimit — weiter offen als benanntes Restrisiko mit Adresse).
+- **Drei Paarungen:** Anker — kein Steering-Loop-Eintrag mit `liegt in`, entfällt. Folge-Slice —
+  keiner genannt. Register — `BEO-PGC/zaehlbasis-nach-neustart-ruecksetzende-ausgabe`,
+  `BEO-PGC/github-actions-unverifizierbar-lokal` und
+  `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` existieren als Verzeichnisse mit nicht
+  leerem `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
