@@ -6,7 +6,7 @@ namespace PgChangeFeed.Client;
 /// <summary>
 /// Builds the connections the clients open themselves. Without a trust anchor
 /// the handler keeps the default trust of the runtime; with one, the server
-/// certificate must chain to exactly the anchor certificates, and the server
+/// certificate must be an anchor certificate or chain to one, and the server
 /// name and the validity period are checked as always.
 /// </summary>
 internal static class TlsTransport
@@ -74,6 +74,15 @@ internal static class TlsTransport
         }
 
         using var leaf = new X509Certificate2(certificate);
+        if (IsAnchor(anchors, leaf))
+        {
+            // The server certificate itself is the anchor (a certificate that an
+            // issuer outside the anchor file signed, or a self-signed one): the
+            // chain has no issuer to reach, so the validity period is the check.
+            var now = DateTime.Now;
+            return leaf.NotBefore <= now && now <= leaf.NotAfter;
+        }
+
         using var chain = new X509Chain();
         chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
         chain.ChainPolicy.CustomTrustStore.AddRange(anchors);
@@ -87,5 +96,18 @@ internal static class TlsTransport
         }
 
         return chain.Build(leaf);
+    }
+
+    private static bool IsAnchor(X509Certificate2Collection anchors, X509Certificate2 leaf)
+    {
+        foreach (var anchor in anchors)
+        {
+            if (anchor.RawData.AsSpan().SequenceEqual(leaf.RawData))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

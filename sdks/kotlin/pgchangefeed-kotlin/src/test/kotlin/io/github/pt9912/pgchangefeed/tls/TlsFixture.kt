@@ -27,8 +27,11 @@ import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import kotlin.test.assertEquals
 
-/** A certificate created at run time: the key store the server uses and the PEM file that serves as trust anchor. */
-internal class TestCertificate(val store: File, val pem: File)
+/**
+ * A certificate created at run time: the key store the server uses and the PEM file that serves as trust anchor.
+ * For an issued certificate [leafPem] is the PEM file of the server certificate itself (the issuer is [pem]).
+ */
+internal class TestCertificate(val store: File, val pem: File, val leafPem: File = pem)
 
 /**
  * Servers on loopback ports for the TLS tests, with and without TLS, and the
@@ -101,7 +104,7 @@ internal class TlsFixture : AutoCloseable {
         )
         keytool(listOf("-importcert", "-alias", "ca", "-file", authorityPem.path, "-keystore", serverStore.path, "-storepass", PASSWORD, "-noprompt"))
         keytool(listOf("-importcert", "-alias", "server", "-file", signed.path, "-keystore", serverStore.path, "-storepass", PASSWORD))
-        return TestCertificate(serverStore, authorityPem)
+        return TestCertificate(serverStore, authorityPem, signed)
     }
 
     /** Writes the PEM files of the certificates, one after the other, into one file. */

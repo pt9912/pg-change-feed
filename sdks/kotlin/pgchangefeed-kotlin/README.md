@@ -355,6 +355,7 @@ Every one of these exceptions carries `messageCode`, the message code of the ser
 
 ## Upgrading
 
+- **0.7.0** — `PgChangeFeedClientOptions` gained the optional trust anchor argument; the constructor with two arguments keeps its signature. The convenience constructors of the gRPC clients open a TLS channel for an `https` address: an address with that scheme that was served in plaintext before is spoken to over TLS now, and a server that answers in plaintext at such an address is not reached. `PgChangeFeedHttpClient(options)` and `PgChangeFeedSseClient(options)` are new constructors.
 - **0.5.0** — `streamChanges` of the SSE client gained the optional parameters `schema` and `table` after `target`. Source code that calls it keeps compiling unchanged. A class file that was compiled against an earlier version calls the old method signature, which no longer exists, and has to be recompiled against 0.5.0.
 
 ## More

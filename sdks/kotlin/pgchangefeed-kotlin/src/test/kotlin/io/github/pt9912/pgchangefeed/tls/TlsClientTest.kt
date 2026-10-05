@@ -101,6 +101,23 @@ class TlsClientTest {
     }
 
     @Test
+    fun `an issued server certificate works as the only trust anchor`() {
+        for (surface in Surface.entries) {
+            val issued = fixture.newIssuedCertificate()
+            val port = start(surface, issued)
+            use(surface, options("https", "localhost", port, issued.leafPem))
+        }
+    }
+
+    @Test
+    fun `an issued server certificate of another server as trust anchor fails the connection`() {
+        for (surface in Surface.entries) {
+            val port = start(surface, fixture.newIssuedCertificate())
+            expectConnectionFailure(surface, options("https", "localhost", port, fixture.newIssuedCertificate().leafPem))
+        }
+    }
+
+    @Test
     fun `the issuer of another server certificate fails the connection`() {
         for (surface in Surface.entries) {
             val port = start(surface, fixture.newIssuedCertificate())

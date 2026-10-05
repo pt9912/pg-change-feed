@@ -134,6 +134,28 @@ public sealed class TlsClientTests : IDisposable
 
     [Theory]
     [MemberData(nameof(Surfaces))]
+    public async Task IssuedServerCertificateAsOnlyTrustAnchor_ConnectsOverTls(Surface surface)
+    {
+        var (server, _) = _certificates.CreateIssued(ServerName);
+        await using var testServer = await TlsTestServer.StartAsync(server);
+
+        await UseAsync(surface, Options(testServer.Address(ServerName, tls: true), _certificates.WritePem(server)));
+    }
+
+    [Theory]
+    [MemberData(nameof(Surfaces))]
+    public async Task IssuedServerCertificateOfAnotherServerAsTrustAnchor_FailsTheConnection(Surface surface)
+    {
+        var (server, _) = _certificates.CreateIssued(ServerName);
+        var (otherServer, _) = _certificates.CreateIssued(ServerName);
+        await using var testServer = await TlsTestServer.StartAsync(server);
+
+        await ExpectConnectionFailureAsync(surface, Options(
+            testServer.Address(ServerName, tls: true), _certificates.WritePem(otherServer)));
+    }
+
+    [Theory]
+    [MemberData(nameof(Surfaces))]
     public async Task IssuerOfAnotherServerAsTrustAnchor_FailsTheConnection(Surface surface)
     {
         var (server, _) = _certificates.CreateIssued(ServerName);

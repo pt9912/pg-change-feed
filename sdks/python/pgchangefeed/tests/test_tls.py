@@ -302,6 +302,24 @@ def test_issuer_as_trust_anchor_connects_over_tls(surface: str, servers: Servers
 
 
 @pytest.mark.parametrize("surface", SURFACES)
+def test_issued_server_certificate_as_only_trust_anchor_connects_over_tls(
+    surface: str, servers: Servers, directory: Path
+) -> None:
+    issued = IssuedCertificate(directory, "issued", "localhost")
+    port = servers.start(surface, issued)
+    use(surface, options("localhost", port, "https", issued.server_cert_path))
+
+
+@pytest.mark.parametrize("surface", SURFACES)
+def test_issued_server_certificate_of_another_server_as_trust_anchor_fails_the_connection(
+    surface: str, servers: Servers, directory: Path
+) -> None:
+    port = servers.start(surface, IssuedCertificate(directory, "issued", "localhost"))
+    other = IssuedCertificate(directory, "other", "localhost")
+    expect_connection_failure(surface, options("localhost", port, "https", other.server_cert_path))
+
+
+@pytest.mark.parametrize("surface", SURFACES)
 def test_issuer_of_another_server_as_trust_anchor_fails_the_connection(
     surface: str, servers: Servers, directory: Path
 ) -> None:
@@ -350,6 +368,22 @@ def test_without_anchor_the_runtime_refuses_an_unknown_certificate(
 ) -> None:
     port = servers.start(surface, Certificate(directory, "server", "localhost"))
     expect_connection_failure(surface, options("localhost", port, "https", None))
+
+
+@pytest.mark.parametrize("surface", ["http", "sse"])
+def test_with_anchor_the_system_trust_does_not_apply(
+    surface: str, servers: Servers, directory: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The certificate of the server is trusted by the system store of this test
+    # process (control: no anchor connects); a foreign anchor must not add it.
+    certificate = Certificate(directory, "server", "localhost")
+    foreign = Certificate(directory, "foreign", "localhost")
+    monkeypatch.setenv("SSL_CERT_FILE", str(certificate.cert_path))
+    monkeypatch.delenv("SSL_CERT_DIR", raising=False)
+    port = servers.start(surface, certificate)
+
+    use(surface, options("localhost", port, "https", None))
+    expect_connection_failure(surface, options("localhost", port, "https", foreign))
 
 
 @pytest.mark.parametrize("surface", SURFACES)
