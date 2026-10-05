@@ -372,7 +372,7 @@ Jedes Finding:
 Zusätzlich am Ende: eine Zeile „geprüft, ohne Befund“ pro betrachtetem
 Verzeichnis (Negativbefund-Zeile — sonst ist „keine Findings“ nicht von „nicht
 geprüft“ unterscheidbar). Report-Gerüst für den ganzen Lauf:
-`docs/reviews/review-report.template.md`, ein Report pro Lauf, Folgeläufe als
+`.harness/baseline/v6.14.0/templates/docs/reviews/review-report.template.md`, ein Report pro Lauf, Folgeläufe als
 neue Datei statt Überschreibung.
 
 ## DoD-Checkbox-Nachzug ohne Fixrunde

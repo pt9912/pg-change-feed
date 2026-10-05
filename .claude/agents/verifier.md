@@ -42,4 +42,4 @@ Disziplin.
   zählen nicht; die Ausgabe muss sichtbar sein
 - je Slice-Umfang: `make doc-commits RANGE=base..head` (Traceability je Commit)
   und `make doc-immutable` (MR-Immutabilität)
-- Bericht-Ort: `docs/reviews/` (Gerüst: `review-report.template.md`)
+- Bericht-Ort: `docs/reviews/` (Gerüst: `.harness/baseline/v6.14.0/templates/docs/reviews/review-report.template.md`)
