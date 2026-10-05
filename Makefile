@@ -243,7 +243,7 @@ test-integration: ## Compose-Integrationstest — Kern-CDC-Pfad, Rollen-DSN-Veri
 # (Kontrast zu coverage-gate). Braucht ein geladenes Image (make image)
 # für den Feed-Container der Skripte.
 .PHONY: bench
-bench: image ## Performance-Benchmarks (vier Skripte: LH-QA-PER-001…003 mit Schwelle, Backfill-Messung LH-FA-CAP-009 ohne; dokumentiertes Ergebnis, kein Gate; ADR-0054 §(b))
+bench: image ## Performance-Benchmarks (vier Skripte: LH-QA-PER-001 Zusatzlatenz je Commit gegen gemessene Festschreib-Latenz, LH-QA-PER-002/003 mit Schwelle, Backfill-Messung LH-FA-CAP-009 ohne; dokumentiertes Ergebnis, kein Gate; ADR-0054 §(b))
 	@bash tools/bench-source-impact.sh
 	@bash tools/bench-scaling.sh
 	@bash tools/bench-batch-vs-single.sh

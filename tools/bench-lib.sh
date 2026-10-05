@@ -159,7 +159,9 @@ bench::median_of() {
 # bench::record_row hält eine Kennungs-Zeile für docs/user/bench-abdeckung.md
 # als eigene Datei unter .tmp/bench-abdeckung-rows/ fest (ADR-0104) — ein
 # Schwellen-Skript schreibt nur seine eigene Zeile, ohne die der anderen
-# Skripte zu lesen oder zu sperren. bench::render_abdeckung liest am Ende
+# Skripte zu lesen oder zu sperren; die Quelle der PER-001-Schwelle ist
+# ADR-0155, die der PER-002/003-Schwellen ADR-0104.
+# bench::render_abdeckung liest am Ende
 # des letzten Schwellen-Skripts alle vorhandenen Zeilen und schreibt die
 # Tabelle gesammelt.
 # $1=Lastenheft-Kennung $2=Kurzbeschreibung $3=Schwelle-Text $4=Ort (Datei:Zeile)
@@ -186,8 +188,10 @@ bench::render_abdeckung() {
 # Bench-Abdeckung je Lastenheft-Kennung
 
 Erzeugt von den drei `tools/bench-*.sh`-Skripten mit Pass/Fail-Schwelle
-(`make bench`,
-[`ADR-0104`](../plan/adr/0104-benchmark-schwellen-per-001-002-003.md));
+(`make bench`; Schwellen für `LH-QA-PER-002`/`LH-QA-PER-003`:
+[`ADR-0104`](../plan/adr/0104-benchmark-schwellen-per-001-002-003.md),
+für `LH-QA-PER-001`:
+[`ADR-0155`](../plan/adr/0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md));
 `tools/bench-backfill.sh` misst ohne Schwelle und trägt keine Zeile.
 Jede Zeile bindet eine Kennung an ihre real durchgesetzte Pass/Fail-
 Schwelle. Diese Datei ist eine **stabile Abdeckungs-Deklaration**, kein

@@ -4,10 +4,16 @@
 # Prozess (Phase "ohne CDC") und einmal mit aktivem Slot und laufendem
 # Feed-Container (Phase "mit CDC"). Je Phase mehrere Läufe, Median als
 # Kennzahl (Vorbild: d-checks bench-fixture.sh).
+# Verdikt (ADR-0155, SPEC-025): die zusätzliche Latenz je Quelltransaktion
+# Δ = (mit CDC − ohne CDC) / N darf max(0,10 ms; 1,5 × t_sync) nicht
+# überschreiten; t_sync ist die im selben Lauf mit pg_test_fsync gemessene
+# Festschreib-Latenz des Datenträgers der Messinstanz. Exit 1 bei Δ über der
+# Grenze, Exit 2 wenn t_sync nicht messbar ist (kein Rückfall auf eine
+# relative Schwelle).
 # N und RUNS sind bewusst groß gewählt: Jede einzelne Insert-Anweisung
 # läuft als eigene, separat committete Transaktion (siehe gen_inserts
 # unten) — bei zu kurzer Gesamtdauer schlägt gewöhnliches WAL-Fsync-/
-# Scheduling-Jitter relativ stark auf die Prozent-Kennzahl durch, real
+# Scheduling-Jitter relativ stark auf Δ durch, real
 # unabhängig von der Auslastung anderer Container auf derselben Maschine
 # (separat per `docker stats` geprüft: 0–5 % CPU). Die gewählte Größe
 # verlängert die absolute Messdauer je Lauf und mittelt über mehrere
@@ -19,9 +25,10 @@ source tools/bench-lib.sh
 
 trap bench::cleanup EXIT
 
-# THRESHOLD_PCT trägt SPEC-025s Quell-Overhead-Schwelle: der
-# Median-Overhead über RUNS Läufe darf sie nicht überschreiten.
-THRESHOLD_PCT=35
+# FACTOR und MIN_MS tragen die Grenze von SPEC-025: Faktor auf t_sync und
+# absolute Untergrenze der Zusatzlatenz je Commit in ms.
+FACTOR=1.5
+MIN_MS=0.10
 N=${BENCH_SOURCE_IMPACT_N:-5000}
 RUNS=5
 TABLE=bench_source_impact
@@ -73,6 +80,29 @@ run_phase_median() {
   echo "$(bench::median_of "${samples[@]}")|${joined}"
 }
 
+# measure_t_sync liefert die Festschreib-Latenz in ms auf stdout: Zeile der
+# von `SHOW wal_sync_method` genannten Methode im Abschnitt „one 8kB write“
+# der Ausgabe von `pg_test_fsync -s 2`, ausgeführt im PostgreSQL-Container
+# auf einer Datei im Datenverzeichnis. Nicht messbar: keine Ausgabe, Exit 1.
+measure_t_sync() {
+  local pg method out usecs
+  pg=$(bench::pg_container)
+  method=$(bench::psql_scalar "SHOW wal_sync_method" | tr -d '[:space:]') || return 1
+  [ -n "$method" ] || return 1
+  out=$(docker exec "$pg" sh -c 'f="${PGDATA:-/var/lib/postgresql/data}/bench-sync-probe.tmp"; pg_test_fsync -s 2 -f "$f"; rc=$?; rm -f "$f"; exit $rc' 2>/dev/null) || return 1
+  usecs=$(printf '%s\n' "$out" | LC_ALL=C awk -v m="$method" '$1 == m && /usecs\/op/ { print $(NF-1); exit }')
+  case "$usecs" in
+    ''|*[!0-9.]*) return 1 ;;
+  esac
+  LC_ALL=C awk -v u="$usecs" 'BEGIN { if (u + 0 <= 0) exit 1; printf "%.3f", u / 1000.0 }'
+}
+
+if ! t_sync_ms=$(measure_t_sync); then
+  echo "bench-source-impact: t_sync nicht messbar (pg_test_fsync im PostgreSQL-Container fehlt oder seine Zeile ist nicht lesbar) — kein Verdikt (LH-QA-PER-001, ADR-0155)" >&2
+  exit 2
+fi
+echo "bench-source-impact: t_sync ${t_sync_ms} ms (pg_test_fsync, Methode aus wal_sync_method)"
+
 echo "bench-source-impact: Phase 1 — ohne CDC (kein Replication-Slot aktiv), $RUNS Läufe …"
 without_result=$(run_phase_median 0 "$N")
 ms_without_cdc=${without_result%%|*}
@@ -91,20 +121,23 @@ bench::wait_captured "$SOURCE_ID" "$TABLE" $(( RUNS * N )) 300 || true
 bench::stop_feed
 
 delta_ms=$(( ms_with_cdc - ms_without_cdc ))
-if [ "$ms_without_cdc" -gt 0 ]; then
-  delta_pct=$(LC_ALL=C awk -v a="$ms_without_cdc" -v b="$ms_with_cdc" 'BEGIN { printf "%.1f", (b - a) * 100.0 / a }')
-else
-  delta_pct="n/a"
-fi
+# Δ je Transaktion, Verhältnis zu t_sync und Grenze (Gleitkomma, "delta|ratio|limit|over").
+verdict=$(LC_ALL=C awk -v d="$delta_ms" -v n="$N" -v t="$t_sync_ms" -v f="$FACTOR" -v m="$MIN_MS" 'BEGIN {
+  delta = d / n
+  limit = f * t; if (m + 0 > limit) limit = m + 0
+  printf "%.3f|%.3f|%.3f|%d", delta, delta / t, limit, (delta > limit) ? 1 : 0
+}')
+IFS='|' read -r delta_tx_ms ratio limit_ms over <<<"$verdict"
 
-echo "bench-source-impact: Ergebnis (LH-QA-PER-001) — ohne CDC ${ms_without_cdc} ms (Median von $RUNS Läufen), mit CDC ${ms_with_cdc} ms (Median von $RUNS Läufen), Differenz ${delta_ms} ms (${delta_pct}%) für je $N Schreibtransaktionen auf public.$TABLE"
+echo "bench-source-impact: Ergebnis (LH-QA-PER-001) — ohne CDC ${ms_without_cdc} ms (Median von $RUNS Läufen), mit CDC ${ms_with_cdc} ms (Median von $RUNS Läufen), Differenz ${delta_ms} ms für je $N Schreibtransaktionen auf public.$TABLE"
+echo "bench-source-impact: Zusatzlatenz Δ ${delta_tx_ms} ms je Transaktion, t_sync ${t_sync_ms} ms, Verhältnis Δ/t_sync ${ratio}, Grenze max(${MIN_MS} ms; ${FACTOR} × t_sync) = ${limit_ms} ms"
 
 bench::record_row "LH-QA-PER-001" \
-  "Schreibdurchsatz/-latenz derselben Insert-Last mit/ohne aktivierter CDC im Vergleich" \
-  "Overhead (Median von $RUNS Läufen) ≤ ${THRESHOLD_PCT}% (\`SPEC-025\`)" \
+  "Zusatzlatenz je Schreibtransaktion derselben Insert-Last mit/ohne aktivierter CDC, bezogen auf die gemessene Festschreib-Latenz" \
+  "Zusatzlatenz je Commit (Median von $RUNS Läufen) ≤ max(${MIN_MS} ms; ${FACTOR} × Festschreib-Latenz) (\`SPEC-025\`)" \
   "tools/bench-source-impact.sh"
 
-if [ "$delta_pct" != "n/a" ] && [ "$(LC_ALL=C awk -v v="$delta_pct" -v t="$THRESHOLD_PCT" 'BEGIN { print (v > t) ? 1 : 0 }')" = "1" ]; then
-  echo "bench-source-impact: SCHWELLE ÜBERSCHRITTEN (LH-QA-PER-001, SPEC-025) — Overhead ${delta_pct}% liegt über der zulässigen ${THRESHOLD_PCT}%-Schwelle" >&2
+if [ "$over" = "1" ]; then
+  echo "bench-source-impact: GRENZE ÜBERSCHRITTEN (LH-QA-PER-001, SPEC-025) — Δ ${delta_tx_ms} ms liegt über der Grenze ${limit_ms} ms (t_sync ${t_sync_ms} ms)" >&2
   exit 1
 fi
