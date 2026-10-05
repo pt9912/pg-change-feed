@@ -1,6 +1,6 @@
 # Verifikation slice-bench-source-impact-absolut (Modul 11)
 
-**Gegenstand:** [Slice-Plan](../plan/planning/in-progress/slice-bench-source-impact-absolut.md), Commits 117e0bcd und ec082b45, gegen [ADR-0155](../plan/adr/0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md), [LH-QA-PER-001](../../spec/lastenheft.md) (Lastenheft 0.16.0) und die Pflichtenheft-Einträge zur Zusatzlatenz. Review-Gegenstück: [Review-Report](review-slice-bench-source-impact-absolut.md).
+**Gegenstand:** [Slice-Plan](../plan/planning/done/slice-bench-source-impact-absolut.md), Commits 117e0bcd und ec082b45, gegen [ADR-0155](../plan/adr/0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md), [LH-QA-PER-001](../../spec/lastenheft.md) (Lastenheft 0.16.0) und die Pflichtenheft-Einträge zur Zusatzlatenz. Review-Gegenstück: [Review-Report](review-slice-bench-source-impact-absolut.md).
 
 Der Report-Text stammt vom Verifier-Lauf (Rollenvorgabe: keine Report-Dateien); der Planner hat ihn hier angelegt.
 

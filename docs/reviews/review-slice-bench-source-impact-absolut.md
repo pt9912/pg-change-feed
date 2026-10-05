@@ -5,7 +5,7 @@
 **Skill:** `.harness/skills/reviewer.md` · **Modell:** Sonnet 5.5
 
 **Eingangs-Kontext:**
-- Plan [`slice-bench-source-impact-absolut`](../plan/planning/in-progress/slice-bench-source-impact-absolut.md)
+- Plan [`slice-bench-source-impact-absolut`](../plan/planning/done/slice-bench-source-impact-absolut.md)
 - [`ADR-0155`](../plan/adr/0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md)
 - [`LH-QA-PER-001`](../../spec/lastenheft.md)
 - [`AGENTS.md`](../../AGENTS.md) §3.7, §3.12, §3.13
