@@ -156,7 +156,7 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, solange die Roadmap unter *Offene Wellen* keine Welle führt.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, solange die Roadmap unter *Offene Wellen* keine Welle führt.
 
 ## 3. Plan (vor Code)
 
@@ -681,6 +681,19 @@ trägt diese Sektion die Zeile `Gegenstand:` mit Kennung oder Grund.
 - **Risiken aus §6:** je ein Ausgang, siehe §6 — alle fünf entfallen (Wortlaut-Verlust
   nicht eingetreten, Bump-Slice nicht gleichzeitig, kein paralleler Slice, längste
   Zellen 162/113, Regel erfasst beide Tabellen gemessen).
+- **Drei Paarungen:** nach dem `git mv` gemessen — (a) *Anker:* der Zielort
+  `harness/sensors/docs-check.md` §Vertrag trägt `seit slice-harness-readme-zellen-kuerzen`
+  (ein Treffer im Abschnitt); (b) *Folge-Slice:* `slice-harness-targets-inhalt-bereinigen`
+  ist eine Datei in `open/`; (c) *Register:* die vier genannten Verzeichnisse
+  (`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`, `BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`, `BEO-PGC/bindung-spalte-uneinheitlich-tief`)
+  existieren, jedes mit nicht leerem `evidence/` (19, 34, 21, 1 Dateien). Ergebnis:
+  getragen. Durch den Move brach kein Link (`make docs-check` 0 Befunde); die
+  Pfadnennung im eingefrorenen Review-Report ist Inline-Code, kein Link. Der
+  Ruhe-Marker der Roadmap steht, `in-progress/` trägt nur `roadmap.md`.
+- **Gates der Closure:** `make docs-check` und `make suchlauf-nachmessen` (12 Zeilen
+  stimmen) Exit 0 nach dem Move; der `make gates`-Lauf nach dem letzten Commit steht
+  im Bericht der Sitzung, nicht in diesem Plan.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
