@@ -168,11 +168,16 @@ Version-Datei) und das gesehene Rot, an Kopien im Scratchpad gefahren:
 | C#: der 0.5.x-Konstruktor `PgChangeFeedBadRequestException(int, string)` bleibt binär erhalten | der Konstruktor aus der Kopie der C#-Bibliothek entfernt (Test der Kopie angepasst), über `SDK_KOMPAT_DIST_CSHARP` | A2: `MissingMethodException: Method not found: 'Void …PgChangeFeedBadRequestException..ctor(Int32, System.String)'`, Exit 2 über `make` |
 | Kotlin: die JVM-Signatur `(int, String)` des Blatt-Typs bleibt erhalten | `@JvmOverloads` an `PgChangeFeedBadRequestException` entfernt | A2: `IllegalAccessError` (Zugriff auf den privaten Basis-Konstruktor, weil die Signatur im Blatt-Typ fehlt), Exit 2 |
 | Python: die 0.5.x-Aufrufform `PgChangeFeedBadRequestError(status, text)` bleibt gültig | `message_code` an `PgChangeFeedBadRequestError.__init__` ohne Standardwert | A2: `TypeError: … missing 1 required keyword-only argument: 'message_code'`, und A5: `PgChangeFeedBadRequestError … 0.5.x-Form bindet=False … ROT`, Exit 2 |
-| A3 prüft die Gegenrichtung | (kein Mutations-Fall: A3 erwartet das Scheitern; die Grundlage `A3-Grundlage` belegt, dass derselbe Gast gegen 0.6.0 läuft) | — |
+| A3 prüft die Gegenrichtung | (kein Mutations-Fall: A3 erwartet das Scheitern; die Grundlage `A3-Grundlage` belegt, dass derselbe Gast gegen die Bibliothek läuft, gegen die er gebaut ist) | — |
+| Modus `dist`: die neue Version kommt aus der Version-Datei, ohne Ersatzwert | in einem Klon des Repos im Scratchpad: `<Version>` der `.csproj` auf `0.6.9` (Artefakt bleibt `0.6.1`); die Zeile `version = …` aus `pyproject.toml` entfernt; eine zweite Zeile `version = "0.6.2"` in `build.gradle.kts`; die `.csproj` gelöscht | je Exit 2 vor jedem Bau: `… trägt kein Artefakt PgChangeFeed.Client.0.6.9.nupkg (Version 0.6.9 aus …csproj); vorhanden: PgChangeFeed.Client.0.6.1.nupkg …` · `… pyproject.toml trägt nicht genau eine Version der Form X.Y.Z (gelesen: keine)` · `… build.gradle.kts trägt nicht genau eine Version der Form X.Y.Z (gelesen: 0.6.1 0.6.2)` · `Version-Datei …csproj der Sprache csharp fehlt` |
+| Modus `dist`: das Artefakt muss genau die Version der Version-Datei tragen | Verzeichnis mit `pgchangefeed-0.6.2-py3-none-any.whl` über `SDK_KOMPAT_DIST_PYTHON` | Exit 2: `… trägt kein Artefakt pgchangefeed-0.6.1-py3-none-any.whl (Version 0.6.1 aus …pyproject.toml); vorhanden: pgchangefeed-0.6.2-py3-none-any.whl …` |
+| Python: ein gescheiterter Austausch in A2 ist rot | Verzeichnis mit dem veröffentlichten Rad 0.6.0 unter dem Namen `pgchangefeed-0.6.1-py3-none-any.whl` über `SDK_KOMPAT_DIST_PYTHON` | `KOMPAT python A2: ROT — Austausch auf 0.6.1 gescheitert (pip Exit 1, installiert 0.5.0, …)`, Exit 2 über `make` |
 
 Menge der Erprobung: je eine Mutation je Sprache, je einmal gefahren; die
 Übertragung auf die übrigen Blatt-Typen und die gRPC-Hierarchie ist
-*hergeleitet*.
+*hergeleitet*. Die Zeilen zur Version-Datei: je eine Mutation an der genannten
+Sprache, die Übertragung auf die übrigen zwei ist *hergeleitet* (dieselbe
+Funktion `version_lesen` bzw. `neu_verzeichnis` im Runner).
 
 ## Fassung im Gate-Index
 
