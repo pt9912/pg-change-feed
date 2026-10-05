@@ -18,7 +18,7 @@
        API comments. -->
   <PropertyGroup>
     <PackageId>PgChangeFeed.Client</PackageId>
-    <Version>0.6.0</Version>
+    <Version>0.6.1</Version>
     <Authors>pt9912</Authors>
     <Description>Official .NET client library for PG Change Feed (HTTP API, gRPC change stream, SSE stream, and NATS full-content stream).</Description>
     <PackageTags>postgresql;change-data-capture;cdc;logical-replication;change-feed</PackageTags>
