@@ -64,9 +64,13 @@ Fehlt die Version-Datei, trägt sie nicht genau eine Version der Form `X.Y.Z`
 (drei Ziffernfolgen; eine Version mit Suffix wie `0.7.0-rc.1` zählt nicht; der
 Dateiname des Python-Rads trägt eine solche Version in PEP-440-Normalform,
 `0.7.0rc1`, *hergeleitet*, nicht gebaut)
-oder fehlt das Artefakt dieser Version, endet der Lauf vor jedem Bau mit Exit 2
-und einer Meldung, die Datei, gelesene Version und vorhandene Artefakte nennt;
-es gibt keinen Ersatzwert. Das Werkzeug trägt die Version des Arbeitsstands
+oder fehlt das Artefakt dieser Version, endet der Lauf vor dem Bau dieser
+Sprache mit Exit 2 und einer Meldung, die Datei, gelesene Version und vorhandene
+Artefakte nennt; es gibt keinen Ersatzwert. Die Prüfung läuft je Sprache in der
+Schleife über `SDK_KOMPAT_SPRACHEN`: die Sprachen davor sind dann bereits gebaut
+und gelaufen, der Ausgang bleibt Exit 2 (gemessen mit einem `docker`-Stub, drei
+Sprachen, Suffix in `pyproject.toml`; Verifikation von
+`slice-sdk-kompat-version-parameter`, V-1). Das Werkzeug trägt die Version des Arbeitsstands
 nirgends als Literal.
 
 **Veröffentlichte Version `REGISTRY_VERSION`.** Eine benannte Konstante in
@@ -163,13 +167,19 @@ rot werden.
    Ziel erst, wenn die Konstante geändert wird.
 8. **A2 tauscht die Bibliothek, nicht ihre Abhängigkeiten.** Die übrigen
    Laufzeit-Abhängigkeiten in A2 sind in Kotlin die der Version
-   `REGISTRY_VERSION`, in C# die des 0.5.0-Publish; A5 vergleicht die
-   Abhängigkeitsmengen von 0.5.0 und `REGISTRY_VERSION`, nicht die der neuen
-   Version aus der Version-Datei.
+   `REGISTRY_VERSION`, in C# die des 0.5.0-Publish. In C# und Kotlin vergleicht
+   A5 die Abhängigkeitsmengen von 0.5.0 und `REGISTRY_VERSION`, nicht die der
+   neuen Version aus der Version-Datei; Python-A5 vergleicht keine
+   Abhängigkeiten.
 9. **Kotlin: nur die oberste `version`-Zeile.** `build.gradle.kts` trägt eine
    zweite, eingerückte Zeile `version = "…"` (Publikation); der Runner liest sie
    nicht. Ihre Gleichheit mit der obersten hält die Probe der Publish-Konfiguration
    in `make sdk-pack-kotlin`.
+10. **Die Form `X.Y.Z` lässt führende Nullen durch.** `00.06.01` passiert die
+    Prüfung (gemessen im Re-Review von `slice-sdk-kompat-version-parameter`,
+    F-1). In Python normalisiert PEP 440 eine solche Version zu `0.6.1`; das Rad
+    hieße dann anders als der verlangte Dateiname (*hergeleitet*, nicht gebaut).
+    Kein Package trägt heute eine solche Version.
 
 ## Test
 

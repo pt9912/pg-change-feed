@@ -1,4 +1,4 @@
-# `make test-sdk-altserver` — SDK 0.6.0 gegen einen Server vor 0.6.0
+# `make test-sdk-altserver` — SDK des Arbeitsstands gegen einen Server vor 0.6.0
 
 ## Vertrag
 

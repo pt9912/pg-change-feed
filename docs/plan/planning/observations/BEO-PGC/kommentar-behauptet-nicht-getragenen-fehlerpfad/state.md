@@ -7,7 +7,17 @@ Paket, trägt der Kommentar einen Rang-Zeiger darauf · seit welle-backfill-best
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §4.1, R6b).
 
-Zähler: 9× (Dateien unter `evidence/`; die neunte,
+Deckel bei 10× (seit slice-sdk-kompat-version-parameter): weitere Auftreten, die vor dem
+Merge vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen bekannten
+Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung in
+der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge ab 10×).
+
+Zähler: 10× (Dateien unter `evidence/`; die zehnte,
+`evidence/slice-sdk-kompat-version-parameter.md`, trägt F-1 (HIGH) und V-1 (LOW): Kommentar,
+Meldung und Vertrag eines Harness-Runners sagten Exit 2 für jede Version außerhalb der Form
+`X.Y.Z` zu, der Code ließ Suffixe durch (Ausprägung **Zusage ohne Code**), und „vor jedem Bau“
+war an einer Sprache gemessen, die Prüfung läuft je Sprache (Ausprägung **Allaussage über einen
+Fall**); vor dem Merge von Lesern gefunden, Ausgang unverändert **verkörpert**; die neunte,
 `evidence/slice-routing-lesewege.md`, trägt F-4 (LOW): der Godoc eines Tests sagte die Strecke
 vom Assembler zum Stream zu, der Test fuhr von der Transaktion zum Fake des Stream-Ports
 (Ausprägung **Allaussage über einen Fall**); vor dem Merge vom Reviewer gefunden, Ausgang

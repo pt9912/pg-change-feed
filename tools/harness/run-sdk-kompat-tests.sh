@@ -16,7 +16,9 @@
 #
 # Versionen: Im Modus dist ist die neue Bibliothek die Version aus der
 # Version-Datei des SDK (version_datei unten); liegt im Artefakt-Verzeichnis
-# kein Artefakt genau dieser Version, endet der Lauf mit Exit 2 vor jedem Bau.
+# kein Artefakt genau dieser Version, endet der Lauf mit Exit 2 vor dem Bau
+# dieser Sprache. Die Prüfung läuft je Sprache in der Schleife: die Sprachen
+# davor sind dann bereits gebaut und gelaufen.
 # REGISTRY_VERSION ist die veröffentlichte Version, gegen die A3 und A5 (C#,
 # Kotlin) übersetzen und die der Modus registry in A2 misst.
 #

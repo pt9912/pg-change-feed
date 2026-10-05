@@ -176,8 +176,8 @@ test-sdk-python-integration: ## Python-SDK-Realserver-Integrationstest (compose 
 test-sdk-kompat: ## SDK des Arbeitsstands gegen 0.5.0: Gast-Programme je Sprache, Binär- und Quellkompatibilität der Fehlertypen (Werkzeug, kein Gate; ADR-0145)
 	@bash tools/harness/run-sdk-kompat-tests.sh
 
-# `test-sdk-altserver` fährt die drei Realserver-Fehlerfälle der 0.6.0-SDKs
-# gegen einen Server vor 0.6.0 (ADR-0145): dieselbe Compose-Umgebung wie die
+# `test-sdk-altserver` fährt die Realserver-Fehlerfälle der drei SDKs (Quelle
+# des Arbeitsstands) gegen einen Server vor 0.6.0 (ADR-0145): dieselbe Compose-Umgebung wie die
 # SDK-Realserver-Runner, nur der Feed-Container ist das Image 0.5.0
 # (Override-Datei im Temp-Verzeichnis, `compose.yaml` bleibt unverändert;
 # SDK_ALTSERVER_IMAGE übersteuert das Image). Belegt: der Fehlerkörper trägt
@@ -186,5 +186,5 @@ test-sdk-kompat: ## SDK des Arbeitsstands gegen 0.5.0: Gast-Programme je Sprache
 # den Datenstand; `make image` läuft vorher.
 # Kein Gate (DB-Zugang, Docker, Netz). Vertrag: harness/targets/sdk-altserver.md.
 .PHONY: test-sdk-altserver
-test-sdk-altserver: ## SDK 0.6.0 gegen den Server 0.5.0: Fehlertypen ohne Meldungscode, Rohdraht-Probe, Tausch auf :dev (make image vorher; Werkzeug, kein Gate; ADR-0145)
+test-sdk-altserver: ## SDK des Arbeitsstands gegen den Server 0.5.0: Fehlertypen ohne Meldungscode, Rohdraht-Probe, Tausch auf :dev (make image vorher; Werkzeug, kein Gate; ADR-0145)
 	@bash tools/harness/run-sdk-altserver-tests.sh

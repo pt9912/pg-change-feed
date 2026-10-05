@@ -46,8 +46,9 @@ lauf_ok A1 "$BIN/alt05"
 # Datei aus ihm; fehlt die daraus gewonnene Datei, ist A2 rot und der Gast
 # läuft nicht. Über den Runner ist dieser Zweig nicht erreichbar: die
 # Bedingung ist dieselbe wie im Dockerfile (RUN-Schicht lib-dist), dort bricht
-# ein fehlendes `cp` den Bau unter `set -eu` ab. Kopplung: ändert sich die
-# Bedingung dort, gilt der Zweig hier weiter.
+# ein fehlendes `cp` den Bau unter `set -eu` ab. Kopplung: wer die Bedingung
+# oder den Zielpfad /kompat/lib-dist der RUN-Schicht lib-dist im Dockerfile
+# ändert, ändert die Bedingung `[ -f "$neu_nupkg" ]` und `neu_dll` hier mit.
 rm -rf /tmp/a2
 cp -r "$BIN/alt05" /tmp/a2
 neu_nupkg="/neu/PgChangeFeed.Client.$NEU_VERSION.nupkg"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# run-sdk-altserver-tests.sh — die Fehlerfälle der 0.6.0-SDKs gegen einen Server
-# vor 0.6.0 (make test-sdk-altserver; Vertrag: harness/targets/sdk-altserver.md).
+# run-sdk-altserver-tests.sh — die Fehlerfälle der SDKs (Quelle des
+# Arbeitsstands) gegen einen Server vor 0.6.0 (make test-sdk-altserver; Vertrag: harness/targets/sdk-altserver.md).
 # Dieselbe Compose-Umgebung wie die SDK-Realserver-Runner (PostgreSQL, NATS,
 # Schema-Rollout des Arbeitsbaums über d-migrate); nur der Feed-Container ist das
 # Image SDK_ALTSERVER_IMAGE (Standard: das Release 0.5.0 mit Tag und Index-Digest).

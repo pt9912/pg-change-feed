@@ -91,14 +91,20 @@ zählen nicht mit.
       Dazu die Index-Zeile in `harness/README.md` (§3, Nachzug).
 - [x] `make gates` grün (Lauf nach dem letzten Commit dieses Laufs, Exit 0 direkt
       gelesen).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`), kein Self-Review.
+      Beleg: `docs/reviews/review-slice-sdk-kompat-version-parameter.md`
+      (1 HIGH, gelöst) und `docs/reviews/review-slice-sdk-kompat-version-parameter-fixrunde.md`
+      (kein HIGH); Verifikation `docs/reviews/verify-slice-sdk-kompat-version-parameter.md`
+      (DoD bestätigt, V-3).
 - [x] Doku-Update: nur der Target-Vertrag (kein öffentlicher Vertrag berührt);
       dazu die Index-Zeile in `harness/README.md`, `docs/user/` ist nicht berührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register fortgeschrieben oder „keine Beobachtung“ in §7.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+- [x] Gemeldete Träger fremder Dateien mit der Closure nachgezogen (§3 Tabelle,
+      Ziel `test-sdk-altserver`; `AGENTS.md` §3.13).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register fortgeschrieben oder „keine Beobachtung“ in §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
 
 (Liefer-Punkte: drei — Version aus der Quelle, Messung, Vertrag.)
 
@@ -116,7 +122,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | `tools/harness/sdk-kompat/python/run.sh` (A2) | update — **Nachzug** | über den Plan hinaus: der Austausch auf die neue Bibliothek ist geprüft (pip-Exit und installierte Version); vor dem Fix lief A2 nach gescheitertem `pip install` still gegen 0.5.0 grün (Rotbefund unten) |
 | `tools/harness/sdk-kompat/csharp/run.sh` (A2) | update — **Nachzug** | trägt `/neu` das Artefakt der neuen Version und fehlt die daraus gewonnene DLL, ist A2 rot statt auf die veröffentlichte DLL zu fallen |
 | `harness/targets/sdk-kompat.md` §Versionen, §Grenze 6/7, §Test | update — **Nachzug** | neuer Abschnitt zur Quelle der Versionen; Grenzen „Dateiname, nicht Inhalt“ und „`REGISTRY_VERSION` zieht niemand nach“; drei Mutations-Zeilen; der Satz „A3 und A5 lesen immer das veröffentlichte Paket“ gilt gemessen nur für C# und Kotlin (Python: `A3-Grundlage` und zweite Signatur-Lesung laufen unter der Bibliothek aus A2) und ist entsprechend berichtigt |
-| `harness/mk/sdk.mk` (Ziel `test-sdk-altserver`), `harness/targets/sdk-altserver.md` (Titel), `tools/harness/run-sdk-altserver-tests.sh` (Kopfkommentar) | **nicht geändert — gemeldet** | Kommentar und Hilfetext in `sdk.mk`, der Titel des Vertrags und der Kopf des Runners nennen „0.6.0-SDKs“ bzw. „SDK 0.6.0“, das Ziel fährt aber die SDK-Quelle des Arbeitsstands (0.6.1); anderes Ziel, anderer Vertrag — Frist: Closure dieses Slice, der Planner zieht nach oder benennt den Träger mit Adresse (die zwei letzten ergänzt in der Fixrunde, Review F-2) |
+| `harness/mk/sdk.mk` (Ziel `test-sdk-altserver`), `harness/targets/sdk-altserver.md` (Titel), `tools/harness/run-sdk-altserver-tests.sh` (Kopfkommentar) | **gemeldet, in der Closure nachgezogen** (versionsneutral: „SDK des Arbeitsstands“ bzw. „Quelle des Arbeitsstands“, §7) | Kommentar und Hilfetext in `sdk.mk`, der Titel des Vertrags und der Kopf des Runners nennen „0.6.0-SDKs“ bzw. „SDK 0.6.0“, das Ziel fährt aber die SDK-Quelle des Arbeitsstands (0.6.1); anderes Ziel, anderer Vertrag — Frist: Closure dieses Slice, der Planner zieht nach oder benennt den Träger mit Adresse (die zwei letzten ergänzt in der Fixrunde, Review F-2) |
 | `tools/harness/run-sdk-kompat-tests.sh` (`version_lesen`) | update — **Fixrunde** | strikt `X.Y.Z` ohne Suffix, Meldung „…, nur Ziffern ohne Suffix“ (Review F-1) |
 | `tools/harness/sdk-kompat/{csharp,kotlin}/{Dockerfile,run.sh}`, `python/{Dockerfile,run.sh}` | update — **Fixrunde** | Bezeichner nach Rolle statt Version: `alt06`→`altreg`, `neu06`→`neureg`, `LIB06`→`LIBREG`, `d06`→`dreg`, `/wheels/06`→`/wheels/neu`; Kennzeichnung des über den Runner nicht erreichbaren C#-Zweigs (Review F-5, F-6) |
 | `harness/targets/sdk-kompat.md` (§Versionen, §Ausgänge, §Grenze 8/9, §Test) | update — **Fixrunde** | Form `X.Y.Z` ohne Suffix samt PEP-440-Hinweis; Grenzen „A2 tauscht nicht die Abhängigkeiten“ und „Kotlin: nur die oberste `version`-Zeile“; Mutations-Zeile zum Suffix (Review F-1, F-3, F-4) |
@@ -128,9 +134,20 @@ diff 1 -n 0\.6\.0 -- tools/harness/run-sdk-kompat-tests.sh
 3b173e28 5 -n 0\.6\.0 -- tools/harness/run-sdk-kompat-tests.sh
 3b173e28 17 -n -e Bibliothek.0\.6\.0 -e Packages.0\.6\.0 -e 0\.6\.0-Pakete -- harness tools/harness
 diff 0 -n -e Bibliothek.0\.6\.0 -e Packages.0\.6\.0 -e 0\.6\.0-Pakete -- harness tools/harness
-diff 4 -n -e 0\.6\.0-SDKs -e SDK.0\.6\.0 -- harness tools/harness
-diff 0 -n -e alt06 -e neu06 -e LIB06 -e wheels/06 -- tools/harness/sdk-kompat
+75d2dee8 4 -n -e 0\.6\.0-SDKs -e SDK.0\.6\.0 -- harness tools/harness
+diff 0 -n -e 0\.6\.0-SDKs -e SDK.0\.6\.0 -- harness tools/harness
+9d1edf2a 26 -n -e alt06 -e neu06 -e LIB06 -e wheels/06 -e d06 -- tools/harness/sdk-kompat
+diff 0 -n -e alt06 -e neu06 -e LIB06 -e wheels/06 -e d06 -- tools/harness/sdk-kompat
 ```
+
+**Closure-Nachzug des Suchlaufs (Planner, gemessen mit `git grep -n`).** Zeile 7
+(in der Fixrunde `diff 4`) steht auf dem Stand vor dem Träger-Nachzug (`75d2dee8`,
+4 Treffer in drei Dateien), Zeile 8 misst am Arbeitsbaum der Closure 0 Treffer: der Nachzug in
+`harness/mk/sdk.mk`, `harness/targets/sdk-altserver.md` und
+`tools/harness/run-sdk-altserver-tests.sh` (§7). Zeile 9/10 tragen den fünften
+umbenannten Namen `d06` (Re-Review F-4): am Parent der Fixrunde `9d1edf2a`
+26 Treffer, davon 3 für `d06` allein (`git grep -n -w d06 9d1edf2a -- tools/harness/sdk-kompat`),
+am Arbeitsbaum 0.
 
 Stand der ersten Zeile: **gemessen** mit `git grep -n` am Parent `3e028ee3` (neun Dateien,
 je Datei 8, 1, 12, 4, 8, 1, 1, 1, 3 Treffer); der Implementer wiederholt sie mit
@@ -245,7 +262,8 @@ gesehenes Rot; die Läufe an einem Klon des Repos im Scratchpad (Stand
 - **F-6 (INFO) — Version im Bezeichner.** Umbenannt: `alt06`→`altreg`,
   `neu06`→`neureg`, `LIB06`→`LIBREG`, `d06`→`dreg`, `/wheels/06`→`/wheels/neu`;
   die gedruckte Zeile `KOMPAT kotlin javap Bibliothek 06` heißt `… Bibliothek REG`.
-  Suchlauf-Zeile 8: 0 Treffer.
+  Suchlauf-Zeile 8 (nach dem Closure-Nachzug Zeile 10): 0 Treffer (das Muster
+  trug `d06` nicht; nachgezogen in der Closure, Re-Review F-4).
 
 **Läufe am Endstand der Fixrunde (Code `a8e9ddf0`, gemessen).**
 `make test-sdk-kompat` (dist): Exit 0, Schlusszeile
@@ -286,22 +304,114 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 Ausgang.
 
 - Das Werkzeug misst gegen ein Paket, dessen Version sich zwischen Versionssprüngen
-  ändert, ohne dass ein Sensor es meldet (kein Gate) — **Ausgang:** offen bis zur
-  Closure; die Quelle der Version ist danach die Version-Datei, ein Sprung ist kein
-  Bruch mehr.
+  ändert, ohne dass ein Sensor es meldet (kein Gate) — **Ausgang:** entfallen —
+  im Modus `dist` kommt die Version aus der Version-Datei je Sprache, kein Literal
+  bleibt (Suchlauf Zeile 2, 0 Treffer); ein Sprung ist kein Bruch mehr: am Stand
+  `0.6.1` Exit 0 in allen drei Sprachen (§3 *Messung*, vom Verifier reproduziert),
+  eine Version-Datei ohne passendes Artefakt endet laut mit Exit 2 (§3
+  *Mutationen*). Was bleibt, ist `REGISTRY_VERSION`, die niemand nachzieht — benannt
+  in §Grenze 7 des Vertrags, kein Risiko dieses Slice.
 - Kotlin und Python sind für den Sprung nicht gemessen (*hergeleitet*, siehe §1)
-  — **Ausgang:** offen bis zur Closure; der Implementer misst vor dem Fix den
-  Rotbefund je Sprache und nennt ihn im Bericht.
+  — **Ausgang:** entfallen — vor dem Fix gemessen (§3 *Vor dem Fix*): Kotlin Exit 0
+  mit falscher Zeile (Jar 0.6.1 unter dem Namen 0.6.0), Python A2 still grün gegen
+  0.5.0 und rot erst an `A3-Grundlage`; beide Befunde trägt der Fix (A2-Zeilen mit
+  `Bibliothek 0.6.1`, Python-Mutation „Austausch ohne stillen Rückfall“ rot).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register:** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
-- **Drei Paarungen:** —
+- **Geliefert:** `make test-sdk-kompat` liest im Modus `dist` die Version je Sprache
+  aus `.csproj`, `build.gradle.kts` (oberste Zeile) bzw. `pyproject.toml`, verlangt
+  die Form `X.Y.Z` ohne Suffix und das Artefakt genau dieser Version, ohne
+  Ersatzwert; `REGISTRY_VERSION=0.6.0` ist die einzige feste Version (Modus
+  `registry`, A3/A5 in C# und Kotlin). Python-A2 prüft den Austausch (pip-Exit und
+  installierte Version), C#-A2 fällt nicht still auf die veröffentlichte DLL zurück;
+  Gast-Bezeichner nach Rolle statt Version. Vertrag `harness/targets/sdk-kompat.md`
+  (§Versionen, §Grenze 6–10, §Test), Index-Zeile in `harness/README.md`. Am Stand
+  `0.6.1`: `dist` und `registry` je Exit 0 in allen drei Sprachen. Review
+  `docs/reviews/review-slice-sdk-kompat-version-parameter.md` (1 HIGH, 1 LOW, 4 INFO;
+  Fixrunde `a8e9ddf0`, `6abac454`), Re-Review
+  `docs/reviews/review-slice-sdk-kompat-version-parameter-fixrunde.md` (kein HIGH;
+  F-4 LOW, F-1–F-3 INFO), Verifikation
+  `docs/reviews/verify-slice-sdk-kompat-version-parameter.md` (DoD bestätigt, V-1 LOW,
+  V-2/V-3 INFO, `make gates` Exit 0).
+- **Was hat funktioniert:** Der Rotbefund vor dem Fix wurde in allen drei Sprachen
+  gemessen statt hergeleitet; er fand zwei Fehler, die das Rot in C# verdeckt hätte:
+  Kotlin grün mit falscher A2-Zeile, Python-A2 still grün gegen 0.5.0. Beide sind
+  jetzt Mutationen mit sichtbarem Rot. Die getrennten Prüfsummen von dist- und
+  Registry-DLL (`e5fa52ed7181` gegen `f8e6415b23e5`) belegen den Weg des Artefakts in
+  A2 ohne A4-Lauf. Reviewer und Verifier haben je eigene Proben mit einem
+  `docker`-Stub gefahren und so Aussagen geprüft, die der Implementer nur an einer
+  Sprache gemessen hatte.
+- **Was ging anders als geplant:** (1) **HIGH, Zusage weiter als ihr Code:**
+  Kommentar, Meldung und Vertrag sagten „Form X.Y.Z“, der Code ließ Suffixe durch
+  (Review F-1); die Fixrunde zog den Code auf die Zusage (strikt `X.Y.Z`, Mutation
+  `0.7.0-rc.1` rot in C# und Python). (2) Zwei Nachzüge über den Plan hinaus
+  (Python- und C#-A2), §3 Tabelle. (3) Die Fremd-Träger-Meldung nannte zuerst nur
+  `harness/mk/sdk.mk` (Review F-2, LOW), die Fixrunde ergänzte zwei Träger.
+  (4) „Vor jedem Bau“ war an einer Sprache gemessen und für den Lauf über alle
+  Sprachen gesagt (V-1, LOW); die Closure berichtigte den Wortlaut.
+- **Re-Review:** nötig und gefahren, weil die Fixrunde Logik änderte
+  (`version_lesen`, Umbenennung der Pfade beider Modi). Es fand keinen HIGH, aber
+  vier Reste: F-1 führende Nullen passieren die Form, F-2 Kopplungssatz ohne
+  mitzuändernde Handlung, F-3 Grenze 8 ohne Sprach-Einschränkung, F-4 Suchmuster
+  ohne `d06`. Regel: `.claude/commands/implement-slice.md` Schritt 21.
+- **Re-Review- und Verifikations-Pflichten in der Closure:** F-4 → Suchlauf-Zeilen
+  9/10 mit `d06` (§3, Parent `9d1edf2a` 26, Arbeitsbaum 0). F-2 → der Kopplungssatz
+  in `tools/harness/sdk-kompat/csharp/run.sh` nennt Bedingung und Zielpfad der
+  RUN-Schicht `lib-dist` als Auslöser und `[ -f "$neu_nupkg" ]`/`neu_dll` als
+  mitzuändernde Stelle (`AGENTS.md` §3.7). F-3 → Grenze 8 gilt für C# und Kotlin,
+  Python-A5 vergleicht keine Abhängigkeiten. F-1 → Grenze 10 im Vertrag. V-1 →
+  Vertrag §Versionen und Kopf des Runners sagen „vor dem Bau dieser Sprache“ und
+  nennen die Schleife; der Code bleibt. V-2 → siehe *Befunde*. V-3 → DoD-Haken.
+- **Träger-Nachzug bei der Closure** (`AGENTS.md` §3.13, Frist Closure):
+  *nachgezogen*, versionsneutral auf „SDK des Arbeitsstands“ bzw. „Quelle des
+  Arbeitsstands“: `harness/mk/sdk.mk` (Kommentar und Hilfetext von
+  `test-sdk-altserver`), `harness/targets/sdk-altserver.md` (Titel; kein Verweis auf
+  den Titel-Anker, `git grep 'sdk-altserver.md#'` 0 Treffer),
+  `tools/harness/run-sdk-altserver-tests.sh` (Kopf). Suchlauf Zeile 7/8: `75d2dee8` 4,
+  Arbeitsbaum 0.
+- **Befunde und Folgearbeit:**
+  - **V-1, Code-Seite:** eine Vorprüfung der Versionen aller Sprachen vor der
+    Schleife, damit ein Eingabefehler den Lauf vor jedem Bau beendet. Kein
+    Folge-Slice: der Ausgang ist schon heute Exit 2, der Vertrag beschreibt das
+    Verhalten, der Preis ist Bauzeit der vorderen Sprachen. Adresse: die nächste
+    Arbeit an `tools/harness/run-sdk-kompat-tests.sh`.
+  - **V-2:** am Stand `0.6.1` ist die Quellseite (A5) und die Gegenrichtung (A3) nur
+    in Python gegen die neue Version gemessen; C# und Kotlin übersetzen beide gegen
+    `REGISTRY_VERSION` 0.6.0 (gedruckt `KOMPAT csharp A5 quelle 0.6.0`,
+    `KOMPAT kotlin A5 quelle 0.6.0`). Die Binärseite (A2) ist in allen drei Sprachen
+    für 0.6.1 gemessen. Der Vertrag nennt das (§Versionen, §Grenze 7/8).
+  - **Re-Review F-1:** führende Nullen — Grenze 10 im Vertrag, keine Code-Änderung
+    (kein Package trägt eine solche Version).
+  - **Review F-3 bis F-6, Re-Review F-2 bis F-4:** in Fixrunde bzw. Closure
+    getragen (oben).
+- **Steering-Loop-Eintrag:** zwei Lernpunkte, keine neue Regel im Text, kein neuer
+  Sensor. (a) *Eine Eingabeprüfung in einer Schleife wird an mehr als einem
+  Durchlauf gemessen:* alle Mutationen liefen mit einer Sprache, deshalb sah keine,
+  dass „vor jedem Bau“ für drei Sprachen nicht gilt; geschärfte Rückfrage an die
+  Mutationszeilen eines Plans: deckt die Eingabe die Mehrzahl, für die die Aussage
+  gilt? (b) *Wer einen Wert prüft, misst die Zusage an einem Wert außerhalb der
+  Menge, die heute im Baum steht:* alle drei Packages trugen `X.Y.Z`, deshalb blieb
+  die Suffix-Lücke bis zum Review unsichtbar. Beide gezählt unter
+  `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` (Ausgang verkörpert im
+  Reviewer-Skill, Klausel *Zusage*; die Probe „den zugesagten Pfad nachfahren“ hat
+  F-1 gefunden).
+- **Beobachtungs-Register (`../observations/`):**
+  `evidence/slice-sdk-kompat-version-parameter.md` in
+  `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad/` angelegt (Review F-1 HIGH,
+  Verifikation V-1 LOW; ein Vorgang, eine Datei) — Zähler 10×, Ausgang unverändert
+  verkörpert, `state.md` nennt jetzt den Deckel. Unter dem Deckel ohne Datei:
+  Review F-2 (LOW) in `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (Fremd-Träger-Meldung
+  unvollständig, 34×) und Re-Review F-4 (LOW) in
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (Suchlauf-Zeile stützt einen Satz
+  über fünf Namen mit einem Muster über vier, 22×). Re-Review F-2 (INFO, Kopplung ohne
+  mitzuändernde Handlung) ohne Register-Eintrag: getragen in der Closure, keine
+  wiederkehrende Klasse im Register. Kein Eintrag erreicht mit diesem Slice die
+  Schwelle 3× neu; kein Lese-Schritt fällig.
+- **Folge-Slices:** keine (V-1-Code-Seite benannt mit Adresse, oben).
+- **Risiken aus §6:** je ein Ausgang, siehe §6 — beide entfallen (Version aus der
+  Quelle gemessen; Kotlin und Python vor dem Fix gemessen).
+- **Drei Paarungen:** nach dem `git mv` gemessen, siehe Commit danach.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
