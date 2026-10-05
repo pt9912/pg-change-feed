@@ -234,7 +234,11 @@ Chronik („Bis `slice-generated-sync-tar-export` lief hier …“, „Vorher �
 
 **Sensoren dieses Laufs:** `make docs-check` Exit 0 (`d-check: 1737 Datei(en)
 geprüft, 0 Befund(e)`); `make kommentar-kennungen DIFF=c38d3a6b` Exit 0 (kein
-Kandidat); `make test-handbuch-public-doc-check` Exit 0; `make fmt-check` entfällt
+Kandidat); die zwei neuen Anker-Links (`#make-doc-tracked` in `harness/README.md`,
+`#make-pin-stale-baseline` in `baseline-verify.md`) prüft `anchors`: an einer
+Scratchpad-Kopie von `0cdeb963` mit je einem angehängten `X` am Anker endet d-check
+(`--disable tracked`, die Kopie trägt kein `.git`) mit Exit 1 und zwei Befunden
+`anchor-missing`, ohne Mutation mit Exit 0; `make test-handbuch-public-doc-check` Exit 0; `make fmt-check` entfällt
 (der Diff trägt keine Go-Datei). `make gates` und `make suchlauf-nachmessen` nach dem
 letzten Commit: Bericht der Sitzung.
 
