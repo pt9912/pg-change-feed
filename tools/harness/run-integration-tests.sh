@@ -5045,7 +5045,10 @@ ot_expect_start_ok() {
 }
 
 # --- Vorbereitung: Image, Komponenten, Vertrauensspeicher, Werkzeug -----------
-docker pull "$OTLP_COLLECTOR_IMAGE" >/dev/null 2>&1 \
+# Ein lokal vorhandenes Image (Tag@Digest) wird nicht erneut abgerufen; ein
+# Abruf geschieht nur bei Fehlen.
+docker image inspect "$OTLP_COLLECTOR_IMAGE" >/dev/null 2>&1 \
+  || docker pull "$OTLP_COLLECTOR_IMAGE" >/dev/null 2>&1 \
   || bf_fail "$OT_PHASE — das Collector-Image $OTLP_COLLECTOR_IMAGE ließ sich nicht abrufen (Registry oder Abruflimit), keine Aussage über den Export"
 ot_components=$(docker run --rm "$OTLP_COLLECTOR_IMAGE" components 2>&1)
 for ot_component in otlp file resource; do
