@@ -21,7 +21,9 @@ der Slice ändert Harness-Dokumente und eine Doku-Gate-Regel, nicht das Produkt.
 **Berührte Spec-Stellen:** — (keine; die Quellen-Rangfolge in `harness/README.md`
 bleibt unberührt).
 
-**Verantwortlich:** —
+**Verantwortlich:** pt9912 (Implementer-Agent im Auftrag). Reihenfolge zu
+`baseline-6-14-0-dokumente-nachziehen`: dieser Slice zuerst, der Bump-Slice
+danach (§1, §4).
 
 **Autor:** pt9912. **Datum:** 2026-10-05.
 
