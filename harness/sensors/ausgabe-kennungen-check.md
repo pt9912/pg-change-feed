@@ -79,10 +79,10 @@ sie), erzeugter Code unter `gen/`, Spec und ADR-Texte.
    (`RAISE`), SDK-Quellen unter `sdks/` (eigenes Gate `make sdk-public-doc-check`),
    Beispiel-Programme in Go/C#/Kotlin unter `examples/` und Texte, die zur
    Laufzeit aus Daten entstehen, liest das Gate nicht.
-6. **Form, nicht Sinn.** Eine Ausgabe, die ihre Aussage ohne Kennung unvollständig
+7. **Form, nicht Sinn.** Eine Ausgabe, die ihre Aussage ohne Kennung unvollständig
    lässt (Klammer-Rest, Satz ohne Subjekt), bleibt grün; diese Hälfte liest der
    Reviewer.
-7. **Die Wächter-Logik ist im Gate-Lauf nicht gegen ihren Tabellentest
+8. **Die Wächter-Logik ist im Gate-Lauf nicht gegen ihren Tabellentest
    gesichert.** `make test-ausgabe-kennungen-check` bleibt Werkzeug; der Ort, an
    dem eine Änderung am Wächter gegen diesen Vertrag gelesen wird, ist der
    Review-Diff. Die Lesefehler-Fälle des Tabellentests (`chmod 000`) entfallen
@@ -111,7 +111,7 @@ Wurzel, leerer Gegenstand und Lesefehler mit Exit 2, je mit Meldungstext. Der
 Tabellentest bleibt Werkzeug — der Gegenstand des Gates ist der Bestand der
 Ausgabe-Literale, nicht die Wächter-Logik (Muster
 [`ADR-0134`](../../docs/plan/adr/0134-sdk-public-doc-check-gate-make-gates.md)
-Teilfrage 2; Grenze 7).
+Teilfrage 2; Grenze 8).
 
 ## Bindung
 

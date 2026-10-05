@@ -49,10 +49,8 @@ name: sdk-python-release
 # `PYPI_API_TOKEN` ist ein Repository-Secret, das dieser Workflow
 # referenziert, aber nicht anlegt (externe Kontohandlung, dieselbe Klasse
 # wie `NUGET_API_KEY`/`DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN`) — sein
-# tatsaechliches Vorhandensein bleibt bis zum ersten echten Tag-Push
-# unbewiesen (AGENTS.md §3.10 analog; real geprueft beim Schreiben dieses
-# Zuges ueber `gh secret list`: existiert zu diesem Zeitpunkt NICHT,
-# anders als `NUGET_API_KEY` bei der C#-Welle).
+# Vorhandensein belegen die gruenen Laeufe zu den `sdk-python-v*`-Tags
+# (`gh run list --workflow sdk-python-release.yml`; AGENTS.md §3.10).
 #
 # Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
 # Tag-Kommentar.

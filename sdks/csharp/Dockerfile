@@ -60,7 +60,7 @@ RUN dotnet test PgChangeFeed.Client/PgChangeFeed.Client.Tests/PgChangeFeed.Clien
 # `--no-build` verlangt, dass die Build-Stufe oben bereits mit derselben
 # Konfiguration (Release) gelaufen ist — sie ist es, als vorhergehender
 # RUN-Schritt dieses selben Dockerfiles. Das Erzeugnis
-# (PgChangeFeed.Client.0.2.1.nupkg, Version aus PgChangeFeed.Client.csproj,
+# (PgChangeFeed.Client.<Version>.nupkg, Version aus PgChangeFeed.Client.csproj,
 # samt der XML-Dokumentationsdatei der Assembly) landet unter /out. ---
 FROM build AS pack
 RUN mkdir -p /out && \

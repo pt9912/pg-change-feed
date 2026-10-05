@@ -21,10 +21,8 @@ name: image-scan
 # `GITHUB_TOKEN` gepushtes GHCR-Paket entsteht unabhaengig von der
 # Sichtbarkeit des Repos privat.
 #
-# Bis zum ersten echten Release (`release-version-und-workflow`,
-# Welle-Datei `docs/plan/planning/welle-release-pipeline-adr-0051.md`
-# §6) existiert kein GHCR-`:latest`-Image — dieser Lauf scheitert bis
-# dahin strukturell am fehlenden Ziel-Image, kein Implementierungsfehler.
+# Ziel ist das GHCR-`:latest`-Image, das `release.yml` bei einem stabilen
+# Tag setzt; fehlt es, scheitert dieser Lauf am fehlenden Ziel-Image.
 #
 # Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
 # Tag-Kommentar.

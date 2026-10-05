@@ -93,14 +93,17 @@ Skript liest Zeilen.
 `make test-handbuch-public-doc-check` fährt den Tabellentest gegen
 `tools/harness/handbuch-public-doc-check.sh`
 (`tools/harness/run-handbuch-public-doc-check-tests.sh`, netzlos): je
-Kennungsart und je Link-Klasse ein Treffer, Wortrand-Fälle ohne Treffer, saubere
-Wurzel, je ein Fall für die vier ausgenommenen Dateien der Liste oben,
-unklassifizierte und fehlende Datei mit Exit 2. Die Zahl vier ist gemessen
-(2026-10-05): die Liste `excluded=` in `tools/harness/handbuch-public-doc-check.sh`
-trägt vier Namen, der Tabellentest je einen Fall „… ausgenommen“ für jede
+Kennungsart und je Link-Klasse ein Treffer (auch im Fenced-Block, in
+`version.md` und in einer Datei mit NUL-Byte), Wortrand-Fälle ohne Treffer,
+saubere Wurzel, je ein Fall für die vier ausgenommenen Dateien der Liste oben,
+eine Nicht-`.md`-Datei ohne Befund; mit Exit 2 eine unklassifizierte Datei (auch
+im Unterverzeichnis), eine fehlende geprüfte und eine fehlende ausgenommene Datei
+sowie, außer unter root, eine nicht lesbare Datei und ein nicht lesbares
+Unterverzeichnis, je mit Meldungstext. Die Zahl vier ist gemessen (2026-10-05):
+die Liste `excluded=` in `tools/harness/handbuch-public-doc-check.sh` trägt vier
+Namen, der Tabellentest je einen Fall „… ausgenommen“ für jede
 (`grep -c '^expect 0 ".*ausgenommen"' tools/harness/run-handbuch-public-doc-check-tests.sh`
-druckt `4`), `make test-handbuch-public-doc-check` endet mit
-Exit 0 und der Zeile `run-handbuch-public-doc-check-tests: alle 41 Fälle bestanden`.
+druckt `4`). Die Gesamtzahl der Fälle druckt der Lauf selbst.
 Der Tabellentest bleibt Werkzeug — der Gegenstand des Gates ist der Bestand der
 Nutzerdokumente, nicht die Wächter-Logik
 ([`ADR-0143`](../../docs/plan/adr/0143-handbuch-public-doc-check-gate-kennungsfreie-nutzerdoku.md)

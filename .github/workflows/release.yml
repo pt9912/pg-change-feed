@@ -24,9 +24,9 @@ name: release
 # Docker-Hub-Zugangsdaten (`DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN`) sind
 # Repository-Secrets, die dieser Workflow referenziert, aber nicht anlegt
 # (externe Kontohandlung, Welle-Datei
-# `docs/plan/planning/welle-release-pipeline-adr-0051.md` §6) — ihr
-# tatsaechliches Vorhandensein bleibt bis zum ersten echten Release
-# unbewiesen (AGENTS.md §3.10 analog).
+# `docs/plan/planning/done/welle-release-pipeline-adr-0051.md` §6) — ihr
+# Vorhandensein belegen die gruenen Laeufe zu den `v*`-Tags
+# (`gh run list --workflow release.yml`; AGENTS.md §3.10).
 #
 # Nach einem erfolgreichen `release`-Job ruft der zusaetzliche
 # `hub-description`-Job `hub-description.yml` per `uses:`/`workflow_call`

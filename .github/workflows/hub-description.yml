@@ -15,20 +15,17 @@ name: hub-description
 # Release). DOCKERHUB_USERNAME/DOCKERHUB_TOKEN sind Repository-Secrets,
 # die dieser Workflow referenziert, aber nicht anlegt (externe
 # Kontohandlung, Welle-Datei
-# docs/plan/planning/welle-release-pipeline-adr-0051.md §6).
+# docs/plan/planning/done/welle-release-pipeline-adr-0051.md §6).
 #
 # Docker-Hub-API (kein gepinnter Action-Fork, direkter curl/jq-Aufruf auf
 # dem Runner — reine Workflow-Mechanik, kein `make`-Target zu
 # duplizieren, analog release.ymls `gh`-CLI-Nutzung): POST
 # /v2/auth/token mit {identifier, secret} liefert ein access_token
 # (Bearer), PATCH /v2/repositories/<namespace>/<repo> mit
-# {full_description} aktualisiert die Beschreibung — real gegen die
-# oeffentliche Docker-Hub-API mit ungueltigen Zugangsdaten geprueft
-# (400 bei zu kurzem Secret, 401 bei korrekt geformtem, falschem Secret
-# — bestaetigt Endpoint und Feldnamen); der volle Erfolgspfad bleibt bis
-# zum ersten echten Lauf mit realen Repository-Secrets unbewiesen
-# (AGENTS.md §3.10 analog, siehe Slice-Plan
-# docs/plan/planning/in-progress/release-hub-description.md §6). Die
+# {full_description} aktualisiert die Beschreibung. Der Erfolgspfad mit
+# realen Repository-Secrets ist durch gruene Laeufe belegt, ueber
+# workflow_dispatch und aus release.yml (`gh run list --workflow
+# hub-description.yml`; AGENTS.md §3.10). Die
 # Token-Extraktion selbst laeuft ueber tools/harness/dockerhub-token.sh
 # (netzlos testbar, make test-dockerhub-token) statt Inline-jq, damit sie
 # denselben committeten Testbarkeits-Standard traegt wie

@@ -88,19 +88,27 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       oder gestrichen; Chronik-Sprache steht im Ist-Zustand (`AGENTS.md` §3.7).
       Zu belegen durch eine Tabelle Punkt → Ausgang → Beleg im Bericht. — Beleg:
       Tabelle „Liefer-Punkt 2“ in §3 Umsetzung.
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
-      [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0.
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand;
+      [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0. —
+      Beleg: Verifikation
+      [`verify-slice-harness-targets-inhalt-bereinigen.md`](../../../reviews/verify-slice-harness-targets-inhalt-bereinigen.md)
+      (DoD bestätigt, `make docs-check` Exit 0); `make docs-check` Exit 0 am
+      Closure-Stand; `make gates` nach dem letzten Commit der Closure, Exit im
+      Bericht der Sitzung.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8). —
       Beleg: [`review-slice-harness-targets-inhalt-bereinigen.md`](../../../reviews/review-slice-harness-targets-inhalt-bereinigen.md)
       (0 HIGH, 0 MEDIUM, keine Fixrunde).
-- [ ] Doku-Update: Träger, die `§Fassung im Gate-Index` oder eine berichtigte
-      Zahl zitieren, sind nachgezogen (Suchlauf, `AGENTS.md` §3.13).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, solange die Roadmap unter *Offene Wellen* keine Welle führt.
+- [x] Doku-Update: Träger, die `§Fassung im Gate-Index` oder eine berichtigte
+      Zahl zitieren, sind nachgezogen (Suchlauf, `AGENTS.md` §3.13). — Beleg:
+      §3 Suchlauf (24 Zeilen, `make suchlauf-nachmessen` Exit 0) und
+      *Nachzug der Closure*; die gemeldeten fremden Träger samt Spec-Zeilen
+      sind mit der Closure nachgezogen.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, solange die Roadmap unter *Offene Wellen* keine Welle führt.
 
 ## 3. Plan (vor Code)
 
@@ -173,7 +181,7 @@ Entscheidung: vier.
 | Punkt | Datei | Ausgang | Beleg |
 |---|---|---|---|
 | 2 `make image-cve` „kein `:latest` vorhanden“, Chronik | `targets/image.md` | nachgemessen, Chronik („löst die seit `slice-001` angekündigte … Zusage ein“, „bis zum ersten echten Release“) gestrichen | `make image-cve` 2026-10-05, Exit 0, Zeile `ghcr.io/pt9912/pg-change-feed:latest (debian 12.15) │ debian │ 0`; `gh release list`: `v0.7.0 Latest` |
-| 3 `hub-description.yml` „bis zum ersten echten Release unbewiesen“ | `targets/workflows.md` | nachgemessen; der Satz zur Probe mit ungültigen Zugangsdaten (400/401) gestrichen, vom realen Erfolgslauf überholt | `gh run view 37258852180 --json jobs` (release.yml, `v0.7.0`): Job „Docker-Hub-Beschreibung synchronisieren“ `success`; `gh run list --workflow hub-description.yml`: fünf Läufe `success`, zuletzt 35483322058 |
+| 3 `hub-description.yml` „bis zum ersten echten Release unbewiesen“ | `targets/workflows.md` | nachgemessen; der Satz zur Probe mit ungültigen Zugangsdaten (400/401) gestrichen, vom realen Erfolgslauf überholt | `gh run view 37258852180 --json jobs` (release.yml, `v0.7.0`): Job „Docker-Hub-Beschreibung synchronisieren“ `success`; `gh run list --workflow hub-description.yml --limit 100` (Closure, 2026-10-05): sechs Läufe, je `success` über `workflow_dispatch`, zuletzt 35483322058 (die Umsetzung nannte fünf; Verifikation V-1) |
 | 4 Artefakt-Namen 0.2.x | `targets/sdk-pack.md` | nachgemessen; die Namen stehen als Form mit `<Version>` aus der Version-Datei, dazu die Messung | `ls sdks/*/dist` 2026-10-05: `PgChangeFeed.Client.0.6.1.nupkg`, `pgchangefeed-0.6.1-py3-none-any.whl`, `pgchangefeed-0.6.1.tar.gz`, `pgchangefeed-kotlin-0.6.1.jar`, `pgchangefeed-kotlin-0.6.1-sources.jar`; Version-Dateien je `0.6.1` |
 | 5 Drift-Messung `make pin-stale-*` ohne Datum und Lauf | `targets/pin-stale.md` | nachgemessen, mit Datum und gedruckter Zeile; als Stand des Laufs gekennzeichnet | `make pin-stale-race`/`-pgtest`/`-dmigrate`/`-acheck` 2026-10-05, je Exit 0, je Zeile `OK …` (die alte Aussage „P3/P4/P5 zeigen Drift“ gilt nicht mehr) |
 | 6 Python-HTTP-Satz in der Kotlin-Zeile | `targets/sdk-integration.md` | nachgemessen, Kopierfehler berichtigt (Kotlin- und C#-Abschnitt) | Marker `pgchangefeed-sdk-e2e:<sprache>-begin` je Runner: `run-sdk-csharp-…` Zeile 537 nur `csharp`, `run-sdk-kotlin-…` Zeile 532 nur `kotlin`, `run-sdk-python-…` Zeile 611 nur `python` |
@@ -196,16 +204,41 @@ diff 2 -F 'fünf ausgenommenen' -- . ':!docs/reviews' ':!docs/plan/planning/done
 c38d3a6b 1 -F 'Nicht behauptet' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
 diff 0 -F 'Nicht behauptet' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
 c38d3a6b 5 -F 'PgChangeFeed.Client.0.2' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
-diff 4 -F 'PgChangeFeed.Client.0.2' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
+diff 1 -F 'PgChangeFeed.Client.0.2' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
 c38d3a6b 7 -F 'Python-HTTP-Abschnitt' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
-diff 5 -F 'Python-HTTP-Abschnitt' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
+diff 4 -F 'Python-HTTP-Abschnitt' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
 c38d3a6b 4 -F 'ersten echten Release' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
-diff 2 -F 'ersten echten Release' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
+diff 0 -F 'ersten echten Release' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
 c38d3a6b 3 -F 'noch nicht existierenden' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
 diff 2 -F 'noch nicht existierenden' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
 c38d3a6b 1 -F 'zeigen echten Drift' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
 diff 0 -F 'zeigen echten Drift' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness'
+fbb0486a 4 -F 'unbewiesen' -- .github harness tools sdks spec
+diff 0 -F 'unbewiesen' -- .github harness tools sdks spec
+fbb0486a 6 -F 'ersten echten' -- .github harness tools sdks spec
+diff 0 -F 'ersten echten' -- .github harness tools sdks spec
+fbb0486a 3 -F '0.2.1.nupkg' -- .github harness tools sdks spec
+diff 0 -F '0.2.1.nupkg' -- .github harness tools sdks spec
+fbb0486a 1 -F 'Python-HTTP-Abschnitt' -- .github harness tools sdks spec
+diff 0 -F 'Python-HTTP-Abschnitt' -- .github harness tools sdks spec
 ```
+
+**Nachzug der Closure** (Planner, 2026-10-05; Stand `diff` der Zeilen oben ist der
+Endstand der Closure, die Zeilen ab `fbb0486a` sind die Synonym-Suche aus Review
+F-1 und Verifikation V-2 über Workflows, Harness, Werkzeuge, SDKs und Spec): die
+gemeldeten fremden Träger und die von Review und Verifikation zusätzlich gefundenen
+sind nachgezogen — Kopfkommentare von `hub-description.yml`, `sdk-csharp-release.yml`,
+`sdk-python-release.yml`, `release.yml` (Secrets durch grüne Läufe belegt),
+`e2e.yml` (Zeitlimit durch grüne Läufe belegt), `image-scan.yml` (Ziel-Image
+ohne Chronik), dazu der Pfad der Welle-Datei in `hub-description.yml` und
+`release.yml` (`done/`); `harness/mk/sdk.mk` und `sdks/csharp/Dockerfile` mit
+`<Version>`; `tools/harness/run-sdk-kotlin-integration-tests.sh` nennt den
+Python-Abschnitt; `spec/pflichtenheft.md` `LH-FA-SST-009.a` mit `<Version>` und
+Historie-Zeile. Nur Kommentarzeilen in den Workflows (`git diff -U0 -- .github`,
+Filter auf Nicht-Kommentarzeilen: leer); die zitierten Zeilen `release.yml`
+Zeile 51f., `e2e.yml` Zeile 59f. und `ci.yml` Zeile 40f. lösen weiter auf. Die
+verbleibenden Treffer der Zeilen oben liegen in Records (Spec-Historie,
+`Accepted`-ADRs, Register, Versionshistorie von `docs/maintainer/releasing.md`).
 
 Gefunden und nachgezogen: die 15 Dateien, `harness/README.md` (Bindung
 `make doc-tracked`) und die Dateien der Befund-Liste. Verbleibende Treffer:
@@ -279,10 +312,17 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 - **Zusammenführen verliert eine Zusage:** ein Satz der Fassung steht nur dort und
   fällt beim Streichen weg. Gegenmaßnahme: Abgleich der Eigennamen (Make-Ziele,
-  Pfade, Zahlen) der Fassung gegen den Endstand der Datei. — **Ausgang:** offen
-  bis zur Closure.
+  Pfade, Zahlen) der Fassung gegen den Endstand der Datei. — **Ausgang:**
+  entfallen — die Gegenprobe des Implementers (`Fehlend: 0`, Gegenbeispiel rot
+  mit `Fehlend: 29`, §3), die Satz-für-Satz-Lesung des Reviewers an sechs Dateien
+  (Review, Probe 1) und die Wort-Deckung je Satz des Verifiers an allen 15
+  Fassungen (Verifikation §2) fanden keinen Inhaltsverlust.
 - **Eine Aussage ist am Host nicht messbar** (Release-Stand, Registry): dann
-  *übernommen* mit Quelle statt Messung. — **Ausgang:** offen bis zur Closure.
+  *übernommen* mit Quelle statt Messung. — **Ausgang:** entfallen — jede Aussage
+  der Befund-Liste war messbar und ist gemessen (`make image-cve`, `gh run view`,
+  `gh run list`, `make pin-stale-*`, `make baseline-verify`; §3 Liefer-Punkt 2);
+  *übernommen* stehen in den Verträgen nur die zwei „real geprüft“-Sätze in
+  `make image` (Quelle `Makefile`), gekennzeichnet.
 
 ## 7. Closure-Notiz
 
@@ -292,8 +332,110 @@ formulieren) · `grundlagen-traceability.md` §Herkunfts-Anker für
 Steering-Loop-Regeln. Ging der Gegenstand an einen anderen Slice oder entfiel er,
 trägt diese Sektion die Zeile `Gegenstand:` mit Kennung oder Grund.
 
-*Der Plan füllt diese Sektion nicht; sie wird bei der Closure vor dem
-`git mv` nach `done/` geschrieben.*
+- **Geliefert:** Die 15 Sensor- und Target-Dateien mit `## Fassung im Gate-Index`
+  tragen ihren Vertrag einmal (Liefer-Punkt 1; `git grep -l '^## Fassung im
+  Gate-Index' -- harness/` 0 Treffer), der Widerspruch „vier“ gegen „fünf“ in
+  `harness/sensors/handbuch-public-doc-check.md` ist am Skript entschieden (vier),
+  und die Punkte 2 bis 8, 10 und 11 der Befund-Liste von
+  `slice-harness-readme-zellen-kuerzen` sind nachgemessen, als übernommen
+  gekennzeichnet oder gestrichen (Liefer-Punkt 2, Tabelle in §3). Review
+  `docs/reviews/review-slice-harness-targets-inhalt-bereinigen.md` (0 HIGH, 0
+  MEDIUM, F-1/F-2 LOW, F-3 bis F-5 INFO, keine Fixrunde), Verifikation
+  `docs/reviews/verify-slice-harness-targets-inhalt-bereinigen.md` (DoD bestätigt,
+  V-1/V-2 LOW).
+- **Was hat funktioniert:** Drei unabhängige Gegenproben an den Fassungen mit drei
+  Methoden (Eigennamen- und Zahlen-Abgleich des Implementers mit rotem
+  Gegenbeispiel, Satz-für-Satz-Lesung des Reviewers, Wort-Deckung je Satz des
+  Verifiers) — keine fand einen Verlust, und jede hätte einen anderen gefunden.
+  Der Widerspruch „vier/fünf“ wurde am Skript, am Verzeichnis und am Tabellentest
+  entschieden statt an einem der zwei Texte. Die Anker-Gegenprobe (Mutation des
+  neuen Links, `anchor-missing` rot) belegte, dass `anchors` die neuen Verweise
+  deckt.
+- **Was ging anders als geplant:** (1) **Das Suchmuster der Träger fand Synonyme
+  nicht** (Review F-1, Verifikation V-2, LOW): gesucht war `ersten echten
+  Release`; dieselbe Aussage stand in Workflow-Kommentaren als „ersten echten
+  Lauf“, „ersten echten Tag-Push“ und „unbewiesen“, und die Meldung sagte „Nicht
+  gefunden“. `AGENTS.md` §3.13 §Suchform verlangt die Beschreibung samt Hedge im
+  Muster; der Lauf nahm die Wortform des Befunds statt der Aussage. (2) Eine
+  gemessene Zahl stand nicht wie gedruckt (V-1, LOW): „fünf“ statt sechs
+  `hub-description.yml`-Läufe; die Closure hat neu gemessen. (3) Der Bestand
+  außerhalb der Befund-Liste trug Chronik-Sprache und eine doppelte Grenznummer
+  (F-2, F-4); der Implementer hat sie benannt, die Closure hat sie nachgezogen.
+- **Re-Review:** nicht nötig — keine Fixrunde; die Closure ändert Prosa und
+  Kommentare, keine Logik (`.claude/commands/implement-slice.md` Schritt 21).
+- **Review- und Verifikations-Pflichten in der Closure:** F-2 → in
+  `harness/sensors/ausgabe-kennungen-check.md` §Grenze die doppelte 6 aufgelöst
+  (Form, nicht Sinn = 7; Wächter-Logik = 8), §Tabellentest zeigt auf Grenze 8;
+  keine andere Datei zeigt auf eine Grenznummer dieser Datei (`git grep` über den
+  Baum, Treffer nur der Review-Report). F-3 → die Fallliste in
+  `harness/sensors/handbuch-public-doc-check.md` §Tabellentest nennt alle
+  Fallklassen des Skripts (Unterverzeichnis, Nicht-`.md`-Datei, fehlende Dateien,
+  NUL-Byte, Lesefehler), die Zahl 41 entfällt (die Gesamtzahl druckt der Lauf).
+  F-4 → `harness/targets/sdk-integration.md` ohne „neue“/„bestehende“/
+  „nachgezogen“; `harness/sensors/generated-sync.md` §Vertrag im Ist-Zustand, die
+  zwei Eigenschaften der Stufe als Grenze 4 und 5. Dazu
+  `harness/sensors/coverage-gate.md` §Vertrag ohne „seit `slice-097`“ mitten im
+  Satz. V-1 → `harness/targets/workflows.md` und §3 Punkt 3 nennen sechs Läufe
+  (`gh run list --workflow hub-description.yml --limit 100`, 2026-10-05: sechs
+  Zeilen, je `success`, `workflow_dispatch`, zuletzt 35483322058). F-1/V-2 →
+  Träger-Nachzug unten. F-5 → siehe *Befunde*.
+- **Träger-Nachzug bei der Closure** (`AGENTS.md` §3.13, Frist Closure):
+  *nachgezogen* — Kopfkommentare von `.github/workflows/hub-description.yml`,
+  `sdk-csharp-release.yml`, `sdk-python-release.yml`, `release.yml` (Secrets
+  durch grüne Läufe belegt, `gh run list` je Workflow am 2026-10-05: 6, 8, 8 und
+  9 Läufe `success`), `e2e.yml` (Zeitlimit: grüne Läufe um 34 Minuten bei 60
+  Minuten Grenze, z. B. 37301088944 mit `34m53s`), `image-scan.yml` (Ziel-Image
+  ohne Chronik), dazu der Pfad der Welle-Datei in `hub-description.yml` und
+  `release.yml` (`done/`); `harness/mk/sdk.mk` Zeile 55 und
+  `sdks/csharp/Dockerfile` Zeile 63 mit `<Version>`;
+  `tools/harness/run-sdk-kotlin-integration-tests.sh` nennt den
+  Python-Abschnitt. Nur Kommentarzeilen in den Workflows, keine strukturelle
+  Änderung (`AGENTS.md` §3.10 nicht ausgelöst); die Zeilen-Zitate `release.yml`
+  Zeile 51f., `e2e.yml` Zeile 59f., `ci.yml` Zeile 40f. lösen auf.
+  **Spec:** [`spec/pflichtenheft.md`](../../../../spec/pflichtenheft.md)
+  `LH-FA-SST-009.a` — die drei Klammern nach „real geprüft“ nannten die
+  Artefakt-Namen der Version 0.2.x als Prüf-Erzeugnis, keine Norm (die Norm ist
+  Abdeckung, Paketierung, Vertriebsweg); sie stehen jetzt als Form mit
+  `<Version>` und der Version-Datei je Sprache, mit Zeile in §7 Historie.
+  Suchlauf §3, Zeilen ab `fbb0486a`: je 0 Treffer am Closure-Stand.
+- **Befunde und Folgearbeit:**
+  - **F-5 (INFO), geteiltes Scratchpad:** Implementer, Reviewer und Verifier
+    teilen das Scratchpad der Sitzung. Der Reviewer und der Verifier haben
+    keines der Implementer-Artefakte als Beleg benutzt; der Verifier arbeitete
+    in einem eigenen Unterverzeichnis `verifier-targets/`, diese Closure in
+    `closure-targets/`. Hinweis an den Auftraggeber, kein Register-Eintrag:
+    die Kontext-Trennung hängt an der Unterverzeichnis-Disziplin des Auftrags.
+  - **Auftrag gegen Skill:** der Reviewer zog den DoD-Haken „Review durchgeführt“
+    gegen den Auftrag „nur Report“ nach, wie sein Skill es verlangt — neu im
+    Register (unten).
+  - Keine Folgearbeit offen: alle gemeldeten Träger sind nachgezogen.
+- **Steering-Loop-Eintrag:** Lernpunkt ohne neue Regel im Text und ohne neuen
+  Sensor: *Das Suchmuster eines Träger-Suchlaufs nimmt die Aussage, nicht die
+  Wortform des Befunds.* Wer „bis zum ersten echten Release unbewiesen“ als
+  überholt streicht, sucht nach dem Hedge der Aussage („unbewiesen“, „ersten
+  echten“), nicht nach dem zitierten Wortlaut — genau das verlangt `AGENTS.md`
+  §3.13 §Suchform („Beschreibung samt Hedge“); die Regel stand, der Lauf las sie
+  nicht. Gezählt unter `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert in
+  `AGENTS.md` §3.13 §Suchform, unter dem Deckel). Benannte Spec-Lücke: keine.
+- **Beobachtungs-Register (`../observations/`):**
+  `evidence/slice-harness-targets-inhalt-bereinigen.md` in
+  `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar/` angelegt (Review
+  F-4, INFO; Doku-Prosa zweier Harness-Verträge; Zähler 9×, Ausgang unverändert
+  verkörpert). Neu: `BEO-PGC/rollen-auftrag-enger-als-skill/` (1×, offen) — der
+  Auftrag „nur Report“ gegen die Skill-Pflicht zum DoD-Haken. Unter dem Deckel
+  ohne Datei: Review F-1 und Verifikation V-2 (LOW) in
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (Fremd-Träger-Meldung
+  unvollständig, Suchmuster ohne die Wortformen der Aussage; Träger-Typ
+  Workflow-Kommentar, 34×) und Verifikation V-1 (LOW) in
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (gemessene Zahl nicht wie
+  gedruckt, 30×). Ohne Register-Eintrag: F-2 (Zeiger auf eine Doppelnummer, in
+  der Closure behoben, keine wiederkehrende Klasse) und F-3 (Fallliste kürzer
+  als der Test, in der Closure behoben). Kein Eintrag erreicht mit diesem Slice
+  die Schwelle 3× neu; kein Lese-Schritt fällig.
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** je ein Ausgang, siehe §6 — beide entfallen (kein
+  Inhaltsverlust in drei Gegenproben; jede Aussage der Befund-Liste gemessen).
+- **Drei Paarungen:** nach dem `git mv` gemessen, siehe Commit danach.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

@@ -8,7 +8,10 @@ begrenzt · seit welle-backfill-bestand
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §4.1, R6a).
 
-Zähler: 8× (Dateien unter `evidence/`; die achte, `evidence/slice-routing-nats-subjekt.md`,
+Zähler: 9× (Dateien unter `evidence/`; die neunte, `evidence/slice-harness-targets-inhalt-bereinigen.md`,
+trägt Review F-4 (INFO, Datei, weil der Eintrag unter 10× steht): Vorher-Nachher-Sätze in der Doku-Prosa
+zweier Harness-Verträge (`harness/targets/sdk-integration.md`, `harness/sensors/generated-sync.md`), vor dem
+Merge gefunden, bei der Closure in den Ist-Zustand gesetzt, Ausgang unverändert **verkörpert**; die achte, `evidence/slice-routing-nats-subjekt.md`,
 trägt F-2 (MEDIUM, daher Datei): ein geerbter Konjunktiv-Satz über die verworfene Alternative im
 umgebrochenen `publish`-Godoc des NATS-Publishers (Ausprägung **Bestand im umgebrochenen Block**);
 der Reviewer fand ihn vor dem Merge, Ausgang unverändert **verkörpert**; die siebte, `evidence/slice-transformationen-e2e-wirkung.md`,

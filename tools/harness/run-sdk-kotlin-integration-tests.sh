@@ -550,7 +550,7 @@ abdeckung_schreiben() {
   abschnitt=$(abdeckung_kotlin_abschnitt)
   # Kopf und fremde Abschnitte bleiben erhalten: alles vor dem eigenen
   # begin-Marker (Kopf + C#-Abschnitt) und alles hinter dem eigenen
-  # end-Marker (Python-HTTP-Abschnitt der Folge-Slices) — jeder Runner
+  # end-Marker (Python-Abschnitt) — jeder Runner
   # ersetzt nur seinen eigenen Abschnitt.
   if [ -f "$ABDECKUNG_ZIEL_DATEI" ]; then
     if grep -q "pgchangefeed-sdk-e2e:kotlin-begin" "$ABDECKUNG_ZIEL_DATEI"; then

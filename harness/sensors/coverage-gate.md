@@ -4,9 +4,8 @@
 
 Wird dieses Target rot, unterschreitet die Gesamt-Coverage über der
 **netzlos prüfbaren Fläche** — `./internal/...`+`./cmd/...`+`./gen/...`
-(`./gen/...` seit `slice-097`: der Umzug der erzeugten Vertragsfläche,
-`ADR-0076`, bewegt den Träger, nicht den Gegenstand — der Architect-Verdikt
-zum Coverage-Messgegenstand von `slice-097`) **ohne**
+(`./gen/...` trägt die erzeugte Vertragsfläche, `ADR-0076`; sie gehört zum
+Gegenstand, siehe den Absatz zum Nenner unten) **ohne**
 die Pakete, deren Testlauf einen externen Dienst voraussetzt — die aktuell
 gültige Schwelle (`THRESHOLD`). Vierte Docker-Multi-Stage-Stufe `coverage`
 (nach `deps`, analog `d-check`s `Dockerfile`): `go test -coverpkg=<Pakete>

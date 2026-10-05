@@ -31,8 +31,8 @@ name: e2e
 # feste Wartephasen (Retention-Alters-/Lag-Schwellen, NATS-Reconnect-Timing)
 # zusaetzlich zum Compose-Hochfahren und Schema-Rollout; ein
 # GitHub-hosted Runner kann dabei langsamer sein als eine lokale
-# Entwicklungsumgebung. Ob das Zeitlimit real ausreicht, bleibt bis zum
-# ersten echten Lauf offen (`BEO-PGC/github-actions-unverifizierbar-lokal`).
+# Entwicklungsumgebung. Die gruenen Laeufe enden unter dem Zeitlimit
+# (`gh run list --workflow e2e.yml`, Spalte Dauer).
 #
 # Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
 # Tag-Kommentar. `fetch-depth: 0` ist hier nicht noetig — dieser Workflow

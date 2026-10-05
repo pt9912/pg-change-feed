@@ -19,34 +19,13 @@ Arbeitsbaum bleibt dabei unberührt
 ([`ADR-0084`](../../docs/plan/adr/0084-sync-gate-fuer-generierte-artefakte.md)
 Festlegung 1, erste Bedingung). Das unterscheidet es von `make proto-generate`,
 das dieselbe Stufe baut, aber nach `.` extrahiert und damit den Baum schreibt
-(committen statt vergleichen) — und deshalb kein Prüf-Schritt ist. Bis
-`slice-generated-sync-tar-export` lief hier stattdessen `docker build --target
-proto` gefolgt von einem manuellen `protoc`-Aufruf gegen einen
-`docker run -v <Temp>:/out --user <uid>:<gid>`-Bind-Mount — der Mount scheiterte
-auf Docker-Backends mit eingeschränktem UID-Mapping außerhalb des eigenen
-Host-Home (z. B. Colima mit `mounts: []` und `TMPDIR` außerhalb `$HOME`,
-`Permission denied`, real reproduziert); die tar-Stream-Extraktion braucht
-keinen Mount und ist gegen diese Fehlerklasse strukturell immun.
-
-**Zwei Eigenschaften des Bind-Mount-Mechanismus entfallen mit dem
-Stufen-Wechsel bewusst** (kein stiller Verlust, siehe
-`tools/harness/generated-sync.sh` Kopf-Kommentar):
-
-- **Modulpfad-Cross-Check.** Vorher leitete das Skript den Modulpfad
-  unabhängig aus `go.mod` ab und rief `protoc` selbst mit diesem Wert auf —
-  ein Drift zwischen `go.mod`s `module`-Zeile und dem in der Stufe
-  hartcodierten Wert fiel dadurch hier auf. Die Stufe `proto-export` trägt
-  Modulpfad und `.proto`-Datei jetzt fest; ein solcher Drift fällt nicht mehr
-  hier auf, sondern spätestens bei `make test`/`make image`, weil ein
-  tatsächlicher Modulpfad-Wechsel die Importpfade im gesamten Baum bricht.
-- **Dynamische `.proto`-Dateierkennung.** Vorher fand das Skript alle
-  `.proto`-Dateien unter dem Quellverzeichnis selbst (`find … -name
-  '*.proto'`) und generierte sie alle. Die Stufe `proto-export` nennt ihre
-  Dateien namentlich (ihr `RUN`-Schritt) — dieselbe Einschränkung trug `make
-  proto-generate`s Stufe bereits seit slice-104; dieses Gate zieht mit dem
-  Stufen-Wechsel nur nach, was für das Erzeugungsziel schon galt, kein neu
-  eingeführter Verlust. Die verbleibende `find`-Ermittlung im Skript ist nur
-  noch ein Existenz-/Berichts-Check.
+(committen statt vergleichen) — und deshalb kein Prüf-Schritt ist. Die
+Extraktion über den `tar`-Stream braucht keinen Bind-Mount und kein `--user`;
+ein Bind-Mount des Temp-Verzeichnisses scheitert auf Docker-Backends mit
+eingeschränktem UID-Mapping außerhalb des eigenen Host-Home (z. B. Colima mit
+`mounts: []` und `TMPDIR` außerhalb `$HOME`, `Permission denied`; *übernommen*
+aus `slice-generated-sync-tar-export`). Was die Stufe fest trägt (Modulpfad,
+Liste der `.proto`-Dateien), prüft dieses Gate nicht; siehe Grenze 4 und 5.
 
 Verglichen wird in **beiden Richtungen**: jede erzeugte Datei gegen ihren
 committeten Gegenpart (Inhalt byte-gleich per `cmp`, und Vorhandensein) **und** jede committete Datei,
@@ -116,6 +95,15 @@ lesbare Form mit Kontext, die Zahl die genaue Stelle.
 3. **Der Generator selbst ist nicht Gegenstand.** Eine Pin-Hebung der Stufe
    `proto`/`proto-export` ändert den Vergleichsmaßstab; sie ist eine bewusste
    Änderung am `Dockerfile` (`ADR-0060`), kein Fall dieses Gates.
+4. **Kein Abgleich des Modulpfads.** Die Stufe `proto-export` trägt den
+   Modulpfad fest; ein Drift zwischen der `module`-Zeile in `go.mod` und diesem
+   Wert fällt hier nicht auf, sondern bei `make test`/`make image`, weil ein
+   Wechsel des Modulpfads die Importpfade im ganzen Baum bricht.
+5. **Keine Erkennung neuer `.proto`-Dateien.** Die Stufe `proto-export` nennt
+   ihre `.proto`-Dateien namentlich (ihr `RUN`-Schritt), wie für
+   `make proto-generate`; eine neue `.proto`-Datei erzeugt hier nichts, bis die
+   Stufe sie nennt. Die `find`-Ermittlung im Skript ist ein Existenz- und
+   Berichts-Check (`tools/harness/generated-sync.sh` Kopf-Kommentar).
 
 ## Sperren
 

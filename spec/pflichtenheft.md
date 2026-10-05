@@ -482,20 +482,22 @@ unversioniertes Vorbild ohne Paketveröffentlichung.
 Für C#/NuGet ist die Frage beantwortet: `PgChangeFeed.Client` (`SPEC-026`)
 deckt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt, real Docker-only
 paketierbar (`make sdk-pack-csharp`) und real geprüft
-(`PgChangeFeed.Client.0.2.1.nupkg`). Eine zweite Sprache oder ein zweiter
+(`PgChangeFeed.Client.<Version>.nupkg`, Version aus
+`PgChangeFeed.Client.csproj`). Eine zweite Sprache oder ein zweiter
 Vertriebsweg bleibt offen — diese Kennung bleibt ihre Adresse.
 
 Für Python/PyPI ist die Frage ebenfalls beantwortet: `pgchangefeed`
 (`SPEC-027`) deckt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt, real
 Docker-only paketierbar (`make sdk-pack-python`) und real geprüft
-(`pgchangefeed-0.2.1-py3-none-any.whl`, `pgchangefeed-0.2.1.tar.gz`). Eine
+(`pgchangefeed-<Version>-py3-none-any.whl`, `pgchangefeed-<Version>.tar.gz`,
+Version aus `pyproject.toml`). Eine
 dritte Sprache oder ein dritter Vertriebsweg bleibt offen — diese Kennung
 bleibt ihre Adresse.
 
 Für Kotlin ist die Frage ebenfalls beantwortet: `pgchangefeed-kotlin`
 (`SPEC-028`) deckt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt, real
 Docker-only paketierbar (`make sdk-pack-kotlin`) und real geprüft
-(`pgchangefeed-kotlin-0.2.2.jar`). Vertriebsweg sind zwei Ziele: Cloudsmith
+(`pgchangefeed-kotlin-<Version>.jar`, Version aus `build.gradle.kts`). Vertriebsweg sind zwei Ziele: Cloudsmith
 (anonym lesbar, ohne Konto und Token beziehbar) und GitHub Packages (der
 Bezug verlangt einen Token); beide Ziele erhalten dieselben Artefakte. Eine
 vierte Sprache oder ein weiterer Vertriebsweg bleibt offen — diese Kennung
@@ -1923,3 +1925,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-04 | `SPEC-033` (OTLP-Metrik-Export), `SPEC-034` (TLS der HTTP- und gRPC-Schnittstellen), `SPEC-035` (mehrere API-Token je Klasse) neu; `SPEC-036` (Messumgebung `BENCH_SOURCE_ENV`) neu in §3; `SPEC-025` neu gefasst (absolute Obergrenze der zusätzlichen Commit-Latenz je Quelltransaktion als Vorschlag, Verhalten außerhalb der Messumgebung); `SPEC-016`: Schlüssel `tls_cert_file`, `tls_key_file`, `otlp_interval`, ausgeschlossene Klasse um `otlp_endpoint`, `otlp_headers` und die zwei Token-Listen erweitert, env-exklusive Liste ergänzt; `SPEC-008`: Warn-Bereich 6 „Beobachtbarkeit und Transport“; `SPEC-009`: `cdc_oldest_change_age` heißt `cdc_oldest_change_age_seconds` (Name der Sicht); §5 Kopfsatz auf die beiden Zugriffswege gezogen; §6: `SPEC-033` als externer Vertrag; `SPEC-018`: Verweise auf `SPEC-034`/`SPEC-035` |
 | 2026-10-04 | `SPEC-033`: Einheit von `cdc_consumer_lag` ist `By` (WAL-Strecke), Zahlenform, Header-Regeln, Header ohne Endpunkt, Benutzerteil der Endpunkt-URL, erster Versuch nach einem vollen Takt, Frist für Lesen und Übertragen gemeinsam, gemeinsamer Fehlerzustand, keine Weiterleitung; `SPEC-034`: Prüfung beim Start auf das Laden des Paares begrenzt (Ablauf, Namen, Kette nicht geprüft); `SPEC-035`: leere Variable, Komma im Token, Leerraum nur in den Listen; `SPEC-009`: Bedeutung von `cdc_consumer_lag` — schreibt den Ist-Zustand fest, kein neues Verhalten außer der Einheit |
 | 2026-10-05 | `SPEC-025`: Grenze der Zusatzlatenz ist max(0,10 ms ; 1,5 × `t_sync`) mit im selben Lauf gemessener Festschreib-Latenz, Verdikt auf jedem Host, Fehlerausgang bei nicht messbarem `t_sync`; `SPEC-036`: Messvorschrift für `t_sync` statt Band `fdatasync` ≤ 0,5 ms; `SPEC-037` neu (TLS-Optionen der Client-Bibliotheken: ein Vertrauensanker je SDK für HTTP, SSE und gRPC) |
+| 2026-10-05 | `LH-FA-SST-009.a`: die Artefakt-Namen der drei SDK-Packages stehen versionsneutral als Form mit `<Version>` und der Version-Datei je Sprache statt als Namen der Version 0.2.x; keine Änderung an Abdeckung, Paketierung oder Vertriebsweg |
