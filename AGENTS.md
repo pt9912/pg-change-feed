@@ -296,7 +296,7 @@ Ausnahmeliste; die Lese-Handlung bleibt beim Reviewer · seit
 slice-code-kommentare-kennungen (`BEO-PGC/kommentar-herkunft-als-kette`).
 
 **Begründung:** Die Abwägung gehört in die ADR, die Historie in `git`, die
-Herkunft in **ein** auflösbares Feld (`LH-*`, `ADR-*`, `· seit welle-<NN>`).
+Herkunft in **ein** auflösbares Feld (`LH-*`, `ADR-*`, `· seit welle-<Kennung>`).
 Was daneben steht, liest jeder Lauf mit und bezahlt es mit Kontext.
 
 ### 3.8 Action-Pinning (GitHub Actions)

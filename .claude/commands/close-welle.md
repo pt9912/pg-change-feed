@@ -66,7 +66,7 @@ Wellen-Closure), Modul 7 (Carveouts), Modul 5 (Lifecycle). Bei Konflikt gilt der
    **Der Lese-Schritt des Beobachtungs-Registers gehört hierher** (`docs/plan/planning/observations/README.md`,
    Modul 6): jeder Eintrag, dessen `evidence/` **≥ 3** Dateien führt, wandert in die
    Steering-Loop-Einträge und wird zur **verkörperten Regel** mit Herkunfts-Anker
-   (`seit welle-<NN>`). Der Ausgang steht danach in seiner `state.md`, das Verzeichnis bleibt liegen;
+   (`seit welle-<Kennung>`). Der Ausgang steht danach in seiner `state.md`, das Verzeichnis bleibt liegen;
    *gestrichen* trägt dieselbe `state.md`, mit Begründung — still löschen macht die Beobachtung
    ununterscheidbar von einer, die es nie gab.
    Erreicht kein Eintrag 3×, ist *„kein Eintrag über der Schwelle"* die Feststellung, die in die
@@ -84,7 +84,7 @@ Wellen-Closure), Modul 7 (Carveouts), Modul 5 (Lifecycle). Bei Konflikt gilt der
    (jetzt eine Ebene tiefer) → im selben Zug reconcilen, bis `docs-check` grün ist.
    **Zum Schluss die drei Paarungen prüfen** — erst jetzt, weil sie die gerade entstandenen Einträge
    prüfen: (a) *Anker* — wo ein Steering-Loop-Eintrag das Feld `liegt in <Zielort>` trägt, existiert
-   der Zielort und trägt `seit welle-<NN>` bzw. `seit slice-<NNN>`; (b) *Folge-Slice* — jeder genannte
+   der Zielort und trägt `seit welle-<Kennung>` bzw. `seit slice-<Kennung>`; (b) *Folge-Slice* — jeder genannte
    Folge-Slice existiert als Datei irgendwo im Planning-Lifecycle, nicht nur in `open/`;
    (c) *Register* — jede genannte Kennung `BEO-<KUERZEL>/<slug>` existiert als Verzeichnis im
    Register, und jedes Verzeichnis trägt ein nicht leeres `evidence/`. Rot heißt in allen drei

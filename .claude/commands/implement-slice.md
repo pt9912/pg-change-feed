@@ -340,7 +340,7 @@ Hier endet die Implementation. Die übrigen Rollen laufen in **getrennten Kontex
     — wer neu formuliert, spaltet eine Klasse in zwei Pfade, und keiner der beiden erreicht je 3×.
     Sonst ein neues Verzeichnis `BEO-<KUERZEL>/<slug>/` mit `observation.md` und `state.md` anlegen
     — Kürzel aus der Modus-Deklaration nachschlagen, nicht erfinden; das Register ist zugleich die
-    Vergabestelle für den `<slug>`-Teil. Der Beleg ist **formgebunden**: `evidence/slice-<NNN>.md`,
+    Vergabestelle für den `<slug>`-Teil. Der Beleg ist **formgebunden**: `evidence/slice-<Kennung>.md`,
     kein Freitext, eine Datei je Auftreten. Geschrieben wird er **vor** dem `git mv` — die
     Slice-Datei liegt dann noch nicht in `done/`, und das ist richtig so, weil Move und Inhalt
     getrennt committen (Hard Rule 3.3). Der Zähler wird **nicht gesetzt**, er ist die Zahl der
@@ -349,18 +349,18 @@ Hier endet die Implementation. Die übrigen Rollen laufen in **getrennten Kontex
     ist keine Antwort. Erreicht ein Eintrag **mit diesem Slice** 3× (die Zahl seiner
     Evidence-Dateien), wandert er in die Steering-Loop-Einträge der laufenden Welle-Closure
     (`/close-welle`); läuft keine Welle, löst die Slice-Closure den Lese-Schritt selbst aus, und der
-    Herkunfts-Anker lautet dann `seit slice-<NNN>` statt `seit welle-<NN>`.
+    Herkunfts-Anker lautet dann `seit slice-<Kennung>` statt `seit welle-<Kennung>`.
 
     **Verweisform auf wandernde Slice-Pläne**
     (`BEO-PGC/slice-pfad-als-link-in-berichten`; mechanisch getragen für
     `docs/reviews/**` und `observation.md` durch die `structure`-Regeln in
     `.d-check.yml`): Ein Slice-Plan wandert
     (`open/` → `next/` → `in-progress/` → `done/`). Ein Markdown-Link mit festem
-    Verzeichnis (`…/planning/in-progress/slice-NNN-….md`) löst am Ist-Ort auf und
+    Verzeichnis (`…/planning/in-progress/slice-<Kennung>.md`) löst am Ist-Ort auf und
     bricht erst beim nächsten `git mv` (`links` → `target-missing`). Stattdessen
-    die Kennung zitieren (`slice-NNN`) oder einen Inline-Code-Pfad. Kandidatenlauf
+    die Kennung zitieren (`slice-<Kennung>`) oder einen Inline-Code-Pfad. Kandidatenlauf
     auf den **rohen** Zeilen der von diesem Lauf berührten Dokumente:
-    `git diff --name-only <Basis> -- 'docs/**' | xargs -r grep -nE '\]\([^)]*(open|next|in-progress)/slice-[0-9]{3}'`
+    `git diff --name-only <Basis> -- 'docs/**' | xargs -r grep -nE '\]\([^)]*(open|next|in-progress)/slice-'`
     — jeder Treffer wird zitiert statt verlinkt. **Grenze:** `state.md` und
     `evidence/*.md` tragen keine Überschrift und damit keinen Abschnitts-Anker;
     die `structure`-Regeln greifen dort nicht, dieser Schritt ist dort die

@@ -29,7 +29,7 @@ Befehl und gedruckter Zahl trägt (Baseline-Regelwerk
 `modul-02-harness-bootstrap.md` §Freshness-Audit der vendored Baseline). Die
 Schritte sind eine Verfahrensregel, kein Gate: ein ausgefülltes Dokument weicht
 im Inhalt beabsichtigt von seiner Vorlage ab, nur Gliederung und feste Klauseln
-sind vergleichbar.
+sind vergleichbar · seit slice-baseline-6-14-0-dokumente-nachziehen.
 
 1. **Delta der Baseline.** `diff -r` alte ↔ neue Baseline, getrennt für
    `templates/` und `regelwerk/`, die Versionsstrings in Kopien im

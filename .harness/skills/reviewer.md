@@ -61,7 +61,7 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   nicht ein `Test*`-Godoc) begründet eine Aussage mit einer Slice-/
   Wellen-Nummer (`slice-<NNN>`, `welle-<NN>`) oder impliziter
   Vorher/Nachher-Sprache, statt mit `ADR-*`/`LH-*` oder dem Herkunfts-Anker
-  `· seit slice-<NNN>` (`AGENTS.md` §3.7). Abgrenzung zur **zulässigen**
+  `· seit slice-<Kennung>` (`AGENTS.md` §3.7). Abgrenzung zur **zulässigen**
   Testfall-Provenienz („`TestXyz` trägt/deckt … aus `review-slice-NNN.md`
   F-x“ — Subjekt ist der Test, nicht der Produktionscode-Pfad, siehe
   dem Architect-Verdikt zur Slice-Chronik in Code-Kommentaren):
@@ -241,7 +241,7 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
 - **Traceability-/ID-Schema-Verstoß** — Commit oder PR nennt keine
   `LH-*`- oder `ADR-*`-Kennung; oder eine Kennung nutzt ein Präfix, das MR-000
   nicht deklariert (`LH-FA/QA-<BEREICH>-<NNN>`, `SPEC-<NNN>`, `ARC-<NNN>`,
-  `ADR-<NNNN>`, `CO-<NNN>`, `slice-<NNN>`, `MR-<NNN>`, `BEO-<KUERZEL>/<slug>`,
+  `ADR-<NNNN>`, `CO-<NNN>`, `slice-<Kennung>`, `MR-<NNN>`, `BEO-<KUERZEL>/<slug>`,
   `RC-<NNN>`). Erstes Auftreten dieser Klasse: Review F-2 (2026-09-09,
   `PH-*`/`TST-*` im Traceability-Beispiel).
 - **Spec-Stratum-Verstoß** — das Technik-Stratum erweitert, wo es nur

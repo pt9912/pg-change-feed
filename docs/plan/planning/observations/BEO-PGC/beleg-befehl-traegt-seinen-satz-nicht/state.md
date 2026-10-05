@@ -22,7 +22,13 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **21×** (die einundzwanzigste Datei:
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **22×** (die zweiundzwanzigste Datei:
+evidence/slice-baseline-6-14-0-dokumente-nachziehen.md — Form **Befehl**, F-1/F-2 (HIGH) und
+V-1 (MEDIUM), daher Datei trotz Deckel: die Begründung einer Verfahrensregel nannte zwei
+Befehlsformen als Fundort, die die Abweichung ihres Anlasses nicht fanden, und das Muster der
+Regel war enger als das gemessene; nach der Berichtigung trug das Auslöser-Dokument noch einen
+Platzhalter, den die Regel trifft; Ausgang unverändert **verkörpert**;
+die einundzwanzigste Datei:
 evidence/slice-routing-e2e.md — Form **Assertion**, F-1 (MEDIUM, daher Datei trotz Deckel): „ein
 auf ein Ziel gewählter Stream-Leser sieht nur dieses Ziel“ war an den Stream-Wegen nur über die
 erste empfangene Change belegt; gebunden in der Fixrunde durch ein Ruhefenster, eine feste Menge

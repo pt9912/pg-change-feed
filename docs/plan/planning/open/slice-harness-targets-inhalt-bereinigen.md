@@ -48,7 +48,9 @@ als übernommen gekennzeichnet oder gestrichen.
 
 - **Die Index-Zeilen der `harness/README.md`.** Sie sind kurz und von der
   `structure`-Regel gehalten; ändert sich ein Kurzsatz durch eine Berichtigung,
-  wird er mitgezogen, sonst bleibt die README unberührt.
+  wird er mitgezogen, sonst bleibt die README unberührt. Die Vorlagen-Platzhalter
+  der README (§Sensors-Musterzeile, Werkzeug-Musterzeilen, §Safety, §Leseordnung)
+  trägt `slice-abgeleitete-dokumente-vorlagen-nachzug`.
 - **Neue Gates oder Änderungen an Skripten.** Die Berichtigung betrifft Prosa;
   stellt sich eine Aussage als Defekt eines Werkzeugs heraus, ist das ein anderer
   Vorgang mit eigenem Slice.

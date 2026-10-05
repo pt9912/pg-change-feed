@@ -41,5 +41,6 @@ Disziplin.
   structure, hostpaths, tracked): fahre die Belege **selbst**, behauptete Läufe
   zählen nicht; die Ausgabe muss sichtbar sein
 - je Slice-Umfang: `make doc-commits RANGE=base..head` (Traceability je Commit)
-  und `make doc-immutable` (MR-Immutabilität)
+  und `make doc-immutable RANGE=base..head` (MR-Immutabilität; ohne `RANGE`
+  endet das Ziel mit Exit 2)
 - Bericht-Ort: `docs/reviews/` (Gerüst: `.harness/baseline/v6.14.0/templates/docs/reviews/review-report.template.md`)

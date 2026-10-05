@@ -239,18 +239,20 @@ structure:
   # evidence/*.md tragen keine Ueberschrift und haben deshalb keinen
   # Abschnitts-Anker — dort bleibt es Disziplin (implement-slice.md, Schritt 25);
   # (4) gedeckt sind genau diese zwei Dateiklassen — nicht die ganze Doku
-  # (die Welle-Form `planning/welle-NN.md` -> `done/` und der gleich-ordnerige
-  # Nachbar-Verweis sind Nachbar-Klassen ohne Beleg und nicht gedeckt).
+  # (die Welle-Form `planning/welle-<Kennung>.md` -> `done/` und der gleich-ordnerige
+  # Nachbar-Verweis sind Nachbar-Klassen ohne Beleg und nicht gedeckt); (5) das
+  # Muster trifft nur die Nummern-Form `slice-[0-9]{3}` des Bestandsschutzes
+  # (MR-002), ein Link auf einen Slice mit Namens-Kennung ist nicht gedeckt.
   - files: "docs/reviews/**/*.md"
     section-pattern: '^# '
     sections: each
     forbid-pattern: '\]\([^)]*(open|next|in-progress)/slice-[0-9]{3}'
-    hint: "Slice-Plan als Markdown-Link mit festem Lifecycle-Verzeichnis: der Link bricht beim naechsten git mv (links: target-missing). Stattdessen die Kennung zitieren (slice-<NNN>) oder einen Inline-Code-Pfad."
+    hint: "Slice-Plan als Markdown-Link mit festem Lifecycle-Verzeichnis: der Link bricht beim naechsten git mv (links: target-missing). Stattdessen die Kennung zitieren (slice-<Kennung>) oder einen Inline-Code-Pfad."
   - files: "docs/plan/planning/observations/**/observation.md"
     section-pattern: '^# '
     sections: each
     forbid-pattern: '\]\([^)]*(open|next|in-progress)/slice-[0-9]{3}'
-    hint: "Slice-Plan als Markdown-Link mit festem Lifecycle-Verzeichnis: der Link bricht beim naechsten git mv. Stattdessen die Kennung zitieren (slice-<NNN>) oder einen Inline-Code-Pfad."
+    hint: "Slice-Plan als Markdown-Link mit festem Lifecycle-Verzeichnis: der Link bricht beim naechsten git mv. Stattdessen die Kennung zitieren (slice-<Kennung>) oder einen Inline-Code-Pfad."
   # Achte Regel — die erzeugte E2E-Abdeckungstabelle
   # (tools/harness/run-integration-tests.sh schreibt sie, das Testpaket
   # traegt die Go-Haelfte). Die Regel sichert die Zeilenform: Abschnitt
