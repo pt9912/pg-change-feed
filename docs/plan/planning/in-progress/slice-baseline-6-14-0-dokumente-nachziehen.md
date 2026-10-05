@@ -104,7 +104,7 @@ Alle Beleg-Angaben dieser Liste sind **Zusagen** („zu belegen durch …“): d
 Planungsstand hat keinen der Läufe gefahren
 ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) Instanz B).
 
-- [ ] **Planungs-README und Roadmap (Liefer-Punkt 1).**
+- [x] **Planungs-README und Roadmap (Liefer-Punkt 1).**
       `docs/plan/planning/README.md` gegen
       `.harness/baseline/v6.14.0/templates/docs/plan/planning/README.template.md`
       abgeglichen und angeglichen: (a) die Zeile `done/` trägt die Klausel „oder
@@ -121,7 +121,7 @@ Planungsstand hat keinen der Läufe gefahren
       (`modul-06-roadmap.md`: wellenlose Arbeit erscheint nicht in der Roadmap;
       erwartet: es fehlt keine Welle und kein Meilenstein-Beleg), sonst nur das
       Nachzuziehende, das die Regel verlangt.
-- [ ] **Verifikation der Reviewer-Dateien und Abgleich der übrigen Träger
+- [x] **Verifikation der Reviewer-Dateien und Abgleich der übrigen Träger
       (Liefer-Punkt 2).** (a) Die Ergebnisse von Agent `ab8c3e73293b11d22` gemessen:
       `.harness/skills/reviewer.md` ↔ `reviewer.template.md`,
       `.harness/skills/closure-note-reviewer.md` ↔ `closure-note-reviewer.template.md`,
@@ -142,7 +142,7 @@ Planungsstand hat keinen der Läufe gefahren
       `docs/plan/carveouts/` ↔ Carveout-Vorlage, Slice- und Welle-Vorlage ↔ Praxis:
       nur Bestandsaufnahme, je Dokument „entspricht“ oder „Abweichung mit Beleg“,
       Abweichungen als benannte Folgepunkte (§1, vierter Ausschluss).
-- [ ] **Bump-Vergleichs-Schritt (Liefer-Punkt 3).** Festgelegt, ob der Vergleich
+- [x] **Bump-Vergleichs-Schritt (Liefer-Punkt 3).** Festgelegt, ob der Vergleich
       Repo-Dokument ↔ Vorlage ein **Werkzeug** (Docker-only, netzlos,
       Normalisierung von Versionsstrings und Platzhaltern) oder eine
       **Verfahrensregel** ist, mit Begründung im Plan-Nachzug; mindestens als
@@ -188,12 +188,13 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `docs/plan/planning/README.md` | update | Klausel in der Zeile `done/`, `welle-<Kennung>-results.md` an zwei Stellen (Liefer-Punkt 1) |
-| `docs/plan/planning/in-progress/roadmap.md` | kein Eingriff erwartet | Struktur-/Regelprüfung, Befund im Bericht (Liefer-Punkt 1) |
+| `docs/plan/planning/in-progress/roadmap.md` | update *(Plan-Nachzug: statt „kein Eingriff erwartet“)* | Ruhe-Marker unter *Offene Wellen* entfernt: er stand, während `in-progress/` diesen Slice trägt (`modul-06-roadmap.md` §Roadmap-Struktur, Bullet *Offene Wellen*); Beleg unter *Belege, Liefer-Punkt 1* (Liefer-Punkt 1) |
 | `.harness/skills/reviewer.md`, `.harness/skills/closure-note-reviewer.md`, `.claude/agents/reviewer.md`, `.claude/agents/verifier.md`, `docs/reviews/` (sechs Reports) | nur lesen | Verifikation der Arbeit von Agent `ab8c3e73293b11d22` (Liefer-Punkt 2a) |
 | `.claude/hooks/span-emit.sh`, `.claude/settings.json` | nur lesen | Abgleich Audit-Span-Schema (Liefer-Punkt 2b) |
 | `harness/README.md`, `harness/conventions.md`, `docs/plan/adr/README.md`, `docs/plan/carveouts/` | nur lesen | Bestandsaufnahme gegen die Vorlagen (Liefer-Punkt 2c) |
-| `harness/sensors/baseline-verify.md` und/oder `harness/targets/pin-stale.md` (Abschnitt `make pin-stale-baseline`) | update | Pflichtschritt „diff alte ↔ neue Baseline“ (Liefer-Punkt 3) |
-| `tools/harness/…` (Vergleichs-Werkzeug) | neu, **nur falls** die Entscheidung auf Werkzeug fällt | Docker-only, netzlos; Gate-Aufnahme geht an den Architect |
+| `harness/targets/pin-stale.md` (Abschnitt `make pin-stale-baseline`, neuer Unterabschnitt *Bump-Ablauf: Vergleich vor dem Löschen der alten Baseline*) | update | Pflichtschritte Delta, Stichprobe gegen den Bestand, Ergebnis je Dokument (Liefer-Punkt 3) |
+| `harness/sensors/baseline-verify.md` (§Grenze, Punkt 2) | update | ein Satz mit Verweis auf den Bump-Ablauf; der Vertrag bleibt (Liefer-Punkt 3) |
+| `tools/harness/…` (Vergleichs-Werkzeug) | **nicht realisiert** *(Plan-Nachzug)* | die Entscheidung fiel auf die Verfahrensregel, Begründung unter *Belege, Liefer-Punkt 3* |
 
 **Entscheidung Werkzeug vs. Verfahrensregel (Vorab-Position, vom Implementer zu
 messen).** Ein Vergleich Repo-Dokument ↔ Vorlage ist nach Normalisierung
@@ -235,14 +236,183 @@ werden gelesen, ob sie MR-002 widersprechen); Zeile 3 bleibt 1
 (`docs/plan/adr/0095…`, `Accepted`, unberührbar); Zeile 4 steigt auf 1; Zeile 2
 sinkt auf 0.
 
+**Startmessung (Implementer, 2026-10-05).** Die sechs Zeilen am Stand
+`d79b7ebd54ba353e484f654a16c5abb0859b3743` (Übergang nach `in-progress/`, Parent
+dieses Laufs) neu gemessen: gedruckt 7 · 2 · 1 · 0 · 1 · 7, gleich den Zahlen am
+Planungsstand `9b360010…` — die 33 Commits dazwischen berühren keine der sechs
+Eigenschaften; keine Abweichung. Der Parent der Zeilen ist damit `d79b7ebd…`.
+Startbedingungen: `in-progress/` trug am Parent nur `roadmap.md` und diesen Slice
+(`ls docs/plan/planning/in-progress`); die Arbeit von Agent `ab8c3e73293b11d22`
+ist committet in `f5b2840a` (Report-Gerüst aus der Baseline, Repo-Kopie der
+Review-Vorlage entfernt), `675246dd` (Reviewer-Skills) und `9b360010` (sechs
+Reports); `484d20ec` ist der Pin-Wechsel des Bumps selbst, nicht seine Arbeit —
+gemessen mit `git show --stat` je Commit, Arbeitsbaum am Parent sauber
+(`git status`). Neu hinzu kommen zwei bewegte Eigenschaften dieses Laufs: (E) der
+Ruhe-Marker der Roadmap (Wortlaut `Nichts in Arbeit`) und (F) der Bump-Ablauf
+(Beschreibung `Stichprobe gegen den Bestand` unter `harness/`). Endstand
+(`diff`-Zeilen, jede Trefferzeile gelesen): Zeile 1 sinkt auf 5 — die übrigen
+Treffer `.claude/commands/close-welle.md` ×2, `.claude/commands/implement-slice.md`,
+`.harness/skills/reviewer.md` und `AGENTS.md` tragen `welle-<NN>` als Platzhalter
+der Herkunfts-Anker-Form `seit welle-<NN>` und sind fremde Träger (Befund 5
+unten, gemeldet, nicht mitgeändert); Zeile 3 bleibt 1 (`ADR-0095` §Geschichte,
+`Accepted`); Zeile 6 bleibt 7, alle in `.claude/hooks/span-emit.sh` und
+`.claude/settings.json`.
+
 ```suchlauf
-9b3600104203cba0f1eeea63902517066a98c26f 7 -n -F 'welle-<NN>' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations
-9b3600104203cba0f1eeea63902517066a98c26f 2 -n -F 'welle-<NN>-results' -- docs/plan/planning/README.md
-9b3600104203cba0f1eeea63902517066a98c26f 1 -n -E 'v6\.13\.0' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations
-9b3600104203cba0f1eeea63902517066a98c26f 0 -n -F 'Gegenstand an einen anderen Slice übergegangen' -- docs/plan/planning/README.md
-9b3600104203cba0f1eeea63902517066a98c26f 1 -n -F 'Gegenstand an einen anderen Slice übergegangen' -- .harness/baseline/v6.14.0/templates/docs/plan/planning/README.template.md
-9b3600104203cba0f1eeea63902517066a98c26f 7 -n -E 'span-emit|Audit-Span|requirement\.id|slice\.id' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations
+d79b7ebd54ba353e484f654a16c5abb0859b3743 7 -n -F 'welle-<NN>' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations
+diff 5 -n -F 'welle-<NN>' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations
+d79b7ebd54ba353e484f654a16c5abb0859b3743 2 -n -F 'welle-<NN>-results' -- docs/plan/planning/README.md
+diff 0 -n -F 'welle-<NN>-results' -- docs/plan/planning/README.md
+d79b7ebd54ba353e484f654a16c5abb0859b3743 1 -n -E 'v6\.13\.0' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations
+diff 1 -n -E 'v6\.13\.0' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations
+d79b7ebd54ba353e484f654a16c5abb0859b3743 0 -n -F 'Gegenstand an einen anderen Slice übergegangen' -- docs/plan/planning/README.md
+diff 1 -n -F 'Gegenstand an einen anderen Slice übergegangen' -- docs/plan/planning/README.md
+d79b7ebd54ba353e484f654a16c5abb0859b3743 1 -n -F 'Gegenstand an einen anderen Slice übergegangen' -- .harness/baseline/v6.14.0/templates/docs/plan/planning/README.template.md
+d79b7ebd54ba353e484f654a16c5abb0859b3743 7 -n -E 'span-emit|Audit-Span|requirement\.id|slice\.id' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations
+diff 7 -n -E 'span-emit|Audit-Span|requirement\.id|slice\.id' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations
+d79b7ebd54ba353e484f654a16c5abb0859b3743 1 -n -F 'Nichts in Arbeit' -- docs/plan/planning/in-progress/roadmap.md
+diff 0 -n -F 'Nichts in Arbeit' -- docs/plan/planning/in-progress/roadmap.md
+d79b7ebd54ba353e484f654a16c5abb0859b3743 0 -n -F 'Stichprobe gegen den Bestand' -- harness
+diff 1 -n -F 'Stichprobe gegen den Bestand' -- harness
 ```
+
+### Belege (Implementer)
+
+Arbeitsverzeichnis der Normalisierungen: Scratchpad des Laufs (Kopien, keine
+Repo-Datei geschrieben).
+
+**Schritt (2) — Delta v6.13.0 ↔ v6.14.0, gemessen.** Die alte Baseline aus der
+Git-Historie gelesen (`git archive 990f1a0e^ .harness/baseline/v6.13.0`, der
+Commit `990f1a0e` entfernte sie), die neue aus `HEAD`. `diff -rq` meldet 32
+verschiedene Dateien: 26 im `regelwerk/`, 5 Vorlagen, `SHA256SUMS`. Nach
+Normalisierung der Versionsstrings (`sed 's/v6\.13\.0/vX/g; s/6\.13\.0/X/g'` bzw.
+`6.14.0`, je Kopie) bleiben im `regelwerk/` drei Dateien mit Inhalt: 
+`modul-10-review-harness.md` (Kein Stil-Polizist; kein HIGH/MEDIUM ohne
+Failure-Szenario; `pfad` als wörtliches Kurzzitat), `modul-15-observability.md`
+(Pflicht-Feld ohne Wert der Quelle bleibt Pflicht, „nicht bekannt“ mit Quelle),
+`README.md` (Stand-Zeile Kurs-Welle 153 → 156); die normalisierte Diff-Ausgabe
+hat 24 Zeilen. Vorlagen: `reviewer.template.md` (LOW mit Konventions-Anker, zwei
+neue Grenzen, `pfad` als Kurzzitat; 17 Diff-Zeilen),
+`closure-note-reviewer.template.md` (`pfad` als Kurzzitat),
+`review-report.template.md` (Spalte Pfad als Kurzzitat), `AGENTS.template.md` und
+`conventions.template.md` (nur die Release-URL). **`README.template.md` und
+`roadmap.template.md` der Planung sind byte-gleich** (`cmp`, Exit 0). Damit ist
+die übernommene Aussage „Vorlage zwischen 6.13.0 und 6.14.0 unverändert“
+nachgemessen: die beiden Abweichungen der Planungs-README sind älter als der Bump.
+
+**Liefer-Punkt 1.** `diff <Vorlage> docs/plan/planning/README.md`: am Parent 20
+Zeilen, am Endstand 10 Zeilen. Übrig bleiben zwei Stellen, beide repo-spezifisch:
+der Template-Hinweis-Block (die Vorlage verlangt, ihn beim Kopieren zu löschen)
+und der Kommentar `d-check:ignore` am Pfad `docs/plan/carveouts/done/` — das
+Verzeichnis existiert nicht (`git ls-files docs/plan/carveouts` nennt nur
+`.gitkeep`), ohne den Kommentar meldete `links` ein fehlendes Ziel.
+Roadmap: Überschriften gegen `roadmap.template.md` (`diff` über `grep -E '^#'`)
+ohne Unterschied, Exit 0. Regelprüfung nach `modul-06-roadmap.md`: keine flache
+Welle-Datei (`ls docs/plan/planning/*.md` nennt nur `README.md`), *Offene Wellen*
+ohne Zeiger — Bijektion erfüllt; *Abgeschlossene Wellen* gegen die
+`welle-*-results.md` unter `done/`: 36 zu 36, `comm -3` leer; einziger
+Meilenstein M1 *erreicht* mit Beleg; wellenlose Slices brauchen keine Zeile.
+**Abweichung:** der Ruhe-Marker stand, obwohl `in-progress/` diesen Slice trägt
+— er steht unverändert seit `d38cf9e7` (2026-09-23, `git blame`), über alle
+seither beanspruchten Slices hinweg; die übernommene Aussage „nur Inhalt weicht
+ab“ trifft damit nicht zu. Behoben: der Marker ist entfernt. **Übergabe an die
+Closure:** nach dem `git mv` dieses Slice nach `done/` trägt `in-progress/`
+keinen Slice mehr, und der Marker kommt zurück (Wortlaut aus `d79b7ebd`);
+Befund 4 unten.
+
+**Liefer-Punkt 2a — Reviewer-Dateien.** Je Änderung des Deltas (Schritt 2):
+
+| Datei | Ergebnis | Beleg |
+|---|---|---|
+| `.harness/skills/reviewer.md` | entspricht | alle vier Änderungsstellen der Vorlage übernommen (`git show 675246dd`): LOW mit Konventions-Anker, „Kein Stil-Polizist“, „Kein HIGH- oder MEDIUM-Finding ohne Failure-Szenario“, `pfad` als Kurzzitat; Report-Gerüst zeigt auf die vendored Vorlage (`f5b2840a`) |
+| `.harness/skills/closure-note-reviewer.md` | entspricht | `pfad` als Kurzzitat übernommen (`675246dd`) |
+| `.claude/agents/reviewer.md`, `.claude/agents/verifier.md` | entspricht | Report-Gerüst `.harness/baseline/v6.14.0/templates/docs/reviews/review-report.template.md` (`f5b2840a`); die Regeln aus `modul-10-review-harness.md` tragen sie über den Skill, keine Zeile `Datei:Zeile` mehr (`grep -n 'Datei:Zeile'` über die vier Dateien: 0 Treffer) |
+| sechs Reports (`9b360010`) | Gliederung entspricht; **Abweichung mit Beleg** | Überschriften `##`–`####` gegen die Vorlage: die drei Review-Reports ohne Unterschied, die drei Verifikations-Reports mit je ein bis zwei zusätzlichen Abschnitten (`Offen / übernommen`, `Nicht neu gefahren (übernommen)`, `Plan-DoD gegen Belege`, `Offene Punkte`); Tabellenköpfe Findings, Negativbefunde, Summary in allen sechs je 1×; die Finding-Kennungen alt ↔ neu gleich (`git show 9b360010^:` gegen `9b360010:`), bis auf `verifikation-slice-bench-source-impact-absolut.md` (alt ohne Kennungen, neu `V-1`…`V-5`); Felder ohne Quelle stehen als „nicht erhoben“ (`git grep -c -i 'nicht erhoben'`: 9 · 8 · 6 · 6 · 5 · 1). Die Reports gehören zu Slices in `done/`; das Neusetzen schreibt Records rückwirkend um (Befund 1) |
+
+**Liefer-Punkt 2b — Audit-Span-Schema.** `.claude/hooks/span-emit.sh` erzeugt
+keinen Span: es ruft `.harness/state/bin/ai-harness-init span-emit` und endet in
+jedem Zweig mit 0; der Träger ist gitignoriert (`git check-ignore -v` →
+`.harness/.gitignore:6:state/`), das Repo führt kein Schema
+(`git grep` nach `Audit-Span|requirement\.id|slice\.id` außerhalb von Baseline,
+Records und diesem Plan: 0 Treffer neben `span-emit`). Ergebnis: **nicht
+Gegenstand dieses Repos** — die Änderung in `modul-15-observability.md` trifft den
+Träger. Nebenbefund 2: die Kommentare des Wrappers zitieren Kennungen und Dateien
+des Träger-Projekts.
+
+**Liefer-Punkt 2c — Bestandsaufnahme** (Überschriften per
+`diff <(grep -E '^#{1,4} ' <Vorlage>) <(grep -E '^#{1,4} ' <Datei>)`,
+Platzhalter per `grep -n -E '<…>|<z\. B\.|<zuerst|<mover>|<Datum>|<Pfad oder URL>'`):
+
+| Dokument | Ergebnis | Beleg |
+|---|---|---|
+| `harness/README.md` ↔ `README.template.md` | **Abweichung mit Beleg** | Überschriften gleich (Exit 0); stehengebliebene Platzhalter: Zeile `` `<make-target>` `` (§Sensors), Zeilen `make <mover>`/`<messung>`/`<vorschau>` (Werkzeuge), §Safety and scope boundaries zweimal `<…>`, §Leseordnung drei Platzhalter |
+| `harness/conventions.md` ↔ `conventions.template.md` | **Abweichung mit Beleg** | Überschriften gleich (Exit 0); Platzhalter: §Adoptierte Konventions-Quellen `<Pfad oder URL>` und `<Pfade zu deinen …>`, MR-000 `**Datum:** <Datum>`, Musterzeilen in §Zusatzklassen und §Glossar |
+| `docs/plan/adr/README.md` ↔ `adr/README.template.md` | **Abweichung mit Beleg** | Abschnitt `## Konventionen` fehlt (Regeln stehen als Vorspann, ohne die Regel zum Feld `**Schärft:**`, das alle 155 ADR-Dateien tragen: `git grep -l -F '**Schärft:**'`); Spalten `Datum`/`Datei` statt `Bezug` |
+| `docs/plan/carveouts/` ↔ `carveouts/README.template.md` | **Abweichung mit Beleg** | kein `README.md` (`git ls-files docs/plan/carveouts`: nur `.gitkeep`); es gibt keinen Carveout |
+| Slice-Vorlage ↔ Praxis | entspricht | `##`-Überschriften der beiden Pläne in `open/` gegen `slice.template.md`: 0 Diff-Zeilen; dieser Plan: nur der bedingte Block `### Sub-Area:` fehlt (alle Sub-Areas GF) |
+| Welle-Vorlage ↔ Praxis | entspricht | `welle-routing.md` gegen `welle.template.md`: Exit 0; `welle-routing-results.md` gegen `welle-results.template.md`: zwei zusätzliche, repo-spezifische Abschnitte (`Validator-Feststellung (Modul 8)` — Adresse aus `.claude/commands/implement-slice.md` Schritt 23 —, `Offene Punkte (mit Adresse)`) |
+
+Keine der vier Abweichungen stammt aus dem Bump (die betroffenen Vorlagen haben
+im Delta keine inhaltliche Änderung; `conventions.template.md` nur die URL, die
+`harness/conventions.md` schon trägt). Sie werden hier nicht behoben (§1, letzter
+Ausschluss); **Folge-Slice vorgeschlagen:** `slice-abgeleitete-dokumente-vorlagen-nachzug`
+(Gegenstand: die vier Zeilen oben mit Abweichung). Die Datei legt der Planner bei
+der Closure in `open/` an (§6, vierter Punkt), mit diesem Gegenstand als Text in
+ihrem §1.
+
+**Liefer-Punkt 3 — Entscheidung: Verfahrensregel.** Gemessen in diesem Lauf: (a)
+das normalisierte Delta zweier Baseline-Stände ist klein (24 Zeilen Regelwerk,
+fünf Vorlagen mit 4 bis 17 Diff-Zeilen) und von einer Rolle in einem Durchgang
+lesbar; (b) die Abweichungen dieses Slice fängt das Delta allein **nicht** — die
+Planungs-README-Vorlage ist byte-gleich, die Abweichung lag im Bestand; das
+Regelwerk benennt genau diesen Fall (`modul-02-harness-bootstrap.md`
+§Freshness-Audit, Punkt *Eine Stichprobe gegen den Bestand*); (c) die
+Bestandsprüfung trägt mit zwei Befehlsformen (Überschriften-`diff`,
+Platzhalter-`grep`), die alle vier Abweichungen aus 2c und die der Planungs-README
+fanden; ein voller `diff` eines ausgefüllten Dokuments gegen seine Vorlage meldet
+dagegen beabsichtigten Inhalt (`diff README.template.md harness/README.md | wc -l`:
+175 Zeilen bei 265 Zeilen der Datei, und die Platzhalter-Funde aus 2c liegen
+darin verstreut). Ein Werkzeug brächte über die zwei Befehle hinaus nur eine Liste
+„abgeleitetes Dokument ↔ Vorlage“ mit eigenem Pflegeaufwand; ein Gate darauf
+prüfte Form statt Wahrheit. Festgeschrieben in `harness/targets/pin-stale.md`,
+Unterabschnitt *Bump-Ablauf: Vergleich vor dem Löschen der alten Baseline* (drei
+Schritte: Delta, Stichprobe gegen den Bestand, Ergebnis je Dokument), mit Verweis
+aus `harness/sensors/baseline-verify.md` §Grenze Punkt 2. Die Index-Zeile in
+`harness/README.md` bleibt unverändert (ihr Kurzsatz gilt weiter). Kein Gate,
+keine ADR. Der Unterabschnitt berührt die Zitat-Korrektur nicht
+(`BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform` gelesen): Schritt 3
+schreibt Records und `Accepted`-ADRs nicht um. Überschneidung: `pin-stale.md` und
+`baseline-verify.md` stehen auch in §3 von `slice-harness-targets-inhalt-bereinigen`;
+der neue Unterabschnitt ist kein Abschnitt `## Fassung im Gate-Index` und keiner
+der dort genannten Befunde.
+
+**Befunde dieses Laufs** (gemeldet, nicht mitgeändert):
+
+1. **Records rückwirkend umgeschrieben.** `9b360010` setzt sechs Reports zu
+   Slices in `done/` aus der neuen Vorlage neu; `modul-02-harness-bootstrap.md`
+   §Freshness-Audit verlangt für wiederkehrende Vorlagen (Review-Report): „Neue
+   Instanzen folgen der neuen Form, bestehende werden nicht rückwirkend
+   umgeschrieben.“ Inhalt der Findings erhalten (Kennungen gleich), aber 35
+   Felder „nicht erhoben“. Entscheidung beim Auftraggeber (stehen lassen oder
+   `git revert 9b360010`).
+2. **Fremde Kennungen im Wrapper.** `.claude/hooks/span-emit.sh` zitiert
+   `LH-FA-10`, `ADR-0022 Festlegung 5`, `LH-QA-01`, `ADR-0011 Festlegung 6`,
+   `test/span-emit-wrapper.bats` und `harness/tools/full-smoke.sh` — Kennungen
+   und Dateien des Träger-Projekts; in diesem Repo ist `ADR-0022` der
+   Filesystem-Spool, `ADR-0011` Persist-before-ACK, beide Dateien fehlen
+   (`ls`). Die Datei ist emittiert (`53420f6a`), Gegenstand des Träger-Projekts.
+3. **Bestandsabweichungen** der vier Dokumente aus 2c → vorgeschlagener
+   Folge-Slice oben.
+4. **Ruhe-Marker ohne Träger.** Keine Datei unter `.claude/commands/` und kein
+   Sensor nennt das Setzen oder Entfernen des Markers (`git grep -i
+   'Nichts in Arbeit|Ruhe-Marker'` außerhalb der Records: nur der
+   Bedienhinweis der Roadmap); bis `f4112fe9` geschah es je Slice per Commit,
+   seit `d38cf9e7` nicht mehr. Kandidat für das Beobachtungs-Register bei der
+   Closure.
+5. **`welle-<NN>` in fremden Trägern** (Zeile 1 des Suchlaufs, fünf Treffer):
+   Platzhalter der Anker-Form `seit welle-<NN>`, gegen `MR-002` (Namen statt
+   Nummern) eine veraltete Schreibweise; Frist: Closure dieses Slice, der Planner
+   zieht nach oder benennt die Träger mit Adresse (`AGENTS.md` §3.13).
 
 ## 4. Trigger
 
