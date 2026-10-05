@@ -435,7 +435,22 @@ trägt diese Sektion die Zeile `Gegenstand:` mit Kennung oder Grund.
 - **Folge-Slices:** keine.
 - **Risiken aus §6:** je ein Ausgang, siehe §6 — beide entfallen (kein
   Inhaltsverlust in drei Gegenproben; jede Aussage der Befund-Liste gemessen).
-- **Drei Paarungen:** nach dem `git mv` gemessen, siehe Commit danach.
+- **Drei Paarungen:** nach dem `git mv` gemessen — (a) *Anker:* kein Eintrag dieser
+  Notiz trägt das Feld `liegt in` (nichts verkörpert), kein Gegenstand der Paarung;
+  (b) *Folge-Slice:* keiner genannt; (c) *Register:* die vier genannten Verzeichnisse
+  (`BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar`,
+  `BEO-PGC/rollen-auftrag-enger-als-skill`,
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`) existieren, jedes mit nicht
+  leerem `evidence/` (9, 1, 34, 30 Dateien). Ergebnis: getragen. Durch den Move brach
+  kein Verweis (`make docs-check` 0 Befunde; `git grep` nach dem `in-progress`-Pfad
+  dieses Plans: ein Treffer, als Inline-Code in der Lauf-Zeile des
+  Verifikationsberichts, eines Records, kein Link). Der Ruhe-Marker der Roadmap
+  steht wieder, Wortlaut gleich `76d02512` (`diff` Exit 0); `in-progress/` trägt nur
+  `roadmap.md`.
+- **Gates der Closure:** `make docs-check` Exit 0 nach dem Move; `make gates` und
+  `make suchlauf-nachmessen` nach dem letzten Commit stehen im Bericht der Sitzung,
+  nicht in diesem Plan.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
