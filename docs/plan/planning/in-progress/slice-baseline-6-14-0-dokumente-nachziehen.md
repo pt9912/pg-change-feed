@@ -162,7 +162,7 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 - [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0,
       `make suchlauf-nachmessen PLAN=` mit diesem Plan Exit 0 am Endstand.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Verifikation durch den Verifier (Belege, nicht Behauptung); Liefer-Punkt 2
@@ -173,6 +173,10 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       berührt (die Index-Zeile in [`harness/README.md`](../../../../harness/README.md)
       §Sensors nur, wenn sich ihr Kurzsatz ändert); gemeldete Träger fremder Dateien mit der
       Closure nachgezogen (§3 Suchlauf, [`AGENTS.md`](../../../../AGENTS.md) §3.13).
+- [ ] Ruhe-Marker unter *Offene Wellen* in `docs/plan/planning/in-progress/roadmap.md`
+      nach dem `git mv` dieses Slice nach `done/` wieder eingesetzt (Wortlaut aus
+      `d79b7ebd`), sofern `in-progress/` dann keinen Slice trägt; die Suchlauf-Zeile
+      `diff 0 … 'Nichts in Arbeit'` nachgezogen (Review F-3).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
@@ -327,7 +331,7 @@ Befund 4 unten.
 | `.harness/skills/reviewer.md` | entspricht | alle vier Änderungsstellen der Vorlage übernommen (`git show 675246dd`): LOW mit Konventions-Anker, „Kein Stil-Polizist“, „Kein HIGH- oder MEDIUM-Finding ohne Failure-Szenario“, `pfad` als Kurzzitat; Report-Gerüst zeigt auf die vendored Vorlage (`f5b2840a`) |
 | `.harness/skills/closure-note-reviewer.md` | entspricht | `pfad` als Kurzzitat übernommen (`675246dd`) |
 | `.claude/agents/reviewer.md`, `.claude/agents/verifier.md` | entspricht | Report-Gerüst `.harness/baseline/v6.14.0/templates/docs/reviews/review-report.template.md` (`f5b2840a`); die Regeln aus `modul-10-review-harness.md` tragen sie über den Skill, keine Zeile `Datei:Zeile` mehr (`grep -n 'Datei:Zeile'` über die vier Dateien: 0 Treffer) |
-| sechs Reports (`9b360010`) | Gliederung entspricht; **Abweichung mit Beleg** | Überschriften `##`–`####` gegen die Vorlage: die drei Review-Reports ohne Unterschied, die drei Verifikations-Reports mit je ein bis zwei zusätzlichen Abschnitten (`Offen / übernommen`, `Nicht neu gefahren (übernommen)`, `Plan-DoD gegen Belege`, `Offene Punkte`); Tabellenköpfe Findings, Negativbefunde, Summary in allen sechs je 1×; die Finding-Kennungen alt ↔ neu gleich (`git show 9b360010^:` gegen `9b360010:`), bis auf `verifikation-slice-bench-source-impact-absolut.md` (alt ohne Kennungen, neu `V-1`…`V-5`); Felder ohne Quelle stehen als „nicht erhoben“ (`git grep -c -i 'nicht erhoben'`: 9 · 8 · 6 · 6 · 5 · 1). Die Reports gehören zu Slices in `done/`; das Neusetzen schreibt Records rückwirkend um (Befund 1) |
+| sechs Reports (`9b360010`) | Gliederung entspricht; **Abweichung mit Beleg** | Überschriften `##`–`####` gegen die Vorlage: die drei Review-Reports ohne Unterschied, die drei Verifikations-Reports mit je ein bis zwei zusätzlichen Abschnitten (`Offen / übernommen`, `Nicht neu gefahren (übernommen)`, `Plan-DoD gegen Belege`, `Offene Punkte`); Tabellenköpfe Findings, Negativbefunde, Summary in allen sechs je 1×; die Finding-Kennungen alt ↔ neu gleich (`git show 9b360010^:` gegen `9b360010:`), bis auf `verifikation-slice-bench-source-impact-absolut.md` (alt ohne Kennungen, neu `V-1`…`V-5`); Felder ohne Quelle stehen als „nicht erhoben“ (`git grep -c -i 'nicht erhoben'`: 9 · 8 · 6 · 6 · 5 · 1). **Kopfzeile mit falscher Herkunft** (Fixrunde F-4): alle sechs tragen nach `9b360010` `**Skill:** … @ 675246dd` (`git show 9b360010 \| grep -E '^[-+]\*\*Skill'`: drei Zeilen ersetzt, drei neu); `675246dd` ist committet 2026-10-05 07:29:03, der früheste Commit je Report liegt zwischen 2026-10-04 20:43:07 und 2026-10-05 07:17:05 (`git log --format=%ad -- <Report> \| tail -1`) — die Zeile nennt einen Skill-Stand, den keiner der Läufe benutzt hat. Die Reports gehören zu Slices in `done/`; das Neusetzen schreibt Records rückwirkend um (Befund 1) |
 
 **Liefer-Punkt 2b — Audit-Span-Schema.** `.claude/hooks/span-emit.sh` erzeugt
 keinen Span: es ruft `.harness/state/bin/ai-harness-init span-emit` und endet in
@@ -341,7 +345,10 @@ des Träger-Projekts.
 
 **Liefer-Punkt 2c — Bestandsaufnahme** (Überschriften per
 `diff <(grep -E '^#{1,4} ' <Vorlage>) <(grep -E '^#{1,4} ' <Datei>)`,
-Platzhalter per `grep -n -E '<…>|<z\. B\.|<zuerst|<mover>|<Datum>|<Pfad oder URL>'`):
+Platzhalter per
+`grep -n -E '<…>|<z\. B\.|<zuerst|<dann|<bei Bedarf|<mover>|<messung>|<vorschau>|<make-target>|<Pfad oder URL>|<Datum>|<repo-spezifischer|<NNN>|<Pfade zu'`
+über `harness/README.md` und `harness/conventions.md` — das ist das Muster des
+Laufs; die frühere Angabe an dieser Stelle war gekürzt, Fixrunde F-2):
 
 | Dokument | Ergebnis | Beleg |
 |---|---|---|
@@ -367,14 +374,18 @@ lesbar; (b) die Abweichungen dieses Slice fängt das Delta allein **nicht** — 
 Planungs-README-Vorlage ist byte-gleich, die Abweichung lag im Bestand; das
 Regelwerk benennt genau diesen Fall (`modul-02-harness-bootstrap.md`
 §Freshness-Audit, Punkt *Eine Stichprobe gegen den Bestand*); (c) die
-Bestandsprüfung trägt mit zwei Befehlsformen (Überschriften-`diff`,
-Platzhalter-`grep`), die alle vier Abweichungen aus 2c und die der Planungs-README
-fanden; ein voller `diff` eines ausgefüllten Dokuments gegen seine Vorlage meldet
-dagegen beabsichtigten Inhalt (`diff README.template.md harness/README.md | wc -l`:
-175 Zeilen bei 265 Zeilen der Datei, und die Platzhalter-Funde aus 2c liegen
-darin verstreut). Ein Werkzeug brächte über die zwei Befehle hinaus nur eine Liste
-„abgeleitetes Dokument ↔ Vorlage“ mit eigenem Pflegeaufwand; ein Gate darauf
-prüfte Form statt Wahrheit. Festgeschrieben in `harness/targets/pin-stale.md`,
+Bestandsprüfung trägt mit drei Befehlsformen, deren Reichweite verschieden ist:
+Überschriften-`diff` und Platzhalter-`grep` fanden die Abweichungen aus 2c, aber
+**nicht** die der Planungs-README (am Parent `d79b7ebd`: Überschriften-`diff`
+Exit 0, Platzhalter-Muster 0 Treffer); die fand nur der volle `diff` gegen die
+Vorlage (Nachweis unter *Fixrunde*, F-1). Ein voller `diff` meldet bei einem
+inhaltlich gefüllten Dokument dagegen vor allem beabsichtigten Inhalt
+(`diff README.template.md harness/README.md | wc -l`: 175 Zeilen bei 265 Zeilen
+der Datei); deshalb schreibt die Regel ihn nur für Dokumente vor, deren Vorlage im
+Delta steht, und immer für die Planungs-README, deren Zeilen feste Klauseln der
+Vorlage sind (Fixrunde F-1). Ein Werkzeug brächte über die drei Befehle hinaus
+nur eine Liste „abgeleitetes Dokument ↔ Vorlage“ mit eigenem Pflegeaufwand; ein
+Gate darauf prüfte Form statt Wahrheit. Festgeschrieben in `harness/targets/pin-stale.md`,
 Unterabschnitt *Bump-Ablauf: Vergleich vor dem Löschen der alten Baseline* (drei
 Schritte: Delta, Stichprobe gegen den Bestand, Ergebnis je Dokument), mit Verweis
 aus `harness/sensors/baseline-verify.md` §Grenze Punkt 2. Die Index-Zeile in
@@ -392,9 +403,12 @@ der dort genannten Befunde.
    Slices in `done/` aus der neuen Vorlage neu; `modul-02-harness-bootstrap.md`
    §Freshness-Audit verlangt für wiederkehrende Vorlagen (Review-Report): „Neue
    Instanzen folgen der neuen Form, bestehende werden nicht rückwirkend
-   umgeschrieben.“ Inhalt der Findings erhalten (Kennungen gleich), aber 35
-   Felder „nicht erhoben“. Entscheidung beim Auftraggeber (stehen lassen oder
-   `git revert 9b360010`).
+   umgeschrieben.“ Finding-Kennungen erhalten (bis auf die neu vergebenen
+   `V-1`…`V-5` eines Verifikations-Reports), 35 Felder „nicht erhoben“, und die
+   Kopfzeile `**Skill:** … @ 675246dd` nennt einen Skill-Stand, der nach allen
+   sechs Läufen entstand (2a, F-4) — die Lauf-Herkunft ist damit verfälscht.
+   **Die Entscheidung ist beim Auftraggeber offen** (stehen lassen mit benannter
+   Ausnahme oder `git revert 9b360010`); dieser Slice revertiert nichts.
 2. **Fremde Kennungen im Wrapper.** `.claude/hooks/span-emit.sh` zitiert
    `LH-FA-10`, `ADR-0022 Festlegung 5`, `LH-QA-01`, `ADR-0011 Festlegung 6`,
    `test/span-emit-wrapper.bats` und `harness/tools/full-smoke.sh` — Kennungen
@@ -409,10 +423,73 @@ der dort genannten Befunde.
    Bedienhinweis der Roadmap); bis `f4112fe9` geschah es je Slice per Commit,
    seit `d38cf9e7` nicht mehr. Kandidat für das Beobachtungs-Register bei der
    Closure.
-5. **`welle-<NN>` in fremden Trägern** (Zeile 1 des Suchlaufs, fünf Treffer):
-   Platzhalter der Anker-Form `seit welle-<NN>`, gegen `MR-002` (Namen statt
-   Nummern) eine veraltete Schreibweise; Frist: Closure dieses Slice, der Planner
-   zieht nach oder benennt die Träger mit Adresse (`AGENTS.md` §3.13).
+5. **Nummern-Platzhalter `welle-<NN>`/`slice-<NNN>` in fremden Trägern**
+   (gemessen am Parent `d79b7ebd`, Ausnahmen wie im Suchlauf; Fixrunde F-5):
+   - `welle-<NN>`: 5 Zeilen (Zeile 1 des Suchlaufs) — `.claude/commands/close-welle.md`
+     69 und 87, `.claude/commands/implement-slice.md` 352,
+     `.harness/skills/reviewer.md` 62, `AGENTS.md` 299.
+   - `slice-<NNN>` (`git grep -n -F 'slice-<NNN>'`): 13 Zeilen in 9 Dateien —
+     `.claude/commands/close-welle.md` (Zeile 87, dieselbe Zeile wie oben),
+     `.claude/commands/implement-slice.md`, `.d-check.yml`,
+     `.harness/skills/reviewer.md`, `harness/conventions.md`,
+     `harness/conventions/MR-002-slice-welle-kennungen-sind-namen.md` und drei
+     `Accepted`-ADRs (`0083`, `0084`, `0086`, unberührbar).
+   - Form ohne spitze Klammern `welle-NN`/`slice-NNN`
+     (`git grep -n -E 'welle-NN|slice-NNN'`): 10 Zeilen, darunter
+     `.d-check.yml` 242, `harness/sensors/docs-check.md` 72,
+     `test/integration/integration_test.go` 1360,
+     `.claude/commands/implement-slice.md` 242/359/361, `.harness/skills/reviewer.md`
+     65 und zwei `Accepted`-ADRs (`0094`, `0099`).
+
+   Nicht jede Stelle ist eine Anker-Form, die `MR-002` überholt:
+   `.harness/skills/reviewer.md` 62 beschreibt das Chronik-Muster (Slice- oder
+   Wellen-Nummer als Begründung im Produktionscode) und trifft auch die
+   nummerierten Kennungen im Bestandsschutz `slice-001`–`slice-105`;
+   `MR-002` selbst nennt `slice-<NNN>` als frühere Vergabe. Ob eine Stelle
+   nachgezogen wird, ist je Stelle zu urteilen. Gemeldet, nicht geändert; Frist:
+   Closure dieses Slice, der Planner zieht nach oder benennt die Träger mit
+   Adresse (`AGENTS.md` §3.13).
+
+### Fixrunde (Review `review-slice-baseline-6-14-0-dokumente-nachziehen`, `d5f2c858`)
+
+Nachweise am Parent `d79b7ebd` auf Kopien im Scratchpad
+(`git show d79b7ebd:<Datei> > <Kopie>`).
+
+- **F-1 (HIGH) — Regel findet die Abweichung der Planungs-README nicht.** Die
+  Regel in `harness/targets/pin-stale.md` (Schritt 2) verlangt jetzt den vollen
+  `diff` gegen die versions-normalisierte Vorlage, jede Abweichung beurteilt, für
+  jedes Dokument, dessen Vorlage im Delta steht oder von einer Regel des Deltas
+  berührt ist, und **immer** für `docs/plan/planning/README.md`; die Rotation ist
+  gestrichen. Die Begründung in *Liefer-Punkt 3* ist berichtigt (Überschriften und
+  Platzhalter fanden die Planungs-README nicht). **Nachweis:**
+  `sed 's/v6\.14\.0/vX/g'` auf Vorlage und Kopie, dann
+  `diff <Vorlage> <Kopie>`: Exit 1, 20 Zeilen, 4 Abschnitte (`3,7d2` Hinweis-Block,
+  `24c19` Zeile `done/`, `37c32` und `46,47c41,42` je `welle-<NN>-results`);
+  `grep -c -F 'Gegenstand an einen anderen Slice übergegangen'` auf die
+  Diff-Ausgabe: 1, `grep -c -F 'welle-<NN>-results'`: 2 — beide Abweichungen
+  gefunden. Gegenprobe der zwei anderen Formen an derselben Kopie:
+  Überschriften-`diff` Exit 0, Muster aus F-2 0 Treffer.
+- **F-2 (HIGH) — Platzhalter-Muster der Regel enger als gemessen.** Die Regel
+  trägt jetzt genau das Muster des Laufs (`<…>|<z\. B\.|<zuerst|<dann|<bei
+  Bedarf|<mover>|<messung>|<vorschau>|<make-target>|<Pfad oder URL>|<Datum>|<repo-spezifischer|<NNN>|<Pfade
+  zu`) und zusätzlich die Platzhalter der Vorlage selbst
+  (`grep -n -F -f <(grep -o -E '<[^<>]+>' <Vorlage> | sort -u)`); 2c nennt das
+  Muster jetzt vollständig. **Nachweis** am Parent: das Muster trifft
+  `harness/README.md` 14 Zeilen und `harness/conventions.md` 11 Zeilen, darunter
+  die vier Stellen `conventions.md` 56 (`<Pfad oder URL>`), 86 (`<Datum>`),
+  `harness/README.md` 125 (`` `<make-target>` ``) und 263 (`<zuerst — …>`). Die
+  Vorlagen-Form allein trifft 125 nicht (die Vorlage trägt dort `make fullbuild`),
+  deshalb stehen beide Formen in der Regel.
+- **F-3 (LOW) — Ruhe-Marker als Closure-Pflicht.** Eigener Closure-Punkt in §2
+  und Risiko in §6.
+- **F-4 (LOW) — Kopfzeile der Reports.** In 2a als Abweichung mit Beleg
+  aufgenommen; Befund 1 nennt sie und hält die Entscheidung beim Auftraggeber
+  offen. Nichts revertiert.
+- **F-5 (LOW) — Befund 5 unvollständig.** Ergänzt um `slice-<NNN>` (13 Zeilen,
+  9 Dateien) und die Form `welle-NN`/`slice-NNN` (10 Zeilen); die Aussage zu
+  `.harness/skills/reviewer.md` 62 ist berichtigt. Nur gemeldet.
+- **F-6 (INFO) — Grenze der Stichprobe.** Die Regel nennt sie in einem Satz:
+  ohne Bump trägt die Stichprobe weiter der Drift-Audit nach `AGENTS.md` §1.
 
 ## 4. Trigger
 
@@ -478,6 +555,11 @@ dasteht.
 - **Der Bestandsabgleich in Liefer-Punkt 2c findet mehr, als der Slice trägt.**
   Gegenmaßnahme: nur Bestandsaufnahme, Abweichungen als benannte Folge-Slices
   (§1). — **Ausgang:** offen bis zur Closure (weiter offen: → Folge-Slice in `open/`).
+- **Der Ruhe-Marker bleibt nach der Closure weg.** Dieser Slice hat ihn entfernt,
+  weil `in-progress/` ihn trägt; kein Command und kein Sensor setzt ihn zurück
+  (Befund 4), und genau so stand er seit `d38cf9e7` falsch. Gegenmaßnahme:
+  eigener Closure-Punkt in §2 (Review F-3). — **Ausgang:** offen bis zur Closure
+  (entfallen: Marker nach dem `git mv` gesetzt, Suchlauf-Zeile nachgezogen).
 
 ## 7. Closure-Notiz
 
