@@ -5,6 +5,9 @@
 # Schritts setzt den Exit auf 1, der Lauf geht bis zum Ende weiter.
 set -u
 
+# NEU_VERSION und REGISTRY_VERSION setzt das Gast-Image (Dockerfile, ENV).
+: "${NEU_VERSION:?}" "${REGISTRY_VERSION:?}"
+
 BIN=/kompat/bin
 rot=0
 
@@ -38,22 +41,31 @@ lauf_scheitert() {
 # A1: Gast gegen das veröffentlichte 0.5.0 gebaut und gegen 0.5.0 gelaufen.
 lauf_ok A1 "$BIN/alt05"
 
-# A2: dieselben Gast-Binärdateien, nur die Bibliotheksdatei ist die aus 0.6.0.
+# A2: dieselben Gast-Binärdateien, nur die Bibliotheksdatei ist die neue
+# (NEU_VERSION). Trägt /neu das Artefakt dieser Version (Modus dist), stammt die
+# Datei aus ihm; fehlt die daraus gewonnene Datei, ist A2 rot und der Gast
+# läuft nicht.
 rm -rf /tmp/a2
 cp -r "$BIN/alt05" /tmp/a2
+neu_nupkg="/neu/PgChangeFeed.Client.$NEU_VERSION.nupkg"
 neu_dll="$BIN/alt06/PgChangeFeed.Client.dll"
-herkunft=Registry
-if [ -f /kompat/lib-dist/PgChangeFeed.Client.dll ]; then
+herkunft="Registry $REGISTRY_VERSION"
+if [ -f "$neu_nupkg" ]; then
   neu_dll=/kompat/lib-dist/PgChangeFeed.Client.dll
-  herkunft="Artefakt $(basename "$(ls /neu/*.nupkg | head -n 1)")"
+  herkunft="Artefakt $(basename "$neu_nupkg")"
 fi
-cp "$neu_dll" /tmp/a2/PgChangeFeed.Client.dll
-echo "KOMPAT csharp A2: Bibliothek 0.6.0 ($herkunft) $(kurz /tmp/a2/PgChangeFeed.Client.dll) ersetzt 0.5.0 $(kurz "$BIN/alt05/PgChangeFeed.Client.dll")"
-lauf_ok A2 /tmp/a2
+if [ -f "$neu_dll" ]; then
+  cp "$neu_dll" /tmp/a2/PgChangeFeed.Client.dll
+  echo "KOMPAT csharp A2: Bibliothek $NEU_VERSION ($herkunft) $(kurz /tmp/a2/PgChangeFeed.Client.dll) ersetzt 0.5.0 $(kurz "$BIN/alt05/PgChangeFeed.Client.dll")"
+  lauf_ok A2 /tmp/a2
+else
+  echo "KOMPAT csharp A2: ROT — Bibliotheksdatei $neu_dll fehlt ($herkunft)"
+  rot=1
+fi
 
-# A3: Gegenrichtung. Grundlage: der gegen 0.6.0 gebaute Gast läuft gegen 0.6.0;
-# danach mit der Bibliotheksdatei 0.5.0 — er muss mit einer Bindungsausnahme
-# scheitern. Die Laufzeit weist die ältere Assembly-Version vor dem Aufruf ab
+# A3: Gegenrichtung. Grundlage: der gegen die veröffentlichte Bibliothek
+# REGISTRY_VERSION gebaute Gast läuft gegen sie; danach mit der
+# Bibliotheksdatei 0.5.0 — er muss mit einer Bindungsausnahme scheitern. Die Laufzeit weist die ältere Assembly-Version vor dem Aufruf ab
 # (FileNotFoundException); eine fehlende Signatur bei gleicher Assembly-Version
 # zeigt erst die Mutationsprobe A4 (MissingMethodException).
 lauf_ok A3-Grundlage "$BIN/neu06"
@@ -66,15 +78,15 @@ lauf_scheitert A3 /tmp/a3 'MissingMethodException|FileNotFoundException|FileLoad
 # gegen beide Versionen übersetzt, die null-Matrix je Version.
 nuspec() { printf '%s/.nuget/packages/pgchangefeed.client/%s/pgchangefeed.client.nuspec' "$HOME" "$1"; }
 deps() { grep -o '<dependency [^>]*>' "$(nuspec "$1")" | sort; }
-if [ "$(deps 0.5.0)" = "$(deps 0.6.0)" ]; then
-  echo "KOMPAT csharp A5 abhaengigkeiten: 0.5.0 und 0.6.0 gleich ($(deps 0.5.0 | wc -l) Zeilen)"
+if [ "$(deps 0.5.0)" = "$(deps "$REGISTRY_VERSION")" ]; then
+  echo "KOMPAT csharp A5 abhaengigkeiten: 0.5.0 und $REGISTRY_VERSION gleich ($(deps 0.5.0 | wc -l) Zeilen)"
 else
-  echo "KOMPAT csharp A5 abhaengigkeiten: ROT — 0.5.0 und 0.6.0 verschieden"
-  diff <(deps 0.5.0) <(deps 0.6.0)
+  echo "KOMPAT csharp A5 abhaengigkeiten: ROT — 0.5.0 und $REGISTRY_VERSION verschieden"
+  diff <(deps 0.5.0) <(deps "$REGISTRY_VERSION")
   rot=1
 fi
 
-for v in 0.5.0 0.6.0; do
+for v in 0.5.0 "$REGISTRY_VERSION"; do
   rm -rf "/tmp/a5-$v"
   cp -r /kompat/src/Gast "/tmp/a5-$v"
   if dotnet build "/tmp/a5-$v/Gast.csproj" -c Release -p:PgcfVersion="$v" -p:GastQuelle=alt -o "/tmp/a5-$v/out" >"/tmp/a5-$v.log" 2>&1; then
@@ -87,7 +99,7 @@ for v in 0.5.0 0.6.0; do
 done
 
 fall_zeilen=$(grep -n '// CASE ' /kompat/src/NullMatrix/NullMatrix.cs | awk -F: '{ name = $0; sub(/.*\/\/ CASE /, "", name); print $1 " " name }')
-for v in 0.5.0 0.6.0; do
+for v in 0.5.0 "$REGISTRY_VERSION"; do
   rm -rf "/tmp/nm-$v"
   cp -r /kompat/src/NullMatrix "/tmp/nm-$v"
   dotnet build "/tmp/nm-$v/NullMatrix.csproj" -c Release -p:PgcfVersion="$v" >"/tmp/nm-$v.log" 2>&1
@@ -100,7 +112,7 @@ done
 declare -A ergebnis
 while read -r zeile fall; do
   [ -n "$fall" ] || continue
-  for v in 0.5.0 0.6.0; do
+  for v in 0.5.0 "$REGISTRY_VERSION"; do
     code=$(grep -oE "NullMatrix\.cs\(${zeile},[0-9]+\): error CS[0-9]+" "/tmp/nm-$v.log" | head -n 1 | grep -oE 'CS[0-9]+' || true)
     ergebnis[$v]=${code:-ok}
   done
@@ -109,11 +121,11 @@ while read -r zeile fall; do
     erwartet_neu=CS0121
   fi
   urteil=wie-erwartet
-  if [ "${ergebnis[0.5.0]}" != ok ] || [ "${ergebnis[0.6.0]}" != "$erwartet_neu" ]; then
+  if [ "${ergebnis[0.5.0]}" != ok ] || [ "${ergebnis[$REGISTRY_VERSION]}" != "$erwartet_neu" ]; then
     urteil=ROT
     rot=1
   fi
-  echo "KOMPAT csharp A5 null-matrix $fall: 0.5.0 ${ergebnis[0.5.0]}, 0.6.0 ${ergebnis[0.6.0]} (erwartet 0.5.0 ok, 0.6.0 $erwartet_neu) $urteil"
+  echo "KOMPAT csharp A5 null-matrix $fall: 0.5.0 ${ergebnis[0.5.0]}, $REGISTRY_VERSION ${ergebnis[$REGISTRY_VERSION]} (erwartet 0.5.0 ok, $REGISTRY_VERSION $erwartet_neu) $urteil"
 done < <(printf '%s\n' "$fall_zeilen")
 
 exit "$rot"

@@ -5,9 +5,9 @@ import io.github.pt9912.pgchangefeed.http.PgChangeFeedBadRequestException
 import io.grpc.Status
 import kotlin.system.exitProcess
 
-// Gegenrichtung: ein gegen 0.6.0 übersetzter Aufrufer nutzt die Konstruktoren mit
-// Meldungscode und liest die Eigenschaft. Unter der Bibliothek 0.5.0 gibt es
-// diese Mitglieder nicht.
+// Gegenrichtung: ein gegen die Bibliothek mit Meldungscode übersetzter Aufrufer
+// nutzt die Konstruktoren mit Meldungscode und liest die Eigenschaft. Unter der
+// Bibliothek 0.5.0 gibt es diese Mitglieder nicht.
 private var aufrufe = 0
 
 private fun pruefe(ok: Boolean, was: String) {

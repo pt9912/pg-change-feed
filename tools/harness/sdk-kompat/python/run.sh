@@ -5,6 +5,9 @@
 # Erwartung des Schritts setzt den Exit auf 1, der Lauf geht bis zum Ende weiter.
 set -u
 
+# NEU_VERSION setzt das Gast-Image (Dockerfile, ENV).
+: "${NEU_VERSION:?}"
+
 rot=0
 
 # lauf_ok <Schritt> <Skript>: das Gast-Programm endet mit Exit 0 und der Zeile "N Aufrufe ok".
@@ -47,17 +50,27 @@ lauf_scheitert A3 /kompat/gast_neu.py TypeError
 # A5 (Grundlinie): die Signaturen unter 0.5.0.
 python /kompat/quelle.py || rot=1
 
-# A2: dieselbe Umgebung, die Bibliothek wird gegen 0.6.0 ausgetauscht, derselbe Gast.
-pip install -q --no-index --find-links /wheels/06 pgchangefeed==0.6.0
+# A2: dieselbe Umgebung, die Bibliothek wird gegen NEU_VERSION ausgetauscht,
+# derselbe Gast. Scheitert der Austausch oder ist danach eine andere Version
+# installiert, ist A2 rot und der Gast läuft nicht.
 herkunft=Registry
-if ls /neu/pgchangefeed-*.whl >/dev/null 2>&1; then
-  herkunft="Artefakt $(basename "$(ls /neu/pgchangefeed-*.whl | head -n 1)")"
+rad="/neu/pgchangefeed-$NEU_VERSION-py3-none-any.whl"
+if [ -f "$rad" ]; then
+  herkunft="Artefakt $(basename "$rad")"
 fi
-echo "KOMPAT python A2: Bibliothek pgchangefeed $(pip show pgchangefeed | sed -n 's/^Version: //p') ($herkunft) ersetzt 0.5.0"
-lauf_ok A2 /kompat/gast_alt.py
+pip_rc=0
+pip install -q --no-index --find-links /wheels/06 "pgchangefeed==$NEU_VERSION" || pip_rc=$?
+installiert=$(pip show pgchangefeed | sed -n 's/^Version: //p')
+if [ "$pip_rc" -ne 0 ] || [ "$installiert" != "$NEU_VERSION" ]; then
+  echo "KOMPAT python A2: ROT — Austausch auf $NEU_VERSION gescheitert (pip Exit $pip_rc, installiert $installiert, $herkunft)"
+  rot=1
+else
+  echo "KOMPAT python A2: Bibliothek pgchangefeed $installiert ($herkunft) ersetzt 0.5.0"
+  lauf_ok A2 /kompat/gast_alt.py
+fi
 lauf_ok A3-Grundlage /kompat/gast_neu.py
 
-# A5: Quellseite unter 0.6.0 — die 0.5.x-Form bindet weiter, ein drittes Positional nicht.
+# A5: Quellseite unter der neuen Bibliothek — die 0.5.x-Form bindet weiter, ein drittes Positional nicht.
 python /kompat/quelle.py || rot=1
 
 exit "$rot"

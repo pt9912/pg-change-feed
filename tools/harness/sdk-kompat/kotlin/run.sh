@@ -5,9 +5,12 @@
 # Erwartung des Schritts setzt den Exit auf 1, der Lauf geht bis zum Ende weiter.
 set -u
 
+# NEU_VERSION und REGISTRY_VERSION setzt das Gast-Image (Dockerfile, ENV).
+: "${NEU_VERSION:?}" "${REGISTRY_VERSION:?}"
+
 BIN=/kompat/bin
 LIB05=$BIN/alt05/lib/pgchangefeed-kotlin-0.5.0.jar
-LIB06=$BIN/alt06/lib/pgchangefeed-kotlin-0.6.0.jar
+LIB06=$BIN/alt06/lib/pgchangefeed-kotlin-$REGISTRY_VERSION.jar
 GAST=kompat.GastKt
 rot=0
 
@@ -48,21 +51,25 @@ done
 # A1: Gast gegen das veröffentlichte 0.5.0 gebaut und gegen 0.5.0 gelaufen.
 lauf_ok A1 "$BIN/alt05/klassen:$BIN/alt05/lib/*"
 
-# A2: dieselben Gast-Klassen, Klassenpfad mit der Laufzeit-Menge 0.6.0; liegt in
-# /neu ein Jar (Modus dist), ersetzt es das veröffentlichte Jar 0.6.0.
+# A2: dieselben Gast-Klassen, Klassenpfad mit der veröffentlichten Laufzeit-Menge;
+# liegt in /neu das Jar der neuen Version (Modus dist), tritt es an die Stelle
+# des veröffentlichten Jars.
 rm -rf /tmp/a2lib
 cp -r "$BIN/alt06/lib" /tmp/a2lib
-neu_jar=$(ls /neu/pgchangefeed-kotlin-*.jar 2>/dev/null | grep -v -e '-sources\.jar$' | head -n 1 || true)
-herkunft=Registry
-if [ -n "$neu_jar" ]; then
-  cp "$neu_jar" /tmp/a2lib/pgchangefeed-kotlin-0.6.0.jar
+neu_jar=/tmp/a2lib/pgchangefeed-kotlin-$REGISTRY_VERSION.jar
+herkunft="Registry $REGISTRY_VERSION"
+if [ -f "/neu/pgchangefeed-kotlin-$NEU_VERSION.jar" ]; then
+  rm "$neu_jar"
+  neu_jar=/tmp/a2lib/pgchangefeed-kotlin-$NEU_VERSION.jar
+  cp "/neu/pgchangefeed-kotlin-$NEU_VERSION.jar" "$neu_jar"
   herkunft="Artefakt $(basename "$neu_jar")"
 fi
-echo "KOMPAT kotlin A2: Bibliothek 0.6.0 ($herkunft) $(kurz /tmp/a2lib/pgchangefeed-kotlin-0.6.0.jar) ersetzt 0.5.0 $(kurz "$LIB05")"
+echo "KOMPAT kotlin A2: Bibliothek $NEU_VERSION ($herkunft) $(kurz "$neu_jar") ersetzt 0.5.0 $(kurz "$LIB05")"
 lauf_ok A2 "$BIN/alt05/klassen:/tmp/a2lib/*"
 
-# A3: Gegenrichtung. Grundlage: der gegen 0.6.0 übersetzte Gast läuft gegen 0.6.0;
-# danach mit dem Klassenpfad 0.5.0 — er muss mit NoSuchMethodError scheitern.
+# A3: Gegenrichtung. Grundlage: der gegen die veröffentlichte Bibliothek
+# REGISTRY_VERSION übersetzte Gast läuft gegen sie; danach mit dem Klassenpfad
+# 0.5.0 — er muss mit NoSuchMethodError scheitern.
 lauf_ok A3-Grundlage "$BIN/neu06/klassen:$BIN/neu06/lib/*"
 lauf_scheitert A3 "$BIN/neu06/klassen:$BIN/alt05/lib/*" NoSuchMethodError
 
@@ -70,12 +77,12 @@ lauf_scheitert A3 "$BIN/neu06/klassen:$BIN/alt05/lib/*" NoSuchMethodError
 d05=$(ls "$BIN/alt05/lib" | grep -v '^pgchangefeed-kotlin-' || true)
 d06=$(ls "$BIN/alt06/lib" | grep -v '^pgchangefeed-kotlin-' || true)
 if [ "$d05" = "$d06" ]; then
-  echo "KOMPAT kotlin A5 abhaengigkeiten: 0.5.0 und 0.6.0 gleich ($(printf '%s\n' "$d05" | wc -l) Jars)"
+  echo "KOMPAT kotlin A5 abhaengigkeiten: 0.5.0 und $REGISTRY_VERSION gleich ($(printf '%s\n' "$d05" | wc -l) Jars)"
 else
   echo "KOMPAT kotlin A5 abhaengigkeiten: verschieden"
   diff <(printf '%s\n' "$d05") <(printf '%s\n' "$d06")
 fi
-for v in 0.5.0 0.6.0; do
+for v in 0.5.0 "$REGISTRY_VERSION"; do
   if ./gradlew --no-daemon -q --rerun-tasks -PpgcfVersion="$v" -PgastQuelle=alt compileKotlin >"/tmp/a5-$v.log" 2>&1; then
     echo "KOMPAT kotlin A5 quelle $v: Gast-Quelltext (0.5.x-Formen, erschöpfendes when) übersetzt"
   else

@@ -9,6 +9,14 @@ ARG BASE=pg-change-feed:sdk-kompat-base-kotlin
 FROM ${BASE}
 WORKDIR /kompat
 
+# Versionen, vom Runner übergeben (tools/harness/run-sdk-kompat-tests.sh): die
+# neue Bibliothek (Modus dist: aus der Version-Datei des SDK) und die
+# veröffentlichte, gegen die A3 und A5 übersetzen. Ohne Wert bricht der Bau ab.
+ARG NEU_VERSION
+ARG REGISTRY_VERSION
+ENV NEU_VERSION=${NEU_VERSION} REGISTRY_VERSION=${REGISTRY_VERSION}
+RUN test -n "$NEU_VERSION" && test -n "$REGISTRY_VERSION"
+
 # Das benannte Verzeichnis `neu` trägt die Artefakte von make sdk-pack-kotlin
 # (Modus dist) oder ist leer (Modus registry); run.sh liest es beim Lauf.
 COPY --from=neu / /neu
@@ -18,8 +26,8 @@ COPY src src
 
 # Drei Übersetzungen des Gast-Programms mit je der aufgelösten Laufzeit-Menge:
 #   alt05  Quelltext alt gegen die veröffentlichte Bibliothek 0.5.0 (A1; Grundlage des Austauschs A2)
-#   alt06  Quelltext alt gegen 0.6.0 (A5; liefert die Laufzeit-Menge 0.6.0)
-#   neu06  Quelltext neu (Formen mit Meldungscode) gegen 0.6.0 (A3)
+#   alt06  Quelltext alt gegen REGISTRY_VERSION (A5; liefert die veröffentlichte Laufzeit-Menge)
+#   neu06  Quelltext neu (Formen mit Meldungscode) gegen REGISTRY_VERSION (A3)
 RUN set -eu; \
     bauen() { \
         ./gradlew --no-daemon -q -PpgcfVersion="$2" -PgastQuelle="$3" clean compileKotlin kopiereLaufzeit; \
@@ -28,8 +36,8 @@ RUN set -eu; \
         cp -r build/laufzeit "bin/$1/lib"; \
     }; \
     bauen alt05 0.5.0 alt; \
-    bauen alt06 0.6.0 alt; \
-    bauen neu06 0.6.0 neu
+    bauen alt06 "$REGISTRY_VERSION" alt; \
+    bauen neu06 "$REGISTRY_VERSION" neu
 
 COPY run.sh /kompat/run.sh
 ENTRYPOINT ["/bin/bash", "/kompat/run.sh"]

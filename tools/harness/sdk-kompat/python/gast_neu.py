@@ -1,5 +1,5 @@
-"""Gegenrichtung der Python-Kompatibilitätsmessung: ein gegen 0.6.0 geschriebener
-Aufrufer übergibt den Meldungscode als Schlüsselwort-Argument und liest die
+"""Gegenrichtung der Python-Kompatibilitätsmessung: ein gegen die Bibliothek mit
+Meldungscode geschriebener Aufrufer übergibt den Meldungscode als Schlüsselwort-Argument und liest die
 Eigenschaft. Unter der Bibliothek 0.5.0 nimmt der Konstruktor das Schlüsselwort
 nicht an."""
 

@@ -161,17 +161,19 @@ test-sdk-csharp-integration: ## C#-SDK-Realserver-Integrationstest (compose + in
 test-sdk-python-integration: ## Python-SDK-Realserver-Integrationstest (compose + integration-Stufe, achtzehn Phasen — vier ohne Regel, eine mit Fehlercode, vier mit rename_column-Regel, vier mit Routing-Regeln, eine mit Tabellenfilter, vier über TLS; Werkzeug, kein Gate; ADR-0110)
 	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" GO_MODCACHE_VOLUME="$(GO_MODCACHE_VOLUME)" bash tools/harness/run-sdk-python-integration-tests.sh
 
-# `test-sdk-kompat` misst die Kompatibilität der veröffentlichten SDK-Packages
-# 0.6.0 gegenüber 0.5.0 (ADR-0145): je Sprache ein Gast-Programm unter
-# tools/harness/sdk-kompat/, das jede Konstruktor- und Aufrufform der
-# 0.5.x-Fehlertypen benutzt — gebaut und gelaufen gegen 0.5.0 (A1), dieselben
-# Binärdateien gegen 0.6.0 (A2), die Gegenrichtung (A3) und die Quellseite
-# samt null-Matrix (A5). Docker-only; Basis ist die Stufe `build` des
+# `test-sdk-kompat` misst die Kompatibilität der SDK-Packages gegenüber 0.5.0
+# (ADR-0145): je Sprache ein Gast-Programm unter tools/harness/sdk-kompat/, das
+# jede Konstruktor- und Aufrufform der 0.5.x-Fehlertypen benutzt — gebaut und
+# gelaufen gegen 0.5.0 (A1), dieselben Binärdateien gegen die neue Bibliothek
+# (A2; Standard: die Artefakte von `make sdk-pack-*` in der Version aus der
+# Version-Datei des SDK), die Gegenrichtung (A3) und die Quellseite samt
+# null-Matrix (A5). Docker-only; Basis ist die Stufe `build` des
 # SDK-Dockerfiles. Kein Gate (Paketbezug braucht Netz, `make gates` bleibt
-# netzlos); SDK_KOMPAT_NEU=registry misst die veröffentlichten Pakete statt
-# der Artefakte von `make sdk-pack-*`. Vertrag: harness/targets/sdk-kompat.md.
+# netzlos); SDK_KOMPAT_NEU=registry misst die veröffentlichten Pakete der
+# Version REGISTRY_VERSION aus tools/harness/run-sdk-kompat-tests.sh.
+# Vertrag: harness/targets/sdk-kompat.md.
 .PHONY: test-sdk-kompat
-test-sdk-kompat: ## SDK 0.6.0 gegen 0.5.0: Gast-Programme je Sprache, Binär- und Quellkompatibilität der Fehlertypen (Werkzeug, kein Gate; ADR-0145)
+test-sdk-kompat: ## SDK des Arbeitsstands gegen 0.5.0: Gast-Programme je Sprache, Binär- und Quellkompatibilität der Fehlertypen (Werkzeug, kein Gate; ADR-0145)
 	@bash tools/harness/run-sdk-kompat-tests.sh
 
 # `test-sdk-altserver` fährt die drei Realserver-Fehlerfälle der 0.6.0-SDKs

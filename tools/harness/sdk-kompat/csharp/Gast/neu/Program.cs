@@ -4,9 +4,9 @@ using PgChangeFeed.Client.Http;
 
 namespace Kompat.Gast;
 
-// Gegenrichtung: ein gegen 0.6.0 gebauter Aufrufer nutzt die Konstruktoren mit
-// Meldungscode und liest die Eigenschaft. Unter der Bibliothek 0.5.0 gibt es
-// diese Mitglieder nicht.
+// Gegenrichtung: ein gegen die Bibliothek mit Meldungscode gebauter Aufrufer
+// nutzt die Konstruktoren mit Meldungscode und liest die Eigenschaft. Unter der
+// Bibliothek 0.5.0 gibt es diese Mitglieder nicht.
 internal static class Program
 {
     private static int aufrufe;
