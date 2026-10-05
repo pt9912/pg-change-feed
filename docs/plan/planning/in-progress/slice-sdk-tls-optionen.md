@@ -92,15 +92,16 @@ je SDK belegt es gegen ein Zertifikat, das nicht im Systemspeicher steht.
       Punkt „Gates“.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein Self-Review
       (`docs/reviews/review-slice-sdk-tls-optionen-fixrunde.md`, Folgelauf zu
-      `docs/reviews/review-slice-sdk-tls-optionen.md`).
+      `docs/reviews/review-slice-sdk-tls-optionen.md`); Verifikation liegt vor
+      (`docs/reviews/verifikation-slice-sdk-tls-optionen.md`, 0 HIGH, 0 MEDIUM).
 - [x] Doku-Update: README der drei Packages (Englisch, Abschnitt zu TLS; die
       Ist-Aussagen „plaintext gRPC“ in Docstrings und README werden nachgezogen),
       Benutzerhandbuch nur, falls es die SDK-Nutzung beschreibt (es tut es an einer
       Stelle: Abschnitt „Schnittstellen mit TLS verschlüsseln“, Version 1.100, mit
       Historienzeile). Suchlauf: §3.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register fortgeschrieben oder „keine Beobachtung“ in §7.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register fortgeschrieben oder „keine Beobachtung“ in §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
 
 (Liefer-Punkte: drei — je SDK Option, Tests, Realserver-Phase.)
@@ -360,23 +361,101 @@ Closure-Notiz mit Lerneintrag geschrieben.
 ## 6. Risiken und offene Punkte
 
 - Die JDK-/Java-HTTP-Schicht und das Python-SSE brauchen jeweils einen eigenen
-  Weg zum Trust-Store — **Ausgang:** weiter offen bis zur Umsetzung; nicht lösbar
-  heißt Rückführung (§4).
+  Weg zum Trust-Store — **Ausgang:** entfallen: alle vier Flächen (HTTP, SSE,
+  gRPC-Stream, gRPC-Verwaltung) arbeiten in allen drei Sprachen mit dem Anker, im
+  Unit-Test und am Realserver (§3, drei Runner Exit 0); der Rückführungs-Trigger
+  aus §4 trat nicht ein.
 - Die Realserver-Runner liegen unter `tools/harness`, das ein anderer Zug gerade
-  ändert — **Ausgang:** weiter offen; entfällt, wenn der Slice nach dessen
-  Abschluss startet.
+  ändert — **Ausgang:** entfallen: auf `main` liegt zwischen dem Parent `267a58b6`
+  und dem Stand der Closure keine Merge-Verknüpfung (`git log --merges`: 0), und
+  die drei Runner samt `harness/mk/sdk.mk` hat im Bereich genau ein Commit berührt
+  (`d0e781b2`, dieser Slice); es gab keinen Konflikt.
 - Der Suchlauf trifft Symbolnamen, nicht verschobene Zahlen (`AGENTS.md` §3.13
-  Grenze) — **Ausgang:** Lese-Handlung des Reviewers.
+  Grenze) — **Ausgang:** entfallen: der Reviewer hat den Suchlauf nachgemessen und
+  die Träger gelesen, ohne Befund (Review und Fixrunde, „Suchlauf und
+  §3.13-Träger“).
+- **Kompatibilität (nachgetragen aus dem Review F-4):** Die Verhaltensänderungen
+  (C#-Mapping von `Internal` auf `UnexpectedStatus` bei einem TLS-Fehler, Kotlin
+  `https` → TLS) sind von `make test-sdk-kompat` nicht gemessen, und das Ziel
+  endet im Standardmodus rot, weil es `0.6.0` fest trägt (dist trägt `0.6.1`) —
+  **Ausgang:** weiter offen: → `slice-sdk-kompat-version-parameter` (Datei in
+  `open/`, Meldung mit Frist nach `AGENTS.md` §3.13: die Closure dieses Slice) für
+  die Werkzeug-Drift; die Nicht-Deckung des Mappings ist benannte Grenze im Eintrag
+  `BEO-PGC/sdk-tls-zusage-hergeleitet-ohne-test` (Punkt 5), belegt durch den
+  Unit-Fall, nicht durch die Messung.
+- **TLS-Zusagen ohne Test (nachgetragen aus Review N-1, Verifikation V-1 bis
+  V-3):** Systemanker-Ausschluss nur in Python HTTP/SSE gebunden; „übergebener
+  Client behält seine Einstellung“ (V-1) ohne Test; Ausstellerfälle nur als Unit
+  (V-3); Anker plus nicht-TLS-Adresse ohne Norm (V-2) — **Ausgang:** weiter
+  offen als benannte Grenze: → `BEO-PGC/sdk-tls-zusage-hergeleitet-ohne-test` im
+  Register. V-1 und V-3 sind verifizierbar und bleiben ohne Folge-Slice
+  *aufgeschoben* (Begründung: LOW bzw. INFO; die README-Aussagen tragen den
+  Vermerk *hergeleitet*, kein Betreiber-Pfad hängt daran, und eine
+  `certgen`-Erweiterung um ein CA-ausgestelltes Zertifikat ist eigener Umfang);
+  der Register-Eintrag ist die Adresse, bis er bei der Planung eines Folge-Slice an
+  den SDK-Packages gelesen wird.
+- **README-Überschrift `0.7.0` gegen Package `0.6.1` (Review N-2):** —
+  **Ausgang:** weiter offen: → `BEO-PGC/sdk-tls-zusage-hergeleitet-ohne-test`
+  (Punkt 6); Auflösung im Release-Zug, der eine neue Freigabe des Auftraggebers
+  braucht.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register:** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
-- **Drei Paarungen:** —
+- **Was hat funktioniert:** Der Schnitt nach Lieferwert trug: eine Option mit einem Inhalt
+  (Pfad einer PEM-Datei), vier Flächen je Sprache, ein Realserver-Lauf je Sprache mit
+  drei Verweigerungen (ohne Anker, fremder Anker, Servername außerhalb des Zertifikats). Die
+  Mutationsproben liefen an Kopien und nannten Zusage, mutierte Eingabe und gesehenes Rot;
+  sie fanden zudem, was der Entwurf nicht kannte (der Trust-Manager der JDK prüft den
+  Gültigkeitszeitraum eines als Anker eingehängten Server-Zertifikats nicht). Review
+  (`docs/reviews/review-slice-sdk-tls-optionen.md`, Fixrunde
+  `docs/reviews/review-slice-sdk-tls-optionen-fixrunde.md`) und Verifikation
+  (`docs/reviews/verifikation-slice-sdk-tls-optionen.md`: 0 HIGH, 0 MEDIUM, V-1 LOW, V-2 und
+  V-3 INFO) trennten Befund von Behebung; F-2, F-3, F-4, F-6 sind in der Fixrunde
+  behandelt.
+- **Was ging anders als geplant:** (1) Die Package-Versionen blieben auf `0.6.1` (Auftrag des
+  Auftraggebers), die READMEs tragen die Überschrift `0.7.0` für die nächste Minor-Version.
+  (2) F-2: ein Server-Zertifikat eines Ausstellers als alleiniger Anker scheiterte in C# an
+  `PartialChain`; Fix nur in C# (`TlsTransport.cs`). (3) `make test-sdk-kompat` war im
+  Standardmodus schon vor diesem Slice rot (Werkzeug trägt `0.6.0`, dist `0.6.1`) und deckt
+  das neue C#-Mapping nicht. (4) Review F-1: ein Text-Anhang per `cat >>` an
+  `tools/harness/run-sdk-csharp-integration-tests.sh` (Verfahrensverstoß gegen `AGENTS.md`
+  §3.1; Inhalt gelesen, am Repo nicht verifizierbar).
+- **Steering-Loop-Eintrag:** drei Lernpunkte, keine neue Regel im Text, kein neuer Sensor:
+  (a) *Blatt-als-Anker:* ein Fall für eine Eigenschaft einer Plattform (Server-Zertifikat eines
+  Ausstellers als alleiniger Anker) wird in **allen** Sprachen vor dem Fix gemessen; hier
+  zeigte das Messen, dass nur C# scheiterte und Kotlin und Python bestanden — der Fix blieb
+  auf eine Sprache begrenzt, die anderen zwei bekamen den Fall als Test ohne Änderung.
+  (b) *Eigene Validierungs-Callbacks prüfen den Namen:* wer eine Zertifikatsprüfung selbst
+  schreibt (Callback, Trust-Manager), nimmt den Namensfehler als Eingabe in den Test auf;
+  die Plattform-Prüfung des Namens entfällt mit dem eigenen Callback nicht von selbst, und ein
+  Entfernen der Zeile `endpointIdentificationAlgorithm` blieb grün, weil das JDK sie selbst
+  setzt — eine Mutation ohne Rot ist ein Befund über die Zeile, nicht über den Test.
+  (c) *Review F-3, ehrliche Grenze statt Scheintest:* wo der Wurzelspeicher prozessweit
+  initialisiert ist (C#, Kotlin, Python gRPC), bindet kein Test die Zusage „Systemanker gelten
+  nicht zusätzlich“; sie steht als *hergeleitet* im Plan und im Register statt als Test, der
+  grün bleibt, was auch immer der Code tut. Benannte Spec-Lücke: die TLS-Festlegung im
+  Pflichtenheft schweigt zu „Anker plus nicht-TLS-Adresse“ (V-2); die drei SDKs setzen es
+  gleich um, die Festlegung hat keinen Norm-Anker. Verkörpert wurde mit diesem Slice keine
+  Regel; der Eintrag ist gezählt, nicht verkörpert.
+- **Beobachtungs-Register (`../observations/`):** weitere Beleg-Datei
+  `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel/evidence/slice-sdk-tls-optionen.md`
+  (F-1, zwölfter Beleg; Ausgang `verkörpert` besteht, Ursprung der Angabe *übernommen*; der
+  Verifier fand den Eintrag nicht — sein Titel nennt die Umleitung nicht, die Fassung in
+  `state.md` schon); neu `BEO-PGC/sdk-tls-zusage-hergeleitet-ohne-test/` (1×, mit evidence,
+  Adresse der „weiter offen“-Risiken aus §6); neu `BEO-PGC/report-nicht-aus-baseline-vorlage/`
+  (1×, mit evidence; Planner-Prozess, Herkunft Rückfrage des Auftraggebers). Einträge über der
+  Schwelle ohne zugewiesenen Ausgang: keine.
+- **Folge-Slices:** `slice-sdk-kompat-version-parameter` (`make test-sdk-kompat` liest die
+  Version aus den Version-Dateien der SDKs) — Datei in `open/`. Für V-1 und V-3 kein Folge-Slice:
+  aufgeschoben mit Begründung (§6), Adresse ist der Register-Eintrag.
+- **Risiken aus §6:** je ein Ausgang, siehe §6 — drei entfallen (Trust-Store-Weg, Runner-Zug,
+  Suchlauf durch Lesen des Reviewers), drei weiter offen mit Adresse
+  (`slice-sdk-kompat-version-parameter`, `BEO-PGC/sdk-tls-zusage-hergeleitet-ohne-test`).
+- **Gates der Closure:** `make gates` am Stand mit Closure-Notiz, Register und neuem Slice
+  Exit 0 (Exit direkt gelesen, ohne Pipe; ein erster Lauf endete an einem `matrix`-Befund in
+  der neuen Beobachtung, behoben und wiederholt). Der Lauf nach den Commits der Closure steht
+  im Bericht der Sitzung, nicht in diesem Plan.
+- **Drei Paarungen:** — (nach dem `git mv`)
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
