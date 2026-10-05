@@ -139,3 +139,11 @@ Rot, an Kopien im Scratchpad gefahren:
 Menge der Erprobung: je eine Mutation je Sprache, je einmal gefahren; die
 Übertragung auf die übrigen Blatt-Typen und die gRPC-Hierarchie ist
 *hergeleitet*.
+
+## Fassung im Gate-Index
+
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+
+### `make test-sdk-kompat`
+
+misst die Kompatibilität der veröffentlichten SDK-Packages 0.6.0 gegenüber 0.5.0 (Fehlertypen beider Hierarchien, HTTP und gRPC-Administration, je Sprache C#, Kotlin, Python): ein Gast-Programm unter `tools/harness/sdk-kompat/` benutzt jede Konstruktor- und Lesefläche der 0.5.x-Fehlertypen — A1 gebaut und gelaufen gegen 0.5.0, A2 dieselben Binärdateien gegen 0.6.0 (Austausch der Bibliotheksdatei, kein Neubau), A3 Gegenrichtung (ein gegen 0.6.0 gebauter Gast gegen 0.5.0 muss scheitern), A5 Quellseite (derselbe Quelltext gegen beide Versionen übersetzt bzw. die Signaturen gelesen, in C# die null-Matrix); A4 ist dieselbe Messung mit einer mutierten Bibliothek über `SDK_KOMPAT_DIST_<SPRACHE>`. Docker-only, Basis ist die Stufe `build` des SDK-Dockerfiles, jeder Schritt per `docker run`, nie in einer `RUN`-Schicht. `SDK_KOMPAT_NEU=dist` (Standard, Artefakte von `make sdk-pack-*`) oder `registry` (veröffentlichte Pakete). Braucht Netz (NuGet, PyPI, Cloudsmith, Maven Central), deshalb Werkzeug statt Gate

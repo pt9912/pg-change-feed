@@ -148,3 +148,11 @@ Menge der Erprobung: das Image `:dev` als einzige Mutation der Eingabe; ein
 Server, der nur das `ErrorInfo` (gRPC) oder nur `error_code` (Diagnose) trägt,
 ist nicht gefahren — die Übertragung auf diese Einzelpfade ist *hergeleitet*
 aus den Unit-Tabellen der SDKs.
+
+## Fassung im Gate-Index
+
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+
+### `make test-sdk-altserver`
+
+fährt die Fehlerfälle der SDKs (C#, Kotlin, Python, Quelle des Arbeitsstands) gegen einen Server vor 0.6.0: `tools/harness/run-sdk-altserver-tests.sh` startet die Compose-Umgebung der SDK-Realserver-Runner, nur der Feed-Container ist das Image `ghcr.io/pt9912/pg-change-feed:0.5.0` mit Tag und Index-Digest (Override-Datei im Temp-Verzeichnis, `compose.yaml` bleibt unverändert; `SDK_ALTSERVER_IMAGE` übersteuert). B0: der Server läuft gegen das Schema des Arbeitsbaums; B1: Rohdraht-Probe, der HTTP-Fehlerkörper der Aktivierung einer fehlenden Tabelle trägt kein `code`; B2: je Sprache eine Test-Klasse — typisierter `NotFound`-Fehler an HTTP und gRPC, Meldungscode leer, Fehlertext da, Reader-Token ohne Code, Diagnose ohne Absturz mit leerem `error_code` (Normalbetrieb und Fehlerzustand); B3: `SDK_ALTSERVER_IMAGE=ghcr.io/pt9912/pg-change-feed:dev` färbt den Lauf an B1 rot; U (zuletzt): der Server 0.5.0 erfasst INSERT, UPDATE und DELETE auf `feed_e2e_full`, ein `--force-recreate` ersetzt ihn durch das Ziel-Image aus `compose.yaml` (Override ohne `image:`-Zeile), danach sind neue Container-ID, unberührte `postgres`/`nats`, Ziel-Image-Referenz und -ID (verschieden vom Start-Image), Health `healthy`, der Datenstand der Quelle über `cdc.changes` (Zeilenzahl und Prüfsumme), eine danach eingefügte Zeile und der Slot geprüft; bei Start-Referenz gleich Ziel-Referenz (B3) druckt der Runner `ALTSERVER U ÜBERSPRUNGEN`. Setzt das geladene `:dev`-Image voraus (`make image` vorher; ohne es Exit 1 mit der Meldung vor jedem Start); Schema konstant, ein Alt-Stand; schreibt nichts in den Arbeitsbaum (nicht in `docs/user/sdk-e2e-abdeckung.md`). Braucht DB-Zugang, Docker-Pulls und Netz, deshalb Werkzeug statt Gate

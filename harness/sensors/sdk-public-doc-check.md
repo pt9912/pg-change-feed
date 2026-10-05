@@ -102,3 +102,15 @@ XML-Doku und Fehlertexte erreichen Anwender über die Pakete) ·
 `tools/harness/sdk-public-doc-check.sh` ·
 `harness/mk/sdk.mk` · seit slice-sdk-public-doc-check-gate
 (Wächter selbst seit slice-sdk-readme-nutzerdoku).
+
+## Fassung im Gate-Index
+
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+
+### `make sdk-public-doc-check`
+
+prüft mit `grep`, dass keine Datei unter `sdks/` (Quellen, Tests, README, Build-Dateien, Dockerfiles) eine interne Kennung trägt — keine Kennung der Spezifikations-, Entscheidungs- und Anforderungsdokumente (`SPEC-…`, `ADR-…`, `ARC-…`, `LH-FA-…`, `LH-QA-…`) und keinen Slice-/Welle-Namen (`tools/harness/sdk-public-doc-check.sh`); Kommentare, Docstrings, KDoc, XML-Doku und Fehlertexte der SDKs erreichen Anwender über die Pakete (Docstrings im Wheel, XML-Dokumentationsdatei im `.nupkg`, Quellen im Sources-Jar und in der `sdist`). Ausgenommen sind Bau-Ausgaben und erzeugter Code (`obj`, `bin`, `build`, `dist`, `.gradle`, `__pycache__`, `.pytest_cache`, `*.egg-info`, `grpc_gen`); die zur Bauzeit erzeugten Python-Stubs prüft `sdks/python/pgchangefeed/tests/test_public_text.py` gegen das installierte Paket. Netzlos und schnell (reines `grep`, kein Docker); die drei `make sdk-pack-*`-Ziele hängen weiterhin an der Vorgänger-Kante (Rückfall fällt vor dem Bau auf)
+
+### `make test-sdk-public-doc-check`
+
+fährt den Tabellentest gegen `tools/harness/sdk-public-doc-check.sh` (je Kennungsart ein Treffer, dazu die Ausnahmen `obj`, `dist`, `grpc_gen` und eine saubere Datei); der Tabellentest bleibt Werkzeug — der Gegenstand des Gates ist der Baum, nicht die Wächter-Logik (`ADR-0134` Teilfrage 2)

@@ -139,3 +139,11 @@ Erzeugung in ein Temp-Verzeichnis, Befund mit Datei und Zeile)
 (der Generator und seine Folgepflicht) · `tools/harness/generated-sync.sh` ·
 `harness/mk/generated-sync.mk` · seit slice-090, mount-loser
 `proto-export`/`tar`-Mechanismus seit `slice-generated-sync-tar-export`.
+
+## Fassung im Gate-Index
+
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+
+### `make generated-sync`
+
+prüft, dass der committete Protobuf-/gRPC-Code byte-gleich der Ausgabe des **gepinnten** Generators (Dockerfile-Stufe `proto-export`, dieselbe Build-Zeit-Erzeugung wie `make proto-generate`, seit `slice-generated-sync-tar-export`) aus den committeten `.proto`-Quellen ist; die host-seitige `tar`-Extraktion (kein Bind-Mount, kein `--user`-Workaround) landet in einem Temp-Verzeichnis, der Arbeitsbaum bleibt unberührt

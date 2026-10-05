@@ -110,3 +110,15 @@ nicht geschlossener Block · Zeilenform (Soll ohne Zahl, unbekannte Stand-Kennun
 Zeile ohne Muster, leeres Argument, offenes Anführungszeichen). Nicht gebunden
 ist die Trennung der Standardfehlerausgabe von der Trefferzählung: der Test
 erzeugt keinen `git grep`-Lauf mit Hinweis und Exit 0 oder 1.
+
+## Fassung im Gate-Index
+
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+
+### `make suchlauf-nachmessen`
+
+misst die `suchlauf`-Blöcke eines Slice-Plans nach: `make suchlauf-nachmessen PLAN=<Datei>` führt je Zeile `<Stand> <Soll> <Argumente von git grep>` als `git grep` am Stand (Commit-Kennung oder `diff` = Arbeitsbaum) aus, zählt die Trefferzeilen, schließt die Plan-Datei aus dem Suchraum aus und endet mit Exit ≠ 0 bei jeder Abweichung, bei `HEAD` als Stand und bei einem Plan ohne Block. Netzlos (`bash` + `git`). Prüft Zahlen und Stände, nicht die Vollständigkeit von Suchraum und Muster (Lese-Handlung des Reviewers, [`AGENTS.md`](../../AGENTS.md) §3.13); kein Gate, weil `diff` sich mit jedem Commit bewegt
+
+### `make test-suchlauf-nachmessen`
+
+Tabellentest gegen `tools/harness/suchlauf-nachmessen.sh`: elf Fälle gegen ein Wegwerf-Repo (stimmt, weicht ab, Selbstverweis ausgeschlossen, `HEAD` abgelehnt, kein Block, Commit-Stand mit Pathspec, erlaubte Optionen, Optionen und Pathspec-Magic außerhalb der Allow-List, `git grep`-Fehler, nicht geschlossener Block, Zeilenform); netzlos

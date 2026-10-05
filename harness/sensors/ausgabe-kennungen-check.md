@@ -103,3 +103,15 @@ Festlegung 10 (Aufnahme in `GATE_CHECKS`, Muster, Reichweite) ·
 [`LH-QA-OPS-001`](../../spec/lastenheft.md) (Betriebsfähigkeit) ·
 `tools/harness/ausgabe-kennungen-check.sh` · `harness/mk/doc-gate.mk` · seit
 slice-meldungscodes-kennungsfreie-ausgaben.
+
+## Fassung im Gate-Index
+
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+
+### `make ausgabe-kennungen-check`
+
+prüft mit `grep` (ERE, kein `-P`), dass kein Ausgabe-Literal des Servers und seiner Betriebs-Skripte eine interne Kennung (`LH-…`, `ADR-…`, `SPEC-…`, `ARC-…`) trägt: Produktions-Go (`*.go` ohne `*_test.go` und `*.pb.go`) unter `internal/`, `cmd/` und `tools/schema/` — eine Kennung hinter einem ungeschlossenen Anführungszeichen oder Backtick, Zeile nicht mit `//` beginnend — und die `echo`-/`printf`-Zeilen der Skripte unter `tools/schema/` und `examples/` (`tools/harness/ausgabe-kennungen-check.sh`). Ausgenommen sind Tests, die Läufer unter `tools/harness/` und Kommentare. Fail-closed: ein Lesefehler, eine fehlende Wurzel und ein leerer Gegenstand enden mit Exit 2. Netzlos und schnell (reines `grep`, kein Docker). Grenzen im Vertrag: ein mehrzeiliges Raw-String-Literal, ein Heredoc, ein einzeiliger Raw-String mit inneren Anführungszeichen und ein Rune-Literal `'"'` vor dem Literal werden nicht gelesen, ein nachgestellter Kommentar mit zitiertem Literal trifft; das Gate liest die Form, nicht den Sinn
+
+### `make test-ausgabe-kennungen-check`
+
+fährt den Tabellentest gegen `tools/harness/ausgabe-kennungen-check.sh` (`tools/harness/run-ausgabe-kennungen-check-tests.sh`: je Kennungsart ein Treffer im Go-Literal und im `echo`/`printf`, Literal mit Schrägstrich und mit URL davor, Raw-String in Backticks; Nicht-Treffer Kommentarzeile, nachgestellter Kommentar ohne Anführungszeichen, Struct-Tag, Test-Datei, erzeugte Datei, Läufer-Verzeichnis, Dateien außerhalb der Wurzeln; der benannte Falsch-Positiv und die benannte Grenze des mehrzeiligen Literals; fehlende Wurzel, leerer Gegenstand und Lesefehler mit Exit 2, je mit Meldungstext); der Tabellentest bleibt Werkzeug — der Gegenstand des Gates ist der Bestand der Ausgabe-Literale, nicht die Wächter-Logik (Muster [`ADR-0134`](../../docs/plan/adr/0134-sdk-public-doc-check-gate-make-gates.md) Teilfrage 2); netzlos

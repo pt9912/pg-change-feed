@@ -150,3 +150,15 @@ existierte weder vorher noch nachher, `make image-mutation-rm TAG=mutprobe1`
 entfernte das Image danach (`docker image ls` nennt den Tag nicht mehr), die
 Zahl der dangling Volumes blieb bei 36 (vorher/nachher gemessen, kein
 `prune`).
+
+## Fassung im Gate-Index
+
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+
+### `make image-mutation` / `make image-mutation-rm`
+
+baut bzw. entfernt ein Mutations-Image mit eigenem Repository-Namen und Tag (`pg-change-feed-mutation:<TAG>`), getrennt vom Lauf-Beleg-Pfad: `make image-mutation SRC=<Verzeichnis> TAG=<Tag>` ruft genau `docker buildx build --load -t pg-change-feed-mutation:<TAG> <SRC>` auf (kein `--metadata-file`, kein `-t` auf `:dev`, kein `--push`), `make image-mutation-rm TAG=<Tag>` genau `docker rmi pg-change-feed-mutation:<TAG>` (kein `-f`, kein `prune`); jede Eingabeprüfung (`TAG`-Zeichenklasse, `dev`/`latest` reserviert, `SRC` mit `Dockerfile`+`go.mod`, `SRC` nicht die Repo-Wurzel oder darunter) läuft vor dem Docker-Aufruf, Exit 2. Ohne `SRC`/`TAG` bricht das Makefile-Ziel mit `$(error …)` ab. `harness/image-hash.txt`, `harness/image-hash.raw` und `:dev` bleiben unberührt
+
+### `make test-image-mutation`
+
+Tabellentest gegen `tools/harness/image-mutation.sh` (`tools/harness/run-image-mutation-tests.sh`): gültige Argumente inkl. SRC mit Leerzeichen, `harness/image-hash.txt`/`.raw` bleiben unverändert, TAG-Zeichenklasse und reservierte Namen, SRC-Eingabefehler (fehlt/kein Verzeichnis/ohne Dockerfile/ohne go.mod/Repo-Wurzel/unter der Wurzel), Exit-Weitergabe eines Docker-Fehlers, `rm` mit genau einem `rmi`-Argument, Make-Ebene ohne SRC/TAG; Stub-`docker` in einem Wegwerf-Repo im Temp-Verzeichnis, netzlos

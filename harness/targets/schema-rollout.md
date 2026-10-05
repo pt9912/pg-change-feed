@@ -258,3 +258,11 @@ bewusst bestehen (Schicht-Cache des nächsten Laufs).
 [`LH-QA-OPS-005`](../../spec/lastenheft.md) (Upgrade-Sicherheit). Sicht des
 Betreibers: [`docs/user/benutzerhandbuch.md`](../../docs/user/benutzerhandbuch.md)
 §Schema aktualisieren ([Anker](../../docs/user/benutzerhandbuch.md#schema-aktualisieren)).
+
+## Fassung im Gate-Index
+
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+
+### `make schema-rollout`
+
+rollt das neutrale Schema mit d-migrate aus: Precheck (`--plan-only`), Wache `tools/schema/rolloutguard`, Vorlauf `DROP VIEW cdc.<name>` bei einer View-Signatur-Änderung, `schema migrate --execute` mit Pflicht-Report (`plan.yaml`) und Rollback-Artefakt (`down.sql`), danach die vier psql-Schritte `tools/schema/nacharbeit-*.sql`; ohne Bind-Mount des Arbeitsbaums (Rezeptur `tools/schema/rollout.sh`; Eingabe per `COPY` in zwei Images aus `tools/schema/Dockerfile`, Nacharbeit über stdin, Erzeugnisse als `tar`-Stream nach `SCHEMA_ARTEFACT_DIR`, Default `.tmp/schema-rollout`, der Arbeitsbaum bleibt unberührt); braucht DB-Zugang, ein zweiter Lauf gegen ein migriertes Ziel endet mit Exit 0. Belegt durch `tools/harness/run-schema-rollout-guard-test.sh` (sechs Läufe gegen eine Wegwerf-PostgreSQL) und die Unit-Tests der Wache (`make test`)

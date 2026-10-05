@@ -92,3 +92,15 @@ Festlegung 5 (Aufnahme in `GATE_CHECKS`, Prüfungen, Heimat `harness/mk/doc-gate
 [`LH-QA-OPS-001`](../../spec/lastenheft.md) (Betriebsfähigkeit) ·
 `tools/harness/meldungscodes-check.sh` · `harness/mk/doc-gate.mk` · seit
 slice-meldungscodes-registry-fehlerkopf.
+
+## Fassung im Gate-Index
+
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+
+### `make meldungscodes-check`
+
+gleicht die Meldungscodes `PCF-<S><NNNN>` mit `grep` (ERE, kein `-P`) ab: jeder Code im Quelltext (Produktions-Go unter `internal/`, `cmd/` und `tools/schema/` ohne das Paket der Tabelle, Skripte unter `tools/schema/` und `examples/`) und im Handbuch steht in der Code-Tabelle `internal/domain/messagecode/codes.go`, und die Codes der Tabelle sind gleich den Codes der Katalog-Zeilen im Benutzerhandbuch (`tools/harness/meldungscodes-check.sh`); ein Token `PCF-…` in falscher Form ist ein Befund. Fail-closed: ein Lesefehler, eine fehlende Tabelle oder ein fehlender Katalog, eine Tabelle ohne Code und ein leerer Gegenstand enden mit Exit 2. Netzlos und schnell (reines `grep`, kein Docker). Grenzen im Vertrag: das Gate vergleicht Mengen, nicht Sinn — Klasse und Bedeutung eines Codes liest der Go-Test des Pakets bzw. der Reviewer
+
+### `make test-meldungscodes-check`
+
+fährt den Tabellentest gegen `tools/harness/meldungscodes-check.sh` (`tools/harness/run-meldungscodes-check-tests.sh`: je Zweig ein Fall mit Meldungstext — Code im Go-Quelltext, in `cmd/` und im Skript ohne Tabelle, falsche Form (Buchstabe, drei und fünf Ziffern, Präfix ohne Code), Tabellen-Code ohne Katalog-Zeile, Katalog-Zeile ohne Tabellen-Code, Codes nur in Prosa oder in einer späteren Zelle, Prosa-Code ohne Tabelle; Nicht-Befunde saubere Menge, zurückgezogener Code in beiden Mengen, Test-Datei, erzeugte Datei, Paket der Tabelle, Läufer-Verzeichnis; fehlende Wurzel, Tabelle, Katalog und Verzeichnis, Tabelle ohne Code, leerer Gegenstand und nicht lesbare Dateien mit Exit 2); der Tabellentest bleibt Werkzeug — der Gegenstand des Gates ist der Bestand der Codes, nicht die Wächter-Logik (Muster [`ADR-0134`](../../docs/plan/adr/0134-sdk-public-doc-check-gate-make-gates.md) Teilfrage 2); netzlos

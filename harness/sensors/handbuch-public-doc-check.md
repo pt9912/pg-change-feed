@@ -92,3 +92,15 @@ Skript liest Zeilen.
 [`LH-QA-OPS-001`](../../spec/lastenheft.md) (Dokumentation für Betreiber) ·
 `tools/harness/handbuch-public-doc-check.sh` · `harness/mk/doc-gate.mk` · seit
 slice-handbuch-public-doc-check-gate-und-skill.
+
+## Fassung im Gate-Index
+
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+
+### `make handbuch-public-doc-check`
+
+prüft mit `grep`, dass die Nutzerdokumente unter `docs/user/` (geprüft: `benutzerhandbuch.md`, `benutzerhandbuch-standard.md`, `version.md`) keine interne Kennung (`LH-FA-…`, `LH-QA-…`, `ADR-…`, `SPEC-…`, `ARC-…`, `BEO-…`, `MR-…`, `CO-…`, Slice-/Welle-Name) und keinen Link nach `docs/plan/` oder `docs/reviews/` tragen (`tools/harness/handbuch-public-doc-check.sh`, Muster und Wortrand im Vertrag). Ausgenommen sind die vier von Runnern geschriebenen `*-abdeckung.md` (die Maintainer-Doku liegt unter `docs/maintainer/`, außerhalb des Gegenstands); jede andere `*.md` unter `docs/user/` und jede genannte, fehlende Datei endet mit Exit 2 (neue Datei erzwingt die Klassifikation). Netzlos und schnell (reines `grep`, kein Docker). Das Gate liest Kennungen, nicht Sinn: Chronik-Sprache ohne Kennung bleibt grün (Lese-Hälfte: Skill `.harness/skills/nutzerdoku-schreiben.md` und Reviewer)
+
+### `make test-handbuch-public-doc-check`
+
+fährt den Tabellentest gegen `tools/harness/handbuch-public-doc-check.sh` (`tools/harness/run-handbuch-public-doc-check-tests.sh`: je Kennungsart und je Link-Klasse ein Treffer, Wortrand-Fälle ohne Treffer, saubere Wurzel, die fünf ausgenommenen Dateien, unklassifizierte und fehlende Datei mit Exit 2); der Tabellentest bleibt Werkzeug — der Gegenstand des Gates ist der Bestand der Nutzerdokumente, nicht die Wächter-Logik (`ADR-0143` Festlegung 5); netzlos

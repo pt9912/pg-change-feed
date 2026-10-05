@@ -191,3 +191,15 @@ fehlschlagendes `git diff` · keine Temp-Datei danach — mit einem Stub für
   [`AGENTS.md`](../../AGENTS.md) §3.7 und meldet auch einen Block mit zwei Ankern,
   die je eine eigene Aussage tragen (Grenze 3). Das ist die Zielform des Plans, kein
   Zufall der Implementierung.
+
+## Fassung im Gate-Index
+
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+
+### `make kommentar-kennungen`
+
+listet die Kommentarblöcke der Go-Dateien und der Nicht-Go-Zeilenkommentar-Formen (`.sh`, `.mk`, `.yml`, `.yaml`, `.sql`, Makefile, Dockerfile), die ihre Herkunft nicht als ein auflösbares Feld tragen (Kandidat: mindestens zwei verschiedene Kennungen `ADR-`/`LH-FA-`/`LH-QA-`/`SPEC-`/`ARC-` oder „ff.“ hinter einer Kennung, eine Kompaktform zählt je Nummer): `make kommentar-kennungen [PATHS=<Pfade>] [COUNT=1] [TESTS=exclude|only] [DIFF=<Basis>]` — `COUNT=1` druckt nur die Zahl, `DIFF=<Basis>` meldet nur Blöcke, die eine seit `<Basis>` hinzugefügte Zeile überlappen. Docker-only (Go-Programm `tools/harness/kommentar-kennungen/`, gepinntes Toolchain-Image, `--network none`; Host-Werkzeuge `bash`, `git`, `docker`). Prüft die **Form, nicht die Wahrheit**: eine Spec-Wiedergabe in eigenen Worten hinter einer Kennung erkennt es nicht, ein Lauf ohne Kandidat sagt nicht „die Kommentare sind konform“. Keine Ausnahmeliste; Exit 1 bei mindestens einem Kandidaten (über `make` als Exit 2). Aufrufer: Schritt 20 des Implementer-Ablaufs, Reviewer (Probe)
+
+### `make test-kommentar-kennungen`
+
+Tabellentests des Programms `tools/harness/kommentar-kennungen/` (Zählregel, Blockgrenzen, Diff-Modus samt Präfix der Zieldatei-Zeile, Modi, ausgenommene Wurzeln, Exit-Codes; der Go-Test läuft auch unter `make test`) und seines Aufrufers `tools/harness/kommentar-kennungen.sh` (`tools/harness/run-kommentar-kennungen-tests.sh`: Eingabefehler, Exit-Weitergabe, Argument-Zerlegung, gepinnte Form des Diff-Stroms unter fremder Git-Konfiguration, Temp-Datei; Stub-`docker` plus vier Läufe mit echtem Docker); Docker-only, netzlos
