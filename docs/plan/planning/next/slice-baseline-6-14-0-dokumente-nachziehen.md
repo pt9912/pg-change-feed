@@ -21,7 +21,7 @@ Keine `LH-*`-Anforderung ist berührt: der Slice ändert Harness-Dokumente, nich
 **Berührte Spec-Stellen:** — (keine; `harness/conventions.md` §Baseline nennt den
 Stand v6.14.0 und wird nur gelesen).
 
-**Verantwortlich:** —
+**Verantwortlich:** pt9912 (Implementer-Agent im Auftrag).
 <!-- BEDIENHINWEIS: Verantwortlich hält die Arbeit — der Rolleninhaber der
 Implementer-Rolle, gesetzt beim Übergang open→next (Baseline-Regelwerk
 modul-05-planning-harness.md §Lifecycle als State Machine). Der Autor schrieb
