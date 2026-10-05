@@ -24,9 +24,9 @@ import cdc.administration.v1.AdministrationOuterClass.RemoveConsumerResponse
 import cdc.administration.v1.AdministrationOuterClass.RunRetentionRequest
 import cdc.administration.v1.AdministrationOuterClass.RunRetentionResponse
 import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions
+import io.github.pt9912.pgchangefeed.TlsSupport
 import io.grpc.Channel
 import io.grpc.ManagedChannel
-import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.Status
 import io.grpc.StatusException
@@ -68,14 +68,20 @@ class PgChangeFeedAdministrationClient private constructor(
 
     /**
      * Convenience constructor: opens and owns its own [ManagedChannel]
-     * against [options]'s address (`usePlaintext()` — the PG Change Feed
-     * server speaks plaintext gRPC over HTTP/2). [close] shuts down that
-     * channel. A TLS-terminated deployment builds its own [Channel] and uses
-     * the advanced constructor below instead.
+     * against [options]'s address. [close] shuts down that channel. An `https`
+     * address connects over TLS: the trust anchors of the Java runtime apply,
+     * or exactly the certificates of [PgChangeFeedClientOptions.trustAnchorFile]
+     * when it is set; chain, validity period and server name are always
+     * checked, and a failed check ends the call with a
+     * [PgChangeFeedGrpcUnexpectedStatusException] (status `UNAVAILABLE`, no
+     * message code), never with a plaintext retry. Any other scheme connects in
+     * plaintext (`usePlaintext()`) and is refused with an
+     * [IllegalArgumentException] when the options carry a trust anchor. A
+     * deployment with its own TLS setup builds its own [Channel] and uses the
+     * advanced constructor below instead.
      *
      * [options].address must carry a resolvable host and port (e.g.
-     * `http://pg-change-feed:50051`) — only the authority part is used, the
-     * scheme is ignored.
+     * `https://pg-change-feed:50051`).
      */
     constructor(options: PgChangeFeedClientOptions) : this(options, buildOwnedChannel(options))
 
@@ -221,14 +227,7 @@ class PgChangeFeedAdministrationClient private constructor(
         val AUTHORIZATION_METADATA_ENTRY: Metadata.Key<String> =
             Metadata.Key.of(AUTHORIZATION_METADATA_KEY, Metadata.ASCII_STRING_MARSHALLER)
 
-        fun buildOwnedChannel(options: PgChangeFeedClientOptions): ManagedChannel {
-            val host = options.address.host
-            val port = options.address.port
-            require(host != null && port != -1) {
-                "options.address must carry a resolvable host and port (got '${options.address}')"
-            }
-            return ManagedChannelBuilder.forAddress(host, port).usePlaintext().build()
-        }
+        fun buildOwnedChannel(options: PgChangeFeedClientOptions): ManagedChannel = TlsSupport.ownedChannel(options)
 
         fun mapException(e: StatusException): PgChangeFeedGrpcException {
             val message = e.status.description ?: ""

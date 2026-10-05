@@ -3,6 +3,7 @@ package io.github.pt9912.pgchangefeed.http
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions
+import io.github.pt9912.pgchangefeed.TlsSupport
 import io.github.pt9912.pgchangefeed.http.model.AcknowledgeConsumerRequest
 import io.github.pt9912.pgchangefeed.http.model.AcknowledgeConsumerResponse
 import io.github.pt9912.pgchangefeed.http.model.ConsumerPositionResponse
@@ -51,6 +52,20 @@ class PgChangeFeedHttpClient internal constructor(
      */
     constructor(httpClient: HttpClient, options: PgChangeFeedClientOptions) :
         this(JdkHttpTransport(httpClient), options)
+
+    /**
+     * Convenience constructor: builds its own `java.net.http.HttpClient` from
+     * [options]. An `https` address connects over TLS: the trust anchors of the
+     * Java runtime apply, or exactly the certificates of
+     * [PgChangeFeedClientOptions.trustAnchorFile] when it is set; chain,
+     * validity period and server name are always checked, and a failed check
+     * surfaces as the `IOException` of `java.net.http.HttpClient`, never as a
+     * plaintext retry. A trust anchor with an `http` address throws an
+     * [IllegalArgumentException]. A trust anchor in the options does not apply
+     * to an `HttpClient` passed to the constructor above.
+     */
+    constructor(options: PgChangeFeedClientOptions) :
+        this(JdkHttpTransport(TlsSupport.httpClient(options)), options)
 
     /**
      * Registers a consumer, a named reader whose position the server keeps

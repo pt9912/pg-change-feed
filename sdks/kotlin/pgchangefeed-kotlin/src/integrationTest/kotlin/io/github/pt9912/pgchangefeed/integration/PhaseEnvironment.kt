@@ -40,4 +40,7 @@ object PhaseEnvironment {
     val filterTableA: String get() = required("PGCHANGEFEED_FILTER_TABLE_A")
     val filterTableB: String get() = required("PGCHANGEFEED_FILTER_TABLE_B")
     val filterQuietSeconds: Long get() = required("PGCHANGEFEED_FILTER_QUIET_SECONDS").toLong()
+    val tlsCaFile: String get() = required("PGCHANGEFEED_TLS_CA_FILE")
+    val tlsForeignCaFile: String get() = required("PGCHANGEFEED_TLS_FOREIGN_CA_FILE")
+    val tlsMismatchHost: String get() = required("PGCHANGEFEED_TLS_MISMATCH_HOST")
 }

@@ -3,6 +3,7 @@ package io.github.pt9912.pgchangefeed.sse
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions
+import io.github.pt9912.pgchangefeed.TlsSupport
 import io.github.pt9912.pgchangefeed.http.PgChangeFeedBadRequestException
 import io.github.pt9912.pgchangefeed.http.PgChangeFeedException
 import io.github.pt9912.pgchangefeed.http.PgChangeFeedForbiddenException
@@ -62,6 +63,20 @@ class PgChangeFeedSseClient internal constructor(
      */
     constructor(httpClient: HttpClient, options: PgChangeFeedClientOptions) :
         this(JdkSseTransport(httpClient), options)
+
+    /**
+     * Convenience constructor: builds its own `java.net.http.HttpClient` from
+     * [options]. An `https` address connects over TLS: the trust anchors of the
+     * Java runtime apply, or exactly the certificates of
+     * [PgChangeFeedClientOptions.trustAnchorFile] when it is set; chain,
+     * validity period and server name are always checked, and a failed check
+     * surfaces as the `IOException` of `java.net.http.HttpClient`, never as a
+     * plaintext retry. A trust anchor with an `http` address throws an
+     * [IllegalArgumentException]. A trust anchor in the options does not apply
+     * to an [HttpClient] passed to the constructor above.
+     */
+    constructor(options: PgChangeFeedClientOptions) :
+        this(JdkSseTransport(TlsSupport.httpClient(options)), options)
 
     /**
      * Opens `GET /changes/stream` and yields every [Change] the server sends

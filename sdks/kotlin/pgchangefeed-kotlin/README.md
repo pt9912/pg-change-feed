@@ -74,7 +74,7 @@ dependencies {
 
 ## Quick start
 
-A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server. The server does not serve TLS itself, so the examples use unencrypted addresses.
+A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server. The examples use unencrypted addresses; a server that runs with a TLS certificate is reached over `https` addresses, see [Connect over TLS](#connect-over-tls).
 
 ### Read changes and remember your position
 
@@ -114,7 +114,7 @@ fun main() {
 
 The three live streams deliver every change committed after you connect. Each surface has its own client; all take the same `PgChangeFeedClientOptions`.
 
-gRPC (the address is the `http://host:port` URL of the gRPC endpoint; `streamChanges()` returns a `kotlinx.coroutines.flow.Flow` of the generated `Change` protobuf messages, row images are JSON in a `ByteString`, empty when there is none; the convenience constructor opens its own plaintext channel, `PgChangeFeedGrpcClient(channel, options)` takes an `io.grpc.Channel` you configure yourself):
+gRPC (the address is the `http://host:port` URL of the gRPC endpoint; `streamChanges()` returns a `kotlinx.coroutines.flow.Flow` of the generated `Change` protobuf messages, row images are JSON in a `ByteString`, empty when there is none; the convenience constructor opens its own channel, over TLS for an `https://` address and in plaintext for any other scheme; `PgChangeFeedGrpcClient(channel, options)` takes an `io.grpc.Channel` you configure yourself):
 
 ```kotlin
 import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions
@@ -201,9 +201,39 @@ fun main() = runBlocking {
 }
 ```
 
+## Connect over TLS
+
+A server that runs with a TLS certificate is reached over `https` addresses (HTTP and SSE) and, for gRPC, over an `https://host:port` address. When the issuer of the certificate is not among the trust anchors of the Java runtime, name the certificate with the trust anchor option of `PgChangeFeedClientOptions`: the path of a PEM file with one or more certificates, the certificate of the issuer or of the server itself.
+
+```kotlin
+import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions
+import io.github.pt9912.pgchangefeed.sse.PgChangeFeedSseClient
+import java.net.URI
+import java.nio.file.Path
+
+fun main() {
+    val options = PgChangeFeedClientOptions(
+        URI("https://feed.example.com:8090"), "<reader token>", Path.of("/etc/pg-change-feed/ca.pem"),
+    )
+    val client = PgChangeFeedSseClient(options)
+    for (change in client.streamChanges()) {
+        println("${change.operation} ${change.schema}.${change.table}")
+    }
+}
+```
+
+The option is read by the constructors that take only the options: `PgChangeFeedHttpClient(options)`, `PgChangeFeedSseClient(options)`, `PgChangeFeedGrpcClient(options)` and `PgChangeFeedAdministrationClient(options)`. Without the option the trust anchors of the Java runtime apply.
+
+- With the option the connection trusts exactly the certificates in the file; the trust anchors of the Java runtime do not apply in addition.
+- The certificate chain, the validity period and the server name are always checked. The server name is the host of the address, so the server certificate must name that host. There is no setting that turns the check off and none that overrides the server name.
+- A failed check is a connection error and never a retry in plaintext: the `java.io.IOException` (an `SSLException`) of `java.net.http.HttpClient` for the HTTP and SSE clients, an `io.grpc.StatusException` with status `UNAVAILABLE` for the gRPC stream client, and a `PgChangeFeedGrpcUnexpectedStatusException` without a message code for the administration client (the server was not reached).
+- A path that cannot be read, or a file without a PEM certificate, throws an `IllegalArgumentException` when the options are created. A trust anchor together with an address that is not `https` throws an `IllegalArgumentException` when the client is created.
+- A connection you configure yourself keeps its own TLS setup: a `java.net.http.HttpClient` passed to `PgChangeFeedHttpClient(httpClient, options)` or `PgChangeFeedSseClient(httpClient, options)`, and an `io.grpc.Channel` passed to the gRPC clients, are not touched by the trust anchor option.
+- The NATS client is not covered by the option; TLS for NATS is configured with the NATS server and its URL.
+
 ## API overview
 
-`PgChangeFeedHttpClient(httpClient, options)` wraps the HTTP API. The `java.net.http.HttpClient` you pass in stays yours; the library never closes it.
+`PgChangeFeedHttpClient(httpClient, options)` wraps the HTTP API. The `java.net.http.HttpClient` you pass in stays yours; the library never closes it. `PgChangeFeedHttpClient(options)` builds its own `HttpClient` (see [Connect over TLS](#connect-over-tls)).
 
 | Method | What it does | Token |
 |---|---|---|
