@@ -26,15 +26,15 @@ COPY NullMatrix src/NullMatrix
 
 # Drei Übersetzungen des Gast-Programms:
 #   alt05  Quelltext alt gegen Package 0.5.0 (A1; Grundlage des Austauschs A2)
-#   alt06  Quelltext alt gegen Package REGISTRY_VERSION (A5 Quelle; liefert die veröffentlichte Bibliothek)
-#   neu06  Quelltext neu (Formen mit Meldungscode) gegen Package REGISTRY_VERSION (A3)
-RUN cp -r src/Gast src/Gast-alt05 && cp -r src/Gast src/Gast-alt06 && cp -r src/Gast src/Gast-neu06
+#   altreg  Quelltext alt gegen Package REGISTRY_VERSION (A5 Quelle; liefert die veröffentlichte Bibliothek)
+#   neureg  Quelltext neu (Formen mit Meldungscode) gegen Package REGISTRY_VERSION (A3)
+RUN cp -r src/Gast src/Gast-alt05 && cp -r src/Gast src/Gast-altreg && cp -r src/Gast src/Gast-neureg
 RUN dotnet publish src/Gast-alt05/Gast.csproj -c Release -p:PgcfVersion=0.5.0 -p:GastQuelle=alt \
       -p:RestoreConfigFile=/kompat/nuget-registry.config -o /kompat/bin/alt05
-RUN dotnet publish src/Gast-alt06/Gast.csproj -c Release -p:PgcfVersion="$REGISTRY_VERSION" -p:GastQuelle=alt \
-      -p:RestoreConfigFile=/kompat/nuget-registry.config -o /kompat/bin/alt06
-RUN dotnet publish src/Gast-neu06/Gast.csproj -c Release -p:PgcfVersion="$REGISTRY_VERSION" -p:GastQuelle=neu \
-      -p:RestoreConfigFile=/kompat/nuget-registry.config -o /kompat/bin/neu06
+RUN dotnet publish src/Gast-altreg/Gast.csproj -c Release -p:PgcfVersion="$REGISTRY_VERSION" -p:GastQuelle=alt \
+      -p:RestoreConfigFile=/kompat/nuget-registry.config -o /kompat/bin/altreg
+RUN dotnet publish src/Gast-neureg/Gast.csproj -c Release -p:PgcfVersion="$REGISTRY_VERSION" -p:GastQuelle=neu \
+      -p:RestoreConfigFile=/kompat/nuget-registry.config -o /kompat/bin/neureg
 
 # Modus dist: die Bibliotheksdatei für den Austausch A2 stammt aus dem Artefakt
 # PgChangeFeed.Client.<NEU_VERSION>.nupkg in /neu, über einen eigenen

@@ -51,14 +51,19 @@ nicht verwendet.
 
 **Neue Bibliothek, Modus `dist` (Standard).** Der Runner liest die Version je
 Sprache aus der Version-Datei des SDK — `<Version>` in
-`sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj`, die Zeile
-`version = "…"` in `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` und in
+`sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj`, die
+nicht eingerückte Zeile `version = "…"` in
+`sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` (die eingerückte
+Publikations-Version liest er nicht, §Grenze 9) und in
 `sdks/python/pgchangefeed/pyproject.toml` — und verlangt im
 Artefakt-Verzeichnis (`sdks/<sprache>/dist/` oder `SDK_KOMPAT_DIST_<SPRACHE>`)
 das Artefakt genau dieser Version, wie `make sdk-pack-<sprache>` es schreibt
 (`PgChangeFeed.Client.<v>.nupkg`, `pgchangefeed-kotlin-<v>.jar`,
 `pgchangefeed-<v>-py3-none-any.whl`); es ersetzt die Bibliothek im Schritt A2.
 Fehlt die Version-Datei, trägt sie nicht genau eine Version der Form `X.Y.Z`
+(drei Ziffernfolgen; eine Version mit Suffix wie `0.7.0-rc.1` zählt nicht; der
+Dateiname des Python-Rads trägt eine solche Version in PEP-440-Normalform,
+`0.7.0rc1`, *hergeleitet*, nicht gebaut)
 oder fehlt das Artefakt dieser Version, endet der Lauf vor jedem Bau mit Exit 2
 und einer Meldung, die Datei, gelesene Version und vorhandene Artefakte nennt;
 es gibt keinen Ersatzwert. Das Werkzeug trägt die Version des Arbeitsstands
@@ -105,7 +110,7 @@ Alles andere (`dotnet`, `java`, `gradle`, `python`, `pip`) läuft im Container.
 |---|---|
 | 0 | jede Sprache hat jeden Schritt wie erwartet bestanden; jeder Schritt hat eine gedruckte Zeile |
 | 1 | mindestens ein Schritt weicht von der Erwartung ab (die Zeile mit `ROT` nennt Schritt und Ausgang), oder eine Sprache druckt für einen Schritt keine Zeile |
-| 2 | Eingabefehler: unbekanntes `SDK_KOMPAT_NEU` oder unbekannte Sprache; im Modus `dist` eine fehlende Version-Datei, eine Version-Datei ohne genau eine Version der Form `X.Y.Z` oder kein Artefakt genau dieser Version im Verzeichnis (Hinweis auf `make sdk-pack-<sprache>`); über `make` kommt jeder Ausgang ≠ 0 als 2 an |
+| 2 | Eingabefehler: unbekanntes `SDK_KOMPAT_NEU` oder unbekannte Sprache; im Modus `dist` eine fehlende Version-Datei, eine Version-Datei ohne genau eine Version der Form `X.Y.Z` (ohne Suffix) oder kein Artefakt genau dieser Version im Verzeichnis (Hinweis auf `make sdk-pack-<sprache>`); über `make` kommt jeder Ausgang ≠ 0 als 2 an |
 
 Kein Gate. Das Ziel steht in keinem Gate-Bündel (`make gates`), weil der
 Paketbezug Netz braucht; die Aufnahme als Gate braucht eine ADR
@@ -156,6 +161,15 @@ rot werden.
    veröffentlichte Version, gegen die A3 und A5 (C#, Kotlin) übersetzen und die
    der Modus `registry` misst; eine neuere veröffentlichte Version misst das
    Ziel erst, wenn die Konstante geändert wird.
+8. **A2 tauscht die Bibliothek, nicht ihre Abhängigkeiten.** Die übrigen
+   Laufzeit-Abhängigkeiten in A2 sind in Kotlin die der Version
+   `REGISTRY_VERSION`, in C# die des 0.5.0-Publish; A5 vergleicht die
+   Abhängigkeitsmengen von 0.5.0 und `REGISTRY_VERSION`, nicht die der neuen
+   Version aus der Version-Datei.
+9. **Kotlin: nur die oberste `version`-Zeile.** `build.gradle.kts` trägt eine
+   zweite, eingerückte Zeile `version = "…"` (Publikation); der Runner liest sie
+   nicht. Ihre Gleichheit mit der obersten hält die Probe der Publish-Konfiguration
+   in `make sdk-pack-kotlin`.
 
 ## Test
 

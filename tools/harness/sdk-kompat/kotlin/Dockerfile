@@ -26,8 +26,8 @@ COPY src src
 
 # Drei Übersetzungen des Gast-Programms mit je der aufgelösten Laufzeit-Menge:
 #   alt05  Quelltext alt gegen die veröffentlichte Bibliothek 0.5.0 (A1; Grundlage des Austauschs A2)
-#   alt06  Quelltext alt gegen REGISTRY_VERSION (A5; liefert die veröffentlichte Laufzeit-Menge)
-#   neu06  Quelltext neu (Formen mit Meldungscode) gegen REGISTRY_VERSION (A3)
+#   altreg  Quelltext alt gegen REGISTRY_VERSION (A5; liefert die veröffentlichte Laufzeit-Menge)
+#   neureg  Quelltext neu (Formen mit Meldungscode) gegen REGISTRY_VERSION (A3)
 RUN set -eu; \
     bauen() { \
         ./gradlew --no-daemon -q -PpgcfVersion="$2" -PgastQuelle="$3" clean compileKotlin kopiereLaufzeit; \
@@ -36,8 +36,8 @@ RUN set -eu; \
         cp -r build/laufzeit "bin/$1/lib"; \
     }; \
     bauen alt05 0.5.0 alt; \
-    bauen alt06 "$REGISTRY_VERSION" alt; \
-    bauen neu06 "$REGISTRY_VERSION" neu
+    bauen altreg "$REGISTRY_VERSION" alt; \
+    bauen neureg "$REGISTRY_VERSION" neu
 
 COPY run.sh /kompat/run.sh
 ENTRYPOINT ["/bin/bash", "/kompat/run.sh"]

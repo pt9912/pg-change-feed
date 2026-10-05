@@ -64,7 +64,8 @@ version_datei() {
 }
 
 # version_lesen <sprache> — die Version aus der Version-Datei. Exit 2, wenn die
-# Datei fehlt oder nicht genau eine Versionszeile in der Form X.Y.Z trägt; es
+# Datei fehlt oder nicht genau eine Versionszeile in der Form X.Y.Z (drei
+# Ziffernfolgen, kein Suffix wie -rc.1) trägt; es
 # gibt keinen Ersatzwert.
 version_lesen() {
   local sprache=$1 datei muster werte
@@ -79,8 +80,8 @@ version_lesen() {
   fi
   werte=$(sed -n "$muster" "$datei")
   if [ "$(printf '%s\n' "$werte" | grep -c .)" -ne 1 ] ||
-    ! printf '%s' "$werte" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$'; then
-    echo "run-sdk-kompat-tests: $datei trägt nicht genau eine Version der Form X.Y.Z (gelesen: $(printf '%s' "${werte:-keine}" | tr '\n' ' '))" >&2
+    ! printf '%s' "$werte" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+    echo "run-sdk-kompat-tests: $datei trägt nicht genau eine Version der Form X.Y.Z, nur Ziffern ohne Suffix (gelesen: $(printf '%s' "${werte:-keine}" | tr '\n' ' '))" >&2
     exit 2
   fi
   printf '%s' "$werte"

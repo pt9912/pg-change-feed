@@ -10,7 +10,7 @@ set -u
 
 BIN=/kompat/bin
 LIB05=$BIN/alt05/lib/pgchangefeed-kotlin-0.5.0.jar
-LIB06=$BIN/alt06/lib/pgchangefeed-kotlin-$REGISTRY_VERSION.jar
+LIBREG=$BIN/altreg/lib/pgchangefeed-kotlin-$REGISTRY_VERSION.jar
 GAST=kompat.GastKt
 rot=0
 
@@ -42,8 +42,8 @@ lauf_scheitert() {
 
 # Der gebundene Deskriptor des Gast-Aufrufs und die Konstruktoren der Bibliothek je Version.
 echo "KOMPAT kotlin javap Gast (alt05): $(javap -c -p -cp "$BIN/alt05/klassen" "$GAST" | grep -m1 'PgChangeFeedBadRequestException."<init>"' | sed 's/^ *//')"
-echo "KOMPAT kotlin javap Gast (neu06): $(javap -c -p -cp "$BIN/neu06/klassen" "$GAST" | grep -m1 'PgChangeFeedBadRequestException."<init>"' | sed 's/^ *//')"
-for v in 05 06; do
+echo "KOMPAT kotlin javap Gast (neureg): $(javap -c -p -cp "$BIN/neureg/klassen" "$GAST" | grep -m1 'PgChangeFeedBadRequestException."<init>"' | sed 's/^ *//')"
+for v in 05 REG; do
   jar=LIB$v
   echo "KOMPAT kotlin javap Bibliothek ${v}: $(javap -s -cp "${!jar}" io.github.pt9912.pgchangefeed.http.PgChangeFeedBadRequestException | grep -A1 'public io.github.pt9912.pgchangefeed.http.PgChangeFeedBadRequestException(' | grep -E 'descriptor' | sed 's/^ *descriptor: //' | tr '\n' ' ')"
 done
@@ -55,7 +55,7 @@ lauf_ok A1 "$BIN/alt05/klassen:$BIN/alt05/lib/*"
 # liegt in /neu das Jar der neuen Version (Modus dist), tritt es an die Stelle
 # des veröffentlichten Jars.
 rm -rf /tmp/a2lib
-cp -r "$BIN/alt06/lib" /tmp/a2lib
+cp -r "$BIN/altreg/lib" /tmp/a2lib
 neu_jar=/tmp/a2lib/pgchangefeed-kotlin-$REGISTRY_VERSION.jar
 herkunft="Registry $REGISTRY_VERSION"
 if [ -f "/neu/pgchangefeed-kotlin-$NEU_VERSION.jar" ]; then
@@ -70,17 +70,17 @@ lauf_ok A2 "$BIN/alt05/klassen:/tmp/a2lib/*"
 # A3: Gegenrichtung. Grundlage: der gegen die veröffentlichte Bibliothek
 # REGISTRY_VERSION übersetzte Gast läuft gegen sie; danach mit dem Klassenpfad
 # 0.5.0 — er muss mit NoSuchMethodError scheitern.
-lauf_ok A3-Grundlage "$BIN/neu06/klassen:$BIN/neu06/lib/*"
-lauf_scheitert A3 "$BIN/neu06/klassen:$BIN/alt05/lib/*" NoSuchMethodError
+lauf_ok A3-Grundlage "$BIN/neureg/klassen:$BIN/neureg/lib/*"
+lauf_scheitert A3 "$BIN/neureg/klassen:$BIN/alt05/lib/*" NoSuchMethodError
 
 # A5: Quellseite. Laufzeit-Mengen der zwei Versionen, derselbe Gast-Quelltext gegen beide übersetzt.
 d05=$(ls "$BIN/alt05/lib" | grep -v '^pgchangefeed-kotlin-' || true)
-d06=$(ls "$BIN/alt06/lib" | grep -v '^pgchangefeed-kotlin-' || true)
-if [ "$d05" = "$d06" ]; then
+dreg=$(ls "$BIN/altreg/lib" | grep -v '^pgchangefeed-kotlin-' || true)
+if [ "$d05" = "$dreg" ]; then
   echo "KOMPAT kotlin A5 abhaengigkeiten: 0.5.0 und $REGISTRY_VERSION gleich ($(printf '%s\n' "$d05" | wc -l) Jars)"
 else
   echo "KOMPAT kotlin A5 abhaengigkeiten: verschieden"
-  diff <(printf '%s\n' "$d05") <(printf '%s\n' "$d06")
+  diff <(printf '%s\n' "$d05") <(printf '%s\n' "$dreg")
 fi
 for v in 0.5.0 "$REGISTRY_VERSION"; do
   if ./gradlew --no-daemon -q --rerun-tasks -PpgcfVersion="$v" -PgastQuelle=alt compileKotlin >"/tmp/a5-$v.log" 2>&1; then

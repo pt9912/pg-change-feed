@@ -59,7 +59,7 @@ if [ -f "$rad" ]; then
   herkunft="Artefakt $(basename "$rad")"
 fi
 pip_rc=0
-pip install -q --no-index --find-links /wheels/06 "pgchangefeed==$NEU_VERSION" || pip_rc=$?
+pip install -q --no-index --find-links /wheels/neu "pgchangefeed==$NEU_VERSION" || pip_rc=$?
 installiert=$(pip show pgchangefeed | sed -n 's/^Version: //p')
 if [ "$pip_rc" -ne 0 ] || [ "$installiert" != "$NEU_VERSION" ]; then
   echo "KOMPAT python A2: ROT — Austausch auf $NEU_VERSION gescheitert (pip Exit $pip_rc, installiert $installiert, $herkunft)"

@@ -25,10 +25,10 @@ RUN pip download --no-cache-dir -d /wheels/05 pgchangefeed==0.5.0
 RUN set -eu; \
     rad="/neu/pgchangefeed-$NEU_VERSION-py3-none-any.whl"; \
     if [ -f "$rad" ]; then \
-        pip download --no-cache-dir -d /wheels/06 "$rad"; \
-        cp "$rad" /wheels/06/; \
+        pip download --no-cache-dir -d /wheels/neu "$rad"; \
+        cp "$rad" /wheels/neu/; \
     else \
-        pip download --no-cache-dir -d /wheels/06 "pgchangefeed==$NEU_VERSION"; \
+        pip download --no-cache-dir -d /wheels/neu "pgchangefeed==$NEU_VERSION"; \
     fi
 
 COPY gast_alt.py gast_neu.py quelle.py run.sh ./

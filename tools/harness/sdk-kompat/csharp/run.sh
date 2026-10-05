@@ -44,11 +44,14 @@ lauf_ok A1 "$BIN/alt05"
 # A2: dieselben Gast-Binärdateien, nur die Bibliotheksdatei ist die neue
 # (NEU_VERSION). Trägt /neu das Artefakt dieser Version (Modus dist), stammt die
 # Datei aus ihm; fehlt die daraus gewonnene Datei, ist A2 rot und der Gast
-# läuft nicht.
+# läuft nicht. Über den Runner ist dieser Zweig nicht erreichbar: die
+# Bedingung ist dieselbe wie im Dockerfile (RUN-Schicht lib-dist), dort bricht
+# ein fehlendes `cp` den Bau unter `set -eu` ab. Kopplung: ändert sich die
+# Bedingung dort, gilt der Zweig hier weiter.
 rm -rf /tmp/a2
 cp -r "$BIN/alt05" /tmp/a2
 neu_nupkg="/neu/PgChangeFeed.Client.$NEU_VERSION.nupkg"
-neu_dll="$BIN/alt06/PgChangeFeed.Client.dll"
+neu_dll="$BIN/altreg/PgChangeFeed.Client.dll"
 herkunft="Registry $REGISTRY_VERSION"
 if [ -f "$neu_nupkg" ]; then
   neu_dll=/kompat/lib-dist/PgChangeFeed.Client.dll
@@ -68,9 +71,9 @@ fi
 # Bibliotheksdatei 0.5.0 — er muss mit einer Bindungsausnahme scheitern. Die Laufzeit weist die ältere Assembly-Version vor dem Aufruf ab
 # (FileNotFoundException); eine fehlende Signatur bei gleicher Assembly-Version
 # zeigt erst die Mutationsprobe A4 (MissingMethodException).
-lauf_ok A3-Grundlage "$BIN/neu06"
+lauf_ok A3-Grundlage "$BIN/neureg"
 rm -rf /tmp/a3
-cp -r "$BIN/neu06" /tmp/a3
+cp -r "$BIN/neureg" /tmp/a3
 cp "$BIN/alt05/PgChangeFeed.Client.dll" /tmp/a3/PgChangeFeed.Client.dll
 lauf_scheitert A3 /tmp/a3 'MissingMethodException|FileNotFoundException|FileLoadException'
 
