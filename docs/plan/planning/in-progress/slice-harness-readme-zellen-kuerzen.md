@@ -13,7 +13,7 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 dieses Slice (Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle
 braucht).
 
-**Bezug:** [`ADR-0051`](../../adr/README.md) (Harness-Pflege und Pin-Inventar),
+**Bezug:** [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) (CI/CD-Pipeline über GitHub Actions, mit Pin-Inventar),
 [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) (Herkunft von Aussagen:
 beim Umzug behalten Zahlen ihren Ursprung). Keine `LH-*`-Anforderung ist berührt:
 der Slice ändert Harness-Dokumente und eine Doku-Gate-Regel, nicht das Produkt.
@@ -75,6 +75,9 @@ wortgleich in der verlinkten Datei, und `make docs-check` hält die Grenze.
 - **Neuschnitt der bestehenden fünf Target-Dateien und 14 Sensor-Dateien.**
   Sie bleiben Bestand; ein Target mit vorhandener Datei verlinkt sie und die
   Mega-Zelle wird dort nur ergänzt, soweit ihr Inhalt dort noch fehlt.
+  **Geändert durch Plan-Nachzug 1 (§3 Umsetzung):** die bestehende Datei trägt
+  die ganze Zelle wortgleich in einem Abschnitt `## Fassung im Gate-Index`;
+  ersetzt wird weiterhin nichts.
 - **Eine eigene Baseline-Vorlage für `harness/targets/`.** Die Baseline führt
   keine; der Aufbau folgt den bestehenden Dateien (Vertrag · Aufruf · Grenzen ·
   „Kein Gate“).
@@ -141,7 +144,7 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 - [x] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0,
       `make suchlauf-nachmessen PLAN=` mit diesem Plan Exit 0 am Endstand.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Verifikation durch den Verifier (Belege, nicht Behauptung): Wortlaut-Gegenprobe
@@ -402,7 +405,11 @@ Wortlaut).**
    Kopierfehler.
 7. `make handbuch-public-doc-check` nennt „die vier von Runnern geschriebenen
    `*-abdeckung.md`“, `make test-handbuch-public-doc-check` „die fünf
-   ausgenommenen Dateien“ — zwei Zahlen für die Ausnahme-Menge.
+   ausgenommenen Dateien“ — zwei Zahlen für die Ausnahme-Menge; in
+   `harness/sensors/handbuch-public-doc-check.md` stehen beide jetzt in
+   derselben Datei (Grenze 3 „Die vier Erzeugnisse“ gegen die Fassung im
+   Gate-Index). Seit der Fixrunde sagt der Einleitungssatz der Fassung, dass
+   bei Abweichung §Vertrag gilt; die inhaltliche Bereinigung ist Folgearbeit.
 8. Positionsverweise auf die alte Tabelle stehen jetzt in einer anderen Datei:
    `make example-run-go` „(siehe Zeile darunter)“ — in `targets/examples.md` ist
    es der nächste Abschnitt, stimmt also; `make example-demo-up` „(siehe
@@ -410,12 +417,19 @@ Wortlaut).**
    solcher Abschnitt, gemeint ist die README-Zeile.
 9. Die 15 ergänzten Dateien tragen ihren Inhalt teils doppelt (eigener Vertrag
    und `## Fassung im Gate-Index`); das Zusammenführen ist eine inhaltliche
-   Entscheidung je Datei und nicht Teil dieses Slice.
+   Entscheidung je Datei und nicht Teil dieses Slice. Bis dahin ordnet der
+   Einleitungssatz jeder Fassung den Rang: bei Abweichung gilt §Vertrag der
+   Datei mit den Abschnitten davor. Die inhaltliche Bereinigung der
+   Doppelungen ist Folgearbeit.
 10. Vorbestand, nicht durch diesen Slice: `harness/sensors/baseline-verify.md`
     Grenze 3 verweist auf `harness/README.md` §Nicht behauptet, einen Abschnitt,
     den die README nicht führt (Inline-Code, kein Link, deshalb kein
     `anchor-missing`); `.github/workflows/ci.yml` Kopfkommentar zählt die
     Gates von `make gates` mit sechs auf, `harness/sensors/gates.md` nennt zehn.
+11. Weitere Chronik-Sprache im umgezogenen Wortlaut (Review F-6):
+    `harness/targets/test-integration.md` „inhaltlich über den ursprünglichen
+    MVP-Zuschnitt hinausgewachsen“ und `harness/targets/image.md` „jetzt als
+    Multi-Arch-Manifestliste“ — nicht berichtigt (§1).
 
 **Träger-Meldungen (§3.13; fremde Dateien, gemeldet, nicht mitgeändert; Frist:
 Closure dieses Slice).**
@@ -438,10 +452,43 @@ Closure dieses Slice).**
   die Zeile ist jetzt ein Satz, der ausführliche Text steht in
   `harness/targets/pin-stale.md` (Abschnitt `make pin-stale-baseline`); der
   Bump-Slice ändert dort.
+- [`AGENTS.md`](../../../../AGENTS.md) §3.14: „die zentrale Wache …
+  (`tools/schema/rolloutguard`, siehe `harness/README.md` §Sensors,
+  `make schema-rollout`-Zeile)“ — die README-Zeile nennt die Wache nicht mehr,
+  sie steht in `harness/targets/schema-rollout.md` (die Zeile verlinkt sie).
+- `harness/mk/coverage.mk` Zeile 11–14: „Kalibrierungs-Bindung
+  (harness/README.md §Sensors …) … die uebrigen Traeger nennen nur die Rampe
+  (Einstieg 70 %, Endstufe 80 %)“ — die README-Zelle nennt die Rampe nicht mehr;
+  sie steht in `harness/sensors/coverage-gate.md`.
 - Die `Accepted`-ADRs, die eine Zeile der Tabelle zitieren (z. B.
   [`ADR-0044`](../../adr/0044-image-beleg-semantik.md) „`make image`-Werkzeuge-Zeile
   in `harness/README.md` tragen die korrigierte …“), frieren den Stand ihrer
   Zeit ein; die Zeilen bestehen weiter, kein Nachzug (`AGENTS.md` §3.5).
+
+### Fixrunde (Review `review-slice-harness-readme-zellen-kuerzen`, 2026-10-05)
+
+- **F-1 (MEDIUM):** jede der 15 Fassungen trägt hinter dem Einleitungssatz
+  „Der Text darunter ist der wortgleich umgezogene Index-Text, kein eigener
+  Vertrag: weicht er von dieser Datei ab, gilt §Vertrag (Link `#vertrag`) mit
+  den Abschnitten bis zu diesem.“ — alle 15 Dateien führen `## Vertrag`, der
+  Anker ist derselbe. Der umgezogene Wortlaut ist unverändert (Gegenprobe
+  unten); Befunde 7 und 9 nennen die Bereinigung als Folgearbeit. Die Aussage
+  „jede ergänzte Datei byte-gleich mit alter Inhalt + Abschnitt“ (§3 oben) gilt
+  damit für den Stand `76c3b9e0`; seither ist je Datei dieser eine Satz
+  hinzugekommen.
+- **F-2 (LOW):** `AGENTS.md` §3.14 und `harness/mk/coverage.mk` stehen unter
+  Träger-Meldungen; nicht geändert, Frist Closure.
+- **F-3 (LOW):** §1 verweist am Ausschluss „Neuschnitt“ auf Plan-Nachzug 1.
+- **F-4 (INFO):** die Bindung von `make doc-tracked` zeigt auf
+  `§Fassung im Gate-Index` statt `§Bindung`.
+- **F-5 (INFO):** Grenze 11 in `harness/sensors/docs-check.md` nennt, dass
+  `Bindung` keine Höchstlänge hat, und kennzeichnet den Satz über eine neue
+  Tabelle als hergeleitet.
+- **F-6 (INFO):** Befund 11.
+- **F-7 (INFO):** in der Zeile `make doc-trace` steht der Datei-Link hinter
+  „wie `make image-stale`“; der Kopf `**Bezug:**` verlinkt
+  [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) auf die ADR-Datei
+  mit ihrem Titel.
 
 ## 4. Trigger
 
