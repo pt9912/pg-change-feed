@@ -14,4 +14,9 @@ bis zu 3.000.000 Changes ist als Form gefasst („nicht mit nennenswertem Betrag
 der Changes“), jede Zahl nennt Host und Lauf, das Ganz-Target `make bench` steht „zur
 Kenntnis“; die Messwerte stammen von einem Host (Implementer-Läufe, Review-Lauf und
 Verifier-Lauf, `n` = 2 bis 3 je Stufe) — die zweite Umgebung bleibt offen.
-Zähler (abgeleitet): **1×** (evidence/slice-backfill-bench-richtgroesse.md).
+Angewandt ohne Anfall an `slice-bench-source-impact-absolut`: der Erwartungswert (Δ ≈ 3 ms) stand
+als „zu belegen durch den Lauf“; er trat auf dem Entwicklungshost nicht ein (gemessen Δ ≈ 1,7 bis
+1,8 ms), kein Kriterium kippte — die Messwerte stammen von einem Host, die zweite Umgebung bleibt
+offen (Re-Evaluierungs-Trigger der Entscheidung zu `LH-QA-PER-001`).
+Zähler (abgeleitet): **1×** (evidence/slice-backfill-bench-richtgroesse.md; angewandt ohne Anfall:
+evidence/slice-bench-source-impact-absolut.md).

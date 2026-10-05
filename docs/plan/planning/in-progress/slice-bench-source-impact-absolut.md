@@ -64,16 +64,18 @@ auf jedem Host, ohne die alte 35-%-Schwelle.
 - [x] Die Träger der bewegten Eigenschaft sind nachgezogen (Liste §3; Suchlauf im
       Bericht und in §6).
 - [x] `make gates` grün (Exit 0, ungefiltert gelaufen, Exit separat gesichert).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`), kein Self-Review.
+- [x] Review durchgeführt, Report [`review-slice-bench-source-impact-absolut`](../../../reviews/review-slice-bench-source-impact-absolut.md)
+      liegt vor (`.harness/skills/reviewer.md`), kein Self-Review; 0 HIGH, F-1 MEDIUM
+      behoben (Commit `ec082b45`). Verifikation:
+      [`verifikation-slice-bench-source-impact-absolut`](../../../reviews/verifikation-slice-bench-source-impact-absolut.md),
+      0 HIGH, 0 MEDIUM.
 - [x] Doku-Update: `docs/user/bench-abdeckung.md` (vom Generator geschrieben),
       kein weiterer öffentlicher Vertrag berührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register fortgeschrieben (`BEO-PGC/dod-kriterium-haengt-am-messhost`
-      um einen Beleg ergänzt, wenn der Lauf ihn liefert) oder „keine
-      Beobachtung angefallen“ in §7.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Beobachtungs-Register fortgeschrieben (`BEO-PGC/dod-kriterium-haengt-am-messhost`
+      um einen Beleg ergänzt: angewandt ohne Anfall, Zähler bleibt 1×, §7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen (§7).
 
 (Liefer-Punkte: zwei — Skript samt Probe, Träger-Nachzug.)
 
@@ -204,30 +206,68 @@ Closure-Notiz mit Lerneintrag geschrieben.
 
 - Das Skript hängt am Host: der Lauf dauert Minuten und braucht Docker-Netz; ein
   roter Lauf auf dem Entwicklungshost nach der Umstellung wäre ein Befund gegen
-  den Faktor 1,5 — **Ausgang:** weiter offen bis zum Lauf; tritt er ein, Folge-ADR
-  mit `Supersedes ADR-0155` (Re-Evaluierungs-Trigger dort).
+  den Faktor 1,5 — **Ausgang: entfallen** für den Entwicklungshost: vier
+  Implementer-Läufe (Läufe 1 bis 4 in §3, **übernommen** aus dem Implementer-Bericht,
+  Verhältnis 0,65 bis 0,99, alle Exit 0) und der Verifier-Lauf (**gemessen** im
+  Verifikations-Report §1: Δ 1,722 ms, `t_sync` 1,815 ms, Verhältnis 0,949, Exit 0)
+  sind grün. **Benannte Grenze, weiter offen:** die Aussage „gilt auf jedem Host“ ist
+  an einem Host belegt; Adresse und Trigger: Re-Evaluierungs-Trigger von
+  [`ADR-0155`](../../adr/0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md)
+  (Messung auf einem zweiten Host; tritt ein Rot dort ein, Folge-ADR mit
+  `Supersedes ADR-0155`).
 - Streuung der Verdikt-Eingabe: einzelne `pg_test_fsync`-Samples streuen auf dem
   Entwicklungshost um den Faktor 2 (1,785 bis 3,571 ms in einem Lauf); ein
   Einzelwert könnte die Grenze um diesen Faktor verschieben und das Verdikt bei
-  unveränderter Software kippen — **Ausgang:** eingetreten und gemindert: `t_sync`
-  ist der Median von drei Samples (Review-Befund F-1). Restrisiko: der Faktor 1,5
-  stützt sich auf wenige Messpunkte (`ADR-0155`: ein gemessener Punkt, ein Host) —
-  **weiter offen** über den Re-Evaluierungs-Trigger von `ADR-0155`.
+  unveränderter Software kippen — **Ausgang: eingetreten, gemindert:** `t_sync`
+  ist der Median von drei Samples (Review-Befund F-1, Commit `ec082b45`). Restrisiko:
+  der Faktor 1,5 stützt sich auf wenige Messpunkte (`ADR-0155`: ein gemessener Punkt,
+  ein Host) — **weiter offen** als benannte Grenze, Adresse: Re-Evaluierungs-Trigger
+  von `ADR-0155` (zweiter Host).
 - Der Suchlauf der Träger fängt Symbolnamen, nicht verschobene Zahlen
   (`AGENTS.md` §3.13 Grenze) — **Ausgang:** Lese-Handlung des Reviewers.
 - Die Zahlen des Verdikts in `harness/README.md` (87,5 % bis 95,8 %, 94,6 %)
   bleiben nur als **übernommen** stehen — **Ausgang:** entfallen als Risiko, wenn
-  die Zeile die Herkunft nennt (`AGENTS.md` §3.12).
+  die Zeile die Herkunft nennt (`AGENTS.md` §3.12) — **Ausgang: entfallen**, die
+  Zeile nennt die Herkunft als übernommen (Verifikation §3).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** —
-- **Was ging anders als geplant:** —
-- **Steering-Loop-Eintrag:** —
-- **Beobachtungs-Register:** —
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
-- **Drei Paarungen:** —
+- **Was hat funktioniert:** Die Mutationsprobe an Scratchpad-Kopien (Exit 1 bei
+  Faktor 0,5, Exit 2 bei fehlendem `pg_test_fsync`) und der Suchlauf mit
+  `make suchlauf-nachmessen` (acht Zeilen stimmen) trugen; der Review fand den
+  Messbasis-Mangel (F-1) früh, vor der Verifikation, und die Fixrunde war ein
+  Commit (`ec082b45`).
+- **Was ging anders als geplant:** Die Erwartung der ADR (Δ ≈ 3 ms, `t_sync` ≈ 2,9 ms,
+  übernommen) trat auf dem Entwicklungshost nicht ein: gemessen Δ ≈ 1,7 bis 1,8 ms,
+  `t_sync` ≈ 1,8 bis 2,8 ms (Läufe in §3, Verifikation §1/§2). Die Messgrößen hängen
+  am Messhost; das Verhältnis (0,65 bis 0,99) blieb unter 1,5. Der Median von drei
+  Samples ist eine Konkretisierung der ADR-Festlegung, kein Widerspruch.
+- **Steering-Loop-Eintrag:** (1) Eine Verdikt-Eingabe, die ein Architect-Verdikt als
+  Einzelwert führt, ist bei gemessener Streuung (Faktor 2 zwischen Samples) eine
+  Zustandsgröße mit Streubreite: der Slice-Schnitt fragt bei jeder Messgröße im
+  Verdikt des Skripts nach der Stückzahl der Samples und der Streuung, nicht nur
+  nach dem Wert. Geschärfte Rückfrage, kein neuer Sensor. (2) Erwartungswerte aus
+  einer ADR gelten für den Host der ADR; als „zu belegen durch den Lauf“
+  formuliert hielt das DoD-Kriterium die Abweichung aus (Messhost-Abhängigkeit,
+  Register-Beleg). (3) Review und Verifikation fanden die Lücke getrennt und früh;
+  die Rollentrennung trug.
+- **Beobachtungs-Register:** `BEO-PGC/dod-kriterium-haengt-am-messhost` um einen Beleg
+  erweitert (angewandt ohne Anfall, Zähler bleibt 1×, `evidence/slice-bench-source-impact-absolut.md`).
+  Kein neues Muster angelegt: die Streuungs-Rückfrage (1) ist ein einzelner Fund,
+  unter der Schwelle, dokumentiert im Review F-1.
+- **Folge-Slices:** keine. Offen als benannte Grenze: Messung von `LH-QA-PER-001`
+  auf einem zweiten Host (Re-Evaluierungs-Trigger von `ADR-0155`, kein Liefer-Punkt).
+- **Risiken aus §6:** alle vier tragen einen Ausgang (§6): Host-Rot entfallen,
+  Streuung eingetreten und gemindert, Suchlauf-Grenze Lese-Handlung, Verdikt-Zahlen
+  entfallen; Restgrenze „ein Host“ weiter offen mit Adresse.
+- **Drei Paarungen:** Anker: kein neuer Sensor, keine neue Regel (keiner zu prüfen).
+  Folge-Slice: keiner benannt. Register: `BEO-PGC/dod-kriterium-haengt-am-messhost`
+  existiert mit nicht-leerem `evidence/`. `ADR-0155`-Folgepflicht erfüllt: Skript,
+  `Makefile`-Hilfetext, `tools/bench-lib.sh`, `docs/user/bench-abdeckung.md`,
+  `harness/README.md`; die Index-Zeilen (`ADR-0104` „→ `ADR-0155`“ teilweise, `ADR-0151`
+  `Superseded`) stehen bereits im ADR-Index; `ADR-0155` bleibt `Accepted`
+  (immutabel, die Formulierung „bekannte Lücke bis zu diesem Slice“ im Text ist nun
+  erledigt, Korrektur wäre eine Folge-ADR und wird nicht verlangt).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
