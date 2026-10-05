@@ -17,7 +17,10 @@ ist dann als Quelle nicht mehr unverändert reproduzierbar.
    ist committet, ein Nach-Abgleich läuft gegen die Registry nicht).
 2. **Nur der Bestand, nicht die Anwendbarkeit** — die Prüfung sagt nichts
    über die verkörperte Form (Briefing, Konventionen, README); deren
-   Konformität zur Baseline lebt in Review und Drift-Audit. Permanent.
+   Konformität zur Baseline lebt in Review und Drift-Audit. Beim Bump trägt
+   sie der Vergleichs-Ablauf in
+   [`harness/targets/pin-stale.md`](../targets/pin-stale.md#bump-ablauf-vergleich-vor-dem-löschen-der-alten-baseline).
+   Permanent.
 3. **Upstream-Drift des Baseline-Stands** — ob es einen neueren
    Baseline-Tag gibt, meldet dieser Sensor nicht (siehe `harness/README.md`
    §Nicht behauptet). Permanent, bis ein Freshness-Audit (Modul 2) läuft.
