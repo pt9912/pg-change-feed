@@ -1,4 +1,4 @@
-# Planning — <Projektname>
+# Planning — pg-change-feed
 
 Slice-Lifecycle: `open/` → `next/` → `in-progress/` → `done/`.
 

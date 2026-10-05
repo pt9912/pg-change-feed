@@ -305,8 +305,9 @@ die übernommene Aussage „Vorlage zwischen 6.13.0 und 6.14.0 unverändert“
 nachgemessen: die beiden Abweichungen der Planungs-README sind älter als der Bump.
 
 **Liefer-Punkt 1.** `diff <Vorlage> docs/plan/planning/README.md`: am Parent 20
-Zeilen, am Endstand 10 Zeilen. Übrig bleiben zwei Stellen, beide repo-spezifisch:
-der Template-Hinweis-Block (die Vorlage verlangt, ihn beim Kopieren zu löschen)
+Zeilen, nach der ersten Runde 10 Zeilen, nach Verifikation V-1 13 Zeilen. Übrig
+bleiben drei Stellen, alle repo-spezifisch: der ausgefüllte Projektname im Titel
+(V-1), der Template-Hinweis-Block (die Vorlage verlangt, ihn beim Kopieren zu löschen)
 und der Kommentar `d-check:ignore` am Pfad `docs/plan/carveouts/done/` — das
 Verzeichnis existiert nicht (`git ls-files docs/plan/carveouts` nennt nur
 `.gitkeep`), ohne den Kommentar meldete `links` ein fehlendes Ziel.
@@ -490,6 +491,18 @@ Nachweise am Parent `d79b7ebd` auf Kopien im Scratchpad
   `.harness/skills/reviewer.md` 62 ist berichtigt. Nur gemeldet.
 - **F-6 (INFO) — Grenze der Stichprobe.** Die Regel nennt sie in einem Satz:
   ohne Bump trägt die Stichprobe weiter der Drift-Audit nach `AGENTS.md` §1.
+- **Verifikation V-1 (MEDIUM) — Titel-Platzhalter der Planungs-README.** Zeile 1
+  trug `# Planning — <Projektname>`; ersetzt durch `# Planning — pg-change-feed`.
+  Ergänzung zum F-1-Nachweis: die zweite Platzhalter-Form der Regel
+  (`grep -n -F -f <(grep -o -E '<[^<>]+>' README.template.md | sort -u)`, vier
+  Platzhalter der Vorlage: `<Kennung>`, `<Platzhalter>`, `<Projektname>`,
+  `<welle-id>`) trifft am Parent `d79b7ebd` 2 Zeilen, darunter Zeile 1
+  `<Projektname>` — die Regel hätte V-1 gefunden; Liefer-Punkt 1 hatte die Zeile
+  übersehen. Am Endstand: zweite Form 3 Zeilen (29 `<welle-id>`, 32 und 41
+  `welle-<Kennung>`), alle drei wortgleich mit der Vorlage — die Vorlage trägt sie
+  als Form der Konvention, kein auszufüllender Platzhalter (der volle `diff`
+  zeigt an diesen Zeilen keinen Unterschied); erste Form (Muster des Laufs)
+  0 Treffer. Kein weiterer Platzhalter.
 
 ## 4. Trigger
 
