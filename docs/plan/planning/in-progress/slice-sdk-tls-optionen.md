@@ -119,7 +119,7 @@ je SDK belegt es gegen ein Zertifikat, das nicht im Systemspeicher steht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `sdks/csharp/PgChangeFeed.Client/TlsTransport.cs` | neu | Handler mit Prüfung gegen genau die Anker (`CustomRootTrust`, `NoCheck`), Servername und `RemoteCertificateNotAvailable` aus der Plattform-Prüfung übernommen; `https` Pflicht bei Anker |
+| `sdks/csharp/PgChangeFeed.Client/TlsTransport.cs` | neu | Handler mit Prüfung gegen genau die Anker (`CustomRootTrust`, `NoCheck`), Servername und `RemoteCertificateNotAvailable` aus der Plattform-Prüfung übernommen; ein präsentiertes Zertifikat, das byte-gleich einem Anker ist, gilt nach der Gültigkeitsprüfung (Server-Zertifikat eines Ausstellers als alleiniger Anker); `https` Pflicht bei Anker |
 | `PgChangeFeedClientOptions.cs`, `Http/PgChangeFeedHttpClient.cs`, `Sse/PgChangeFeedSseClient.cs`, `Grpc/*Client.cs` (C#) | update | `TrustAnchorFile` (Konstruktor mit dritter Angabe), PEM-Prüfung beim Erzeugen; HTTP- und SSE-Client haben keinen Konstruktor, der die Verbindung selbst baut — neu `PgChangeFeedHttpClient(options)` und `PgChangeFeedSseClient(options)` (`IDisposable`, besitzen ihren `HttpClient`); die gRPC-Clients bauen ihren Kanal über denselben Handler |
 | `Grpc/PgChangeFeedAdministrationClient.cs` `MapException` | update | ein TLS-Fehler kommt als `RpcException` mit Status `Internal` und dem `HttpRequestException` als `DebugException` an; er wäre als `PgChangeFeedGrpcInternalException` („Fehler im Server“) gemeldet worden — jetzt `PgChangeFeedGrpcUnexpectedStatusException` ohne Meldungscode (`SPEC-037`: Verbindungsfehler, Server nicht erreicht) |
 | `sdks/csharp/.../PgChangeFeed.Client.Tests/Tls/*` und `PgChangeFeed.Client.Tests.csproj` | neu / update | Kestrel-Server auf Loopback (`FrameworkReference Microsoft.AspNetCore.App`, kein neues Paket), Zertifikate zur Laufzeit (`CertificateRequest`), vier Flächen je Fall |
@@ -135,7 +135,7 @@ je SDK belegt es gegen ein Zertifikat, das nicht im Systemspeicher steht.
 
 ```suchlauf
 71c6a886 9 -i -E 'plaintext|no TLS' -- sdks
-diff 37 -i -E 'plaintext|no TLS' -- sdks
+diff 38 -i -E 'plaintext|no TLS' -- sdks
 71c6a886 6 -i -E 'does not serve TLS|speaks plaintext|plaintext gRPC' -- sdks
 diff 0 -i -E 'does not serve TLS|speaks plaintext|plaintext gRPC' -- sdks
 71c6a886 2 -i -E 'keine TLS-Einstellung' -- docs/user
@@ -144,7 +144,8 @@ diff 1 -i -E 'keine TLS-Einstellung' -- docs/user
 
 Stand der Zeilen: **gemessen** mit `git grep -n` am Parent `71c6a886` und am Arbeitsbaum
 (`diff`); der Implementer wiederholt sie mit `make suchlauf-nachmessen PLAN=<Plan-Datei>`.
-Die 37 `diff`-Trefferzeilen zu „plaintext“ sind gelesen: 14 liegen in Dateien, die
+Die 38 `diff`-Trefferzeilen zu „plaintext“ sind gelesen (die 38. ist der Upgrading-Eintrag
+des Kotlin-READMEs der Fixrunde): 15 liegen in Dateien, die
 schon am Parent standen (READMEs, Docstrings der Konstruktoren), 23 in den neuen
 Dateien (`TlsTransport.cs`, `TlsSupport.kt`, `tls.py`, Tests und Test-Server);
 jede nennt Klartext als Zweig neben TLS (`https`/`http`-Gegenüberstellung,
@@ -226,7 +227,71 @@ gepinnt (`dotnet/sdk:10.0`, `eclipse-temurin:21-jdk`, `python:3.14-slim`,
     abgelaufene Zertifikat unter Python (der Test ist grün; eine Mutation, die
     allein den Zeitraum abschaltet, wurde nicht gefahren — *hergeleitet*: OpenSSL
     prüft den Zeitraum der Kette), (c) die Ausstellerfälle (`IssuerAsTrustAnchor`) in allen
-    drei Sprachen sind nicht mutiert.
+    drei Sprachen sind nicht mutiert (Stand der Fixrunde: (a) Python HTTP/SSE
+    gebunden, (c) für C# teilweise durch die Mutationen der Fixrunde belegt).
+- **Fixrunde nach dem Review (F-2, F-3, F-4, F-6), gemessen am Arbeitsstand dieser Runde.**
+  - **F-2 (Server-Zertifikat eines Ausstellers als alleiniger Anker).** Je ein Fall
+    `Blatt-Zertifikat eines Ausstellers als alleiniger Anker` (Erfolg) und `Blatt eines
+    anderen Servers als Anker` (Fehler) auf allen vier Flächen, in allen drei Sprachen.
+    **Gemessen vor dem Fix:** Kotlin und Python bestehen den Erfolgsfall unverändert
+    (`make sdk-pack-kotlin` Exit 0; `make sdk-pack-python` Exit 0); C# scheitert an
+    allen vier Flächen (`Failed:     4, Passed:   250, Skipped:     0, Total:   254`,
+    Ursache `PartialChain`, Aussteller fehlt in der Kette). **Fix nur in C#**
+    (`TlsTransport.cs`): ist das präsentierte Zertifikat byte-gleich (`RawData`)
+    einem Anker, gelten nach der Namens- und Verfügbarkeitsprüfung der Plattform der
+    Gültigkeitszeitraum als Prüfung, sonst die Kettenprüfung mit `CustomRootTrust`;
+    die Prüfung bleibt an, kein `AllowUnknownCertificateAuthority`. **Danach:** C#
+    `Passed!  - Failed:     0, Passed:   254, Skipped:     0, Total:   254`, Kotlin
+    `BUILD SUCCESSFUL` (13 Fälle in `TlsClientTest`), Python `252 passed`.
+    Mutationen (Kopie im Scratchpad, Bau in Docker, Eingabeseite = das
+    präsentierte Zertifikat): Gleichheitsprüfung unwirksam (`false &&`) · rot
+    `IssuedServerCertificateAsOnlyTrustAnchor_ConnectsOverTls` × 4 (4 von 254);
+    Gültigkeitsprüfung im Gleichheitszweig durch `return true` ersetzt · rot
+    `ExpiredCertificate_FailsTheConnection` × 4 (4 von 254); Gleichheitsprüfung
+    durch „jeder Anker gleich“ ersetzt (zusammen mit `return true` im Zweig) · rot
+    `ForeignAnchor_…`, `IssuedServerCertificateOfAnotherServerAsTrustAnchor_…`,
+    `IssuerOfAnotherServerAsTrustAnchor_…` und `ExpiredCertificate_…`, je × 4.
+    Die Fälle in Kotlin und Python sind nicht mutiert (die Implementierung
+    unverändert, der Fall bestand vor der Änderung; *hergeleitet*: die Anker-Speicher
+    von JDK und OpenSSL nehmen ein Blatt als Anker auf).
+  - **F-3 (Systemanker gelten bei gesetztem Anker nicht zusätzlich).** Python HTTP und
+    SSE gebunden: `test_with_anchor_the_system_trust_does_not_apply[http|sse]` setzt
+    `SSL_CERT_FILE` auf das Server-Zertifikat (Kontrolle: ohne Anker verbindet der
+    Client), mit fremdem Anker scheitert dieselbe Verbindung; Mutation
+    `context.load_default_certs()` nach dem Anker-Kontext · rot (2 von 252 Fällen).
+    **Nicht gebunden bleiben:** Python gRPC (der Wurzelspeicher von gRPC liest
+    `GRPC_DEFAULT_SSL_ROOTS_FILE_PATH` einmal je Prozess, ein Test im selben Prozess
+    wäre reihenfolgeabhängig), C# (`SSL_CERT_FILE` wirkt auf den Wurzelspeicher der
+    Plattform, der prozessweit beim ersten Gebrauch gelesen wird) und Kotlin (der
+    Standard-`SSLContext` der JDK ist prozessweit initialisiert); ein Test dort wäre
+    ein Scheintest oder bräuchte einen Kindprozess je Fall. Der Code setzt in diesen
+    Fällen nur den Anker-Speicher (*hergeleitet*, wie oben).
+  - **F-4 (Verhaltensänderungen, Kompat-Messung).** `make test-sdk-kompat` (Standard,
+    `SDK_KOMPAT_NEU=dist`) endet rot (Exit 2) an der Auflösung des Pakets: das Ziel
+    erwartet `0.6.0` in `sdks/csharp/dist`, dort liegt `0.6.1`
+    (`NU1603 … PgChangeFeed.Client 0.6.0 was not found. … 0.6.1 was resolved instead`);
+    die Ursache steht seit dem Versionsstand `0.6.1` und liegt nicht an dieser
+    Änderung. `SDK_KOMPAT_NEU=registry` endet mit Exit 0 (`Kompatibilitätsmessung
+    (registry) grün für: csharp kotlin python`) und misst die veröffentlichten
+    Pakete, **nicht** den Arbeitsstand; das neue C#-Mapping (`Internal` mit
+    `HttpRequestException` → `UnexpectedStatus`) und `https` → TLS in Kotlin sind
+    damit von dem Ziel **nicht gemessen** (das Ziel liest die Fehlertypen, nicht
+    das Mapping), ihre Belege sind die Unit-Fälle `ExpectConnectionFailureAsync`
+    bzw. `expectConnectionFailure`. Beide Änderungen stehen als Eintrag
+    „Upgrading“ in den READMEs von C# und Kotlin (Überschrift `0.7.0`, die nächste
+    Minor-Version laut `SPEC-037`; die Package-Versionen bleiben bis zum Release-Zug).
+  - **F-6 (Kotlin-Realserver, Gegenlauf).** `SDK_TLS_CA_FILE=/tls/other.pem make
+    test-sdk-kotlin-integration` · Exit 2; rot in der HTTP-TLS-Phase:
+    `registersAConsumerAndListsTablesOverTlsWithTheTrustAnchor() FAILED
+    javax.net.ssl.SSLHandshakeException` (die Ablehnungs-Fälle der Phase blieben
+    `REJECTED tls no_anchor=ok foreign_anchor=ok name_mismatch=ok`). Die
+    Ausstellerfälle am Realserver sind nicht gefahren: `certgen` erzeugt
+    selbstsignierte Zertifikate, ein Ausstellerfall bräuchte eine Erweiterung der
+    Fixture; sie sind in den Unit-Fällen aller drei Sprachen gebunden.
+  - **Realserver, Wiederholung nach dem Fix** (`make image` Exit 0 zuvor): die drei
+    `make test-sdk-*-integration` je Exit 0, die TLS-Zeilen wie oben
+    (C# `csharp-sdk-tls-20261005064620`, Kotlin `kotlin-sdk-tls-20261005065038`,
+    Python `python-sdk-tls-4acfb622a1fd`).
 - **Realserver** (`make image` zuvor; je Runner ein Lauf, Exit 0; die Zeile ist die
   gedruckte Abschlusszeile des Runners, `change_id`/`consumer_id` je unabhängig
   über `cdc.changes` bzw. `cdc.consumer` gegengelesen):
@@ -252,7 +317,7 @@ gepinnt (`dotnet/sdk:10.0`, `eclipse-temurin:21-jdk`, `python:3.14-slim`,
     HTTP-TLS-Phase — mit dem richtigen Anker als fremdem: „der Ablehnungs-Beleg
     blieb aus (REJECTED tls … fehlt)“, mit dem fremden als richtigem: „der Test
     empfing keine der committeten Änderungen“ bzw. „lieferte den Happy-Path-Marker
-    nicht“. Nicht gefahren: Kotlin mit `SDK_TLS_CA_FILE=/tls/other.pem`.
+    nicht“. Der Kotlin-Lauf mit `SDK_TLS_CA_FILE=/tls/other.pem` steht in der Fixrunde (F-6).
 - **Pakete:** `make sdk-pack-csharp`, `make sdk-pack-kotlin`, `make sdk-pack-python`
   je Exit 0; Artefakte `PgChangeFeed.Client.0.6.1.nupkg`,
   `pgchangefeed-kotlin-0.6.1.jar` und `…-0.6.1-sources.jar`,
