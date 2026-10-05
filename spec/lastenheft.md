@@ -1,7 +1,7 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.15.1 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.16.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
 **Autor:** pt9912, **Datum:** 2026-09-12
@@ -1209,8 +1209,8 @@ Zertifikate, die Prüfung von Gültigkeitszeitraum, Namen und Kette des
 Zertifikats beim Start (der Client prüft sie beim Verbinden). Die Verbindung zu NATS (`LH-FA-SST-007`, `LH-FA-SST-008`) und die
 Verbindungen zur PostgreSQL-Instanz sind nicht Gegenstand dieser Anforderung;
 die Verschlüsselung der NATS-Verbindung ist Sache der NATS-Konfiguration. Die
-TLS-Optionen der Client-Bibliotheken (`LH-FA-SST-009`) sind eine eigene,
-nachgelagerte Anforderung.
+TLS-Optionen der Client-Bibliotheken (`LH-FA-SST-009`) sind Gegenstand von
+`LH-FA-SST-013`.
 
 ### LH-FA-SST-012 — Unterbrechungsfreier Wechsel der API-Token
 
@@ -1244,6 +1244,43 @@ automatische Rotation, ein Token-Verwaltungsdienst und das Speichern von Token
 in Hash-Form sind nicht gefordert. Der Verbindungs-Token des NATS-Zustellwegs
 (`LH-FA-SST-008`) wird vom NATS-Server vergeben und gewechselt und ist nicht
 Gegenstand dieser Anforderung.
+
+### LH-FA-SST-013 — TLS-Optionen der Client-Bibliotheken
+
+**Beschreibung:** Die offiziellen Client-Bibliotheken (`LH-FA-SST-009`) müssen
+die HTTP-, SSE- und gRPC-Zustellwege über eine TLS-gesicherte Verbindung
+(`LH-FA-SST-011`) nutzen können, auch wenn der Aussteller des
+Server-Zertifikats nicht zu den Vertrauensankern des Betriebssystems gehört:
+der Anwender kann einen eigenen Vertrauensanker (Zertifikat des Ausstellers
+oder des Servers) angeben.
+
+**Akzeptanzkriterien:**
+
+- **Happy Path:** Given der Server läuft mit TLS und einem Zertifikat, dessen
+  Aussteller das System des Clients nicht kennt, when der Anwender den
+  Vertrauensanker an der Client-Bibliothek angibt, then verbindet sich der
+  Client über TLS, und die Fähigkeiten des Zustellwegs (`LH-FA-SST-006`,
+  `LH-FA-SST-008`) sind fachlich gleichwertig zum Betrieb ohne TLS nutzbar.
+- **Boundary:** Given keine TLS-Option ist angegeben und die Adresse ist die
+  des unverschlüsselten Betriebs, when der Client sich verbindet, then verhält
+  er sich unverändert. Given die Adresse verlangt TLS und kein eigener
+  Vertrauensanker ist angegeben, when der Client sich verbindet, then
+  entscheiden die Vertrauensanker des Betriebssystems.
+- **Negative:** Given das Zertifikat des Servers ist nicht vertrauenswürdig,
+  abgelaufen oder gehört nicht zum angesprochenen Namen, when der Client sich
+  verbindet, then scheitert die Verbindung sichtbar mit einem Verbindungsfehler;
+  es gibt weder einen stillen Rückfall auf eine unverschlüsselte Verbindung noch
+  eine Einstellung, die die Prüfung abschaltet. Given der angegebene
+  Vertrauensanker ist nicht lesbar oder enthält kein Zertifikat, when der
+  Client erzeugt wird, then scheitert dies sichtbar mit einem
+  Konfigurationsfehler.
+
+**Out-of-Scope:** Client-Zertifikate (gegenseitige Authentisierung), eine
+Einstellung zum Abschalten der Zertifikatsprüfung, das Überschreiben des
+Servernamens, gegen den geprüft wird, Mindestversion und Cipher-Auswahl des
+Clients, Neuladen des Vertrauensankers zur Laufzeit. Die Verbindung zu NATS
+(`LH-FA-SST-007`, `LH-FA-SST-008`) ist nicht Gegenstand dieser Anforderung; ihre
+Verschlüsselung ist Sache der NATS-Konfiguration.
 
 ---
 
@@ -1296,14 +1333,17 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 ### LH-QA-PER-001 — Geringe Auswirkung auf die Quelle
 
 - **Anforderung:** Die Auswirkung auf schreibende Quelltransaktionen soll
-  minimiert werden und eine festgelegte absolute Obergrenze nicht
-  überschreiten: die zusätzliche Commit-Latenz je Quelltransaktion durch
-  aktivierte CDC, in Millisekunden, gemessen in einer benannten Messumgebung.
+  minimiert werden und eine festgelegte Obergrenze nicht überschreiten: die
+  zusätzliche Commit-Latenz je Quelltransaktion durch aktivierte CDC, in
+  Millisekunden, bezogen auf die Latenz des Festschreibens (Flush) auf dem
+  Datenträger der Quelle, gemessen im selben Lauf. Die Obergrenze gilt damit
+  auf jedem Host; sie misst nicht die Geschwindigkeit des Datenträgers mit.
 - **Messmethode:** Benchmark: dieselbe Folge einzeln committeter
   Quelltransaktionen der Quelle mit und ohne aktivierte CDC; die zusätzliche
   Commit-Latenz ist die Differenz der Gesamtdauern geteilt durch die Zahl der
-  Transaktionen. Wert und Messumgebung sind in `spec/pflichtenheft.md` §3
-  festgelegt ([`SPEC-025`](pflichtenheft.md), [`SPEC-036`](pflichtenheft.md)).
+  Transaktionen; die Festschreib-Latenz wird im selben Lauf gemessen. Grenze
+  und Messvorschrift sind in `spec/pflichtenheft.md` §3 festgelegt
+  ([`SPEC-025`](pflichtenheft.md), [`SPEC-036`](pflichtenheft.md)).
 
 ### LH-QA-PER-002 — Skalierbarkeit
 
@@ -1488,3 +1528,4 @@ in dieser Tabelle (Decken-Regel).
 | 0.14.0 | 2026-10-01 | `LH-FA-CFG-008`: das Happy-Path-Kriterium sagt, was „zugestellt“ heißt — die Change ist über die Zugriffswege des Systems (Abruf oder Abonnement) unter dem Zustellziel auswählbar; die Anforderung wird inhaltlich nicht erweitert, die Klarstellung hält die Lesart fest, auf der die Abnahme beruht; dieselbe Draft-Regel wie bei 0.4.0–0.13.0, eigener Commit vor dem E2E-Slice der Routing-Welle | — |
 | 0.15.0 | 2026-10-04 | `LH-FA-SST-010` (Metrik-Export über OpenTelemetry/OTLP als aktiver Push, zusätzlich zur SQL-Sicht), `LH-FA-SST-011` (TLS der HTTP- und gRPC-Schnittstellen) und `LH-FA-SST-012` (mehrere gleichzeitig gültige API-Token je Klasse für einen unterbrechungsfreien Wechsel) neu ergänzt; `LH-QA-PER-001` von „minimiert“ auf eine absolute Obergrenze der zusätzlichen Commit-Latenz je Quelltransaktion in einer benannten Messumgebung gefasst (Wert und Umgebung im Pflichtenheft); §5: Zukunftsliste „Produktionsreife Observability“ neu gefasst, zwei Nicht-Anforderungen ergänzt; `LH-QA-OPS-003` und `LH-FA-SST-004` bleiben unverändert; dieselbe Draft-Regel wie bei 0.4.0–0.14.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.15.1 | 2026-10-04 | `LH-FA-SST-011`: Negative nennt „ungültig“ als „nicht als PEM-Zertifikat bzw. -Schlüssel ladbar“, Out-of-Scope um die Prüfung von Gültigkeitszeitraum, Namen und Kette beim Start ergänzt — hält die Lesart fest, auf der die Umsetzung beruht (Lockerung gegenüber der weitesten Lesart von „ungültig“, bestätigt vom Auftraggeber); dieselbe Draft-Regel wie bei 0.4.0–0.15.0, eigener Commit vor dem Pflichtenheft-Nachzug | — |
+| 0.16.0 | 2026-10-05 | `LH-QA-PER-001`: Obergrenze der zusätzlichen Commit-Latenz je Quelltransaktion bezogen auf die im selben Lauf gemessene Festschreib-Latenz des Datenträgers statt als absoluter Millisekunden-Wert in einer benannten Messumgebung (gilt auf jedem Host); `LH-FA-SST-013` (TLS-Optionen der Client-Bibliotheken: eigener Vertrauensanker für HTTP, SSE und gRPC) neu ergänzt, `LH-FA-SST-011` verweist darauf; dieselbe Draft-Regel wie bei 0.4.0–0.15.1, eigener Commit vor jedem umsetzenden Slice | — |
