@@ -10,8 +10,8 @@ Referenz: lokaler Link oder Heading-Anker ins Leere (`target-missing`,
 (`version-stale`), Struktur-Verstoß im Abschnitt
 (`section-cell-*`, `section-forbidden` — Register-Spalten,
 Closure-Notiz-Guidance, die Verweisform auf wandernde Slice-Pläne in
-Berichten und der Register-Identität und die erzeugte
-E2E-Abdeckungstabelle), oder einen host-lokalen absoluten Pfad in Prosa oder
+Berichten und der Register-Identität, die erzeugte
+E2E-Abdeckungstabelle und die Zellenlänge des Gate-Index), oder einen host-lokalen absoluten Pfad in Prosa oder
 Inline-Code (`hostpath-forbidden` — ein Schwester-Artefakt wird als blankes
 Repo-Wort mit relativem Pfad zitiert,
 [`ADR-0074`](../../docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md)).
@@ -22,9 +22,15 @@ Die `structure`-Regeln prüfen Abschnitts-Invarianten in ihren Trägerdateien:
 den ADR-Index, die Pflichtenheft-Defaults, zwei Architektur-Tabellen, die
 Closure-Notiz je `done/slice-*.md` (sie läuft seit der ersten Closure mit,
 `· seit slice-001`), die Verweisform auf wandernde Slice-Pläne in Berichten
-und Register-Identität sowie die erzeugte E2E-Abdeckungstabelle. Innerhalb
+und Register-Identität, die erzeugte E2E-Abdeckungstabelle sowie den Gate-Index
+in `harness/README.md` §Sensors (Feedback-Gates): dort ist eine Zelle der
+Spalte `Vertrag` höchstens 220 und eine Zelle der Spalte `Tut was` höchstens
+120 Zeichen lang, beide mindestens 1; die Regel misst beide Tabellen des
+Abschnitts (Gate-Tabelle und Werkzeuge-Tabelle), weil sie die Spalte über den
+Kopfzeilen-Namen findet · seit slice-harness-readme-zellen-kuerzen. Innerhalb
 dieser Familie adressieren die vier Tabellen-Regeln und die
-E2E-Abdeckungstabelle ihre Spalten über Mindestbreiten; die
+E2E-Abdeckungstabelle ihre Spalten über Mindestbreiten, die Gate-Index-Regel
+über Mindest- und Höchstlänge; die
 Closure-Notiz-Regel und die beiden Verweisform-Regeln tragen keinen
 Spalten-Knoten und prüfen nur Abschnitt und Muster
 (`non-empty`/`max-open-tasks`/`require-pattern`/`forbid-pattern`). Keine
@@ -151,6 +157,18 @@ Regel zählt Zeilen.
     sagt über die RTM nichts aus — sie bleibt advisory, ihr Exit-Code steht
     unabhängig neben dem Gate · seit slice-d-check-trace-rtm.
 
+11. **Die Gate-Index-Regel misst die Länge, nicht den Satz.** Sie hält jede
+    Zelle der Spalten `Vertrag` und `Tut was` in `harness/README.md`
+    §Sensors (Feedback-Gates) unter ihrer Höchstlänge; ob der Satz die Zeile
+    trägt, ob die Bindung die ausführliche Datei unter `harness/sensors/` bzw.
+    `harness/targets/` verlinkt und ob diese Datei den Inhalt führt, prüft sie
+    nicht — das bleibt Review. Eine neue Tabelle im Abschnitt mit einem
+    anderen Spaltennamen fällt aus der Regel. Gemessen an einer Kopie im
+    Scratchpad: eine Zelle `Tut was` mit 121 Zeichen und eine Zelle `Vertrag`
+    mit 222 Zeichen enden mit `section-cell-oversized` (Exit 2), eine leere
+    Zelle `Tut was` mit `section-cell-undersized`, eine Zelle mit 120 Zeichen
+    bleibt grün · seit slice-harness-readme-zellen-kuerzen.
+
 **Wie groß der Ausschnitt ist, sagt das Kommando, nicht diese Datei:**
 `docker run … d-check` über `scan.roots: ["."]` mit `scan.ignore`; die
 Vollständigkeits-Zeile „N Datei(en) geprüft, 0 Befund(e)“ sagt etwas über
@@ -181,7 +199,9 @@ Verweisform auf wandernde Slice-Pläne (`BEO-PGC/slice-pfad-als-link-in-berichte
 3×, `seit slice-075`) · Form der erzeugten E2E-Abdeckungstabelle
 ([`LH-QA-POR-003`](../../spec/lastenheft.md) — die E2E-Kette ist ihr
 Erzeuger; die `structure`-Regel sichert die Zeilenform, die `ids`-Linkpflicht
-die Kennungsspalte) — `.d-check.yml` §structure · kein host-lokaler absoluter
+die Kennungsspalte) · Zellenlänge des Gate-Index (Baseline-Regelwerk
+`grundlagen-harness-dateien.md` §harness/README.md als Einstiegspunkt,
+`seit slice-harness-readme-zellen-kuerzen`) — `.d-check.yml` §structure · kein host-lokaler absoluter
 Pfad in der Doku (`hostpaths` in `modules`, ohne Ausschlussblock —
 [`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)
 trägt die Aktivierung, die Reichweite der Regel
@@ -196,3 +216,11 @@ git-Index (`tracked` in `modules`, Konfiguration `.d-check.yml` §tracked,
 (`structure`-Modul-Aktivierung, 2026-09-09), siehe
 [`docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md`](../../docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md)
 · seit slice-d-check-tracked-modul).
+
+## Fassung im Gate-Index
+
+Ausführliche Fassung der Index-Zeile aus [`harness/README.md` §Sensors](../README.md#sensors-feedback-gates); die Zeile dort trägt einen Satz und verlinkt hierher.
+
+### `make doc-tracked`
+
+isolierter Einzel-Lauf des `tracked`-Moduls (Getrackt-Status auflösbarer, existierender Link-/Bild-Ziele gegen den git-Index, `--enable tracked` mit allen anderen Modulen `--disable`) — das Modul läuft bereits im `modules:`-Bündel mit und damit in `make docs-check`/`make gates`; dieses Ziel bleibt daneben als isoliertes Diagnose-Werkzeug bestehen, netzlos, braucht `.git` im Mount

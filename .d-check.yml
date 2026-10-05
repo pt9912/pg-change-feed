@@ -190,6 +190,24 @@ structure:
         - name: Substituierbarkeit
           cell-min-chars: 10
           cell-max-chars: 200
+  # Gate-Index: die Index-Zeile traegt einen Satz, der ausfuehrliche Vertrag
+  # steht in harness/sensors/<target>.md bzw. harness/targets/<gruppe>.md
+  # (Baseline-Regelwerk grundlagen-harness-dateien.md, harness/README.md als
+  # Einstiegspunkt). Der Abschnitt traegt zwei Tabellen; die Spalte wird ueber
+  # den Kopfzeilen-Namen adressiert, `Vertrag` steht nur in der Gate-Tabelle,
+  # `Tut was` nur in der Werkzeuge-Tabelle, und die Regel misst beide.
+  # Grenze: die Regel misst die Laenge einer Zelle, nicht ob ihr Satz die Zeile
+  # traegt und nicht, ob die verlinkte Datei den ausfuehrlichen Inhalt fuehrt.
+  - files: harness/README.md
+    section: "## Sensors (Feedback-Gates)"
+    table:
+      column:
+        - name: Vertrag
+          cell-min-chars: 1
+          cell-max-chars: 220
+        - name: Tut was
+          cell-min-chars: 1
+          cell-max-chars: 120
   # Fuenfte Regel — AKTIVIERT mit der ERSTEN Closure (slice-001/slice-002
   # in done/, 2026-09-09): Closure-Notiz je Slice vorhanden, gefuellt,
   # Lerneintrag enthalten, keine offenen Aufgaben, ohne Vorlagen-Guidance.
