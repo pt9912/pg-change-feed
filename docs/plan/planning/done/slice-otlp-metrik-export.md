@@ -114,7 +114,7 @@ von **neun auf elf** — genau seine zwei Schlüssel; die zwei anderen trägt
 (Begründung dort, §1). `otlp_interval` ist ein **zulässiges** Datei-Feld und kein
 Klassenmitglied (eine Zahl trägt keine Zugangsdaten).
 
-**Übergabe-Block an [`otlp-metrik-export-e2e`](../in-progress/slice-otlp-metrik-export-e2e.md)**
+**Übergabe-Block an [`otlp-metrik-export-e2e`](slice-otlp-metrik-export-e2e.md)**
 (Folge-Slice, mit der Closure dieses Slice angelegt — §7). Der
 Gegenstand, den der Realserver-Beleg dort tragen muss und den dieser Slice
 **nicht** trägt: (1) ein Wegwerf-Empfänger im Compose-Netz nimmt `POST /v1/metrics`
@@ -356,7 +356,7 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       Benutzerteil der Endpunkt-URL in `SPEC-033`: Spec-Zug; Frist beider: vor dem
       Release) (§3 Suchlauf, [`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Der Folge-Slice `otlp-metrik-export-e2e` ist als Datei in `open/` angelegt
-      ([`slice-otlp-metrik-export-e2e`](../in-progress/slice-otlp-metrik-export-e2e.md);
+      ([`slice-otlp-metrik-export-e2e`](slice-otlp-metrik-export-e2e.md);
       Planner, mit der Closure) und trägt den Übergabe-Block aus §1 als
       committeten Text in seinem §2 — kein Verweis auf diesen Plan allein.
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
@@ -742,7 +742,7 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   Unit- und Datenbank-Ebene entfallen (`TestMetricsReadEqualsTheView`,
   `TestStartMetricExportDeliversTheValuesOfTheView` laufen und überspringen sich
   nicht, Verifikation §1); die Realserver-Hälfte weiter offen und übergeben an
-  [`slice-otlp-metrik-export-e2e`](../in-progress/slice-otlp-metrik-export-e2e.md) (gegen
+  [`slice-otlp-metrik-export-e2e`](slice-otlp-metrik-export-e2e.md) (gegen
   einen echten Collector).
 - **Die Warnung trägt eine Zugangsdaten-Information** (Header-Wert, Userinfo
   der URL im Fehlertext des HTTP-Clients: `net/http` nennt die URL im Fehler): die
@@ -766,7 +766,7 @@ Closure **offen** (Platzhalter `Ausgang: offen bis Closure`).
   *nach Kenntnisstand* enthalten, ungeprüft): im Folge-Slice zu messen (Übergabe-Block
   Punkt 4); dieser Slice liefert dazu keine Aussage und das Handbuch nennt für
   `https` keine Zusage. — **Ausgang:** weiter offen, übergeben an
-  [`slice-otlp-metrik-export-e2e`](../in-progress/slice-otlp-metrik-export-e2e.md)
+  [`slice-otlp-metrik-export-e2e`](slice-otlp-metrik-export-e2e.md)
   (Liefer-Punkt 3: das CA-Bündel am Image gemessen, nicht übernommen).
 - **Das Handbuch zieht nicht mit** (Betreiber-Oberfläche wächst um drei
   Variablen, ein Datei-Feld, zwei Codes und einen Bereich):
@@ -862,7 +862,7 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   Validator-Lauf ist nach dem Release sinnvoll, mit Token-Wechsel und TLS
   (Betreiber-Oberfläche als Ganzes).
 - **Folge-Slices:**
-  [`slice-otlp-metrik-export-e2e`](../in-progress/slice-otlp-metrik-export-e2e.md) —
+  [`slice-otlp-metrik-export-e2e`](slice-otlp-metrik-export-e2e.md) —
   Realserver-Beleg des Exports gegen einen **echten OpenTelemetry-Collector**
   (Entscheidung des Auftraggebers), Datei in `open/`; der Übergabe-Block aus §1
   steht dort als committeter Text in §2. Er ist **Voraussetzung des Server-Releases**
@@ -892,7 +892,7 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   übergeben an den Folge-Slice · Handbuch zieht nicht mit entfallen.
 - **Drei Paarungen:** (a) *Anker* — kein Eintrag trägt `liegt in` (nichts
   verkörpert); entfällt. (b) *Folge-Slice* —
-  [`slice-otlp-metrik-export-e2e`](../in-progress/slice-otlp-metrik-export-e2e.md) existiert
+  [`slice-otlp-metrik-export-e2e`](slice-otlp-metrik-export-e2e.md) existiert
   in `open/` (Datei, nicht nur ein Name). (c) *Register* —
   `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (30 `evidence/`-Dateien, die
   neue nicht leer),

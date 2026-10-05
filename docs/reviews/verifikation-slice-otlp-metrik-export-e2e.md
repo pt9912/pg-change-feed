@@ -1,6 +1,6 @@
 # Verifikation slice-otlp-metrik-export-e2e (Diff 13df935f..fcb5e9ee)
 
-**Gegenstand:** [Plan](../plan/planning/in-progress/slice-otlp-metrik-export-e2e.md), [Review-Report](review-slice-otlp-metrik-export-e2e.md), [ADR-0149](../plan/adr/0149-otlp-metrik-export-mechanismus.md), [ADR-0153](../plan/adr/0153-otlp-einheit-consumer-lag-byte.md), [ADR-0154](../plan/adr/0154-spec-luecken-otlp-tls-token-ist-zustand.md), [ADR-0146](../plan/adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md), [LH-FA-SST-010](../../spec/lastenheft.md).
+**Gegenstand:** [Plan](../plan/planning/done/slice-otlp-metrik-export-e2e.md), [Review-Report](review-slice-otlp-metrik-export-e2e.md), [ADR-0149](../plan/adr/0149-otlp-metrik-export-mechanismus.md), [ADR-0153](../plan/adr/0153-otlp-einheit-consumer-lag-byte.md), [ADR-0154](../plan/adr/0154-spec-luecken-otlp-tls-token-ist-zustand.md), [ADR-0146](../plan/adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md), [LH-FA-SST-010](../../spec/lastenheft.md).
 
 Der Report-Text stammt vom Verifier-Lauf (Rollenvorgabe: keine Report-Dateien); der Planner hat ihn hier angelegt.
 

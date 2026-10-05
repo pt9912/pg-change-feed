@@ -5,7 +5,7 @@
 **Skill:** `.harness/skills/reviewer.md` · **Modell:** Sonnet 5.5
 
 **Eingangs-Kontext:**
-- Plan [`slice-otlp-metrik-export-e2e`](../plan/planning/in-progress/slice-otlp-metrik-export-e2e.md)
+- Plan [`slice-otlp-metrik-export-e2e`](../plan/planning/done/slice-otlp-metrik-export-e2e.md)
 - [`ADR-0149`](../plan/adr/0149-otlp-metrik-export-mechanismus.md)
 - [`ADR-0146`](../plan/adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md)
 - [`LH-FA-SST-010`](../../spec/lastenheft.md)
