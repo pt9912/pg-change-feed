@@ -411,7 +411,19 @@ Ausgang.
 - **Folge-Slices:** keine (V-1-Code-Seite benannt mit Adresse, oben).
 - **Risiken aus §6:** je ein Ausgang, siehe §6 — beide entfallen (Version aus der
   Quelle gemessen; Kotlin und Python vor dem Fix gemessen).
-- **Drei Paarungen:** nach dem `git mv` gemessen, siehe Commit danach.
+- **Drei Paarungen:** nach dem `git mv` gemessen — (a) *Anker:* kein Eintrag dieser
+  Notiz trägt das Feld `liegt in` (nichts verkörpert), kein Gegenstand der Paarung;
+  (b) *Folge-Slice:* keiner genannt; (c) *Register:* die drei genannten Verzeichnisse
+  (`BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`,
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`) existieren, jedes mit nicht leerem
+  `evidence/` (10, 34, 22 Dateien). Ergebnis: getragen. Durch den Move brach kein
+  Verweis (`make docs-check` 0 Befunde; `git grep` nach dem `in-progress`-Pfad dieses
+  Plans: 0 Treffer). Der Ruhe-Marker der Roadmap steht wieder, Wortlaut gleich
+  `6b179119` (`diff` Exit 0); `in-progress/` trägt nur `roadmap.md`.
+- **Gates der Closure:** `make docs-check` Exit 0 nach dem Move; `make gates` und
+  `make suchlauf-nachmessen` nach dem letzten Commit stehen im Bericht der Sitzung,
+  nicht in diesem Plan.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
