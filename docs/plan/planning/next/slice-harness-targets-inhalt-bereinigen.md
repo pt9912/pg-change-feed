@@ -20,7 +20,7 @@ ist berührt: der Slice ändert Harness-Dokumente, nicht das Produkt.
 
 **Berührte Spec-Stellen:** —
 
-**Verantwortlich:** —
+**Verantwortlich:** pt9912 (Implementer-Agent im Auftrag).
 
 **Autor:** pt9912 (Planner, Closure von `slice-harness-readme-zellen-kuerzen`).
 **Datum:** 2026-10-05.
