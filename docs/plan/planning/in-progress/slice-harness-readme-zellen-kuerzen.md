@@ -101,7 +101,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gefahren ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
 Instanz B).
 
-- [ ] **Zuschnitt und Umzug (Liefer-Punkt 1).** Je Ziel oder Ziel-Gruppe der
+- [x] **Zuschnitt und Umzug (Liefer-Punkt 1).** Je Ziel oder Ziel-Gruppe der
       Tabelle „Werkzeuge“ (z. B. `make pin-stale-*`, `make test-sdk-*-integration`,
       `make examples-*` und `make example-*`, die `make test-*`-Tier-Läufe,
       `make bench`, `make proto-generate`, die `.github/workflows/*`) liegt eine
@@ -115,7 +115,7 @@ Instanz B).
       gedruckten Zahlen) und ein Suchlauf der Eigennamen (Make-Ziele, Dateipfade,
       Schlüsselzahlen) in alter Zelle und neuer Datei. Aussagen, die dabei als
       falsch oder veraltet auffallen, stehen in einer Befund-Liste in §7.
-- [ ] **Zellen kürzen (Liefer-Punkt 2).** In `harness/README.md` ist jede Zelle
+- [x] **Zellen kürzen (Liefer-Punkt 2).** In `harness/README.md` ist jede Zelle
       „Tut was“ ≤ 120 und jede Zelle „Vertrag“ der Sensors-Tabelle ≤ 220 Zeichen
       (gemessen wie dargestellt, inkl. Markdown-Syntax); die Bindung-Zelle
       verlinkt die Datei in Link-Form (kein Pfad im Fließtext); die Index-Zeilen
@@ -123,7 +123,7 @@ Instanz B).
       „Source precedence“, „Guides“ und die Prosa-Abschnitte sind unverändert
       (`git diff` zeigt keine Änderung dort). Träger, die Zeilenzahl oder Position
       der README zitieren, sind nachgezogen (Suchlauf unten, §3.13 der Regeln).
-- [ ] **Regel, die die Grenze hält (Liefer-Punkt 3).** `.d-check.yml` trägt unter
+- [x] **Regel, die die Grenze hält (Liefer-Punkt 3).** `.d-check.yml` trägt unter
       `structure:` eine neue Regel für `harness/README.md`, Abschnitt
       `## Sensors (Feedback-Gates)`, Spalten `Tut was` (max 120) und `Vertrag`
       (max 220), min jeweils 1 — **nach** dem Umbau eingeführt, nicht davor
@@ -138,7 +138,7 @@ Instanz B).
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0,
       `make suchlauf-nachmessen PLAN=` mit diesem Plan Exit 0 am Endstand.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -164,6 +164,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 |---|---|---|
 | `harness/targets/*.md` (neu, nach Gruppen) | neu | Umzug der ausführlichen Zellen der Tabelle „Werkzeuge“ (Liefer-Punkt 1) |
 | `harness/sensors/*.md` (neu, wo für eine Gate-Zeile keine Datei besteht) | neu | Umzug des Überhangs der Sensors-Zellen (Liefer-Punkt 1) |
+| bestehende `harness/sensors/*.md` und `harness/targets/*.md` (15 Dateien, Zuordnung unten) | update | Abschnitt `## Fassung im Gate-Index` mit der Zelle wortgleich (Liefer-Punkt 1; Plan-Nachzug 1 unter §3 Umsetzung) |
 | `harness/README.md` | update | Zellen auf Ein-Satz-Länge, Bindung verlinkt die Datei (Liefer-Punkt 2) |
 | `.d-check.yml` | update | neue `structure:`-Regel, nach dem Umbau (Liefer-Punkt 3) |
 | `harness/sensors/docs-check.md` | update | §Bindung/Gegenstand nennt die Regel (Liefer-Punkt 3) |
@@ -202,14 +203,245 @@ Zeilen 2 und 3 sinken auf 0, Zeile 4 steigt um die neuen Dateien; die Zeilen 5 u
 jede Trefferzeile wird gelesen, ob sie eine Länge, Position oder einen Zelleninhalt
 behauptet, der sich bewegt hat.
 
+**Startmessung (Implementer, 2026-10-05).** `make suchlauf-nachmessen PLAN=` mit
+diesem Plan am Stand `b61412ac` mit den Parent-Zeilen `4db7cf95`: sechs Zeilen
+`OK`, Exit 0. Seit `4db7cf95` änderte `d0e781b2` drei Zeilen der
+`harness/README.md` (die drei `make test-sdk-*-integration`-Zeilen, TLS-Phasen),
+ohne eine der Schwellen zu kreuzen: dieselben sechs Befehle am Stand `b61412ac`
+liefern 15 · 57 · 55 · 5 · 113 · 48 (gemessen, `git grep … b61412ac -- …`). Der
+Parent ist deshalb auf `b61412ac` nachgezogen, die Soll-Zahlen bleiben; der
+Ausschluss der Plan-Datei nennt ihren Ort in `in-progress/` (das Werkzeug
+schließt sie ohnehin aus).
+
+**Endstand (`diff`, gemessen am Arbeitsbaum vor dem Plan-Commit; die Plan-Datei
+ist aus dem Suchraum ausgeschlossen).** Zeile 1 sinkt auf 0 (längste Zeile der
+README jetzt 790 Zeichen). Zeile 2 sinkt auf **6**, nicht auf 0 wie erwartet:
+das Muster misst die zweite Spalte beider Tabellen mit 120, die Spalte `Vertrag`
+darf aber 220 tragen (§2 Liefer-Punkt 2) — die sechs Treffer sind Gate-Zeilen
+(`make a-check`, `make commit-traceability`, `make coverage-gate`,
+`make generated-sync`, `make handbuch-public-doc-check`,
+`make meldungscodes-check`), keine Werkzeug-Zeile. Zeile 3 sinkt auf 0. Zeile 4
+steigt von 5 auf 18 (13 neue Target-Dateien). Zeile 5 steigt von 113 auf 148 und
+Zeile 6 von 48 auf 81; jede neue Trefferzeile ist gelesen: 30 sind der
+Einleitungssatz „Ausführliche Fassung der Index-Zeile(n) aus
+[`harness/README.md` §Sensors]…“ der 15 neuen und der 15 ergänzten Dateien, die
+übrigen stehen in `harness/sensors/docs-check.md` (§Vertrag, Grenze 11, §Bindung)
+und in der neuen Regel in `.d-check.yml`. Die stehenden Treffer sind gelesen;
+die, die eine bewegte Eigenschaft behaupten, stehen unter „Träger-Meldungen“ in
+§3 Umsetzung.
+
 ```suchlauf
-4db7cf958264705b9d18e727e48f95361095bad4 15 -n -E '^.{2001,}$' -- harness/README.md
-4db7cf958264705b9d18e727e48f95361095bad4 57 -n -E '^\| `[^|]*\| [^|]{121,} \| ' -- harness/README.md
-4db7cf958264705b9d18e727e48f95361095bad4 55 -n -E '^\| `[^|]*\| [^|]{221,} \| ' -- harness/README.md
-4db7cf958264705b9d18e727e48f95361095bad4 5 -n -E '^# `' -- harness/targets/*.md
-4db7cf958264705b9d18e727e48f95361095bad4 113 -n -F 'harness/README.md' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations :!docs/plan/planning/open/slice-harness-readme-zellen-kuerzen.md
-4db7cf958264705b9d18e727e48f95361095bad4 48 -n -E 'Sensors \(Feedback-Gates\)|§Sensors' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations :!docs/plan/planning/open/slice-harness-readme-zellen-kuerzen.md
+b61412ac838199028c81a33b217b7991b52189d4 15 -n -E '^.{2001,}$' -- harness/README.md
+b61412ac838199028c81a33b217b7991b52189d4 57 -n -E '^\| `[^|]*\| [^|]{121,} \| ' -- harness/README.md
+b61412ac838199028c81a33b217b7991b52189d4 55 -n -E '^\| `[^|]*\| [^|]{221,} \| ' -- harness/README.md
+b61412ac838199028c81a33b217b7991b52189d4 5 -n -E '^# `' -- harness/targets/*.md
+b61412ac838199028c81a33b217b7991b52189d4 113 -n -F 'harness/README.md' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations :!docs/plan/planning/in-progress/slice-harness-readme-zellen-kuerzen.md
+b61412ac838199028c81a33b217b7991b52189d4 48 -n -E 'Sensors \(Feedback-Gates\)|§Sensors' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations :!docs/plan/planning/in-progress/slice-harness-readme-zellen-kuerzen.md
+diff 0 -n -E '^.{2001,}$' -- harness/README.md
+diff 6 -n -E '^\| `[^|]*\| [^|]{121,} \| ' -- harness/README.md
+diff 0 -n -E '^\| `[^|]*\| [^|]{221,} \| ' -- harness/README.md
+diff 18 -n -E '^# `' -- harness/targets/*.md
+diff 148 -n -F 'harness/README.md' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations :!docs/plan/planning/in-progress/slice-harness-readme-zellen-kuerzen.md
+diff 81 -n -E 'Sensors \(Feedback-Gates\)|§Sensors' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations :!docs/plan/planning/in-progress/slice-harness-readme-zellen-kuerzen.md
 ```
+
+### Umsetzung (Implementer, 2026-10-05)
+
+**Nachgemessene Anlass-Werte (§1).** Die Zeile `make test-integration` hatte am
+Parent 26.286 Zeichen (gemessen, `git show b61412ac:harness/README.md | sed -n
+147p | awk '{print length($0)}'`). Die Tabelle „Werkzeuge“ hatte 58 Zeilen, davon
+3 Vorlagen-Platzhalter (`make <mover>`, `make <messung>`, `make <vorschau>`);
+von den 55 echten verlinkten 22 schon eine Datei unter `harness/sensors/` oder
+`harness/targets/`, 33 keine (gemessen, `git show b61412ac:harness/README.md |
+awk 'NR>=131 && NR<=185' | grep -cE '\]\((sensors|targets)/'`). Die Tabelle
+„Sensors“ hat 12 Zeilen, davon 1 Platzhalter (`<make-target>`). Die README hat
+nach dem Umbau 34.679 Byte in 265 Zeilen (gemessen, `wc -c -l`).
+
+**Zuordnung Gruppe → Datei** (63 geänderte Zeilen; unverändert blieben
+`make baseline-verify`, `make docs-check`, `make a-check` — Vertrag schon ≤ 220,
+Datei schon verlinkt — und die vier Platzhalter):
+
+| Gruppe (Index-Zeilen) | Datei | Art |
+|---|---|---|
+| `make image`, `make image-stale`, `make image-cve` | `harness/targets/image.md` | neu |
+| `make pin-stale-race`/`-pgtest`/`-dmigrate`/`-acheck`, `-dcheck`, `-baseline`, `-actions` | `harness/targets/pin-stale.md` | neu |
+| `make doc-trace`, `make doc-ci-matrix` | `harness/targets/doc-trace.md` | neu |
+| `make proto-generate` | `harness/targets/proto-generate.md` | neu |
+| `make test`, `make test-store`, `make test-replication`, `make test-notify` | `harness/targets/tier-tests.md` | neu |
+| `make test-integration` | `harness/targets/test-integration.md` | neu |
+| die sieben `.github/workflows/*.yml`-Zeilen | `harness/targets/workflows.md` | neu |
+| `make test-command-guard` | `harness/targets/command-guard.md` | neu |
+| `make schema-validate` | `harness/targets/schema-validate.md` | neu |
+| `make bench` | `harness/targets/bench.md` | neu |
+| `make examples-csharp`, `make examples-kotlin`, `make example-run-*`, `make example-demo-*`, `make example-transformation-demo` | `harness/targets/examples.md` | neu |
+| `make sdk-pack-csharp`/`-python`/`-kotlin` | `harness/targets/sdk-pack.md` | neu |
+| `make test-sdk-kotlin`/`-csharp`/`-python-integration` | `harness/targets/sdk-integration.md` | neu |
+| `make commit-traceability` | `harness/sensors/commit-traceability.md` | neu |
+| `make gates` | `harness/sensors/gates.md` | neu |
+| `make coverage-gate` · `make generated-sync` · `make doc-tracked` | `harness/sensors/coverage-gate.md` · `generated-sync.md` · `docs-check.md` | ergänzt |
+| `make sdk-public-doc-check` + Tabellentest · `make handbuch-public-doc-check` + Tabellentest · `make ausgabe-kennungen-check` + Tabellentest · `make meldungscodes-check` + Tabellentest | die gleichnamigen Dateien unter `harness/sensors/` | ergänzt |
+| `make pin-stale-all` + Tabellentest · `make suchlauf-nachmessen` + Tabellentest · `make kommentar-kennungen` + Tabellentest · `make fmt-check` + Tabellentest | die gleichnamigen Dateien unter `harness/sensors/` | ergänzt |
+| `make image-mutation` + Tabellentest · `make schema-rollout` · `make test-sdk-kompat` · `make test-sdk-altserver` | `harness/targets/image-mutation.md` · `schema-rollout.md` · `sdk-kompat.md` · `sdk-altserver.md` | ergänzt |
+
+**Plan-Nachzug — drei Abweichungen vom Ansatz, mit Grund.**
+
+1. *Bestehende Dateien: ganze Zelle statt „soweit fehlt“.* Der Ansatz sah vor,
+   in eine bestehende Datei nur den Teil der Zelle zu übernehmen, der dort
+   fehlt. Ob ein Satz „schon da“ ist, ist ein Urteil über Wortlaut-Nähe und lässt
+   sich am Diff nicht nachprüfen; ein Eigennamen-Abgleich (Backtick-Tokens und
+   Zahlen der Zelle gegen die Datei) fand in 13 der 22 Zellen fehlende Tokens.
+   Jede bestehende Datei trägt deshalb am Ende einen Abschnitt
+   `## Fassung im Gate-Index` mit der Zelle wortgleich; nichts wurde ersetzt.
+   Folge: Inhalt, der dort schon stand, steht nun zweimal in derselben Datei
+   (dieselbe Doppelung, die vorher zwischen README und Datei bestand) —
+   Befund 9 unten.
+2. *Eine Datei für `make gates`.* Die Zelle (230 Zeichen) zählte die zehn
+   Gates auf; die Aufzählung steht wortgleich in `harness/sensors/gates.md`, die
+   Zelle sagt „alle inneren Gates dieser Tabelle“.
+3. *Absätze.* Beim Umzug ist eine Zelle ein Absatz; vor „Zusätzlich“ und
+   „Seit slice-“ (nach einem Punkt) beginnt ein neuer Absatz, damit die
+   26-KB-Zelle lesbar bleibt. Weitere Abweichungen vom Wortlaut sind nur
+   Tabellen-Syntax und Verlinkung: `\|` → `|` und die Link-Präfixe relativ zum
+   neuen Ort (`../` → `../../`, `sensors/`, `targets/`, `mk/`, `conventions/`
+   → `../…/`). Die Bindung-Zelle der README bleibt, sie bekommt den Link auf die
+   Datei vorn hinter „kein Gate,“ (bzw. vor „· seit“); die Bindung steht in den
+   neuen Target-Dateien zusätzlich als Zeile **Bindung:**.
+
+**Gegenprobe Wortlaut (Liefer-Punkt 1).** Je geänderter Index-Zeile wird die
+Zelle am Parent mit derselben Umformung (Absatz, `\|`, Link-Präfix) gebildet und
+jeder Absatz als ganze Zeile in der Datei gesucht, die die neue Bindung-Zelle
+zuerst verlinkt; gedruckt werden Zeichenzahl alt/umgeformt und Absatzzahl. Der
+Befehl (Host-Werkzeuge `bash`, `git`, `awk`, `sed`, `grep`; im Repo-Wurzel
+ausführen, Argument der Parent):
+
+```bash
+P=b61412ac; T=$(mktemp -d); git show "$P:harness/README.md" > "$T/alt"; fail=0; n=0
+for nr in $(seq 1 "$(wc -l < "$T/alt")"); do
+  alt=$(sed -n "${nr}p" "$T/alt"); neu=$(sed -n "${nr}p" harness/README.md)
+  [ "$alt" = "$neu" ] && continue; n=$((n+1))
+  ziel=$(printf '%s\n' "$neu" | grep -oE '\]\((sensors|targets)/[^)]*\.md\)' | head -1 | sed -E 's/^\]\(//; s/\)$//')
+  zelle=$(printf '%s\n' "$alt" | awk -F' \\| ' '{ if (NF==4) print $2 " | " $3; else print $2 }')
+  form=$(printf '%s\n' "$zelle" | sed -E 's/\\\|/|/g; s#\]\(\.\./#](../../#g; s#\]\((sensors|targets|mk|conventions)/#](../\1/#g')
+  ok=OK; while IFS= read -r abs; do [ -z "$abs" ] || grep -qFx -- "$abs" "harness/$ziel" || ok=FEHLT
+  done < <(printf '%s\n' "$form" | sed -E 's/\. (Zusätzlich|Seit slice-)/.\n\1/g')
+  echo "$ok $nr $ziel alt=${#zelle} form=${#form}"; [ $ok = OK ] || fail=1
+done; echo "geaenderte Zeilen: $n, Fehler: $fail"; rm -rf "$T"
+```
+
+Gedruckt am Arbeitsbaum (Auszug; alle 63 Zeilen `OK`): `OK 147
+targets/test-integration.md alt=26149 form=26314`, `OK 183
+targets/sdk-integration.md alt=6461 form=6488`, `OK 166 targets/bench.md
+alt=4473 form=4500`, `OK 124 sensors/gates.md alt=230 form=230`, letzte Zeile
+`geaenderte Zeilen: 63, Fehler: 0`. Die Differenz form−alt ist je Zelle +3 je
+umgeschriebenem Link-Präfix und −1 je `\|` (Beispiel `make example-run-go`:
+alt=1148, form=1145, drei `\|`). Weil jeder Absatz als ganze Zeile gefunden
+wird, sind alle Eigennamen (Make-Ziele, Pfade, Zahlen, Herkunftsangaben) der
+alten Zelle in der Datei; zusätzlich ist jede neue Datei byte-gleich mit einem
+im Scratchpad aus den Zellen erzeugten Entwurf (`cmp`, 13 Target-, 2
+Sensor-Dateien) und jede ergänzte Datei byte-gleich mit „alter Inhalt +
+Leerzeile + Abschnitt“ (`cmp`, 15 Dateien). Mutationsprobe der Gegenprobe (Kopie
+im Scratchpad, `harness/targets/bench.md`: „vier eigenständige Bench-Skripte“ →
+„vier Bench-Skripte“): `FEHLT 166 targets/bench.md`, `Fehler: 1`, Exit 1.
+
+**Zellen und Zeilen (Liefer-Punkt 2).** Längste Zelle `Vertrag`: 162 Zeichen
+(`make commit-traceability`); längste Zelle `Tut was`: 113 Zeichen
+(`make pin-stale-all`) (gemessen, `awk -F' \\| '` über den Abschnitt, Länge der
+zweiten Spalte). Zeilen der beiden Tabellen vorher = nachher = 70 (gemessen:
+Zeilen des Abschnitts, die mit `` | ` `` beginnen, an Parent und Arbeitsbaum).
+`git diff b61412ac -- harness/README.md` zeigt zwei Hunks, Zeilen 117–124 und
+131–185 (63 Zeilen entfernt, 63 eingefügt); Source precedence, Guides und die
+Prosa sind unberührt.
+
+**Regel und Mutationsprobe (Liefer-Punkt 3).** `.d-check.yml` §structure trägt
+die Regel für `harness/README.md`, Abschnitt `## Sensors (Feedback-Gates)`,
+Spalten `Vertrag` (1–220) und `Tut was` (1–120). Gemessen, ob sie beide Tabellen
+erfasst: ja — dieselbe Regel auf die **ungekürzte** README (Kopie im
+Scratchpad, Klon am Stand `b61412ac`) meldete 63 Befunde
+`section-cell-oversized`, darunter die Werkzeug-Zeilen 131 bis 185 (Spalte
+`Tut was`) und die Gate-Zeilen 117 bis 124 (Spalte `Vertrag`); eine Tabelle ohne
+die Spalte meldet nichts. Mutationen auf der Kopie mit gekürzter README und
+Regel, je `make docs-check` im Klon:
+
+| Stelle | Mutation | gesehene Farbe |
+|---|---|---|
+| Zeile 131 `make image`, Spalte `Tut was` | Zelle auf 122 und auf 121 Zeichen verlängert (zwei Läufe) | rot: `section-cell-oversized … hat 122 Zeichen, erlaubt sind 120` bzw. `… hat 121 Zeichen, erlaubt sind 120`, je Exit 2 |
+| Zeile 131, Spalte `Tut was` | Zelle auf 120 Zeichen | grün, 0 Befunde, Exit 0 |
+| Zeile 120 `make sdk-public-doc-check`, Spalte `Vertrag` | Zelle auf 222 Zeichen | rot: `… Spalte "Vertrag" hat 222 Zeichen, erlaubt sind 220`, Exit 2 |
+| Zeile 132 `make image-stale`, Spalte `Tut was` | Zelle geleert | rot: `section-cell-undersized … hat 0 Zeichen, verlangt sind 1`, Exit 2 |
+
+Ohne Mutation endet derselbe Lauf im Klon mit `0 Befund(e)`, Exit 0.
+`harness/sensors/docs-check.md` nennt die Regel in §Vertrag, als Grenze 11 (sie
+misst Länge, nicht ob der Satz die Zeile trägt) und in §Bindung.
+
+**Befund-Liste (Vorlage für §7; nicht berichtigt, der Umzug ändert keinen
+Wortlaut).**
+
+1. `make proto-generate`: die Zelle trug ein unmaskiertes `|` im Code-Span
+   (`docker run … <image> | tar -x -C .`); die Tabellenzeile zerfiel damit in
+   vier Zellen. In der Datei ist der Text kein Tabelleninhalt mehr, der Fehler
+   ist mit dem Umzug weg.
+2. `make image-cve` (`targets/image.md`): „scheitert bis zum ersten echten
+   Release strukturell am fehlenden Ziel-Image (real geprüft — kein
+   `ghcr.io/pt9912/pg-change-feed:latest` vorhanden)“ — ein Server-Release ist
+   seither erschienen (`make test-sdk-altserver` nennt das Image `:0.5.0`); die
+   Aussage ist vermutlich veraltet. Dazu Chronik-Sprache („bis hierhin
+   unimplementierte Zusage“).
+3. `.github/workflows/hub-description.yml` (`targets/workflows.md`): „der volle
+   Erfolgspfad … bleibt bis zum ersten echten Release unbewiesen“ — derselbe
+   Stand wie Befund 2.
+4. `make sdk-pack-*` (`targets/sdk-pack.md`): „real erzeugt“ nennt
+   `PgChangeFeed.Client.0.2.1.nupkg`, `pgchangefeed-0.2.1` und
+   `pgchangefeed-kotlin-0.2.2`; `make test-sdk-kompat` misst Packages 0.6.0 —
+   die Artefakt-Namen sind ein alter Lauf-Beleg.
+5. `make pin-stale-*` (`targets/pin-stale.md`): „Real ausgeführt: P3/P4/P5
+   zeigen echten Drift …, P6 ist aktuell“ — Messung ohne Datum und Lauf.
+6. `make test-sdk-kotlin-integration` (`targets/sdk-integration.md`): „trägt den
+   Python-HTTP-Abschnitt im Abdeckungs-Träger seit
+   slice-sdk-python-http-reale2e“ — im Kotlin-Runner unplausibel (der Satz
+   steht so in der C#-Zelle mit Kotlin- und Python-Abschnitt); vermutlich
+   Kopierfehler.
+7. `make handbuch-public-doc-check` nennt „die vier von Runnern geschriebenen
+   `*-abdeckung.md`“, `make test-handbuch-public-doc-check` „die fünf
+   ausgenommenen Dateien“ — zwei Zahlen für die Ausnahme-Menge.
+8. Positionsverweise auf die alte Tabelle stehen jetzt in einer anderen Datei:
+   `make example-run-go` „(siehe Zeile darunter)“ — in `targets/examples.md` ist
+   es der nächste Abschnitt, stimmt also; `make example-demo-up` „(siehe
+   `make schema-rollout`-Zeile oben)“ — in `targets/examples.md` steht kein
+   solcher Abschnitt, gemeint ist die README-Zeile.
+9. Die 15 ergänzten Dateien tragen ihren Inhalt teils doppelt (eigener Vertrag
+   und `## Fassung im Gate-Index`); das Zusammenführen ist eine inhaltliche
+   Entscheidung je Datei und nicht Teil dieses Slice.
+10. Vorbestand, nicht durch diesen Slice: `harness/sensors/baseline-verify.md`
+    Grenze 3 verweist auf `harness/README.md` §Nicht behauptet, einen Abschnitt,
+    den die README nicht führt (Inline-Code, kein Link, deshalb kein
+    `anchor-missing`); `.github/workflows/ci.yml` Kopfkommentar zählt die
+    Gates von `make gates` mit sechs auf, `harness/sensors/gates.md` nennt zehn.
+
+**Träger-Meldungen (§3.13; fremde Dateien, gemeldet, nicht mitgeändert; Frist:
+Closure dieses Slice).**
+
+- `tools/coverage-gate.sh` Zeile 2–3: „aktuelle Schwelle und Historie in
+  harness/README.md §Sensors“ — die Rampe (70 % → 80 %) steht jetzt in
+  `harness/sensors/coverage-gate.md` (§Fassung im Gate-Index) und die Stufe in
+  `harness/mk/coverage.mk`; die README-Zelle verweist auf `coverage.mk`.
+- `examples/http-client/consumer_test.go` Zeile 34–35,
+  `examples/http-client/request_test.go` Zeile 64 und
+  `examples/csharp/http-client/HttpClient.Tests/TablesClientTests.cs` Zeile 10:
+  „dieselbe Grenze wie beim `natsnotify`-Adapter, `harness/README.md` §Sensors,
+  `make test-notify`“ — die Loopback-Grenze steht jetzt in
+  `harness/targets/tier-tests.md` (die README-Zeile verlinkt sie).
+- [`AGENTS.md`](../../../../AGENTS.md) §4: „dort stehen Target, Vertrag und
+  Bindung (inkl. ADR-Links, Schwellen, Carveout-Verweise) vollständig“ — der
+  Index ist vollständig, der ausführliche Vertrag steht in der verlinkten Datei.
+- `docs/plan/planning/open/slice-baseline-6-14-0-dokumente-nachziehen.md`
+  (Liefer-Punkt 3, §3): „`harness/README.md` (Zeile `make pin-stale-baseline`)“ —
+  die Zeile ist jetzt ein Satz, der ausführliche Text steht in
+  `harness/targets/pin-stale.md` (Abschnitt `make pin-stale-baseline`); der
+  Bump-Slice ändert dort.
+- Die `Accepted`-ADRs, die eine Zeile der Tabelle zitieren (z. B.
+  [`ADR-0044`](../../adr/0044-image-beleg-semantik.md) „`make image`-Werkzeuge-Zeile
+  in `harness/README.md` tragen die korrigierte …“), frieren den Stand ihrer
+  Zeit ein; die Zeilen bestehen weiter, kein Nachzug (`AGENTS.md` §3.5).
 
 ## 4. Trigger
 
@@ -307,8 +539,25 @@ neue Sub-Area.
 
 **Vorgelagert — offene Beobachtungen sichten:** Register
 (`docs/plan/planning/observations/BEO-PGC/`) für die berührte Sub-Area:
-vom Planungsstand nicht durchgesehen — der Implementer sichtet es zum Start auf
-Einträge zu Zellenlänge, `harness/README.md` und Register-Regeln und nennt Treffer
-mit Zähler-Stand (offene Aufgabe, keine Aussage über den Bestand).
+vom Planungsstand nicht durchgesehen; der Implementer hat es zum Start gesichtet
+(2026-10-05, gemessen: `grep -l -i -E 'zelle|zellen|README\.md|structure|register-spalt|Zeilenl'
+docs/plan/planning/observations/BEO-PGC/*/observation.md`, 15 Dateien, jede
+gelesen; Zähler = Zahl der Dateien in `evidence/`). Treffer zum Gegenstand:
+
+- `BEO-PGC/bindung-spalte-uneinheitlich-tief` — **offen, 1×**: die
+  Bindung-Spalte der Sensors-Tabelle verweist unterschiedlich tief (ADR inline
+  oder nur über die Sensor-Datei). Dieser Slice berührt sie: jede gekürzte Zeile
+  verlinkt ihre Datei, die ADR-Links der Zelle bleiben stehen; die Asymmetrie
+  bleibt bestehen (Formfrage, kein Gegenstand dieses Slice). Mit diesem Slice
+  nicht erneut aufgetreten, kein zweites Auftreten.
+- `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (verkörpert, Deckel) und
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert, Deckel) — die Klasse
+  der Befunde 2 bis 5 und der Träger-Meldungen in §3 Umsetzung; kein neuer
+  Mechanismus nötig, der Suchlauf trägt sie.
+- `BEO-PGC/regel-weiter-als-ihr-sensor` (verkörpert, teilweise) — Nachbarklasse
+  zur Grenze der neuen Regel (sie misst Länge, nicht den Satz).
+
+Kein Eintrag zur Zellenlänge der `harness/README.md` selbst; keiner erreicht mit
+diesem Slice 3×.
 
 **Modus:** alle berührten Sub-Areas GF (`*`/`PGC`, Greenfield).
