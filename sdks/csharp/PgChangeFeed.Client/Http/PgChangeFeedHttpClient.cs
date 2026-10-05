@@ -20,14 +20,16 @@ namespace PgChangeFeed.Client.Http;
 /// caller as the <see cref="HttpRequestException"/> or
 /// <see cref="TaskCanceledException"/> of the <see cref="HttpClient"/>.
 ///
-/// The <see cref="HttpClient"/> is passed in, not owned — the caller controls
-/// its lifetime, connection pooling and any <c>DelegatingHandler</c>
-/// pipeline (proxies, retries, logging); this type never disposes it. The
+/// An <see cref="HttpClient"/> passed to the <c>(httpClient, options)</c>
+/// constructor is passed in, not owned — the caller controls its lifetime,
+/// connection pooling, TLS setup and any <c>DelegatingHandler</c> pipeline
+/// (proxies, retries, logging); this type never disposes it, and a trust
+/// anchor in the options does not apply to it. The
 /// bearer token and server address come from <see cref="PgChangeFeedClientOptions"/>,
 /// supplied at construction — there is no global or static state, so a
 /// process can hold several independently configured instances at once.
 /// </summary>
-public sealed class PgChangeFeedHttpClient
+public sealed class PgChangeFeedHttpClient : IDisposable
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -36,6 +38,30 @@ public sealed class PgChangeFeedHttpClient
 
     private readonly HttpClient _httpClient;
     private readonly PgChangeFeedClientOptions _options;
+    private readonly HttpClient? _ownedHttpClient;
+
+    /// <summary>
+    /// Creates the client over an <see cref="HttpClient"/> it owns and
+    /// <see cref="Dispose"/> disposes. An <c>https</c> address connects over
+    /// TLS with the trust anchors of the operating system, or exactly the
+    /// certificates of <see cref="PgChangeFeedClientOptions.TrustAnchorFile"/>
+    /// when it is set; chain, validity period and server name are always
+    /// checked, and a failed check surfaces as the
+    /// <see cref="HttpRequestException"/> of the <see cref="HttpClient"/>. A
+    /// trust anchor with an <c>http</c> address throws an
+    /// <see cref="ArgumentException"/>.
+    /// </summary>
+    /// <param name="options">The server address, the bearer token and the optional trust anchor.</param>
+    public PgChangeFeedHttpClient(PgChangeFeedClientOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        _options = options;
+        _ownedHttpClient = TlsTransport.CreateHttpClient(options, TimeSpan.FromSeconds(100));
+        _httpClient = _ownedHttpClient;
+    }
+
+    /// <summary>Disposes the <see cref="HttpClient"/> this instance owns, if any (see the options constructor).</summary>
+    public void Dispose() => _ownedHttpClient?.Dispose();
 
     /// <summary>Creates the client over an <see cref="HttpClient"/> the caller owns.</summary>
     /// <param name="httpClient">The client used for every request.</param>

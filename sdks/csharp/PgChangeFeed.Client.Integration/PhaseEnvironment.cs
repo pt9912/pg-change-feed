@@ -50,6 +50,10 @@ internal static class PhaseEnvironment
     internal static string FilterTableB => Required("PGCHANGEFEED_FILTER_TABLE_B");
     internal static int FilterQuietSeconds => int.Parse(Required("PGCHANGEFEED_FILTER_QUIET_SECONDS"));
 
+    internal static string TlsCaFile => Required("PGCHANGEFEED_TLS_CA_FILE");
+    internal static string TlsForeignCaFile => Required("PGCHANGEFEED_TLS_FOREIGN_CA_FILE");
+    internal static string TlsMismatchHost => Required("PGCHANGEFEED_TLS_MISMATCH_HOST");
+
     internal static CancellationTokenSource ReceiveCts => new(TimeSpan.FromSeconds(90));
     internal static CancellationTokenSource RejectCts => new(TimeSpan.FromSeconds(15));
 }

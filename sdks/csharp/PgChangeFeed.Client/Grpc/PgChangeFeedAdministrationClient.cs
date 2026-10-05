@@ -42,13 +42,23 @@ public sealed class PgChangeFeedAdministrationClient : IDisposable
     /// <summary>
     /// Convenience constructor: opens and owns its own <see cref="GrpcChannel"/>
     /// against <paramref name="options"/>'s address. <see cref="Dispose"/>
-    /// disposes that channel.
+    /// disposes that channel. An <c>https://</c> address connects over TLS with
+    /// the trust anchors of the operating system, or exactly the certificates
+    /// of <see cref="PgChangeFeedClientOptions.TrustAnchorFile"/> when it is
+    /// set; a failed check ends the call with a
+    /// <see cref="PgChangeFeedGrpcUnexpectedStatusException"/>, never with a
+    /// plaintext retry. An <c>http://</c> address connects in plaintext and is
+    /// refused when the options carry a trust anchor.
     /// </summary>
     public PgChangeFeedAdministrationClient(PgChangeFeedClientOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
         _options = options;
-        _ownedChannel = GrpcChannel.ForAddress(options.Address);
+        _ownedChannel = GrpcChannel.ForAddress(options.Address, new GrpcChannelOptions
+        {
+            HttpClient = TlsTransport.CreateHttpClient(options, Timeout.InfiniteTimeSpan, forGrpc: true),
+            DisposeHttpClient = true,
+        });
         _client = new Administration.AdministrationClient(_ownedChannel);
     }
 
@@ -247,6 +257,10 @@ public sealed class PgChangeFeedAdministrationClient : IDisposable
             StatusCode.Unauthenticated => new PgChangeFeedGrpcUnauthenticatedException(ex.Status.Detail, ex, messageCode),
             StatusCode.PermissionDenied => new PgChangeFeedGrpcPermissionDeniedException(ex.Status.Detail, ex, messageCode),
             StatusCode.NotFound => new PgChangeFeedGrpcNotFoundException(ex.Status.Detail, ex, messageCode),
+            // A call that never reached the server (for example a TLS check that failed) carries the
+            // HttpRequestException of the transport as debug exception; it is not an error inside the server.
+            StatusCode.Internal when ex.Status.DebugException is HttpRequestException =>
+                new PgChangeFeedGrpcUnexpectedStatusException(ex.StatusCode, ex.Status.Detail, ex, messageCode),
             StatusCode.Internal => new PgChangeFeedGrpcInternalException(ex.Status.Detail, ex, messageCode),
             _ => new PgChangeFeedGrpcUnexpectedStatusException(ex.StatusCode, ex.Status.Detail, ex, messageCode),
         };

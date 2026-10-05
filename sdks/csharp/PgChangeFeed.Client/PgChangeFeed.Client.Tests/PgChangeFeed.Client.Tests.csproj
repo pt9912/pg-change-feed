@@ -21,4 +21,10 @@
     <ProjectReference Include="../PgChangeFeed.Client.csproj" />
   </ItemGroup>
 
+  <!-- The TLS tests start a Kestrel server on a loopback port; the shared
+       framework ships with the SDK image, no package is added. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
 </Project>

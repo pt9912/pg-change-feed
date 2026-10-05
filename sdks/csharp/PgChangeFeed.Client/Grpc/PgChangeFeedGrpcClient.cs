@@ -40,15 +40,26 @@ public sealed class PgChangeFeedGrpcClient : IDisposable
     /// against <paramref name="options"/>'s address. <see cref="Dispose"/>
     /// disposes that channel.
     ///
-    /// The PG Change Feed server speaks plaintext gRPC over HTTP/2 (no TLS).
-    /// An <c>http://</c> address connects without further setup on .NET 10;
-    /// this constructor sets no process-wide <see cref="AppContext"/> switch.
+    /// An <c>https://</c> address connects over TLS: the trust anchors of the
+    /// operating system apply, or exactly the certificates of
+    /// <see cref="PgChangeFeedClientOptions.TrustAnchorFile"/> when it is set
+    /// (chain, validity period and server name are always checked, and a failed
+    /// check ends the call with an <see cref="RpcException"/>, never with a
+    /// plaintext retry). An <c>http://</c> address connects in plaintext
+    /// without further setup on .NET 10 and is refused when the options carry
+    /// a trust anchor; this constructor sets no process-wide
+    /// <see cref="AppContext"/> switch. Use the advanced constructor to supply
+    /// a <see cref="CallInvoker"/> with your own TLS setup.
     /// </summary>
     public PgChangeFeedGrpcClient(PgChangeFeedClientOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
         _options = options;
-        _ownedChannel = GrpcChannel.ForAddress(options.Address);
+        _ownedChannel = GrpcChannel.ForAddress(options.Address, new GrpcChannelOptions
+        {
+            HttpClient = TlsTransport.CreateHttpClient(options, Timeout.InfiniteTimeSpan, forGrpc: true),
+            DisposeHttpClient = true,
+        });
         _client = new ChangeStream.ChangeStreamClient(_ownedChannel);
     }
 

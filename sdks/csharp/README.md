@@ -22,7 +22,7 @@ Requires .NET 10 or newer. The examples below assume implicit usings, the defaul
 
 ## Quick start
 
-A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server. The server does not serve TLS itself, so the examples use unencrypted addresses.
+A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server. The examples use unencrypted addresses; a server that runs with a TLS certificate is reached over `https` addresses, see [Connect over TLS](#connect-over-tls).
 
 ### Read changes and remember your position
 
@@ -59,7 +59,7 @@ if (result.Changes.Count > 0)
 
 The three live streams deliver every change committed after you connect. Each surface has its own client; all take the same `PgChangeFeedClientOptions` and return an `IAsyncEnumerable` you read with `await foreach`. Every `StreamChangesAsync` accepts a `CancellationToken` to end the stream.
 
-gRPC (the address is the `http://host:port` URL of the gRPC endpoint; the messages are the generated `Cdc.Stream.V1.Change` protobuf messages, row images are JSON in a `ByteString`, empty when there is none; the convenience constructor opens its own plaintext channel, `new PgChangeFeedGrpcClient(callInvoker, options)` takes a `CallInvoker` you configure yourself, for example from `GrpcChannel.CreateCallInvoker()`):
+gRPC (the address is the `http://host:port` URL of the gRPC endpoint; the messages are the generated `Cdc.Stream.V1.Change` protobuf messages, row images are JSON in a `ByteString`, empty when there is none; the convenience constructor opens its own channel, over TLS for an `https://` address and in plaintext for an `http://` address; `new PgChangeFeedGrpcClient(callInvoker, options)` takes a `CallInvoker` you configure yourself, for example from `GrpcChannel.CreateCallInvoker()`):
 
 ```csharp
 using PgChangeFeed.Client;
@@ -132,9 +132,35 @@ foreach (var t in tables.Tables)
 }
 ```
 
+## Connect over TLS
+
+A server that runs with a TLS certificate is reached over `https` addresses (HTTP and SSE) and, for gRPC, over an `https://host:port` address. When the issuer of the certificate is not among the trust anchors of the operating system, name the certificate with the trust anchor option of `PgChangeFeedClientOptions`: the path of a PEM file with one or more certificates, the certificate of the issuer or of the server itself.
+
+```csharp
+using PgChangeFeed.Client;
+using PgChangeFeed.Client.Sse;
+
+var options = new PgChangeFeedClientOptions(
+    new Uri("https://feed.example.com:8090"), "<reader token>", trustAnchorFile: "/etc/pg-change-feed/ca.pem");
+using var client = new PgChangeFeedSseClient(options);
+await foreach (var change in client.StreamChangesAsync())
+{
+    Console.WriteLine($"{change.Operation} {change.Schema}.{change.Table}");
+}
+```
+
+The option is read by the constructors that take only the options: `PgChangeFeedHttpClient(options)`, `PgChangeFeedSseClient(options)`, `PgChangeFeedGrpcClient(options)` and `PgChangeFeedAdministrationClient(options)`. All four open their own connection and dispose it with the client. Without the option the trust anchors of the operating system apply.
+
+- With the option the connection trusts exactly the certificates in the file; the trust anchors of the operating system do not apply in addition.
+- The certificate chain, the validity period and the server name are always checked. The server name is the host of the address, so the server certificate must name that host. There is no setting that turns the check off and none that overrides the server name.
+- A failed check is a connection error and never a retry in plaintext: `HttpRequestException` for the HTTP and SSE clients, `RpcException` for the gRPC stream client, and `PgChangeFeedGrpcUnexpectedStatusException` without a message code for the administration client (the server was not reached).
+- A path that cannot be read, or a file without a PEM certificate, throws an `ArgumentException` when the options are created. A trust anchor together with an `http` address throws an `ArgumentException` when the client is created.
+- A connection you configure yourself keeps its own TLS setup: an `HttpClient` passed to `PgChangeFeedHttpClient(httpClient, options)` or `PgChangeFeedSseClient(httpClient, options)`, and a `CallInvoker` passed to the gRPC clients, are not touched by the trust anchor option.
+- The NATS client is not covered by the option; TLS for NATS is configured with the NATS server and its URL.
+
 ## API overview
 
-`PgChangeFeedHttpClient(httpClient, options)` wraps the HTTP API. The `HttpClient` you pass in stays yours; the library never disposes it. Every method also takes an optional `CancellationToken`.
+`PgChangeFeedHttpClient(httpClient, options)` wraps the HTTP API. The `HttpClient` you pass in stays yours; the library never disposes it. `PgChangeFeedHttpClient(options)` builds and owns its `HttpClient` (see [Connect over TLS](#connect-over-tls)); dispose the client when done. Every method also takes an optional `CancellationToken`.
 
 | Method | What it does | Token |
 |---|---|---|
@@ -158,7 +184,7 @@ The live streams each have one method:
 | Class | Method | What it does |
 |---|---|---|
 | `PgChangeFeedGrpcClient(options)` | `StreamChangesAsync(schema, table, cancellationToken, target)` | Opens the gRPC stream and yields generated `Cdc.Stream.V1.Change` messages. `schema`/`table`/`target` are optional and independent, all left out delivers every change. The client owns its channel; dispose it when done. |
-| `PgChangeFeedSseClient(httpClient, options)` | `StreamChangesAsync(cancellationToken, target, schema, table)` | Opens `GET /changes/stream` and yields `PgChangeFeed.Client.Sse.Models.Change` objects. `target`/`schema`/`table` are optional and independent, pass them by name; all left out delivers every change. |
+| `PgChangeFeedSseClient(httpClient, options)` or `PgChangeFeedSseClient(options)` | `StreamChangesAsync(cancellationToken, target, schema, table)` | Opens `GET /changes/stream` and yields `PgChangeFeed.Client.Sse.Models.Change` objects. `target`/`schema`/`table` are optional and independent, pass them by name; all left out delivers every change. |
 | `PgChangeFeedNatsStreamClient(options)` | `StreamChangesAsync(subject, cancellationToken)` | Subscribes to a subject and yields `PgChangeFeed.Client.Nats.Models.Change` objects. Dispose the client when done. |
 
 `PgChangeFeedAdministrationClient(options)` wraps the eleven RPCs of the `Administration` gRPC service — the same capabilities as the HTTP table above, over gRPC. Requests and responses are the generated `Cdc.Administration.V1` protobuf messages, used directly (no separate model type):

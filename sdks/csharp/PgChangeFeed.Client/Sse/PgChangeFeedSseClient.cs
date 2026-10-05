@@ -13,7 +13,8 @@ namespace PgChangeFeed.Client.Sse;
 /// <see cref="Change"/> — the same form as the gRPC client
 /// (<see cref="PgChangeFeed.Client.Grpc.PgChangeFeedGrpcClient.StreamChangesAsync"/>).
 ///
-/// The <see cref="System.Net.Http.HttpClient"/> is passed in, not owned —
+/// A <see cref="System.Net.Http.HttpClient"/> passed to the
+/// <c>(httpClient, options)</c> constructor is passed in, not owned —
 /// same as <see cref="PgChangeFeedHttpClient"/>, with one extra obligation
 /// for this client: <see cref="System.Net.Http.HttpClient.Timeout"/> covers
 /// the *entire* request/response lifetime for a streamed response, not just
@@ -30,7 +31,7 @@ namespace PgChangeFeed.Client.Sse;
 /// permanently. Missed changes remain recoverable through the read path
 /// (<see cref="PgChangeFeedHttpClient.ReadChangesAsync"/>).
 /// </summary>
-public sealed class PgChangeFeedSseClient
+public sealed class PgChangeFeedSseClient : IDisposable
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -39,6 +40,30 @@ public sealed class PgChangeFeedSseClient
 
     private readonly HttpClient _httpClient;
     private readonly PgChangeFeedClientOptions _options;
+    private readonly HttpClient? _ownedHttpClient;
+
+    /// <summary>
+    /// Creates the client over an <see cref="HttpClient"/> it owns, with an
+    /// infinite timeout for the long-lived stream, and <see cref="Dispose"/>
+    /// disposes it. An <c>https</c> address connects over TLS with the trust
+    /// anchors of the operating system, or exactly the certificates of
+    /// <see cref="PgChangeFeedClientOptions.TrustAnchorFile"/> when it is set;
+    /// chain, validity period and server name are always checked, and a failed
+    /// check surfaces as the <see cref="HttpRequestException"/> of the
+    /// <see cref="HttpClient"/>. A trust anchor with an <c>http</c> address
+    /// throws an <see cref="ArgumentException"/>.
+    /// </summary>
+    /// <param name="options">The HTTP base URL, the bearer token and the optional trust anchor.</param>
+    public PgChangeFeedSseClient(PgChangeFeedClientOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        _options = options;
+        _ownedHttpClient = TlsTransport.CreateHttpClient(options, Timeout.InfiniteTimeSpan);
+        _httpClient = _ownedHttpClient;
+    }
+
+    /// <summary>Disposes the <see cref="HttpClient"/> this instance owns, if any (see the options constructor).</summary>
+    public void Dispose() => _ownedHttpClient?.Dispose();
 
     /// <summary>Creates the client over an <see cref="HttpClient"/> the caller owns.</summary>
     /// <param name="httpClient">The client used for the stream request; its timeout must be infinite for a long-lived stream.</param>
