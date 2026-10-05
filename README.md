@@ -22,9 +22,9 @@ graphical interface.
 | **Reading** | Read captured changes via SQL (`cdc.changes`) — or through one of four delivery paths: HTTP/JSON API, gRPC stream, Server-Sent Events or NATS (wake-up signal or full change content, table-granular). |
 | **Consumers** | Register multiple independent consumers, acknowledge and resume their position — duplicates are preferred over silent gaps. |
 | **Retention** | Run time- and consumer-based retention, surface blocking consumers before they prevent deletion. |
-| **Operations** | Query operational status, CLI diagnostics, metrics and WAL lag. |
-| **Security** | Enforce role-specific access rights (`cdc_capture`/`cdc_admin`/`cdc_reader`, least privilege — no separate login, access runs through the PostgreSQL connection itself). |
-| **Distribution** | Available as an OCI image for `linux/amd64` **and** `linux/arm64` (GHCR and Docker Hub, identical digest); the HTTP API, gRPC stream, SSE stream, and NATS full-content stream are also available as an official C# client library ([`PgChangeFeed.Client`](https://www.nuget.org/packages/PgChangeFeed.Client) on NuGet.org), and the same four delivery paths as an official Python client library ([`pgchangefeed`](https://pypi.org/project/pgchangefeed/) on PyPI). |
+| **Operations** | Query operational status, CLI diagnostics, metrics and WAL lag; push metrics to an OpenTelemetry collector via OTLP/HTTP. |
+| **Security** | Enforce role-specific access rights (`cdc_capture`/`cdc_admin`/`cdc_reader`, least privilege, no user accounts of its own); protect the HTTP and gRPC APIs with API tokens per class (several valid tokens at once, so tokens can be rotated without downtime) and serve them over TLS. |
+| **Distribution** | Available as an OCI image for `linux/amd64` **and** `linux/arm64` (GHCR and Docker Hub, identical digest); the HTTP API, gRPC stream, SSE stream, and NATS full-content stream are also available as an official C# client library ([`PgChangeFeed.Client`](https://www.nuget.org/packages/PgChangeFeed.Client) on NuGet.org), the same four delivery paths as an official Python client library ([`pgchangefeed`](https://pypi.org/project/pgchangefeed/) on PyPI), and as an official Kotlin client library (`pgchangefeed-kotlin` on Cloudsmith and GitHub Packages). |
 
 Details and examples for each access path (Go, C#, Kotlin) are in the
 [user manual](docs/user/benutzerhandbuch.md); the full scope of
@@ -35,6 +35,7 @@ See:
 - [`docs/user/benutzerhandbuch.md`](docs/user/benutzerhandbuch.md) for usage (German).
 - [`sdks/csharp/`](sdks/csharp/) for the official C# client library ([`PgChangeFeed.Client`](https://www.nuget.org/packages/PgChangeFeed.Client) on NuGet.org).
 - [`sdks/python/`](sdks/python/) for the official Python client library ([`pgchangefeed`](https://pypi.org/project/pgchangefeed/) on PyPI).
+- [`sdks/kotlin/pgchangefeed-kotlin/`](sdks/kotlin/pgchangefeed-kotlin/) for the official Kotlin client library (`pgchangefeed-kotlin` on Cloudsmith and GitHub Packages).
 - [`docs/maintainer/releasing.md`](docs/maintainer/releasing.md) for the release process.
 - [`spec/lastenheft.md`](spec/lastenheft.md) for requirements and acceptance criteria.
 - [`spec/pflichtenheft.md`](spec/pflichtenheft.md) for the technical specification.

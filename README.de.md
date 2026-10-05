@@ -22,9 +22,9 @@ Oberfläche.
 | **Lesen** | Erfasste Änderungen per SQL (`cdc.changes`) lesen — oder über eine von vier Zustellwegen: HTTP-/JSON-API, gRPC-Stream, Server-Sent-Events oder NATS (Wecksignal oder vollständiger Change-Inhalt tabellen-granular). |
 | **Consumer** | Mehrere unabhängige Consumer registrieren, ihre Position bestätigen und fortsetzen — Duplikate werden stillen Lücken vorgezogen. |
 | **Aufbewahrung** | Zeit- und consumer-basierte Retention betreiben, blockierende Consumer sichtbar machen, bevor sie die Löschung verhindern. |
-| **Betrieb** | Betriebsstatus, CLI-Diagnose, Metriken und WAL-Rückstand abfragen. |
-| **Sicherheit** | Rollenspezifische Zugriffsrechte durchsetzen (`cdc_capture`/`cdc_admin`/`cdc_reader`, Least-Privilege — kein eigener Login, Zugriff läuft über die PostgreSQL-Verbindung selbst). |
-| **Distribution** | Als OCI-Image für `linux/amd64` **und** `linux/arm64` beziehen (GHCR und Docker Hub, identischer Digest); HTTP-API, gRPC-Stream, SSE-Stream und NATS-Vollinhalts-Stream stehen zusätzlich als offizielle C#-Client-Bibliothek zur Verfügung ([`PgChangeFeed.Client`](https://www.nuget.org/packages/PgChangeFeed.Client) auf NuGet.org), dieselben vier Zustellwege zusätzlich als offizielle Python-Client-Bibliothek ([`pgchangefeed`](https://pypi.org/project/pgchangefeed/) auf PyPI). |
+| **Betrieb** | Betriebsstatus, CLI-Diagnose, Metriken und WAL-Rückstand abfragen; Metriken per OTLP/HTTP an einen OpenTelemetry-Collector senden. |
+| **Sicherheit** | Rollenspezifische Zugriffsrechte durchsetzen (`cdc_capture`/`cdc_admin`/`cdc_reader`, Least-Privilege, keine eigenen Benutzerkonten); HTTP- und gRPC-API mit API-Token je Klasse schützen (mehrere gültige Token gleichzeitig, damit Token ohne Ausfall rotiert werden können) und per TLS ausliefern. |
+| **Distribution** | Als OCI-Image für `linux/amd64` **und** `linux/arm64` beziehen (GHCR und Docker Hub, identischer Digest); HTTP-API, gRPC-Stream, SSE-Stream und NATS-Vollinhalts-Stream stehen zusätzlich als offizielle C#-Client-Bibliothek zur Verfügung ([`PgChangeFeed.Client`](https://www.nuget.org/packages/PgChangeFeed.Client) auf NuGet.org), dieselben vier Zustellwege zusätzlich als offizielle Python-Client-Bibliothek ([`pgchangefeed`](https://pypi.org/project/pgchangefeed/) auf PyPI) und als offizielle Kotlin-Client-Bibliothek (`pgchangefeed-kotlin` auf Cloudsmith und GitHub Packages). |
 
 Details und Beispiele je Zugriffsweg (Go, C#, Kotlin) stehen im
 [Benutzerhandbuch](docs/user/benutzerhandbuch.md); der volle Anforderungs-
@@ -35,6 +35,7 @@ Siehe:
 - [`docs/user/benutzerhandbuch.md`](docs/user/benutzerhandbuch.md) für die Bedienung.
 - [`sdks/csharp/`](sdks/csharp/) für die offizielle C#-Client-Bibliothek ([`PgChangeFeed.Client`](https://www.nuget.org/packages/PgChangeFeed.Client) auf NuGet.org).
 - [`sdks/python/`](sdks/python/) für die offizielle Python-Client-Bibliothek ([`pgchangefeed`](https://pypi.org/project/pgchangefeed/) auf PyPI).
+- [`sdks/kotlin/pgchangefeed-kotlin/`](sdks/kotlin/pgchangefeed-kotlin/) für die offizielle Kotlin-Client-Bibliothek (`pgchangefeed-kotlin` auf Cloudsmith und GitHub Packages).
 - [`docs/maintainer/releasing.md`](docs/maintainer/releasing.md) für den Release-Prozess.
 - [`spec/lastenheft.md`](spec/lastenheft.md) für Anforderungen und Akzeptanzkriterien.
 - [`spec/pflichtenheft.md`](spec/pflichtenheft.md) für die technische Spezifikation.
