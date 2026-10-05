@@ -28,8 +28,9 @@ des nächsten Slice, dessen Läufe unter diesem Guard liefen; eingetreten mit de
 Repo-Pfad **mit Wirkung** auf eine Repo-Datei) ist nicht eingetreten. Die Neubewertung der nicht gelisteten
 Namen trägt der Auflösungs-Trigger von `MR-004`. Die Scratchpad-Ausnahme für
 `sed -i` ist entschieden: keine, der Guard blockt unbedingt.
-Zähler (abgeleitet): 10× (zehn Dateien unter `evidence/`; die Aufzählung nennt die ersten acht, der neunte
-Beleg `slice-routing-sdk-beispiel-target` und der zehnte `slice-sdk-0-6-kompatibilitaet-messen` stehen unten;
+Zähler (abgeleitet): 12× (zwölf Dateien unter `evidence/`; die Aufzählung nennt die ersten acht, der neunte
+Beleg `slice-routing-sdk-beispiel-target`, der zehnte `slice-sdk-0-6-kompatibilitaet-messen`, der elfte
+`slice-otlp-metrik-export-e2e` und der zwölfte `slice-sdk-tls-optionen` stehen unten;
 evidence/slice-backfill-speicher-untersuchung.md,
 evidence/slice-transformationen-antragsweg-usecase.md,
 evidence/slice-transformationen-backfill-pfad.md,
@@ -80,3 +81,7 @@ Schreiben von `ADR-0147`, vom Architect im Bericht selbst gemeldet, Inhalt korre
 Der elfte Beleg (`slice-otlp-metrik-export-e2e`, evidence/slice-otlp-metrik-export-e2e.md) ist die
 Umleitungs-Hälfte in der Rolle Implementer: `cat >>` an `check_test.go`, selbst gemeldet, im Review als
 F-1 (HIGH, nicht verifizierbar) geführt, Inhalt geprüft; Ursprung *übernommen*. Kein neuer Mechanismus.
+Der zwölfte Beleg (`slice-sdk-tls-optionen`, evidence/slice-sdk-tls-optionen.md) ist die
+Umleitungs-Hälfte in der Rolle Implementer: `cat >>` an `tools/harness/run-sdk-csharp-integration-tests.sh`,
+selbst gemeldet, im Review als F-1 (HIGH, nicht verifizierbar) geführt, Inhalt gelesen; Ursprung
+*übernommen*. Kein neuer Mechanismus; der Guard liest Umleitungen weiterhin nicht (`MR-003`).
