@@ -271,6 +271,43 @@ Aussagen-Berührung steht hier gar nicht.
   Dateien `*.pem`. Die HTTP- und SSE-Beispiele sind **nicht** gegen den
   TLS-Container gefahren (kein Aufruf, keine Aussage im Handbuch).
 
+**Fixrunde zu `review-slice-examples-grpc-tls` (F-1, F-4, F-5, F-7).**
+
+- **Keine Runner-Phase (Begründung).** Der Realserver-Beleg der Beispiele ist
+  je Sprache ein Lauf gegen die Demo-Umgebung mit Compose-Override; eine Phase in
+  `tools/harness/run-integration-tests.sh` hieße ein vierter Liefer-Punkt (§4
+  Rückführung), und die Beispiele sind Dokumentation mit Bau-Bindung, kein
+  Gate-Gegenstand ([`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)).
+- **Exit 1 ohne Anker:** gefahren nur für Go (Ausgang 1, Zeile oben); für C#
+  und Kotlin aus dem Code hergeleitet (`Program.cs` und `Main.kt` enden bei einem
+  fehlgeschlagenen Aufruf mit Ausgang 1), im Realserver-Lauf nicht auf den
+  Ausgangscode gelesen.
+- **F-1 Namensprüfung.** Je Sprache ein Test, dessen Anker das Serverzertifikat
+  ist (Kette stimmt), dessen SAN aber nur `other.example` nennt, bei Verbindung an
+  `127.0.0.1`: Go `TestTransportCredentialsRejectsNameOutsideSAN`, C#
+  `TlsHandler_WithNameOutsideSan_FailsHandshake`, Kotlin
+  `nameOutsideSanFailsAgainstTrustedCertificate`. Gegenprobe (Name im SAN)
+  tragen die Happy-Path-Tests. Mutation C# (Kopie im Scratchpad,
+  `docker build --target runtime-grpc`): das Bit `RemoteCertificateNameMismatch`
+  aus der Maske in `Validate` entfernt → `Failed!  - Failed:     1, Passed:    60 …
+  GrpcClient.Tests.dll`, rot ist `TlsHandler_WithNameOutsideSan_FailsHandshake`.
+  Frischer Lauf der Fixrunde (unmutiert): `make examples-csharp` Exit 0, `Passed:
+  61`; `make examples-kotlin` Exit 0 (`BUILD SUCCESSFUL`, Test-Schicht frisch);
+  `make test` Exit 0 (`ok … examples/grpc-client`). Go und Kotlin delegieren den
+  Namen an die Bibliothek (`credentials.NewTLS` mit `RootCAs`, `TlsChannelCredentials`
+  mit `trustManager`); eine Mutation dort wurde nicht gefahren, die Bindung beider
+  Tests an die Namensprüfung ist daher **hergeleitet** (der Fehler entsteht allein
+  durch das SAN, Kette und Adresse sind gleich dem Happy-Path-Test).
+- **F-4 Grenze.** Die C#-Prüfung baut die Kette ohne vom Server gesendete
+  Zwischenzertifikate; als benannte Grenze in Handbuch und `examples/README.md`
+  geführt (hergeleitet, nicht gefahren; Fehlerfall ist die Ablehnung).
+- **F-5 Kotlin (Befund widerlegt).** Die Annahme „eine DER-Datei besteht die
+  Vorprüfung und wirft im `build()`“ ist gemessen falsch: der Test
+  `derAnchorIsAcceptedAndReachesTlsServer` (DER-Export des `keytool`) erreicht den
+  TLS-Server; `trustManager(File)` liest ein DER-Zertifikat. Kein Fang nötig, kein
+  Code geändert; ein Pfad, auf dem `build()` nach bestandener Vorprüfung wirft,
+  ist nicht bekannt.
+
 - **Zertifikat im Test.** Der Go-Test erzeugt es mit `crypto/x509` zur Laufzeit;
   C# und Kotlin erzeugen es mit der Bibliothek der Sprache im Test oder lesen
   eine zur Laufzeit geschriebene Datei im Temp-Verzeichnis. Kein Zertifikat und

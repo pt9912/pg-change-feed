@@ -190,7 +190,11 @@ wird: `-ca-file <Pfad>` (Go) bzw. `--ca-file <Pfad>` (C#, Kotlin) oder die
 Umgebungsvariable `CDC_TLS_CA_FILE` nennt das Zertifikat des Servers als
 PEM-Datei; ohne Angabe verbinden sie im Klartext. Die Standard-Prüfung der
 Bibliothek (Kette und Name) bleibt, die Prüfung wird nicht übersprungen; eine
-nicht lesbare oder PEM-lose Datei endet mit Exit 2 vor dem Verbindungsaufbau. Die
+nicht lesbare oder PEM-lose Datei endet mit Exit 2 vor
+dem Verbindungsaufbau. Grenze des C#-Beispiels: es baut die Kette allein aus der
+Anker-Datei; ein Anker, der eine CA statt des Serverzertifikats nennt, trägt
+nicht, wenn der Server eine Zwischen-CA sendet (aus dem Code hergeleitet, nicht
+gefahren) — als Anker dient das Serverzertifikat oder die ganze Kette. Die
 Datei muss im Container des Beispiels liegen (`docker run … -v
 <Zertifikat>:/tls/ca.pem:ro -e CDC_TLS_CA_FILE=/tls/ca.pem`); die Demo-Umgebung
 unter `examples/compose.yaml` bleibt im Klartext. Die Aufrufform und die Messung

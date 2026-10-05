@@ -29,6 +29,12 @@ import (
 // Pfad der Zertifikatsdatei und das geladene Paar werden zurückgegeben.
 func writeTestCert(t *testing.T) (string, tls.Certificate) {
 	t.Helper()
+	return writeTestCertSAN(t, nil, []net.IP{net.ParseIP("127.0.0.1")})
+}
+
+// writeTestCertSAN erzeugt das Zertifikat mit genau den genannten SAN-Einträgen.
+func writeTestCertSAN(t *testing.T, dns []string, ips []net.IP) (string, tls.Certificate) {
+	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		t.Fatalf("Schlüssel: %v", err)
@@ -40,7 +46,8 @@ func writeTestCert(t *testing.T) (string, tls.Certificate) {
 		NotAfter:     time.Now().Add(time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1")},
+		DNSNames:     dns,
+		IPAddresses:  ips,
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
 	if err != nil {
@@ -138,6 +145,21 @@ func TestTransportCredentialsRejectsForeignAnchor(t *testing.T) {
 	addr := startHealthServer(t, &cert)
 	if err := callHealth(addr, foreign); err == nil {
 		t.Fatal("Aufruf mit fremdem Anker gelang")
+	}
+}
+
+// TestTransportCredentialsRejectsNameOutsideSAN: der Anker ist das
+// Serverzertifikat (die Kette stimmt), sein SAN nennt aber nicht die Adresse
+// der Verbindung; der Aufruf scheitert an der Namensprüfung.
+func TestTransportCredentialsRejectsNameOutsideSAN(t *testing.T) {
+	anchor, cert := writeTestCertSAN(t, []string{"other.example"}, nil)
+	addr := startHealthServer(t, &cert)
+	err := callHealth(addr, anchor)
+	if err == nil {
+		t.Fatal("Aufruf an einen Namen außerhalb des SAN gelang")
+	}
+	if !strings.Contains(err.Error(), "x509") {
+		t.Fatalf("Fehler nennt keine Zertifikatsprüfung: %v", err)
 	}
 }
 

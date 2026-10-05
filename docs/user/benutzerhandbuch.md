@@ -2,7 +2,7 @@
 
 Version: 1.99
 Software-Version: siehe `docs/user/version.md`
-Stand: 2026-10-04
+Stand: 2026-10-05
 
 ## 1. Einleitung
 
@@ -1929,9 +1929,13 @@ wenn ihnen ein Vertrauensanker genannt wird: das Flag `-ca-file <Pfad>` (Go) bzw
 `--ca-file <Pfad>` (C#, Kotlin) oder die Umgebungsvariable `CDC_TLS_CA_FILE`
 nennt das Zertifikat des Servers als PEM-Datei. Das Beispiel prüft dann Kette
 und Namen des Serverzertifikats gegen diese Datei und überspringt die Prüfung
-nie; ohne Angabe verbindet es im Klartext wie bisher. Eine nicht lesbare Datei
-und eine Datei ohne PEM-Zertifikat enden mit Ausgang 2 und einer Fehlermeldung,
-bevor eine Verbindung entsteht. Die Datei muss im Container des Beispiels
+nie; ohne Angabe verbindet es im Klartext. Eine nicht lesbare Datei
+und eine Datei ohne PEM-Zertifikat enden mit
+Ausgang 2 und einer Fehlermeldung, bevor eine Verbindung entsteht. Grenze des
+C#-Beispiels: es baut die Kette allein aus der Anker-Datei; nennt die Datei eine
+CA statt des Serverzertifikats und sendet der Server eine Zwischen-CA mit, lehnt
+das Beispiel die Verbindung ab. Als Anker dient deshalb das Zertifikat des
+Servers selbst oder eine Datei, die die ganze Kette bis zur Wurzel enthält. Die Datei muss im Container des Beispiels
 liegen, zum Beispiel für das Go-Beispiel mit dem Stream als Verb:
 
 ```text
@@ -3288,4 +3292,4 @@ MIT — siehe `LICENSE`.
 | 1.96 | 2026-10-04 | Die HTTP- und die gRPC-Schnittstelle lassen sich mit einem gemeinsamen TLS-Paar verschlüsseln: die neuen Variablen `CDC_TLS_CERT_FILE` und `CDC_TLS_KEY_FILE` (Datei-Felder `tls_cert_file` und `tls_key_file`, Pfade ohne Zugangsdaten-Charakter), neuer Abschnitt „Schnittstellen mit TLS verschlüsseln“ (TLS ab Version 1.2, kein Klartext auf derselben Adresse, kein Client-Zertifikat, Zertifikatswechsel nur mit Neustart); ein unvollständiges oder nicht ladbares Paar verhindert den Start (neue Meldungscodes `PCF-E2009` und `PCF-E2010`); die gRPC-Beispielprogramme verbinden im Klartext und die Optionen der Client-Pakete bieten keine TLS-Einstellung |
 | 1.97 | 2026-10-04 | Der Feed-Container kann seine Kennzahlen periodisch per OpenTelemetry-Protokoll (OTLP/HTTP, Protobuf) an einen Empfänger übertragen: die neuen Variablen `CDC_OTLP_ENDPOINT`, `CDC_OTLP_HEADERS` und `CDC_OTLP_INTERVAL_SECONDS` (Datei-Feld `otlp_interval` für den Takt), neuer Abschnitt „Metriken per OTLP übertragen“ mit Kennzahlen, Einheiten und dem Hinweis, dass alle Kennzahlen Momentstände (Gauge) sind, auch die mit dem Namensteil `_total`; ohne Endpunkt bleibt der Export aus; ein Ausfall des Empfängers beeinträchtigt Erfassung und Health nicht und erzeugt die Warnungen `PCF-W6001` und `PCF-W6002` (neuer Warn-Bereich 6 „Beobachtbarkeit und Transport“); eine ungültige Export-Konfiguration verhindert den Start (neue Meldungscodes `PCF-E2011` bis `PCF-E2014`; die Meldung nennt nie den Wert von Endpunkt oder Header, beim Takt den eingegebenen Wert); die zugangsdaten-tragenden Schlüssel der Konfigurationsdatei, die dort nicht stehen dürfen, wachsen von neun auf elf (`otlp_endpoint`, `otlp_headers`) |
 | 1.98 | 2026-10-04 | Metrik-Export gegen einen echten OpenTelemetry-Collector gemessen: die Einheit von `cdc_consumer_lag` ist `By` (WAL-Strecke in Bytes, nicht Datenvolumen; Abschnitte „Metriken lesen“, „Metriken per OTLP übertragen“ und die Diagnose-Beschreibung); der Abschnitt zum Export nennt den `https`-Empfänger (CA-Bündel im Image, selbstsigniertes Zertifikat über `SSL_CERT_FILE`, ohne sie Warnung `PCF-W6001`) und den Benutzerteil der Endpunkt-URL (wird als Basic-Authorization gesendet, ein `Authorization`-Header aus `CDC_OTLP_HEADERS` gewinnt, keine Zugangsdaten in Log oder Fehlertext) |
-| 1.99 | 2026-10-05 | Die gRPC-Beispielprogramme in Go, C# und Kotlin verbinden über TLS, wenn ihnen ein Vertrauensanker genannt wird (Flag `-ca-file` bzw. `--ca-file`, Umgebungsvariable `CDC_TLS_CA_FILE`; ohne Angabe Klartext wie bisher); der Abschnitt „Schnittstellen mit TLS verschlüsseln“ nennt die Aufrufform und die Messung gegen einen Feed-Container mit TLS-Paar |
+| 1.99 | 2026-10-05 | Die gRPC-Beispielprogramme in Go, C# und Kotlin verbinden über TLS, wenn ihnen ein Vertrauensanker genannt wird (Flag `-ca-file` bzw. `--ca-file`, Umgebungsvariable `CDC_TLS_CA_FILE`; ohne Angabe Klartext); der Abschnitt „Schnittstellen mit TLS verschlüsseln“ nennt die Aufrufform und die Messung gegen einen Feed-Container mit TLS-Paar |

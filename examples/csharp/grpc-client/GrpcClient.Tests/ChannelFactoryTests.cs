@@ -19,12 +19,19 @@ public sealed class ChannelFactoryTests : IDisposable
 
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 
-    private static X509Certificate2 NewCertificate()
+    private static X509Certificate2 NewCertificate(string? dnsName = null)
     {
         using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         var request = new CertificateRequest("CN=grpc-client-test", key, HashAlgorithmName.SHA256);
         var san = new SubjectAlternativeNameBuilder();
-        san.AddIpAddress(IPAddress.Loopback);
+        if (dnsName is null)
+        {
+            san.AddIpAddress(IPAddress.Loopback);
+        }
+        else
+        {
+            san.AddDnsName(dnsName);
+        }
         request.CertificateExtensions.Add(san.Build());
         using var created = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddHours(-1), DateTimeOffset.UtcNow.AddHours(1));
         return X509CertificateLoader.LoadPkcs12(created.Export(X509ContentType.Pfx), null);
@@ -103,6 +110,24 @@ public sealed class ChannelFactoryTests : IDisposable
         try
         {
             var handler = ChannelFactory.TlsHandler(WritePem(foreign));
+            await Assert.ThrowsAsync<HttpRequestException>(() => GetAsync(handler, port));
+        }
+        finally
+        {
+            stop.Cancel();
+        }
+    }
+
+    [Fact]
+    public async Task TlsHandler_WithNameOutsideSan_FailsHandshake()
+    {
+        // Der Anker ist das Serverzertifikat (Kette stimmt), sein SAN nennt
+        // aber nicht die Adresse 127.0.0.1 der Verbindung.
+        using var cert = NewCertificate("other.example");
+        var (port, stop) = StartServer(cert);
+        try
+        {
+            var handler = ChannelFactory.TlsHandler(WritePem(cert));
             await Assert.ThrowsAsync<HttpRequestException>(() => GetAsync(handler, port));
         }
         finally

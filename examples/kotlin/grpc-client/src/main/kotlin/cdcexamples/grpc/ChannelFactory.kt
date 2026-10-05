@@ -19,7 +19,7 @@ object ChannelFactory {
     /**
      * create liefert den Kanal zur Konfiguration. Eine nicht lesbare Datei und
      * eine Datei ohne PEM-Zertifikat enden als [IllegalArgumentException] vor
-     * dem Verbindungsaufbau.
+     * dem Verbindungsaufbau; ein DER-Zertifikat gilt als Anker.
      */
     fun create(cfg: Config): ManagedChannel {
         val credentials = if (cfg.caFile.isEmpty()) {

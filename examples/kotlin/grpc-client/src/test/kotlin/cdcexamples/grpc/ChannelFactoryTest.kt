@@ -46,13 +46,13 @@ class ChannelFactoryTest {
         assertEquals(0, process.waitFor(), "keytool: $output")
     }
 
-    /** Erzeugt ein selbstsigniertes Zertifikat für 127.0.0.1 und gibt Keystore und Anker-PEM zurück. */
-    private fun newCertificate(name: String): Pair<File, File> {
+    /** Erzeugt ein selbstsigniertes Zertifikat mit dem SAN [san] und gibt Keystore und Anker-PEM zurück. */
+    private fun newCertificate(name: String, san: String = "ip:127.0.0.1"): Pair<File, File> {
         val store = File(dir, "$name.p12")
         val pem = File(dir, "$name.pem")
         keytool(
             "-genkeypair", "-alias", name, "-keyalg", "EC", "-groupname", "secp256r1",
-            "-dname", "CN=grpc-client-test", "-ext", "san=ip:127.0.0.1", "-validity", "1",
+            "-dname", "CN=grpc-client-test", "-ext", "san=$san", "-validity", "1",
             "-storetype", "PKCS12", "-keystore", store.path, "-storepass", "changeit",
         )
         keytool("-exportcert", "-rfc", "-alias", name, "-keystore", store.path, "-storepass", "changeit", "-file", pem.path)
@@ -133,6 +133,23 @@ class ChannelFactoryTest {
         val (_, foreign) = newCertificate("b")
         val addr = startServer(store)
         assertTrue(call(config(addr, foreign.path)) != null, "Aufruf mit fremdem Anker gelang")
+    }
+
+    /** Der Anker ist das Serverzertifikat (Kette stimmt), sein SAN nennt aber nicht die Adresse der Verbindung. */
+    @Test
+    fun nameOutsideSanFailsAgainstTrustedCertificate() {
+        val (store, pem) = newCertificate("n", san = "dns:other.example")
+        val addr = startServer(store)
+        assertTrue(call(config(addr, pem.path)) != null, "Aufruf an einen Namen außerhalb des SAN gelang")
+    }
+
+    @Test
+    fun derAnchorIsAcceptedAndReachesTlsServer() {
+        val (store, _) = newCertificate("d")
+        val der = File(dir, "d.der")
+        keytool("-exportcert", "-alias", "d", "-keystore", store.path, "-storepass", "changeit", "-file", der.path)
+        val addr = startServer(store)
+        assertEquals(null, call(config(addr, der.path)))
     }
 
     @Test
