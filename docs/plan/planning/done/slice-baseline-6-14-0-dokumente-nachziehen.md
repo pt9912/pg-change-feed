@@ -159,7 +159,7 @@ Planungsstand hat keinen der Läufe gefahren
 
 Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
 
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0,
       `make suchlauf-nachmessen PLAN=` mit diesem Plan Exit 0 am Endstand.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -173,14 +173,14 @@ Gate- und Lauf-Pflichten (zählen nicht zu den Liefer-Punkten):
       berührt (die Index-Zeile in [`harness/README.md`](../../../../harness/README.md)
       §Sensors nur, wenn sich ihr Kurzsatz ändert); gemeldete Träger fremder Dateien mit der
       Closure nachgezogen (§3 Suchlauf, [`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Ruhe-Marker unter *Offene Wellen* in `docs/plan/planning/in-progress/roadmap.md`
+- [x] Ruhe-Marker unter *Offene Wellen* in `docs/plan/planning/in-progress/roadmap.md`
       nach dem `git mv` dieses Slice nach `done/` wieder eingesetzt (Wortlaut aus
       `d79b7ebd`), sofern `in-progress/` dann keinen Slice trägt; die Suchlauf-Zeile
       `diff 0 … 'Nichts in Arbeit'` nachgezogen (Review F-3).
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, solange die Roadmap unter *Offene Wellen* keine Welle führt.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, solange die Roadmap unter *Offene Wellen* keine Welle führt.
 
 ## 3. Plan (vor Code)
 
@@ -278,7 +278,7 @@ d79b7ebd54ba353e484f654a16c5abb0859b3743 1 -n -F 'Gegenstand an einen anderen Sl
 d79b7ebd54ba353e484f654a16c5abb0859b3743 7 -n -E 'span-emit|Audit-Span|requirement\.id|slice\.id' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations
 diff 7 -n -E 'span-emit|Audit-Span|requirement\.id|slice\.id' -- . :!docs/reviews :!.harness/baseline :!docs/plan/planning/done :!docs/plan/planning/observations
 d79b7ebd54ba353e484f654a16c5abb0859b3743 1 -n -F 'Nichts in Arbeit' -- docs/plan/planning/in-progress/roadmap.md
-diff 0 -n -F 'Nichts in Arbeit' -- docs/plan/planning/in-progress/roadmap.md
+diff 1 -n -F 'Nichts in Arbeit' -- docs/plan/planning/in-progress/roadmap.md
 d79b7ebd54ba353e484f654a16c5abb0859b3743 0 -n -F 'Stichprobe gegen den Bestand' -- harness
 diff 1 -n -F 'Stichprobe gegen den Bestand' -- harness
 ```
@@ -706,6 +706,23 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 - **Risiken aus §6:** je ein Ausgang, siehe §6 — vier entfallen (Agent vorher
   committet, Verfahrensregel genügt, Vorlage nachgemessen unverändert, Marker
   wieder gesetzt), eines eingetreten (Bestandsabgleich → Folge-Slice).
+- **Drei Paarungen:** nach dem `git mv` gemessen — (a) *Anker:* der Zielort
+  `harness/targets/pin-stale.md` §Bump-Ablauf trägt
+  `seit slice-baseline-6-14-0-dokumente-nachziehen` (ein Treffer in der Datei, im
+  Abschnitt); (b) *Folge-Slice:* `slice-abgeleitete-dokumente-vorlagen-nachzug` ist
+  eine Datei in `open/`; (c) *Register:* die fünf genannten Verzeichnisse
+  (`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`,
+  `BEO-PGC/record-rueckwirkend-umgeschrieben`, `BEO-PGC/ruhe-marker-ohne-traeger`,
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
+  `BEO-PGC/report-nicht-aus-baseline-vorlage`) existieren, jedes mit nicht leerem
+  `evidence/` (22, 1, 1, 34, 1 Dateien). Ergebnis: getragen. Durch den Move brach kein
+  Verweis (`make docs-check` 0 Befunde; `git grep` nach dem `in-progress`-Pfad dieses
+  Plans außerhalb der Datei: 0 Treffer). Der Ruhe-Marker steht wieder, Wortlaut gleich
+  `d79b7ebd` (`diff` Exit 0), `in-progress/` trägt nur `roadmap.md`; die
+  Suchlauf-Zeile `Nichts in Arbeit` steht auf `diff 1`.
+- **Gates der Closure:** `make docs-check` Exit 0 nach dem Move; `make gates` und
+  `make suchlauf-nachmessen` nach dem letzten Commit stehen im Bericht der Sitzung,
+  nicht in diesem Plan.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
