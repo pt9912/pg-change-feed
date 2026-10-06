@@ -43,4 +43,4 @@ Disziplin.
 - je Slice-Umfang: `make doc-commits RANGE=base..head` (Traceability je Commit)
   und `make doc-immutable RANGE=base..head` (MR-Immutabilität; ohne `RANGE`
   endet das Ziel mit Exit 2)
-- Bericht-Ort: `docs/reviews/` (Gerüst: `.harness/baseline/v6.14.0/templates/docs/reviews/review-report.template.md`)
+- Bericht-Ort: `docs/reviews/` (Gerüst: `.harness/baseline/v6.14.1/templates/docs/reviews/review-report.template.md`)

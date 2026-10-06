@@ -10,7 +10,7 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   [`AGENTS.md`](../../AGENTS.md) §3.1 Absatz „Durchsetzung“.
 - **Ersetzt-Baseline-Regel:** [`grundlagen-durchsetzungsschicht.md`
   §Grenzen — ehrlich
-  benannt](../../.harness/baseline/v6.14.0/regelwerk/grundlagen-durchsetzungsschicht.md#grenzen--ehrlich-benannt)
+  benannt](../../.harness/baseline/v6.14.1/regelwerk/grundlagen-durchsetzungsschicht.md#grenzen--ehrlich-benannt)
   — der Satz, ein Befehls-Guard prüfe nur Befehlspositionen, Interpreter-Umwege
   blieben möglich. Der Guard dieses Repos liest darüber hinaus die Flag-Tokens
   dreier Werkzeuge und ein Pfad-Muster im Befehlsstring; die Grenze liegt hinter

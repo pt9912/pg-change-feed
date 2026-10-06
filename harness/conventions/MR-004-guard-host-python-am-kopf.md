@@ -16,7 +16,7 @@ Abschnitts-Anker in die vendored Fassung; ein Datei-Link benennt keine Regel.
 - **Ersetzt-Baseline-Regel:** [`modul-13-quality-gates.md`
   §Guard-Härtung: Wächter reifen in Wellen — „Gehärtet wird die Zerlegung,
   nicht die
-  Denylist“](../../.harness/baseline/v6.14.0/regelwerk/modul-13-quality-gates.md#guard-haertung).
+  Denylist“](../../.harness/baseline/v6.14.1/regelwerk/modul-13-quality-gates.md#guard-haertung).
 - **Adaption:** Der Guard sperrt zwei Kopf-Wörter unbedingt — `python` und
   `python3`, geladen aus `tools/harness/blocked/python` über die bestehende
   Fragment-Ladung (`BLOCKED`, Kopfkommentar des Guards). Ein Kommando-Segment,
