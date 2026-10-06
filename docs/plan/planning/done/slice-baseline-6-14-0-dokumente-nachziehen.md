@@ -106,7 +106,7 @@ Planungsstand hat keinen der Läufe gefahren
 
 - [x] **Planungs-README und Roadmap (Liefer-Punkt 1).**
       `docs/plan/planning/README.md` gegen
-      `.harness/baseline/v6.14.0/templates/docs/plan/planning/README.template.md`
+      `.harness/baseline/v6.14.1/templates/docs/plan/planning/README.template.md`
       abgeglichen und angeglichen: (a) die Zeile `done/` trägt die Klausel „oder
       Gegenstand an einen anderen Slice übergegangen oder entfallen: §7 nennt
       Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer (Baseline-Regelwerk

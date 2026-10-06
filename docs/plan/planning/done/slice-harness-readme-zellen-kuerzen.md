@@ -38,7 +38,7 @@ ist einzeln lieferbar. **§1 nennt Ziel und Abgrenzung**.
 **Anlass (gemessen am Parent `4db7cf95`, 2026-10-05, Befehle in §3).**
 `harness/README.md` hat 136.970 Byte in 265 Zeilen (Wert des Auftraggebers,
 **übernommen**; `wc -c`/`wc -l` am Planungsstand bestätigen 136970 und 265); die
-Vorlage `.harness/baseline/v6.14.0/templates/harness/README.template.md` hat
+Vorlage `.harness/baseline/v6.14.1/templates/harness/README.template.md` hat
 11 KB in 210 Zeilen (**übernommen**). 15 Zeilen haben mehr als 2.000 Zeichen
 (gemessen, Suchlauf Zeile 1); die längste ist die Zeile `make test-integration`
 der Tabelle „Werkzeuge“ mit 26.286 Zeichen (**übernommen**, im Slice

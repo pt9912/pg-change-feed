@@ -159,7 +159,7 @@ durchgehen muss.
       Klasse `interp` sah der Reviewer zweimal live geblockt (übernommen aus dem Review-Report,
       nicht nachgemessen). Ein Live-Aufruf mit Host-`python` entfällt (`AGENTS.md` §3.1).
 - [x] **Liefer-Punkt 3 — die Träger.** (a) `harness/conventions/MR-003-…md` per `cp` aus
-      `.harness/baseline/v6.14.0/templates/harness/conventions/MR-NNN-titel.template.md`, in
+      `.harness/baseline/v6.14.1/templates/harness/conventions/MR-NNN-titel.template.md`, in
       place gefüllt (Auslöser: der Register-Eintrag mit seinen drei Beleg-Dateien; Adaption:
       was der Guard liest; **Grenz-Zeile**: was er nicht kann — die Punkte aus §6, Risiko 2;
       Ersetzt-Baseline-Regel: `grundlagen-durchsetzungsschicht.md` §Grenzen — ehrlich

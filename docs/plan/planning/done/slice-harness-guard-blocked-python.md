@@ -188,7 +188,7 @@ Jedes Kriterium trägt „Zu belegen durch:“; jede Aussage über eine Mutation
       als Trenner → der Fall hinter `cd <Repo> &&` rot); Fragment-Ladung liest nur eine feste Datei `go` → die
       Block-Fälle rot. Menge der Erprobung: die Fälle des Tabellentests.
 - [x] **Liefer-Punkt 3 — die Träger.** (a) `harness/conventions/MR-004-guard-host-python-am-kopf.md` per `cp` aus
-      `.harness/baseline/v6.14.0/templates/harness/conventions/MR-NNN-titel.template.md` (byte-Gleichheit mit
+      `.harness/baseline/v6.14.1/templates/harness/conventions/MR-NNN-titel.template.md` (byte-Gleichheit mit
       `diff -q` vor dem Füllen), in place gefüllt, plus die Zeile in `harness/conventions.md` §Aktive
       Adaptionen (Anker `mr-004`); Inhalt siehe §3 „Ansatz“ (Grenz-Zeile: die Liste ist die benannte Grenze).
       `MR-003` bleibt unverändert (`Accepted`, immutable). (b) [`AGENTS.md`](../../../../AGENTS.md) §3.1 Absatz
@@ -269,7 +269,7 @@ Träger-Änderungen und zwei Register-Zeilen. Der Tabellentest-Umbau ist der gr�
 - **`MR-004` (Inhalt, der Implementer füllt aus der Vorlage).** *Titel:* der Guard sperrt Host-`python`/`python3` am Kopf
   unbedingt. *Datum:* das des Slice. *Geltungsbereich:* das Fragment, der Guard, der Tabellentest, `AGENTS.md` §3.1
   „Durchsetzung“. *Ersetzt-Baseline-Regel:* genau eine — der Punkt „Gehärtet wird die Zerlegung, nicht die Denylist“
-  in [`modul-13-quality-gates.md` §Guard-Härtung](../../../../.harness/baseline/v6.14.0/regelwerk/modul-13-quality-gates.md#guard-härtung-wächter-reifen-in-wellen-modul-13)
+  in [`modul-13-quality-gates.md` §Guard-Härtung](../../../../.harness/baseline/v6.14.1/regelwerk/modul-13-quality-gates.md#guard-härtung-wächter-reifen-in-wellen-modul-13)
   (Anker `guard-haertung` vom Implementer mit `make docs-check` zu prüfen). *Adaption:* der Guard sperrt zwei
   Kopf-Wörter unbedingt; die Repo-Pfad-Regel von `MR-003` bleibt für `python3.<N>` und `perl`. *Begründung:* die
   Baseline nennt als Schaden der Denylist, dass sie `make` blockiert; die Kopf-Liste des Guards liest nur den Kopf, `make`
