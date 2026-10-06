@@ -198,7 +198,10 @@ Planungsstand hat außer den in §1 genannten Läufen keinen im Repo gefahren
       `234ed26a`, Ausgabe in eine Log-Datei, Exit direkt danach gesichert: `0`;
       gedruckt u. a. `d-check: 1794 Datei(en) geprüft, 0 Befund(e)`,
       `commit-traceability: OK — 5 Commit(s) in "HEAD~5..HEAD", Betreffs ohne Struktur-ID`,
-      Coverage `total: … 83.3%` bei Schwelle 80.
+      Coverage `total: … 83.3%` bei Schwelle 80. Nach der Fixrunde am Stand
+      `1dca86c8`: `make gates` Exit `0`, `d-check: 1796 Datei(en) geprüft, 0 Befund(e)`,
+      Coverage `total: … 83.3%`; `make kommentar-kennungen DIFF=8551babd`
+      Exit 0 ohne Kandidat.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
