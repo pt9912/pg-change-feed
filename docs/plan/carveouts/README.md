@@ -24,6 +24,11 @@ Datei), `Titel`, `Gate` (das betroffene Make-Ziel), `Trigger` und
 
 - Jeder aktive Carveout braucht: Trigger, Folge-Slice, letzten Prüf-Termin.
 - Bei Welle-Closure: Carveout-Audit zwingend — welche gültig, welche aufgelöst?
-  Ohne Welle trägt die Slice-Closure diesen Trigger-Audit (Baseline-Regelwerk
-  `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht).
+  Dieses Repo führt Wellen: Die Welle-Closure liest dabei auch die seit der
+  letzten Welle geschlossenen Slices ohne Wellen-Zugehörigkeit
+  (Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht,
+  „Achse zuerst“). Führt die Roadmap unter *Offene Wellen* keine Welle, läuft
+  der Trigger-Audit zusätzlich bei der Closure eines wellenlosen Slice — so
+  geschehen bei der Slice-Closure, aus der
+  [`ADR-0070`](../adr/0070-supersede-reichweite-und-klassengrenze.md) hervorging.
 - Siehe Baseline-Regelwerk `modul-07-carveouts.md`.

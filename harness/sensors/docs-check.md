@@ -208,7 +208,7 @@ Mount.
 (Baseline-Regelwerk Modul 5/6, abgebildet in `.d-check.yml` §matrix) ·
 Baseline-Pin (`harness/conventions.md` §Baseline) · Register-Spalten und
 Verweisform auf wandernde Slice-Pläne (`BEO-PGC/slice-pfad-als-link-in-berichten`,
-3×, `seit slice-075`) · Form der erzeugten E2E-Abdeckungstabelle
+`seit slice-075`) · Form der erzeugten E2E-Abdeckungstabelle
 ([`LH-QA-POR-003`](../../spec/lastenheft.md) — die E2E-Kette ist ihr
 Erzeuger; die `structure`-Regel sichert die Zeilenform, die `ids`-Linkpflicht
 die Kennungsspalte) · Zellenlänge des Gate-Index (Baseline-Regelwerk

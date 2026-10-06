@@ -168,6 +168,7 @@ halluziniertes Gate (Modul 13).
 | Herkunfts-Anker | `seit slice-<Kennung>` / `seit welle-<Kennung>`, ergänzt um `erweitert seit …` | der Vorgang, der die Zeile eingeführt oder erweitert hat | `seit slice-harness-fmt-check` bei `make fmt-check` |
 | Beobachtungs-Bindung | `BEO-PGC/<slug>` | der Register-Eintrag, aus dem das Werkzeug hervorging | `BEO-PGC/formatierungs-drift-ohne-gate` bei `make fmt-check` |
 | MR-Bindung | `MR-<NNN>` als Link auf `harness/conventions/` | die Adaption, die die Regel des Werkzeugs trägt | `MR-003` bei `make test-command-guard` |
+| Hard-Rule-Bindung | Link auf `AGENTS.md` mit Abschnitt `§<n>` | die harte Regel, deren Form das Werkzeug liest | `AGENTS.md` §3.7 bei `make kommentar-kennungen` |
 
 ## Modus-Deklaration pro Sub-Area
 

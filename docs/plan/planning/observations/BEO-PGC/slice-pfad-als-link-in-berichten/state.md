@@ -7,7 +7,7 @@ und Architect-Verdikt-Berichte) und
 Markdown-Link auf einen Slice-Plan in einem Lifecycle-Verzeichnis (`open/`,
 `next/`, `in-progress/`) färbt `make docs-check` als `section-forbidden` rot —
 **vor** dem Move, nicht erst danach. Den Reparatur-Pfad trägt der `hint` der
-Regel: die Kennung zitieren (`slice-NNN`) oder einen Inline-Code-Pfad.
+Regel: die Kennung zitieren (`slice-<Kennung>`) oder einen Inline-Code-Pfad.
 Rot-Beleg real gemessen (je ein Link in `docs/reviews/**` und in einer
 `observation.md` → zweimal `section-forbidden`, danach grün). Die
 Entscheidungs-Hälfte (ADR) trug die `matrix`-Regel `adr → slice` bereits; offen

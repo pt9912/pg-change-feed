@@ -112,7 +112,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       Zu belegen durch eine Mutation (ein solcher Link in einer Kopie) mit Befund.
 - [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
       [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update: Träger, die die geänderten Abschnitte zitieren, sind
@@ -133,6 +133,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | `docs/plan/adr/README.md`, `docs/plan/carveouts/README.md` | update / neu | Liefer-Punkt 2 |
 | `.d-check.yml` (zwei `structure`-Regeln), `harness/sensors/docs-check.md` Grenze | update | Liefer-Punkt 3 |
 | `docs/plan/planning/README.md` | update (Plan-Nachzug) | Liefer-Punkt 2: der Kommentar `d-check:ignore` am Pfad `docs/plan/carveouts/done/` fällt — er ist wirkungslos (Messung unten) und die einzige Abweichung der Zeile von `planning/README.template.md` Zeile 47 |
+| `harness/README.md` (zwei Bindung-Zellen der SDK-Integrationstests) | update (Fixrunde F-1) | nackte Slice-Kennung vor `· seit slice-…` gestrichen; die Zelle trägt die Herkunft in der deklarierten Form |
+| `harness/sensors/docs-check.md` §Bindung, `observations/BEO-PGC/slice-pfad-als-link-in-berichten/state.md` | update (Fixrunde F-7) | Zähler „3×“ entfernt (der Zähler ist abgeleitet); Reparatur-Pfad `slice-NNN` → `slice-<Kennung>` wie im `hint` |
 
 ### Ergebnis je Liefer-Punkt (Implementer, Stand vor dem Commit, Parent `3f51d3ed`)
 
@@ -142,8 +144,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 |---|---|---|
 | Gate-Tabelle, Zeile `` `<make-target>` `` „volle Closure“ | gestrichen | Das Makefile führt kein Closure-Ziel (`grep -nE '^(fullbuild\|ci)[: ]' Makefile harness/mk/*.mk d-check.mk`: 0 Treffer); der Image-Digest ist ein lokaler Lauf-Beleg von `make image`, das in der Werkzeug-Tabelle steht ([`ADR-0103`](../../adr/0103-image-hash-lokal-statt-committet.md)) |
 | Werkzeug-Tabelle, Musterzeilen `make <mover>`, `make <messung>`, `make <vorschau>` | gestrichen | Formbeispiele der Vorlage; die Werkzeug-Tabelle führt die realen Ziele dieser Arten |
-| §Safety and scope boundaries, zweimal `<…>` | ausgefüllt, fünf Punkte | je Punkt die zitierte Quelle in der Zeile selbst: `spec/lastenheft.md` §MVP-Schnitt (Reihenfolge, Rollback, Neustart), `LH-FA-CFG-006`, `LH-QA-SEC-002` mit `ADR-0047`, die drei Kennungs-Gates aus §Sensors, `AGENTS.md` §3.1 |
-| §Leseordnung, drei Platzhalter | ausgefüllt, vier Zeiger | Rang-Reihenfolge von `AGENTS.md` §2 (`README.md` Rang 7 als Überblick, `AGENTS.md` §3, `spec/lastenheft.md` Rang 1) und das Bei-Bedarf-Beispiel der Vorlage (`harness/conventions.md`) |
+| §Safety and scope boundaries, zweimal `<…>` | ausgefüllt, fünf Punkte | je Punkt die zitierte Quelle in der Zeile selbst: `spec/lastenheft.md` §MVP-Schnitt (Reihenfolge, Rollback, Neustart), `LH-FA-CFG-006`, `LH-QA-SEC-002` mit `ADR-0047`, die drei Kennungs-Gates aus §Sensors (Punkt 4 auf deren Gegenstand eingeengt, Fixrunde F-5), `AGENTS.md` §3.1 |
+| §Leseordnung, drei Platzhalter | ausgefüllt, vier Zeiger | Die **Zeiger** stammen aus `AGENTS.md` §2 (Rang 7 `README.md`, Rang 1 `spec/lastenheft.md`) und aus den Beispielen der Vorlage (`AGENTS.md` Hard Rules, `harness/conventions.md` bei Bedarf). Die **Reihenfolge** ist eigene Wahl und folgt nicht den Rängen: ein neuer Mensch braucht zuerst den Überblick über den Gegenstand (`README.md`), dann die Regeln, die jede Änderung bindet (`AGENTS.md` §3), dann den Vertrag im Detail (`spec/lastenheft.md`); die Konventionen braucht erst, wer eine Struktur- oder Kennungsfrage hat |
 
 **Liefer-Punkt 1 — `harness/conventions.md`.**
 
@@ -153,7 +155,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | `**In-Repo (verkörperte Form):** <Pfade zu …>` | ausgefüllt | die Liste der abgeleiteten Dokumente in `harness/targets/pin-stale.md` §Bump-Ablauf Schritt 2, mit `docs/plan/carveouts/README.md` statt des Verzeichnisses |
 | MR-000 `**Datum:** <Datum>` | `2026-09-09` | `git log --follow --format='%h %ad' --date=short -- harness/conventions.md`: ältester Commit `40c8c431` 2026-09-09 (legt die Datei an) |
 | §Aufgelöste Adaptionen, Musterzeile `\<NNN\>` | `— \| —` | `harness/conventions/done/` existiert nicht (`ls`: nicht gefunden) |
-| §Zusatzklassen, Musterzeile | fünf Klassen | die Bindung-Spalte beider Tabellen in `harness/README.md` §Sensors, ausgezählt: `LH-*` (3 Zeilen), Vertragsdatei `sensors/…`/`targets/…`, `seit slice-…`, `BEO-PGC/…` (1), `MR-*` (1); je Klasse ein Beispiel aus einer realen Zeile |
+| §Zusatzklassen, Musterzeile | sechs Klassen (Fixrunde F-1) | die Bindung-Spalte beider Tabellen in `harness/README.md` §Sensors, ausgezählt (Befehl und Zahlen unter *Fixrunde*, F-1): LH (2 Zellen), Vertragsdatei `sensors/…`/`targets/…` (66), Herkunfts-Anker `seit slice-…`/`seit welle-…` (40), `BEO-PGC/…` (1), `MR-*` (1), Link auf `AGENTS.md` §n (1); je Klasse ein Beispiel aus einer realen Zeile. Die zwei nackten Slice-Kennungen ohne `seit` sind in die Form `seit slice-…` angeglichen |
 | §Glossar, Musterzeile | gestrichen, Satz mit Grund | Produkt-Begriffe führt `spec/lastenheft.md` §6 Glossar |
 
 **Platzhalter-Prüfung** (beide Formen der Regel in `harness/targets/pin-stale.md`
@@ -239,11 +241,68 @@ fünf fremde Zeilen (`ADR-0053`, zwei `evidence/`-Dateien,
 `internal/bootstrap/otlp_internal_test.go`) — andere Gegenstände. Kein Träger
 beschreibt die Carveout-Ablage als leer oder den ADR-Index als ohne
 Konventionen; `harness/targets/pin-stale.md` nennt `docs/plan/carveouts/` als
-Verzeichnis und bleibt richtig. Gemeldet, nicht mitgeändert (ein anderer
-Gegenstand als die bewegten Eigenschaften): `harness/sensors/docs-check.md`
-§Bindung zählt `BEO-PGC/slice-pfad-als-link-in-berichten` mit „3×“, der
-`state.md` des Eintrags mit 5× — Frist: die Closure dieses Slice, der Planner
-zieht nach oder benennt den Träger mit Adresse.
+Verzeichnis und bleibt richtig. Den hier zunächst nur gemeldeten Zähler „3×“
+in `harness/sensors/docs-check.md` §Bindung zieht die Fixrunde nach (F-7).
+
+### Fixrunde (Review `review-slice-abgeleitete-dokumente-vorlagen-nachzug`, Commit `a2fb6cf0`)
+
+- **F-1 (HIGH), angenommen.** Auszählung der Bindung-Spalte, je Stand (Parent
+  `3f51d3ed` mit den vier gestrichenen Musterzeilen, Arbeitsbaum ohne sie);
+  Zellen = letzte Spalte jeder Datenzeile zwischen `## Sensors` und
+  `## Traceability`, je Muster die Zahl der Zellen mit Treffer:
+
+  ```text
+  awk '/^## Sensors/,/^## Traceability/' harness/README.md | grep -E '^\| ' \
+    | grep -vE '^\| (Target|---)' | awk -F' \\| ' '{print $NF}' > <Scratchpad>/b.txt
+  grep -cE '<Muster>' <Scratchpad>/b.txt
+  ```
+
+  Gedruckt (`3f51d3ed` / Arbeitsbaum): Zellen 70 / 66 · `LH-(FA|QA)-` 2 / 2 ·
+  `AGENTS\.md` 1 / 1 · `BEO-PGC/` 1 / 1 · `MR-[0-9]` 1 / 1 ·
+  `seit (slice|welle)-` 40 / 40 · `(sensors|targets)/` 66 / 66 ·
+  nackte Kennung `(^|, )slice-[a-z0-9-]+ ·` 2 / 0. Die übrigen Formen der
+  Spalte sind die kanonischen Klassen der Vorlage (`ADR-*`, `kein Gate`,
+  Reproduzierbarkeit über Modul 14 in der Zeile `make image-stale`).
+  `harness/conventions.md` §Zusatzklassen führt jetzt sechs Klassen, mit
+  „Hard-Rule-Bindung“ (`AGENTS.md` §3.7 bei `make kommentar-kennungen`); die
+  nackte Kennung ist nicht deklariert, sondern in den Zellen von
+  `make test-sdk-kotlin-integration` und `make test-sdk-csharp-integration`
+  gestrichen — beide trugen dieselbe Kennung schon als `· seit slice-…`. Die
+  Zellenlängen-Regel misst `Vertrag`/`Tut was`, nicht `Bindung`;
+  `make docs-check` bleibt bei 0 Befunden.
+- **F-2 (MEDIUM), angenommen.** Die Regel steht nur noch in §Konventionen
+  des ADR-Index, mit der Ausnahme der Zitat-Korrektur nach `ADR-0073` und dem
+  Verweis auf `AGENTS.md` §3.5; der Kopf-Absatz verweist auf §Konventionen.
+- **F-3 (LOW), angenommen.** `docs/plan/carveouts/README.md` stellt die Achse
+  voran: das Repo führt Wellen, die Welle-Closure liest auch die wellenlosen
+  Slices seit der letzten Welle (Baseline-Regelwerk `modul-06-roadmap.md`
+  §Wann Arbeit eine Welle braucht). Ohne offene Welle läuft der Trigger-Audit
+  zusätzlich bei der Closure eines wellenlosen Slice — Beleg im Bestand:
+  `ADR-0070` nennt als Autor-Anlass den „Trigger-Audit der Slice-Closure“
+  (`git grep -n 'Trigger-Audit der Slice-Closure' -- docs/plan/adr`), und die
+  DoD dieses Slice lässt die Slice-Closure ihre Paarungen tragen, „solange die
+  Roadmap unter *Offene Wellen* keine Welle führt“.
+- **F-4 (LOW), angenommen.** Die Quelle der Leseordnung in §3 trennt Zeiger
+  (`AGENTS.md` §2, Vorlage) und Reihenfolge (eigene Wahl, mit Grund).
+- **F-5 (INFO), angenommen.** Safety-Punkt 4 nennt die drei geprüften
+  Nutzerdokumente und schließt die erzeugten `*-abdeckung.md` aus
+  (`harness/sensors/handbuch-public-doc-check.md`).
+- **F-6 (INFO), angenommen.** Das Argument „zweite Quelle“ ist gestrichen;
+  tragend bleiben die `structure`-Regel (`ID` acht Zeichen, Link in `Datei`)
+  und das `**Schärft:**`-Feld in jeder ADR-Datei (155 von 155, §3).
+- **F-7 (INFO), angenommen.** `harness/sensors/docs-check.md` §Bindung
+  nennt den Eintrag zählerfrei (`· seit slice-075` bleibt); `state.md` des
+  Eintrags gibt den Reparatur-Pfad als `slice-<Kennung>` wieder.
+  `git grep -n -F 'slice-NNN' -- docs/plan/planning/observations/BEO-PGC/slice-pfad-als-link-in-berichten`:
+  `3f51d3ed` 3 Zeilen, danach 2 — die zwei in `observation.md` bleiben, die
+  Identitäts-Datei ist ab Anlage unveränderlich (Baseline-Regelwerk
+  `modul-06-roadmap.md` §Das Beobachtungs-Register).
+- **F-8 (INFO), keine Änderung.** Befund-Liste, Hinweis auf die
+  Baseline-Vorlage: MR-000 führt `BEO-<NNN>`, wie
+  `templates/harness/conventions.template.md` Zeile 107 der Baseline
+  `v6.14.0`; Register und Regelwerk (`modul-06-roadmap.md`) führen
+  `BEO-<KUERZEL>/<slug>`. Die Abweichung kommt aus der Vorlage — Sache des
+  Freshness-Audits (`AGENTS.md` §1) bzw. einer Meldung an die Baseline.
 
 ## 4. Trigger
 

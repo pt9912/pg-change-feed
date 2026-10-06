@@ -2,11 +2,8 @@
 
 Regeln dieser Datei: Neue ADRs ergänzen diesen Index (Baseline-Regelwerk
 `modul-04-adrs.md`; `AGENTS.md` §5). Eine Zeile je ADR-Datei; die Kennung
-ist `ADR-<NNNN>` (MR-000), der Datei-Name trägt dieselbe Nummer. Status:
-`Accepted`-ADRs sind inhaltlich immutable — Korrekturen als Folge-ADR mit
-`Supersedes` (`AGENTS.md` §3.5), eine **Zitat-Korrektur** am Zitat- und
-Verweisgerüst bei unverändertem Referenten ausgenommen
-([`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md)).
+ist `ADR-<NNNN>` (MR-000), der Datei-Name trägt dieselbe Nummer. Immutabilität,
+Supersedes und das Feld `**Schärft:**` regelt §Konventionen unten.
 
 Quelle der Erst-Anlage: `architecture-decision-records.md` (Architektur-
 Entwurf, 2026-09-09 in Einzel-ADRs überführt).
@@ -171,8 +168,11 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 
 ## Konventionen
 
-- ADRs sind nach `Accepted` **immutable** (siehe Baseline-Regelwerk `modul-04-adrs.md`).
-- Schärfungen entstehen als neue ADR mit `Supersedes ADR-NNNN`.
+- ADRs sind nach `Accepted` **immutable** (siehe Baseline-Regelwerk `modul-04-adrs.md`;
+  `AGENTS.md` §3.5). Ausgenommen ist die **Zitat-Korrektur** am Zitat- und
+  Verweisgerüst bei unverändertem Referenten
+  ([`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md)).
+- Schärfungen und Korrekturen entstehen als neue ADR mit `Supersedes ADR-NNNN`.
 - Bei `Accepted`: diesen Index aktualisieren (Status, Datum).
 - Jede ADR deklariert im `**Schärft:**`-Feld *aufwärts*, welche Spec-Stelle
   sie verbindlich macht (Baseline-Regelwerk `grundlagen-referenz-richtung.md` §Referenz-Richtung (SDP)) —
@@ -180,8 +180,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
   Abschnitt, wo die Sektion keine Kennungen vergibt.
   Prozess-ADRs ohne Spec-Stratum tragen `—`.
 - **Spalten — repo-spezifisch.** Der Index führt `Datum` und `Datei` statt der
-  Spalte `Bezug` der Vorlage: Den Spec-Bezug trägt das `**Schärft:**`-Feld der
-  ADR selbst, eine Index-Spalte wäre eine zweite Quelle für denselben Bezug;
-  `ID` steht ohne Link, weil die `structure`-Regel in `.d-check.yml` die Zelle
-  auf genau acht Zeichen hält, und der Link auf die Datei steht deshalb in
-  `Datei`.
+  Spalte `Bezug` der Vorlage. `ID` steht ohne Link, weil die `structure`-Regel
+  in `.d-check.yml` die Zelle auf genau acht Zeichen hält; der Link auf die
+  Datei steht deshalb in `Datei`. Die Spec-Stelle einer ADR liest man in ihrem
+  `**Schärft:**`-Feld, das jede ADR-Datei trägt.
