@@ -155,10 +155,17 @@ Planungsstand hat keinen der Läufe im Repo gefahren
       von `v6.14.0` zeigt auf v6.14.1: [`AGENTS.md`](../../../../AGENTS.md) §1
       (Release-URL); `harness/conventions.md` §Baseline (Stand, Datum der
       Adoption, Release-URL, Stand-Zeile „Kurs-Welle 157 · 2026-10-06“);
-      `harness/conventions/MR-001` bis `MR-004` (Pfad-Segment);
+      `harness/conventions/MR-001` bis `MR-004` (Pfad-Segment; Zitat-Korrektur
+      an immutablen Einträgen nach `ADR-0073` und
+      [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md),
+      Abschnitt „Verweise, Pins und Records“);
       `harness/sensors/baseline-verify.md` (Messzeile neu gemessen, Bindung);
       `.claude/agents/architect.md`, `reviewer.md`, `verifier.md`;
       `.harness/skills/closure-note-reviewer.md`, `.harness/skills/reviewer.md`;
+      die vier Regel-Symlinks `.claude/rules/modul-01-…`, `modul-05-…`,
+      `modul-06-…`, `modul-08-…` (Ziel ins Tag-Verzeichnis; umgestellt in
+      `b6c5b419` vom Koordinator, Messung im Abschnitt „Verweise, Pins und
+      Records“ — `git grep` liest Symlink-Ziele nicht);
       [`ADR-0095`](../../adr/0095-review-klasse-exempt-status-check.md) Zeile
       §Verglichene Alternativen A als Zitat-Korrektur nach
       [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
@@ -174,9 +181,11 @@ Planungsstand hat keinen der Läufe im Repo gefahren
       `docs/reviews/architect-verdict-aufschub-adresse-verfaellt.md` —
       je Zeile Zitat-Korrektur nach `ADR-0073`, wenn der Referent in v6.14.1
       unverändert ist (Commit nennt `ADR-0073`, Vorbild `996e6231`), sonst eine
-      begründete andere Behandlung; die Entscheidung je Zeile steht im Bericht.
+      begründete andere Behandlung; die Entscheidung je Zeile steht im
+      Abschnitt „Verweise, Pins und Records“.
       *Zu belegen durch:* den Suchlauf §3 mit `diff`-Zeilen,
-      `make suchlauf-nachmessen` und `make docs-check` Exit 0 nach dem Löschen.
+      `make suchlauf-nachmessen` und `make docs-check` Exit 0 nach dem Löschen,
+      dazu die Symlink-Messung je Stand (der Suchlauf sieht Symlinks nicht).
 - [x] **Bump-Ablauf Schritte 1–3 mit Belegen, Nachzug der abgeleiteten Träger
       (Liefer-Punkt 3).** Schritt 1 (Delta je `templates/` und `regelwerk/`,
       versions-normalisiert, im Repo neu erzeugt), Schritt 2 (Stichprobe: Gliederung,
@@ -223,6 +232,8 @@ Aussagen-Berührung steht hier gar nicht.
 | `.harness/baseline/<Tag>/**` (Tag: v6.14.1) | neu | Regelwerk + Templates + `SHA256SUMS` aus dem Release-Asset (Liefer-Punkt 1) |
 | `.harness/baseline/<Tag>/**` (Tag: v6.14.0) | entfernt | eigener Commit nach Liefer-Punkt 3; der alte Stand lebt in der Git-Historie |
 | `AGENTS.md` §1, `harness/conventions.md` §Baseline, `harness/conventions/MR-001`…`MR-004`, `harness/sensors/baseline-verify.md`, `.claude/agents/{architect,reviewer,verifier}.md`, `.harness/skills/{closure-note-reviewer,reviewer}.md` | update | Version-Segment und Release-URL auf v6.14.1 (Liefer-Punkt 2) |
+| `.claude/rules/modul-{01,05,06,08}-*.md` (Symlinks, Modus 120000) | update — **Plan-Nachzug** (Review F-1) | Ziel ins Tag-Verzeichnis v6.14.1, `b6c5b419` (Koordinator); Messung je Stand im Abschnitt „Verweise, Pins und Records“ |
+| `AGENTS.md` §3.5, `.claude/agents/verifier.md` (`make doc-immutable`), `harness/targets/pin-stale.md` §Bump-Ablauf | update — **Plan-Nachzug** (Fixrunde) | Folgepflichten (1)–(3) aus `ADR-0157`; dazu in `pin-stale.md` Schritt 1 die Prüfung getrackter Symlinks (Review F-4) |
 | `docs/plan/adr/0095-review-klasse-exempt-status-check.md` | Zitat-Korrektur + §Geschichte-Zeile | `Accepted`, Pfad in §Verglichene Alternativen A ([`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)) |
 | vier Pläne unter `done/`, ein Report unter `docs/reviews/` (Liste in §2) | Zitat-Korrektur je Zeile oder begründete andere Behandlung | Verweisgerüst, das `versions`/`links` mit dem Löschen von v6.14.0 rot färben |
 | `harness/conventions.md` MR-000 | update | ID-Schema `BEO-<KUERZEL>/<slug>` wie die v6.14.1-`conventions.template.md` (Liefer-Punkt 3, b) |
@@ -421,8 +432,23 @@ nur den Versionsstring oder sind byte-gleich.
 1. Das Platzhalter-Muster 2 in `harness/targets/pin-stale.md` §Bump-Ablauf
    sucht `<z\. B\.` und verfehlt die Form `<z.B.` der `AGENTS.template.md`.
 2. Muster 1 derselben Stelle (`grep -o` je Zeile) verfehlt Platzhalter, die
-   über eine Zeilengrenze laufen (`AGENTS.md` Z. 242, 244). Eine Änderung der Verfahrensregel ist ein anderer
-Vorgang (§1); Adresse vergibt der Planner bei der Closure.
+   über eine Zeilengrenze laufen (`AGENTS.md` Z. 242, 244).
+3. Review F-5: [`ADR-0156`](../../adr/0156-versions-gate-nimmt-done-records-aus.md)
+   sagt „der Referent ist je Zeile `cmp`-gleich“, gemessen ist normalisiert;
+   für `regelwerk/modul-13-quality-gates.md` ist der rohe `cmp` 1. Nicht
+   geändert: das Wort „normalisiert“ zu ergänzen änderte die Aussage der ADR —
+   `ADR-0157` Entscheidung 1 (c) lässt eine Zitat-Korrektur nur zu, wenn kein
+   Wort der Aussage sich ändert. Weg: Folge-ADR oder Lesart im Review.
+4. Review F-6: `ADR-0156` nennt `BEO-PGC/exemption-ohne-reifegrenze` nicht,
+   obwohl die Ausnahme die dort empfohlene Form mit Reifegrenze hat. Nicht
+   geändert, aus demselben Grund (neuer Verweis mit eigener Aussage, kein
+   Gerüst). Gehört in den Lese-/Sichtungs-Schritt des Registers.
+5. Review F-7: die fünf Record-Korrekturen (`54c6e632`) wären mit `ADR-0156`
+   für `versions` nicht nötig gewesen; `ADR-0156` §Konsequenzen lässt sie
+   stehen. Keine Aktion.
+
+Eine Änderung der Verfahrensregel zu 1 und 2 ist ein anderer Vorgang (§1);
+Adresse vergibt der Planner bei der Closure.
 
 **Nachzüge (b) und (c), `bc0aaeeb`.** (b) `harness/conventions.md` MR-000
 nennt im ID-Schema `BEO-<KUERZEL>/<slug>` wie Zeile 107 der
@@ -480,6 +506,71 @@ Plan und `ADR-0156`: Treffer nur in `.d-check.yml`, `implement-slice.md` Z. 45
 (Modulliste, unverändert gültig), `ADR-0072`, `ADR-0095`, ADR-Index, dem
 Register-Eintrag `BEO-PGC/exemption-ohne-reifegrenze` und
 `harness/sensors/docs-check.md` Z. 10 (Befundname)).
+
+**Regel-Symlinks unter `.claude/rules/` (Review F-1).** `git grep` liest kein
+Symlink-Ziel (Modus 120000): `git grep -c 'v6\.14\.0' 4045dc4f -- .claude/rules`
+endet mit Exit 1, ohne Treffer, obwohl vier Ziele dort den alten Tag nennen.
+Der Suchlauf §3 deckt diese Träger deshalb nicht; gemessen ist je Stand über
+die Blobs der Symlinks:
+
+```text
+git ls-tree -r <Stand> | awk '$1==120000{print $3}' | while read b; do git cat-file -p $b; echo; done | grep -c '/v6\.14\.0/'
+```
+
+| Stand | Symlinks (Modus 120000) | Ziel mit `/v6.14.0/` |
+|---|---|---|
+| `11a5bac5` (Parent) | 7 | 4 |
+| `4045dc4f` (vor der Umstellung, v6.14.0 schon entfernt — die vier hingen) | 7 | 4 |
+| `b6c5b419` (Umstellung, Koordinator) | 7 | 0 |
+
+Am Arbeitsbaum (`git ls-files -s | awk '$1==120000{print $4}'` mit `readlink`):
+sieben Symlinks, vier Ziele unter `.harness/baseline/v6.14.1/regelwerk/`
+(`modul-01`, `-05`, `-06`, `-08`), drei auf `AGENTS.md`,
+`harness/conventions.md`, `harness/README.md`; alle Ziele existieren,
+`find . -path ./.git -prune -o -xtype l -print | wc -l` druckt 0. Die Prüfung
+steht jetzt als Teil von Schritt 1 im Bump-Ablauf (`harness/targets/pin-stale.md`).
+
+**MR-Pins als Zitat-Korrektur (`ADR-0157` Entscheidung 5).** Der Commit
+`5d8855d9` ist für `MR-001` bis `MR-004` eine Zitat-Korrektur an immutablen
+Einträgen nach `ADR-0073` und
+[`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md):
+geändert ist nur das Versions-Segment des Links im Feld
+`Ersetzt-Baseline-Regel`. Benannte Lücke: der Commit ändert acht weitere
+Dateien und seine Message nennt nur `ADR-0051`; festgeschriebene Historie wird
+nicht umgeschrieben, diese Zeile trägt die Kennung nach. Gemessen (Stand
+`fca136d4`):
+
+- `make doc-immutable RANGE=11a5bac5..5d8855d9~1`: Exit 0,
+  `d-check: 1753 Datei(en) geprüft, 0 Befund(e)`.
+- `make doc-immutable RANGE=5d8855d9..HEAD`: Exit 0,
+  `d-check: 1753 Datei(en) geprüft, 0 Befund(e)`.
+- Zum Vergleich die volle Range `11a5bac5..HEAD`: Exit 2, vier `core-drift-vcs`.
+- Normalisierter `cmp` am Pin-Commit (Schleife aus `ADR-0157` Entscheidung 4,
+  `P=5d8855d9`), gedruckt je Datei: `cmp 0 harness/conventions/MR-001-technik-dokument-heisst-pflichtenheft.md`,
+  `cmp 0 …/MR-002-slice-welle-kennungen-sind-namen.md`,
+  `cmp 0 …/MR-003-guard-inplace-textwerkzeug.md`,
+  `cmp 0 …/MR-004-guard-host-python-am-kopf.md`.
+
+### Fixrunde (Review `review-slice-harness-baseline-v6-14-1`)
+
+- **F-1 (HIGH) — behoben.** Symlinks und `b6c5b419` stehen in Liefer-Punkt 2
+  und §3; Messung je Stand oben; die Grenze von `git grep` ist benannt.
+- **F-2 (MEDIUM) — vom Architect entschieden** (`ADR-0157`, `f1f6ae70`):
+  Reichweite nach Aussage. Umgesetzt: `AGENTS.md` §3.5 nach Entscheidung 2
+  (`01399b76`). Die Korrektur an `ADR-0095` (`eadf3054`) erfüllt
+  Entscheidung 1: nur das Versions-Segment, Referent `templates/.d-check.yml`
+  roh `cmp` 0, kein Wort der Aussage geändert.
+- **F-3 (MEDIUM) — behoben nach `ADR-0157`.** `verifier.md` und `pin-stale.md`
+  (`fca136d4`), Zeile zu `5d8855d9` mit Messung oben.
+- **F-4 (LOW) — behoben.** Schritt 1 des Bump-Ablaufs prüft getrackte Symlinks
+  auf den alten Tag (`fca136d4`). Gegenprobe des Befehls am Arbeitsbaum: mit
+  `grep -F '/v6.14.1/'` 4 Treffer, mit `'/v6.14.0/'` 0.
+- **F-5 (LOW) — nicht geändert, Befund.** Siehe Befund 3.
+- **F-6 (INFO) — nicht geändert, Befund.** Siehe Befund 4.
+- **F-7 (INFO) — keine Aktion.** Siehe Befund 5.
+
+Die DoD-Zeile „Review durchgeführt“ bleibt offen: die Fixrunde ändert eine Norm
+(`AGENTS.md` §3.5), ein Re-Review folgt.
 
 ## 4. Trigger
 
