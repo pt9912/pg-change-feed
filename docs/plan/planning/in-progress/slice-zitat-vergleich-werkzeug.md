@@ -167,8 +167,8 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       ist) und F-6 (Locale). *Zu belegen durch:* je eine Mutation am Skript,
       die einen der neuen Fälle rot färbt, mit Stelle und gesehener Farbe
       ([`AGENTS.md`](../../../../AGENTS.md) §3.12).
-      **Beleg** (Stand `f13b7f9d`; nach den Fixrunden 86 bzw. 94 Fälle je
-      Runde, siehe §3 Fixrunde und Fixrunde 2): `make test-zitat-vergleich`
+      **Beleg** (Stand `f13b7f9d`; nach den Fixrunden 86, 94 bzw. 99 Fälle je
+      Runde, siehe §3 Fixrunde bis Fixrunde 3): `make test-zitat-vergleich`
       (`tools/harness/run-zitat-vergleich-tests.sh`) — 65 Fälle je Runde, drei
       Runden (ohne Option, `BASHOPTS=nullglob`, `BASHOPTS=failglob`);
       gedruckt `run-zitat-vergleich-tests: 195 Fälle bestanden (je Runde 65,
@@ -268,7 +268,7 @@ nicht die Antwort.
 | Architect-Zug | erledigt, ohne ADR | Verdikt `docs/reviews/architect-verdict-zitat-vergleich-werkzeug.md` (`728b75e3`): Werkzeug trägt die Messung, `ADR-0159` die Semantik; F-1 als Auslegung, F-2 Exit 2, F-3 CommonMark, F-5 Baseline-Bäume, F-6 Locale samt Fähigkeitsprobe; Form §5 |
 | `tools/harness/zitat-vergleich.sh` | neu (Name wie geplant) | Funktionen `einheit`, `tagnorm`, `vergleich`, dazu `baumda` (Tag-Paar an den Baseline-Bäumen) und `main` (Argumentzahl, Locale, Probe, Wechsel in die Repo-Wurzel); mit `source` geladen definiert die Datei nur die Funktionen — für die Gleichstand-Messung gegen die ADR-Form |
 | `tools/harness/zitat-vergleich.sh` | über den Plan hinaus | Exit-Check von `sed` am Lokator und von `awk` am Anker (Exit 2); ein leeres siebtes Argument endet mit Exit 2 (die ADR-Form liest es als roh); ein Backtick im Info-String öffnet keinen Fence (CommonMark, Teil von F-3) |
-| `tools/harness/run-zitat-vergleich-tests.sh` | neu | 65 Fälle je Runde am Stand `f13b7f9d` (86 nach Fixrunde, 94 nach Fixrunde 2), drei Runden über `BASHOPTS` (ohne Option, `nullglob`, `failglob`); `set -euo pipefail` beim Aufrufer über `SHELLOPTS`; Prüfling per `PROG=` |
+| `tools/harness/run-zitat-vergleich-tests.sh` | neu | 65 Fälle je Runde am Stand `f13b7f9d` (86 nach Fixrunde, 94 nach Fixrunde 2, 99 nach Fixrunde 3), drei Runden über `BASHOPTS` (ohne Option, `nullglob`, `failglob`); `set -euo pipefail` beim Aufrufer über `SHELLOPTS`; Prüfling per `PROG=` |
 | `Makefile` | update | `zitat-vergleich` (`$(error …)` ohne `ARGS`) und `test-zitat-vergleich` neben `suchlauf-nachmessen`, nicht in `GATE_CHECKS` |
 | `harness/targets/zitat-vergleich.md` | neu | Vertrag: Wer was trägt, Aufruf mit Quotierung, Einheit je Referenz, Ausgänge, Abweichungen vom Block der ADR, Host-Werkzeuge, Grenzen, Test |
 | `AGENTS.md` §3.5 | update, zwei Stellen | Messsatz (Ziel, Vertrag, Verdikt §3 als Auslegung) und Beleg-Satz („gedruckte Zeile von `make zitat-vergleich`“) |
@@ -468,7 +468,7 @@ Fixrunde. Die Mehrdeutigkeits-Regel trifft keinen realen Anker.
 
 | Finding | Mutation (Stelle) | rot gesehen |
 |---|---|---|
-| F-1 | `nb % 2 \|\|` aus der Mehrdeutigkeits-Bedingung entfernt | n4 |
+| F-1 | `nb % 2 \|\|` aus der Mehrdeutigkeits-Bedingung entfernt | n4, „id nach unsicherer Kommentar-Grenze ist mehrdeutig“ (nachgetragen nach Re-Review zu Fixrunde 2, F-4) |
 | F-1 | ``` \|\| index($0, "``") ``` entfernt | n5 |
 | F-1 | `span % 2 \|\|` entfernt | n6 |
 | F-1 | `if (kand && unsicher) mehr = 1` → `if (0)` | „id nach unsicherer Kommentar-Grenze ist mehrdeutig“ |
@@ -483,6 +483,65 @@ angepasst werden: „F-1 gestapelt“ und „Fence nach `id`-Zeile“ greifen je
 `leer(k)`, „F-2 andere Form → Exit 2“ entfernt `if (bad) exit 3; ` aus
 `END { if (bad) exit 3; if (mehr) exit 4 }`. Mit 8 neuen sind es 37
 Mutationen.
+
+### Fixrunde 3
+
+Anlass: Re-Review `docs/reviews/review-slice-zitat-vergleich-werkzeug-fixrunde-2.md`
+(`cb74ae3f`; 1 HIGH, 2 LOW, 2 INFO). Code, Test und Vertrag im Commit
+`967564e6`.
+
+- **F-1 (HIGH), `id` in Code-Span mit Text davor:** `idform` zählt die
+  Backticks der Zeile vor der Fundstelle; bei ungerader Zahl liegt sie in
+  Inline-Code und wird nicht gelesen (vorher: nur ein Backtick unmittelbar vor
+  `<a`). Die Zählung trägt nur in einer Zeile, die der Hauptblock nicht als
+  mehrdeutig markiert. Ein `<!--` im Code-Span öffnet nach derselben Zählung
+  keinen Kommentar (`ohnekommentar`, unverändert). Fälle: „id in Code-Span im
+  Absatz zählt nicht“, „id und Kommentar in Code-Span zählen nicht“ (Form der
+  Vertragszeile), „id in Code-Span einer Tabellenzelle zählt nicht“ (je
+  `cmp 1`, die echte `id` dahinter wird gelesen), „id nur in Code-Span mit
+  Text davor“ (Exit 2) und die Gegenprobe „id nach geschlossenem Code-Span
+  wird gelesen“ (`cmp 1`). Kommentar von `idform` und Vertragssatz
+  (§Einheit: „vor der Fundstelle steht in der Zeile eine ungerade Zahl
+  Backticks“) gefasst. **Gemessen** am realen Fall:
+  `make zitat-vergleich ARGS="967564e6 harness/targets/zitat-vergleich.md '#X' 967564e6 harness/targets/zitat-vergleich.md '#X'"`
+  → `vergleich: 967564e6:harness/targets/zitat-vergleich.md#X keine Einheit, Exit 2`
+  (vorher Exit 0).
+- **F-2 (LOW), F-3 (LOW):** nicht behoben, im Vertrag §Grenzen als benannte
+  Grenzen (fail-open, heute ohne Fundstelle): `<!--` in eingerücktem Code
+  nach einer `id`-Zeile; eingerückter Code in einem Blockzitat.
+- **F-4 (INFO):** in der Mutationstabelle von Fixrunde 2 bei `nb % 2` den
+  zweiten roten Fall nachgetragen.
+- **F-5 (INFO):** Kommentar von `ohnekommentar` sagt jetzt: eine unsichere
+  Kommentar-Grenze markiert der Hauptblock als unsicher, mehrdeutig wird jede
+  spätere Fundstelle.
+
+**Tabellentest:** gedruckt `run-zitat-vergleich-tests: 297 Fälle bestanden (je
+Runde 99, Runden: ohne Option, nullglob, failglob)`, Exit 0. Die ADR-Form als
+`PROG`: Exit 1, 40 Fälle je Runde rot, alle aus den gewollten Abweichungen.
+
+**Gleichstand neu** (Verfahren wie §2 Liefer-Punkt 2): `stand=967564e6
+anker=2116 abweichend=4 leer_alt=7 leer_neu=11`. Abweichungen: `#[^` in
+`ADR-0159` (eingerückter Fence) und `harness/conventions.md#mr-<NNN>`
+(Kommentar) wie zuvor, dazu `harness/targets/zitat-vergleich.md#X` und `#x`:
+beide stehen dort nur in Code-Spans mit Text davor, die ADR-Form liest sie als
+Anker, das Werkzeug endet mit Exit 2 (F-1, gewollt). Weitere Fundstellen der
+Form zeigt die Messung nicht.
+
+**Mutationen** (Instanz Tabellentest mit `PROG=<Kopie>`, je Exit 1, rot in
+allen drei Runden). Neu:
+
+| Mutation (Stelle in `idform`) | rot gesehen |
+|---|---|
+| Zählung → alte Regel ``if (p == 1 \|\| substr(l, p - 1, 1) != "`")`` | „id in Code-Span im Absatz …“, „id und Kommentar in Code-Span …“, „… Tabellenzelle …“, „id nur in Code-Span mit Text davor“ |
+| Zählung → zu breit ``if (index(t, "`") == 0)`` | „id nach geschlossenem Code-Span wird gelesen“ |
+
+Nachgefahren, wo `idform` betroffen ist: die Inline-Code-Mutation (jetzt
+Zählung → `if (1)`; rot: „andere Form in Inline-Code bleibt ungelesen“, „id
+nur in Inline-Code“ und die vier neuen Code-Span-Fälle außer der Gegenprobe),
+„F-2 andere Form → Exit 2“ (drei F-2-Fälle rot), die Einzugs-Prüfung der
+`id`-Zeile („id in eingerücktem Code zählt nicht“ rot) und die
+Kommentar-Entfernung vor `idform` (ein- und mehrzeiliger Kommentar, Kommentar
+in der `id`-Zeile rot).
 
 ## 4. Trigger
 
@@ -523,14 +582,15 @@ dasteht.
   gegenüber der ADR-Form). *Zu belegen durch:* die Fälle der §Fitness Function
   von `ADR-0159` im Tabellentest mit gleichem Ergebnis, und für F-2/F-3 die
   Entscheidung des Architects zum normativen Träger. — **Ausgang:** offen bis
-  zur Closure. *Stand (Implementer, nach Fixrunde 2, Skript `33e1a81e`):*
-  Verdikt §2 nennt *entfallen*. Gleichstand `stand=33e1a81e anker=2115
-  abweichend=2 leer_alt=7 leer_neu=9`; beide Abweichungen sind gewollt:
-  `#[^` in `ADR-0159` (eingerückter Fence, Verdikt F-3) und
+  zur Closure. *Stand (Implementer, nach Fixrunde 3, Skript `967564e6`):*
+  Verdikt §2 nennt *entfallen*. Gleichstand `stand=967564e6 anker=2116
+  abweichend=4 leer_alt=7 leer_neu=11`; alle vier Abweichungen sind gewollt:
+  `#[^` in `ADR-0159` (eingerückter Fence, Verdikt F-3),
   `harness/conventions.md#mr-<NNN>` (`id` nur im HTML-Kommentar, Review F-4,
-  §3 Fixrunde). Der Stand vor den Fixrunden (`f13b7f9d`, `abweichend=1`) steht
+  §3 Fixrunde) sowie `#X` und `#x` in `harness/targets/zitat-vergleich.md`
+  (`id` nur in Code-Spans mit Text davor, §3 Fixrunde 3). Der Stand vor den Fixrunden (`f13b7f9d`, `abweichend=1`) steht
   in §2 Liefer-Punkt 2. Die ADR-Form als `PROG` fällt im Tabellentest nur an
-  Abweichungs-Fällen (§3 Fixrunde 2).
+  Abweichungs-Fällen (§3 Fixrunde 3).
 - **Locale am Host.** Das Skript läuft mit Host-`awk` ([`AGENTS.md`](../../../../AGENTS.md)
   §3.1); eine feste UTF-8-Locale (F-6) muss am Host vorhanden sein. *Zu
   belegen durch:* den Fall L im Tabellentest unter `LC_ALL=C` beim Aufrufer.
