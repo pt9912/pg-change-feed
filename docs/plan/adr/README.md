@@ -166,7 +166,8 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0154 | Spec-Lücken OTLP, TLS, API-Token: Ist-Zustand festgeschrieben | Accepted | 2026-10-04 | [0154-spec-luecken-otlp-tls-token-ist-zustand.md](0154-spec-luecken-otlp-tls-token-ist-zustand.md) |
 | ADR-0155 | PER-001 relativ zur Festschreib-Latenz (Supers. ADR-0151, ADR-0104 teilw.) | Accepted | 2026-10-05 | [0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md](0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md) |
 | ADR-0156 | `versions`-Modul nimmt die Records unter `done/**` aus | Accepted | 2026-10-06 | [0156-versions-gate-nimmt-done-records-aus.md](0156-versions-gate-nimmt-done-records-aus.md) |
-| ADR-0157 | Zitat-Korrektur nach Aussage; MR-Pins (Supers. ADR-0073, teilw.) | Accepted | 2026-10-06 | [0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md](0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md) |
+| ADR-0157 | Zitat-Korrektur nach Aussage; MR-Pins (Supers. ADR-0073, teilw.; → ADR-0158) | Accepted | 2026-10-06 | [0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md](0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md) |
+| ADR-0158 | Zitat-Korrektur: Vergleichseinheit je Verweisform (Supers. ADR-0157, teilw.) | Accepted | 2026-10-06 | [0158-zitat-korrektur-vergleichseinheit-je-verweisform.md](0158-zitat-korrektur-vergleichseinheit-je-verweisform.md) |
 
 ## Konventionen
 
@@ -175,7 +176,9 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
   Verweisgerüst bei unverändertem Referenten
   ([`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md)); sie ist in
   jedem Abschnitt zulässig, solange die Aussage gleich bleibt
-  ([`ADR-0157`](0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)).
+  ([`ADR-0157`](0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)),
+  und gemessen wird die Einheit, die der Verweis adressiert
+  ([`ADR-0158`](0158-zitat-korrektur-vergleichseinheit-je-verweisform.md)).
 - Schärfungen und Korrekturen entstehen als neue ADR mit `Supersedes ADR-NNNN`.
 - Bei `Accepted`: diesen Index aktualisieren (Status, Datum).
 - Jede ADR deklariert im `**Schärft:**`-Feld *aufwärts*, welche Spec-Stelle
