@@ -189,8 +189,12 @@ Planungsstand hat außer den in §1 genannten Läufen keinen im Repo gefahren
       am Arbeitsbaum vor dem Träger-Commit Exit 0,
       `suchlauf-nachmessen: 20 Zeilen stimmen`; `make docs-check` Exit 0,
       `d-check: 1794 Datei(en) geprüft, 0 Befund(e)`.
-- [ ] `make gates` grün, Exit-Code ungefiltert gesichert
-      ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [x] `make gates` grün, Exit-Code ungefiltert gesichert
+      ([`AGENTS.md`](../../../../AGENTS.md) §3.9). *Beleg:* `make gates` am Stand
+      `234ed26a`, Ausgabe in eine Log-Datei, Exit direkt danach gesichert: `0`;
+      gedruckt u. a. `d-check: 1794 Datei(en) geprüft, 0 Befund(e)`,
+      `commit-traceability: OK — 5 Commit(s) in "HEAD~5..HEAD", Betreffs ohne Struktur-ID`,
+      Coverage `total: … 83.3%` bei Schwelle 80.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
