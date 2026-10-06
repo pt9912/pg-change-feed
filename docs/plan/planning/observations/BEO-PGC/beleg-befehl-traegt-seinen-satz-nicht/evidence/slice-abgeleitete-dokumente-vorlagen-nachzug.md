@@ -1,0 +1,8 @@
+**Vorgang:** slice-abgeleitete-dokumente-vorlagen-nachzug (Review F-1, HIGH, und F-4, LOW; dreiundzwanzigste Datei des Eintrags)
+
+**Fund:** Der Plan leitete die Zusatzklassen in `harness/conventions.md` aus „der Bindung-Spalte beider Tabellen in `harness/README.md` §Sensors, ausgezählt“ ab und nannte dazu Zahlen je Klasse, aber weder den Befehl noch die gedruckten Zeilen. Die Nachzählung des Reviewers ergab `LH-*` in 2 statt 3 Bindung-Zellen und zwei Bindungsformen ohne Klasse — den Hard-Rule-Link auf `AGENTS.md` §3.7 und die nackte Slice-Kennung ohne `seit` (F-1). Im selben Vorgang trug die Quellenangabe der Leseordnung („Rang-Reihenfolge von `AGENTS.md` §2“) die Auswahl der Zeiger, nicht ihre Reihenfolge (F-4). Die Fixrunde (`e54b0322`) setzte Befehl und Zahlen je Stand (`3f51d3ed` / Arbeitsbaum) in den Plan, deklarierte die Hard-Rule-Bindung, strich die zwei nackten Kennungen und trennte Zeiger und Reihenfolge; der Verifier zählte mit eigener Methode dieselben Zahlen.
+
+**Form (Ausprägung):** Befehl — eine Auszählung stand als gemessen da, ohne dass Befehl und Lauf genannt waren, und das Ergebnis trug die daraus abgeleitete Liste nicht. F-4 ist dieselbe Klasse (Quelle trägt nur einen Teil der Aussage) im selben Vorgang und zählt nicht ein zweites Mal. Schwere HIGH, daher eine Datei trotz Deckel; vor dem Merge gefunden, Ausgang unverändert **verkörpert**.
+
+Quelle: `docs/reviews/review-slice-abgeleitete-dokumente-vorlagen-nachzug.md` (F-1, F-4) <!-- d-check:status-provenance -->
+· `docs/reviews/verify-slice-abgeleitete-dokumente-vorlagen-nachzug.md` (§3). <!-- d-check:status-provenance -->

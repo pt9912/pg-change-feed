@@ -110,17 +110,23 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       **Übergabe an den Architect**: ob die Erweiterung eine ADR braucht
       (`AGENTS.md` §3.6, `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger`).
       Zu belegen durch eine Mutation (ein solcher Link in einer Kopie) mit Befund.
-- [ ] `make gates` grün (Exit direkt ausgewertet, am Endstand;
-      [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0.
+- [x] `make gates` grün (Exit direkt ausgewertet, am Endstand;
+      [`AGENTS.md`](../../../../AGENTS.md) §3.9), `make docs-check` Exit 0. —
+      Beleg: Verifikation
+      [`verify-slice-abgeleitete-dokumente-vorlagen-nachzug.md`](../../../reviews/verify-slice-abgeleitete-dokumente-vorlagen-nachzug.md)
+      (`make docs-check` Exit 0 am Stand `e54b0322`); `make gates` Exit 0 nach
+      dem Commit des Berichts (`1466964e`, übernommen aus der Rückmeldung des
+      Verifiers); `make gates` nach dem letzten Commit der Closure, Exit im
+      Bericht der Sitzung.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update: Träger, die die geänderten Abschnitte zitieren, sind
       nachgezogen (Suchlauf, `AGENTS.md` §3.13).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, solange die Roadmap unter *Offene Wellen* keine Welle führt.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der Slice-Closure selbst, solange die Roadmap unter *Offene Wellen* keine Welle führt.
 
 ## 3. Plan (vor Code)
 
@@ -155,7 +161,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | `**In-Repo (verkörperte Form):** <Pfade zu …>` | ausgefüllt | die Liste der abgeleiteten Dokumente in `harness/targets/pin-stale.md` §Bump-Ablauf Schritt 2, mit `docs/plan/carveouts/README.md` statt des Verzeichnisses |
 | MR-000 `**Datum:** <Datum>` | `2026-09-09` | `git log --follow --format='%h %ad' --date=short -- harness/conventions.md`: ältester Commit `40c8c431` 2026-09-09 (legt die Datei an) |
 | §Aufgelöste Adaptionen, Musterzeile `\<NNN\>` | `— \| —` | `harness/conventions/done/` existiert nicht (`ls`: nicht gefunden) |
-| §Zusatzklassen, Musterzeile | sechs Klassen (Fixrunde F-1) | die Bindung-Spalte beider Tabellen in `harness/README.md` §Sensors, ausgezählt (Befehl und Zahlen unter *Fixrunde*, F-1): LH (2 Zellen), Vertragsdatei `sensors/…`/`targets/…` (66), Herkunfts-Anker `seit slice-…`/`seit welle-…` (40), `BEO-PGC/…` (1), `MR-*` (1), Link auf `AGENTS.md` §n (1); je Klasse ein Beispiel aus einer realen Zeile. Die zwei nackten Slice-Kennungen ohne `seit` sind in die Form `seit slice-…` angeglichen |
+| §Zusatzklassen, Musterzeile | sechs Klassen (Fixrunde F-1) | die Bindung-Spalte beider Tabellen in `harness/README.md` §Sensors, ausgezählt (Befehl und Zahlen unter *Fixrunde*, F-1): LH (2 Zellen), Vertragsdatei `sensors/…`/`targets/…` (66), Herkunfts-Anker `seit slice-…`/`seit welle-…` (40), `BEO-PGC/…` (1), `MR-*` (1), Link auf `AGENTS.md` §n (1); je Klasse ein Beispiel aus einer realen Zeile. Die zwei nackten Slice-Kennungen ohne `seit` sind gestrichen: beide Zellen trugen dieselbe Kennung schon als `· seit slice-…` (Verifikation V-2) |
 | §Glossar, Musterzeile | gestrichen, Satz mit Grund | Produkt-Begriffe führt `spec/lastenheft.md` §6 Glossar |
 
 **Platzhalter-Prüfung** (beide Formen der Regel in `harness/targets/pin-stale.md`
@@ -339,12 +345,20 @@ dasteht.
 - **Ausgefüllte Leseordnung und §Safety erfinden Inhalt**, den kein Träger trägt.
   Gegenmaßnahme: jede Zeile zeigt auf eine bestehende Regel oder Datei; die
   Quelle je Zeile steht in §3 (Liefer-Punkt 1). —
-  **Ausgang:** offen bis zur Closure.
+  **Ausgang:** entfallen — jede Zeile der Leseordnung und jeder der fünf
+  Safety-Punkte ist an ihrer Quelle nachgeprüft, vom Reviewer (Review, Proben 1
+  und 2) und in frischem Kontext vom Verifier (Verifikation §2, Zeilen
+  „§Safety trägt an der Quelle“ und „§Leseordnung“); kein Punkt ohne Quelle.
+  Punkt 4 ist in der Fixrunde auf den Gegenstand des Gates eingeengt (F-5).
 - **Das erweiterte Muster meldet Bestand.** Gemessen bei der Anlage: der weite
   Ausdruck trifft in den zwei Dateiklassen eine Zeile, in Inline-Code (für die
   Regel unsichtbar). Nachgemessen vom Implementer: d-check mit dem weiten Muster
   über den Arbeitsbaum Exit 0, 0 `section-forbidden` (§3, Liefer-Punkt 3). —
-  **Ausgang:** offen bis zur Closure.
+  **Ausgang:** entfallen — `make docs-check` meldet am Stand `e54b0322` 0
+  Befunde, ebenso der Bestandslauf des Verifiers am Klon (Verifikation §1 und
+  §4); die Negativkontrollen dort zeigen, dass das Muster `roadmap.md` in
+  `in-progress/`, Links nach `done/` und Inline-Code nicht trifft. Einen neuen
+  Link auf einen wandernden Plan meldet die Regel, wie sie soll.
 
 ## 7. Closure-Notiz
 
@@ -355,8 +369,111 @@ formulieren — sonst zählt das Register zwei Namen getrennt) ·
 Gegenstand an einen anderen Slice oder entfiel er, trägt diese Sektion die Zeile
 `Gegenstand:` mit Kennung oder Grund.
 
-*Der Plan füllt diese Sektion nicht; sie wird bei der Closure vor dem
-`git mv` nach `done/` geschrieben.*
+- **Geliefert:** `harness/README.md` und `harness/conventions.md` tragen keinen
+  Platzhalter ihrer Vorlage mehr (Liefer-Punkt 1; jeder verbleibende Treffer
+  beider Platzhalter-Formen ist Notation, §3), `docs/plan/adr/README.md` trägt
+  `## Konventionen` samt der Regel zu `**Schärft:**` und der Spalten-Abweichung
+  mit Grund, `docs/plan/carveouts/README.md` existiert aus der Vorlage
+  (Liefer-Punkt 2; Überschriften-`diff` Exit 0 für alle vier Dokumente), und
+  beide `structure`-Regeln gegen Slice-Pfad-Links treffen die Namens-Kennung
+  (Liefer-Punkt 3, Architect-Verdikt `architect-verdict-slice-pfad-waechter-namensform`
+  Variante (a), keine ADR). Review
+  `docs/reviews/review-slice-abgeleitete-dokumente-vorlagen-nachzug.md`
+  (`a2fb6cf0`; F-1 HIGH, F-2 MEDIUM, F-3/F-4 LOW, F-5 bis F-8 INFO), Fixrunde
+  `e54b0322` (F-1 bis F-7 angenommen, F-8 ohne Änderung), Verifikation
+  `docs/reviews/verify-slice-abgeleitete-dokumente-vorlagen-nachzug.md`
+  (`1466964e`; DoD bestätigt, V-1/V-2 INFO, H-1 an die Closure).
+- **Was hat funktioniert:** Die Übergabe an den Architect *vor* der Umsetzung
+  von Liefer-Punkt 3 (DoD) hat die Frage `AGENTS.md` §3.6 entschieden, bevor ein
+  Diff entstand; das Verdikt nannte die Grenze zur Klasse
+  `gate-scope-erweiterung-ohne-adr-traeger` mit Beleg. Die Mutation des
+  Wächters lief an drei Stellen mit je anderen Formen (Implementer: Link ohne
+  Anker in beiden Dateiklassen; Reviewer: `open/`, `next/`; Verifier:
+  Anker-Suffix, Name mit Ziffer-Präfix, dazu Negativkontrollen) — jede rot mit
+  neuem und grün mit altem Muster. Jede Zeile von §Safety und §Leseordnung ist
+  von zwei Rollen an ihrer Quelle nachgeprüft.
+- **Was ging anders als geplant:** (1) **Eine Auszählung stand als gemessen
+  da, ohne gemessen zu sein** (Review F-1, HIGH): §3 leitete die Zusatzklassen
+  aus „der Bindung-Spalte beider Tabellen …, ausgezählt“ ab, nannte aber weder
+  Befehl noch gedruckte Zahlen; die Nachzählung des Reviewers ergab `LH-*` in
+  2 statt 3 Zellen und zwei Bindungsformen ohne Klasse (Hard-Rule-Link,
+  nackte Slice-Kennung). Die Fixrunde trägt Befehl und Zahlen je Stand
+  (`3f51d3ed` / Arbeitsbaum), deklariert die Hard-Rule-Bindung und streicht
+  die nackten Kennungen; der Verifier zählte mit eigener Methode dieselben
+  Zahlen. (2) **Der Nachzug widersprach dem Nachbarn im selben Träger**
+  (F-2, MEDIUM): `## Konventionen` des ADR-Index nannte die Immutabilität ohne
+  die Ausnahme, die der Kopf-Absatz derselben Datei trägt; die Regel steht
+  jetzt einmal, mit der Zitat-Korrektur nach `ADR-0073`. (3) Der Plan-Nachzug
+  der Fixrunde ließ in §3 „angeglichen“ neben dem richtigen „gestrichen“ des
+  Fixrunde-Absatzes stehen (V-2, INFO); bei der Closure berichtigt. (4) Zwei
+  Quellenangaben trugen nur einen Teil ihrer Aussage (F-3 Achse der
+  Baseline-Regel, F-4 Reihenfolge der Leseordnung); in der Fixrunde behoben.
+- **Re-Review:** nicht nötig — die Fixrunde `e54b0322` änderte nur Text (Plan,
+  `harness/README.md`, `harness/conventions.md`, ADR-Index, Carveout-README,
+  `harness/sensors/docs-check.md`, `state.md` eines Register-Eintrags), keine
+  Logik und kein Muster, und der Verifier hat F-1 bis F-8 in frischem Kontext
+  selbst nachgefahren (Verifikation §3, Auszählung mit eigener Methode)
+  (`.claude/commands/implement-slice.md` Schritt 21).
+- **Review- und Verifikations-Pflichten in der Closure:** V-2 → §3 Zeile der
+  Zusatzklassen sagt „gestrichen“. H-1 → Ausgänge in §6. V-1 → siehe
+  *Befunde*.
+- **Befunde und Folgearbeit:**
+  - **V-1 (INFO), Freitext in der Bindung-Spalte:** neben den Klassen trägt die
+    Spalte erläuternden Text („braucht Netz“ in 6 Zellen, „(ein Wächter
+    verhindert eine Handlung, er prüft kein Ergebnis)“, „wie `make
+    image-stale`“, „DB-Adapter-Coverage (…)“) — die Begründung zu `kein Gate`,
+    keine Bindungsform. Bestand, nicht dieser Diff; die Vorlage entscheidet
+    nicht, ob er in die Spalte gehört. Keine Folgearbeit: es gibt keine Regel,
+    gegen die er verstieße. Kein Register-Beleg: die nächste Klasse
+    `BEO-PGC/bindung-spalte-uneinheitlich-tief` (1×) betrifft die Zitiertiefe
+    der Spalte, nicht Begleittext — ein Beleg dort spaltete die Klasse in zwei
+    Formen; *benannt, nicht gezählt*.
+  - **F-8 (INFO), Baseline-Vorlage führt `BEO-<NNN>`:** MR-000 in
+    `harness/conventions.md` folgt
+    `templates/harness/conventions.template.md` Zeile 107 der Baseline
+    `v6.14.0`; das Regelwerk (`modul-06-roadmap.md` §Das Beobachtungs-Register)
+    und das Register führen `BEO-<KUERZEL>/<slug>`. Die Abweichung liegt in der
+    Vorlage. Adresse: **Meldung an das Kurs-Projekt**
+    (`pt9912/ai-harness-course`, repo-extern; Übergabe an den Auftraggeber im
+    Bericht dieser Sitzung). Im Repo kein Folge-Slice — eine lokale Abweichung
+    von der Vorlage wäre eine Adaption (`MR-*`); der Freshness-Audit des
+    nächsten Bumps (`harness/targets/pin-stale.md` §Bump-Ablauf) liest MR-000
+    gegen die dann gültige Vorlage.
+  - **`docs/plan/carveouts/.gitkeep`:** neben der neuen `README.md` nicht mehr
+    nötig, bleibt aber — das Repo hält `.gitkeep` auch neben Inhalt in
+    `docs/plan/adr/`, `docs/reviews/` und `harness/conventions/` (Review,
+    Negativbefunde); kein Konventions-Anker, keine Folgearbeit.
+  - **Architect-Verdikt, Register:** kein Beleg für
+    `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger` — das Verdikt stuft
+    Liefer-Punkt 3 als Verfeinerung innerhalb der bestehenden Bindung ein
+    (akzeptiertes Negativ); der Eintrag bleibt bei 2×.
+  - Keine Folgearbeit im Repo offen: der gemeldete Träger (Zähler „3×“ in
+    `harness/sensors/docs-check.md` §Bindung) ist in der Fixrunde nachgezogen
+    (F-7).
+- **Steering-Loop-Eintrag:** Lernpunkt ohne neue Regel im Text und ohne neuen
+  Sensor: *Wer aus einer Auszählung eine Liste ableitet, schreibt den Befehl und
+  die gedruckten Zahlen je Stand vor die Liste — „ausgezählt“ ohne beides ist
+  eine übernommene, keine gemessene Aussage.* Die Regel stand
+  (`AGENTS.md` §3.12 Instanz A: jede Zahl trägt ihren Ursprung, eine Messung
+  ihren Lauf; Reviewer-Skill HIGH „Beleg trägt seinen Satz nicht“: die Zählung
+  nachfahren); der Lauf schrieb das Ergebnis, nicht die Messung, und erst die
+  Nachzählung des Reviewers fand die Abweichung. Gezählt unter
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (verkörpert in
+  `.harness/skills/reviewer.md`, HIGH). Benannte Spec-Lücke: keine.
+- **Beobachtungs-Register (`../observations/`):**
+  `evidence/slice-abgeleitete-dokumente-vorlagen-nachzug.md` in
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht/` angelegt (Review F-1, HIGH,
+  daher Datei trotz Deckel; F-4 im selben Vorgang zählt nicht ein zweites Mal;
+  Zähler 23×, Ausgang unverändert verkörpert) und in
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen/` (Review F-2, MEDIUM, daher
+  Datei trotz Deckel; V-2 im selben Vorgang; Zähler 20×, Ausgang unverändert
+  verkörpert). Ohne Register-Eintrag: F-3 (Baseline-Regel enger zitiert als
+  ihre Achse, LOW, in der Fixrunde behoben, keine wiederkehrende Klasse im
+  Register), V-1 (siehe *Befunde*). Kein Eintrag erreicht mit diesem Slice die
+  Schwelle 3× neu; kein Lese-Schritt fällig.
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** je ein Ausgang, siehe §6 — beide entfallen (jede Zeile an
+  ihrer Quelle nachgeprüft; das weite Muster meldet am Bestand 0 Befunde).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

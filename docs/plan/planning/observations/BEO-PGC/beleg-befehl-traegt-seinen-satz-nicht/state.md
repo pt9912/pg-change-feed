@@ -22,7 +22,13 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **22×** (die zweiundzwanzigste Datei:
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **23×** (die dreiundzwanzigste Datei:
+evidence/slice-abgeleitete-dokumente-vorlagen-nachzug.md — Form **Befehl**, F-1 (HIGH, daher
+Datei trotz Deckel): eine Auszählung der Bindung-Spalte stand ohne Befehl und gedruckte Zahlen
+als Grundlage einer abgeleiteten Klassenliste, die Nachzählung des Reviewers ergab andere Zahlen
+und zwei Formen ohne Klasse; in der Fixrunde mit Befehl und Zahlen je Stand behoben, vom
+Verifier mit eigener Methode nachgezählt, Ausgang unverändert **verkörpert**;
+die zweiundzwanzigste Datei:
 evidence/slice-baseline-6-14-0-dokumente-nachziehen.md — Form **Befehl**, F-1/F-2 (HIGH) und
 V-1 (MEDIUM), daher Datei trotz Deckel: die Begründung einer Verfahrensregel nannte zwei
 Befehlsformen als Fundort, die die Abweichung ihres Anlasses nicht fanden, und das Muster der
