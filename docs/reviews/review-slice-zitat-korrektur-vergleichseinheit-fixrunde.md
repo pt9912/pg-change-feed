@@ -110,7 +110,7 @@ Die Probe-Commits existieren nur im Klon:
 
 | Bereich | Ergebnis |
 |---|---|
-| `ADR-0159` Teil-Supersede von `ADR-0158` (Form wie `ADR-0157`→`ADR-0073`, `ADR-0158`→`ADR-0157`; `ADR-0158` selbst unverändert; Index-Vermerk „→ ADR-0159“) | geprüft, zulässig — Umfangs-Benennung siehe F-7 |
+| `ADR-0159` Teil-Supersede von `ADR-0158` (Form wie `ADR-0157`→`ADR-0073`, `ADR-0158`→`ADR-0157`; `ADR-0158` selbst unverändert; Index-Vermerk „→ `ADR-0159`“) | geprüft, zulässig — Umfangs-Benennung siehe F-7 |
 | `ADR-0159` gemessen/hergeleitet (`AGENTS.md` §3.12) | geprüft, ohne Befund. „*Hergeleitet*“ steht an der Prosazeilen-Stellung, an der Regel der ersten Fundstelle und in der Mutationszeile; „übernommen“ steht an F-8 (Probe P3); die gemessenen Zeilen stimmen mit meinen Proben überein. |
 | `ADR-0159` Entscheidung 3, Tag-Paar statt `.harness/baseline/` (Abweichung zu F-7) | geprüft, trägt — Contra zu Option C nachgemessen |
 | `ADR-0159` öffnet neue Lücke? | geprüft — ja, eng: F-1 bis F-3. Alle drei fail-open ohne Fundstelle. Re-Evaluierungs-Trigger (a) ist damit eingetreten (eine Probe weicht ab, weil die Form eine `id`-Stellung bzw. einen Fence nicht trägt). |
