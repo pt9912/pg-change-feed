@@ -227,6 +227,7 @@ Aussagen-Berührung steht hier gar nicht.
 | vier Pläne unter `done/`, ein Report unter `docs/reviews/` (Liste in §2) | Zitat-Korrektur je Zeile oder begründete andere Behandlung | Verweisgerüst, das `versions`/`links` mit dem Löschen von v6.14.0 rot färben |
 | `harness/conventions.md` MR-000 | update | ID-Schema `BEO-<KUERZEL>/<slug>` wie die v6.14.1-`conventions.template.md` (Liefer-Punkt 3, b) |
 | `.claude/commands/implement-slice.md` (Kandidatenlauf auf Vorlagenrest, Schritt 24) | update | Muster trifft alte und neue `Auslöser:`-Form (Liefer-Punkt 3, c) |
+| `AGENTS.md` §3.7 (drei Falsch/Richtig-Beispiele) | update — **Plan-Nachzug** | stehengebliebene Vorlagen-Klammer `<z.B. …>`, gefunden in Schritt 2, behoben nach Schritt 3 (Abschnitt „Bump-Ablauf — Belege“); mechanisch, keine Regeländerung |
 | dieser Plan, neuer Abschnitt „Bump-Ablauf — Belege“ | update | Schritte 1–3 aus `harness/targets/pin-stale.md` mit Befehl und gedruckter Zahl, vor dem Löschen von v6.14.0 committet |
 
 **Ansatz — Commit-Folge** (Vorbild `9eca47e2` → `484d20ec` → `990f1a0e` →
@@ -277,6 +278,126 @@ Die `diff`-Zeilen trägt der Implementer nach; **erwartet** (hergeleitet, nicht
 gemessen): Zeile 1 → 3 (die zwei Register-Records und die bestehende
 §Geschichte-Zeile von `ADR-0095`), Zeilen 2, 3 und 6 → 0, Zeile 7 → 0, Zeile 4
 nach der Form, die (c) wählt. Jede Abweichung davon steht mit Grund im Feld.
+
+### Bump-Ablauf — Belege (Implementer)
+
+Gemessen am 2026-10-06 im Repo, beide Bäume nebeneinander
+(`.harness/baseline/v6.14.0/` und `.harness/baseline/v6.14.1/`, Commit
+`4da92b66`). Normalisierte Kopien und Ausgaben liegen im Scratchpad des Laufs
+(`<Scratchpad>/impl-6141/`), keine Repo-Datei geschrieben.
+
+**Liefer-Punkt 1 — Eingang des Baums.** `cp -r` des Baums aus dem
+`vendor-baseline`-Lauf des Wegwerf-Klons, danach im Repo-Verzeichnis
+`sha256sum -c SHA256SUMS`: Exit 0, 54 Zeilen `: OK` (`grep -c ': OK$'`);
+`find . -type f | wc -l` 55 (54 Dateien plus `SHA256SUMS`); `diff -r` gegen den
+Klon-Baum Exit 0; `git diff --cached --name-only | wc -l` 55 vor dem Commit
+(auch `templates/.d-check.yml` und `templates/.harness/` sind getrackt).
+`make baseline-verify` auf diesem Stand: Exit 2 (`FEHLER: mehr als ein
+<tag>-Verzeichnis`) — der benannte Zwischenstand (§6).
+
+**Schritt 1 — Delta.** Normalisiert je Stand in Kopien
+(`sed 's/v6\.14\.0/vX/g'` bzw. `'s/v6\.14\.1/vX/g'`, `SHA256SUMS` ausgenommen),
+dann `diff -r alt/<teil> neu/<teil>`:
+
+| Teil | Exit | Diff-Zeilen | Dateien | davon Zeilen `<`/`>` |
+|---|---|---|---|---|
+| `templates/` | 1 | 46 | 4 | 22 |
+| `regelwerk/` | 1 | 10 | 2 | 4 |
+
+Roh (`diff -rq v6.14.0 v6.14.1 | wc -l`) 32 Dateien: die 26 übrigen tragen nur
+den Versionsstring (25 im `regelwerk/`, `AGENTS.template.md`), dazu
+`SHA256SUMS`. Die 56 normalisierten Zeilen bestätigen die übernommene Zahl aus
+§1. Je Änderung gegen das abgeleitete Repo-Dokument (`git grep` außerhalb von
+Baseline, Records und diesem Plan):
+
+| Änderung (Delta) | abgeleitetes Repo-Dokument | Ergebnis |
+|---|---|---|
+| `regelwerk/README.md` Stand-Zeile Kurs-Welle 156 → 157 · 2026-10-06 | `harness/conventions.md` §Baseline | übernommen in `harness/conventions.md` (Liefer-Punkt 2) |
+| `regelwerk/modul-10-review-harness.md` „Zuordnung zur `BEO-<NNN>`“ → „Beobachtung“ | `.harness/skills/reviewer.md` | betrifft das Repo nicht: der Skill trägt den Satz nicht (`git grep -n 'Zuordnung zur'` trifft nur `internal/domain/model/table.go`, fachfremd) |
+| `review-report.template.md` dieselbe Stelle | Review-Reports (Instanzen) | betrifft das Repo nicht: wiederkehrende Vorlage, bestehende Reports bleiben (pin-stale.md Schritt 3) |
+| `slice.template.md` drei Zeilen `BEO-<NNN>` → `BEO-<KUERZEL>/<slug>` | `.claude/commands/implement-slice.md` Schritt 24 (Kandidatenlauf auf `Auslöser: .BEO-<NNN>`) | übernommen in `.claude/commands/implement-slice.md` (Nachzug c); Instanzen bleiben |
+| `welle-results.template.md` `BEO-<NNN>` und Ablage `observations/` statt `observations.md` | `.claude/commands/close-welle.md`, `plan-welle.md` | entspricht bereits: beide nennen `docs/plan/planning/observations/README.md` (`grep -n observations`), keine `observations.md` |
+| `conventions.template.md` ID-Schema `BEO-<KUERZEL>/<slug>` | `harness/conventions.md` MR-000 | übernommen in `harness/conventions.md` (Nachzug b) |
+
+**Adaptionen** (`harness/conventions.md` §Aktive Adaptionen) gegen das Delta:
+`MR-001` (Rang-2-Datei-Name), `MR-002` (Kennungen als Namen), `MR-003`
+(Guard, in-place), `MR-004` (Guard, Host-`python`) — **bleibt gültig**, alle
+vier: das Delta berührt nur die Beobachtungs-Kennung und die Stand-Zeile, keine
+der ersetzten Baseline-Regeln (`grundlagen-source-precedence.md`,
+`grundlagen-durchsetzungsschicht.md`, `modul-13-quality-gates.md` sind
+normalisiert byte-gleich).
+
+**Schritt 2 — Stichprobe gegen den Bestand** (Vorlage jeweils aus
+`.harness/baseline/v6.14.1/templates/`; Gliederung
+`diff <(grep -E '^#{1,4} ' <Vorlage>) <(grep -E '^#{1,4} ' <Datei>)`;
+Platzhalter 1 `grep -n -F -f <(grep -o -E '<[^<>]+>' <Vorlage> | sort -u) <Datei>`;
+Platzhalter 2 das Muster der älteren Vorlagen aus pin-stale.md Schritt 2;
+voller `diff` gegen die Vorlage, beide mit `sed 's/v6\.14\.1/vX/g'`
+normalisiert). Am Stand `4da92b66`:
+
+| Dokument | Gliederung (Exit/Zeilen) | Platzh. 1 | Platzh. 2 | voller `diff` |
+|---|---|---|---|---|
+| `AGENTS.md` | 1 / 9 | 8 | 3 | — |
+| `harness/README.md` | 0 / 0 | 11 | 5 | — |
+| `harness/conventions.md` | 0 / 0 | 16 | 7 | 103 Zeilen |
+| `docs/plan/planning/README.md` | 1 / 4 | 3 | 0 | 9 Zeilen |
+| `docs/plan/planning/in-progress/roadmap.md` | 0 / 0 | 1 | 0 | — |
+| `docs/plan/adr/README.md` | 1 / 4 | 2 | 0 | — |
+| `docs/plan/carveouts/README.md` | 1 / 4 | 3 | 2 | — |
+
+Der volle `diff` läuft für `harness/conventions.md` (Vorlage im Delta) und
+`docs/plan/planning/README.md` (immer); die übrigen Vorlagen tragen im Delta
+nur den Versionsstring oder sind byte-gleich.
+
+**Schritt 3 — Ergebnis je Dokument** (jede Trefferzeile beurteilt):
+
+- **`AGENTS.md` — Abweichung mit Beleg, behoben.** Gliederung: die 9 Zeilen
+  sind die repo-eigenen Hard Rules §3.8–§3.15; die Vorlage verlangt
+  „Repo-spezifische Hard Rules ergänzen“ — entspricht. Platzhalter: Zeilen 30,
+  50 (`<tag>`), 44, 299, 724, 728, 729 (Kennungsform `MR-<NNN>`,
+  `welle-<Kennung>`, `SPEC-<NNN>`, `<PREFIX>-FA-<NN>`) sind Notation, wie in
+  der Vorlage. **Zeilen 242, 244, 247 sind stehengebliebene Platzhalter:** die
+  Falsch/Richtig-Beispiele in §3.7 tragen noch die Vorlagen-Klammer
+  `<z.B. „…">` (seit `40c8c431`, `git blame`). Die Platzhalter-Prüfung hat sie
+  nur zum Teil gefunden: Muster 1 trifft Zeile 247 (die beiden anderen
+  Platzhalter laufen über zwei Zeilen, `grep -o` liest zeilenweise), Muster 2
+  keine, weil es `<z\. B\.` mit Leerzeichen sucht und die Vorlage hier
+  `<z.B.` schreibt. Behoben: die Klammer `<z.B. …>` fällt, der Beispieltext
+  bleibt (Nachzug, Commit der Nachzüge). Die Lücke im Muster ist gemeldet,
+  nicht geändert (Befund unten).
+- **`harness/README.md` — entspricht.** Platzhalter-Treffer sind Notation
+  (`MR-<NNN>`, `CO-<NNN>`, `<tag>`, `<target>`, `PCF-<S><NNNN>`) oder
+  gleichlautend mit der Vorlage (Zeile 204 `<LH-*>`, Zeile 200 der
+  Vorlagen-Kommentar `<!-- Domänenspezifische Gates ergänzen … -->`, nicht
+  dargestellt).
+- **`harness/conventions.md` — Abweichung mit Beleg, behoben.** Der volle
+  `diff` (103 Zeilen) zeigt ausgefüllten Inhalt (Konvention, Quellen, MR-Index,
+  Zusatzklassen, Modus, Glossar), den entfernten Template-Hinweis und die
+  Umformulierung „gleichnamige Eintrags-Vorlage“ (seit `40c8c431`) — dazu drei
+  Stellen aus dem Bump: Stand/Datum und Release-URL (Liefer-Punkt 2), die
+  Stand-Zeile „Kurs-Welle 156“ (Liefer-Punkt 2) und das ID-Schema `BEO-<NNN>`
+  (Nachzug b). Platzhalter-Treffer: Muster 2 trifft Zeile 98 `BEO-<NNN>`
+  (Nachzug b), sonst Kennungsform-Notation (Zeilen 97, 98, 108, 166, 170);
+  Muster 1 zusätzlich `<tag>` (62, 71), die Anker `mr-<NNN>` im
+  Vorlagen-Kommentar (117, 118, gleichlautend mit der Vorlage), die
+  gefüllten Anker `mr-001`…`mr-004` (130–133, Teiltreffer auf `<a id=`) und
+  Notation (168, 169, 176).
+- **`docs/plan/planning/README.md` — entspricht.** Voller `diff` 9 Zeilen:
+  ausgefüllter Titel und der entfernte Template-Hinweis (die Vorlage verlangt
+  das Löschen); Gliederung 4 Zeilen = derselbe Titel. Platzhalter: Notation
+  `<welle-id>`, `welle-<Kennung>`.
+- **`docs/plan/planning/in-progress/roadmap.md` — entspricht.** Zeile 24 `<->`
+  ist ein Pfeil, kein Platzhalter.
+- **`docs/plan/adr/README.md` — entspricht.** Gliederung: ausgefüllter Titel;
+  Platzhalter: Notation `ADR-<NNNN>`, `<Buchstabe>`.
+- **`docs/plan/carveouts/README.md` — entspricht.** Gliederung: ausgefüllter
+  Titel; Platzhalter: Notation `CO-<NNN>`, `slice-<Kennung>`.
+
+**Befund (gemeldet, nicht mitgeändert):** Das Platzhalter-Muster 2 in
+`harness/targets/pin-stale.md` §Bump-Ablauf sucht `<z\. B\.` und verfehlt die
+Form `<z.B.` der `AGENTS.template.md`; Muster 1 verfehlt Platzhalter, die über
+eine Zeilengrenze laufen. Eine Änderung der Verfahrensregel ist ein anderer
+Vorgang (§1); Adresse vergibt der Planner bei der Closure.
 
 ## 4. Trigger
 
@@ -340,11 +461,13 @@ dasteht.
   `9eca47e2`/`484d20ec` (zwei Tag-Verzeichnisse, Löschen erst in `990f1a0e`).
   Der rote Stand darf den Hauptzweig nicht einzeln erreichen: gepusht wird erst
   die vollständige Folge bis zum Löschen. *Zu belegen durch:* `make gates`
-  Exit 0 auf dem Commit nach dem Löschen.- **Der kopierte Baum ist nicht der des Werkzeugs.** Ein `cp -r` aus dem Klon
+  Exit 0 auf dem Commit nach dem Löschen.
+- **Der kopierte Baum ist nicht der des Werkzeugs.** Ein `cp -r` aus dem Klon
   könnte Dateien verlieren oder hinzufügen (Rechte, versteckte Dateien wie
   `templates/.d-check.yml`). *Zu belegen durch:* `sha256sum -c SHA256SUMS` im
   Repo-Verzeichnis (54 erwartet) und `make baseline-verify` nach dem Löschen,
-  das auch zusätzliche Dateien meldet.- **Die Zitat-Korrektur an `ADR-0095` §Verglichene Alternativen ist das dritte
+  das auch zusätzliche Dateien meldet.
+- **Die Zitat-Korrektur an `ADR-0095` §Verglichene Alternativen ist das dritte
   Auftreten von `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform`**
   (2× am Parent, gemessen: zwei Dateien unter `evidence/`). Mit diesem Slice
   wird der Eintrag eine Lücke und braucht einen eigenen Folge-Slice
@@ -360,7 +483,8 @@ dasteht.
   `-- .harness/baseline/v6.14.0/…`): eine Zitat-Korrektur änderte das Ergebnis
   der Messung, die der Record festhält, und wäre keine reine Gerüst-Änderung.
   *Zu belegen durch:* die Entscheidung je Zeile im Bericht (Korrektur,
-  Ausnahme-Marker mit Grund, oder Folge-ADR).- **Der Bump-Ablauf findet Abweichungen über das Delta hinaus** (Schritt 2
+  Ausnahme-Marker mit Grund, oder Folge-ADR).
+- **Der Bump-Ablauf findet Abweichungen über das Delta hinaus** (Schritt 2
   liest unabhängig vom Delta). *Zu belegen durch:* das Ergebnis je Dokument in
   Schritt 3 (Behebung hier oder Folge-Slice mit Kennung, §4).
 
