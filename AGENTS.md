@@ -222,9 +222,12 @@ Abschnitten darf eine Zitat-Korrektur ändern, wenn der Referent gemessen gleich
 bleibt
 ([`ADR-0157`](docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md));
 gemessen wird die Einheit, die der Verweis adressiert — die Datei, den Abschnitt
-hinter dem Anker oder die zitierten Zeilen —, roh, und nur ein Versions-Segment
-nach Normalisierung des Tags
-([`ADR-0158`](docs/plan/adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md)).
+hinter dem Anker (Heading oder HTML-`id`; eine `id` in einer Tabellenzeile
+adressiert die Zeile) oder die zitierten Zeilen —, roh, und ein Versions-Segment
+nur nach Normalisierung des bewegten Tag-Paars
+([`ADR-0158`](docs/plan/adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md),
+[`ADR-0159`](docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md),
+dort die Befehlsform).
 Herkunft: `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform` ·
 seit slice-harness-baseline-v6-14-1.
 
@@ -233,9 +236,11 @@ seit slice-harness-baseline-v6-14-1.
 jede betroffene `Accepted` ADR
 erhält **eine** Zeile ihrer §Geschichte-Tabelle (Datum, Ereignis,
 Commit-Kennung). Records (`done/`, `docs/reviews/**`) tragen keine §Geschichte —
-bei ihnen ist die Commit-Kennung der Beleg. Der Beleg einer Zitat-Korrektur
-nennt je Verweis Form, Einheit, beide Stände, roh oder normalisiert und die
-gedruckte Zeile des Vergleichs (`ADR-0158` Entscheidung 5).
+bei ihnen ist die Commit-Kennung der Beleg. Für eine Zitat-Korrektur an einer
+`Accepted` ADR oder einem MR-Eintrag (`ADR-0157`) nennt der Beleg zusätzlich je
+Verweis Form, Einheit, beide Stände, roh oder normalisiert und die gedruckte
+Zeile des Vergleichs, oder „nicht messbar“ mit Grund (`ADR-0158`
+Entscheidung 4, 5); für Records bleibt die Commit-Kennung der Beleg.
 
 ### 3.6 Gates dürfen nicht ohne ADR gelockert werden
 

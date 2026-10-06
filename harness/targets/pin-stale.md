@@ -80,7 +80,9 @@ dessen Message `ADR-0073` nennt (Pin-Commit). Der Verifier prüft
 `make doc-immutable` dann in den Teil-Ranges um diesen Commit und den
 Pin-Commit selbst per normalisiertem `cmp`
 ([`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
-Entscheidung 4).
+Entscheidung 4) sowie je bewegtem Verweis den Referenten
+([`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
+Entscheidung 2); der Messende belegt im Slice-Plan des Bumps.
 
 ## `make pin-stale-actions`
 
