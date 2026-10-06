@@ -165,6 +165,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0153 | OTLP-Einheit `cdc_consumer_lag` ist `By` (Supers. ADR-0149, teilw.) | Accepted | 2026-10-04 | [0153-otlp-einheit-consumer-lag-byte.md](0153-otlp-einheit-consumer-lag-byte.md) |
 | ADR-0154 | Spec-Lücken OTLP, TLS, API-Token: Ist-Zustand festgeschrieben | Accepted | 2026-10-04 | [0154-spec-luecken-otlp-tls-token-ist-zustand.md](0154-spec-luecken-otlp-tls-token-ist-zustand.md) |
 | ADR-0155 | PER-001 relativ zur Festschreib-Latenz (Supers. ADR-0151, ADR-0104 teilw.) | Accepted | 2026-10-05 | [0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md](0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md) |
+| ADR-0156 | `versions`-Modul nimmt die Records unter `done/**` aus | Accepted | 2026-10-06 | [0156-versions-gate-nimmt-done-records-aus.md](0156-versions-gate-nimmt-done-records-aus.md) |
 
 ## Konventionen
 
