@@ -1,8 +1,14 @@
-**Stand:** offen
+**Stand:** offen — **Schwelle erreicht (3×)** mit `slice-dcheck-v0-82-0`; der
+Lese-Schritt dieser wellenlosen Closure ist fällig und weist den Ausgang zu
+(Planner → Architect → Planner). Bis dahin steht der Eintrag vorübergehend ohne
+Ausgang.
 
-Zweites Auftreten (2×), unter der 3×-Schwelle für eine reguläre
-Skill-/Regel-Verkörperung. Kein Ausgang zugewiesen — kein Ausgang unter der
-Schwelle ist der Normalzustand, kein Rückstand.
+Drittes Auftreten (`evidence/slice-dcheck-v0-82-0.md`) in der **verdeckten**
+Ausprägung wie das erste: Träger des Bump-Ablaufs setzten eine
+„Ausführungsregel“ an die Stelle von `ADR-0157` Entscheidung 4, ohne Artefakt des
+Architect (Review F-1, HIGH; aufgelöst über `ADR-0160`), dazu im selben Vorgang
+ein Zusatzsatz zum beschlossenen Wortlaut von `ADR-0160` in `AGENTS.md` §3.11
+(Re-Review F-1, LOW; bei der Closure gestrichen).
 
 Das zweite Auftreten ist die **benannte** Ausprägung (Abweichung als Risiko und
 Auslegung geführt, vom Verifier als konform gelesen), das erste die
@@ -40,5 +46,5 @@ ADR-Aussage („derselbe Mechanismus“), nicht die Umsetzung — der Architect 
 `ADR-0141`. Die Gegenrichtung, eine Fixrunde, die dem Wortlaut folgte, wurde zurückgenommen.
 Der Vorgang zählt unter `BEO-PGC/adr-aussage-breiter-als-ihre-messung`, nicht hier.
 
-Zähler (abgeleitet): 2× (`evidence/slice-sdk-kotlin-publish-workflow.md`,
-`evidence/slice-transformationen-kern-rename.md`).
+Zähler (abgeleitet): 3× (`evidence/slice-sdk-kotlin-publish-workflow.md`,
+`evidence/slice-transformationen-kern-rename.md`, `evidence/slice-dcheck-v0-82-0.md`).

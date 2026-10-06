@@ -1,3 +1,9 @@
+Deckel bei 10× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
+vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen bekannten
+Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung
+in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
+ab 10×); erstes so geführtes Auftreten: `slice-dcheck-v0-82-0` Review F-5 (LOW).
+
 Zustand: **verkörpert** — Ausgang zugewiesen beim Lese-Schritt der
 `welle-d-check`-Closure (der Architect-Verdikt zum welle-d-check-Lese-Schritt,
 §2): Kein

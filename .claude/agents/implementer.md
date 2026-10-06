@@ -50,9 +50,10 @@ Disziplin.
   eines Baseline-Bumps, läuft das Ziel in den Teil-Ranges `base..P~1` und
   `P..head`; vor jedem Lauf entscheidet der Leer-Test: leer genau dann, wenn
   `git rev-parse` für Basis und Spitze denselben Commit liefert (dann kein
-  Lauf, die gedruckte Zeile ist der Beleg), sonst `git merge-base
-  --is-ancestor` und Zählung > 0, dann `make doc-immutable` mit Exit 0; jede
-  andere Lage ist Exit 2, die Range wird neu gebildet — Befehl: Funktion
+  Lauf, die gedruckte Zeile ist der Beleg), sonst
+  `git merge-base --is-ancestor` und Zählung > 0, dann `make doc-immutable`
+  mit Exit 0; jede andere Lage ist Exit 2, die Range wird neu gebildet —
+  Befehl: Funktion
   `teilrange` in
   [`ADR-0160`](../../docs/plan/adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
   Entscheidung 1; am Pin-Commit selbst belegt der Messende im Slice-Plan des Bumps

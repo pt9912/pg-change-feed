@@ -210,9 +210,13 @@ Planungsstand hat außer den in §1 genannten Läufen keinen im Repo gefahren
       [`review-slice-dcheck-v0-82-0-fixrunde`](../../../reviews/review-slice-dcheck-v0-82-0-fixrunde.md)
       (0 HIGH, 0 MEDIUM, 1 LOW an die Closure; keine weitere Fixrunde, vom
       Reviewer nachgezogen).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag. *Offen:* §7 steht, der
+      Lese-Schritt für die zwei Einträge, die mit diesem Slice 3× erreichen,
+      fehlt noch (§7 „Lese-Schritt“).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      *Beleg:* §7 „Beobachtungs-Register“ (vier Dateien in `evidence/`).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+      *Beleg:* §7 „Risiken aus §6“ (vier Risiken, je entfallen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
       Roadmap führt unter *Offene Wellen* keine Welle, also trägt sie die
       Slice-Closure selbst (nach dem `git mv`).
@@ -314,7 +318,7 @@ diff 30 -ni 'home-relativ' -- . ':(exclude).harness/baseline/**' ':(exclude)docs
 diff 10 -n 'rev-list --count' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 0 -n 'rev-list --count' -- .claude/agents harness/targets/pin-stale.md
 diff 13 -n 'teilrange' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 5 -n 'merge-base --is-ancestor' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 7 -n 'merge-base --is-ancestor' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 14 -n 'Tilde mit Benutzername' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 ```
 
@@ -351,10 +355,11 @@ Die Zeilen tragen die Fixrunde und die mit ihr gelandete
   Zeile) — das Leer-Kriterium des ersten Laufs ist dort entfernt.
 - **`teilrange`** (13): je 1 in den drei Trägern (am Stand `87567887` dort 0),
   `ADR-0160` 10.
-- **`merge-base --is-ancestor`** (5): `verifier.md` 1, `ADR-0160` 2, zwei
-  Evidence-Dateien des Registers (Bestand, anderer Gegenstand);
-  `implementer.md` trägt die Wendung über einen Zeilenumbruch und trifft das
-  Muster deshalb nicht, `pin-stale.md` ebenso.
+- **`merge-base --is-ancestor`** (7): `verifier.md` 1, `implementer.md` 1,
+  `pin-stale.md` 1, `ADR-0160` 2, zwei Evidence-Dateien des Registers
+  (Bestand, anderer Gegenstand). Gemessen vom Implementer: 5 — in
+  `implementer.md` und `pin-stale.md` stand die Wendung über einen
+  Zeilenumbruch; bei der Closure zusammengeführt (Planner), Soll auf 7.
 - **`Tilde mit Benutzername`** (14): `AGENTS.md` 3, `docs-check.md` 2,
   `ADR-0160` 9.
 
@@ -625,20 +630,138 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Gegenstand:** <übernommen von `slice-<Kennung>` | entfallen: <Grund>>
-  *(nur beim Ausgang ohne Arbeit; sonst Zeile löschen)*
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<KUERZEL>/<slug>` (<slice-kennung-a>, <slice-kennung-b>, <slice-kennung-c> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-<Kennung>.md` | `evidence/slice-<Kennung>.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-<Kennung> (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Geliefert:** `d-check.mk` pinnt d-check v0.82.0 mit dem Release-Digest
+  (Pin-Commit `7f796ef0`, Liefer-Punkt 1); die Wirkung von v0.80.0 bis v0.82.0
+  ist je Changelog-Punkt gemessen (§3 „Wirkung v0.80.0–v0.82.0 — Belege“,
+  Liefer-Punkt 2); die Träger sind nach
+  [`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+  nachgezogen (`0f724933`, Liefer-Punkt 3). Architect-Zug als Folge-ADR
+  `ADR-0160` (`87567887`, Teil-Supersede von `ADR-0157` Entscheidung 4 und
+  `ADR-0075` Entscheidung 2). Review (2 HIGH, 2 MEDIUM, 1 LOW, 2 INFO), eine
+  Fixrunde (`1dca86c8`), Re-Review (0 HIGH, 0 MEDIUM, 1 LOW, 2 INFO);
+  Verifikation `docs/reviews/verify-slice-dcheck-v0-82-0.md` (`d971fee3`; DoD
+  bestätigt, `make gates` Exit 0). Validator: entfällt — Harness-Werkzeug ohne
+  End-Nutzer-Wert, kein MVP-Slice (Verifikationsbericht, Kopf).
+- **Was hat funktioniert:** Die Messung vor dem Pin (Liefer-Punkt 2 mit dem
+  neuen Digest auf der Kommandozeile, ohne `d-check.mk` zu ändern) hat die eine
+  Wirkung mit Folgen — die leere Teil-Range wird rot — vor dem Pin-Commit
+  sichtbar gemacht, mit Befehl, Stand und gedruckter Zeile. Der Reviewer hat
+  sie nachgefahren und an ihr beide HIGH-Befunde belegt; der Architect-Zug
+  stützte sich auf dieselben Messungen. Der Leer-Test als Funktion in der ADR
+  (`teilrange`) wurde von Implementer und Verifier unabhängig an Wegwerf-Klonen
+  gefahren, mit derselben Farbe je Fall.
+- **Was ging anders als geplant:**
+  (1) **Der Architect-Zug lief erst nach dem Review.** Der Plan sah ihn nach
+  der Messung vor (Ansatz Schritt 2); der erste Lauf ersetzte ihn durch eine
+  Orchestrator-„Ausführungsregel“ in den Trägern. Review F-1 (HIGH) fand den
+  Widerspruch zu `ADR-0157`, F-2 (HIGH) den Beleg-Befehl, der „leer“ nicht
+  trug; Ausgang war `ADR-0160` und eine Fixrunde. Register: unten.
+  (2) **Der Pin erweiterte ein Gate.** Dass `hostpaths` ab v0.80.0 mehr meldet,
+  stand im Plan als Meldung an den Planner; Review F-3 (MEDIUM) machte es zur
+  Frage an den Architect (`ADR-0160` Entscheidung 3 und 4, `AGENTS.md` §3.11
+  Fassung 3). Damit kam `AGENTS.md` in den Umfang (§1 nachgezogen).
+- **Re-Review- und Verifikations-Pflichten in der Closure:**
+  - Re-Review F-1 / Verifikation V-1 (LOW, Zusatzsatz in `AGENTS.md` §3.11)
+    → **gestrichen** mit dieser Closure. Der Satz „Die Hausform ist `d-check`s
+    `Dockerfile`, nicht der Pfad auf einem Rechner.“ kam mit diesem Slice
+    (`0f724933`); am Start-Stand `8551babd` stand das Beispiel als Klammer im
+    Satz zur Hausform (`git show 8551babd:AGENTS.md`). §3.11 trägt jetzt den
+    Wortlaut von `ADR-0160` Entscheidung 3 (Fassung 3) ohne Zusatz; die
+    Hausform zeigt das Falsch/Richtig-Paar darunter
+    ([`ADR-0074`](../../adr/0074-zitationsform-schwester-repo-hausform.md)).
+  - Restpunkt des Implementers: die Wendung `git merge-base --is-ancestor`
+    stand in `.claude/agents/implementer.md` und `harness/targets/pin-stale.md`
+    über einen Zeilenumbruch → **zusammengeführt** mit dieser Closure (reiner
+    Umbruch, Wortlaut gleich); die Suchlauf-Zeile in §3 steht damit auf 7.
+- **Befunde (gemeldet, nicht geändert):**
+  - Review F-5 (LOW, Zitat `AGENTS.md` §3.6 trägt den Ausschluss von `targets`
+    nicht; in der Fixrunde behoben): Auftreten von
+    `BEO-PGC/zitat-nennt-die-falsche-stelle` unter dem Deckel (verkörpert,
+    10×, LOW, vor dem Merge gefunden, bekannter Träger-Typ Verweis) — keine
+    Datei, hier geführt.
+  - Review F-6 (INFO, Formbeispiel in `docs-check.md` §Grenze Punkt 8 enger
+    als das Verhalten; behoben) und F-7 (INFO, Verweis an den Verifier):
+    benannt, nicht gezählt.
+  - Re-Review F-2 (INFO): die zweite Fitness-Function-Zeile von `ADR-0160`
+    stützt „Am Repo: `make docs-check` … `0 Befund(e)`“ auf den nicht
+    committeten Bericht des Zugs. Die Aussage ist gemessen und über §2 dieses
+    Plans auflösbar (Gate-Lauf am Stand `1dca86c8`); die ADR ist `Accepted`
+    und bleibt ([`AGENTS.md`](../../../../AGENTS.md) §3.5). Benannt, nicht
+    gezählt: `BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker` trifft
+    eine DoD-Zusage ohne Anker, hier steht der Anker im Plan. Leser: der
+    Architect bei der nächsten ADR.
+  - Re-Review F-3 (INFO): die Aufrufzeilen des `bash`-Blocks von `ADR-0160`
+    brechen unter `set -e` beim ersten Exit 2 ab — rot bleibt rot. Konstruiert,
+    ohne Fundstelle; Hinweis an den Verifier von
+    `slice-harness-baseline-v6-16-0`. Keine Folgearbeit.
+  - Verifikation V-2 (INFO): §1 „Kein Produkt-Code“ zählt die berührten Pfade
+    ohne `docs/plan/adr/` (`ADR-0160`, Index; Architect) und `docs/reviews/`
+    (Reviewer, Verifier) auf; beides sind Artefakte anderer Rollen, die
+    §3-Tabelle nennt `ADR-0160`, die Grenze „kein Produkt-Code“ hält. Dazu
+    kommt mit dieser Closure das Register. Benannt, nicht gezählt.
+- **Steering-Loop-Eintrag:** Sensor-Vertrag ergänzt: `hostpaths` meldet ab
+  d-check v0.80.0 auch Home-relative Pfade; Regel (`AGENTS.md` §3.11 Fassung 3)
+  und Modul sind gleich weit außer bei der Tilde mit Benutzername, das Ventil
+  ist verfügbar und nicht gesetzt.
+  — liegt in `harness/sensors/docs-check.md §Grenze`.
+  Auslöser: d-check-CHANGELOG 0.80.0, Review F-3, `ADR-0160` Entscheidung 3 und 4.
+  Geschärft, ohne eigenen Herkunfts-Anker: der Leer-Test vor jedem
+  Teil-Range-Lauf eines Bumps (`.claude/agents/verifier.md`,
+  `.claude/agents/implementer.md`, `harness/targets/pin-stale.md`
+  §Bump-Ablauf; die Träger nennen `ADR-0160` Entscheidung 1). Benannte
+  Spec-Lücke: keine.
+- **Lese-Schritt (wellenlos, Baseline-Regelwerk `modul-06-roadmap.md`
+  §Wann Arbeit eine Welle braucht):** zwei Einträge erreichen mit diesem
+  Slice 3× — `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` und
+  `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger` (Register unten). Ihr
+  Ausgang (verkörpert · geplant · gestrichen) ist **noch nicht zugewiesen**;
+  der Zug Planner → Architect → Planner (Verkörperung,
+  `modul-08-agentenrollen.md` §Rollen-Sequenz für eine Welle, Tabelle „ohne
+  Wellen-Betrieb“) ist fällig, bevor der Slice nach `done/` geht. Anker dann
+  `seit slice-dcheck-v0-82-0`.
+- **Beobachtungs-Register (`../observations/`):**
+  - `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab/`:
+    `evidence/slice-dcheck-v0-82-0.md` ergänzt (Review F-1, HIGH; Re-Review
+    F-1 / V-1, LOW; ein Vorgang) — Zähler **3×**, Schwelle erreicht.
+  - `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger/`:
+    `evidence/slice-dcheck-v0-82-0.md` ergänzt (Review F-3, MEDIUM; neuer Weg:
+    der Werkzeug-Pin) — Zähler **3×**, Schwelle erreicht.
+  - `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht/`:
+    `evidence/slice-dcheck-v0-82-0.md` ergänzt (Review F-2, HIGH, Datei trotz
+    Deckel) — Zähler 25×, Ausgang unverändert verkörpert.
+  - `BEO-PGC/nachzug-laesst-ueberholten-text-stehen/`:
+    `evidence/slice-dcheck-v0-82-0.md` ergänzt (Review F-4, MEDIUM, Datei trotz
+    Deckel) — Zähler 24×, Ausgang unverändert verkörpert.
+  - `BEO-PGC/zitat-nennt-die-falsche-stelle/`: keine Datei (Deckel, Review
+    F-5 oben); `state.md` nennt den Deckel — Zähler 10×.
+  - Die in §8 gesichteten Einträge (`pin-ohne-inventar-eintrag-driftet-unsichtbar`,
+    `regel-weiter-als-ihr-sensor`, `arbeit-ueberholt-stehenden-traeger`,
+    `werkzeugvertrag-zusage-ohne-testfall`): kein Auftreten. Die Lücke an der
+    Tilde mit Benutzername ist eine entschiedene, benannte Grenze
+    (`ADR-0160`), kein Auftreten von `regel-weiter-als-ihr-sensor`.
+- **Folge-Slices:** `slice-harness-baseline-v6-16-0` (Baseline auf v6.16.0,
+  §1) — ist eine Datei in `open/`; dieser Slice legt keinen neuen an.
+- **Risiken aus §6:** vier Risiken, je ein Ausgang.
+  - *Leere Teil-Range wird rot* → **entfallen**: als Messbefund eingetreten
+    (§1, §3 (b)), aber in diesem Slice aufgefangen, nicht durch Carveout oder
+    Folge-Slice — `ADR-0160` Entscheidung 1 (`Accepted`) legt den Leer-Test
+    fest, die drei Träger tragen ihn (Liefer-Punkt 3 (i)), die Probe
+    `teilrange` ist gefahren (§3 „Fixrunde“) und vom Verifier nachgemessen.
+    Ein Bump-Verifier läuft nicht mehr gegen eine Regel, die Exit 0 verlangt.
+  - *Fitness-Function-Zeile von `ADR-0157` hält einen v0.79.0-Wert* →
+    **entfallen**: `ADR-0160` nennt die Leerfall-Hälfte der Zeile als
+    abgelöst (Status-Zeile, Teil-Supersede), der ADR-Index trägt den
+    Rückverweis (Re-Review, Status F-1). `ADR-0157` bleibt unverändert.
+  - *`hostpaths` meldet am Arbeitsbaum mehr* → **entfallen**: 0 Befunde —
+    `make docs-check` mit v0.82.0 am Arbeitsbaum `d-check: 1794 Datei(en)
+    geprüft, 0 Befund(e)` (§3 (a)), nach der Fixrunde `1796 Datei(en)
+    geprüft, 0 Befund(e)` (§2, Gate-Lauf `1dca86c8`).
+  - *Shallow-Klon bricht `vcs` ab* → **entfallen**: kein Workflow fährt
+    `doc-immutable`, `ci.yml:57` checkt mit `fetch-depth: 0` aus (bei der
+    Closure gemessen am Stand `d971fee3` mit
+    `grep -n 'doc-immutable\|fetch-depth' .github/workflows/*.yml`: kein
+    `doc-immutable`).
+- **Drei Paarungen:** nach dem `git mv`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

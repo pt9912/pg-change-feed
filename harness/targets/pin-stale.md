@@ -87,9 +87,9 @@ Entscheidung 2, Vertrag [`zitat-vergleich.md`](zitat-vergleich.md)); der
 Messende belegt im Slice-Plan des Bumps mit der gedruckten Zeile. Vor jedem
 Teil-Range-Lauf steht der Leer-Test: **leer** genau dann, wenn `git rev-parse`
 für Basis und Spitze denselben Commit liefert — dann läuft `make doc-immutable`
-nicht, und die gedruckte Zeile des Tests ist der Beleg; sonst `git merge-base
---is-ancestor` und Zählung > 0, dann `make doc-immutable` mit Exit 0; jede
-andere Lage (eine Seite löst nicht auf, die Basis ist kein Vorfahr, etwa eine
+nicht, und die gedruckte Zeile des Tests ist der Beleg; sonst
+`git merge-base --is-ancestor` und Zählung > 0, dann `make doc-immutable`
+mit Exit 0; jede andere Lage (eine Seite löst nicht auf, die Basis ist kein Vorfahr, etwa eine
 umgekehrte Range) endet mit Exit 2, und die Range wird neu gebildet. Der
 Befehl ist die Funktion `teilrange` in
 [`ADR-0160`](../../docs/plan/adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)

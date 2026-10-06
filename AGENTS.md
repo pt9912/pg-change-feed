@@ -455,7 +455,6 @@ Schwester-Artefakt wird in der Hausform zitiert. Kein Gegenstand der Regel
 sind die Werkzeug-Konvention mit Punkt-Segment, die nackte Tilde und die
 Tilde in einem URL-Pfad.
 
-Die Hausform ist `d-check`s `Dockerfile`, nicht der Pfad auf einem Rechner.
 Eine verbotene Form zeigt ein Dokument **nur als Platzhalter** — `<Host-Wurzel>`
 für das Wurzel-Segment, `~/<Verzeichnis>/…` für den Home-relativen Pfad; die
 reale Form steht nirgends, auch nicht im Fence.

@@ -22,7 +22,12 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **24×** (die vierundzwanzigste Datei:
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **25×** (die fünfundzwanzigste Datei:
+evidence/slice-dcheck-v0-82-0.md — Form **Befehl**, F-2 (HIGH, daher Datei trotz Deckel): eine
+Commit-Zählung, die `0` druckt, sollte „die Range ist leer“ belegen und druckt dieselbe `0` bei
+einer umgekehrten Range; in der Fixrunde durch Commit-Gleichheit ersetzt (`ADR-0160`), Ausgang
+unverändert **verkörpert**;
+die vierundzwanzigste Datei:
 evidence/slice-harness-baseline-v6-14-1.md — Form **Werkzeug**, F-1 (HIGH, daher Datei trotz
 Deckel): der Suchlauf trug den Haken „jede lebende Nennung“, sein `git grep` liest aber keine
 Symlink-Ziele; in der Fixrunde mit einer Messung je Stand über die Blobs behoben, Ausgang
