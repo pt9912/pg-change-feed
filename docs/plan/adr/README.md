@@ -82,7 +82,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0070 | Supersede-Reichweite und Klassengrenze (Supersedes ADR-0069, teilweise) | Accepted | 2026-09-15 | [0070-supersede-reichweite-und-klassengrenze.md](0070-supersede-reichweite-und-klassengrenze.md) |
 | ADR-0071 | Coverage-Gate — Messgegenstand netzlos prüfbare Fläche (Supersedes ADR-0054) | Accepted | 2026-09-15 | [0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md](0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) |
 | ADR-0072 | hostpaths aktiviert — kein Host-Pfad, ohne Ausnahme (→ ADR-0074/0075, teilw.) | Accepted | 2026-09-15 | [0072-hostpaths-modul-aktiviert-ohne-ausnahme.md](0072-hostpaths-modul-aktiviert-ohne-ausnahme.md) |
-| ADR-0073 | Zitat-Korrektur an immutablen Dokumenten — die Klasse für §3.5 | Accepted | 2026-09-15 | [0073-zitat-korrektur-an-immutablen-dokumenten.md](0073-zitat-korrektur-an-immutablen-dokumenten.md) |
+| ADR-0073 | Zitat-Korrektur an immutablen Dokumenten — die Klasse für §3.5 (→ ADR-0157) | Accepted | 2026-09-15 | [0073-zitat-korrektur-an-immutablen-dokumenten.md](0073-zitat-korrektur-an-immutablen-dokumenten.md) |
 | ADR-0074 | Zitationsform Schwester-Repo — Hausform (Supersedes ADR-0072, teilweise) | Accepted | 2026-09-15 | [0074-zitationsform-schwester-repo-hausform.md](0074-zitationsform-schwester-repo-hausform.md) |
 | ADR-0075 | `hostpaths`-Regel — Reichweite, §3.11-Entwurf, Lokator-Disposition | Accepted | 2026-09-15 | [0075-hostpaths-reichweite-und-wortlaut.md](0075-hostpaths-reichweite-und-wortlaut.md) |
 | ADR-0076 | Beispiel-Clients `examples/` (Supers. ADR-0060/0068, teilw.; → ADR-0079/0098) | Accepted | 2026-09-15 | [0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md](0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md) |
@@ -166,13 +166,16 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0154 | Spec-Lücken OTLP, TLS, API-Token: Ist-Zustand festgeschrieben | Accepted | 2026-10-04 | [0154-spec-luecken-otlp-tls-token-ist-zustand.md](0154-spec-luecken-otlp-tls-token-ist-zustand.md) |
 | ADR-0155 | PER-001 relativ zur Festschreib-Latenz (Supers. ADR-0151, ADR-0104 teilw.) | Accepted | 2026-10-05 | [0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md](0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md) |
 | ADR-0156 | `versions`-Modul nimmt die Records unter `done/**` aus | Accepted | 2026-10-06 | [0156-versions-gate-nimmt-done-records-aus.md](0156-versions-gate-nimmt-done-records-aus.md) |
+| ADR-0157 | Zitat-Korrektur nach Aussage; MR-Pins (Supers. ADR-0073, teilw.) | Accepted | 2026-10-06 | [0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md](0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md) |
 
 ## Konventionen
 
 - ADRs sind nach `Accepted` **immutable** (siehe Baseline-Regelwerk `modul-04-adrs.md`;
   `AGENTS.md` §3.5). Ausgenommen ist die **Zitat-Korrektur** am Zitat- und
   Verweisgerüst bei unverändertem Referenten
-  ([`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md)).
+  ([`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md)); sie ist in
+  jedem Abschnitt zulässig, solange die Aussage gleich bleibt
+  ([`ADR-0157`](0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)).
 - Schärfungen und Korrekturen entstehen als neue ADR mit `Supersedes ADR-NNNN`.
 - Bei `Accepted`: diesen Index aktualisieren (Status, Datum).
 - Jede ADR deklariert im `**Schärft:**`-Feld *aufwärts*, welche Spec-Stelle
