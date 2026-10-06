@@ -187,7 +187,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft.
 
 ## 3. Plan (vor Code)
 
@@ -477,7 +477,33 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   in `open/`.
 - **Risiken aus §6:** ein Risiko, ein Ausgang — eingetreten,
   `slice-zitat-vergleich-werkzeug` (siehe §6).
-- **Drei Paarungen:** nach dem `git mv` gemessen, siehe unten.
+- **Drei Paarungen:** nach dem `git mv` gemessen — (a) *Anker:* kein Eintrag
+  trägt `liegt in` (der Steering-Loop-Eintrag ist gezählt, nicht verkörpert);
+  nichts zu paaren. (b) *Folge-Slice:* `slice-zitat-vergleich-werkzeug` liegt
+  in `open/` (`1bbb2ce8`). (c) *Register:* die genannten Verzeichnisse
+  existieren, jedes mit nicht leerem `evidence/` (`ls evidence | wc -l`):
+  `befehlsform-in-adr-prosa-zieht-folge-adr-nach` 1,
+  `adr-aussage-breiter-als-ihre-messung` 14,
+  `nachzug-laesst-ueberholten-text-stehen` 22,
+  `zitat-nennt-die-falsche-stelle` 10,
+  `zitat-korrektur-reichweite-abschnitte-kurzform` 3,
+  `arbeit-ueberholt-stehenden-traeger` 34,
+  `zahl-in-traeger-driftet-gegen-die-messung` 30. Ergebnis: getragen. Durch
+  den Move brach kein Verweis (`git grep` nach dem `in-progress`-Pfad dieses
+  Plans: ein Treffer, Inline-Code im Verifikationsbericht, kein Link). Die
+  `MR-001`-Korrektur steht in `ccbd0ac1`. Der Ruhe-Marker der Roadmap steht
+  wieder, Wortlaut gleich `065f8fa1`; `in-progress/` trägt nur `roadmap.md`.
+- **Befund aus der `MR-001`-Korrektur (gemeldet, nicht geändert):** Die
+  Index-Zeile `MR-001` in `harness/conventions.md` §Aktive Adaptionen nennt in
+  der Spalte „Ersetzt-Baseline-Regel“ weiter `grundlagen-source-precedence.md`
+  §Spec-Straten (Text, kein Link). Die Korrektur blieb auf den MR-Eintrag
+  beschränkt; die Zelle zieht der nächste Zug an `harness/conventions.md`
+  nach.
+- **Gates der Closure:** `make docs-check` und `make suchlauf-nachmessen` vor
+  dem Inhalts-Commit Exit 0; `make gates`, `make suchlauf-nachmessen` und
+  `make doc-immutable` in den Teil-Ranges um `ccbd0ac1` nach dem letzten
+  Commit stehen im Bericht der Sitzung, nicht in diesem Plan.
+- **DoD „Drei Paarungen“:** abgehakt in §2 mit diesem Commit.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
