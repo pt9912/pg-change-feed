@@ -202,9 +202,14 @@ Planungsstand hat außer den in §1 genannten Läufen keinen im Repo gefahren
       `1dca86c8`: `make gates` Exit `0`, `d-check: 1796 Datei(en) geprüft, 0 Befund(e)`,
       Coverage `total: … 83.3%`; `make kommentar-kennungen DIFF=8551babd`
       Exit 0 ohne Kandidat.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      *Beleg:* [`review-slice-dcheck-v0-82-0`](../../../reviews/review-slice-dcheck-v0-82-0.md)
+      und das Re-Review
+      [`review-slice-dcheck-v0-82-0-fixrunde`](../../../reviews/review-slice-dcheck-v0-82-0-fixrunde.md)
+      (0 HIGH, 0 MEDIUM, 1 LOW an die Closure; keine weitere Fixrunde, vom
+      Reviewer nachgezogen).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
