@@ -84,7 +84,11 @@ Entscheidung 4) sowie je bewegtem Verweis den Referenten mit
 `make zitat-vergleich`
 ([`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
 Entscheidung 2, Vertrag [`zitat-vergleich.md`](zitat-vergleich.md)); der
-Messende belegt im Slice-Plan des Bumps mit der gedruckten Zeile.
+Messende belegt im Slice-Plan des Bumps mit der gedruckten Zeile. Eine
+**leere** Teil-Range läuft nicht: druckt `git rev-list --count <range>` die
+Zahl `0` (etwa `base..P~1`, wenn `P` der erste Commit nach `base` ist), hat sie
+keinen Commit zu prüfen, und d-check endet dort mit Exit 2; ihr Beleg ist die
+gedruckte Zahl.
 
 ## `make pin-stale-actions`
 

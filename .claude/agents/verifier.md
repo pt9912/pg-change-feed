@@ -44,7 +44,11 @@ Disziplin.
   und `make doc-immutable RANGE=base..head` (MR-Immutabilität; ohne `RANGE`
   endet das Ziel mit Exit 2); enthält die Range einen Pin-Commit `P` eines
   Baseline-Bumps (ändert nur MR-Dateien, Message nennt `ADR-0073`), läuft
-  `doc-immutable` in den Teil-Ranges `base..P~1` und `P..head` (je Exit 0), und
+  `doc-immutable` in den Teil-Ranges `base..P~1` und `P..head` (je Exit 0;
+  eine leere Teil-Range — `git rev-list --count <range>` druckt `0`, etwa
+  `base..P~1`, wenn `P` der erste Commit nach `base` ist — läuft nicht, weil sie
+  nichts zu prüfen hat und d-check dort mit Exit 2 endet; Beleg ist die gedruckte
+  Zahl), und
   am Pin-Commit selbst je MR-Datei ein `cmp` nach Normalisierung des Tags (je
   Exit 0) — Befehl in
   [`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)

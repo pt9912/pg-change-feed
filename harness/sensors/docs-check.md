@@ -11,7 +11,7 @@ Referenz: lokaler Link oder Heading-Anker ins Leere (`target-missing`,
 (`section-cell-*`, `section-forbidden` — Register-Spalten,
 Closure-Notiz-Guidance, die Verweisform auf wandernde Slice-Pläne in
 Berichten und der Register-Identität, die erzeugte
-E2E-Abdeckungstabelle und die Zellenlänge des Gate-Index), oder einen host-lokalen absoluten Pfad in Prosa oder
+E2E-Abdeckungstabelle und die Zellenlänge des Gate-Index), oder einen host-lokalen absoluten oder Home-relativen Pfad in Prosa oder
 Inline-Code (`hostpath-forbidden` — ein Schwester-Artefakt wird als blankes
 Repo-Wort mit relativem Pfad zitiert,
 [`ADR-0074`](../../docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md)).
@@ -115,7 +115,15 @@ Regel zählt Zeilen.
 
 8. **`hostpaths` — die gescannte Markdown-Fläche, nicht das Repo.** Das Modul
    meldet host-lokale **absolute** Pfade in `.md`-Dateien unter `scan.roots`,
-   in Prosa und Inline-Code (`hostpath-forbidden`). Vier benannte Ränder:
+   in Prosa und Inline-Code (`hostpath-forbidden`), und ab d-check v0.80.0 auch
+   **Home-relative** Pfade (Tilde, Schrägstrich, ein erstes Segment ohne
+   führenden Punkt: `~/<Verzeichnis>/…`; seit slice-dcheck-v0-82-0). Still
+   bleiben dabei, am Werkzeug gemessen: die
+   Werkzeug-Konvention mit Punkt-Segment (`~/.config/…`), die nackte Tilde, die
+   Tilde mit Benutzername und die Tilde in einem URL-Pfad. Das Modul meldet
+   damit mehr, als der Wortlaut von `AGENTS.md` §3.11 nennt (dort Wurzel-Segment
+   und Windows-Muster); ein Ventil `hostpaths.exempt-targets` setzt dieses Repo
+   nicht. Vier benannte Ränder:
    **Fenced-Code-Blöcke** prüft es nicht — einen Opt-out-Marker kennt es
    nicht; **relative** Pfade sind ungeprüft (die Zusage lautet nicht „kein
    Pfad verlässt das Repo"); die **Windows-Laufwerks- und UNC-Muster** sind
