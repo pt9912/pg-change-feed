@@ -226,15 +226,15 @@ sind durch die Fixrunde überholt und hier ersetzt.
 
 ```suchlauf
 b36f882d 75 -iE 'Zitat-Korrektur|Referent|gemessen gleich' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
-diff 103 -iE 'Zitat-Korrektur|Referent|gemessen gleich' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 104 -iE 'Zitat-Korrektur|Referent|gemessen gleich' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
 b36f882d 8 -wE 'cmp' -- *.md .d-check.yml :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
-diff 10 -wE 'cmp' -- *.md .d-check.yml :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 11 -wE 'cmp' -- *.md .d-check.yml :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
 b36f882d 15 -iE 'Vergleichseinheit|roh oder normalisiert|Normalisierung des|Tag-Paar|nicht messbar' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
-diff 28 -iE 'Vergleichseinheit|roh oder normalisiert|Normalisierung des|Tag-Paar|nicht messbar' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 29 -iE 'Vergleichseinheit|roh oder normalisiert|Normalisierung des|Tag-Paar|nicht messbar' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
 b36f882d 2 -e 'ADR-0158' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
-diff 9 -e 'ADR-0158' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 10 -e 'ADR-0158' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
 b36f882d 0 -e 'ADR-0159' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
-diff 24 -e 'ADR-0159' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 27 -e 'ADR-0159' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
 b36f882d 0 -F -e 'HTML-`id`' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
 diff 3 -F -e 'HTML-`id`' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
 ```
@@ -266,9 +266,14 @@ der Anker löst an keinem Stand auf. **Bei der Closure erledigt:** beide
 `state.md` nachgezogen (Zustand und Beleg nach `ADR-0158`/`ADR-0159`), `MR-001`
 korrigiert (§7).
 
-**Suchlauf bei der Closure nachgemessen.** Die `diff`-Zeilen sind am
-Arbeitsbaum der Closure gemessen (vor dem `git mv`); sie zählen den Folge-Slice,
-die Register-Einträge und die Nachzüge der Closure mit.
+**Suchlauf bei der Closure nachgemessen.** Die `diff`-Zeilen sind am Stand
+nach dem letzten Closure-Commit gemessen (`9ce2e35a`, Arbeitsbaum sauber); sie
+zählen den Folge-Slice, die Register-Einträge und die Nachzüge der Closure mit.
+Eine erste Messung vor dem Inhalts-Commit lag zu niedrig, weil `git grep` am
+Arbeitsbaum nur getrackte Dateien liest und die neuen Register-Dateien noch
+nicht getrackt waren. Das Werkzeug schließt jede Datei mit dem Basisnamen des
+Plans aus, also auch die drei `evidence/slice-zitat-korrektur-vergleichseinheit.md`.
+
 **Nicht gefunden:** kein Treffer in `.harness/skills/` (u. a. `reviewer.md`)
 und `.claude/commands/` (u. a. `implement-slice.md`); keine weitere Datei
 beschreibt die Vergleichseinheit oder die Messung am Pin-Commit.
@@ -499,9 +504,10 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   §Spec-Straten (Text, kein Link). Die Korrektur blieb auf den MR-Eintrag
   beschränkt; die Zelle zieht der nächste Zug an `harness/conventions.md`
   nach.
-- **Gates der Closure:** `make docs-check` und `make suchlauf-nachmessen` vor
-  dem Inhalts-Commit Exit 0; `make gates`, `make suchlauf-nachmessen` und
-  `make doc-immutable` in den Teil-Ranges um `ccbd0ac1` nach dem letzten
+- **Gates der Closure:** `make docs-check` vor dem Inhalts-Commit Exit 0;
+  `make doc-immutable` in den Teil-Ranges `b7d97cca..ccbd0ac1~1` und
+  `ccbd0ac1..9ce2e35a` je Exit 0 (`d-check: 1777 Datei(en) geprüft, 0
+  Befund(e)`). `make gates` und `make suchlauf-nachmessen` nach dem letzten
   Commit stehen im Bericht der Sitzung, nicht in diesem Plan.
 - **DoD „Drei Paarungen“:** abgehakt in §2 mit diesem Commit.
 
