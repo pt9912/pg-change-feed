@@ -177,7 +177,7 @@ Planungsstand hat keinen der Läufe im Repo gefahren
       begründete andere Behandlung; die Entscheidung je Zeile steht im Bericht.
       *Zu belegen durch:* den Suchlauf §3 mit `diff`-Zeilen,
       `make suchlauf-nachmessen` und `make docs-check` Exit 0 nach dem Löschen.
-- [ ] **Bump-Ablauf Schritte 1–3 mit Belegen, Nachzug der abgeleiteten Träger
+- [x] **Bump-Ablauf Schritte 1–3 mit Belegen, Nachzug der abgeleiteten Träger
       (Liefer-Punkt 3).** Schritt 1 (Delta je `templates/` und `regelwerk/`,
       versions-normalisiert, im Repo neu erzeugt), Schritt 2 (Stichprobe: Gliederung,
       Platzhalter mit beiden Mustern, voller `diff` für `harness/conventions.md`
@@ -282,7 +282,7 @@ nach der Form, die (c) wählt. Jede Abweichung davon steht mit Grund im Feld.
 ### Bump-Ablauf — Belege (Implementer)
 
 Gemessen am 2026-10-06 im Repo, beide Bäume nebeneinander
-(`.harness/baseline/v6.14.0/` und `.harness/baseline/v6.14.1/`, Commit
+(Tag-Verzeichnisse v6.14.0 und v6.14.1 unter `.harness/baseline/`, Commit
 `4da92b66`). Normalisierte Kopien und Ausgaben liegen im Scratchpad des Laufs
 (`<Scratchpad>/impl-6141/`), keine Repo-Datei geschrieben.
 
@@ -399,6 +399,57 @@ Form `<z.B.` der `AGENTS.template.md`; Muster 1 verfehlt Platzhalter, die über
 eine Zeilengrenze laufen. Eine Änderung der Verfahrensregel ist ein anderer
 Vorgang (§1); Adresse vergibt der Planner bei der Closure.
 
+**Nachzüge (b) und (c), `bc0aaeeb`.** (b) `harness/conventions.md` MR-000
+nennt im ID-Schema `BEO-<KUERZEL>/<slug>` wie Zeile 107 der
+`conventions.template.md` v6.14.1. (c) Muster in
+`.claude/commands/implement-slice.md` Schritt 24 jetzt
+`Auslöser: .BEO-<(NNN|KUERZEL)>`. Probe mit drei Dateien im Scratchpad — die
+`Auslöser:`-Zeile der Slice-Vorlage v6.14.0, dieselbe Zeile aus v6.14.1, eine
+gefüllte Zeile `` Auslöser: `BEO-PGC/vorlagenrest-in-closure-notiz` (…) ``:
+das neue Muster trifft alt (Exit 0, Zeile 194) und neu (Exit 0, Zeile 194),
+die gefüllte nicht (Exit 1); das alte Muster gegen die neue Zeile: Exit 1 —
+das ist die Lücke, die (c) schließt.
+
+### Verweise, Pins und Records — Entscheidung je Zeile (Implementer)
+
+**`ADR-0095` (Zitat-Korrektur, `eadf3054`, §Geschichte-Kennung `1ef273f9`).**
+Korrigiert ist genau eine Stelle: Abschnitt **§Verglichene Alternativen**,
+Options-Tabelle, Zeile A, Spalte *Contra* — das Versions-Pfadsegment der
+Baseline-Vorlage `templates/.d-check.yml` (v6.14.0 → v6.14.1). Dazu eine neue
+Zeile in **§Geschichte** (der Abschnitt, den
+[`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) als
+Beleg-Ort verlangt). Angewandt ist die **Kurzform** von `ADR-0073` („das Gerüst
+darf sich ändern, die Aussage nie; der Referent bleibt derselbe"), nicht die
+Abschnitte-Liste von §Entscheidung 1, die §Verglichene Alternativen als
+unberührbar führt. Referent gemessen unverändert: `templates/.d-check.yml`
+ist zwischen beiden Tags roh byte-gleich (`cmp`, Exit 0), die Aussage über
+`matrix.status` steht unverändert. Das ist das dritte Auftreten von
+`BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform` (§6); Folge-Slice und
+Evidence legt die Closure an, nicht dieser Lauf.
+
+**Records** (mit `make docs-check` gemessen: am Arbeitsbaum nach dem
+Umstellen von `harness/conventions.md` §Baseline, vor `5d8855d9`, meldete
+`versions` zehn `version-stale`-Befunde — `ADR-0095`, sieben Record-Zeilen,
+zwei Zeilen dieses Plans; die zwei Plan-Zeilen sind umformuliert, ohne
+Pfad-Segment; am Stand `bc0aaeeb` bleiben zwei, Zeilen 277 und 337). Kriterium
+je Zeile: Referent zwischen v6.14.0 und v6.14.1 normalisiert byte-gleich
+(`cmp` auf den Kopien aus Schritt 1)?
+
+| Record-Zeile | Referent | `cmp` | Gate | Entscheidung |
+|---|---|---|---|---|
+| `done/slice-baseline-6-14-0-dokumente-nachziehen.md` 109 | `templates/docs/plan/planning/README.template.md` | 0 | `versions` | Zitat-Korrektur, `54c6e632` |
+| `done/slice-harness-guard-blocked-python.md` 191 | `templates/harness/conventions/MR-NNN-titel.template.md` | 0 | `versions` | Zitat-Korrektur, `54c6e632` |
+| `done/slice-harness-guard-blocked-python.md` 272 (Link) | `regelwerk/modul-13-quality-gates.md` samt Anker | 0 | `versions`, `links` | Zitat-Korrektur, `54c6e632` |
+| `done/slice-harness-guard-inplace-textwerkzeug.md` 162 | `templates/harness/conventions/MR-NNN-titel.template.md` | 0 | `versions` | Zitat-Korrektur, `54c6e632` |
+| `done/slice-harness-readme-zellen-kuerzen.md` 41 | `templates/harness/README.template.md` | 0 | `versions` | Zitat-Korrektur, `54c6e632` |
+| `done/slice-baseline-6-14-0-dokumente-nachziehen.md` 277 (`suchlauf`-Zeile) | `templates/docs/plan/planning/README.template.md`, als Pfad-Argument von `git grep` am Commit `d79b7ebd` | 0 | `versions` (`version-stale`, gemessen — das Modul liest den Fence) | **offen, angehalten** — eine Korrektur ändert die Messung: `git grep -c … d79b7ebd -- <v6.14.0-Pfad>` druckt 1 (Exit 0), mit dem v6.14.1-Pfad nichts (Exit 1); das Soll 1 der Zeile wäre falsch |
+| `done/slice-baseline-6-14-0-dokumente-nachziehen.md` 337 | `templates/docs/reviews/review-report.template.md` | 1 | `versions` | **offen, angehalten** — Referent geändert (Zeile 93 der Vorlage, `BEO-<NNN>` → „Beobachtung") |
+| `docs/reviews/architect-verdict-aufschub-adresse-verfaellt.md` 114 (Link) | `templates/docs/plan/planning/slice.template.md` | 1 | `links` (nach dem Entfernen von v6.14.0; `versions` nimmt `docs/reviews/**` aus) | **offen, angehalten** — Referent geändert (drei Zeilen `BEO-<NNN>`) |
+
+Die drei offenen Zeilen sind dem Auftraggeber zur Entscheidung gemeldet; bis
+dahin bleibt v6.14.0 im Repo, und `make gates` ist rot (`baseline-verify`:
+zwei Tag-Verzeichnisse; `docs-check`: Zeilen 277 und 337).
+
 ## 4. Trigger
 
 <!-- BEDIENHINWEIS: Beispiele — "Wenn Welle X done." / "Wenn Carveout CO-NN
@@ -480,7 +531,7 @@ dasteht.
   eingetreten, mit der Kennung des Folge-Slice.
 - **Eine Pin-Zeile in einem Record misst an ihrem Commit gegen den v6.14.0-Pfad**
   (`done/slice-baseline-6-14-0-dokumente-nachziehen.md`, `suchlauf`-Zeile mit
-  `-- .harness/baseline/v6.14.0/…`): eine Zitat-Korrektur änderte das Ergebnis
+  Pfad-Argument in das Tag-Verzeichnis v6.14.0): eine Zitat-Korrektur änderte das Ergebnis
   der Messung, die der Record festhält, und wäre keine reine Gerüst-Änderung.
   *Zu belegen durch:* die Entscheidung je Zeile im Bericht (Korrektur,
   Ausnahme-Marker mit Grund, oder Folge-ADR).
