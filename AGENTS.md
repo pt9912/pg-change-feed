@@ -227,8 +227,11 @@ adressiert die Zeile, eine `id` vor oder in einem Absatz den Block bis vor das
 nächste Heading) oder die zitierten Zeilen —, roh, und ein Versions-Segment
 nur nach Normalisierung des bewegten Tag-Paars
 ([`ADR-0158`](docs/plan/adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md),
-[`ADR-0159`](docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md),
-dort die Befehlsform).
+[`ADR-0159`](docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)).
+Gemessen wird mit `make zitat-vergleich`; Aufruf, Ausgänge und Grenzen stehen in
+[`harness/targets/zitat-vergleich.md`](harness/targets/zitat-vergleich.md), die
+Auslegung der Einheit (gestapelte `id`, `id` in anderer Form, Fence) im
+[Architect-Verdikt](docs/reviews/architect-verdict-zitat-vergleich-werkzeug.md) §3.
 Herkunft: `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform` ·
 seit slice-harness-baseline-v6-14-1.
 
@@ -240,7 +243,7 @@ Commit-Kennung). Records (`done/`, `docs/reviews/**`) tragen keine §Geschichte 
 bei ihnen ist die Commit-Kennung der Beleg. Für eine Zitat-Korrektur an einer
 `Accepted` ADR oder einem MR-Eintrag (`ADR-0157`) nennt der Beleg zusätzlich je
 Verweis Form, Einheit, beide Stände, roh oder normalisiert und die gedruckte
-Zeile des Vergleichs, oder „nicht messbar“ mit Grund (`ADR-0158`
+Zeile von `make zitat-vergleich`, oder „nicht messbar“ mit Grund (`ADR-0158`
 Entscheidung 4, 5; für einen MR-Eintrag `ADR-0159` Entscheidung 2); für Records bleibt die Commit-Kennung der Beleg.
 
 ### 3.6 Gates dürfen nicht ohne ADR gelockert werden

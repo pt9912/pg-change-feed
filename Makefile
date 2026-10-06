@@ -123,6 +123,15 @@ suchlauf-nachmessen: ## Misst die suchlauf-Blöcke eines Slice-Plans nach: make 
 test-suchlauf-nachmessen: ## Tabellentest gegen tools/harness/suchlauf-nachmessen.sh (elf Fälle gegen ein Wegwerf-Repo, netzlos)
 	@bash tools/harness/run-suchlauf-nachmessen-tests.sh
 
+.PHONY: zitat-vergleich
+zitat-vergleich: ## Referent-Messung einer Zitat-Korrektur: make zitat-vergleich ARGS="<alt-stand> <alt-pfad> '<alt-ref>' <neu-stand> <neu-pfad> '<neu-ref>' [<alt-tag>:<neu-tag>]" (netzlos, kein Gate; harness/targets/zitat-vergleich.md)
+	$(if $(ARGS),,$(error ARGS fehlt, z.B. make zitat-vergleich ARGS="<alt-stand> <pfad> '#anker' <neu-stand> <pfad> '#anker'"))
+	@bash tools/harness/zitat-vergleich.sh $(ARGS)
+
+.PHONY: test-zitat-vergleich
+test-zitat-vergleich: ## Tabellentest gegen tools/harness/zitat-vergleich.sh (Wegwerf-Repo, drei Runden: ohne Option, nullglob, failglob; netzlos)
+	@bash tools/harness/run-zitat-vergleich-tests.sh
+
 .PHONY: kommentar-kennungen
 kommentar-kennungen: ## Listet Go-Kommentarblöcke mit mehr als einer Kennung oder "ff." (Kandidaten): make kommentar-kennungen [PATHS=<Pfade>] [COUNT=1] [TESTS=exclude|only] [DIFF=<Basis>] (Docker-only, netzlos, kein Gate; harness/sensors/kommentar-kennungen.md)
 	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" bash tools/harness/kommentar-kennungen.sh "$(PATHS)" "$(COUNT)" "$(TESTS)" "$(DIFF)"

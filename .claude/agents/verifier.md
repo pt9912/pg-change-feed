@@ -49,8 +49,9 @@ Disziplin.
   Exit 0) — Befehl in
   [`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
   Entscheidung 4; dazu je Verweis, dessen Versions-Segment der Pin-Commit
-  bewegt, die Referent-Messung mit `vergleich` (Befehlsform in
-  [`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
-  Entscheidung 4); ein Referent, der an keinem Stand auflöst, ist „nicht
+  bewegt, die Referent-Messung mit `make zitat-vergleich` (Vertrag
+  `harness/targets/zitat-vergleich.md`, Einheit nach
+  [`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md));
+  ein Referent, der an keinem Stand auflöst, ist „nicht
   messbar“ und wird gemeldet
 - Bericht-Ort: `docs/reviews/` (Gerüst: `.harness/baseline/v6.14.1/templates/docs/reviews/review-report.template.md`)

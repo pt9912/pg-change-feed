@@ -51,9 +51,11 @@ Disziplin.
   `P..head`; am Pin-Commit selbst belegt der Messende im Slice-Plan des Bumps
   je MR-Datei den `cmp`
   ([`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
-  Entscheidung 4) und je bewegtem Verweis die Referent-Messung
+  Entscheidung 4) und je bewegtem Verweis die Referent-Messung mit
+  `make zitat-vergleich`
   ([`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
-  Entscheidung 2); der Verifier fährt beide nach
+  Entscheidung 2, Vertrag `harness/targets/zitat-vergleich.md`); der Verifier
+  fährt beide nach
 - Nicht-Gate-Sensoren, die dieser Command nennt (rot färbende Mutation je
   Zusage), laufen vor der „fertig"-Meldung; halluzinierte Targets sind verboten
   (AGENTS.md §4) — nur Targets aus `Makefile`/`d-check.mk` nennen

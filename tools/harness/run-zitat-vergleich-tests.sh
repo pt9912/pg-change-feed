@@ -1,0 +1,241 @@
+#!/usr/bin/env bash
+# run-zitat-vergleich-tests.sh — Tabellentest gegen zitat-vergleich.sh
+# (harness/targets/zitat-vergleich.md): je Fall ein Aufruf gegen ein
+# Wegwerf-Repo im Temp-Verzeichnis, mit Soll-Exit und Muster der Ausgabe.
+# Die Fall-Tabelle läuft dreimal: ohne Shell-Option, unter nullglob und unter
+# failglob (über BASHOPTS des Prüflings). Fallgruppen: HTML-id je Stellung ·
+# fail-closed · set -euo pipefail · roh · Normalisierung und Tag-Paar ·
+# Regressionsfälle (Anker-Wechsel, Lokator, git mv) · Heading mit Inline-Code ·
+# Fence nach CommonMark · gestapelte id · id in anderer Form · Locale und
+# Fähigkeitsprobe von awk · Argumente.
+# Netzlos, kein Docker (bash, git, awk, sed, cmp, env). Der Prüfling ist per
+# PROG übersteuerbar (Mutationsläufe gegen eine Kopie).
+set -uo pipefail
+repo=$(git rev-parse --show-toplevel)
+prog=${PROG:-$repo/tools/harness/zitat-vergleich.sh}
+case "$prog" in /*) ;; *) prog=$PWD/$prog ;; esac
+[ -f "$prog" ] || { echo "run-zitat-vergleich-tests: Prüfling $prog fehlt" >&2; exit 2; }
+real_awk=$(command -v awk)
+
+tmp=$(mktemp -d "${TMPDIR:-/tmp}/zitat-vergleich-test.XXXXXX")
+trap 'rm -rf "$tmp"' EXIT
+cd "$tmp" || exit 1
+
+git init -q .
+git config user.name test
+git config user.email test@example.invalid
+git config commit.gpgsign false
+
+# commit <Nachricht> — committet den Arbeitsbaum und druckt die kurze Kennung;
+# ein Fehler beim Aufbau beendet den Test mit Exit 2.
+commit() {
+  git add -A && git commit -q -m "$1" >/dev/null || { echo "run-zitat-vergleich-tests: Aufbau-Commit '$1' gescheitert" >&2; exit 2; }
+  git rev-parse --short HEAD
+}
+
+# --- Stand c0: alle Fixtures in Ausgangsform ---------------------------------
+mkdir -p .harness/baseline/v6.14.0
+printf 'Baseline v6.14.0\n' >.harness/baseline/v6.14.0/README.md
+g_base='# Modul 13\n\n<a id="gh"></a>\n\n## Guard-Härtung: Wächter reifen\n\nKörper eins.\n\n## Danach\n\nRest.\n'
+printf "$g_base" >g1.md
+printf "$g_base" >g2.md
+printf "$g_base" >g3.md
+printf '# Tabelle\n\n| MR | Titel |\n|---|---|\n| MR-003 <a id="mr-003"></a> | alpha |\n| MR-004 <a id="mr-004"></a> | beta |\n' >t.md
+printf '# P\n\n<a id="absatz"></a>\nErster Absatz alpha.\n\nZweiter Absatz.\n\n## Weiter\n\nx\n' >p.md
+printf '# H\n\n## 2x2 Matrix <a id="m22"></a>\n\nInhalt alpha.\n' >h.md
+printf '# I\n\nSiehe `<a id="code"></a>` hier.\n' >i.md
+printf 'x\n' >r1.md
+printf '## S\n\ntext' >s.md
+printf '# A\n\n## Teilfrage 2\n\nzwei\n\n## Teilfrage 3\n\ndrei\n' >ad.md
+printf 'eins\nzwei\ndrei\nvier\nfuenf\nsechs\n' >lz.md
+printf '# Mv\n\ninhalt\n' >mv.md
+printf '# N1\n\n## Der `make gates`-Lauf\n\nalpha\n' >n1.md
+printf '## Ungerade\n\nvor\n\n````\n```\n## im fence\n````\n\nnachher alpha\n\n## Ende\n\nschluss\n' >fe.md
+printf '## Gerade\n\nvor\n\n````\n```\ncode\n```\n## im fence\n````\n\nnachher alpha\n' >fe2.md
+printf '## Tilde\n\n```\n~~~\n## nicht\n```\n\nnachher alpha\n' >ft.md
+printf '## Eins\n\n```a`b\n## Zwei\n\nzwei alpha\n' >fb.md
+printf '# S\n\n<a id="oben"></a>\n<a id="unten"></a>\n\n## Abschnitt\n\nKörper alpha.\n' >st.md
+printf '<a id="s1"></a>\n<a id="s2"></a>\n\nAbsatz alpha.\n\n## H\n\nh\n' >sp.md
+printf '# F\n\n<a id="attr" class="k"></a>\n\n## A\n\nalpha\n' >fa.md
+printf '# F\n\n<a id="selbst"/>\n\n## B\n\nalpha\n' >fs.md
+printf '# F\n\n## Doppel\n\nalpha\n\n<a id="doppel" class="x"></a>\n' >fh.md
+printf '## Fi\n\nText mit `<a id="fi" class="k">` hier.\n' >fi.md
+printf '<a id="fz"></a>\n\n```\ncode\n```\ntext\n\n## Next\n\nn\n' >fz.md
+printf '## Pins\n\nPfad .harness/baseline/v6.14.0/regelwerk/x.md und https://github.com/pt9912/ai-harness-course/blob/v6.14.0/x.md\n' >n.md
+printf '## Pins\n\nPfad .harness/baseline/v6.14.0/x.md und https://example.org/tool/v0.79.0/bin\n' >fp.md
+printf '## Pins\n\nWerkzeug https://example.org/tool/v0.79.0/bin\n' >fo.md
+c0=$(commit c0) || exit 2
+
+# --- je Commit eine Änderung -------------------------------------------------
+printf '# Modul 13\n\n<a id="gh"></a>\n\n## Guard-Härtung: Wächter reifen neu\n\nKörper eins.\n\n## Danach\n\nRest.\n' >g1.md
+c_head=$(commit "nur Heading-Zeile") || exit 2
+printf '# Modul 13\n\n<a id="gh"></a>\n\n## Guard-Härtung: Wächter reifen\n\nKörper zwei.\n\n## Danach\n\nRest.\n' >g2.md
+c_body=$(commit "Wort im Körper") || exit 2
+printf '# Modul 13\n\n<a id="gh"></a>\n\n## Guard-Härtung: Wächter reifen\n\nKörper eins.\n\n\n## Danach\n\nRest.\n' >g3.md
+c_leer=$(commit "Leerzeile im Abschnitt") || exit 2
+printf '# Tabelle\n\n| MR | Titel |\n|---|---|\n| MR-003 <a id="mr-003"></a> | alpha |\n| MR-004 <a id="mr-004"></a> | gamma |\n' >t.md
+c_tab=$(commit "Wort in Zeile MR-004") || exit 2
+printf '# P\n\n<a id="absatz"></a>\nErster Absatz beta.\n\nZweiter Absatz.\n\n## Weiter\n\nx\n' >p.md
+printf '# H\n\n## 2x2 Matrix <a id="m22"></a>\n\nInhalt beta.\n' >h.md
+printf 'x\n\n\n\n' >r1.md
+printf '## S\n\ntext\n' >s.md
+printf 'neu1\nneu2\nneu3\neins\nzwei\ndrei\nvier\nfuenf\nsechs\n' >lz.md
+printf '# N1\n\n## Der `make gates`-Lauf\n\nbeta\n' >n1.md
+printf '## Ungerade\n\nvor\n\n````\n```\n## im fence\n````\n\nnachher beta\n\n## Ende\n\nschluss\n' >fe.md
+printf '## Gerade\n\nvor\n\n````\n```\ncode\n```\n## im fence\n````\n\nnachher beta\n' >fe2.md
+printf '## Tilde\n\n```\n~~~\n## nicht\n```\n\nnachher beta\n' >ft.md
+printf '## Eins\n\n```a`b\n## Zwei\n\nzwei beta\n' >fb.md
+printf '# S\n\n<a id="oben"></a>\n<a id="unten"></a>\n\n## Abschnitt\n\nKörper beta.\n' >st.md
+printf '<a id="s1"></a>\n<a id="s2"></a>\n\nAbsatz beta.\n\n## H\n\nh\n' >sp.md
+c_wort=$(commit "Wortänderungen") || exit 2
+git mv mv.md mv2.md || exit 2
+c_mv=$(commit "git mv") || exit 2
+# Bump: neuer Baseline-Baum neben dem alten, Tag in Pfad und Kurs-URL bewegt;
+# in fp.md zusätzlich ein fremder Pin, in fo.md nur ein fremder Pin.
+mkdir -p .harness/baseline/v6.14.1
+printf 'Baseline v6.14.1\n' >.harness/baseline/v6.14.1/README.md
+printf '## Pins\n\nPfad .harness/baseline/v6.14.1/regelwerk/x.md und https://github.com/pt9912/ai-harness-course/blob/v6.14.1/x.md\n' >n.md
+printf '## Pins\n\nPfad .harness/baseline/v6.14.1/x.md und https://example.org/tool/v0.80.0/bin\n' >fp.md
+printf '## Pins\n\nWerkzeug https://example.org/tool/v0.80.0/bin\n' >fo.md
+c_bump=$(commit "Bump") || exit 2
+
+fail=0
+count=0
+out=""
+rc=0
+opts=""
+
+# run <Argumente des Prüflings> — Ausgabe (stdout und stderr) und Exit; die
+# Shell-Option der Runde steht in BASHOPTS des Prüflings.
+run() {
+  if [ -n "$opts" ]; then
+    out=$(env BASHOPTS="$opts" bash "$prog" "$@" 2>&1)
+  else
+    out=$(bash "$prog" "$@" 2>&1)
+  fi
+  rc=$?
+}
+
+expect() { # <Fallname> <erwarteter Exit> <Muster in der Ausgabe oder ->
+  local name=$1 want_rc=$2 pattern=$3
+  count=$((count + 1))
+  if [ "$rc" -ne "$want_rc" ]; then
+    echo "FEHLER [${opts:-ohne Option}]: $name — Exit $rc, erwartet $want_rc; Ausgabe:" >&2
+    printf '%s\n' "$out" >&2
+    fail=1
+  elif [ "$pattern" != "-" ] && ! printf '%s\n' "$out" | grep -qE -- "$pattern"; then
+    echo "FEHLER [${opts:-ohne Option}]: $name — Ausgabe trägt '$pattern' nicht:" >&2
+    printf '%s\n' "$out" >&2
+    fail=1
+  fi
+}
+
+# check <Fallname> <Exit> <Muster> <Argumente…> — run und expect in einem.
+check() {
+  local name=$1 want_rc=$2 pattern=$3
+  shift 3
+  run "$@"
+  expect "$name" "$want_rc" "$pattern"
+}
+
+cases() {
+  # HTML-id vor einem Heading: Einheit ist der Abschnittskörper.
+  check "id vor Heading, nur Heading-Zeile geändert" 0 'cmp 0' "$c0" g1.md '#gh' "$c_head" g1.md '#gh'
+  check "id vor Heading, Wort im Körper (A1)" 1 'vergleich roh: .*cmp 1' "$c0" g2.md '#gh' "$c_body" g2.md '#gh'
+  check "id vor Heading gegen sich selbst" 0 'cmp 0' "$c_body" g2.md '#gh' "$c_body" g2.md '#gh'
+  check "Zeile der id unverändert" 0 'cmp 0' "$c0" g2.md 'L3-3' "$c_body" g2.md 'L3-3'
+  check "id-Einheit gleich Einheit des Heading-Slugs mit Umlaut" 0 'cmp 0' "$c0" g2.md '#gh' "$c0" g2.md '#guard-härtung-wächter-reifen'
+  check "Leerzeile im Abschnitt (A4b)" 1 'cmp 1' "$c0" g3.md '#gh' "$c_leer" g3.md '#gh'
+  # HTML-id in einer Tabellenzeile: Einheit ist die Zeile.
+  check "Tabellenzeile, Wort in der eigenen Zeile" 1 'cmp 1' "$c0" t.md '#mr-004' "$c_tab" t.md '#mr-004'
+  check "Tabellenzeile, Wort in der Nachbarzeile" 0 'cmp 0' "$c0" t.md '#mr-003' "$c_tab" t.md '#mr-003'
+  check "Tabellenzeile gegen Abschnitt (N2)" 1 'cmp 1' "$c0" t.md '#mr-004' "$c0" t.md '#tabelle'
+  # HTML-id vor einem Absatz und in einer Heading-Zeile.
+  check "id vor Absatz, Wort im Absatz" 1 'cmp 1' "$c0" p.md '#absatz' "$c_wort" p.md '#absatz'
+  check "id in Heading-Zeile, Wort im Abschnitt" 1 'cmp 1' "$c0" h.md '#m22' "$c_wort" h.md '#m22'
+  check "id in Heading-Zeile, Änderung in anderer Datei" 0 'cmp 0' "$c0" h.md '#m22' "$c_tab" h.md '#m22'
+  check "id nur in Inline-Code" 2 'keine Einheit, Exit 2' "$c0" i.md '#code' "$c0" i.md '#code'
+  # fail-closed.
+  check "verschiedene Einheiten (A2)" 1 'cmp 1' "$c0" g2.md '#gh' "$c0" p.md '#absatz'
+  check "fehlende Datei" 2 'keine Einheit, Exit 2' "$c0" fehlt.md '' "$c0" g1.md ''
+  check "fehlende Datei, Meldung" 2 'nicht lesbar' "$c0" fehlt.md '' "$c0" g1.md ''
+  check "unbekannter Anker links" 2 "^vergleich: $c0:g1.md#unbekannt keine Einheit, Exit 2" "$c0" g1.md '#unbekannt' "$c0" g1.md '#gh'
+  check "unbekannter Anker rechts" 2 "^vergleich: $c0:g1.md#unbekannt keine Einheit, Exit 2" "$c0" g1.md '#gh' "$c0" g1.md '#unbekannt'
+  check "Lokator X1-2" 2 'einheit: Lokator X1-2' "$c0" g1.md 'X1-2' "$c0" g1.md 'X1-2'
+  check "Lokator L0-0" 2 'Exit 2' "$c0" g1.md 'L0-0' "$c0" g1.md 'L0-0'
+  check "Tag-Paar mit Bindestrich" 2 'Tag-Paar v6.14.0-v6.14.1, Exit 2' "$c_wort" n.md '' "$c_bump" n.md '' 'v6.14.0-v6.14.1'
+  check "Tag-Paar mit Suffix" 2 'Tag-Paar v6.14.0:v6.14.1x, Exit 2' "$c_wort" n.md '' "$c_bump" n.md '' 'v6.14.0:v6.14.1x'
+  # roh: byte-gleich, abschließende Leerzeilen eingeschlossen.
+  check "abschließende Leerzeilen der Datei (A4)" 1 'cmp 1' "$c0" r1.md '' "$c_wort" r1.md ''
+  check "Leerzeile als Lokator ist eine Einheit" 0 'cmp 0' "$c_wort" r1.md 'L2-2' "$c_wort" r1.md 'L3-3'
+  check "Schluss-Umbruch, Abschnitt" 0 'cmp 0' "$c0" s.md '#s' "$c_wort" s.md '#s'
+  check "Schluss-Umbruch, ganze Datei" 1 'cmp 1' "$c0" s.md '' "$c_wort" s.md ''
+  # Normalisierung nur des bewegten Tags; Tag-Paar an den Baseline-Bäumen.
+  check "Bump roh" 1 'vergleich roh: .*cmp 1' "$c_mv" n.md '#pins' "$c_bump" n.md '#pins'
+  check "Bump mit Tag-Paar" 0 'vergleich norm v6.14.0:v6.14.1: .*cmp 0' "$c_mv" n.md '#pins' "$c_bump" n.md '#pins' 'v6.14.0:v6.14.1'
+  check "Bump, ganze Datei mit Tag-Paar" 0 'cmp 0' "$c_mv" n.md '' "$c_bump" n.md '' 'v6.14.0:v6.14.1'
+  check "fremder Pin neben dem Bump bleibt roh (A5)" 1 'vergleich norm v6.14.0:v6.14.1: .*cmp 1' "$c_mv" fp.md '#pins' "$c_bump" fp.md '#pins' 'v6.14.0:v6.14.1'
+  check "nur fremder Pin roh (N7)" 1 'cmp 1' "$c_mv" fo.md '#pins' "$c_bump" fo.md '#pins'
+  check "nur fremder Pin, Bump-Paar (N7)" 1 'cmp 1' "$c_mv" fo.md '#pins' "$c_bump" fo.md '#pins' 'v6.14.0:v6.14.1'
+  check "fremdes Paar ohne Baseline-Baum (N7)" 2 "$c_mv trägt .harness/baseline/v0.79.0 nicht, Exit 2" "$c_mv" fo.md '#pins' "$c_bump" fo.md '#pins' 'v0.79.0:v0.80.0'
+  check "Tag-Paar mit gleichen Tags" 2 'mit gleichen Tags, Exit 2' "$c_bump" n.md '' "$c_bump" n.md '' 'v6.14.1:v6.14.1'
+  check "alter Stand ohne alten Baum" 2 "$c_mv trägt .harness/baseline/v6.14.1 nicht, Exit 2" "$c_mv" n.md '' "$c_bump" n.md '' 'v6.14.1:v6.14.0'
+  check "neuer Stand ohne neuen Baum" 2 "$c_mv trägt .harness/baseline/v6.14.1 nicht, Exit 2" "$c_bump" n.md '' "$c_mv" n.md '' 'v6.14.0:v6.14.1'
+  check "leeres Tag-Paar" 2 'Tag-Paar , Exit 2' "$c_mv" n.md '' "$c_bump" n.md '' ''
+  # Regressionsfälle: Anker-Wechsel, Lokator, git mv.
+  check "Anker-Wechsel auf anderen Abschnitt" 1 'cmp 1' "$c0" ad.md '#teilfrage-2' "$c_wort" ad.md '#teilfrage-3'
+  check "gleicher Anker" 0 'cmp 0' "$c0" ad.md '#teilfrage-2' "$c_wort" ad.md '#teilfrage-2'
+  check "Lokator nachgezogen" 0 'cmp 0' "$c0" lz.md 'L2-4' "$c_wort" lz.md 'L5-7'
+  check "Lokator nicht nachgezogen" 1 'cmp 1' "$c0" lz.md 'L2-4' "$c_wort" lz.md 'L2-4'
+  check "git mv, alte Adresse am neuen Stand" 2 'keine Einheit, Exit 2' "$c_mv" mv.md '' "$c_mv" mv2.md ''
+  check "git mv, alte Adresse am Parent" 0 'cmp 0' "$c_wort" mv.md '' "$c_mv" mv2.md ''
+  # Heading mit Inline-Code (N1).
+  check "Heading mit Inline-Code (N1)" 1 'cmp 1' "$c0" n1.md '#der-make-gates-lauf' "$c_wort" n1.md '#der-make-gates-lauf'
+  # Fence nach CommonMark (F-3).
+  check "Fence aus vier Backticks, ein innerer Fence (F-3)" 1 'cmp 1' "$c0" fe.md '#ungerade' "$c_wort" fe.md '#ungerade'
+  check "Abschnitt hinter dem Fence (F-3)" 0 'cmp 0' "$c0" fe.md '#ende' "$c_wort" fe.md '#ende'
+  check "Fence aus vier Backticks, zwei innere Fences (N6)" 1 'cmp 1' "$c0" fe2.md '#gerade' "$c_wort" fe2.md '#gerade'
+  check "~~~ in einem Fence aus Backticks" 1 'cmp 1' "$c0" ft.md '#tilde' "$c_wort" ft.md '#tilde'
+  check "Backtick im Info-String öffnet keinen Fence" 0 'cmp 0' "$c0" fb.md '#eins' "$c_wort" fb.md '#eins'
+  check "Fence direkt nach id-Zeile gehört zur Einheit" 0 'cmp 0' "$c0" fz.md '#fz' "$c0" fz.md 'L3-7'
+  # Gestapelte id (F-1).
+  check "gestapelte id, obere (F-1)" 1 'cmp 1' "$c0" st.md '#oben' "$c_wort" st.md '#oben'
+  check "gestapelte id, untere (F-1)" 1 'cmp 1' "$c0" st.md '#unten' "$c_wort" st.md '#unten'
+  check "gestapelte id adressiert den Abschnitt" 0 'cmp 0' "$c0" st.md '#oben' "$c0" st.md '#abschnitt'
+  check "gestapelte id vor Absatz, Einheit ist der Block" 0 'cmp 0' "$c0" sp.md '#s1' "$c0" sp.md 'L4-5'
+  check "gestapelte id vor Absatz, Wort im Absatz" 1 'cmp 1' "$c0" sp.md '#s1' "$c_wort" sp.md '#s1'
+  # id in anderer Form (F-2).
+  check "id mit Attribut (F-2)" 2 'anderer Form .*Exit 2|keine Einheit, Exit 2' "$c0" fa.md '#attr' "$c0" fa.md '#attr'
+  check "id mit Attribut, Meldung (F-2)" 2 '<a id="attr" in anderer Form' "$c0" fa.md '#attr' "$c0" fa.md '#attr'
+  check "id selbstschließend (F-2)" 2 '<a id="selbst" in anderer Form' "$c0" fs.md '#selbst' "$c0" fs.md '#selbst'
+  check "id mit Attribut neben gleichnamigem Heading-Slug (F-2)" 2 '<a id="doppel" in anderer Form' "$c0" fh.md '#doppel' "$c0" fh.md '#doppel'
+  check "andere Form in Inline-Code bleibt ungelesen" 0 'cmp 0' "$c0" fi.md '#fi' "$c0" fi.md '#fi'
+  # Locale und Fähigkeitsprobe (F-6).
+  out=$(env ${opts:+BASHOPTS="$opts"} LC_ALL=C bash "$prog" "$c0" g2.md '#guard-härtung-wächter-reifen' "$c0" g2.md '#guard-härtung-wächter-reifen' 2>&1)
+  rc=$?
+  expect "Umlaut-Slug unter LC_ALL=C beim Aufrufer (L)" 0 'cmp 0'
+  mkdir -p "$tmp/stub"
+  printf '#!/bin/sh\nLC_ALL=C exec %s "$@"\n' "$real_awk" >"$tmp/stub/awk"
+  chmod +x "$tmp/stub/awk"
+  out=$(env ${opts:+BASHOPTS="$opts"} PATH="$tmp/stub:$PATH" bash "$prog" "$c0" g1.md '' "$c0" g1.md '' 2>&1)
+  rc=$?
+  expect "awk ohne Multibyte" 2 'awk ohne Multibyte/UTF-8'
+  # Argumente.
+  check "fünf Argumente" 2 '^Aufruf: .*5 Argumente' "$c0" g1.md '#gh' "$c0" g1.md
+  check "acht Argumente" 2 '^Aufruf: .*8 Argumente' "$c0" g1.md '#gh' "$c0" g1.md '#gh' 'v6.14.0:v6.14.1' x
+  # set -euo pipefail beim Aufrufer: die Zeile steht vor dem Abbruch.
+  out=$(env ${opts:+BASHOPTS="$opts"} SHELLOPTS=errexit:nounset:pipefail bash "$prog" "$c0" g2.md '#gh' "$c_body" g2.md '#gh' 2>&1)
+  rc=$?
+  expect "roter Vergleich unter set -euo pipefail" 1 'vergleich roh: .*cmp 1'
+}
+
+for opts in "" nullglob failglob; do
+  cases
+done
+
+if [ "$fail" -eq 0 ]; then
+  echo "run-zitat-vergleich-tests: $count Fälle bestanden (je Runde $((count / 3)), Runden: ohne Option, nullglob, failglob)"
+else
+  echo "run-zitat-vergleich-tests: mindestens ein Fall gescheitert ($count Fälle)" >&2
+  exit 1
+fi
