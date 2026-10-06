@@ -238,9 +238,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Zeilen der Werkzeug-Tabelle, „Tut was“ unter 120 Zeichen). Suchlauf in
       §3 unten.
 - [x] `make gates` grün (Lauf nach dem letzten Commit, im Bericht).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      **Beleg:** `docs/reviews/review-slice-zitat-vergleich-werkzeug-fixrunde-3.md`
+      (0 HIGH, 0 MEDIUM, 1 LOW an die Closure; Nachzug durch den Reviewer
+      ohne Fixrunde).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
