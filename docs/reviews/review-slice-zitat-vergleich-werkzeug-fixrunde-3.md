@@ -64,7 +64,7 @@ geändertem Körper folgen nur in a):
 | c | `` Erst `a` und `b` dann <a id="qc"></a> `` | außerhalb | 4 davor → gelesen, `cmp 1` |
 | d | `` Erst `a` dann <a id="qd"></a> und `b` `` | außerhalb | 2 davor → gelesen, `cmp 1` |
 | e | `` Text \` <a id="qe"></a> \` `` | außerhalb (beide escaped) | 1 davor → nicht gelesen, leere Einheit, Exit 2 (fail-closed) |
-| f | `` Pfad `C:\` <a id="qf"></a> `` | außerhalb (Backslash in Code-Span ist wörtlich) | 2 davor → gelesen, `cmp 1` |
+| f | `` Pfad `x\` <a id="qf"></a> `` | außerhalb (Backslash in Code-Span ist wörtlich) | 2 davor → gelesen, `cmp 1` |
 
 ## Findings
 
