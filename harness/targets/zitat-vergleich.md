@@ -39,8 +39,9 @@ bash tools/harness/zitat-vergleich.sh <alt-stand> <alt-pfad> <alt-ref> <neu-stan
   Name); **Pfad:** relativ zur Repo-Wurzel. Das Skript wechselt in die Wurzel
   des Repos, in dem es aufgerufen wird.
 - **Referenz:** `''` = ganze Datei · `'#anker'` = Abschnitt hinter einem
-  Heading-Slug oder einer HTML-`id` · `L<a>-<b>` = Zeilen `a` bis `b`. Jede
-  andere Form endet mit Exit 2.
+  Heading-Slug oder einer HTML-`id` · `L<a>-<b>` = Zeilen `a` bis `b` mit
+  `1 <= a <= b`. Jede andere Form endet mit Exit 2 (auch `L7`, `L5-3`, `L0-1`,
+  `L1-2-3`).
 - **Tag-Paar** (optional, siebtes Argument): `v<X.Y.Z>:v<X.Y.Z>`, nur wenn roh
   fällt und die Korrektur ein Versions-Segment bewegt.
 - Genau 6 oder 7 Argumente, sonst Exit 2 mit Gebrauchszeile. Ohne `ARGS` bricht
@@ -64,14 +65,19 @@ realen Bump stehen im Plan von `slice-zitat-vergleich-werkzeug` §2.
 - **Ganze Datei** und **Zeilen** (`sed -n "<a>,<b>p"`): roh, ein Unterschied im
   Schluss-Umbruch der Datei fällt.
 - **Heading-Slug:** der Abschnittskörper (ohne die Heading-Zeile) bis vor das
-  nächste Heading gleicher oder höherer Ebene. Der Slug ist der Heading-Text
+  nächste Heading gleicher oder höherer Ebene. Ein Heading beginnt am
+  Zeilenanfang mit 1 bis 6 `#` und einem Leerzeichen. Der Slug ist der
+  Heading-Text ohne schließende `#`-Folge (CommonMark: ` ##` am Zeilenende),
   klein geschrieben, ohne HTML-Tags, ohne Zeichen außer Buchstaben, Ziffern,
   Leerzeichen, `_` und `-`, Leerzeichen zu `-`; ein doppelter Slug bekommt
   `-1`, `-2`, … . Headings in einem Code-Fence zählen nicht. Aufgelöst wird die
   erste Fundstelle in Dateireihenfolge, Slug oder `id`.
 - **HTML-`id`** — gelesen wird nur das öffnende Tag `<a id="X">` außerhalb von
-  Fence und Inline-Code (vor dem Tag steht kein Backtick); die Einheit folgt
-  der Stellung:
+  Fence, Inline-Code (vor dem Tag steht kein Backtick), eingerücktem Code (die
+  Zeile beginnt mit vier Leerzeichen oder einem Tab; das trifft auch einen
+  Fence in einem Listenpunkt) und HTML-Kommentar (`<!--` bis `-->`, auch über
+  Zeilen; ein `<!--` hinter einer ungeraden Zahl Backticks der Zeile steht in
+  Inline-Code und öffnet keinen). Die Einheit folgt der Stellung:
 
   | Stellung | Einheit |
   |---|---|
@@ -123,7 +129,11 @@ Skripts braucht, ruft es direkt auf.
 ## Abweichungen von der Befehlsform im Block der ADR
 
 Gewollt und im Tabellentest gebunden
-([Architect-Verdikt](../../docs/reviews/architect-verdict-zitat-vergleich-werkzeug.md) §2 bis §5):
+([Architect-Verdikt](../../docs/reviews/architect-verdict-zitat-vergleich-werkzeug.md) §2 bis §5;
+die drei letzten Zeilen aus der Review-Fixrunde, als Auslegung im Sinn von
+Verdikt §2: dieselbe Erkennungsregel wie „`id` in Code-Fence oder Inline-Code
+zählt nicht“, ein strikter Lokator nach „ungültiger Lokator endet mit Exit 2“
+und der Slug des Renderers):
 
 | Punkt | Werkzeug | Block der ADR |
 |---|---|---|
@@ -132,6 +142,9 @@ Gewollt und im Tabellentest gebunden
 | Fence | CommonMark: Einzug 0 bis 3, Zeichen und Länge gemerkt | jede Zeile, die am Zeilenanfang mit ```` ``` ```` oder `~~~` beginnt, schaltet um |
 | Tag-Paar | nur mit verschiedenen Tags, `.harness/baseline/<alt-tag>` am alten und `.harness/baseline/<neu-tag>` am neuen Stand; ein leeres siebtes Argument endet mit Exit 2 | jedes Paar der Form `v…:v…`; ein leeres siebtes Argument heißt roh |
 | Locale | setzt `LC_ALL=C.UTF-8` selbst und prüft `printf 'Ä' \| awk '{print tolower($0), length($0)}'` gegen `ä 1`, sonst Exit 2 | hängt an der Locale des Aufrufers; unter `LC_ALL=C` endet ein Slug mit Umlaut als leere Einheit |
+| `id` in eingerücktem Code und in HTML-Kommentar | nicht gelesen | gelesen; `harness/conventions.md#mr-<NNN>` löst auf den Kommentar auf |
+| Lokator | nur `L<a>-<b>` mit `1 <= a <= b` | `L7` als `L7-7`, `L5-3` als Zeile 5 |
+| schließende `#`-Folge eines Headings | gehört nicht zum Slug (`## Eins ##` → `#eins`) | gehört zum Slug (`#eins-`) |
 
 Daneben prüft das Werkzeug die Zahl der Argumente und den Exit von `sed` am
 Zeilen-Lokator und von `awk` am Anker; beides endet mit Exit 2.
@@ -139,8 +152,8 @@ Zeilen-Lokator und von `awk` am Anker; beides endet mit Exit 2.
 ## Host-Werkzeuge
 
 `bash`, `git`, `awk`, `sed`, `cmp` ([`AGENTS.md`](../../AGENTS.md) §3.1,
-Klasse „Host-Werkzeug ohne Installation“); der Tabellentest zusätzlich `env`
-und `mktemp`. `awk` muss Multibyte unter `C.UTF-8` können; das prüft die
+Klasse „Host-Werkzeug ohne Installation“); der Tabellentest zusätzlich `env`,
+`grep`, `mktemp` und `mv` (im Temp-Verzeichnis). `awk` muss Multibyte unter `C.UTF-8` können; das prüft die
 Fähigkeitsprobe vor der ersten Messung (fail-closed). Gemessen ist das
 Werkzeug an GNU Awk 5.2.1 und GNU bash 5.2; GNU Awk wird nicht nach Name
 verlangt, und das Skript benutzt keine Funktion, die nur gawk kennt.
@@ -152,7 +165,13 @@ verlangt, und das Skript benutzt keine Funktion, die nur gawk kennt.
   endet der nachgebildete Slug auf `-` und trifft den Slug des Renderers
   nicht; die Einheit ist leer, Exit 2 — adressiert wird dann über die `id`.
   Ein Heading mit Einzug, ein Setext-Heading und ein Tab im Fence-Einzug
-  werden nicht gelesen.
+  werden nicht gelesen. Ein Heading in einem HTML-Kommentar zählt als Heading
+  (nur die `id` wird dort ausgeblendet). Ob ein `<!--` in Inline-Code steht,
+  liest das Werkzeug an der Zahl der Backticks davor in derselben Zeile; ein
+  Code-Span über mehrere Zeilen oder mit doppelten Backticks kann das
+  verfehlen — ein falsch geöffneter Kommentar blendet die `id`s bis zum
+  nächsten `-->` aus; die Einheit ist dann leer (Exit 2) oder die eines
+  gleichnamigen Heading-Slugs.
 - **Schluss-Umbruch im Abschnitts- und Block-Modus.** `awk` schreibt jede Zeile
   mit Zeilenumbruch; ein Unterschied allein im Schluss-Umbruch der Datei fällt
   dort nicht auf.
@@ -188,9 +207,15 @@ fremder Pin, fremdes Paar ohne Baseline-Baum, gleiche Tags, fehlender Baum je
 Seite, leeres Paar) · Anker-Wechsel, Lokator, `git mv` · Heading mit
 Inline-Code · Fence nach CommonMark (vier Backticks mit einem und mit zwei
 inneren Fences, `~~~` in einem Backtick-Fence, Backtick im Info-String, Fence
-nach `id`-Zeile) · gestapelte `id` (vor Heading und vor Absatz) · `id` in
-anderer Form (Attribut, selbstschließend, neben gleichnamigem Heading-Slug, in
-Inline-Code) · Locale (`LC_ALL=C` beim Aufrufer) und Stub-`awk` ohne Multibyte ·
-Argumentzahl · roter Vergleich unter `set -euo pipefail` beim Aufrufer (über
-`SHELLOPTS`). Der Prüfling ist per `PROG=<Datei>` übersteuerbar
+nach `id`-Zeile, Einzug 3 ist ein Fence, Einzug 4 keiner) · gestapelte `id`
+(vor Heading und vor Absatz) · `id` in anderer Form (Attribut,
+selbstschließend, neben gleichnamigem Heading-Slug, in Inline-Code) · `id` in
+eingerücktem Code und in HTML-Kommentar (mehrzeilig, einzeilig, `<!--` in
+Inline-Code) · Normalisierung nur am Segment (`tool-v6.14.0` bleibt roh, Punkt
+im Tag ist kein Platzhalter) · Slug (ohne HTML-Tags, Dubletten `-1`/`-2`,
+Ebene höchstens 6, schließende `#`-Folge) · Lokator strikt (`L7`, `L1-2-3`,
+`L5-3`, `L0-1`) · Locale (`LC_ALL=C` beim Aufrufer) und Stub-`awk` ohne
+Multibyte · Argumentzahl · roter Vergleich unter `set -euo pipefail` beim
+Aufrufer (über `SHELLOPTS`) · `source` lässt die Shell-Optionen des Aufrufers
+unverändert. Der Prüfling ist per `PROG=<Datei>` übersteuerbar
 (Mutationsläufe an Kopien).

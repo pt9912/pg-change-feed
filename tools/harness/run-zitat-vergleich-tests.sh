@@ -64,6 +64,17 @@ printf '<a id="fz"></a>\n\n```\ncode\n```\ntext\n\n## Next\n\nn\n' >fz.md
 printf '## Pins\n\nPfad .harness/baseline/v6.14.0/regelwerk/x.md und https://github.com/pt9912/ai-harness-course/blob/v6.14.0/x.md\n' >n.md
 printf '## Pins\n\nPfad .harness/baseline/v6.14.0/x.md und https://example.org/tool/v0.79.0/bin\n' >fp.md
 printf '## Pins\n\nWerkzeug https://example.org/tool/v0.79.0/bin\n' >fo.md
+printf '## Pins\n\nPfad .harness/baseline/v6.14.0/x und https://example.org/tool-v6.14.0/x\n' >seg.md
+printf '## Pins\n\nPfad .harness/baseline/v6.14.0/x und https://example.org/v6-14-0/x\n' >dot.md
+printf '## Eins\n\n   ```\n## im fence\n   ```\n\neins alpha\n\n## Zwei\n\nz\n' >fi3.md
+printf '## Eins\n\n    ```\n## Zwei\n\nzwei alpha\n' >fi4.md
+printf '## Code <code>x</code>\n\nalpha\n' >code.md
+printf '## Dup\n\neins\n\n## Dup\n\nzwei alpha\n\n## Dup\n\ndrei\n' >dup.md
+printf '###### Sechs\n\nalpha\n\n####### sieben\n\nnach alpha\n' >lvl.md
+printf '1. Liste\n\n    ```\n    <a id="ein"></a>\n    ```\n\n<a id="ein"></a>\n\n## Ziel\n\nziel alpha\n' >indent.md
+printf '<!-- Kommentar\n<a id="kom"></a>\n-->\n<!-- <a id="k2"></a> -->\n\n<a id="kom"></a>\n<a id="k2"></a>\n\n## Ziel\n\nziel alpha\n' >kom.md
+printf 'Text mit `<!--` in Inline-Code.\n\n<a id="k3"></a>\n\n## Z3\n\nz3 alpha\n' >ik.md
+printf '## Eins ##\n\nalpha\n\n## Zwei\n\nz\n' >close.md
 c0=$(commit c0) || exit 2
 
 # --- je Commit eine Änderung -------------------------------------------------
@@ -87,6 +98,9 @@ printf '## Tilde\n\n```\n~~~\n## nicht\n```\n\nnachher beta\n' >ft.md
 printf '## Eins\n\n```a`b\n## Zwei\n\nzwei beta\n' >fb.md
 printf '# S\n\n<a id="oben"></a>\n<a id="unten"></a>\n\n## Abschnitt\n\nKörper beta.\n' >st.md
 printf '<a id="s1"></a>\n<a id="s2"></a>\n\nAbsatz beta.\n\n## H\n\nh\n' >sp.md
+for f in fi3.md fi4.md code.md dup.md lvl.md indent.md kom.md ik.md close.md; do
+  sed 's/alpha/beta/' "$f" >"$f.neu" && mv "$f.neu" "$f"
+done
 c_wort=$(commit "Wortänderungen") || exit 2
 git mv mv.md mv2.md || exit 2
 c_mv=$(commit "git mv") || exit 2
@@ -97,6 +111,8 @@ printf 'Baseline v6.14.1\n' >.harness/baseline/v6.14.1/README.md
 printf '## Pins\n\nPfad .harness/baseline/v6.14.1/regelwerk/x.md und https://github.com/pt9912/ai-harness-course/blob/v6.14.1/x.md\n' >n.md
 printf '## Pins\n\nPfad .harness/baseline/v6.14.1/x.md und https://example.org/tool/v0.80.0/bin\n' >fp.md
 printf '## Pins\n\nWerkzeug https://example.org/tool/v0.80.0/bin\n' >fo.md
+printf '## Pins\n\nPfad .harness/baseline/v6.14.1/x und https://example.org/tool-v6.14.1/x\n' >seg.md
+printf '## Pins\n\nPfad .harness/baseline/v6.14.1/x und https://example.org/v6-14-0/x\n' >dot.md
 c_bump=$(commit "Bump") || exit 2
 
 fail=0
@@ -210,6 +226,35 @@ cases() {
   check "id selbstschließend (F-2)" 2 '<a id="selbst" in anderer Form' "$c0" fs.md '#selbst' "$c0" fs.md '#selbst'
   check "id mit Attribut neben gleichnamigem Heading-Slug (F-2)" 2 '<a id="doppel" in anderer Form' "$c0" fh.md '#doppel' "$c0" fh.md '#doppel'
   check "andere Form in Inline-Code bleibt ungelesen" 0 'cmp 0' "$c0" fi.md '#fi' "$c0" fi.md '#fi'
+  # Fence-Einzug: bis 3 Leerzeichen ein Fence, ab 4 keiner.
+  check "Fence mit 3 Leerzeichen Einzug" 1 'cmp 1' "$c0" fi3.md '#eins' "$c_wort" fi3.md '#eins'
+  check "4 Leerzeichen Einzug öffnet keinen Fence" 0 'cmp 0' "$c0" fi4.md '#eins' "$c_wort" fi4.md '#eins'
+  # Normalisierung nur am Segment /<tag>/ mit maskierten Punkten.
+  check "Tag ohne Segment-Schrägstrich bleibt roh" 1 'vergleich norm v6.14.0:v6.14.1: .*cmp 1' "$c_mv" seg.md '#pins' "$c_bump" seg.md '#pins' 'v6.14.0:v6.14.1'
+  check "Punkt im Tag ist kein Platzhalter" 0 'vergleich norm v6.14.0:v6.14.1: .*cmp 0' "$c_mv" dot.md '#pins' "$c_bump" dot.md '#pins' 'v6.14.0:v6.14.1'
+  # Slug: ohne HTML-Tags, Dubletten-Suffix, Ebene höchstens 6, schließende #-Folge.
+  check "Slug ohne HTML-Tags" 1 'cmp 1' "$c0" code.md '#code-x' "$c_wort" code.md '#code-x'
+  check "Dublette -1" 1 'cmp 1' "$c0" dup.md '#dup-1' "$c_wort" dup.md '#dup-1'
+  check "Dublette ohne Suffix" 0 'cmp 0' "$c0" dup.md '#dup' "$c_wort" dup.md '#dup'
+  check "Dublette -2" 0 'cmp 0' "$c0" dup.md '#dup-2' "$c_wort" dup.md '#dup-2'
+  check "sieben # sind kein Heading" 2 'leere Einheit' "$c0" lvl.md '#sieben' "$c0" lvl.md '#sieben'
+  check "Ebene 6 ist ein Heading" 1 'cmp 1' "$c0" lvl.md '#sechs' "$c_wort" lvl.md '#sechs'
+  check "schließende #-Folge gehört nicht zum Slug" 1 'cmp 1' "$c0" close.md '#eins' "$c_wort" close.md '#eins'
+  check "Slug mit Bindestrich der #-Folge löst nicht auf" 2 'leere Einheit' "$c0" close.md '#eins-' "$c0" close.md '#eins-'
+  # id in eingerücktem Code und in HTML-Kommentar wird nicht gelesen.
+  check "id in eingerücktem Code zählt nicht" 1 'cmp 1' "$c0" indent.md '#ein' "$c_wort" indent.md '#ein'
+  check "id in mehrzeiligem HTML-Kommentar zählt nicht" 1 'cmp 1' "$c0" kom.md '#kom' "$c_wort" kom.md '#kom'
+  check "id in einzeiligem HTML-Kommentar zählt nicht" 1 'cmp 1' "$c0" kom.md '#k2' "$c_wort" kom.md '#k2'
+  check "<!-- in Inline-Code öffnet keinen Kommentar" 1 'cmp 1' "$c0" ik.md '#k3' "$c_wort" ik.md '#k3'
+  # Lokator strikt.
+  check "Lokator ohne Bindestrich" 2 'Lokator L7 \(Form' "$c0" lz.md 'L7' "$c0" lz.md 'L7-7'
+  check "Lokator mit drittem Teil" 2 'Lokator L1-2-3 \(Form' "$c0" lz.md 'L1-2-3' "$c0" lz.md 'L1-2'
+  check "Lokator a > b" 2 'Lokator L5-3 \(1 <= a <= b\)' "$c0" lz.md 'L5-3' "$c0" lz.md 'L5-5'
+  check "Lokator ab 0" 2 'Lokator L0-1 \(1 <= a <= b\)' "$c0" lz.md 'L0-1' "$c0" lz.md 'L1-1'
+  # source ändert die Shell-Optionen des Aufrufers nicht.
+  out=$(env ${opts:+BASHOPTS="$opts"} bash -c 'v=$-; p=$(set -o | grep "^pipefail"); source "$1"; if [ "$v" = "$-" ] && [ "$p" = "$(set -o | grep "^pipefail")" ] && declare -F einheit >/dev/null; then echo "Optionen unverändert: $-"; else echo "Optionen geändert: $v -> $-"; exit 1; fi' x "$prog" 2>&1)
+  rc=$?
+  expect "source lässt die Shell-Optionen unverändert" 0 'Optionen unverändert'
   # Locale und Fähigkeitsprobe (F-6).
   out=$(env ${opts:+BASHOPTS="$opts"} LC_ALL=C bash "$prog" "$c0" g2.md '#guard-härtung-wächter-reifen' "$c0" g2.md '#guard-härtung-wächter-reifen' 2>&1)
   rc=$?

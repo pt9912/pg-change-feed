@@ -15,8 +15,8 @@
 # ungleich 0 als Exit 2 an.
 #
 # Mit `source` geladen, definiert die Datei nur die Funktionen (Messläufe
-# gegen die Befehlsform der ADR); der Aufruf als Skript führt main aus.
-set -uo pipefail
+# gegen die Befehlsform der ADR) und lässt die Shell-Optionen des Aufrufers
+# unverändert; der Aufruf als Skript setzt `set -uo pipefail` und führt main aus.
 
 # einheit <stand> <pfad> [<ref>] — druckt die Einheit roh auf stdout; leere
 # oder nicht lesbare Einheit, ungültiger Lokator und eine `id` in anderer Form
@@ -27,8 +27,9 @@ einheit() {
   out="${out%.}"
   case "$ref" in
     "") ;;
-    L*) a="${ref#L}"; b="${a#*-}"; a="${a%%-*}"
-        [[ "$a" =~ ^[0-9]+$ && "$b" =~ ^[0-9]+$ ]] || { echo "einheit: Lokator $ref" >&2; return 2; }
+    L*) [[ "$ref" =~ ^L([0-9]+)-([0-9]+)$ ]] || { echo "einheit: Lokator $ref (Form L<a>-<b>)" >&2; return 2; }
+        a=$((10#${BASH_REMATCH[1]})); b=$((10#${BASH_REMATCH[2]}))
+        [ "$a" -ge 1 ] && [ "$a" -le "$b" ] || { echo "einheit: Lokator $ref (1 <= a <= b)" >&2; return 2; }
         out=$(printf '%s' "$out" | sed -n "${a},${b}p" 2>/dev/null && printf .) || { echo "einheit: Lokator $ref" >&2; return 2; }
         out="${out%.}" ;;
     \#*) out=$(printf '%s' "$out" | awk -v want="${ref#\#}" '
@@ -63,6 +64,26 @@ einheit() {
           }
           # leer(l): die Zeile trägt nach dem Entfernen aller <a id="…"></a> nur Leerraum.
           function leer(l, r) { r = l; gsub(/<a id="[^"]*"><\/a>/, "", r); return r ~ /^[[:space:]]*$/ }
+          # ohnekommentar(l): l ohne die Teile in einem HTML-Kommentar <!-- … -->;
+          # incom trägt einen offenen Kommentar in die nächste Zeile. Ein <!--
+          # hinter einer ungeraden Zahl Backticks steht in Inline-Code und öffnet nichts.
+          function ohnekommentar(l, r, p, pre, t) {
+            r = ""
+            while (l != "") {
+              if (incom) {
+                p = index(l, "-->"); if (!p) return r
+                l = substr(l, p + 3); incom = 0
+              } else {
+                p = index(l, "<!--"); if (!p) return r l
+                pre = substr(l, 1, p - 1); t = r pre
+                if (gsub(/`/, "`", t) % 2) { r = r substr(l, 1, p + 3); l = substr(l, p + 4); continue }
+                r = r pre; l = substr(l, p + 4); incom = 1
+              }
+            }
+            return r
+          }
+          # heading(l): Heading-Text ohne schließende #-Folge (CommonMark).
+          function heading(l, t) { t = l; sub(/[ \t]+#+[ \t]*$/, "", t); if (t ~ /^#+[ \t]*$/) t = ""; return t }
           BEGIN { tag = "<a id=\"" want "\"" }
           {
             inf = fence
@@ -70,7 +91,10 @@ einheit() {
             if (!fence) {
               if (n && !(fch == "`" && index(frest, "`"))) { fence = 1; fc = fch; fl = n; inf = 1 }
             } else if (n && fch == fc && n >= fl && frest ~ /^[ \t]*$/) { fence = 0 }
-            f = inf ? 0 : idform($0)
+            # Eine id in einem Fence, in eingerücktem Code (4 Leerzeichen oder Tab)
+            # und in einem HTML-Kommentar wird nicht gelesen.
+            f = 0
+            if (!inf) { k = ohnekommentar($0); if ($0 !~ /^(    |\t)/) f = idform(k) }
             if (f == 2) bad = 1
           }
           done { next }
@@ -79,7 +103,7 @@ einheit() {
             if ((mode == "abs" && lvl <= ilvl) || mode == "blk") { done = 1; next }
             if (mode == "vor") { mode = "abs"; ilvl = lvl; next }
             if (mode == "") {
-              s = slug(substr($0, lvl + 2)); k = seen[s]++; if (k) s = s "-" k
+              s = slug(heading(substr($0, lvl + 2))); d = seen[s]++; if (d) s = s "-" d
               if (s == want || f == 1) { mode = "abs"; ilvl = lvl; next }
             }
           }
@@ -154,6 +178,7 @@ main() {
 }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  set -uo pipefail
   main "$@"
   exit $?
 fi
