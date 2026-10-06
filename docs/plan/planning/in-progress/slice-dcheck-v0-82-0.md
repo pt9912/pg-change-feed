@@ -210,9 +210,8 @@ Planungsstand hat außer den in §1 genannten Läufen keinen im Repo gefahren
       [`review-slice-dcheck-v0-82-0-fixrunde`](../../../reviews/review-slice-dcheck-v0-82-0-fixrunde.md)
       (0 HIGH, 0 MEDIUM, 1 LOW an die Closure; keine weitere Fixrunde, vom
       Reviewer nachgezogen).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag. *Offen:* §7 steht, der
-      Lese-Schritt für die zwei Einträge, die mit diesem Slice 3× erreichen,
-      fehlt noch (§7 „Lese-Schritt“).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. *Beleg:* §7
+      „Steering-Loop-Eintrag“ und „Lese-Schritt“ (Architect-Zug `64054840`).
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
       *Beleg:* §7 „Beobachtungs-Register“ (vier Dateien in `evidence/`).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
@@ -713,19 +712,22 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 - **Lese-Schritt (wellenlos, Baseline-Regelwerk `modul-06-roadmap.md`
   §Wann Arbeit eine Welle braucht):** zwei Einträge erreichen mit diesem
   Slice 3× — `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` und
-  `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger` (Register unten). Ihr
-  Ausgang (verkörpert · geplant · gestrichen) ist **noch nicht zugewiesen**;
-  der Zug Planner → Architect → Planner (Verkörperung,
-  `modul-08-agentenrollen.md` §Rollen-Sequenz für eine Welle, Tabelle „ohne
-  Wellen-Betrieb“) ist fällig, bevor der Slice nach `done/` geht. Anker dann
-  `seit slice-dcheck-v0-82-0`.
+  `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger` (Register unten).
+  Lese-Schritt erledigt (Architect-Zug, Commit `64054840`):
+  `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` → verkörpert,
+  `AGENTS.md` §3.5 + `.claude/agents/implementer.md`;
+  `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger` → verkörpert,
+  `harness/targets/pin-stale.md` §Bump eines Gate-Werkzeugs. Anker
+  `seit slice-dcheck-v0-82-0`; kein Folge-Slice.
 - **Beobachtungs-Register (`../observations/`):**
   - `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab/`:
     `evidence/slice-dcheck-v0-82-0.md` ergänzt (Review F-1, HIGH; Re-Review
-    F-1 / V-1, LOW; ein Vorgang) — Zähler **3×**, Schwelle erreicht.
+    F-1 / V-1, LOW; ein Vorgang) — Zähler **3×**, Ausgang verkörpert
+    (Lese-Schritt oben).
   - `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger/`:
     `evidence/slice-dcheck-v0-82-0.md` ergänzt (Review F-3, MEDIUM; neuer Weg:
-    der Werkzeug-Pin) — Zähler **3×**, Schwelle erreicht.
+    der Werkzeug-Pin) — Zähler **3×**, Ausgang verkörpert (Lese-Schritt
+    oben).
   - `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht/`:
     `evidence/slice-dcheck-v0-82-0.md` ergänzt (Review F-2, HIGH, Datei trotz
     Deckel) — Zähler 25×, Ausgang unverändert verkörpert.

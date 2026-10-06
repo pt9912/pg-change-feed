@@ -1,7 +1,7 @@
-**Stand:** offen — **Schwelle erreicht (3×)** mit `slice-dcheck-v0-82-0`; der
-Lese-Schritt dieser wellenlosen Closure ist fällig und weist den Ausgang zu
-(Planner → Architect → Planner). Bis dahin steht der Eintrag vorübergehend ohne
-Ausgang.
+**Stand:** **verkörpert** in `AGENTS.md` §3.5 (Absatz „Eine Abweichung vom
+Wortlaut ist eine Frage, keine Regel.“) und `.claude/agents/implementer.md`
+(`seit slice-dcheck-v0-82-0`; Lese-Schritt der wellenlosen Closure, Architect-Zug
+`64054840`).
 
 Drittes Auftreten (`evidence/slice-dcheck-v0-82-0.md`) in der **verdeckten**
 Ausprägung wie das erste: Träger des Bump-Ablaufs setzten eine
