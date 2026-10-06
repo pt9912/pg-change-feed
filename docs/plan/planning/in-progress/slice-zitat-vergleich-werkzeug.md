@@ -191,7 +191,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       | F-1 Zeile ohne Inhalt | `mode == "vor" && !inf && leer($0)` → `mode == "vor" && /^[[:space:]]*$/` | „gestapelte id, obere“, „… adressiert den Abschnitt“, „… vor Absatz, Einheit ist der Block“ |
       | F-2 andere Form → Exit 2 | `END { if (bad) exit 3 }` → `END { }` | „id mit Attribut, Meldung“, „id selbstschließend“, „… neben gleichnamigem Heading-Slug“ |
       | F-2 Inline-Code | ``if (p == 1 \|\| substr(l, p - 1, 1) != "`")`` → `if (1)` | „andere Form in Inline-Code bleibt ungelesen“, „id nur in Inline-Code“ |
-      | F-3 Länge | `n >= fl` → `n >= 3` (Schließen) | „Fence aus vier Backticks, ein innerer Fence“, „Abschnitt hinter dem Fence“, „… zwei innere Fences (N6)“ |
+      | F-3 Länge | `n >= fl` → `n >= 3` (Schließen) | „Fence aus vier Backticks, ein innerer Fence“, „Abschnitt hinter dem Fence“ (N6 bleibt grün: sein innerer Fence ist geschlossen, nachgemessen in der Fixrunde) |
       | F-3 Zeichen | `fch == fc && ` entfernt (Schließen) | „~~~ in einem Fence aus Backticks“ |
       | F-3 Info-String | Bedingung ``!(fch == "`" && index(frest, "`"))`` entfernt (Öffnen) | „Backtick im Info-String öffnet keinen Fence“ |
       | Fence nach `id`-Zeile | `mode == "vor" && !inf && leer($0)` → `mode == "vor" && (inf \|\| leer($0))` | „Fence direkt nach id-Zeile gehört zur Einheit“ |
@@ -203,10 +203,14 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       | Argumentzahl | `if [ $# -ne 6 ] && [ $# -ne 7 ]` → `if false` | „fünf Argumente“, „acht Argumente“ |
       | leeres Tag-Paar | `if [ $# -ge 7 ]` → `if [ -n "${7:-}" ]` | „leeres Tag-Paar“ |
 
-      Gemessen ist je Regel **eine** Stelle; dass jede andere Verletzung
-      derselben Regel ebenso fällt, ist *hergeleitet*. Nicht mutiert: der
-      Exit-Check von `sed` am Lokator (`L0-0` endet auch ohne ihn über die
-      leere Einheit mit Exit 2).
+      Gemessen ist je Regel **eine** Stelle. Für F-3 trug das nicht: die
+      Einzugsregel des Fence (0 bis 3 Leerzeichen) blieb unter beiden
+      Mutationsrichtungen grün (Review F-2); die Fälle und Mutationen dafür
+      stehen unter §Fixrunde. Dass jede andere Verletzung einer Regel ebenso
+      fällt, gilt nur für die mutierte Stelle als gemessen. Nicht färbbar: die
+      Exit-Checks von `sed` am Lokator und von `awk` am Anker — jede Eingabe,
+      an der `sed` oder `awk` scheitert, endet auch ohne sie über die leere
+      Einheit mit Exit 2 (Review F-8).
       **Gleichstand mit der ADR-Form** (Verdikt §5, M3 nachgefahren,
       **gemessen**): `einheit f13b7f9d <datei> '#<anker>'` je Heading-Slug und
       je `<a id="…"` in allen getrackten `.md` unter
@@ -328,6 +332,84 @@ Slice als Adresse („Befehlsform als Skript hinter `make`“) — Ausgang bei d
 Closure. **Nicht gefunden:** kein Träger in `.claude/commands/`,
 `.harness/skills/` oder `harness/sensors/` nennt die Befehlsform oder das
 Herausziehen aus der ADR.
+
+### Fixrunde
+
+Anlass: Review `docs/reviews/review-slice-zitat-vergleich-werkzeug.md`
+(`7ead896e`; 1 HIGH, 3 MEDIUM, 3 LOW, 2 INFO). Code, Test und Vertrag im
+Commit `adf9c0c1`. Die Erweiterungen zu F-4, F-5 und F-6 sind Auslegung im
+Sinn von Verdikt §2 (Erkennungsregeln; die Semantik von `ADR-0159` bleibt).
+
+- **F-1 (HIGH), `source` ändert Optionen:** `set -uo pipefail` steht nur im
+  Zweig des direkten Aufrufs (`BASH_SOURCE[0] = $0`); der Kopfkommentar sagt
+  das. Fall „source lässt die Shell-Optionen unverändert“ (`$-` und
+  `pipefail` vor und nach `source` gleich, `einheit` definiert).
+- **F-2 (MEDIUM), Fence-Einzug:** Fälle „Fence mit 3 Leerzeichen Einzug“
+  (`cmp 1`) und „4 Leerzeichen Einzug öffnet keinen Fence“ (`cmp 0`); beide
+  Mutationsrichtungen rot (Tabelle unten). Der Satz zu *hergeleitet* in §2
+  Liefer-Punkt 2 ist berichtigt; die Zeile „F-3 Länge“ der Mutationstabelle
+  dort nennt N6 nicht mehr als rot (am gefahrenen Stand blieb N6 grün).
+- **F-3 (MEDIUM), Vertragszusagen ungebunden:** Fälle „Tag ohne
+  Segment-Schrägstrich bleibt roh“ (`tool-v6.14.0`, mit Tag-Paar `cmp 1`),
+  „Punkt im Tag ist kein Platzhalter“ (`/v6-14-0/` bleibt, mit Tag-Paar
+  `cmp 0`), „Slug ohne HTML-Tags“ (`#code-x`), „Dublette -1“, „Dublette ohne
+  Suffix“, „Dublette -2“, „sieben # sind kein Heading“ (Exit 2), „Ebene 6 ist
+  ein Heading“.
+- **F-4 (MEDIUM), `id` in eingerücktem Code und HTML-Kommentar:** eine Zeile mit
+  vier Leerzeichen oder Tab am Anfang und die Teile in `<!-- … -->` (auch über
+  Zeilen; `<!--` hinter einer ungeraden Zahl Backticks öffnet keinen)
+  werden für die `id` nicht gelesen. Fälle „id in eingerücktem Code zählt
+  nicht“ (Fence unter `1. Liste`), „… mehrzeiligem HTML-Kommentar …“,
+  „… einzeiligem HTML-Kommentar …“, „`<!--` in Inline-Code öffnet keinen
+  Kommentar“. **Gemessen:** `make zitat-vergleich ARGS="adf9c0c1
+  harness/conventions.md '#mr-<NNN>' adf9c0c1 harness/conventions.md
+  '#mr-<NNN>'"` → `einheit: leere Einheit adf9c0c1:harness/conventions.md#mr-<NNN>`
+  / `vergleich: … keine Einheit, Exit 2` (vorher: der Kommentarblock, `cmp 0`).
+  **Gleichstand neu** (Verfahren wie §2 Liefer-Punkt 2, Skript am Stand
+  `adf9c0c1`): `stand=adf9c0c1 anker=2115 abweichend=2 leer_alt=8
+  leer_neu=10`. Abweichungen: `#[^` in `ADR-0159` (eingerückter Fence, F-3,
+  wie zuvor) und `harness/conventions.md#mr-<NNN>` (nur im HTML-Kommentar,
+  Zeile mit fünf Leerzeichen Einzug; F-4). Beide gehören zu den gewollten
+  Punkten.
+- **F-5 (LOW), Lokator:** strikt `^L([0-9]+)-([0-9]+)$` mit `1 <= a <= b`,
+  sonst Exit 2 mit Grund. Fälle `L7`, `L1-2-3`, `L5-3`, `L0-1`.
+- **F-6 (LOW), schließende `#`-Folge:** behoben — `heading()` entfernt
+  ` ##` am Zeilenende vor dem Slug. Fälle „schließende #-Folge gehört nicht
+  zum Slug“ (`## Eins ##` → `#eins`, `cmp 1`) und „Slug mit Bindestrich der
+  #-Folge löst nicht auf“ (`#eins-`, Exit 2). Im Baum 0 Fundstellen
+  (übernommen aus dem Review).
+- **F-7 (LOW):** Vertrag §Host-Werkzeuge nennt für den Test `env`, `grep`,
+  `mktemp` und `mv`.
+- **F-8 (INFO):** in §2 Liefer-Punkt 2 für `sed` und `awk` als nicht färbbar
+  benannt.
+- **F-9 (INFO):** keine Aktion (Meldung an den Planner steht oben).
+
+**Tabellentest nach der Fixrunde:** 86 Fälle je Runde, drei Runden;
+gedruckt `run-zitat-vergleich-tests: 258 Fälle bestanden (je Runde 86, Runden:
+ohne Option, nullglob, failglob)`, Exit 0.
+
+**Mutationen der Fixrunde** (Instanz Tabellentest mit `PROG=<Kopie im
+Scratchpad>`, je Lauf Exit 1, die genannten Fälle `FEHLER` in allen drei
+Runden; die 14 Mutationen aus §2 am Stand `adf9c0c1` erneut gefahren, alle
+rot):
+
+| Finding | Mutation (Stelle in `tools/harness/zitat-vergleich.sh`) | rot gesehen |
+|---|---|---|
+| F-1 | `set -uo pipefail` wieder vor die Funktionen (Dateiebene) | „source lässt die Shell-Optionen unverändert“ |
+| F-2 | Einzug nicht gelesen: `while (ind < 4 &&` → `while (ind < 0 &&` | „Fence mit 3 Leerzeichen Einzug“ |
+| F-2 | Einzug bis 9: `ind < 10`, `if (ind > 9) return 0` | „4 Leerzeichen Einzug öffnet keinen Fence“ |
+| F-3 | `tagnorm` ohne Segment-Schrägstriche | „Tag ohne Segment-Schrägstrich bleibt roh“ |
+| F-3 | `tagnorm` ohne Punkt-Escape (`${1}`) | „Punkt im Tag ist kein Platzhalter“ |
+| F-3 | im Slug `gsub(/<[^>]*>/, "", s)` entfernt | „Slug ohne HTML-Tags“ |
+| F-3 | Dubletten-Suffix `if (d)` → `if (0)` | „Dublette -1“, „Dublette -2“ |
+| F-3 | Heading-Ebene `&& RLENGTH <= 7` → `&& 1` | „sieben # sind kein Heading“ |
+| F-4 | Einzugs-Prüfung der `id`-Zeile entfernt | „id in eingerücktem Code zählt nicht“ |
+| F-4 | `k = ohnekommentar($0)` → `k = $0` | „id in einzeiligem …“, „id in mehrzeiligem HTML-Kommentar zählt nicht“ |
+| F-4 | Backtick-Parität vor `<!--` → `if (0)` | „`<!--` in Inline-Code öffnet keinen Kommentar“ |
+| F-5 | `$` am Ende der Lokator-Regex entfernt | „Lokator mit drittem Teil“ |
+| F-5 | Prüfung `a <= b` → `true` | „Lokator a > b“ |
+| F-5 | Prüfung `a >= 1` → `true` | „Lokator ab 0“ |
+| F-6 | `sub()` der schließenden `#`-Folge in `heading()` entfernt | „schließende #-Folge gehört nicht zum Slug“, „Slug mit Bindestrich der #-Folge löst nicht auf“ |
 
 ## 4. Trigger
 
