@@ -285,7 +285,7 @@ diff 10 -n 'v6\.14\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/rev
 diff 0 -nE '\.harness/baseline/v6\.14\.0/' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 0 -n 'Kurs-Welle 156' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 0 -n 'BEO-<NNN>' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 21 -n 'v6\.14\.1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 23 -n 'v6\.14\.1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 2 -nE '\.harness/baseline/v6\.14\.0/' -- docs/plan/planning/done
 diff 0 -nE '\]\([^)]*\.harness/baseline/v6\.14\.0' -- docs/plan/planning/done docs/reviews
 ```
@@ -298,8 +298,10 @@ die den Bump als Anlass beschreiben (neu mit `60cc0ed1`, nach der Erwartung
 geschrieben; Vorgangs-Angaben, kein Pin). Zeile 4 steht bei 0: die Form von (c)
 ist `BEO-<(NNN|KUERZEL)>` und enthält die wörtliche Zeichenkette nicht mehr.
 Zeile 6 steht bei 2 statt 0: die Zeilen 277 und 337 des v6.14.0-Records bleiben
-per `ADR-0156` unverändert (Entscheidungstabelle unten). Zeile 5 (21) sind die
-lebenden v6.14.1-Nennungen.
+per `ADR-0156` unverändert (Entscheidungstabelle unten). Zeile 5 sind die
+v6.14.1-Nennungen: am Stand `4045dc4f` 21 (lebende Träger und vier Zeilen in
+`ADR-0156`), nach der Fixrunde (`891d81e7`) 23 — dazu zwei Zeilen in
+`ADR-0157` (`f1f6ae70`), die den Bump als Anlass nennen.
 
 Die 19 Treffer der ersten Zeile verteilen sich auf 13 lebende Träger (§2,
 Liefer-Punkt 2) und zwei Register-Records
