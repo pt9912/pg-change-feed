@@ -141,7 +141,7 @@ Alle Beleg-Angaben dieser Liste sind **Zusagen** („zu belegen durch …“): d
 Planungsstand hat außer den in §1 genannten Läufen keinen im Repo gefahren
 ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) Instanz B).
 
-- [ ] **Pin auf v0.82.0 (Liefer-Punkt 1).** `d-check.mk` trägt
+- [x] **Pin auf v0.82.0 (Liefer-Punkt 1).** `d-check.mk` trägt
       `DCHECK_IMAGE ?= ghcr.io/pt9912/d-check:v0.82.0` und den Digest
       `sha256:d28e9437888554a262ad9a2e8a63fdb1717e5b5860824fdef263a877d532e0c8`,
       in einem Commit, der sonst nichts ändert. Weitere lebende d-check-Pins gibt
@@ -149,8 +149,9 @@ Planungsstand hat außer den in §1 genannten Läufen keinen im Repo gefahren
       `Accepted`-ADRs und in einer Test-Fixture, §1). *Zu belegen durch:*
       `make pin-stale-dcheck` mit beiden Achsen ohne `DRIFT` (gedruckte Zeilen
       im Bericht; braucht Netz) und `make docs-check` Exit 0 mit der gedruckten
-      Zeile `d-check: … Datei(en) geprüft, 0 Befund(e)`.
-- [ ] **Wirkung der drei Changelog-Punkte gemessen (Liefer-Punkt 2).** Ein
+      Zeile `d-check: … Datei(en) geprüft, 0 Befund(e)`. *Beleg:* §3 „Wirkung
+      v0.80.0–v0.82.0 — Belege“, Absatz „Nach dem Pin-Commit `7f796ef0`“.
+- [x] **Wirkung der drei Changelog-Punkte gemessen (Liefer-Punkt 2).** Ein
       committeter Abschnitt „Wirkung v0.80.0–v0.82.0 — Belege“ in diesem Plan
       trägt je Punkt Befehl, Stand und gedruckte Zeile: (a) `hostpaths` —
       `make docs-check` am Arbeitsbaum mit neuem Pin (Zahl der
@@ -164,8 +165,9 @@ Planungsstand hat außer den in §1 genannten Läufen keinen im Repo gefahren
       `fetch-depth: 0` auscheckt (gemessen mit `grep`); (c) `targets` —
       `make doc-targets` mit altem und neuem Digest, Exit und Befundzahl
       (advisory, nicht im Bündel). Jede Abweichung von „keine Wirkung“ hat
-      einen Ausgang in Liefer-Punkt 3 oder in §6.
-- [ ] **Träger nachgezogen (Liefer-Punkt 3).** (i) Die Teil-Range-Regel: in
+      einen Ausgang in Liefer-Punkt 3 oder in §6. *Beleg:* §3 „Wirkung
+      v0.80.0–v0.82.0 — Belege“ (a) bis (c).
+- [x] **Träger nachgezogen (Liefer-Punkt 3).** (i) Die Teil-Range-Regel: in
       `.claude/agents/verifier.md`, `.claude/agents/implementer.md` und
       `harness/targets/pin-stale.md` §Bump-Ablauf (Absatz „MR-Pins in einem
       eigenen Commit“) steht, wie eine **leere** Teil-Range behandelt wird
@@ -180,6 +182,13 @@ Planungsstand hat außer den in §1 genannten Läufen keinen im Repo gefahren
       nackte Tilde, Tilde in URL-Pfaden, Fences), soweit am Werkzeug gemessen.
       *Zu belegen durch:* den Suchlauf §3 mit `diff`-Zeilen,
       `make suchlauf-nachmessen PLAN=…` und `make docs-check` Exit 0.
+      **Abweichung:** statt eines Architect-Verdikts trägt (i) die Entscheidung
+      des Orchestrators im Auftrag, ohne ADR — Wortlaut und Begründung in §3
+      „Leere Teil-Range — Ausführungsregel“, Zeile in der §3-Tabelle. *Beleg:*
+      §3 „Suchlauf am Diff“; `make suchlauf-nachmessen PLAN=docs/plan/planning/in-progress/slice-dcheck-v0-82-0.md`
+      am Arbeitsbaum vor dem Träger-Commit Exit 0,
+      `suchlauf-nachmessen: 20 Zeilen stimmen`; `make docs-check` Exit 0,
+      `d-check: 1794 Datei(en) geprüft, 0 Befund(e)`.
 - [ ] `make gates` grün, Exit-Code ungefiltert gesichert
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -266,6 +275,57 @@ Zeile 6 — die Fitness-Function-Zeile von `ADR-0157`; Zeile 7 — vier ADRs 7,
 (`docs-check.md`). Ob der `.d-check.yml`-Kommentar zur Teil-Range nachgezogen
 wird, folgt aus dem Verdikt; jede Abweichung steht mit Grund im Feld.
 
+**Suchlauf am Diff (Implementer, Arbeitsbaum nach dem Träger-Nachzug).** Neues
+Muster in Zeile 10: das Prüfwort der Ausführungsregel (`rev-list --count`).
+
+```suchlauf
+281f14f3 1 -n 'rev-list --count' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 7 -n 'v0\.79\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 2 -n 'b4b8756b' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 1 -n 'd28e9437' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 16 -n 'Teil-Range' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 6 -n 'base\.\.P~1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 6 -niE 'leere[nr]? (Teil-)?Range' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 9 -n 'hostpath-forbidden' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 2 -nE 'host-lokale \*\*absolute\*\*' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 2 -ni 'home-relativ' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 4 -n 'rev-list --count' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+```
+
+Verteilung am Diff (gemessen, `git grep … | cut -d: -f1 | sort | uniq -c`,
+Plan-Datei ausgeschlossen):
+
+- **Zeile 1** (7): `d-check.mk` hat den Tag verlassen; der Rest ist Bestand
+  nach §1 (ADRs, Test-Fixture).
+- **Zeile 2** (2): nur noch [`ADR-0156`](../../adr/0156-versions-gate-nimmt-done-records-aus.md).
+- **Zeile 3** (1): `d-check.mk`.
+- **Zeile 4** (16): +1 je Träger (`implementer.md`, `verifier.md`,
+  `pin-stale.md`), dazu +4 in `slice-harness-baseline-v6-16-0` (Datei in `open/`,
+  nach dem Parent `281f14f3` angelegt mit `a93856eb`).
+- **Zeile 5** (6): +1 je Träger, +1 in `slice-harness-baseline-v6-16-0`.
+- **Zeile 6** (6): +1 in `implementer.md` und `verifier.md`, +3 in
+  `slice-harness-baseline-v6-16-0`; `pin-stale.md` schreibt „**leere**
+  Teil-Range“ und trifft das Muster wegen der Hervorhebung nicht.
+- **Zeile 7** (9) und **Zeile 8** (2): unverändert — `docs-check.md` behält den
+  Satz zu den absoluten Pfaden und ergänzt die Home-relativen.
+- **Zeile 9** (2): `docs-check.md` (Einleitung, §Grenze Punkt 8).
+- **Zeile 10** (4): +1 je Träger; Bestand `tools/harness/commit-traceability.sh`.
+
+**Nicht nachgezogen, mit Grund:**
+
+- `slice-harness-baseline-v6-16-0` (fremder Plan): sagt in §3, §4 und §6, der
+  Verifier fahre „in der Fassung, die `slice-dcheck-v0-82-0` für eine leere
+  Teil-Range hinterlässt“ — das trifft den Stand nach diesem Slice; kein
+  Nachzug nötig.
+- [`AGENTS.md`](../../../../AGENTS.md) §3.11 (fremde Datei, gemeldet an den
+  Planner, Frist: Closure dieses Slice): die Regel nennt einen „host-lokalen
+  absoluten Pfad“ (Wurzel-Segment, Windows-Muster); das Modul meldet ab v0.80.0
+  zusätzlich Home-relative Pfade. Der Sensor ist damit weiter als der
+  Regel-Wortlaut; `docs-check.md` §Grenze Punkt 8 benennt das. Ob die Regel
+  nachzieht, ist eine Frage an die Reichweite nach
+  [`ADR-0075`](../../adr/0075-hostpaths-reichweite-und-wortlaut.md).
+- Der Kommentar im Block `vcs:` von `.d-check.yml` (Zeile 4): siehe §3-Tabelle.
+
 ### Wirkung v0.80.0–v0.82.0 — Belege
 
 Gemessen vom Implementer am 2026-10-06, Stand `8551babd` (Arbeitsbaum ohne
@@ -348,6 +408,19 @@ Logs sind ohne die `docker`-Zeile gleich (`diff` Exit 0). `.d-check.yml` trägt
 keinen Block `targets:` (`grep -n '^targets' .d-check.yml`: kein Treffer), also
 weder `makefiles` noch `authority`; beide Erweiterungen greifen hier nicht.
 Keine Wirkung.
+
+**Nach dem Pin-Commit `7f796ef0`** (Liefer-Punkt 1):
+
+- `make pin-stale-dcheck`, Exit 0:
+
+  ```text
+  OK          DCHECK_DIGEST (ghcr.io/pt9912/d-check:v0.82.0) == sha256:d28e9437888554a262ad9a2e8a63fdb1717e5b5860824fdef263a877d532e0c8
+  OK          DCHECK_IMAGE Tag-Frische (v0.82.0) == neuester Release
+  ```
+
+- `make docs-check` (Image `d-check@sha256:d28e9437…` aus `d-check.mk`), Exit 0,
+  `d-check: 1794 Datei(en) geprüft, 0 Befund(e)`.
+- `git show --stat 7f796ef0`: `d-check.mk | 4 ++--`, eine Datei.
 
 ### Leere Teil-Range — Ausführungsregel
 
