@@ -130,8 +130,8 @@ Verifikation.
 - **Immutabilität (`AGENTS.md` §3.5).** `ADR-0157` ist in der Range nicht
   geändert. `ADR-0158` ist nur in ihrem Anlage-Commit `07923146` berührt
   (`git log b7d97cca..HEAD -- docs/plan/adr/`: nur `07923146` und `b36f882d`).
-  Die Teilablösung läuft über `Supersedes` in `ADR-0159` und den Index-Vermerk
-  „→ ADR-0158“ bzw. „→ ADR-0159“. `make doc-immutable` endet mit Exit 0.
+  Die Teilablösung läuft über `Supersedes` in `ADR-0159` und die Index-Vermerke
+  `→ ADR-0158` und `→ ADR-0159`. `make doc-immutable` endet mit Exit 0.
 - **`AGENTS.md` §3.5 gegen die ADR.** Der Kernsatz nennt Datei, Abschnitt
   hinter Heading oder HTML-`id`, die Tabellenzeile für eine `id` in einer
   Tabelle, zitierte Zeilen, roh und das bewegte Tag-Paar. Das stimmt mit
@@ -212,9 +212,15 @@ Keine DoD-Abweichung. Hinweise der Stufe INFO:
 
 ## 7. Gate-Lauf
 
-Nach dem Commit dieses Berichts lief `make gates` ungefiltert. Der Exit-Code
-ist direkt gesichert. Das Ergebnis meldet der Verifier an den Aufrufer: Der
-Bericht friert vor dem Lauf ein und trägt die Zahl deshalb nicht selbst.
+Der erste `make gates`-Lauf nach dem Commit dieses Berichts (`4221a342`) endete
+mit Exit 2. Grund war `docs-check`:
+`d-check: 1770 Datei(en) geprüft, 2 Befund(e)`, zweimal `id-unlinked` in diesem
+Bericht. Die beiden Index-Vermerke standen als nackte Kennung in
+Anführungszeichen. Sie sind jetzt in Inline-Code gesetzt. Die übrigen Ziele des
+Laufs waren bis dahin grün, darunter
+`coverage-gate: OK — Coverage 83.30% erfüllt Schwelle 80%`. Das Ergebnis des
+Laufs nach der Korrektur meldet der Verifier an den Aufrufer. Der Bericht friert
+vor diesem Lauf ein und trägt die Zahl deshalb nicht selbst.
 
 ## Verdikt
 
