@@ -205,9 +205,11 @@ Planungsstand hat keinen der Läufe im Repo gefahren
       gefüllte Anker-Zeile trifft nicht), Ausgabe im Bericht.
 - [ ] `make gates` grün, Exit-Code ungefiltert gesichert
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Reports: [`review-slice-harness-baseline-v6-14-1`](../../../reviews/review-slice-harness-baseline-v6-14-1.md),
+      Re-Review [`review-slice-harness-baseline-v6-14-1-fixrunde`](../../../reviews/review-slice-harness-baseline-v6-14-1-fixrunde.md).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
