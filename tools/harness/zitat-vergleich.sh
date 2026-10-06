@@ -56,6 +56,9 @@ einheit() {
           # steht in Inline-Code; die Zählung trägt nur in einer Zeile, die der
           # Hauptblock nicht als mehrdeutig markiert (einzelne Backticks in
           # gerader Zahl, kein offener Code-Span aus der Vorzeile).
+          # Grenze (fail-open): ein escapter Backtick \` zählt mit; vor einem
+          # Code-Span verschiebt er die Parität, und eine id darin gilt dann als
+          # Anker. Heute ohne Fundstelle; der Vertrag nennt die Grenze.
           function idform(l, off, p, res, t) {
             res = 0; off = 0
             while ((p = index(substr(l, off + 1), tag)) > 0) {

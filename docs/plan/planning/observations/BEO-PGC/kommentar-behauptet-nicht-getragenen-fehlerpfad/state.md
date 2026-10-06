@@ -12,7 +12,12 @@ Merge vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und eine
 Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung in
 der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge ab 10×).
 
-Zähler: 10× (Dateien unter `evidence/`; die zehnte,
+Zähler: 11× (Dateien unter `evidence/`; die elfte,
+`evidence/slice-zitat-vergleich-werkzeug.md`, trägt Review F-1 und Re-Review zu Fixrunde 2
+F-1 (je HIGH, daher Datei trotz Deckel): der Kopfkommentar eines Harness-Skripts sagte zu,
+`source` definiere nur Funktionen, und der Kommentar von `idform` sagte zu, eine `id` in
+Inline-Code nicht zu lesen; der Code trug beides nicht (Ausprägung **Zusage ohne Code**);
+vor dem Merge vom Reviewer gefunden, Ausgang unverändert **verkörpert**; die zehnte,
 `evidence/slice-sdk-kompat-version-parameter.md`, trägt F-1 (HIGH) und V-1 (LOW): Kommentar,
 Meldung und Vertrag eines Harness-Runners sagten Exit 2 für jede Version außerhalb der Form
 `X.Y.Z` zu, der Code ließ Suffixe durch (Ausprägung **Zusage ohne Code**), und „vor jedem Bau“

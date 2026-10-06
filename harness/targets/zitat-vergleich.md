@@ -110,7 +110,7 @@ realen Bump stehen im Plan von `slice-zitat-vergleich-werkzeug` §2.
   der Zeile eine ungerade Zahl Backticks steht, liegt in Inline-Code und wird
   nicht gelesen, auch mit Text zwischen Backtick und Tag
   (`` `siehe <a id="x"></a>` ``); bei gerader Zahl liegt die Fundstelle
-  außerhalb.
+  außerhalb. Ein escapter Backtick trägt diese Lesung nicht (§Grenzen).
 - **Fence** (CommonMark): öffnet mit 0 bis 3 Leerzeichen Einzug und mindestens
   drei gleichen Zeichen `` ` `` oder `~` (ein Backtick-Fence trägt im
   Info-String keinen Backtick) und schließt nur mit demselben Zeichen in
@@ -207,6 +207,14 @@ verlangt, und das Skript benutzt keine Funktion, die nur gawk kennt.
   Namens danach misst der Vergleich die falsche Stelle (`cmp 0` möglich).
   Heute ohne Fundstelle (übernommen aus dem Re-Review zu Fixrunde 2); der
   Messende prüft diese Stellung am Diff.
+- **Escapter Backtick vor einem Code-Span (fail-open).** Die Zählung kennt
+  keinen escapten Backtick: ein `` \` `` zählt mit und verschiebt die Parität.
+  Steht er vor einem Code-Span mit `<a id="x"></a>` und ist die Gesamtzahl
+  gerade, gilt die `id` im Code-Span als Anker; mit einer echten `id` gleichen
+  Namens danach misst der Vergleich die falsche Stelle (`cmp 0` möglich). Die
+  Gegenrichtung endet mit Exit 2 (fail-closed). Heute ohne Fundstelle
+  (übernommen aus dem Re-Review zu Fixrunde 3); der Messende prüft diese
+  Stellung am Diff.
 - **Eingerückter Absatz in einem Listenpunkt.** Eine `id` in einer Zeile mit
   vier Leerzeichen Einzug wird auch dann nicht gelesen, wenn die Zeile nach
   CommonMark ein Absatz eines Listenpunkts ist; der Verweis endet mit Exit 2

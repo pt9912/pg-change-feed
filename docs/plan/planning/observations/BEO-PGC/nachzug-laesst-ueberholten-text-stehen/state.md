@@ -12,7 +12,11 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 22× (Dateien unter `evidence/`; die zweiundzwanzigste,
+Zähler: 23× (Dateien unter `evidence/`; die dreiundzwanzigste,
+`evidence/slice-zitat-vergleich-werkzeug.md`, trägt Re-Review zur Fixrunde F-2 (MEDIUM): die
+Fixrunde maß in §3 des Slice-Plans `abweichend=2`, §6 nannte weiter `abweichend=1`
+(Träger-Typ Slice-Plan); in der zweiten Fixrunde behoben, Ausgang unverändert **verkörpert**;
+die zweiundzwanzigste,
 `evidence/slice-zitat-korrektur-vergleichseinheit.md`, trägt Review F-4 (MEDIUM): der Nachzug in
 `AGENTS.md` §3.5 setzte den Beleg-Satz ohne Geltungsbereich neben den Satz zu den Records
 (Träger-Typ `AGENTS.md`); in der Fixrunde behoben, Ausgang unverändert **verkörpert**;

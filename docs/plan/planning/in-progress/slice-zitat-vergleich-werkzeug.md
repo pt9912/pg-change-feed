@@ -244,9 +244,9 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       **Beleg:** `docs/reviews/review-slice-zitat-vergleich-werkzeug-fixrunde-3.md`
       (0 HIGH, 0 MEDIUM, 1 LOW an die Closure; Nachzug durch den Reviewer
       ohne Fixrunde).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft.
 
 ## 3. Plan (vor Code)
@@ -293,9 +293,9 @@ Hedge (`kein Werkzeug`, `Option E`, `Trigger (a)`):
 728b75e3 48 -F 'Befehlsform' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
 diff 50 -F 'Befehlsform' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
 728b75e3 3 -F 'zitat-vergleich' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
-diff 47 -F 'zitat-vergleich' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 58 -F 'zitat-vergleich' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
 728b75e3 10 -F 'Referent-Messung' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
-diff 14 -F 'Referent-Messung' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 15 -F 'Referent-Messung' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
 728b75e3 5 -F '`vergleich`' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
 diff 4 -F '`vergleich`' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
 728b75e3 1 -F 'Herausziehen' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
@@ -336,6 +336,14 @@ Slice als Adresse („Befehlsform als Skript hinter `make`“) — Ausgang bei d
 Closure. **Nicht gefunden:** kein Träger in `.claude/commands/`,
 `.harness/skills/` oder `harness/sensors/` nennt die Befehlsform oder das
 Herausziehen aus der ADR.
+
+**Suchlauf bei der Closure nachgemessen.** Die `diff`-Zeilen sind am
+Arbeitsbaum der Closure mit allen neuen Dateien im Index gemessen
+(`make suchlauf-nachmessen`, vor dem Inhalts-Commit); sie zählen die neuen
+Register-Einträge, die nachgezogenen `state.md` und die Grenze im Vertrag mit
+(`zitat-vergleich` 47 → 58, `Referent-Messung` 14 → 15). Das Werkzeug schließt
+jede Datei mit dem Basisnamen des Plans aus, also auch die vier
+`evidence/slice-zitat-vergleich-werkzeug.md`.
 
 ### Fixrunde
 
@@ -584,8 +592,8 @@ dasteht.
   können auseinanderlaufen (Behebung von F-2/F-3 ändert das Verhalten
   gegenüber der ADR-Form). *Zu belegen durch:* die Fälle der §Fitness Function
   von `ADR-0159` im Tabellentest mit gleichem Ergebnis, und für F-2/F-3 die
-  Entscheidung des Architects zum normativen Träger. — **Ausgang:** offen bis
-  zur Closure. *Stand (Implementer, nach Fixrunde 3, Skript `967564e6`):*
+  Entscheidung des Architects zum normativen Träger. — **Ausgang:**
+  *entfallen* (Closure, Begründung in §7). *Stand (Implementer, nach Fixrunde 3, Skript `967564e6`):*
   Verdikt §2 nennt *entfallen*. Gleichstand `stand=967564e6 anker=2116
   abweichend=4 leer_alt=7 leer_neu=11`; alle vier Abweichungen sind gewollt:
   `#[^` in `ADR-0159` (eingerückter Fence, Verdikt F-3),
@@ -597,7 +605,8 @@ dasteht.
 - **Locale am Host.** Das Skript läuft mit Host-`awk` ([`AGENTS.md`](../../../../AGENTS.md)
   §3.1); eine feste UTF-8-Locale (F-6) muss am Host vorhanden sein. *Zu
   belegen durch:* den Fall L im Tabellentest unter `LC_ALL=C` beim Aufrufer.
-  — **Ausgang:** offen bis zur Closure. *Stand (Implementer):* das Skript
+  — **Ausgang:** *entfallen* (Closure, Begründung in §7). *Stand
+  (Implementer):* das Skript
   setzt `LC_ALL=C.UTF-8` und prüft `awk` vor der ersten Messung (Exit 2
   ohne Multibyte); Fall L grün, Stub-`awk` Exit 2, beide mit Mutation rot
   gesehen (§2 Liefer-Punkt 2). Gemessen an einem Host mit `C.utf8`; ein Host
@@ -618,13 +627,126 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
-- **Drei Paarungen:** <…>
+- **Geliefert:** Die Referent-Messung einer Zitat-Korrektur läuft als
+  `make zitat-vergleich` (`tools/harness/zitat-vergleich.sh`, Vertrag
+  `harness/targets/zitat-vergleich.md`) mit Tabellentest
+  `make test-zitat-vergleich` (99 Fälle je Runde, drei Runden über
+  `BASHOPTS`); die Träger nennen das Ziel (Liefer-Punkte 1 bis 3, §2).
+  Architect-Verdikt `docs/reviews/architect-verdict-zitat-vergleich-werkzeug.md`
+  (`728b75e3`, ohne ADR: das Werkzeug trägt die Messung, `ADR-0159` die
+  Semantik). Review (1 HIGH, 3 MEDIUM, 3 LOW, 2 INFO), drei Fixrunden
+  (`adf9c0c1`, `33e1a81e`, `967564e6`) mit je einem Re-Review, zuletzt 0 HIGH,
+  0 MEDIUM, 1 LOW; Verifikation
+  `docs/reviews/verify-slice-zitat-vergleich-werkzeug.md` (`1eb917c1`; DoD
+  bestätigt, `make gates` Exit 0). Validator: entfällt — Harness-Werkzeug ohne
+  End-Nutzer-Wert, kein MVP-Slice (Verifikationsbericht, Kopf).
+- **Was hat funktioniert:** Die Pflichtproben aus dem Vorgänger-Slice und die
+  Gleichstand-Messung gegen die ADR-Form (Verdikt §5) haben jede Runde
+  gebunden: Implementer und Verifier kamen unabhängig auf dieselbe Menge der
+  Abweichungen (vier, alle gewollt), und die ADR-Form als `PROG` färbt den
+  Tabellentest genau an den Abweichungs-Fällen rot. Die Mutationstabellen mit
+  Stelle, Instanz und Farbe ([`AGENTS.md`](../../../../AGENTS.md) §3.12) haben
+  zweimal einen Fall entlarvt, dessen Fixture die geprüfte Regel nicht
+  erreichte (Fixrunde F-2, Fixrunde 2 F-1). Der Weg, den `ADR-0159`
+  Re-Evaluierungs-Trigger (a) vorsah, hat die Kette der Folge-ADRs beendet:
+  vier Review-Runden ohne eine weitere ADR.
+- **Was ging anders als geplant:**
+  (1) **Vier Review-Runden statt einer.** Jede Runde fand in frischem Kontext
+  einen neuen fail-open-Grenzfall der Markdown-Nachbildung (Code-Span,
+  Kommentar, Einzug, Container, Escape), zuletzt nur noch konstruierte Formen
+  ohne Fundstelle im Baum.
+  (2) **Das Prinzip kam in Runde 2, nicht im Plan.** „Mehrdeutigkeit endet mit
+  Exit 2“ (nicht messbar, Urteil am Diff, `ADR-0159` Entscheidung 2) wurde erst
+  in der zweiten Fixrunde gesetzt; danach wurden aus Fällen benannte Grenzen,
+  und die Schwere-Regel der Runden (fail-open mit Fundstelle: Fixrunde; ohne:
+  Grenze für die Closure) machte das Ende der Kette entscheidbar. Im Plan
+  stand es nicht; dort waren die fünf Formen F-1 bis F-6 als Fälle geplant.
+  (3) **Mehr Code als geplant**, je in §3 benannt: Lokator-Form, Kommentar-
+  und Einzugs-Lesung, Mehrdeutigkeits-Regel, Code-Span-Zählung.
+- **Re-Review-Pflichten in der Closure:** Re-Review zu Fixrunde 3 F-1 (LOW,
+  escapter Backtick vor einem Code-Span, fail-open, ohne Fundstelle) →
+  benannte Grenze in `harness/targets/zitat-vergleich.md` §Grenzen und im
+  Kommentar von `idform`; am Code sonst nichts geändert
+  (`make test-zitat-vergleich` 297 Fälle Exit 0,
+  `make kommentar-kennungen DIFF=1eb917c1` ohne Kandidat, Exit 0, beide vor dem
+  Inhalts-Commit).
+- **Gemeldete Träger (Frist Closure, [`AGENTS.md`](../../../../AGENTS.md) §3.13):**
+  - Die zwei `state.md` → nachgezogen:
+    `BEO-PGC/befehlsform-in-adr-prosa-zieht-folge-adr-nach` (Ausweg geliefert,
+    Stand weiter offen, unten) und
+    `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform` (Zeiger auf das
+    Ziel statt auf den Folge-Slice).
+  - `docs/plan/adr/README.md` §Konventionen („mit der Befehlsform aus
+    `ADR-0159`“) → **benannt, nicht geändert.** Die Zeile ist Text des Index,
+    nicht der ADR; das Verdikt §5 legt aber ausdrücklich fest, dass
+    `ADR-0159` und `docs/plan/adr/README.md` unberührt bleiben. Eine
+    Planner-Änderung dagegen wäre die stille Abweichung, die Modul 8 verbietet.
+    Die Zeile bleibt als Semantik-Zeiger richtig (die Einheiten legt
+    `ADR-0159` fest), nennt das Ziel aber nicht; `AGENTS.md` §3.5 nennt es.
+    Adresse: der nächste Zug am ADR-Index, mit Architect-Zustimmung.
+- **Befunde (gemeldet, nicht geändert):**
+  - Review F-7 (LOW, `grep` und `mv` im Vertrag nicht genannt; behoben):
+    beide liegen in der Klasse von `AGENTS.md` §3.1, kein Auftreten von
+    `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration` (die
+    Klasse betrifft ein Werkzeug außerhalb der Deklaration); benannt, nicht
+    gezählt.
+  - Verifikation §4 (INFO): die Tag-Paar-Form fällt bei einem Suffix über
+    `baumda` fail-closed zurück, die Bindung hängt am Meldungstext. Keine
+    Folgearbeit.
+  - Die Datei-Schleife des MR-Datei-`cmp` (`ADR-0157` Entscheidung 4) bleibt
+    Befehlsform in einer ADR (§1 Abgrenzung, Vertrag §Grenzen).
+- **Steering-Loop-Eintrag:** Neuer Sensor (Werkzeug): Eine ausführbare
+  Messvorschrift wird ein Skript hinter `make` mit Tabellentest statt eines
+  `bash`-Blocks in einer `Accepted`-ADR; ihre Randfälle gehen in Skript und
+  Test, nicht in eine Folge-ADR.
+  — liegt in `harness/README.md §Sensors`.
+  Auslöser: `BEO-PGC/befehlsform-in-adr-prosa-zieht-folge-adr-nach` (slice-zitat-korrektur-vergleichseinheit — 1×) und `ADR-0159` Re-Evaluierungs-Trigger (a).
+  Gezählt, nicht als Register-Ausgang verkörpert: der Eintrag steht unter
+  der Schwelle und bleibt offen. Benannt, nicht verkörpert: ein Werkzeug, das
+  ein Format nachbildet, setzt „Mehrdeutigkeit endet mit Exit 2“ von Anfang an
+  und führt konstruierte Formen als benannte Grenzen
+  (`BEO-PGC/messwerkzeug-grenze-unbenannt-fail-open`, 1×). Benannte
+  Spec-Lücke: keine.
+- **Beobachtungs-Register (`../observations/`):**
+  - `BEO-PGC/messwerkzeug-grenze-unbenannt-fail-open/` neu angelegt, Beleg
+    `evidence/slice-zitat-vergleich-werkzeug.md` (Klasse „Grenze unbenannt,
+    fail-open“ in allen vier Review-Läufen: Review F-4 bis F-6, Re-Review F-1,
+    F-3, F-4, Re-Review 2 F-1 bis F-3, Re-Review 3 F-1; ein Vorgang) —
+    Zähler 1×.
+  - `BEO-PGC/werkzeugvertrag-zusage-ohne-testfall/` neu angelegt, Beleg
+    `evidence/slice-zitat-vergleich-werkzeug.md` (Review F-2, F-3, MEDIUM;
+    Re-Review F-5, LOW) — Zähler 1×.
+  - `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad/`:
+    `evidence/slice-zitat-vergleich-werkzeug.md` ergänzt (Review F-1,
+    Re-Review 2 F-1, je HIGH, Datei trotz Deckel) — Zähler 11×.
+  - `BEO-PGC/nachzug-laesst-ueberholten-text-stehen/`:
+    `evidence/slice-zitat-vergleich-werkzeug.md` ergänzt (Re-Review F-2,
+    MEDIUM, Datei trotz Deckel) — Zähler 23×.
+  - `BEO-PGC/befehlsform-in-adr-prosa-zieht-folge-adr-nach/`: kein Beleg
+    (dieser Slice ist der Ausweg, kein weiteres Auftreten); `state.md`
+    nachgezogen — Zähler 1×, offen.
+  - `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform/`: kein Beleg;
+    `state.md` nachgezogen — Zähler 3×, Ausgang unverändert verkörpert.
+  - Ohne Datei: Review F-7 (siehe Befunde). Keine Klasse erreicht mit diesem
+    Slice 3×.
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** zwei Risiken, je ein Ausgang.
+  - *Zwei Träger derselben Messung* → **entfallen**: Das Verdikt §2 legt den
+    normativen Träger fest (Werkzeug für die Messung, `ADR-0159` für die
+    Semantik, der `bash`-Block ist die historische Fassung); ein
+    Auseinanderlaufen ist damit gewollt und benannt (Vertrag §Abweichungen),
+    kein Risiko. Gemessen: Gleichstand `abweichend=4`, alle vier gewollt, vom
+    Verifier unabhängig bestätigt (Verifikationsbericht §5, Stände `967564e6`
+    und `d25c79c3`).
+  - *Locale am Host* → **entfallen**: Das Risiko war ein falsches Ergebnis an
+    einem Host mit anderer Locale. Das Skript setzt `LC_ALL=C.UTF-8` und prüft
+    vor der ersten Messung, ob `awk` Multibyte liest; ohne die Fähigkeit endet
+    es mit Exit 2 (fail-closed), eine falsche Farbe entsteht nicht. Beide
+    Hälften sind gebunden (Fall L und Stub-`awk`, je mit Mutation rot, §2
+    Liefer-Punkt 2). Dass ein Host ohne `C.utf8` an der Probe scheitert, ist
+    *hergeleitet* (die Probe liest die Fähigkeit, nicht den Namen der Locale),
+    nicht an einem solchen Host gefahren; im ungünstigsten Fall ist die Messung
+    dort nicht messbar, was der Vertrag als Exit 2 zusagt.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

@@ -21,8 +21,10 @@ Vergleichseinheit und Normalisierung der Referent-Messung (Bedingung (b) von
 [`ADR-0159`](../../../../adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
 (Einheit einer HTML-`id`, Referent-Messung an MR-Pins, Tag-Paar, Befehlsform),
 umgesetzt in `AGENTS.md` §3.5 (Satz „gemessen wird die Einheit, die der Verweis
-adressiert“; `fc6d104c`, `fce2d159`). Die Befehlsform
-als Skript hinter `make`: Folge-Slice `slice-zitat-vergleich-werkzeug`.
+adressiert“; `fc6d104c`, `fce2d159`). Die Messung läuft als Skript hinter
+`make`: `make zitat-vergleich`, Vertrag `harness/targets/zitat-vergleich.md`,
+Tabellentest `make test-zitat-vergleich` · seit slice-zitat-vergleich-werkzeug
+(`AGENTS.md` §3.5 nennt das Ziel).
 
 Zähler (abgeleitet): **3×** (evidence/slice-harness-baseline-v6-13-0.md,
 evidence/slice-maintainer-ordner-releasing-verschieben.md,
