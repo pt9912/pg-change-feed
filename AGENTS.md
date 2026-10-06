@@ -220,7 +220,11 @@ und §Verglichene Alternativen sowie §Status und die `Supersedes`-Kette; ihre
 Änderung ist eine neue ADR mit `Supersedes ADR-NNNN`. Das Zitatgerüst in diesen
 Abschnitten darf eine Zitat-Korrektur ändern, wenn der Referent gemessen gleich
 bleibt
-([`ADR-0157`](docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)).
+([`ADR-0157`](docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md));
+gemessen wird die Einheit, die der Verweis adressiert — die Datei, den Abschnitt
+hinter dem Anker oder die zitierten Zeilen —, roh, und nur ein Versions-Segment
+nach Normalisierung des Tags
+([`ADR-0158`](docs/plan/adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md)).
 Herkunft: `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform` ·
 seit slice-harness-baseline-v6-14-1.
 
@@ -229,7 +233,9 @@ seit slice-harness-baseline-v6-14-1.
 jede betroffene `Accepted` ADR
 erhält **eine** Zeile ihrer §Geschichte-Tabelle (Datum, Ereignis,
 Commit-Kennung). Records (`done/`, `docs/reviews/**`) tragen keine §Geschichte —
-bei ihnen ist die Commit-Kennung der Beleg.
+bei ihnen ist die Commit-Kennung der Beleg. Der Beleg einer Zitat-Korrektur
+nennt je Verweis Form, Einheit, beide Stände, roh oder normalisiert und die
+gedruckte Zeile des Vergleichs (`ADR-0158` Entscheidung 5).
 
 ### 3.6 Gates dürfen nicht ohne ADR gelockert werden
 
