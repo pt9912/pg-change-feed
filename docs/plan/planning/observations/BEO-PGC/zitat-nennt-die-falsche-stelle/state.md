@@ -14,8 +14,12 @@ Ein vierter Beleg (`welle-d-check-verkoerperung`) traf **denselben Commit**,
 der diese Verkörperung schrieb — bestätigt den Wert der Regel unmittelbar
 (siehe evidence-Datei).
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **9×**
-(evidence/slice-antragsqueue-lesefehler-failed.md — der Verweis liegt im eigenen Plan: eine Zeile
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **10×**
+(evidence/slice-zitat-korrektur-vergleichseinheit.md — ein MR-Eintrag (`MR-001`) zitiert ein
+Heading des Regelwerks unter der falschen Datei, der Anker löst an keinem Stand auf (Review F-9,
+INFO); lange nach dem Merge gefunden, bei der Closure als Zitat-Korrektur behoben, Ausgang
+unverändert **verkörpert**;
+evidence/slice-antragsqueue-lesefehler-failed.md — der Verweis liegt im eigenen Plan: eine Zeile
 des nummerierten Suchlauf-Feldes (Review F-2, HIGH) und die Nummer eines Findings des zugehörigen
 Reviews (Verifikation V-1, LOW); beide vor dem Merge gefunden, Ausgang unverändert **verkörpert**;
 evidence/slice-backfill-run-store.md — Kopplungs-Kommentar nennt eine Testdatei, die keinen

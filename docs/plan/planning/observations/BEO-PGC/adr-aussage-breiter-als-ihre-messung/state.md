@@ -113,9 +113,15 @@ Träger-Typ (ADR-Fitness-Function-Zeile, ADR-Prosa-Aussage) treffen, bekommen ke
 
 - `ADR-0157` Entscheidung 1 Bedingung (b) („Referent gemessen derselbe“ per `cmp` des
   Zielinhalts; die Vergleichseinheit bei Anker- und Lokator-Wechsel und die Normalisierung sind
-  nicht festgelegt, Re-Review F-1 zu `slice-harness-baseline-v6-14-1`, MEDIUM) und `ADR-0156`
-  („je Zeile `cmp`-gleich“, gemessen normalisiert, Review F-5, LOW): adressiert mit dem
-  Folge-Slice `slice-zitat-korrektur-vergleichseinheit` (Architect-Zug); `ADR-0156` bleibt
-  unberührt. Schwere MEDIUM, deshalb eine Evidenz-Datei trotz Deckel.
+  nicht festgelegt, Re-Review F-1 zu `slice-harness-baseline-v6-14-1`, MEDIUM): berichtigt mit
+  `ADR-0158` (Teil-Supersede). `ADR-0156` („je Zeile `cmp`-gleich“, gemessen normalisiert,
+  Review F-5, LOW) bleibt unberührt. Schwere MEDIUM, deshalb eine Evidenz-Datei trotz Deckel.
 
-Zähler: 13× (Dateien unter `evidence/`, gemessen mit `ls evidence | wc -l`).
+- `ADR-0158` Entscheidung 1 (Einheit einer HTML-`id` ist die Zeile der `id`) und §Konsequenzen
+  („misst jetzt den Referenten jeder Form“; MR-Pins `5d8855d9` seien Versions-Segmente auf ganze
+  Dateien; gemessen: eine `id` vor einem Heading bleibt an jedem Stand gleich, `5d8855d9` bewegt
+  vier Verweise mit Anker): berichtigt mit `ADR-0159` (Teil-Supersede, Review F-1 und F-2 zu
+  `slice-zitat-korrektur-vergleichseinheit`, HIGH). Schwere HIGH, deshalb eine Evidenz-Datei
+  trotz Deckel.
+
+Zähler: 14× (Dateien unter `evidence/`, gemessen mit `ls evidence | wc -l`).

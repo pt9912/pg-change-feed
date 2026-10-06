@@ -14,10 +14,15 @@ Zugewiesen im Lese-Schritt der Slice-Closure von
 `slice-harness-baseline-v6-14-1` (wellenlos); Architect-Zug: `ADR-0157`
 (`f1f6ae70`).
 
-Benannte Lücke der verkörperten Regel, adressiert: Bedingung (b) von
-`ADR-0157` Entscheidung 1 legt die Vergleichseinheit des Referenten bei
-Anker- und Lokator-Wechsel und die Normalisierung nicht fest (Re-Review F-1,
-MEDIUM) — Folge-Slice `slice-zitat-korrektur-vergleichseinheit`.
+Vergleichseinheit und Normalisierung der Referent-Messung (Bedingung (b) von
+`ADR-0157` Entscheidung 1): festgelegt in
+[`ADR-0158`](../../../../adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md)
+(Einheit je Verweisform) und
+[`ADR-0159`](../../../../adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
+(Einheit einer HTML-`id`, Referent-Messung an MR-Pins, Tag-Paar, Befehlsform),
+umgesetzt in `AGENTS.md` §3.5 (Satz „gemessen wird die Einheit, die der Verweis
+adressiert“; `fc6d104c`, `fce2d159`). Die Befehlsform
+als Skript hinter `make`: Folge-Slice `slice-zitat-vergleich-werkzeug`.
 
 Zähler (abgeleitet): **3×** (evidence/slice-harness-baseline-v6-13-0.md,
 evidence/slice-maintainer-ordner-releasing-verschieben.md,

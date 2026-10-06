@@ -48,9 +48,12 @@ Disziplin.
 - `make doc-immutable RANGE=base..head` bzw. `STAGED=1` — MR-Einträge
   append-only (`harness/conventions/`); enthält die Range den Pin-Commit `P`
   eines Baseline-Bumps, läuft das Ziel in den Teil-Ranges `base..P~1` und
-  `P..head`, den Pin-Commit selbst prüft der Verifier per `cmp`
+  `P..head`; am Pin-Commit selbst belegt der Messende im Slice-Plan des Bumps
+  je MR-Datei den `cmp`
   ([`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
-  Entscheidung 4)
+  Entscheidung 4) und je bewegtem Verweis die Referent-Messung
+  ([`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
+  Entscheidung 2); der Verifier fährt beide nach
 - Nicht-Gate-Sensoren, die dieser Command nennt (rot färbende Mutation je
   Zusage), laufen vor der „fertig"-Meldung; halluzinierte Targets sind verboten
   (AGENTS.md §4) — nur Targets aus `Makefile`/`d-check.mk` nennen
