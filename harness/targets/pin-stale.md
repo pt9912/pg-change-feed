@@ -38,7 +38,13 @@ sind vergleichbar · seit slice-baseline-6-14-0-dokumente-nachziehen.
    aus der geänderten Vorlage oder Regel abgeleitet ist (Skill, Agent-Datei,
    Briefing, README, Konventionen): „übernommen in `<Datei>`“ oder „betrifft das
    Repo nicht“ mit Grund. Dazu der Durchgang durch die Adaptionen in
-   `harness/conventions.md` mit ihren fünf Ausgängen.
+   `harness/conventions.md` mit ihren fünf Ausgängen. Dazu die getrackten
+   Symlinks auf den alten Tag — `git grep` liest kein Symlink-Ziel (Modus
+   120000), `make docs-check` ebenfalls nicht:
+   `git ls-files -s | awk '$1==120000{print $4}' | while read -r p; do printf '%s -> %s\n' "$p" "$(readlink "$p")"; done | grep -F '/<alt>/'`
+   — jeder Treffer wird auf den neuen Tag umgestellt; nach dem Löschen des alten
+   Verzeichnisses meldet `find . -path ./.git -prune -o -xtype l -print` keinen
+   hängenden Symlink.
 2. **Stichprobe gegen den Bestand.** Unabhängig vom Delta, weil eine nie
    übernommene, seither unveränderte Vorlagen-Klausel kein Delta erzeugt. Für
    die aus Vorlagen abgeleiteten Repo-Dokumente (`AGENTS.md`, `harness/README.md`,
@@ -66,6 +72,14 @@ sind vergleichbar · seit slice-baseline-6-14-0-dokumente-nachziehen.
    Instanzen wiederkehrender Vorlagen (ADR, Slice, Welle, Review-Report, `MR`)
    und die Records unter `done/` und `docs/reviews/` werden nicht rückwirkend
    umgeschrieben; neue Instanzen folgen der neuen Form.
+
+**MR-Pins in einem eigenen Commit.** Die Baseline-Pins der MR-Einträge unter
+`harness/conventions/` stellt ein Commit um, der **nur** MR-Dateien ändert und
+dessen Message `ADR-0073` nennt (Pin-Commit). Der Verifier prüft
+`make doc-immutable` dann in den Teil-Ranges um diesen Commit und den
+Pin-Commit selbst per normalisiertem `cmp`
+([`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
+Entscheidung 4).
 
 ## `make pin-stale-actions`
 

@@ -42,5 +42,11 @@ Disziplin.
   zählen nicht; die Ausgabe muss sichtbar sein
 - je Slice-Umfang: `make doc-commits RANGE=base..head` (Traceability je Commit)
   und `make doc-immutable RANGE=base..head` (MR-Immutabilität; ohne `RANGE`
-  endet das Ziel mit Exit 2)
+  endet das Ziel mit Exit 2); enthält die Range einen Pin-Commit `P` eines
+  Baseline-Bumps (ändert nur MR-Dateien, Message nennt `ADR-0073`), läuft
+  `doc-immutable` in den Teil-Ranges `base..P~1` und `P..head` (je Exit 0), und
+  am Pin-Commit selbst je MR-Datei ein `cmp` nach Normalisierung des Tags (je
+  Exit 0) — Befehl in
+  [`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
+  Entscheidung 4
 - Bericht-Ort: `docs/reviews/` (Gerüst: `.harness/baseline/v6.14.1/templates/docs/reviews/review-report.template.md`)
