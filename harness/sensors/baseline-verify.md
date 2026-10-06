@@ -29,8 +29,8 @@ ist dann als Quelle nicht mehr unverändert reproduzierbar.
 
 **Wie groß der Ausschnitt ist, sagt das Kommando, nicht diese Datei:**
 `sha256sum -c` über die `SHA256SUMS` plus Bestandsabgleich; der Lauf meldet
-die Zahl (gemessen 2026-10-05 mit `make baseline-verify`, Exit 0, gedruckte
-Zeile `baseline-verify: v6.14.0 OK — 54 Dateien (Integritaet + Vollstaendigkeit, netzlos)`)
+die Zahl (gemessen 2026-10-06 mit `make baseline-verify`, Exit 0, gedruckte
+Zeile `baseline-verify: v6.14.1 OK — 54 Dateien (Integritaet + Vollstaendigkeit, netzlos)`)
 — sie sagt etwas über den Baseline-Ausschnitt, nicht über das Repo.
 
 ## Ausgabe und Ausgänge
