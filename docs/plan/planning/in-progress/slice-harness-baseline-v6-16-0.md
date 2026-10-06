@@ -277,6 +277,11 @@ Aussagen-Berührung steht hier gar nicht.
 | `Accepted`-ADRs mit `v6.14.1` (`ADR-0095`, `ADR-0156` bis `ADR-0159`), ein Plan unter `done/`, ein Report unter `docs/reviews/` | Zitat-Korrektur je Zeile oder begründete andere Behandlung | nur das Verweisgerüst, das nach dem Löschen ein Gate rot färbt (Liefer-Punkt 2) |
 | dieser Plan, neuer Abschnitt „Bump-Ablauf — Belege“ | update | Schritte 1–3 mit Befehl und gedruckter Zahl, Ausgang je Delta-Punkt, vor dem Löschen von v6.14.1 committet (Liefer-Punkt 3) |
 | `docs/reviews/architect-verdict-…` (Name setzt der Architect) | neu (Architect, nicht Implementer) | Verdikt zum MR-001-Pin bei bewegtem Referent (§4, §6) |
+| `AGENTS.md` §3.6, §5 | update (Plan-Nachzug, Implementer) | Bump-Ablauf Schritt 3: zwei nie übernommene Klauseln der Vorlage (Carveout-Satz in §3.6, Tabellenform in §5), unabhängig von Neu 1 und Neu 2 (Abschnitt „Bump-Ablauf — Belege“) |
+| `harness/README.md` §Sensors (Kommentar-Block) | update (Plan-Nachzug, Implementer) | Bump-Ablauf Schritt 3: zwei nie übernommene Klauseln der Vorlage (Target-Zelle als nackter Name, Herkunft der Sensor-Datei aus `gate.template.md`) |
+| `harness/targets/zitat-vergleich.md` Beispielzeile der Ausgabe | update (Plan-Nachzug, Implementer) | Tag-Paar der Beispielzeile auf v6.14.1:v6.16.0 — dieselbe Form, die die Messung dieses Bumps druckt |
+| `ADR-0160` Zeile 278 | **nicht** angefasst, Frage an den Architect | `versions` meldet `version-stale`; die Zeile ist ein Messbeleg, kein Verweis (Abschnitt „Halt vor MR-001 und den ADR-Zeilen“) |
+| `harness/sensors/baseline-verify.md` | update erst nach dem Löschen von v6.14.1 | die Messzeile nennt die gedruckte Zeile des Laufs auf einem Baum mit nur einem Tag; vorher druckt das Ziel `FEHLER: mehr als ein <tag>-Verzeichnis` |
 
 **Ansatz — Commit-Folge** (Vorbild der Bump auf v6.14.1, `done/slice-harness-baseline-v6-14-1.md`
 §3 und seine Commits, gelesen mit `git log --oneline`):
@@ -342,6 +347,175 @@ Entscheidung je Zeile stehen bleiben; Zeile 2 → 5 (Fixture) plus was der
 MR-001-Ausgang stehen lässt; Zeile 3 → 0; Zeilen 5 und 6 nach der
 Entscheidung je Zeile; Zeilen 7 bis 9 unverändert (Folgearbeit). Jede
 Abweichung steht mit Grund im Feld.
+
+### Bump-Ablauf — Belege (Implementer)
+
+Gemessen am 2026-10-06 im Repo, beide Bäume nebeneinander (Tag-Verzeichnisse
+v6.14.1 und v6.16.0 unter `.harness/baseline/`, Commit `bee507d7`).
+Normalisierte Kopien und Ausgaben liegen im Scratchpad des Laufs
+(`<Scratchpad>/impl-6160/`), keine Repo-Datei geschrieben.
+
+**Liefer-Punkt 1 — Eingang des Baums (`bee507d7`).** `cp -r` des Baums aus dem
+`vendor-baseline`-Lauf des Wegwerf-Klons (Asset-sha256 `feb4d744…`,
+**übernommen**, §1), danach im Repo-Verzeichnis `sha256sum -c SHA256SUMS`:
+Exit 0, 54 Zeilen `: OK` (`grep -c ': OK$'`); `find . -type f | wc -l` 55 (54
+Dateien plus `SHA256SUMS`); `diff -r` gegen den Klon-Baum Exit 0;
+`git diff --cached --name-only | wc -l` 55 vor dem Commit; Stand-Zeile von
+`regelwerk/README.md` „Kurs-Welle 159 · 2026-10-06“. `make baseline-verify` auf
+diesem Stand: make-Exit 2 (`FEHLER: mehr als ein <tag>-Verzeichnis`) — der
+benannte Zwischenstand (§6).
+
+**Schritt 1 — Delta.** Normalisiert je Stand in Kopien
+(`sed 's/v6\.14\.1/vX/g'` bzw. `'s/v6\.16\.0/vX/g'`, `SHA256SUMS`
+ausgenommen), dann `diff -r alt/<teil> neu/<teil>`:
+
+| Teil | Exit | Diff-Zeilen | Dateien | davon Zeilen `<`/`>` |
+|---|---|---|---|---|
+| `templates/` | 1 | 103 | 8 | 70 |
+| `regelwerk/` | 1 | 131 | 6 | 104 |
+
+Roh (`diff -rq` der beiden Tag-Verzeichnisse `| wc -l`) 36 Dateien; die 22
+über die 14 hinaus tragen nur den Versionsstring, dazu `SHA256SUMS`. 234
+normalisierte Zeilen in 14 Dateien bestätigen die übernommene Zahl aus §1. Je
+Änderung der Ausgang (Neu 1 = werkzeug-eigene Teile des Gate-Index, Neu 2 =
+Festlegungen der Harness-Werkzeuge in der Spezifikation):
+
+| # | Änderung (Delta) | abgeleitetes Repo-Dokument | Ausgang |
+|---|---|---|---|
+| R1 | `regelwerk/README.md` Stand-Zeile Kurs-Welle 157 → 159 | `harness/conventions.md` §Baseline | übernommen in `harness/conventions.md` (`a06da54e`) |
+| R2 | `grundlagen-begriffe.md` Zeile `harness/sensors/<target>.md`: „was das Werkzeug prüft … steht in der Spezifikation“ | Sensor-Verträge unter `harness/sensors/`, `harness/targets/` | Folge-Slice Neu 2 |
+| R3 | `grundlagen-begriffe.md` neue Zeile `harness/mk/<werkzeug>.md` | `harness/README.md` §Sensors | Folge-Slice Neu 1 |
+| R4 | `grundlagen-harness-dateien.md` Baum-Eintrag `harness/mk/` | `harness/README.md` | Folge-Slice Neu 1 |
+| R5 | `grundlagen-harness-dateien.md` „Ein Index, mehrere Eigentümer“ (fünf Bedingungen, Vereinigung, Disjunktheit) | `harness/README.md` §Sensors, `.d-check.yml` | Folge-Slice Neu 1 |
+| R6 | `grundlagen-harness-dateien.md` Carveout eines Werkzeug-Gates in der Verweis-Zeile | `harness/README.md` §Sensors | Folge-Slice Neu 1 |
+| R7 | `grundlagen-harness-dateien.md` Sensor-Datei verlinkt die Festlegung in der Spezifikation | `harness/sensors/*.md` | Folge-Slice Neu 2 |
+| R8 | `grundlagen-referenz-richtung.md` §Spec-Straten, neuer Absatz (17 Zeilen) | `spec/pflichtenheft.md`, Gate-ADRs, MR-001 | Folge-Slice Neu 2; für MR-001 Frage an den Architect (unten) |
+| R9 | `modul-03-spec.md` Gliederung des Rang-2-Dokuments um „Festlegungen der Harness-Werkzeuge“ | `spec/pflichtenheft.md`, `spec/lastenheft.md` („Abschnitte 1–7“) | Folge-Slice Neu 2 |
+| R10 | `modul-13-quality-gates.md` drei Stellen (Index samt Werkzeug-Teilen, Carveout-Zeile, Autorität aus mehreren Dateien) | `harness/README.md` §Sensors | Folge-Slice Neu 1 |
+| T1 | `AGENTS.template.md` §4 „Targets aus Werkzeug-Fragmenten stehen in dem Teil des Werkzeugs“ | `AGENTS.md` §4 | Folge-Slice Neu 1 — der Satz beschriebe einen Teil, den es im Repo nicht gibt |
+| T2 | `.d-check.yml` (Vorlage) kommentiertes `targets`-Beispiel | `.d-check.yml` | Folge-Slice Neu 1 — die Aktivierung von `targets` ist eine Gate-Entscheidung ([`AGENTS.md`](../../../../AGENTS.md) §3.6) |
+| T3 | `NNNN-titel.template.md` Gate-ADR schärft ihre Spec-Stelle | neue ADRs (Instanzen) | Folge-Slice Neu 2; bestehende ADRs bleiben (pin-stale.md Schritt 3) |
+| T4 | `adr/README.template.md` Konvention zu `Schärft:` einer Gate-ADR | `docs/plan/adr/README.md` Zeile 192 | Folge-Slice Neu 2 — die Spec-Stelle, auf die sie zeigte, gibt es noch nicht |
+| T5 | `harness/README.template.md` „DIES IST DER GATE-INDEX DES REPOS …“ samt Werkzeug-Teilen | `harness/README.md` §Sensors | Folge-Slice Neu 1 (das Repo führte die Vorgänger-Klausel „DIES IST DER EINZIGE GATE-INDEX“ nie, Schritt 2) |
+| T6 | `harness/README.template.md` Bindung „Spec-Kennung“ | `harness/README.md` §Sensors | Folge-Slice Neu 2 |
+| T7 | `harness/README.template.md` „was es prüft … steht in der Spezifikation“ | `harness/README.md` Kommentar-Block | Folge-Slice Neu 2 |
+| T8 | `gate.template.md` drei Stellen (Spec-Kennung, keine Schwelle/Randform im Vertrag) | `harness/sensors/*.md`, `harness/targets/*.md` (Instanzen) | Folge-Slice Neu 2 |
+| T9 | `Makefile` (Vorlage) Kopfkommentar zu Werkzeug-Fragmenten | `Makefile` (Kopf erzeugt von `ai-harness-init`) | Folge-Slice Neu 1 |
+| T10 | `spezifikation.template.md` neuer §7 „Festlegungen der Harness-Werkzeuge“, Historie wird §8, Verweis „§2 bis §7“ | `spec/pflichtenheft.md`, `spec/lastenheft.md`, MR-001 | Folge-Slice Neu 2 (Rang-1-Berührung, §1) |
+
+Keine der Formänderungen T1 bis T10 ist von Neu 1 oder Neu 2 unabhängig: jede
+beschriebe einen Teil des Gate-Index oder eine Spec-Stelle, die das Repo heute
+nicht führt. Übernommen sind deshalb nur R1 und die zwei Abweichungen aus
+Schritt 3 (unten).
+
+**Neu 1 am Werkzeug gelesen.** `ai-harness-init` v0.2.7, Quelle des Releases
+(`gh release download v0.2.7 --repo pt9912/ai-harness-init --archive=tar.gz`
+in den Scratchpad): alle Pfad-Literale unter `harness/mk/` in `internal/`
+(`grep -rhn '"harness/mk/[^"]*"' internal --include=*.go | grep -v _test`)
+sind `.mk`-Fragmente (`archivierung`, `baseline`, `doc-gate`, `e2e-abdeckung`,
+`enforce`, `erfassung`, `go`, `hooks-install`, `selbstpruefung`, `slice-mv`,
+`traeger`, `vorgaben`, `arch-<modul>`) und `harness/mk/.gitattributes`; kein
+Pfad auf `.md` (`grep -rlE 'harness/mk/[^ "]*\.md' internal cmd` ohne Treffer).
+Installiert ist v0.2.3 (`--version`). **Gemessen:** kein veröffentlichter Stand
+erzeugt `harness/mk/<werkzeug>.md`. Das Repo führt werkzeug-erzeugte Fragmente
+(§1), deren Ziele in `harness/README.md` stehen; den Teil, den die neue Regel
+dem Werkzeug zuschreibt, kann das Repo nicht selbst schreiben („das Repo
+schreibt nicht hinein“, R3). Ausgang: Folge-Slice Neu 1, Auslöser ein
+`ai-harness-init`-Release, das den Teil erzeugt; dazu die ADR für das Modul
+`targets`.
+
+**Adaptionen** gegen das Delta: `MR-002` (Kennungen als Namen), `MR-003`
+(Guard, in-place), `MR-004` (Guard, Host-`python`) — **bleibt gültig**: ihre
+Referenten sind roh gleich (Messung unten). `MR-001` (Rang-2-Datei-Name) — sein
+Referent hat sich bewegt (R8), und seine Aussage „Inhalt und Struktur
+(Abschnitte 1–7 …) sind unverändert“ steht gegen eine Vorlage mit acht
+Abschnitten (T10). Ausgang offen, Frage an den Architect (unten).
+
+**Symlinks.** Befehl aus pin-stale.md Schritt 1 mit `grep -F '/v6.14.1/'`:
+vier Treffer am Parent (§1), nach `a06da54e` null; alle sieben getrackten
+Symlinks lösen auf (`test -e` je Pfad, kein Fehler). Die Prüfung auf hängende
+Symlinks nach dem Löschen steht noch aus.
+
+**Schritt 2 — Stichprobe gegen den Bestand** (Vorlage jeweils aus dem
+Tag-Verzeichnis v6.16.0 unter `.harness/baseline/`; Befehle wie im Vorgänger
+`slice-harness-baseline-v6-14-1`, Muster aus pin-stale.md Schritt 2; voller
+`diff` gegen die Vorlage, beide normalisiert). Am Stand `bee507d7`:
+
+| Dokument | Gliederung (Exit/Zeilen) | Platzh. 1 | Platzh. 2 | voller `diff` |
+|---|---|---|---|---|
+| `AGENTS.md` | 1 / 9 | 7 | 3 | 760 Zeilen (Vorlage im Delta) |
+| `harness/README.md` | 0 / 0 | 11 | 5 | 219 Zeilen (Vorlage im Delta) |
+| `harness/conventions.md` | 0 / 0 | 16 | 7 | — (Vorlage nicht im Delta) |
+| `docs/plan/planning/README.md` | 1 / 4 | 3 | 0 | 9 Zeilen (immer) |
+| `docs/plan/planning/in-progress/roadmap.md` | 0 / 0 | 1 | 0 | — |
+| `docs/plan/adr/README.md` | 1 / 4 | 2 | 0 | 213 Zeilen (Vorlage im Delta) |
+| `docs/plan/carveouts/README.md` | 1 / 4 | 3 | 2 | — |
+
+**Schritt 3 — Ergebnis je Dokument** (jede Trefferzeile beurteilt):
+
+- **`AGENTS.md` — Abweichung mit Beleg, behoben (`a06da54e`).** Gliederung: die
+  9 Zeilen sind die repo-eigenen Hard Rules §3.8–§3.15, wie die Vorlage
+  verlangt. Platzhalter: Notation (`<tag>`, `MR-<NNN>`, `welle-<Kennung>`,
+  `SPEC-<NNN>`, `<PREFIX>-FA-<NN>`). Der volle `diff` zeigt neben
+  ausgefülltem Inhalt zwei nie übernommene Klauseln der Vorlage, die im Delta
+  nicht stehen: §3.6 der Satz „Eine befristete Ausnahme für einen Teil …
+  ist ein Carveout mit Trigger und Folge-Slice; die Schwelle selbst bleibt“,
+  und §5 die Tabellenform (`#`, Regel, Datei) samt `<PREFIX>-RB-<NN>` im
+  ID-Schema. Beide übernommen; die Regeln in §5 tragen den Wortlaut des Repos
+  (`Pflichtenheft`, MR-001). Die §4-Klausel der Vorlage ist T1.
+- **`harness/README.md` — Abweichung mit Beleg, behoben (`a06da54e`).** Der
+  volle `diff` zeigt im Kommentar-Block von §Sensors zwei nie übernommene
+  Klauseln: „TARGET-ZELLE = NACKTER NAME“ (das Repo hält sie ein: keine
+  Target-Zelle trägt im Code-Span ein Argument hinter dem Ziel, `grep -nE` auf
+  Tabellenzeilen, die mit einem Code-Span `make <ziel> <argument>` beginnen,
+  ohne Treffer) und „— kopiert aus `harness/sensors/gate.template.md` der
+  vendored Baseline —“. Beide übernommen. Die Klausel „DIES IST DER …
+  GATE-INDEX“ ist T5, „Spec-Kennung“ T6, der letzte Satz T7. Die übrigen
+  Zeilen sind ausgefüllter Inhalt oder die Beispielzeilen der Vorlage.
+  Platzhalter: Notation (`MR-<NNN>`, `CO-<NNN>`, `<tag>`, `<target>`,
+  `PCF-<S><NNNN>`, `<LH-*>`).
+- **`harness/conventions.md` — entspricht.** Platzhalter wie beim Vorgänger:
+  Kennungsform-Notation, `<tag>`, Anker `mr-<NNN>` im Vorlagen-Kommentar.
+- **`docs/plan/planning/README.md` — entspricht.** Voller `diff` 9 Zeilen:
+  ausgefüllter Titel und der entfernte Template-Hinweis.
+- **`docs/plan/planning/in-progress/roadmap.md` — entspricht.** Zeile 24 `<->`
+  ist ein Pfeil.
+- **`docs/plan/adr/README.md` — entspricht.** Die Spalten-Abweichung ist in der
+  Datei selbst begründet („Spalten — repo-spezifisch“); die Zeile 192 ist T4.
+- **`docs/plan/carveouts/README.md` — entspricht.** Gliederung: ausgefüllter
+  Titel; Platzhalter: Notation.
+
+### Halt vor MR-001 und den ADR-Zeilen (Implementer)
+
+Referent je Verweis mit `make zitat-vergleich`, beide Stände `bee507d7`
+(beide Bäume im Repo), gedruckte Zeilen (Pfadpräfix der Baseline gekürzt):
+
+| Verweis | Einheit | roh | normalisiert v6.14.1:v6.16.0 |
+|---|---|---|---|
+| `MR-001` → `grundlagen-referenz-richtung.md#spec-straten-mehr-als-ein-spec-dokument` | Abschnitt | `cmp 1` (erster Unterschied Zeile 25 der Einheit) | `cmp 1` |
+| `MR-002` → `grundlagen-source-precedence.md#vergabe-woher-die-nächste-kennung-kommt` | Abschnitt | `cmp 0` | — |
+| `MR-003` → `grundlagen-durchsetzungsschicht.md#grenzen--ehrlich-benannt` | Abschnitt | `cmp 0` | — |
+| `MR-004` → `modul-13-quality-gates.md#guard-haertung` | Abschnitt (`id` vor Heading) | `cmp 0` | — |
+| [`ADR-0095`](../../adr/0095-review-klasse-exempt-status-check.md) Zeile 107 → `templates/.d-check.yml` | ganze Datei | `cmp 1` (Zeile 38: das kommentierte `targets`-Beispiel, T2) | `cmp 1` |
+
+`make docs-check` nach `a06da54e` (Stand v6.16.0 in `harness/conventions.md`,
+v6.14.1 noch im Baum): make-Exit 2, `d-check: 1802 Datei(en) geprüft, 6
+Befund(e)`, alle `version-stale` — die vier MR-Dateien,
+[`ADR-0095`](../../adr/0095-review-klasse-exempt-status-check.md) Zeile 107 und
+[`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+Zeile 278. Die letzte ist kein Verweis: sie beschreibt, welchen Pfad der
+simulierte Pin-Commit `689b88d6` umstellte (§Fitness Function), und eine
+Umstellung auf v6.16.0 machte den Messbeleg falsch.
+
+Nach [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
+Entscheidung 1 ist eine Umstellung bei geändertem Referenten keine
+Zitat-Korrektur. Nicht geändert, als Frage an den Architect
+([`AGENTS.md`](../../../../AGENTS.md) §3.5, letzter Absatz): MR-001 Zeile 12,
+`ADR-0095` Zeile 107, `ADR-0160` Zeile 278. Ohne Ausgang für alle drei bleibt
+`versions` rot, und das Löschen von v6.14.1 bräche zusätzlich den Link in
+MR-001 (`links`). Kein MR-Pin-Commit, kein Löschen des alten Tags, bis das
+Artefakt des Architect vorliegt (§4, Rückführung `in-progress → open` falls es
+eine nicht angenommene Folge-ADR verlangt).
 
 ## 4. Trigger
 
