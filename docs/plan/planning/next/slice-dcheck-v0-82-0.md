@@ -24,7 +24,7 @@ ein Harness-Werkzeug und seine Verträge, nicht das Produkt.
 
 **Berührte Spec-Stellen:** — (keine; Harness-Werkzeug und Verträge).
 
-**Verantwortlich:** —
+**Verantwortlich:** pt9912 (Implementer-Agent im Auftrag).
 <!-- BEDIENHINWEIS: Verantwortlich hält die Arbeit — der Rolleninhaber der
 Implementer-Rolle, gesetzt beim Übergang open→next (Baseline-Regelwerk
 modul-05-planning-harness.md §Lifecycle als State Machine). Der Autor schrieb
