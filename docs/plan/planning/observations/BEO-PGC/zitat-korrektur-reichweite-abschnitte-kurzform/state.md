@@ -1,18 +1,24 @@
-Zustand: **geplant** — Ausgang-Vorschlag liegt vor (der Architect hat die
-Kurzform-Lesart als tragende gezogen und im Audit §4.2/§7 niedergelegt:
-„das Gerüst — Pfade, Linkziele, Version-Segmente — darf sich ändern, die
-Aussage und der Referent nie"; engere Lesart für neue Fälle: Folge-ADR,
-die die Abschnitte-Liste von [`ADR-0073`](../../../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
-§Entscheidung 1 an die Kurzform angleicht). Ausgang zugewiesen ist er
-noch nicht: die Klärung der zwei Norm-Texte (`AGENTS.md` §3.5,
-`ADR-0073` §Entscheidung 1) ist eine Entscheidung über die
-Referenz-Ordnung und verlangt den eigenen Architect-Zug — ein Planner,
-der sie selbst träfe, wäre derselbe Kontext, der sie prüfen soll (Modul 8).
-Gelesen wird der Eintrag im Sichtungs-Schritt der Slice-Planung und im
-Lese-Schritt der nächsten Welle-Closure.
+Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` §3.5 (Absatz
+„Ausnahme ist die Zitat-Korrektur“: unberührbar bleibt die **Aussage** von
+§Entscheidung, §Konsequenzen und §Verglichene Alternativen; das Zitatgerüst
+darin darf eine Zitat-Korrektur ändern, wenn der Referent gemessen gleich
+bleibt) und
+[`ADR-0157`](../../../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
+(Teil-Supersede von
+[`ADR-0073`](../../../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
+§Entscheidung 1; Entscheidungen 3 und 4 nehmen die MR-Einträge in die Klasse
+auf) · seit slice-harness-baseline-v6-14-1. Der Herkunfts-Anker steht in
+`AGENTS.md` §3.5 (Zeile „Herkunft: …“).
 
-Zähler (abgeleitet): **2×** (evidence/slice-harness-baseline-v6-13-0.md,
-evidence/slice-maintainer-ordner-releasing-verschieben.md — zweite Form:
-Ort des Referenten statt Versions-Segment, Stellen in §Entscheidung und
-§Konsequenzen von `ADR-0123`; die Folge-ADR zur Angleichung der
-Abschnitte-Liste ist benannt, nicht angelegt).
+Zugewiesen im Lese-Schritt der Slice-Closure von
+`slice-harness-baseline-v6-14-1` (wellenlos); Architect-Zug: `ADR-0157`
+(`f1f6ae70`).
+
+Benannte Lücke der verkörperten Regel, adressiert: Bedingung (b) von
+`ADR-0157` Entscheidung 1 legt die Vergleichseinheit des Referenten bei
+Anker- und Lokator-Wechsel und die Normalisierung nicht fest (Re-Review F-1,
+MEDIUM) — Folge-Slice `slice-zitat-korrektur-vergleichseinheit`.
+
+Zähler (abgeleitet): **3×** (evidence/slice-harness-baseline-v6-13-0.md,
+evidence/slice-maintainer-ordner-releasing-verschieben.md,
+evidence/slice-harness-baseline-v6-14-1.md).

@@ -125,7 +125,8 @@ versions:
 vcs:
   # Append-only der Adaptions-Eintraege (Modul vcs; Target `doc-immutable`
   # mit Commit-Range). Der Core einer MR-Datei bleibt ueber die Range
-  # unveraendert — Eintraege werden nie ueberschrieben.
+  # unveraendert; eine Zitat-Korrektur (Pin-Umstellung beim Bump) steht in
+  # einem eigenen Commit, den der Lauf per Teil-Range umgeht (ADR-0157).
   paths: ["harness/conventions/**/MR-[0-9]*.md"]
   immutable-when: '^- \*\*Datum:\*\*'
 structure:

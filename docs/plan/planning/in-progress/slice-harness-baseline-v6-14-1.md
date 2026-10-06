@@ -102,11 +102,15 @@ Vorlagen abgeleiteten Repo-Dokumente sind nach dem Bump-Ablauf
 - **Bestehende Instanzen der geänderten Vorlagen** (Slice-Pläne, Welle-Notizen,
   Review-Reports mit `BEO-<NNN>`-Resten aus früheren Vorlagen) — Bestand bleibt
   stehen, aus demselben Grund; neue Instanzen folgen der neuen Form.
-- **Die Angleichung der Abschnitte-Liste von
+- **Die Vergleichseinheit und Normalisierung der Referent-Messung** aus
+  [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
+  Entscheidung 1 Bedingung (b) (Re-Review F-1) — ein Folge-Slice übernimmt
+  sie: `slice-zitat-korrektur-vergleichseinheit` (Architect-Zug zuerst). Die
+  Angleichung der Abschnitte-Liste von
   [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
-  §Entscheidung 1 an ihre Kurzform** — ein anderer Vorgang (Architect-Zug,
-  Folge-ADR); dieser Slice zählt nur das dritte Auftreten
-  (`BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform`, §6, §8).
+  §Entscheidung 1 selbst hat der Architect im Konflikt-Pfad dieses Slice
+  entschieden (`ADR-0157`, umgesetzt in `AGENTS.md` §3.5; Abschnitt
+  „Fixrunde“, §6, §8).
 - **Änderung am Werkzeug `ai-harness-init`** (dass `vendor-baseline` neben einem
   anderen Tag abbricht) — ein anderer Vorgang am Werkzeug, nicht am Gegenstand;
   das Werkzeug liegt nicht in diesem Repo.
@@ -203,16 +207,26 @@ Planungsstand hat keinen der Läufe im Repo gefahren
       *Zu belegen durch:* je Muster ein `grep -nE` gegen eine Probe-Datei mit
       der alten und eine mit der neuen Zeile (beide treffen, eine
       gefüllte Anker-Zeile trifft nicht), Ausgabe im Bericht.
-- [ ] `make gates` grün, Exit-Code ungefiltert gesichert
-      ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [x] `make gates` grün, Exit-Code ungefiltert gesichert
+      ([`AGENTS.md`](../../../../AGENTS.md) §3.9) — Exit 0 nach dem
+      Verifikations-Commit `db7ad7e3` (übernommen aus der Rückmeldung des
+      Verifiers); der Lauf nach dem letzten Closure-Commit steht im Bericht der
+      Sitzung.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       Reports: [`review-slice-harness-baseline-v6-14-1`](../../../reviews/review-slice-harness-baseline-v6-14-1.md),
       Re-Review [`review-slice-harness-baseline-v6-14-1-fixrunde`](../../../reviews/review-slice-harness-baseline-v6-14-1-fixrunde.md).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Verifikation in frischem Kontext:
+      [`verify-slice-harness-baseline-v6-14-1`](../../../reviews/verify-slice-harness-baseline-v6-14-1.md)
+      (`db7ad7e3`), DoD-Liefer-Punkte 1–3 bestätigt.
+- [x] Doku-Update: die Träger der Fixrunde (`AGENTS.md` §3.5,
+      `.claude/agents/verifier.md`, `harness/targets/pin-stale.md`) und bei der
+      Closure Re-Review F-3 (`.claude/agents/implementer.md`, Kommentar im Block
+      `vcs:` der `.d-check.yml`).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
       Roadmap führt unter *Offene Wellen* keine Welle, also trägt sie die
       Slice-Closure selbst (nach dem `git mv`).
@@ -283,11 +297,11 @@ ist ein Versionsstring, keine Menge. Gemessen vom Planner am Parent
 74dfb99b 0 -n 'v6\.14\.1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 74dfb99b 7 -nE '\.harness/baseline/v6\.14\.0/' -- docs/plan/planning/done
 74dfb99b 2 -nE '\]\([^)]*\.harness/baseline/v6\.14\.0' -- docs/plan/planning/done docs/reviews
-diff 10 -n 'v6\.14\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 11 -n 'v6\.14\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 0 -nE '\.harness/baseline/v6\.14\.0/' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 0 -n 'Kurs-Welle 156' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 0 -n 'BEO-<NNN>' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 23 -n 'v6\.14\.1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 24 -n 'v6\.14\.1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 2 -nE '\.harness/baseline/v6\.14\.0/' -- docs/plan/planning/done
 diff 0 -nE '\]\([^)]*\.harness/baseline/v6\.14\.0' -- docs/plan/planning/done docs/reviews
 ```
@@ -303,7 +317,15 @@ Zeile 6 steht bei 2 statt 0: die Zeilen 277 und 337 des v6.14.0-Records bleiben
 per `ADR-0156` unverändert (Entscheidungstabelle unten). Zeile 5 sind die
 v6.14.1-Nennungen: am Stand `4045dc4f` 21 (lebende Träger und vier Zeilen in
 `ADR-0156`), nach der Fixrunde (`891d81e7`) 23 — dazu zwei Zeilen in
-`ADR-0157` (`f1f6ae70`), die den Bump als Anlass nennen.
+`ADR-0157` (`f1f6ae70`), die den Bump als Anlass nennen. Nachgemessen bei der
+Closure am Arbeitsbaum des Inhalts-Commits: Zeile 1 steht bei 11, Zeile 5 bei
+24 — neu sind `observation.md` von `BEO-PGC/bump-ablauf-ohne-symlink-ziele`
+(nennt `2d51b380` mit `v6.14.0`) und eine Zeile in
+`slice-zitat-korrektur-vergleichseinheit` §1 (`v6.14.1`). Die
+`evidence/slice-harness-baseline-v6-14-1.md`-Belege dieser Closure nennen den
+Bump ebenfalls, zählen aber nicht: `make suchlauf-nachmessen` schließt jede
+Datei mit dem Namen des Plans aus (`tools/harness/suchlauf-nachmessen.sh`,
+Ausschluss `**/<Plan-Dateiname>`).
 
 Die 19 Treffer der ersten Zeile verteilen sich auf 13 lebende Träger (§2,
 Liefer-Punkt 2) und zwei Register-Records
@@ -479,8 +501,8 @@ Abschnitte-Liste von §Entscheidung 1, die §Verglichene Alternativen als
 unberührbar führt. Referent gemessen unverändert: `templates/.d-check.yml`
 ist zwischen beiden Tags roh byte-gleich (`cmp`, Exit 0), die Aussage über
 `matrix.status` steht unverändert. Das ist das dritte Auftreten von
-`BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform` (§6); Folge-Slice und
-Evidence legt die Closure an, nicht dieser Lauf.
+`BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform` (§6); Evidence und
+Ausgang legt die Closure an, nicht dieser Lauf.
 
 **Records** (mit `make docs-check` gemessen: am Arbeitsbaum nach dem
 Umstellen von `harness/conventions.md` §Baseline, vor `5d8855d9`, meldete
@@ -573,8 +595,10 @@ nicht umgeschrieben, diese Zeile trägt die Kennung nach. Gemessen (Stand
 - **F-6 (INFO) — nicht geändert, Befund.** Siehe Befund 4.
 - **F-7 (INFO) — keine Aktion.** Siehe Befund 5.
 
-Die DoD-Zeile „Review durchgeführt“ bleibt offen: die Fixrunde ändert eine Norm
-(`AGENTS.md` §3.5), ein Re-Review folgt.
+Die Fixrunde ändert eine Norm (`AGENTS.md` §3.5), deshalb ein Re-Review:
+`review-slice-harness-baseline-v6-14-1-fixrunde` (`26bfde80`), kein HIGH; die
+DoD-Zeile „Review durchgeführt“ ist abgehakt. Seine Findings F-1 bis F-5
+behandelt §7.
 
 ## 4. Trigger
 
@@ -638,32 +662,54 @@ dasteht.
   `9eca47e2`/`484d20ec` (zwei Tag-Verzeichnisse, Löschen erst in `990f1a0e`).
   Der rote Stand darf den Hauptzweig nicht einzeln erreichen: gepusht wird erst
   die vollständige Folge bis zum Löschen. *Zu belegen durch:* `make gates`
-  Exit 0 auf dem Commit nach dem Löschen.
+  Exit 0 auf dem Commit nach dem Löschen. —
+  **Ausgang:** entfallen — `make baseline-verify` Exit 0 mit `v6.14.1 OK — 54
+  Dateien` nach `e2666499`, `make gates` Exit 0 nach `db7ad7e3`; kein
+  Zwischenstand ist gepusht (`git merge-base --is-ancestor 4da92b66 origin/main`
+  falsch, Verifikation §3).
 - **Der kopierte Baum ist nicht der des Werkzeugs.** Ein `cp -r` aus dem Klon
   könnte Dateien verlieren oder hinzufügen (Rechte, versteckte Dateien wie
   `templates/.d-check.yml`). *Zu belegen durch:* `sha256sum -c SHA256SUMS` im
   Repo-Verzeichnis (54 erwartet) und `make baseline-verify` nach dem Löschen,
-  das auch zusätzliche Dateien meldet.
+  das auch zusätzliche Dateien meldet. —
+  **Ausgang:** entfallen — `sha256sum -c` 54 von 54 `OK`, `make baseline-verify`
+  Exit 0; der Verifier fand den Baum gegen das neu geladene Release-Asset
+  byte-gleich bis auf die von `vendor-baseline` angelegte `SHA256SUMS`
+  (Verifikation §1).
 - **Die Zitat-Korrektur an `ADR-0095` §Verglichene Alternativen ist das dritte
   Auftreten von `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform`**
   (2× am Parent, gemessen: zwei Dateien unter `evidence/`). Mit diesem Slice
-  wird der Eintrag eine Lücke und braucht einen eigenen Folge-Slice
-  (Baseline-Regelwerk `modul-05-planning-harness.md` §Zwei Schritte vor der
-  Modus-Begründung): den Architect-Zug, der die Abschnitte-Liste von
+  wird der Eintrag eine Lücke (Baseline-Regelwerk `modul-05-planning-harness.md`
+  §Zwei Schritte vor der Modus-Begründung): die Abschnitte-Liste von
   [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
-  §Entscheidung 1 an die Kurzform angleicht (Folge-ADR). Die Datei des
-  Folge-Slice liegt spätestens bei der Closure dieses Slice im Lifecycle
-  (Folge-Slice-Paarung); der Planner legt sie an. Erwarteter Ausgang:
-  eingetreten, mit der Kennung des Folge-Slice.
+  §Entscheidung 1 steht gegen ihre Kurzform. —
+  **Ausgang:** eingetreten — `slice-zitat-korrektur-vergleichseinheit`. Den
+  Kern der Lücke hat der Architect im Konflikt-Pfad dieses Slice entschieden
+  ([`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md),
+  `f1f6ae70`, umgesetzt in `AGENTS.md` §3.5); der Register-Eintrag ist damit
+  *verkörpert* (§7). Offen bleibt die Lücke der neuen Regel selbst —
+  Vergleichseinheit und Normalisierung in Bedingung (b), Re-Review F-1 —, und
+  die trägt der Folge-Slice.
 - **Eine Pin-Zeile in einem Record misst an ihrem Commit gegen den v6.14.0-Pfad**
   (`done/slice-baseline-6-14-0-dokumente-nachziehen.md`, `suchlauf`-Zeile mit
   Pfad-Argument in das Tag-Verzeichnis v6.14.0): eine Zitat-Korrektur änderte das Ergebnis
   der Messung, die der Record festhält, und wäre keine reine Gerüst-Änderung.
   *Zu belegen durch:* die Entscheidung je Zeile im Bericht (Korrektur,
-  Ausnahme-Marker mit Grund, oder Folge-ADR).
+  Ausnahme-Marker mit Grund, oder Folge-ADR). —
+  **Ausgang:** entfallen — die Zeile 277 bleibt unverändert, weil `versions`
+  `done/**` ausnimmt
+  ([`ADR-0156`](../../adr/0156-versions-gate-nimmt-done-records-aus.md),
+  `435c9c75`); die Messung des Records bleibt gültig, und `make docs-check` ist
+  grün (Entscheidungstabelle in §3, Verifikation §1).
 - **Der Bump-Ablauf findet Abweichungen über das Delta hinaus** (Schritt 2
   liest unabhängig vom Delta). *Zu belegen durch:* das Ergebnis je Dokument in
-  Schritt 3 (Behebung hier oder Folge-Slice mit Kennung, §4).
+  Schritt 3 (Behebung hier oder Folge-Slice mit Kennung, §4). —
+  **Ausgang:** entfallen — Schritt 3 fand keine Abweichung, die einen
+  Folge-Slice oder eine Rückführung (§4) verlangte: die eine Abweichung (die
+  Vorlagen-Klammer `<z.B. …>` in `AGENTS.md` §3.7) war mechanisch und ist im
+  Slice behoben (§3, Schritt 3; Verifikation §2). Die zwei Lücken der
+  Platzhalter-Muster (Befunde 1 und 2) betreffen den Ablauf, nicht den Bestand;
+  sie stehen in §7 als benannte Folgearbeit.
 
 Jedes Risiko bekommt bei der Closure genau einen Ausgang (eingetreten mit
 `CO-*`- oder Slice-Kennung · entfallen mit Grund · weiter offen ins Register).
@@ -671,13 +717,6 @@ Kein Workflow unter `.github/workflows/` ist berührt; [`AGENTS.md`](../../../..
 §3.10 greift nicht.
 
 ## 7. Closure-Notiz
-
-<!-- BEDIENHINWEIS — keine Norm; faellt beim Kopieren weg (README.md
-§Verwendung, Schritt 5) und darf deshalb nichts Tragendes halten. Reihenfolge:
-diese Sektion vor dem `git mv` nach done/ fuellen — einzige Ausnahme ist das
-letzte DoD-Item in §2 (die Paarungen suchen in `done/`, also nach dem `git mv`).
-Im Repo ohne Wellen-Betrieb braucht die Closure dadurch drei Commits: Inhalt,
-`git mv`, Haekchen — das folgt aus der Hard Rule, es widerspricht ihr nicht. -->
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register (vorhandene `BEO-<NNN>` **zitieren** statt neu
@@ -691,20 +730,139 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Gegenstand:** <übernommen von `slice-<Kennung>` | entfallen: <Grund>>
-  *(nur beim Ausgang ohne Arbeit; sonst Zeile löschen)*
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-kennung-a>, <slice-kennung-b>, <slice-kennung-c> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-<Kennung>.md` | `evidence/slice-<Kennung>.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-<Kennung> (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Geliefert:** Die vendored Baseline steht auf v6.14.1, v6.14.0 ist entfernt
+  (Liefer-Punkt 1: `4da92b66`, `e2666499`; `make baseline-verify` Exit 0, 54
+  Dateien). Jede lebende Nennung und jeder Pin nennt v6.14.1, auch die vier
+  Regel-Symlinks unter `.claude/rules/` (Liefer-Punkt 2: `5d8855d9`,
+  `b6c5b419`; Zitat-Korrekturen `eadf3054` an `ADR-0095`, `54c6e632` an vier
+  Records, `cc9ecb27` an einem Verdikt). Der Bump-Ablauf ist mit Befehl und
+  Zahl je Schritt belegt, die Nachzüge (b) und (c) sind gemacht (Liefer-Punkt
+  3: `6290dd9a`, `bc0aaeeb`). Zwei ADRs sind entstanden:
+  [`ADR-0156`](../../adr/0156-versions-gate-nimmt-done-records-aus.md)
+  (`versions` nimmt `done/**` aus) und
+  [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
+  (Reichweite der Zitat-Korrektur nach Aussage; MR-Pins in einem eigenen
+  Commit), umgesetzt in `AGENTS.md` §3.5, `.claude/agents/verifier.md` und
+  `harness/targets/pin-stale.md`. Review
+  `docs/reviews/review-slice-harness-baseline-v6-14-1.md` (1 HIGH, 2 MEDIUM,
+  2 LOW, 2 INFO), Fixrunde, Re-Review
+  `docs/reviews/review-slice-harness-baseline-v6-14-1-fixrunde.md` (kein HIGH),
+  Verifikation `docs/reviews/verify-slice-harness-baseline-v6-14-1.md`
+  (`db7ad7e3`, DoD bestätigt).
+- **Was hat funktioniert:** Der Weg über den Wegwerf-Klon trug, obwohl
+  `vendor-baseline` neben einem anderen Tag abbricht: Der Baum ist mit dem
+  Release-Asset byte-gleich bis auf `SHA256SUMS`, und kein roter Zwischenstand
+  ist gepusht (Verifikation §1, §3). Die Entscheidungstabelle je Record-Zeile
+  mit `cmp` des Referenten hat jede Korrektur auf eine Messung gestellt und
+  zwei Zeilen, an denen eine Korrektur die Aussage geändert hätte, sichtbar
+  gemacht. Beide Konflikte gingen über den Konflikt-Pfad an den Architect,
+  ohne dass der Implementer still einer ADR widersprach (`ADR-0156`,
+  `ADR-0157`). Re-Review und Verifier haben die Messungen der Fixrunde in
+  frischem Kontext nachgefahren, mit gleichem Ergebnis.
+- **Was ging anders als geplant:**
+  (1) **Records mussten per ADR ausgenommen werden.** Der Plan sah für die
+  gate-roten Record-Zeilen Zitat-Korrektur oder „begründete andere
+  Behandlung“ vor. Zwei Zeilen ließen keine Korrektur zu: eine `suchlauf`-Zeile,
+  die an ihrem Commit gegen den v6.14.0-Pfad misst, und eine mit geändertem
+  Referenten. Die Ausnahme brauchte eine Gate-Entscheidung, `ADR-0156`
+  (`AGENTS.md` §3.6). Die fünf schon gemachten Record-Korrekturen wären danach
+  nicht mehr nötig gewesen (Review F-7).
+  (2) **Die Symlinks fand erst der Auftraggeber.** `git grep` liest kein
+  Symlink-Ziel, `make docs-check` sieht hängende Symlinks nicht. Der Suchlauf
+  nach `AGENTS.md` §3.13 meldete deshalb „jede lebende Nennung“, während vier
+  Symlinks ins Leere zeigten (Review F-1, HIGH). Die Nachmessung zeigt, dass sie
+  seit `slice-105` hingen und zwei Bumps sie stehen ließen.
+  (3) **`ADR-0073` reichte nicht.** Die `ADR-0095`-Korrektur sitzt zum dritten
+  Mal in einem Abschnitt, den die Abschnitte-Liste als unberührbar führt, und
+  der MR-Pin-Commit färbt `make doc-immutable` über die volle Range rot (Review
+  F-2, F-3). Der Architect entschied beides mit `ADR-0157` als Teil-Supersede.
+  (4) **Die neue ADR hat selbst eine Lücke.** Bedingung (b) legt die
+  Vergleichseinheit bei Anker- und Lokator-Wechsel nicht fest (Re-Review F-1);
+  sie geht an den Folge-Slice.
+- **Re-Review-Pflichten in der Closure:**
+  F-1 (MEDIUM) → Folge-Slice `slice-zitat-korrektur-vergleichseinheit`
+  (`5ae65a5a`), Abgrenzung in beiden Plänen.
+  F-2 (MEDIUM) → §1, §6 und §8 nennen den Ausgang `ADR-0157`/*verkörpert*
+  statt eines Folge-Slice für die Abschnitte-Liste.
+  F-3 (LOW) → `.claude/agents/implementer.md` nennt die Teil-Ranges um den
+  Pin-Commit; der Kommentar im Block `vcs:` der `.d-check.yml` nennt die
+  Zitat-Korrektur im eigenen Commit (ein Anker, `ADR-0157`; Konfiguration
+  unverändert).
+- **Befunde (gemeldet, nicht geändert):**
+  - **Befunde 1 und 2 (§3), Platzhalter-Muster in
+    `harness/targets/pin-stale.md` Schritt 2:** Muster 2 sucht `<z\. B\.` und
+    verfehlt `<z.B.`; Muster 1 liest zeilenweise und verfehlt Platzhalter über
+    eine Zeilengrenze. Benannte Folgearbeit: der Plan des nächsten Bump-Slice,
+    der Schritt 2 fährt, schärft beide Muster und belegt sie an `AGENTS.md`
+    §3.7 im Stand vor `bc0aaeeb`.
+  - **Befund 3 (Review F-5, LOW) und Befund 4 (F-6, INFO) an `ADR-0156`:** die
+    Messung „`cmp`-gleich“ war normalisiert; der Eintrag
+    `BEO-PGC/exemption-ohne-reifegrenze` ist nicht genannt. Beides änderte die
+    Aussage einer `Accepted`-ADR. Keine Änderung. F-5 ist unter
+    `BEO-PGC/adr-aussage-breiter-als-ihre-messung` mitgezählt; F-6 ist kein
+    weiteres Auftreten von `exemption-ohne-reifegrenze` (die Ausnahme hat die
+    empfohlene Reifegrenze), benannt, nicht gezählt.
+  - **Befund 5 (F-7, INFO):** keine Aktion; die Record-Korrekturen genügen
+    `ADR-0073`, kein Beleg in `BEO-PGC/record-rueckwirkend-umgeschrieben`.
+  - **Re-Review F-4 (INFO):** `AGENTS.md` §3.5, Absatz „Beleg“, nennt die
+    MR-Einträge nicht als Klasse ohne §Geschichte. `ADR-0157` verlangt das
+    nicht; die Belegform steht in `harness/targets/pin-stale.md` und
+    `.claude/agents/verifier.md`. Keine Folgearbeit.
+  - **Re-Review F-5 (INFO):** die Schleife aus `ADR-0157` Entscheidung 4 färbt
+    ihren Exit nicht. Benannt in `slice-zitat-korrektur-vergleichseinheit` §1
+    (geht mit, wenn der Architect sie in denselben Zug nimmt).
+  - **„Sechs Gate-Ziele“ (Verifikation §6):** `.claude/agents/verifier.md` und
+    `.claude/agents/implementer.md` zählen sechs Gate-Ziele und nennen sechs
+    Namen; `GATE_CHECKS` hat zehn (gemessen: `git grep -n 'GATE_CHECKS +='
+    -- Makefile harness/mk a-check.mk` druckt zehn Zeilen). Keine Ein-Wort-Korrektur: die
+    Namensliste müsste mitwachsen. Älter als dieser Slice. Benannte
+    Folgearbeit: der nächste Zug an `.claude/agents/` ersetzt die Liste durch
+    den Zeiger auf `harness/README.md` §Sensors (`AGENTS.md` §4: der
+    Gate-Index steht einmal). Unter
+    `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` benannt, nicht gezählt
+    (Deckel: INFO, vom Verifier gefunden, bekannter Träger-Typ).
+- **Steering-Loop-Eintrag 1:** Hard Rule geschärft: Die Zitat-Korrektur reicht
+  nach der Aussage, nicht nach dem Abschnitt; das Zitatgerüst in §Entscheidung,
+  §Konsequenzen und §Verglichene Alternativen darf sie ändern, wenn der
+  Referent gemessen gleich bleibt (`ADR-0157`).
+  — liegt in `AGENTS.md §3.5`.
+  Auslöser: `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform` (slice-harness-baseline-v6-13-0, slice-maintainer-ordner-releasing-verschieben, slice-harness-baseline-v6-14-1 — 3×).
+- **Steering-Loop-Eintrag 2:** Verfahrensregel geschärft: Schritt 1 des
+  Bump-Ablaufs prüft die getrackten Symlinks auf den alten Tag und nach dem
+  Löschen auf hängende Symlinks.
+  — liegt in `harness/targets/pin-stale.md §Bump-Ablauf`.
+  Auslöser: `BEO-PGC/bump-ablauf-ohne-symlink-ziele` (slice-105, slice-harness-baseline-v6-13-0, slice-harness-baseline-v6-14-1 — 3×).
+  Ohne eigenen Architect-Zug: Die Regel ist ein Verfahrensschritt, keine
+  Entscheidung. Sie entstand in der Fixrunde (`fca136d4`), das Re-Review hat
+  sie geprüft (F-4 geschlossen) und der Verifier auch, beide in frischem
+  Kontext. Ein weiterer Architect-Zug fände keinen neuen Gegenstand. Die zwei
+  ersten Belege sind später gefunden (gemessen an `9b9e9b84` und `3c9d9483`:
+  nur der neue Tag liegt unter `.harness/baseline/`, die Symlinks zeigen auf
+  `v6.5.0`). `2d51b380` ist ohne Vorgang und nur benannt.
+  Benannte Spec-Lücke: keine.
+- **Beobachtungs-Register (`../observations/`):**
+  - `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform/`:
+    `evidence/slice-harness-baseline-v6-14-1.md` ergänzt (Review F-2, F-3 als
+    zweite Form im selben Vorgang), Zähler 3×, Ausgang **verkörpert**
+    (Lese-Schritt dieser Closure).
+  - `BEO-PGC/bump-ablauf-ohne-symlink-ziele/` neu angelegt, drei Belege
+    (`slice-105`, `slice-harness-baseline-v6-13-0`, dieser Slice; Review F-4),
+    Zähler 3×, Ausgang **verkörpert** (Lese-Schritt dieser Closure).
+  - `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht/`: Beleg ergänzt (Review
+    F-1, HIGH, Datei trotz Deckel), Zähler 24×.
+  - `BEO-PGC/adr-aussage-breiter-als-ihre-messung/`: Beleg ergänzt (Re-Review
+    F-1, MEDIUM, Datei trotz Deckel; F-5 im selben Vorgang), Zähler 13×.
+  - `BEO-PGC/nachzug-laesst-ueberholten-text-stehen/`: Beleg ergänzt
+    (Re-Review F-2, MEDIUM, Datei trotz Deckel), Zähler 21×.
+  - Ohne Datei: Re-Review F-3 (LOW, vor dem Merge gefunden, bekannter
+    Träger-Typ) unter `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (Deckel,
+    34×). Keine weitere Klasse erreicht mit diesem Slice 3×.
+- **Folge-Slices:** `slice-zitat-korrektur-vergleichseinheit` (Vergleichseinheit
+  und Normalisierung der Referent-Messung einer Zitat-Korrektur festlegen) —
+  ist eine Datei in `open/`.
+- **Risiken aus §6:** je ein Ausgang, siehe §6 — Zitat-Korrektur-Reichweite
+  eingetreten (`slice-zitat-korrektur-vergleichseinheit`), die übrigen vier
+  entfallen.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
@@ -734,11 +892,12 @@ gemessen mit `ls | wc -l` am 2026-10-06), gefiltert nach Baseline, Vorlage,
 Zitat-Korrektur, Record und Nachzug. Treffer mit Bezug zu diesem Gegenstand,
 Zähler als Zahl der `evidence/`-Dateien (gemessen):
 
-- `zitat-korrektur-reichweite-abschnitte-kurzform` — **2×**, Stand *geplant*
-  ohne Folge-Slice-Datei. Die `ADR-0095`-Korrektur dieses Slice ist das dritte
-  gezählte Auftreten (die gleichartige Korrektur `cd364fc5` beim Bump auf
-  v6.14.0 hat keine `evidence/`-Datei) — damit eine Lücke, eigener Folge-Slice,
-  §6.
+- `zitat-korrektur-reichweite-abschnitte-kurzform` — **2×** bei der Planung,
+  Stand *geplant* ohne Folge-Slice-Datei. Die `ADR-0095`-Korrektur dieses Slice
+  ist das dritte gezählte Auftreten (die gleichartige Korrektur `cd364fc5` beim
+  Bump auf v6.14.0 hat keine `evidence/`-Datei) — damit eine Lücke. Entschieden
+  im Konflikt-Pfad dieses Slice (`ADR-0157`), Ausgang *verkörpert* bei der
+  Closure (§6, §7).
 - `record-rueckwirkend-umgeschrieben` — **1×**. Berührt die Grenze in §1: die
   Aussage der Records bleibt, nur das gate-rote Verweisgerüst wird korrigiert.
 - `vorlagenrest-in-closure-notiz` — 4×, *verkörpert*; ihr Kandidatenlauf in

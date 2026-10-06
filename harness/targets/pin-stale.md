@@ -44,7 +44,8 @@ sind vergleichbar · seit slice-baseline-6-14-0-dokumente-nachziehen.
    `git ls-files -s | awk '$1==120000{print $4}' | while read -r p; do printf '%s -> %s\n' "$p" "$(readlink "$p")"; done | grep -F '/<alt>/'`
    — jeder Treffer wird auf den neuen Tag umgestellt; nach dem Löschen des alten
    Verzeichnisses meldet `find . -path ./.git -prune -o -xtype l -print` keinen
-   hängenden Symlink.
+   hängenden Symlink · seit slice-harness-baseline-v6-14-1
+   (`BEO-PGC/bump-ablauf-ohne-symlink-ziele`).
 2. **Stichprobe gegen den Bestand.** Unabhängig vom Delta, weil eine nie
    übernommene, seither unveränderte Vorlagen-Klausel kein Delta erzeugt. Für
    die aus Vorlagen abgeleiteten Repo-Dokumente (`AGENTS.md`, `harness/README.md`,

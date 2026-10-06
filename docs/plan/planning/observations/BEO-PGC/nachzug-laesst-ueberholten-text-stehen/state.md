@@ -12,7 +12,11 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 20× (Dateien unter `evidence/`; die zwanzigste,
+Zähler: 21× (Dateien unter `evidence/`; die einundzwanzigste,
+`evidence/slice-harness-baseline-v6-14-1.md`, trägt Re-Review F-2 (MEDIUM): §1, §6 und §8 des
+Slice-Plans erwarteten nach der Fixrunde weiter einen Folge-Slice, den `ADR-0157` erübrigt hatte
+(Träger-Typ Slice-Plan); bei der Closure nachgezogen, Ausgang unverändert **verkörpert**;
+die zwanzigste,
 `evidence/slice-abgeleitete-dokumente-vorlagen-nachzug.md`, trägt F-2 (MEDIUM) und V-2 (INFO):
 der neue Abschnitt `## Konventionen` des ADR-Index nannte die Immutabilität ohne die Ausnahme
 Zitat-Korrektur, die der Kopf-Absatz derselben Datei trug, und der Plan-Nachzug ließ

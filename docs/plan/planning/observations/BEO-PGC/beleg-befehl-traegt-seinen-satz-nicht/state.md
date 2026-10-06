@@ -22,7 +22,12 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **23×** (die dreiundzwanzigste Datei:
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **24×** (die vierundzwanzigste Datei:
+evidence/slice-harness-baseline-v6-14-1.md — Form **Werkzeug**, F-1 (HIGH, daher Datei trotz
+Deckel): der Suchlauf trug den Haken „jede lebende Nennung“, sein `git grep` liest aber keine
+Symlink-Ziele; in der Fixrunde mit einer Messung je Stand über die Blobs behoben, Ausgang
+unverändert **verkörpert**;
+die dreiundzwanzigste Datei:
 evidence/slice-abgeleitete-dokumente-vorlagen-nachzug.md — Form **Befehl**, F-1 (HIGH, daher
 Datei trotz Deckel): eine Auszählung der Bindung-Spalte stand ohne Befehl und gedruckte Zahlen
 als Grundlage einer abgeleiteten Klassenliste, die Nachzählung des Reviewers ergab andere Zahlen

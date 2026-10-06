@@ -221,6 +221,8 @@ und §Verglichene Alternativen sowie §Status und die `Supersedes`-Kette; ihre
 Abschnitten darf eine Zitat-Korrektur ändern, wenn der Referent gemessen gleich
 bleibt
 ([`ADR-0157`](docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)).
+Herkunft: `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform` · seit
+slice-harness-baseline-v6-14-1.
 
 **Beleg:** Die Commit-Message nennt
 [`ADR-0073`](docs/plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md);

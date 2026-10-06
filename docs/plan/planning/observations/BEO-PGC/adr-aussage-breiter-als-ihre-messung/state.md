@@ -111,4 +111,11 @@ Träger-Typ (ADR-Fitness-Function-Zeile, ADR-Prosa-Aussage) treffen, bekommen ke
 `evidence/`-Datei, sondern stehen mit Finding-Kennung in der Closure-Notiz des Slice
 (`../../README.md`). Ausgang unverändert **verkörpert**.
 
-Zähler: 12× (Dateien unter `evidence/`, gemessen mit `ls evidence | wc -l`).
+- `ADR-0157` Entscheidung 1 Bedingung (b) („Referent gemessen derselbe“ per `cmp` des
+  Zielinhalts; die Vergleichseinheit bei Anker- und Lokator-Wechsel und die Normalisierung sind
+  nicht festgelegt, Re-Review F-1 zu `slice-harness-baseline-v6-14-1`, MEDIUM) und `ADR-0156`
+  („je Zeile `cmp`-gleich“, gemessen normalisiert, Review F-5, LOW): adressiert mit dem
+  Folge-Slice `slice-zitat-korrektur-vergleichseinheit` (Architect-Zug); `ADR-0156` bleibt
+  unberührt. Schwere MEDIUM, deshalb eine Evidenz-Datei trotz Deckel.
+
+Zähler: 13× (Dateien unter `evidence/`, gemessen mit `ls evidence | wc -l`).

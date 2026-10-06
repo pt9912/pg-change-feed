@@ -46,7 +46,11 @@ Disziplin.
 - `make doc-commits RANGE=base..head` — Traceability-Kennung (`LH-*`/`ADR-*`)
   je Commit-Message
 - `make doc-immutable RANGE=base..head` bzw. `STAGED=1` — MR-Einträge
-  append-only (`harness/conventions/`)
+  append-only (`harness/conventions/`); enthält die Range den Pin-Commit `P`
+  eines Baseline-Bumps, läuft das Ziel in den Teil-Ranges `base..P~1` und
+  `P..head`, den Pin-Commit selbst prüft der Verifier per `cmp`
+  ([`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
+  Entscheidung 4)
 - Nicht-Gate-Sensoren, die dieser Command nennt (rot färbende Mutation je
   Zusage), laufen vor der „fertig"-Meldung; halluzinierte Targets sind verboten
   (AGENTS.md §4) — nur Targets aus `Makefile`/`d-check.mk` nennen
