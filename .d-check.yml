@@ -117,7 +117,11 @@ versions:
   # harness/conventions/done/** oben · seit slice-105.
   pin-pattern: '\.harness/baseline/(v\d+\.\d+\.\d+)/'
   current-from: harness/conventions.md#baseline
-  exempt-paths: ["harness/conventions/done/**", "docs/reviews/**"]
+  # docs/plan/planning/done/** sind Records derselben Art: ihr version-stale
+  # entsteht durch einen Bump ausserhalb der Datei, nicht durch ihren Text.
+  # Die Ausnahme gilt nur fuer versions; links und anchors pruefen done/ weiter
+  # (ADR-0156).
+  exempt-paths: ["harness/conventions/done/**", "docs/reviews/**", "docs/plan/planning/done/**"]
 vcs:
   # Append-only der Adaptions-Eintraege (Modul vcs; Target `doc-immutable`
   # mit Commit-Range). Der Core einer MR-Datei bleibt ueber die Range
