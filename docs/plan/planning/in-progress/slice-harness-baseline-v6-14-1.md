@@ -141,7 +141,7 @@ Alle Beleg-Angaben dieser Liste sind **Zusagen** („zu belegen durch …“): d
 Planungsstand hat keinen der Läufe im Repo gefahren
 ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) Instanz B).
 
-- [ ] **Baseline v6.14.1 vendored und verifiziert, v6.14.0 entfernt
+- [x] **Baseline v6.14.1 vendored und verifiziert, v6.14.0 entfernt
       (Liefer-Punkt 1).** `.harness/baseline/<Tag>/` (Tag: v6.14.1) committet
       (Regelwerk + Templates + `SHA256SUMS`, 54 Dateien erwartet), aus einem
       `vendor-baseline`-Lauf mit dem Asset-sha256
@@ -151,7 +151,7 @@ Planungsstand hat keinen der Läufe im Repo gefahren
       SHA256SUMS` im neuen Verzeichnis (Exit-Code, Zahl der `OK`-Zeilen) vor dem
       Löschen des alten und `make baseline-verify` danach (gedruckte Zeile
       `baseline-verify: v6.14.1 OK — 54 Dateien …` erwartet, Exit 0).
-- [ ] **Verweise und Pins nachgezogen (Liefer-Punkt 2).** Jede lebende Nennung
+- [x] **Verweise und Pins nachgezogen (Liefer-Punkt 2).** Jede lebende Nennung
       von `v6.14.0` zeigt auf v6.14.1: [`AGENTS.md`](../../../../AGENTS.md) §1
       (Release-URL); `harness/conventions.md` §Baseline (Stand, Datum der
       Adoption, Release-URL, Stand-Zeile „Kurs-Welle 157 · 2026-10-06“);
@@ -227,6 +227,8 @@ Aussagen-Berührung steht hier gar nicht.
 | vier Pläne unter `done/`, ein Report unter `docs/reviews/` (Liste in §2) | Zitat-Korrektur je Zeile oder begründete andere Behandlung | Verweisgerüst, das `versions`/`links` mit dem Löschen von v6.14.0 rot färben |
 | `harness/conventions.md` MR-000 | update | ID-Schema `BEO-<KUERZEL>/<slug>` wie die v6.14.1-`conventions.template.md` (Liefer-Punkt 3, b) |
 | `.claude/commands/implement-slice.md` (Kandidatenlauf auf Vorlagenrest, Schritt 24) | update | Muster trifft alte und neue `Auslöser:`-Form (Liefer-Punkt 3, c) |
+| `.d-check.yml` Block `versions:` | update — **Plan-Nachzug** | `exempt-paths` um `docs/plan/planning/done/**`, Kommentar mit Anker; Folgepflicht aus [`ADR-0156`](../../adr/0156-versions-gate-nimmt-done-records-aus.md), Entscheidung des Auftraggebers zu den Record-Zeilen 277/337 |
+| `docs/reviews/architect-verdict-aufschub-adresse-verfaellt.md` Z. 114 | Zitat-Korrektur der Form — **Plan-Nachzug** | Link in das Tag-Verzeichnis v6.14.0 → Inline-Code, Pfad unverändert (`ADR-0156` Entscheidung 3, `ADR-0073`) |
 | `AGENTS.md` §3.7 (drei Falsch/Richtig-Beispiele) | update — **Plan-Nachzug** | stehengebliebene Vorlagen-Klammer `<z.B. …>`, gefunden in Schritt 2, behoben nach Schritt 3 (Abschnitt „Bump-Ablauf — Belege“); mechanisch, keine Regeländerung |
 | dieser Plan, neuer Abschnitt „Bump-Ablauf — Belege“ | update | Schritte 1–3 aus `harness/targets/pin-stale.md` mit Befehl und gedruckter Zahl, vor dem Löschen von v6.14.0 committet |
 
@@ -268,7 +270,25 @@ ist ein Versionsstring, keine Menge. Gemessen vom Planner am Parent
 74dfb99b 0 -n 'v6\.14\.1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 74dfb99b 7 -nE '\.harness/baseline/v6\.14\.0/' -- docs/plan/planning/done
 74dfb99b 2 -nE '\]\([^)]*\.harness/baseline/v6\.14\.0' -- docs/plan/planning/done docs/reviews
+diff 10 -n 'v6\.14\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 0 -nE '\.harness/baseline/v6\.14\.0/' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 0 -n 'Kurs-Welle 156' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 0 -n 'BEO-<NNN>' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 21 -n 'v6\.14\.1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 2 -nE '\.harness/baseline/v6\.14\.0/' -- docs/plan/planning/done
+diff 0 -nE '\]\([^)]*\.harness/baseline/v6\.14\.0' -- docs/plan/planning/done docs/reviews
 ```
+
+**`diff`-Zeilen, gemessen vom Implementer nach `e2666499` samt der Messzeile in
+`baseline-verify.md`.** Abweichungen von der Erwartung: Zeile 1 steht bei 10
+statt 3 — die erwarteten drei (die zwei Register-Records und die
+§Geschichte-Zeile `cd364fc` von `ADR-0095`) plus sieben Zeilen in `ADR-0156`,
+die den Bump als Anlass beschreiben (neu mit `60cc0ed1`, nach der Erwartung
+geschrieben; Vorgangs-Angaben, kein Pin). Zeile 4 steht bei 0: die Form von (c)
+ist `BEO-<(NNN|KUERZEL)>` und enthält die wörtliche Zeichenkette nicht mehr.
+Zeile 6 steht bei 2 statt 0: die Zeilen 277 und 337 des v6.14.0-Records bleiben
+per `ADR-0156` unverändert (Entscheidungstabelle unten). Zeile 5 (21) sind die
+lebenden v6.14.1-Nennungen.
 
 Die 19 Treffer der ersten Zeile verteilen sich auf 13 lebende Träger (§2,
 Liefer-Punkt 2) und zwei Register-Records
@@ -293,7 +313,10 @@ Gemessen am 2026-10-06 im Repo, beide Bäume nebeneinander
 Klon-Baum Exit 0; `git diff --cached --name-only | wc -l` 55 vor dem Commit
 (auch `templates/.d-check.yml` und `templates/.harness/` sind getrackt).
 `make baseline-verify` auf diesem Stand: Exit 2 (`FEHLER: mehr als ein
-<tag>-Verzeichnis`) — der benannte Zwischenstand (§6).
+<tag>-Verzeichnis`) — der benannte Zwischenstand (§6). Nach `git rm -r` des
+alten Tags (`e2666499`, eigener Commit): `ls .harness/baseline` nennt nur
+`v6.14.1`, `make baseline-verify` Exit 0 mit der gedruckten Zeile
+`baseline-verify: v6.14.1 OK — 54 Dateien (Integritaet + Vollstaendigkeit, netzlos)`.
 
 **Schritt 1 — Delta.** Normalisiert je Stand in Kopien
 (`sed 's/v6\.14\.0/vX/g'` bzw. `'s/v6\.14\.1/vX/g'`, `SHA256SUMS` ausgenommen),
@@ -393,10 +416,12 @@ nur den Versionsstring oder sind byte-gleich.
 - **`docs/plan/carveouts/README.md` — entspricht.** Gliederung: ausgefüllter
   Titel; Platzhalter: Notation `CO-<NNN>`, `slice-<Kennung>`.
 
-**Befund (gemeldet, nicht mitgeändert):** Das Platzhalter-Muster 2 in
-`harness/targets/pin-stale.md` §Bump-Ablauf sucht `<z\. B\.` und verfehlt die
-Form `<z.B.` der `AGENTS.template.md`; Muster 1 verfehlt Platzhalter, die über
-eine Zeilengrenze laufen. Eine Änderung der Verfahrensregel ist ein anderer
+**Befunde (gemeldet, nicht mitgeändert):**
+
+1. Das Platzhalter-Muster 2 in `harness/targets/pin-stale.md` §Bump-Ablauf
+   sucht `<z\. B\.` und verfehlt die Form `<z.B.` der `AGENTS.template.md`.
+2. Muster 1 derselben Stelle (`grep -o` je Zeile) verfehlt Platzhalter, die
+   über eine Zeilengrenze laufen (`AGENTS.md` Z. 242, 244). Eine Änderung der Verfahrensregel ist ein anderer
 Vorgang (§1); Adresse vergibt der Planner bei der Closure.
 
 **Nachzüge (b) und (c), `bc0aaeeb`.** (b) `harness/conventions.md` MR-000
@@ -442,13 +467,19 @@ je Zeile: Referent zwischen v6.14.0 und v6.14.1 normalisiert byte-gleich
 | `done/slice-harness-guard-blocked-python.md` 272 (Link) | `regelwerk/modul-13-quality-gates.md` samt Anker | 0 | `versions`, `links` | Zitat-Korrektur, `54c6e632` |
 | `done/slice-harness-guard-inplace-textwerkzeug.md` 162 | `templates/harness/conventions/MR-NNN-titel.template.md` | 0 | `versions` | Zitat-Korrektur, `54c6e632` |
 | `done/slice-harness-readme-zellen-kuerzen.md` 41 | `templates/harness/README.template.md` | 0 | `versions` | Zitat-Korrektur, `54c6e632` |
-| `done/slice-baseline-6-14-0-dokumente-nachziehen.md` 277 (`suchlauf`-Zeile) | `templates/docs/plan/planning/README.template.md`, als Pfad-Argument von `git grep` am Commit `d79b7ebd` | 0 | `versions` (`version-stale`, gemessen — das Modul liest den Fence) | **offen, angehalten** — eine Korrektur ändert die Messung: `git grep -c … d79b7ebd -- <v6.14.0-Pfad>` druckt 1 (Exit 0), mit dem v6.14.1-Pfad nichts (Exit 1); das Soll 1 der Zeile wäre falsch |
-| `done/slice-baseline-6-14-0-dokumente-nachziehen.md` 337 | `templates/docs/reviews/review-report.template.md` | 1 | `versions` | **offen, angehalten** — Referent geändert (Zeile 93 der Vorlage, `BEO-<NNN>` → „Beobachtung") |
-| `docs/reviews/architect-verdict-aufschub-adresse-verfaellt.md` 114 (Link) | `templates/docs/plan/planning/slice.template.md` | 1 | `links` (nach dem Entfernen von v6.14.0; `versions` nimmt `docs/reviews/**` aus) | **offen, angehalten** — Referent geändert (drei Zeilen `BEO-<NNN>`) |
+| `done/slice-baseline-6-14-0-dokumente-nachziehen.md` 277 (`suchlauf`-Zeile) | `templates/docs/plan/planning/README.template.md`, als Pfad-Argument von `git grep` am Commit `d79b7ebd` | 0 | `versions` (`version-stale`, gemessen — das Modul liest den Fence) | **bleibt unverändert** per [`ADR-0156`](../../adr/0156-versions-gate-nimmt-done-records-aus.md) (`versions` nimmt `done/**` aus, `435c9c75`) — eine Korrektur änderte die Messung: `git grep -c … d79b7ebd -- <v6.14.0-Pfad>` druckt 1 (Exit 0), mit dem v6.14.1-Pfad nichts (Exit 1) |
+| `done/slice-baseline-6-14-0-dokumente-nachziehen.md` 337 | `templates/docs/reviews/review-report.template.md` | 1 | `versions` | **bleibt unverändert** per `ADR-0156` — Referent geändert (Zeile 93 der Vorlage, `BEO-<NNN>` → „Beobachtung"), Zitat-Korrektur nicht zulässig |
+| `docs/reviews/architect-verdict-aufschub-adresse-verfaellt.md` 114 (Link) | `templates/docs/plan/planning/slice.template.md` | 1 | `links` (nach dem Entfernen von v6.14.0; `versions` nimmt `docs/reviews/**` aus) | **Zitat-Korrektur der Form**, `cc9ecb27` (`ADR-0156` Entscheidung 3): Link → Inline-Code, Pfad samt v6.14.0 unverändert |
 
-Die drei offenen Zeilen sind dem Auftraggeber zur Entscheidung gemeldet; bis
-dahin bleibt v6.14.0 im Repo, und `make gates` ist rot (`baseline-verify`:
-zwei Tag-Verzeichnisse; `docs-check`: Zeilen 277 und 337).
+Die drei Zeilen hat der Auftraggeber entschieden; der Weg ist in `ADR-0156`
+(`60cc0ed1`) begründet. `harness/sensors/docs-check.md` beschreibt die
+Ausnahmen der Module nicht („Die Module und ihre Grenzen stehen in
+`.d-check.yml`“), braucht also keinen Nachzug (`git grep` nach `` `versions` ``,
+`versions-Modul`, `version-stale` über den Baum ohne Baseline, Records, diesen
+Plan und `ADR-0156`: Treffer nur in `.d-check.yml`, `implement-slice.md` Z. 45
+(Modulliste, unverändert gültig), `ADR-0072`, `ADR-0095`, ADR-Index, dem
+Register-Eintrag `BEO-PGC/exemption-ohne-reifegrenze` und
+`harness/sensors/docs-check.md` Z. 10 (Befundname)).
 
 ## 4. Trigger
 
