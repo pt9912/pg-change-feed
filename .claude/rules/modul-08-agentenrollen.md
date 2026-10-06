@@ -1,1 +1,1 @@
-../../.harness/baseline/v6.14.1/regelwerk/modul-08-agentenrollen.md
+../../.harness/baseline/v6.16.0/regelwerk/modul-08-agentenrollen.md

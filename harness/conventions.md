@@ -31,7 +31,7 @@ damit spätere Adaptionen einen Bezugspunkt haben.
 
 - **Konvention:** AI-Harness-Kurs (Baseline-Regelwerk, als Release-Asset
   vendored unter `.harness/baseline/`)
-- **Stand:** v6.14.1
+- **Stand:** v6.16.0
 - **Datum der Adoption:** 2026-10-06
 
 <!--
@@ -58,9 +58,9 @@ ist derivativ — bei Konflikt gilt das Lehrmaterial.
   den `make pin-stale-baseline` den adoptierten Stand prüft)
 - **Vendored Baseline (Regelwerk + Templates):** aus dem self-contained
   Release-Asset
-  https://github.com/pt9912/ai-harness-course/releases/download/v6.14.1/lab-regelwerk.zip
+  https://github.com/pt9912/ai-harness-course/releases/download/v6.16.0/lab-regelwerk.zip
   nach `.harness/baseline/<tag>/{regelwerk,templates}/` entpackt (netzlos,
-  `SHA256SUMS`) — adoptierter Stand: Kurs-Welle 157 · 2026-10-06 (Stand-Zeile
+  `SHA256SUMS`) — adoptierter Stand: Kurs-Welle 159 · 2026-10-06 (Stand-Zeile
   in `regelwerk/README.md`; Wellen-Register: CHANGELOG.md im Kurs-Repo); für
   harte Reproduzierbarkeit das Asset eines Tags ziehen statt `latest`.
 - **In-Repo (verkörperte Form):** `AGENTS.md`, `harness/README.md`, diese

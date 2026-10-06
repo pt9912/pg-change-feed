@@ -26,7 +26,7 @@ Das **Regelwerk der adoptierten Baseline** ist die **präsente,
 nachschlagbare Vertiefung** zu diesem Briefing: ein self-navigierbares
 **Modul-Bundle** (`README.md` = Index). Beim Bootstrap wird das
 self-contained Release-ZIP
-(<https://github.com/pt9912/ai-harness-course/releases/download/v6.14.1/lab-regelwerk.zip>)
+(<https://github.com/pt9912/ai-harness-course/releases/download/v6.16.0/lab-regelwerk.zip>)
 **committet vendored** unter `.harness/baseline/<tag>/{regelwerk,templates}/`
 (Regelwerk *und* Templates parallel, netzlos materialisiert samt `SHA256SUMS`
 — Vorgehen siehe
@@ -260,7 +260,9 @@ seit slice-dcheck-v0-82-0.
 ### 3.6 Gates dürfen nicht ohne ADR gelockert werden
 
 Jede Schwellen-Senkung (Coverage, Linter-Strenge, Architekturregel)
-ist ein ADR, kein PR-Kommentar.
+ist ein ADR, kein PR-Kommentar. Eine befristete Ausnahme für einen Teil (einen
+Layer, einen Pfad) ist keine Senkung, sondern ein Carveout mit Trigger und
+Folge-Slice; die Schwelle selbst bleibt.
 
 ### 3.7 Ein Kommentar beschreibt, was da ist
 
@@ -760,17 +762,12 @@ Harness-Lüge (Baseline-Regelwerk `modul-13-quality-gates.md`).
 
 ## 5. Dokumentations-Regeln
 
-- **Anforderungs-IDs und ADR-Nummern** müssen in PRs/Commits referenziert
-  sein — sie sagen, welche Zusage oder Entscheidung berührt ist. Struktur-IDs
-  (`SPEC-<NNN>`, `ARC-<NNN>`) adressieren *innerhalb* der Spec und gehören
-  nicht in die Commit-Message.
-- Vergeben werden IDs beim Spec-/ADR-Schreiben nach dem in
-  `harness/conventions.md` deklarierten ID-Schema (Default:
-  `<PREFIX>-FA-<NN>` / `<PREFIX>-QA-<NN>` aus dem Lastenheft,
-  `SPEC-<NNN>` im Pflichtenheft, `ARC-<NNN>` in der Sicht, ADR-Nummern
-  über den ADR-Index) — nie ad hoc im PR.
-- Neue ADRs müssen den ADR-Index aktualisieren.
-- Roadmap/Status-Geschichte lebt in `docs/plan/planning/`, nicht in `spec/architecture.md`.
+| # | Regel | Datei |
+|---|---|---|
+| 1 | **Anforderungs-IDs und ADR-Nummern** müssen in PRs/Commits referenziert sein — sie sagen, welche Zusage oder Entscheidung berührt ist. Struktur-IDs (`SPEC-<NNN>`, `ARC-<NNN>`) adressieren *innerhalb* der Spec und gehören nicht in die Commit-Message. | — |
+| 2 | Vergeben werden IDs beim Spec-/ADR-Schreiben nach dem in `harness/conventions.md` deklarierten ID-Schema (Default: `<PREFIX>-FA-<NN>` / `<PREFIX>-QA-<NN>` / `<PREFIX>-RB-<NN>` aus dem Lastenheft, `SPEC-<NNN>` im Pflichtenheft, `ARC-<NNN>` in der Sicht, ADR-Nummern über den ADR-Index) — nie ad hoc im PR. | — |
+| 3 | Neue ADRs müssen den ADR-Index aktualisieren. | — |
+| 4 | Roadmap/Status-Geschichte lebt in `docs/plan/planning/`, nicht in `spec/architecture.md`. | — |
 
 ## 6. Minimal Agent Workflow
 

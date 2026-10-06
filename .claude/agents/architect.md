@@ -61,7 +61,7 @@ Disziplin.
   fixieren; MADR-Form, `Schärft:`-Felder zeigen auf `ARC-*`/`SPEC-*`/`LH-*.a`)
 - Spec-Straten: `spec/lastenheft.md` (Vertrag), `spec/pflichtenheft.md`
   (Technik), `spec/architecture.md` (Sicht, `ARC-001…012`)
-- Vorlage: `.harness/baseline/v6.14.1/templates/docs/plan/adr/NNNN-titel.template.md`
+- Vorlage: `.harness/baseline/v6.16.0/templates/docs/plan/adr/NNNN-titel.template.md`
   — per `cp` kopieren und füllen, nie hand-schreiben
 - Adaptionen: `harness/conventions.md` (MR-000 ID-Schema, MR-001: das
   Technik-Dokument heißt Pflichtenheft)

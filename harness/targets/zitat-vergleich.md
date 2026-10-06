@@ -126,7 +126,7 @@ Je Lauf eine Zeile auf stdout, gedruckt vor dem Ende:
 
 ```text
 vergleich roh: <alt-stand>:<alt-pfad><alt-ref> <-> <neu-stand>:<neu-pfad><neu-ref> cmp 0
-vergleich norm v6.14.0:v6.14.1: … cmp 1
+vergleich norm v6.14.1:v6.16.0: … cmp 1
 vergleich: <stand>:<pfad><ref> keine Einheit, Exit 2
 ```
 

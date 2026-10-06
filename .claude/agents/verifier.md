@@ -61,4 +61,4 @@ Disziplin.
   [`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md));
   ein Referent, der an keinem Stand auflöst, ist „nicht
   messbar“ und wird gemeldet
-- Bericht-Ort: `docs/reviews/` (Gerüst: `.harness/baseline/v6.14.1/templates/docs/reviews/review-report.template.md`)
+- Bericht-Ort: `docs/reviews/` (Gerüst: `.harness/baseline/v6.16.0/templates/docs/reviews/review-report.template.md`)

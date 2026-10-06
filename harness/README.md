@@ -63,6 +63,10 @@ Was lenkt den Agenten *vor* der Handlung? Pointer, kein Inhalt.
 WICHTIG: Nur Befehle aufzählen, die im Makefile *existieren*.
 Halluzinierte Gates sind die häufigste Form von Harness-Lüge (Modul 13).
 
+TARGET-ZELLE = NACKTER NAME. Der Aufruf (`SLICE=<id>`) steht in der
+Nachbarspalte: `make verify-slice SLICE=<id>` in der Code-Span macht die
+Zeile für den Sensor unsichtbar. Ein LINK auf der Zelle schadet nicht.
+
 Drei Spalten — kein Lauf-Status:
 - Target:  der Make-Befehl.
 - Vertrag: was prüft das Gate (was wäre verletzt, wenn es rot wird).
@@ -96,8 +100,9 @@ Braucht ein Gate mehr als EINEN SATZ — Deckungsgrenze, Ausgabe-Bedeutung,
 Exit-Codes, Abbruch-Bedingungen —, wandert das nach. Ob der Überhang schon
 unter der Tabelle steht oder in die Zelle gedrängt wurde, ist dieselbe Sache:
 eine Zelle, die zum Absatz geworden ist, ist der Fund, nicht die Ausnahme.
-`harness/sensors/<target>.md`, und die **Target-Zelle wird zum Link darauf**
-— wie die `MR`-Zelle im Adaptions-Block. Der Link ist kein Komfort: Er ist die
+`harness/sensors/<target>.md` — kopiert aus `harness/sensors/gate.template.md`
+der vendored Baseline —, und die **Target-Zelle wird zum Link darauf** — wie
+die `MR`-Zelle im Adaptions-Block. Der Link ist kein Komfort: Er ist die
 einzige Fassung dieser Zuordnung, die der Link-Sensor prüft. Eine bloße
 Namenskonvention (`make X` -> `sensors/X.md`) bleibt still grün, wenn die
 Datei verschwindet und die Zeile stehen bleibt. Seine Grenze: Er prüft EINE

@@ -39,9 +39,9 @@ Disziplin.
 **Deine repo-spezifischen Quellen.**
 - Anweisungssatz: `.harness/skills/reviewer.md` — geschärft 2026-09-09 (vier
   repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen aus dem Eröffnungs-Review)
-- Report-Gerüst: `.harness/baseline/v6.14.1/templates/docs/reviews/review-report.template.md`
+- Report-Gerüst: `.harness/baseline/v6.16.0/templates/docs/reviews/review-report.template.md`
   (kopieren, ausfüllen, ablegen unter `docs/reviews/`); ein Report je Lauf,
   Folgeläufe als neue Datei
 - ID-Schema und Adaptionen: `harness/conventions.md` (MR-000, MR-001)
-- Baseline-Bestand: `.harness/baseline/v6.14.1/regelwerk/modul-10-review-harness.md`
+- Baseline-Bestand: `.harness/baseline/v6.16.0/regelwerk/modul-10-review-harness.md`
   — nur die benötigten Abschnitte laden (README ist der Index)
