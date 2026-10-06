@@ -52,9 +52,12 @@ die Zahl der Argumente fällt dann unter 6, und der Lauf endet mit Exit 2. Eine
 leere Referenz steht als `''`:
 
 ```text
-make zitat-vergleich ARGS="5d8855d9~1 .harness/baseline/v6.14.0/regelwerk/modul-13-quality-gates.md '#guard-haertung' 5d8855d9 .harness/baseline/v6.14.1/regelwerk/modul-13-quality-gates.md '#guard-haertung'"
-make zitat-vergleich ARGS="11a5bac5 .harness/baseline/v6.14.0/regelwerk/grundlagen-begriffe.md '' 625ddbef .harness/baseline/v6.14.1/regelwerk/grundlagen-begriffe.md '' v6.14.0:v6.14.1"
+make zitat-vergleich ARGS="<P>~1 .harness/baseline/<alt-tag>/regelwerk/modul-13-quality-gates.md '#guard-haertung' <P> .harness/baseline/<neu-tag>/regelwerk/modul-13-quality-gates.md '#guard-haertung'"
+make zitat-vergleich ARGS="<alt-stand> .harness/baseline/<alt-tag>/regelwerk/grundlagen-begriffe.md '' <neu-stand> .harness/baseline/<neu-tag>/regelwerk/grundlagen-begriffe.md '' <alt-tag>:<neu-tag>"
 ```
+
+`<P>` ist der Pin-Commit eines Baseline-Bumps; die gemessenen Aufrufe am
+realen Bump stehen im Plan von `slice-zitat-vergleich-werkzeug` §2.
 
 ## Einheit je Referenz
 

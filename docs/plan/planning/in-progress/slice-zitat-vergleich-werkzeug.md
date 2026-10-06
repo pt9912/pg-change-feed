@@ -111,7 +111,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **Werkzeug (Liefer-Punkt 1).** Ein Skript unter `tools/harness/` hinter
+- [x] **Werkzeug (Liefer-Punkt 1).** Ein Skript unter `tools/harness/` hinter
       einem `make`-Ziel misst `vergleich <stand> <pfad> <ref> <stand> <pfad>
       <ref> [<alt-tag>:<neu-tag>]` mit den Einheiten aus `ADR-0158`/`ADR-0159`
       und den Zusagen aus `ADR-0159` Entscheidung 4 (Exit 0/1/2, gedruckte
@@ -121,7 +121,44 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `slice-zitat-korrektur-vergleichseinheit` §2 (Anker-Wechsel fällt,
       verschobener Lokator besteht, `#guard-haertung` mit geändertem Wort
       fällt), gefahren mit dem Ziel, Befehl und gedruckte Zeile.
-- [ ] **Tabellentest (Liefer-Punkt 2).** Ein `make test-…`-Ziel fährt je Fall
+      **Beleg:** `tools/harness/zitat-vergleich.sh`, `make zitat-vergleich
+      ARGS=…`, Vertrag `harness/targets/zitat-vergleich.md` (Commit
+      `f13b7f9d`). Pflichtproben **gemessen** mit `make zitat-vergleich` an
+      einem Klon im Scratchpad `impl-werkzeug/klon/` (Stand `f13b7f9d`, GNU Awk
+      5.2.1, GNU bash 5.2.21); die Probe-Commits `365205d2` (drei Zeilen vor
+      Zeile 41 von `F`) und `513140ed` (`M` Zeile 272 „demselben
+      Steering-Loop“ → „demselbigen Steering-Loop“) gibt es nur im Klon.
+      `F=docs/plan/adr/0100-nats-dritter-vollinhalts-zustellweg.md`,
+      `M=.harness/baseline/v6.14.1/regelwerk/modul-13-quality-gates.md`.
+      Der Exit von `make` ist bei jeder roten Zeile 2 (Vertrag §Ausgabe).
+      *Anker-Wechsel fällt:*
+      `make zitat-vergleich ARGS="f13b7f9d $F '#teilfrage-2--subjekt--und-nachrichtenschema' f13b7f9d $F '#teilfrage-3--zustellsemantik-core-nats-vs-jetstream'"`
+      → `vergleich roh: f13b7f9d:…zustellweg.md#teilfrage-2--subjekt--und-nachrichtenschema <-> f13b7f9d:…zustellweg.md#teilfrage-3--zustellsemantik-core-nats-vs-jetstream cmp 1`;
+      gleicher Anker gegen `365205d2` `cmp 0`.
+      *Verschobener Lokator besteht:*
+      `make zitat-vergleich ARGS="f13b7f9d $F L139-145 365205d2 $F L142-148"`
+      → `vergleich roh: f13b7f9d:…zustellweg.mdL139-145 <-> 365205d2:…zustellweg.mdL142-148 cmp 0`;
+      nicht nachgezogen (`L139-145` an beiden Seiten) `cmp 1`.
+      *`#guard-haertung` mit geändertem Wort fällt:*
+      `make zitat-vergleich ARGS="f13b7f9d $M '#guard-haertung' 513140ed $M '#guard-haertung'"`
+      → `vergleich roh: f13b7f9d:.harness/baseline/v6.14.1/regelwerk/modul-13-quality-gates.md#guard-haertung <-> 513140ed:.harness/baseline/v6.14.1/regelwerk/modul-13-quality-gates.md#guard-haertung cmp 1`;
+      Gegenproben: `L266-266` an beiden Seiten `cmp 0`, `#guard-haertung`
+      gegen `365205d2` (Änderung nur in `F`) `cmp 0`; ungequotetes `#…` in
+      `ARGS` (`ARGS="#guard-haertung f13b7f9d $M"`) →
+      `Aufruf: … — 0 Argumente, erwartet 6 oder 7; …, Exit 2`.
+      **Zusätzlich am realen Bump gemessen** (Repo, `make zitat-vergleich`,
+      `R0`/`R1` = `.harness/baseline/v6.14.0|v6.14.1/regelwerk`): die vier
+      MR-Pins `5d8855d9~1` gegen `5d8855d9` — `MR-002`
+      `#vergabe-woher-die-nächste-kennung-kommt`, `MR-003`
+      `#grenzen--ehrlich-benannt`, `MR-004` `#guard-haertung` je
+      `vergleich roh: … cmp 0`; `MR-001`
+      `#spec-straten-mehr-als-ein-spec-dokument` →
+      `vergleich: 5d8855d9~1:…/grundlagen-source-precedence.md#spec-straten-mehr-als-ein-spec-dokument keine Einheit, Exit 2`
+      (nicht messbar, wie `ADR-0159` Entscheidung 2). `grundlagen-begriffe.md`
+      `11a5bac5` gegen `625ddbef`: roh `cmp 1`, mit `v6.14.0:v6.14.1`
+      `vergleich norm v6.14.0:v6.14.1: … cmp 0`, mit `v0.79.0:v0.80.0`
+      `vergleich: Tag-Paar v0.79.0:v0.80.0, 11a5bac5 trägt .harness/baseline/v0.79.0 nicht, Exit 2`.
+- [x] **Tabellentest (Liefer-Punkt 2).** Ein `make test-…`-Ziel fährt je Fall
       eine Probe im Wegwerf-Repo mit Soll-Exit und Meldungstext: die Fälle der
       §Fitness Function von `ADR-0159`, die Proben A1, A2, A4, A4b, A5, N1,
       N2, N6, N7 und L des Re-Reviews, und je ein Fall für F-1 (gestapelte
@@ -130,12 +167,72 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       ist) und F-6 (Locale). *Zu belegen durch:* je eine Mutation am Skript,
       die einen der neuen Fälle rot färbt, mit Stelle und gesehener Farbe
       ([`AGENTS.md`](../../../../AGENTS.md) §3.12).
-- [ ] **Träger (Liefer-Punkt 3).** `AGENTS.md` §3.5, `.claude/agents/verifier.md`,
+      **Beleg:** `make test-zitat-vergleich`
+      (`tools/harness/run-zitat-vergleich-tests.sh`) — 65 Fälle je Runde, drei
+      Runden (ohne Option, `BASHOPTS=nullglob`, `BASHOPTS=failglob`);
+      gedruckt `run-zitat-vergleich-tests: 195 Fälle bestanden (je Runde 65,
+      Runden: ohne Option, nullglob, failglob)`, Exit 0. Die Fallgruppen
+      nennt der Vertrag §Test; die Zusatzfälle aus Verdikt §5 (falsche
+      Argumentzahl, fremdes Paar ohne Baseline-Baum, gleiche Tags, Stub-`awk`,
+      Attributform neben gleichnamigem Heading-Slug, gestapelte `id`s vor
+      einem Absatz, `~~~` in einem Backtick-Fence, Fence nach `id`-Zeile) sind
+      dabei. *Unterscheidungskraft gegen die ADR-Form* — **gemessen**: der
+      `bash`-Block von `ADR-0159` Entscheidung 4 (per `awk` gezogen, 56
+      Zeilen, `bash -n` Exit 0, mit angehängtem `vergleich "$@"`) als `PROG`:
+      Exit 1, 20 Fälle je Runde rot, genau die der Abweichungen (F-1 3, F-2 4,
+      F-3 4 einschließlich Info-String, F-5 5 einschließlich leeres Paar, F-6
+      2, Argumentzahl 2); die übrigen 45 Fälle je Runde grün.
+      **Mutationen** — je Zeile Stelle in `tools/harness/zitat-vergleich.sh`,
+      Instanz Tabellentest mit `PROG=<Kopie im Scratchpad>`, gesehene Farbe
+      (Lauf Exit 1, die genannten Fälle `FEHLER`, je in allen drei Runden):
+
+      | Regel | Mutation (Stelle) | rot gesehen |
+      |---|---|---|
+      | F-1 Zeile ohne Inhalt | `mode == "vor" && !inf && leer($0)` → `mode == "vor" && /^[[:space:]]*$/` | „gestapelte id, obere“, „… adressiert den Abschnitt“, „… vor Absatz, Einheit ist der Block“ |
+      | F-2 andere Form → Exit 2 | `END { if (bad) exit 3 }` → `END { }` | „id mit Attribut, Meldung“, „id selbstschließend“, „… neben gleichnamigem Heading-Slug“ |
+      | F-2 Inline-Code | ``if (p == 1 \|\| substr(l, p - 1, 1) != "`")`` → `if (1)` | „andere Form in Inline-Code bleibt ungelesen“, „id nur in Inline-Code“ |
+      | F-3 Länge | `n >= fl` → `n >= 3` (Schließen) | „Fence aus vier Backticks, ein innerer Fence“, „Abschnitt hinter dem Fence“, „… zwei innere Fences (N6)“ |
+      | F-3 Zeichen | `fch == fc && ` entfernt (Schließen) | „~~~ in einem Fence aus Backticks“ |
+      | F-3 Info-String | Bedingung ``!(fch == "`" && index(frest, "`"))`` entfernt (Öffnen) | „Backtick im Info-String öffnet keinen Fence“ |
+      | Fence nach `id`-Zeile | `mode == "vor" && !inf && leer($0)` → `mode == "vor" && (inf \|\| leer($0))` | „Fence direkt nach id-Zeile gehört zur Einheit“ |
+      | F-5 gleiche Tags | Prüfung `[ "$alt" != "$neu" ]` → `true` | „Tag-Paar mit gleichen Tags“ |
+      | F-5 alter Baum | `baumda "$1" "$alt"` → `true` | „alter Stand ohne alten Baum“, „fremdes Paar ohne Baseline-Baum (N7)“ |
+      | F-5 neuer Baum | `baumda "$4" "$neu"` → `true` | „neuer Stand ohne neuen Baum“ |
+      | F-6 Locale | `export LC_ALL=C.UTF-8` → `:` | „Umlaut-Slug unter LC_ALL=C beim Aufrufer (L)“ |
+      | F-6 Fähigkeitsprobe | Bedingung `… != "ä 1"` um `&& false` ergänzt | „awk ohne Multibyte“ |
+      | Argumentzahl | `if [ $# -ne 6 ] && [ $# -ne 7 ]` → `if false` | „fünf Argumente“, „acht Argumente“ |
+      | leeres Tag-Paar | `if [ $# -ge 7 ]` → `if [ -n "${7:-}" ]` | „leeres Tag-Paar“ |
+
+      Gemessen ist je Regel **eine** Stelle; dass jede andere Verletzung
+      derselben Regel ebenso fällt, ist *hergeleitet*. Nicht mutiert: der
+      Exit-Check von `sed` am Lokator (`L0-0` endet auch ohne ihn über die
+      leere Einheit mit Exit 2).
+      **Gleichstand mit der ADR-Form** (Verdikt §5, M3 nachgefahren,
+      **gemessen**): `einheit f13b7f9d <datei> '#<anker>'` je Heading-Slug und
+      je `<a id="…"` in allen getrackten `.md` unter
+      `.harness/baseline/v6.14.1/regelwerk/`, `docs/plan/adr/`, `harness/` und
+      `AGENTS.md`, ADR-Form (per `source`) gegen das Skript (per `source`),
+      Ausgabe und Exit je Anker, `LC_ALL=C.UTF-8`; gedruckt
+      `stand=f13b7f9d anker=2115 abweichend=1 leer_alt=8 leer_neu=9`. Die eine
+      Abweichung ist der Pseudo-Anker `#[^` aus dem Code-Block von `ADR-0159`
+      (`gsub(/<a id="[^"]*">…`): der Block steht in einem um drei Leerzeichen
+      eingerückten Fence, den das Werkzeug nach CommonMark als Fence liest
+      (F-3), die ADR-Form nicht. Die übrigen Exit-2-Anker stehen nur in
+      Inline-Code oder Fences (`#mr-<NNN>`, `#…`, `#X`, `#2x2-matrix`,
+      `#guard-haertung`, `#jedes-artefakt-hat-einen-konsumenten` in
+      `ADR-0159`), an beiden Seiten gleich.
+- [x] **Träger (Liefer-Punkt 3).** `AGENTS.md` §3.5, `.claude/agents/verifier.md`,
       `.claude/agents/implementer.md`, `harness/targets/pin-stale.md` und
       `harness/README.md` §Sensors (Werkzeug-Tabelle) nennen das Ziel statt des
       Herausziehens aus der ADR; Suchlauf nach `AGENTS.md` §3.13 mit
       `suchlauf`-Block.
-- [ ] `make gates` grün.
+      **Beleg:** Commit `f13b7f9d` — `AGENTS.md` §3.5 (Messsatz und
+      Beleg-Satz nennen `make zitat-vergleich`, Vertrag und Verdikt §3 als
+      Auslegung), `.claude/agents/verifier.md`, `.claude/agents/implementer.md`,
+      `harness/targets/pin-stale.md` (§MR-Pins), `harness/README.md` (zwei
+      Zeilen der Werkzeug-Tabelle, „Tut was“ unter 120 Zeichen). Suchlauf in
+      §3 unten.
+- [x] `make gates` grün (Lauf nach dem letzten Commit, im Bericht).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -158,6 +255,79 @@ nicht die Antwort.
 | `Makefile` oder `harness/mk/*.mk` | update | Ziel und Test-Ziel, kein Eintrag in `GATE_CHECKS` |
 | `harness/targets/zitat-vergleich.md` | neu | Vertrag: Aufruf, Exit-Codes, Host-Werkzeuge, Grenzen |
 | `AGENTS.md` §3.5, `.claude/agents/verifier.md`, `.claude/agents/implementer.md`, `harness/targets/pin-stale.md`, `harness/README.md` | update | Träger nennen das Ziel |
+
+**Nachzug des Implementers** (Stand `f13b7f9d`):
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| Architect-Zug | erledigt, ohne ADR | Verdikt `docs/reviews/architect-verdict-zitat-vergleich-werkzeug.md` (`728b75e3`): Werkzeug trägt die Messung, `ADR-0159` die Semantik; F-1 als Auslegung, F-2 Exit 2, F-3 CommonMark, F-5 Baseline-Bäume, F-6 Locale samt Fähigkeitsprobe; Form §5 |
+| `tools/harness/zitat-vergleich.sh` | neu (Name wie geplant) | Funktionen `einheit`, `tagnorm`, `vergleich`, dazu `baumda` (Tag-Paar an den Baseline-Bäumen) und `main` (Argumentzahl, Locale, Probe, Wechsel in die Repo-Wurzel); mit `source` geladen definiert die Datei nur die Funktionen — für die Gleichstand-Messung gegen die ADR-Form |
+| `tools/harness/zitat-vergleich.sh` | über den Plan hinaus | Exit-Check von `sed` am Lokator und von `awk` am Anker (Exit 2); ein leeres siebtes Argument endet mit Exit 2 (die ADR-Form liest es als roh); ein Backtick im Info-String öffnet keinen Fence (CommonMark, Teil von F-3) |
+| `tools/harness/run-zitat-vergleich-tests.sh` | neu | 65 Fälle je Runde, drei Runden über `BASHOPTS` (ohne Option, `nullglob`, `failglob`); `set -euo pipefail` beim Aufrufer über `SHELLOPTS`; Prüfling per `PROG=` |
+| `Makefile` | update | `zitat-vergleich` (`$(error …)` ohne `ARGS`) und `test-zitat-vergleich` neben `suchlauf-nachmessen`, nicht in `GATE_CHECKS` |
+| `harness/targets/zitat-vergleich.md` | neu | Vertrag: Wer was trägt, Aufruf mit Quotierung, Einheit je Referenz, Ausgänge, Abweichungen vom Block der ADR, Host-Werkzeuge, Grenzen, Test |
+| `AGENTS.md` §3.5 | update, zwei Stellen | Messsatz (Ziel, Vertrag, Verdikt §3 als Auslegung) und Beleg-Satz („gedruckte Zeile von `make zitat-vergleich`“) |
+| `docs/plan/adr/README.md` Z. 183 („mit der Befehlsform aus `ADR-0159`“) | **nicht** geändert | Verdikt §5: `ADR-0159` und der Index bleiben unberührt; Meldung an den Planner unten |
+
+**Suchlauf** ([`AGENTS.md`](../../../../AGENTS.md) §3.13). Bewegte
+Eigenschaft: *womit die Referent-Messung läuft* (Befehlsform aus der ADR → `make
+zitat-vergleich`). Suchraum der ganze Baum ohne `docs/reviews/**`, Records unter
+`done/` und `.harness/baseline/**`; die Plan-Datei schließt das Werkzeug selbst
+aus. Parent `728b75e3`, `diff` = Arbeitsbaum nach `f13b7f9d` samt dem
+Plan-Commit (dort im Vertrag die Beispiele mit Platzhaltern statt realer Tags,
+`versions`-Modul von `make docs-check`). Symbolnamen
+(`Befehlsform`, `zitat-vergleich`, `Referent-Messung`, `` `vergleich` ``),
+Beschreibung des Herausziehens (`Herausziehen`, ``per `awk` ``,
+`Verfahrensregel`), Zählwort (`56 Zeilen`, die Länge der gezogenen Form) und
+Hedge (`kein Werkzeug`, `Option E`, `Trigger (a)`):
+
+```suchlauf
+728b75e3 48 -F 'Befehlsform' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 50 -F 'Befehlsform' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+728b75e3 3 -F 'zitat-vergleich' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 47 -F 'zitat-vergleich' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+728b75e3 10 -F 'Referent-Messung' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 14 -F 'Referent-Messung' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+728b75e3 5 -F '`vergleich`' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 4 -F '`vergleich`' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+728b75e3 1 -F 'Herausziehen' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 1 -F 'Herausziehen' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+728b75e3 2 -F 'per `awk`' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 2 -F 'per `awk`' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+728b75e3 7 -F 'Verfahrensregel' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 7 -F 'Verfahrensregel' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+728b75e3 1 -F '56 Zeilen' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 1 -F '56 Zeilen' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+728b75e3 20 -F 'kein Werkzeug' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 20 -F 'kein Werkzeug' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+728b75e3 10 -F 'Option E' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 10 -F 'Option E' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+728b75e3 38 -F 'Trigger (a)' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+diff 38 -F 'Trigger (a)' -- . ':!docs/reviews/**' ':!**/done/**' ':!.harness/baseline/**'
+```
+
+**Gefunden und nachgezogen** (Commit `f13b7f9d`): `AGENTS.md` §3.5 („dort die
+Befehlsform“, „gedruckte Zeile des Vergleichs“), `.claude/agents/verifier.md`
+(„mit `vergleich` (Befehlsform in `ADR-0159` Entscheidung 4)“),
+`.claude/agents/implementer.md` und `harness/targets/pin-stale.md` (Referent-Messung
+ohne Werkzeug). Die Zuwächse bei `Befehlsform`, `zitat-vergleich` und
+`Referent-Messung` sind die neuen Träger (Vertrag, Skript, Test, `Makefile`,
+`harness/README.md`, die vier nachgezogenen Dateien).
+**Gefunden, nicht geändert:** `ADR-0158` und `ADR-0159` (Befehlsform,
+`Verfahrensregel`, `56 Zeilen`, ``per `awk` ``, `Herausziehen`, `Option E`,
+`Trigger (a)`; `Accepted`, unveränderlich, Verdikt §2: der Block ist die
+historische Fassung); die Treffer von `kein Werkzeug`, `Option E` und
+`Trigger (a)` in anderen ADRs und Registereinträgen betreffen andere Gegenstände.
+**Gemeldet an den Planner** (fremde Träger, Frist: Closure dieses Slice,
+`AGENTS.md` §3.13): `docs/plan/adr/README.md` Z. 183 „mit der Befehlsform aus
+`ADR-0159`“ — vom Verdikt §5 ausdrücklich unberührt gelassen, bleibt als
+Semantik-Zeiger richtig, nennt das Ziel aber nicht;
+`docs/plan/planning/observations/BEO-PGC/befehlsform-in-adr-prosa-zieht-folge-adr-nach/state.md`
+und `…/zitat-korrektur-reichweite-abschnitte-kurzform/state.md` nennen diesen
+Slice als Adresse („Befehlsform als Skript hinter `make`“) — Ausgang bei der
+Closure. **Nicht gefunden:** kein Träger in `.claude/commands/`,
+`.harness/skills/` oder `harness/sensors/` nennt die Befehlsform oder das
+Herausziehen aus der ADR.
 
 ## 4. Trigger
 
@@ -198,11 +368,19 @@ dasteht.
   gegenüber der ADR-Form). *Zu belegen durch:* die Fälle der §Fitness Function
   von `ADR-0159` im Tabellentest mit gleichem Ergebnis, und für F-2/F-3 die
   Entscheidung des Architects zum normativen Träger. — **Ausgang:** offen bis
-  zur Closure.
+  zur Closure. *Stand (Implementer):* Verdikt §2 nennt *entfallen*; der
+  Gleichstand ist nachgefahren (§2 Liefer-Punkt 2: `anker=2115 abweichend=1`,
+  die eine Abweichung unter F-3), und die ADR-Form als `PROG` fällt im
+  Tabellentest genau an den Abweichungs-Fällen.
 - **Locale am Host.** Das Skript läuft mit Host-`awk` ([`AGENTS.md`](../../../../AGENTS.md)
   §3.1); eine feste UTF-8-Locale (F-6) muss am Host vorhanden sein. *Zu
   belegen durch:* den Fall L im Tabellentest unter `LC_ALL=C` beim Aufrufer.
-  — **Ausgang:** offen bis zur Closure.
+  — **Ausgang:** offen bis zur Closure. *Stand (Implementer):* das Skript
+  setzt `LC_ALL=C.UTF-8` und prüft `awk` vor der ersten Messung (Exit 2
+  ohne Multibyte); Fall L grün, Stub-`awk` Exit 2, beide mit Mutation rot
+  gesehen (§2 Liefer-Punkt 2). Gemessen an einem Host mit `C.utf8`; ein Host
+  ohne diese Locale endet fail-closed mit Exit 2 (*hergeleitet* aus der
+  Probe, nicht an einem solchen Host gefahren).
 
 ## 7. Closure-Notiz
 
