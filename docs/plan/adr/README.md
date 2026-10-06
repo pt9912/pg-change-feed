@@ -168,3 +168,20 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0153 | OTLP-Einheit `cdc_consumer_lag` ist `By` (Supers. ADR-0149, teilw.) | Accepted | 2026-10-04 | [0153-otlp-einheit-consumer-lag-byte.md](0153-otlp-einheit-consumer-lag-byte.md) |
 | ADR-0154 | Spec-Lücken OTLP, TLS, API-Token: Ist-Zustand festgeschrieben | Accepted | 2026-10-04 | [0154-spec-luecken-otlp-tls-token-ist-zustand.md](0154-spec-luecken-otlp-tls-token-ist-zustand.md) |
 | ADR-0155 | PER-001 relativ zur Festschreib-Latenz (Supers. ADR-0151, ADR-0104 teilw.) | Accepted | 2026-10-05 | [0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md](0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md) |
+
+## Konventionen
+
+- ADRs sind nach `Accepted` **immutable** (siehe Baseline-Regelwerk `modul-04-adrs.md`).
+- Schärfungen entstehen als neue ADR mit `Supersedes ADR-NNNN`.
+- Bei `Accepted`: diesen Index aktualisieren (Status, Datum).
+- Jede ADR deklariert im `**Schärft:**`-Feld *aufwärts*, welche Spec-Stelle
+  sie verbindlich macht (Baseline-Regelwerk `grundlagen-referenz-richtung.md` §Referenz-Richtung (SDP)) —
+  als Kennung (`SPEC-*`, `ARC-*`, `LH-FA-*.<Buchstabe>`), ersatzweise als
+  Abschnitt, wo die Sektion keine Kennungen vergibt.
+  Prozess-ADRs ohne Spec-Stratum tragen `—`.
+- **Spalten — repo-spezifisch.** Der Index führt `Datum` und `Datei` statt der
+  Spalte `Bezug` der Vorlage: Den Spec-Bezug trägt das `**Schärft:**`-Feld der
+  ADR selbst, eine Index-Spalte wäre eine zweite Quelle für denselben Bezug;
+  `ID` steht ohne Link, weil die `structure`-Regel in `.d-check.yml` die Zelle
+  auf genau acht Zeichen hält, und der Link auf die Datei steht deshalb in
+  `Datei`.

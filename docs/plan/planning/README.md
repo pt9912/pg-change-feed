@@ -39,7 +39,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   **Slices** auf; `done/` archiviert **zusätzlich** abgeschlossene
   **Nicht-Slice-Records** — Welle-Plan und Welle-Closure
   `done/welle-<Kennung>-results.md`. Aufgelöste Carveouts wandern **nicht** hierher,
-  sondern in ihr eigenes `docs/plan/carveouts/done/` <!-- d-check:ignore (done/ entsteht erst bei erster Carveout-Auflösung) --> (Baseline-Regelwerk
+  sondern in ihr eigenes `docs/plan/carveouts/done/` (Baseline-Regelwerk
   `modul-07-carveouts.md`).
 
 Neben den Lifecycle-Verzeichnissen liegt **flach** in `planning/` das
