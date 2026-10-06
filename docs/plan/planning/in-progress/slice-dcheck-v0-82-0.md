@@ -210,7 +210,8 @@ Aussagen-Berührung steht hier gar nicht.
 | dieser Plan, neuer Abschnitt „Wirkung v0.80.0–v0.82.0 — Belege“ | update | Messungen je Changelog-Punkt mit Befehl, Stand und gedruckter Zeile (Liefer-Punkt 2) |
 | `.claude/agents/verifier.md`, `.claude/agents/implementer.md`, `harness/targets/pin-stale.md` §Bump-Ablauf | update | Behandlung einer leeren Teil-Range nach dem Architect-Verdikt (Liefer-Punkt 3, i) |
 | `harness/sensors/docs-check.md` §Grenze Punkt 8 | update | Reichweite von `hostpaths` ab v0.80.0 (Liefer-Punkt 3, ii) |
-| `docs/reviews/architect-verdict-…` (Name setzt der Architect) | neu (Architect, nicht Implementer) | Verdikt zur leeren Teil-Range gegen `ADR-0157` Entscheidung 4 (§4, §6) |
+| `docs/reviews/architect-verdict-…` (Name setzt der Architect) | **nicht realisiert** | Die Frage zur leeren Teil-Range hat der Orchestrator im Auftrag entschieden, ohne Architect-Verdikt und ohne ADR; Wortlaut und Begründung stehen im Abschnitt „Leere Teil-Range — Ausführungsregel“ unten. Bestreitet der Reviewer die Einordnung als Ausführungsregel, ist das ein Befund für Architect bzw. Auftraggeber |
+| `.d-check.yml` (Kommentar im Block `vcs:`) | unverändert | Der Kommentar sagt, der Pin-Commit wird „per Teil-Range umgangen“ — das bleibt wahr; die Behandlung der leeren Teil-Range ist eine Ausführungsregel der drei Träger, keine Eigenschaft der Konfiguration |
 
 **Ansatz — Commit-Folge:**
 
@@ -264,6 +265,109 @@ Zeile 6 — die Fitness-Function-Zeile von `ADR-0157`; Zeile 7 — vier ADRs 7,
 → 1 (`d-check.mk`), Zeile 4 bis 6 nach dem Wortlaut des Verdikts, Zeile 9 → ≥ 1
 (`docs-check.md`). Ob der `.d-check.yml`-Kommentar zur Teil-Range nachgezogen
 wird, folgt aus dem Verdikt; jede Abweichung steht mit Grund im Feld.
+
+### Wirkung v0.80.0–v0.82.0 — Belege
+
+Gemessen vom Implementer am 2026-10-06, Stand `8551babd` (Arbeitsbaum ohne
+Änderung, alter Pin `b4b8756b` aus `d-check.mk`, neuer Digest per
+`DCHECK_DIGEST=sha256:d28e9437888554a262ad9a2e8a63fdb1717e5b5860824fdef263a877d532e0c8`
+auf der Kommandozeile), Logs unter `<Scratchpad>/impl-dcheck/`.
+
+**Digest des Tags.** `docker buildx imagetools inspect ghcr.io/pt9912/d-check:v0.82.0`
+druckt `Digest:    sha256:d28e9437888554a262ad9a2e8a63fdb1717e5b5860824fdef263a877d532e0c8`
+(Medientyp `application/vnd.docker.distribution.manifest.v2+json`) — gleich dem
+übernommenen Release-Digest aus §1.
+
+**(a) `hostpaths` — Home-relative Pfade (0.80.0).**
+
+- `make docs-check` am Arbeitsbaum: neuer Digest Exit 0,
+  `d-check: 1794 Datei(en) geprüft, 0 Befund(e)`; alter Digest Exit 0, dieselbe
+  Zeile. `grep -c hostpath-forbidden` in beiden Logs: 0. Der Bestand trägt keinen
+  Home-relativen Pfad in Prosa oder Inline-Code; ein Fund zum Beheben entfällt.
+- Reichweite am Werkzeug gemessen, Wegwerf-Verzeichnis `<Scratchpad>/impl-dcheck/hp/`
+  mit `.d-check.yml` = `modules: [hostpaths]` und dieser `probe.md` (die Zeilen
+  stehen hier im Fence, weil das Modul Fences nicht liest):
+
+  ```text
+  Z3 Prosa: die Daten liegen unter ~/projekte/demo/notiz.md hier.
+  Z5 Inline: `~/projekte/demo/notiz.md`
+  Z7 Werkzeug: ~/.config/demo/conf.yml
+  Z9 nackt: ~ allein
+  Z11 mit Benutzer: ~anna/projekte/demo
+  Z13 URL: https://example.org/~anna/projekte/x
+  (Fence) ~/projekte/demo/im-fence.md
+  ```
+
+  Alter Digest: `d-check: 1 Datei(en) geprüft, 0 Befund(e)`, Exit 0. Neuer
+  Digest: `d-check: 1 Datei(en) geprüft, 2 Befund(e)`, Exit 1, die Befunde
+
+  ```text
+  probe.md:3	~/projekte/demo/notiz.md	hostpath-forbidden
+  probe.md:5	~/projekte/demo/notiz.md	hostpath-forbidden
+  ```
+
+  Gemeldet sind Prosa und Inline-Code; still bleiben die Werkzeug-Konvention mit
+  Punkt-Segment, die nackte Tilde, die Tilde mit Benutzername, die Tilde im
+  URL-Pfad und der Fence. Ausgang: Liefer-Punkt 3 (ii).
+
+**(b) `vcs` — leere Range (0.80.0).**
+
+- Leere Range: `git rev-list --count 8551babd..8551babd` druckt `0`;
+  `make doc-immutable RANGE=8551babd..8551babd` mit neuem Digest druckt
+  `d-check: error: Range-Leerfall "8551babd".."8551babd" — Basis und Spitze benennen denselben Commit, es wurde nichts geprüft`,
+  make-Exit 2; mit altem Digest `d-check: 1794 Datei(en) geprüft, 0 Befund(e)`,
+  Exit 0.
+- Nicht leere Range: `git rev-list --count a93856eb..8551babd` druckt `4`;
+  `make doc-immutable RANGE=a93856eb..8551babd` mit neuem Digest Exit 0,
+  `d-check: 1794 Datei(en) geprüft, 0 Befund(e)`.
+- Simulierter Bump im Wegwerf-Klon `<Scratchpad>/impl-dcheck/klon/` (Zweig ab
+  `8551babd`): Pin-Commit `P` = `6309d19e` stellt in `MR-001` bis `MR-004` den
+  Pfad `.harness/baseline/v6.14.1/` auf `v6.14.9/` um (nur MR-Dateien, Message
+  mit `ADR-0073`), danach ein Commit `H` = `cdf259ff` an einer Nicht-MR-Datei;
+  `B` = `8551babd`, `P` ist der erste Commit nach `B`. Mit neuem Digest:
+
+  | Range | `git rev-list --count` | make-Exit | gedruckte Zeile |
+  |---|---|---|---|
+  | `B..P~1` | 0 | 2 | `d-check: error: Range-Leerfall "8551babd".."6309d19e~1" — Basis und Spitze benennen denselben Commit, es wurde nichts geprüft` |
+  | `P..H` | 1 | 0 | `d-check: 1794 Datei(en) geprüft, 0 Befund(e)` |
+  | `B..H` (volle Range) | 2 | 2 (d-check 1) | `d-check: 1794 Datei(en) geprüft, 4 Befund(e)`, je MR-Datei ein `core-drift-vcs` |
+
+  `B..P~1` mit altem Digest: Exit 0, `d-check: 1794 Datei(en) geprüft, 0 Befund(e)`.
+  Der normalisierte `cmp` aus
+  [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
+  Entscheidung 4 am Pin-Commit: Exit 0 für alle vier MR-Dateien.
+- CI: `grep -n 'doc-immutable\|fetch-depth' .github/workflows/*.yml` trifft
+  kein `doc-immutable`; `ci.yml:57` trägt `fetch-depth: 0` (für
+  `commit-traceability`, dessen Modul `commits` 0.80.0 nicht ändert). Kein
+  Workflow fährt `vcs`; ein shallow-Klon trifft hier keinen Lauf.
+  Ausgang: Liefer-Punkt 3 (i) für die leere Teil-Range; §6 Risiko 4.
+
+**(c) `targets` (0.81.0, 0.82.0).** `make doc-targets` mit altem und neuem
+Digest: je Exit 0, `d-check: 1794 Datei(en) geprüft, 0 Befund(e)`; die beiden
+Logs sind ohne die `docker`-Zeile gleich (`diff` Exit 0). `.d-check.yml` trägt
+keinen Block `targets:` (`grep -n '^targets' .d-check.yml`: kein Treffer), also
+weder `makefiles` noch `authority`; beide Erweiterungen greifen hier nicht.
+Keine Wirkung.
+
+### Leere Teil-Range — Ausführungsregel
+
+Entschieden vom Orchestrator im Auftrag (2026-10-06), ohne ADR; der
+Architect-Zug aus „Ansatz“ Schritt 2 entfällt dadurch:
+
+- Eine **leere** Teil-Range wird nicht gefahren: es gibt in ihr nichts zu prüfen.
+- Ob eine Teil-Range leer ist, entscheidet `git rev-list --count <range>`; der
+  Messende druckt die Zahl. Bei `0` entfällt der `doc-immutable`-Lauf für diese
+  Teil-Range, und der Beleg ist die gedruckte Zahl.
+- **Begründung.** [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
+  Entscheidung 4 verlangt grüne Läufe über die Commits um den Pin-Commit. Eine
+  Range ohne Commit hat keinen Lauf, den sie grün machen könnte; d-check ab
+  v0.80.0 meldet sie deshalb laut mit Exit 2 (Changelog 0.80.0,
+  `DC-FA-VCS-002`; gemessen unter (b)). Die Regel legt fest, wie die
+  Entscheidung ausgeführt wird, und ändert sie nicht; die Fitness-Function-Zeile
+  der ADR („`B..P~1` bei leerer Range Exit 0“) bleibt der Messwert ihres
+  Entscheidungszeitpunkts mit v0.79.0.
+- Träger: `.claude/agents/verifier.md`, `.claude/agents/implementer.md`,
+  `harness/targets/pin-stale.md` §Bump-Ablauf.
 
 ## 4. Trigger
 
