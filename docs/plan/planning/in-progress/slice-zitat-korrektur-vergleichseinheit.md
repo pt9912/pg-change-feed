@@ -171,9 +171,14 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       die Referent-Messung je bewegtem Verweis (`ADR-0159` Entscheidung 2, 4).
       Suchlauf und Befund unter §3 „Suchlauf“.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      **Beleg:** [`review-slice-zitat-korrektur-vergleichseinheit`](../../../reviews/review-slice-zitat-korrektur-vergleichseinheit.md)
+      (erstes Review, verlangte die Fixrunde) und
+      [`review-slice-zitat-korrektur-vergleichseinheit-fixrunde`](../../../reviews/review-slice-zitat-korrektur-vergleichseinheit-fixrunde.md)
+      (Re-Review: 0 HIGH, 0 MEDIUM, keine weitere Fixrunde; Haken vom Reviewer
+      nachgezogen).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
