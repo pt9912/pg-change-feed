@@ -216,9 +216,9 @@ Planungsstand hat außer den in §1 genannten Läufen keinen im Repo gefahren
       *Beleg:* §7 „Beobachtungs-Register“ (vier Dateien in `evidence/`).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
       *Beleg:* §7 „Risiken aus §6“ (vier Risiken, je entfallen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
       Roadmap führt unter *Offene Wellen* keine Welle, also trägt sie die
-      Slice-Closure selbst (nach dem `git mv`).
+      Slice-Closure selbst (nach dem `git mv`). *Beleg:* §7 „Drei Paarungen“.
 
 ## 3. Plan (vor Code)
 
@@ -763,7 +763,28 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
     Closure gemessen am Stand `d971fee3` mit
     `grep -n 'doc-immutable\|fetch-depth' .github/workflows/*.yml`: kein
     `doc-immutable`).
-- **Drei Paarungen:** nach dem `git mv`.
+- **Drei Paarungen:** nach dem `git mv` gemessen — (a) *Anker:* der
+  Steering-Loop-Eintrag trägt `liegt in` `harness/sensors/docs-check.md`
+  §Grenze; die Verkörperungen des Lese-Schritts liegen in `AGENTS.md` §3.5 und
+  `harness/targets/pin-stale.md` §Bump eines Gate-Werkzeugs
+  (`git grep -n 'seit slice-dcheck-v0-82-0' -- AGENTS.md harness/targets/pin-stale.md harness/sensors/docs-check.md`:
+  je 1 Treffer, 3 insgesamt; `.claude/agents/implementer.md` zeigt auf
+  `AGENTS.md` §3.5 und trägt keinen eigenen Anker). (b) *Folge-Slice:*
+  `slice-harness-baseline-v6-16-0` existiert in `open/`. (c) *Register:* die
+  genannten Verzeichnisse existieren, jedes mit nicht leerem `evidence/`
+  (`ls evidence | wc -l`): `implementierung-weicht-von-adr-wortlaut-ab` 3,
+  `gate-scope-erweiterung-ohne-adr-traeger` 3,
+  `beleg-befehl-traegt-seinen-satz-nicht` 25,
+  `nachzug-laesst-ueberholten-text-stehen` 24,
+  `zitat-nennt-die-falsche-stelle` 10,
+  `plan-zusage-erfuellung-ohne-committeten-anker` 5,
+  `pin-ohne-inventar-eintrag-driftet-unsichtbar` 2,
+  `regel-weiter-als-ihr-sensor` 4, `arbeit-ueberholt-stehenden-traeger` 34,
+  `werkzeugvertrag-zusage-ohne-testfall` 1. Ergebnis: getragen. Durch den Move
+  brach kein Verweis (`git grep -n 'in-progress/slice-dcheck-v0-82-0'`: nur
+  Inline-Code in den zwei eingefrorenen Review-Reports, kein Link). Der
+  Ruhe-Marker der Roadmap steht wieder, Wortlaut gleich `281f14f3`;
+  `in-progress/` trägt nur `roadmap.md`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
