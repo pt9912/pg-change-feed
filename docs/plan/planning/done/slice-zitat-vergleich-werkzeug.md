@@ -247,7 +247,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft.
 
 ## 3. Plan (vor Code)
 
@@ -747,6 +747,31 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
     *hergeleitet* (die Probe liest die Fähigkeit, nicht den Namen der Locale),
     nicht an einem solchen Host gefahren; im ungünstigsten Fall ist die Messung
     dort nicht messbar, was der Vertrag als Exit 2 zusagt.
+- **Drei Paarungen:** nach dem `git mv` (`dcde0bf8`) gemessen — (a) *Anker:*
+  der Steering-Loop-Eintrag trägt `liegt in` `harness/README.md` §Sensors; die
+  Werkzeug-Tabelle dort trägt `seit slice-zitat-vergleich-werkzeug` in den
+  Zeilen zu `make zitat-vergleich` und `make test-zitat-vergleich`
+  (`git grep -n 'seit slice-zitat-vergleich-werkzeug' -- harness/README.md`:
+  2 Treffer). (b) *Folge-Slice:* keiner genannt; nichts zu paaren. (c)
+  *Register:* die genannten Verzeichnisse existieren, jedes mit nicht leerem
+  `evidence/` (`ls evidence | wc -l`):
+  `messwerkzeug-grenze-unbenannt-fail-open` 1,
+  `werkzeugvertrag-zusage-ohne-testfall` 1,
+  `kommentar-behauptet-nicht-getragenen-fehlerpfad` 11,
+  `nachzug-laesst-ueberholten-text-stehen` 23,
+  `befehlsform-in-adr-prosa-zieht-folge-adr-nach` 1,
+  `zitat-korrektur-reichweite-abschnitte-kurzform` 3,
+  `host-werkzeug-jenseits-docker-und-make-ohne-deklaration` 2. Ergebnis:
+  getragen. Durch den Move brach kein Verweis (`git grep -n
+  'in-progress/slice-zitat-vergleich-werkzeug'`: 0 Treffer). Der Ruhe-Marker
+  der Roadmap steht wieder, Wortlaut gleich `b8ec6a38`; `in-progress/` trägt
+  nur `roadmap.md`.
+- **Gates der Closure:** `make docs-check` und `make suchlauf-nachmessen` vor
+  dem Inhalts-Commit (`c6ff18c9`) je Exit 0 (`d-check: 1792 Datei(en)
+  geprüft, 0 Befund(e)`, `suchlauf-nachmessen: 22 Zeilen stimmen`).
+  `make gates`, `make test-zitat-vergleich` und `make suchlauf-nachmessen`
+  nach dem letzten Commit stehen im Bericht der Sitzung, nicht in diesem Plan.
+- **DoD „Drei Paarungen“:** abgehakt in §2 mit diesem Commit.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
