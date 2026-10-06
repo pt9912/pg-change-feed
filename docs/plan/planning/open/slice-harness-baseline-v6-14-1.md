@@ -1,0 +1,458 @@
+# Slice harness-baseline-v6-14-1: Das vendored Regelwerk auf v6.14.1 anheben
+
+**Lifecycle:** Der Zustand dieses Slice ist das Verzeichnis, in dem diese
+Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
+wechselt nur durch `git mv`, siehe
+Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
+Übernimmt ein anderer Slice den Gegenstand oder entfällt er, geht diese Datei
+aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
+Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
+(§Ein Slice, dessen Gegenstand ein anderer übernimmt).
+
+**Welle:** ohne Welle — es gibt keine Closure-Bedingung, die von der DoD
+dieses Slice verschieden ist; die Roadmap führt wellenlose Arbeit nicht
+(Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht).
+
+**Bezug:** [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md)
+(Pin-Inventar P8, Entscheidung 7: eine Baseline-Aktualisierung ist ein bewusster
+Bootstrap-Vorgang), [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
+(Zitat-Korrektur an der `Accepted`-ADR
+[`ADR-0095`](../../adr/0095-review-klasse-exempt-status-check.md)),
+[`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) (Herkunft von
+Aussagen). Keine `LH-*`-Anforderung ist berührt: der Slice ändert Harness-Dokumente,
+nicht das Produkt.
+
+**Berührte Spec-Stellen:** — (keine; Harness-Werkzeug und Konventionen).
+
+**Verantwortlich:** —
+<!-- BEDIENHINWEIS: Verantwortlich hält die Arbeit — der Rolleninhaber der
+Implementer-Rolle, gesetzt beim Übergang open→next (Baseline-Regelwerk
+modul-05-planning-harness.md §Lifecycle als State Machine). Der Autor schrieb
+den Plan; zwei Felder, zwei Fragen. Kein Statuswert: der Zustand bleibt das
+Verzeichnis. Kein Sensor prüft das Feld — es ist Deklaration. -->
+
+**Autor:** pt9912 (Planner-Agent im Auftrag). **Datum:** 2026-10-06.
+
+---
+
+## 1. Ziel und Abgrenzung
+
+<!-- BEDIENHINWEIS: Ziel = ein Satz, Liefer-Fokus, kein "wir machen
+aufraeumen". Abgrenzung = je Punkt eine Begruendung, nicht nur eine Nennung:
+ein Ausschluss ohne Grund ist eine Behauptung. Keine Mindestzahl — ein echter
+Ausschluss ist besser als vier erfundene. -->
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Ziel-Form: Slice — Schnitt nach Lieferwert, nicht nach Schichten; jeder Slice
+ist einzeln lieferbar. **§1 nennt Ziel und Abgrenzung** (Out-of-Scope-Disziplin
+des Lastenhefts, auf den Slice-Plan angewandt); die vier Klassen des
+Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
+zusammen mit der Begründungs-Pflicht je Punkt.
+
+**Ausgangslage (Herkunft je Angabe, [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)):**
+
+- `make pin-stale-baseline` druckte `DRIFT Kurs-Baseline: adoptiert v6.14.0,
+  neuester Release v6.14.1` (Release vom 2026-10-06T05:16:10Z) — **übernommen**
+  aus dem Lauf des Auftraggebers vom 2026-10-06, im Slice nachzumessen.
+- `.harness/state/bin/ai-harness-init vendor-baseline <tag> <sha256>` (v0.2.3)
+  bricht ab, wenn ein anderer Tag vendored ist — **übernommen** (Auftraggeber).
+  Er hat v6.14.1 in einem Wegwerf-Klon vendored (alten Baum per `git rm`
+  entfernt, dann `vendor-baseline v6.14.1
+  9886252512171e0496e58974a119391dd5009c31946e07970d7065bec22dc7bc`, Exit 0;
+  der sha256 stammt aus dem Release-Asset `SHA256SUMS`) — **übernommen**.
+- Im Baum dieses Klons (`<Scratchpad>/bump6141/klon/.harness/baseline/v6.14.1`)
+  endet `sha256sum -c SHA256SUMS` mit Exit 0, 54 Zeilen `: OK` bei 54 Zeilen in
+  `SHA256SUMS` — **gemessen** vom Planner am 2026-10-06; der Baum ist nicht
+  committet und kein Beleg für den Repo-Stand.
+- Delta v6.14.0 → v6.14.1, versions-normalisiert (`sed 's/v6\.14\.x/vX/g'`,
+  `diff -r -x SHA256SUMS`): 56 Zeilen, sechs Dateien — **übernommen** aus
+  `<Scratchpad>/bump6141/delta.diff` des Auftraggebers (vom Planner gelesen,
+  nicht neu erzeugt). Inhalt: `regelwerk/README.md` (Stand-Zeile Kurs-Welle 157
+  · 2026-10-06); `regelwerk/modul-10-review-harness.md` und
+  `templates/docs/reviews/review-report.template.md` („`BEO-<NNN>`“ →
+  „Beobachtung“); `templates/docs/plan/planning/slice.template.md`,
+  `welle-results.template.md`, `templates/harness/conventions.template.md`
+  (`BEO-<NNN>` → `BEO-<KUERZEL>/<slug>`); in `welle-results.template.md`
+  zusätzlich die Ablage `observations/` statt `observations.md`. Fachlich ist
+  das Befund F-8 aus `done/slice-abgeleitete-dokumente-vorlagen-nachzug.md`,
+  im Kurs-Projekt behoben.
+
+**Ziel:** Das vendored Baseline-Regelwerk steht auf **v6.14.1**
+(`.harness/baseline/<Tag>/`, Tag: v6.14.1, gegen `SHA256SUMS` geprüft, v6.14.0
+entfernt), jeder lebende Verweis und Pin nennt v6.14.1, die aus den geänderten
+Vorlagen abgeleiteten Repo-Dokumente sind nach dem Bump-Ablauf
+([`harness/targets/pin-stale.md`](../../../../harness/targets/pin-stale.md)
+§Bump-Ablauf, Schritte 1–3) mit Befehl und gedruckter Zahl abgeglichen, und
+`make gates` ist grün.
+
+**Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
+
+- **Die Aussage von Records unter `done/`, `docs/reviews/**` und im
+  Beobachtungs-Register** (`observation.md`, `evidence/*.md`), die `v6.14.0`
+  oder `BEO-<NNN>` nennen — Bestand bleibt bewusst stehen: sie sind
+  Vorgangs-Angaben ihres Laufs und werden nicht rückwirkend umgeschrieben
+  (pin-stale.md §Bump-Ablauf Schritt 3;
+  `BEO-PGC/record-rueckwirkend-umgeschrieben`). Ausgenommen ist allein das
+  **Verweisgerüst**, das ein Gate mit dem Löschen von v6.14.0 rot färbt
+  (Pin-Segment unter `versions`, Linkziel unter `links`): es wird nach
+  [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
+  korrigiert oder, wo die Korrektur die Aussage des Records änderte (eine
+  `suchlauf`-Zeile, die an ihrem Commit gegen den v6.14.0-Pfad misst), mit
+  Grund anders behandelt — Liefer-Punkt 2, Vorbild `996e6231`, `cd364fc5`.
+- **Bestehende Instanzen der geänderten Vorlagen** (Slice-Pläne, Welle-Notizen,
+  Review-Reports mit `BEO-<NNN>`-Resten aus früheren Vorlagen) — Bestand bleibt
+  stehen, aus demselben Grund; neue Instanzen folgen der neuen Form.
+- **Die Angleichung der Abschnitte-Liste von
+  [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
+  §Entscheidung 1 an ihre Kurzform** — ein anderer Vorgang (Architect-Zug,
+  Folge-ADR); dieser Slice zählt nur das dritte Auftreten
+  (`BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform`, §6, §8).
+- **Änderung am Werkzeug `ai-harness-init`** (dass `vendor-baseline` neben einem
+  anderen Tag abbricht) — ein anderer Vorgang am Werkzeug, nicht am Gegenstand;
+  das Werkzeug liegt nicht in diesem Repo.
+- **Ein neues Gate oder eine Gate-Änderung** (etwa `baseline-verify` mit zwei
+  Tag-Verzeichnissen grün) — Gate-Entscheidungen brauchen eine ADR
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.6); der Zwischenstand mit zwei
+  Verzeichnissen ist ein benannter, vorübergehender roter Stand (§4, §6).
+- **Kein Produkt-Code** — Schicht-Abgrenzung: der Slice berührt nur
+  `.harness/`, `harness/`, `.claude/`, `AGENTS.md` und eine ADR-Zitatstelle.
+
+**Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
+einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
+Ausfüll-Liste. Suchreihenfolge: Was übernimmt ein **Folge-Slice** (mit
+Kennung — und die Kennung muss den Punkt auch annehmen)? Was bleibt als
+**Bestand** bewusst stehen (mit Begründung)? Was wäre ein **anderer Vorgang**?
+Welche **Schicht** rührt der Slice nicht an?
+
+Was hier steht, ist die Grenze, an der ein wachsender Slice sich messen lässt:
+Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
+**geändert**, nicht nur ergänzt.
+
+## 2. Definition of Done
+
+<!-- BEDIENHINWEIS: je Zeile ein pruefbares Kriterium. -->
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Ziel-Form: Slice — **≤ 3 Liefer-Punkte**; mehr heißt: der Slice ist zu groß und
+gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
+Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
+
+Alle Beleg-Angaben dieser Liste sind **Zusagen** („zu belegen durch …“): der
+Planungsstand hat keinen der Läufe im Repo gefahren
+([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) Instanz B).
+
+- [ ] **Baseline v6.14.1 vendored und verifiziert, v6.14.0 entfernt
+      (Liefer-Punkt 1).** `.harness/baseline/<Tag>/` (Tag: v6.14.1) committet
+      (Regelwerk + Templates + `SHA256SUMS`, 54 Dateien erwartet), aus einem
+      `vendor-baseline`-Lauf mit dem Asset-sha256
+      `9886252512171e0496e58974a119391dd5009c31946e07970d7065bec22dc7bc`
+      (Weg: §3, Ansatz). Das Verzeichnis des alten Tags entfällt in einem
+      eigenen Commit **nach** Liefer-Punkt 3. *Zu belegen durch:* `sha256sum -c
+      SHA256SUMS` im neuen Verzeichnis (Exit-Code, Zahl der `OK`-Zeilen) vor dem
+      Löschen des alten und `make baseline-verify` danach (gedruckte Zeile
+      `baseline-verify: v6.14.1 OK — 54 Dateien …` erwartet, Exit 0).
+- [ ] **Verweise und Pins nachgezogen (Liefer-Punkt 2).** Jede lebende Nennung
+      von `v6.14.0` zeigt auf v6.14.1: [`AGENTS.md`](../../../../AGENTS.md) §1
+      (Release-URL); `harness/conventions.md` §Baseline (Stand, Datum der
+      Adoption, Release-URL, Stand-Zeile „Kurs-Welle 157 · 2026-10-06“);
+      `harness/conventions/MR-001` bis `MR-004` (Pfad-Segment);
+      `harness/sensors/baseline-verify.md` (Messzeile neu gemessen, Bindung);
+      `.claude/agents/architect.md`, `reviewer.md`, `verifier.md`;
+      `.harness/skills/closure-note-reviewer.md`, `.harness/skills/reviewer.md`;
+      [`ADR-0095`](../../adr/0095-review-klasse-exempt-status-check.md) Zeile
+      §Verglichene Alternativen A als Zitat-Korrektur nach
+      [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
+      (Referent vorher messen: die v6.14.1-Vorlage `templates/.d-check.yml`
+      trägt dieselbe `status`-Aussage; Commit nennt `ADR-0073`, genau eine
+      §Geschichte-Zeile; Vorbild `00d96eb7`). Dazu das Verweisgerüst der
+      Records, das mit dem Löschen von v6.14.0 ein Gate rot färbt (gemessen am
+      Parent, §3): sieben Pin-Zeilen in vier Plänen unter `done/`
+      (`slice-baseline-6-14-0-dokumente-nachziehen.md` 3,
+      `slice-harness-guard-blocked-python.md` 2,
+      `slice-harness-guard-inplace-textwerkzeug.md` 1,
+      `slice-harness-readme-zellen-kuerzen.md` 1) und ein Link in
+      `docs/reviews/architect-verdict-aufschub-adresse-verfaellt.md` —
+      je Zeile Zitat-Korrektur nach `ADR-0073`, wenn der Referent in v6.14.1
+      unverändert ist (Commit nennt `ADR-0073`, Vorbild `996e6231`), sonst eine
+      begründete andere Behandlung; die Entscheidung je Zeile steht im Bericht.
+      *Zu belegen durch:* den Suchlauf §3 mit `diff`-Zeilen,
+      `make suchlauf-nachmessen` und `make docs-check` Exit 0 nach dem Löschen.
+- [ ] **Bump-Ablauf Schritte 1–3 mit Belegen, Nachzug der abgeleiteten Träger
+      (Liefer-Punkt 3).** Schritt 1 (Delta je `templates/` und `regelwerk/`,
+      versions-normalisiert, im Repo neu erzeugt), Schritt 2 (Stichprobe: Gliederung,
+      Platzhalter mit beiden Mustern, voller `diff` für `harness/conventions.md`
+      und `docs/plan/planning/README.md` und jedes Dokument, dessen Vorlage im
+      Delta steht) und Schritt 3 (je Dokument „entspricht“ oder „Abweichung mit
+      Beleg“) stehen in einem committeten Abschnitt dieses Plans, je Prüfung
+      Befehl und gedruckte Zahl, **bevor** v6.14.0 fällt. Nachgezogen werden
+      dabei mindestens: (b) `harness/conventions.md` MR-000 (Zeile mit
+      `BEO-<NNN>` im ID-Schema) auf `BEO-<KUERZEL>/<slug>` wie die neue
+      `conventions.template.md`; (c) der Kandidatenlauf auf Vorlagenrest in
+      `.claude/commands/implement-slice.md` (Muster `Auslöser: .BEO-<NNN>`)
+      trifft beide Formen — die alte `BEO-<NNN>` und die neue
+      `BEO-<KUERZEL>/<slug>`, die die v6.14.1-Slice-Vorlage hinterlässt.
+      *Zu belegen durch:* je Muster ein `grep -nE` gegen eine Probe-Datei mit
+      der alten und eine mit der neuen Zeile (beide treffen, eine
+      gefüllte Anker-Zeile trifft nicht), Ausgabe im Bericht.
+- [ ] `make gates` grün, Exit-Code ungefiltert gesichert
+      ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
+      Roadmap führt unter *Offene Wellen* keine Welle, also trägt sie die
+      Slice-Closure selbst (nach dem `git mv`).
+
+## 3. Plan (vor Code)
+
+<!-- BEDIENHINWEIS: Datei- oder Komponenten-Ebene reicht; der
+Implementer-Agent erweitert die Liste in seinem ersten Lauf, inklusive
+einer Testdatei-Zeile mit der Akzeptanzkriterien-ID in `Begründung`
+(Modul 9 §Minimal Agent Workflow). -->
+
+Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
+§Was ist eine Sub-Area? — diese Liste liefert die **Pfad-Kandidaten** für §8,
+nicht die Antwort: Pfad-Berührung ist nicht hinreichend, und eine
+Aussagen-Berührung steht hier gar nicht.
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `.harness/baseline/<Tag>/**` (Tag: v6.14.1) | neu | Regelwerk + Templates + `SHA256SUMS` aus dem Release-Asset (Liefer-Punkt 1) |
+| `.harness/baseline/<Tag>/**` (Tag: v6.14.0) | entfernt | eigener Commit nach Liefer-Punkt 3; der alte Stand lebt in der Git-Historie |
+| `AGENTS.md` §1, `harness/conventions.md` §Baseline, `harness/conventions/MR-001`…`MR-004`, `harness/sensors/baseline-verify.md`, `.claude/agents/{architect,reviewer,verifier}.md`, `.harness/skills/{closure-note-reviewer,reviewer}.md` | update | Version-Segment und Release-URL auf v6.14.1 (Liefer-Punkt 2) |
+| `docs/plan/adr/0095-review-klasse-exempt-status-check.md` | Zitat-Korrektur + §Geschichte-Zeile | `Accepted`, Pfad in §Verglichene Alternativen A ([`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)) |
+| vier Pläne unter `done/`, ein Report unter `docs/reviews/` (Liste in §2) | Zitat-Korrektur je Zeile oder begründete andere Behandlung | Verweisgerüst, das `versions`/`links` mit dem Löschen von v6.14.0 rot färben |
+| `harness/conventions.md` MR-000 | update | ID-Schema `BEO-<KUERZEL>/<slug>` wie die v6.14.1-`conventions.template.md` (Liefer-Punkt 3, b) |
+| `.claude/commands/implement-slice.md` (Kandidatenlauf auf Vorlagenrest, Schritt 24) | update | Muster trifft alte und neue `Auslöser:`-Form (Liefer-Punkt 3, c) |
+| dieser Plan, neuer Abschnitt „Bump-Ablauf — Belege“ | update | Schritte 1–3 aus `harness/targets/pin-stale.md` mit Befehl und gedruckter Zahl, vor dem Löschen von v6.14.0 committet |
+
+**Ansatz — Commit-Folge** (Vorbild `9eca47e2` → `484d20ec` → `990f1a0e` →
+`cd364fc5`/`996e6231` beim Bump auf v6.14.0, gelesen mit `git show --stat`):
+
+1. **v6.14.1 neben v6.14.0 ins Repo.** `vendor-baseline` bricht ab, solange ein
+   anderer Tag vendored ist (übernommen, §1). Weg: der Baum aus einem
+   `vendor-baseline`-Lauf in einem Wegwerf-Klon (Asset-sha256 geprüft, s. o.)
+   wird als Ganzes ins Repo kopiert (`cp -r`, ganze Dateien, kein Text-Schreiben,
+   [`AGENTS.md`](../../../../AGENTS.md) §3.1), danach `sha256sum -c SHA256SUMS`
+   im neuen Verzeichnis. Ein eigener Commit. `make baseline-verify` ist auf
+   diesem und den folgenden Commits rot (zwei Tag-Verzeichnisse,
+   [`harness/sensors/baseline-verify.md`](../../../../harness/sensors/baseline-verify.md)
+   Exit 1) — derselbe dokumentierte Zwischenstand wie bei `9eca47e2`; es wird
+   nichts gepusht, bevor die Folge abgeschlossen ist.
+2. **Bump-Ablauf Schritte 1–3** gegen die beiden Bäume im Repo, Belege in diesen
+   Plan, Nachzug (b) und (c). Eigene Commits.
+3. **Verweise und Pins** auf v6.14.1 (Liefer-Punkt 2), Zitat-Korrekturen je
+   Datei-Klasse in eigenen Commits mit `ADR-0073`.
+4. **v6.14.0 entfernt** (`git rm -r`), eigener Commit; danach `make
+   baseline-verify` und `make gates` grün.
+
+**Suchlauf ([`AGENTS.md`](../../../../AGENTS.md) §3.13).** Bewegte Eigenschaft:
+der adoptierte Baseline-Stand (v6.14.0 → v6.14.1) samt Stand-Zeile, und die
+Form der Beobachtungs-Kennung in den abgeleiteten Trägern (`BEO-<NNN>` →
+`BEO-<KUERZEL>/<slug>`). Suchraum der ganze Baum ohne `.harness/baseline/**`
+(der Gegenstand selbst), `docs/reviews/**` und `done/**` (Records); die Records
+misst die letzte Zeile gesondert, weil das Gate ihr Verweisgerüst rot färbt
+(§2, Liefer-Punkt 2). Zählwort und Hedge tragen hier nichts: die Eigenschaft
+ist ein Versionsstring, keine Menge. Gemessen vom Planner am Parent
+`74dfb99b`, Plan-Datei ausgeschlossen (sie lag am Parent noch nicht vor):
+
+```suchlauf
+74dfb99b 19 -n 'v6\.14\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+74dfb99b 11 -nE '\.harness/baseline/v6\.14\.0/' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+74dfb99b 1 -n 'Kurs-Welle 156' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+74dfb99b 2 -n 'BEO-<NNN>' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+74dfb99b 0 -n 'v6\.14\.1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+74dfb99b 7 -nE '\.harness/baseline/v6\.14\.0/' -- docs/plan/planning/done
+74dfb99b 2 -nE '\]\([^)]*\.harness/baseline/v6\.14\.0' -- docs/plan/planning/done docs/reviews
+```
+
+Die 19 Treffer der ersten Zeile verteilen sich auf 13 lebende Träger (§2,
+Liefer-Punkt 2) und zwei Register-Records
+(`BEO-PGC/record-rueckwirkend-umgeschrieben`: `observation.md` und
+`evidence/slice-baseline-6-14-0-dokumente-nachziehen.md`), die bleiben (§1).
+Die `diff`-Zeilen trägt der Implementer nach; **erwartet** (hergeleitet, nicht
+gemessen): Zeile 1 → 3 (die zwei Register-Records und die bestehende
+§Geschichte-Zeile von `ADR-0095`), Zeilen 2, 3 und 6 → 0, Zeile 7 → 0, Zeile 4
+nach der Form, die (c) wählt. Jede Abweichung davon steht mit Grund im Feld.
+
+## 4. Trigger
+
+<!-- BEDIENHINWEIS: Beispiele — "Wenn Welle X done." / "Wenn Carveout CO-NN
+aufgeloest." -->
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Trigger je Lifecycle-Übergang und WIP-Limit.
+
+**Start** (`next` → `in-progress`): das Release-Asset v6.14.1 ist
+veröffentlicht (2026-10-06, übernommen aus `make pin-stale-baseline`, §1);
+`in-progress/` trägt keinen Slice (WIP-Limit 1; am Parent `74dfb99b` liegt dort
+nur `roadmap.md`, gemessen mit `ls`); `Verantwortlich:` ist beim `open → next`
+gesetzt.
+
+**Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
+
+- `in-progress` → `next` (zu groß, zurück zur Zerlegung): der Bump-Ablauf
+  (Schritt 2/3) findet eine Abweichung, die **keine** mechanische Zeile ist
+  (eine fehlende Klausel, eine Regel-Änderung mit Folge für ein Gate oder eine
+  Hard Rule) — sie wird dann als Folge-Slice geschnitten, nicht hier
+  mitgenommen. Mechanische Nachzüge über die §3-Tabelle hinaus (weitere
+  Pin-Zeilen) führen **nicht** zurück: ohne sie bleibt `make gates` rot, und
+  eine Zerlegung verlängerte den roten Stand über die Slice-Grenze
+  (Begründung wie `done/slice-harness-baseline-v6-13-0.md` §7).
+- `in-progress` → `open` (blockiert): der Baum aus dem `vendor-baseline`-Lauf
+  löst gegen `SHA256SUMS` nicht auf oder der Asset-sha256 weicht vom Wert in
+  §2 ab — der Release-Stand ist dann nicht vertrauenswürdig, der Slice wartet
+  auf einen korrigierten Release; ebenso, wenn `ai-harness-init` den Lauf auch
+  im Wegwerf-Klon verweigert und kein Weg ohne Handarbeit am Baum bleibt.
+
+## 5. Closure-Trigger
+
+<!-- BEDIENHINWEIS: z.B. "DoD vollstaendig + PR gemerged + Closure-Notiz
+geschrieben." -->
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Closure- und Lerneintrag-Regeln — zwei beobachtbare Kriterien **und** ein
+Lerneintrag; ohne ihn ist der Slice nur abgelegt.
+
+Die drei Liefer-Punkte der DoD sind abgehakt mit Beleg; `make baseline-verify`
+druckt `v6.14.1 OK` mit Exit 0 und `make gates` endet mit Exit 0, beide auf dem
+Commit nach dem Löschen von v6.14.0; der Review-Report liegt vor und ist
+aufgelöst; die Closure-Notiz (§7) trägt den Lerneintrag und jedes Risiko aus §6
+seinen Ausgang.
+
+## 6. Risiken und offene Punkte
+
+<!-- BEDIENHINWEIS: Was koennte schief gehen? Welche Carveouts entstehen
+ggf.? Die drei Ausgaenge stehen als Form in der Zeile darunter. -->
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Offene Risiken werden bei Closure aufgelöst — **jedes** Risiko bekommt genau
+**einen** Ausgang, und kein Slice geht nach `done/`, während eines ohne Ausgang
+dasteht.
+
+- **Zwischenstand rot.** `vendor-baseline` vendort nicht neben dem alten Tag
+  (übernommen, §1); der Weg über den Wegwerf-Klon und `cp -r` (§3, Ansatz)
+  macht zwei Tag-Verzeichnisse für mehrere Commits zum Bestand, und
+  `make baseline-verify` (damit `make gates`) ist auf ihnen rot — wie bei
+  `9eca47e2`/`484d20ec` (zwei Tag-Verzeichnisse, Löschen erst in `990f1a0e`).
+  Der rote Stand darf den Hauptzweig nicht einzeln erreichen: gepusht wird erst
+  die vollständige Folge bis zum Löschen. *Zu belegen durch:* `make gates`
+  Exit 0 auf dem Commit nach dem Löschen.- **Der kopierte Baum ist nicht der des Werkzeugs.** Ein `cp -r` aus dem Klon
+  könnte Dateien verlieren oder hinzufügen (Rechte, versteckte Dateien wie
+  `templates/.d-check.yml`). *Zu belegen durch:* `sha256sum -c SHA256SUMS` im
+  Repo-Verzeichnis (54 erwartet) und `make baseline-verify` nach dem Löschen,
+  das auch zusätzliche Dateien meldet.- **Die Zitat-Korrektur an `ADR-0095` §Verglichene Alternativen ist das dritte
+  Auftreten von `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform`**
+  (2× am Parent, gemessen: zwei Dateien unter `evidence/`). Mit diesem Slice
+  wird der Eintrag eine Lücke und braucht einen eigenen Folge-Slice
+  (Baseline-Regelwerk `modul-05-planning-harness.md` §Zwei Schritte vor der
+  Modus-Begründung): den Architect-Zug, der die Abschnitte-Liste von
+  [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
+  §Entscheidung 1 an die Kurzform angleicht (Folge-ADR). Die Datei des
+  Folge-Slice liegt spätestens bei der Closure dieses Slice im Lifecycle
+  (Folge-Slice-Paarung); der Planner legt sie an. Erwarteter Ausgang:
+  eingetreten, mit der Kennung des Folge-Slice.
+- **Eine Pin-Zeile in einem Record misst an ihrem Commit gegen den v6.14.0-Pfad**
+  (`done/slice-baseline-6-14-0-dokumente-nachziehen.md`, `suchlauf`-Zeile mit
+  `-- .harness/baseline/v6.14.0/…`): eine Zitat-Korrektur änderte das Ergebnis
+  der Messung, die der Record festhält, und wäre keine reine Gerüst-Änderung.
+  *Zu belegen durch:* die Entscheidung je Zeile im Bericht (Korrektur,
+  Ausnahme-Marker mit Grund, oder Folge-ADR).- **Der Bump-Ablauf findet Abweichungen über das Delta hinaus** (Schritt 2
+  liest unabhängig vom Delta). *Zu belegen durch:* das Ergebnis je Dokument in
+  Schritt 3 (Behebung hier oder Folge-Slice mit Kennung, §4).
+
+Jedes Risiko bekommt bei der Closure genau einen Ausgang (eingetreten mit
+`CO-*`- oder Slice-Kennung · entfallen mit Grund · weiter offen ins Register).
+Kein Workflow unter `.github/workflows/` ist berührt; [`AGENTS.md`](../../../../AGENTS.md)
+§3.10 greift nicht.
+
+## 7. Closure-Notiz
+
+<!-- BEDIENHINWEIS — keine Norm; faellt beim Kopieren weg (README.md
+§Verwendung, Schritt 5) und darf deshalb nichts Tragendes halten. Reihenfolge:
+diese Sektion vor dem `git mv` nach done/ fuellen — einzige Ausnahme ist das
+letzte DoD-Item in §2 (die Paarungen suchen in `done/`, also nach dem `git mv`).
+Im Repo ohne Wellen-Betrieb braucht die Closure dadurch drei Commits: Inhalt,
+`git mv`, Haekchen — das folgt aus der Hard Rule, es widerspricht ihr nicht. -->
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
+§Das Beobachtungs-Register (vorhandene `BEO-<NNN>` **zitieren** statt neu
+formulieren — sonst zählt das Register zwei Namen getrennt) ·
+`grundlagen-traceability.md` §Herkunfts-Anker für Steering-Loop-Regeln (das
+Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
+wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
+Backticks). Ging der Gegenstand an einen anderen Slice oder entfiel er, trägt
+diese Sektion die Zeile `Gegenstand:` mit Kennung oder Grund und jedes Risiko
+aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
+(`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
+übernimmt).
+
+- **Was hat funktioniert:** <…>
+- **Was ging anders als geplant:** <…>
+- **Gegenstand:** <übernommen von `slice-<Kennung>` | entfallen: <Grund>>
+  *(nur beim Ausgang ohne Arbeit; sonst Zeile löschen)*
+- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
+  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
+  Auslöser: `BEO-<NNN>` (<slice-kennung-a>, <slice-kennung-b>, <slice-kennung-c> — 3×).
+  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
+  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
+  verkörpert.)*
+- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-<Kennung>.md` | `evidence/slice-<Kennung>.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
+- **Folge-Slices:** <slice-<Kennung> (<Titel>) — ist eine Datei in `open/`>
+- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
+- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+
+## 8. Sub-Area-Prüfungen und Modus-Begründung
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Ziel-Form: Sub-Area-Modus-Begründung — dort die **zwei vorgelagerten
+Schritte** (sie stehen in jedem Slice-Plan, unabhängig von Modus und
+Slice-Typ) und die **vier Pflichtkriterien** (Konventionen-Dichte ·
+Phase-Reife · Evidenz-/Diskrepanz-Risiko · Reconciliation-Aufwand), vier und
+nicht mehr.
+
+**Der Abschnitt selbst entfällt nie.** Die zwei vorgelagerten Prüfungen laufen
+in **jedem** Slice-Plan — sie hängen weder am Modus noch am Slice-Typ. Bedingt
+ist allein der Modus-Begründungsblock am Ende; deshalb nennt der Titel beide
+Hälften.
+
+**Vorgelagert — Sub-Area-Wahl prüfen:** berührt sind `.harness/baseline/`
+(vendored Bestand), `harness/` (Konventionen, Sensor-Vertrag), `.claude/`
+(Agenten, Command), `.harness/skills/`, `AGENTS.md` und eine ADR-Zitatstelle.
+Die Modus-Deklaration in `harness/conventions.md` führt nur die Default-Sub-Area
+`*` (Kürzel `PGC`, Greenfield); alle Pfade fallen unter sie. Keine
+Ausdifferenzierung nötig: der Slice ändert in allen Pfaden dieselbe Eigenschaft
+(den Baseline-Stand), es mischen sich keine Modi.
+
+**Vorgelagert — offene Beobachtungen sichten:** Register
+`docs/plan/planning/observations/BEO-PGC/` durchgegangen (154 Verzeichnisse,
+gemessen mit `ls | wc -l` am 2026-10-06), gefiltert nach Baseline, Vorlage,
+Zitat-Korrektur, Record und Nachzug. Treffer mit Bezug zu diesem Gegenstand,
+Zähler als Zahl der `evidence/`-Dateien (gemessen):
+
+- `zitat-korrektur-reichweite-abschnitte-kurzform` — **2×**, Stand *geplant*
+  ohne Folge-Slice-Datei. Die `ADR-0095`-Korrektur dieses Slice ist das dritte
+  gezählte Auftreten (die gleichartige Korrektur `cd364fc5` beim Bump auf
+  v6.14.0 hat keine `evidence/`-Datei) — damit eine Lücke, eigener Folge-Slice,
+  §6.
+- `record-rueckwirkend-umgeschrieben` — **1×**. Berührt die Grenze in §1: die
+  Aussage der Records bleibt, nur das gate-rote Verweisgerüst wird korrigiert.
+- `vorlagenrest-in-closure-notiz` — 4×, *verkörpert*; ihr Kandidatenlauf in
+  `implement-slice.md` ist Gegenstand von Nachzug (c). Der Nachzug hält die
+  verkörperte Regel gegen die neue Vorlagenform wirksam.
+- `arbeit-ueberholt-stehenden-traeger` (34×, Deckel) und
+  `nachzug-laesst-ueberholten-text-stehen` (20×, *verkörpert*) — die Klasse, die
+  der Suchlauf §3 abwehrt; kein Anlass für einen eigenen Schritt.
+- `zahl-in-traeger-driftet-gegen-die-messung` (30×, Deckel) — betrifft die
+  Messzeile in `harness/sensors/baseline-verify.md`: sie wird neu gemessen,
+  nicht übernommen.
+
+**Modus-Begründungsblock — Umfang.** Pflicht, sobald mindestens eine berührte
+Sub-Area BF oder Hybrid ist — einer pro Sub-Area. Bei reinem GF genügt der
+Hinweis *"alle berührten Sub-Areas GF"*; bei reinem Refactor ohne neue
+Sub-Area-Berührung entfällt **er** — nicht der Abschnitt.
+
+Alle berührten Sub-Areas GF.
