@@ -84,11 +84,16 @@ Entscheidung 4) sowie je bewegtem Verweis den Referenten mit
 `make zitat-vergleich`
 ([`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
 Entscheidung 2, Vertrag [`zitat-vergleich.md`](zitat-vergleich.md)); der
-Messende belegt im Slice-Plan des Bumps mit der gedruckten Zeile. Eine
-**leere** Teil-Range läuft nicht: druckt `git rev-list --count <range>` die
-Zahl `0` (etwa `base..P~1`, wenn `P` der erste Commit nach `base` ist), hat sie
-keinen Commit zu prüfen, und d-check endet dort mit Exit 2; ihr Beleg ist die
-gedruckte Zahl.
+Messende belegt im Slice-Plan des Bumps mit der gedruckten Zeile. Vor jedem
+Teil-Range-Lauf steht der Leer-Test: **leer** genau dann, wenn `git rev-parse`
+für Basis und Spitze denselben Commit liefert — dann läuft `make doc-immutable`
+nicht, und die gedruckte Zeile des Tests ist der Beleg; sonst `git merge-base
+--is-ancestor` und Zählung > 0, dann `make doc-immutable` mit Exit 0; jede
+andere Lage (eine Seite löst nicht auf, die Basis ist kein Vorfahr, etwa eine
+umgekehrte Range) endet mit Exit 2, und die Range wird neu gebildet. Der
+Befehl ist die Funktion `teilrange` in
+[`ADR-0160`](../../docs/plan/adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+Entscheidung 1.
 
 ## `make pin-stale-actions`
 

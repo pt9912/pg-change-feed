@@ -44,11 +44,14 @@ Disziplin.
   und `make doc-immutable RANGE=base..head` (MR-Immutabilität; ohne `RANGE`
   endet das Ziel mit Exit 2); enthält die Range einen Pin-Commit `P` eines
   Baseline-Bumps (ändert nur MR-Dateien, Message nennt `ADR-0073`), läuft
-  `doc-immutable` in den Teil-Ranges `base..P~1` und `P..head` (je Exit 0;
-  eine leere Teil-Range — `git rev-list --count <range>` druckt `0`, etwa
-  `base..P~1`, wenn `P` der erste Commit nach `base` ist — läuft nicht, weil sie
-  nichts zu prüfen hat und d-check dort mit Exit 2 endet; Beleg ist die gedruckte
-  Zahl), und
+  `doc-immutable` in den Teil-Ranges `base..P~1` und `P..head`, je nach dem
+  Leer-Test: leer genau dann, wenn `git rev-parse` für Basis und Spitze
+  denselben Commit liefert (kein Lauf, die gedruckte Zeile ist der Beleg);
+  sonst `git merge-base --is-ancestor` und Zählung > 0, dann `make
+  doc-immutable` mit Exit 0; jede andere Lage ist Exit 2, die Range wird neu
+  gebildet — Befehl: Funktion `teilrange` in
+  [`ADR-0160`](../../docs/plan/adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+  Entscheidung 1, und
   am Pin-Commit selbst je MR-Datei ein `cmp` nach Normalisierung des Tags (je
   Exit 0) — Befehl in
   [`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)

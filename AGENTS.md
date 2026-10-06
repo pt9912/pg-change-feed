@@ -443,15 +443,22 @@ siehe
 [`docs/reviews/architect-verdict-github-actions-unverifizierbar-lokal-3x.md`](docs/reviews/architect-verdict-github-actions-unverifizierbar-lokal-3x.md)
 · seit welle-17.
 
-### 3.11 Kein host-lokaler absoluter Pfad in der Doku
+### 3.11 Kein host-lokaler absoluter oder Home-relativer Pfad in der Doku
 
 Kein Markdown-Dokument dieses Repos nennt an irgendeiner Stelle — Prosa,
-Inline-Code oder Fenced-Code-Block — einen host-lokalen absoluten Pfad: ein
-Wurzel-Segment eines Entwicklerrechners (Präfixliste `hostpaths.prefixes`) oder
-ein Windows-Laufwerks-/UNC-Muster. Ein Schwester-Artefakt wird in der Hausform
-zitiert (`d-check`s `Dockerfile`), nicht über seinen Pfad auf einem Rechner.
+Inline-Code oder Fenced-Code-Block — einen host-lokalen Pfad. Das ist ein
+absoluter Pfad mit dem Wurzel-Segment eines Entwicklerrechners
+(Präfixliste `hostpaths.prefixes`) oder mit einem Windows-Laufwerks- oder
+UNC-Muster, oder ein Home-relativer Pfad: Tilde, Schrägstrich und ein
+Segment ohne führenden Punkt, oder Tilde mit Benutzername. Ein
+Schwester-Artefakt wird in der Hausform zitiert. Kein Gegenstand der Regel
+sind die Werkzeug-Konvention mit Punkt-Segment, die nackte Tilde und die
+Tilde in einem URL-Pfad.
+
+Die Hausform ist `d-check`s `Dockerfile`, nicht der Pfad auf einem Rechner.
 Eine verbotene Form zeigt ein Dokument **nur als Platzhalter** — `<Host-Wurzel>`
-für das Wurzel-Segment; die reale Form steht nirgends, auch nicht im Fence.
+für das Wurzel-Segment, `~/<Verzeichnis>/…` für den Home-relativen Pfad; die
+reale Form steht nirgends, auch nicht im Fence.
 
 **Falsch** (der Pfad beginnt mit dem Wurzel-Segment eines Entwicklerrechners;
 der Platzhalter steht für dieses Segment, weil die Regel auch dieses Beispiel
@@ -470,20 +477,24 @@ Real geprüftes Vorbild: `d-check`s `Dockerfile` (Stage `coverage`)
 **Was der Sensor deckt — und was nicht.** Die durchsetzbare Hälfte trägt das
 `hostpaths`-Modul in `make docs-check` (`make gates`, Modulliste in
 `.d-check.yml`). Es deckt `.md`-Dateien unter `scan.roots` in Prosa und
-Inline-Code. Es deckt **nicht**: Fenced-Code-Blöcke (Modul-Design, ohne
-Opt-out-Marker), **relative** Pfade, **Nicht-Markdown** (die Skriptkommentare
-in `Makefile`, `tools/**` und `harness/mk/**` liest der Scan nicht), und
-Dateien unter `scan.ignore`. **Die Fenced-Fläche deckt die Regel voll, der
-Sensor nicht** — diese Lücke ist benannt, nicht still; der Wächter dort ist
-das Review, kein Gate.
+Inline-Code; dort meldet es absolute Pfade und Home-relative Pfade ohne
+Punkt-Segment. Es deckt **nicht**: Fenced-Code-Blöcke (Modul-Design, ohne
+Opt-out-Marker), die **Tilde mit Benutzername** (das Modul bleibt dort still),
+**relative** Pfade, **Nicht-Markdown** (die Skriptkommentare in `Makefile`,
+`tools/**` und `harness/mk/**` liest der Scan nicht), und Dateien unter
+`scan.ignore`. **Die Fenced-Fläche und die Tilde mit Benutzername deckt die
+Regel voll, der Sensor nicht** — diese Lücken sind benannt, nicht still; der
+Wächter dort ist das Review, kein Gate.
 
-**Begründung:** Ein host-lokaler absoluter Pfad ist eine Aussage über einen
+**Begründung:** Ein host-lokaler Pfad ist eine Aussage über einen
 Rechner, nicht über das Repo: nicht portabel, für Mitlesende unauflösbar, und
 er verrät das Maschinen-Layout.
 
 **Träger und Anker:** Die Regel wirkt über das `hostpaths`-Modul in
-`make docs-check`; ihre Reichweite trägt
-[`ADR-0075`](docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md), die
+`make docs-check`; ihre Reichweite tragen
+[`ADR-0075`](docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md) (Fläche)
+und [`ADR-0160`](docs/plan/adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+(Pfad-Klassen, Wortlaut), die
 Aktivierung
 [`ADR-0072`](docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md),
 die Zitationsform eines Schwester-Repos

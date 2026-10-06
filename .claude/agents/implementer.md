@@ -48,10 +48,14 @@ Disziplin.
 - `make doc-immutable RANGE=base..head` bzw. `STAGED=1` — MR-Einträge
   append-only (`harness/conventions/`); enthält die Range den Pin-Commit `P`
   eines Baseline-Bumps, läuft das Ziel in den Teil-Ranges `base..P~1` und
-  `P..head`; eine leere Teil-Range (`git rev-list --count <range>` druckt `0`,
-  etwa `base..P~1`, wenn `P` der erste Commit nach `base` ist) läuft nicht —
-  d-check endet dort mit Exit 2, weil es nichts zu prüfen gibt —, die gedruckte
-  Zahl ist ihr Beleg; am Pin-Commit selbst belegt der Messende im Slice-Plan des Bumps
+  `P..head`; vor jedem Lauf entscheidet der Leer-Test: leer genau dann, wenn
+  `git rev-parse` für Basis und Spitze denselben Commit liefert (dann kein
+  Lauf, die gedruckte Zeile ist der Beleg), sonst `git merge-base
+  --is-ancestor` und Zählung > 0, dann `make doc-immutable` mit Exit 0; jede
+  andere Lage ist Exit 2, die Range wird neu gebildet — Befehl: Funktion
+  `teilrange` in
+  [`ADR-0160`](../../docs/plan/adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+  Entscheidung 1; am Pin-Commit selbst belegt der Messende im Slice-Plan des Bumps
   je MR-Datei den `cmp`
   ([`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
   Entscheidung 4) und je bewegtem Verweis die Referent-Messung mit

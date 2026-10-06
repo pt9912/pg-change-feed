@@ -116,27 +116,34 @@ Regel zählt Zeilen.
 8. **`hostpaths` — die gescannte Markdown-Fläche, nicht das Repo.** Das Modul
    meldet host-lokale **absolute** Pfade in `.md`-Dateien unter `scan.roots`,
    in Prosa und Inline-Code (`hostpath-forbidden`), und ab d-check v0.80.0 auch
-   **Home-relative** Pfade (Tilde, Schrägstrich, ein erstes Segment ohne
-   führenden Punkt: `~/<Verzeichnis>/…`; seit slice-dcheck-v0-82-0). Still
-   bleiben dabei, am Werkzeug gemessen: die
-   Werkzeug-Konvention mit Punkt-Segment (`~/.config/…`), die nackte Tilde, die
-   Tilde mit Benutzername und die Tilde in einem URL-Pfad. Das Modul meldet
-   damit mehr, als der Wortlaut von `AGENTS.md` §3.11 nennt (dort Wurzel-Segment
-   und Windows-Muster); ein Ventil `hostpaths.exempt-targets` setzt dieses Repo
-   nicht. Vier benannte Ränder:
+   **Home-relative** Pfade: Tilde, Schrägstrich und ein erstes Segment ohne
+   führenden Punkt — `~/<Verzeichnis>/…`, eine Datei direkt unter der Tilde
+   (`~/<Datei>`) und ein einzelnes Segment ohne abschließenden Schrägstrich
+   (`~/<Verzeichnis>`), am Werkzeug gemessen (seit slice-dcheck-v0-82-0). Regel
+   und Modul sind bei den Home-relativen Pfaden gleich weit, außer bei der
+   **Tilde mit Benutzername** (`~<Benutzer>/…`): die Regel deckt sie, das Modul
+   bleibt still. `~/.config/…`, die nackte Tilde und die Tilde in einem URL-Pfad
+   sind kein Gegenstand der Regel; das Modul meldet sie nicht. Das Ventil
+   `hostpaths.exempt-targets` ist verfügbar und nicht gesetzt
+   ([`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)
+   Entscheidung 2). Vier benannte Ränder:
    **Fenced-Code-Blöcke** prüft es nicht — einen Opt-out-Marker kennt es
    nicht; **relative** Pfade sind ungeprüft (die Zusage lautet nicht „kein
    Pfad verlässt das Repo"); die **Windows-Laufwerks- und UNC-Muster** sind
    fest, nicht konfigurierbar; und **Nicht-Markdown** ist ungelesen — die
    Skriptkommentare in `Makefile`, `tools/**` und `harness/mk/**` erreicht der
    Scan nicht. Dateien unter `scan.ignore` (`.harness/**`, `**/*.template.md`)
-   liegen ebenfalls außerhalb. **Die Regel deckt die Fenced-Fläche voll, dieses
-   Modul nicht** — ihre Reichweite und diese benannte Lücke stehen in
-   `AGENTS.md` §3.11; der Wächter dort ist das Review, kein Gate. Dieser
+   liegen ebenfalls außerhalb. **Die Regel deckt die Fenced-Fläche und die
+   Tilde mit Benutzername voll, dieses Modul nicht** — ihre Reichweite und
+   diese benannten Lücken stehen in `AGENTS.md` §3.11; der Wächter dort ist das
+   Review, kein Gate. Dieser
    Abschnitt trägt, **was der Sensor deckt und was nicht**; die Reichweite der
    Regel steht in `AGENTS.md` §3.11. Träger:
    die Reichweite
-   [`ADR-0075`](../../docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md),
+   [`ADR-0075`](../../docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md)
+   (Fläche) und
+   [`ADR-0160`](../../docs/plan/adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+   (Pfad-Klassen),
    die Aktivierung
    [`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md).
    Die Aktivierung kennt **keinen**
@@ -222,10 +229,12 @@ Erzeuger; die `structure`-Regel sichert die Zeilenform, die `ids`-Linkpflicht
 die Kennungsspalte) · Zellenlänge des Gate-Index (Baseline-Regelwerk
 `grundlagen-harness-dateien.md` §harness/README.md als Einstiegspunkt,
 `seit slice-harness-readme-zellen-kuerzen`) — `.d-check.yml` §structure · kein host-lokaler absoluter
-Pfad in der Doku (`hostpaths` in `modules`, ohne Ausschlussblock —
+oder Home-relativer Pfad in der Doku (`hostpaths` in `modules`, ohne Ausschlussblock —
 [`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)
 trägt die Aktivierung, die Reichweite der Regel
-[`ADR-0075`](../../docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md),
+[`ADR-0075`](../../docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md)
+und
+[`ADR-0160`](../../docs/plan/adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md),
 die Zitationsform eines Schwester-Repos
 [`ADR-0074`](../../docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md),
 die Zitat-Korrektur an immutablen Dokumenten
