@@ -53,7 +53,9 @@ vollen Lehrmaterials liest (operatives Regelwerk ohne Didaktik). Es
 ist derivativ — bei Konflikt gilt das Lehrmaterial.
 -->
 
-- **Extern (Lehrmaterial):** <Pfad oder URL>
+- **Extern (Lehrmaterial):** https://github.com/pt9912/ai-harness-course
+  (das Kurs-Repo, dessen Release-Asset unten vendored ist; derselbe Ort, gegen
+  den `make pin-stale-baseline` den adoptierten Stand prüft)
 - **Vendored Baseline (Regelwerk + Templates):** aus dem self-contained
   Release-Asset
   https://github.com/pt9912/ai-harness-course/releases/download/v6.14.0/lab-regelwerk.zip
@@ -61,10 +63,13 @@ ist derivativ — bei Konflikt gilt das Lehrmaterial.
   `SHA256SUMS`) — adoptierter Stand: Kurs-Welle 156 · 2026-10-03 (Stand-Zeile
   in `regelwerk/README.md`; Wellen-Register: CHANGELOG.md im Kurs-Repo); für
   harte Reproduzierbarkeit das Asset eines Tags ziehen statt `latest`.
-- **In-Repo (verkörperte Form):** <Pfade zu deinen kopiert-und-ausgefüllten
-  Artefakten> — die vendored `.harness/baseline/<tag>/templates/` sind die
-  Referenz-Form („Ziel-Form" des Regelwerks); deine eigenen Dateien sind daraus
-  kopiert und ausgefüllt.
+- **In-Repo (verkörperte Form):** `AGENTS.md`, `harness/README.md`, diese
+  Datei, `docs/plan/planning/README.md`,
+  `docs/plan/planning/in-progress/roadmap.md`, `docs/plan/adr/README.md` und
+  `docs/plan/carveouts/README.md` (die Liste der abgeleiteten Dokumente im
+  Bump-Ablauf von `harness/targets/pin-stale.md`) — die vendored
+  `.harness/baseline/<tag>/templates/` sind die Referenz-Form („Ziel-Form" des
+  Regelwerks); diese Dateien sind daraus kopiert und ausgefüllt.
 
 ## Adaptions-Block
 
@@ -83,7 +88,7 @@ Agentenlauf — aufgelöste Adaptionen gehören nicht in diesen Pfad
 Bleibt hier: Sie ist keine Adaption, sondern die Adoptions-Erklärung, und
 sie gilt für jeden Lauf.
 
-- **Datum:** <Datum>
+- **Datum:** 2026-09-09
 - **Geltungsbereich:** gesamtes Repo
 - **Ersetzt-Baseline-Regel:** — *(keine; dieser Eintrag ist die
   Adoptions-Erklärung, keine Adaption)*
@@ -137,7 +142,7 @@ sie gilt für jeden Lauf.
 
 | MR | aufgelöst durch |
 |---|---|
-| \<NNN\> <a id="mr-<NNN>"></a> | MR-\<NNN\> |
+| — | — |
 
 ## Zusatzklassen-Deklaration für Sensors-Bindung
 
@@ -158,10 +163,11 @@ halluziniertes Gate (Modul 13).
 
 | Klasse | Form | Bedeutung | Beispiel |
 |---|---|---|---|
-| <z. B. LH-Bindung> | `LH-<...>` | <z. B. Gate prüft eine bestimmte LH-Anforderung> | <z. B. `LH-QA-01` für Determinismus-Gate> |
-
-<!-- Wenn keine Zusatzklassen verwendet werden: Tabelle entfernen oder
-"— keine —" eintragen. -->
+| LH-Bindung | `LH-(FA\|QA)-<BER>-<NNN>` als Link auf `spec/lastenheft.md` | die Zeile trägt oder belegt eine Anforderung des Lastenhefts | `LH-QA-POR-003` bei `make test-integration` |
+| Vertragsdatei | Link auf `harness/sensors/<target>.md` bzw. `harness/targets/<gruppe>.md` | Vertrag, Grenze und Ausgänge stehen dort; die Index-Zeile trägt einen Satz | `harness/sensors/fmt-check.md` bei `make fmt-check` |
+| Herkunfts-Anker | `seit slice-<Kennung>` / `seit welle-<Kennung>`, ergänzt um `erweitert seit …` | der Vorgang, der die Zeile eingeführt oder erweitert hat | `seit slice-harness-fmt-check` bei `make fmt-check` |
+| Beobachtungs-Bindung | `BEO-PGC/<slug>` | der Register-Eintrag, aus dem das Werkzeug hervorging | `BEO-PGC/formatierungs-drift-ohne-gate` bei `make fmt-check` |
+| MR-Bindung | `MR-<NNN>` als Link auf `harness/conventions/` | die Adaption, die die Regel des Werkzeugs trägt | `MR-003` bei `make test-command-guard` |
 
 ## Modus-Deklaration pro Sub-Area
 
@@ -198,6 +204,6 @@ Repo-spezifische Begriffe, die in den Kernbegriffen des
 Baseline-Regelwerks nicht stehen. Nur ergänzen, nicht wiederholen.
 -->
 
-| Begriff | Bedeutung |
-|---|---|
-| <repo-spezifischer Begriff> | <Bedeutung in diesem Repo> |
+— keine Einträge: Die Begriffe des Produkts führt
+[`spec/lastenheft.md`](../spec/lastenheft.md) §6 Glossar, die des Harness das
+Baseline-Regelwerk; dieser Abschnitt wiederholt sie nicht.

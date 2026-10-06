@@ -122,7 +122,6 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 | `make ausgabe-kennungen-check` | prüft mit `grep`, dass kein Ausgabe-Literal des Servers und seiner Betriebs-Skripte eine interne Kennung trägt | [`ADR-0144`](../docs/plan/adr/0144-meldungscodes-nutzerseitige-kennungen.md) Festlegung 10 · [`harness/sensors/ausgabe-kennungen-check.md`](sensors/ausgabe-kennungen-check.md) · seit slice-meldungscodes-kennungsfreie-ausgaben |
 | `make meldungscodes-check` | gleicht die Meldungscodes `PCF-<S><NNNN>` in Quelltext und Handbuch mit der Code-Tabelle `internal/domain/messagecode/codes.go` ab | [`ADR-0144`](../docs/plan/adr/0144-meldungscodes-nutzerseitige-kennungen.md) Festlegung 5 · [`harness/sensors/meldungscodes-check.md`](sensors/meldungscodes-check.md) · seit slice-meldungscodes-registry-fehlerkopf |
 | `make gates` | alle inneren Gates dieser Tabelle, Nachweis-Stempel zuletzt | [`harness/sensors/gates.md`](sensors/gates.md) |
-| `<make-target>` | volle Closure | Image-Hash `sha256:…` (Modul 14) |
 
 **Werkzeuge — genannt, weil der Lauf sie braucht, aber kein Gate:**
 
@@ -183,9 +182,6 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 | `make test-sdk-python-integration` | Realserver-Integrationstest der Python-SDK-Zustellweg-Flächen gegen die `compose.yaml`-Umgebung | kein Gate, [`harness/targets/sdk-integration.md`](targets/sdk-integration.md), [`ADR-0110`](../docs/plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) §Entscheidung Festlegung 2 · seit slice-sdk-python-grpc-client-flaeche, erweitert seit slice-sdk-regel-realserver-e2e und slice-routing-sdk-realserver-e2e und slice-sdk-sse-client-schema-table-filter-realserver und slice-sdk-sse-filter-phase-verbindung-haertung und slice-sdk-meldungscodes-in-fehlertypen und slice-sdk-tls-optionen |
 | `make test-sdk-kompat` | misst die Kompatibilität der SDK-Packages des Arbeitsstands gegenüber 0.5.0; braucht Netz | kein Gate, [`harness/targets/sdk-kompat.md`](targets/sdk-kompat.md), [`ADR-0145`](../docs/plan/adr/0145-sdk-meldungscodes-eigenschaft-der-fehlertypen.md) · seit slice-sdk-0-6-kompatibilitaet-messen |
 | `make test-sdk-altserver` | fährt die Fehlerfälle der SDKs gegen einen Server vor 0.6.0; braucht DB-Zugang und Netz | kein Gate, [`harness/targets/sdk-altserver.md`](targets/sdk-altserver.md), [`ADR-0145`](../docs/plan/adr/0145-sdk-meldungscodes-eigenschaft-der-fehlertypen.md), [`ADR-0146`](../docs/plan/adr/0146-pin-inventar-quantifizierte-regel-alle-digest-pins.md) (Tag mit Digest), [`ADR-0148`](../docs/plan/adr/0148-kotlin-sdk-grpc-api-readme-und-upgrade-trigger-erfuellt.md) (Phase U) · seit slice-sdk-0-6-kompatibilitaet-messen, erweitert seit slice-upgrade-versionswechsel-alt-image |
-| `make <mover>` | bewegt <…>, prüft nichts | kein Gate |
-| `make <messung>` | misst <…> gegen <Schwelle> | kein Gate, ADR-<NNNN> |
-| `make <vorschau>` | sagt, was <schreibender Lauf> täte; Ausgänge und Sperren in der verlinkten Datei | kein Gate |
 
 **Aktueller Lauf-Status:** [![ci](https://github.com/pt9912/pg-change-feed/actions/workflows/ci.yml/badge.svg)](https://github.com/pt9912/pg-change-feed/actions/workflows/ci.yml)
 bzw. lokal `make help` / `make gates`. Der Workflow
@@ -232,8 +228,24 @@ Für ein Policy/Compliance-Repo:
 - KI-Funktionen liefern Vorschläge, keine verbindlichen Entscheidungen.
 -->
 
-- <…>
-- <…>
+- **Kernverträge des Produkts** sind die MVP-Abnahmekriterien in
+  [`spec/lastenheft.md`](../spec/lastenheft.md) §MVP-Schnitt, darunter die
+  logische Reihenfolge der Changes ([`LH-FA-CAP-004`](../spec/lastenheft.md)),
+  keine Auslieferung zurückgerollter Änderungen
+  ([`LH-FA-CAP-007`](../spec/lastenheft.md)) und kein Verlust dauerhaft
+  erfasster Changes bei einem Neustart ([`LH-FA-RET-001`](../spec/lastenheft.md)).
+- **Die Quellanwendung bleibt unverändert:** CDC zu aktivieren verlangt keine
+  Änderung an ihrem Anwendungscode ([`LH-FA-CFG-006`](../spec/lastenheft.md)).
+- **Datenbankzugriff nach Rollen getrennt:** administrative CDC-Funktionen und
+  Lesezugriffe sind getrennt berechtigbar
+  ([`LH-QA-SEC-002`](../spec/lastenheft.md)); die Verdrahtung je Rolle trägt
+  [`ADR-0047`](../docs/plan/adr/0047-rollenspezifische-dsn-verdrahtung.md).
+- **Nutzerseitige Texte tragen keine interne Kennung:** die Nutzerdokumente
+  unter `docs/user/`, die SDKs unter `sdks/` und die Ausgabe-Literale des
+  Servers; getragen von `make handbuch-public-doc-check`,
+  `make sdk-public-doc-check` und `make ausgabe-kennungen-check` (§Sensors).
+- **Docker-only:** keine Host-Toolchain und kein Umschreiben einer Repo-Datei
+  mit einem Host-Werkzeug ([`AGENTS.md`](../AGENTS.md) §3.1).
 
 ## Minimal agent workflow
 
@@ -260,6 +272,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-harness-dateien.md`
 drei bis fünf **geordnete** Zeiger, was ein neuer Mensch zuerst liest und was
 bei Bedarf; eine Leseordnung, die alles nennt, ist keine.
 
-1. <zuerst — z. B. `AGENTS.md` §Hard Rules>
-2. <dann — z. B. `spec/lastenheft.md`>
-3. <bei Bedarf — z. B. `harness/conventions.md`>
+1. [`README.md`](../README.md) — was das Produkt ist und was es heute kann.
+2. [`AGENTS.md`](../AGENTS.md) §3 — die harten Regeln jedes Laufs.
+3. [`spec/lastenheft.md`](../spec/lastenheft.md) — die Anforderungen und ihre
+   Akzeptanzkriterien.
+4. Bei Bedarf [`harness/conventions.md`](conventions.md) — Adaptionen
+   gegenüber der Baseline, ID-Schema und Modus je Sub-Area.
