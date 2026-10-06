@@ -474,6 +474,22 @@ Gegenstand an einen anderen Slice oder entfiel er, trägt diese Sektion die Zeil
 - **Folge-Slices:** keine.
 - **Risiken aus §6:** je ein Ausgang, siehe §6 — beide entfallen (jede Zeile an
   ihrer Quelle nachgeprüft; das weite Muster meldet am Bestand 0 Befunde).
+- **Drei Paarungen:** nach dem `git mv` gemessen — (a) *Anker:* kein Eintrag
+  dieser Notiz trägt das Feld `liegt in` (nichts verkörpert), kein Gegenstand
+  der Paarung; (b) *Folge-Slice:* keiner genannt; (c) *Register:* die vier
+  genannten Verzeichnisse (`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`,
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`,
+  `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger`,
+  `BEO-PGC/bindung-spalte-uneinheitlich-tief`) existieren, jedes mit nicht
+  leerem `evidence/` (23, 20, 2, 1 Dateien). Ergebnis: getragen. Durch den Move
+  brach kein Verweis (`git grep` nach dem `in-progress`-Pfad dieses Plans: drei
+  Treffer, alle als Inline-Code in Mutations-Tabellen — dieser Plan §3, das
+  Architect-Verdikt und der Verifikationsbericht —, kein Link). Der Ruhe-Marker
+  der Roadmap steht wieder, Wortlaut gleich `15646fcb` (`diff` Exit 0);
+  `in-progress/` trägt nur `roadmap.md`.
+- **Gates der Closure:** `make docs-check` vor dem Inhalts-Commit Exit 0;
+  `make gates` und `make suchlauf-nachmessen` nach dem letzten Commit stehen im
+  Bericht der Sitzung, nicht in diesem Plan.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
