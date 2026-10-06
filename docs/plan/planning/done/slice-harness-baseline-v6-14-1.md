@@ -227,7 +227,7 @@ Planungsstand hat keinen der Läufe im Repo gefahren
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
       Roadmap führt unter *Offene Wellen* keine Welle, also trägt sie die
       Slice-Closure selbst (nach dem `git mv`).
 
@@ -863,6 +863,30 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 - **Risiken aus §6:** je ein Ausgang, siehe §6 — Zitat-Korrektur-Reichweite
   eingetreten (`slice-zitat-korrektur-vergleichseinheit`), die übrigen vier
   entfallen.
+- **Drei Paarungen:** nach dem `git mv` gemessen — (a) *Anker:* zwei Einträge
+  tragen `liegt in`; `AGENTS.md` §3.5 trägt die Zeile „Herkunft:
+  `BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform` · seit
+  slice-harness-baseline-v6-14-1“, `harness/targets/pin-stale.md` §Bump-Ablauf
+  Schritt 1 „· seit slice-harness-baseline-v6-14-1“ (`grep -n`). (b)
+  *Folge-Slice:* `slice-zitat-korrektur-vergleichseinheit` liegt in `open/`
+  (`5ae65a5a`). (c) *Register:* die genannten Verzeichnisse existieren, jedes
+  mit nicht leerem `evidence/` (`ls evidence | wc -l`):
+  `zitat-korrektur-reichweite-abschnitte-kurzform` 3,
+  `bump-ablauf-ohne-symlink-ziele` 3, `beleg-befehl-traegt-seinen-satz-nicht`
+  24, `adr-aussage-breiter-als-ihre-messung` 13,
+  `nachzug-laesst-ueberholten-text-stehen` 21,
+  `arbeit-ueberholt-stehenden-traeger` 34, `exemption-ohne-reifegrenze` 1,
+  `record-rueckwirkend-umgeschrieben` 1,
+  `zahl-in-traeger-driftet-gegen-die-messung` 30. Ergebnis: getragen. Durch
+  den Move brach kein Verweis (`git grep` nach dem `in-progress`-Pfad dieses
+  Plans: vier Treffer, alle Inline-Code in Records — `ADR-0156` M1, beide
+  Review-Reports, der Verifikationsbericht —, kein Link). Der Ruhe-Marker der
+  Roadmap steht wieder, Wortlaut gleich `109bf2df` (`diff` Exit 0);
+  `in-progress/` trägt nur `roadmap.md`.
+- **Gates der Closure:** `make docs-check` und `make suchlauf-nachmessen` vor
+  dem Inhalts-Commit Exit 0; `make gates`, `make suchlauf-nachmessen` und
+  `make doc-immutable RANGE=5d8855d9..HEAD` nach dem letzten Commit stehen im
+  Bericht der Sitzung, nicht in diesem Plan.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
