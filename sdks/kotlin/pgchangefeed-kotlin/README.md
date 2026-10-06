@@ -33,7 +33,7 @@ Then declare the dependency in `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("io.github.pt9912:pgchangefeed-kotlin:0.6.1")
+    implementation("io.github.pt9912:pgchangefeed-kotlin:0.7.0")
 }
 ```
 
