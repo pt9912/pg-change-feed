@@ -73,9 +73,13 @@ Implementer-Teil (Nachzug der Träger) folgt dem Verdikt.
 - **Der Baseline-Bump auf v6.14.1** (`slice-harness-baseline-v6-14-1`) — ein
   anderer Vorgang, dessen Closure diesen Slice anlegt; dieser Slice übernimmt
   aus ihm nur das Re-Review-Finding F-1. Die dort nach `ADR-0157` gemachten Zitat-Korrekturen
-  (`ADR-0095`, `eadf3054`; Records `54c6e632`; MR-Pins `5d8855d9`) sind
-  Versions-Segmente bei gleicher Datei und bleiben bewusst stehen: an ihnen
-  trägt der Datei-`cmp`.
+  (`ADR-0095`, `eadf3054`; Records `54c6e632`; MR-Pins `5d8855d9`) bleiben
+  bewusst stehen. Am Versions-Segment von `ADR-0095` auf eine ganze Datei trägt
+  der Datei-`cmp`. Die MR-Pins `5d8855d9` bewegen dagegen vier Verweise mit
+  Anker. Drei bestehen die Referent-Messung roh, `MR-001`
+  (`#spec-straten-mehr-als-ein-spec-dokument`) ist nicht messbar; gemessen in
+  [`ADR-0159`](../../adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
+  Entscheidung 2 und §Fitness Function, Review F-2.
 - **Ein Sensor für die Messung** — die Prüfung „nur Gerüst, Aussage gleich“
   bleibt Urteil am Diff (`ADR-0157` §Fitness Function); ein Gate wäre eine
   eigene Entscheidung nach [`AGENTS.md`](../../../../AGENTS.md) §3.6.
@@ -122,14 +126,50 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Seiten) `cmp 1`, der Datei-`cmp` derselben Änderung (`vergleich … '' … ''`)
       `cmp 1`. Die übrigen Formen sind nicht nachgefahren; für sie gilt die
       Messung des Architects (übernommen).
+      **Fixrunde — Folge-ADR**
+      [`ADR-0159`](../../adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
+      (Commit `b36f882d`, `Supersedes ADR-0158` teilweise): Einheit einer
+      HTML-`id` nach ihrer Stellung (Entscheidung 1), Datei-`cmp` und
+      Referent-Messung an MR-Pins (Entscheidung 2), Normalisierung nur des
+      bewegten Tag-Paars (Entscheidung 3), gehärtete Befehlsform (Entscheidung
+      4), benannte Grenzen (Entscheidung 5). Ihre Proben (37 Fälle, je ohne
+      Option, unter `nullglob` und unter `failglob`) stehen in ihrer §Fitness
+      Function, gemessen vom Architect am Stand `625ddbef` (übernommen).
+      **Nachgefahren mit der Befehlsform von `ADR-0159`** (Implementer):
+      `einheit`, `tagnorm` und `vergleich` (56 Zeilen) per `awk` wörtlich aus
+      dem `bash`-Block von `ADR-0159` Entscheidung 4 gezogen, an einem Klon im
+      Scratchpad `impl-vergleich2/` (Stand `b36f882d`, GNU Awk 5.2.1), `F` wie
+      oben, `M=.harness/baseline/v6.14.1/regelwerk/modul-13-quality-gates.md`;
+      Probe-Commits existieren nur im Klon.
+      *Pflichtprobe 1:* `vergleich b36f882d $F '#teilfrage-2--subjekt--und-nachrichtenschema' b36f882d $F '#teilfrage-3--zustellsemantik-core-nats-vs-jetstream'`
+      → `vergleich roh: b36f882d:…zustellweg.md#teilfrage-2--subjekt--und-nachrichtenschema <-> b36f882d:…zustellweg.md#teilfrage-3--zustellsemantik-core-nats-vs-jetstream cmp 1`, Exit 1.
+      *Pflichtprobe 2:* Probe-Commit `5bd07e74` fügt vor Zeile 41 von `F` drei
+      Zeilen ein; `vergleich b36f882d $F L139-145 5bd07e74 $F L142-148`
+      → `vergleich roh: b36f882d:…zustellweg.mdL139-145 <-> 5bd07e74:…zustellweg.mdL142-148 cmp 0`,
+      Exit 0; nicht nachgezogen (`L139-145` an beiden Seiten) `cmp 1`.
+      *F-1-Probe `#guard-haertung` (Wort im Körper muss fallen):* Probe-Commit
+      `cdad40e0` ändert in `M` Zeile 272 „demselben Steering-Loop“ zu
+      „demselbigen Steering-Loop“ (Körper des Abschnitts hinter
+      `<a id="guard-haertung"></a>`, Zeile 266);
+      `vergleich b36f882d $M '#guard-haertung' cdad40e0 $M '#guard-haertung'`
+      → `vergleich roh: b36f882d:.harness/baseline/v6.14.1/regelwerk/modul-13-quality-gates.md#guard-haertung <-> cdad40e0:.harness/baseline/v6.14.1/regelwerk/modul-13-quality-gates.md#guard-haertung cmp 1`,
+      Exit 1. Gegenproben: die Zeile der `id` (Einheit nach `ADR-0158`,
+      `L266-266` an beiden Seiten) an demselben Probe-Commit `cmp 0` — die
+      Lücke aus F-1; `#guard-haertung` gegen `5bd07e74` (Änderung nur in `F`)
+      `cmp 0`.
 - [x] **Träger nachgezogen (Liefer-Punkt 2).** `AGENTS.md` §3.5 und jeder
       Träger, der die Referent-Messung beschreibt, folgen der Entscheidung;
       Suchlauf nach [`AGENTS.md`](../../../../AGENTS.md) §3.13 mit `diff`-Zeilen.
       **Beleg:** `AGENTS.md` §3.5 nennt die Vergleichseinheit (Datei, Abschnitt
-      hinter dem Anker, zitierte Zeilen; roh, Normalisierung nur für ein
-      Versions-Segment) mit Verweis auf `ADR-0158`, und der Absatz „Beleg“
-      nennt die Bestandteile des Belegs (`ADR-0158` Entscheidung 5). Suchlauf
-      und Befund unter §3 „Suchlauf“.
+      hinter dem Anker — Heading oder HTML-`id`, eine `id` in einer
+      Tabellenzeile adressiert die Zeile —, zitierte Zeilen; roh,
+      Normalisierung nur des bewegten Tag-Paars) mit Verweis auf `ADR-0158`
+      und `ADR-0159`; der Absatz „Beleg“ nennt die Bestandteile des Belegs mit
+      Geltungsbereich (`Accepted` ADR oder MR-Eintrag; „nicht messbar“ mit
+      Grund; Records unverändert). `.claude/agents/verifier.md` und
+      `harness/targets/pin-stale.md` nennen am Pin-Commit neben dem Datei-`cmp`
+      die Referent-Messung je bewegtem Verweis (`ADR-0159` Entscheidung 2, 4).
+      Suchlauf und Befund unter §3 „Suchlauf“.
 - [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -149,37 +189,51 @@ nicht die Antwort.
 |---|---|---|
 | `docs/plan/adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md` | neu (geliefert, `07923146`) | Architect-Zug zu Bedingung (b) als Folge-ADR; kein Verdikt-Dokument unter `docs/reviews/` |
 | `docs/plan/adr/README.md` | update (geliefert, `07923146`) | Index-Zeile `ADR-0158` und Vermerk an `ADR-0157`, im Architect-Commit |
-| `AGENTS.md` §3.5 | update (geliefert) | Vergleichseinheit und Normalisierung mit Verweis auf `ADR-0158`; Absatz „Beleg“ um die Bestandteile nach `ADR-0158` Entscheidung 5 ergänzt |
-| `.claude/agents/verifier.md`, `harness/targets/pin-stale.md` | **nicht geändert** | beide beschreiben nur den `cmp` des Pin-Commits der MR-Einträge (`ADR-0157` Entscheidung 4); `ADR-0158` lässt Entscheidung 4 unberührt, und am MR-Pin ist die Einheit die ganze Datei mit Tag-Normalisierung — dieselbe Messung |
-| `.claude/agents/implementer.md`, `.d-check.yml` (`vcs`-Kommentar) | **nicht geändert** | nennen ebenfalls nur den MR-Pin-Commit (`ADR-0157` Entscheidung 4) |
-| Werkzeug hinter `make` | **nicht realisiert** | `ADR-0158` Entscheidung 6 legt die Befehlsform als Verfahrensregel fest (Option C, Option D verworfen); die Rückführung aus §4 („verlangt ein Werkzeug“) tritt nicht ein |
+| `docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md` | neu (geliefert, `b36f882d`, Fixrunde) | Architect-Zug zum Review F-1 bis F-3, F-5 bis F-7; Index-Zeile im selben Commit |
+| `AGENTS.md` §3.5 | update (geliefert, Fixrunde nachgezogen) | Vergleichseinheit (samt HTML-`id`) und Normalisierung des bewegten Tag-Paars mit Verweis auf `ADR-0158` und `ADR-0159`; Absatz „Beleg“ mit Geltungsbereich (Review F-4) |
+| `.claude/agents/verifier.md`, `harness/targets/pin-stale.md` | update (Fixrunde) | am Pin-Commit belegt der Datei-`cmp` nach `ADR-0157` Entscheidung 4 nur die Bedingungen (a) und (c); die Referent-Messung je bewegtem Verweis kommt hinzu (`ADR-0159` Entscheidung 2). Die Einstufung „nicht geändert“ im ersten Lauf (die Einheit am MR-Pin sei die ganze Datei) war falsch, Review F-2 |
+| `.claude/agents/implementer.md`, `.d-check.yml` (`vcs`-Kommentar) | **nicht geändert** | nennen nur die Teil-Ranges von `make doc-immutable` um den Pin-Commit und den Verifier als Prüfer; die Referent-Messung trägt `verifier.md` |
+| Werkzeug hinter `make` | **nicht realisiert** | `ADR-0159` Entscheidung 4 hält die Befehlsform als Verfahrensregel (Option E nicht gewählt, Re-Evaluierungs-Trigger (a)); die Rückführung aus §4 („verlangt ein Werkzeug“) tritt nicht ein |
 
 **Suchlauf ([`AGENTS.md`](../../../../AGENTS.md) §3.13).** Bewegte Eigenschaft:
 die Vergleichseinheit der Referent-Messung einer Zitat-Korrektur. Suchraum:
 ganzer Baum ohne `docs/reviews/`, `docs/plan/planning/done/`,
 `.harness/baseline/` und `docs/plan/adr/` (Accepted-ADRs sind unberührbar;
-der Index trägt `ADR-0158` seit `07923146`). Muster: Beschreibung
-(`Zitat-Korrektur`, `Referent`, `gemessen gleich`), Symbol (`cmp` in Markdown
-und `.d-check.yml`), Zählwort/Hedge der offenen Festlegung (`Vergleichseinheit`,
-`roh oder normalisiert`, `Normalisierung des Tags`), Anker (`ADR-0158`).
-Parent `07923146`, `diff` = Arbeitsbaum dieses Laufs.
+der Index trägt `ADR-0158` seit `07923146` und `ADR-0159` seit `b36f882d`).
+Muster: Beschreibung (`Zitat-Korrektur`, `Referent`, `gemessen gleich`),
+Symbol (`cmp` in Markdown und `.d-check.yml`), Zählwort/Hedge
+(`Vergleichseinheit`, `roh oder normalisiert`, `Normalisierung des`,
+`Tag-Paar`, `nicht messbar`), Anker (`ADR-0158`, `ADR-0159`), Form der
+`id`-Einheit (`HTML-`id``). Gemessen in der Fixrunde: Parent `b36f882d`
+(Stand nach dem ersten Lauf, Review und `ADR-0159`), `diff` = Arbeitsbaum der
+Fixrunde. Der erste Lauf maß gegen Parent `07923146` (dort 73 → 75
+Beschreibung, 6 → 9 Zählwort, 0 → 2 `ADR-0158`, `cmp` 8 → 8; nachgemessen mit
+`make suchlauf-nachmessen` am Stand `e0c82845`, Exit 0); seine `diff`-Zeilen
+sind durch die Fixrunde überholt und hier ersetzt.
 
 ```suchlauf
-07923146 73 -iE 'Zitat-Korrektur|Referent|gemessen gleich' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
-diff 75 -iE 'Zitat-Korrektur|Referent|gemessen gleich' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
-07923146 8 -wE 'cmp' -- *.md .d-check.yml :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+b36f882d 75 -iE 'Zitat-Korrektur|Referent|gemessen gleich' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 81 -iE 'Zitat-Korrektur|Referent|gemessen gleich' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+b36f882d 8 -wE 'cmp' -- *.md .d-check.yml :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
 diff 8 -wE 'cmp' -- *.md .d-check.yml :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
-07923146 6 -iE 'Vergleichseinheit|roh oder normalisiert|Normalisierung des Tags' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
-diff 9 -iE 'Vergleichseinheit|roh oder normalisiert|Normalisierung des Tags' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
-07923146 0 -e 'ADR-0158' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+b36f882d 15 -iE 'Vergleichseinheit|roh oder normalisiert|Normalisierung des|Tag-Paar|nicht messbar' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 16 -iE 'Vergleichseinheit|roh oder normalisiert|Normalisierung des|Tag-Paar|nicht messbar' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+b36f882d 2 -e 'ADR-0158' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
 diff 2 -e 'ADR-0158' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+b36f882d 0 -e 'ADR-0159' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 3 -e 'ADR-0159' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+b36f882d 0 -F -e 'HTML-`id`' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 1 -F -e 'HTML-`id`' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
 ```
 
-**Gefunden und nachgezogen:** `AGENTS.md` §3.5 (die +2 bei Beschreibung,
-+3 bei Zählwort, +2 bei Anker sind die neuen Zeilen dort).
-**Gefunden, nicht betroffen:** `.claude/agents/verifier.md`,
-`harness/targets/pin-stale.md`, `.claude/agents/implementer.md`, `.d-check.yml`
-(MR-Pin, `ADR-0157` Entscheidung 4, siehe Tabelle); `.claude/agents/architect.md`
+**Gefunden und nachgezogen (Fixrunde):** `AGENTS.md` §3.5 (Kernsatz und Absatz
+„Beleg“), `.claude/agents/verifier.md` (Pin-Commit-Zeile),
+`harness/targets/pin-stale.md` (Absatz „MR-Pins in einem eigenen Commit“).
+Die verbleibende Fundstelle „`cmp` nach Normalisierung des Tags“ in
+`verifier.md` ist der MR-Datei-`cmp` nach `ADR-0157` Entscheidung 4, der seine
+eigene Normalisierung behält (`ADR-0159` Entscheidung 3, letzter Satz).
+**Gefunden, nicht betroffen:** `.claude/agents/implementer.md`, `.d-check.yml`
+(nur Teil-Ranges um den Pin-Commit, siehe Tabelle); `.claude/agents/architect.md`
 (nennt nur die „Zitat-Korrektur-Grenze“), `harness/sensors/docs-check.md`
 (verweist nur auf `ADR-0073`); die übrigen `cmp`-Treffer sind Code und
 Skript-Kommentare ohne Bezug (`generated-sync`, SDK-Runner), die Treffer in
@@ -190,11 +244,37 @@ Z. 17–20 („Benannte Lücke … legt die Vergleichseinheit … nicht fest …
 Folge-Slice `slice-zitat-korrektur-vergleichseinheit`“) und
 `docs/plan/planning/observations/BEO-PGC/adr-aussage-breiter-als-ihre-messung/state.md`
 Z. 114–118 (dieselbe Lücke als „adressiert mit dem Folge-Slice“): beide
-Zustandsfelder beschreiben die Lücke als offen; mit `ADR-0158` ist sie
-geschlossen.
+Zustandsfelder beschreiben die Lücke als offen; mit `ADR-0158` und `ADR-0159`
+ist sie geschlossen. Dazu (Review F-9, gemessen in `ADR-0159` Entscheidung 2):
+`harness/conventions/MR-001-technik-dokument-heisst-pflichtenheft.md` verweist
+auf `grundlagen-source-precedence.md#spec-straten-mehr-als-ein-spec-dokument`,
+der Anker löst an keinem Stand auf.
 **Nicht gefunden:** kein Treffer in `.harness/skills/` (u. a. `reviewer.md`)
 und `.claude/commands/` (u. a. `implement-slice.md`); keine weitere Datei
-beschreibt die Vergleichseinheit.
+beschreibt die Vergleichseinheit oder die Messung am Pin-Commit.
+
+**Fixrunde** (Review `review-slice-zitat-korrektur-vergleichseinheit`, `625ddbef`):
+
+- **F-1** (HIGH, Einheit einer HTML-`id`) — erledigt durch `ADR-0159`
+  Entscheidung 1; nachgefahren an `#guard-haertung` (§2 Liefer-Punkt 1, `cmp 1`).
+- **F-2** (HIGH, Konsequenz zu den MR-Pins `5d8855d9`) — erledigt durch
+  `ADR-0159` Entscheidung 2; §1 und die §3-Zeile zu `verifier.md`/`pin-stale.md`
+  berichtigt, beide Träger nachgezogen.
+- **F-3** (MEDIUM, Befehlsform fail-open unter `nullglob`/`failglob`) —
+  erledigt durch `ADR-0159` Entscheidung 4.
+- **F-4** (MEDIUM, Beleg-Satz ohne Geltungsbereich) — erledigt in `AGENTS.md`
+  §3.5, Absatz „Beleg“.
+- **F-5** (LOW, keine gedruckte Zeile unter `set -e`) — erledigt durch
+  `ADR-0159` Entscheidung 4.
+- **F-6** (LOW, abschließende Leerzeilen nicht roh) — erledigt durch
+  `ADR-0159` Entscheidung 4 (Wächter-Zeichen) und Entscheidung 5 (Grenze
+  Schluss-Umbruch).
+- **F-7** (LOW, Normalisierung trifft fremde Pins) — erledigt durch
+  `ADR-0159` Entscheidung 3.
+- **F-8** (INFO, Anker-Wechsel bei gleichem Körper) — an die Closure; als
+  Grenze benannt in `ADR-0159` Entscheidung 5.
+- **F-9** (INFO, gebrochener Anker in `MR-001`) — an die Closure; über die
+  Behebung entscheidet nach `ADR-0159` Entscheidung 2 die Closure dieses Slice.
 
 ## 4. Trigger
 
