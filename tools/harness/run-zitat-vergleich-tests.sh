@@ -78,7 +78,7 @@ printf '## Eins ##\n\nalpha\n\n## Zwei\n\nz\n' >close.md
 printf 'Ein ` Backtick <!-- <a id="m4"></a> -->\n\n<a id="m4"></a>\n\n## Ziel\n\nziel alpha\n' >n4.md
 printf '``a`b`` <!-- <a id="m5"></a> --> `\n\n<a id="m5"></a>\n\n## Ziel\n\nziel alpha\n' >n5.md
 printf 'Text `beginnt\nendet `<!-- <a id="m6"></a> -->` x\n\n<a id="m6"></a>\n\n## Ziel\n\nziel alpha\n' >n6.md
-printf 'Ein ` Backtick <!--\n<a id="m7"></a>\n-->\n\n<a id="m7"></a>\n\n## Ziel\n\nziel alpha\n' >un.md
+printf 'Ein ` Backtick <!--\n\n<a id="m7"></a>\n\n-->\n\n<a id="m7"></a>\n\n## Ziel\n\nziel alpha\n' >un.md
 printf '  \t<a id="m3"></a>\n\n<a id="m3"></a>\n\n## Ziel\n\nziel alpha\n' >mi.md
 printf '<!-- k --> <a id="m8"></a>\n\n## Ziel\n\nziel alpha\n' >hc.md
 printf '| MR | Titel | Text |\n|---|---|---|\n| MR-009 <a id="mr-009"></a> | `x` | y alpha |\n' >tb.md
