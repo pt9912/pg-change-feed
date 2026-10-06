@@ -15,7 +15,7 @@ Planner-Lauf, der den Slice angelegt hat).
 **Datum:** 2026-10-06
 
 **Bezug:** [`ADR-0051`](../plan/adr/0051-cicd-pipeline-github-actions.md)
-(Bezug des Slice) · [`ADR-0068`](../plan/adr/0068-a-check-tooling-gruppe-statt-composition-root-glob.md)
+(Bezug des Slice) · [`ADR-0068`](../plan/adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md)
 (Verfeinerung gegen Erweiterung) ·
 [`ADR-0099`](../plan/adr/0099-slice-welle-review-regel-zurueckgenommen.md)
 (zweiter Beleg des Register-Eintrags) ·
@@ -60,7 +60,7 @@ eine andere:
 
 | Beleg | Richtung | Was die ADR auslöste |
 |---|---|---|
-| `slice-071` | Lockerung: `composition_root` um `tools/**` gab **Importrecht** | [`ADR-0068`](../plan/adr/0068-a-check-tooling-gruppe-statt-composition-root-glob.md) Festlegung 3: ADR-pflichtig ist die Aufnahme eines Bereichs **mit Import-Berechtigung**; das Verfeinern bestehender Regeln bleibt ADR-frei |
+| `slice-071` | Lockerung: `composition_root` um `tools/**` gab **Importrecht** | [`ADR-0068`](../plan/adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md) Festlegung 3: ADR-pflichtig ist die Aufnahme eines Bereichs **mit Import-Berechtigung**; das Verfeinern bestehender Regeln bleibt ADR-frei |
 | `ADR-0099` | Verschärfung, aber **im Widerspruch** zu `ADR-0094`/`ADR-0097`, die genau diese Regel bewusst ausgelassen hatten | die Kollision mit `Accepted`-ADRs (§3.5), nicht die Verschärfung als solche — §Entscheidung von `ADR-0099` stellt keine allgemeine ADR-Pflicht für Verschärfungen auf |
 
 Der vorliegende Fall ist keines von beiden: Er gibt keine Berechtigung, er senkt
