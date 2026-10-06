@@ -70,10 +70,7 @@ Regel zählt Zeilen.
    tragen keine Überschrift und haben deshalb keinen Abschnitts-Anker; dort
    trägt die Selbstprüfung im Closure-Schritt. Die Wellen-Form (flaches
    `planning/welle-<Kennung>.md` → `done/`) und der gleich-ordnerige Nachbar-Verweis
-   (Quell-Seite, `links.resolve-from`) sind Nachbar-Klassen, nicht gedeckt. Das
-   Muster trifft nur die Nummern-Form `slice-[0-9]{3}` des Bestandsschutzes
-   ([`MR-002`](../conventions/MR-002-slice-welle-kennungen-sind-namen.md)); ein
-   Link auf einen Slice mit Namens-Kennung ist nicht gedeckt.
+   (Quell-Seite, `links.resolve-from`) sind Nachbar-Klassen, nicht gedeckt.
 
 7. **Die erzeugte E2E-Abdeckungstabelle trägt keine Symbol-Prüfung.** Die
    Tabelle `docs/user/e2e-abdeckung.md` ist ein Erzeugnis von
