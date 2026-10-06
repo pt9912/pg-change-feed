@@ -215,9 +215,12 @@ und Verweisgerüst — host-lokale Pfade, Linkziele, Zeilen-Lokatoren, die Form
 einer gebrochenen Referenz — bei unverändertem Referenten. Sie ist **kein**
 inhaltliches Überschreiben und in-place zulässig, wenn sie
 [`ADR-0073`](docs/plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
-genügt. **Unberührbar** bleiben §Entscheidung, §Konsequenzen, §Verglichene
-Alternativen, §Status und die `Supersedes`-Kette; ihre Änderung ist eine neue
-ADR mit `Supersedes ADR-NNNN`, nie eine Zitat-Korrektur.
+genügt. **Unberührbar** bleibt die Aussage von §Entscheidung, §Konsequenzen
+und §Verglichene Alternativen sowie §Status und die `Supersedes`-Kette; ihre
+Änderung ist eine neue ADR mit `Supersedes ADR-NNNN`. Das Zitatgerüst in diesen
+Abschnitten darf eine Zitat-Korrektur ändern, wenn der Referent gemessen gleich
+bleibt
+([`ADR-0157`](docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)).
 
 **Beleg:** Die Commit-Message nennt
 [`ADR-0073`](docs/plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md);
