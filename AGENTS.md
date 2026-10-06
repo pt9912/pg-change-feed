@@ -239,12 +239,12 @@ Rang-Zeiger · Grenze** — und schreibt an den, der die Stelle *ändert*, nicht
 Entscheidung *trifft*. Regeln dieser Sektion: Baseline-Regelwerk
 `grundlagen-harness-dateien.md` §Was ein Kommentar trägt.
 
-**Falsch:** <z.B. „Ohne dieses Feld behauptete die Ausgabe eine Verteilung,
-die nicht stattgefunden hat"> — Konjunktiv über die verworfene Alternative.
-**Richtig:** <z.B. „Verteilt ist wahr, wenn die Splitting-Regel angewendet
-werden konnte"> — Indikativ über den Zustand.
+**Falsch:** „Ohne dieses Feld behauptete die Ausgabe eine Verteilung,
+die nicht stattgefunden hat" — Konjunktiv über die verworfene Alternative.
+**Richtig:** „Verteilt ist wahr, wenn die Splitting-Regel angewendet
+werden konnte" — Indikativ über den Zustand.
 
-**Falsch:** <z.B. „die frühere Fassung prüfte nur die Länge"> — beschreibt
+**Falsch:** „die frühere Fassung prüfte nur die Länge" — beschreibt
 abwesenden Text.
 **Richtig:** die geltende Zusage nennen; die vorige hält `git`.
 

@@ -330,7 +330,7 @@ Hier endet die Implementation. Die übrigen Rollen laufen in **getrennten Kontex
     `— liegt in <Zielort>` mit Herkunfts-Anker. Kandidatenlauf vor dem `git mv`,
     auf dem **rohen** Text (die `structure`-Regel liest den bereinigten, in dem
     Backtick-Spans geleert sind):
-    `grep -nE 'Wurde mit diesem Slice nichts verkörpert|Auslöser: .BEO-<NNN>|— liegt in .<' <slice-datei>`
+    `grep -nE 'Wurde mit diesem Slice nichts verkörpert|Auslöser: .BEO-<(NNN|KUERZEL)>|— liegt in .<' <slice-datei>`
     — jeder Treffer in §7 wird ersatzlos entfernt oder zu einem echten Zielort gefüllt.
     **Grenze:** die tragende Linie ist die `structure`-Regel (`.d-check.yml`).
 25. **Das Beobachtungs-Register fortschreiben** (`docs/plan/planning/observations/`, Modul 6) —
