@@ -154,7 +154,7 @@ permanent.
 | 2026-09-18 | Accepted — `docs/reviews/*.md` in `matrix.exempt-paths` ergänzt, Anlass: 58 real gemessene `matrix-inactive`-Befunde nach dem `ADR-0094`-Diff | Architect-Verdikt zur `matrix.status`-Ausnahme für die `review`-Klasse (2026-09-18) |
 | 2026-09-29 | Zitat-Korrektur — Baseline-Vorlagen-Pfad auf v6.13.0 ersetzt (`ADR-0073`) | `00d96eb` |
 | 2026-10-05 | Zitat-Korrektur — Baseline-Vorlagen-Pfad auf v6.14.0 ersetzt (`ADR-0073`) | `cd364fc` |
-| 2026-10-06 | Zitat-Korrektur — Baseline-Vorlagen-Pfad auf v6.14.1 ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-10-06 | Zitat-Korrektur — Baseline-Vorlagen-Pfad auf v6.14.1 ersetzt (`ADR-0073`) | `eadf305` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
