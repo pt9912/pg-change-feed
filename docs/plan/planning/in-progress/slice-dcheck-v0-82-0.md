@@ -19,7 +19,10 @@ Digest-Commit), [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-auss
 (Entscheidung 4: Teil-Ranges des `doc-immutable`-Laufs um den Pin-Commit),
 [`ADR-0075`](../../adr/0075-hostpaths-reichweite-und-wortlaut.md) (Reichweite
 von `hostpaths`), [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
-(Herkunft von Aussagen). Keine `LH-*`-Anforderung ist berührt: der Slice ändert
+(Herkunft von Aussagen), [`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+(Leer-Test der Teil-Range, ersetzt `ADR-0157` Entscheidung 4 erster
+Spiegelstrich; Home-relative Pfade in der Regel, ersetzt `ADR-0075`
+Entscheidung 2). Keine `LH-*`-Anforderung ist berührt: der Slice ändert
 ein Harness-Werkzeug und seine Verträge, nicht das Produkt.
 
 **Berührte Spec-Stellen:** — (keine; Harness-Werkzeug und Verträge).
@@ -99,8 +102,11 @@ Sensor-Vertrag), sind nachgezogen, und `make gates` ist grün.
   dieser Bump nicht um, sein Bump-Ablauf weist ihm einen Ausgang zu (dort §1, §6).
   Dieser Slice liefert nur den d-check-Stand, den die v6.16.0-Vorlage
   `.d-check.yml` voraussetzt („d-check >= v0.82.0“).
-- **Das Modul `targets` aktivieren** — ein anderer Vorgang: eine Erweiterung des
-  Gate-Umfangs braucht eine ADR ([`AGENTS.md`](../../../../AGENTS.md) §3.6).
+- **Das Modul `targets` aktivieren** — ein anderer Vorgang: eine Aktivierung
+  fügt eine Prüfung hinzu und prägt, welche Doku künftig zulässig ist; dieses
+  Repo liest sie als Entscheidung mit Träger, also mit eigener ADR — nach dem
+  Muster von [`ADR-0072`](../../adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)
+  Entscheidung 1 (`AGENTS.md` §3.6 regelt nur die Lockerung).
 - **Die Nennungen von v0.79.0 und `b4b8756b` in `Accepted`-ADRs**
   ([`ADR-0156`](../../adr/0156-versions-gate-nimmt-done-records-aus.md),
   [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md),
@@ -115,7 +121,11 @@ Sensor-Vertrag), sind nachgezogen, und `make gates` ist grün.
   der übernommene `docs-check`-Lauf zeigt keinen Befund. Erzeugt der neue Stand
   doch einen, wird der Fund behoben, nicht ausgenommen.
 - **Kein Produkt-Code** — Schicht-Abgrenzung: der Slice berührt nur
-  `d-check.mk`, `harness/`, `.claude/agents/` und diesen Plan.
+  `d-check.mk`, `harness/`, `.claude/agents/`, `AGENTS.md` §3.11 und diesen
+  Plan. `AGENTS.md` kam mit der Fixrunde hinzu: die Folgepflicht 1 von
+  [`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+  weist diesem Slice den Wortlaut von §3.11 in Fassung 3 zu; andere Abschnitte
+  von `AGENTS.md` bleiben unberührt.
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
@@ -171,24 +181,18 @@ Planungsstand hat außer den in §1 genannten Läufen keinen im Repo gefahren
       `.claude/agents/verifier.md`, `.claude/agents/implementer.md` und
       `harness/targets/pin-stale.md` §Bump-Ablauf (Absatz „MR-Pins in einem
       eigenen Commit“) steht, wie eine **leere** Teil-Range behandelt wird
-      (`base..P~1` mit `P~1` = `base`) — Wortlaut **nach** dem Verdikt des
-      Architect (Artefakt unter `docs/reviews/`), weil die `Accepted`-ADR
-      [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
-      Entscheidung 4 „jede endet mit Exit 0“ sagt ([`AGENTS.md`](../../../../AGENTS.md)
-      §3.5; Weg und Rückführung §4, §6). (ii) `harness/sensors/docs-check.md`
-      §Grenze Punkt 8 (`hostpaths` „meldet host-lokale **absolute** Pfade“) nennt
-      die Home-relativen Pfade, die das Modul ab v0.80.0 meldet, und die
-      Ausnahmen, die still bleiben (Werkzeug-Konventionen wie `~/.config`,
-      nackte Tilde, Tilde in URL-Pfaden, Fences), soweit am Werkzeug gemessen.
+      (`base..P~1` mit `P~1` = `base`) — Wortlaut nach dem Leer-Test aus
+      [`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+      Entscheidung 1 (Funktion `teilrange`). (ii) `harness/sensors/docs-check.md`
+      §Grenze Punkt 8 und §Bindung sowie `AGENTS.md` §3.11 tragen die
+      Home-relativen Pfade nach `ADR-0160` Entscheidung 3 (Fassung 3), mit den
+      Ausnahmen, die kein Gegenstand der Regel sind (Werkzeug-Konvention mit
+      Punkt-Segment, nackte Tilde, Tilde in URL-Pfaden), und der Lücke des
+      Sensors bei Fences und der Tilde mit Benutzername, soweit am Werkzeug
+      gemessen.
       *Zu belegen durch:* den Suchlauf §3 mit `diff`-Zeilen,
-      `make suchlauf-nachmessen PLAN=…` und `make docs-check` Exit 0.
-      **Abweichung:** statt eines Architect-Verdikts trägt (i) die Entscheidung
-      des Orchestrators im Auftrag, ohne ADR — Wortlaut und Begründung in §3
-      „Leere Teil-Range — Ausführungsregel“, Zeile in der §3-Tabelle. *Beleg:*
-      §3 „Suchlauf am Diff“; `make suchlauf-nachmessen PLAN=docs/plan/planning/in-progress/slice-dcheck-v0-82-0.md`
-      am Arbeitsbaum vor dem Träger-Commit Exit 0,
-      `suchlauf-nachmessen: 20 Zeilen stimmen`; `make docs-check` Exit 0,
-      `d-check: 1794 Datei(en) geprüft, 0 Befund(e)`.
+      `make suchlauf-nachmessen PLAN=…` und `make docs-check` Exit 0. *Beleg:*
+      §3 „Suchlauf am Diff“ und §3 „Fixrunde“ (Probe `teilrange`, Gate-Lauf).
 - [x] `make gates` grün, Exit-Code ungefiltert gesichert
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9). *Beleg:* `make gates` am Stand
       `234ed26a`, Ausgabe in eine Log-Datei, Exit direkt danach gesichert: `0`;
@@ -221,10 +225,11 @@ Aussagen-Berührung steht hier gar nicht.
 |---|---|---|
 | `d-check.mk` (`DCHECK_IMAGE`, `DCHECK_DIGEST`) | update | Tag v0.82.0 und Release-Digest (Liefer-Punkt 1), eigener Commit |
 | dieser Plan, neuer Abschnitt „Wirkung v0.80.0–v0.82.0 — Belege“ | update | Messungen je Changelog-Punkt mit Befehl, Stand und gedruckter Zeile (Liefer-Punkt 2) |
-| `.claude/agents/verifier.md`, `.claude/agents/implementer.md`, `harness/targets/pin-stale.md` §Bump-Ablauf | update | Behandlung einer leeren Teil-Range nach dem Architect-Verdikt (Liefer-Punkt 3, i) |
-| `harness/sensors/docs-check.md` §Grenze Punkt 8 | update | Reichweite von `hostpaths` ab v0.80.0 (Liefer-Punkt 3, ii) |
-| `docs/reviews/architect-verdict-…` (Name setzt der Architect) | **nicht realisiert** | Die Frage zur leeren Teil-Range hat der Orchestrator im Auftrag entschieden, ohne Architect-Verdikt und ohne ADR; Wortlaut und Begründung stehen im Abschnitt „Leere Teil-Range — Ausführungsregel“ unten. Bestreitet der Reviewer die Einordnung als Ausführungsregel, ist das ein Befund für Architect bzw. Auftraggeber |
-| `.d-check.yml` (Kommentar im Block `vcs:`) | unverändert | Der Kommentar sagt, der Pin-Commit wird „per Teil-Range umgangen“ — das bleibt wahr; die Behandlung der leeren Teil-Range ist eine Ausführungsregel der drei Träger, keine Eigenschaft der Konfiguration |
+| `.claude/agents/verifier.md`, `.claude/agents/implementer.md`, `harness/targets/pin-stale.md` §Bump-Ablauf | update | Leer-Test der Teil-Range nach [`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md) Entscheidung 1, Verweis auf die Funktion `teilrange` (Liefer-Punkt 3, i) |
+| `harness/sensors/docs-check.md` §Grenze Punkt 8, §Bindung | update | Reichweite von `hostpaths` ab v0.80.0 nach `ADR-0160` Entscheidung 3 und 4 (Liefer-Punkt 3, ii) |
+| `AGENTS.md` §3.11 | update (Fixrunde) | Fassung 3 nach `ADR-0160` Entscheidung 3, Folgepflicht 1: Überschrift, Aussage, Platzhalter `~/<Verzeichnis>/…`, Lücke Tilde mit Benutzername, Träger-Zeile (Liefer-Punkt 3, ii) |
+| `docs/reviews/architect-verdict-…` (Name setzt der Architect) | **ersetzt durch `ADR-0160`** | Der Architect-Zug zu Review F-1 bis F-3 endete als ADR statt als Verdikt; die Orchestrator-Ausführungsregel ist damit abgelöst |
+| `.d-check.yml` (Kommentar im Block `vcs:`) | unverändert | Der Kommentar sagt, der Pin-Commit wird „per Teil-Range umgangen“ — das bleibt wahr; der Leer-Test ist ein Verfahrensschritt der drei Träger, keine Eigenschaft der Konfiguration (`ADR-0160` Entscheidung 2: `.d-check.yml` bleibt unverändert) |
 
 **Ansatz — Commit-Folge:**
 
@@ -232,13 +237,12 @@ Aussagen-Berührung steht hier gar nicht.
    `DCHECK_DIGEST=…` auf der Kommandozeile, ohne `d-check.mk` zu ändern), Belege
    in diesen Plan, eigener Commit.
 2. **Architect-Zug** zur leeren Teil-Range (Planner → Architect → Planner,
-   Modul 8): Eingabe ist der Beleg aus Schritt 1; Ausgang ein Verdikt unter
-   `docs/reviews/` — Trägerwortlaut genügt (die leere Range enthält keinen
-   Commit, den `vcs` prüfen könnte) **oder** Folge-ADR zu
-   [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md).
+   Modul 8): Eingabe ist der Beleg aus Schritt 1. Gelaufen ist er erst nach dem
+   Review (F-1 bis F-3); sein Ausgang ist die Folge-ADR
+   [`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md).
 3. **Pin-Commit** `d-check.mk` (Liefer-Punkt 1), danach `make docs-check` und
    `make pin-stale-dcheck`.
-4. **Träger** nach dem Verdikt (Liefer-Punkt 3), eigener Commit; danach
+4. **Träger** nach `ADR-0160` (Liefer-Punkt 3), eigener Commit; danach
    `make gates`.
 
 **Suchlauf ([`AGENTS.md`](../../../../AGENTS.md) §3.13).** Bewegte
@@ -275,45 +279,76 @@ Zeile 6 — die Fitness-Function-Zeile von `ADR-0157`; Zeile 7 — vier ADRs 7,
 `harness/sensors/docs-check.md` 2; Zeile 8 — [`ADR-0072`](../../adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)
 1, `docs-check.md` 1. Die `diff`-Zeilen trägt der Implementer nach;
 **erwartet** (hergeleitet, nicht gemessen): Zeile 1 → 7, Zeile 2 → 2, Zeile 3
-→ 1 (`d-check.mk`), Zeile 4 bis 6 nach dem Wortlaut des Verdikts, Zeile 9 → ≥ 1
-(`docs-check.md`). Ob der `.d-check.yml`-Kommentar zur Teil-Range nachgezogen
-wird, folgt aus dem Verdikt; jede Abweichung steht mit Grund im Feld.
+→ 1 (`d-check.mk`), Zeile 4 bis 6 nach dem Wortlaut der Teil-Range-Regel
+(`ADR-0160`), Zeile 9 → ≥ 1 (`docs-check.md`). Ob der `.d-check.yml`-Kommentar
+zur Teil-Range nachgezogen wird, folgt aus `ADR-0160` Entscheidung 2; jede
+Abweichung steht mit Grund im Feld.
 
-**Suchlauf am Diff (Implementer, Arbeitsbaum nach dem Träger-Nachzug).** Neues
-Muster in Zeile 10: das Prüfwort der Ausführungsregel (`rev-list --count`).
+**Suchlauf am Diff (Implementer, Arbeitsbaum nach der Fixrunde).** Neue Muster:
+das Wort `rev-list --count` (Leer-Kriterium des ersten Laufs, das `ADR-0160`
+ablöst), der Funktionsname `teilrange` und `merge-base --is-ancestor`
+(Leer-Test nach `ADR-0160`), die Beschreibung „Tilde mit Benutzername“ (Lücke
+des Sensors). Die erste Fassung dieses Blocks (Stand `234ed26a`) maß vor der
+Fixrunde; ihre `diff`-Zeilen sind hier ersetzt.
 
 ```suchlauf
 281f14f3 1 -n 'rev-list --count' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 7 -n 'v0\.79\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 2 -n 'b4b8756b' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 1 -n 'd28e9437' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 16 -n 'Teil-Range' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 6 -n 'base\.\.P~1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 6 -niE 'leere[nr]? (Teil-)?Range' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+87567887 0 -n 'teilrange' -- .claude/agents harness/targets/pin-stale.md
+diff 11 -n 'v0\.79\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 3 -n 'b4b8756b' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 2 -n 'd28e9437' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 28 -n 'Teil-Range' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 3 -n 'base\.\.P~1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 9 -niE 'leere[nr]? (Teil-)?Range' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 9 -n 'hostpath-forbidden' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 2 -nE 'host-lokale \*\*absolute\*\*' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 2 -ni 'home-relativ' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 4 -n 'rev-list --count' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 3 -nE 'host-lokale \*\*absolute\*\*' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 30 -ni 'home-relativ' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 10 -n 'rev-list --count' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 0 -n 'rev-list --count' -- .claude/agents harness/targets/pin-stale.md
+diff 13 -n 'teilrange' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 5 -n 'merge-base --is-ancestor' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 14 -n 'Tilde mit Benutzername' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 ```
 
 Verteilung am Diff (gemessen, `git grep … | cut -d: -f1 | sort | uniq -c`,
 Plan-Datei ausgeschlossen):
 
-- **Zeile 1** (7): `d-check.mk` hat den Tag verlassen; der Rest ist Bestand
-  nach §1 (ADRs, Test-Fixture).
-- **Zeile 2** (2): nur noch [`ADR-0156`](../../adr/0156-versions-gate-nimmt-done-records-aus.md).
-- **Zeile 3** (1): `d-check.mk`.
-- **Zeile 4** (16): +1 je Träger (`implementer.md`, `verifier.md`,
-  `pin-stale.md`), dazu +4 in `slice-harness-baseline-v6-16-0` (Datei in `open/`,
-  nach dem Parent `281f14f3` angelegt mit `a93856eb`).
-- **Zeile 5** (6): +1 je Träger, +1 in `slice-harness-baseline-v6-16-0`.
-- **Zeile 6** (6): +1 in `implementer.md` und `verifier.md`, +3 in
-  `slice-harness-baseline-v6-16-0`; `pin-stale.md` schreibt „**leere**
-  Teil-Range“ und trifft das Muster wegen der Hervorhebung nicht.
-- **Zeile 7** (9) und **Zeile 8** (2): unverändert — `docs-check.md` behält den
-  Satz zu den absoluten Pfaden und ergänzt die Home-relativen.
-- **Zeile 9** (2): `docs-check.md` (Einleitung, §Grenze Punkt 8).
-- **Zeile 10** (4): +1 je Träger; Bestand `tools/harness/commit-traceability.sh`.
+Die Zeilen tragen die Fixrunde und die mit ihr gelandete
+[`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+(Commit `87567887`, Architect); ihr Anteil steht je Zeile dabei.
+
+- **`v0\.79\.0`** (11): `d-check.mk` hat den Tag verlassen; Bestand nach §1
+  (ADRs 0157/0159, Test-Fixture) 7, dazu 4 in `ADR-0160` (Messangaben).
+- **`b4b8756b`** (3): [`ADR-0156`](../../adr/0156-versions-gate-nimmt-done-records-aus.md)
+  2, `ADR-0160` 1.
+- **`d28e9437`** (2): `d-check.mk`, `ADR-0160`.
+- **`Teil-Range`** (28): je 1 in `implementer.md`, `verifier.md`, 2 in
+  `pin-stale.md`, `.d-check.yml` 1 (Kommentar, unverändert), `ADR-0157` 5,
+  `ADR-0160` 13, ADR-Index 1, `slice-harness-baseline-v6-16-0` 4 (Datei in
+  `open/`, nach dem Parent `281f14f3` angelegt mit `a93856eb`).
+- **`base\.\.P~1`** (3): `implementer.md`, `verifier.md`,
+  `slice-harness-baseline-v6-16-0`; `pin-stale.md` nennt den Leer-Test ohne die
+  Range-Schreibweise.
+- **`leere … Range`** (9): `ADR-0157` 1 (Fitness Function), `ADR-0160` 5,
+  `slice-harness-baseline-v6-16-0` 3; die drei Träger nennen den Leerfall
+  jetzt über den Leer-Test, nicht mit diesem Wort.
+- **`hostpath-forbidden`** (9): unverändert.
+- **`host-lokale **absolute**`** (3): `ADR-0072`, `ADR-0160` (Kontext),
+  `docs-check.md` §Grenze Punkt 8 (der Satz bleibt und wird ergänzt).
+- **`home-relativ`** (30): `AGENTS.md` 5, `docs-check.md` 6, `ADR-0160` 15,
+  ADR-Index 1, und je 1 in den drei Trägern über den Dateinamen von `ADR-0160`
+  im Link.
+- **`rev-list --count`** (10): `ADR-0160` 9, Bestand
+  `tools/harness/commit-traceability.sh` 1; in den drei Trägern 0 (eigene
+  Zeile) — das Leer-Kriterium des ersten Laufs ist dort entfernt.
+- **`teilrange`** (13): je 1 in den drei Trägern (am Stand `87567887` dort 0),
+  `ADR-0160` 10.
+- **`merge-base --is-ancestor`** (5): `verifier.md` 1, `ADR-0160` 2, zwei
+  Evidence-Dateien des Registers (Bestand, anderer Gegenstand);
+  `implementer.md` trägt die Wendung über einen Zeilenumbruch und trifft das
+  Muster deshalb nicht, `pin-stale.md` ebenso.
+- **`Tilde mit Benutzername`** (14): `AGENTS.md` 3, `docs-check.md` 2,
+  `ADR-0160` 9.
 
 **Nicht nachgezogen, mit Grund:**
 
@@ -321,13 +356,6 @@ Plan-Datei ausgeschlossen):
   Verifier fahre „in der Fassung, die `slice-dcheck-v0-82-0` für eine leere
   Teil-Range hinterlässt“ — das trifft den Stand nach diesem Slice; kein
   Nachzug nötig.
-- [`AGENTS.md`](../../../../AGENTS.md) §3.11 (fremde Datei, gemeldet an den
-  Planner, Frist: Closure dieses Slice): die Regel nennt einen „host-lokalen
-  absoluten Pfad“ (Wurzel-Segment, Windows-Muster); das Modul meldet ab v0.80.0
-  zusätzlich Home-relative Pfade. Der Sensor ist damit weiter als der
-  Regel-Wortlaut; `docs-check.md` §Grenze Punkt 8 benennt das. Ob die Regel
-  nachzieht, ist eine Frage an die Reichweite nach
-  [`ADR-0075`](../../adr/0075-hostpaths-reichweite-und-wortlaut.md).
 - Der Kommentar im Block `vcs:` von `.d-check.yml` (Zeile 4): siehe §3-Tabelle.
 
 ### Wirkung v0.80.0–v0.82.0 — Belege
@@ -426,25 +454,62 @@ Keine Wirkung.
   `d-check: 1794 Datei(en) geprüft, 0 Befund(e)`.
 - `git show --stat 7f796ef0`: `d-check.mk | 4 ++--`, eine Datei.
 
-### Leere Teil-Range — Ausführungsregel
+### Leere Teil-Range — Regel nach `ADR-0160`
 
-Entschieden vom Orchestrator im Auftrag (2026-10-06), ohne ADR; der
-Architect-Zug aus „Ansatz“ Schritt 2 entfällt dadurch:
+Die Regel steht in
+[`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+Entscheidung 1 (Leer-Test, Funktion `teilrange`); sie ersetzt in
+[`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
+Entscheidung 4 den ersten Spiegelstrich. Die Ausführungsregel des ersten
+Implementer-Laufs (Leer-Kriterium `git rev-list --count` = 0) ist damit
+abgelöst (Review F-1, F-2). Träger: `.claude/agents/verifier.md`,
+`.claude/agents/implementer.md`, `harness/targets/pin-stale.md` §Bump-Ablauf.
 
-- Eine **leere** Teil-Range wird nicht gefahren: es gibt in ihr nichts zu prüfen.
-- Ob eine Teil-Range leer ist, entscheidet `git rev-list --count <range>`; der
-  Messende druckt die Zahl. Bei `0` entfällt der `doc-immutable`-Lauf für diese
-  Teil-Range, und der Beleg ist die gedruckte Zahl.
-- **Begründung.** [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
-  Entscheidung 4 verlangt grüne Läufe über die Commits um den Pin-Commit. Eine
-  Range ohne Commit hat keinen Lauf, den sie grün machen könnte; d-check ab
-  v0.80.0 meldet sie deshalb laut mit Exit 2 (Changelog 0.80.0,
-  `DC-FA-VCS-002`; gemessen unter (b)). Die Regel legt fest, wie die
-  Entscheidung ausgeführt wird, und ändert sie nicht; die Fitness-Function-Zeile
-  der ADR („`B..P~1` bei leerer Range Exit 0“) bleibt der Messwert ihres
-  Entscheidungszeitpunkts mit v0.79.0.
-- Träger: `.claude/agents/verifier.md`, `.claude/agents/implementer.md`,
-  `harness/targets/pin-stale.md` §Bump-Ablauf.
+### Fixrunde
+
+Fixrunde nach dem Review `review-slice-dcheck-v0-82-0` (Stand `1474274e`) und
+der Folge-ADR [`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+(Commit `87567887`); ein Eintrag je Finding:
+
+- **F-1 (HIGH, Träger ändert `ADR-0157` ohne Architect):** aufgelöst durch
+  `ADR-0160` (Teil-Supersede von `ADR-0157` Entscheidung 4, erster
+  Spiegelstrich). Die drei Träger verweisen auf `ADR-0160` Entscheidung 1.
+- **F-2 (HIGH, `rev-list --count` trägt „leer“ nicht):** das Leer-Kriterium
+  ist jetzt Commit-Gleichheit (`git rev-parse`), sonst Vorfahr und Zählung,
+  sonst Exit 2; in den drei Trägern ersetzt. Probe unten.
+- **F-3 (MEDIUM, Gate-Umfang ohne Entscheidung):** aufgelöst durch `ADR-0160`
+  Entscheidung 3 und 4; `AGENTS.md` §3.11 trägt Fassung 3,
+  `harness/sensors/docs-check.md` §Grenze Punkt 8 und §Bindung nennen Regel und
+  Modul gleich weit außer bei der Tilde mit Benutzername, das Ventil als
+  verfügbar und nicht gesetzt.
+- **F-4 (MEDIUM, Nachbarn im Plan):** §4 (Rückführung), §5 (Closure-Trigger),
+  §6 Risiko 1 und 2 und „Ansatz“ Schritt 2 und 4 nennen `ADR-0160` statt eines
+  Verdikts.
+- **F-5 (LOW, falsches Zitat in §1):** die `targets`-Abgrenzung stützt sich auf
+  das Muster von [`ADR-0072`](../../adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)
+  Entscheidung 1, nicht auf `AGENTS.md` §3.6.
+- **F-6 (INFO, Formbeispiel zu eng):** `docs-check.md` §Grenze Punkt 8 nennt
+  auch die Datei direkt unter der Tilde und das einzelne Segment. Die
+  Platzhalter `~/<Datei>`, `~/<Verzeichnis>` und `~<Benutzer>/…` in
+  Inline-Code bleiben mit v0.82.0 still (Wegwerf-Verzeichnis
+  `<Scratchpad>/impl-dcheck/hp3/`, `d-check: 1 Datei(en) geprüft, 0 Befund(e)`).
+- **F-7 (INFO, DoD-Haken mit Abweichung):** die „Abweichung“ in Liefer-Punkt 3
+  entfällt; der Haken stützt sich auf `ADR-0160`. Ob er trägt, prüft der
+  Verifier.
+
+**Probe `teilrange`.** Die Funktion ist wörtlich aus dem `bash`-Block von
+`ADR-0160` gezogen (`awk` zwischen den Fence-Zeilen, ohne die beiden
+Aufrufzeilen) und an einem Wegwerf-Klon `<Scratchpad>/impl-dcheck2/klon/` (Zweig
+ab `87567887`) gefahren: `B` = `87567887`, Pin-Commit `P` = `1930b4d3`
+(`MR-001` bis `MR-004` von `v6.14.1/` auf `v6.14.9/`), `H` = `bb16699f` (ein
+Commit an einer Nicht-MR-Datei). Je Fall `teilrange <basis> <spitze>`, Exit
+direkt danach gelesen:
+
+| Fall | Aufruf | Exit | gedruckte Zeile |
+|---|---|---|---|
+| leer | `teilrange 87567887 1930b4d3~1` | 0 | `teilrange: 87567887..1930b4d3~1 leer (Basis = Spitze = 87567887fc3e384669f7fbc846a8a22c43b0ad8e), kein Lauf` |
+| nicht leer | `teilrange 1930b4d3 bb16699f` | 0 | `teilrange: 1930b4d3..bb16699f enthält 1 Commit(s), Lauf`, dann `d-check: 1796 Datei(en) geprüft, 0 Befund(e)` |
+| umgekehrt | `teilrange bb16699f 87567887` | 2 | `teilrange: bb16699f ist kein Vorfahr von 87567887, Exit 2` |
 
 ## 4. Trigger
 
@@ -467,9 +532,10 @@ ist veröffentlicht (übernommen, §1); `in-progress/` trägt keinen Slice
   Records unter `done/` oder `Accepted`-ADRs berührte, oder ein `targets`-Befund,
   der eine Gate-Entscheidung verlangt. Sie wird dann als eigener Slice
   geschnitten.
-- `in-progress` → `open` (blockiert): das Architect-Verdikt verlangt eine
-  Folge-ADR zu `ADR-0157` und sie ist nicht `Accepted`, bevor Liefer-Punkt 3 (i)
-  geschrieben werden müsste; oder `make pin-stale-dcheck` meldet für v0.82.0
+- `in-progress` → `open` (blockiert): die Folge-ADR zu `ADR-0157` ist nicht
+  `Accepted`, bevor Liefer-Punkt 3 (i) geschrieben werden müsste (mit
+  [`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+  `Accepted` nicht eingetreten); oder `make pin-stale-dcheck` meldet für v0.82.0
   `DRIFT` (der Tag trägt nicht den Release-Digest) — der Stand ist dann nicht
   vertrauenswürdig und der Slice wartet auf einen geklärten Release.
 
@@ -483,8 +549,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 Lerneintrag; ohne ihn ist der Slice nur abgelegt.
 
 Die drei Liefer-Punkte der DoD sind abgehakt mit Beleg; `make docs-check` und
-`make gates` enden auf dem Commit nach dem Träger-Nachzug mit Exit 0; das
-Architect-Verdikt liegt vor; der Review-Report liegt vor und ist aufgelöst; die
+`make gates` enden auf dem Commit nach dem Träger-Nachzug mit Exit 0;
+[`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+ist `Accepted` und ihre Folgepflichten 1 bis 4 sind umgesetzt; der Review-Report liegt vor und ist aufgelöst; die
 Closure-Notiz (§7) trägt den Lerneintrag und jedes Risiko aus §6 seinen
 Ausgang.
 
@@ -502,15 +569,17 @@ dasteht.
   `make doc-immutable RANGE=base..P~1` mit Exit 2, wenn `P` der erste Commit nach
   `base` ist. Der Verifier eines Bump-Slice (als nächster
   `slice-harness-baseline-v6-16-0`) läuft dann gegen eine Regel, die Exit 0
-  verlangt. *Zu belegen durch:* Architect-Verdikt und Träger-Nachzug
-  (Liefer-Punkt 3, i), vor der Closure dieses Slice. Erwarteter Ausgang:
-  eingetreten, aufgefangen durch Liefer-Punkt 3 oder durch die Folge-ADR, die
-  das Verdikt nennt.
+  verlangt. *Zu belegen durch:*
+  [`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+  Entscheidung 1 und den Träger-Nachzug (Liefer-Punkt 3, i), vor der Closure
+  dieses Slice; Probe `teilrange` in §3 „Fixrunde“. Erwarteter Ausgang:
+  eingetreten, aufgefangen durch `ADR-0160` und Liefer-Punkt 3.
 - **Die Fitness-Function-Zeile von `ADR-0157` hält einen Messwert mit v0.79.0
   fest** („`B..P~1` bei leerer Range Exit 0“), der mit dem neuen Pin nicht mehr
   gilt. Die ADR ist `Accepted` und wird nicht überschrieben
-  ([`AGENTS.md`](../../../../AGENTS.md) §3.5); ob die Abweichung eine Folge-ADR
-  braucht, entscheidet das Verdikt. *Zu belegen durch:* die Zeile des Verdikts.
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.5). *Zu belegen durch:* `ADR-0160`
+  Status-Zeile (Supersedes der Leerfall-Hälfte) und deren Fitness Function.
+  Erwarteter Ausgang: eingetreten, aufgefangen durch `ADR-0160`.
 - **`hostpaths` meldet am Arbeitsbaum des Implementers mehr als am
   übernommenen Stand** (neue Dateien seit `281f14f3`, Home-relative Pfade in
   Prosa). *Zu belegen durch:* `make docs-check` mit neuem Pin am Arbeitsbaum
