@@ -92,16 +92,45 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **Entscheidung (Liefer-Punkt 1).** Architect-Verdikt oder Folge-ADR legt
+- [x] **Entscheidung (Liefer-Punkt 1).** Architect-Verdikt oder Folge-ADR legt
       je Verweisform aus Bedingung (a) Vergleichseinheit und Normalisierung
       fest. *Zu belegen durch:* je Form eine Probe mit Befehl und gedrucktem
       Ergebnis — mindestens ein Anker-Wechsel auf einen anderen Abschnitt
       derselben Datei (muss fallen) und ein verschobener Zeilen-Lokator bei
       gleichem Inhalt (muss bestehen).
-- [ ] **Träger nachgezogen (Liefer-Punkt 2).** `AGENTS.md` §3.5 und jeder
+      **Beleg:** Folge-ADR
+      [`ADR-0158`](../../adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md)
+      (Commit `07923146`, `Supersedes ADR-0157` teilweise, nur Entscheidung 1
+      (b)): Einheit je Verweisform (Entscheidung 1), Normalisierung nur für
+      Versions-Segmente (Entscheidung 2), Befehlsform (Entscheidung 6). Die
+      Proben je Form (Anker, Zeilen-Lokator, Pfad und gebrochene Referenz,
+      Versions-Segment, Mutation) stehen mit gedrucktem Ergebnis in ihrer
+      §Fitness Function, gemessen vom Architect am Stand `b7d97cca`.
+      **Nachgefahren** (Implementer, ADR-Text als einzige Quelle): Funktionen
+      `einheit`/`vergleich` per `awk` wörtlich aus dem `bash`-Block von
+      Entscheidung 6 gezogen, an einem Klon im Scratchpad (Stand `07923146`,
+      GNU Awk 5.2.1), Datei `F=docs/plan/adr/0100-nats-dritter-vollinhalts-zustellweg.md`.
+      *Pflichtprobe 1, Anker-Wechsel (muss fallen):*
+      `vergleich 07923146 $F '#teilfrage-2--subjekt--und-nachrichtenschema' 07923146 $F '#teilfrage-3--zustellsemantik-core-nats-vs-jetstream'`
+      → gedruckt `vergleich roh: 07923146:…zustellweg.md#teilfrage-2--subjekt--und-nachrichtenschema <-> 07923146:…zustellweg.md#teilfrage-3--zustellsemantik-core-nats-vs-jetstream cmp 1`,
+      Exit 1; Gegenprobe gleicher Anker `#teilfrage-2-…` an beiden Seiten `cmp 0`.
+      *Pflichtprobe 2, Lokator verschoben (muss bestehen):* Probe-Commit
+      `21f80c21` (nur im Klon) fügt vor Zeile 41 drei Zeilen ein;
+      `vergleich 07923146 $F L139-145 21f80c21 $F L142-148` → gedruckt
+      `vergleich roh: 07923146:…zustellweg.mdL139-145 <-> 21f80c21:…zustellweg.mdL142-148 cmp 0`,
+      Exit 0; Gegenprobe Lokator nicht nachgezogen (`L139-145` an beiden
+      Seiten) `cmp 1`, der Datei-`cmp` derselben Änderung (`vergleich … '' … ''`)
+      `cmp 1`. Die übrigen Formen sind nicht nachgefahren; für sie gilt die
+      Messung des Architects (übernommen).
+- [x] **Träger nachgezogen (Liefer-Punkt 2).** `AGENTS.md` §3.5 und jeder
       Träger, der die Referent-Messung beschreibt, folgen der Entscheidung;
       Suchlauf nach [`AGENTS.md`](../../../../AGENTS.md) §3.13 mit `diff`-Zeilen.
-- [ ] `make gates` grün.
+      **Beleg:** `AGENTS.md` §3.5 nennt die Vergleichseinheit (Datei, Abschnitt
+      hinter dem Anker, zitierte Zeilen; roh, Normalisierung nur für ein
+      Versions-Segment) mit Verweis auf `ADR-0158`, und der Absatz „Beleg“
+      nennt die Bestandteile des Belegs (`ADR-0158` Entscheidung 5). Suchlauf
+      und Befund unter §3 „Suchlauf“.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -118,10 +147,54 @@ nicht die Antwort.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `docs/plan/adr/<neu>` oder `docs/reviews/architect-verdict-<…>.md` | neu | Architect-Zug zu Bedingung (b) |
-| `docs/plan/adr/README.md` | update | nur bei Folge-ADR |
-| `AGENTS.md` §3.5 | update | Wortlaut nach der Entscheidung |
-| `.claude/agents/verifier.md`, `harness/targets/pin-stale.md` | update, falls betroffen | beschreiben die Referent-Messung (`cmp`) |
+| `docs/plan/adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md` | neu (geliefert, `07923146`) | Architect-Zug zu Bedingung (b) als Folge-ADR; kein Verdikt-Dokument unter `docs/reviews/` |
+| `docs/plan/adr/README.md` | update (geliefert, `07923146`) | Index-Zeile `ADR-0158` und Vermerk an `ADR-0157`, im Architect-Commit |
+| `AGENTS.md` §3.5 | update (geliefert) | Vergleichseinheit und Normalisierung mit Verweis auf `ADR-0158`; Absatz „Beleg“ um die Bestandteile nach `ADR-0158` Entscheidung 5 ergänzt |
+| `.claude/agents/verifier.md`, `harness/targets/pin-stale.md` | **nicht geändert** | beide beschreiben nur den `cmp` des Pin-Commits der MR-Einträge (`ADR-0157` Entscheidung 4); `ADR-0158` lässt Entscheidung 4 unberührt, und am MR-Pin ist die Einheit die ganze Datei mit Tag-Normalisierung — dieselbe Messung |
+| `.claude/agents/implementer.md`, `.d-check.yml` (`vcs`-Kommentar) | **nicht geändert** | nennen ebenfalls nur den MR-Pin-Commit (`ADR-0157` Entscheidung 4) |
+| Werkzeug hinter `make` | **nicht realisiert** | `ADR-0158` Entscheidung 6 legt die Befehlsform als Verfahrensregel fest (Option C, Option D verworfen); die Rückführung aus §4 („verlangt ein Werkzeug“) tritt nicht ein |
+
+**Suchlauf ([`AGENTS.md`](../../../../AGENTS.md) §3.13).** Bewegte Eigenschaft:
+die Vergleichseinheit der Referent-Messung einer Zitat-Korrektur. Suchraum:
+ganzer Baum ohne `docs/reviews/`, `docs/plan/planning/done/`,
+`.harness/baseline/` und `docs/plan/adr/` (Accepted-ADRs sind unberührbar;
+der Index trägt `ADR-0158` seit `07923146`). Muster: Beschreibung
+(`Zitat-Korrektur`, `Referent`, `gemessen gleich`), Symbol (`cmp` in Markdown
+und `.d-check.yml`), Zählwort/Hedge der offenen Festlegung (`Vergleichseinheit`,
+`roh oder normalisiert`, `Normalisierung des Tags`), Anker (`ADR-0158`).
+Parent `07923146`, `diff` = Arbeitsbaum dieses Laufs.
+
+```suchlauf
+07923146 73 -iE 'Zitat-Korrektur|Referent|gemessen gleich' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 75 -iE 'Zitat-Korrektur|Referent|gemessen gleich' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+07923146 8 -wE 'cmp' -- *.md .d-check.yml :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 8 -wE 'cmp' -- *.md .d-check.yml :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+07923146 6 -iE 'Vergleichseinheit|roh oder normalisiert|Normalisierung des Tags' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 9 -iE 'Vergleichseinheit|roh oder normalisiert|Normalisierung des Tags' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+07923146 0 -e 'ADR-0158' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+diff 2 -e 'ADR-0158' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/adr
+```
+
+**Gefunden und nachgezogen:** `AGENTS.md` §3.5 (die +2 bei Beschreibung,
++3 bei Zählwort, +2 bei Anker sind die neuen Zeilen dort).
+**Gefunden, nicht betroffen:** `.claude/agents/verifier.md`,
+`harness/targets/pin-stale.md`, `.claude/agents/implementer.md`, `.d-check.yml`
+(MR-Pin, `ADR-0157` Entscheidung 4, siehe Tabelle); `.claude/agents/architect.md`
+(nennt nur die „Zitat-Korrektur-Grenze“), `harness/sensors/docs-check.md`
+(verweist nur auf `ADR-0073`); die übrigen `cmp`-Treffer sind Code und
+Skript-Kommentare ohne Bezug (`generated-sync`, SDK-Runner), die Treffer in
+`evidence/` sind Records.
+**Gefunden, fremde Datei — gemeldet, nicht mitgeändert (Frist: Closure dieses
+Slice, Planner):** `docs/plan/planning/observations/BEO-PGC/zitat-korrektur-reichweite-abschnitte-kurzform/state.md`
+Z. 17–20 („Benannte Lücke … legt die Vergleichseinheit … nicht fest … —
+Folge-Slice `slice-zitat-korrektur-vergleichseinheit`“) und
+`docs/plan/planning/observations/BEO-PGC/adr-aussage-breiter-als-ihre-messung/state.md`
+Z. 114–118 (dieselbe Lücke als „adressiert mit dem Folge-Slice“): beide
+Zustandsfelder beschreiben die Lücke als offen; mit `ADR-0158` ist sie
+geschlossen.
+**Nicht gefunden:** kein Treffer in `.harness/skills/` (u. a. `reviewer.md`)
+und `.claude/commands/` (u. a. `implement-slice.md`); keine weitere Datei
+beschreibt die Vergleichseinheit.
 
 ## 4. Trigger
 
