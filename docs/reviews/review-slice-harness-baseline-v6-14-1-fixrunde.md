@@ -31,7 +31,7 @@ diese Liste ist der Lauf nicht reproduzierbar):
 
 - Slice-Plan `slice-harness-baseline-v6-14-1` (Stand `65c75a3c`), Abschnitt „Fixrunde“ und „Verweise, Pins und Records“
 - Erstes Review [`review-slice-harness-baseline-v6-14-1`](review-slice-harness-baseline-v6-14-1.md) (F-1 bis F-7)
-- [`ADR-0157`](../plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md) (neu, Supersedes ADR-0073 teilweise)
+- [`ADR-0157`](../plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md) (neu, Supersedes [`ADR-0073`](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) teilweise)
 - [`ADR-0073`](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) (Entscheidung 1–5)
 - [`ADR-0063`](../plan/adr/0063-lh-fa-sch-003-testform-korrektur.md) / [`ADR-0058`](../plan/adr/0058-testansatz-fuenf-luecken.md) (Vorbild Teil-Supersede)
 - [`ADR-0051`](../plan/adr/0051-cicd-pipeline-github-actions.md) Entscheidung 7 (P8), [`ADR-0083`](../plan/adr/0083-herkunft-von-aussagen-in-traegern.md), [`ADR-0095`](../plan/adr/0095-review-klasse-exempt-status-check.md)
@@ -91,7 +91,7 @@ diese Liste ist der Lauf nicht reproduzierbar):
 | Finding | Behauptung „Fixrunde“ | Nachgeprüft |
 |---|---|---|
 | F-1 (HIGH) | behoben | stimmt: die Symlinks und `b6c5b419` stehen in Liefer-Punkt 2 und §3, die Messung je Stand ist nachgefahren und gleich, und die Grenze von `git grep` ist benannt. **Geschlossen.** |
-| F-2 (MEDIUM) | vom Architect entschieden | stimmt: `ADR-0157` ist ein Teil-Supersede nach `AGENTS.md` §3.5 in der Form `ADR-0063` → `ADR-0058`. `ADR-0073` ist unverändert, der Index trägt `(→ ADR-0157)` und „Supers. ADR-0073, teilw.“, und `AGENTS.md` §3.5 entspricht Wort für Wort dem Wortlaut aus Entscheidung 2. Die `ADR-0095`-Korrektur erfüllt Entscheidung 1 (roh `cmp` 0, kein Wort der Aussage geändert). **Geschlossen**; neue Befunde F-1 und F-2 oben. |
+| F-2 (MEDIUM) | vom Architect entschieden | stimmt: `ADR-0157` ist ein Teil-Supersede nach `AGENTS.md` §3.5 in der Form `ADR-0063` → `ADR-0058`. `ADR-0073` ist unverändert, der Index trägt `(→ ADR-0157)` und „Supers. `ADR-0073`, teilw.“, und `AGENTS.md` §3.5 entspricht Wort für Wort dem Wortlaut aus Entscheidung 2. Die `ADR-0095`-Korrektur erfüllt Entscheidung 1 (roh `cmp` 0, kein Wort der Aussage geändert). **Geschlossen**; neue Befunde F-1 und F-2 oben. |
 | F-3 (MEDIUM) | behoben nach `ADR-0157` | stimmt: Teil-Ranges und `cmp` sind nachgefahren und gleich dem Plan, `verifier.md` und `pin-stale.md` folgen Entscheidung 4, und die Zeile nach Entscheidung 5 steht im Plan. **Geschlossen**; Restträger in F-3 oben. |
 | F-4 (LOW) | behoben | stimmt: Schritt 1 enthält den Symlink-Befehl und die Prüfung `find -xtype l`; Gegenprobe nachgefahren. **Geschlossen.** |
 | F-5 (LOW) | nicht geändert, Befund 3 | begründet: Das Wort „normalisiert“ ändert die Aussage einer `Accepted`-ADR. Der Weg ist eine Folge-ADR oder eine Lesart. Angenommen. |
@@ -109,7 +109,7 @@ diese Liste ist der Lauf nicht reproduzierbar):
 | `.claude/agents/verifier.md` gegen `ADR-0157` Entscheidung 4 (Definition des Pin-Commits, Teil-Ranges, Verweis auf den Befehl). Der Pin-Commit `5d8855d9` dieses Slice erfüllt die Definition nicht; Entscheidung 5 und die Zeile im Plan tragen ihn. | geprüft, ohne Befund über F-5 hinaus |
 | `harness/targets/pin-stale.md` §Bump-Ablauf (Symlink-Schritt in Schritt 1, Absatz zum eigenen MR-Pin-Commit mit `ADR-0073`) | geprüft, ohne Befund |
 | `docs/plan/adr/README.md` (Index-Zeilen `ADR-0073`/`ADR-0157`, Satz in §Konventionen) | geprüft, ohne Befund |
-| §3.13-Suchlauf nach der alten Abschnitte-Liste (`git grep` nach „Unberührbar“, „§Entscheidung, §Konsequenzen“, „nie eine Zitat-Korrektur“, „Zitat-Korrektur“, „ADR-0073“, „doc-immutable“; ganzer Baum ohne `.harness/baseline/**`, `docs/reviews/**`, `done/**`). Treffer gibt es nur in `Accepted`-ADRs (`ADR-0073`, `-0090`, `-0101`, `-0102`, `-0157`), in Register-Records und in diesem Plan. Skills, Kommandos, `harness/sensors/docs-check.md` und `.claude/agents/architect.md` geben die Liste nicht wieder. | geprüft, ohne Befund über F-3 hinaus |
+| §3.13-Suchlauf nach der alten Abschnitte-Liste (`git grep` nach „Unberührbar“, „§Entscheidung, §Konsequenzen“, „nie eine Zitat-Korrektur“, „Zitat-Korrektur“, „`ADR-0073`“, „doc-immutable“; ganzer Baum ohne `.harness/baseline/**`, `docs/reviews/**`, `done/**`). Treffer gibt es nur in `Accepted`-ADRs (`ADR-0073`, `-0090`, `-0101`, `-0102`, `-0157`), in Register-Records und in diesem Plan. Skills, Kommandos, `harness/sensors/docs-check.md` und `.claude/agents/architect.md` geben die Liste nicht wieder. | geprüft, ohne Befund über F-3 hinaus |
 | Commit-Folge der Fixrunde: ADR und Index getrennt von den Norm-Nachzügen und vom Plan; jede Message nennt `ADR-0157` (`make doc-commits` 0 Befunde) | geprüft, ohne Befund |
 | Plan-Abschnitte „Verweise, Pins und Records“ und „Fixrunde“ (Zahlen, Befehle, Stände nachgemessen; Suchlauf 14/14) | geprüft, ohne Befund über F-2 hinaus |
 | Docker-only (`AGENTS.md` §3.1): Der Diff enthält keine Skripte; der Befehl in `pin-stale.md` benutzt nur `git`, `awk`, `readlink`, `grep` und `find`. Keine Umleitung schreibt in eine Repo-Datei. | geprüft, ohne Befund |
@@ -136,8 +136,14 @@ betrifft fremde Dateien (`AGENTS.md` §3.13). F-4 und F-5 sind Hinweise.
 
 **DoD-Haken „Review durchgeführt“:** nachgezogen im selben Commit wie dieser
 Report (Skill §DoD-Checkbox-Nachzug ohne Fixrunde). Kein Finding geht als
-Reviewer→Implementer-Rückgabe zurück.
+Reviewer→Implementer-Rückgabe zurück. Die Notiz am Ende des Abschnitts
+„Fixrunde“ im Plan („bleibt offen … ein Re-Review folgt“) ist nicht geändert;
+der Skill erlaubt dem Reviewer nur die eine Checkbox.
 
 **Übergabe:** F-1 an den Architect, F-2 und F-3 an den Planner. Die
 Finding-Klassen gehen in die Slice-Closure §7. Dieser Report ist ein Lauf-Beleg
 und ersetzt die Verifikation nicht.
+
+**Lauf-Notiz:** Der erste `make gates`-Lauf nach dem Report-Commit `26bfde80`
+endete mit Exit 2: drei `id-unlinked` zu `ADR-0073` in diesem Report. Behoben
+in diesem Report im Folge-Commit, danach `make gates` erneut gefahren.
