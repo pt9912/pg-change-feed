@@ -83,6 +83,11 @@ printf '  \t<a id="m3"></a>\n\n<a id="m3"></a>\n\n## Ziel\n\nziel alpha\n' >mi.m
 printf '<!-- k --> <a id="m8"></a>\n\n## Ziel\n\nziel alpha\n' >hc.md
 printf '| MR | Titel | Text |\n|---|---|---|\n| MR-009 <a id="mr-009"></a> | `x` | y alpha |\n' >tb.md
 printf 'z1\nz2\nz3\nz4\nz5\nz6\nz7\nz8\nz9\nz10\nz11\nz12\n' >l12.md
+printf 'Absatz `siehe <a id="q1"></a>` hier.\n\n<a id="q1"></a>\n\n## Ziel\n\nziel alpha\n' >e1.md
+printf -- '- `<!-- k --> <a id="q2"></a>` gilt als ohne Inhalt.\n\n<a id="q2"></a>\n\n## Ziel\n\nziel alpha\n' >e2.md
+printf '| A | B |\n|---|---|\n| x | `Form <a id="q6"></a>` |\n\n<a id="q6"></a>\n\n## Ziel\n\nziel alpha\n' >e6.md
+printf '## Kopf\n\nNur `in <a id="q7"></a> Code`.\n' >e7.md
+printf 'Erst `code` dann <a id="q8"></a> Text alpha\n\n## Z\n\nz\n' >e8.md
 c0=$(commit c0) || exit 2
 
 # --- je Commit eine Änderung -------------------------------------------------
@@ -106,7 +111,7 @@ printf '## Tilde\n\n```\n~~~\n## nicht\n```\n\nnachher beta\n' >ft.md
 printf '## Eins\n\n```a`b\n## Zwei\n\nzwei beta\n' >fb.md
 printf '# S\n\n<a id="oben"></a>\n<a id="unten"></a>\n\n## Abschnitt\n\nKörper beta.\n' >st.md
 printf '<a id="s1"></a>\n<a id="s2"></a>\n\nAbsatz beta.\n\n## H\n\nh\n' >sp.md
-for f in fi3.md fi4.md code.md dup.md lvl.md indent.md kom.md ik.md close.md n4.md n5.md n6.md un.md mi.md hc.md tb.md; do
+for f in fi3.md fi4.md code.md dup.md lvl.md indent.md kom.md ik.md close.md n4.md n5.md n6.md un.md mi.md hc.md tb.md e1.md e2.md e6.md e8.md; do
   sed 's/alpha/beta/' "$f" >"$f.neu" && mv "$f.neu" "$f"
 done
 c_wort=$(commit "Wortänderungen") || exit 2
@@ -262,6 +267,12 @@ cases() {
   check "Einzug aus Leerzeichen und Tab ist mehrdeutig" 2 'm3" mehrdeutig' "$c0" mi.md '#m3' "$c_wort" mi.md '#m3'
   check "Tabellenzeile mit Inline-Code bleibt gelesen" 1 'cmp 1' "$c0" tb.md '#mr-009' "$c_wort" tb.md '#mr-009'
   check "Kommentar in der id-Zeile vor Heading, Einheit ist der Abschnitt" 1 'cmp 1' "$c0" hc.md '#m8' "$c_wort" hc.md '#m8'
+  # id in einem Code-Span mit Text davor wird nicht gelesen.
+  check "id in Code-Span im Absatz zählt nicht" 1 'cmp 1' "$c0" e1.md '#q1' "$c_wort" e1.md '#q1'
+  check "id und Kommentar in Code-Span zählen nicht" 1 'cmp 1' "$c0" e2.md '#q2' "$c_wort" e2.md '#q2'
+  check "id in Code-Span einer Tabellenzelle zählt nicht" 1 'cmp 1' "$c0" e6.md '#q6' "$c_wort" e6.md '#q6'
+  check "id nur in Code-Span mit Text davor" 2 'keine Einheit, Exit 2' "$c0" e7.md '#q7' "$c0" e7.md '#q7'
+  check "id nach geschlossenem Code-Span wird gelesen" 1 'cmp 1' "$c0" e8.md '#q8' "$c_wort" e8.md '#q8'
   check "Lokator mit führenden Nullen ist dezimal" 0 'cmp 0' "$c0" l12.md 'L010-012' "$c0" l12.md 'L10-12'
   # Lokator strikt.
   check "Lokator ohne Bindestrich" 2 'Lokator L7 \(Form' "$c0" lz.md 'L7' "$c0" lz.md 'L7-7'

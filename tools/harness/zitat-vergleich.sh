@@ -52,11 +52,16 @@ einheit() {
           }
           # idform(l): 0 kein <a id="want" außerhalb von Inline-Code, 1 nur die
           # Form <a id="want">, 2 mindestens eine andere Form (Attribut, />).
-          function idform(l, off, p, res) {
+          # Eine Fundstelle hinter einer ungeraden Zahl Backticks der Zeile
+          # steht in Inline-Code; die Zählung trägt nur in einer Zeile, die der
+          # Hauptblock nicht als mehrdeutig markiert (einzelne Backticks in
+          # gerader Zahl, kein offener Code-Span aus der Vorzeile).
+          function idform(l, off, p, res, t) {
             res = 0; off = 0
             while ((p = index(substr(l, off + 1), tag)) > 0) {
               p += off
-              if (p == 1 || substr(l, p - 1, 1) != "`") {
+              t = substr(l, 1, p - 1)
+              if (gsub(/`/, "`", t) % 2 == 0) {
                 if (substr(l, p + length(tag), 1) == ">") { if (res == 0) res = 1 } else res = 2
               }
               off = p
@@ -69,8 +74,9 @@ einheit() {
           # incom trägt einen offenen Kommentar in die nächste Zeile. Ein <!--
           # hinter einer ungeraden Zahl Backticks gilt als Inline-Code und öffnet
           # nichts; sicher ist das nur bei einzelnen Backticks in gerader Zahl
-          # ohne offenen Code-Span aus der Vorzeile, sonst markiert der
-          # Hauptblock die Zeile als mehrdeutig.
+          # ohne offenen Code-Span aus der Vorzeile. Eine Zeile mit unsicherer
+          # Kommentar-Grenze markiert der Hauptblock als unsicher; jede spätere
+          # Fundstelle von want ist dann mehrdeutig.
           function ohnekommentar(l, r, p, pre, t) {
             r = ""
             while (l != "") {

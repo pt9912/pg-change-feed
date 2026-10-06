@@ -73,7 +73,8 @@ realen Bump stehen im Plan von `slice-zitat-vergleich-werkzeug` §2.
   `-1`, `-2`, … . Headings in einem Code-Fence zählen nicht. Aufgelöst wird die
   erste Fundstelle in Dateireihenfolge, Slug oder `id`.
 - **HTML-`id`** — gelesen wird nur das öffnende Tag `<a id="X">` außerhalb von
-  Fence, Inline-Code (vor dem Tag steht kein Backtick), eingerücktem Code (die
+  Fence, Inline-Code (vor der Fundstelle steht in der Zeile eine ungerade Zahl
+  Backticks), eingerücktem Code (die
   Zeile beginnt mit vier Leerzeichen oder einem Tab; das trifft auch einen
   Fence in einem Listenpunkt) und HTML-Kommentar (`<!--` bis `-->`, auch über
   Zeilen; ein `<!--` hinter einer ungeraden Zahl Backticks der Zeile steht in
@@ -105,8 +106,11 @@ realen Bump stehen im Plan von `slice-zitat-vergleich-werkzeug` §2.
   Leerzeichen und Tab. Exit 2 heißt hier „nicht messbar, Urteil am Diff“
   ([`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
   Entscheidung 2). Einzelne Backticks in gerader Zahl ohne offenen Span aus
-  der Vorzeile gelten als sicher gelesen: Was zwischen einem Paar steht, ist
-  Inline-Code.
+  der Vorzeile gelten als sicher gelesen: Eine `id` oder ein `<!--`, vor dem in
+  der Zeile eine ungerade Zahl Backticks steht, liegt in Inline-Code und wird
+  nicht gelesen, auch mit Text zwischen Backtick und Tag
+  (`` `siehe <a id="x"></a>` ``); bei gerader Zahl liegt die Fundstelle
+  außerhalb.
 - **Fence** (CommonMark): öffnet mit 0 bis 3 Leerzeichen Einzug und mindestens
   drei gleichen Zeichen `` ` `` oder `~` (ein Backtick-Fence trägt im
   Info-String keinen Backtick) und schließt nur mit demselben Zeichen in
@@ -191,6 +195,18 @@ verlangt, und das Skript benutzt keine Funktion, die nur gawk kennt.
   §Einheit). Ein `<!--` in einer eingerückten Code-Zeile öffnet einen
   Kommentar; spätere `id`s bis zum nächsten `-->` sind dann ausgeblendet, die
   Einheit ist leer (Exit 2) oder die eines gleichnamigen Heading-Slugs.
+- **`<!--` in eingerücktem Code nach einer `id`-Zeile (fail-open).** Folgt auf
+  eine `id`-Zeile ohne Inhalt eingerückter Code, der mit `<!--` beginnt, so gilt
+  der Code als Kommentar und damit als „ohne Inhalt“; die Einheit wird der
+  Abschnitt des nächsten Headings statt des Code-Blocks, und eine Änderung im
+  Code-Block ergibt `cmp 0`. Heute ohne Fundstelle (übernommen aus dem
+  Re-Review zu Fixrunde 2); der Messende prüft diese Stellung am Diff.
+- **Eingerückter Code in einem Blockzitat (fail-open).** Container werden
+  nicht gelesen; die Einzugsregel liest nur den Zeilenanfang. Eine `id` in
+  `>     <a id="x"></a>` gilt als Anker, und mit einer echten `id` gleichen
+  Namens danach misst der Vergleich die falsche Stelle (`cmp 0` möglich).
+  Heute ohne Fundstelle (übernommen aus dem Re-Review zu Fixrunde 2); der
+  Messende prüft diese Stellung am Diff.
 - **Eingerückter Absatz in einem Listenpunkt.** Eine `id` in einer Zeile mit
   vier Leerzeichen Einzug wird auch dann nicht gelesen, wenn die Zeile nach
   CommonMark ein Absatz eines Listenpunkts ist; der Verweis endet mit Exit 2
@@ -242,7 +258,9 @@ Ebene höchstens 6, schließende `#`-Folge) · mehrdeutige Stellung mit Exit 2
 mit offenem Code-Span, `id` nach unsicherer Kommentar-Grenze, Einzug aus
 Leerzeichen und Tab) und ihre Gegenprobe (Tabellenzeile mit Inline-Code
 bleibt gelesen) · Kommentar in der `id`-Zeile vor einem Heading · Lokator mit
-führenden Nullen (`L010-012`) · Lokator strikt (`L7`, `L1-2-3`,
+führenden Nullen (`L010-012`) · `id` in einem Code-Span mit Text davor
+(Absatz, mit Kommentar, Tabellenzelle, nur im Code-Span) und die Gegenprobe
+`id` nach geschlossenem Code-Span · Lokator strikt (`L7`, `L1-2-3`,
 `L5-3`, `L0-1`) · Locale (`LC_ALL=C` beim Aufrufer) und Stub-`awk` ohne
 Multibyte · Argumentzahl · roter Vergleich unter `set -euo pipefail` beim
 Aufrufer (über `SHELLOPTS`) · `source` lässt die Shell-Optionen des Aufrufers
