@@ -6,6 +6,8 @@ Ausführliche Fassung der Index-Zeilen aus [`harness/README.md` §Sensors](../RE
 
 Upstream-Pin-Freshness P3–P6 ([`ADR-0051`](../../docs/plan/adr/0051-cicd-pipeline-github-actions.md) Pin-Inventar): je Achse ein Digest-Vergleich einer Makefile-/`a-check.mk`-Variable (`TOOLCHAIN_RACE_IMAGE`, `PG_TEST_IMAGE`, `D_MIGRATE_IMAGE`, `A_CHECK_IMAGE`) gegen den aktuellen Registry-Digest, über das gemeinsame `tools/harness/pin-stale.sh` (analog `make image-stale`, aber Quelle ist eine Variable statt einer Dockerfile-`FROM`-Zeile); P5/P6 sind reine Digest-Pins ohne eigenen Tag, deshalb Vergleich gegen den jeweiligen `:latest`-Tag der GHCR-Pakete. Je Achse eine Zeile `OK`, `DRIFT` oder `UNBESTIMMT` mit Variable, Tag und Digest. Gemessen 2026-10-05 mit den vier Zielen einzeln, je Exit 0 und gedruckte Zeile `OK` für `TOOLCHAIN_RACE_IMAGE` (`golang:1.27`), `PG_TEST_IMAGE` (`postgres:18-alpine`), `D_MIGRATE_IMAGE` und `A_CHECK_IMAGE` (je `:latest`); das Ergebnis ist der Stand dieses Laufs und bewegt sich mit jedem Neubau eines Upstream-Tags
 
+Ein Bump von `A_CHECK_IMAGE` folgt [§Bump eines Gate-Werkzeugs](#bump-eines-gate-werkzeugs-reichweite-vor-dem-pin-commit).
+
 **Bindung:** kein Gate, [`ADR-0051`](../../docs/plan/adr/0051-cicd-pipeline-github-actions.md) Entscheidung 7, braucht Netz
 
 ## `make pin-stale-dcheck`
@@ -13,6 +15,21 @@ Upstream-Pin-Freshness P3–P6 ([`ADR-0051`](../../docs/plan/adr/0051-cicd-pipel
 Upstream-Pin-Freshness P7 ([`ADR-0051`](../../docs/plan/adr/0051-cicd-pipeline-github-actions.md) Pin-Inventar): zwei Achsen für `d-check.mk`s `DCHECK_IMAGE`/`DCHECK_DIGEST` — Digest-Drift (trägt der gepinnte Tag noch denselben Bau?) und Tag-Frische (existiert ein neuerer `pt9912/d-check`-Release als der gepinnte Tag, über die GitHub-Releases-API?)
 
 **Bindung:** kein Gate, [`ADR-0051`](../../docs/plan/adr/0051-cicd-pipeline-github-actions.md) Entscheidung 7, braucht Netz
+
+### Bump eines Gate-Werkzeugs: Reichweite vor dem Pin-Commit
+
+Hebt ein Slice den Pin eines Werkzeugs, dessen Lauf in `make gates` blockiert —
+d-check (`DCHECK_IMAGE`/`DCHECK_DIGEST` in `d-check.mk`), a-check
+(`A_CHECK_IMAGE`) —, liest er vor dem Pin-Commit das Changelog jeder
+übersprungenen Version auf Änderungen dessen, was ein aktives Modul meldet oder
+durchlässt. Jede Änderung wird gegen die ADR gehalten, die die Reichweite der
+betroffenen Regel trägt. Eine **Erweiterung** — das Gate meldet eine Klasse, die
+keine Regel verbietet — bekommt vor dem Pin-Commit eine ADR oder ein Verdikt des
+Architect; ohne dieses Artefakt landet der Pin nicht. Der Plan des Bumps trägt je
+Version „keine Reichweiten-Änderung“ oder die Änderung mit ihrem Artefakt. Null
+Befunde am Arbeitsbaum belegen keine gleiche Reichweite: sie sagen nur, dass der
+Bestand die neue Klasse heute nicht trifft. Herkunft:
+`BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger` · seit slice-dcheck-v0-82-0.
 
 ## `make pin-stale-baseline`
 

@@ -246,6 +246,17 @@ Verweis Form, Einheit, beide Stände, roh oder normalisiert und die gedruckte
 Zeile von `make zitat-vergleich`, oder „nicht messbar“ mit Grund (`ADR-0158`
 Entscheidung 4, 5; für einen MR-Eintrag `ADR-0159` Entscheidung 2); für Records bleibt die Commit-Kennung der Beleg.
 
+**Eine Abweichung vom Wortlaut ist eine Frage, keine Regel.** Weicht eine Arbeit
+vom Wortlaut einer `Accepted`-ADR ab, schreibt keine Rolle — Planner,
+Implementer, Orchestrator — die abweichende Regel in einen Träger (Slice-Plan,
+Briefing, Skill, Target-Vertrag, Workflow), auch nicht offen benannt als
+„Ausführungsregel“, „Auslegung“ oder Risiko. Die Abweichung geht als Frage an
+den Architect; gültig wird sie mit seinem Artefakt: Folge-ADR mit
+`Supersedes`, Verdikt unter `docs/reviews/` oder der Befund, dass der Wortlaut
+die Arbeit deckt. Bis dahin folgt die Arbeit dem Wortlaut oder steht.
+Herkunft: `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` ·
+seit slice-dcheck-v0-82-0.
+
 ### 3.6 Gates dürfen nicht ohne ADR gelockert werden
 
 Jede Schwellen-Senkung (Coverage, Linter-Strenge, Architekturregel)

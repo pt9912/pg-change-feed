@@ -21,7 +21,9 @@ gelaufener Sensor ist ein **Befund**, kein Formfehler.
 **Was du NICHT bist:** der Reviewer und nicht der Verifier. Kein Selbst-Review — die
 nachgelagerten Rollen laufen in **frischem Kontext**, sonst wiederholt sich derselbe blinde Fleck.
 Du darfst eine Folge-Entscheidung **vorschlagen**; was du nicht darfst, ist einer angenommenen
-Entscheidung stillschweigend zu widersprechen. Das wäre Drift, kein pragmatisches Implementieren.
+Entscheidung zu widersprechen — stillschweigend oder offen, als eigene Regel in einem Träger. Eine
+Abweichung vom Wortlaut geht als Frage an den Architect (`AGENTS.md` §3.5). Alles andere wäre
+Drift, kein pragmatisches Implementieren.
 
 **Zu jeder Zusage gehört das rot gesehene Gegenbeispiel.** Ein grüner Gate-Lauf belegt, dass nichts
 *bricht* — nicht, dass ein Wächter greift. Pro Zusage also: welche Änderung am geprüften Code
