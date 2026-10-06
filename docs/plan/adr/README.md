@@ -84,7 +84,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0072 | hostpaths aktiviert — kein Host-Pfad, ohne Ausnahme (→ ADR-0074/0075, teilw.) | Accepted | 2026-09-15 | [0072-hostpaths-modul-aktiviert-ohne-ausnahme.md](0072-hostpaths-modul-aktiviert-ohne-ausnahme.md) |
 | ADR-0073 | Zitat-Korrektur an immutablen Dokumenten — die Klasse für §3.5 (→ ADR-0157) | Accepted | 2026-09-15 | [0073-zitat-korrektur-an-immutablen-dokumenten.md](0073-zitat-korrektur-an-immutablen-dokumenten.md) |
 | ADR-0074 | Zitationsform Schwester-Repo — Hausform (Supersedes ADR-0072, teilweise) | Accepted | 2026-09-15 | [0074-zitationsform-schwester-repo-hausform.md](0074-zitationsform-schwester-repo-hausform.md) |
-| ADR-0075 | `hostpaths`-Regel — Reichweite, §3.11-Entwurf, Lokator-Disposition | Accepted | 2026-09-15 | [0075-hostpaths-reichweite-und-wortlaut.md](0075-hostpaths-reichweite-und-wortlaut.md) |
+| ADR-0075 | `hostpaths`-Regel — Reichweite, §3.11-Entwurf, Lokator (→ ADR-0160, teilw.) | Accepted | 2026-09-15 | [0075-hostpaths-reichweite-und-wortlaut.md](0075-hostpaths-reichweite-und-wortlaut.md) |
 | ADR-0076 | Beispiel-Clients `examples/` (Supers. ADR-0060/0068, teilw.; → ADR-0079/0098) | Accepted | 2026-09-15 | [0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md](0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md) |
 | ADR-0077 | Coverage-Rampen — Neu-Bemessung bei Subjekt-Transfer (→ ADR-0078, teilweise) | Accepted | 2026-09-15 | [0077-coverage-rampen-neu-bemessung-subjekt-transfer.md](0077-coverage-rampen-neu-bemessung-subjekt-transfer.md) |
 | ADR-0078 | Coverage-Rampen — Transfer-Nachweis statt Summen-Konstanz | Accepted | 2026-09-15 | [0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md](0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md) |
@@ -166,9 +166,10 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0154 | Spec-Lücken OTLP, TLS, API-Token: Ist-Zustand festgeschrieben | Accepted | 2026-10-04 | [0154-spec-luecken-otlp-tls-token-ist-zustand.md](0154-spec-luecken-otlp-tls-token-ist-zustand.md) |
 | ADR-0155 | PER-001 relativ zur Festschreib-Latenz (Supers. ADR-0151, ADR-0104 teilw.) | Accepted | 2026-10-05 | [0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md](0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md) |
 | ADR-0156 | `versions`-Modul nimmt die Records unter `done/**` aus | Accepted | 2026-10-06 | [0156-versions-gate-nimmt-done-records-aus.md](0156-versions-gate-nimmt-done-records-aus.md) |
-| ADR-0157 | Zitat-Korrektur nach Aussage; MR-Pins (Supers. ADR-0073, teilw.; → ADR-0158) | Accepted | 2026-10-06 | [0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md](0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md) |
+| ADR-0157 | Zitat-Korrektur nach Aussage; MR-Pins (Supers. ADR-0073, teilw.; → 0158/0160) | Accepted | 2026-10-06 | [0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md](0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md) |
 | ADR-0158 | Zitat-Korrektur: Vergleichseinheit (Supers. ADR-0157, teilw.; → ADR-0159) | Accepted | 2026-10-06 | [0158-zitat-korrektur-vergleichseinheit-je-verweisform.md](0158-zitat-korrektur-vergleichseinheit-je-verweisform.md) |
 | ADR-0159 | Zitat-Korrektur: HTML-`id`, MR-Pins, Befehlsform (Supers. ADR-0158, teilw.) | Accepted | 2026-10-06 | [0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md](0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md) |
+| ADR-0160 | Leer-Test der Teil-Range; Home-relative Pfade (Supers. ADR-0157/0075, teilw.) | Accepted | 2026-10-06 | [0160-teil-range-leer-test-und-hostpaths-home-relativ.md](0160-teil-range-leer-test-und-hostpaths-home-relativ.md) |
 
 ## Konventionen
 
