@@ -20,7 +20,8 @@
 
 # einheit <stand> <pfad> [<ref>] — druckt die Einheit roh auf stdout; leere
 # oder nicht lesbare Einheit, ungültiger Lokator und eine `id` in anderer Form
-# als `<a id="X">` enden mit 2 und einer Zeile auf stderr.
+# als `<a id="X">` oder in einer mehrdeutigen Stellung enden mit 2 und einer
+# Zeile auf stderr.
 einheit() {
   local stand="$1" pfad="$2" ref="${3:-}" out a b rc=0
   out=$(git show "$stand:$pfad" 2>/dev/null && printf .) || { echo "einheit: $stand:$pfad nicht lesbar" >&2; return 2; }
@@ -66,7 +67,10 @@ einheit() {
           function leer(l, r) { r = l; gsub(/<a id="[^"]*"><\/a>/, "", r); return r ~ /^[[:space:]]*$/ }
           # ohnekommentar(l): l ohne die Teile in einem HTML-Kommentar <!-- … -->;
           # incom trägt einen offenen Kommentar in die nächste Zeile. Ein <!--
-          # hinter einer ungeraden Zahl Backticks steht in Inline-Code und öffnet nichts.
+          # hinter einer ungeraden Zahl Backticks gilt als Inline-Code und öffnet
+          # nichts; sicher ist das nur bei einzelnen Backticks in gerader Zahl
+          # ohne offenen Code-Span aus der Vorzeile, sonst markiert der
+          # Hauptblock die Zeile als mehrdeutig.
           function ohnekommentar(l, r, p, pre, t) {
             r = ""
             while (l != "") {
@@ -96,6 +100,21 @@ einheit() {
             f = 0
             if (!inf) { k = ohnekommentar($0); if ($0 !~ /^(    |\t)/) f = idform(k) }
             if (f == 2) bad = 1
+            # Mehrdeutig (Exit 4): eine Zeile mit <a id="want" oder einer
+            # Kommentar-Grenze trägt einen Backtick-Lauf ab Länge 2, eine ungerade
+            # Zahl Backticks oder steht in einem Absatz mit offenem Code-Span; dann
+            # ist Inline-Code nicht sicher erkannt. Eine unsichere Kommentar-Grenze
+            # macht jede spätere Fundstelle von want mehrdeutig; ebenso ein Einzug
+            # aus Leerzeichen und Tab vor want.
+            if (inf) { span = 0 } else {
+              kand = index($0, tag) && $0 !~ /^(    |\t)/
+              grenz = index($0, "<!--") || index($0, "-->")
+              t = $0; nb = gsub(/`/, "`", t)
+              if ((kand || grenz) && (span % 2 || nb % 2 || index($0, "``"))) { if (kand) mehr = 1; else unsicher = 1 }
+              if (kand && unsicher) mehr = 1
+              if (kand && match($0, /^ +\t/) && RLENGTH <= 4) mehr = 1
+              if ($0 ~ /^[[:space:]]*$/ || $0 ~ /^#+ /) span = 0; else span += nb
+            }
           }
           done { next }
           !inf && match($0, /^#+ /) && RLENGTH <= 7 {
@@ -107,15 +126,19 @@ einheit() {
               if (s == want || f == 1) { mode = "abs"; ilvl = lvl; next }
             }
           }
-          mode == "vor" && !inf && leer($0) { next }
+          mode == "vor" && !inf && leer(k) { next }
           mode == "vor" { mode = "blk" }
           mode == "abs" || mode == "blk" { print; next }
           mode == "" && f == 1 {
             if ($0 ~ /^[[:space:]]*[|]/) { print; done = 1; next }
-            if (leer($0)) { mode = "vor"; next }
+            if (leer(k)) { mode = "vor"; next }
             mode = "blk"; print
           }
-          END { if (bad) exit 3 }' && printf .) || rc=$?
+          END { if (bad) exit 3; if (mehr) exit 4 }' && printf .) || rc=$?
+        if [ "$rc" -eq 4 ]; then
+          echo "einheit: <a id=\"${ref#\#}\" mehrdeutig (Code-Span, Kommentar oder Einzug nicht sicher erkannt) in $stand:$pfad, nicht gelesen" >&2
+          return 2
+        fi
         if [ "$rc" -eq 3 ]; then
           echo "einheit: <a id=\"${ref#\#}\" in anderer Form als <a id=\"${ref#\#}\"> (Attribut oder selbstschließend) in $stand:$pfad, nicht gelesen" >&2
           return 2

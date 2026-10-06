@@ -88,10 +88,25 @@ realen Bump stehen im Plan von `slice-zitat-vergleich-werkzeug` §2.
   | in einer anderen Zeile mit Text | der Block ab dieser Zeile bis vor das nächste Heading beliebiger Ebene oder bis zum Dateiende |
 
   Eine **Zeile ohne Inhalt** trägt nach dem Entfernen aller `<a id="…"></a>`
-  nur Leerraum. Gestapelte `id`-Zeilen vor einem Heading adressieren deshalb
-  alle den Abschnittskörper dieses Headings, vor einem Absatz den Block ab dem
-  Absatz. Ein Fence direkt nach einer `id`-Zeile beginnt den Block; seine
-  Öffnungszeile gehört zur Einheit.
+  und aller HTML-Kommentar-Teile nur Leerraum. Gestapelte `id`-Zeilen vor einem
+  Heading adressieren deshalb alle den Abschnittskörper dieses Headings, vor
+  einem Absatz den Block ab dem Absatz; eine Zeile `<!-- … --> <a id="X"></a>`
+  vor einem Heading ebenso den Abschnitt. Ein Fence direkt nach einer
+  `id`-Zeile beginnt den Block; seine Öffnungszeile gehört zur Einheit.
+
+  **Mehrdeutig endet mit Exit 2.** Das Werkzeug parst Code-Spans nicht. Trägt
+  eine Zeile außerhalb eines Fence `<a id="X"` (nicht eingerückt) oder eine
+  Kommentar-Grenze (`<!--`, `-->`) und dazu einen Backtick-Lauf ab Länge 2,
+  eine ungerade Zahl Backticks, oder steht sie in einem Absatz, dessen
+  Vorzeilen eine ungerade Zahl Backticks tragen (offener Code-Span), so ist
+  nicht sicher, ob `id` oder Kommentar in Inline-Code stehen. Eine solche
+  `id`-Zeile und jede Fundstelle von `X` nach einer solchen Kommentar-Grenze
+  enden mit Exit 2 („mehrdeutig“); ebenso eine `id`-Zeile mit einem Einzug aus
+  Leerzeichen und Tab. Exit 2 heißt hier „nicht messbar, Urteil am Diff“
+  ([`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
+  Entscheidung 2). Einzelne Backticks in gerader Zahl ohne offenen Span aus
+  der Vorzeile gelten als sicher gelesen: Was zwischen einem Paar steht, ist
+  Inline-Code.
 - **Fence** (CommonMark): öffnet mit 0 bis 3 Leerzeichen Einzug und mindestens
   drei gleichen Zeichen `` ` `` oder `~` (ein Backtick-Fence trägt im
   Info-String keinen Backtick) und schließt nur mit demselben Zeichen in
@@ -119,7 +134,7 @@ Unterschieds; Meldungen von `einheit` (nicht lesbar, Lokator, leere Einheit,
 |---|---|
 | 0 | die Einheiten sind gleich (`cmp 0`) |
 | 1 | die Einheiten sind verschieden (`cmp 1`) |
-| 2 | eine Seite hat keine Einheit (Datei an dem Stand nicht lesbar, Lokator ungültig, Einheit leer, `id` in anderer Form), das Tag-Paar ist ungültig, die Zahl der Argumente ist nicht 6 oder 7, oder `awk` besteht die Fähigkeitsprobe nicht |
+| 2 | eine Seite hat keine Einheit (Datei an dem Stand nicht lesbar, Lokator ungültig, Einheit leer, `id` in anderer Form, `id` in mehrdeutiger Stellung), das Tag-Paar ist ungültig, die Zahl der Argumente ist nicht 6 oder 7, oder `awk` besteht die Fähigkeitsprobe nicht |
 
 **Die Farbe steht in der Zeile.** Über `make` kommt jeder Exit ungleich 0 als
 der Make-eigene Exit `2` an; ein Beleg zitiert deshalb die gedruckte Zeile
@@ -145,6 +160,8 @@ und der Slug des Renderers):
 | `id` in eingerücktem Code und in HTML-Kommentar | nicht gelesen | gelesen; `harness/conventions.md#mr-<NNN>` löst auf den Kommentar auf |
 | Lokator | nur `L<a>-<b>` mit `1 <= a <= b` | `L7` als `L7-7`, `L5-3` als Zeile 5 |
 | schließende `#`-Folge eines Headings | gehört nicht zum Slug (`## Eins ##` → `#eins`) | gehört zum Slug (`#eins-`) |
+| mehrdeutige Stellung (Backtick-Lauf ab 2, ungerade Backticks, offener Code-Span, Einzug aus Leerzeichen und Tab) | Exit 2, „mehrdeutig“ | gelesen wie jede andere Zeile |
+| HTML-Kommentar in einer `id`-Zeile | gilt als ohne Inhalt | gilt als Text, Einheit ist der Block |
 
 Daneben prüft das Werkzeug die Zahl der Argumente und den Exit von `sed` am
 Zeilen-Lokator und von `awk` am Anker; beides endet mit Exit 2.
@@ -166,12 +183,19 @@ verlangt, und das Skript benutzt keine Funktion, die nur gawk kennt.
   nicht; die Einheit ist leer, Exit 2 — adressiert wird dann über die `id`.
   Ein Heading mit Einzug, ein Setext-Heading und ein Tab im Fence-Einzug
   werden nicht gelesen. Ein Heading in einem HTML-Kommentar zählt als Heading
-  (nur die `id` wird dort ausgeblendet). Ob ein `<!--` in Inline-Code steht,
-  liest das Werkzeug an der Zahl der Backticks davor in derselben Zeile; ein
-  Code-Span über mehrere Zeilen oder mit doppelten Backticks kann das
-  verfehlen — ein falsch geöffneter Kommentar blendet die `id`s bis zum
-  nächsten `-->` aus; die Einheit ist dann leer (Exit 2) oder die eines
-  gleichnamigen Heading-Slugs.
+  (nur die `id` wird dort ausgeblendet).
+- **Code-Spans werden nicht geparst.** Ob ein `<!--` oder eine `id` in
+  Inline-Code steht, liest das Werkzeug nur bei einzelnen Backticks in gerader
+  Zahl ohne offenen Span aus der Vorzeile; jede andere Backtick-Lage an einer
+  `id`-Zeile oder Kommentar-Grenze endet mit Exit 2 („mehrdeutig“, siehe
+  §Einheit). Ein `<!--` in einer eingerückten Code-Zeile öffnet einen
+  Kommentar; spätere `id`s bis zum nächsten `-->` sind dann ausgeblendet, die
+  Einheit ist leer (Exit 2) oder die eines gleichnamigen Heading-Slugs.
+- **Eingerückter Absatz in einem Listenpunkt.** Eine `id` in einer Zeile mit
+  vier Leerzeichen Einzug wird auch dann nicht gelesen, wenn die Zeile nach
+  CommonMark ein Absatz eines Listenpunkts ist; der Verweis endet mit Exit 2
+  (fail-closed), adressiert wird dann über ein Heading oder eine nicht
+  eingerückte `id`.
 - **Schluss-Umbruch im Abschnitts- und Block-Modus.** `awk` schreibt jede Zeile
   mit Zeilenumbruch; ein Unterschied allein im Schluss-Umbruch der Datei fällt
   dort nicht auf.
@@ -213,7 +237,12 @@ selbstschließend, neben gleichnamigem Heading-Slug, in Inline-Code) · `id` in
 eingerücktem Code und in HTML-Kommentar (mehrzeilig, einzeilig, `<!--` in
 Inline-Code) · Normalisierung nur am Segment (`tool-v6.14.0` bleibt roh, Punkt
 im Tag ist kein Platzhalter) · Slug (ohne HTML-Tags, Dubletten `-1`/`-2`,
-Ebene höchstens 6, schließende `#`-Folge) · Lokator strikt (`L7`, `L1-2-3`,
+Ebene höchstens 6, schließende `#`-Folge) · mehrdeutige Stellung mit Exit 2
+(Kommentar hinter einzelnem Backtick, neben Doppel-Backtick-Span, im Absatz
+mit offenem Code-Span, `id` nach unsicherer Kommentar-Grenze, Einzug aus
+Leerzeichen und Tab) und ihre Gegenprobe (Tabellenzeile mit Inline-Code
+bleibt gelesen) · Kommentar in der `id`-Zeile vor einem Heading · Lokator mit
+führenden Nullen (`L010-012`) · Lokator strikt (`L7`, `L1-2-3`,
 `L5-3`, `L0-1`) · Locale (`LC_ALL=C` beim Aufrufer) und Stub-`awk` ohne
 Multibyte · Argumentzahl · roter Vergleich unter `set -euo pipefail` beim
 Aufrufer (über `SHELLOPTS`) · `source` lässt die Shell-Optionen des Aufrufers

@@ -75,6 +75,14 @@ printf '1. Liste\n\n    ```\n    <a id="ein"></a>\n    ```\n\n<a id="ein"></a>\n
 printf '<!-- Kommentar\n<a id="kom"></a>\n-->\n<!-- <a id="k2"></a> -->\n\n<a id="kom"></a>\n<a id="k2"></a>\n\n## Ziel\n\nziel alpha\n' >kom.md
 printf 'Text mit `<!--` in Inline-Code.\n\n<a id="k3"></a>\n\n## Z3\n\nz3 alpha\n' >ik.md
 printf '## Eins ##\n\nalpha\n\n## Zwei\n\nz\n' >close.md
+printf 'Ein ` Backtick <!-- <a id="m4"></a> -->\n\n<a id="m4"></a>\n\n## Ziel\n\nziel alpha\n' >n4.md
+printf '``a`b`` <!-- <a id="m5"></a> --> `\n\n<a id="m5"></a>\n\n## Ziel\n\nziel alpha\n' >n5.md
+printf 'Text `beginnt\nendet `<!-- <a id="m6"></a> -->` x\n\n<a id="m6"></a>\n\n## Ziel\n\nziel alpha\n' >n6.md
+printf 'Ein ` Backtick <!--\n<a id="m7"></a>\n-->\n\n<a id="m7"></a>\n\n## Ziel\n\nziel alpha\n' >un.md
+printf '  \t<a id="m3"></a>\n\n<a id="m3"></a>\n\n## Ziel\n\nziel alpha\n' >mi.md
+printf '<!-- k --> <a id="m8"></a>\n\n## Ziel\n\nziel alpha\n' >hc.md
+printf '| MR | Titel | Text |\n|---|---|---|\n| MR-009 <a id="mr-009"></a> | `x` | y alpha |\n' >tb.md
+printf 'z1\nz2\nz3\nz4\nz5\nz6\nz7\nz8\nz9\nz10\nz11\nz12\n' >l12.md
 c0=$(commit c0) || exit 2
 
 # --- je Commit eine Änderung -------------------------------------------------
@@ -98,7 +106,7 @@ printf '## Tilde\n\n```\n~~~\n## nicht\n```\n\nnachher beta\n' >ft.md
 printf '## Eins\n\n```a`b\n## Zwei\n\nzwei beta\n' >fb.md
 printf '# S\n\n<a id="oben"></a>\n<a id="unten"></a>\n\n## Abschnitt\n\nKörper beta.\n' >st.md
 printf '<a id="s1"></a>\n<a id="s2"></a>\n\nAbsatz beta.\n\n## H\n\nh\n' >sp.md
-for f in fi3.md fi4.md code.md dup.md lvl.md indent.md kom.md ik.md close.md; do
+for f in fi3.md fi4.md code.md dup.md lvl.md indent.md kom.md ik.md close.md n4.md n5.md n6.md un.md mi.md hc.md tb.md; do
   sed 's/alpha/beta/' "$f" >"$f.neu" && mv "$f.neu" "$f"
 done
 c_wort=$(commit "Wortänderungen") || exit 2
@@ -246,6 +254,15 @@ cases() {
   check "id in mehrzeiligem HTML-Kommentar zählt nicht" 1 'cmp 1' "$c0" kom.md '#kom' "$c_wort" kom.md '#kom'
   check "id in einzeiligem HTML-Kommentar zählt nicht" 1 'cmp 1' "$c0" kom.md '#k2' "$c_wort" kom.md '#k2'
   check "<!-- in Inline-Code öffnet keinen Kommentar" 1 'cmp 1' "$c0" ik.md '#k3' "$c_wort" ik.md '#k3'
+  # Mehrdeutige Stellung endet mit Exit 2.
+  check "Kommentar hinter einzelnem Backtick ist mehrdeutig (n4)" 2 'm4" mehrdeutig' "$c0" n4.md '#m4' "$c_wort" n4.md '#m4'
+  check "Kommentar neben Doppel-Backtick-Span ist mehrdeutig (n5)" 2 'm5" mehrdeutig' "$c0" n5.md '#m5' "$c_wort" n5.md '#m5'
+  check "Kommentar im Absatz mit offenem Code-Span ist mehrdeutig (n6)" 2 'm6" mehrdeutig' "$c0" n6.md '#m6' "$c_wort" n6.md '#m6'
+  check "id nach unsicherer Kommentar-Grenze ist mehrdeutig" 2 'm7" mehrdeutig' "$c0" un.md '#m7' "$c_wort" un.md '#m7'
+  check "Einzug aus Leerzeichen und Tab ist mehrdeutig" 2 'm3" mehrdeutig' "$c0" mi.md '#m3' "$c_wort" mi.md '#m3'
+  check "Tabellenzeile mit Inline-Code bleibt gelesen" 1 'cmp 1' "$c0" tb.md '#mr-009' "$c_wort" tb.md '#mr-009'
+  check "Kommentar in der id-Zeile vor Heading, Einheit ist der Abschnitt" 1 'cmp 1' "$c0" hc.md '#m8' "$c_wort" hc.md '#m8'
+  check "Lokator mit führenden Nullen ist dezimal" 0 'cmp 0' "$c0" l12.md 'L010-012' "$c0" l12.md 'L10-12'
   # Lokator strikt.
   check "Lokator ohne Bindestrich" 2 'Lokator L7 \(Form' "$c0" lz.md 'L7' "$c0" lz.md 'L7-7'
   check "Lokator mit drittem Teil" 2 'Lokator L1-2-3 \(Form' "$c0" lz.md 'L1-2-3' "$c0" lz.md 'L1-2'
