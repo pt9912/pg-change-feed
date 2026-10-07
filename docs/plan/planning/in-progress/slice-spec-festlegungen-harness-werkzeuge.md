@@ -309,7 +309,7 @@ die drei Aufrufe am Endstand nach.
 **Fixrunde** (Review-Report `docs/reviews/review-slice-spec-festlegungen-harness-werkzeuge.md`,
 Commit `01264f8d`; 0 HIGH, 3 MEDIUM, 5 LOW, 5 INFO):
 
-- **F-1 (MEDIUM), teilweise.** Der Satz aus
+- **F-1 (MEDIUM), erledigt.** Der Satz aus
   [`ADR-0158`](../../adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md)
   Entscheidung 3 steht in `SPEC-038` „Stände“: „Ist eine Einheit leer oder
   nicht lesbar (Anker unbekannt, Datei fehlt), besteht die Korrektur nicht.“;
@@ -324,8 +324,12 @@ Commit `01264f8d`; 0 HIGH, 3 MEDIUM, 5 LOW, 5 INFO):
   [`ADR-0159`](../../adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
   Entscheidung 2, der einer nicht auflösenden Adresse gilt. „besteht nicht“
   und „Urteil am Diff“ sind zwei Lesungen; welche gilt, entscheidet der
-  Architect (`AGENTS.md` §3.5). Der Satz „Mehrdeutig heißt „nicht messbar““
-  in `SPEC-038` bleibt bis dahin unverändert.
+  Architect (`AGENTS.md` §3.5). **Aufgelöst** durch das Architect-Verdikt
+  `docs/reviews/architect-verdict-zitat-vergleich-mehrdeutig.md` (`86bff10f`,
+  Lesung (a) „besteht nicht“, ohne ADR): `SPEC-038` sagt jetzt, dass eine
+  Seite in mehrdeutiger Stellung keine Einheit hat, der Lauf mit Exit 2 endet
+  und die Korrektur nicht besteht, und dass sie kein nicht messbarer Referent
+  ist; die Historie-Zeile in §8 nennt es. Der Vertrag bleibt unverändert.
 - **F-2 (MEDIUM).** `harness/targets/zitat-vergleich.md`: der Block der ADR ist
   „historische Fassung … und kein Maßstab“, Maßstab allein `SPEC-038`
   (`ADR-0162` Entscheidung 2); der Satz „Weicht … außerhalb der Punkte ab“ und
