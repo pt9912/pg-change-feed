@@ -271,7 +271,7 @@ Planungsstand hat keinen der Läufe im Repo gefahren
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
       Roadmap führt unter *Offene Wellen* keine Welle, also trägt sie die
       Slice-Closure selbst (nach dem `git mv`).
 
@@ -913,7 +913,28 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   `slice-harness-gate-index-werkzeug-teile`; Neu 2 *eingetreten* →
   `slice-spec-festlegungen-harness-werkzeuge`; kopierter Baum *entfallen*;
   Abweichungen über das Delta hinaus *entfallen* (im Slice behoben).
-- **Drei Paarungen:** nach dem `git mv` geprüft, Ergebnis im Commit danach.
+- **Drei Paarungen:** nach dem `git mv` (`d86186e3`) gemessen — (a) *Anker:*
+  der Steering-Loop-Eintrag trägt kein Feld `liegt in` (geschärft ohne
+  eigenen Herkunfts-Anker, benannte Spec-Lücke mit Folge-Slice), also kein
+  Gegenstand der Paarung; der Anker des verkörperten Eintrags
+  `implementierung-weicht-von-adr-wortlaut-ab` steht unverändert in
+  `AGENTS.md` §3.5 (`seit slice-dcheck-v0-82-0`). (b) *Folge-Slice:*
+  `slice-harness-gate-index-werkzeug-teile` und
+  `slice-spec-festlegungen-harness-werkzeuge` existieren in `open/`
+  (`ls docs/plan/planning/open`). (c) *Register:* die genannten Verzeichnisse
+  existieren, jedes mit nicht leerem `evidence/` (`ls evidence | wc -l`):
+  `implementierung-weicht-von-adr-wortlaut-ab` 4,
+  `nachzug-laesst-ueberholten-text-stehen` 25,
+  `rollen-uebergabe-ohne-committetes-artefakt` 1,
+  `record-rueckwirkend-umgeschrieben` 1, `report-nicht-aus-baseline-vorlage` 1,
+  `messwerkzeug-grenze-unbenannt-fail-open` 1, `bump-ablauf-ohne-symlink-ziele`
+  3, `zitat-korrektur-reichweite-abschnitte-kurzform` 3,
+  `arbeit-ueberholt-stehenden-traeger` 34,
+  `zahl-in-traeger-driftet-gegen-die-messung` 30. Ergebnis: getragen. Durch
+  den Move brach kein Verweis (`git grep -n
+  'in-progress/slice-harness-baseline-v6-16-0'`: nur Inline-Code im
+  eingefrorenen Review-Report, kein Link). Der Ruhe-Marker der Roadmap steht
+  wieder, Wortlaut gleich `e56fa737`; `in-progress/` trägt nur `roadmap.md`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
