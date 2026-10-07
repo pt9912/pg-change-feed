@@ -8,10 +8,13 @@ Stand: roh (byte-gleich, abschließende Leerzeilen eingeschlossen) oder, mit
 Tag-Paar, nach Normalisierung nur des bewegten Baseline-Tags
 (`tools/harness/zitat-vergleich.sh`; netzlos, kein Docker). Es ist die Messung,
 die eine Zitat-Korrektur an einer `Accepted` ADR und an einem MR-Eintrag belegt
-([`AGENTS.md`](../../AGENTS.md) §3.5) und im Adaptions-Durchgang eines
+([`AGENTS.md`](../../AGENTS.md) §3.5) — ausgenommen die Form-Korrektur an einem
+MR-Eintrag nach
+[`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+Entscheidung 3, deren Beleg an Stelle dieser Messung `teilrange` und der
+`formnorm`-`cmp` sind (Entscheidung 4) — und im Adaptions-Durchgang eines
 Baseline-Bumps den Referenten je MR-Eintrag zwischen den Tags des Bumps misst
-([`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
-Entscheidung 5).
+(`ADR-0161` Entscheidung 5).
 
 **Wer was trägt.** Die **Semantik** — welche Einheit ein Verweis hat, was
 normalisiert wird, was „roh“ heißt, wann der Lauf mit 2 endet — trägt

@@ -46,5 +46,18 @@ ADR-Aussage („derselbe Mechanismus“), nicht die Umsetzung — der Architect 
 `ADR-0141`. Die Gegenrichtung, eine Fixrunde, die dem Wortlaut folgte, wurde zurückgenommen.
 Der Vorgang zählt unter `BEO-PGC/adr-aussage-breiter-als-ihre-messung`, nicht hier.
 
-Zähler (abgeleitet): 3× (`evidence/slice-sdk-kotlin-publish-workflow.md`,
-`evidence/slice-transformationen-kern-rename.md`, `evidence/slice-dcheck-v0-82-0.md`).
+Viertes Auftreten (`evidence/slice-harness-baseline-v6-16-0.md`) in einer **dritten**
+Ausprägung, der **unbeabsichtigten**: der Träger (`AGENTS.md` §3.5) wich nicht als
+Entscheidung vom Wortlaut von `ADR-0161` ab, sondern durch die Lesart eines Fixrunden-Auftrags
+(Zusatz statt Ersatz), dessen Vorlage nicht im Repo lag (Review F-1 MEDIUM, Re-Review R-1 /
+Verifikation V-1 LOW; bei der Closure an den Wortlaut angeglichen). Die verkörperte Regel hat
+gegriffen: der Planner hielt an, statt die Abweichung in weitere Träger zu schreiben. Nach dem
+vierten Auftreten einer in Prosa verkörperten Klasse (Baseline-Regelwerk `modul-06-roadmap.md`
+§Wellen-Closure-Prozedur, Schritt 3): **kein Sensor möglich** — ob ein Satz in einem Träger
+dasselbe sagt wie der Wortlaut einer ADR, ist eine Lese-Handlung; die Leser sind Reviewer und
+Verifier, die alle vier Auftreten vor dem Merge fanden. Die Ursache dieses Auftretens zählt
+gesondert unter `BEO-PGC/rollen-uebergabe-ohne-committetes-artefakt`.
+
+Zähler (abgeleitet): 4× (`evidence/slice-sdk-kotlin-publish-workflow.md`,
+`evidence/slice-transformationen-kern-rename.md`, `evidence/slice-dcheck-v0-82-0.md`,
+`evidence/slice-harness-baseline-v6-16-0.md`).

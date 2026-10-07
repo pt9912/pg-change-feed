@@ -12,7 +12,12 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 24× (Dateien unter `evidence/`; die vierundzwanzigste,
+Zähler: 25× (Dateien unter `evidence/`; die fünfundzwanzigste,
+`evidence/slice-harness-baseline-v6-16-0.md`, trägt Review F-2 (MEDIUM): der Plan-Nachzug auf
+`ADR-0161` in DoD und §3 ließ §1 Ziel, Bezug und Ausschluss sowie den Symlink-Absatz in §3 beim
+überholten Pin-Commit stehen (Träger-Typ Slice-Plan); in der Fixrunde behoben, Ausgang
+unverändert **verkörpert**;
+die vierundzwanzigste,
 `evidence/slice-dcheck-v0-82-0.md`, trägt Review F-4 (MEDIUM): der Plan-Nachzug in §3 ließ §4,
 §5 und §6 bei einem Architect-Verdikt stehen, das es nicht gab (Träger-Typ Slice-Plan); in der
 Fixrunde behoben, Ausgang unverändert **verkörpert**;

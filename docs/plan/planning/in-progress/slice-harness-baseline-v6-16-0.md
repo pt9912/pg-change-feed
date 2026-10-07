@@ -257,17 +257,20 @@ Planungsstand hat keinen der Läufe im Repo gefahren
       „Bump-Ablauf — Belege“ (`18bbdc98`, Ausgang je Delta-Punkt R1–R10,
       T1–T10) und „Adaptions-Durchgang nach `ADR-0161`“ (`70da35c6`), beide
       vor dem Löschen `9a7da482` committet.
-- [ ] `make gates` grün, Exit-Code ungefiltert gesichert
-      ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [x] `make gates` grün, Exit-Code ungefiltert gesichert
+      ([`AGENTS.md`](../../../../AGENTS.md) §3.9). **Belegt:** Lauf des
+      Verifiers am Stand `1e535f4d` (nach dem Löschen von v6.14.1), Exit 0
+      (`docs/reviews/verify-slice-harness-baseline-v6-16-0.md` Abschnitt 1);
+      der Lauf nach dem letzten Closure-Commit steht in §7.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       **Belegt:** `docs/reviews/review-slice-harness-baseline-v6-16-0.md` und
       `docs/reviews/review-slice-harness-baseline-v6-16-0-fixrunde.md` (kein
       HIGH, kein MEDIUM offen).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
       Roadmap führt unter *Offene Wellen* keine Welle, also trägt sie die
       Slice-Closure selbst (nach dem `git mv`).
@@ -293,8 +296,10 @@ Aussagen-Berührung steht hier gar nicht.
 | `harness/conventions/MR-001` bis `MR-004` | Form-Commit `F` (`3f88e0c2`, nur MR-Dateien, Message nennt `ADR-0073` und `ADR-0161`) | Link in das Tag v6.14.1 wird Inline-Code, Pfad und Anker unverändert (`ADR-0161` Entscheidung 3/4; Liefer-Punkt 2) |
 | `Accepted`-ADRs mit `v6.14.1` (`ADR-0095`, `ADR-0156` bis `ADR-0160`) | unverändert | Pins eingefroren (`ADR-0161` Entscheidung 1/2); aus ADRs zeigt kein Markdown-Link in die Baseline |
 | `done/slice-harness-guard-blocked-python.md` Zeile 272 | Zitat-Korrektur der Form (`ce045921`, `ADR-0073`, `ADR-0156`) | der einzige Link aus `done/` in das Tag v6.14.1; `links` färbt ihn nach dem Löschen rot |
-| `.d-check.yml` Blöcke `versions:` und `vcs:` | update (`fff016fb`) | `exempt-paths` nach `ADR-0161` Entscheidung 2, Kommentare mit je einer Kennung |
-| `harness/targets/pin-stale.md` §Bump-Ablauf, `.claude/agents/{verifier,implementer}.md`, `AGENTS.md` §3.5 (Beleg), `harness/targets/zitat-vergleich.md` (drei Stellen) | update (`fff016fb`) | Folgepflicht 4 bis 7 von `ADR-0161` |
+| `.d-check.yml` Blöcke `versions:` und `vcs:` | update (`fff016fb`; Fixrunde `c88a766b`) | `exempt-paths` nach `ADR-0161` Entscheidung 2, Kommentare mit je einer Kennung; Fixrunde: Stellung und Wortlaut der Kommentare (Review F-4, F-5) |
+| `harness/targets/pin-stale.md` §Bump-Ablauf, `.claude/agents/{verifier,implementer}.md`, `AGENTS.md` §3.5 (Beleg), `harness/targets/zitat-vergleich.md` (drei Stellen) | update (`fff016fb`; Fixrunde `c88a766b` an `verifier.md`, `implementer.md`, `AGENTS.md` §3.5 und `zitat-vergleich.md` Zeile 10; Closure an `AGENTS.md` §3.5 und `zitat-vergleich.md`) | Folgepflicht 4 bis 7 von `ADR-0161`; Fixrunde: Review F-1, F-3; Closure: Re-Review R-1 (Abschnitt „Fixrunde“) |
+| `docs/plan/adr/README.md` (Architect, `d9c8a5ff`) | update | Index-Zeilen für `ADR-0157` bis `ADR-0161` und eine Konvention ([`AGENTS.md`](../../../../AGENTS.md) §5) |
+| `open/slice-harness-gate-index-werkzeug-teile.md`, `open/slice-spec-festlegungen-harness-werkzeuge.md` | neu (Planner, Closure `db2a9003`) | Folge-Slices Neu 1 und Neu 2 (Liefer-Punkt 3) |
 | `harness/conventions/MR-005-…` und Index-Zeile in `harness/conventions.md` | neu (`42efdd6d`) | Folgepflicht 3 von `ADR-0161` (Entscheidung 6) |
 | dieser Plan, neuer Abschnitt „Bump-Ablauf — Belege“ | update | Schritte 1–3 mit Befehl und gedruckter Zahl, Ausgang je Delta-Punkt, vor dem Löschen von v6.14.1 committet (Liefer-Punkt 3) |
 | `docs/plan/adr/0161-…` (Architect, `d9c8a5ff`) | neu (Architect, nicht Implementer) | Artefakt zu den drei Haltestellen; an Stelle des erwarteten Verdikts unter `docs/reviews/` |
@@ -355,12 +360,12 @@ noch nicht vor):
 diff 53 -n 'v6\.14\.1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 11 -nE '\.harness/baseline/v6\.14\.1/' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 0 -n 'Kurs-Welle 157' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 24 -n 'v6\.16\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 26 -n 'v6\.16\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 diff 13 -nE '\.harness/baseline/v6\.14\.1/' -- docs/plan/planning/done
 diff 1 -nE '\]\([^)]*\.harness/baseline/v6\.14\.1' -- docs/plan/planning/done docs/reviews
-diff 3 -n 'Abschnitte 1–7' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 0 -n 'Festlegungen der Harness-Werkzeuge' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
-diff 0 -nE 'harness/mk/[^ ]*\.md' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 10 -n 'Abschnitte 1–7' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 4 -n 'Festlegungen der Harness-Werkzeuge' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 7 -nE 'harness/mk/[^ ]*\.md' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 ```
 
 **`diff`-Zeilen (Implementer, gemessen am Arbeitsbaum nach `9a7da482`).**
@@ -379,6 +384,16 @@ Inline-Code, kein Link (`make docs-check` 0 Befunde). Zeile 7 steigt um
 `ADR-0161` Zeile 187, die den Satz in MR-001 nennt; MR-001 und
 `spec/lastenheft.md` bleiben (Folge-Slice Neu 2). Zeilen 8 und 9 unverändert
 (Folgearbeit).
+
+**Nachgezogen bei der Closure (Planner, gemessen nach `db2a9003`, Verteilung mit
+`git grep … | cut -d: -f1 | sort | uniq -c`):** die Zeilen 4, 7, 8 und 9 steigen
+allein um die zwei Folge-Slice-Dateien unter `open/` — Zeile 4 von 24 auf 26
+(je 1 in `slice-harness-gate-index-werkzeug-teile` und
+`slice-spec-festlegungen-harness-werkzeuge`), Zeile 7 von 3 auf 10 (7 in
+`slice-spec-festlegungen-harness-werkzeuge`), Zeile 8 von 0 auf 4 (1 bzw. 3),
+Zeile 9 von 0 auf 7 (alle in `slice-harness-gate-index-werkzeug-teile`). Die
+Nachzüge zu R-1 in `AGENTS.md` §3.5 und `harness/targets/zitat-vergleich.md`
+tragen keinen der Suchbegriffe.
 
 Verteilung (gemessen, `git grep … | cut -d: -f2 | sort | uniq -c`): Zeile 1 —
 `AGENTS.md` 1, `.claude/agents/` 4 (architect 1, reviewer 2, verifier 1),
@@ -616,8 +631,17 @@ und `3f88e0c2`, Einheit Abschnitt, roh, gedruckt (Pfadpräfix
   die Form-Korrektur an einem MR-Eintrag `ADR-0161` Entscheidung 4 und den
   `formnorm`-`cmp` (Folgepflicht 6: Verweis ersetzt, nicht gestrichen);
   `harness/targets/zitat-vergleich.md` Zeile 10 nennt die Beleg-Rolle wieder
-  „an einem MR-Eintrag“. Beide Träger verlangen für den Form-Commit dieselben
-  zwei Belege; die vier `zitat-vergleich`-Zeilen vor und nach `F` stehen oben.
+  „an einem MR-Eintrag“. Die Fixrunde las die Klammer als Zusatz zur
+  `zitat-vergleich`-Zeile; das widersprach `ADR-0161` Entscheidung 4 und
+  §Konsequenzen (Re-Review R-1, Verifikation V-1). **Bei der Closure an den
+  Wortlaut der ADR angeglichen:** `AGENTS.md` §3.5 nennt für die
+  Form-Korrektur an einem MR-Eintrag `teilrange` und je MR-Datei den
+  `formnorm`-`cmp` **an Stelle** der `zitat-vergleich`-Zeile, und
+  `zitat-vergleich.md` Zeile 10 nimmt diese Form-Korrektur aus seiner
+  Beleg-Rolle aus; beide sagen damit dasselbe, `pin-stale.md` und
+  `implementer.md` stimmen unverändert. Die vier `zitat-vergleich`-Zeilen vor
+  und nach `F` oben sind Messung, kein verlangter Beleg (Re-Review R-2: sie
+  folgen aus der Konstruktion und belegen, dass Adresse und Anker auflösen).
 - **F-2 (MEDIUM) — behoben.** §1 Bezug um `ADR-0161` ergänzt (und die
   Klammer zu `ADR-0157` ohne „MR-Pins im eigenen Commit“), §1 Ziel und §1
   Ausschluss Records nach `ADR-0161` bzw. `ADR-0156` Entscheidung 3, Absatz
@@ -639,8 +663,9 @@ und `3f88e0c2`, Einheit Abschnitt, roh, gedruckt (Pfadpräfix
 - **F-7, F-8 (INFO) — keine Aktion** (Closure: Folge-Slice-Dateien; Klausel
   wörtlich aus der Vorlage).
 
-Die Fixrunde ändert eine Norm (`AGENTS.md` §3.5), deshalb folgt ein
-Re-Review; die DoD-Zeile „Review durchgeführt“ bleibt offen.
+Die Fixrunde ändert eine Norm (`AGENTS.md` §3.5), deshalb folgte ein
+Re-Review (`docs/reviews/review-slice-harness-baseline-v6-16-0-fixrunde.md`,
+0 HIGH, 0 MEDIUM); es setzte die DoD-Zeile „Review durchgeführt“ auf `[x]`.
 
 ## 4. Trigger
 
@@ -706,38 +731,64 @@ dasteht.
   `cmp 1`) und das Architect-Verdikt (Pin trotzdem als Gerüst, weil die Aussage
   der Adaption — der Datei-Name — unberührt ist; oder neue Adaption bzw.
   Folge-Slice zusammen mit Neu 2). Erwarteter Ausgang: eingetreten, mit der
-  Kennung, die das Verdikt nennt. **Ausgang: eingetreten** —
+  Kennung, die das Verdikt nennt. **Ausgang: eingetreten →
+  `slice-spec-festlegungen-harness-werkzeuge`** (gemessen `cmp 1`, Abschnitt
+  „Halt …“). Den Pin fing in diesem Slice
   [`ADR-0161`](../../adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
-  (gemessen `cmp 1`, Abschnitt „Halt …“; MR-001 bleibt gültig, Form-Korrektur
-  `3f88e0c2`, „Abschnitte 1–7“ an Folge-Slice Neu 2).
+  auf (MR-001 bleibt gültig, Form-Korrektur `3f88e0c2`); der Rest — der Satz
+  „Abschnitte 1–7“ und ob MR-001 einen Nachfolge-Eintrag braucht — liegt beim
+  Folge-Slice (dort Liefer-Punkt 3).
 - **Zwischenstand rot.** `vendor-baseline` vendort nicht neben dem alten Tag
   (Vorgänger-Bump); der Weg über den Wegwerf-Klon und `cp -r` macht zwei
   Tag-Verzeichnisse für mehrere Commits zum Bestand, und `make baseline-verify`
   (damit `make gates`) ist auf ihnen rot. Gepusht wird erst die vollständige
   Folge bis zum Löschen. *Zu belegen durch:* `make gates` Exit 0 auf dem Commit
-  nach dem Löschen.
+  nach dem Löschen. **Ausgang: entfallen** — der rote Zwischenstand blieb lokal:
+  `origin/main` steht auf `1009269e`, vor `bee507d7` (gemessen mit
+  `git rev-parse origin/main`), und `make gates` endet am Stand `1e535f4d` nach
+  dem Löschen mit Exit 0 (Verifikationsbericht, Abschnitt 1).
 - **Die leere Teil-Range im `doc-immutable`-Lauf.** Ist der Form-Commit `F`
   (an Stelle des Pin-Commits `P`, `ADR-0161`) der erste Commit nach `base` oder die
   Spitze, ist eine Teil-Range leer, und d-check ≥ v0.80.0 endet
   dort mit Exit 2 (gemessen in `slice-dcheck-v0-82-0` §1). *Zu belegen durch:*
   den Verifier-Lauf nach der Regel, die `slice-dcheck-v0-82-0` hinterlässt;
-  der Start-Trigger (§4) stellt sicher, dass sie vorliegt.
+  der Start-Trigger (§4) stellt sicher, dass sie vorliegt. **Ausgang:
+  entfallen** — an diesem `F` ist keine Teil-Range leer: `teilrange 1009269e
+  3f88e0c2~1` „enthält 6 Commit(s)“, `teilrange 3f88e0c2 HEAD` „enthält 9
+  Commit(s)“, je `0 Befund(e)`, Exit 0 (Verifikationsbericht, Abschnitt 1).
 - **Neu 1 — ob `ai-harness-init` `harness/mk/<werkzeug>.md` erzeugt, ist offen**
   (§1: installiert v0.2.3, neuester Release v0.2.7, die Release-Texte nennen die
   Datei nicht). Davon hängt ab, ob der Delta-Punkt das Repo heute betrifft. *Zu
   belegen durch:* den Ausgang im Bump-Ablauf mit Grund — gelesen am Werkzeug
   (Quelle oder Lauf von v0.2.7 in einem Wegwerf-Klon), nicht an den
-  Release-Texten allein.
+  Release-Texten allein. **Ausgang: eingetreten →
+  `slice-harness-gate-index-werkzeug-teile`** — an der Quelle von v0.2.7
+  gemessen, dass kein veröffentlichter Stand den Teil erzeugt (Abschnitt
+  „Neu 1 am Werkzeug gelesen“; im Verifikationsbericht übernommen, nicht
+  nachgefahren); der Folge-Slice startet mit einem Release, der ihn erzeugt.
 - **Neu 2 berührt das Lastenheft** („Abschnitte 1–7“ in `spec/lastenheft.md`,
   Rang 1). Ein Nachzug im Bump-Slice wäre eine stille Spec-Änderung. *Zu belegen
   durch:* Ausgang „Folge-Slice“ im Bump-Ablauf; die Spec-Änderung trägt ein
-  eigener Slice mit eigener Begründung.
+  eigener Slice mit eigener Begründung. **Ausgang: eingetreten →
+  `slice-spec-festlegungen-harness-werkzeuge`** (Delta-Punkte R2, R7–R9, T3,
+  T4, T6–T8, T10). Bei der Anlage gemessen: die einzige Nennung in
+  `spec/lastenheft.md` (Zeile 1517) steht in der Historie und beschreibt die
+  Gliederung des Lastenhefts selbst; ob sie betroffen ist, entscheidet der
+  Folge-Slice (§6 dort).
 - **Der kopierte Baum ist nicht der des Werkzeugs** (Rechte, versteckte Dateien
   wie `templates/.d-check.yml`). *Zu belegen durch:* `sha256sum -c SHA256SUMS`
   im Repo-Verzeichnis (54 erwartet) und `make baseline-verify` nach dem Löschen.
+  **Ausgang: entfallen** — der vendored Baum ist byte-gleich dem vom Verifier
+  selbst entpackten Release-Asset, `templates/.d-check.yml` eingeschlossen
+  (`diff -r` Exit 0), und `make baseline-verify` druckt `v6.16.0 OK — 54
+  Dateien`, Exit 0 (Verifikationsbericht, Abschnitt 1).
 - **Der Bump-Ablauf findet Abweichungen über das Delta hinaus** (Schritt 2 liest
   unabhängig vom Delta). *Zu belegen durch:* das Ergebnis je Dokument in
-  Schritt 3 (Behebung hier oder Folge-Slice mit Kennung, §4).
+  Schritt 3 (Behebung hier oder Folge-Slice mit Kennung, §4). **Ausgang:
+  entfallen** — als Befund eingetreten (zwei nie übernommene Klauseln in
+  `AGENTS.md` und in `harness/README.md`, Schritt 3), aber in diesem Slice
+  behoben (`a06da54e`), ohne Rest für einen Carveout oder Folge-Slice; die
+  übrigen Dokumente „entspricht“.
 
 Jedes Risiko bekommt bei der Closure genau einen Ausgang (eingetreten mit
 `CO-*`- oder Slice-Kennung · entfallen mit Grund · weiter offen ins Register).
@@ -765,20 +816,104 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Gegenstand:** <übernommen von `slice-<Kennung>` | entfallen: <Grund>>
-  *(nur beim Ausgang ohne Arbeit; sonst Zeile löschen)*
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<KUERZEL>/<slug>` (<slice-kennung-a>, <slice-kennung-b>, <slice-kennung-c> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-<Kennung>.md` | `evidence/slice-<Kennung>.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-<Kennung> (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Geliefert:** Baseline v6.16.0 vendored und verifiziert, v6.14.1 entfernt
+  (`bee507d7`, `9a7da482`, Liefer-Punkt 1); lebende Verweise, Symlinks,
+  Form-Commit `F` = `3f88e0c2` und Record-Korrektur `ce045921` (Liefer-Punkt 2);
+  Bump-Ablauf Schritte 1–3 mit Ausgang je Delta-Punkt R1–R10, T1–T10
+  (`18bbdc98`, `70da35c6`, Liefer-Punkt 3). Architect-Zug als
+  [`ADR-0161`](../../adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+  (`d9c8a5ff`) mit `MR-005` (`42efdd6d`). Review (0 HIGH, 2 MEDIUM, 2 LOW,
+  4 INFO), eine Fixrunde (`c88a766b`, `a445afa7`), Re-Review (0 HIGH,
+  0 MEDIUM, 1 LOW, 3 INFO); Verifikation
+  `docs/reviews/verify-slice-harness-baseline-v6-16-0.md` (`f931c818`; DoD
+  bestätigt, `make gates` Exit 0). Validator: entfällt — Harness-Werkzeug
+  ohne End-Nutzer-Wert, kein MVP-Slice (Verifikationsbericht, Kopf).
+- **Was hat funktioniert:** Der Halt vor den drei `version-stale`-Stellen
+  (Abschnitt „Halt …“) mit `make zitat-vergleich` je Verweis als Eingabe gab
+  dem Architect eine gemessene Frage statt einer Auslegung; `ADR-0161` löste
+  alle drei, ohne einen `Accepted`-Text zu ändern. Der Bump-Ablauf mit
+  Ausgang je Delta-Punkt machte aus zwei neuen Baseline-Konzepten zwei
+  adressierbare Folge-Slices statt eines stillen Teilnachzugs. Der Verifier
+  prüfte den vendored Baum unabhängig gegen das selbst entpackte
+  Release-Asset.
+- **Was ging anders als geplant:**
+  (1) **Statt eines Pin-Commits ein Form-Commit.** Der Plan erwartete für
+  MR-001 ein Verdikt über einen Pin; `ADR-0161` friert Pins in ADRs und
+  MR-Einträgen ein und ersetzt den Pin-Commit durch den Form-Commit — mit
+  Folgepflichten an fünf Trägern und einer neuen Adaption (`MR-005`).
+  (2) **Der Beleg am Form-Commit brauchte drei Anläufe.** Folgepflicht 6
+  wurde zuerst gestrichen statt ersetzt (Review F-1), dann in der Fixrunde
+  als Zusatz statt als Ersatz gelesen (Re-Review R-1, V-1). Die Vorgabe des
+  Architect zur Fixrunde lag nicht im Repo; der Planner hielt bei der Closure
+  an, der Orchestrator klärte die Lesart nach dem Wortlaut der ADR (Ersatz).
+  Mit dieser Closure sagen `AGENTS.md` §3.5 und
+  `harness/targets/zitat-vergleich.md` Zeile 10 dasselbe: für die
+  Form-Korrektur an einem MR-Eintrag `teilrange` und `formnorm`-`cmp` an
+  Stelle der `zitat-vergleich`-Zeile; `pin-stale.md` und `implementer.md`
+  stimmten bereits.
+- **Re-Review- und Verifikations-Pflichten in der Closure:**
+  - R-1 / V-1 (LOW) → **behoben** mit dieser Closure (oben, (2); Abschnitt
+    „Fixrunde“, F-1).
+  - R-2 (INFO): die vier `zitat-vergleich`-Zeilen an `F~1`/`F` folgen aus der
+    Konstruktion (dieselbe Datei an beiden Ständen) und belegen nur, dass
+    Adresse und Anker auflösen; sie bleiben im Plan als Messung, nicht als
+    verlangter Beleg. Benannt, keine Folgearbeit.
+  - R-3 (INFO) → **präzisiert** im Abschnitt „Fixrunde“, F-1 (welcher Träger
+    welchen Beleg nennt).
+  - R-4 / V-2 (INFO) → **nachgezogen** in der Datei-Tabelle §3 (Commits der
+    Fixrunde, `docs/plan/adr/README.md`, Folge-Slices).
+  - V-3 (INFO) → erledigt mit dieser Closure (Risiko-Ausgänge, Folge-Slices).
+  - Satz „DoD-Zeile ‚Review durchgeführt‘ bleibt offen“ im Abschnitt
+    „Fixrunde“ → nachgezogen.
+- **Steering-Loop-Eintrag:** Regel geschärft, ohne eigenen Herkunfts-Anker:
+  `AGENTS.md` §3.5 „Beleg“ nennt für die Form-Korrektur an einem MR-Eintrag
+  `teilrange` und `formnorm`-`cmp` ausdrücklich **an Stelle** der
+  `zitat-vergleich`-Zeile, `harness/targets/zitat-vergleich.md` nimmt sie aus
+  seiner Beleg-Rolle aus. Benannte Spec-Lücke: die Festlegungen der
+  Harness-Werkzeuge (Schwelle, Randform, Spec-Kennung je Gate) stehen in keiner
+  Spec-Stelle des Repos, die Baseline v6.16.0 verlangt sie im Rang-2-Dokument —
+  Folge-Slice `slice-spec-festlegungen-harness-werkzeuge`. Neuer Sensor: keiner;
+  `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` erreicht mit diesem Slice
+  das vierte Auftreten nach der Verkörperung in Prosa, ein Sensor ist
+  begründet ausgeschlossen (`state.md` des Eintrags: Wortlaut-Gleichheit ist
+  eine Lese-Handlung).
+- **Lese-Schritt (wellenlos, Baseline-Regelwerk `modul-06-roadmap.md`
+  §Wann Arbeit eine Welle braucht):** kein Eintrag erreicht mit diesem Slice
+  erstmals 3×. `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` steht
+  bei 4× mit Ausgang *verkörpert* (`AGENTS.md` §3.5,
+  `seit slice-dcheck-v0-82-0`); Ausgang unverändert, Begründung zum vierten
+  Auftreten in seiner `state.md`.
+- **Beobachtungs-Register (`../observations/`):**
+  - `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab/`:
+    `evidence/slice-harness-baseline-v6-16-0.md` ergänzt (Review F-1, MEDIUM;
+    Re-Review R-1 / V-1, LOW; ein Vorgang) — Zähler 4×, Ausgang unverändert
+    verkörpert.
+  - `BEO-PGC/nachzug-laesst-ueberholten-text-stehen/`:
+    `evidence/slice-harness-baseline-v6-16-0.md` ergänzt (Review F-2, MEDIUM,
+    Datei trotz Deckel; R-4 / V-2 und der Satz zur Review-DoD-Zeile unter dem
+    Deckel in derselben Datei benannt) — Zähler 25×, Ausgang unverändert
+    verkörpert.
+  - `BEO-PGC/rollen-uebergabe-ohne-committetes-artefakt/` **neu angelegt**,
+    Beleg `evidence/slice-harness-baseline-v6-16-0.md` (Vorgabe des Architect
+    zur Fixrunde nur im Bericht an den Orchestrator) — Zähler 1×, offen.
+  - Die in §8 gesichteten Einträge (`record-rueckwirkend-umgeschrieben`,
+    `report-nicht-aus-baseline-vorlage`,
+    `messwerkzeug-grenze-unbenannt-fail-open`, `bump-ablauf-ohne-symlink-ziele`,
+    `zitat-korrektur-reichweite-abschnitte-kurzform`,
+    `arbeit-ueberholt-stehenden-traeger`,
+    `zahl-in-traeger-driftet-gegen-die-messung`): kein Auftreten.
+- **Folge-Slices:** `slice-harness-gate-index-werkzeug-teile` (Neu 1:
+  werkzeug-eigene Teile des Gate-Index) und
+  `slice-spec-festlegungen-harness-werkzeuge` (Neu 2: Festlegungen der
+  Harness-Werkzeuge im Pflichtenheft) — beide Dateien in `open/`
+  (`db2a9003`).
+- **Risiken aus §6:** sieben Risiken, je ein Ausgang (§6): MR-001-Referent
+  *eingetreten* → `slice-spec-festlegungen-harness-werkzeuge`; Zwischenstand
+  rot *entfallen*; leere Teil-Range *entfallen*; Neu 1 *eingetreten* →
+  `slice-harness-gate-index-werkzeug-teile`; Neu 2 *eingetreten* →
+  `slice-spec-festlegungen-harness-werkzeuge`; kopierter Baum *entfallen*;
+  Abweichungen über das Delta hinaus *entfallen* (im Slice behoben).
+- **Drei Paarungen:** nach dem `git mv` geprüft, Ergebnis im Commit danach.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
