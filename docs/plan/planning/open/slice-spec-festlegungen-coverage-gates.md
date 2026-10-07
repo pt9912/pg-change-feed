@@ -114,7 +114,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       je eine Zeile mit eigener `SPEC-<NNN>` für `make coverage-gate` und die
       DB-Adapter-Coverage, in der Form, die der Pilot für §7 festlegt (R9); die
       Grenze zwischen beiden Gegenständen steht in beiden Zeilen gleich.
-      *Zu belegen durch:* Suchlauf ([`AGENTS.md`](../../../../AGENTS.md) §3.13)
+      *Zu belegen durch:* Gegenprobe der Quellen und Anschluss-Frage (§3),
+      Suchlauf ([`AGENTS.md`](../../../../AGENTS.md) §3.13)
       und `make docs-check` Exit 0.
 - [ ] **Verträge und Index verweisen (Liefer-Punkt 2).**
       `harness/sensors/coverage-gate.md` und `db-adapter-coverage.md` nennen
@@ -155,6 +156,18 @@ messen; bewegte Eigenschaft ist der Ort von Schwelle, Stufe und Gegenstand
 (Träger außerhalb der Verträge: `harness/mk/coverage.mk`, `AGENTS.md` §3.2,
 die Zeilen `make test-store` und `make test-replication` in
 `harness/README.md`).
+
+**Gegenprobe der Quellen und Anschluss-Frage** (Beleg zu Liefer-Punkt 1;
+Regel: `.claude/commands/plan-welle.md` Schritt 6 · seit
+slice-spec-festlegungen-harness-werkzeuge,
+`BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen`): Vor dem
+Review trägt dieser Abschnitt eine Tabelle mit einer Zeile je normativem Satz
+der Quellen — die Verträge aus Liefer-Punkt 2 und die Entscheidungen der ADRs
+aus **Bezug** — und ihrem Ausgang *steht in `SPEC-<NNN>` · bleibt im Vertrag
+(Grund) · entfällt (Grund)*; darunter je Ausgang und Randfall der neuen Zeilen
+die Folge für den Anwender (besteht oder nicht, welcher Fall gewinnt). Eine
+Folge, die keine Quelle trägt, entscheidet der Architect vor der Closure, nicht
+eine Lesung im Auftrag.
 
 ## 4. Trigger
 
@@ -249,8 +262,9 @@ der ADR-Index; die Modus-Deklaration führt nur die Default-Sub-Area `*`
 
 **Vorgelagert — offene Beobachtungen sichten:** beim Übergang `open → next`
 nachzuholen (gemergter Stand des Registers); bei Anlage gelesen:
-`BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen` (2×) trifft
-Liefer-Punkt 1. Die verkörperten Einträge
+`BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen` (bei Anlage
+2×, mit `slice-spec-festlegungen-harness-werkzeuge` 3× und verkörpert) trifft
+Liefer-Punkt 1 — Prüfschritt in §3. Die verkörperten Einträge
 `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` und
 `BEO-PGC/endstufe-unter-eigenem-messgegenstand-unerreichbar` betreffen den
 Gegenstand der Festlegungen und sind als Bestand zu lesen, nicht zu zählen.

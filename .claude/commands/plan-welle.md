@@ -119,6 +119,27 @@ die Antwort und wird notiert.
    die tragende ist der unabhängige Reviewer (`.harness/skills/reviewer.md`,
    eigener benannter HIGH-Punkt, Probe: `git grep` der Kernbegriffe im Plan
    der Adresse).
+   **Festlegung im Pflichtenheft: Gegenprobe der Quellen und Anschluss-Frage ·
+   seit slice-spec-festlegungen-harness-werkzeuge**
+   (`BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen`, 3×;
+   Architect-Zug des Lese-Schritts, Modul 6): Liefert ein Slice eine Festlegung
+   in `spec/pflichtenheft.md` — einen Spec-Nachzug, den ein Folge-Slice
+   umsetzt, oder den Umzug eines Vertrags oder einer ADR-Aussage in eine
+   `SPEC-*`-Zeile —, nennt §2 als Beleg dieses Liefer-Punkts zwei Prüfungen,
+   deren Ergebnis vor dem Review als Tabelle im Plan steht:
+   (a) **Gegenprobe der Quellen** — je normativer Satz jeder Quelle (der
+   umziehende Vertrag, die Entscheidungen der ADRs, aus denen die Festlegung
+   schöpft) eine Zeile *Satz → steht in `SPEC-<NNN>` · bleibt im Vertrag (Grund)
+   · entfällt (Grund)*; ein Satz ohne Zeile ist der Verlust;
+   (b) **Anschluss-Frage** — je Ausgang und Randfall der Festlegung die Folge
+   für den, der sie umsetzt oder anwendet (besteht oder nicht, welcher Fehler
+   gewinnt, welcher Vergleich gilt); eine Folge, die keine Quelle trägt,
+   entscheidet der Architect vor der Closure, nicht eine Lesung im Auftrag.
+   Kein Werkzeug: ein Satz wird beim Umzug umformuliert und hinterlässt keine
+   Spur, nach der ein Abgleich suchen könnte, und ob eine Folge fehlt, ist
+   Urteil. **Grenze:** Selbstprüfung im schreibenden Kontext — erste, nicht
+   tragende Linie; die tragende ist der Reviewer, der die Tabelle gegen die
+   Quellen nachliest.
 
 ## Welle-Plan per cp anlegen und füllen (der Kern-Schritt)
 

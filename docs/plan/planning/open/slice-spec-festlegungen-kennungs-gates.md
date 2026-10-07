@@ -107,7 +107,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       je eine Zeile mit eigener `SPEC-<NNN>` für `make sdk-public-doc-check`,
       `make handbuch-public-doc-check`, `make ausgabe-kennungen-check` und
       `make meldungscodes-check` (Gegenstand, Muster, Ausnahmen, Ausgänge), in
-      der Form, die der Pilot für §7 festlegt (R9). *Zu belegen durch:* Suchlauf
+      der Form, die der Pilot für §7 festlegt (R9). *Zu belegen durch:*
+      Gegenprobe der Quellen und Anschluss-Frage (§3), Suchlauf
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13) und `make docs-check` Exit 0.
 - [ ] **Verträge und Index verweisen (Liefer-Punkt 2).** Die vier Verträge unter
       `harness/sensors/` nennen die Kennung ihrer Festlegung und tragen Schwelle
@@ -145,6 +146,18 @@ Der Suchlauf ([`AGENTS.md`](../../../../AGENTS.md) §3.13) ist beim Start zu
 messen; bewegte Eigenschaft ist der Ort von Muster und Randform der vier Gates
 (Träger außerhalb der Verträge: die Skills `.harness/skills/nutzerdoku-schreiben.md`
 und `reviewer.md`, die Tabellentests `tools/harness/run-*-check-tests.sh`).
+
+**Gegenprobe der Quellen und Anschluss-Frage** (Beleg zu Liefer-Punkt 1;
+Regel: `.claude/commands/plan-welle.md` Schritt 6 · seit
+slice-spec-festlegungen-harness-werkzeuge,
+`BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen`): Vor dem
+Review trägt dieser Abschnitt eine Tabelle mit einer Zeile je normativem Satz
+der Quellen — die Verträge aus Liefer-Punkt 2 und die Entscheidungen der ADRs
+aus **Bezug** — und ihrem Ausgang *steht in `SPEC-<NNN>` · bleibt im Vertrag
+(Grund) · entfällt (Grund)*; darunter je Ausgang und Randfall der neuen Zeilen
+die Folge für den Anwender (besteht oder nicht, welcher Fall gewinnt). Eine
+Folge, die keine Quelle trägt, entscheidet der Architect vor der Closure, nicht
+eine Lesung im Auftrag.
 
 ## 4. Trigger
 
@@ -241,8 +254,9 @@ der ADR-Index; die Modus-Deklaration führt nur die Default-Sub-Area `*`
 
 **Vorgelagert — offene Beobachtungen sichten:** beim Übergang `open → next`
 nachzuholen (gemergter Stand des Registers); bei Anlage gelesen:
-`BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen` (2×) trifft
-Liefer-Punkt 1; `BEO-PGC/gate-prueft-existenz-nicht-passung` (2×) betrifft
+`BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen` (bei Anlage
+2×, mit `slice-spec-festlegungen-harness-werkzeuge` 3× und verkörpert) trifft
+Liefer-Punkt 1 — Prüfschritt in §3; `BEO-PGC/gate-prueft-existenz-nicht-passung` (2×) betrifft
 `make meldungscodes-check` — die Festlegung nennt, dass das Gate Mengen
 vergleicht, nicht die Passung; `BEO-PGC/intern-kennungen-in-ausgelieferten-texten`
 (1×) betrifft den Gegenstand von `make sdk-public-doc-check`.
