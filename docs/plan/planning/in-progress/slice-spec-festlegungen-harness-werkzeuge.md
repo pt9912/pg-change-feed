@@ -14,19 +14,25 @@ dieses Slice verschieden ist (Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht).
 
 **Bezug:** [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md)
-(Entscheidung 7: Baseline-Aktualisierung als bewusster Bootstrap-Vorgang);
-Kandidaten für das `Schärft:`-Ziel einer Gate-ADR:
+(Entscheidung 7: Baseline-Aktualisierung als bewusster Bootstrap-Vorgang).
+Quellen der zwei Festlegungen:
 [`ADR-0158`](../../adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md),
 [`ADR-0159`](../../adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md),
+[`ADR-0161`](../../adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+(Entscheidungen 4 und 5) für `make zitat-vergleich`;
 [`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
-(Auswahl ist Teil der Arbeit, §6). Die Adaption
+(Entscheidung 1) für den Leer-Test der Teil-Range. Alle vier tragen
+`Schärft: —` und sind `Accepted`; die Kante zu den neuen Kennungen stellt eine
+Architect-ADR her (§2). Die Adaption
 [`MR-001`](../../../../harness/conventions/MR-001-technik-dokument-heisst-pflichtenheft.md)
-(Rang-2-Datei heißt Pflichtenheft) ist berührt. Welche `LH-*`-Anforderung der
-neue Abschnitt verfeinert, steht beim Planen fest, nicht hier.
+(Rang-2-Datei heißt Pflichtenheft) wird durch `MR-006` abgelöst. Keine
+`LH-*`-Anforderung ist berührt: die Festlegungen gelten Harness-Werkzeugen,
+nicht dem Produkt.
 
-**Berührte Spec-Stellen:** `spec/pflichtenheft.md` §7 (Historie, wird §8) und
-ein neuer §7 „Festlegungen der Harness-Werkzeuge“; `spec/lastenheft.md`
-(Zeile mit „Abschnitte 1–7“, Prüfauftrag §6).
+**Berührte Spec-Stellen:** `spec/pflichtenheft.md` §1 (Verweis „§2 bis §6“
+wird „§2 bis §7“), ein neuer §7 „Festlegungen der Harness-Werkzeuge“ mit zwei
+`SPEC-<NNN>` und §7 Historie, die §8 wird. `spec/lastenheft.md` ist nicht
+berührt (§6, gemessen).
 
 **Verantwortlich:** pt9912 (Implementer-Agent im Auftrag).
 <!-- BEDIENHINWEIS: Verantwortlich hält die Arbeit — der Rolleninhaber der
@@ -57,28 +63,76 @@ Abschnitt der Spezifikations-Vorlage vor der Historie
 `regelwerk/modul-03-spec.md`, `templates/harness/sensors/gate.template.md`,
 `templates/docs/plan/adr/NNNN-titel.template.md`).
 
-**Ziel:** `spec/pflichtenheft.md` trägt den Abschnitt „Festlegungen der
-Harness-Werkzeuge“ vor der Historie, die Sensor-Verträge und Gate-Zeilen
-verweisen für Schwelle und Randform auf ihn, Gate-ADRs schärfen ihn über
-`Schärft:`, und die Aussagen „Abschnitte 1–7“ in Spec und `MR-001` haben je
-einen Ausgang.
+**Planänderung (2026-10-07) — Neuschnitt in Arbeit, keine Rückführung.**
+*Grund:* Die Rückführungs-Bedingung „zu groß“ aus §4 trat beim Start ein; der
+Auftraggeber hat statt der Rückführung `in-progress → next` den Zuschnitt A
+freigegeben: dieser Slice bleibt in `in-progress/` und wird zum Pilot, die
+Festlegungen der übrigen Werkzeuge gehen an fünf Folge-Slices in `open/`.
+*Messung des Implementers* (Lauf am Stand `abbe11b4`, Probe als Kopie des
+Arbeitsbaums im Scratchpad, nicht committet):
+
+- Die Spec darf nicht auf ADRs zeigen: ein §7 mit Link auf
+  [`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+  und mit `ADR-0158` im Inline-Code ergibt in `make docs-check` zwei Befunde
+  `matrix-forbidden` (gedruckte Zeile `d-check: 1814 Datei(en) geprüft,
+  2 Befund(e)`). Die Festlegung trägt ihren Inhalt deshalb selbst, und die
+  Kante läuft aufwärts über `Schärft:` einer ADR.
+- Die vier Quell-ADRs tragen `Schärft: —` und sind `Accepted`
+  (`grep -n 'Schärft' docs/plan/adr/015[89]*.md docs/plan/adr/016[01]*.md`):
+  die Kante braucht eine neue ADR.
+- `spec/lastenheft.md` ist nicht betroffen: die einzige Nennung von
+  „Abschnitte 1–7“ steht in Zeile 1517 in der Historie-Tabelle und beschreibt
+  die Gliederung des Lastenhefts selbst.
+- Die nächste freie Kennung im Pflichtenheft ist `SPEC-038` (höchste vergebene
+  `SPEC-037`, `grep -o 'SPEC-[0-9]\{3\}' spec/pflichtenheft.md | sort -u`); der
+  Implementer misst sie beim Schreiben erneut.
+- Größe der Verträge (`wc -l harness/sensors/*.md`, bei der Planänderung
+  nachgemessen): `coverage-gate.md` 385 Zeilen mit acht ADRs,
+  `db-adapter-coverage.md` 313, `docs-check.md` 247,
+  `harness/targets/zitat-vergleich.md` 285 — alle Gates in einem Slice sprengen
+  eine Review-Sitzung.
+
+**Ziel (Zuschnitt A):** `spec/pflichtenheft.md` trägt §7 „Festlegungen der
+Harness-Werkzeuge“ in der Struktur der Vorlage
+(`.harness/baseline/v6.16.0/templates/spec/spezifikation.template.md` §7) mit
+zwei Festlegungen — `make zitat-vergleich` und der Leer-Test der Teil-Range
+`teilrange` —, die Historie ist §8, und §1 verweist auf „§2 bis §7“; der
+Vertrag von `make zitat-vergleich` und seine Zeile in `harness/README.md`
+verweisen auf die Kennung; die `Schärft:`-Konvention im ADR-Index zeigt auf
+§7; eine Architect-ADR stellt die `Schärft:`-Kante der Quell-ADRs her; `MR-006`
+löst `MR-001` ab.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
+- **Festlegungen der übrigen Gates, Prüfer und Hooks** — Folge-Slices (je in
+  `open/`, Start-Trigger: dieser Slice in `done/`):
+  `slice-spec-festlegungen-doku-gates` (docs-check samt aller Module,
+  commit-traceability, baseline-verify),
+  `slice-spec-festlegungen-kennungs-gates` (sdk-public-doc-check,
+  handbuch-public-doc-check, ausgabe-kennungen-check, meldungscodes-check),
+  `slice-spec-festlegungen-code-gates` (a-check, generated-sync),
+  `slice-spec-festlegungen-coverage-gates` (coverage-gate,
+  DB-Adapter-Coverage) und `slice-spec-festlegungen-pruefer-hooks`
+  (suchlauf-nachmessen, kommentar-kennungen, fmt-check, pin-stale-*,
+  PreToolUse-Guard, commit-msg-Hook). Jeder trägt die Delta-Punkte R2, R7, R9,
+  T6 und T8 für seine Werkzeuge in §1 als Übergabe.
 - **Werkzeug-eigene Teile des Gate-Index (Neu 1)** — Gegenstand von
   `slice-harness-gate-index-werkzeug-teile`: dort der Ort des Gate-Index, hier
   der Ort der Festlegung.
 - **`Accepted`-ADRs inhaltlich ändern** — Bestand bleibt: ein `Schärft:`-Feld
   an einer `Accepted`-ADR nachzutragen wäre ein Überschreiben
-  ([`AGENTS.md`](../../../../AGENTS.md) §3.5); neue Gate-ADRs folgen der neuen
-  Vorlage (T3), bestehende bekommen das Feld nur über eine Folge-ADR, falls der
-  Architect das entscheidet.
-- **Bestehende Sensor-Verträge über den Verweis hinaus umschreiben** — Bestand
-  bleibt; der Slice verschiebt Schwelle und Randform in die Spec und lässt im
-  Vertrag den Verweis, er schreibt die Verträge nicht neu.
-- **Kein Produkt-Code** — Schicht-Abgrenzung: berührt sind `spec/`,
-  `harness/sensors/`, `harness/targets/`, `harness/README.md`, `MR-001` bzw. ein
-  Nachfolge-Eintrag und der ADR-Index.
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.5); die Kante entsteht über die
+  Architect-ADR (§2).
+- **Die Träger des Leer-Tests außerhalb des ADR-Index umschreiben**
+  (`AGENTS.md` §3.5, `.claude/agents/implementer.md`, `verifier.md`) — Bestand
+  bleibt: sie sind Briefings, keine Werkzeug-Verträge (R2, R7 und T8 gelten
+  Verträgen), zitieren die Funktion `teilrange` und bleiben nach der Festlegung
+  gültig.
+- **`spec/lastenheft.md` ändern** — Bestand bleibt: die Nennung von
+  „Abschnitte 1–7“ dort betrifft das Lastenheft selbst (gemessen, oben).
+- **Kein Produkt-Code** — Schicht-Abgrenzung: berührt sind `spec/pflichtenheft.md`,
+  `harness/targets/zitat-vergleich.md`, `harness/README.md`, der ADR-Index, eine
+  neue ADR und `harness/conventions/`.
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
@@ -94,20 +148,41 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Ziel-Form: Slice — **≤ 3 Liefer-Punkte**. Alle Beleg-Angaben sind **Zusagen**
 („zu belegen durch …“).
 
-- [ ] **Abschnitt im Pflichtenheft (Liefer-Punkt 1).** `spec/pflichtenheft.md`
-      trägt §7 „Festlegungen der Harness-Werkzeuge“, die Historie ist §8, jeder
-      Verweis auf die alte §7 ist nachgezogen; je Gate des Index eine
-      Festlegung mit Kennung (R9, T10). *Zu belegen durch:* Suchlauf
-      ([`AGENTS.md`](../../../../AGENTS.md) §3.13) auf „§7“, „Historie“,
-      „Abschnitte 1–7“ an beiden Ständen und `make docs-check` Exit 0.
-- [ ] **Verträge und Index verweisen (Liefer-Punkt 2).** Sensor- und
-      Target-Verträge sowie `harness/README.md` §Sensors nennen die
-      Spec-Kennung der Festlegung (R2, R7, T6, T7, T8); die Konvention zu
-      `Schärft:` im ADR-Index zeigt auf eine Stelle, die es gibt (T4).
-- [ ] **Ausgänge für „Abschnitte 1–7“ und `MR-001` (Liefer-Punkt 3).** `MR-001`
-      bleibt gültig, wird per Nachfolge-Eintrag abgelöst oder bekommt einen
-      anderen Ausgang des Adaptions-Durchgangs, mit Grund (R8); die
-      Lastenheft-Zeile bekommt ihren Ausgang (§6).
+- [ ] **§7 im Pflichtenheft mit zwei Festlegungen (Liefer-Punkt 1).**
+      `spec/pflichtenheft.md` trägt §7 „Festlegungen der Harness-Werkzeuge“ in
+      der Struktur der Vorlage (Regel-Absatz, Tabelle `ID · Werkzeug ·
+      Festlegung`), die Historie ist §8 mit einer neuen Zeile, §1 verweist auf
+      „§2 bis §7“ (T10, R9 für die zwei Werkzeuge). Zwei Zeilen mit eigener
+      `SPEC-<NNN>` (erwartet `SPEC-038` und `SPEC-039`, der Implementer misst):
+      (a) `make zitat-vergleich` — Vergleichseinheit je Verweisform,
+      Normalisierung, die zwei Stände, der nicht messbare Referent und die
+      Ausgänge; (b) der Leer-Test der Teil-Range `teilrange` am Pin-Commit.
+      Die Zeilen tragen ihren Inhalt selbst und nennen keine ADR (Messung in
+      §1). **Dazu, als Bedingung vor der Closure:** eine Architect-ADR
+      (Rollenwechsel, Baseline-Regelwerk `modul-08-agentenrollen.md`) mit
+      `Schärft:` auf die zwei Kennungen stellt die Kante von
+      [`ADR-0158`](../../adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md)
+      bis [`ADR-0161`](../../adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+      her; Status `Accepted`, ADR-Index nachgezogen. Sie setzt das Muster, dem
+      die Folge-Slices folgen. *Zu belegen durch:* Suchlauf (§3),
+      `make docs-check` Exit 0 und die ADR.
+- [ ] **Vertrag, Index und Konvention verweisen (Liefer-Punkt 2).**
+      `harness/targets/zitat-vergleich.md` nennt die Kennung (a) und trägt
+      Einheit, Normalisierung und Ausgänge nicht mehr selbst (R2, R7, T8 für
+      dieses Werkzeug); seine Zeile in `harness/README.md` trägt die Bindung
+      „Spec-Kennung“ (T6 für diese Zeile); der Kommentar-Block in
+      `harness/README.md` §Sensors trägt den Satz, dass was ein Werkzeug prüft
+      in der Spezifikation steht (T7); die `Schärft:`-Konvention im ADR-Index
+      nennt §7 als Ziel einer Gate-ADR (T4).
+- [ ] **`MR-006` löst `MR-001` ab (Liefer-Punkt 3).** `harness/conventions/MR-006-…`
+      (per `cp` aus `.harness/baseline/v6.16.0/templates/harness/conventions/MR-NNN-titel.template.md`)
+      übernimmt die Adaption „Technik-Dokument heißt Pflichtenheft“ mit der
+      Struktur §1–§8 und den Feldern `Löst auf` und `Ausgelöst durch
+      Baseline-Stand`; `MR-001` geht per `git mv` nach
+      `harness/conventions/done/` (eigener Commit); der Index in
+      `harness/conventions.md` führt `MR-006` unter *Aktive* und `MR-001` unter
+      *Aufgelöste Adaptionen* (R8). Freigabe des Auftraggebers liegt vor
+      (2026-10-07).
 - [ ] `make gates` grün, Exit-Code ungefiltert gesichert
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -125,11 +200,37 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `spec/pflichtenheft.md` | update | neuer §7, Historie §8 (Liefer-Punkt 1) |
-| `harness/sensors/*.md`, `harness/targets/*.md` | update | Verweis auf die Festlegung (Liefer-Punkt 2) |
-| `harness/README.md` §Sensors, `docs/plan/adr/README.md` | update | Bindung „Spec-Kennung“, `Schärft:`-Konvention (T4, T6, T7) |
-| `harness/conventions/MR-001-…` bzw. Nachfolge-Eintrag | Ausgang des Durchgangs | R8, Liefer-Punkt 3 |
-| `spec/lastenheft.md` | Prüfauftrag | Zeile mit „Abschnitte 1–7“ (§6) |
+| `spec/pflichtenheft.md` | update | §1-Verweis, neuer §7 mit zwei Zeilen, Historie §8 (Liefer-Punkt 1) |
+| `docs/plan/adr/<NNNN>-…` und ADR-Index | neu (Architect) | `Schärft:`-Kante von `ADR-0158` bis `ADR-0161` (Bedingung in Liefer-Punkt 1) |
+| `harness/targets/zitat-vergleich.md` | update | Verweis auf Kennung (a) (Liefer-Punkt 2) |
+| `harness/README.md` (Zeile `make zitat-vergleich`, Kommentar-Block §Sensors) | update | T6, T7 (Liefer-Punkt 2) |
+| `docs/plan/adr/README.md` §Konventionen | update | `Schärft:`-Konvention (T4, Liefer-Punkt 2) |
+| `harness/conventions/MR-006-…`, `MR-001-…` → `done/`, `harness/conventions.md` | neu, `git mv`, update | R8 (Liefer-Punkt 3) |
+| `docs/plan/planning/observations/BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall/state.md` | Prüfauftrag | nennt „`spec/pflichtenheft.md` §7 Historie“ (Suchlauf unten); Zustandsfeld, nachziehen oder mit Grund stehen lassen |
+
+**Suchlauf — bewegte Eigenschaften:** die Nummer der Historie (§7 → §8), der
+Abschnitts-Umfang „§2 bis §6“ / „Abschnitte 1–7“ und das Ziel der
+`Schärft:`-Konvention. Suchraum: der ganze Baum ohne `docs/reviews/**`,
+`docs/plan/planning/done/**` und `.harness/baseline/**`. Gemessen beim
+Neuschnitt am Parent `abbe11b4`; die `diff`-Zeilen gelten dem Arbeitsbaum
+nach dem Commit der Folge-Slices. Der Implementer ergänzt die `diff`-Zahlen
+nach seiner Arbeit und nennt Gefundenes und Nichtgefundenes.
+
+```suchlauf
+abbe11b4 3 -F 'Abschnitte 1–7' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 3 -F 'Abschnitte 1–7' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+abbe11b4 1 -F '§2 bis §6' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 1 -F '§2 bis §6' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+abbe11b4 1 -E 'pflichtenheft[^ ]*`? §7' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+abbe11b4 0 -F '7-historie' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+abbe11b4 1 -F 'welche Spec-Stelle' -- docs/plan/adr/README.md
+```
+
+Befund am Parent: „Abschnitte 1–7“ in `spec/lastenheft.md` (Historie, nicht
+berührt), `MR-001` (abgelöst durch `MR-006`) und
+[`ADR-0161`](../../adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+Zeile 187 (`Accepted`, bleibt); „§2 bis §6“ nur in `spec/pflichtenheft.md` §1;
+die Historie als §7 nur im Zustandsfeld oben; kein Anker `#7-historie`.
 
 ## 4. Trigger
 
@@ -143,16 +244,23 @@ nicht an `slice-harness-gate-index-werkzeug-teile`.
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
 - `in-progress` → `next` (zu groß): die Festlegungen aller Gates sprengen eine
-  Review-Sitzung — dann je Gate-Gruppe ein Slice.
-- `in-progress` → `open` (blockiert): die Änderung am Lastenheft (Rang 1,
-  vertraglich) verlangt eine Freigabe, die nicht vorliegt.
+  Review-Sitzung — dann je Gate-Gruppe ein Slice. **Eingetreten am
+  2026-10-07**; Ausgang ist die Planänderung in §1 (Zuschnitt A, fünf
+  Folge-Slices), freigegeben durch den Auftraggeber, keine Rückführung.
+- `in-progress` → `next` (Zuschnitt A zu groß): die Festlegung von
+  `make zitat-vergleich` allein sprengt eine Review-Sitzung — dann
+  `MR-006` als eigener Slice.
+- `in-progress` → `open` (blockiert): der Architect lehnt eine ADR ab, die
+  `Schärft:` auf eine `SPEC-<NNN>` in §7 setzt, und benennt keinen anderen
+  Weg der Kante.
 
 ## 5. Closure-Trigger
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Closure- und Lerneintrag-Regeln.
 
-Die drei Liefer-Punkte sind abgehakt mit Beleg, `make gates` endet mit Exit 0,
+Die drei Liefer-Punkte sind abgehakt mit Beleg, die Architect-ADR ist
+`Accepted`, `make gates` endet mit Exit 0,
 der Review-Report liegt vor und ist aufgelöst, die Closure-Notiz trägt den
 Lerneintrag und jedes Risiko aus §6 seinen Ausgang.
 
@@ -163,18 +271,30 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 - **Berührung des Lastenhefts (Rang 1).** Der Bump-Plan zählte die Nennung von
   „Abschnitte 1–7“ in `spec/lastenheft.md` als betroffen. **Gemessen** bei der
-  Anlage (`grep -n 'Abschnitte 1–7' spec/lastenheft.md`): eine Zeile, 1517, in
-  der Historie-Tabelle (Version 0.3.0, „Überführung in
-  Lastenheft-Vorlagen-Struktur“) — sie beschreibt die Gliederung des
-  Lastenhefts selbst, nicht die des Pflichtenhefts. Ob sie betroffen ist, ist
-  am Start zu entscheiden; erwartet: nicht betroffen, Historie bleibt.
+  Anlage und vom Implementer bestätigt (`grep -n 'Abschnitte 1–7'
+  spec/lastenheft.md`): eine Zeile, 1517, in der Historie-Tabelle (Version
+  0.3.0) — sie beschreibt die Gliederung des Lastenhefts selbst. Erwarteter
+  Ausgang: *entfallen*, mit diesem Grund.
 - **Umnummerierung bricht Verweise auf §7 des Pflichtenhefts** (Anker,
-  Prosa-Nennungen). *Zu belegen durch:* Suchlauf an beiden Ständen und
+  Prosa-Nennungen). *Zu belegen durch:* Suchlauf (§3) an beiden Ständen und
   `make docs-check`.
-- **Welche Gate-ADR schärft welche Festlegung** — Auswahl unter `ADR-0158` bis
-  `ADR-0160` und älteren Gate-ADRs; eine `Accepted`-ADR bekommt kein
-  nachgetragenes Feld (§1). *Zu belegen durch:* Architect-Artefakt, falls eine
-  Folge-ADR nötig ist.
+- **Kante von `ADR-0158` bis `ADR-0161` zu den neuen Kennungen.** Die vier
+  tragen `Schärft: —` und sind immutabel; die Spec darf nicht auf ADRs zeigen
+  (Messung in §1). Die Kante entsteht nur über eine Architect-ADR; lehnt der
+  Architect sie ab, greift die Rückführung `in-progress → open` (§4).
+  *Zu belegen durch:* die ADR.
+- **Lücke in §7 bis zu den Folge-Slices.** Nach diesem Slice trägt §7 zwei
+  Festlegungen; die übrigen Gates, Prüfer und Hooks führen Schwelle und
+  Randform weiter in ihren Verträgen, bis
+  `slice-spec-festlegungen-doku-gates`, `-kennungs-gates`, `-code-gates`,
+  `-coverage-gates` und `-pruefer-hooks` geschlossen sind. Die Regel der
+  Baseline („steht in der Spezifikation“) gilt bis dahin nur für zwei
+  Werkzeuge — benannt, nicht still. Erwarteter Ausgang: *eingetreten* mit den
+  fünf Kennungen der Folge-Slices.
+- **Festlegung lässt eine Randform offen** (`BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen`,
+  2×; ein drittes Auftreten wäre eine Lücke). *Zu belegen durch:* Gegenlesen
+  der zwei Zeilen gegen den Vertrag von `make zitat-vergleich` und die vier
+  Quell-ADRs; die Folge-Slices brauchen die Form von §7 ohne Rückfrage.
 
 ## 7. Closure-Notiz
 
@@ -212,11 +332,19 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 **Der Abschnitt selbst entfällt nie.**
 
-**Vorgelagert — Sub-Area-Wahl prüfen:** berührt sind `spec/`, `harness/` und
-der ADR-Index; die Modus-Deklaration führt nur die Default-Sub-Area `*`
+**Vorgelagert — Sub-Area-Wahl prüfen:** berührt sind `spec/`, `harness/`
+(samt `harness/conventions/`), der ADR-Index und eine neue ADR; die Modus-Deklaration führt nur die Default-Sub-Area `*`
 (Kürzel `PGC`, Greenfield), alle Pfade fallen unter sie.
 
-**Vorgelagert — offene Beobachtungen sichten:** beim Übergang `open → next`
-nachzuholen (gemergter Stand des Registers).
+**Vorgelagert — offene Beobachtungen sichten:** beim Neuschnitt (2026-10-07)
+am Stand `abbe11b4` gelesen:
+`BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen` (2×) trifft
+Liefer-Punkt 1 (Risiko in §6);
+`BEO-PGC/messwerkzeug-grenze-unbenannt-fail-open` (1×) betrifft
+`make zitat-vergleich`, das Markdown nachbildet — die Festlegung nennt die
+Grenze; `BEO-PGC/werkzeugvertrag-zusage-ohne-testfall` (1×) betrifft die
+Randformen der Festlegung (a), die der Tabellentest `make test-zitat-vergleich`
+tragen muss. Keiner erreicht mit diesem Slice 3×, solange die Festlegungen
+vollständig sind.
 
 **Modus-Begründungsblock — Umfang.** Alle berührten Sub-Areas GF.
