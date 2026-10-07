@@ -57,11 +57,10 @@ sind vergleichbar · seit slice-baseline-6-14-0-dokumente-nachziehen.
    Repo nicht“ mit Grund. Dazu der Durchgang durch die Adaptionen in
    `harness/conventions.md` mit ihren fünf Ausgängen; je MR-Eintrag misst er
    die Einheit seines Verweises in `Ersetzt-Baseline-Regel` **zwischen den
-   Tags des Bumps** (Pfad und Anker aus dem eingefrorenen Verweis, Tag-Segment
-   alt bzw. neu, ein Stand mit beiden Bäumen) mit `make zitat-vergleich`, roh
-   und bei `cmp 1` mit Tag-Paar. `cmp 0` ist kein Prüfauftrag; `cmp 1`
-   normalisiert oder Exit 2 ist ein Prüfauftrag, der einen der fünf Ausgänge
-   mit Grund im Plan des Bumps bekommt
+   Tags des Bumps** mit `make zitat-vergleich`; Stände, Normalisierung und die
+   Lesung der Ausgänge stehen in
+   [`SPEC-038`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge),
+   ein Prüfauftrag bekommt seinen Ausgang mit Grund im Plan des Bumps
    ([`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
    Entscheidung 5). Dazu die getrackten
    Symlinks auf den alten Tag — `git grep` liest kein Symlink-Ziel (Modus
@@ -112,13 +111,11 @@ Version und Anker, der Linktext bleibt Prosa). Das steht in einem eigenen
 Commit `F`, der **nur** MR-Dateien ändert, dessen Message `ADR-0073` und
 `ADR-0161` nennt und der **vor** dem Lösch-Commit liegt (Entscheidung 4). Der
 Verifier prüft `make doc-immutable` in den Teil-Ranges `B..F~1` und `F..H`,
-je mit dem Leer-Test `teilrange` aus
+je mit dem Leer-Test der Teil-Range
+([`SPEC-039`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge);
+Befehlsform: Funktion `teilrange` in
 [`ADR-0160`](../../docs/plan/adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
-Entscheidung 1 (leer genau dann, wenn `git rev-parse` für Basis und Spitze
-denselben Commit liefert; dann kein Lauf, die gedruckte Zeile ist der Beleg;
-sonst `git merge-base --is-ancestor` und Zählung > 0, dann
-`make doc-immutable` mit Exit 0; jede andere Lage endet mit Exit 2, und die
-Range wird neu gebildet), und am Form-Commit je MR-Datei den `formnorm`-`cmp`
+Entscheidung 1), und am Form-Commit je MR-Datei den `formnorm`-`cmp`
 aus `ADR-0161` Entscheidung 4: eine Zeile je Datei, jede mit `cmp 0`. Ein
 Link aus einer ADR in ein gelöschtes Tag bekommt dieselbe Form-Korrektur in
 einem eigenen Commit mit `ADR-0073` und einer §Geschichte-Zeile.

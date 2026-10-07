@@ -4,8 +4,8 @@
 
 `make zitat-vergleich ARGS="…"` vergleicht die **Einheit**, die eine alte
 Adresse an ihrem Stand adressiert, mit der Einheit der neuen Adresse an deren
-Stand: roh (byte-gleich, abschließende Leerzeilen eingeschlossen) oder, mit
-Tag-Paar, nach Normalisierung nur des bewegten Baseline-Tags
+Stand: roh oder, mit Tag-Paar, nach Normalisierung nur des bewegten
+Baseline-Tags
 (`tools/harness/zitat-vergleich.sh`; netzlos, kein Docker). Es ist die Messung,
 die eine Zitat-Korrektur an einer `Accepted` ADR und an einem MR-Eintrag belegt
 ([`AGENTS.md`](../../AGENTS.md) §3.5) — ausgenommen die Form-Korrektur an einem
@@ -16,18 +16,16 @@ Entscheidung 3, deren Beleg an Stelle dieser Messung `teilrange` und der
 Baseline-Bumps den Referenten je MR-Eintrag zwischen den Tags des Bumps misst
 (`ADR-0161` Entscheidung 5).
 
-**Wer was trägt.** Die **Semantik** — welche Einheit ein Verweis hat, was
-normalisiert wird, was „roh“ heißt, wann der Lauf mit 2 endet — trägt
+**Wer was trägt.** Die **Festlegung** — welche Einheit ein Verweis hat, was
+normalisiert wird, was „roh“ heißt, an welchen Ständen gelesen wird, wann der
+Lauf mit 2 endet und wie ein Ausgang zu lesen ist — steht in
+[`SPEC-038`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge);
+diese Datei wiederholt sie nicht. Die **Messung** trägt dieses Ziel; Beleg ist
+seine gedruckte Zeile. Der `bash`-Block in Entscheidung 4 von
 [`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
-(Entscheidung 1 bis 5, mit den Teilen von
-[`ADR-0158`](../../docs/plan/adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md),
-die sie in Kraft lässt), ausgelegt durch das
-[Architect-Verdikt](../../docs/reviews/architect-verdict-zitat-vergleich-werkzeug.md) §3.
-Die **Messung** trägt dieses Ziel; Beleg ist seine gedruckte Zeile. Der
-`bash`-Block in Entscheidung 4 der ADR ist die historische Fassung der
-Messform. Weicht dieses Werkzeug außerhalb der Punkte unter §Abweichungen von
-ihm ab, ist das ein Fehler des Werkzeugs; weicht es von der Semantik ab, ist
-das Werkzeug falsch.
+ist die historische Fassung der Messform. Weicht dieses Werkzeug außerhalb der
+Punkte unter §Abweichungen von ihm ab, ist das ein Fehler des Werkzeugs; weicht
+es von der Festlegung ab, ist das Werkzeug falsch.
 
 **Kein Gate.** Die Messung fällt je Baseline-Bump und je Zitat-Korrektur einmal
 an und hat keinen stehenden Stand; ob die Korrektur nur das Gerüst berührt,
@@ -45,11 +43,11 @@ bash tools/harness/zitat-vergleich.sh <alt-stand> <alt-pfad> <alt-ref> <neu-stan
   Name); **Pfad:** relativ zur Repo-Wurzel. Das Skript wechselt in die Wurzel
   des Repos, in dem es aufgerufen wird.
 - **Referenz:** `''` = ganze Datei · `'#anker'` = Abschnitt hinter einem
-  Heading-Slug oder einer HTML-`id` · `L<a>-<b>` = Zeilen `a` bis `b` mit
-  `1 <= a <= b`. Jede andere Form endet mit Exit 2 (auch `L7`, `L5-3`, `L0-1`,
-  `L1-2-3`).
-- **Tag-Paar** (optional, siebtes Argument): `v<X.Y.Z>:v<X.Y.Z>`, nur wenn roh
-  fällt und die Korrektur ein Versions-Segment bewegt.
+  Heading-Slug oder einer HTML-`id` · `L<a>-<b>` = Zeilen `a` bis `b`; die
+  gültigen Formen stehen in
+  [`SPEC-038`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge).
+- **Tag-Paar** (optional, siebtes Argument): `v<X.Y.Z>:v<X.Y.Z>`; wann es
+  gesetzt wird, steht ebenda.
 - Genau 6 oder 7 Argumente, sonst Exit 2 mit Gebrauchszeile. Ohne `ARGS` bricht
   das Make-Ziel mit `$(error …)` ab.
 
@@ -70,63 +68,13 @@ Pin-Commit gemessen) und von `slice-harness-baseline-v6-16-0`.
 
 ## Einheit je Referenz
 
-- **Ganze Datei** und **Zeilen** (`sed -n "<a>,<b>p"`): roh, ein Unterschied im
-  Schluss-Umbruch der Datei fällt.
-- **Heading-Slug:** der Abschnittskörper (ohne die Heading-Zeile) bis vor das
-  nächste Heading gleicher oder höherer Ebene. Ein Heading beginnt am
-  Zeilenanfang mit 1 bis 6 `#` und einem Leerzeichen. Der Slug ist der
-  Heading-Text ohne schließende `#`-Folge (CommonMark: ` ##` am Zeilenende),
-  klein geschrieben, ohne HTML-Tags, ohne Zeichen außer Buchstaben, Ziffern,
-  Leerzeichen, `_` und `-`, Leerzeichen zu `-`; ein doppelter Slug bekommt
-  `-1`, `-2`, … . Headings in einem Code-Fence zählen nicht. Aufgelöst wird die
-  erste Fundstelle in Dateireihenfolge, Slug oder `id`.
-- **HTML-`id`** — gelesen wird nur das öffnende Tag `<a id="X">` außerhalb von
-  Fence, Inline-Code (vor der Fundstelle steht in der Zeile eine ungerade Zahl
-  Backticks), eingerücktem Code (die
-  Zeile beginnt mit vier Leerzeichen oder einem Tab; das trifft auch einen
-  Fence in einem Listenpunkt) und HTML-Kommentar (`<!--` bis `-->`, auch über
-  Zeilen; ein `<!--` hinter einer ungeraden Zahl Backticks der Zeile steht in
-  Inline-Code und öffnet keinen). Die Einheit folgt der Stellung:
-
-  | Stellung | Einheit |
-  |---|---|
-  | in einer Heading-Zeile | der Abschnittskörper dieses Headings |
-  | in einer Zeile ohne Inhalt, die nächste Zeile mit Inhalt ist ein Heading | der Abschnittskörper dieses Headings |
-  | in einer Zeile ohne Inhalt, die nächste Zeile mit Inhalt ist kein Heading | der Block ab dieser Zeile bis vor das nächste Heading beliebiger Ebene oder bis zum Dateiende |
-  | in einer Tabellenzeile (die Zeile beginnt mit `\|`) | die Tabellenzeile |
-  | in einer anderen Zeile mit Text | der Block ab dieser Zeile bis vor das nächste Heading beliebiger Ebene oder bis zum Dateiende |
-
-  Eine **Zeile ohne Inhalt** trägt nach dem Entfernen aller `<a id="…"></a>`
-  und aller HTML-Kommentar-Teile nur Leerraum. Gestapelte `id`-Zeilen vor einem
-  Heading adressieren deshalb alle den Abschnittskörper dieses Headings, vor
-  einem Absatz den Block ab dem Absatz; eine Zeile `<!-- … --> <a id="X"></a>`
-  vor einem Heading ebenso den Abschnitt. Ein Fence direkt nach einer
-  `id`-Zeile beginnt den Block; seine Öffnungszeile gehört zur Einheit.
-
-  **Mehrdeutig endet mit Exit 2.** Das Werkzeug parst Code-Spans nicht. Trägt
-  eine Zeile außerhalb eines Fence `<a id="X"` (nicht eingerückt) oder eine
-  Kommentar-Grenze (`<!--`, `-->`) und dazu einen Backtick-Lauf ab Länge 2,
-  eine ungerade Zahl Backticks, oder steht sie in einem Absatz, dessen
-  Vorzeilen eine ungerade Zahl Backticks tragen (offener Code-Span), so ist
-  nicht sicher, ob `id` oder Kommentar in Inline-Code stehen. Eine solche
-  `id`-Zeile und jede Fundstelle von `X` nach einer solchen Kommentar-Grenze
-  enden mit Exit 2 („mehrdeutig“); ebenso eine `id`-Zeile mit einem Einzug aus
-  Leerzeichen und Tab. Exit 2 heißt hier „nicht messbar, Urteil am Diff“
-  ([`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
-  Entscheidung 2). Einzelne Backticks in gerader Zahl ohne offenen Span aus
-  der Vorzeile gelten als sicher gelesen: Eine `id` oder ein `<!--`, vor dem in
-  der Zeile eine ungerade Zahl Backticks steht, liegt in Inline-Code und wird
-  nicht gelesen, auch mit Text zwischen Backtick und Tag
-  (`` `siehe <a id="x"></a>` ``); bei gerader Zahl liegt die Fundstelle
-  außerhalb. Ein escapter Backtick trägt diese Lesung nicht (§Grenzen).
-- **Fence** (CommonMark): öffnet mit 0 bis 3 Leerzeichen Einzug und mindestens
-  drei gleichen Zeichen `` ` `` oder `~` (ein Backtick-Fence trägt im
-  Info-String keinen Backtick) und schließt nur mit demselben Zeichen in
-  mindestens derselben Länge, danach höchstens Leerraum. Ein nicht
-  geschlossener Fence reicht bis zum Dateiende.
-- **Normalisierung mit Tag-Paar:** auf der alten Seite wird nur das Segment
-  `/<alt-tag>/` durch `/<tag>/` ersetzt, auf der neuen nur `/<neu-tag>/`; ein
-  fremder Pin mit anderer Version bleibt roh.
+Welche Einheit eine Referenz hat — Datei, Abschnittskörper eines Headings,
+Einheit einer HTML-`id` nach ihrer Stellung, Zeilen —, wie Slug, Fence und
+Inline-Code gelesen werden, wann eine Stellung mehrdeutig ist und was die
+Normalisierung mit Tag-Paar ersetzt, steht in
+[`SPEC-038`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge).
+Diese Datei nennt die Grenzen der Nachbildung (§Grenzen) und die Punkte, an
+denen das Werkzeug vom Block der ADR abweicht (§Abweichungen).
 
 ## Ausgabe und Ausgänge
 
@@ -142,11 +90,9 @@ Bei verschiedenen Einheiten druckt `cmp` davor die Stelle des ersten
 Unterschieds; Meldungen von `einheit` (nicht lesbar, Lokator, leere Einheit,
 `id` in anderer Form, awk-Fehler) stehen auf stderr.
 
-| Exit | Bedeutung |
-|---|---|
-| 0 | die Einheiten sind gleich (`cmp 0`) |
-| 1 | die Einheiten sind verschieden (`cmp 1`) |
-| 2 | eine Seite hat keine Einheit (Datei an dem Stand nicht lesbar, Lokator ungültig, Einheit leer, `id` in anderer Form, `id` in mehrdeutiger Stellung), das Tag-Paar ist ungültig, die Zahl der Argumente ist nicht 6 oder 7, oder `awk` besteht die Fähigkeitsprobe nicht |
+Die Exit-Codes 0 (`cmp 0`), 1 (`cmp 1`) und 2 (keine Einheit, ungültiges
+Argument) und ihre Lesung im Adaptions-Durchgang stehen in
+[`SPEC-038`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge).
 
 **Die Farbe steht in der Zeile.** Über `make` kommt jeder Exit ungleich 0 als
 der Make-eigene Exit `2` an; ein Beleg zitiert deshalb die gedruckte Zeile
@@ -160,22 +106,26 @@ Gewollt und im Tabellentest gebunden
 die drei letzten Zeilen aus der Review-Fixrunde, als Auslegung im Sinn von
 Verdikt §2: dieselbe Erkennungsregel wie „`id` in Code-Fence oder Inline-Code
 zählt nicht“, ein strikter Lokator nach „ungültiger Lokator endet mit Exit 2“
-und der Slug des Renderers):
+und der Slug des Renderers). Was das Werkzeug an jedem Punkt tut, steht in
+[`SPEC-038`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge);
+die Tabelle nennt, wie der Block der ADR denselben Punkt behandelt:
 
-| Punkt | Werkzeug | Block der ADR |
-|---|---|---|
-| gestapelte `id` | Zeile ohne Inhalt wird übersprungen, die Einheit ist der Abschnitt bzw. Block dahinter | die Einheit der oberen `id` ist die Zeile der unteren |
-| `id` in anderer Form (`<a id="X" class="…">`, `<a id="X"/>`) | Exit 2 mit einer Zeile, die die Form nennt, auch wenn ein Heading-Slug `X` trifft | als Zeile mit Text gelesen, die Einheit ist nur die `id`-Zeile |
-| Fence | CommonMark: Einzug 0 bis 3, Zeichen und Länge gemerkt | jede Zeile, die am Zeilenanfang mit ```` ``` ```` oder `~~~` beginnt, schaltet um |
-| Tag-Paar | nur mit verschiedenen Tags, `.harness/baseline/<alt-tag>` am alten und `.harness/baseline/<neu-tag>` am neuen Stand; ein leeres siebtes Argument endet mit Exit 2 | jedes Paar der Form `v…:v…`; ein leeres siebtes Argument heißt roh |
-| Locale | setzt `LC_ALL=C.UTF-8` selbst und prüft `printf 'Ä' \| awk '{print tolower($0), length($0)}'` gegen `ä 1`, sonst Exit 2 | hängt an der Locale des Aufrufers; unter `LC_ALL=C` endet ein Slug mit Umlaut als leere Einheit |
-| `id` in eingerücktem Code und in HTML-Kommentar | nicht gelesen | gelesen; `harness/conventions.md#mr-<NNN>` löst auf den Kommentar auf |
-| Lokator | nur `L<a>-<b>` mit `1 <= a <= b` | `L7` als `L7-7`, `L5-3` als Zeile 5 |
-| schließende `#`-Folge eines Headings | gehört nicht zum Slug (`## Eins ##` → `#eins`) | gehört zum Slug (`#eins-`) |
-| mehrdeutige Stellung (Backtick-Lauf ab 2, ungerade Backticks, offener Code-Span, Einzug aus Leerzeichen und Tab) | Exit 2, „mehrdeutig“ | gelesen wie jede andere Zeile |
-| HTML-Kommentar in einer `id`-Zeile | gilt als ohne Inhalt | gilt als Text, Einheit ist der Block |
+| Punkt | Block der ADR |
+|---|---|
+| gestapelte `id` | die Einheit der oberen `id` ist die Zeile der unteren |
+| `id` in anderer Form (`<a id="X" class="…">`, `<a id="X"/>`) | als Zeile mit Text gelesen, die Einheit ist nur die `id`-Zeile |
+| Fence | jede Zeile, die am Zeilenanfang mit ```` ``` ```` oder `~~~` beginnt, schaltet um |
+| Tag-Paar | jedes Paar der Form `v…:v…`; ein leeres siebtes Argument heißt roh |
+| Locale | hängt an der Locale des Aufrufers; unter `LC_ALL=C` endet ein Slug mit Umlaut als leere Einheit |
+| `id` in eingerücktem Code und in HTML-Kommentar | gelesen; `harness/conventions.md#mr-<NNN>` löst auf den Kommentar auf |
+| Lokator | `L7` als `L7-7`, `L5-3` als Zeile 5 |
+| schließende `#`-Folge eines Headings | gehört zum Slug (`#eins-`) |
+| mehrdeutige Stellung (Backtick-Lauf ab 2, ungerade Backticks, offener Code-Span, Einzug aus Leerzeichen und Tab) | gelesen wie jede andere Zeile |
+| HTML-Kommentar in einer `id`-Zeile | gilt als Text, Einheit ist der Block |
 
-Daneben prüft das Werkzeug die Zahl der Argumente und den Exit von `sed` am
+Die Fähigkeitsprobe der Locale ist
+`printf 'Ä' | awk '{print tolower($0), length($0)}'` gegen `ä 1`. Daneben
+prüft das Werkzeug die Zahl der Argumente und den Exit von `sed` am
 Zeilen-Lokator und von `awk` am Anker; beides endet mit Exit 2.
 
 ## Host-Werkzeuge
@@ -228,9 +178,9 @@ verlangt, und das Skript benutzt keine Funktion, die nur gawk kennt.
   CommonMark ein Absatz eines Listenpunkts ist; der Verweis endet mit Exit 2
   (fail-closed), adressiert wird dann über ein Heading oder eine nicht
   eingerückte `id`.
-- **Schluss-Umbruch im Abschnitts- und Block-Modus.** `awk` schreibt jede Zeile
-  mit Zeilenumbruch; ein Unterschied allein im Schluss-Umbruch der Datei fällt
-  dort nicht auf.
+- **Schluss-Umbruch im Abschnitts- und Block-Modus** und **fremder Pin mit dem
+  Bump-Tag** — beide Randformen stehen in
+  [`SPEC-038`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge).
 - **Gleicher Körper.** Ein Anker-Wechsel zwischen zwei Abschnitten mit
   byte-gleichem Körper besteht; ob der neue Anker dieselbe Aussage meint,
   bleibt Urteil am Diff.
@@ -241,8 +191,6 @@ verlangt, und das Skript benutzt keine Funktion, die nur gawk kennt.
   Attributform in einer gestapelten Zeile gilt als Inhalt.
 - **NUL-Bytes** trägt eine Shell-Variable nicht; das Werkzeug ist für
   Textdateien gemacht.
-- **Fremder Pin mit dem Bump-Tag.** Trägt ein fremder Pin zufällig genau den
-  alten oder neuen Baseline-Tag, normalisiert das Werkzeug auch ihn.
 - **Was nicht im Werkzeug steht:** die Datei-Schleife des `formnorm`-`cmp` am
   Form-Commit aus
   [`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
@@ -283,3 +231,9 @@ Multibyte · Argumentzahl · roter Vergleich unter `set -euo pipefail` beim
 Aufrufer (über `SHELLOPTS`) · `source` lässt die Shell-Optionen des Aufrufers
 unverändert. Der Prüfling ist per `PROG=<Datei>` übersteuerbar
 (Mutationsläufe an Kopien).
+
+## Bindung
+
+kein Gate ·
+[`SPEC-038`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge) ·
+[`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)

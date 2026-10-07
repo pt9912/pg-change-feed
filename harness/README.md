@@ -71,7 +71,7 @@ Drei Spalten — kein Lauf-Status:
 - Target:  der Make-Befehl.
 - Vertrag: was prüft das Gate (was wäre verletzt, wenn es rot wird).
 - Bindung: strukturelle Referenzen — Carveout-ID (`CO-<NNN>`),
-  Slice-ID, Schwelle, Image-Hash, ADR-ID. NICHT der Lauf-Status,
+  Slice-ID, Spec-Kennung, Schwelle, Image-Hash, ADR-ID. NICHT der Lauf-Status,
   sondern was das Gate *strukturell trägt*.
 
 Lauf-Wahrheit pro Commit liegt in CI (Badge/Dashboard), nicht hier
@@ -111,7 +111,8 @@ auf die falsche Datei bleiben still grün, und geprüft wird nur, wo ein
 Link-Sensor über `harness/` läuft. Kein `sensors/done/`:
 ein retiriertes Gate verschwindet, `git` hält seine Geschichte. Was das
 Werkzeug selbst deckt (welcher Test welche Hälfte trägt), gehört NICHT
-dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
+dorthin, sondern in seine ADR/seinen Skriptkopf; was es prüft und wie es an
+seinen Randformen entscheidet, steht in der Spezifikation.
 -->
 
 | Target | Vertrag | Bindung |
@@ -158,7 +159,7 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 | `.github/workflows/sdk-kotlin-release.yml` | Publish-Workflow für `pgchangefeed-kotlin` (GitHub Packages, Cloudsmith), Trigger `sdk-kotlin-v*`-Tag | kein Gate, [`harness/targets/workflows.md`](targets/workflows.md), [`ADR-0109`](../docs/plan/adr/0109-kotlin-github-packages-drittes-sdk-package.md) Festlegung 2/5, [`ADR-0123`](../docs/plan/adr/0123-kotlin-sdk-zusaetzlich-auf-cloudsmith.md) · seit slice-sdk-kotlin-publish-workflow, erweitert seit slice-sdk-kotlin-cloudsmith |
 | `make suchlauf-nachmessen` | misst die `suchlauf`-Blöcke eines Slice-Plans nach; netzlos | kein Gate, [`harness/sensors/suchlauf-nachmessen.md`](sensors/suchlauf-nachmessen.md), [`ADR-0083`](../docs/plan/adr/0083-herkunft-von-aussagen-in-traegern.md) · seit slice-harness-suchlauf-nachmessen |
 | `make test-suchlauf-nachmessen` | Tabellentest gegen `tools/harness/suchlauf-nachmessen.sh`; netzlos | kein Gate, [`harness/sensors/suchlauf-nachmessen.md`](sensors/suchlauf-nachmessen.md) · seit slice-harness-suchlauf-nachmessen |
-| `make zitat-vergleich` | Referent-Messung einer Zitat-Korrektur: vergleicht die Einheit zweier Adressen roh oder mit Tag-Paar; netzlos | kein Gate, [`harness/targets/zitat-vergleich.md`](targets/zitat-vergleich.md), [`ADR-0159`](../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md) · seit slice-zitat-vergleich-werkzeug |
+| `make zitat-vergleich` | Referent-Messung einer Zitat-Korrektur: vergleicht die Einheit zweier Adressen roh oder mit Tag-Paar; netzlos | kein Gate, [`harness/targets/zitat-vergleich.md`](targets/zitat-vergleich.md), [`SPEC-038`](../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge), [`ADR-0159`](../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md) · seit slice-zitat-vergleich-werkzeug |
 | `make test-zitat-vergleich` | Tabellentest gegen `tools/harness/zitat-vergleich.sh` in drei Runden (ohne Option, `nullglob`, `failglob`); netzlos | kein Gate, [`harness/targets/zitat-vergleich.md`](targets/zitat-vergleich.md) · seit slice-zitat-vergleich-werkzeug |
 | `make kommentar-kennungen` | listet Kommentarblöcke, die ihre Herkunft nicht als ein auflösbares Feld tragen; Docker-only | kein Gate, [`harness/sensors/kommentar-kennungen.md`](sensors/kommentar-kennungen.md), [`ADR-0083`](../docs/plan/adr/0083-herkunft-von-aussagen-in-traegern.md), [`AGENTS.md`](../AGENTS.md) §3.7 · seit slice-code-kommentare-kennungen, Nicht-Go-Formen seit slice-kommentar-kennungen-skripte |
 | `make test-kommentar-kennungen` | Tabellentests des Programms `tools/harness/kommentar-kennungen/` und seines Aufrufers; Docker-only | kein Gate, [`harness/sensors/kommentar-kennungen.md`](sensors/kommentar-kennungen.md) · seit slice-code-kommentare-kennungen |

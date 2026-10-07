@@ -194,7 +194,9 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
   sie verbindlich macht (Baseline-Regelwerk `grundlagen-referenz-richtung.md` §Referenz-Richtung (SDP)) —
   als Kennung (`SPEC-*`, `ARC-*`, `LH-FA-*.<Buchstabe>`), ersatzweise als
   Abschnitt, wo die Sektion keine Kennungen vergibt.
-  Prozess-ADRs ohne Spec-Stratum tragen `—`.
+  Prozess-ADRs ohne Spec-Stratum tragen `—`; die ADR eines Gates, dessen
+  Werkzeug festlegt, was es prüft, schärft dessen Spec-Stelle in
+  [`spec/pflichtenheft.md` §7](../../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge).
 - **Spalten — repo-spezifisch.** Der Index führt `Datum` und `Datei` statt der
   Spalte `Bezug` der Vorlage. `ID` steht ohne Link, weil die `structure`-Regel
   in `.d-check.yml` die Zelle auf genau acht Zeichen hält; der Link auf die

@@ -1900,8 +1900,10 @@ des Renderers, nicht seine Auflösung.
 
 Eine **HTML-`id`** wird nur als öffnendes Tag `<a id="X">` gelesen, und nur
 außerhalb von Fence, Inline-Code (vor der Fundstelle steht in der Zeile eine
-ungerade Zahl Backticks), eingerücktem Code (die Zeile beginnt mit vier
-Leerzeichen oder einem Tab) und HTML-Kommentar (`<!--` bis `-->`, auch über
+ungerade Zahl Backticks, auch mit Text zwischen Backtick und Tag; bei gerader
+Zahl liegt sie außerhalb), eingerücktem Code (die Zeile beginnt mit vier
+Leerzeichen oder einem Tab; das trifft auch einen Fence in einem Listenpunkt)
+und HTML-Kommentar (`<!--` bis `-->`, auch über
 Zeilen; ein `<!--` hinter einer ungeraden Zahl Backticks der Zeile öffnet
 keinen). Die Einheit folgt der Stellung:
 
@@ -1931,7 +1933,8 @@ abschließende Leerzeilen eingeschlossen. Im Datei- und im Zeilen-Modus zählt
 ein Unterschied im Schluss-Umbruch der Datei, im Abschnitts- und im
 Block-Modus nicht (jede Zeile der Einheit endet dort mit Zeilenumbruch).
 Normalisiert wird nur mit einem **Tag-Paar** `<alt-tag>:<neu-tag>` der Form
-`v<X.Y.Z>:v<X.Y.Z>` mit verschiedenen Tags, nur wenn die Korrektur ein
+`v<X.Y.Z>:v<X.Y.Z>` mit verschiedenen Tags (ein leeres Tag-Paar ist
+ungültig, nicht roh), nur wenn die Korrektur ein
 Versions-Segment bewegt und der rohe Vergleich fällt: auf der alten Seite wird
 nur das Segment `/<alt-tag>/` durch `/<tag>/` ersetzt, auf der neuen nur
 `/<neu-tag>/`. Am alten Stand muss `.harness/baseline/<alt-tag>` liegen, am
@@ -1965,8 +1968,10 @@ gedruckt vor dem Ende: `vergleich roh: … cmp <n>`, `vergleich norm
 | 1 | die Einheiten sind verschieden (`cmp 1`) |
 | 2 | eine Seite hat keine Einheit (Datei am Stand nicht lesbar, Lokator ungültig, Einheit leer, `id` in anderer Form, mehrdeutige Stellung), das Tag-Paar ist ungültig, die Zahl der Argumente ist nicht 6 oder 7, oder `awk` liest unter `C.UTF-8` kein Multibyte |
 
-Exit 2 endet nie als `cmp 0`. Shell-Optionen der Pfadnamen-Expansion des
-Aufrufers (`nullglob`, `failglob`) ändern das Ergebnis nicht. Im
+Exit 2 endet nie als `cmp 0`. Das Ergebnis hängt nicht an der Locale des
+Aufrufers (das Werkzeug liest unter `C.UTF-8` und prüft vor der ersten Messung,
+dass `awk` dort Multibyte liest), und Shell-Optionen der Pfadnamen-Expansion
+des Aufrufers (`nullglob`, `failglob`) ändern es nicht. Im
 Adaptions-Durchgang heißt `cmp 0` (roh oder normalisiert): die ersetzte Regel
 hat sich im Bump nicht bewegt, kein Prüfauftrag; `cmp 1` normalisiert oder
 Exit 2 ist ein Prüfauftrag, der einen der fünf Ausgänge des Freshness-Audits
