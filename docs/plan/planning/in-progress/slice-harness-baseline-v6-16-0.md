@@ -17,9 +17,13 @@ dieses Slice verschieden ist; die Roadmap führt wellenlose Arbeit nicht
 (Pin-Inventar P8, Entscheidung 7: eine Baseline-Aktualisierung ist ein bewusster
 Bootstrap-Vorgang), [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
 und [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
-(Zitat-Korrektur, MR-Pins im eigenen Commit),
+(Zitat-Korrektur nach Aussage),
 [`ADR-0159`](../../adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
 (Referent-Messung mit `make zitat-vergleich`),
+[`ADR-0161`](../../adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+(Pins in ADRs und MR-Einträgen eingefroren, Form-Commit statt Pin-Commit,
+Referent-Messung im Adaptions-Durchgang; löst `ADR-0157` Entscheidung 4,
+`ADR-0159` Entscheidung 2 und `ADR-0160` Entscheidung 2 ab),
 [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) (Herkunft von
 Aussagen). Keine `LH-*`-Anforderung ist berührt: der Slice ändert Harness-Dokumente,
 nicht das Produkt.
@@ -121,8 +125,10 @@ zusammen mit der Begründungs-Pflicht je Punkt.
 **Ziel:** Das vendored Baseline-Regelwerk steht auf **v6.16.0**
 (`.harness/baseline/<Tag>/`, Tag: v6.16.0, gegen `SHA256SUMS` geprüft, v6.14.1
 entfernt), jeder lebende Verweis, Pin und getrackte Symlink nennt v6.16.0, die
-MR-Pins sind in einem eigenen Pin-Commit umgestellt oder — wo der Referent sich
-bewegt hat — nach dem Verdikt des Architect behandelt, der Bump-Ablauf
+Pins in ADRs und MR-Einträgen bleiben nach
+[`ADR-0161`](../../adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+auf dem Stand ihrer Abfassung und ihre Links in das gelöschte Tag sind im
+Form-Commit zu Inline-Code geworden, der Bump-Ablauf
 ([`harness/targets/pin-stale.md`](../../../../harness/targets/pin-stale.md)
 §Bump-Ablauf, Schritte 1–3) gibt **jedem** Delta-Punkt einen Ausgang, und
 `make gates` ist grün.
@@ -146,11 +152,11 @@ bewegt hat — nach dem Verdikt des Architect behandelt, der Bump-Ablauf
   Beobachtungs-Register, die `v6.14.1` nennen — Bestand bleibt bewusst stehen
   (pin-stale.md §Bump-Ablauf Schritt 3; `BEO-PGC/record-rueckwirkend-umgeschrieben`).
   Ausgenommen ist das **Verweisgerüst**, das ein Gate mit dem Löschen von v6.14.1
-  rot färbt: es wird nach
+  rot färbt: ein Link in das gelöschte Tag wird nach
   [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) und
-  [`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
-  korrigiert, Referent je Verweis mit `make zitat-vergleich` gemessen
-  (Liefer-Punkt 2).
+  [`ADR-0156`](../../adr/0156-versions-gate-nimmt-done-records-aus.md)
+  Entscheidung 3 zu Inline-Code, Pfad und Anker unverändert; die Commit-Kennung
+  ist der Beleg (Liefer-Punkt 2).
 - **Bestehende Instanzen der geänderten Vorlagen** (ADRs ohne die neue Form,
   Sensor-Verträge, `harness/README.md`-Zeilen) — Bestand bleibt; neue Instanzen
   folgen der neuen Form. Eine im Bump-Ablauf Schritt 2 gefundene Abweichung der
@@ -473,8 +479,9 @@ Abschnitten (T10). Ausgang nach `ADR-0161` Entscheidung 5 im Abschnitt
 
 **Symlinks.** Befehl aus pin-stale.md Schritt 1 mit `grep -F '/v6.14.1/'`:
 vier Treffer am Parent (§1), nach `a06da54e` null; alle sieben getrackten
-Symlinks lösen auf (`test -e` je Pfad, kein Fehler). Die Prüfung auf hängende
-Symlinks nach dem Löschen steht noch aus.
+Symlinks lösen auf (`test -e` je Pfad, kein Fehler). Nach dem Löschen
+(`9a7da482`) druckt `find . -path ./.git -prune -o -xtype l -print | wc -l`
+die Zahl 0: kein hängender Symlink.
 
 **Schritt 2 — Stichprobe gegen den Bestand** (Vorlage jeweils aus dem
 Tag-Verzeichnis v6.16.0 unter `.harness/baseline/`; Befehle wie im Vorgänger
@@ -591,6 +598,46 @@ Entscheidung 4, gedruckte Zeilen:
 `harness/conventions/MR-002-slice-welle-kennungen-sind-namen.md cmp 0`,
 `harness/conventions/MR-003-guard-inplace-textwerkzeug.md cmp 0`,
 `harness/conventions/MR-004-guard-host-python-am-kopf.md cmp 0`.
+Referent je Verweis vor und nach `F` (`AGENTS.md` §3.5 Beleg, `ADR-0161`
+Entscheidung 3), `make zitat-vergleich` mit derselben Adresse an `3f88e0c2~1`
+und `3f88e0c2`, Einheit Abschnitt, roh, gedruckt (Pfadpräfix
+`.harness/baseline/` + Tag v6.14.1 + `/regelwerk/` gekürzt):
+`grundlagen-referenz-richtung.md#spec-straten-mehr-als-ein-spec-dokument cmp 0`,
+`grundlagen-source-precedence.md#vergabe-woher-die-nächste-kennung-kommt cmp 0`,
+`grundlagen-durchsetzungsschicht.md#grenzen--ehrlich-benannt cmp 0`,
+`modul-13-quality-gates.md#guard-haertung cmp 0`.
+
+### Fixrunde (Review `review-slice-harness-baseline-v6-16-0`)
+
+- **F-1 (MEDIUM) — behoben.** `AGENTS.md` §3.5 „Beleg“: die Klammer nennt für
+  die Form-Korrektur an einem MR-Eintrag `ADR-0161` Entscheidung 4 und den
+  `formnorm`-`cmp` (Folgepflicht 6: Verweis ersetzt, nicht gestrichen);
+  `harness/targets/zitat-vergleich.md` Zeile 10 nennt die Beleg-Rolle wieder
+  „an einem MR-Eintrag“. Beide Träger verlangen für den Form-Commit dieselben
+  zwei Belege; die vier `zitat-vergleich`-Zeilen vor und nach `F` stehen oben.
+- **F-2 (MEDIUM) — behoben.** §1 Bezug um `ADR-0161` ergänzt (und die
+  Klammer zu `ADR-0157` ohne „MR-Pins im eigenen Commit“), §1 Ziel und §1
+  Ausschluss Records nach `ADR-0161` bzw. `ADR-0156` Entscheidung 3, Absatz
+  „Symlinks“ mit dem Ergebnis nach dem Löschen.
+- **F-3 (LOW) — behoben.** `verifier.md`: der Verifier liest den Beleg des
+  Adaptions-Durchgangs, fährt ihn nicht nach; `implementer.md`: er fährt den
+  `formnorm`-`cmp` und liest den Durchgangs-Beleg.
+- **F-4 (LOW) — behoben.** `.d-check.yml`: ein Kommentarblock direkt über
+  `exempt-paths:` (`done/`, ADR-Dateien, MR-Einträge, eine Kennung), der
+  Kommentar zwischen `paths:` und `immutable-when:` ist in den Block über
+  `paths:` gezogen.
+- **F-5 (INFO) — behoben.** Der `versions`-Kommentar nennt „ab Accepted bzw.
+  ab ihrer Datum-Zeile immutabel“ und „durch einen Bump außerhalb der Datei“.
+- **F-6 (INFO) — nicht geändert, begründet.** Titel bleibt. Der
+  Geltungsbereich von `MR-005` nennt neben `versions:` auch Block `vcs:` und
+  `AGENTS.md` §3.5, weil beide Stellen die Adaption tragen (Folgepflicht 1 und
+  6 von `ADR-0161`); `MR-005` ist ab seiner `Datum`-Zeile immutabel, eine
+  Kürzung wäre eine Core-Änderung (`vcs`).
+- **F-7, F-8 (INFO) — keine Aktion** (Closure: Folge-Slice-Dateien; Klausel
+  wörtlich aus der Vorlage).
+
+Die Fixrunde ändert eine Norm (`AGENTS.md` §3.5), deshalb folgt ein
+Re-Review; die DoD-Zeile „Review durchgeführt“ bleibt offen.
 
 ## 4. Trigger
 
