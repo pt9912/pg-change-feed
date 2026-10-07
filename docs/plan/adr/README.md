@@ -171,6 +171,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0159 | Zitat-Korrektur: HTML-`id`, MR-Pins, Befehlsform (Supers. 0158 teilw.; → 0161) | Accepted | 2026-10-06 | [0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md](0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md) |
 | ADR-0160 | Leer-Test Teil-Range; Home-relative Pfade (Supers. 0157/0075 teilw.; → 0161) | Accepted | 2026-10-06 | [0160-teil-range-leer-test-und-hostpaths-home-relativ.md](0160-teil-range-leer-test-und-hostpaths-home-relativ.md) |
 | ADR-0161 | Baseline-Pins in ADRs/MR-Einträgen eingefroren (Supers. 0157/0159/0160, teilw.) | Accepted | 2026-10-07 | [0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md](0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md) |
+| ADR-0162 | Festlegungen zitat-vergleich/Teil-Range (Herkunft 0158–0161); MR-Umzug | Accepted | 2026-10-07 | [0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md](0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md) |
 
 ## Konventionen
 
