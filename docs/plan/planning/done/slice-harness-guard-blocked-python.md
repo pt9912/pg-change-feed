@@ -269,7 +269,7 @@ Träger-Änderungen und zwei Register-Zeilen. Der Tabellentest-Umbau ist der gr�
 - **`MR-004` (Inhalt, der Implementer füllt aus der Vorlage).** *Titel:* der Guard sperrt Host-`python`/`python3` am Kopf
   unbedingt. *Datum:* das des Slice. *Geltungsbereich:* das Fragment, der Guard, der Tabellentest, `AGENTS.md` §3.1
   „Durchsetzung“. *Ersetzt-Baseline-Regel:* genau eine — der Punkt „Gehärtet wird die Zerlegung, nicht die Denylist“
-  in [`modul-13-quality-gates.md` §Guard-Härtung](../../../../.harness/baseline/v6.14.1/regelwerk/modul-13-quality-gates.md#guard-härtung-wächter-reifen-in-wellen-modul-13)
+  in `modul-13-quality-gates.md` §Guard-Härtung (`.harness/baseline/v6.14.1/regelwerk/modul-13-quality-gates.md#guard-härtung-wächter-reifen-in-wellen-modul-13`)
   (Anker `guard-haertung` vom Implementer mit `make docs-check` zu prüfen). *Adaption:* der Guard sperrt zwei
   Kopf-Wörter unbedingt; die Repo-Pfad-Regel von `MR-003` bleibt für `python3.<N>` und `perl`. *Begründung:* die
   Baseline nennt als Schaden der Denylist, dass sie `make` blockiert; die Kopf-Liste des Guards liest nur den Kopf, `make`
