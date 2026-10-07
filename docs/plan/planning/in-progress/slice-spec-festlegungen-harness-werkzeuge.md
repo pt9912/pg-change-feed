@@ -539,21 +539,26 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 - **Steering-Loop-Eintrag:** benannte Spec-Lücke: was ein Harness-Werkzeug
   prüft, steht nach diesem Slice für zwei Werkzeuge in
   `spec/pflichtenheft.md` §7; für die übrigen Gates, Prüfer und Hooks samt
-  `make doc-immutable` fehlt es, Folge-Slices unten. Geschärfte Regel und
-  neuer Sensor: keiner mit diesem Slice. Der Lese-Schritt zu
-  `BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen` (3×) steht
-  aus und kann eine Regel ergeben (unten).
+  `make doc-immutable` fehlt es, Folge-Slices unten. Geschärfte Regel:
+  Gegenprobe der Quellen und Anschluss-Frage bei jeder Festlegung im
+  Pflichtenheft — liegt in `.claude/commands/plan-welle.md Schritt 6`.
+  Auslöser: `BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen`
+  (slice-transformationen-spec-nachzug, slice-routing-lesewege,
+  slice-spec-festlegungen-harness-werkzeuge — 3×). Neuer Sensor: keiner.
 - **Lese-Schritt (wellenlos, Baseline-Regelwerk `modul-06-roadmap.md`
   §Wann Arbeit eine Welle braucht):**
   `BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen` erreicht
-  mit diesem Slice **3×**. Sein Ausgang ist noch nicht zugewiesen; der
-  Lese-Schritt braucht einen Architect-Zug (Baseline-Regelwerk
-  `modul-08-agentenrollen.md` §Rollen-Sequenz für eine Welle, Zug 3b) und
-  steht vor dem `git mv` aus.
+  mit diesem Slice **3×**; Ausgang **verkörpert** (Architect-Zug 3b,
+  `9f2891f7`): `.claude/commands/plan-welle.md` Schritt 6 verlangt bei jeder
+  Festlegung im Pflichtenheft Gegenprobe der Quellen und Anschluss-Frage als
+  Beleg in §2, und die fünf Folge-Slices `slice-spec-festlegungen-*` tragen
+  den Prüfschritt in §2 und §3. Ein Werkzeug ist verworfen: ein beim Umzug
+  umformulierter Satz hinterlässt keine Spur, und ob eine Folge fehlt, ist
+  Urteil.
 - **Beobachtungs-Register (`../observations/`):**
   - `BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen/`:
     `evidence/slice-spec-festlegungen-harness-werkzeuge.md` ergänzt (Review
-    F-1, MEDIUM) — Zähler 3×, offen, Lese-Schritt ausstehend.
+    F-1, MEDIUM) — Zähler 3×, verkörpert (`9f2891f7`).
   - `BEO-PGC/nachzug-laesst-ueberholten-text-stehen/`:
     `evidence/slice-spec-festlegungen-harness-werkzeuge.md` ergänzt (Review
     F-2, MEDIUM, Datei trotz Deckel) — Zähler 26×, Ausgang unverändert
@@ -601,11 +606,10 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
     `slice-spec-festlegungen-coverage-gates`,
     `slice-spec-festlegungen-pruefer-hooks` (`make doc-immutable` seit
     `0119aeb9` beim ersten).
-  - Festlegung lässt eine Randform offen → *eingetreten* (Review F-1, MEDIUM)
-    und im Slice behoben (`941b1207`, `8ed4eb7f`), weder Carveout noch
-    Folge-Slice nötig; gezählt als drittes Auftreten im Register (oben).
-- **Drei Paarungen:** stehen nach dem `git mv` aus; der `git mv` wartet auf
-  den Lese-Schritt (oben).
+  - Festlegung lässt eine Randform offen → *entfallen* — im Slice behoben
+    (F-1, `941b1207`, `8ed4eb7f`); gezählt als drittes Auftreten im Register
+    (oben).
+- **Drei Paarungen:** nach dem `git mv` gemessen (unten nachgetragen).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
