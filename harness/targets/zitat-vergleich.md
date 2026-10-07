@@ -7,7 +7,7 @@ Adresse an ihrem Stand adressiert, mit der Einheit der neuen Adresse an deren
 Stand: roh (byte-gleich, abschließende Leerzeilen eingeschlossen) oder, mit
 Tag-Paar, nach Normalisierung nur des bewegten Baseline-Tags
 (`tools/harness/zitat-vergleich.sh`; netzlos, kein Docker). Es ist die Messung,
-die eine Zitat-Korrektur an einer `Accepted` ADR belegt
+die eine Zitat-Korrektur an einer `Accepted` ADR und an einem MR-Eintrag belegt
 ([`AGENTS.md`](../../AGENTS.md) §3.5) und im Adaptions-Durchgang eines
 Baseline-Bumps den Referenten je MR-Eintrag zwischen den Tags des Bumps misst
 ([`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)

@@ -116,23 +116,22 @@ versions:
   # zeitlich, nicht Status-basiert, ADR-0073), dieselbe Begruendung wie fuer
   # harness/conventions/done/** oben · seit slice-105.
   pin-pattern: '\.harness/baseline/(v\d+\.\d+\.\d+)/'
-  # docs/plan/planning/done/** sind Records derselben Art: ihr version-stale
-  # entsteht durch einen Bump ausserhalb der Datei, nicht durch ihren Text.
-  # Die Ausnahme gilt nur fuer versions; links und anchors pruefen done/ weiter
-  # (ADR-0156).
   current-from: harness/conventions.md#baseline
-  # ADR-Dateien und MR-Eintraege nennen den Stand ihrer Abfassung; ein Bump
-  # zieht ihre Pins nicht nach. Die Ausnahme haengt am Pfad, nicht am Status;
-  # der ADR-Index (README.md) faellt nicht unter [0-9]* und bleibt geprueft.
-  # links und anchors pruefen beide Pfade weiter (ADR-0161).
+  # docs/plan/planning/done/** sind Records derselben Art. ADR-Dateien sind ab
+  # Accepted, MR-Eintraege ab ihrer Datum-Zeile immutabel und nennen den Stand
+  # ihrer Abfassung. In allen drei Pfaden entsteht ein version-stale durch einen
+  # Bump ausserhalb der Datei, nicht durch ihren Text. Die Ausnahme haengt am
+  # Pfad, nicht am Status; der ADR-Index (README.md) faellt nicht unter [0-9]*
+  # und bleibt geprueft. Sie gilt nur fuer versions; links und anchors pruefen
+  # alle Pfade weiter (ADR-0161).
   exempt-paths: ["harness/conventions/done/**", "docs/reviews/**", "docs/plan/planning/done/**", "docs/plan/adr/[0-9]*.md", "harness/conventions/MR-[0-9]*.md"]
 vcs:
   # Append-only der Adaptions-Eintraege (Modul vcs; Target `doc-immutable`
   # mit Commit-Range). Der Core einer MR-Datei bleibt ueber die Range
   # unveraendert; eine Zitat-Korrektur (Form-Korrektur eines Links in ein
-  # geloeschtes Baseline-Tag) steht in einem eigenen Commit (ADR-0161).
+  # geloeschtes Baseline-Tag) steht in einem eigenen Commit, den der Lauf per
+  # Teil-Range samt Leer-Test umgeht (ADR-0161).
   paths: ["harness/conventions/**/MR-[0-9]*.md"]
-  # Der Lauf umgeht diesen Commit per Teil-Range samt Leer-Test (ADR-0160).
   immutable-when: '^- \*\*Datum:\*\*'
 structure:
   # Struktur-Invarianten INNERHALB der Register-Dokumente: Spalten bleiben

@@ -64,7 +64,7 @@ Disziplin.
   Entscheidung 4) und im Adaptions-Durchgang je MR-Eintrag die
   Referent-Messung zwischen den Tags des Bumps mit `make zitat-vergleich`
   (Entscheidung 5, Vertrag `harness/targets/zitat-vergleich.md`); der Verifier
-  fährt beide nach
+  fährt den `formnorm`-`cmp` nach und liest den Beleg des Durchgangs im Plan
 - Nicht-Gate-Sensoren, die dieser Command nennt (rot färbende Mutation je
   Zusage), laufen vor der „fertig"-Meldung; halluzinierte Targets sind verboten
   (AGENTS.md §4) — nur Targets aus `Makefile`/`d-check.mk` nennen

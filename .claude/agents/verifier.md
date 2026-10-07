@@ -56,6 +56,7 @@ Disziplin.
   am Form-Commit selbst je MR-Datei der `formnorm`-`cmp` (eine Zeile je Datei,
   jede `cmp 0`; ohne Zeile ist der Commit falsch bestimmt) — Befehl in
   [`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
-  Entscheidung 4; die Referent-Messung je MR-Eintrag steht als Beleg des
-  Adaptions-Durchgangs im Plan des Bumps (Entscheidung 5), du fährst sie nach
+  Entscheidung 4; die Referent-Messung je MR-Eintrag ist Prüfauftrag des
+  Adaptions-Durchgangs (Entscheidung 5) — du liest ihren Beleg im Plan des
+  Bumps, du fährst sie nicht nach
 - Bericht-Ort: `docs/reviews/` (Gerüst: `.harness/baseline/v6.16.0/templates/docs/reviews/review-report.template.md`)
