@@ -128,9 +128,10 @@ versions:
 vcs:
   # Append-only der Adaptions-Eintraege (Modul vcs; Target `doc-immutable`
   # mit Commit-Range). Der Core einer MR-Datei bleibt ueber die Range
-  # unveraendert; eine Zitat-Korrektur (Form-Korrektur eines Links in ein
-  # geloeschtes Baseline-Tag) steht in einem eigenen Commit, den der Lauf per
-  # Teil-Range samt Leer-Test umgeht (ADR-0161).
+  # unveraendert; ein Commit, der nur MR-Dateien aendert (Form-Korrektur eines
+  # Links in ein geloeschtes Baseline-Tag oder Umzug eines aufgeloesten
+  # Eintrags nach conventions/done/), steht allein, und der Lauf umgeht ihn per
+  # Teil-Range samt Leer-Test (SPEC-039).
   paths: ["harness/conventions/**/MR-[0-9]*.md"]
   immutable-when: '^- \*\*Datum:\*\*'
 structure:

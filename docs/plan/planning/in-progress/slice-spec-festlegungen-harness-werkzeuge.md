@@ -107,7 +107,8 @@ löst `MR-001` ab.
 - **Festlegungen der übrigen Gates, Prüfer und Hooks** — Folge-Slices (je in
   `open/`, Start-Trigger: dieser Slice in `done/`):
   `slice-spec-festlegungen-doku-gates` (docs-check samt aller Module,
-  commit-traceability, baseline-verify),
+  commit-traceability, baseline-verify; dazu `make doc-immutable`, Übergabe
+  bei der Closure, §7),
   `slice-spec-festlegungen-kennungs-gates` (sdk-public-doc-check,
   handbuch-public-doc-check, ausgabe-kennungen-check, meldungscodes-check),
   `slice-spec-festlegungen-code-gates` (a-check, generated-sync),
@@ -123,11 +124,16 @@ löst `MR-001` ab.
   an einer `Accepted`-ADR nachzutragen wäre ein Überschreiben
   ([`AGENTS.md`](../../../../AGENTS.md) §3.5); die Kante entsteht über die
   Architect-ADR (§2).
-- **Die Träger des Leer-Tests außerhalb des ADR-Index umschreiben**
-  (`AGENTS.md` §3.5, `.claude/agents/implementer.md`, `verifier.md`) — Bestand
-  bleibt: sie sind Briefings, keine Werkzeug-Verträge (R2, R7 und T8 gelten
-  Verträgen), zitieren die Funktion `teilrange` und bleiben nach der Festlegung
-  gültig.
+- **Die Träger des Leer-Tests außerhalb des ADR-Index auf die Festlegung
+  umschreiben** (`AGENTS.md` §3.5, `.claude/agents/implementer.md`,
+  `verifier.md`) — Bestand bleibt: sie sind Briefings, keine Werkzeug-Verträge
+  (R2, R7 und T8 gelten Verträgen), zitieren die Funktion `teilrange` und
+  bleiben nach der Festlegung gültig. *Planänderung (`d2a863a1`):* die zwei
+  Briefings tragen den Umzugs-Commit neben dem Form-Commit, als Folgepflicht
+  von
+  [`ADR-0162`](../../adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md)
+  (§Konsequenzen) auf Vorgabe des Architects; den Leer-Test selbst führen sie
+  weiter über `teilrange`, nicht über `SPEC-039`.
 - **`spec/lastenheft.md` ändern** — Bestand bleibt: die Nennung von
   „Abschnitte 1–7“ dort betrifft das Lastenheft selbst (gemessen, oben).
 - **`formnorm`-`cmp` am Form-Commit** — übernimmt
@@ -192,8 +198,14 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       `harness/conventions.md` führt `MR-006` unter *Aktive* und `MR-001` unter
       *Aufgelöste Adaptionen* (R8). Freigabe des Auftraggebers liegt vor
       (2026-10-07).
-- [ ] `make gates` grün, Exit-Code ungefiltert gesichert
-      ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+- [x] `make gates` grün, Exit-Code ungefiltert gesichert
+      ([`AGENTS.md`](../../../../AGENTS.md) §3.9). Beleg: Lauf des Verifiers
+      am Stand `861bf40e` (Exit 0, **übernommen** aus seiner Rückmeldung an den
+      Planner, Bericht §8 nennt den Lauf) und
+      eigener Lauf des Planners am Arbeitsbaum der Closure vor dem
+      Inhalts-Commit, Ausgabe in eine Log-Datei, Exit unmittelbar danach
+      gesichert: Exit 0, gedruckt u. a. `d-check: 1829 Datei(en) geprüft,
+      0 Befund(e)` und `coverage-gate: OK — Coverage 83.30% erfüllt Schwelle 80%`.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -201,9 +213,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       (3 MEDIUM, Fixrunde) und
       `docs/reviews/review-slice-spec-festlegungen-harness-werkzeuge-fixrunde.md`
       (0 HIGH, 0 MEDIUM, 0 LOW, 1 INFO; keine weitere Fixrunde).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -229,6 +241,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | Umzugs-Commit `8e00e831` (`MR-001` nach `harness/conventions/done/`) | `git mv`, eigener Commit (Implementer) | reiner Umzug nach [`ADR-0162`](../../adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md) Entscheidung 3, belegt mit `umzug` (Beleg unten); die Message nennt `MR-001` und `ADR-0161`, nicht `ADR-0162` — der Commit liegt vor der ADR (`f2d6f194`) |
 | `.claude/agents/verifier.md`, `.claude/agents/implementer.md`, `harness/targets/pin-stale.md` (Absatz „Umzug eines abgelösten Eintrags“), `harness/conventions.md` §Adaptions-Block | update (Implementer, wörtliche Vorgabe des Architects nach `ADR-0162`, `d2a863a1`) | Teilung und Beleg am Umzugs-Commit; ändert den Ausschluss „Träger des Leer-Tests außerhalb des ADR-Index umschreiben“ in §1 für die zwei Briefings — Planänderung auf Vorgabe des Architects |
 | Abschnitt „Test“ in `harness/targets/zitat-vergleich.md` | **nicht geändert**, mit Grund | die Deckung des Werkzeugs gehört nach `gate.template.md` in ADR oder Skriptkopf, Liefer-Punkt 2 verlangt nur, dass Einheit, Normalisierung und Ausgänge den Vertrag verlassen; der Umzug der Testbeschreibung ist ein eigener Vorgang |
+| `docs/plan/planning/open/slice-spec-festlegungen-doku-gates.md`, `…-kennungs-gates.md` | update (Planner, Closure, `0119aeb9`) | Übergabe von `make doc-immutable` samt Zeile in `harness/README.md` (Review F-5, F-13) |
+| `.d-check.yml` (Kommentar am Block `vcs:`) | update (Planner, Closure) | nennt den Umzugs-Commit neben der Form-Korrektur, Anker `SPEC-039` (Review F-10) |
+| `docs/plan/planning/observations/BEO-PGC/messwerkzeug-grenze-unbenannt-fail-open/state.md` | update (Planner, Closure) | verankert das Prinzip in `SPEC-038` statt im Vertrag (Re-Review F-1, Verifikation A-3) |
 
 **Suchlauf — bewegte Eigenschaften:** die Nummer der Historie (§7 → §8), der
 Abschnitts-Umfang „§2 bis §6“ / „Abschnitte 1–7“ und das Ziel der
@@ -247,7 +262,7 @@ abbe11b4 1 -E 'pflichtenheft[^ ]*`? §7' -- . ':!docs/reviews' ':!docs/plan/plan
 abbe11b4 0 -F '7-historie' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 abbe11b4 1 -F 'welche Spec-Stelle' -- docs/plan/adr/README.md
 diff 2 -F '§2 bis §7' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 22 -E 'pflichtenheft[^ ]*`? §7' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 23 -E 'pflichtenheft[^ ]*`? §7' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 1 -E 'pflichtenheft[^ ]*`? §8' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 0 -F '7-historie' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 15 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
@@ -273,7 +288,9 @@ nachgezogene Zustandsfeld); der Anker `#7-festlegungen-der-harness-werkzeuge`
 §7“ 22 (dazu `ADR-0162` Zeile 31), der Anker 14 (dazu `ADR-0162` 2 im
 `Schärft:`-Feld und der neue Absatz in `pin-stale.md`); die übrigen Zeilen
 unverändert. Nach der Fixrunde: der Anker 15 (dazu der Verweis in §Grenzen von
-`zitat-vergleich.md`, F-7). Nicht gefunden: ein Verweis auf
+`zitat-vergleich.md`, F-7). Nach der Closure (Planner): „pflichtenheft … §7“
+23 (dazu die `state.md` von `BEO-PGC/messwerkzeug-grenze-unbenannt-fail-open`,
+A-3, im neuen Sinn). Nicht gefunden: ein Verweis auf
 die alte §7 als Historie außerhalb des Zustandsfelds; in den `Accepted`-ADRs
 `ADR-0090` und `ADR-0098` steht „§7“ für die Historie (Zeilen 407, 562 bzw.
 449), sie bleiben eingefroren (`AGENTS.md` §3.5). `MR-001` als geltende
@@ -357,7 +374,7 @@ Commit `01264f8d`; 0 HIGH, 3 MEDIUM, 5 LOW, 5 INFO):
 - **F-12 (INFO).** `harness/targets/pin-stale.md` nennt die Message-Pflicht des
   Umzugs-Commits (Kennung und `ADR-0162`) wie die drei anderen Träger.
 - **F-5, F-9, F-10, F-11, F-13** — an die Closure, in dieser Fixrunde nicht
-  bearbeitet.
+  bearbeitet; Ausgänge in §7.
 
 ## 4. Trigger
 
@@ -417,7 +434,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   `-coverage-gates` und `-pruefer-hooks` geschlossen sind. Die Regel der
   Baseline („steht in der Spezifikation“) gilt bis dahin nur für zwei
   Werkzeuge — benannt, nicht still. Erwarteter Ausgang: *eingetreten* mit den
-  fünf Kennungen der Folge-Slices.
+  fünf Kennungen der Folge-Slices. *Berichtigt bei der Closure (Review F-5):*
+  die Deckung durch die fünf war nicht voll — `make doc-immutable` (Modul
+  `vcs`) stand in keinem der fünf Pläne (`git grep -n -i -E
+  'doc-immutable|vcs' -- docs/plan/planning/open/` am Stand `861bf40e`: kein
+  Treffer); seit `0119aeb9` nimmt `slice-spec-festlegungen-doku-gates` es als
+  Übergabe in §1 und Liefer-Punkt 1 und 2 an (`git grep -c doc-immutable` im
+  Plan der Adresse: 9).
 - **Festlegung lässt eine Randform offen** (`BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen`,
   2×; ein drittes Auftreten wäre eine Lücke). *Zu belegen durch:* Gegenlesen
   der zwei Zeilen gegen den Vertrag von `make zitat-vergleich` und die vier
@@ -437,20 +460,152 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Gegenstand:** <übernommen von `slice-<Kennung>` | entfallen: <Grund>>
-  *(nur beim Ausgang ohne Arbeit; sonst Zeile löschen)*
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<KUERZEL>/<slug>` (<slice-kennung-a>, <slice-kennung-b>, <slice-kennung-c> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-<Kennung>.md` | `evidence/slice-<Kennung>.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-<Kennung> (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Geliefert:** §7 „Festlegungen der Harness-Werkzeuge“ im Pflichtenheft mit
+  `SPEC-038` (`make zitat-vergleich`) und `SPEC-039` (Leer-Test der
+  Teil-Range), Historie als §8 (`14bbd8dc`, `8e89831d`, `d2a863a1`,
+  `941b1207`, `8ed4eb7f`, Liefer-Punkt 1); Vertrag, `harness/README.md`,
+  `harness/targets/pin-stale.md` und ADR-Index verweisen auf die Kennungen
+  (`8e89831d`, Liefer-Punkt 2); `MR-006` löst `MR-001` ab, Umzug als eigener
+  Commit `8e00e831` (`dc04087e`, Liefer-Punkt 3). Architect-Zug als
+  [`ADR-0162`](../../adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md)
+  (`f2d6f194`) und Verdikt `architect-verdict-zitat-vergleich-mehrdeutig`
+  (`86bff10f`). Review (0 HIGH, 3 MEDIUM, 5 LOW, 5 INFO, `01264f8d`), eine
+  Fixrunde, Re-Review (0 HIGH, 0 MEDIUM, 0 LOW, 1 INFO, `fdaa5fbe`);
+  Verifikation `docs/reviews/verify-slice-spec-festlegungen-harness-werkzeuge.md`
+  (`861bf40e`; Liefer-Punkte 1 bis 3 bestätigt, Abweichungen A-1 bis A-3).
+  Validator: entfällt — Harness-Festlegung ohne End-Nutzer-Wert, kein
+  MVP-Slice.
+- **Was hat funktioniert:** Der Neuschnitt auf den Piloten (Zuschnitt A) mit
+  Messung der Vertragsgrößen hielt den Slice in einer Review-Sitzung und gab
+  den fünf Folge-Slices eine Form, an der sie sich ausrichten können
+  (`ADR-0162` als Muster der `Schärft:`-Kante). Das Gegenlesen jedes Satzes
+  der Festlegung gegen die Quell-ADR, das §6 als Beleg zusagte, fand die
+  offene Randform (F-1). Der Halt des Implementers an einer Lesung ohne Quelle
+  und das committete Verdikt entschieden sie, ohne eine `Accepted`-ADR zu
+  ändern. `umzug` und `teilrange` aus den ADRs, wörtlich gezogen, machten den
+  Umzugs-Commit messbar (Exit 0 an Implementer, Reviewer und Verifier).
+- **Was ging anders als geplant:**
+  (1) **Neuschnitt beim Start.** Die Rückführungs-Bedingung „zu groß“ trat
+  ein; statt `in-progress → next` gab der Auftraggeber Zuschnitt A frei (§1
+  „Planänderung“, §4).
+  (2) **Planänderung an den Briefings (Verifikation A-2).** Der Ausschluss
+  „Träger des Leer-Tests außerhalb des ADR-Index umschreiben“ stand nach
+  `d2a863a1` unverändert, obwohl `implementer.md` und `verifier.md` dort den
+  Umzugs-Commit aufnahmen; mit dieser Closure nennt §1 die Planänderung und
+  ihren Grund (Folgepflicht von `ADR-0162`).
+  (3) **Eine Lesung ohne Quelle im Fixrunden-Auftrag.** Der Auftrag band
+  „mehrdeutig“ an „nicht messbar, Urteil am Diff“; keine Quell-ADR trug das,
+  der Implementer hielt an, der Architect entschied „besteht nicht“ (§3
+  „Fixrunde“, F-1; Register unten).
+  (4) **Benannter Altfall: Umzugs-Commit ohne `ADR-0162` (Review F-4,
+  Verifikation A-1).** Die Message von `8e00e831` nennt `MR-001` und
+  `ADR-0161`, nicht `ADR-0162`, wie dessen Entscheidung 3 für einen
+  Umzugs-Commit verlangt. Der Commit liegt vor der ADR (`f2d6f194`), `umzug`
+  endet mit Exit 0, die ADR nennt ihn in ihrer Fitness Function als Messstand;
+  ein Neuschnitt hätte deren Kennungen umgeschrieben. Kein Neuschnitt; der
+  Verifier bestimmte `M` über den Inhalt, nicht über die Message.
+- **Review- und Verifikations-Pflichten in der Closure:**
+  - F-5 (LOW) → **übergeben**: `make doc-immutable` geht an
+    `slice-spec-festlegungen-doku-gates` (§1 Übergabe, Liefer-Punkt 1 und 2,
+    `0119aeb9`); die Aussage „volle Deckung“ in §6 ist berichtigt.
+  - F-13 (INFO) → **übergeben** an denselben Slice, nicht hier nachgezogen:
+    die Zeile in `harness/README.md` soll die Bindung „Spec-Kennung“ tragen,
+    und die Kennung entsteht erst dort; eine Zeile jetzt trüge Randform und
+    Ausgänge selbst, gegen den Satz des Kommentar-Blocks (T7) — und würde im
+    Folge-Slice wieder umgeschrieben.
+  - F-10 (INFO) → **nachgezogen**: der Kommentar am Block `vcs:` in
+    `.d-check.yml` nennt den Umzugs-Commit neben der Form-Korrektur, ein
+    Anker (`SPEC-039`, [`AGENTS.md`](../../../../AGENTS.md) §3.7).
+  - Re-Review F-1 / Verifikation A-3 (INFO) → **nachgezogen**: die `state.md`
+    von `BEO-PGC/messwerkzeug-grenze-unbenannt-fail-open` verankert das
+    Prinzip in `SPEC-038` statt im Vertrag. Ihre `observation.md` trägt
+    weiter die Glosse „nicht messbar, Urteil am Diff“; sie bleibt
+    unverändert, weil sie ab Anlage immutabel ist, und die `state.md` benennt,
+    dass die Glosse nicht mehr gilt.
+  - F-8 (LOW) → **benannt, Lese-Hinweis**: `MR-006` trägt mit „Abschnitte
+    1–8“ eine bewegliche Bestandsangabe der Baseline-Vorlage; der Eintrag ist
+    ab seinem Datum immutabel. Ändert ein Bump die Gliederung der
+    Spezifikations-Vorlage, braucht `MR-006` wieder einen Nachfolger — der
+    Adaptions-Durchgang des nächsten Bumps (`harness/targets/pin-stale.md`)
+    liest diese Zeile mit.
+  - F-9 (INFO) → **benannt**: `umzug` gibt einen Umzug mit Moduswechsel
+    (`100644 → 100755`) als reinen Umzug aus, und `ADR-0162` Entscheidung 4
+    nennt die Randformen „vollständig“; gemessen vom Reviewer am Klon, im
+    Bestand ohne Fundstelle. Ändert sich das, ist es eine Folge-ADR; Register
+    unten.
+  - F-11 (INFO) → **benannt**: die Fitness-Function-Zeile `matrix`/`ids` in
+    `ADR-0162` nennt ihr Ergebnis „im Architect-Bericht“; die Aussage trägt
+    der Gate-Lauf des Reviews und `make gates` unten.
+- **Steering-Loop-Eintrag:** benannte Spec-Lücke: was ein Harness-Werkzeug
+  prüft, steht nach diesem Slice für zwei Werkzeuge in
+  `spec/pflichtenheft.md` §7; für die übrigen Gates, Prüfer und Hooks samt
+  `make doc-immutable` fehlt es, Folge-Slices unten. Geschärfte Regel und
+  neuer Sensor: keiner mit diesem Slice. Der Lese-Schritt zu
+  `BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen` (3×) steht
+  aus und kann eine Regel ergeben (unten).
+- **Lese-Schritt (wellenlos, Baseline-Regelwerk `modul-06-roadmap.md`
+  §Wann Arbeit eine Welle braucht):**
+  `BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen` erreicht
+  mit diesem Slice **3×**. Sein Ausgang ist noch nicht zugewiesen; der
+  Lese-Schritt braucht einen Architect-Zug (Baseline-Regelwerk
+  `modul-08-agentenrollen.md` §Rollen-Sequenz für eine Welle, Zug 3b) und
+  steht vor dem `git mv` aus.
+- **Beobachtungs-Register (`../observations/`):**
+  - `BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen/`:
+    `evidence/slice-spec-festlegungen-harness-werkzeuge.md` ergänzt (Review
+    F-1, MEDIUM) — Zähler 3×, offen, Lese-Schritt ausstehend.
+  - `BEO-PGC/nachzug-laesst-ueberholten-text-stehen/`:
+    `evidence/slice-spec-festlegungen-harness-werkzeuge.md` ergänzt (Review
+    F-2, MEDIUM, Datei trotz Deckel) — Zähler 26×, Ausgang unverändert
+    verkörpert.
+  - `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an/`:
+    `evidence/slice-spec-festlegungen-harness-werkzeuge.md` ergänzt (Review
+    F-3, MEDIUM; F-5 im selben Vorgang) — Zähler 6×, erstes Auftreten nach
+    der Verkörperung, Ausgang unverändert verkörpert.
+  - `BEO-PGC/rollen-uebergabe-ohne-committetes-artefakt/`:
+    `evidence/slice-spec-festlegungen-harness-werkzeuge.md` ergänzt (Lesung
+    ohne Quelle im Fixrunden-Auftrag) — Zähler 2×, offen.
+  - Unter dem Deckel, ohne Datei: Re-Review F-1 und Review F-10
+    (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, INFO), Review F-7
+    (`BEO-PGC/zitat-nennt-die-falsche-stelle`, LOW), Review F-9
+    (`BEO-PGC/adr-aussage-breiter-als-ihre-messung`, INFO) — je vor dem Merge
+    gefunden, bekannter Träger-Typ.
+  - Ohne Register-Eintrag: F-4 (Altfall vor der Regel), F-6 (Randform blieb
+    im Vertrag, in der Fixrunde behoben), F-8 und F-11 — Einzelbefunde, für
+    die das Register keine Klasse führt.
+  - Die in §8 gesichteten Einträge `messwerkzeug-grenze-unbenannt-fail-open`
+    und `werkzeugvertrag-zusage-ohne-testfall`: kein Auftreten (die
+    `state.md` des ersten ist nachgezogen, oben).
+- **Folge-Slices:** `slice-spec-festlegungen-doku-gates` (docs-check samt
+  Modulen, commit-traceability, baseline-verify, doc-immutable),
+  `slice-spec-festlegungen-kennungs-gates`, `slice-spec-festlegungen-code-gates`,
+  `slice-spec-festlegungen-coverage-gates` und
+  `slice-spec-festlegungen-pruefer-hooks` (dazu `formnorm`, Übergabe seit
+  `941b1207`) — fünf Dateien in `open/` (`cc55be92`).
+- **Risiken aus §6:** fünf Risiken, je ein Ausgang:
+  - Berührung des Lastenhefts → *entfallen*: die einzige Nennung von
+    „Abschnitte 1–7“ (Zeile 1517) beschreibt die Gliederung des Lastenhefts
+    selbst (gemessen bei Anlage und vom Implementer).
+  - Umnummerierung bricht Verweise → *entfallen*: kein Anker `#7-historie`,
+    das einzige Zustandsfeld mit der alten Nummer ist nachgezogen (Suchlauf
+    §3 an beiden Ständen), `make docs-check` Exit 0; die Prosa „§7“ in den
+    `Accepted`-ADRs `ADR-0090` und `ADR-0098` bleibt eingefroren
+    ([`AGENTS.md`](../../../../AGENTS.md) §3.5) und bricht keinen Verweis.
+  - Kante von `ADR-0158` bis `ADR-0161` → *entfallen*: `ADR-0162` stellt sie
+    her (`Accepted`, `f2d6f194`), die Rückführung `in-progress → open` trat
+    nicht ein.
+  - Lücke in §7 bis zu den Folge-Slices → *eingetreten* →
+    `slice-spec-festlegungen-doku-gates`,
+    `slice-spec-festlegungen-kennungs-gates`,
+    `slice-spec-festlegungen-code-gates`,
+    `slice-spec-festlegungen-coverage-gates`,
+    `slice-spec-festlegungen-pruefer-hooks` (`make doc-immutable` seit
+    `0119aeb9` beim ersten).
+  - Festlegung lässt eine Randform offen → *eingetreten* (Review F-1, MEDIUM)
+    und im Slice behoben (`941b1207`, `8ed4eb7f`), weder Carveout noch
+    Folge-Slice nötig; gezählt als drittes Auftreten im Register (oben).
+- **Drei Paarungen:** stehen nach dem `git mv` aus; der `git mv` wartet auf
+  den Lese-Schritt (oben).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

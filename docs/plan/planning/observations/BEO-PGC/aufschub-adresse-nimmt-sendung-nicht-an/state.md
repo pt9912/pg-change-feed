@@ -14,10 +14,16 @@ Zielorte (alle drei gesetzt): `.claude/commands/implement-slice.md` Schritt 17 (
 nach „Ereignis-Adresse muss eintreten können“, `BEO-PGC/aufschub-adresse-verfaellt`) und der
 HIGH-Punkt „Neue Betreiber-Oberfläche ohne Handbuch-Zug“ in `.harness/skills/reviewer.md` (Probe:
 `git grep` der Kernbegriffe im Plan der Adresse) — alle drei Anker `· seit welle-transformationen`.
-Zähler (abgeleitet): 5× (evidence/slice-071.md, evidence/slice-072.md,
+Zähler (abgeleitet): 6× (evidence/slice-071.md, evidence/slice-072.md,
 evidence/slice-transformationen-antragsweg-schema.md,
 evidence/slice-transformationen-backfill-pfad.md,
-evidence/slice-antragsqueue-lesefehler-failed.md). Der fünfte Beleg trifft die dritte Ausprägung: der
+evidence/slice-antragsqueue-lesefehler-failed.md,
+evidence/slice-spec-festlegungen-harness-werkzeuge.md). Der sechste Beleg ist das erste
+Auftreten nach der Verkörperung: die Regel stand, der Absender trug den `git grep`-Beleg nicht,
+die Probe des Reviewers fing es vor dem Merge (F-3, dazu F-5 bei der Closure). Ausgang
+unverändert **verkörpert**; ein Sensor ist nicht vorgeschlagen — ob eine Adresse den Gegenstand
+trägt, ist eine Lese-Handlung am Plan der Adresse. Ein weiteres Auftreten nach der
+Verkörperung ist Anlass, die Frage eines Sensors erneut zu stellen. Der fünfte Beleg trifft die dritte Ausprägung: der
 Plan der Adresse trug den Gegenstand weder als Stichwort noch als Ablauf; der Übergabe-Text steht seit
 der Fixrunde als committeter Text in §2 von `slice-transformationen-betriebsdoku`. Der vierte Beleg
 trifft die zweite Ausprägung der Beobachtung („ihr DoD-Ausschnitt ist enger gefasst als der

@@ -12,7 +12,12 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 25× (Dateien unter `evidence/`; die fünfundzwanzigste,
+Zähler: 26× (Dateien unter `evidence/`; die sechsundzwanzigste,
+`evidence/slice-spec-festlegungen-harness-werkzeuge.md`, trägt Review F-2 (MEDIUM): der Nachzug
+des Vertrags `harness/targets/zitat-vergleich.md` auf die Festlegung ließ den historischen Block
+der ADR als Maßstab und fünf Punkte als „Auslegung“ stehen (Träger-Typ Werkzeug-Vertrag); in der
+Fixrunde behoben, Ausgang unverändert **verkörpert**;
+die fünfundzwanzigste,
 `evidence/slice-harness-baseline-v6-16-0.md`, trägt Review F-2 (MEDIUM): der Plan-Nachzug auf
 `ADR-0161` in DoD und §3 ließ §1 Ziel, Bezug und Ausschluss sowie den Symlink-Absatz in §3 beim
 überholten Pin-Commit stehen (Träger-Typ Slice-Plan); in der Fixrunde behoben, Ausgang
