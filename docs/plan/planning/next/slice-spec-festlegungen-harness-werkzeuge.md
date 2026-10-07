@@ -28,7 +28,7 @@ neue Abschnitt verfeinert, steht beim Planen fest, nicht hier.
 ein neuer §7 „Festlegungen der Harness-Werkzeuge“; `spec/lastenheft.md`
 (Zeile mit „Abschnitte 1–7“, Prüfauftrag §6).
 
-**Verantwortlich:** —
+**Verantwortlich:** pt9912 (Implementer-Agent im Auftrag).
 <!-- BEDIENHINWEIS: Verantwortlich hält die Arbeit — der Rolleninhaber der
 Implementer-Rolle, gesetzt beim Übergang open→next (Baseline-Regelwerk
 modul-05-planning-harness.md §Lifecycle als State Machine). Der Autor schrieb
