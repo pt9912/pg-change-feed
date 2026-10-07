@@ -130,6 +130,10 @@ löst `MR-001` ab.
   gültig.
 - **`spec/lastenheft.md` ändern** — Bestand bleibt: die Nennung von
   „Abschnitte 1–7“ dort betrifft das Lastenheft selbst (gemessen, oben).
+- **`formnorm`-`cmp` am Form-Commit** — übernimmt
+  `slice-spec-festlegungen-pruefer-hooks` (führt `harness/targets/pin-stale.md`),
+  [`ADR-0162`](../../adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md)
+  Entscheidung 4.
 - **Kein Produkt-Code** — Schicht-Abgrenzung: berührt sind `spec/pflichtenheft.md`,
   `harness/targets/zitat-vergleich.md`, `harness/README.md`, der ADR-Index, eine
   neue ADR und `harness/conventions/`.
@@ -148,7 +152,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Ziel-Form: Slice — **≤ 3 Liefer-Punkte**. Alle Beleg-Angaben sind **Zusagen**
 („zu belegen durch …“).
 
-- [ ] **§7 im Pflichtenheft mit zwei Festlegungen (Liefer-Punkt 1).**
+- [x] **§7 im Pflichtenheft mit zwei Festlegungen (Liefer-Punkt 1).**
       `spec/pflichtenheft.md` trägt §7 „Festlegungen der Harness-Werkzeuge“ in
       der Struktur der Vorlage (Regel-Absatz, Tabelle `ID · Werkzeug ·
       Festlegung`), die Historie ist §8 mit einer neuen Zeile, §1 verweist auf
@@ -167,8 +171,10 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       die Folge-Slices folgen. *Zu belegen durch:* Suchlauf (§3),
       `make docs-check` Exit 0 und die ADR. *Stand Implementer:* §7 mit
       `SPEC-038` und `SPEC-039` geliefert (`14bbd8dc`, Nachtrag `8e89831d`),
-      Suchlauf und `make docs-check` im Befund unter §3; offen ist allein die
-      Architect-ADR, deshalb noch nicht abgehakt.
+      Suchlauf und `make docs-check` im Befund unter §3; die Architect-ADR ist
+      [`ADR-0162`](../../adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md)
+      (`Accepted`, `f2d6f194`), ihre Wortlaut-Berichtigung an `SPEC-038` und
+      `SPEC-039` steht in `d2a863a1`.
 - [x] **Vertrag, Index und Konvention verweisen (Liefer-Punkt 2).**
       `harness/targets/zitat-vergleich.md` nennt die Kennung (a) und trägt
       Einheit, Normalisierung und Ausgänge nicht mehr selbst (R2, R7, T8 für
@@ -214,7 +220,10 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | `harness/README.md` Kommentar-Block §Sensors, Liste „Bindung“ | update (Plan-Nachzug, Implementer) | „Spec-Kennung“ in der Bindungs-Liste wie in der Vorlage (T6, im Kommentar statt nur in der Zeile) |
 | `.claude/agents/architect.md`, `planner.md`, `reviewer.md`, `.harness/skills/reviewer.md` | update (Plan-Nachzug, Implementer) | nannten `MR-001` als geltende Adaption; jetzt `MR-006` (LP3, Suchlauf `git grep -n MR-001`) |
 | `spec/pflichtenheft.md` §7 | update (Plan-Nachzug, Implementer) | vier Randformen, die nur im Vertrag standen (Inline-Code mit Text vor dem Tag, Fence in einem Listenpunkt, Locale, leeres Tag-Paar), in `SPEC-038` übernommen, bevor der Vertrag sie abgab (`8e89831d`) |
-| `formnorm`-`cmp` am Form-Commit | **nicht realisiert**, mit Grund | ist weder `make zitat-vergleich` noch der Leer-Test; `SPEC-038` nennt ihn nur als Beleg der Form-Korrektur, die Festlegung gehört zu `slice-spec-festlegungen-pruefer-hooks` oder bleibt Befehlsform der ADR (Entscheidung des Planners) |
+| `formnorm`-`cmp` am Form-Commit | **nicht realisiert**, mit Grund | ist weder `make zitat-vergleich` noch der Leer-Test; `SPEC-038` nennt ihn nur als Beleg der Form-Korrektur, die Festlegung übernimmt `slice-spec-festlegungen-pruefer-hooks` (`ADR-0162` Entscheidung 4, Ausschluss in §1) |
+| `docs/plan/adr/0162-…` und Index | neu (Architect) | erledigt |
+| Umzugs-Commit `8e00e831` (`MR-001` nach `harness/conventions/done/`) | `git mv`, eigener Commit (Implementer) | reiner Umzug nach [`ADR-0162`](../../adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md) Entscheidung 3, belegt mit `umzug` (Beleg unten); die Message nennt `MR-001` und `ADR-0161`, nicht `ADR-0162` — der Commit liegt vor der ADR (`f2d6f194`) |
+| `.claude/agents/verifier.md`, `.claude/agents/implementer.md`, `harness/targets/pin-stale.md` (Absatz „Umzug eines abgelösten Eintrags“), `harness/conventions.md` §Adaptions-Block | update (Implementer, wörtliche Vorgabe des Architects nach `ADR-0162`, `d2a863a1`) | Teilung und Beleg am Umzugs-Commit; ändert den Ausschluss „Träger des Leer-Tests außerhalb des ADR-Index umschreiben“ in §1 für die zwei Briefings — Planänderung auf Vorgabe des Architects |
 | Abschnitt „Test“ in `harness/targets/zitat-vergleich.md` | **nicht geändert**, mit Grund | die Deckung des Werkzeugs gehört nach `gate.template.md` in ADR oder Skriptkopf, Liefer-Punkt 2 verlangt nur, dass Einheit, Normalisierung und Ausgänge den Vertrag verlassen; der Umzug der Testbeschreibung ist ein eigener Vorgang |
 
 **Suchlauf — bewegte Eigenschaften:** die Nummer der Historie (§7 → §8), der
@@ -234,10 +243,10 @@ abbe11b4 1 -E 'pflichtenheft[^ ]*`? §7' -- . ':!docs/reviews' ':!docs/plan/plan
 abbe11b4 0 -F '7-historie' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 abbe11b4 1 -F 'welche Spec-Stelle' -- docs/plan/adr/README.md
 diff 2 -F '§2 bis §7' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 21 -E 'pflichtenheft[^ ]*`? §7' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 22 -E 'pflichtenheft[^ ]*`? §7' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 1 -E 'pflichtenheft[^ ]*`? §8' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 0 -F '7-historie' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 11 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 14 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 1 -F 'Spec-Stelle in' -- docs/plan/adr/README.md
 ```
 
@@ -256,7 +265,10 @@ und das Zitat im Feld `Löst auf` von `MR-006`; „§2 bis §6“ 0, „§2 bis 
 `open/`, alle im neuen Sinn (§7 = Festlegungen); „pflichtenheft … §8“ 1 (das
 nachgezogene Zustandsfeld); der Anker `#7-festlegungen-der-harness-werkzeuge`
 11 (ADR-Index 1, `harness/README.md` 1, `pin-stale.md` 2,
-`zitat-vergleich.md` 7); kein `#7-historie`. Nicht gefunden: ein Verweis auf
+`zitat-vergleich.md` 7); kein `#7-historie`. Nach `d2a863a1`: „pflichtenheft …
+§7“ 22 (dazu `ADR-0162` Zeile 31), der Anker 14 (dazu `ADR-0162` 2 im
+`Schärft:`-Feld und der neue Absatz in `pin-stale.md`); die übrigen Zeilen
+unverändert. Nicht gefunden: ein Verweis auf
 die alte §7 als Historie außerhalb des Zustandsfelds; in den `Accepted`-ADRs
 `ADR-0090` und `ADR-0098` steht „§7“ für die Historie (Zeilen 407, 562 bzw.
 449), sie bleiben eingefroren (`AGENTS.md` §3.5). `MR-001` als geltende
@@ -264,6 +276,34 @@ Adaption nannten vier Briefings (`.claude/agents/architect.md`,
 `planner.md`, `reviewer.md`, `.harness/skills/reviewer.md`), nachgezogen auf
 `MR-006`; `MR-005` nennt `MR-001` als Anlass und bleibt (immutabel ab Datum).
 `make docs-check` am Arbeitsbaum: Exit 0, `1820 Datei(en) geprüft, 0 Befund(e)`.
+
+**Beleg zur Verifier-Range (Implementer, am Stand `d2a863a1`).** Die Range des
+Slice `fcff30ec..HEAD` enthält den Umzugs-Commit `8e00e831`; ein Lauf über die
+ganze Range endet mit `core-drift-vcs` an `MR-001` (Exit 2, gemessen vor
+`ADR-0162`). Geteilt nach `SPEC-039`, mit `teilrange` aus
+[`ADR-0160`](../../adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
+Entscheidung 1 und `umzug` aus
+[`ADR-0162`](../../adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md)
+Entscheidung 3, beide wörtlich aus dem `bash`-Block der ADR gezogen
+(`awk`-Ausschnitt in eine Datei im Scratchpad, `source`):
+
+```text
+teilrange fcff30ec 8e00e831~1; echo "Exit $?"
+teilrange: fcff30ec..8e00e831~1 enthält 2 Commit(s), Lauf
+d-check: 1821 Datei(en) geprüft, 0 Befund(e)
+Exit 0
+teilrange 8e00e831 HEAD; echo "Exit $?"
+teilrange: 8e00e831..HEAD enthält 4 Commit(s), Lauf
+d-check: 1821 Datei(en) geprüft, 0 Befund(e)
+Exit 0
+umzug 8e00e831; echo "Exit $?"
+umzug: R100	harness/conventions/MR-001-technik-dokument-heisst-pflichtenheft.md	harness/conventions/done/MR-001-technik-dokument-heisst-pflichtenheft.md
+umzug: 8e00e831 ist ein reiner Umzug nach harness/conventions/done/, Exit 0
+Exit 0
+```
+
+Die Commits nach `d2a863a1` ändern keinen Adaptions-Eintrag; der Verifier fährt
+die drei Aufrufe am Endstand nach.
 
 ## 4. Trigger
 
