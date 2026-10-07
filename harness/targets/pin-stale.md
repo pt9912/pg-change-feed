@@ -120,6 +120,8 @@ aus `ADR-0161` Entscheidung 4: eine Zeile je Datei, jede mit `cmp 0`. Ein
 Link aus einer ADR in ein gelöschtes Tag bekommt dieselbe Form-Korrektur in
 einem eigenen Commit mit `ADR-0073` und einer §Geschichte-Zeile.
 
+**Umzug eines abgelösten Eintrags.** Bekommt ein Adaptions-Eintrag im Durchgang einen Nachfolge-Eintrag, wandert der alte per `git mv` nach `harness/conventions/done/`, in einem eigenen Commit `M`, der nur diesen Umzug trägt; Nachfolge-Eintrag und Index in `harness/conventions.md` stehen in anderen Commits. Der Verifier teilt die Range auch um `M` ([`SPEC-039`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge)) und belegt `M` mit `umzug` aus [`ADR-0162`](../../docs/plan/adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md) Entscheidung 3.
+
 ## `make pin-stale-actions`
 
 Upstream-Pin-Freshness P9 ([`ADR-0051`](../../docs/plan/adr/0051-cicd-pipeline-github-actions.md) Pin-Inventar): jede SHA-gepinnte `uses:`-Zeile über alle `.github/workflows/*.yml` (`AGENTS.md` §3.8) gegen zwei Achsen — Tag-Mutation (`git ls-remote` gegen den im Kommentar genannten Tag; zeigt er noch auf denselben SHA?) und Tag-Frische (neuester Release des Action-Repos über die GitHub-Releases-API). Ein doppelt referenziertes Repo@Tag über mehrere Workflow-Dateien wird nur einmal geprüft

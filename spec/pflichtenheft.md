@@ -1911,7 +1911,7 @@ keinen). Die Einheit folgt der Stellung:
 |---|---|
 | in einer Heading-Zeile | der Abschnittskörper dieses Headings |
 | in einer Zeile ohne Inhalt, die nächste Zeile mit Inhalt ist ein Heading | der Abschnittskörper dieses Headings |
-| in einer Zeile ohne Inhalt, die nächste Zeile mit Inhalt ist kein Heading | der Block ab dieser Zeile bis vor das nächste Heading beliebiger Ebene oder bis zum Dateiende |
+| in einer Zeile ohne Inhalt, die nächste Zeile mit Inhalt ist kein Heading | der Block ab der nächsten Zeile mit Inhalt bis vor das nächste Heading beliebiger Ebene oder bis zum Dateiende |
 | in einer Tabellenzeile (die Zeile beginnt mit `\|`) | die Tabellenzeile |
 | in einer anderen Zeile mit Text | der Block ab dieser Zeile bis vor das nächste Heading beliebiger Ebene oder bis zum Dateiende |
 
@@ -1983,7 +1983,11 @@ Slice-Plan.
 
 **Zu `SPEC-039`.** Um einen Commit `F`, der nur Adaptions-Einträge
 (`harness/conventions/**/MR-<NNN>-*.md`) ändert, läuft `make doc-immutable`
-über eine Range `B..H` in den zwei Teil-Ranges `B..F~1` und `F..H`. Für jede
+über eine Range `B..H` in den zwei Teil-Ranges `B..F~1` und `F..H`. Ein
+solcher Commit ist der Form-Commit eines Baseline-Bumps oder der
+Umzugs-Commit, der einen aufgelösten Adaptions-Eintrag per `git mv` unter
+demselben Dateinamen nach `harness/conventions/done/` verschiebt; liegen
+mehrere in der Range, wird an jedem geteilt, in der Reihenfolge der Commits. Für jede
 Teil-Range `<basis>..<spitze>` gilt genau eines:
 
 - **leer** genau dann, wenn `git rev-parse --verify` für `<basis>` und
@@ -2085,4 +2089,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-04 | `SPEC-033`: Einheit von `cdc_consumer_lag` ist `By` (WAL-Strecke), Zahlenform, Header-Regeln, Header ohne Endpunkt, Benutzerteil der Endpunkt-URL, erster Versuch nach einem vollen Takt, Frist für Lesen und Übertragen gemeinsam, gemeinsamer Fehlerzustand, keine Weiterleitung; `SPEC-034`: Prüfung beim Start auf das Laden des Paares begrenzt (Ablauf, Namen, Kette nicht geprüft); `SPEC-035`: leere Variable, Komma im Token, Leerraum nur in den Listen; `SPEC-009`: Bedeutung von `cdc_consumer_lag` — schreibt den Ist-Zustand fest, kein neues Verhalten außer der Einheit |
 | 2026-10-05 | `SPEC-025`: Grenze der Zusatzlatenz ist max(0,10 ms ; 1,5 × `t_sync`) mit im selben Lauf gemessener Festschreib-Latenz, Verdikt auf jedem Host, Fehlerausgang bei nicht messbarem `t_sync`; `SPEC-036`: Messvorschrift für `t_sync` statt Band `fdatasync` ≤ 0,5 ms; `SPEC-037` neu (TLS-Optionen der Client-Bibliotheken: ein Vertrauensanker je SDK für HTTP, SSE und gRPC) |
 | 2026-10-05 | `LH-FA-SST-009.a`: die Artefakt-Namen der drei SDK-Packages stehen versionsneutral als Form mit `<Version>` und der Version-Datei je Sprache statt als Namen der Version 0.2.x; keine Änderung an Abdeckung, Paketierung oder Vertriebsweg |
-| 2026-10-07 | §7 „Festlegungen der Harness-Werkzeuge“ neu: `SPEC-038` (Referent-Messung `make zitat-vergleich`: Einheit je Verweisform, roh und Normalisierung, Stände, nicht messbarer Referent, Ausgänge) und `SPEC-039` (Leer-Test der Teil-Range vor `make doc-immutable`); die Historie ist §8, §1 verweist auf §2 bis §7 |
+| 2026-10-07 | §7 „Festlegungen der Harness-Werkzeuge“ neu: `SPEC-038` (Referent-Messung `make zitat-vergleich`: Einheit je Verweisform, roh und Normalisierung, Stände, nicht messbarer Referent, Ausgänge) und `SPEC-039` (Leer-Test der Teil-Range vor `make doc-immutable`); die Historie ist §8, §1 verweist auf §2 bis §7. `SPEC-038`: in der Tabelle „Stellung“ beginnt der Block einer `id` in einer Zeile ohne Inhalt vor einem Absatz an der nächsten Zeile mit Inhalt; `SPEC-039`: geteilt wird auch am Umzugs-Commit eines aufgelösten Adaptions-Eintrags, bei mehreren solchen Commits an jedem in der Reihenfolge der Commits |

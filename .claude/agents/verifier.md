@@ -56,7 +56,7 @@ Disziplin.
   am Form-Commit selbst je MR-Datei der `formnorm`-`cmp` (eine Zeile je Datei,
   jede `cmp 0`; ohne Zeile ist der Commit falsch bestimmt) — Befehl in
   [`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
-  Entscheidung 4; die Referent-Messung je MR-Eintrag ist Prüfauftrag des
+  Entscheidung 4; enthält die Range einen Umzugs-Commit `M` (ein aufgelöster MR-Eintrag wandert per `git mv` nach `harness/conventions/done/`, Message nennt die Kennung und `ADR-0162`), wird ebenso um `M` geteilt (`base..M~1` und `M..head`, je mit dem Leer-Test; mehrere solche Commits teilen der Reihe nach), und am Umzugs-Commit selbst belegt die Funktion `umzug` aus [`ADR-0162`](../../docs/plan/adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md) Entscheidung 3 mit Exit 0 einen reinen Umzug (`R100`, derselbe Dateiname, ein Parent); Exit 1 ist ein Befund; die Referent-Messung je MR-Eintrag ist Prüfauftrag des
   Adaptions-Durchgangs (Entscheidung 5) — du liest ihren Beleg im Plan des
   Bumps, du fährst sie nicht nach
 - Bericht-Ort: `docs/reviews/` (Gerüst: `.harness/baseline/v6.16.0/templates/docs/reviews/review-report.template.md`)

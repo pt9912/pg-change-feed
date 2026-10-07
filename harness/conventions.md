@@ -76,8 +76,7 @@ ist derivativ — bei Konflikt gilt das Lehrmaterial.
 Regeln dieser Sektion: Diese Datei trägt den **Index**, nicht die Einträge.
 Jede Adaption ist eine eigene Datei unter `harness/conventions/`, kopiert aus der
 gleichnamigen Eintrags-Vorlage `MR-NNN-titel.template.md` der vendored Baseline;
-ist ihr Auflösungs-Trigger eingetreten, wandert sie per `git mv` nach
-`conventions/done/`. Der Zustand ist die Verzeichnis-Position, kein
+ist ihr Auflösungs-Trigger eingetreten, wandert sie per `git mv` nach `conventions/done/` — in einem eigenen Commit, der nur diesen Umzug trägt (dieser Index und der Nachfolge-Eintrag stehen in anderen Commits); die Message nennt die aufgelöste Kennung und [`ADR-0162`](../docs/plan/adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md), weil `make doc-immutable` um diesen Commit in Teil-Ranges läuft (Entscheidung 3). Der Zustand ist die Verzeichnis-Position, kein
 Status-Feld. Der Grund für den Schnitt: Was hier steht, liest **jeder**
 Agentenlauf — aufgelöste Adaptionen gehören nicht in diesen Pfad
 (Baseline-Regelwerk `grundlagen-harness-dateien.md`

@@ -64,7 +64,8 @@ Disziplin.
   Entscheidung 4) und im Adaptions-Durchgang je MR-Eintrag die
   Referent-Messung zwischen den Tags des Bumps mit `make zitat-vergleich`
   (Entscheidung 5, Vertrag `harness/targets/zitat-vergleich.md`); der Verifier
-  fährt den `formnorm`-`cmp` nach und liest den Beleg des Durchgangs im Plan
+  fährt den `formnorm`-`cmp` nach und liest den Beleg des Durchgangs im Plan.
+  Ein aufgelöster MR-Eintrag wandert per `git mv` nach `harness/conventions/done/` in einem eigenen Commit `M`, der nur diesen Umzug trägt (Index und Nachfolge-Eintrag in anderen Commits, Message nennt die Kennung und `ADR-0162`); `make doc-immutable` läuft dann auch um `M` in Teil-Ranges, Beleg am Commit ist `umzug` aus [`ADR-0162`](../../docs/plan/adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md) Entscheidung 3.
 - Nicht-Gate-Sensoren, die dieser Command nennt (rot färbende Mutation je
   Zusage), laufen vor der „fertig"-Meldung; halluzinierte Targets sind verboten
   (AGENTS.md §4) — nur Targets aus `Makefile`/`d-check.mk` nennen
