@@ -166,10 +166,11 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0154 | Spec-Lücken OTLP, TLS, API-Token: Ist-Zustand festgeschrieben | Accepted | 2026-10-04 | [0154-spec-luecken-otlp-tls-token-ist-zustand.md](0154-spec-luecken-otlp-tls-token-ist-zustand.md) |
 | ADR-0155 | PER-001 relativ zur Festschreib-Latenz (Supers. ADR-0151, ADR-0104 teilw.) | Accepted | 2026-10-05 | [0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md](0155-per-001-zusatzlatenz-relativ-zur-festschreib-latenz.md) |
 | ADR-0156 | `versions`-Modul nimmt die Records unter `done/**` aus | Accepted | 2026-10-06 | [0156-versions-gate-nimmt-done-records-aus.md](0156-versions-gate-nimmt-done-records-aus.md) |
-| ADR-0157 | Zitat-Korrektur nach Aussage; MR-Pins (Supers. ADR-0073, teilw.; → 0158/0160) | Accepted | 2026-10-06 | [0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md](0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md) |
+| ADR-0157 | Zitat-Korrektur nach Aussage; MR-Pins (Supers. 0073 teilw.; → 0158/0160/0161) | Accepted | 2026-10-06 | [0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md](0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md) |
 | ADR-0158 | Zitat-Korrektur: Vergleichseinheit (Supers. ADR-0157, teilw.; → ADR-0159) | Accepted | 2026-10-06 | [0158-zitat-korrektur-vergleichseinheit-je-verweisform.md](0158-zitat-korrektur-vergleichseinheit-je-verweisform.md) |
-| ADR-0159 | Zitat-Korrektur: HTML-`id`, MR-Pins, Befehlsform (Supers. ADR-0158, teilw.) | Accepted | 2026-10-06 | [0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md](0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md) |
-| ADR-0160 | Leer-Test der Teil-Range; Home-relative Pfade (Supers. ADR-0157/0075, teilw.) | Accepted | 2026-10-06 | [0160-teil-range-leer-test-und-hostpaths-home-relativ.md](0160-teil-range-leer-test-und-hostpaths-home-relativ.md) |
+| ADR-0159 | Zitat-Korrektur: HTML-`id`, MR-Pins, Befehlsform (Supers. 0158 teilw.; → 0161) | Accepted | 2026-10-06 | [0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md](0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md) |
+| ADR-0160 | Leer-Test Teil-Range; Home-relative Pfade (Supers. 0157/0075 teilw.; → 0161) | Accepted | 2026-10-06 | [0160-teil-range-leer-test-und-hostpaths-home-relativ.md](0160-teil-range-leer-test-und-hostpaths-home-relativ.md) |
+| ADR-0161 | Baseline-Pins in ADRs/MR-Einträgen eingefroren (Supers. 0157/0159/0160, teilw.) | Accepted | 2026-10-07 | [0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md](0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md) |
 
 ## Konventionen
 
@@ -183,6 +184,10 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
   ([`ADR-0158`](0158-zitat-korrektur-vergleichseinheit-je-verweisform.md)),
   mit der Befehlsform aus
   [`ADR-0159`](0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md).
+- Ein Baseline-Pin in einer ADR nennt den Stand, der beim Schreiben adoptiert
+  ist, und wird bei einem Bump nicht nachgezogen; ein Link in ein gelöschtes
+  Tag bekommt einmal die Form-Korrektur
+  ([`ADR-0161`](0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)).
 - Schärfungen und Korrekturen entstehen als neue ADR mit `Supersedes ADR-NNNN`.
 - Bei `Accepted`: diesen Index aktualisieren (Status, Datum).
 - Jede ADR deklariert im `**Schärft:**`-Feld *aufwärts*, welche Spec-Stelle
