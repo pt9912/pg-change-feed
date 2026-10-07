@@ -71,7 +71,7 @@ die Kennung, statt Schwelle und Randform selbst zu tragen, und die Zeilen in
   (Pilot); dieser Slice fügt Zeilen in eine bestehende Tabelle ein.
 - **Gates anderer Gruppen** — Folge-Slices:
   `slice-spec-festlegungen-doku-gates` (docs-check, commit-traceability,
-  baseline-verify), `slice-spec-festlegungen-code-gates` (a-check,
+  baseline-verify, doc-immutable), `slice-spec-festlegungen-code-gates` (a-check,
   generated-sync), `slice-spec-festlegungen-coverage-gates` (coverage-gate,
   db-adapter-coverage), `slice-spec-festlegungen-pruefer-hooks` (Prüfer und
   Hooks ohne Gate).

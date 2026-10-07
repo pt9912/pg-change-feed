@@ -1,4 +1,4 @@
-# Slice spec-festlegungen-doku-gates: Festlegungen von docs-check, commit-traceability und baseline-verify im Pflichtenheft
+# Slice spec-festlegungen-doku-gates: Festlegungen von docs-check, commit-traceability, baseline-verify und doc-immutable im Pflichtenheft
 
 **Lifecycle:** Der Zustand dieses Slice ist das Verzeichnis, in dem diese
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
@@ -58,12 +58,23 @@ Slice:** die Delta-Punkte R2, R7, R9, T6 und T8 des Bumps auf Baseline v6.16.0
 Gates `make docs-check` (alle Module der Liste `modules:` in `.d-check.yml`,
 samt `hostpaths`), `make commit-traceability` und `make baseline-verify`.
 
+**Übergabe aus `slice-spec-festlegungen-harness-werkzeuge`** (Closure, Review
+F-5 und F-13): `make doc-immutable` (d-check Modul `vcs`, Block `vcs:` in
+`.d-check.yml`, Ziel in `d-check.mk`; kein Gate, Lauf des Verifiers).
+Festzulegen ist, was als Drift gilt (der Kern einer Datei unter `vcs.paths` ab der
+Zeile `immutable-when` bleibt über die Range unverändert), die zwei Formen des
+Aufrufs (`RANGE=<basis>..<spitze>` und `STAGED=1`) und die Ausgänge. Der
+Leer-Test der Teil-Range **vor** dem Lauf steht schon in `SPEC-039` (Pilot)
+und ist hier nicht Gegenstand. Dazu bekommt `make doc-immutable` eine Zeile im
+Werkzeug-Teil von `harness/README.md` §Sensors mit der Bindung
+„Spec-Kennung“; heute steht es dort in keiner Zeile.
+
 **Ziel:** `spec/pflichtenheft.md` §7 trägt für `make docs-check`,
-`make commit-traceability` und `make baseline-verify` je eine Festlegung mit
-eigener `SPEC-<NNN>` (was als Treffer gilt, Randform, Ausgänge); die Verträge
-unter `harness/sensors/` nennen die Kennung, statt Schwelle und Randform selbst
-zu tragen, und die Zeilen in `harness/README.md` §Sensors tragen die Bindung
-„Spec-Kennung“.
+`make commit-traceability`, `make baseline-verify` und `make doc-immutable` je
+eine Festlegung mit eigener `SPEC-<NNN>` (was als Treffer gilt, Randform,
+Ausgänge); die Verträge unter `harness/sensors/` nennen die Kennung, statt
+Schwelle und Randform selbst zu tragen, und die Zeilen in `harness/README.md`
+§Sensors tragen die Bindung „Spec-Kennung“.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -106,15 +117,18 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       je eine Zeile mit eigener `SPEC-<NNN>` für `make docs-check` (je Modul
       der Liste `modules:` was als Treffer gilt, samt der Reichweite von
       `hostpaths`), `make commit-traceability` (positive Hälfte und
-      Betreff-Grenze, Range) und `make baseline-verify` (Integrität und
-      Vollständigkeit gegen `SHA256SUMS`), in der Form, die der Pilot für §7
+      Betreff-Grenze, Range), `make baseline-verify` (Integrität und
+      Vollständigkeit gegen `SHA256SUMS`) und `make doc-immutable` (Drift des
+      Kerns, `RANGE` und `STAGED`, Ausgänge; Übergabe in §1), in der Form, die der Pilot für §7
       festlegt (R9). *Zu belegen durch:* Suchlauf
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13) und `make docs-check` Exit 0.
 - [ ] **Verträge und Index verweisen (Liefer-Punkt 2).**
       `harness/sensors/docs-check.md`, `commit-traceability.md` und
       `baseline-verify.md` nennen die Kennung ihrer Festlegung und tragen
       Schwelle und Randform nicht mehr selbst (R2, R7, T8); die drei Zeilen in
-      `harness/README.md` §Sensors tragen die Bindung „Spec-Kennung“ (T6).
+      `harness/README.md` §Sensors tragen die Bindung „Spec-Kennung“ (T6), und
+      `make doc-immutable` bekommt dort eine Zeile im Werkzeug-Teil mit
+      derselben Bindung (Übergabe in §1).
 - [ ] **Bedingung vor der Closure — `Schärft:`-Kante.** Eine Architect-ADR
       (Rollenwechsel, Baseline-Regelwerk `modul-08-agentenrollen.md`) stellt die
       Kante der Gate-ADRs dieser Gruppe zu den neuen Kennungen her, nach dem
@@ -138,14 +152,14 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `spec/pflichtenheft.md` §7 | update | drei Zeilen (Liefer-Punkt 1) |
+| `spec/pflichtenheft.md` §7 | update | vier Zeilen, drei Gates und `make doc-immutable` (Liefer-Punkt 1) |
 | `harness/sensors/docs-check.md`, `commit-traceability.md`, `baseline-verify.md` | update | Verweis statt Schwelle und Randform (Liefer-Punkt 2) |
-| `harness/README.md` §Sensors | update | Bindung „Spec-Kennung“ (Liefer-Punkt 2) |
+| `harness/README.md` §Sensors | update | Bindung „Spec-Kennung“, Zeile `make doc-immutable` im Werkzeug-Teil neu (Liefer-Punkt 2) |
 | `docs/plan/adr/<NNNN>-…` und ADR-Index | neu (Architect) | `Schärft:`-Kante (Bedingung vor der Closure) |
 
 Der Suchlauf ([`AGENTS.md`](../../../../AGENTS.md) §3.13) ist beim Start zu
 messen; bewegte Eigenschaft ist der Ort von Schwelle und Randform der drei
-Gates (Träger außerhalb der Verträge: `AGENTS.md` §3.11, `.d-check.yml`
+Gates und von `make doc-immutable` (Träger außerhalb der Verträge: `AGENTS.md` §3.11, `.d-check.yml`
 Kommentare).
 
 ## 4. Trigger
