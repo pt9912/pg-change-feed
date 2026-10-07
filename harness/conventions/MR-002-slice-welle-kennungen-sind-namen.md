@@ -8,9 +8,9 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   `slice-105` neu angelegten Slice- und Welle-Plan-Dateien dieses Repos.
   `slice-001`–`slice-105` sind von dieser Adaption nicht betroffen und bleiben
   numerisch (siehe Adaption unten).
-- **Ersetzt-Baseline-Regel:** [`grundlagen-source-precedence.md`
+- **Ersetzt-Baseline-Regel:** `grundlagen-source-precedence.md`
   §Vergabe: woher die nächste Kennung
-  kommt](../../.harness/baseline/v6.14.1/regelwerk/grundlagen-source-precedence.md#vergabe-woher-die-nächste-kennung-kommt)
+  kommt (`.harness/baseline/v6.14.1/regelwerk/grundlagen-source-precedence.md#vergabe-woher-die-nächste-kennung-kommt`)
   — konkret der Satz „Welle- und Slice-Kennungen sind Namen, nicht Nummern —
   unabhängig von der Schreiberzahl.“
 - **Adaption:** Bestehende `slice-001`–`slice-104` (und `slice-105`, der

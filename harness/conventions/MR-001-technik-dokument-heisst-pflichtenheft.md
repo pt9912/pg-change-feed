@@ -8,8 +8,8 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   `spec/spezifikation.md`), `harness/README.md` §Source precedence und
   §Guides, `AGENTS.md` §2 und §5, `spec/lastenheft.md` (Verweise auf das
   Technik-Dokument)
-- **Ersetzt-Baseline-Regel:** [grundlagen-referenz-richtung.md
-  §Spec-Straten](../../.harness/baseline/v6.14.1/regelwerk/grundlagen-referenz-richtung.md#spec-straten-mehr-als-ein-spec-dokument)
+- **Ersetzt-Baseline-Regel:** grundlagen-referenz-richtung.md
+  §Spec-Straten (`.harness/baseline/v6.14.1/regelwerk/grundlagen-referenz-richtung.md#spec-straten-mehr-als-ein-spec-dokument`)
   — der Datei-Name des Rang-2-Dokuments (`spec/spezifikation.md`)
 - **Adaption:** Das Rang-2-Dokument heißt
   `spec/pflichtenheft.md` statt `spec/spezifikation.md`. Inhalt und Struktur
