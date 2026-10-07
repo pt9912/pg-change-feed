@@ -39,6 +39,6 @@ Disziplin.
 - Lifecycle-Bestand: `docs/plan/planning/{open, next, in-progress, done}/` und
   das Beobachtungs-Register (`observations/`); die Roadmap liegt unter
   `docs/plan/planning/in-progress/roadmap.md`
-- Adaptionen: `harness/conventions.md` (MR-000, MR-001); die auskommentierte
+- Adaptionen: `harness/conventions.md` (MR-000, MR-006); die auskommentierte
   fünfte structure-Regel in `.d-check.yml` wird mit der ersten Closure in
   `done/` aktiviert — der Moment gehört zu deiner Closure-Planung

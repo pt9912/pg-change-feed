@@ -127,11 +127,11 @@ sie gilt für jeden Lauf.
 
 | MR | Titel | Geltungsbereich | Ersetzt-Baseline-Regel |
 |---|---|---|---|
-| MR-001 <a id="mr-001"></a> | [Technik-Dokument heißt Pflichtenheft](conventions/MR-001-technik-dokument-heisst-pflichtenheft.md) | `spec/pflichtenheft.md` (vormals `spezifikation.md`), `harness/README.md`, `AGENTS.md`, `spec/lastenheft.md` | `grundlagen-source-precedence.md` §Spec-Straten (Rang-2-Datei-Name) |
 | MR-002 <a id="mr-002"></a> | [Slice-/Welle-Kennungen sind Namen, nicht Nummern (ab slice-105 exklusive)](conventions/MR-002-slice-welle-kennungen-sind-namen.md) | `harness/conventions.md` §Aktive Adaptionen; alle nach `slice-105` neu angelegten Slice-/Welle-Plan-Dateien | `grundlagen-source-precedence.md` §Vergabe (Bestandsschutz für `slice-001`–`slice-105`) |
 | MR-003 <a id="mr-003"></a> | [Der PreToolUse-Guard blockt in-place Textwerkzeuge und Host-Interpreter auf Repo-Pfaden](conventions/MR-003-guard-inplace-textwerkzeug.md) | `.claude/hooks/pretooluse-command-guard.sh`, `tools/harness/mask-quotes.awk`, `tools/harness/run-command-guard-tests.sh`, `AGENTS.md` §3.1 „Durchsetzung“ | `grundlagen-durchsetzungsschicht.md` §Grenzen — ehrlich benannt |
 | MR-004 <a id="mr-004"></a> | [Der PreToolUse-Guard sperrt Host-`python` und `python3` am Kopf eines Kommando-Segments unbedingt](conventions/MR-004-guard-host-python-am-kopf.md) | `tools/harness/blocked/python`, `.claude/hooks/pretooluse-command-guard.sh`, `tools/harness/run-command-guard-tests.sh`, `AGENTS.md` §3.1 „Durchsetzung“ | `modul-13-quality-gates.md` §Guard-Härtung |
 | MR-005 <a id="mr-005"></a> | [Baseline-Pins in ADRs und MR-Einträgen bleiben auf dem Stand ihrer Abfassung](conventions/MR-005-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md) | `.d-check.yml` `versions:`/`vcs:`, Pins in `docs/plan/adr/[0-9]*.md` und `harness/conventions/MR-[0-9]*.md`, `harness/targets/pin-stale.md` §Bump-Ablauf | `grundlagen-traceability.md` §Herkunfts-Anker für Steering-Loop-Regeln („Zwei Rot-Quellen, ein Prinzip“) |
+| MR-006 <a id="mr-006"></a> | [Technik-Dokument heißt Pflichtenheft](conventions/MR-006-technik-dokument-heisst-pflichtenheft.md) | `spec/pflichtenheft.md` (vormals `spezifikation.md`, Abschnitte 1–8), `harness/README.md`, `AGENTS.md`, `spec/lastenheft.md` | `grundlagen-referenz-richtung.md` §Spec-Straten (Rang-2-Datei-Name) |
 
 ### Aufgelöste Adaptionen
 
@@ -143,7 +143,7 @@ sie gilt für jeden Lauf.
 
 | MR | aufgelöst durch |
 |---|---|
-| — | — |
+| [MR-001](conventions/done/MR-001-technik-dokument-heisst-pflichtenheft.md) <a id="mr-001"></a> | [MR-006](#mr-006) |
 
 ## Zusatzklassen-Deklaration für Sensors-Bindung
 

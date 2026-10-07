@@ -2,7 +2,7 @@
 
 * Status: Accepted
 * Bezug: `AGENTS.md` §3 Hard Rules und §5 Dokumentations-Regeln ·
-  `harness/conventions.md` (MR-000 ID-Schema, MR-001 Pflichtenheft-Umbenennung) ·
+  `harness/conventions.md` (MR-000 ID-Schema, MR-006 Pflichtenheft-Umbenennung) ·
   <!-- d-check:ignore (Kurs-/ADR-Referenzen; Anker gelten im Ziel-Repo) -->
 * Gilt für: kein eigenes Make-Target — getragen vom Reviewer-Agenten
   (`.claude/agents/reviewer.md`); Reports nach `docs/reviews/`
@@ -17,7 +17,7 @@ Was der Reviewer *immer* mitbringt, bevor er den Diff liest:
   `SPEC-*`)
 - ADRs, deren ID im PR oder in der Commit-Message vorkommt
 - `AGENTS.md` §"Hard Rules"
-- `harness/conventions.md` (MR-000/MR-001 — ID-Schema und Datei-Namen)
+- `harness/conventions.md` (MR-000/MR-006 — ID-Schema und Datei-Namen)
 - vorherige Findings am gleichen Modul (letzte ~5 PRs)
 
 Ohne diesen Block sieht der Reviewer den Code, aber nicht *die Verträge, gegen

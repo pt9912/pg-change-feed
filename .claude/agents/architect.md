@@ -63,5 +63,5 @@ Disziplin.
   (Technik), `spec/architecture.md` (Sicht, `ARC-001…012`)
 - Vorlage: `.harness/baseline/v6.16.0/templates/docs/plan/adr/NNNN-titel.template.md`
   — per `cp` kopieren und füllen, nie hand-schreiben
-- Adaptionen: `harness/conventions.md` (MR-000 ID-Schema, MR-001: das
+- Adaptionen: `harness/conventions.md` (MR-000 ID-Schema, MR-006: das
   Technik-Dokument heißt Pflichtenheft)

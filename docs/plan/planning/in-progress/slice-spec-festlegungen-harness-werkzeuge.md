@@ -24,7 +24,7 @@ Quellen der zwei Festlegungen:
 (Entscheidung 1) für den Leer-Test der Teil-Range. Alle vier tragen
 `Schärft: —` und sind `Accepted`; die Kante zu den neuen Kennungen stellt eine
 Architect-ADR her (§2). Die Adaption
-[`MR-001`](../../../../harness/conventions/MR-001-technik-dokument-heisst-pflichtenheft.md)
+[`MR-001`](../../../../harness/conventions.md#mr-001)
 (Rang-2-Datei heißt Pflichtenheft) wird durch `MR-006` abgelöst. Keine
 `LH-*`-Anforderung ist berührt: die Festlegungen gelten Harness-Werkzeugen,
 nicht dem Produkt.
