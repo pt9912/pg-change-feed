@@ -55,7 +55,15 @@ sind vergleichbar · seit slice-baseline-6-14-0-dokumente-nachziehen.
    aus der geänderten Vorlage oder Regel abgeleitet ist (Skill, Agent-Datei,
    Briefing, README, Konventionen): „übernommen in `<Datei>`“ oder „betrifft das
    Repo nicht“ mit Grund. Dazu der Durchgang durch die Adaptionen in
-   `harness/conventions.md` mit ihren fünf Ausgängen. Dazu die getrackten
+   `harness/conventions.md` mit ihren fünf Ausgängen; je MR-Eintrag misst er
+   die Einheit seines Verweises in `Ersetzt-Baseline-Regel` **zwischen den
+   Tags des Bumps** (Pfad und Anker aus dem eingefrorenen Verweis, Tag-Segment
+   alt bzw. neu, ein Stand mit beiden Bäumen) mit `make zitat-vergleich`, roh
+   und bei `cmp 1` mit Tag-Paar. `cmp 0` ist kein Prüfauftrag; `cmp 1`
+   normalisiert oder Exit 2 ist ein Prüfauftrag, der einen der fünf Ausgänge
+   mit Grund im Plan des Bumps bekommt
+   ([`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+   Entscheidung 5). Dazu die getrackten
    Symlinks auf den alten Tag — `git grep` liest kein Symlink-Ziel (Modus
    120000), `make docs-check` ebenfalls nicht:
    `git ls-files -s | awk '$1==120000{print $4}' | while read -r p; do printf '%s -> %s\n' "$p" "$(readlink "$p")"; done | grep -F '/<alt>/'`
@@ -91,26 +99,29 @@ sind vergleichbar · seit slice-baseline-6-14-0-dokumente-nachziehen.
    und die Records unter `done/` und `docs/reviews/` werden nicht rückwirkend
    umgeschrieben; neue Instanzen folgen der neuen Form.
 
-**MR-Pins in einem eigenen Commit.** Die Baseline-Pins der MR-Einträge unter
-`harness/conventions/` stellt ein Commit um, der **nur** MR-Dateien ändert und
-dessen Message `ADR-0073` nennt (Pin-Commit). Der Verifier prüft
-`make doc-immutable` dann in den Teil-Ranges um diesen Commit und den
-Pin-Commit selbst per normalisiertem `cmp`
-([`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
-Entscheidung 4) sowie je bewegtem Verweis den Referenten mit
-`make zitat-vergleich`
-([`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
-Entscheidung 2, Vertrag [`zitat-vergleich.md`](zitat-vergleich.md)); der
-Messende belegt im Slice-Plan des Bumps mit der gedruckten Zeile. Vor jedem
-Teil-Range-Lauf steht der Leer-Test: **leer** genau dann, wenn `git rev-parse`
-für Basis und Spitze denselben Commit liefert — dann läuft `make doc-immutable`
-nicht, und die gedruckte Zeile des Tests ist der Beleg; sonst
-`git merge-base --is-ancestor` und Zählung > 0, dann `make doc-immutable`
-mit Exit 0; jede andere Lage (eine Seite löst nicht auf, die Basis ist kein Vorfahr, etwa eine
-umgekehrte Range) endet mit Exit 2, und die Range wird neu gebildet. Der
-Befehl ist die Funktion `teilrange` in
+**Pins in ADRs und MR-Einträgen bleiben stehen.** Baseline-Pins in
+`docs/plan/adr/[0-9]*.md` und `harness/conventions/MR-[0-9]*.md` nennen den
+Stand ihrer Abfassung; ein Bump zieht sie nicht nach, `versions` nimmt beide
+Pfade aus, `links` und `anchors` nicht
+([`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+Entscheidung 1).
+
+**Form-Commit vor dem Löschen.** Zeigt ein Link in einem MR-Eintrag in das
+Tag, das der Bump löscht, wird er einmal zu Inline-Code (Pfad samt alter
+Version und Anker, der Linktext bleibt Prosa). Das steht in einem eigenen
+Commit `F`, der **nur** MR-Dateien ändert, dessen Message `ADR-0073` und
+`ADR-0161` nennt und der **vor** dem Lösch-Commit liegt (Entscheidung 4). Der
+Verifier prüft `make doc-immutable` in den Teil-Ranges `B..F~1` und `F..H`,
+je mit dem Leer-Test `teilrange` aus
 [`ADR-0160`](../../docs/plan/adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
-Entscheidung 1.
+Entscheidung 1 (leer genau dann, wenn `git rev-parse` für Basis und Spitze
+denselben Commit liefert; dann kein Lauf, die gedruckte Zeile ist der Beleg;
+sonst `git merge-base --is-ancestor` und Zählung > 0, dann
+`make doc-immutable` mit Exit 0; jede andere Lage endet mit Exit 2, und die
+Range wird neu gebildet), und am Form-Commit je MR-Datei den `formnorm`-`cmp`
+aus `ADR-0161` Entscheidung 4: eine Zeile je Datei, jede mit `cmp 0`. Ein
+Link aus einer ADR in ein gelöschtes Tag bekommt dieselbe Form-Korrektur in
+einem eigenen Commit mit `ADR-0073` und einer §Geschichte-Zeile.
 
 ## `make pin-stale-actions`
 

@@ -7,8 +7,11 @@ Adresse an ihrem Stand adressiert, mit der Einheit der neuen Adresse an deren
 Stand: roh (byte-gleich, abschließende Leerzeilen eingeschlossen) oder, mit
 Tag-Paar, nach Normalisierung nur des bewegten Baseline-Tags
 (`tools/harness/zitat-vergleich.sh`; netzlos, kein Docker). Es ist die Messung,
-die eine Zitat-Korrektur an einer `Accepted` ADR und an einem MR-Pin belegt
-([`AGENTS.md`](../../AGENTS.md) §3.5).
+die eine Zitat-Korrektur an einer `Accepted` ADR belegt
+([`AGENTS.md`](../../AGENTS.md) §3.5) und im Adaptions-Durchgang eines
+Baseline-Bumps den Referenten je MR-Eintrag zwischen den Tags des Bumps misst
+([`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+Entscheidung 5).
 
 **Wer was trägt.** Die **Semantik** — welche Einheit ein Verweis hat, was
 normalisiert wird, was „roh“ heißt, wann der Lauf mit 2 endet — trägt
@@ -53,12 +56,14 @@ die Zahl der Argumente fällt dann unter 6, und der Lauf endet mit Exit 2. Eine
 leere Referenz steht als `''`:
 
 ```text
-make zitat-vergleich ARGS="<P>~1 .harness/baseline/<alt-tag>/regelwerk/modul-13-quality-gates.md '#guard-haertung' <P> .harness/baseline/<neu-tag>/regelwerk/modul-13-quality-gates.md '#guard-haertung'"
+make zitat-vergleich ARGS="<stand> .harness/baseline/<alt-tag>/regelwerk/modul-13-quality-gates.md '#guard-haertung' <stand> .harness/baseline/<neu-tag>/regelwerk/modul-13-quality-gates.md '#guard-haertung'"
 make zitat-vergleich ARGS="<alt-stand> .harness/baseline/<alt-tag>/regelwerk/grundlagen-begriffe.md '' <neu-stand> .harness/baseline/<neu-tag>/regelwerk/grundlagen-begriffe.md '' <alt-tag>:<neu-tag>"
 ```
 
-`<P>` ist der Pin-Commit eines Baseline-Bumps; die gemessenen Aufrufe am
-realen Bump stehen im Plan von `slice-zitat-vergleich-werkzeug` §2.
+`<stand>` ist ein Stand eines Baseline-Bumps, an dem beide Tag-Verzeichnisse
+im Baum liegen (Adaptions-Durchgang, `ADR-0161` Entscheidung 5); gemessene
+Aufrufe stehen im Plan von `slice-zitat-vergleich-werkzeug` §2 (dort am
+Pin-Commit gemessen) und von `slice-harness-baseline-v6-16-0`.
 
 ## Einheit je Referenz
 
@@ -235,8 +240,9 @@ verlangt, und das Skript benutzt keine Funktion, die nur gawk kennt.
   Textdateien gemacht.
 - **Fremder Pin mit dem Bump-Tag.** Trägt ein fremder Pin zufällig genau den
   alten oder neuen Baseline-Tag, normalisiert das Werkzeug auch ihn.
-- **Was nicht im Werkzeug steht:** die Datei-Schleife des MR-Datei-`cmp` aus
-  [`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
+- **Was nicht im Werkzeug steht:** die Datei-Schleife des `formnorm`-`cmp` am
+  Form-Commit aus
+  [`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
   Entscheidung 4; sie bleibt die Befehlsform der ADR, und der Verifier liest
   ihre Ausgabe.
 

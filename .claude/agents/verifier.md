@@ -42,9 +42,10 @@ Disziplin.
   zählen nicht; die Ausgabe muss sichtbar sein
 - je Slice-Umfang: `make doc-commits RANGE=base..head` (Traceability je Commit)
   und `make doc-immutable RANGE=base..head` (MR-Immutabilität; ohne `RANGE`
-  endet das Ziel mit Exit 2); enthält die Range einen Pin-Commit `P` eines
-  Baseline-Bumps (ändert nur MR-Dateien, Message nennt `ADR-0073`), läuft
-  `doc-immutable` in den Teil-Ranges `base..P~1` und `P..head`, je nach dem
+  endet das Ziel mit Exit 2); enthält die Range einen Form-Commit `F` eines
+  Baseline-Bumps (ändert nur MR-Dateien, Message nennt `ADR-0073` und
+  `ADR-0161`), läuft
+  `doc-immutable` in den Teil-Ranges `base..F~1` und `F..head`, je nach dem
   Leer-Test: leer genau dann, wenn `git rev-parse` für Basis und Spitze
   denselben Commit liefert (kein Lauf, die gedruckte Zeile ist der Beleg);
   sonst `git merge-base --is-ancestor` und Zählung > 0, dann `make
@@ -52,13 +53,9 @@ Disziplin.
   gebildet — Befehl: Funktion `teilrange` in
   [`ADR-0160`](../../docs/plan/adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
   Entscheidung 1, und
-  am Pin-Commit selbst je MR-Datei ein `cmp` nach Normalisierung des Tags (je
-  Exit 0) — Befehl in
-  [`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
-  Entscheidung 4; dazu je Verweis, dessen Versions-Segment der Pin-Commit
-  bewegt, die Referent-Messung mit `make zitat-vergleich` (Vertrag
-  `harness/targets/zitat-vergleich.md`, Einheit nach
-  [`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md));
-  ein Referent, der an keinem Stand auflöst, ist „nicht
-  messbar“ und wird gemeldet
+  am Form-Commit selbst je MR-Datei der `formnorm`-`cmp` (eine Zeile je Datei,
+  jede `cmp 0`; ohne Zeile ist der Commit falsch bestimmt) — Befehl in
+  [`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+  Entscheidung 4; die Referent-Messung je MR-Eintrag steht als Beleg des
+  Adaptions-Durchgangs im Plan des Bumps (Entscheidung 5), du fährst sie nach
 - Bericht-Ort: `docs/reviews/` (Gerüst: `.harness/baseline/v6.16.0/templates/docs/reviews/review-report.template.md`)

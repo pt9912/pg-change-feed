@@ -244,7 +244,12 @@ bei ihnen ist die Commit-Kennung der Beleg. Für eine Zitat-Korrektur an einer
 `Accepted` ADR oder einem MR-Eintrag (`ADR-0157`) nennt der Beleg zusätzlich je
 Verweis Form, Einheit, beide Stände, roh oder normalisiert und die gedruckte
 Zeile von `make zitat-vergleich`, oder „nicht messbar“ mit Grund (`ADR-0158`
-Entscheidung 4, 5; für einen MR-Eintrag `ADR-0159` Entscheidung 2); für Records bleibt die Commit-Kennung der Beleg.
+Entscheidung 4, 5); für Records bleibt die Commit-Kennung der Beleg.
+Baseline-Pins in ADRs und MR-Einträgen nennen den Stand ihrer Abfassung und
+werden bei einem Bump nicht nachgezogen; ein Link in ein gelöschtes Tag wird
+einmal zu Inline-Code, an MR-Einträgen im Form-Commit, und die
+Referent-Messung je MR-Eintrag gehört in den Adaptions-Durchgang des Bumps
+([`ADR-0161`](docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)).
 
 **Eine Abweichung vom Wortlaut ist eine Frage, keine Regel.** Weicht eine Arbeit
 vom Wortlaut einer `Accepted`-ADR ab, schreibt keine Rolle — Planner,

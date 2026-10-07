@@ -48,9 +48,9 @@ Disziplin.
 - `make doc-commits RANGE=base..head` — Traceability-Kennung (`LH-*`/`ADR-*`)
   je Commit-Message
 - `make doc-immutable RANGE=base..head` bzw. `STAGED=1` — MR-Einträge
-  append-only (`harness/conventions/`); enthält die Range den Pin-Commit `P`
-  eines Baseline-Bumps, läuft das Ziel in den Teil-Ranges `base..P~1` und
-  `P..head`; vor jedem Lauf entscheidet der Leer-Test: leer genau dann, wenn
+  append-only (`harness/conventions/`); enthält die Range den Form-Commit `F`
+  eines Baseline-Bumps, läuft das Ziel in den Teil-Ranges `base..F~1` und
+  `F..head`; vor jedem Lauf entscheidet der Leer-Test: leer genau dann, wenn
   `git rev-parse` für Basis und Spitze denselben Commit liefert (dann kein
   Lauf, die gedruckte Zeile ist der Beleg), sonst
   `git merge-base --is-ancestor` und Zählung > 0, dann `make doc-immutable`
@@ -58,13 +58,12 @@ Disziplin.
   Befehl: Funktion
   `teilrange` in
   [`ADR-0160`](../../docs/plan/adr/0160-teil-range-leer-test-und-hostpaths-home-relativ.md)
-  Entscheidung 1; am Pin-Commit selbst belegt der Messende im Slice-Plan des Bumps
-  je MR-Datei den `cmp`
-  ([`ADR-0157`](../../docs/plan/adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
-  Entscheidung 4) und je bewegtem Verweis die Referent-Messung mit
-  `make zitat-vergleich`
-  ([`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
-  Entscheidung 2, Vertrag `harness/targets/zitat-vergleich.md`); der Verifier
+  Entscheidung 1; am Form-Commit selbst belegt der Messende im Slice-Plan des
+  Bumps je MR-Datei den `formnorm`-`cmp`
+  ([`ADR-0161`](../../docs/plan/adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+  Entscheidung 4) und im Adaptions-Durchgang je MR-Eintrag die
+  Referent-Messung zwischen den Tags des Bumps mit `make zitat-vergleich`
+  (Entscheidung 5, Vertrag `harness/targets/zitat-vergleich.md`); der Verifier
   fährt beide nach
 - Nicht-Gate-Sensoren, die dieser Command nennt (rot färbende Mutation je
   Zusage), laufen vor der „fertig"-Meldung; halluzinierte Targets sind verboten
