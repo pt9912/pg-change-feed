@@ -29,8 +29,8 @@ ist dann als Quelle nicht mehr unverändert reproduzierbar.
 
 **Wie groß der Ausschnitt ist, sagt das Kommando, nicht diese Datei:**
 `sha256sum -c` über die `SHA256SUMS` plus Bestandsabgleich; der Lauf meldet
-die Zahl (gemessen 2026-10-06 mit `make baseline-verify`, Exit 0, gedruckte
-Zeile `baseline-verify: v6.14.1 OK — 54 Dateien (Integritaet + Vollstaendigkeit, netzlos)`)
+die Zahl (gemessen 2026-10-07 mit `make baseline-verify` am Stand `9a7da482`, Exit 0, gedruckte
+Zeile `baseline-verify: v6.16.0 OK — 54 Dateien (Integritaet + Vollstaendigkeit, netzlos)`)
 — sie sagt etwas über den Baseline-Ausschnitt, nicht über das Repo.
 
 ## Ausgabe und Ausgänge
@@ -50,4 +50,4 @@ Kein Netz; das Skript läuft mit bash + coreutils ohne Fremd-Laufzeit.
 ## Bindung
 
 `harness/conventions.md` §Baseline (Adoptions-Erklärung, MR-000) — der
-adoptierte Stand `v6.14.1` ist die Referenz gegen die diese Prüfung gilt.
+adoptierte Stand `v6.16.0` ist die Referenz gegen die diese Prüfung gilt.

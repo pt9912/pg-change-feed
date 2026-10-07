@@ -190,7 +190,7 @@ Alle Beleg-Angaben dieser Liste sind **Zusagen** („zu belegen durch …“): d
 Planungsstand hat keinen der Läufe im Repo gefahren
 ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) Instanz B).
 
-- [ ] **Baseline v6.16.0 vendored und verifiziert, v6.14.1 entfernt
+- [x] **Baseline v6.16.0 vendored und verifiziert, v6.14.1 entfernt
       (Liefer-Punkt 1).** `.harness/baseline/<Tag>/` (Tag: v6.16.0) committet
       (Regelwerk + Templates + `SHA256SUMS`, 54 Dateien erwartet), aus einem
       `vendor-baseline`-Lauf mit dem Asset-sha256
@@ -200,8 +200,12 @@ Planungsstand hat keinen der Läufe im Repo gefahren
       **nach** Liefer-Punkt 3. *Zu belegen durch:* `sha256sum -c SHA256SUMS` im
       neuen Verzeichnis (Exit-Code, Zahl der `OK`-Zeilen) vor dem Löschen und
       `make baseline-verify` danach (gedruckte Zeile `baseline-verify: v6.16.0 OK
-      — 54 Dateien …` erwartet, Exit 0).
-- [ ] **Verweise, Pins, Symlinks und Form-Commit (Liefer-Punkt 2).** Jede
+      — 54 Dateien …` erwartet, Exit 0). **Belegt:** `bee507d7` (Eingang,
+      `sha256sum -c` Exit 0, 54 `OK`, Abschnitt „Bump-Ablauf — Belege“),
+      `9a7da482` (Löschen, eigener Commit nach `3f88e0c2`); danach
+      `make baseline-verify` Exit 0, gedruckt
+      `baseline-verify: v6.16.0 OK — 54 Dateien (Integritaet + Vollstaendigkeit, netzlos)`.
+- [x] **Verweise, Pins, Symlinks und Form-Commit (Liefer-Punkt 2).** Jede
       lebende Nennung von `v6.14.1` zeigt auf v6.16.0:
       [`AGENTS.md`](../../../../AGENTS.md) §1 (Release-URL);
       `harness/conventions.md` §Baseline (Stand, Datum der Adoption,
@@ -223,8 +227,15 @@ Planungsstand hat keinen der Läufe im Repo gefahren
       Form-Korrektur in einem eigenen Commit (`ADR-0156` Entscheidung 3);
       `MR-005` deklariert die Adaption. *Zu belegen durch:* den Suchlauf §3 mit
       `diff`-Zeilen, `make suchlauf-nachmessen`, die `formnorm`-Zeilen am
-      Form-Commit und `make docs-check` Exit 0 nach dem Löschen.
-- [ ] **Bump-Ablauf Schritte 1–3 mit Belegen (Liefer-Punkt 3).** Schritt 1
+      Form-Commit und `make docs-check` Exit 0 nach dem Löschen. **Belegt:**
+      `a06da54e` (lebende Träger, Symlinks), `fff016fb`, `42efdd6d`,
+      `3f88e0c2` (`formnorm` viermal `cmp 0`, Abschnitt „Adaptions-Durchgang“),
+      `ce045921`; `harness/sensors/baseline-verify.md` nach `9a7da482` neu
+      gemessen; Suchlauf §3 `diff`-Zeilen, `make suchlauf-nachmessen` Exit 0
+      („18 Zeilen stimmen“); nach `9a7da482` `make docs-check` Exit 0
+      (`d-check: 1804 Datei(en) geprüft, 0 Befund(e)`) und
+      `find . -path ./.git -prune -o -xtype l -print | wc -l` druckt 0.
+- [x] **Bump-Ablauf Schritte 1–3 mit Belegen (Liefer-Punkt 3).** Schritt 1
       (Delta je `templates/` und `regelwerk/`, versions-normalisiert, im Repo
       neu erzeugt, mit dem Durchgang durch die Adaptionen MR-001 bis MR-004 und
       dem Symlink-Befehl), Schritt 2 (Stichprobe: Gliederung, Platzhalter mit
@@ -236,7 +247,10 @@ Planungsstand hat keinen der Läufe im Repo gefahren
       „übernommen in `<Datei>`“, „betrifft das Repo nicht“ mit Grund, oder
       „Folge-Slice“ mit Gegenstand. Für Neu 1 und Neu 2 ist „Folge-Slice“
       erwartet (§1); der Implementer entscheidet am Delta, der Planner legt jede
-      genannte Folge-Slice-Datei bis zur Closure an.
+      genannte Folge-Slice-Datei bis zur Closure an. **Belegt:** Abschnitt
+      „Bump-Ablauf — Belege“ (`18bbdc98`, Ausgang je Delta-Punkt R1–R10,
+      T1–T10) und „Adaptions-Durchgang nach `ADR-0161`“ (`70da35c6`), beide
+      vor dem Löschen `9a7da482` committet.
 - [ ] `make gates` grün, Exit-Code ungefiltert gesichert
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -329,7 +343,33 @@ noch nicht vor):
 281f14f3 2 -n 'Abschnitte 1–7' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 281f14f3 0 -n 'Festlegungen der Harness-Werkzeuge' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 281f14f3 0 -nE 'harness/mk/[^ ]*\.md' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 53 -n 'v6\.14\.1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 11 -nE '\.harness/baseline/v6\.14\.1/' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 0 -n 'Kurs-Welle 157' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 24 -n 'v6\.16\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 13 -nE '\.harness/baseline/v6\.14\.1/' -- docs/plan/planning/done
+diff 1 -nE '\]\([^)]*\.harness/baseline/v6\.14\.1' -- docs/plan/planning/done docs/reviews
+diff 3 -n 'Abschnitte 1–7' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 0 -n 'Festlegungen der Harness-Werkzeuge' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 0 -nE 'harness/mk/[^ ]*\.md' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 ```
+
+**`diff`-Zeilen (Implementer, gemessen am Arbeitsbaum nach `9a7da482`).**
+Zeile 1 bleibt bei 53, aber mit anderer Verteilung: `Accepted`-ADRs 17
+(eingefroren, `ADR-0161`) und `ADR-0161` selbst 10, MR-001 bis MR-004 je 1
+(eingefroren, als Inline-Code), Register-Records 3, Test-Fixture 18,
+`harness/targets/zitat-vergleich.md` 1 (Beispielzeile mit dem Tag-Paar dieses
+Bumps); alle lebenden Träger aus §2 Liefer-Punkt 2 sind frei. Zeile 2: die
+vier MR-Einträge, `ADR-0095` und `ADR-0160` je 1 (eingefroren), Fixture 5.
+Zeile 4 (24) nennt die lebenden Träger, `MR-005` und `ADR-0161`. Zeile 5
+steigt von 12 auf 13: die Zeile 272 in `done/slice-harness-guard-blocked-python.md`
+ist jetzt Inline-Code statt Link (`ce045921`). Zeile 6: der verbleibende
+Treffer steht in einer Tabellenzelle von
+`docs/reviews/review-slice-harness-baseline-v6-14-1.md` Zeile 91 als
+Inline-Code, kein Link (`make docs-check` 0 Befunde). Zeile 7 steigt um
+`ADR-0161` Zeile 187, die den Satz in MR-001 nennt; MR-001 und
+`spec/lastenheft.md` bleiben (Folge-Slice Neu 2). Zeilen 8 und 9 unverändert
+(Folgearbeit).
 
 Verteilung (gemessen, `git grep … | cut -d: -f2 | sort | uniq -c`): Zeile 1 —
 `AGENTS.md` 1, `.claude/agents/` 4 (architect 1, reviewer 2, verifier 1),
