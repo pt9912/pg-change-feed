@@ -201,7 +201,7 @@ Planungsstand hat keinen der Läufe im Repo gefahren
       neuen Verzeichnis (Exit-Code, Zahl der `OK`-Zeilen) vor dem Löschen und
       `make baseline-verify` danach (gedruckte Zeile `baseline-verify: v6.16.0 OK
       — 54 Dateien …` erwartet, Exit 0).
-- [ ] **Verweise, Pins, Symlinks und MR-Pin-Commit (Liefer-Punkt 2).** Jede
+- [ ] **Verweise, Pins, Symlinks und Form-Commit (Liefer-Punkt 2).** Jede
       lebende Nennung von `v6.14.1` zeigt auf v6.16.0:
       [`AGENTS.md`](../../../../AGENTS.md) §1 (Release-URL);
       `harness/conventions.md` §Baseline (Stand, Datum der Adoption,
@@ -212,24 +212,18 @@ Planungsstand hat keinen der Läufe im Repo gefahren
       `.harness/skills/reviewer.md`. Die vier getrackten Symlinks unter
       `.claude/rules/` zeigen auf v6.16.0, und nach dem Löschen meldet
       `find . -path ./.git -prune -o -xtype l -print` keinen hängenden Symlink.
-      **MR-Pins:** ein Commit, der **nur** MR-Dateien ändert und dessen Message
-      `ADR-0073` nennt ([`ADR-0157`](../../adr/0157-zitat-korrektur-reichweite-nach-aussage-und-mr-pins.md)
-      Entscheidung 4); je MR-Verweis der Referent mit `make zitat-vergleich`
-      gemessen. Für MR-001 bewegt sich der Referent (§1) — der Pin dort folgt dem
-      Verdikt des Architect (§4, §6), nicht dem Pin-Commit von selbst. Das
-      Verweisgerüst der `Accepted`-ADRs (`v6.14.1` in
-      [`ADR-0095`](../../adr/0095-review-klasse-exempt-status-check.md),
-      [`ADR-0156`](../../adr/0156-versions-gate-nimmt-done-records-aus.md) bis
-      [`ADR-0159`](../../adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md))
-      und der Records (ein Link in
-      `done/slice-harness-guard-blocked-python.md`, ein Link in
-      `docs/reviews/review-slice-harness-baseline-v6-14-1.md`) wird nur dort
-      angefasst, wo ein Gate es nach dem Löschen rot färbt — je Zeile
-      Zitat-Korrektur mit gemessenem Referent oder begründete andere Behandlung;
-      die Entscheidung je Zeile steht im Bericht. *Zu belegen durch:* den
-      Suchlauf §3 mit `diff`-Zeilen, `make suchlauf-nachmessen`, die gedruckten
-      Zeilen von `make zitat-vergleich` je Verweis und `make docs-check` Exit 0
-      nach dem Löschen.
+      **MR-Einträge und ADRs** nach
+      [`ADR-0161`](../../adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md):
+      ihre Pins bleiben auf v6.14.1 (`versions` nimmt beide Pfade aus); die
+      Links aus MR-001 bis MR-004 in das gelöschte Tag werden in einem
+      Form-Commit `F` zu Inline-Code (nur MR-Dateien, Message nennt `ADR-0073`
+      und `ADR-0161`, vor dem Lösch-Commit), `formnorm`-`cmp` je MR-Datei;
+      `ADR-0095` Zeile 107 und `ADR-0160` Zeile 278 bleiben unverändert; der
+      Link in `done/slice-harness-guard-blocked-python.md` bekommt dieselbe
+      Form-Korrektur in einem eigenen Commit (`ADR-0156` Entscheidung 3);
+      `MR-005` deklariert die Adaption. *Zu belegen durch:* den Suchlauf §3 mit
+      `diff`-Zeilen, `make suchlauf-nachmessen`, die `formnorm`-Zeilen am
+      Form-Commit und `make docs-check` Exit 0 nach dem Löschen.
 - [ ] **Bump-Ablauf Schritte 1–3 mit Belegen (Liefer-Punkt 3).** Schritt 1
       (Delta je `templates/` und `regelwerk/`, versions-normalisiert, im Repo
       neu erzeugt, mit dem Durchgang durch die Adaptionen MR-001 bis MR-004 und
@@ -273,14 +267,18 @@ Aussagen-Berührung steht hier gar nicht.
 | `.harness/baseline/<Tag>/**` (Tag: v6.14.1) | entfernt | eigener Commit nach Liefer-Punkt 3; der alte Stand lebt in der Git-Historie |
 | `AGENTS.md` §1, `harness/conventions.md` §Baseline, `harness/sensors/baseline-verify.md`, `harness/targets/zitat-vergleich.md`, `.claude/agents/{architect,reviewer,verifier}.md`, `.harness/skills/{closure-note-reviewer,reviewer}.md` | update | Version-Segment, Release-URL, Stand-Zeile (Liefer-Punkt 2) |
 | `.claude/rules/modul-0{1,5,6,8}-*.md` (Symlinks) | update | Ziel auf `.harness/baseline/<Tag>/regelwerk/…` (Tag: v6.16.0; Liefer-Punkt 2) |
-| `harness/conventions/MR-001` bis `MR-004` | Pin-Commit (nur MR-Dateien, Message nennt `ADR-0073`) | MR-002 bis MR-004 nach gemessenem Referent; MR-001 nach Architect-Verdikt (§6) |
-| `Accepted`-ADRs mit `v6.14.1` (`ADR-0095`, `ADR-0156` bis `ADR-0159`), ein Plan unter `done/`, ein Report unter `docs/reviews/` | Zitat-Korrektur je Zeile oder begründete andere Behandlung | nur das Verweisgerüst, das nach dem Löschen ein Gate rot färbt (Liefer-Punkt 2) |
+| `harness/conventions/MR-001` bis `MR-004` | Form-Commit `F` (`3f88e0c2`, nur MR-Dateien, Message nennt `ADR-0073` und `ADR-0161`) | Link in das Tag v6.14.1 wird Inline-Code, Pfad und Anker unverändert (`ADR-0161` Entscheidung 3/4; Liefer-Punkt 2) |
+| `Accepted`-ADRs mit `v6.14.1` (`ADR-0095`, `ADR-0156` bis `ADR-0160`) | unverändert | Pins eingefroren (`ADR-0161` Entscheidung 1/2); aus ADRs zeigt kein Markdown-Link in die Baseline |
+| `done/slice-harness-guard-blocked-python.md` Zeile 272 | Zitat-Korrektur der Form (`ce045921`, `ADR-0073`, `ADR-0156`) | der einzige Link aus `done/` in das Tag v6.14.1; `links` färbt ihn nach dem Löschen rot |
+| `.d-check.yml` Blöcke `versions:` und `vcs:` | update (`fff016fb`) | `exempt-paths` nach `ADR-0161` Entscheidung 2, Kommentare mit je einer Kennung |
+| `harness/targets/pin-stale.md` §Bump-Ablauf, `.claude/agents/{verifier,implementer}.md`, `AGENTS.md` §3.5 (Beleg), `harness/targets/zitat-vergleich.md` (drei Stellen) | update (`fff016fb`) | Folgepflicht 4 bis 7 von `ADR-0161` |
+| `harness/conventions/MR-005-…` und Index-Zeile in `harness/conventions.md` | neu (`42efdd6d`) | Folgepflicht 3 von `ADR-0161` (Entscheidung 6) |
 | dieser Plan, neuer Abschnitt „Bump-Ablauf — Belege“ | update | Schritte 1–3 mit Befehl und gedruckter Zahl, Ausgang je Delta-Punkt, vor dem Löschen von v6.14.1 committet (Liefer-Punkt 3) |
-| `docs/reviews/architect-verdict-…` (Name setzt der Architect) | neu (Architect, nicht Implementer) | Verdikt zum MR-001-Pin bei bewegtem Referent (§4, §6) |
+| `docs/plan/adr/0161-…` (Architect, `d9c8a5ff`) | neu (Architect, nicht Implementer) | Artefakt zu den drei Haltestellen; an Stelle des erwarteten Verdikts unter `docs/reviews/` |
 | `AGENTS.md` §3.6, §5 | update (Plan-Nachzug, Implementer) | Bump-Ablauf Schritt 3: zwei nie übernommene Klauseln der Vorlage (Carveout-Satz in §3.6, Tabellenform in §5), unabhängig von Neu 1 und Neu 2 (Abschnitt „Bump-Ablauf — Belege“) |
 | `harness/README.md` §Sensors (Kommentar-Block) | update (Plan-Nachzug, Implementer) | Bump-Ablauf Schritt 3: zwei nie übernommene Klauseln der Vorlage (Target-Zelle als nackter Name, Herkunft der Sensor-Datei aus `gate.template.md`) |
 | `harness/targets/zitat-vergleich.md` Beispielzeile der Ausgabe | update (Plan-Nachzug, Implementer) | Tag-Paar der Beispielzeile auf v6.14.1:v6.16.0 — dieselbe Form, die die Messung dieses Bumps druckt |
-| `ADR-0160` Zeile 278 | **nicht** angefasst, Frage an den Architect | `versions` meldet `version-stale`; die Zeile ist ein Messbeleg, kein Verweis (Abschnitt „Halt vor MR-001 und den ADR-Zeilen“) |
+| `ADR-0160` Zeile 278 | unverändert | die Zeile ist ein Messbeleg, kein Verweis; `versions` nimmt die Datei aus (`ADR-0161`) |
 | `harness/sensors/baseline-verify.md` | update erst nach dem Löschen von v6.14.1 | die Messzeile nennt die gedruckte Zeile des Laufs auf einem Baum mit nur einem Tag; vorher druckt das Ziel `FEHLER: mehr als ein <tag>-Verzeichnis` |
 
 **Ansatz — Commit-Folge** (Vorbild der Bump auf v6.14.1, `done/slice-harness-baseline-v6-14-1.md`
@@ -292,18 +290,19 @@ Aussagen-Berührung steht hier gar nicht.
    Tag-Verzeichnisse) — benannter Zwischenstand, nichts wird vor dem Ende der
    Folge gepusht.
 2. **Bump-Ablauf Schritte 1–3** gegen die beiden Bäume im Repo, Belege in diesen
-   Plan (Liefer-Punkt 3), eigener Commit. Danach der **Architect-Zug** zum
-   MR-001-Pin (Planner → Architect → Planner), Eingabe ist der
-   `zitat-vergleich`-Beleg.
-3. **Verweise, Pins, Symlinks** auf v6.16.0 (Liefer-Punkt 2): ein Commit für die
-   lebenden Träger und Symlinks, ein **Pin-Commit** nur für MR-Dateien mit
-   `ADR-0073` in der Message, Zitat-Korrekturen je Datei-Klasse in eigenen
-   Commits mit `ADR-0073`.
+   Plan (Liefer-Punkt 3), eigener Commit. Danach der **Architect-Zug** zu den
+   Haltestellen, Eingabe ist der `zitat-vergleich`-Beleg; Ergebnis ist
+   `ADR-0161`.
+3. **Verweise, Symlinks, Form-Korrekturen** (Liefer-Punkt 2): ein Commit für
+   die lebenden Träger und Symlinks, ein Commit für die Folgepflichten von
+   `ADR-0161`, einer für `MR-005`, der **Form-Commit** `F` nur für MR-Dateien
+   mit `ADR-0073` und `ADR-0161` in der Message, die Form-Korrektur am
+   `done/`-Record in einem eigenen Commit mit `ADR-0073`.
 4. **v6.14.1 entfernt** (`git rm -r`), eigener Commit; danach `make
    baseline-verify`, `find … -xtype l` und `make gates`.
 
-Der Verifier prüft `make doc-immutable` in den Teil-Ranges um den Pin-Commit
-und den Pin-Commit per `cmp` — in der Fassung, die `slice-dcheck-v0-82-0` für
+Der Verifier prüft `make doc-immutable` in den Teil-Ranges um den Form-Commit
+`F` und den Form-Commit per `formnorm`-`cmp` (`ADR-0161` Entscheidung 4) — in der Fassung, die `slice-dcheck-v0-82-0` für
 eine leere Teil-Range hinterlässt (d-check ≥ v0.80.0 bricht bei leerer Range
 mit Exit 2 ab).
 
@@ -389,7 +388,7 @@ Festlegungen der Harness-Werkzeuge in der Spezifikation):
 | R5 | `grundlagen-harness-dateien.md` „Ein Index, mehrere Eigentümer“ (fünf Bedingungen, Vereinigung, Disjunktheit) | `harness/README.md` §Sensors, `.d-check.yml` | Folge-Slice Neu 1 |
 | R6 | `grundlagen-harness-dateien.md` Carveout eines Werkzeug-Gates in der Verweis-Zeile | `harness/README.md` §Sensors | Folge-Slice Neu 1 |
 | R7 | `grundlagen-harness-dateien.md` Sensor-Datei verlinkt die Festlegung in der Spezifikation | `harness/sensors/*.md` | Folge-Slice Neu 2 |
-| R8 | `grundlagen-referenz-richtung.md` §Spec-Straten, neuer Absatz (17 Zeilen) | `spec/pflichtenheft.md`, Gate-ADRs, MR-001 | Folge-Slice Neu 2; für MR-001 Frage an den Architect (unten) |
+| R8 | `grundlagen-referenz-richtung.md` §Spec-Straten, neuer Absatz (17 Zeilen) | `spec/pflichtenheft.md`, Gate-ADRs, MR-001 | Folge-Slice Neu 2; MR-001 bleibt gültig (Adaptions-Durchgang unten) |
 | R9 | `modul-03-spec.md` Gliederung des Rang-2-Dokuments um „Festlegungen der Harness-Werkzeuge“ | `spec/pflichtenheft.md`, `spec/lastenheft.md` („Abschnitte 1–7“) | Folge-Slice Neu 2 |
 | R10 | `modul-13-quality-gates.md` drei Stellen (Index samt Werkzeug-Teilen, Carveout-Zeile, Autorität aus mehreren Dateien) | `harness/README.md` §Sensors | Folge-Slice Neu 1 |
 | T1 | `AGENTS.template.md` §4 „Targets aus Werkzeug-Fragmenten stehen in dem Teil des Werkzeugs“ | `AGENTS.md` §4 | Folge-Slice Neu 1 — der Satz beschriebe einen Teil, den es im Repo nicht gibt |
@@ -429,7 +428,8 @@ schreibt nicht hinein“, R3). Ausgang: Folge-Slice Neu 1, Auslöser ein
 Referenten sind roh gleich (Messung unten). `MR-001` (Rang-2-Datei-Name) — sein
 Referent hat sich bewegt (R8), und seine Aussage „Inhalt und Struktur
 (Abschnitte 1–7 …) sind unverändert“ steht gegen eine Vorlage mit acht
-Abschnitten (T10). Ausgang offen, Frage an den Architect (unten).
+Abschnitten (T10). Ausgang nach `ADR-0161` Entscheidung 5 im Abschnitt
+„Adaptions-Durchgang nach `ADR-0161`“ unten.
 
 **Symlinks.** Befehl aus pin-stale.md Schritt 1 mit `grep -F '/v6.14.1/'`:
 vier Treffer am Parent (§1), nach `a06da54e` null; alle sieben getrackten
@@ -517,6 +517,41 @@ MR-001 (`links`). Kein MR-Pin-Commit, kein Löschen des alten Tags, bis das
 Artefakt des Architect vorliegt (§4, Rückführung `in-progress → open` falls es
 eine nicht angenommene Folge-ADR verlangt).
 
+**Auflösung.** Das Artefakt ist
+[`ADR-0161`](../../adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+(`Accepted`, `d9c8a5ff`): Pins in ADRs und MR-Einträgen bleiben auf v6.14.1,
+`versions` nimmt `docs/plan/adr/[0-9]*.md` und `harness/conventions/MR-[0-9]*.md`
+aus (`fff016fb`). Die drei Haltestellen bleiben im Text unverändert; MR-001
+bekommt nur die Form-Korrektur. Kein Pin-Commit; an seine Stelle tritt der
+Form-Commit `F` = `3f88e0c2`.
+
+### Adaptions-Durchgang nach ADR-0161 (Implementer)
+
+Referent je MR-Eintrag zwischen den Tags des Bumps (Entscheidung 5), gemessen
+mit `make zitat-vergleich` am Stand `bee507d7` (beide Bäume), Pfad und Anker
+aus dem eingefrorenen Verweis; die gedruckten Zeilen stehen in der Tabelle des
+Abschnitts „Halt …“ oben:
+
+| MR | Verweis | Messung | Ausgang |
+|---|---|---|---|
+| `MR-001` | `grundlagen-referenz-richtung.md#spec-straten-mehr-als-ein-spec-dokument` | roh `cmp 1`, normalisiert `cmp 1` — Prüfauftrag | **bleibt gültig**: die Aussage der Adaption, der Datei-Name des Rang-2-Dokuments, berührt der neue Absatz (R8) nicht; der Satz „Abschnitte 1–7“ hängt am Folge-Slice Neu 2 (T10), der entscheidet, ob er einen Nachfolge-Eintrag braucht. Datei nur mit Form-Korrektur (`3f88e0c2`) |
+| `MR-002` | `grundlagen-source-precedence.md#vergabe-woher-die-nächste-kennung-kommt` | roh `cmp 0` | kein Prüfauftrag, bleibt gültig |
+| `MR-003` | `grundlagen-durchsetzungsschicht.md#grenzen--ehrlich-benannt` | roh `cmp 0` | kein Prüfauftrag, bleibt gültig |
+| `MR-004` | `modul-13-quality-gates.md#guard-haertung` | roh `cmp 0` | kein Prüfauftrag, bleibt gültig |
+
+`MR-005` (neu, `42efdd6d`) zeigt auf v6.16.0 und ist nicht Gegenstand des
+Durchgangs. Sein Link ist einzeilig, `links`/`anchors` lesen ihn: Mutation des
+Ankers (`…-regelnX`) am Arbeitsbaum, `make docs-check` druckt ein
+`anchor-missing` an `MR-005` Zeile 16, `1 Befund(e)`, make-Exit 2 — rot;
+zurückgesetzt, danach `0 Befund(e)`.
+
+**Form-Commit `F` = `3f88e0c2`**, `formnorm`-`cmp` aus `ADR-0161`
+Entscheidung 4, gedruckte Zeilen:
+`harness/conventions/MR-001-technik-dokument-heisst-pflichtenheft.md cmp 0`,
+`harness/conventions/MR-002-slice-welle-kennungen-sind-namen.md cmp 0`,
+`harness/conventions/MR-003-guard-inplace-textwerkzeug.md cmp 0`,
+`harness/conventions/MR-004-guard-host-python-am-kopf.md cmp 0`.
+
 ## 4. Trigger
 
 <!-- BEDIENHINWEIS: Beispiele — "Wenn Welle X done." / "Wenn Carveout CO-NN
@@ -581,15 +616,19 @@ dasteht.
   `cmp 1`) und das Architect-Verdikt (Pin trotzdem als Gerüst, weil die Aussage
   der Adaption — der Datei-Name — unberührt ist; oder neue Adaption bzw.
   Folge-Slice zusammen mit Neu 2). Erwarteter Ausgang: eingetreten, mit der
-  Kennung, die das Verdikt nennt.
+  Kennung, die das Verdikt nennt. **Ausgang: eingetreten** —
+  [`ADR-0161`](../../adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+  (gemessen `cmp 1`, Abschnitt „Halt …“; MR-001 bleibt gültig, Form-Korrektur
+  `3f88e0c2`, „Abschnitte 1–7“ an Folge-Slice Neu 2).
 - **Zwischenstand rot.** `vendor-baseline` vendort nicht neben dem alten Tag
   (Vorgänger-Bump); der Weg über den Wegwerf-Klon und `cp -r` macht zwei
   Tag-Verzeichnisse für mehrere Commits zum Bestand, und `make baseline-verify`
   (damit `make gates`) ist auf ihnen rot. Gepusht wird erst die vollständige
   Folge bis zum Löschen. *Zu belegen durch:* `make gates` Exit 0 auf dem Commit
   nach dem Löschen.
-- **Die leere Teil-Range im `doc-immutable`-Lauf.** Ist der Pin-Commit `P` der
-  erste Commit nach `base`, ist `base..P~1` leer, und d-check ≥ v0.80.0 endet
+- **Die leere Teil-Range im `doc-immutable`-Lauf.** Ist der Form-Commit `F`
+  (an Stelle des Pin-Commits `P`, `ADR-0161`) der erste Commit nach `base` oder die
+  Spitze, ist eine Teil-Range leer, und d-check ≥ v0.80.0 endet
   dort mit Exit 2 (gemessen in `slice-dcheck-v0-82-0` §1). *Zu belegen durch:*
   den Verifier-Lauf nach der Regel, die `slice-dcheck-v0-82-0` hinterlässt;
   der Start-Trigger (§4) stellt sicher, dass sie vorliegt.
