@@ -194,9 +194,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       (2026-10-07).
 - [ ] `make gates` grün, Exit-Code ungefiltert gesichert
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Belege: `docs/reviews/review-slice-spec-festlegungen-harness-werkzeuge.md`
+      (3 MEDIUM, Fixrunde) und
+      `docs/reviews/review-slice-spec-festlegungen-harness-werkzeuge-fixrunde.md`
+      (0 HIGH, 0 MEDIUM, 0 LOW, 1 INFO; keine weitere Fixrunde).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
