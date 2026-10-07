@@ -16,7 +16,7 @@ Regeln dieser Sektion: Tatsächlicher Code gehört in `src/`, nicht hierher.
 ID-Schema `LH-<STRATUM>-<BEREICH>-<NN>.<Buchstabe>` für Verfeinerungen
 einzelner Lastenheft-IDs (Baseline-Regelwerk
 `grundlagen-source-precedence.md` §ID-Schema als Klammer). Was **keine**
-einzelne Lastenheft-ID verfeinert, trägt eine `SPEC-<NNN>` — siehe §2 bis §6.
+einzelne Lastenheft-ID verfeinert, trägt eine `SPEC-<NNN>` — siehe §2 bis §7.
 
 ### LH-QA-REL-001.a — Persist-before-ACK
 
@@ -1846,7 +1846,161 @@ WAL-Rückstand und Capture-Lag werden überwacht.
 
 ---
 
-## 7. Historie
+## 7. Festlegungen der Harness-Werkzeuge
+
+Regeln dieser Sektion: was ein Gate, ein Prüfer, ein Hook prüft und wie er an
+seinen Randformen entscheidet. Setzt das Werkzeug genau eine Anforderung durch,
+steht die Festlegung als deren Verfeinerung in §1, nicht hier. Eine Randform,
+die nach `Accepted` der Gate-ADR auftaucht, wird hier fortgeschrieben; womit das
+Werkzeug selbst gedeckt ist (Tabellentest, Mutationen), steht nicht hier,
+sondern bei ihm (Baseline-Regelwerk `grundlagen-referenz-richtung.md`
+§Spec-Straten). Kein ADR-Verweis: welche ADR eine Festlegung schärft,
+deklariert die ADR in ihrem `Schärft:`-Feld.
+
+| ID | Werkzeug | Festlegung |
+|---|---|---|
+| `SPEC-038` | `make zitat-vergleich` | Referent-Messung einer Zitat-Korrektur: vergleicht die Einheit, die eine alte Adresse an ihrem Stand adressiert, mit der Einheit der neuen Adresse an deren Stand — roh, oder mit Tag-Paar nach Normalisierung nur des bewegten Baseline-Tags; Einheit je Verweisform, Stände und Ausgänge unter der Tabelle |
+| `SPEC-039` | Leer-Test `teilrange` vor `make doc-immutable` | entscheidet je Teil-Range um einen Commit, der nur Adaptions-Einträge ändert, zwischen leer (kein Lauf), nicht leer (Lauf, Exit 0) und falsch gebildet (Exit 2); Einzelheiten unter der Tabelle |
+
+**Zu `SPEC-038` — Gegenstand.** Die Messung belegt, dass eine Zitat-Korrektur
+an einem immutablen Dokument (einer `Accepted` ADR, einem Adaptions-Eintrag
+`MR-<NNN>`) den Referenten nicht bewegt: verglichen wird die Einheit, die der
+Verweis adressiert, nicht die Datei, in der sie steht. Im Adaptions-Durchgang
+eines Baseline-Bumps misst sie je Adaptions-Eintrag die Einheit des Verweises
+in `Ersetzt-Baseline-Regel` zwischen den Tags des Bumps. Die Form-Korrektur
+eines Links in einem Adaptions-Eintrag (Link wird Inline-Code, die Adresse
+bleibt byte-gleich) belegt sie nicht; dort tragen `SPEC-039` und der Vergleich
+je Adaptions-Datei nach Form-Normalisierung am Form-Commit.
+
+**Zu `SPEC-038` — Einheit je Verweisform.** Die Einheit folgt dem genauesten
+Lokator des Verweises; jede Seite wird nach ihrem eigenen Lokator gelesen.
+Tragen alte und neue Adresse verschiedene Lokator-Arten, misst jede Seite ihre
+eigene Einheit; gleich heißt: beide Einheiten sind byte-gleich.
+
+| Verweisform | Referenz | Einheit |
+|---|---|---|
+| Pfad oder Linkziel ohne Anker und Lokator | leer | die ganze Datei |
+| Anker auf ein Heading | `#<slug>` | der Abschnittskörper: die Zeilen nach dem Heading bis vor das nächste Heading gleicher oder höherer Ebene; die Heading-Zeile gehört nicht dazu |
+| Anker als HTML-`id` | `#<id>` | nach der Stellung der `id` (Tabelle unten) |
+| Zeilen-Lokator | `L<a>-<b>` mit `1 <= a <= b` | die Zeilen `a` bis `b`; jede andere Form (`L7`, `L5-3`, `L0-1`, `L1-2-3`) hat keine Einheit |
+| Versions-Segment | wie der übrige Verweis | die Einheit, die der übrige Verweis adressiert, mit der Normalisierung des Tag-Paars |
+| Form einer gebrochenen Referenz | wie die korrigierte Form | die Einheit der Form, die der Verweis nach der Korrektur trägt; die alte Adresse wird am Stand nach „Stände“ gelesen |
+
+Ein **Heading** beginnt am Zeilenanfang mit 1 bis 6 `#` und einem Leerzeichen;
+ein Heading in einem Code-Fence zählt nicht. Der **Slug** ist der Heading-Text
+ohne schließende `#`-Folge, klein geschrieben, ohne HTML-Tags, ohne Zeichen
+außer Buchstaben, Ziffern, Leerzeichen, `_` und `-`, Leerzeichen zu `-`; ein
+doppelter Slug bekommt `-1`, `-2`, … . Aufgelöst wird die erste Fundstelle in
+Dateireihenfolge, Slug oder `id`. Ein **Fence** folgt CommonMark: er öffnet mit
+0 bis 3 Leerzeichen Einzug und mindestens drei gleichen Zeichen `` ` `` oder
+`~` (ein Backtick-Fence trägt im Info-String keinen Backtick), schließt nur mit
+demselben Zeichen in mindestens derselben Länge, danach höchstens Leerraum, und
+reicht ungeschlossen bis zum Dateiende. Slug und Fence sind eine Nachbildung
+des Renderers, nicht seine Auflösung.
+
+Eine **HTML-`id`** wird nur als öffnendes Tag `<a id="X">` gelesen, und nur
+außerhalb von Fence, Inline-Code (vor der Fundstelle steht in der Zeile eine
+ungerade Zahl Backticks), eingerücktem Code (die Zeile beginnt mit vier
+Leerzeichen oder einem Tab) und HTML-Kommentar (`<!--` bis `-->`, auch über
+Zeilen; ein `<!--` hinter einer ungeraden Zahl Backticks der Zeile öffnet
+keinen). Die Einheit folgt der Stellung:
+
+| Stellung | Einheit |
+|---|---|
+| in einer Heading-Zeile | der Abschnittskörper dieses Headings |
+| in einer Zeile ohne Inhalt, die nächste Zeile mit Inhalt ist ein Heading | der Abschnittskörper dieses Headings |
+| in einer Zeile ohne Inhalt, die nächste Zeile mit Inhalt ist kein Heading | der Block ab dieser Zeile bis vor das nächste Heading beliebiger Ebene oder bis zum Dateiende |
+| in einer Tabellenzeile (die Zeile beginnt mit `\|`) | die Tabellenzeile |
+| in einer anderen Zeile mit Text | der Block ab dieser Zeile bis vor das nächste Heading beliebiger Ebene oder bis zum Dateiende |
+
+Eine **Zeile ohne Inhalt** trägt nach dem Entfernen aller `<a id="…"></a>` und
+aller HTML-Kommentar-Teile nur Leerraum; gestapelte `id`-Zeilen adressieren
+deshalb alle dieselbe Einheit dahinter. Ein Fence direkt nach einer `id`-Zeile
+beginnt den Block, seine Öffnungszeile gehört zur Einheit. Keine Einheit haben:
+eine `id` in anderer Form (`<a id="X" class="…">`, `<a id="X"/>`), auch wenn
+ein Heading-Slug `X` trifft; ein `name=` und eine `id` an einem anderen
+Element; eine `id`-Zeile oder Kommentar-Grenze in **mehrdeutiger Stellung** —
+außerhalb eines Fence und nicht eingerückt, zusammen mit einem Backtick-Lauf ab
+Länge 2, einer ungeraden Zahl Backticks oder in einem Absatz, dessen Vorzeilen
+eine ungerade Zahl Backticks tragen (offener Code-Span), sowie eine
+`id`-Zeile mit einem Einzug aus Leerzeichen und Tab; jede Fundstelle von `X`
+nach einer solchen Kommentar-Grenze ebenso. Mehrdeutig heißt „nicht messbar“.
+
+**Zu `SPEC-038` — roh und Normalisierung.** Roh heißt byte-gleich,
+abschließende Leerzeilen eingeschlossen. Im Datei- und im Zeilen-Modus zählt
+ein Unterschied im Schluss-Umbruch der Datei, im Abschnitts- und im
+Block-Modus nicht (jede Zeile der Einheit endet dort mit Zeilenumbruch).
+Normalisiert wird nur mit einem **Tag-Paar** `<alt-tag>:<neu-tag>` der Form
+`v<X.Y.Z>:v<X.Y.Z>` mit verschiedenen Tags, nur wenn die Korrektur ein
+Versions-Segment bewegt und der rohe Vergleich fällt: auf der alten Seite wird
+nur das Segment `/<alt-tag>/` durch `/<tag>/` ersetzt, auf der neuen nur
+`/<neu-tag>/`. Am alten Stand muss `.harness/baseline/<alt-tag>` liegen, am
+neuen `.harness/baseline/<neu-tag>`. Ein fremder Pin mit anderer Version bleibt
+roh; ein fremder Pin mit genau dem alten oder neuen Tag wird mit normalisiert.
+Keine Normalisierung von Leerraum, Zeilenenden oder Groß-/Kleinschreibung.
+
+**Zu `SPEC-038` — Stände.** Die alte Adresse wird am jüngsten Stand gelesen,
+an dem sie auflöst — in der Regel am Parent des Korrektur-Commits; ist die
+Zieldatei umgezogen oder gelöscht, am Parent des Commits, der sie bewegt hat.
+Die neue Adresse wird am Korrektur-Commit gelesen. Im Adaptions-Durchgang
+werden beide Seiten an einem Stand gelesen, an dem beide Tag-Verzeichnisse im
+Baum liegen; Pfad und Anker kommen aus dem eingefrorenen Verweis, das
+Tag-Segment ist `<alt-tag>` bzw. `<neu-tag>`; gemessen wird roh, bei `cmp 1`
+zusätzlich mit dem Tag-Paar.
+
+**Zu `SPEC-038` — nicht messbarer Referent.** Liegt die alte Adresse außerhalb
+des Repos oder löst sie an keinem Stand auf, gibt es keinen gemessenen
+Referenten. In §Entscheidung, §Konsequenzen und §Verglichene Alternativen einer
+ADR ist die Korrektur dann keine Zitat-Korrektur, sondern eine Folge-ADR; in
+den übrigen Abschnitten einer ADR und in einem Adaptions-Eintrag ist sie Urteil
+am Diff, und der Beleg nennt „nicht messbar“ mit Grund.
+
+**Zu `SPEC-038` — Ausgänge und Beleg.** Je Lauf steht eine Zeile auf stdout,
+gedruckt vor dem Ende: `vergleich roh: … cmp <n>`, `vergleich norm
+<alt-tag>:<neu-tag>: … cmp <n>` oder `vergleich: … keine Einheit, Exit 2`.
+
+| Exit | Bedeutung |
+|---|---|
+| 0 | die Einheiten sind gleich (`cmp 0`) |
+| 1 | die Einheiten sind verschieden (`cmp 1`) |
+| 2 | eine Seite hat keine Einheit (Datei am Stand nicht lesbar, Lokator ungültig, Einheit leer, `id` in anderer Form, mehrdeutige Stellung), das Tag-Paar ist ungültig, die Zahl der Argumente ist nicht 6 oder 7, oder `awk` liest unter `C.UTF-8` kein Multibyte |
+
+Exit 2 endet nie als `cmp 0`. Shell-Optionen der Pfadnamen-Expansion des
+Aufrufers (`nullglob`, `failglob`) ändern das Ergebnis nicht. Im
+Adaptions-Durchgang heißt `cmp 0` (roh oder normalisiert): die ersetzte Regel
+hat sich im Bump nicht bewegt, kein Prüfauftrag; `cmp 1` normalisiert oder
+Exit 2 ist ein Prüfauftrag, der einen der fünf Ausgänge des Freshness-Audits
+bekommt — bleibt die Adaption gültig, bleibt der Adaptions-Eintrag unberührt,
+jeder andere Ausgang ist ein Nachfolge-Eintrag. Der Beleg einer
+Zitat-Korrektur nennt je Verweis Form, Einheit, beide Stände, roh oder
+normalisiert und die gedruckte Zeile; er steht in der Commit-Message oder im
+Slice-Plan.
+
+**Zu `SPEC-039`.** Um einen Commit `F`, der nur Adaptions-Einträge
+(`harness/conventions/**/MR-<NNN>-*.md`) ändert, läuft `make doc-immutable`
+über eine Range `B..H` in den zwei Teil-Ranges `B..F~1` und `F..H`. Für jede
+Teil-Range `<basis>..<spitze>` gilt genau eines:
+
+- **leer** genau dann, wenn `git rev-parse --verify` für `<basis>` und
+  `<spitze>` denselben Commit druckt — dann läuft `make doc-immutable` für
+  diese Teil-Range nicht, der Beleg ist die gedruckte Zeile des Tests;
+- **nicht leer**, wenn `git merge-base --is-ancestor <basis> <spitze>` gilt und
+  `git rev-list --count <basis>..<spitze>` größer 0 ist — dann läuft
+  `make doc-immutable RANGE=<basis>..<spitze>` und endet mit Exit 0;
+- **falsch gebildet** in jeder anderen Lage: eine Seite löst nicht auf, oder
+  `<basis>` ist kein Vorfahr von `<spitze>`, die umgekehrte Range
+  eingeschlossen — der Test endet mit Exit 2, und das ist rot; die Range wird
+  neu gebildet, nicht ausgelassen.
+
+`git rev-list --count` allein entscheidet „leer“ nicht. Jede Teil-Range ist
+entweder leer oder grün; ein Exit 2 aus dem Test oder aus `make doc-immutable`
+ist ein Befund und kein Leerfall. Ein falsch bestimmtes `F` fällt so nicht
+still durch: liegt es hinter dem echten Commit, enthält `B..F~1` diesen und
+wird rot; liegt es vor `B`, ist `B` kein Vorfahr von `F~1`, Exit 2.
+
+---
+
+## 8. Historie
 
 Regeln dieser Sektion: **kein ADR- und kein Slice-Verweis.** Die Decken-Regel
 gilt für alle drei Spec-Straten, auch hier — welche ADR eine Festlegung
@@ -1926,3 +2080,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-04 | `SPEC-033`: Einheit von `cdc_consumer_lag` ist `By` (WAL-Strecke), Zahlenform, Header-Regeln, Header ohne Endpunkt, Benutzerteil der Endpunkt-URL, erster Versuch nach einem vollen Takt, Frist für Lesen und Übertragen gemeinsam, gemeinsamer Fehlerzustand, keine Weiterleitung; `SPEC-034`: Prüfung beim Start auf das Laden des Paares begrenzt (Ablauf, Namen, Kette nicht geprüft); `SPEC-035`: leere Variable, Komma im Token, Leerraum nur in den Listen; `SPEC-009`: Bedeutung von `cdc_consumer_lag` — schreibt den Ist-Zustand fest, kein neues Verhalten außer der Einheit |
 | 2026-10-05 | `SPEC-025`: Grenze der Zusatzlatenz ist max(0,10 ms ; 1,5 × `t_sync`) mit im selben Lauf gemessener Festschreib-Latenz, Verdikt auf jedem Host, Fehlerausgang bei nicht messbarem `t_sync`; `SPEC-036`: Messvorschrift für `t_sync` statt Band `fdatasync` ≤ 0,5 ms; `SPEC-037` neu (TLS-Optionen der Client-Bibliotheken: ein Vertrauensanker je SDK für HTTP, SSE und gRPC) |
 | 2026-10-05 | `LH-FA-SST-009.a`: die Artefakt-Namen der drei SDK-Packages stehen versionsneutral als Form mit `<Version>` und der Version-Datei je Sprache statt als Namen der Version 0.2.x; keine Änderung an Abdeckung, Paketierung oder Vertriebsweg |
+| 2026-10-07 | §7 „Festlegungen der Harness-Werkzeuge“ neu: `SPEC-038` (Referent-Messung `make zitat-vergleich`: Einheit je Verweisform, roh und Normalisierung, Stände, nicht messbarer Referent, Ausgänge) und `SPEC-039` (Leer-Test der Teil-Range vor `make doc-immutable`); die Historie ist §8, §1 verweist auf §2 bis §7 |

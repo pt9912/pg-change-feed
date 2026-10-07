@@ -1,5 +1,5 @@
 Zustand: gestrichen (**3×**, akzeptiertes Negativ; Ausgang am Ende). Behoben im Vorgang:
-die Randwert-Regel steht in einer Formulierung an den Trägern (`spec/pflichtenheft.md` §7
+die Randwert-Regel steht in einer Formulierung an den Trägern (`spec/pflichtenheft.md` §8
 Historie, `docs/user/benutzerhandbuch.md` Absatz nach den `**SDK:**`-Absätzen, die drei
 `sdks/*/README.md`) und je Sprache als Test mit sechs Fällen; die Eingabeseiten-Mutationen
 (Verifikation §4: C1 bis C3, P1, P2, K1, K2) färben je Sprache rot.
