@@ -216,7 +216,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -609,7 +609,29 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   - Festlegung lässt eine Randform offen → *entfallen* — im Slice behoben
     (F-1, `941b1207`, `8ed4eb7f`); gezählt als drittes Auftreten im Register
     (oben).
-- **Drei Paarungen:** nach dem `git mv` gemessen (unten nachgetragen).
+- **Drei Paarungen:** nach dem `git mv` (`675d705b`) gemessen — (a) *Anker:*
+  der Steering-Loop-Eintrag trägt `liegt in`; `.claude/commands/plan-welle.md`
+  Schritt 6 trägt den Absatz „Festlegung im Pflichtenheft: Gegenprobe der
+  Quellen und Anschluss-Frage · seit slice-spec-festlegungen-harness-werkzeuge“
+  (`grep -n 'seit slice-spec-festlegungen-harness-werkzeuge'
+  .claude/commands/plan-welle.md`: Zeile 123). (b) *Folge-Slice:* die fünf
+  `slice-spec-festlegungen-*` (doku-, kennungs-, code-, coverage-gates,
+  pruefer-hooks) existieren in `open/` und nennen je die Gegenprobe
+  (`git grep -c -i Gegenprobe` je Plan: 2); `formnorm` steht in `-pruefer-hooks`
+  (2), `doc-immutable` in `-doku-gates` (9). (c) *Register:* die genannten
+  Verzeichnisse existieren, jedes mit nicht leerem `evidence/`
+  (`ls evidence | wc -l`): `spec-nachzug-laesst-festlegung-fuer-folge-slice-offen`
+  3, `nachzug-laesst-ueberholten-text-stehen` 26,
+  `aufschub-adresse-nimmt-sendung-nicht-an` 6,
+  `rollen-uebergabe-ohne-committetes-artefakt` 2,
+  `arbeit-ueberholt-stehenden-traeger` 34, `zitat-nennt-die-falsche-stelle` 10,
+  `adr-aussage-breiter-als-ihre-messung` 14,
+  `messwerkzeug-grenze-unbenannt-fail-open` 1,
+  `werkzeugvertrag-zusage-ohne-testfall` 1. Ergebnis: getragen. Durch den Move
+  brach kein Verweis (`git grep -n
+  'in-progress/slice-spec-festlegungen-harness-werkzeuge'` außerhalb von
+  `docs/reviews/`: kein Treffer). Der Ruhe-Marker der Roadmap steht wieder,
+  Wortlaut gleich `be079ee0`; `in-progress/` trägt nur `roadmap.md`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
