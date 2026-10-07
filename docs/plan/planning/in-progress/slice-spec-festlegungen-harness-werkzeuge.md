@@ -246,7 +246,7 @@ diff 2 -F '§2 bis §7' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.ha
 diff 22 -E 'pflichtenheft[^ ]*`? §7' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 1 -E 'pflichtenheft[^ ]*`? §8' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 0 -F '7-historie' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 14 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 15 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 1 -F 'Spec-Stelle in' -- docs/plan/adr/README.md
 ```
 
@@ -268,7 +268,8 @@ nachgezogene Zustandsfeld); der Anker `#7-festlegungen-der-harness-werkzeuge`
 `zitat-vergleich.md` 7); kein `#7-historie`. Nach `d2a863a1`: „pflichtenheft …
 §7“ 22 (dazu `ADR-0162` Zeile 31), der Anker 14 (dazu `ADR-0162` 2 im
 `Schärft:`-Feld und der neue Absatz in `pin-stale.md`); die übrigen Zeilen
-unverändert. Nicht gefunden: ein Verweis auf
+unverändert. Nach der Fixrunde: der Anker 15 (dazu der Verweis in §Grenzen von
+`zitat-vergleich.md`, F-7). Nicht gefunden: ein Verweis auf
 die alte §7 als Historie außerhalb des Zustandsfelds; in den `Accepted`-ADRs
 `ADR-0090` und `ADR-0098` steht „§7“ für die Historie (Zeilen 407, 562 bzw.
 449), sie bleiben eingefroren (`AGENTS.md` §3.5). `MR-001` als geltende
@@ -304,6 +305,51 @@ Exit 0
 
 Die Commits nach `d2a863a1` ändern keinen Adaptions-Eintrag; der Verifier fährt
 die drei Aufrufe am Endstand nach.
+
+**Fixrunde** (Review-Report `docs/reviews/review-slice-spec-festlegungen-harness-werkzeuge.md`,
+Commit `01264f8d`; 0 HIGH, 3 MEDIUM, 5 LOW, 5 INFO):
+
+- **F-1 (MEDIUM), teilweise.** Der Satz aus
+  [`ADR-0158`](../../adr/0158-zitat-korrektur-vergleichseinheit-je-verweisform.md)
+  Entscheidung 3 steht in `SPEC-038` „Stände“: „Ist eine Einheit leer oder
+  nicht lesbar (Anker unbekannt, Datei fehlt), besteht die Korrektur nicht.“;
+  Historie §8 nachgezogen. **Angehalten** an der zweiten Hälfte (Bindung von
+  „mehrdeutig“ an „nicht messbar, Urteil am Diff“): keine Quell-ADR trägt
+  diese Lesung. `ADR-0158` Entscheidung 4 bindet „nicht messbar“ an eine alte
+  Adresse außerhalb des Repos oder an keinem Stand auflösend,
+  [`ADR-0162`](../../adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md)
+  Entscheidung 2 nennt Mehrdeutig mit Exit 2 „fail-closed“, und Entscheidung 3
+  von `ADR-0158` sagt für eine Seite ohne Einheit „besteht nicht“; der alte
+  Vertrag zitierte für „Urteil am Diff“ den Zweig von
+  [`ADR-0159`](../../adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
+  Entscheidung 2, der einer nicht auflösenden Adresse gilt. „besteht nicht“
+  und „Urteil am Diff“ sind zwei Lesungen; welche gilt, entscheidet der
+  Architect (`AGENTS.md` §3.5). Der Satz „Mehrdeutig heißt „nicht messbar““
+  in `SPEC-038` bleibt bis dahin unverändert.
+- **F-2 (MEDIUM).** `harness/targets/zitat-vergleich.md`: der Block der ADR ist
+  „historische Fassung … und kein Maßstab“, Maßstab allein `SPEC-038`
+  (`ADR-0162` Entscheidung 2); der Satz „Weicht … außerhalb der Punkte ab“ und
+  die Bezeichnung „Auslegung im Sinn von Verdikt §2“ samt „die drei letzten
+  Zeilen“ sind ersetzt durch „Alle zehn Punkte sind Festlegung“.
+- **F-3 (MEDIUM).** Übergabe als committeter Text in §1 von
+  `slice-spec-festlegungen-pruefer-hooks` (Absatz „Übergabe aus …“).
+  Beleg: `git grep -c formnorm -- docs/plan/planning/open/slice-spec-festlegungen-pruefer-hooks.md`
+  druckt `…pruefer-hooks.md:2`, Exit 0 (am Stand `01264f8d` Exit 1, kein Treffer).
+- **F-4 (LOW).** Benannter Altfall, kein Neuschnitt (Einschätzung des
+  Reviewers): `8e00e831` liegt vor `ADR-0162`, `umzug` Exit 0, §3 trägt den
+  Vermerk; gehört in die Closure-Notiz.
+- **F-6 (LOW).** Der Fehler von `sed` am Zeilen-Lokator und von `awk` am Anker
+  steht in der Exit-Tabelle von `SPEC-038`; der Satz im Vertrag ist entfernt.
+- **F-7 (LOW).** §Grenzen des Vertrags verweist für die mehrdeutige Stellung
+  direkt auf `SPEC-038`.
+- **F-8 (LOW).** Befund, Lese-Hinweis für die Closure: `MR-006` trägt mit
+  „Abschnitte 1–8“ wieder eine Bestandsangabe der Baseline-Vorlage; der
+  Eintrag ist ab seinem Datum immutabel und bleibt so — eine Änderung der
+  Gliederung der Vorlage erzwingt wieder einen Nachfolger.
+- **F-12 (INFO).** `harness/targets/pin-stale.md` nennt die Message-Pflicht des
+  Umzugs-Commits (Kennung und `ADR-0162`) wie die drei anderen Träger.
+- **F-5, F-9, F-10, F-11, F-13** — an die Closure, in dieser Fixrunde nicht
+  bearbeitet.
 
 ## 4. Trigger
 

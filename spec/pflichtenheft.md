@@ -1945,7 +1945,9 @@ Keine Normalisierung von Leerraum, Zeilenenden oder Groß-/Kleinschreibung.
 **Zu `SPEC-038` — Stände.** Die alte Adresse wird am jüngsten Stand gelesen,
 an dem sie auflöst — in der Regel am Parent des Korrektur-Commits; ist die
 Zieldatei umgezogen oder gelöscht, am Parent des Commits, der sie bewegt hat.
-Die neue Adresse wird am Korrektur-Commit gelesen. Im Adaptions-Durchgang
+Die neue Adresse wird am Korrektur-Commit gelesen. Ist eine Einheit leer
+oder nicht lesbar (Anker unbekannt, Datei fehlt), besteht die Korrektur
+nicht. Im Adaptions-Durchgang
 werden beide Seiten an einem Stand gelesen, an dem beide Tag-Verzeichnisse im
 Baum liegen; Pfad und Anker kommen aus dem eingefrorenen Verweis, das
 Tag-Segment ist `<alt-tag>` bzw. `<neu-tag>`; gemessen wird roh, bei `cmp 1`
@@ -1966,7 +1968,7 @@ gedruckt vor dem Ende: `vergleich roh: … cmp <n>`, `vergleich norm
 |---|---|
 | 0 | die Einheiten sind gleich (`cmp 0`) |
 | 1 | die Einheiten sind verschieden (`cmp 1`) |
-| 2 | eine Seite hat keine Einheit (Datei am Stand nicht lesbar, Lokator ungültig, Einheit leer, `id` in anderer Form, mehrdeutige Stellung), das Tag-Paar ist ungültig, die Zahl der Argumente ist nicht 6 oder 7, oder `awk` liest unter `C.UTF-8` kein Multibyte |
+| 2 | eine Seite hat keine Einheit (Datei am Stand nicht lesbar, Lokator ungültig, Einheit leer, `id` in anderer Form, mehrdeutige Stellung, `sed` am Zeilen-Lokator oder `awk` am Anker endet mit Fehler), das Tag-Paar ist ungültig, die Zahl der Argumente ist nicht 6 oder 7, oder `awk` liest unter `C.UTF-8` kein Multibyte |
 
 Exit 2 endet nie als `cmp 0`. Das Ergebnis hängt nicht an der Locale des
 Aufrufers (das Werkzeug liest unter `C.UTF-8` und prüft vor der ersten Messung,
@@ -2089,4 +2091,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-04 | `SPEC-033`: Einheit von `cdc_consumer_lag` ist `By` (WAL-Strecke), Zahlenform, Header-Regeln, Header ohne Endpunkt, Benutzerteil der Endpunkt-URL, erster Versuch nach einem vollen Takt, Frist für Lesen und Übertragen gemeinsam, gemeinsamer Fehlerzustand, keine Weiterleitung; `SPEC-034`: Prüfung beim Start auf das Laden des Paares begrenzt (Ablauf, Namen, Kette nicht geprüft); `SPEC-035`: leere Variable, Komma im Token, Leerraum nur in den Listen; `SPEC-009`: Bedeutung von `cdc_consumer_lag` — schreibt den Ist-Zustand fest, kein neues Verhalten außer der Einheit |
 | 2026-10-05 | `SPEC-025`: Grenze der Zusatzlatenz ist max(0,10 ms ; 1,5 × `t_sync`) mit im selben Lauf gemessener Festschreib-Latenz, Verdikt auf jedem Host, Fehlerausgang bei nicht messbarem `t_sync`; `SPEC-036`: Messvorschrift für `t_sync` statt Band `fdatasync` ≤ 0,5 ms; `SPEC-037` neu (TLS-Optionen der Client-Bibliotheken: ein Vertrauensanker je SDK für HTTP, SSE und gRPC) |
 | 2026-10-05 | `LH-FA-SST-009.a`: die Artefakt-Namen der drei SDK-Packages stehen versionsneutral als Form mit `<Version>` und der Version-Datei je Sprache statt als Namen der Version 0.2.x; keine Änderung an Abdeckung, Paketierung oder Vertriebsweg |
-| 2026-10-07 | §7 „Festlegungen der Harness-Werkzeuge“ neu: `SPEC-038` (Referent-Messung `make zitat-vergleich`: Einheit je Verweisform, roh und Normalisierung, Stände, nicht messbarer Referent, Ausgänge) und `SPEC-039` (Leer-Test der Teil-Range vor `make doc-immutable`); die Historie ist §8, §1 verweist auf §2 bis §7. `SPEC-038`: in der Tabelle „Stellung“ beginnt der Block einer `id` in einer Zeile ohne Inhalt vor einem Absatz an der nächsten Zeile mit Inhalt; `SPEC-039`: geteilt wird auch am Umzugs-Commit eines aufgelösten Adaptions-Eintrags, bei mehreren solchen Commits an jedem in der Reihenfolge der Commits |
+| 2026-10-07 | §7 „Festlegungen der Harness-Werkzeuge“ neu: `SPEC-038` (Referent-Messung `make zitat-vergleich`: Einheit je Verweisform, roh und Normalisierung, Stände, nicht messbarer Referent, Ausgänge) und `SPEC-039` (Leer-Test der Teil-Range vor `make doc-immutable`); die Historie ist §8, §1 verweist auf §2 bis §7. `SPEC-038`: in der Tabelle „Stellung“ beginnt der Block einer `id` in einer Zeile ohne Inhalt vor einem Absatz an der nächsten Zeile mit Inhalt; `SPEC-039`: geteilt wird auch am Umzugs-Commit eines aufgelösten Adaptions-Eintrags, bei mehreren solchen Commits an jedem in der Reihenfolge der Commits; `SPEC-038` „Stände“: eine leere oder nicht lesbare Einheit lässt die Korrektur nicht bestehen |

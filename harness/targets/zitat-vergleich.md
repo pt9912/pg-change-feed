@@ -23,9 +23,10 @@ Lauf mit 2 endet und wie ein Ausgang zu lesen ist — steht in
 diese Datei wiederholt sie nicht. Die **Messung** trägt dieses Ziel; Beleg ist
 seine gedruckte Zeile. Der `bash`-Block in Entscheidung 4 von
 [`ADR-0159`](../../docs/plan/adr/0159-zitat-korrektur-html-id-mr-pins-und-gehaertete-befehlsform.md)
-ist die historische Fassung der Messform. Weicht dieses Werkzeug außerhalb der
-Punkte unter §Abweichungen von ihm ab, ist das ein Fehler des Werkzeugs; weicht
-es von der Festlegung ab, ist das Werkzeug falsch.
+ist die historische Fassung der Messform und kein Maßstab. Der Maßstab ist
+allein die Festlegung
+([`ADR-0162`](../../docs/plan/adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md)
+Entscheidung 2): weicht das Werkzeug von ihr ab, ist das Werkzeug falsch.
 
 **Kein Gate.** Die Messung fällt je Baseline-Bump und je Zitat-Korrektur einmal
 an und hat keinen stehenden Stand; ob die Korrektur nur das Gerüst berührt,
@@ -101,14 +102,13 @@ Skripts braucht, ruft es direkt auf.
 
 ## Abweichungen von der Befehlsform im Block der ADR
 
-Gewollt und im Tabellentest gebunden
-([Architect-Verdikt](../../docs/reviews/architect-verdict-zitat-vergleich-werkzeug.md) §2 bis §5;
-die drei letzten Zeilen aus der Review-Fixrunde, als Auslegung im Sinn von
-Verdikt §2: dieselbe Erkennungsregel wie „`id` in Code-Fence oder Inline-Code
-zählt nicht“, ein strikter Lokator nach „ungültiger Lokator endet mit Exit 2“
-und der Slug des Renderers). Was das Werkzeug an jedem Punkt tut, steht in
+Alle zehn Punkte sind Festlegung
+([`ADR-0162`](../../docs/plan/adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md)
+Entscheidung 2) und im Tabellentest gebunden. Was das Werkzeug an jedem Punkt
+tut, steht in
 [`SPEC-038`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge);
-die Tabelle nennt, wie der Block der ADR denselben Punkt behandelt:
+die Tabelle nennt nur, wie der historische Block der ADR denselben Punkt
+behandelt:
 
 | Punkt | Block der ADR |
 |---|---|
@@ -124,9 +124,7 @@ die Tabelle nennt, wie der Block der ADR denselben Punkt behandelt:
 | HTML-Kommentar in einer `id`-Zeile | gilt als Text, Einheit ist der Block |
 
 Die Fähigkeitsprobe der Locale ist
-`printf 'Ä' | awk '{print tolower($0), length($0)}'` gegen `ä 1`. Daneben
-prüft das Werkzeug die Zahl der Argumente und den Exit von `sed` am
-Zeilen-Lokator und von `awk` am Anker; beides endet mit Exit 2.
+`printf 'Ä' | awk '{print tolower($0), length($0)}'` gegen `ä 1`.
 
 ## Host-Werkzeuge
 
@@ -149,8 +147,8 @@ verlangt, und das Skript benutzt keine Funktion, die nur gawk kennt.
 - **Code-Spans werden nicht geparst.** Ob ein `<!--` oder eine `id` in
   Inline-Code steht, liest das Werkzeug nur bei einzelnen Backticks in gerader
   Zahl ohne offenen Span aus der Vorzeile; jede andere Backtick-Lage an einer
-  `id`-Zeile oder Kommentar-Grenze endet mit Exit 2 („mehrdeutig“, siehe
-  §Einheit). Ein `<!--` in einer eingerückten Code-Zeile öffnet einen
+  `id`-Zeile oder Kommentar-Grenze endet mit Exit 2 („mehrdeutige Stellung“
+  in [`SPEC-038`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge)). Ein `<!--` in einer eingerückten Code-Zeile öffnet einen
   Kommentar; spätere `id`s bis zum nächsten `-->` sind dann ausgeblendet, die
   Einheit ist leer (Exit 2) oder die eines gleichnamigen Heading-Slugs.
 - **`<!--` in eingerücktem Code nach einer `id`-Zeile (fail-open).** Folgt auf

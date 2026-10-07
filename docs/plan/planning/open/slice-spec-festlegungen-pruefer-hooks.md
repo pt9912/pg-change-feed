@@ -62,6 +62,17 @@ und den `commit-msg`-Hook. Die DB-Adapter-Coverage war im Auftrag dieser Gruppe
 zugeordnet und geht an `slice-spec-festlegungen-coverage-gates` (Grund dort,
 §1).
 
+**Übergabe aus `slice-spec-festlegungen-harness-werkzeuge`:** die Festlegung
+zum `formnorm`-`cmp` am Form-Commit eines Baseline-Bumps (je MR-Datei der
+Vergleich nach Form-Normalisierung, eine Zeile je Datei, jede `cmp 0`; ohne
+Zeile ist der Commit falsch bestimmt) —
+[`ADR-0161`](../../adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
+Entscheidung 4, zweiter Spiegelstrich, übergeben durch
+[`ADR-0162`](../../adr/0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md)
+Entscheidung 4. Dieser Slice führt den Vertrag `harness/targets/pin-stale.md`
+samt Bump-Ablauf und trägt die Festlegung als eigene Zeile in §7; bis dahin
+bleibt die Befehlsform `formnorm` in der ADR.
+
 **Ziel:** `spec/pflichtenheft.md` §7 trägt je Werkzeug der Gruppe eine
 Festlegung mit eigener `SPEC-<NNN>` (was als Treffer, als Kandidat oder als
 Drift gilt, Randformen, Ausgänge); die Verträge unter `harness/sensors/` und
