@@ -284,7 +284,7 @@ Gedruckt ist der Grund-Code bzw. die Summenzeile.
 | M34 | Basislauf direkt, stdout und stderr getrennt in Dateien | Exit 0; stdout leer, stderr `d-check: 1835 Datei(en) geprüft, 0 Befund(e)` (Verifikation A-1) |
 | M35 | Link auf eine fehlende Datei, direkt, Ströme getrennt | Exit 1; stdout `README.md:66` TAB `gibt-es-nicht.md` TAB `target-missing` TAB `Linkziel existiert nicht`; stderr `… 1 Befund(e)` |
 | M36 | M35 über `make docs-check > Datei 2>&1` | Exit 2; Reihenfolge: `docker run …`, Summenzeile, Befundzeile, `make: *** [d-check.mk:20: docs-check] Fehler 1` |
-| M37 | drei fehlende Linkziele über `make docs-check 2>&1`, fünf Läufe | je Exit 2, je Zeile 2 die Summenzeile `… 3 Befund(e)`, je letzte Zeile die Fehlerzeile von `make` |
+| M37 | drei fehlende Linkziele über `make docs-check 2>&1`, fünf Läufe | je Exit 2, je Zeile 2 die Summenzeile `… 3 Befund(e)`, je letzte Zeile die Fehlerzeile von `make`. **Zu schmal:** fünf Läufe trugen den Schluss „Summe vor den Befunden“ nicht; die Nachprüfung des Verifiers (`2d9e1953`, A-6) sah in 20 Läufen die Summenzeile 14-mal davor und 6-mal dahinter (*übernommen*). Gilt nur noch für die letzte Zeile |
 | M38 | `~/<Verzeichnis>/x` in Inline-Code, direkt | Exit 1; stdout `README.md:66` TAB der Pfad TAB `hostpath-forbidden` — drei Felder, kein Text |
 | M39 | unbekannter Schlüssel auf oberster Ebene von `.d-check.yml` | Exit 2; stdout leer; stderr zwei Zeilen: `d-check: error: .d-check.yml: yaml: unmarshal errors:` und `  line 348: field unbekannt not found` |
 | M40 | unbekannter Schlüssel unter `scan:` | Exit 2; stderr dieselbe Form, zweite Zeile `  line 4: field unbekannt not found { … }` |
@@ -383,7 +383,7 @@ steht mit E und Grund.
 | Fall | Folge |
 |---|---|
 | Befund und Fehler über `make` | beide Exit 2 von `make`; die letzte Zeile ist die Fehlerzeile von `make`, es gilt die Summenzeile (`<M> Befund(e)`) bzw. die Zeile `d-check: error: …` (M1a, M1b, M36, M43) |
-| Befund-Zeilen und Summenzeile | Befunde auf stdout, Summe auf stderr (M34, M35); über `make` mit `2>&1` die Summe vor den Befunden, in fünf Läufen gleich (M37) |
+| Befund-Zeilen und Summenzeile | Befunde auf stdout, Summe auf stderr (M34, M35); über `make` mit `2>&1` ist die Reihenfolge nicht festgelegt — 20 Läufe des Verifiers, Summe 14-mal vor, 6-mal hinter den Befunden (*übernommen*, Nachprüfung `2d9e1953`, A-6; M37 mit fünf Läufen war zu schmal). Der Beleg ist die Summenzeile selbst, nicht ihre Stellung |
 | Konfigurationsfehler | kein Urteil über die Doku, kein Rückfall auf Defaults; der Lauf prüft nichts (M1b) |
 | Baum ohne `.git` | Exit 2 vor jeder Prüfung (M0); ein `git archive`-Export ist kein prüfbarer Baum |
 | Kennung mit Link auf ein anderes Dokument als ihr Definitions-Dokument | kein Treffer (M25, M26); ein falsches Ziel bleibt dem Review |
@@ -529,13 +529,25 @@ Commit `e4f609d8`):
   auf das gemessene Verhalten gezogen (M34 bis M43): Befundzeilen auf stdout,
   Summen- und Fehlerzeile auf stderr; `hostpaths` mit drei Feldern; Fehler des
   YAML-Parsers mit zweiter Zeile `  line <n>: …`; über `make` mit `2>&1` die
-  Summenzeile vor den Befunden und die Fehlerzeile von `make` am Ende — der
+  Fehlerzeile von `make` am Ende (die Aussage „Summe vor den Befunden“ ist mit
+  A-6 zurückgenommen, unten) — der
   Beleg ist die Summen- bzw. `d-check: error`-Zeile, nicht die letzte Zeile.
   Vertrag §Ausgabe nachgezogen („Summenzeile“ statt „Schlusszeile“).
 - **A-2, erledigt.** Beleg von Liefer-Punkt 2 nennt „die Befund-Code-Tabelle“.
 - **A-5, erledigt.** Unbekanntes Modul in `modules:` als Exit-2-Fall in der
   Tabelle (M42).
 - **A-3, A-4.** An die Closure (Planner), keine Handlung hier.
+
+**Nachprüfung der Verifikation**
+(`docs/reviews/verify-slice-spec-festlegungen-doku-gates-nachpruefung.md`,
+Commit `2d9e1953`):
+
+- **A-6, erledigt.** Über `make docs-check 2>&1` stand die Summenzeile in 14
+  von 20 Läufen vor, in 6 hinter den Befunden (*übernommen*, keine neue
+  Messung). `SPEC-040` „Ausgänge“ und die Historie-Zeile sagen jetzt, dass die
+  Reihenfolge nicht festgelegt ist; M37 ist als zu schmal markiert, die Zeile
+  der Anschluss-Frage nachgezogen. Der Vertrag sagte nichts zur Reihenfolge und
+  bleibt unverändert.
 
 ## 4. Trigger
 
