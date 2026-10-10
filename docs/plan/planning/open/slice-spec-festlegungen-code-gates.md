@@ -199,6 +199,16 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   Festlegung des Werkzeugs Technik (Rang 2); eine Festlegung, die Edges
   wiederholt, wäre eine zweite Quelle. *Zu belegen durch:* Gegenlesen der
   Festlegung gegen `spec/architecture.md` und `.a-check.yml`.
+- **Werkzeug-Stand der a-check-Festlegung** (Übergabe aus
+  `slice-gate-werkzeuge-acheck-v0-23-2-dcheck-v0-86-1`, §1 Abgrenzung). Jener
+  Slice hebt `A_CHECK_IMAGE` von v0.20.0 (`e8208764…`) auf v0.23.2
+  (`2368f7b3…`, Index-Digest); dazwischen liegen der Optionalblock `shapes`
+  (0.21.0, in `.a-check.yml` nicht gesetzt) und die einzeilige
+  `shape-*`-Meldung (0.22.0). Die Festlegung beschreibt das Werkzeug am Pin
+  ihrer Messung und nennt ihn. *Zu belegen durch:* den Digest aus `a-check.mk`
+  am Stand der Messungen dieses Slice; liegt der Bump-Slice dann noch nicht in
+  `done/`, misst dieser Slice mit v0.23.2 per `A_CHECK_IMAGE=…` auf der
+  Kommandozeile oder benennt den älteren Stand.
 - **Die Spec darf nicht auf ADRs zeigen** (gemessen im Pilot: `matrix-forbidden`
   für Link und Kennung im Inline-Code). Die Festlegung trägt ihren Inhalt
   selbst. *Zu belegen durch:* `make docs-check` Exit 0 **und** keine Zeile
