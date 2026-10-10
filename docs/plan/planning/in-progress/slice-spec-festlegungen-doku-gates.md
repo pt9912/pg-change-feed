@@ -482,7 +482,10 @@ Commit `72e57998`; 5 HIGH, 3 MEDIUM, 2 LOW, 2 INFO):
 - **F-8 (MEDIUM), erledigt.** §3-Zeile der Architect-ADR auf „erledigt“, C8
   mit `ADR-0163` Entscheidung 4.
 - **F-9 (LOW), erledigt für §6; fremde Träger gemeldet.** §6 vierter Punkt
-  belegt zusätzlich mit `git grep -c status-provenance -- spec/`; die fünf
+  belegt zusätzlich, dass keine Zeile unter `spec/` den Marker und zugleich
+  ein Token `adr`/`slice` trägt:
+  `git grep -n status-provenance -- spec/ | grep -cE 'ADR-[0-9]{4}|slice-[0-9]{3}'`
+  druckt `0` (Arbeitsbaum nach `b36af1f1`); die fünf
   Pläne in `open/` stehen als Meldung an den Planner mit Frist Closure.
 - **F-10 (LOW), erledigt.** Vertrag Grenze 8, §Ausgabe und §Sperren
   wiederholen die Randformen und Exit-Ursachen nicht mehr, sie verweisen auf
@@ -492,6 +495,19 @@ Commit `72e57998`; 5 HIGH, 3 MEDIUM, 2 LOW, 2 INFO):
   Marker und `matrix.exempt-paths`; keine neue Zeile.
 - **F-12 (INFO).** Keine Handlung; die zweite Rückführungs-Bedingung tritt
   von Seiten des Reviews nicht ein.
+
+**Re-Review** (`docs/reviews/review-slice-spec-festlegungen-doku-gates-re-review.md`,
+Commit `b36af1f1`):
+
+- **N-1 (HIGH), erledigt.** Der Beleg zu F-9 oben nennt jetzt den Befehl aus
+  §6 und seine gedruckte Zeile `0` statt `git grep -c status-provenance --
+  spec/` (der druckt `spec/pflichtenheft.md:2` und trägt den Satz nicht).
+- **N-2 (LOW), bekannt, nicht geändert.** Die Überschrift von Grenze 12 im
+  Vertrag („zwei angenommene Lücken, der Fence und der Status nur am Link“)
+  ist der Wortlaut aus §3.2 des Verdikts
+  `architect-verdict-matrix-inactive-nur-link`; das Zählwort deckt vier
+  Lücken nicht eindeutig. Der Ausgang steht bei der Closure an.
+- **N-3, N-4.** Keine Handlung.
 
 ## 4. Trigger
 
