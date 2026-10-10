@@ -158,8 +158,14 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       Muster, das die ADR des Pilots setzt; Status `Accepted`, Index
       nachgezogen. Kein Liefer-Punkt: der Implementer liefert die Kennungen, der
       Architect die Kante.
-- [ ] `make gates` grün, Exit-Code ungefiltert gesichert
+- [x] `make gates` grün, Exit-Code ungefiltert gesichert
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+      *Beleg:* `make gates > <Log im Scratchpad> 2>&1; echo $?` am Stand
+      `780cd2b5`: Exit 0; gedruckt u. a. `coverage-gate: OK — Coverage 83.30%
+      erfüllt Schwelle 80%`, `d-check: 1830 Datei(en) geprüft, 0 Befund(e)`,
+      `commit-traceability: OK — 5 Commit(s) in "HEAD~5..HEAD"`,
+      `generated-sync: OK`. Nach dem Commit dieses Belegs erneut gelaufen
+      (Stempel), Ergebnis im Bericht des Implementers.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
