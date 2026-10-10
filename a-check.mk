@@ -6,7 +6,7 @@
 # Benutzerhandbuch (aufgabenorientiert, deutsch):
 #   https://github.com/pt9912/a-check/blob/main/docs/user/benutzerhandbuch.md
 #
-A_CHECK_IMAGE ?= ghcr.io/pt9912/a-check@sha256:e8208764b119c606c92f82722813386277a65b12812d23b6107ea7a14dc25da1
+A_CHECK_IMAGE ?= ghcr.io/pt9912/a-check@sha256:2368f7b3a84f1dc5d075edccfe2201e19947d12fcbc8eaf4df84ef162d94f422
 
 # Maschinenform der §2-Schichten-Constraints (ADR-0041):
 # a-check haengt an GATE_CHECKS und laeuft damit im `make gates`-Buendel mit.
