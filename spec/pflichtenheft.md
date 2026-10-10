@@ -2027,7 +2027,7 @@ in Inline-Code wird nicht auf Existenz geprüft.
 |---|---|---|
 | `links` | `target-missing` | das Ziel eines lokalen Markdown-Links existiert nicht; ein Link mit URL-Schema ist kein Gegenstand des Laufs |
 | `anchors` | `anchor-missing` | der Anker eines lokalen Links trifft in der Zieldatei weder einen Heading-Slug noch einen HTML-Anker |
-| `ids` | `id-unlinked` | eine Kennung, die ein Muster aus `ids.patterns` trifft, steht in Prosa ohne Link auf das Dokument, das das Muster ihr zuordnet (Lastenheft, Pflichtenheft, Architektur-Sicht, ADR-Verzeichnis) |
+| `ids` | `id-unlinked` | eine Kennung, die ein Muster aus `ids.patterns` trifft, steht in Prosa ohne Link; ob der Link auf das Dokument zeigt, das das Muster ihr zuordnet (Lastenheft, Pflichtenheft, Architektur-Sicht, ADR-Verzeichnis), prüft der Lauf nicht |
 | `matrix` | `matrix-forbidden` | eine Datei einer Klasse verweist auf eine Datei einer Klasse, die eine Regel mit `allow: false` als Ziel verbietet — als Link oder als Token der Zielklasse im Text |
 | `matrix` | `matrix-inactive` | eine Datei verweist auf ein Ziel, dessen Status in `status.forbidden` steht (`superseded`, `deprecated`) |
 | `versions` | `version-stale` | ein Pfad, der `pin-pattern` trifft, trägt eine andere Version als die, die `current-from` (`harness/conventions.md` §Baseline) nennt |
@@ -2035,15 +2035,17 @@ in Inline-Code wird nicht auf Existenz geprüft.
 | `hostpaths` | `hostpath-forbidden` | ein host-lokaler Pfad in Prosa oder Inline-Code (Absatz unten) |
 | `tracked` | `target-untracked` | ein Link- oder Bild-Ziel existiert und löst auf, steht aber nicht im git-Index (untracked oder ignoriert); `tracked.exempt-targets` ist leer |
 
-**Zu `SPEC-040` — Randformen der Verweis-Module.** Geht der Linktext oder das
-Ziel eines Links über einen Zeilenumbruch, melden `links` und `anchors` nichts.
+**Zu `SPEC-040` — Randformen der Verweis-Module.** Geht der Linktext eines
+Links über einen Zeilenumbruch, melden `links` und `anchors` nichts. Geht das
+Ziel über einen Zeilenumbruch, ist der Link ein Befund (`target-missing` bzw.
+`anchor-missing`), auch wenn das zusammengesetzte Ziel existiert.
 `ids` liest Prosa: eine Kennung in einem Inline-Code-Span ist kein Treffer, und
-eine verlinkte Kennung ist kein Treffer, auch wenn das Definitions-Dokument sie
-nicht führt — gegen dessen Kennungen gleicht das Modul nicht ab. Trifft eine
-Kennung mehrere Muster, gilt das erste der Liste; deshalb steht das Muster der
-Verfeinerungen (`<Kennung>.a`, Ziel Pflichtenheft) vor dem Basismuster. Eine
+eine verlinkte Kennung ist kein Treffer, gleich wohin der Link zeigt und auch
+wenn das Definitions-Dokument sie nicht führt — weder das Ziel des Links noch
+die Kennungen des Dokuments gleicht das Modul ab. Eine
 Kennung ohne Muster (`MR-<NNN>`, `BEO-<KUERZEL>/<slug>`) ist kein Treffer.
-`matrix` meldet auch eine Kennung der Zielklasse in Inline-Code. Das Token der
+`matrix` meldet auch eine Kennung der Zielklasse in Inline-Code, in einem Fence
+nicht. Das Token der
 Klasse `slice` trifft nur Kennungen mit Nummer (`slice-<NNN>`). Innerhalb der
 Spec-Straten gibt es keine Regel; die Klassen `slice` und `welle` dürfen auf
 `review` verweisen. Eine Datei unter `matrix.exempt-paths` prüft das Modul als
@@ -2081,8 +2083,10 @@ Muster mit `sections: each`, dann gilt sie für jeden Abschnitt, dessen
 Keine Regel zählt Zeilen. Die Regeln gelten dem ADR-Index, der Tabelle §3 der
 Defaults dieses Dokuments, den Tabellen §1 und §3 der Architektur-Sicht, den
 Spalten `Vertrag` und `Tut was` des Gate-Index in `harness/README.md`
-§Sensors (beide Tabellen des Abschnitts), der Closure-Notiz §7 jedes
-geschlossenen Slice-Plans, der Verweisform auf einen wandernden Slice-Plan in
+§Sensors (beide Tabellen des Abschnitts), der Closure-Notiz §7 der
+Slice-Pläne mit dem Namen `slice-*.md` direkt unter
+`docs/plan/planning/done/` (ein geschlossener Plan mit anderem Namen oder in
+einem Unterverzeichnis fällt nicht unter die Regel), der Verweisform auf einen wandernden Slice-Plan in
 Berichten unter `docs/reviews/` und in der Identität eines Eintrags des
 Beobachtungs-Registers, und der erzeugten E2E-Abdeckungstabelle; die Werte
 stehen in `.d-check.yml`.
@@ -2198,4 +2202,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-05 | `SPEC-025`: Grenze der Zusatzlatenz ist max(0,10 ms ; 1,5 × `t_sync`) mit im selben Lauf gemessener Festschreib-Latenz, Verdikt auf jedem Host, Fehlerausgang bei nicht messbarem `t_sync`; `SPEC-036`: Messvorschrift für `t_sync` statt Band `fdatasync` ≤ 0,5 ms; `SPEC-037` neu (TLS-Optionen der Client-Bibliotheken: ein Vertrauensanker je SDK für HTTP, SSE und gRPC) |
 | 2026-10-05 | `LH-FA-SST-009.a`: die Artefakt-Namen der drei SDK-Packages stehen versionsneutral als Form mit `<Version>` und der Version-Datei je Sprache statt als Namen der Version 0.2.x; keine Änderung an Abdeckung, Paketierung oder Vertriebsweg |
 | 2026-10-07 | §7 „Festlegungen der Harness-Werkzeuge“ neu: `SPEC-038` (Referent-Messung `make zitat-vergleich`: Einheit je Verweisform, roh und Normalisierung, Stände, nicht messbarer Referent, Ausgänge) und `SPEC-039` (Leer-Test der Teil-Range vor `make doc-immutable`); die Historie ist §8, §1 verweist auf §2 bis §7. `SPEC-038`: in der Tabelle „Stellung“ beginnt der Block einer `id` in einer Zeile ohne Inhalt vor einem Absatz an der nächsten Zeile mit Inhalt; `SPEC-039`: geteilt wird auch am Umzugs-Commit eines aufgelösten Adaptions-Eintrags, bei mehreren solchen Commits an jedem in der Reihenfolge der Commits; `SPEC-038` „Stände“: eine leere oder nicht lesbare Einheit lässt die Korrektur nicht bestehen, auch bei mehrdeutiger Stellung (keine Einheit, kein nicht messbarer Referent) |
-| 2026-10-10 | §7: `SPEC-040` neu (`make docs-check`: gescannte Fläche und Eingabe, Befund je Modul der acht Module, Randformen der Verweis-Module, `structure`, `hostpaths`, Ausgänge) |
+| 2026-10-10 | §7: `SPEC-040` neu (`make docs-check`: gescannte Fläche und Eingabe, Befund je Modul der acht Module, Randformen der Verweis-Module, `structure`, `hostpaths`, Ausgänge); in den Randformen: der Kommentar `d-check:status-provenance` hebt ein Token von `matrix` für jede Regel auf, ein Link bleibt Befund, und eine Datei unter `matrix.exempt-paths` ist als Quelle ganz ausgenommen, als Ziel nicht |

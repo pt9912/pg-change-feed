@@ -99,21 +99,16 @@ Schwester-Artefakt wird als blankes Repo-Wort mit relativem Pfad zitiert
 8. **`hostpaths` — die gescannte Markdown-Fläche, nicht das Repo.** Welche
    Pfade das Modul meldet und welche nicht, steht in
    [`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge)
-   (Home-relative Formen am Werkzeug gemessen seit slice-dcheck-v0-82-0). Regel
-   und Modul sind bei den Home-relativen Pfaden gleich weit, außer bei der
-   **Tilde mit Benutzername**: die Regel deckt sie, das Modul bleibt still. Das
-   Ventil `hostpaths.exempt-targets` ist verfügbar und nicht gesetzt
+   (Home-relative Formen am Werkzeug gemessen seit slice-dcheck-v0-82-0). Das
+   Grün sagt deshalb nichts über drei Flächen: über die zwei, die die Regel
+   deckt und das Modul nicht (**Fence** und **Tilde mit Benutzername**), über
+   die Skriptkommentare in `Makefile`, `tools/**` und `harness/mk/**`
+   (**Nicht-Markdown**, außerhalb des Scans) und über **relative** Pfade (die
+   Zusage lautet nicht „kein Pfad verlässt das Repo"). Das Ventil
+   `hostpaths.exempt-targets` ist verfügbar und nicht gesetzt
    ([`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)
-   Entscheidung 2). Benannte Ränder: **Fenced-Code-Blöcke** prüft es nicht —
-   einen Opt-out-Marker kennt es nicht; **relative** Pfade sind ungeprüft (die
-   Zusage lautet nicht „kein Pfad verlässt das Repo"); und **Nicht-Markdown**
-   ist ungelesen — die Skriptkommentare in `Makefile`, `tools/**` und
-   `harness/mk/**` erreicht der Scan nicht. Dateien unter `scan.ignore`
-   (`.harness/**`, `**/*.template.md`) liegen ebenfalls außerhalb. **Die Regel
-   deckt die Fenced-Fläche und die Tilde mit Benutzername voll, dieses Modul
-   nicht** — ihre Reichweite und
-   diese benannten Lücken stehen in `AGENTS.md` §3.11; der Wächter dort ist das
-   Review, kein Gate. Dieser
+   Entscheidung 2). Die Reichweite der Regel und diese Lücken stehen in
+   `AGENTS.md` §3.11; der Wächter dort ist das Review, kein Gate. Dieser
    Abschnitt trägt, **was der Sensor deckt und was nicht**; die Reichweite der
    Regel steht in `AGENTS.md` §3.11. Träger:
    die Reichweite
@@ -125,14 +120,14 @@ Schwester-Artefakt wird als blankes Repo-Wort mit relativem Pfad zitiert
    [`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md).
    Die Aktivierung kennt **keinen**
    Ausschlussblock: kein `scope`, kein `ignore`, kein `exempt-paths`.
-9. **Mehrzeilige Markdown-Links sind ungeprüft — `anchors` und `links`.** Ein
-   Link, dessen Linktext oder Ziel über einen Zeilenumbruch geht, ist kein
-   Gegenstand der beiden Module
-   ([`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge)).
-   In `slice-077` mit sechs Mutationen gemessen; repo-weit betrifft es neun
-   Links in fünf Dateien (Stand `slice-077`), ihre Ziele waren von Hand prüfbar
-   und in Ordnung. Der Wächter dieser Form ist das Review, kein Gate. Träger des
-   Fundes: Review zu `slice-077`, Delta-Review, N-2.
+9. **Links mit umbrochenem Linktext sind ungeprüft — `anchors` und `links`.**
+   Wie das Werkzeug einen Link mit Zeilenumbruch im Linktext oder im Ziel
+   entscheidet, steht in
+   [`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge)
+   (gemessen in `slice-spec-festlegungen-doku-gates`, M27 bis M30). Ungedeckt
+   bleibt der Link mit umbrochenem Linktext: sein Ziel kann fehlen, ohne dass
+   das Grün es zeigt. Der Wächter dieser Form ist das Review, kein Gate. Erster
+   Fund: Review zu `slice-077`, Delta-Review, N-2.
 
 10. **`trace:` ist kein Modul und läuft nicht in `docs-check`/`make gates`.**
     `.d-check.yml`s `trace:`-Block konfiguriert ausschließlich die
@@ -161,6 +156,19 @@ Schwester-Artefakt wird als blankes Repo-Wort mit relativem Pfad zitiert
     gemessen vom Verifier an einem Klon mit einer dritten Tabelle, Spalte
     `Macht was`, 300 Zeichen) · seit slice-harness-readme-zellen-kuerzen.
 
+12. **`matrix` — zwei angenommene Lücken und der Fence.** Der Kommentar
+    `<!-- d-check:status-provenance -->` hebt einen Token-Befund auch in
+    `spec/` auf, auch wenn er selbst in Inline-Code steht; dort ist er kein
+    zulässiger Weg, und das Grün zeigt ihn nicht. Die ADRs 0039 und 0041 stehen unter `matrix.exempt-paths` und sind
+    damit auch von den Regeln `adr → slice` und `adr → review` ausgenommen.
+    Ein Token in einem Fence ist für `matrix` kein Treffer. Die Wirkung steht
+    in
+    [`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge),
+    die Annahme der zwei Lücken in
+    [`ADR-0163`](../../docs/plan/adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md)
+    Entscheidung 2 und 3; der Wächter ist das Review jeder Spec-Änderung bzw.
+    jeder Zitat-Korrektur an den zwei ADRs, kein Gate.
+
 **Wie groß der Ausschnitt ist, sagt das Kommando, nicht diese Datei:**
 `docker run … d-check` über `scan.roots: ["."]` mit `scan.ignore`; die
 Vollständigkeits-Zeile „N Datei(en) geprüft, 0 Befund(e)“ sagt etwas über
@@ -168,25 +176,23 @@ diesen Ausschnitt (nicht über das Repo).
 
 ## Ausgabe und Ausgänge
 
-Zeile je Befund, Schlusszeile und Exit-Codes stehen in
-[`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge).
-
-**Die Farbe steht in der Zeile.** Über `make` kommt ein Befund wie ein Fehler
-als Exit `2` an; ein Beleg zitiert deshalb die Schlusszeile
-(`<M> Befund(e)` oder `d-check: error: …`), nicht den Exit von `make`.
+Zeile je Befund, Schlusszeile, Exit-Codes und wie ein Exit über `make`
+ankommt, stehen in
+[`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge);
+ein Beleg zitiert die Schlusszeile.
 
 Reparatur-Pfad: `make doc-repair` (konservativ, nur `id-unlinked`/
 `target-missing`, `git apply --unidiff-zero`); Diagnose: `make doc-doctor`.
 
 ## Sperren
 
-- **Konfigurationsfehler** — ein unbekannter Schlüssel in `.d-check.yml` oder
-  ein unlesbares `versions.current-from` beendet den Lauf, bevor er prüft
-  (`d-check: error: …`) → den Schlüssel bzw. die Quelle in `.d-check.yml`
-  berichtigen.
-- **Kein git-Repository im Mount** — `tracked` liest den git-Index (`d-check:
-  error: kein lesbares git-Repository …`) → aus einem Klon mit `.git`
-  aufrufen.
+Wann der Lauf vor der Prüfung abbricht, steht in
+[`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge)
+(Exit 2). Was den Weg frei macht:
+
+- **Konfigurationsfehler** (`d-check: error: …`) → den Schlüssel bzw. die
+  Quelle in `.d-check.yml` berichtigen.
+- **Kein git-Repository im Mount** → aus einem Klon mit `.git` aufrufen.
 
 ## `make doc-tracked`
 
@@ -201,7 +207,7 @@ Mount.
 
 [`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge)
 (Festlegung) · `harness/conventions.md` MR-000 (ID-Schema als Linkpflicht) ·
-Closure-Notiz je geschlossenem Slice-Plan (`.d-check.yml` §structure,
+Closure-Notiz je `done/slice-*.md` (`.d-check.yml` §structure,
 `seit slice-001`) · Decken-Regel
 (Baseline-Regelwerk Modul 5/6, abgebildet in `.d-check.yml` §matrix) ·
 Baseline-Pin (`harness/conventions.md` §Baseline) · Register-Spalten und

@@ -193,7 +193,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | `spec/pflichtenheft.md` §7 | update | eine Zeile, `make docs-check` mit acht Modulen (Liefer-Punkt 1) |
 | `harness/sensors/docs-check.md` | update | Verweis statt Schwelle und Randform (Liefer-Punkt 2) |
 | `harness/README.md` §Sensors | update | Bindung „Spec-Kennung“ in der Zeile `make docs-check` (Liefer-Punkt 2) |
-| `docs/plan/adr/<NNNN>-…` und ADR-Index | neu (Architect) | `Schärft:`-Kante (Bedingung vor der Closure) — **offen**, Frage in §6 |
+| `docs/plan/adr/<NNNN>-…` und ADR-Index | neu (Architect) | `Schärft:`-Kante (Bedingung vor der Closure) — erledigt: [`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md) (`deecc466`), Folgepflicht in `64c68933` |
 | `spec/pflichtenheft.md` §8 Historie | update (Plan-Nachzug, Implementer) | eine Zeile für `SPEC-040`, wie der Pilot für `SPEC-038`/`SPEC-039` |
 | `harness/sensors/docs-check.md` §Sperren, §Bindung | update (Plan-Nachzug, Implementer) | Sperren je mit „was zu tun ist“ (Vorlage `gate.template.md`), zweite Sperre „kein git-Repository im Mount“ (gemessen, M1 unten); Bindung nennt `SPEC-040` und den Herkunfts-Anker der Closure-Notiz-Regel, den der alte Vertrags-Absatz trug |
 | `AGENTS.md` §3.11, `.d-check.yml` Kommentare | **nicht geändert**, mit Grund | Suchlauf unten: §3.11 nennt die Vertragsdatei für „was der Sensor deckt und was nicht“, und das trägt §Grenze Punkt 8 weiter; die Kommentare begründen Werte der Eingabe und bleiben richtig |
@@ -229,10 +229,18 @@ der Architect vor der Closure, nicht eine Lesung im Auftrag.
 **Messungen am Werkzeug** (Implementer, d-check-Digest aus `d-check.mk`,
 `docker run --rm --network none -v <Baum>:/repo:ro <Digest>` direkt, ohne
 `make`, außer wo genannt). M0 lief an einer `git archive`-Kopie ohne `.git` im
-Scratchpad; M1 lief versehentlich am Arbeitsbaum (`942ebf3f`), die Mutationen
-sind mit `git checkout` zurückgesetzt (`git status` danach leer); M2 bis M23
-liefen an einem Klon von `942ebf3f` im Scratchpad, je Mutation einzeln, danach
-`git checkout -- .`. Gedruckt ist der Grund-Code bzw. die Schlusszeile.
+Scratchpad. **Vorfall bei M1:** M1 lief am Arbeitsbaum (`942ebf3f`), weil ein
+`cd` in den Klon fehlschlug und der Befehl ohne Abbruch weiterlief. Die
+Mutationen schrieben je eine Zeile per Umleitung `>>` an `README.md` und an
+`.d-check.yml` — Text in eine Repo-Datei per Umleitung, verletzte Regel
+[`AGENTS.md`](../../../../AGENTS.md) §3.1 („Text-Umschreiben im Repo ist Sache
+der Datei-Werkzeuge des Laufs“). Beide wurden im selben Befehl sofort per
+`git checkout` zurückgesetzt, `git status` danach leer; im Diff des Slice
+steht keine Spur. Kandidat für das Register (Eintrag macht der Planner bei der
+Closure): `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`. M2 bis M23
+liefen an einem Klon von `942ebf3f` im Scratchpad, M24 bis M33 (Fixrunde) an
+einem Klon von `72e57998`, je Mutation einzeln, danach `git checkout -- .`.
+Gedruckt ist der Grund-Code bzw. die Schlusszeile.
 
 | # | Mutation | Ergebnis |
 |---|---|---|
@@ -261,6 +269,16 @@ liefen an einem Klon von `942ebf3f` im Scratchpad, je Mutation einzeln, danach
 | M21 | M19 mit `<!-- d-check:ignore -->` | Exit 1, `hostpath-forbidden` |
 | M22 | Pfad in die vendored Baseline mit dem Tag `v6.14.0` in Inline-Code | Exit 1, `version-stale` |
 | M23 | M22 mit `<!-- d-check:ignore -->` | Exit 0 |
+| M24 | offene Aufgabe `- [ ]` in §7 von `done/release-image-scan.md` (geschlossen, Name ohne `slice-`) | Exit 0 (Review F-1, R1) |
+| M25 | `[SPEC-040](harness/conventions.md)` in `README.md` | Exit 0 (Review F-2, R3) |
+| M26 | `[LH-QA-REL-001.a](spec/lastenheft.md)` in `README.md` | Exit 0 (Review F-2, R3) |
+| M27 | Link, Ziel umbrochen: `[Text](harness/conventions` / `.md)` (zusammengesetzt existiert es) | Exit 1, `target-missing` (Review F-4, R8) |
+| M28 | Link, Ziel-Anker umbrochen: `…conventions.md#gibt-es` / `-nicht)` | Exit 1, `anchor-missing` |
+| M29 | Link, Linktext umbrochen, Ziel fehlt | Exit 0 |
+| M30 | Link, Linktext umbrochen, Anker fehlt | Exit 0 |
+| M31 | `ADR-0094` und `slice-099` in einem Fence der Architektur-Sicht | Exit 0 (Review F-7, R13) |
+| M32 | Token `ADR-0038` (Status `Superseded`) in Inline-Code im Slice-Plan in `in-progress/`; in einer `observation.md`; in einem Review-Bericht mit `docs/reviews/*.md` aus `matrix.exempt-paths` entfernt | je kein `matrix-inactive`; im dritten Lauf 57 `matrix-inactive`, alle an Links, keiner an einem Token (Review F-3, R7) |
+| M33 | `ADR-0094` in Inline-Code und der Marker als Text in Inline-Code in derselben Zeile der Architektur-Sicht | Exit 0 — der Marker wirkt auch in Inline-Code |
 
 **Gegenprobe der Quellen** (Implementer). Ausgänge: **S** = steht in
 `SPEC-040` · **V** = bleibt im Vertrag (Grund) · **E** = entfällt (Grund).
@@ -274,7 +292,7 @@ steht mit E und Grund.
 | A1 | Vertrag: je Klasse ein Grund-Code (`target-missing`, `anchor-missing`, `id-unlinked`, `matrix-forbidden`/`-inactive`, `version-stale`, `section-cell-*`, `section-forbidden`, `hostpath-forbidden`) | S (Tabelle „Befund je Modul“, ergänzt um die gemessenen `structure`-Codes M2 bis M6 und `target-untracked`); V nur die Klassen als Satz |
 | A2 | Schwester-Artefakt als blankes Repo-Wort | V — Zitierregel der Doku, kein Prüfgegenstand; das Modul meldet den Pfad, nicht die Form |
 | A3 | Module und Grenzen in `.d-check.yml`, Konfiguration ist Deklaration des Vertrags | S umformuliert: `.d-check.yml` ist die Eingabe, die Festlegung sagt, was ein Modul daraus als Befund meldet |
-| A4 | Trägerdateien der `structure`-Regeln | S („Die Regeln gelten …“) |
+| A4 | Trägerdateien der `structure`-Regeln | S („Die Regeln gelten …“); die Closure-Notiz-Regel in der Fixrunde auf `done/slice-*.md` enger gefasst, wie die Quelle („je `done/slice-*.md`“) und das Werkzeug (M24) |
 | A5 | Closure-Notiz-Regel `seit slice-001` | V — Herkunfts-Anker, in §Bindung (die Spec trägt keine Slice-Kennung) |
 | A6 | Gate-Index: `Vertrag` ≤ 220, `Tut was` ≤ 120, beide ≥ 1 | E — Werte der Eingabe (`.d-check.yml`); die Regelart (Zelle unter Mindest-/über Höchstlänge) steht in S |
 | A7 | die Regel misst beide Tabellen, Spalte über den Kopfzeilen-Namen | S |
@@ -295,8 +313,8 @@ steht mit E und Grund.
 | A22 | Grenze 8: Fence, relative Pfade, Nicht-Markdown, `scan.ignore` ungeprüft | V; S Fence und relativer Pfad |
 | A23 | Grenze 8: Windows-Laufwerks-/UNC-Muster fest | S |
 | A24 | Grenze 8: Regel strenger als Modul, Wächter Review, Träger-ADRs, kein Ausschlussblock | V |
-| A25 | Grenze 9: mehrzeiliger Link wird nicht gemeldet | S; V verkürzt (Messung `slice-077`, neun Links, Wächter Review) |
-| A26 | Grenze 9: einzeilig rot, zweizeilig grün (Exit 0) | E — Messprotokoll; die Zusage steht in S |
+| A25 | Grenze 9: mehrzeiliger Link wird nicht gemeldet | S, in der Fixrunde nach M27 bis M30 berichtigt: nur ein umbrochener Linktext wird nicht gemeldet, ein umbrochenes Ziel ist ein Befund; V die Lücke (umbrochener Linktext), Wächter Review |
+| A26 | Grenze 9: einzeilig rot, zweizeilig grün (Exit 0), neun Links in fünf Dateien | E — Messung an einem älteren d-check (`slice-077`), am gepinnten Werkzeug nur für den Linktext wahr; ersetzt durch M27 bis M30 |
 | A27 | Grenze 10: `trace:` kein Modul, RTM advisory | V; S („`trace:` ist kein Modul“) |
 | A28 | Grenze 11: misst Länge, nicht Satz; `Bindung` ohne Höchstlänge | V |
 | A29 | Grenze 11: Tabelle mit anderem Spaltennamen fällt aus der Regel; umbenannte Kopfzelle → `section-column-missing` | S (M5); V Verweis |
@@ -308,7 +326,7 @@ steht mit E und Grund.
 | A35 | `make doc-tracked` | V |
 | A36 | Bindung | V, ergänzt um `SPEC-040` |
 | B1 | `scan.ignore`: `.harness/**` ist tool-interne Ablage | S der Glob; E der Grund (Kommentar der Eingabe) |
-| B2 | `ids`: je Stratum ein Muster, `.a`-Muster vor dem Basismuster | S (erstes Muster gilt) |
+| B2 | `ids`: je Stratum ein Muster, `.a`-Muster vor dem Basismuster | E — am Werkzeug ohne beobachtbare Wirkung: ein Link auf ein beliebiges Ziel genügt (M25, M26); S nur „ohne Link ist ein Treffer“ |
 | B3 | `matrix`: Decken-Regel; `no-downward` nicht gesetzt, Delegation des Lastenhefts | S die Wirkung; E die Begründung (Kommentar) |
 | B4 | Klasse `slice` eng gefasst, `*` quert kein `/` | E — Wert der Eingabe; S das Token nur mit Nummer (M12) |
 | B5 | Klasse `welle` für die Abgrenzung | E — Wert der Eingabe |
@@ -330,7 +348,7 @@ steht mit E und Grund.
 | C5 | 0072 E4, E5: 31 Stellen korrigieren, §3.11-Entwurf | E — einmaliger Vorgang bzw. Regel in `AGENTS.md` §3.11 |
 | C6 | 0072 Config-Block: `hostpaths` in `modules:`, kein `hostpaths:`-Knoten | S |
 | C7 | 0072 Entwurf §3.11 „Was der Sensor deckt“ | E — abgelöst durch 0075 E2 und 0160 E3; die geltende Fassung steht in S |
-| C8 | 0072 §3.11-Entwurf: „Modul-Semantik steht einmal in `harness/sensors/docs-check.md`“ | E — überholt durch diesen Slice; Träger ist eine `Accepted`-ADR, gemeldet (Suchlauf) |
+| C8 | 0072 §3.11-Entwurf: „Modul-Semantik steht einmal in `harness/sensors/docs-check.md`“ | E — überholt durch diesen Slice; Träger ist eine `Accepted`-ADR, bleibt als Geschichte ([`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md) Entscheidung 4) |
 | C9 | 0074 E1–E3: Hausform, Link-Variante, Rest aus 0072 bleibt | V (A2) |
 | C10 | 0075 E1: Regel deckt Fences, Sensor nicht | S (Fence kein Treffer); V Grenze 8 |
 | C11 | 0075 E2, E3: Fassung 2, Lokator-Disposition | E — abgelöst durch 0160 E3 bzw. kein Werkzeug |
@@ -355,7 +373,8 @@ steht mit E und Grund.
 | Befund und Fehler über `make` | beide Exit 2 von `make`; es gilt die Schlusszeile (`<M> Befund(e)` oder `d-check: error`), M1a, M1b |
 | Konfigurationsfehler | kein Urteil über die Doku, kein Rückfall auf Defaults; der Lauf prüft nichts (M1b) |
 | Baum ohne `.git` | Exit 2 vor jeder Prüfung (M0); ein `git archive`-Export ist kein prüfbarer Baum |
-| Kennung in zwei Mustern | das erste gilt; `.a`-Verfeinerung verlangt den Link ins Pflichtenheft |
+| Kennung mit Link auf ein anderes Dokument als ihr Definitions-Dokument | kein Treffer (M25, M26); ein falsches Ziel bleibt dem Review |
+| Link mit Zeilenumbruch | im Linktext kein Befund (M29, M30), im Ziel ein Befund, auch wenn das zusammengesetzte Ziel existiert (M27, M28) |
 | Kennung in Inline-Code | `ids` kein Treffer (M7), `matrix` Treffer (M10) — die zwei Module lesen Inline-Code verschieden |
 | `d-check:ignore` | hebt `ids` und `versions` für die Zeile auf (M9, M23), `hostpaths` nicht (M21) und `matrix` nicht (*übernommen* aus `ADR-0163` Fitness Function Zeile 6) |
 | `d-check:status-provenance` | hebt in seiner Zeile den Token-Befund von `matrix` für jede Regel auf (M13, M15); ein Link in derselben Zeile bleibt `matrix-forbidden` (`ADR-0163` Entscheidung 2). In `spec/` ist der Marker kein zulässiger Weg, das Werkzeug lässt ihn trotzdem zu; Wächter ist das Review (ebenda, Grenze) |
@@ -383,9 +402,9 @@ diff 8 -F 'hostpath-forbidden' -- . ':!docs/reviews' ':!docs/plan/planning/done'
 942ebf3f 2 -E 'acht (docs-check-)?Module' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 5 -E 'acht (docs-check-)?Module' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 15 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 23 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 25 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 0 -F 'SPEC-040' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 33 -F 'SPEC-040' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 35 -F 'SPEC-040' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 ```
 
 Gefunden: `harness/sensors/docs-check.md` nennen 26 Zeilen; bewegt hat sich
@@ -416,7 +435,8 @@ Nachgemessen nach `deecc466` (Arbeitsbaum mit der Folgepflicht aus
 Zuwächse gegenüber dem Stand des Liefer-Commits kommen aus `ADR-0163` selbst
 (`sensors/docs-check.md` +1, „Modul-Semantik“ +2, der Anker +1, `SPEC-040`
 +18; je `git grep -c` am Arbeitsbaum, nach Datei gelesen) — kein weiterer
-Träger.
+Träger. Nach der Fixrunde: der Anker und `SPEC-040` je +2, beide im Vertrag
+(neuer Grenze-Punkt 12 und §Sperren); die übrigen Zahlen unverändert.
 
 **Umfang gemessen vor dem Schreiben** (Implementer, zur zweiten
 Rückführungs-Bedingung in §4, `BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`).
@@ -432,6 +452,43 @@ Zeilen-Verhältnis, das der Planner bei der Rückführung abgewogen hat (§4). D
 Bedingung ist an dieser Messung **nicht neu eingetreten**; die Gegenprobe
 oben hat 76 Zeilen. Ob sie eine Review-Sitzung übersteigt, sagt der
 Review-Report (zweite Hälfte der Bedingung).
+
+**Fixrunde** (Review-Report `docs/reviews/review-slice-spec-festlegungen-doku-gates.md`,
+Commit `72e57998`; 5 HIGH, 3 MEDIUM, 2 LOW, 2 INFO):
+
+- **F-1 (HIGH), erledigt.** `SPEC-040` nennt für die Closure-Notiz-Regel die
+  Slice-Pläne `slice-*.md` direkt unter `done/` und sagt, dass ein geschlossener
+  Plan mit anderem Namen nicht darunter fällt (M24); §Bindung des Vertrags
+  ebenso. A4 nachgezogen.
+- **F-2 (HIGH), erledigt.** Zeile `ids` und Randformen: ohne Link ist ein
+  Treffer, das Ziel des Links prüft der Lauf nicht; der Satz „das erste Muster
+  gilt …“ ist gestrichen (M25, M26). B2 und Anschluss-Frage nachgezogen.
+- **F-3 (HIGH), angehalten.** Frage an den Architect in §6 (`ADR-0095`
+  §Kontext sagt Tokens zu, das Werkzeug meldet nur Links, M32); die Zeile in
+  `SPEC-040` ist unverändert.
+- **F-4 (HIGH), erledigt.** `SPEC-040` und Vertrag Grenze 9 nach M27 bis M30:
+  umbrochener Linktext kein Befund, umbrochenes Ziel ein Befund. Die Aussage
+  aus `slice-077` steht nicht mehr als Messung da (A25, A26).
+- **F-5 (HIGH), nicht behebbar, erfasst.** Siehe F-6.
+- **F-6 (MEDIUM), erledigt.** Vorfall bei M1 mit Weg (`>>`), verletzter Regel
+  (`AGENTS.md` §3.1) und Rücksetzung oben eingetragen; Register-Kandidat
+  `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` für die Closure.
+- **F-7 (MEDIUM), erledigt.** Vertrag §Grenze Punkt 12: Marker in `spec/`,
+  Regel-Ausnahme der ADRs 0039/0041, Token im Fence (M31; der Fence-Satz auch
+  in `SPEC-040`).
+- **F-8 (MEDIUM), erledigt.** §3-Zeile der Architect-ADR auf „erledigt“, C8
+  mit `ADR-0163` Entscheidung 4.
+- **F-9 (LOW), erledigt für §6; fremde Träger gemeldet.** §6 vierter Punkt
+  belegt zusätzlich mit `git grep -c status-provenance -- spec/`; die fünf
+  Pläne in `open/` stehen als Meldung an den Planner mit Frist Closure.
+- **F-10 (LOW), erledigt.** Vertrag Grenze 8, §Ausgabe und §Sperren
+  wiederholen die Randformen und Exit-Ursachen nicht mehr, sie verweisen auf
+  `SPEC-040` und tragen nur noch, was das Grün nicht deckt bzw. was den Weg
+  frei macht.
+- **F-11 (INFO), erledigt.** Die Historie-Zeile von `SPEC-040` in §8 nennt
+  Marker und `matrix.exempt-paths`; keine neue Zeile.
+- **F-12 (INFO).** Keine Handlung; die zweite Rückführungs-Bedingung tritt
+  von Seiten des Reviews nicht ein.
 
 ## 4. Trigger
 
@@ -551,7 +608,36 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   bleiben als Geschichte, keine Folge-ADR.
 - **Die Spec darf nicht auf ADRs zeigen** (gemessen im Pilot: `matrix-forbidden`
   für Link und Kennung im Inline-Code). Die Festlegung trägt ihren Inhalt
-  selbst. *Zu belegen durch:* `make docs-check` Exit 0.
+  selbst. *Zu belegen durch:* `make docs-check` Exit 0 **und** keine Zeile
+  unter `spec/`, die den Marker trägt und zugleich ein Token der Klassen `adr`
+  oder `slice` — seit `ADR-0163` Entscheidung 2 hebt der Marker einen
+  Token-Befund auch in `spec/` auf (M13), auch wenn er selbst in Inline-Code
+  steht (M33), das Grün allein belegt die Aussage nicht mehr; Wächter ist dazu
+  das Review des Spec-Diffs (Review F-9). Gemessen am Arbeitsbaum der
+  Fixrunde: `git grep -n status-provenance -- spec/` trifft eine Zeile
+  (`SPEC-040`, Randformen, der Marker als Text in Inline-Code) und den
+  Historie-Eintrag; `git grep -n status-provenance -- spec/ | grep -cE 'ADR-[0-9]{4}|slice-[0-9]{3}'`
+  druckt `0`.
+  **Meldung an den Planner (Review F-9, Frist: Closure dieses Slice):** dieselbe
+  Beleg-Zeile „Die Spec darf nicht auf ADRs zeigen … `make docs-check` Exit 0“
+  steht in fünf Plänen unter `open/` — `slice-spec-festlegungen-code-gates`,
+  `slice-spec-festlegungen-commit-baseline-gates`,
+  `slice-spec-festlegungen-coverage-gates`,
+  `slice-spec-festlegungen-kennungs-gates`,
+  `slice-spec-festlegungen-pruefer-hooks`. Fremde Träger, hier nicht geändert;
+  der Planner zieht sie nach oder benennt sie mit Adresse.
+- **`matrix-inactive` gegen eine Quell-ADR (Review F-3) — angehalten, Frage an
+  den Architect.** `SPEC-040` sagt „eine Datei verweist auf ein Ziel“ mit
+  verbotenem Status. Das Werkzeug meldet nur einen **Link** und nur aus einer
+  Datei, die einer `matrix`-Klasse angehört (Review R5–R7; M32: ein Token in
+  einem Slice-Plan, einer `observation.md` und einem Review-Bericht bleibt
+  grün, die 57 Befunde des dritten Laufs hängen alle an Links). `ADR-0095`
+  §Kontext sagt dagegen, mit der Klasse `review` würden die „ausgehenden
+  `ADR-\d{4}`-Token gegen `matrix.status.forbidden` geprüft“ — ein Wortlaut,
+  der mehr zusagt als das gepinnte Werkzeug leistet. Die Zeile in `SPEC-040`
+  ist deshalb **nicht** umgeschrieben ([`AGENTS.md`](../../../../AGENTS.md)
+  §3.5); der Architect entscheidet, ob die Festlegung auf „Link aus einer
+  Datei einer Klasse“ geht und wie mit dem Satz in `ADR-0095` umzugehen ist.
 
 ## 7. Closure-Notiz
 
