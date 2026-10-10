@@ -261,7 +261,7 @@ Instanz B).
       Entscheidung 1, Trigger (c)). Dieselbe Zeile für `SPEC-039`, soweit ihr
       Ausgang am Leerfall von `vcs` hängt. *Zu belegen durch:* die Tabelle in
       §3 und `make docs-check` Exit 0 nach dem Nachzug.
-- [ ] `make gates` grün, Exit-Code ungefiltert gesichert
+- [x] `make gates` grün, Exit-Code ungefiltert gesichert
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -659,6 +659,13 @@ Beleg zu Liefer-Punkt 1 (Reihenfolge) und 2; gemessen vom Implementer am
 - Kommentare in `a-check.mk` und `d-check.mk`, die einen Stand nennen: keine
   (`grep -n 'v0\.' a-check.mk` → kein Treffer; in `d-check.mk` nur Zeile 6,
   der Pin selbst).
+- `make gates` am Stand `bf8e1762` (letzter Commit mit Pin, Plan und
+  Suchlauf), `make gates > <Datei> 2>&1; echo $? > <Datei>`: Exit 0; gedruckt
+  u. a. `baseline-verify: v6.16.0 OK — 54 Dateien …`,
+  `coverage-gate: OK — Coverage 83.30% erfüllt Schwelle 80%`, zweimal
+  `d-check: 1848 Datei(en) geprüft, 0 Befund(e)`, `gesamt: 0 Befund(e)`
+  (a-check mit `2368f7b3…`), `commit-traceability: OK — 5 Commit(s) in
+  "HEAD~5..HEAD", Betreffs ohne Struktur-ID`, `generated-sync: OK — …`.
 
 ## 4. Trigger
 
