@@ -28,7 +28,10 @@ von `make docs-check` (gemessen bei der Rückführung, siehe §4):
 `matrix`;
 [`ADR-0156`](../../adr/0156-versions-gate-nimmt-done-records-aus.md),
 [`ADR-0161`](../../adr/0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md)
-(Block `versions:`) für `versions`. Keine `LH-*`-Anforderung ist berührt: die
+(Block `versions:`) für `versions`;
+[`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md)
+(`Schärft:`-Kante zur Festlegung, Provenance-Marker, `matrix.exempt-paths`).
+Keine `LH-*`-Anforderung ist berührt: die
 Festlegung gilt einem Harness-Werkzeug, nicht dem Produkt.
 
 **Berührte Spec-Stellen:** `spec/pflichtenheft.md` §7 „Festlegungen der
@@ -139,8 +142,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       Suchlauf in §3, `make suchlauf-nachmessen` Exit 0
       („16 Zeilen stimmen“); `make docs-check` am Arbeitsbaum nach `9e43f968`
       mit diesem Plan: Exit 0, `d-check: 1830 Datei(en) geprüft, 0 Befund(e)`.
-      Drei Befunde ohne Quelle stehen als Frage an den Architect in §6, nicht in
-      der Festlegung.
+      Die drei Befunde aus §6 hat `ADR-0163` entschieden; die zwei Sätze zu
+      Provenance-Marker und `matrix.exempt-paths` stehen nach ihrem Wortlaut in
+      `SPEC-040` (Commit nach `deecc466`).
 - [x] **Vertrag und Index verweisen (Liefer-Punkt 2).**
       `harness/sensors/docs-check.md` nennt die Kennung der Festlegung und
       trägt Schwelle und Randform nicht mehr selbst (R2, R7, T8); die Zeile
@@ -152,12 +156,17 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       mehr in ihm (Suchlauf: `höchstens (220|120)` und „Deklaration dieses
       Vertrags“ im Vertrag 0). `harness/README.md` Zeile `make docs-check`,
       Spalte Bindung: Vertragsdatei · `SPEC-040`.
-- [ ] **Bedingung vor der Closure — `Schärft:`-Kante.** Eine Architect-ADR
+- [x] **Bedingung vor der Closure — `Schärft:`-Kante.** Eine Architect-ADR
       (Rollenwechsel, Baseline-Regelwerk `modul-08-agentenrollen.md`) stellt die
       Kante der ADRs aus **Bezug** zur neuen Kennung her, nach dem
       Muster, das die ADR des Pilots setzt; Status `Accepted`, Index
       nachgezogen. Kein Liefer-Punkt: der Implementer liefert die Kennungen, der
       Architect die Kante.
+      *Beleg:* Commit `deecc466`,
+      [`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md),
+      Status `Accepted`, `Schärft:` auf `SPEC-040`, Zeile im ADR-Index. Ihre
+      Folgepflicht 1 und 2 ist im Commit nach `deecc466` umgesetzt (Spec-Absatz
+      „Randformen der Verweis-Module“, §3, §6).
 - [x] `make gates` grün, Exit-Code ungefiltert gesichert
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
       *Beleg:* `make gates > <Log im Scratchpad> 2>&1; echo $?` am Stand
@@ -305,7 +314,7 @@ steht mit E und Grund.
 | B5 | Klasse `welle` für die Abgrenzung | E — Wert der Eingabe |
 | B6 | keine Regel `slice`/`welle` → `review` | S |
 | B7 | `status.forbidden`, `allow-supersede-lineage`, `supersede-fields` | S |
-| B8 | `matrix.exempt-paths`: Alt-ADRs, `docs/reviews`, `welle-3-results` | S die Wirkung auf die Status-Prüfung und als Ziel; E die Gründe; Befund M16 (§6) |
+| B8 | `matrix.exempt-paths`: Alt-ADRs, `docs/reviews`, `welle-3-results` | S — die Datei ist als Quelle ganz ausgenommen, als Ziel nicht (M16; [`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md) Entscheidung 3); E die Gründe |
 | B9 | `versions`: Pin trägt die Version aus `current-from` | S |
 | B10 | `versions.exempt-paths`: Records, ADRs, MR-Einträge, pfadgebunden; nur `versions`, `links`/`anchors` weiter | S |
 | B11 | `structure`: Spalte über Kopfzeilen-Namen, Zell-Länge wie dargestellt inkl. Markdown-Syntax | S |
@@ -328,9 +337,9 @@ steht mit E und Grund.
 | C12 | 0160 E3: Gegenstand der Regel und Ausnahmen | S die Modul-Hälfte („Was der Sensor deckt“, Fassung 3); E die Regel-Hälfte (`AGENTS.md` §3.11) |
 | C13 | 0160 E4: Ventil `hostpaths.exempt-targets` ungenutzt | S |
 | C14 | 0094: Klasse `review`, Regel adr → review, Token fängt Pfad ohne Link | S (Link oder Token, M14) |
-| C15 | 0094: kein Provenance-Marker-Escape für adr → review | **offen** — das Werkzeug lässt den Marker gelten (M15); Frage an den Architect (§6), nicht in S |
+| C15 | 0094: kein Provenance-Marker-Escape für adr → review | S — in diesem Absatz abgelöst: der Marker hebt den Token-Befund jeder Regel auf, ein Link bleibt ein Befund (M13, M15; `ADR-0163` Entscheidung 2) |
 | C16 | 0094: die Regel prüft eine Adresse, nicht die Semantik einer Umformulierung | E — Review-Prüfpflicht, kein Werkzeug |
-| C17 | 0095: `docs/reviews/*.md` nur von der Status-Prüfung ausgenommen, Regel adr → review bleibt scharf | S (Status und als Ziel); Befund M16 (§6) |
+| C17 | 0095: `docs/reviews/*.md` nur von der Status-Prüfung ausgenommen, Regel adr → review bleibt scharf | S — als Quelle ganz ausgenommen, als Ziel Gegenstand der Regel (M14, M16); für `docs/reviews/*.md` deckt der Wortlaut die Wirkung, weil keine Regel `review` als Quelle hat (`ADR-0163` Entscheidung 3) |
 | C18 | 0097: Klasse `observation`, Regel observation → review | S (Regel der Eingabe, Befund `matrix-forbidden`) |
 | C19 | 0099: keine Regel slice/welle → review, Klasse `welle` bleibt | S |
 | C20 | 0156 E1, E2: `done/**` von `versions` ausgenommen, `links`/`anchors` ohne Ausnahme | S |
@@ -348,9 +357,9 @@ steht mit E und Grund.
 | Baum ohne `.git` | Exit 2 vor jeder Prüfung (M0); ein `git archive`-Export ist kein prüfbarer Baum |
 | Kennung in zwei Mustern | das erste gilt; `.a`-Verfeinerung verlangt den Link ins Pflichtenheft |
 | Kennung in Inline-Code | `ids` kein Treffer (M7), `matrix` Treffer (M10) — die zwei Module lesen Inline-Code verschieden |
-| `d-check:ignore` | hebt `ids` und `versions` für die Zeile auf (M9, M23), `hostpaths` nicht (M21); `matrix` nicht gemessen |
-| `d-check:status-provenance` | hebt einen Token-Befund von `matrix` auf, auch adr → review (M13, M15) — keine Quelle trägt die Lesung für `review` und `adr` als Ziel; **Architect** (§6) |
-| Datei unter `matrix.exempt-paths` als Quelle | keine Regel greift (M16) — die Quelle 0095 nennt nur die Status-Prüfung; **Architect** (§6) |
+| `d-check:ignore` | hebt `ids` und `versions` für die Zeile auf (M9, M23), `hostpaths` nicht (M21) und `matrix` nicht (*übernommen* aus `ADR-0163` Fitness Function Zeile 6) |
+| `d-check:status-provenance` | hebt in seiner Zeile den Token-Befund von `matrix` für jede Regel auf (M13, M15); ein Link in derselben Zeile bleibt `matrix-forbidden` (`ADR-0163` Entscheidung 2). In `spec/` ist der Marker kein zulässiger Weg, das Werkzeug lässt ihn trotzdem zu; Wächter ist das Review (ebenda, Grenze) |
+| Datei unter `matrix.exempt-paths` als Quelle | weder Status-Prüfung noch Regeln greifen (M16); als Ziel bleibt sie Gegenstand der Regel (M14). Für `ADR-0039`/`ADR-0041` angenommen, wer einen Pfad neu aufnimmt, nennt die Regel-Ausnahme in seiner ADR (`ADR-0163` Entscheidung 3) |
 | Tabelle ohne die Spalte vs. Abschnitt ohne die Spalte | erste fällt aus der Regel, zweiter `section-column-missing` (M5) |
 | Regel trifft keinen Abschnitt | `section-missing` (M6), auch wenn die Datei fehlt (B15) |
 
@@ -362,9 +371,9 @@ Parent `942ebf3f`, `diff` ist der Arbeitsbaum nach dem Liefer-Commit.
 
 ```suchlauf
 942ebf3f 26 -F 'sensors/docs-check.md' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 26 -F 'sensors/docs-check.md' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 27 -F 'sensors/docs-check.md' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 3 -F 'Modul-Semantik' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 3 -F 'Modul-Semantik' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 5 -F 'Modul-Semantik' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 3 -E 'höchstens (220|120)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 2 -E 'höchstens (220|120)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 1 -F 'Deklaration dieses Vertrags' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
@@ -374,9 +383,9 @@ diff 8 -F 'hostpath-forbidden' -- . ':!docs/reviews' ':!docs/plan/planning/done'
 942ebf3f 2 -E 'acht (docs-check-)?Module' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 diff 5 -E 'acht (docs-check-)?Module' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 15 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 22 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 23 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 0 -F 'SPEC-040' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 15 -F 'SPEC-040' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 33 -F 'SPEC-040' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 ```
 
 Gefunden: `harness/sensors/docs-check.md` nennen 26 Zeilen; bewegt hat sich
@@ -401,6 +410,13 @@ Träger außerhalb des Vertrags, der die Schwellen 220/120 oder die Exit-Codes
 von `make docs-check` nennt; `.claude/commands/implement-slice.md` („Strenges
 Doc-Gate“) und `.harness/skills/reviewer.md` beschreiben die Module, nicht den
 Ort ihrer Festlegung, und bleiben richtig.
+
+Nachgemessen nach `deecc466` (Arbeitsbaum mit der Folgepflicht aus
+`ADR-0163`): die `diff`-Zeilen oben sind auf diesen Stand gezogen. Alle
+Zuwächse gegenüber dem Stand des Liefer-Commits kommen aus `ADR-0163` selbst
+(`sensors/docs-check.md` +1, „Modul-Semantik“ +2, der Anker +1, `SPEC-040`
++18; je `git grep -c` am Arbeitsbaum, nach Datei gelesen) — kein weiterer
+Träger.
 
 **Umfang gemessen vor dem Schreiben** (Implementer, zur zweiten
 Rückführungs-Bedingung in §4, `BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`).
@@ -497,6 +513,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   Modul; (2) ob dieselbe ADR auch `vcs:`/`make doc-immutable` des Folge-Slice
   trägt, dessen Festlegung es noch nicht gibt; (3) die drei Befunde der
   nächsten Zeile.
+  **Ausgang: entfallen** — Grund:
+  [`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md)
+  (`deecc466`) beantwortet die Frage: eine ADR für `SPEC-040` mit Herkunft je
+  Teil, `make doc-immutable` nicht dort, sondern in der eigenen Architect-ADR
+  von `slice-spec-festlegungen-commit-baseline-gates` (Entscheidung 1).
 - **Umfang auch nach dem Neuschnitt an der Grenze.** `docs-check` allein liegt
   bei etwa 1130 Quellzeilen gegen etwa 790 im Pilot (*übernommen*, §4); der
   Block `structure:` trägt 160 Zeilen (gemessen, §3). *Zu belegen durch:* der
@@ -521,6 +542,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   und mit `SPEC-040` überholt. Ob (a) und (b) ein eigener Slice werden (Werkzeug
   oder Konfiguration) oder die Festlegung sie aufnimmt, und ob (c) eine
   Folge-ADR braucht, entscheidet der Architect.
+  **Ausgang der drei Befunde: entfallen** — Grund: `ADR-0163`. (a) Entscheidung
+  2 löst den Absatz von `ADR-0094` und den Satz von `ADR-0097` ab: Token mit
+  Marker ist Herkunft, ein Link bleibt verboten; `SPEC-040` trägt den Satz.
+  (b) Entscheidung 3 legt die Wirkung fest (als Quelle ganz ausgenommen) und
+  nimmt sie für `ADR-0039`/`ADR-0041` an; `SPEC-040` trägt den Satz. (c)
+  Entscheidung 4: Ort der Modul-Semantik ist `SPEC-040`, die zwei Sätze
+  bleiben als Geschichte, keine Folge-ADR.
 - **Die Spec darf nicht auf ADRs zeigen** (gemessen im Pilot: `matrix-forbidden`
   für Link und Kennung im Inline-Code). Die Festlegung trägt ihren Inhalt
   selbst. *Zu belegen durch:* `make docs-check` Exit 0.

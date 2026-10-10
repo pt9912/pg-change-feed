@@ -2046,14 +2046,17 @@ Kennung ohne Muster (`MR-<NNN>`, `BEO-<KUERZEL>/<slug>`) ist kein Treffer.
 `matrix` meldet auch eine Kennung der Zielklasse in Inline-Code. Das Token der
 Klasse `slice` trifft nur Kennungen mit Nummer (`slice-<NNN>`). Innerhalb der
 Spec-Straten gibt es keine Regel; die Klassen `slice` und `welle` dürfen auf
-`review` verweisen. Eine Datei unter `matrix.exempt-paths` prüft das Modul
-nicht auf Ziele mit verbotenem Status; als Ziel einer Regel bleibt sie
-Gegenstand der Regel. Mit `allow-supersede-lineage` darf
+`review` verweisen. Eine Datei unter `matrix.exempt-paths` prüft das Modul als
+Quelle nicht, weder auf Ziele mit verbotenem Status noch gegen die Regeln; als
+Ziel einer Regel bleibt sie Gegenstand der Regel. Mit `allow-supersede-lineage` darf
 eine Datei ihr abgelöstes Ziel nennen, wenn sie es in `Supersedes` oder
 `Status` führt. `versions.exempt-paths` nimmt Dateien nur von `versions` aus;
 `links` und `anchors` prüfen sie weiter. Eine Zeile, die den Kommentar
 `<!-- d-check:ignore -->` trägt, ist für `ids` und `versions` kein Treffer;
-`hostpaths` kennt keinen Zeilen-Marker.
+`hostpaths` kennt keinen Zeilen-Marker. Eine Zeile, die den Kommentar
+`<!-- d-check:status-provenance -->` trägt, ist für ein Token von `matrix` kein
+Treffer, für jede Regel; ein Link in derselben Zeile bleibt ein Befund.
+`<!-- d-check:ignore -->` wirkt auf `matrix` nicht.
 
 **Zu `SPEC-040` — `structure`.** Eine Regel nennt Dateien (`files`, Pfad oder
 Glob) und einen Abschnitt: den Text einer Überschrift (`section`) oder ein
