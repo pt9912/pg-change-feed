@@ -1861,6 +1861,7 @@ deklariert die ADR in ihrem `Schärft:`-Feld.
 |---|---|---|
 | `SPEC-038` | `make zitat-vergleich` | Referent-Messung einer Zitat-Korrektur: vergleicht die Einheit, die eine alte Adresse an ihrem Stand adressiert, mit der Einheit der neuen Adresse an deren Stand — roh, oder mit Tag-Paar nach Normalisierung nur des bewegten Baseline-Tags; Einheit je Verweisform, Stände und Ausgänge unter der Tabelle |
 | `SPEC-039` | Leer-Test `teilrange` vor `make doc-immutable` | entscheidet je Teil-Range um einen Commit, der nur Adaptions-Einträge ändert, zwischen leer (kein Lauf), nicht leer (Lauf, Exit 0) und falsch gebildet (Exit 2); Einzelheiten unter der Tabelle |
+| `SPEC-040` | `make docs-check` | prüft die gescannte Markdown-Fläche mit den acht Modulen der Liste `modules:` in `.d-check.yml` (`links`, `anchors`, `ids`, `matrix`, `versions`, `structure`, `hostpaths`, `tracked`) und meldet je Verstoß einen Befund; Fläche, Befund je Modul, Randformen und Ausgänge unter der Tabelle |
 
 **Zu `SPEC-038` — Gegenstand.** Die Messung belegt, dass eine Zitat-Korrektur
 an einem immutablen Dokument (einer `Accepted` ADR, einem Adaptions-Eintrag
@@ -2009,6 +2010,108 @@ ist ein Befund und kein Leerfall. Ein falsch bestimmtes `F` fällt so nicht
 still durch: liegt es hinter dem echten Commit, enthält `B..F~1` diesen und
 wird rot; liegt es vor `B`, ist `B` kein Vorfahr von `F~1`, Exit 2.
 
+**Zu `SPEC-040` — Fläche und Eingabe.** Geprüft werden die `.md`-Dateien unter
+`scan.roots` (`.`) ohne die Globs aus `scan.ignore` (`**/*.template.md`,
+`.tmp/**`, `.harness/**`). Der Lauf ist netzlos, liest das Repo schreibgeschützt
+und braucht `.git` im Mount. Muster, Klassen, Pfadlisten, Abschnitte und
+Spaltengrenzen jedes Moduls stehen in `.d-check.yml`; diese Datei ist die
+Eingabe des Laufs, die Festlegung sagt, was ein Modul mit ihr als Befund
+meldet. Es laufen genau die Module der Liste `modules:`. Ein Konfigurationsblock
+ohne Modul in der Liste (`reviews:`, `commits:`, `vcs:`) wirkt in diesem Lauf
+nicht, `trace:` ist kein Modul, und `codepaths` ist nicht in der Liste: ein Pfad
+in Inline-Code wird nicht auf Existenz geprüft.
+
+**Zu `SPEC-040` — Befund je Modul.**
+
+| Modul | Befund (Grund-Code) | gilt als Treffer |
+|---|---|---|
+| `links` | `target-missing` | das Ziel eines lokalen Markdown-Links existiert nicht; ein Link mit URL-Schema ist kein Gegenstand des Laufs |
+| `anchors` | `anchor-missing` | der Anker eines lokalen Links trifft in der Zieldatei weder einen Heading-Slug noch einen HTML-Anker |
+| `ids` | `id-unlinked` | eine Kennung, die ein Muster aus `ids.patterns` trifft, steht in Prosa ohne Link auf das Dokument, das das Muster ihr zuordnet (Lastenheft, Pflichtenheft, Architektur-Sicht, ADR-Verzeichnis) |
+| `matrix` | `matrix-forbidden` | eine Datei einer Klasse verweist auf eine Datei einer Klasse, die eine Regel mit `allow: false` als Ziel verbietet — als Link oder als Token der Zielklasse im Text |
+| `matrix` | `matrix-inactive` | eine Datei verweist auf ein Ziel, dessen Status in `status.forbidden` steht (`superseded`, `deprecated`) |
+| `versions` | `version-stale` | ein Pfad, der `pin-pattern` trifft, trägt eine andere Version als die, die `current-from` (`harness/conventions.md` §Baseline) nennt |
+| `structure` | `section-cell-oversized`, `section-cell-undersized`, `section-column-missing`, `section-missing`, `section-forbidden`, `section-pattern-missing`, `section-empty`, `section-tasks-open` | ein Abschnitt verletzt eine Bedingung seiner Regel (Absatz unten) |
+| `hostpaths` | `hostpath-forbidden` | ein host-lokaler Pfad in Prosa oder Inline-Code (Absatz unten) |
+| `tracked` | `target-untracked` | ein Link- oder Bild-Ziel existiert und löst auf, steht aber nicht im git-Index (untracked oder ignoriert); `tracked.exempt-targets` ist leer |
+
+**Zu `SPEC-040` — Randformen der Verweis-Module.** Geht der Linktext oder das
+Ziel eines Links über einen Zeilenumbruch, melden `links` und `anchors` nichts.
+`ids` liest Prosa: eine Kennung in einem Inline-Code-Span ist kein Treffer, und
+eine verlinkte Kennung ist kein Treffer, auch wenn das Definitions-Dokument sie
+nicht führt — gegen dessen Kennungen gleicht das Modul nicht ab. Trifft eine
+Kennung mehrere Muster, gilt das erste der Liste; deshalb steht das Muster der
+Verfeinerungen (`<Kennung>.a`, Ziel Pflichtenheft) vor dem Basismuster. Eine
+Kennung ohne Muster (`MR-<NNN>`, `BEO-<KUERZEL>/<slug>`) ist kein Treffer.
+`matrix` meldet auch eine Kennung der Zielklasse in Inline-Code. Das Token der
+Klasse `slice` trifft nur Kennungen mit Nummer (`slice-<NNN>`). Innerhalb der
+Spec-Straten gibt es keine Regel; die Klassen `slice` und `welle` dürfen auf
+`review` verweisen. Eine Datei unter `matrix.exempt-paths` prüft das Modul
+nicht auf Ziele mit verbotenem Status; als Ziel einer Regel bleibt sie
+Gegenstand der Regel. Mit `allow-supersede-lineage` darf
+eine Datei ihr abgelöstes Ziel nennen, wenn sie es in `Supersedes` oder
+`Status` führt. `versions.exempt-paths` nimmt Dateien nur von `versions` aus;
+`links` und `anchors` prüfen sie weiter. Eine Zeile, die den Kommentar
+`<!-- d-check:ignore -->` trägt, ist für `ids` und `versions` kein Treffer;
+`hostpaths` kennt keinen Zeilen-Marker.
+
+**Zu `SPEC-040` — `structure`.** Eine Regel nennt Dateien (`files`, Pfad oder
+Glob) und einen Abschnitt: den Text einer Überschrift (`section`) oder ein
+Muster mit `sections: each`, dann gilt sie für jeden Abschnitt, dessen
+Überschrift das Muster trifft. Je Regel prüft der Lauf:
+
+- **Tabelle** (`table.column`): die Spalte wird über den Namen der Kopfzeile
+  gefunden, nicht über die Position; eine Zelle unter `cell-min-chars` oder über
+  `cell-max-chars` ist ein Befund. Gemessen wird die Zelle, wie sie im
+  Quelltext steht, mit Markdown-Syntax. Eine Tabelle des Abschnitts ohne eine
+  Spalte des Namens fällt aus der Regel; trägt keine Tabelle des Abschnitts
+  eine Kopfzelle des Namens, meldet der Lauf `section-column-missing`. Trifft
+  die Regel keine Datei oder keinen Abschnitt, meldet er `section-missing`.
+- **Muster** (`require-pattern`, `forbid-pattern`): gelesen wird der bereinigte
+  Abschnittstext, in dem Inline-Code-Spans geleert sind und Fences nicht
+  zählen; ein Treffer von `forbid-pattern` ist `section-forbidden`, ein
+  fehlender Treffer von `require-pattern` `section-pattern-missing`.
+- **Inhalt** (`non-empty`, `max-open-tasks`): ein leerer Abschnitt ist
+  `section-empty`, mehr offene Aufgaben (`- [ ]`) als erlaubt sind
+  `section-tasks-open`.
+
+Keine Regel zählt Zeilen. Die Regeln gelten dem ADR-Index, der Tabelle §3 der
+Defaults dieses Dokuments, den Tabellen §1 und §3 der Architektur-Sicht, den
+Spalten `Vertrag` und `Tut was` des Gate-Index in `harness/README.md`
+§Sensors (beide Tabellen des Abschnitts), der Closure-Notiz §7 jedes
+geschlossenen Slice-Plans, der Verweisform auf einen wandernden Slice-Plan in
+Berichten unter `docs/reviews/` und in der Identität eines Eintrags des
+Beobachtungs-Registers, und der erzeugten E2E-Abdeckungstabelle; die Werte
+stehen in `.d-check.yml`.
+
+**Zu `SPEC-040` — `hostpaths`.** Ein Treffer ist in Prosa oder Inline-Code ein
+absoluter Pfad, dessen Wurzel-Segment in der Präfixliste `hostpaths.prefixes`
+steht (der Default des Moduls; `.d-check.yml` trägt keinen Block `hostpaths:`),
+ein Windows-Laufwerks- oder UNC-Muster (fest, nicht konfigurierbar) oder ein
+Home-relativer Pfad aus Tilde, Schrägstrich und einem ersten Segment ohne
+führenden Punkt — `~/<Verzeichnis>/…`, `~/<Datei>` und `~/<Verzeichnis>` ohne
+abschließenden Schrägstrich. Kein Treffer sind ein Pfad in einem Fence, die
+Tilde mit Benutzername (`~<Benutzer>/…`), die Werkzeug-Konvention mit
+Punkt-Segment (`~/.config/…`), die nackte Tilde, die Tilde in einem URL-Pfad und
+ein relativer Pfad. Ausgenommen ist nichts: weder `hostpaths.exempt-targets`
+noch eine Pfadliste noch ein Zeilen-Marker ist gesetzt.
+
+**Zu `SPEC-040` — Ausgänge.** Je Befund steht eine Zeile
+`<Datei>:<Zeile>`, Ziel, Grund-Code und Text, getrennt durch Tabulatoren; die
+letzte Zeile lautet `d-check: <N> Datei(en) geprüft, <M> Befund(e)` und sagt
+etwas über die gescannte Fläche, nicht über das Repo.
+
+| Exit | Bedeutung |
+|---|---|
+| 0 | kein Befund in der gescannten Fläche |
+| 1 | mindestens ein Befund |
+| 2 | Nutzungs- oder Konfigurationsfehler, kein Urteil über die Doku: ein unbekannter Schlüssel in `.d-check.yml`, `versions.current-from` nicht lesbar, kein lesbares git-Repository im Mount |
+
+Bei einem Konfigurationsfehler fällt der Lauf nicht still auf Defaults zurück.
+Über `make` kommt jeder Exit ungleich 0 als der Make-eigene Exit 2 an; ob ein
+Befund oder ein Fehler vorliegt, sagt die letzte Zeile (`<M> Befund(e)` oder
+`d-check: error: …`).
+
 ---
 
 ## 8. Historie
@@ -2092,3 +2195,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-05 | `SPEC-025`: Grenze der Zusatzlatenz ist max(0,10 ms ; 1,5 × `t_sync`) mit im selben Lauf gemessener Festschreib-Latenz, Verdikt auf jedem Host, Fehlerausgang bei nicht messbarem `t_sync`; `SPEC-036`: Messvorschrift für `t_sync` statt Band `fdatasync` ≤ 0,5 ms; `SPEC-037` neu (TLS-Optionen der Client-Bibliotheken: ein Vertrauensanker je SDK für HTTP, SSE und gRPC) |
 | 2026-10-05 | `LH-FA-SST-009.a`: die Artefakt-Namen der drei SDK-Packages stehen versionsneutral als Form mit `<Version>` und der Version-Datei je Sprache statt als Namen der Version 0.2.x; keine Änderung an Abdeckung, Paketierung oder Vertriebsweg |
 | 2026-10-07 | §7 „Festlegungen der Harness-Werkzeuge“ neu: `SPEC-038` (Referent-Messung `make zitat-vergleich`: Einheit je Verweisform, roh und Normalisierung, Stände, nicht messbarer Referent, Ausgänge) und `SPEC-039` (Leer-Test der Teil-Range vor `make doc-immutable`); die Historie ist §8, §1 verweist auf §2 bis §7. `SPEC-038`: in der Tabelle „Stellung“ beginnt der Block einer `id` in einer Zeile ohne Inhalt vor einem Absatz an der nächsten Zeile mit Inhalt; `SPEC-039`: geteilt wird auch am Umzugs-Commit eines aufgelösten Adaptions-Eintrags, bei mehreren solchen Commits an jedem in der Reihenfolge der Commits; `SPEC-038` „Stände“: eine leere oder nicht lesbare Einheit lässt die Korrektur nicht bestehen, auch bei mehrdeutiger Stellung (keine Einheit, kein nicht messbarer Referent) |
+| 2026-10-10 | §7: `SPEC-040` neu (`make docs-check`: gescannte Fläche und Eingabe, Befund je Modul der acht Module, Randformen der Verweis-Module, `structure`, `hostpaths`, Ausgänge) |

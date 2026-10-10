@@ -3,38 +3,21 @@
 ## Vertrag
 
 Wird dieses Target rot, trägt die gescannte Markdown-Doku eine kaputte
-Referenz: lokaler Link oder Heading-Anker ins Leere (`target-missing`,
-`anchor-missing`), nackte Kennung ohne Link auf ihre Definition
-(`id-unlinked`), verbotene Referenzrichtung zwischen Dokumentklassen
-(`matrix-forbidden` / `matrix-inactive`), abweichender Baseline-Pin
-(`version-stale`), Struktur-Verstoß im Abschnitt
-(`section-cell-*`, `section-forbidden` — Register-Spalten,
-Closure-Notiz-Guidance, die Verweisform auf wandernde Slice-Pläne in
-Berichten und der Register-Identität, die erzeugte
-E2E-Abdeckungstabelle und die Zellenlänge des Gate-Index), oder einen host-lokalen absoluten oder Home-relativen Pfad in Prosa oder
-Inline-Code (`hostpath-forbidden` — ein Schwester-Artefakt wird als blankes
-Repo-Wort mit relativem Pfad zitiert,
-[`ADR-0074`](../../docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md)).
-Die Module und ihre Grenzen stehen in `.d-check.yml`; die Konfiguration ist die
-Deklaration dieses Vertrags, nicht dieses Dokument.
+Referenz, eine nackte Kennung, eine verbotene Referenzrichtung, einen
+abweichenden Baseline-Pin, einen Struktur-Verstoß im Abschnitt, einen
+host-lokalen Pfad oder ein Linkziel außerhalb des git-Index — je Modul der
+Liste `modules:` in `.d-check.yml` eine Klasse.
 
-Die `structure`-Regeln prüfen Abschnitts-Invarianten in ihren Trägerdateien:
-den ADR-Index, die Pflichtenheft-Defaults, zwei Architektur-Tabellen, die
-Closure-Notiz je `done/slice-*.md` (sie läuft seit der ersten Closure mit,
-`· seit slice-001`), die Verweisform auf wandernde Slice-Pläne in Berichten
-und Register-Identität, die erzeugte E2E-Abdeckungstabelle sowie den Gate-Index
-in `harness/README.md` §Sensors (Feedback-Gates): dort ist eine Zelle der
-Spalte `Vertrag` höchstens 220 und eine Zelle der Spalte `Tut was` höchstens
-120 Zeichen lang, beide mindestens 1; die Regel misst beide Tabellen des
-Abschnitts (Gate-Tabelle und Werkzeuge-Tabelle), weil sie die Spalte über den
-Kopfzeilen-Namen findet · seit slice-harness-readme-zellen-kuerzen. Innerhalb
-dieser Familie adressieren die vier Tabellen-Regeln und die
-E2E-Abdeckungstabelle ihre Spalten über Mindestbreiten, die Gate-Index-Regel
-über Mindest- und Höchstlänge; die
-Closure-Notiz-Regel und die beiden Verweisform-Regeln tragen keinen
-Spalten-Knoten und prüfen nur Abschnitt und Muster
-(`non-empty`/`max-open-tasks`/`require-pattern`/`forbid-pattern`). Keine
-Regel zählt Zeilen.
+**Wer was trägt.** Die **Festlegung** — welche Fläche gescannt wird, was jedes
+der acht Module als Befund meldet und unter welchem Grund-Code, wie es an seinen
+Randformen entscheidet, welche Abschnitte die `structure`-Regeln prüfen und was
+die Ausgänge bedeuten — steht in
+[`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge);
+diese Datei wiederholt sie nicht. Die Werte (Muster, Klassen, Pfadlisten,
+Spaltengrenzen) stehen in `.d-check.yml`, der Eingabe des Laufs. Diese Datei
+sagt, wie ein Lauf zu lesen ist und was sein Grün nicht abdeckt. Ein
+Schwester-Artefakt wird als blankes Repo-Wort mit relativem Pfad zitiert
+([`ADR-0074`](../../docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md)).
 
 ## Grenze — was das Grün nicht abdeckt
 
@@ -113,28 +96,22 @@ Regel zählt Zeilen.
    Quelltext** (Go-Hälfte) und der **Anker je Phase** (Bash-Hälfte) — nicht
    das Doku-Gate.
 
-8. **`hostpaths` — die gescannte Markdown-Fläche, nicht das Repo.** Das Modul
-   meldet host-lokale **absolute** Pfade in `.md`-Dateien unter `scan.roots`,
-   in Prosa und Inline-Code (`hostpath-forbidden`), und ab d-check v0.80.0 auch
-   **Home-relative** Pfade: Tilde, Schrägstrich und ein erstes Segment ohne
-   führenden Punkt — `~/<Verzeichnis>/…`, eine Datei direkt unter der Tilde
-   (`~/<Datei>`) und ein einzelnes Segment ohne abschließenden Schrägstrich
-   (`~/<Verzeichnis>`), am Werkzeug gemessen (seit slice-dcheck-v0-82-0). Regel
+8. **`hostpaths` — die gescannte Markdown-Fläche, nicht das Repo.** Welche
+   Pfade das Modul meldet und welche nicht, steht in
+   [`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge)
+   (Home-relative Formen am Werkzeug gemessen seit slice-dcheck-v0-82-0). Regel
    und Modul sind bei den Home-relativen Pfaden gleich weit, außer bei der
-   **Tilde mit Benutzername** (`~<Benutzer>/…`): die Regel deckt sie, das Modul
-   bleibt still. `~/.config/…`, die nackte Tilde und die Tilde in einem URL-Pfad
-   sind kein Gegenstand der Regel; das Modul meldet sie nicht. Das Ventil
-   `hostpaths.exempt-targets` ist verfügbar und nicht gesetzt
+   **Tilde mit Benutzername**: die Regel deckt sie, das Modul bleibt still. Das
+   Ventil `hostpaths.exempt-targets` ist verfügbar und nicht gesetzt
    ([`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)
-   Entscheidung 2). Vier benannte Ränder:
-   **Fenced-Code-Blöcke** prüft es nicht — einen Opt-out-Marker kennt es
-   nicht; **relative** Pfade sind ungeprüft (die Zusage lautet nicht „kein
-   Pfad verlässt das Repo"); die **Windows-Laufwerks- und UNC-Muster** sind
-   fest, nicht konfigurierbar; und **Nicht-Markdown** ist ungelesen — die
-   Skriptkommentare in `Makefile`, `tools/**` und `harness/mk/**` erreicht der
-   Scan nicht. Dateien unter `scan.ignore` (`.harness/**`, `**/*.template.md`)
-   liegen ebenfalls außerhalb. **Die Regel deckt die Fenced-Fläche und die
-   Tilde mit Benutzername voll, dieses Modul nicht** — ihre Reichweite und
+   Entscheidung 2). Benannte Ränder: **Fenced-Code-Blöcke** prüft es nicht —
+   einen Opt-out-Marker kennt es nicht; **relative** Pfade sind ungeprüft (die
+   Zusage lautet nicht „kein Pfad verlässt das Repo"); und **Nicht-Markdown**
+   ist ungelesen — die Skriptkommentare in `Makefile`, `tools/**` und
+   `harness/mk/**` erreicht der Scan nicht. Dateien unter `scan.ignore`
+   (`.harness/**`, `**/*.template.md`) liegen ebenfalls außerhalb. **Die Regel
+   deckt die Fenced-Fläche und die Tilde mit Benutzername voll, dieses Modul
+   nicht** — ihre Reichweite und
    diese benannten Lücken stehen in `AGENTS.md` §3.11; der Wächter dort ist das
    Review, kein Gate. Dieser
    Abschnitt trägt, **was der Sensor deckt und was nicht**; die Reichweite der
@@ -148,10 +125,10 @@ Regel zählt Zeilen.
    [`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md).
    Die Aktivierung kennt **keinen**
    Ausschlussblock: kein `scope`, kein `ignore`, kein `exempt-paths`.
-9. **Mehrzeilige Markdown-Links sind ungeprüft — `anchors` und `links`.** Geht
-   der **Linktext** oder das **Ziel** eines Links über einen Zeilenumbruch,
-   melden beide Module nichts: einzeilig gestellt kippt dieselbe Mutation rot
-   (`anchor-missing` bzw. `target-missing`), zweizeilig bleibt sie grün (Exit 0).
+9. **Mehrzeilige Markdown-Links sind ungeprüft — `anchors` und `links`.** Ein
+   Link, dessen Linktext oder Ziel über einen Zeilenumbruch geht, ist kein
+   Gegenstand der beiden Module
+   ([`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge)).
    In `slice-077` mit sechs Mutationen gemessen; repo-weit betrifft es neun
    Links in fünf Dateien (Stand `slice-077`), ihre Ziele waren von Hand prüfbar
    und in Ordnung. Der Wächter dieser Form ist das Review, kein Gate. Träger des
@@ -179,13 +156,10 @@ Regel zählt Zeilen.
     `harness/targets/` verlinkt und ob diese Datei den Inhalt führt, prüft sie
     nicht — das bleibt Review. Die Spalte `Bindung` hat keine Höchstlänge.
     Eine neue Tabelle im Abschnitt mit einem anderen Spaltennamen fällt aus
-    der Regel (gemessen vom Verifier an einem Klon: eine dritte Tabelle mit
-    Spalte `Macht was` und 300 Zeichen bleibt grün; eine umbenannte Kopfzelle
-    `Tut was` meldet `section-column-missing`). Gemessen an einer Kopie im
-    Scratchpad: eine Zelle `Tut was` mit 121 Zeichen und eine Zelle `Vertrag`
-    mit 222 Zeichen enden mit `section-cell-oversized` (Exit 2), eine leere
-    Zelle `Tut was` mit `section-cell-undersized`, eine Zelle mit 120 Zeichen
-    bleibt grün · seit slice-harness-readme-zellen-kuerzen.
+    der Regel
+    ([`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge);
+    gemessen vom Verifier an einem Klon mit einer dritten Tabelle, Spalte
+    `Macht was`, 300 Zeichen) · seit slice-harness-readme-zellen-kuerzen.
 
 **Wie groß der Ausschnitt ist, sagt das Kommando, nicht diese Datei:**
 `docker run … d-check` über `scan.roots: ["."]` mit `scan.ignore`; die
@@ -194,19 +168,25 @@ diesen Ausschnitt (nicht über das Repo).
 
 ## Ausgabe und Ausgänge
 
-| Exit | Bedeutung |
-|---|---|
-| 0 | keine Befunde im Ausschnitt |
-| 1 | mindestens ein Befund (`Datei:Zeile  Ziel  Grund-Code`) |
-| 2 | Nutzungs-/Konfigurationsfehler — kein Urteil über die Doku |
+Zeile je Befund, Schlusszeile und Exit-Codes stehen in
+[`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge).
+
+**Die Farbe steht in der Zeile.** Über `make` kommt ein Befund wie ein Fehler
+als Exit `2` an; ein Beleg zitiert deshalb die Schlusszeile
+(`<M> Befund(e)` oder `d-check: error: …`), nicht den Exit von `make`.
 
 Reparatur-Pfad: `make doc-repair` (konservativ, nur `id-unlinked`/
 `target-missing`, `git apply --unidiff-zero`); Diagnose: `make doc-doctor`.
 
 ## Sperren
 
-- Exit 2 bei Config-Fehler (unbekannter Schlüssel in `.d-check.yml`,
-  `versions.current-from` unlesbar) — kein stiller Rückfall auf Defaults.
+- **Konfigurationsfehler** — ein unbekannter Schlüssel in `.d-check.yml` oder
+  ein unlesbares `versions.current-from` beendet den Lauf, bevor er prüft
+  (`d-check: error: …`) → den Schlüssel bzw. die Quelle in `.d-check.yml`
+  berichtigen.
+- **Kein git-Repository im Mount** — `tracked` liest den git-Index (`d-check:
+  error: kein lesbares git-Repository …`) → aus einem Klon mit `.git`
+  aufrufen.
 
 ## `make doc-tracked`
 
@@ -219,7 +199,10 @@ Mount.
 
 ## Bindung
 
-`harness/conventions.md` MR-000 (ID-Schema als Linkpflicht) · Decken-Regel
+[`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge)
+(Festlegung) · `harness/conventions.md` MR-000 (ID-Schema als Linkpflicht) ·
+Closure-Notiz je geschlossenem Slice-Plan (`.d-check.yml` §structure,
+`seit slice-001`) · Decken-Regel
 (Baseline-Regelwerk Modul 5/6, abgebildet in `.d-check.yml` §matrix) ·
 Baseline-Pin (`harness/conventions.md` §Baseline) · Register-Spalten und
 Verweisform auf wandernde Slice-Pläne (`BEO-PGC/slice-pfad-als-link-in-berichten`,
