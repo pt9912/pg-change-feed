@@ -71,7 +71,9 @@ Schwelle und Randform selbst zu tragen, und die Zeilen in `harness/README.md`
   `MR-001`-Ablösung** — Gegenstand von `slice-spec-festlegungen-harness-werkzeuge`
   (Pilot); dieser Slice fügt Zeilen in eine bestehende Tabelle ein.
 - **Gates anderer Gruppen** — Folge-Slices:
-  `slice-spec-festlegungen-doku-gates`, `slice-spec-festlegungen-kennungs-gates`,
+  `slice-spec-festlegungen-doku-gates`,
+  `slice-spec-festlegungen-commit-baseline-gates`,
+  `slice-spec-festlegungen-kennungs-gates`,
   `slice-spec-festlegungen-coverage-gates` (coverage-gate,
   db-adapter-coverage), `slice-spec-festlegungen-pruefer-hooks`.
 - **Die Edges in `.a-check.yml` und die Schichten der Sicht** — Bestand bleibt:

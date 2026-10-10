@@ -87,7 +87,9 @@ tragen, und die Zeilen in `harness/README.md` tragen die Bindung
   `slice-spec-festlegungen-harness-werkzeuge` (Pilot); dieser Slice fügt
   Zeilen in eine bestehende Tabelle ein.
 - **Gates anderer Gruppen** — Folge-Slices:
-  `slice-spec-festlegungen-doku-gates`, `slice-spec-festlegungen-kennungs-gates`,
+  `slice-spec-festlegungen-doku-gates`,
+  `slice-spec-festlegungen-commit-baseline-gates`,
+  `slice-spec-festlegungen-kennungs-gates`,
   `slice-spec-festlegungen-code-gates`, `slice-spec-festlegungen-coverage-gates`.
 - **Die Adaptionen `MR-003` und `MR-004` ändern** — Bestand bleibt: die
   Festlegung beschreibt, was der Guard liest; die Adaption bleibt der Grund,

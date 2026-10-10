@@ -70,7 +70,8 @@ die Kennung, statt Schwelle und Randform selbst zu tragen, und die Zeilen in
   `MR-001`-Ablösung** — Gegenstand von `slice-spec-festlegungen-harness-werkzeuge`
   (Pilot); dieser Slice fügt Zeilen in eine bestehende Tabelle ein.
 - **Gates anderer Gruppen** — Folge-Slices:
-  `slice-spec-festlegungen-doku-gates` (docs-check, commit-traceability,
+  `slice-spec-festlegungen-doku-gates` (docs-check),
+  `slice-spec-festlegungen-commit-baseline-gates` (commit-traceability,
   baseline-verify, doc-immutable), `slice-spec-festlegungen-code-gates` (a-check,
   generated-sync), `slice-spec-festlegungen-coverage-gates` (coverage-gate,
   db-adapter-coverage), `slice-spec-festlegungen-pruefer-hooks` (Prüfer und
