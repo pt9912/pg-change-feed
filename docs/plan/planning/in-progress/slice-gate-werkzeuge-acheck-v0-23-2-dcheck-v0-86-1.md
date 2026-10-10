@@ -208,7 +208,7 @@ Planungsstand hat außer den in §1 genannten Lesungen keinen Lauf im Repo
 gefahren ([`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
 Instanz B).
 
-- [ ] **Reichweite je übersprungener Version, vor jedem Pin-Commit
+- [x] **Reichweite je übersprungener Version, vor jedem Pin-Commit
       (Liefer-Punkt 1).** Ein committeter Abschnitt „Reichweite
       a-check v0.21.0–v0.23.2 und d-check v0.83.0–v0.86.1 — Belege“ in diesem
       Plan trägt je Version (a-check 0.21.0, 0.22.0, 0.23.0, 0.23.1, 0.23.2;
@@ -232,7 +232,7 @@ Instanz B).
       *Zu belegen durch:* den Abschnitt mit Befehl, Stand und gedruckter Zeile
       je Lauf; der Commit des Abschnitts liegt vor den Pin-Commits
       (`git log --oneline`).
-- [ ] **Pins auf v0.23.2 und v0.86.1 (Liefer-Punkt 2).** `a-check.mk` trägt
+- [x] **Pins auf v0.23.2 und v0.86.1 (Liefer-Punkt 2).** `a-check.mk` trägt
       `A_CHECK_IMAGE ?= ghcr.io/pt9912/a-check@sha256:2368f7b3a84f1dc5d075edccfe2201e19947d12fcbc8eaf4df84ef162d94f422`,
       `d-check.mk` `DCHECK_IMAGE ?= ghcr.io/pt9912/d-check:v0.86.1` und
       `DCHECK_DIGEST ?= sha256:3e0b9779a71e2fa942960e8b961428fba036455c535513d34a75bfb799ffce0e`
@@ -242,7 +242,7 @@ Instanz B).
       (gedruckter Digest gleich dem Release-Digest), `make pin-stale-acheck`
       und `make pin-stale-dcheck` ohne `DRIFT` (gedruckte Zeilen; braucht
       Netz), `git show --stat` je Pin-Commit (eine Datei).
-- [ ] **`SPEC-040` gegen v0.86.1 gehalten (Liefer-Punkt 3).** Für jeden Satz
+- [x] **`SPEC-040` gegen v0.86.1 gehalten (Liefer-Punkt 3).** Für jeden Satz
       von
       [`SPEC-040`](../../../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge),
       den eine Version aus Liefer-Punkt 1 berührt, eine Zeile *Satz → gilt
@@ -294,6 +294,9 @@ Aussagen-Berührung steht hier gar nicht.
 | dieser Plan, Tabelle „`SPEC-040` gegen v0.86.1“ | update | Gegenprobe, Anschluss-Frage, Messung am Werkzeug, Trigger von `ADR-0163` (Liefer-Punkt 3) |
 | `harness/sensors/docs-check.md`, `harness/sensors/a-check.md` | update, nur falls der Suchlauf dort eine bewegte Eigenschaft findet | Träger-Nachzug ([`AGENTS.md`](../../../../AGENTS.md) §3.13); der Vertrag verweist auf die Festlegung, statt sie zu doppeln (`BEO-PGC/vertrag-doppelt-die-festlegung`, §8) |
 | `docs/plan/planning/open/slice-spec-festlegungen-code-gates.md` §6 | update (mit diesem Plan committet) | Übergabe-Zeile „Werkzeug-Stand der a-check-Festlegung“ (§1 Abgrenzung) |
+| `spec/pflichtenheft.md` §7 | **nicht realisiert** (Implementer) | `SPEC-040` und `SPEC-039` gelten gegen v0.86.1 unverändert (Abschnitt „`SPEC-040` gegen v0.86.1“); keine Historie-Zeile |
+| `harness/sensors/docs-check.md`, `harness/sensors/a-check.md` | **nicht realisiert** (Implementer) | der Suchlauf findet dort keine bewegte Eigenschaft (Ergebnis am Stand `diff`) |
+| dieser Plan, Tabelle „`SPEC-040` gegen v0.86.1“ | im Commit des Reichweiten-Abschnitts (Implementer) | die Messung lief vor den Pin-Commits; Ansatz Schritt 5 trägt danach nur den Suchlauf und die Häkchen |
 
 **Ansatz — Commit-Folge:**
 
@@ -336,6 +339,15 @@ da913c16 0 -n 'v0\.86\.1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/
 da913c16 39 -n 'SPEC-040' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 da913c16 6 -nE 'Datei\(en\) geprüft' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 da913c16 35 -n 'Index-Digest' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 1 -n 'e8208764' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 2 -n '2368f7b3' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 18 -n 'v0\.82\.0' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 2 -n 'd28e9437' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 1 -n '3e0b9779' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 1 -n 'v0\.86\.1' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 39 -n 'SPEC-040' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 6 -nE 'Datei\(en\) geprüft' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
+diff 36 -n 'Index-Digest' -- . ':(exclude).harness/baseline/**' ':(exclude)docs/reviews/**' ':(exclude)docs/plan/planning/done/**'
 ```
 
 Verteilung (gemessen, `git grep … | cut -d: -f2 | sort | uniq -c`): Zeile 1 —
@@ -355,6 +367,25 @@ gemessen): Zeile 1 → 1 (die Übergabe-Zeile in
 3 → 18, Zeile 4 → 2, Zeile 5 → 1 und Zeile 6 → 1 (`d-check.mk`); Zeile 7 bis 9
 nach dem Ergebnis von Liefer-Punkt 3. Die `diff`-Zeilen trägt der Implementer
 nach, jede Abweichung mit Grund.
+
+**Ergebnis am Stand `diff`** (Implementer, nach dem Pin-Commit d-check,
+Verteilung mit `git grep … | cut -d: -f1 | sort | uniq -c`, Plan-Datei
+ausgeschlossen): Zeilen 1 bis 6 wie erwartet — Zeile 1 nur
+`slice-spec-festlegungen-code-gates`, Zeile 2 `a-check.mk` und dieselbe Datei,
+Zeile 3 die Accepted-ADRs 0160 (7), 0161 (2), 0162 (3), 0163 (3), zwei
+Evidence-Dateien und `slice-harness-gate-index-werkzeug-teile` (Untergrenze),
+Zeile 4 ADR 0160 und 0161, Zeilen 5 und 6 nur `d-check.mk`. Zeile 7 und 8
+unverändert (39, 6): `SPEC-040` gilt unverändert, kein Nachzug. Zeile 9 steht
+bei 36 statt 35: der Zuwachs ist die Übergabe-Zeile in
+`slice-spec-festlegungen-code-gates` §6, die mit diesem Plan committet wurde
+(`6884fb6b`), nicht ein Träger dieser Arbeit. **Gefunden, nicht nachgezogen:**
+keine Fundstelle verlangt einen Nachzug — die Nennungen in den Accepted-ADRs
+und den Evidence-Dateien sind Stand-Angaben ihres Zeitpunkts (§1 Abgrenzung),
+`harness/sensors/docs-check.md` trägt Summenzeile und Messungen mit Herkunft
+(„gemessen in …“, „seit slice-dcheck-v0-82-0“), keinen Stand-Pin.
+`harness/sensors/a-check.md` nennt keinen Stand. **Nicht gefunden:** keine
+weitere Nennung eines der beiden Stände außerhalb von `a-check.mk` und
+`d-check.mk`.
 
 ### Reichweite a-check v0.21.0–v0.23.2 und d-check v0.83.0–v0.86.1 — Belege
 
@@ -602,6 +633,32 @@ und Spitze (`Range-Leerfall … benennen denselben Commit`) und bei der
 umgekehrten Range (`Range-Leerfall … 0 Commits`), Exit 2 bei nicht
 auflösbarer Basis, Exit 0 in einer nicht leeren Range ohne MR-Commit, Exit 2
 mit `core-drift-vcs` um den Form- und den Umzugs-Commit (Tabelle oben).
+
+### Pin-Commits — Belege
+
+Beleg zu Liefer-Punkt 1 (Reihenfolge) und 2; gemessen vom Implementer am
+2026-10-10 am Arbeitsbaum. `git log --oneline d496d0ee..17611a23`:
+
+```text
+17611a23 chore(harness): d-check auf v0.86.1 gepinnt, Index-Digest 3e0b9779 (ADR-0051, ADR-0163)
+0845d926 chore(harness): a-check auf v0.23.2 gepinnt, Index-Digest 2368f7b3 (ADR-0051, ADR-0041)
+05c14aac docs(plan): Reichweite a-check v0.21.0-v0.23.2 und d-check v0.83.0-v0.86.1 vor den Pin-Commits gemessen (ADR-0051, ADR-0163)
+```
+
+- `git show --stat 0845d926` → `a-check.mk | 2 +-`, `1 file changed`;
+  `git show --stat 17611a23` → `d-check.mk | 4 ++--`, `1 file changed`.
+- Nach `0845d926`: `make a-check` Exit 0, `gesamt: 0 Befund(e)`;
+  `make pin-stale-acheck` Exit 0,
+  `OK          A_CHECK_IMAGE (ghcr.io/pt9912/a-check:latest) == sha256:2368f7b3a84f1dc5d075edccfe2201e19947d12fcbc8eaf4df84ef162d94f422`.
+- Nach `17611a23`: `make docs-check` Exit 0,
+  `d-check: 1848 Datei(en) geprüft, 0 Befund(e)`; `make pin-stale-dcheck`
+  Exit 0, `OK          DCHECK_DIGEST (ghcr.io/pt9912/d-check:v0.86.1) == sha256:3e0b9779a71e2fa942960e8b961428fba036455c535513d34a75bfb799ffce0e`
+  und `OK          DCHECK_IMAGE Tag-Frische (v0.86.1) == neuester Release`.
+  Kein `DRIFT`, kein `UNBESTIMMT`: der Freshness-Vergleich trägt den
+  Index-Digest (Risiko 4 aus §6).
+- Kommentare in `a-check.mk` und `d-check.mk`, die einen Stand nennen: keine
+  (`grep -n 'v0\.' a-check.mk` → kein Treffer; in `d-check.mk` nur Zeile 6,
+  der Pin selbst).
 
 ## 4. Trigger
 
