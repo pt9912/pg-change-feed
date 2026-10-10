@@ -331,7 +331,7 @@ steht mit E und Grund.
 | B4 | Klasse `slice` eng gefasst, `*` quert kein `/` | E — Wert der Eingabe; S das Token nur mit Nummer (M12) |
 | B5 | Klasse `welle` für die Abgrenzung | E — Wert der Eingabe |
 | B6 | keine Regel `slice`/`welle` → `review` | S |
-| B7 | `status.forbidden`, `allow-supersede-lineage`, `supersede-fields` | S |
+| B7 | `status.forbidden`, `allow-supersede-lineage`, `supersede-fields` | S — `matrix-inactive` nur an einem Link zwischen Dateien einer Klasse, ein Token ist kein Treffer, eine Datei ohne Klasse ist weder Quelle noch Ziel (M32; `docs/reviews/architect-verdict-matrix-inactive-nur-link.md`, `037a9d32`, Messungen T1, T2, L1–L7, Z1, Z2) |
 | B8 | `matrix.exempt-paths`: Alt-ADRs, `docs/reviews`, `welle-3-results` | S — die Datei ist als Quelle ganz ausgenommen, als Ziel nicht (M16; [`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md) Entscheidung 3); E die Gründe |
 | B9 | `versions`: Pin trägt die Version aus `current-from` | S |
 | B10 | `versions.exempt-paths`: Records, ADRs, MR-Einträge, pfadgebunden; nur `versions`, `links`/`anchors` weiter | S |
@@ -357,7 +357,7 @@ steht mit E und Grund.
 | C14 | 0094: Klasse `review`, Regel adr → review, Token fängt Pfad ohne Link | S (Link oder Token, M14) |
 | C15 | 0094: kein Provenance-Marker-Escape für adr → review | S — in diesem Absatz abgelöst: der Marker hebt den Token-Befund jeder Regel auf, ein Link bleibt ein Befund (M13, M15; `ADR-0163` Entscheidung 2) |
 | C16 | 0094: die Regel prüft eine Adresse, nicht die Semantik einer Umformulierung | E — Review-Prüfpflicht, kein Werkzeug |
-| C17 | 0095: `docs/reviews/*.md` nur von der Status-Prüfung ausgenommen, Regel adr → review bleibt scharf | S — als Quelle ganz ausgenommen, als Ziel Gegenstand der Regel (M14, M16); für `docs/reviews/*.md` deckt der Wortlaut die Wirkung, weil keine Regel `review` als Quelle hat (`ADR-0163` Entscheidung 3) |
+| C17 | 0095: `docs/reviews/*.md` nur von der Status-Prüfung ausgenommen, Regel adr → review bleibt scharf | S — als Quelle ganz ausgenommen, als Ziel Gegenstand der Regel (M14, M16); für `docs/reviews/*.md` deckt der Wortlaut die Wirkung, weil keine Regel `review` als Quelle hat (`ADR-0163` Entscheidung 3). Der Satz in §Kontext über die „ausgehenden Token“ ist keine Entscheidung und bleibt als Geschichte; die Status-Prüfung liest nur Links (Architect-Verdikt `architect-verdict-matrix-inactive-nur-link`, §1) |
 | C18 | 0097: Klasse `observation`, Regel observation → review | S (Regel der Eingabe, Befund `matrix-forbidden`) |
 | C19 | 0099: keine Regel slice/welle → review, Klasse `welle` bleibt | S |
 | C20 | 0156 E1, E2: `done/**` von `versions` ausgenommen, `links`/`anchors` ohne Ausnahme | S |
@@ -464,8 +464,11 @@ Commit `72e57998`; 5 HIGH, 3 MEDIUM, 2 LOW, 2 INFO):
   Treffer, das Ziel des Links prüft der Lauf nicht; der Satz „das erste Muster
   gilt …“ ist gestrichen (M25, M26). B2 und Anschluss-Frage nachgezogen.
 - **F-3 (HIGH), angehalten.** Frage an den Architect in §6 (`ADR-0095`
-  §Kontext sagt Tokens zu, das Werkzeug meldet nur Links, M32); die Zeile in
-  `SPEC-040` ist unverändert.
+  §Kontext sagt Tokens zu, das Werkzeug meldet nur Links, M32). **Danach
+  erledigt** nach dem Architect-Verdikt
+  `architect-verdict-matrix-inactive-nur-link` (`037a9d32`), Wortlaut aus
+  dessen §3 in `SPEC-040` (Zeile `matrix-inactive`, Randformen, Historie) und
+  im Vertrag (Grenze 12).
 - **F-4 (HIGH), erledigt.** `SPEC-040` und Vertrag Grenze 9 nach M27 bis M30:
   umbrochener Linktext kein Befund, umbrochenes Ziel ein Befund. Die Aussage
   aus `slice-077` steht nicht mehr als Messung da (A25, A26).
@@ -638,6 +641,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   ist deshalb **nicht** umgeschrieben ([`AGENTS.md`](../../../../AGENTS.md)
   §3.5); der Architect entscheidet, ob die Festlegung auf „Link aus einer
   Datei einer Klasse“ geht und wie mit dem Satz in `ADR-0095` umzugehen ist.
+  **Ausgang: entfallen** — Grund: Architect-Verdikt
+  `docs/reviews/architect-verdict-matrix-inactive-nur-link.md` (`037a9d32`):
+  die Festlegung hat falsch behauptet, `matrix-inactive` meldet nur einen Link
+  zwischen Dateien einer Klasse; keine Folge-ADR, `ADR-0095` bleibt
+  unverändert. Die Zeile in `SPEC-040`, der Satz in den Randformen, die
+  Historie-Zeile und Grenze 12 des Vertrags tragen den Wortlaut aus §3 des
+  Verdikts.
 
 ## 7. Closure-Notiz
 

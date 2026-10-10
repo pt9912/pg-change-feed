@@ -156,17 +156,22 @@ Schwester-Artefakt wird als blankes Repo-Wort mit relativem Pfad zitiert
     gemessen vom Verifier an einem Klon mit einer dritten Tabelle, Spalte
     `Macht was`, 300 Zeichen) · seit slice-harness-readme-zellen-kuerzen.
 
-12. **`matrix` — zwei angenommene Lücken und der Fence.** Der Kommentar
-    `<!-- d-check:status-provenance -->` hebt einen Token-Befund auch in
-    `spec/` auf, auch wenn er selbst in Inline-Code steht; dort ist er kein
-    zulässiger Weg, und das Grün zeigt ihn nicht. Die ADRs 0039 und 0041 stehen unter `matrix.exempt-paths` und sind
-    damit auch von den Regeln `adr → slice` und `adr → review` ausgenommen.
-    Ein Token in einem Fence ist für `matrix` kein Treffer. Die Wirkung steht
-    in
+12. **`matrix` — zwei angenommene Lücken, der Fence und der Status nur am
+    Link.** Der Kommentar `<!-- d-check:status-provenance -->` hebt einen
+    Token-Befund auch in `spec/` auf, auch wenn er selbst in Inline-Code
+    steht; dort ist er kein zulässiger Weg, und das Grün zeigt ihn nicht. Die
+    ADRs 0039 und 0041 stehen unter `matrix.exempt-paths` und sind damit auch
+    von den Regeln `adr → slice` und `adr → review` ausgenommen. Ein Token in
+    einem Fence ist für `matrix` kein Treffer. `matrix-inactive` meldet nur
+    einen Link zwischen zwei Dateien, die einer Klasse angehören. Eine Kennung
+    einer abgelösten ADR im Text und ein Link aus `AGENTS.md`, `README.md` oder
+    `harness/**` auf eine abgelöste ADR bleiben grün; der Wächter ist das
+    Review. Die Wirkung steht in
     [`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge),
     die Annahme der zwei Lücken in
     [`ADR-0163`](../../docs/plan/adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md)
-    Entscheidung 2 und 3; der Wächter ist das Review jeder Spec-Änderung bzw.
+    Entscheidung 2 und 3, die Lesung von `matrix-inactive` im
+    [Architect-Verdikt](../../docs/reviews/architect-verdict-matrix-inactive-nur-link.md); der Wächter ist das Review jeder Spec-Änderung bzw.
     jeder Zitat-Korrektur an den zwei ADRs, kein Gate.
 
 **Wie groß der Ausschnitt ist, sagt das Kommando, nicht diese Datei:**
