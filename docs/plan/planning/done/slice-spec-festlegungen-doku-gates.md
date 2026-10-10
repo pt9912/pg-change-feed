@@ -192,7 +192,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -893,7 +893,31 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   Repo legt kein `done/slice-<Kennung>-archiv.zip` an (`ls
   docs/plan/planning/done/*.zip`: kein Treffer); der Plan bleibt flach in
   `done/`.
-- **Drei Paarungen:** nach dem `git mv` gemessen (unten nachgetragen).
+- **Drei Paarungen:** nach dem `git mv` (`31f18e85`) gemessen — (a) *Anker:*
+  der Steering-Loop-Eintrag trägt kein Feld `liegt in` (mit diesem Slice ist
+  nichts verkörpert), kein Gegenstand der Paarung; die benannte Spec-Lücke
+  hat ihr Gegenstück in den Folge-Slices unter (b). (b) *Folge-Slice:* die
+  fünf `slice-spec-festlegungen-*` (commit-baseline-, kennungs-, code-,
+  coverage-gates, pruefer-hooks) existieren in `open/` (`ls`), und jede trägt
+  die Marker-Messung aus F-9 (`git grep -c 'grep -cE'` je Plan: 1). (c)
+  *Register:* die genannten Verzeichnisse existieren, jedes mit nicht leerem
+  `evidence/` (`ls evidence | wc -l`): `mechanismus-erklaerung-ohne-werkzeugbeleg`
+  4, `inplace-textwerkzeug-am-repo-trotz-nutzerregel` 13,
+  `beleg-befehl-traegt-seinen-satz-nicht` 26,
+  `nachzug-laesst-ueberholten-text-stehen` 27,
+  `messwerkzeug-grenze-unbenannt-fail-open` 2,
+  `vertrag-doppelt-die-festlegung` 2, `arbeit-ueberholt-stehenden-traeger` 34,
+  `dod-begruendung-unzutreffende-tatsachenbehauptung` 13,
+  `zahl-in-traeger-driftet-gegen-die-messung` 30,
+  `vorab-bedingung-nach-umsetzung-geprueft` 2,
+  `rollen-uebergabe-ohne-committetes-artefakt` 2,
+  `unclosed-backtick-taeuscht-nackte-id-vor` 1,
+  `bindung-spalte-uneinheitlich-tief` 1, `gate-prueft-existenz-nicht-passung` 2.
+  Ergebnis: getragen. Durch den Move brach kein Verweis (`git grep -n
+  'in-progress/slice-spec-festlegungen-doku-gates'` außerhalb von
+  `docs/reviews/`: kein Treffer; der eine Treffer im Verifikationsbericht ist
+  ein Befehl in Inline-Code eines Records). Der Ruhe-Marker der Roadmap steht
+  wieder, Wortlaut gleich `cffa45be`; `in-progress/` trägt nur `roadmap.md`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
