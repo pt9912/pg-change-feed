@@ -124,7 +124,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Ziel-Form: Slice — **≤ 3 Liefer-Punkte**. Alle Beleg-Angaben sind **Zusagen**
 („zu belegen durch …“).
 
-- [ ] **Festlegung in §7 (Liefer-Punkt 1).** `spec/pflichtenheft.md` §7 trägt
+- [x] **Festlegung in §7 (Liefer-Punkt 1).** `spec/pflichtenheft.md` §7 trägt
       eine Zeile mit eigener `SPEC-<NNN>` für `make docs-check`: je Modul der
       Liste `modules:` in `.d-check.yml` (links, anchors, ids, matrix,
       versions, structure, hostpaths, tracked) was als Treffer gilt, samt der
@@ -132,11 +132,26 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       (R9). *Zu belegen durch:* Gegenprobe der Quellen und Anschluss-Frage
       (§3), Suchlauf ([`AGENTS.md`](../../../../AGENTS.md) §3.13) und
       `make docs-check` Exit 0.
-- [ ] **Vertrag und Index verweisen (Liefer-Punkt 2).**
+      *Beleg:* Kennung `SPEC-040` (nächste freie: `git grep -ohE 'SPEC-[0-9]{3}'`
+      am Stand `942ebf3f` endet bei `SPEC-039`), Commit `9e43f968`; Tabelle,
+      Absätze „Zu `SPEC-040` — …“ und Historie-Zeile wie beim Pilot.
+      Gegenprobe (76 Zeilen), Anschluss-Frage und Messungen M0 bis M23 in §3;
+      Suchlauf in §3, `make suchlauf-nachmessen` Exit 0
+      („16 Zeilen stimmen“); `make docs-check` am Arbeitsbaum nach `9e43f968`
+      mit diesem Plan: Exit 0, `d-check: 1830 Datei(en) geprüft, 0 Befund(e)`.
+      Drei Befunde ohne Quelle stehen als Frage an den Architect in §6, nicht in
+      der Festlegung.
+- [x] **Vertrag und Index verweisen (Liefer-Punkt 2).**
       `harness/sensors/docs-check.md` nennt die Kennung der Festlegung und
       trägt Schwelle und Randform nicht mehr selbst (R2, R7, T8); die Zeile
       `make docs-check` in `harness/README.md` §Sensors trägt die Bindung
       „Spec-Kennung“ (T6).
+      *Beleg:* Commit `9e43f968`. Der Vertrag verweist in §Vertrag („Wer was
+      trägt“), §Grenze 8, 9, 11, §Ausgabe und §Bindung auf `SPEC-040`; die
+      Grund-Codes, die Zellgrenzen 220/120 und die Exit-Tabelle stehen nicht
+      mehr in ihm (Suchlauf: `höchstens (220|120)` und „Deklaration dieses
+      Vertrags“ im Vertrag 0). `harness/README.md` Zeile `make docs-check`,
+      Spalte Bindung: Vertragsdatei · `SPEC-040`.
 - [ ] **Bedingung vor der Closure — `Schärft:`-Kante.** Eine Architect-ADR
       (Rollenwechsel, Baseline-Regelwerk `modul-08-agentenrollen.md`) stellt die
       Kante der ADRs aus **Bezug** zur neuen Kennung her, nach dem
@@ -163,7 +178,10 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | `spec/pflichtenheft.md` §7 | update | eine Zeile, `make docs-check` mit acht Modulen (Liefer-Punkt 1) |
 | `harness/sensors/docs-check.md` | update | Verweis statt Schwelle und Randform (Liefer-Punkt 2) |
 | `harness/README.md` §Sensors | update | Bindung „Spec-Kennung“ in der Zeile `make docs-check` (Liefer-Punkt 2) |
-| `docs/plan/adr/<NNNN>-…` und ADR-Index | neu (Architect) | `Schärft:`-Kante (Bedingung vor der Closure) |
+| `docs/plan/adr/<NNNN>-…` und ADR-Index | neu (Architect) | `Schärft:`-Kante (Bedingung vor der Closure) — **offen**, Frage in §6 |
+| `spec/pflichtenheft.md` §8 Historie | update (Plan-Nachzug, Implementer) | eine Zeile für `SPEC-040`, wie der Pilot für `SPEC-038`/`SPEC-039` |
+| `harness/sensors/docs-check.md` §Sperren, §Bindung | update (Plan-Nachzug, Implementer) | Sperren je mit „was zu tun ist“ (Vorlage `gate.template.md`), zweite Sperre „kein git-Repository im Mount“ (gemessen, M1 unten); Bindung nennt `SPEC-040` und den Herkunfts-Anker der Closure-Notiz-Regel, den der alte Vertrags-Absatz trug |
+| `AGENTS.md` §3.11, `.d-check.yml` Kommentare | **nicht geändert**, mit Grund | Suchlauf unten: §3.11 nennt die Vertragsdatei für „was der Sensor deckt und was nicht“, und das trägt §Grenze Punkt 8 weiter; die Kommentare begründen Werte der Eingabe und bleiben richtig |
 
 Der Suchlauf ([`AGENTS.md`](../../../../AGENTS.md) §3.13) ist beim Start zu
 messen; bewegte Eigenschaft ist der Ort von Schwelle und Randform von
@@ -192,6 +210,206 @@ der Quellen — der Vertrag aus Liefer-Punkt 2, die Kommentare der Blöcke in
 Ausgang und Randfall der neuen Zeilen die Folge für den Anwender (besteht oder
 nicht, welcher Fall gewinnt). Eine Folge, die keine Quelle trägt, entscheidet
 der Architect vor der Closure, nicht eine Lesung im Auftrag.
+
+**Messungen am Werkzeug** (Implementer, d-check-Digest aus `d-check.mk`,
+`docker run --rm --network none -v <Baum>:/repo:ro <Digest>` direkt, ohne
+`make`, außer wo genannt). M0 lief an einer `git archive`-Kopie ohne `.git` im
+Scratchpad; M1 lief versehentlich am Arbeitsbaum (`942ebf3f`), die Mutationen
+sind mit `git checkout` zurückgesetzt (`git status` danach leer); M2 bis M23
+liefen an einem Klon von `942ebf3f` im Scratchpad, je Mutation einzeln, danach
+`git checkout -- .`. Gedruckt ist der Grund-Code bzw. die Schlusszeile.
+
+| # | Mutation | Ergebnis |
+|---|---|---|
+| M0 | Baum ohne `.git` | Exit 2, `d-check: error: kein lesbares git-Repository unter /repo` |
+| M1a | Link auf eine fehlende Datei | Exit 1, `target-missing`, `1 Befund(e)`; über `make docs-check` Exit 2 |
+| M1b | unbekannter Schlüssel in `.d-check.yml` | Exit 2, `d-check: error: .d-check.yml: yaml: unmarshal errors` |
+| M2 | `require-pattern` der §7-Regel fehlt | Exit 1, `section-pattern-missing` |
+| M3 | offene Aufgabe `- [ ]` in §7 | Exit 1, `section-tasks-open` |
+| M4 | §7 leer | Exit 1, `section-empty` (und `section-pattern-missing`) |
+| M5 | Kopfzelle `Titel` im ADR-Index umbenannt | Exit 1, `section-column-missing` („keine Tabelle des Abschnitts trägt eine Kopfzelle“) |
+| M6 | Überschrift „3. Defaults und Konstanten“ umbenannt | Exit 1, `section-missing` („kein Abschnitt passt auf den Selektor“) |
+| M7 | Kennung in Inline-Code ohne Link | Exit 0 |
+| M8 | Kennung nackt in Prosa | Exit 1, `id-unlinked` |
+| M9 | Kennung mit `<!-- d-check:ignore -->` in der Zeile | Exit 0 |
+| M10 | ADR-Kennung in Inline-Code in der Architektur-Sicht | Exit 1, `matrix-forbidden` (Token) |
+| M11 | Link aus der Architektur-Sicht in das ADR-Verzeichnis | Exit 1, `matrix-forbidden` |
+| M12 | `slice-099` und `slice-abc-name` in der Architektur-Sicht | Exit 1, `matrix-forbidden` nur für `slice-099` |
+| M13 | M10 mit `<!-- d-check:status-provenance -->` in der Zeile | Exit 0 (Befund, §6) |
+| M14 | Token `docs/reviews/…` in einer ADR | Exit 1, `matrix-forbidden` adr → review |
+| M15 | M14 mit `<!-- d-check:status-provenance -->` | Exit 0 (Befund, §6) |
+| M16 | `slice-099` in der ADR 0039 (unter `matrix.exempt-paths`) | Exit 0 (Befund, §6) |
+| M17 | Link auf ein fehlendes Heading und auf eine HTML-`id` | Exit 1, `anchor-missing` nur für das fehlende Heading |
+| M18 | Link mit URL-Schema auf ein Ziel, das es nicht gibt | Exit 0 |
+| M19 | `~/<Verzeichnis>/x` in Inline-Code | Exit 1, `hostpath-forbidden` |
+| M20 | Tilde in URL, `~/.config/x`, nackte Tilde, `~<Benutzer>/x` | Exit 0 |
+| M21 | M19 mit `<!-- d-check:ignore -->` | Exit 1, `hostpath-forbidden` |
+| M22 | Pfad in die vendored Baseline mit dem Tag `v6.14.0` in Inline-Code | Exit 1, `version-stale` |
+| M23 | M22 mit `<!-- d-check:ignore -->` | Exit 0 |
+
+**Gegenprobe der Quellen** (Implementer). Ausgänge: **S** = steht in
+`SPEC-040` · **V** = bleibt im Vertrag (Grund) · **E** = entfällt (Grund).
+Quellen: der Vertrag am Stand `942ebf3f` (A), die Kommentare der Modul-Blöcke
+in `.d-check.yml` (B), die Entscheidungen der ADRs aus **Bezug** (C). Ein Satz
+ohne Wirkung auf das Werkzeug (Begründung, Verfahren, einmaliger Vorgang)
+steht mit E und Grund.
+
+| # | Satz der Quelle | Ausgang |
+|---|---|---|
+| A1 | Vertrag: je Klasse ein Grund-Code (`target-missing`, `anchor-missing`, `id-unlinked`, `matrix-forbidden`/`-inactive`, `version-stale`, `section-cell-*`, `section-forbidden`, `hostpath-forbidden`) | S (Tabelle „Befund je Modul“, ergänzt um die gemessenen `structure`-Codes M2 bis M6 und `target-untracked`); V nur die Klassen als Satz |
+| A2 | Schwester-Artefakt als blankes Repo-Wort | V — Zitierregel der Doku, kein Prüfgegenstand; das Modul meldet den Pfad, nicht die Form |
+| A3 | Module und Grenzen in `.d-check.yml`, Konfiguration ist Deklaration des Vertrags | S umformuliert: `.d-check.yml` ist die Eingabe, die Festlegung sagt, was ein Modul daraus als Befund meldet |
+| A4 | Trägerdateien der `structure`-Regeln | S („Die Regeln gelten …“) |
+| A5 | Closure-Notiz-Regel `seit slice-001` | V — Herkunfts-Anker, in §Bindung (die Spec trägt keine Slice-Kennung) |
+| A6 | Gate-Index: `Vertrag` ≤ 220, `Tut was` ≤ 120, beide ≥ 1 | E — Werte der Eingabe (`.d-check.yml`); die Regelart (Zelle unter Mindest-/über Höchstlänge) steht in S |
+| A7 | die Regel misst beide Tabellen, Spalte über den Kopfzeilen-Namen | S |
+| A8 | `seit slice-harness-readme-zellen-kuerzen` | V (Grenze 11) |
+| A9 | Tabellen-Regeln über Mindestbreiten, Gate-Index über Mindest- und Höchstlänge, drei Regeln ohne Spalten-Knoten | S als Regelarten (Tabelle · Muster · Inhalt); E die Zuordnung je Regel — Werte der Eingabe |
+| A10 | Keine Regel zählt Zeilen | S |
+| A11 | Grenze 1: keine Richtung innerhalb der Spec, Review-Prüfpflicht | V; S „Innerhalb der Spec-Straten gibt es keine Regel“ |
+| A12 | Grenze 2: `codepaths` aus | V; S (Fläche) |
+| A13 | Grenze 3: Opt-in-Module nur über `doc-*`; `tracked` im Bündel | V; S „es laufen genau die Module der Liste“ |
+| A14 | Grenze 4: `MR-*` nicht linkpflichtig, `tracked` prüft Getrackt-Status | V; S (Kennung ohne Muster) |
+| A15 | Grenze 5: `.harness/**`, `**/*.template.md` ausgenommen | V; S (Fläche, `scan.ignore`) |
+| A16 | Grenze 6: Verweisform als Textform, bereinigter Text, Reference-Style umgeht, `state.md`/`evidence` ohne Überschrift, Nachbar-Klassen | V; S der bereinigte Text (Muster) |
+| A17 | Grenze 7: `ids` prüft Link, nicht Existenz; Inline-Code ungeprüft; kein Modul prüft Symbole; Bash-Hälfte deklariert | V alle vier; S die ersten zwei (Randformen der Verweis-Module) |
+| A18 | Grenze 8: gemeldet werden absolute und Home-relative Pfade (drei Formen) in Prosa und Inline-Code | S (`hostpaths`) |
+| A19 | Grenze 8: Tilde mit Benutzername deckt die Regel, das Modul nicht | V; S (kein Treffer, M20) |
+| A20 | Grenze 8: `~/.config/…`, nackte Tilde, Tilde in URL meldet das Modul nicht | S (M20) |
+| A21 | Grenze 8: Ventil verfügbar, nicht gesetzt | V; S („ausgenommen ist nichts“) |
+| A22 | Grenze 8: Fence, relative Pfade, Nicht-Markdown, `scan.ignore` ungeprüft | V; S Fence und relativer Pfad |
+| A23 | Grenze 8: Windows-Laufwerks-/UNC-Muster fest | S |
+| A24 | Grenze 8: Regel strenger als Modul, Wächter Review, Träger-ADRs, kein Ausschlussblock | V |
+| A25 | Grenze 9: mehrzeiliger Link wird nicht gemeldet | S; V verkürzt (Messung `slice-077`, neun Links, Wächter Review) |
+| A26 | Grenze 9: einzeilig rot, zweizeilig grün (Exit 0) | E — Messprotokoll; die Zusage steht in S |
+| A27 | Grenze 10: `trace:` kein Modul, RTM advisory | V; S („`trace:` ist kein Modul“) |
+| A28 | Grenze 11: misst Länge, nicht Satz; `Bindung` ohne Höchstlänge | V |
+| A29 | Grenze 11: Tabelle mit anderem Spaltennamen fällt aus der Regel; umbenannte Kopfzelle → `section-column-missing` | S (M5); V Verweis |
+| A30 | Grenze 11: 121/222 Zeichen → `section-cell-oversized` „(Exit 2)“, leer → `-undersized`, 120 grün | E — Messprotokoll der Werte; die Regel steht in S, „Exit 2“ ist der Exit von `make` (S, Ausgänge; M1a) |
+| A31 | Ausschnitt: Vollständigkeits-Zeile sagt etwas über den Ausschnitt | V; S (Ausgänge) |
+| A32 | Exit 0/1/2 | S |
+| A33 | `make doc-repair`, `make doc-doctor` | V |
+| A34 | Sperre: Config-Fehler → Exit 2, kein stiller Rückfall | S; V als Sperre mit Abhilfe |
+| A35 | `make doc-tracked` | V |
+| A36 | Bindung | V, ergänzt um `SPEC-040` |
+| B1 | `scan.ignore`: `.harness/**` ist tool-interne Ablage | S der Glob; E der Grund (Kommentar der Eingabe) |
+| B2 | `ids`: je Stratum ein Muster, `.a`-Muster vor dem Basismuster | S (erstes Muster gilt) |
+| B3 | `matrix`: Decken-Regel; `no-downward` nicht gesetzt, Delegation des Lastenhefts | S die Wirkung; E die Begründung (Kommentar) |
+| B4 | Klasse `slice` eng gefasst, `*` quert kein `/` | E — Wert der Eingabe; S das Token nur mit Nummer (M12) |
+| B5 | Klasse `welle` für die Abgrenzung | E — Wert der Eingabe |
+| B6 | keine Regel `slice`/`welle` → `review` | S |
+| B7 | `status.forbidden`, `allow-supersede-lineage`, `supersede-fields` | S |
+| B8 | `matrix.exempt-paths`: Alt-ADRs, `docs/reviews`, `welle-3-results` | S die Wirkung auf die Status-Prüfung und als Ziel; E die Gründe; Befund M16 (§6) |
+| B9 | `versions`: Pin trägt die Version aus `current-from` | S |
+| B10 | `versions.exempt-paths`: Records, ADRs, MR-Einträge, pfadgebunden; nur `versions`, `links`/`anchors` weiter | S |
+| B11 | `structure`: Spalte über Kopfzeilen-Namen, Zell-Länge wie dargestellt inkl. Markdown-Syntax | S |
+| B12 | Gate-Index-Regel und ihre Grenze | S; V (Grenze 11) |
+| B13 | §7-Regel: aktiviert mit der ersten Closure, `forbid-pattern` gegen Vorlagenrest | S die Regel; V der Anker; E der Grund |
+| B14 | Verweisform-Regeln samt vier Grenzen | S (bereinigter Text); V Grenze 6 |
+| B15 | E2E-Regel: Mindestbreiten, kein Maximum, Link trägt `ids`, rotet bei fehlender Datei | S (`section-missing` „keine Datei“); V Grenze 7 |
+| B16 | `tracked`: existierendes, nicht getracktes Ziel; `exempt-targets: []` | S |
+| C1 | 0072 E1: Aktivierung als Entscheidung mit Träger | E — Grund der Aktivierung, kein Prüfverhalten |
+| C2 | 0072 E2: kein `scope`, kein `exempt-paths`, kein Zeilen-Marker; `ids`/`versions` kennen `d-check:ignore`, `hostpaths` nicht; Geltungsbereich globaler Scan | S (M9, M21, M23; „ausgenommen ist nichts“) |
+| C3 | 0072 E2: ein nicht korrigierbarer Befund braucht eine Folge-ADR | E — Verfahren, kein Werkzeug |
+| C4 | 0072 E3: Zitationsform besitzer-qualifiziert | E — abgelöst durch 0074 |
+| C5 | 0072 E4, E5: 31 Stellen korrigieren, §3.11-Entwurf | E — einmaliger Vorgang bzw. Regel in `AGENTS.md` §3.11 |
+| C6 | 0072 Config-Block: `hostpaths` in `modules:`, kein `hostpaths:`-Knoten | S |
+| C7 | 0072 Entwurf §3.11 „Was der Sensor deckt“ | E — abgelöst durch 0075 E2 und 0160 E3; die geltende Fassung steht in S |
+| C8 | 0072 §3.11-Entwurf: „Modul-Semantik steht einmal in `harness/sensors/docs-check.md`“ | E — überholt durch diesen Slice; Träger ist eine `Accepted`-ADR, gemeldet (Suchlauf) |
+| C9 | 0074 E1–E3: Hausform, Link-Variante, Rest aus 0072 bleibt | V (A2) |
+| C10 | 0075 E1: Regel deckt Fences, Sensor nicht | S (Fence kein Treffer); V Grenze 8 |
+| C11 | 0075 E2, E3: Fassung 2, Lokator-Disposition | E — abgelöst durch 0160 E3 bzw. kein Werkzeug |
+| C12 | 0160 E3: Gegenstand der Regel und Ausnahmen | S die Modul-Hälfte („Was der Sensor deckt“, Fassung 3); E die Regel-Hälfte (`AGENTS.md` §3.11) |
+| C13 | 0160 E4: Ventil `hostpaths.exempt-targets` ungenutzt | S |
+| C14 | 0094: Klasse `review`, Regel adr → review, Token fängt Pfad ohne Link | S (Link oder Token, M14) |
+| C15 | 0094: kein Provenance-Marker-Escape für adr → review | **offen** — das Werkzeug lässt den Marker gelten (M15); Frage an den Architect (§6), nicht in S |
+| C16 | 0094: die Regel prüft eine Adresse, nicht die Semantik einer Umformulierung | E — Review-Prüfpflicht, kein Werkzeug |
+| C17 | 0095: `docs/reviews/*.md` nur von der Status-Prüfung ausgenommen, Regel adr → review bleibt scharf | S (Status und als Ziel); Befund M16 (§6) |
+| C18 | 0097: Klasse `observation`, Regel observation → review | S (Regel der Eingabe, Befund `matrix-forbidden`) |
+| C19 | 0099: keine Regel slice/welle → review, Klasse `welle` bleibt | S |
+| C20 | 0156 E1, E2: `done/**` von `versions` ausgenommen, `links`/`anchors` ohne Ausnahme | S |
+| C21 | 0156 E3, E4: Form-Korrektur eines Links in ein altes Tag | E — Doku-Verfahren (Zitat-Korrektur), kein Werkzeug |
+| C22 | 0161 E2: ADRs und MR-Einträge von `versions` ausgenommen, pfadgebunden, Index bleibt geprüft | S |
+| C23 | 0161 E3: `links`/`anchors` ohne Ausnahme, Form-Korrektur | S der erste Teil; E die Form-Korrektur (Verfahren) |
+| C24 | 0161 E7: was ein Bump nachzieht; `versions` prüft alle `.md` unter `scan.roots`; Symlinks und `.harness/skills/**` liest es nicht | S `scan.roots`/`scan.ignore`; E die Liste des Bumps (Träger `harness/targets/pin-stale.md`) |
+
+**Anschluss-Frage** (je Ausgang und Randfall die Folge für den Anwender):
+
+| Fall | Folge |
+|---|---|
+| Befund und Fehler über `make` | beide Exit 2 von `make`; es gilt die Schlusszeile (`<M> Befund(e)` oder `d-check: error`), M1a, M1b |
+| Konfigurationsfehler | kein Urteil über die Doku, kein Rückfall auf Defaults; der Lauf prüft nichts (M1b) |
+| Baum ohne `.git` | Exit 2 vor jeder Prüfung (M0); ein `git archive`-Export ist kein prüfbarer Baum |
+| Kennung in zwei Mustern | das erste gilt; `.a`-Verfeinerung verlangt den Link ins Pflichtenheft |
+| Kennung in Inline-Code | `ids` kein Treffer (M7), `matrix` Treffer (M10) — die zwei Module lesen Inline-Code verschieden |
+| `d-check:ignore` | hebt `ids` und `versions` für die Zeile auf (M9, M23), `hostpaths` nicht (M21); `matrix` nicht gemessen |
+| `d-check:status-provenance` | hebt einen Token-Befund von `matrix` auf, auch adr → review (M13, M15) — keine Quelle trägt die Lesung für `review` und `adr` als Ziel; **Architect** (§6) |
+| Datei unter `matrix.exempt-paths` als Quelle | keine Regel greift (M16) — die Quelle 0095 nennt nur die Status-Prüfung; **Architect** (§6) |
+| Tabelle ohne die Spalte vs. Abschnitt ohne die Spalte | erste fällt aus der Regel, zweiter `section-column-missing` (M5) |
+| Regel trifft keinen Abschnitt | `section-missing` (M6), auch wenn die Datei fehlt (B15) |
+
+**Suchlauf** ([`AGENTS.md`](../../../../AGENTS.md) §3.13). Bewegte
+Eigenschaft: der Ort von Befund-Codes, Schwellen und Randformen von
+`make docs-check` (Vertrag → `SPEC-040`). Suchraum: der ganze Baum ohne
+`docs/reviews/**`, `docs/plan/planning/done/**` und `.harness/baseline/**`;
+Parent `942ebf3f`, `diff` ist der Arbeitsbaum nach dem Liefer-Commit.
+
+```suchlauf
+942ebf3f 26 -F 'sensors/docs-check.md' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 26 -F 'sensors/docs-check.md' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+942ebf3f 3 -F 'Modul-Semantik' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 3 -F 'Modul-Semantik' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+942ebf3f 3 -E 'höchstens (220|120)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 2 -E 'höchstens (220|120)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+942ebf3f 1 -F 'Deklaration dieses Vertrags' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 0 -F 'Deklaration dieses Vertrags' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+942ebf3f 9 -F 'hostpath-forbidden' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 8 -F 'hostpath-forbidden' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+942ebf3f 2 -E 'acht (docs-check-)?Module' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 5 -E 'acht (docs-check-)?Module' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+942ebf3f 15 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 22 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+942ebf3f 0 -F 'SPEC-040' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 15 -F 'SPEC-040' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+```
+
+Gefunden: `harness/sensors/docs-check.md` nennen 26 Zeilen; bewegt hat sich
+keine, weil die Abschnitte des Vertrags und die Nummern von §Grenze bleiben —
+`AGENTS.md` §3.11 („was der Sensor deckt und was nicht, führt
+`harness/sensors/docs-check.md` aus seiner Sicht“) bleibt wahr, Punkt 8 trägt
+die Lücken zwischen Regel und Modul weiter und verweist für die Formen auf
+`SPEC-040`; die Zustandsfelder im Register und `harness/targets/doc-trace.md`
+zeigen auf §Grenze (Punkte 8 und 10 bleiben). „Modul-Semantik“ dreimal in
+`Accepted`-ADRs: `ADR-0072` Zeile 198 sagt, die Modul-Semantik stehe einmal in
+`harness/sensors/docs-check.md` — das ist mit diesem Slice überholt, die Datei
+ist eingefroren ([`AGENTS.md`](../../../../AGENTS.md) §3.5); **gemeldet** an
+den Architect (Frage in §6), nicht geändert. `ADR-0160` Zeile 252 nennt
+„§Grenze Punkt 8: die Formen nach …“ — die Formen stehen jetzt in `SPEC-040`,
+Punkt 8 verweist dorthin; eingefroren, mit gemeldet. „höchstens 220/120“: die
+Zeile im Vertrag ist entfallen, die übrigen zwei Treffer (`bench-backfill`)
+gehören nicht zur Eigenschaft. „hostpath-forbidden“ 9 → 8: der Vertrag nannte
+den Code zweimal und nennt ihn nicht mehr, `SPEC-040` nennt ihn einmal; die
+übrigen sechs Treffer stehen in `Accepted`-ADRs (Messprotokolle) und bleiben.
+Nicht gefunden: ein
+Träger außerhalb des Vertrags, der die Schwellen 220/120 oder die Exit-Codes
+von `make docs-check` nennt; `.claude/commands/implement-slice.md` („Strenges
+Doc-Gate“) und `.harness/skills/reviewer.md` beschreiben die Module, nicht den
+Ort ihrer Festlegung, und bleiben richtig.
+
+**Umfang gemessen vor dem Schreiben** (Implementer, zur zweiten
+Rückführungs-Bedingung in §4, `BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`).
+Satzenden (`.`, `!`, `?`, `:` gefolgt von Leerraum, ohne Fences) als
+Näherung der normativen Sätze, mit derselben `awk`/`grep`-Zählung je Quelle:
+`docs-check`: Vertrag 103, Kommentare `.d-check.yml` Zeilen 1–305 90,
+Entscheidungen der ADRs 253 (0072 59, 0074 18, 0075 32, 0160 E3/E4 40, 0094
+17, 0095 6, 0097 13, 0099 13, 0156 26, 0161 E2/E3/E7 29) — zusammen 446.
+Pilot am Parent `fcff30ec`: `harness/targets/zitat-vergleich.md` 108,
+Entscheidungen 0158 39, 0159 85, 0160 E1/E2 etwa 37, 0161 E4/E5 etwa 48 —
+zusammen etwa 317. Verhältnis etwa 1,4 (*abgeleitet*), dasselbe wie das
+Zeilen-Verhältnis, das der Planner bei der Rückführung abgewogen hat (§4). Die
+Bedingung ist an dieser Messung **nicht neu eingetreten**; die Gegenprobe
+oben hat 76 Zeilen. Ob sie eine Review-Sitzung übersteigt, sagt der
+Review-Report (zweite Hälfte der Bedingung).
 
 ## 4. Trigger
 
@@ -265,6 +483,14 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   Sammel-ADR für `docs-check` oder eine ADR je Modul die Kante herstellt — und
   ob sie mit der Kante von `slice-spec-festlegungen-commit-baseline-gates`
   zusammengeht —, entscheidet der Architect. *Zu belegen durch:* die ADR.
+  **Stand (Implementer, nach dem Liefer-Commit):** keine ADR liegt vor
+  (`ADR-0162` ist die jüngste, sie schärft `SPEC-038`/`SPEC-039`). Offen für
+  den Architect: (1) die Kante von `ADR-0072`, `ADR-0074`, `ADR-0075`,
+  `ADR-0160` (E3, E4), `ADR-0094`, `ADR-0095`, `ADR-0097`, `ADR-0099`,
+  `ADR-0156` und `ADR-0161` (E2, E3, E7) zu `SPEC-040` — Sammel-ADR oder je
+  Modul; (2) ob dieselbe ADR auch `vcs:`/`make doc-immutable` des Folge-Slice
+  trägt, dessen Festlegung es noch nicht gibt; (3) die drei Befunde der
+  nächsten Zeile.
 - **Umfang auch nach dem Neuschnitt an der Grenze.** `docs-check` allein liegt
   bei etwa 1130 Quellzeilen gegen etwa 790 im Pilot (*übernommen*, §4); der
   Block `structure:` trägt 160 Zeilen (gemessen, §3). *Zu belegen durch:* der
@@ -275,6 +501,20 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   [`ADR-0075`](../../adr/0075-hostpaths-reichweite-und-wortlaut.md) anders
   nennt als der Vertrag). *Zu belegen durch:* Gegenlesen der Festlegung gegen
   Vertrag und ADR-Kette; ein Befund wird ein eigener Slice.
+  **Stand (Implementer):** drei Befunde, gemessen (§3, Messungen), nicht in
+  `SPEC-040` geschrieben, weil die Lesung eine Entscheidung ist
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.5): (a) der Kommentar
+  `<!-- d-check:status-provenance -->` hebt einen Token-Befund von `matrix` auf,
+  auch für adr → review (M15) und spec → adr (M13); `ADR-0094` §Entscheidung
+  schließt den Marker für adr → review aus. (b) Eine Datei unter
+  `matrix.exempt-paths` prüft das Modul als **Quelle** gar nicht, auch nicht auf
+  die Regeln (M16, `slice-099` in der ADR 0039 bleibt grün); `ADR-0095` nennt
+  nur die Status-Prüfung. (c) `ADR-0072` Zeile 198 nennt
+  `harness/sensors/docs-check.md` als einzigen Ort der Modul-Semantik, und
+  `ADR-0160` Zeile 252 die Formen in §Grenze Punkt 8; beide sind eingefroren
+  und mit `SPEC-040` überholt. Ob (a) und (b) ein eigener Slice werden (Werkzeug
+  oder Konfiguration) oder die Festlegung sie aufnimmt, und ob (c) eine
+  Folge-ADR braucht, entscheidet der Architect.
 - **Die Spec darf nicht auf ADRs zeigen** (gemessen im Pilot: `matrix-forbidden`
   für Link und Kennung im Inline-Code). Die Festlegung trägt ihren Inhalt
   selbst. *Zu belegen durch:* `make docs-check` Exit 0.
@@ -326,11 +566,43 @@ Hälften.
 der ADR-Index; die Modus-Deklaration führt nur die Default-Sub-Area `*`
 (Kürzel `PGC`, Greenfield), alle Pfade fallen unter sie.
 
-**Vorgelagert — offene Beobachtungen sichten:** beim Übergang `open → next`
-nachzuholen (gemergter Stand des Registers); bei Anlage gelesen:
+**Vorgelagert — offene Beobachtungen sichten:** bei Anlage gelesen:
 `BEO-PGC/spec-nachzug-laesst-festlegung-fuer-folge-slice-offen` (bei Anlage
 2×, mit `slice-spec-festlegungen-harness-werkzeuge` 3× und verkörpert) trifft
 Liefer-Punkt 1 — eine Festlegung, die eine Randform offen lässt, wäre ein
 Auftreten nach der Verkörperung; Prüfschritt in §3.
+
+Nachgeholt vom Implementer am gemergten Stand `942ebf3f` (alle Einträge unter
+`observations/BEO-PGC/` mit Zustand `offen`, Zähler = Zahl der Dateien in
+`evidence/`). Die einzige Sub-Area ist `*` (`PGC`); getroffen heißt: der
+Eintrag betrifft Festlegung, Vertrag, das Doku-Gate oder die Übergabe dieses
+Slice.
+
+- `BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft` (2×) — trifft §4: die
+  zweite Rückführungs-Bedingung ist vor dem Schreiben gemessen (§3, „Umfang
+  gemessen vor dem Schreiben“), nicht erst bei der Closure. Mit diesem Slice
+  kein Auftreten.
+- `BEO-PGC/messwerkzeug-grenze-unbenannt-fail-open` (1×) — trifft
+  Liefer-Punkt 1: `SPEC-040` nennt die gemessenen Formen ohne Befund
+  (mehrzeiliger Link, Inline-Code bei `ids`, `d-check:ignore`, Fence und
+  Tilde mit Benutzername bei `hostpaths`); zwei fail-open-Formen (§6, Befund a
+  und b) stehen als Frage an den Architect, nicht unbenannt.
+- `BEO-PGC/rollen-uebergabe-ohne-committetes-artefakt` (2×) — trifft die
+  `Schärft:`-Kante: die Fragen an den Architect stehen in §6 dieses Plans, nicht
+  nur im Bericht; ein dritter Beleg entstünde, wenn eine Vorgabe des Architect
+  ohne Artefakt umgesetzt würde.
+- `BEO-PGC/unclosed-backtick-taeuscht-nackte-id-vor` (1×) — Randform von
+  `ids`, die die Quellen nicht tragen; nicht in `SPEC-040` aufgenommen (keine
+  Quelle, kein Messfall in diesem Slice), benannt für den Review.
+- `BEO-PGC/bindung-spalte-uneinheitlich-tief` (1×) — trifft Liefer-Punkt 2:
+  die Zeile `make docs-check` trägt Vertragsdatei und Spec-Kennung inline,
+  wie die Zeile `make zitat-vergleich`.
+- `BEO-PGC/gate-prueft-existenz-nicht-passung` (2×) — gilt Gates, die
+  Kennungsmengen vergleichen; `ids` prüft den Link, nicht die Existenz (A17) —
+  dieselbe Klasse auf der Doku-Seite, als Randform in `SPEC-040` benannt; kein
+  Auftreten.
+
+Keine der übrigen offenen Einträge betrifft Spec, Harness-Vertrag oder
+Doku-Gate; keiner erreicht mit diesem Slice 3×.
 
 **Modus-Begründungsblock — Umfang.** Alle berührten Sub-Areas GF.
