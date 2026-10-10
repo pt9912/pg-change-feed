@@ -103,10 +103,10 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0091 | Zugangsdaten-Klasse — sechs Schlüssel (Supers. ADR-0088; → ADR-0101) | Accepted | 2026-09-17 | [0091-zugangsdaten-klasse-sechs-schluessel.md](0091-zugangsdaten-klasse-sechs-schluessel.md) |
 | ADR-0092 | Feldmengen-Paarung — Reichweite der drei Träger (Supers. ADR-0089; → ADR-0101) | Accepted | 2026-09-17 | [0092-feldmengen-paarung-reichweite-der-drei-traeger.md](0092-feldmengen-paarung-reichweite-der-drei-traeger.md) |
 | ADR-0093 | Digest-Korrektur — ADR-0087s Kotlin-Basis-Image-Zeile (Supers. ADR-0087, teilw.) | Accepted | 2026-09-17 | [0093-digest-korrektur-adr-0087-kotlin-basis-image.md](0093-digest-korrektur-adr-0087-kotlin-basis-image.md) |
-| ADR-0094 | Review-Matrixklasse — Kennung statt Adresse (ergänzt ADR-0073) | Accepted | 2026-09-18 | [0094-review-matrixklasse-kennung-statt-adresse.md](0094-review-matrixklasse-kennung-statt-adresse.md) |
+| ADR-0094 | Review-Matrixklasse — Kennung statt Adresse (ergänzt ADR-0073; → 0163 teilw.) | Accepted | 2026-09-18 | [0094-review-matrixklasse-kennung-statt-adresse.md](0094-review-matrixklasse-kennung-statt-adresse.md) |
 | ADR-0095 | Review-Klasse — Status-Ausnahme (ergänzt ADR-0094) | Accepted | 2026-09-18 | [0095-review-klasse-exempt-status-check.md](0095-review-klasse-exempt-status-check.md) |
 | ADR-0096 | Altbestand-Schlüssel für wellenlosen Archiv-Bestand | Accepted | 2026-09-18 | [0096-altbestand-schluessel-fuer-wellenlosen-archiv-bestand.md](0096-altbestand-schluessel-fuer-wellenlosen-archiv-bestand.md) |
-| ADR-0097 | `observation`-Matrixklasse — Review verboten (ergänzt ADR-0094) | Accepted | 2026-09-18 | [0097-observation-matrixklasse-review-verboten.md](0097-observation-matrixklasse-review-verboten.md) |
+| ADR-0097 | `observation`-Matrixklasse — Review verboten (→ 0099/0163 teilw.) | Accepted | 2026-09-18 | [0097-observation-matrixklasse-review-verboten.md](0097-observation-matrixklasse-review-verboten.md) |
 | ADR-0098 | Beispiel-Clients — Startform `make`/Dockerfile (Supers. ADR-0076, teilw.) | Accepted | 2026-09-18 | [0098-beispiel-clients-start-ueber-make-dockerfile.md](0098-beispiel-clients-start-ueber-make-dockerfile.md) |
 | ADR-0099 | `slice`/`welle → review` zurückgenommen (Supers. ADR-0097, teilw.) | Accepted | 2026-09-18 | [0099-slice-welle-review-regel-zurueckgenommen.md](0099-slice-welle-review-regel-zurueckgenommen.md) |
 | ADR-0100 | NATS — dritter Vollinhalts-Zustellweg für Live-Streaming | Accepted | 2026-09-18 | [0100-nats-dritter-vollinhalts-zustellweg.md](0100-nats-dritter-vollinhalts-zustellweg.md) |
@@ -172,6 +172,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0160 | Leer-Test Teil-Range; Home-relative Pfade (Supers. 0157/0075 teilw.; → 0161) | Accepted | 2026-10-06 | [0160-teil-range-leer-test-und-hostpaths-home-relativ.md](0160-teil-range-leer-test-und-hostpaths-home-relativ.md) |
 | ADR-0161 | Baseline-Pins in ADRs/MR-Einträgen eingefroren (Supers. 0157/0159/0160, teilw.) | Accepted | 2026-10-07 | [0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md](0161-baseline-pins-in-adrs-und-mr-eintraegen-eingefroren.md) |
 | ADR-0162 | Festlegungen zitat-vergleich/Teil-Range (Herkunft 0158–0161); MR-Umzug | Accepted | 2026-10-07 | [0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md](0162-schaerft-spec-038-039-und-umzug-aufgeloester-mr-eintraege.md) |
+| ADR-0163 | Festlegung docs-check; Provenance-Marker (Supers. 0094/0097 teilw.) | Accepted | 2026-10-10 | [0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md](0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md) |
 
 ## Konventionen
 
