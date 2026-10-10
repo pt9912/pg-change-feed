@@ -273,7 +273,7 @@ Instanz B).
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
       Roadmap führt unter *Offene Wellen* keine Welle, also trägt sie die
       Slice-Closure selbst (nach dem `git mv`).
 
@@ -926,7 +926,25 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
   Repo legt kein `done/slice-<Kennung>-archiv.zip` an; der Plan bleibt flach in
   `done/`. Der Reichweiten-Abschnitt (§3) und die Zahl 132 bleiben damit lesbar;
   die Zahl steht zusätzlich im Register.
-- **Drei Paarungen:** nach dem `git mv` gemessen (unten nachgetragen).
+- **Drei Paarungen:** nach dem `git mv` (`2deb6c6a`)
+  gemessen — (a) *Anker:* der Steering-Loop-Eintrag trägt kein Feld `liegt in`
+  (mit diesem Slice ist nichts verkörpert), kein Gegenstand der Paarung.
+  (b) *Folge-Slice:* kein Folge-Slice genannt; die Übergabe-Adresse
+  `slice-spec-festlegungen-code-gates` existiert in `open/` (`ls`) und trägt die
+  Übergabe-Zeile in §6. (c) *Register:* die genannten Verzeichnisse existieren,
+  jedes mit nicht leerem `evidence/` (`ls evidence | wc -l`):
+  `modul-reviews-inaktiv-aktivierung-trifft-bestand` 1,
+  `bump-messliste-unvollstaendig-gegen-zielliste` 1,
+  `nachzug-laesst-ueberholten-text-stehen` 27,
+  `zahl-in-traeger-driftet-gegen-die-messung` 30,
+  `gate-scope-erweiterung-ohne-adr-traeger` 3,
+  `vertrag-doppelt-die-festlegung` 2,
+  `pin-ohne-inventar-eintrag-driftet-unsichtbar` 2,
+  `messwerkzeug-grenze-unbenannt-fail-open` 2. Ergebnis: getragen. Durch den
+  Move brach kein Verweis (`git grep -n 'in-progress/slice-gate-werkzeuge'`
+  außerhalb von `docs/reviews/`: kein Treffer). Der Ruhe-Marker der Roadmap
+  steht wieder, Wortlaut gleich `cffa45be`; `in-progress/` trägt nur
+  `roadmap.md`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
