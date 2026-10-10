@@ -1,7 +1,7 @@
 # Releasing: Release-Prozess für Maintainer
 
-Version: 1.14
-Stand: 2026-10-03
+Version: 1.15
+Stand: 2026-10-10
 
 ## 1. Zweck und Zielgruppe
 
@@ -135,6 +135,19 @@ endete der Upload im Lauf 36201941235 mit `success`. Ob Cloudsmith beim Upload
 auch den Service-Namen annimmt, ist nicht geprüft. Bei einem
 Authentifizierungsfehler (HTTP 401/403 im Upload-Schritt) prüft der Betreiber
 zuerst den Wert dieses Secrets und wiederholt nur den roten Job.
+
+### Schutz von `main` gegen Pushes aus Workflows
+
+Ein Workflow läuft in der Fassung des Branch, der ihn ausgelöst hat; ein Job mit
+`contents: write` (hier nur der `release`-Job, für `gh release create`) könnte
+mit geänderter YAML über das `GITHUB_TOKEN` auf `main` schreiben. Das
+Repository-Ruleset `main-nur-admin` (GitHub-Einstellungen, nicht im Repo) sperrt
+auf `refs/heads/main` Update, Löschen und Non-Fast-Forward; nur die Rolle
+Repository-Admin umgeht es. Das `GITHUB_TOKEN` trägt diese Rolle nicht, direkte
+Pushes des Eigentümers gehen durch; Tags, Releases und andere Branches sind
+nicht betroffen. Grenze: ein persönliches Token des Eigentümers in einem Secret
+trägt Admin-Rechte und umgeht das Ruleset; dass ein Push mit dem
+`GITHUB_TOKEN` abgewiesen wird, ist nicht durch einen echten Versuch belegt.
 
 ### SDK-Release: NuGet.org-Publish für `PgChangeFeed.Client`
 
@@ -402,3 +415,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.12 | 2026-09-26 | §1 und §4 Kotlin-Abschnitt an den Lauf zu `sdk-kotlin-v0.2.2` gezogen (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): Lauf 36201941235 mit beiden Jobs `success`, anonymer Abruf der Cloudsmith-Artefakte HTTP 200, Service-Slug und Moduldatei angenommen; offen bleiben Paketseiten-Anzeige, Usage-Seite und Doppel-Upload; Hinweis zur Verarbeitungsverzögerung beim Abruf |
 | 1.13 | 2026-10-03 | Dokument von `docs/user/` nach `docs/maintainer/` verschoben (`ADR-0143`, `ADR-0051`): Zielgruppe in §1 auf Maintainer geschärft, Link auf `version.md` zeigt auf `../user/version.md`; Inhalt sonst unverändert |
 | 1.14 | 2026-10-03 | §5 Eintrag `upstream-drift.yml` an den Umfang gezogen: neben den neun benannten Achsen die zehnte `make pin-stale-all` über jede Digest-Pin-Referenz des Baums (`ADR-0146`, `ADR-0051`) |
+| 1.15 | 2026-10-10 | §4 neuer Abschnitt „Schutz von `main` gegen Pushes aus Workflows“: Repository-Ruleset `main-nur-admin` (Update, Löschen, Non-Fast-Forward auf `main`, Bypass nur Repository-Admin) und seine Grenze (`ADR-0051`) |
