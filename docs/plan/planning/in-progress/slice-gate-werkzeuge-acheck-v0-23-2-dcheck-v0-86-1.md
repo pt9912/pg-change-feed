@@ -356,6 +356,253 @@ gemessen): Zeile 1 → 1 (die Übergabe-Zeile in
 nach dem Ergebnis von Liefer-Punkt 3. Die `diff`-Zeilen trägt der Implementer
 nach, jede Abweichung mit Grund.
 
+### Reichweite a-check v0.21.0–v0.23.2 und d-check v0.83.0–v0.86.1 — Belege
+
+Beleg zu Liefer-Punkt 1. **Herkunft:** gemessen vom Implementer am
+2026-10-10 an einem Klon von `d496d0ee` im Scratchpad
+(`git clone --no-hardlinks`), vor jedem Pin-Commit. „alt“ ist der Pin am Stand
+(`A_CHECK_IMAGE=ghcr.io/pt9912/a-check@sha256:e8208764…`,
+`DCHECK_DIGEST=sha256:d28e9437…`), „neu“ der Release-Digest
+(`…a-check@sha256:2368f7b3…`, `sha256:3e0b9779…`), je auf der Kommandozeile;
+die `.mk`-Dateien sind dabei unverändert. Über `make` heißt: `make -s -C <Klon>
+<Ziel> <Variable>=<Wert> > <Datei> 2>&1`, Exit von `make`.
+
+**Digests am Tag** (`docker buildx imagetools inspect <Tag>`, gedruckte Zeile
+`Digest:`, beide `MediaType: application/vnd.oci.image.index.v1+json` mit
+`linux/amd64` und `linux/arm64`):
+
+- `ghcr.io/pt9912/a-check:v0.23.2` → `sha256:2368f7b3a84f1dc5d075edccfe2201e19947d12fcbc8eaf4df84ef162d94f422`
+  — gleich dem Release-Digest aus §1.
+- `ghcr.io/pt9912/d-check:v0.86.1` → `sha256:3e0b9779a71e2fa942960e8b961428fba036455c535513d34a75bfb799ffce0e`
+  — gleich dem Release-Digest aus §1.
+
+**Läufe am Bestand, alt gegen neu** (über `make`; „gleich“ heißt: Ausgabe
+byte-gleich, bei den zwei roten `doc-immutable`-Läufen nach `sort` byte-gleich,
+weil Summen- und Befundzeile in `2>&1` die Stellung tauschen):
+
+| Ziel | alt | neu | Vergleich |
+|---|---|---|---|
+| `make a-check` | Exit 0, `gesamt: 0 Befund(e)` | Exit 0, `gesamt: 0 Befund(e)` | gleich |
+| `make docs-check` | Exit 0, `d-check: 1848 Datei(en) geprüft, 0 Befund(e)` | Exit 0, dieselbe Zeile | gleich |
+| `make commit-traceability` | Exit 0, `… 0 Befund(e)` | Exit 0, `… 0 Befund(e)` | gleich |
+| `make doc-planning` | Exit 0, `… 0 Befund(e)` | Exit 0, `… 0 Befund(e)` | gleich |
+| `make doc-targets` | Exit 0, `… 0 Befund(e)` | Exit 0, `… 0 Befund(e)` | gleich |
+| `make doc-structure`, `make doc-tracked` | je Exit 0, `… 0 Befund(e)` | je Exit 0, `… 0 Befund(e)` | gleich |
+| `make doc-immutable RANGE=d496d0ee..d496d0ee` (leer) | Exit 2, `d-check: error: Range-Leerfall "d496d0ee".."d496d0ee" — Basis und Spitze benennen denselben Commit, es wurde nichts geprüft` | Exit 2, dieselbe Zeile | gleich |
+| `make doc-immutable RANGE=dc04087e..d496d0ee` (nicht leer, ohne MR-Commit) | Exit 0, `… 0 Befund(e)` | Exit 0, `… 0 Befund(e)` | gleich |
+| `make doc-immutable RANGE=3f88e0c2~1..3f88e0c2` (Form-Commit) | Exit 2, 4 × `core-drift-vcs` (MR-001 bis MR-004) | Exit 2, dieselben 4 | gleich nach `sort` |
+| `make doc-immutable RANGE=8e00e831~1..8e00e831` (Umzugs-Commit) | Exit 2, 1 × `core-drift-vcs` „immutable Datei gelöscht oder umbenannt“ | Exit 2, derselbe | gleich nach `sort` |
+| `make doc-immutable RANGE=d496d0ee..dc04087e` (umgekehrt) | Exit 2, `d-check: error: Range-Leerfall "d496d0ee".."dc04087e" — 0 Commits, es wurde nichts geprüft` | Exit 2, dieselbe Zeile | gleich |
+| `make doc-immutable RANGE=gibtsnicht..d496d0ee` | Exit 2, `d-check: error: Range-Basis "gibtsnicht" nicht auflösbar: reference not found` | Exit 2, dieselbe Zeile | gleich |
+| `make doc-immutable STAGED=1` | Exit 0, `… 0 Befund(e)` | Exit 0 | gleich |
+
+**Läufe an Mutationen, alt gegen neu.** Null Befunde am Bestand belegen keine
+gleiche Reichweite (`harness/targets/pin-stale.md` §Bump eines
+Gate-Werkzeugs); deshalb je Werkzeug eine Mutation, die rot werden muss, am
+Klon, danach `git reset --hard d496d0ee`:
+
+| Mutation | Ziel | alt | neu |
+|---|---|---|---|
+| `internal/domain/model/zz_mut.go` importiert `…/internal/adapters/driven/grpcstream` | `make a-check` | Exit 2, `wrong-direction: domain -> adapters`, `gesamt: 1 Befund(e)` | byte-gleich |
+| leerer Commit mit Betreff `chore: ohne Kennung` | `make doc-commits RANGE=HEAD~1..HEAD` | Exit 2, 1 × `commit-untraceable` | gleich nach `sort` |
+| Slice-Plan in `in-progress/` gelöscht; getrennt davon der Ruhe-Marker der Roadmap von `d496d0ee~1` zurück | `make doc-planning` | je Exit 0, 0 Befund(e) | gleich |
+| Zeile `make gibtsnicht` in die Gate-Tabelle von `harness/README.md` | `make doc-targets` | Exit 0, 0 Befund(e) | gleich |
+
+Die Mutationen der `d-check`-Module, die in `make docs-check` laufen, stehen im
+nächsten Abschnitt (M0 bis M64, je alt und neu); sie liefen vor den
+Pin-Commits und stehen deshalb im selben Commit wie dieser Abschnitt.
+**Grenze:** `make doc-planning` und `make doc-targets` laufen ohne eigenen
+Block in `.d-check.yml` mit den Defaults des Moduls; an keiner der drei
+Mutationen wurden sie rot, in keinem der beiden Stände. Ihre Reichweite ist
+damit nicht durch ein gesehenes Rot belegt, nur ihre Gleichheit am Bestand und
+an den Mutationen. Beide sind keine Gates.
+
+**Modul `reviews`, das in keinem Ziel läuft** (Risiko 1 aus §6):
+`git grep -n -e '--enable reviews' -- Makefile '*.mk' tools .github` → kein
+Treffer, Exit 1; `git grep -c -e '--disable reviews' -- d-check.mk` →
+`d-check.mk:7` (alle sieben Einzel-Ziele mit Modul-Liste);
+`.d-check.yml` Zeile 8 `modules: [links, anchors, ids, matrix, versions,
+structure, hostpaths, tracked]`. Ein direkter Lauf mit dem Modul
+(`docker run --rm --network none -v <Klon>:/repo:ro <Digest> --enable reviews`)
+gegen den Bestand: alt Exit 0, `… 0 Befund(e)`; neu Exit 1, `… 132 Befund(e)`,
+alle `review-missing`. Das ist die angekündigte „nicht rein additive“ Änderung
+von 0.85.0/0.86.0; sie erreicht kein Ziel dieses Repos, solange `reviews`
+nicht aktiviert ist (eine Aktivierung ist nach §1 ein anderer Vorgang).
+
+**Schlüssel-Gerüst, alt gegen neu.** `--print-config` beider d-check-Stände,
+`diff`: neu sind nur die Zeilen zu `vcs.ignore-link-targets`,
+`planning.closure.recursive`/`skip-pattern`/`skip-allows-empty`,
+`structure[].skip-pattern`/`skip-allows-empty`, die Erklärung von `reviews`
+(`promise-pattern`, `match`, `require-promises`, `recursive`, `skip-pattern`,
+`skip-allows-empty`) und `targets.authority-disjoint: false`; am Block
+`matrix` ändert sich keine Zeile. `grep -n -e
+'authority-disjoint\|ignore-link-targets\|skip-pattern\|skip-allows-empty\|recursive'
+.d-check.yml` → kein Treffer. a-check `--print-config`, `diff`: neu ist nur der
+kommentierte Block `shapes`; `grep -n shapes .a-check.yml` → kein Treffer.
+
+**Urteil je Version.** „keine Reichweiten-Änderung“ heißt: kein Gate und kein
+Einzel-Ziel dieses Repos meldet oder lässt mit dem neuen Stand anderes durch;
+gehalten gegen
+[`ADR-0041`](../../adr/0041-a-check-maschinenform-architekturpruefung.md) und
+[`ADR-0068`](../../adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md)
+(a-check: Schichten-Edges, `tooling`/`examples` unverändert in
+`.a-check.yml`), die Herkunftstabelle von
+[`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md)
+Entscheidung 1 (`make docs-check`) und
+[`ADR-0045`](../../adr/0045-commit-traceability-standing-gate.md) (Modul
+`commits`).
+
+| Version | Änderung laut Changelog | Urteil und Grund |
+|---|---|---|
+| a-check 0.21.0 | Optionalblock `shapes`, Befunde `shape-*`; Baseline des Werkzeug-Repos | keine Reichweiten-Änderung: `.a-check.yml` trägt keinen Block `shapes`; `make a-check` am Bestand und an der Mutation byte-gleich |
+| a-check 0.22.0 | Dialekte `gomod`/`json` für `shapes`; `shape-*`-Meldung einzeilig | keine Reichweiten-Änderung: nur `shapes`, nicht konfiguriert |
+| a-check 0.23.0 | Multi-Arch, Pin ist ein Index-Digest | keine Reichweiten-Änderung: Distribution; der Pin ist der Index-Digest (Digest oben) |
+| a-check 0.23.1 | CVE-Scan je Plattform, README und Handbuch | keine Reichweiten-Änderung: kein Prüfverhalten |
+| a-check 0.23.2 | Go 1.27.2 (drei CVE der Standardbibliothek) | keine Reichweiten-Änderung: kein Prüfverhalten; Läufe byte-gleich |
+| d-check 0.83.0 | `targets.authority-disjoint` (opt-in) | keine Reichweiten-Änderung: Schlüssel nicht gesetzt, Default `false` (`--print-config`); `make doc-targets` gleich |
+| d-check 0.84.0-rc.1, 0.84.0 | Multi-Plattform-Index, Docker-Hub-Spiegel mit demselben Digest, Abhängigkeiten | keine Reichweiten-Änderung: Distribution und Abhängigkeiten; alle Läufe gleich |
+| d-check 0.85.0 | `reviews`: zwei Defaults (nicht rein additiv), neue `reviews`-Schlüssel; `vcs.ignore-link-targets`, `planning.closure.recursive`/`skip-pattern`, `structure[].skip-pattern` (opt-in); Go 1.27.2 | keine Reichweiten-Änderung eines Ziels: `reviews` läuft in keinem Ziel (oben, 132 Befunde nur bei `--enable reviews`); die opt-in-Schlüssel sind nicht gesetzt; `make doc-immutable` in sechs Ranges und mit `STAGED=1`, `make doc-planning` und `make docs-check` samt M0 bis M64 gleich |
+| d-check 0.86.0 | `--manual`; `skip-allows-empty` (opt-in); `reviews.match: name` deckt nur den längsten Namen (nicht rein additiv); `--suggest-config` | keine Reichweiten-Änderung eines Ziels: kein Ziel ruft `--manual` oder `--suggest-config`, `skip-allows-empty` nicht gesetzt, `reviews` nicht aktiv und ohne `match` |
+| d-check 0.86.1 | `golang.org/x/net` (CVE), „keine Verhaltensänderung“ | keine Reichweiten-Änderung: alle Läufe gleich |
+
+**Ergebnis:** keine Erweiterung, kein Architect-Zug vor den Pin-Commits nötig
+(Ansatz Schritt 2 entfällt).
+
+### `SPEC-040` gegen v0.86.1
+
+Beleg zu Liefer-Punkt 3, Prüfungen nach `.claude/commands/plan-welle.md`
+Schritt 6. **Herkunft:** gemessen vom Implementer am 2026-10-10 am Klon von
+`d496d0ee` im Scratchpad; je Mutation einzeln, danach `git checkout -- .` und
+`git clean -fd`; je Mutation zwei Läufe direkt, ohne `make`:
+`docker run --rm --network none -v <Klon>:/repo:ro <Digest>` mit dem Digest
+von v0.82.0 (`d28e9437…`) und von v0.86.1 (`3e0b9779…`), stdout, stderr und
+Exit je in eine eigene Datei. **Vergleich:** in jedem der 67 Läufe je Stand
+(M34 ist der Basislauf ohne Mutation; M1b und M39 sowie M19 und M38 sind je
+dieselbe Mutation) sind Exit, stderr und stdout (als Menge, nach `sort`)
+beider Stände gleich; die Spalte zeigt die Ausgabe von v0.86.1. Die Nummern
+M0 bis M43 folgen den Messungen, auf die sich
+[`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md)
+stützt (Plan von `slice-spec-festlegungen-doku-gates`, §3); M19b und M44 bis
+M64 sind neu; M35 ist hier M1a, M36, M37 und M43 liefen über `make` (unter
+der Tabelle).
+
+| # | Mutation | v0.86.1 (gleich v0.82.0) | Satz von `SPEC-040` |
+|---|---|---|---|
+| M34 | keine (Basislauf) | Exit 0; stdout leer; stderr `d-check: 1848 Datei(en) geprüft, 0 Befund(e)` | Fläche; Ausgänge (Summenzeile auf stderr, Exit 0) |
+| M62 | `.harness/mut/x.md` mit Link auf eine fehlende Datei | Exit 0, `1848 Datei(en)` | Fläche: `.harness/**` aus `scan.ignore` |
+| M63 | `docs/x.template.md` mit Link auf eine fehlende Datei | Exit 0, `1848 Datei(en)` | Fläche: `**/*.template.md` |
+| M45 | neue, ungetrackte `unverfolgt.md`, Link aus `README.md` darauf | Exit 1, `target-untracked`, `1849 Datei(en)` | Fläche (neue `.md` gezählt); `tracked` |
+| M0 | Baum ohne `.git` (`git archive`) | Exit 2, `d-check: error: kein lesbares git-Repository unter /repo: …` | Eingabe braucht `.git`; Exit 2 |
+| M44 | Pfad `gibt/es/nicht.go` in Inline-Code | Exit 0 | `codepaths` nicht in der Liste |
+| — | Basislauf mit `--enable reviews` (Abschnitt oben) | Exit 1, 132 × `review-missing` | Block ohne Modul (`reviews:`) wirkt nicht, solange das Modul nicht läuft |
+| M1a | Link auf eine fehlende Datei | Exit 1; stdout `README.md:65` TAB `gibt-es-nicht.md` TAB `target-missing` TAB `Linkziel existiert nicht` | `links`; Ausgänge (vier Felder) |
+| M18 | Link mit URL-Schema auf ein Ziel, das es nicht gibt | Exit 0 | `links`: URL-Schema kein Gegenstand |
+| M17 | Link auf ein fehlendes Heading und Link auf eine HTML-`id` | Exit 1, `anchor-missing` nur für das Heading | `anchors` |
+| M61 | Links auf vorhandenes Heading und vorhandene HTML-`id` | Exit 0 | `anchors` |
+| M8 | Kennung `ADR-0041` nackt in Prosa | Exit 1, `id-unlinked` | `ids` |
+| M7 | dieselbe Kennung in Inline-Code | Exit 0 | `ids`: Inline-Code kein Treffer |
+| M25 | `SPEC-040` verlinkt auf `harness/conventions.md` | Exit 0 | `ids`: Ziel des Links nicht abgeglichen |
+| M26 | `LH-QA-REL-001.a` verlinkt auf `spec/lastenheft.md` | Exit 0 | `ids`: Ziel des Links nicht abgeglichen |
+| M46 | `MR-002` und `BEO-PGC/gibt-es-nicht` in Prosa | Exit 0 | `ids`: Kennung ohne Muster |
+| M10 | `ADR-0041` in Inline-Code in der Architektur-Sicht | Exit 1, `matrix-forbidden` | `matrix`: Token in Inline-Code |
+| M11 | Link aus der Architektur-Sicht ins ADR-Verzeichnis | Exit 1, `matrix-forbidden` | `matrix-forbidden` als Link |
+| M14 | Token `docs/reviews/x.md` in einer ADR | Exit 1, `matrix-forbidden` | Regel `adr → review` |
+| M31 | `ADR-0094` und `slice-099` in einem Fence der Architektur-Sicht | Exit 0 | `matrix`: Fence kein Treffer |
+| M12 | `slice-099` und `slice-abc-name` in der Architektur-Sicht | Exit 1, `matrix-forbidden` nur für `slice-099` | Token `slice` nur mit Nummer |
+| M47a | Link aus der Architektur-Sicht auf `AGENTS.md` | Exit 0 | Datei ohne Klasse als Ziel |
+| M47b | `ADR-0041` und `docs/reviews/x.md` in Inline-Code in `harness/README.md` | Exit 0 | Datei ohne Klasse als Quelle |
+| M48 | Link aus der Architektur-Sicht auf das Lastenheft | Exit 0 | keine Regel innerhalb der Spec-Straten |
+| M49 | Link aus dem Slice-Plan in `in-progress/` auf einen Review-Bericht | Exit 0 | `slice` darf auf `review` verweisen |
+| M32a, M32b | Token `ADR-0038` (Status `Superseded`) in Inline-Code im Slice-Plan; in einer `observation.md` | je Exit 0 | `matrix-inactive` nur an Links |
+| M32c | `docs/reviews/*.md` aus `matrix.exempt-paths` entfernt | Exit 1, 57 × `matrix-inactive`; jede der 57 Zeilen trägt einen Link `](<Ziel>` (Zählung je Befundzeile gegen die Quellzeile) | `matrix-inactive` nur an Links; `exempt-paths` als Quelle |
+| M16 | `slice-099` in ADR 0039 (unter `matrix.exempt-paths`) | Exit 0 | `exempt-paths`: als Quelle ganz ausgenommen |
+| M50 | Link aus der Architektur-Sicht auf ADR 0039 | Exit 1, `matrix-forbidden` und `matrix-inactive` | `exempt-paths`: als Ziel Gegenstand der Regel |
+| M51 | `allow-supersede-lineage: true` gestrichen | Exit 1, 16 × `matrix-inactive` | `allow-supersede-lineage` (mit dem Schlüssel: Basislauf 0) |
+| M22 | Pfad in die vendored Baseline mit Tag `v6.14.0` in Inline-Code in `README.md` | Exit 1, `version-stale` | `versions` |
+| M53 | derselbe Pfad in einer ADR | Exit 0 | `versions.exempt-paths` |
+| M52 | Link auf eine fehlende Datei in einer ADR | Exit 1, `target-missing` | `versions.exempt-paths` nimmt `links` nicht aus |
+| M9 | M8 mit `<!-- d-check:ignore -->` | Exit 0 | `d-check:ignore` für `ids` |
+| M23 | M22 mit `<!-- d-check:ignore -->` | Exit 0 | `d-check:ignore` für `versions` |
+| M21 | `~/<Verzeichnis>/x` in Inline-Code mit `<!-- d-check:ignore -->` | Exit 1, `hostpath-forbidden` | `hostpaths` kennt keinen Zeilen-Marker |
+| M55 | M10 mit `<!-- d-check:ignore -->` | Exit 1, `matrix-forbidden` | `d-check:ignore` wirkt auf `matrix` nicht |
+| M13 | M10 mit `<!-- d-check:status-provenance -->` | Exit 0 | Provenance-Marker hebt Token auf |
+| M15 | M14 mit dem Marker | Exit 0 | Marker für jede Regel (`adr → review`) |
+| M33 | `ADR-0094` und der Marker als Text, beide in Inline-Code, Architektur-Sicht | Exit 0 | Marker hebt Token auf |
+| M54 | M11 mit dem Marker | Exit 1, `matrix-forbidden` | Link in derselben Zeile bleibt Befund |
+| M27 | Linkziel über einen Zeilenumbruch, zusammengesetzt vorhanden | Exit 1, `target-missing` | Randform Ziel umbrochen |
+| M28 | Anker über einen Zeilenumbruch | Exit 1, `anchor-missing` | Randform Ziel umbrochen |
+| M29, M30 | Linktext umbrochen, Ziel bzw. Anker fehlt | je Exit 0 | Randform Linktext umbrochen |
+| M5 | Kopfzelle `Titel` im ADR-Index umbenannt | Exit 1, `section-column-missing` | `structure`: Spalte über den Namen |
+| M56a | Titel-Zelle im ADR-Index über 80 Zeichen | Exit 1, `section-cell-oversized` | `cell-max-chars` |
+| M56b | Status-Zelle `X` | Exit 1, `section-cell-undersized` | `cell-min-chars` |
+| M6 | Überschrift „3. Defaults und Konstanten“ umbenannt | Exit 1, `section-missing` | Regel trifft keinen Abschnitt |
+| M2 | „Steering-Loop“ in einem `done/slice-*.md` ersetzt | Exit 1, `section-pattern-missing` | `require-pattern` |
+| M58 | Satz „Wurde mit diesem Slice nichts verkörpert“ in Prosa in §7 | Exit 1, `section-forbidden` | `forbid-pattern` |
+| M57 | derselbe Satz in Inline-Code | Exit 0 | bereinigter Abschnittstext |
+| M4 | §7 leer | Exit 1, `section-empty` und `section-pattern-missing` | `non-empty` |
+| M3 | offene Aufgabe `- [ ]` in §7 | Exit 1, `section-tasks-open` | `max-open-tasks` |
+| M24 | offene Aufgabe in §7 von `done/release-image-scan.md` | Exit 0 | Regel gilt nur `done/slice-*.md` |
+| M19, M38 | `~/<Verzeichnis>/x` in Inline-Code | Exit 1; stdout `README.md:65` TAB der Pfad TAB `hostpath-forbidden` | `hostpaths` Home-relativ; drei Felder |
+| M64 | `~/<Datei>` und `~/<Verzeichnis>` ohne Schrägstrich in Inline-Code | Exit 1, 2 × `hostpath-forbidden` | `hostpaths` Home-relativ, beide Formen |
+| M19b | `<Host-Wurzel>/x` in Inline-Code | Exit 1, `hostpath-forbidden` | Präfixliste |
+| M59 | ein Laufwerks- und ein UNC-Muster in Inline-Code | Exit 1, 2 × `hostpath-forbidden` | Windows-Laufwerk, UNC |
+| M20 | Tilde in URL, `~/.config/x`, nackte Tilde, `~<Benutzer>/x` | Exit 0 | kein Treffer |
+| M60 | Home-relativer und absoluter Pfad in einem Fence; relativer Pfad in Inline-Code | Exit 0 | Fence und relativer Pfad kein Treffer |
+| M1b, M39 | unbekannter Schlüssel auf oberster Ebene | Exit 2; stdout leer; stderr `d-check: error: .d-check.yml: yaml: unmarshal errors:` und `  line 348: field unbekannt not found` | Exit 2, zwei Zeilen |
+| M40 | unbekannter Schlüssel unter `scan:` | Exit 2; zweite Zeile `  line 4: field unbekannt not found { … }` | YAML-Fehler mit Zeilennummer |
+| M41 | `versions.current-from` auf eine fehlende Datei | Exit 2, `d-check: error: versions.current-from nicht lesbar (…)` | Exit 2 |
+| M42 | unbekanntes Modul `gibtsnicht` in `modules:` | Exit 2, `d-check: error: unbekanntes Modul "gibtsnicht" in der Konfiguration — gültig: …` | Exit 2 |
+
+**Über `make`, nur v0.86.1:** drei fehlende Linkziele, `make -s docs-check
+DCHECK_DIGEST=sha256:3e0b9779… > <Datei> 2>&1`, **20 Läufe**: je Exit 2; die
+Summenzeile 14-mal vor der ersten und 6-mal nach der letzten Befundzeile, nie
+dazwischen; die letzte Zeile 20-mal `make: *** [d-check.mk:20: docs-check]
+Fehler 1`. M43 (M39 über `make`, ein Lauf): Exit 2, die zwei Zeilen des
+Fehlers, danach `make: *** [d-check.mk:20: docs-check] Fehler 2`. Beides
+deckt die Sätze „über `make` jeder Exit ≠ 0 als Exit 2“, „letzte Zeile die
+Fehlerzeile von `make`“ und „Reihenfolge nicht festgelegt“.
+
+**Nicht gemessen** (*hergeleitet*, ohne Lauf mit v0.86.1): „gemessen wird die
+Zelle mit Markdown-Syntax“, „eine Tabelle ohne Spalte des Namens fällt aus der
+Regel“, „keine Regel zählt Zeilen“ und die Aufzählung, wem die
+`structure`-Regeln gelten (Werte der Eingabe `.d-check.yml`, Datei unverändert),
+„`hostpaths.prefixes` ist der Default“ (kein Block `hostpaths:` in
+`.d-check.yml`, `grep -n '^hostpaths:' .d-check.yml` ohne Treffer). Das
+Changelog 0.83.0–0.86.1 nennt für `structure` nur den opt-in-Schlüssel
+`skip-pattern`.
+
+**Ergebnis je Satz:** jeder Satz von `SPEC-040` **gilt unverändert**; keine
+Version aus Liefer-Punkt 1 berührt einen Satz (Urteil je Version oben), und
+keiner der 67 Läufe zeigt einen Unterschied zwischen v0.82.0 und v0.86.1.
+`spec/pflichtenheft.md` bleibt unverändert, keine Historie-Zeile.
+
+- **(a) Gegenprobe gegen die Quell-ADRs:** entfällt als neue Prüfung — kein
+  Satz ändert sich, die Gegenprobe von
+  [`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md)
+  Entscheidung 1 bleibt unberührt.
+- **(b) Anschluss-Frage:** kein Ausgang und kein Randfall ändert sich (Exit,
+  stdout, stderr gleich in allen 67 Läufen und in den Läufen über `make`);
+  keine neue Folge für den Anwender.
+- **(c) Messung am Werkzeug:** die Tabelle oben.
+
+**Re-Evaluierungs-Trigger von `ADR-0163`:**
+
+- (a) **nicht eingetreten** — `--print-config` v0.86.1 gegen v0.82.0 ändert am
+  Block `matrix` keine Zeile (kein Schlüssel für `exempt-paths` oder den
+  Marker je Regel); M13, M15, M33, M54, M55 gleich in beiden Ständen.
+- (b) **nicht eingetreten** — der Slice ändert weder `spec/` noch
+  `matrix.exempt-paths`; `git grep -n 'd-check:status-provenance' -- spec/`
+  trifft zwei Zeilen von `spec/pflichtenheft.md` (2062, 2216), beide nennen den
+  Marker in Inline-Code, keine trägt ihn als Kommentar.
+- (c) **nicht eingetreten** — keine Festlegung von `SPEC-040` ändert sich.
+
+**`SPEC-039`** gilt unverändert: Ihr Ausgang hängt am Leerfall von
+`make doc-immutable` — mit v0.86.1 wie mit v0.82.0 Exit 2 bei gleicher Basis
+und Spitze (`Range-Leerfall … benennen denselben Commit`) und bei der
+umgekehrten Range (`Range-Leerfall … 0 Commits`), Exit 2 bei nicht
+auflösbarer Basis, Exit 0 in einer nicht leeren Range ohne MR-Commit, Exit 2
+mit `core-drift-vcs` um den Form- und den Umzugs-Commit (Tabelle oben).
+
 ## 4. Trigger
 
 <!-- BEDIENHINWEIS: Beispiele — "Wenn Welle X done." / "Wenn Carveout CO-NN
