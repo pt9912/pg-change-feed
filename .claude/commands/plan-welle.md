@@ -125,8 +125,9 @@ die Antwort und wird notiert.
    Architect-Zug des Lese-Schritts, Modul 6): Liefert ein Slice eine Festlegung
    in `spec/pflichtenheft.md` — einen Spec-Nachzug, den ein Folge-Slice
    umsetzt, oder den Umzug eines Vertrags oder einer ADR-Aussage in eine
-   `SPEC-*`-Zeile —, nennt §2 als Beleg dieses Liefer-Punkts zwei Prüfungen,
-   deren Ergebnis vor dem Review als Tabelle im Plan steht:
+   `SPEC-*`-Zeile —, nennt §2 als Beleg dieses Liefer-Punkts zwei Prüfungen
+   (drei, wenn die Festlegung ein Werkzeug beschreibt, siehe den nächsten
+   Absatz), deren Ergebnis vor dem Review als Tabelle im Plan steht:
    (a) **Gegenprobe der Quellen** — je normativer Satz jeder Quelle (der
    umziehende Vertrag, die Entscheidungen der ADRs, aus denen die Festlegung
    schöpft) eine Zeile *Satz → steht in `SPEC-<NNN>` · bleibt im Vertrag (Grund)
@@ -140,6 +141,22 @@ die Antwort und wird notiert.
    Urteil. **Grenze:** Selbstprüfung im schreibenden Kontext — erste, nicht
    tragende Linie; die tragende ist der Reviewer, der die Tabelle gegen die
    Quellen nachliest.
+   **Festlegung über ein Werkzeug: Messung am Werkzeug · seit
+   slice-spec-festlegungen-doku-gates**
+   (`BEO-PGC/mechanismus-erklaerung-ohne-werkzeugbeleg`, 4×; Architect-Verdikt
+   `docs/reviews/architect-verdict-mechanismus-erklaerung-ohne-werkzeugbeleg-4x.md`):
+   Beschreibt die Festlegung, was ein Werkzeug prüft, meldet, nicht meldet oder
+   ausgibt, kommt (c) hinzu: **Messung am Werkzeug** — je solcher Satz eine
+   Zeile *Satz → Lauf* (Befehl, konstruierte Eingabe, gesehene Ausgabe,
+   Werkzeug-Stand) oder *übernommen aus <Quelle>* bzw. *hergeleitet*
+   (`AGENTS.md` §3.12). Vertrag, Konfigurations-Kommentar, ADR und eine ältere
+   Messung beschreiben das Werkzeug; ein Lauf sind sie nicht, und die
+   Gegenprobe (a) zeigt nur, dass die Festlegung ihren Quellen folgt. Ein Satz
+   über eine Reihenfolge oder eine Menge nennt die Zahl der Läufe, auf die er
+   sich stützt. Kein Werkzeug prüft, ob jeder Satz eine Zeile hat (Begründung
+   im Verdikt). **Grenze:** Selbstprüfung im schreibenden Kontext — erste,
+   nicht tragende Linie; die tragende ist die Mutation des Reviewers am
+   Werkzeug.
 
 ## Welle-Plan per cp anlegen und füllen (der Kern-Schritt)
 
