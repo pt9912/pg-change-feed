@@ -22,7 +22,12 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **25×** (die fünfundzwanzigste Datei:
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **26×** (die sechsundzwanzigste Datei:
+evidence/slice-spec-festlegungen-doku-gates.md — Form **Befehl**, Re-Review N-1 (HIGH, daher Datei
+trotz Deckel): die Fixrunde-Zeile belegte „keine Zeile unter `spec/` trägt Marker und Token“ mit
+`git grep -c status-provenance -- spec/`, der nur die Marker-Zeilen zählt; berichtigt auf den Befehl
+aus §6 des Plans, der `0` druckt (`3122ff63`), Ausgang unverändert **verkörpert**;
+die fünfundzwanzigste Datei:
 evidence/slice-dcheck-v0-82-0.md — Form **Befehl**, F-2 (HIGH, daher Datei trotz Deckel): eine
 Commit-Zählung, die `0` druckt, sollte „die Range ist leer“ belegen und druckt dieselbe `0` bei
 einer umgekehrten Range; in der Fixrunde durch Commit-Gleichheit ersetzt (`ADR-0160`), Ausgang

@@ -268,8 +268,14 @@ dasteht.
   eigener Slice. — **Ausgang:** bei Closure.
 - **Die Spec darf nicht auf ADRs zeigen** (gemessen im Pilot:
   `matrix-forbidden` für Link und Kennung im Inline-Code). Die Festlegung
-  trägt ihren Inhalt selbst. *Zu belegen durch:* `make docs-check` Exit 0. —
-  **Ausgang:** bei Closure.
+  trägt ihren Inhalt selbst. *Zu belegen durch:* `make docs-check` Exit 0
+  **und** keine Zeile unter `spec/`, die den Marker `d-check:status-provenance`
+  und zugleich ein Token der Klassen `adr` oder `slice` trägt —
+  `git grep -n status-provenance -- spec/ | grep -cE 'ADR-[0-9]{4}|slice-[0-9]{3}'`
+  druckt `0`. Seit `ADR-0163` Entscheidung 2 hebt der Marker einen Token-Befund
+  auch in `spec/` auf, auch in Inline-Code; das Grün allein belegt die Aussage
+  nicht mehr (Review F-9 zu `slice-spec-festlegungen-doku-gates`, nachgezogen
+  bei dessen Closure). — **Ausgang:** bei Closure.
 
 ## 7. Closure-Notiz
 

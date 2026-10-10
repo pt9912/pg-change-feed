@@ -12,7 +12,12 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 26× (Dateien unter `evidence/`; die sechsundzwanzigste,
+Zähler: 27× (Dateien unter `evidence/`; die siebenundzwanzigste,
+`evidence/slice-spec-festlegungen-doku-gates.md`, trägt Review F-8 (MEDIUM): der Nachzug auf
+`ADR-0163` hakte die Architect-ADR in §2 ab und gab ihr in §6 den Ausgang, ließ aber die Zeile in
+der Datei-Tabelle von §3 auf „offen“ stehen (Träger-Typ Slice-Plan); in der Fixrunde behoben,
+Ausgang unverändert **verkörpert**;
+die sechsundzwanzigste,
 `evidence/slice-spec-festlegungen-harness-werkzeuge.md`, trägt Review F-2 (MEDIUM): der Nachzug
 des Vertrags `harness/targets/zitat-vergleich.md` auf die Festlegung ließ den historischen Block
 der ADR als Maßstab und fünf Punkte als „Auslegung“ stehen (Träger-Typ Werkzeug-Vertrag); in der

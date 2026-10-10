@@ -28,9 +28,10 @@ des nächsten Slice, dessen Läufe unter diesem Guard liefen; eingetreten mit de
 Repo-Pfad **mit Wirkung** auf eine Repo-Datei) ist nicht eingetreten. Die Neubewertung der nicht gelisteten
 Namen trägt der Auflösungs-Trigger von `MR-004`. Die Scratchpad-Ausnahme für
 `sed -i` ist entschieden: keine, der Guard blockt unbedingt.
-Zähler (abgeleitet): 12× (zwölf Dateien unter `evidence/`; die Aufzählung nennt die ersten acht, der neunte
+Zähler (abgeleitet): 13× (dreizehn Dateien unter `evidence/`; die Aufzählung nennt die ersten acht, der neunte
 Beleg `slice-routing-sdk-beispiel-target`, der zehnte `slice-sdk-0-6-kompatibilitaet-messen`, der elfte
-`slice-otlp-metrik-export-e2e` und der zwölfte `slice-sdk-tls-optionen` stehen unten;
+`slice-otlp-metrik-export-e2e`, der zwölfte `slice-sdk-tls-optionen` und der dreizehnte
+`slice-spec-festlegungen-doku-gates` stehen unten;
 evidence/slice-backfill-speicher-untersuchung.md,
 evidence/slice-transformationen-antragsweg-usecase.md,
 evidence/slice-transformationen-backfill-pfad.md,
@@ -85,3 +86,8 @@ Der zwölfte Beleg (`slice-sdk-tls-optionen`, evidence/slice-sdk-tls-optionen.md
 Umleitungs-Hälfte in der Rolle Implementer: `cat >>` an `tools/harness/run-sdk-csharp-integration-tests.sh`,
 selbst gemeldet, im Review als F-1 (HIGH, nicht verifizierbar) geführt, Inhalt gelesen; Ursprung
 *übernommen*. Kein neuer Mechanismus; der Guard liest Umleitungen weiterhin nicht (`MR-003`).
+Der dreizehnte Beleg (`slice-spec-festlegungen-doku-gates`, evidence/slice-spec-festlegungen-doku-gates.md)
+ist die Umleitungs-Hälfte in der Rolle Implementer nach einem fehlgeschlagenen `cd` (dieselbe Ursache
+wie der neunte): `>>` an `README.md` und `.d-check.yml` im Arbeitsbaum, im selben Befehl per
+`git checkout` zurückgesetzt, selbst gemeldet, im Review als F-5 (HIGH, nicht verifizierbar) geführt;
+Ursprung *übernommen*. Ausgang unverändert **verkörpert**.

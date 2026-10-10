@@ -176,12 +176,22 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       `commit-traceability: OK — 5 Commit(s) in "HEAD~5..HEAD"`,
       `generated-sync: OK`. Nach dem Commit dieses Belegs erneut gelaufen
       (Stempel), Ergebnis im Bericht des Implementers.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+      Belege: `docs/reviews/review-slice-spec-festlegungen-doku-gates.md`
+      (5 HIGH, 3 MEDIUM, 2 LOW, 2 INFO, `72e57998`; Fixrunde `7f139836`,
+      Architect-Verdikt `037a9d32`, Nachzug `2ac39c31`) und
+      `docs/reviews/review-slice-spec-festlegungen-doku-gates-re-review.md`
+      (1 HIGH, 0 MEDIUM, 1 LOW, 2 INFO, `b36af1f1`); N-1 behoben in
+      `3122ff63`, vom Verifier selbst nachgefahren (Befehl druckt `0`,
+      `verify-slice-spec-festlegungen-doku-gates.md` §1, `e4f609d8`). Offen
+      blieb N-2 (LOW), Ausgang in §7. Verifikation: drei Läufe, Endverdikt
+      *bestanden* (`verify-slice-spec-festlegungen-doku-gates-nachpruefung-2.md`,
+      `7c050206`).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -399,25 +409,28 @@ steht mit E und Grund.
 Eigenschaft: der Ort von Befund-Codes, Schwellen und Randformen von
 `make docs-check` (Vertrag → `SPEC-040`). Suchraum: der ganze Baum ohne
 `docs/reviews/**`, `docs/plan/planning/done/**` und `.harness/baseline/**`;
-Parent `942ebf3f`, `diff` ist der Arbeitsbaum nach dem Liefer-Commit.
+Parent `942ebf3f`; die zweite Zeile je Muster war am Arbeitsbaum (`diff`)
+gemessen und steht seit der Closure auf `7c050206`, dem verifizierten Stand
+vor den Closure-Commits (dieselben Zahlen, `git grep -c` an `7c050206`; die
+Closure-Commits fügen Register-Dateien hinzu, die Muster nennen).
 
 ```suchlauf
 942ebf3f 26 -F 'sensors/docs-check.md' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 27 -F 'sensors/docs-check.md' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+7c050206 27 -F 'sensors/docs-check.md' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 3 -F 'Modul-Semantik' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 5 -F 'Modul-Semantik' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+7c050206 5 -F 'Modul-Semantik' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 3 -E 'höchstens (220|120)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 2 -E 'höchstens (220|120)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+7c050206 2 -E 'höchstens (220|120)' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 1 -F 'Deklaration dieses Vertrags' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 0 -F 'Deklaration dieses Vertrags' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+7c050206 0 -F 'Deklaration dieses Vertrags' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 9 -F 'hostpath-forbidden' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 8 -F 'hostpath-forbidden' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+7c050206 8 -F 'hostpath-forbidden' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 2 -E 'acht (docs-check-)?Module' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 5 -E 'acht (docs-check-)?Module' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+7c050206 5 -E 'acht (docs-check-)?Module' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 15 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 25 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+7c050206 25 -F '7-festlegungen-der-harness-werkzeuge' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 942ebf3f 0 -F 'SPEC-040' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
-diff 35 -F 'SPEC-040' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+7c050206 35 -F 'SPEC-040' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
 ```
 
 Gefunden: `harness/sensors/docs-check.md` nennen 26 Zeilen; bewegt hat sich
@@ -639,6 +652,10 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   Block `structure:` trägt 160 Zeilen (gemessen, §3). *Zu belegen durch:* der
   Review-Report — prüft er die Festlegung in einer Sitzung, ist das Risiko
   entfallen; sonst greift die zweite Rückführungs-Bedingung in §4.
+  **Ausgang: entfallen** — Grund: Review F-12 (INFO): `structure` war in der
+  Sitzung prüfbar (R1, R2, R11, R12), die zweite Rückführungs-Bedingung trat
+  nicht ein; das Re-Review und drei Verifikations-Läufe fanden ebenfalls keinen
+  Teil, der eine eigene Sitzung brauchte.
 - **Vertrag und Werkzeug weichen ab**, sobald die Randform als Festlegung
   formuliert wird (etwa eine Reichweite von `hostpaths`, die
   [`ADR-0075`](../../adr/0075-hostpaths-reichweite-und-wortlaut.md) anders
@@ -665,6 +682,12 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   nimmt sie für `ADR-0039`/`ADR-0041` an; `SPEC-040` trägt den Satz. (c)
   Entscheidung 4: Ort der Modul-Semantik ist `SPEC-040`, die zwei Sätze
   bleiben als Geschichte, keine Folge-ADR.
+  **Ausgang des Risikos: entfallen** — Grund: die drei Befunde hat `ADR-0163`
+  entschieden (oben); die weiteren Abweichungen zwischen Festlegung und
+  Werkzeug, die Review (F-1 bis F-4) und Verifikation (A-1, A-6) gemessen
+  haben, sind im Slice an das Werkzeug gezogen (`7f139836`, `bf8d26c2`,
+  `928de0ff`). Kein Befund verlangte eine Änderung am Werkzeug, also kein
+  eigener Slice; gezählt sind sie im Register (§7).
 - **Die Spec darf nicht auf ADRs zeigen** (gemessen im Pilot: `matrix-forbidden`
   für Link und Kennung im Inline-Code). Die Festlegung trägt ihren Inhalt
   selbst. *Zu belegen durch:* `make docs-check` Exit 0 **und** keine Zeile
@@ -685,6 +708,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   `slice-spec-festlegungen-kennungs-gates`,
   `slice-spec-festlegungen-pruefer-hooks`. Fremde Träger, hier nicht geändert;
   der Planner zieht sie nach oder benennt sie mit Adresse.
+  **Ausgang: entfallen** — Grund: `make docs-check` Exit 0 und die
+  `git grep`-Messung oben druckt `0`; die verbleibende Lücke (ein Token mit
+  Marker in `spec/` bleibt grün) hat `ADR-0163` Entscheidung 2 angenommen,
+  Vertrag Grenze 12 benennt sie, Wächter ist das Review. Die fünf Pläne in
+  `open/` sind bei der Closure nachgezogen (§7, Review F-9).
 - **`matrix-inactive` gegen eine Quell-ADR (Review F-3) — angehalten, Frage an
   den Architect.** `SPEC-040` sagt „eine Datei verweist auf ein Ziel“ mit
   verbotenem Status. Das Werkzeug meldet nur einen **Link** und nur aus einer
@@ -719,20 +747,153 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Gegenstand:** <übernommen von `slice-<Kennung>` | entfallen: <Grund>>
-  *(nur beim Ausgang ohne Arbeit; sonst Zeile löschen)*
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<KUERZEL>/<slug>` (<slice-kennung-a>, <slice-kennung-b>, <slice-kennung-c> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-<Kennung>.md` | `evidence/slice-<Kennung>.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-<Kennung> (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Geliefert:** `SPEC-040` in `spec/pflichtenheft.md` §7 für `make docs-check`
+  mit allen acht Modulen samt Historie-Zeile in §8 (`9e43f968`, `64c68933`,
+  `7f139836`, `2ac39c31`, `bf8d26c2`, `928de0ff`; Liefer-Punkt 1); Vertrag
+  `harness/sensors/docs-check.md` und Gate-Index verweisen auf die Kennung
+  (`9e43f968`, `7f139836`, `2ac39c31`; Liefer-Punkt 2). Architect-Zug als
+  [`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md)
+  (`deecc466`) und Verdikt `architect-verdict-matrix-inactive-nur-link`
+  (`037a9d32`). Review (5 HIGH, 3 MEDIUM, 2 LOW, 2 INFO, `72e57998`), eine
+  Fixrunde, Re-Review (1 HIGH, 1 LOW, 2 INFO, `b36af1f1`), N-1-Fix
+  `3122ff63`; Verifikation in drei Läufen (`e4f609d8` nicht bestanden wegen
+  A-1, `2d9e1953` nicht bestanden wegen A-6, `7c050206` bestanden). Validator:
+  entfällt — Harness-Festlegung ohne End-Nutzer-Wert, kein MVP-Slice.
+- **Was hat funktioniert:** Die Mutationen am gepinnten Werkzeug, beim
+  Implementer (M0 bis M43), beim Reviewer (R1 bis R13) und beim Verifier
+  (getrennte Ströme, 20 Läufe), haben jede Abweichung zwischen Festlegung und
+  Werkzeug gefunden, bevor sie gemergt war. Der Halt an F-3 ging als Frage an
+  den Architect und kam als committetes Verdikt zurück, ohne dass eine
+  `Accepted`-ADR geändert wurde. `structure` blieb im Slice und war in einer
+  Sitzung prüfbar (F-12), der Schnitt nach Lieferwert hat getragen.
+- **Was ging anders als geplant:**
+  (1) **Festlegung aus Lesung statt Messung.** Die Gegenprobe der Quellen
+  (`.claude/commands/plan-welle.md` Schritt 6) lief vollständig, 76 Zeilen, und
+  fand keine der sechs Abweichungen F-1 bis F-4, A-1 und A-6: sie hält die
+  Festlegung gegen ihre Quellen, und die Quellen waren selbst breiter oder
+  enger als das Werkzeug; F-4 übernahm dazu eine Messung aus `slice-077` an
+  einem älteren d-check ohne Kennzeichnung. Gefunden haben sie Mutationen am
+  Werkzeug. Register unten (`mechanismus-erklaerung-ohne-werkzeugbeleg`).
+  (2) **Vorfall bei M1.** Der Implementer schrieb nach einem fehlgeschlagenen
+  `cd` je eine Zeile per `>>` an `README.md` und `.d-check.yml` im Arbeitsbaum
+  und setzte sie im selben Befehl per `git checkout` zurück (§3, Review F-5,
+  F-6; [`AGENTS.md`](../../../../AGENTS.md) §3.1). Keine Spur im Diff.
+  (3) **Drei Verifikations-Läufe.** A-1 und A-6 haben die Ausgabe-Form der
+  Festlegung zweimal an das Werkzeug gezogen; die Fixrunden `bf8d26c2` und
+  `928de0ff` ändern Spec-Text und sind vom Verifier in frischem Kontext
+  geprüft (Nachprüfung mit Messung N1 bis N7, zweite Nachprüfung als Lesung),
+  nicht vom Reviewer. Das Re-Review nach einer Fixrunde
+  (`.claude/commands/implement-slice.md` Schritt 21) gilt Fixrunden nach
+  Reviewer-Findings; diese zwei folgten Verifier-Abweichungen und sind vom
+  Verifier nachgeprüft.
+- **Review- und Verifikations-Pflichten in der Closure:**
+  - Re-Review N-2 (LOW) / Verifikation A-3 → **hingenommen, mit Grund**: die
+    Überschrift von Grenze 12 ist der Wortlaut aus §3.2 des Verdikts
+    `architect-verdict-matrix-inactive-nur-link`. „Zwei angenommene Lücken“
+    zählt die zwei, die `ADR-0163` Entscheidung 2 und 3 annimmt (Marker,
+    `matrix.exempt-paths`); „der Fence und der Status nur am Link“ stehen
+    daneben als weitere Punkte, und der Schlusssatz des Punkts bindet „die zwei
+    Lücken“ an die zwei Entscheidungen. Lesbar, nicht falsch; eine Umformulierung
+    wiche vom Wortlaut des Architect ab und wäre eine Frage an ihn
+    ([`AGENTS.md`](../../../../AGENTS.md) §3.5) für einen LOW-Befund ohne
+    Folge für den Anwender. Der Vertrag bleibt unverändert.
+  - Review F-9 / Verifikation A-3 → **nachgezogen**: die fünf Pläne
+    `slice-spec-festlegungen-code-gates`, `-commit-baseline-gates`,
+    `-coverage-gates`, `-kennungs-gates` und `-pruefer-hooks` in `open/`
+    belegen „Die Spec darf nicht auf ADRs zeigen“ jetzt mit `make docs-check`
+    Exit 0 **und** der Marker-Messung aus §6 (`git grep -n status-provenance
+    -- spec/ | grep -cE …` druckt `0`, Arbeitsbaum dieses Commits), mit
+    Verweis auf `ADR-0163` Entscheidung 2. Frist (Closure) gehalten.
+  - Verifikation A-4 (INFO) → **hingenommen, mit Grund**: die Index-Zeile von
+    `ADR-0097` trägt „(→ 0099/0163 teilw.)“ statt „(`ergänzt ADR-0094`)“.
+    Titel mit beiden Zusätzen (`ergänzt ADR-0094; → 0099/0163 teilw.` in
+    einer Klammer) hat 83 Zeichen (`echo -n … | wc -m`), die
+    `structure`-Regel des ADR-Index erlaubt in der Spalte `Titel` höchstens 80
+    (`.d-check.yml`, `cell-max-chars: 80`). Die Ergänzung steht im Feld
+    **Bezug** der ADR selbst; der Index zeigt auf die Datei und behält die
+    Supersede-Kette, die für den Leser die tragende ist.
+  - Verifikation A-2 und A-5 → in der Fixrunde `bf8d26c2` erledigt.
+- **Steering-Loop-Eintrag:** benannte Spec-Lücke: was ein Harness-Werkzeug
+  prüft, steht nach diesem Slice für drei Werkzeuge in `spec/pflichtenheft.md`
+  §7 (`SPEC-038`, `SPEC-039`, `SPEC-040`); für die übrigen Gates, Prüfer und
+  Hooks samt `make doc-immutable` fehlt es, Folge-Slices unten. Neuer Sensor:
+  keiner. Geschärfte Regel: keine mit diesem Slice. Benannt für den nächsten
+  Architect-Zug, nicht verkörpert: die Gegenprobe der Quellen fängt eine
+  Festlegung nicht, deren Quellen das Werkzeug falsch beschreiben (Punkt (1)
+  oben); getragen haben hier die Messungen am Werkzeug, die im Plan als
+  Messungs-Tabelle standen, ohne dass `plan-welle` Schritt 6 sie verlangt.
+- **Lese-Schritt (wellenlos, Baseline-Regelwerk `modul-06-roadmap.md`
+  §Wann Arbeit eine Welle braucht):** kein Eintrag erreicht mit diesem Slice
+  3× ohne Ausgang. `BEO-PGC/mechanismus-erklaerung-ohne-werkzeugbeleg` steht
+  bei 4× mit Ausgang *verkörpert* (`AGENTS.md` §3.12 Instanz B, seit
+  slice-089) — erstes Auftreten nach der Verkörperung, Ausgang unverändert;
+  alle übrigen fortgeschriebenen Einträge mit Ausgang ebenso, die zwei offenen
+  stehen bei 2×.
+- **Trigger-Audit:** Carveout — 0 aktiv (`docs/plan/carveouts/` trägt nur
+  `README.md`). Bootstrap-aware Gate — `make coverage-gate` steht auf der
+  Endstufe 80 (`harness/mk/coverage.mk`, `THRESHOLD ?= 80`), Hochschalt-Trigger
+  ausgeschöpft, nichts fällig. ADR — die Re-Evaluierungs-Trigger von
+  `ADR-0163` (a) bis (c) und der Quell-ADRs 0072, 0074, 0075, 0094, 0095,
+  0097, 0099, 0156, 0160, 0161 hängen an einer Änderung von d-check oder an
+  einem Review-Fund; der Pin bleibt v0.82.0, und keine Festlegung in
+  `SPEC-040` widerspricht nach der Fixrunde einer Quell-ADR. Für `ADR-0163`
+  (b): die zwei Zeilen unter `spec/`, die den Marker nennen, nennen ihn als
+  Text der Festlegung (gefordert von deren Folgepflicht), tragen kein Token
+  `adr`/`slice` (Messung oben: `0`) und sind kein Marker-Ausweg; nicht
+  eingetreten. Hard Rule — kein Auflösungs-Trigger in `AGENTS.md` eingetreten
+  (§3.14 bleibt Rang-Zeiger). Ergebnis: nichts fällig.
+- **Beobachtungs-Register (`../observations/`):**
+  - `BEO-PGC/mechanismus-erklaerung-ohne-werkzeugbeleg/`:
+    `evidence/slice-spec-festlegungen-doku-gates.md` ergänzt (Review F-1 bis
+    F-4, Verifikation A-1, A-6) — Zähler 4×, Ausgang unverändert verkörpert.
+  - `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel/`:
+    `evidence/slice-spec-festlegungen-doku-gates.md` ergänzt (Review F-5, HIGH;
+    F-6 im selben Vorgang) — Zähler 13×, Ausgang unverändert verkörpert.
+  - `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht/`:
+    `evidence/slice-spec-festlegungen-doku-gates.md` ergänzt (Re-Review N-1,
+    HIGH, Datei trotz Deckel) — Zähler 26×, Ausgang unverändert verkörpert.
+  - `BEO-PGC/nachzug-laesst-ueberholten-text-stehen/`:
+    `evidence/slice-spec-festlegungen-doku-gates.md` ergänzt (Review F-8,
+    MEDIUM, Datei trotz Deckel) — Zähler 27×, Ausgang unverändert verkörpert.
+  - `BEO-PGC/messwerkzeug-grenze-unbenannt-fail-open/`:
+    `evidence/slice-spec-festlegungen-doku-gates.md` ergänzt (Review F-7,
+    MEDIUM) — Zähler 2×, offen.
+  - `BEO-PGC/vertrag-doppelt-die-festlegung/` neu angelegt (Review F-10,
+    LOW), Belege `evidence/slice-spec-festlegungen-doku-gates.md` und
+    `evidence/slice-spec-festlegungen-harness-werkzeuge.md` (Review F-6 des
+    Piloten, dort als Einzelbefund geführt) — Zähler 2×, offen.
+  - Unter dem Deckel, ohne Datei: Review F-9
+    (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, LOW), Verifikation A-2
+    (`BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`, Lese-Hinweis),
+    Re-Review N-3 (`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`, INFO) —
+    je vor dem Merge gefunden, bekannter Träger-Typ.
+  - Ohne Register-Eintrag: N-2 (hingenommen, oben), A-4 (hingenommen, oben),
+    A-5, F-11, F-12, N-4 — Einzelbefunde ohne Klasse.
+  - Die in §8 gesichteten Einträge `vorab-bedingung-nach-umsetzung-geprueft`,
+    `rollen-uebergabe-ohne-committetes-artefakt`,
+    `unclosed-backtick-taeuscht-nackte-id-vor`, `bindung-spalte-uneinheitlich-tief`
+    und `gate-prueft-existenz-nicht-passung`: kein Auftreten.
+- **Folge-Slices:** `slice-spec-festlegungen-commit-baseline-gates`
+  (commit-traceability, baseline-verify, doc-immutable),
+  `slice-spec-festlegungen-kennungs-gates`, `slice-spec-festlegungen-code-gates`,
+  `slice-spec-festlegungen-coverage-gates` und
+  `slice-spec-festlegungen-pruefer-hooks` — fünf Dateien in `open/`, angelegt
+  mit dem Piloten; dieser Slice legt keinen neuen an.
+- **Risiken aus §6:** fünf Risiken, je ein Ausgang:
+  - Architect-Frage zur `Schärft:`-Kante → *entfallen*: `ADR-0163` (`deecc466`).
+  - Umfang an der Grenze → *entfallen*: Review F-12, eine Sitzung genügte.
+  - Vertrag und Werkzeug weichen ab → *entfallen*: die drei Befunde durch
+    `ADR-0163`, die übrigen Abweichungen im Slice an das Werkzeug gezogen.
+  - Die Spec darf nicht auf ADRs zeigen → *entfallen*: Exit 0 und Messung `0`;
+    die angenommene Lücke trägt `ADR-0163` Entscheidung 2, die fünf fremden
+    Träger sind nachgezogen.
+  - `matrix-inactive` gegen eine Quell-ADR → *entfallen*: Architect-Verdikt
+    `architect-verdict-matrix-inactive-nur-link` (`037a9d32`).
+- **Archivierung:** keine — die Praxis wellenloser Slice-Closures in diesem
+  Repo legt kein `done/slice-<Kennung>-archiv.zip` an (`ls
+  docs/plan/planning/done/*.zip`: kein Treffer); der Plan bleibt flach in
+  `done/`.
+- **Drei Paarungen:** nach dem `git mv` gemessen (unten nachgetragen).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

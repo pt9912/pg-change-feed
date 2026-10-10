@@ -10,4 +10,8 @@ Diff“ in `observation.md` gibt die Lesung zur Zeit der Anlage wieder; sie gilt
 nicht mehr, `observation.md` bleibt ab Anlage unverändert. Eine geschärfte
 Regel für neue Werkzeuge gibt es nicht.
 
-Zähler (abgeleitet): **1×** (evidence/slice-zitat-vergleich-werkzeug.md).
+Für das zweite Auftreten (d-check, angenommene Lücken aus `ADR-0163` und der Fence) trägt der
+Vertrag `harness/sensors/docs-check.md` §Grenze Punkt 12 die Formen.
+
+Zähler (abgeleitet): **2×** (evidence/slice-zitat-vergleich-werkzeug.md,
+evidence/slice-spec-festlegungen-doku-gates.md).
