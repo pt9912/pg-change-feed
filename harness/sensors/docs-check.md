@@ -181,10 +181,11 @@ diesen Ausschnitt (nicht über das Repo).
 
 ## Ausgabe und Ausgänge
 
-Zeile je Befund, Schlusszeile, Exit-Codes und wie ein Exit über `make`
-ankommt, stehen in
+Zeile je Befund, Summenzeile, Fehlerzeile, Ströme, Exit-Codes und wie ein
+Lauf über `make` ankommt, stehen in
 [`SPEC-040`](../../spec/pflichtenheft.md#7-festlegungen-der-harness-werkzeuge);
-ein Beleg zitiert die Schlusszeile.
+ein Beleg zitiert die Summenzeile bzw. die Zeile `d-check: error: …`, nicht die
+letzte Zeile.
 
 Reparatur-Pfad: `make doc-repair` (konservativ, nur `id-unlinked`/
 `target-missing`, `git apply --unidiff-zero`); Diagnose: `make doc-doctor`.

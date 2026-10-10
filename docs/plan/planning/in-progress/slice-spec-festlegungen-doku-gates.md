@@ -152,8 +152,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       „Spec-Kennung“ (T6).
       *Beleg:* Commit `9e43f968`. Der Vertrag verweist in §Vertrag („Wer was
       trägt“), §Grenze 8, 9, 11, §Ausgabe und §Bindung auf `SPEC-040`; die
-      Grund-Codes, die Zellgrenzen 220/120 und die Exit-Tabelle stehen nicht
-      mehr in ihm (Suchlauf: `höchstens (220|120)` und „Deklaration dieses
+      Befund-Code-Tabelle, die Zellgrenzen 220/120 und die Exit-Tabelle stehen
+      nicht mehr in ihm (einzelne Grund-Codes nennt er weiter als Kontext,
+      Verifikation A-2) (Suchlauf: `höchstens (220|120)` und „Deklaration dieses
       Vertrags“ im Vertrag 0). `harness/README.md` Zeile `make docs-check`,
       Spalte Bindung: Vertragsdatei · `SPEC-040`.
 - [x] **Bedingung vor der Closure — `Schärft:`-Kante.** Eine Architect-ADR
@@ -239,8 +240,9 @@ der Datei-Werkzeuge des Laufs“). Beide wurden im selben Befehl sofort per
 steht keine Spur. Kandidat für das Register (Eintrag macht der Planner bei der
 Closure): `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`. M2 bis M23
 liefen an einem Klon von `942ebf3f` im Scratchpad, M24 bis M33 (Fixrunde) an
-einem Klon von `72e57998`, je Mutation einzeln, danach `git checkout -- .`.
-Gedruckt ist der Grund-Code bzw. die Schlusszeile.
+einem Klon von `72e57998`, M34 bis M43 (Verifikation) an einem Klon von
+`e4f609d8`, je Mutation einzeln, danach `git checkout -- .`.
+Gedruckt ist der Grund-Code bzw. die Summenzeile.
 
 | # | Mutation | Ergebnis |
 |---|---|---|
@@ -279,6 +281,16 @@ Gedruckt ist der Grund-Code bzw. die Schlusszeile.
 | M31 | `ADR-0094` und `slice-099` in einem Fence der Architektur-Sicht | Exit 0 (Review F-7, R13) |
 | M32 | Token `ADR-0038` (Status `Superseded`) in Inline-Code im Slice-Plan in `in-progress/`; in einer `observation.md`; in einem Review-Bericht mit `docs/reviews/*.md` aus `matrix.exempt-paths` entfernt | je kein `matrix-inactive`; im dritten Lauf 57 `matrix-inactive`, alle an Links, keiner an einem Token (Review F-3, R7) |
 | M33 | `ADR-0094` in Inline-Code und der Marker als Text in Inline-Code in derselben Zeile der Architektur-Sicht | Exit 0 — der Marker wirkt auch in Inline-Code |
+| M34 | Basislauf direkt, stdout und stderr getrennt in Dateien | Exit 0; stdout leer, stderr `d-check: 1835 Datei(en) geprüft, 0 Befund(e)` (Verifikation A-1) |
+| M35 | Link auf eine fehlende Datei, direkt, Ströme getrennt | Exit 1; stdout `README.md:66` TAB `gibt-es-nicht.md` TAB `target-missing` TAB `Linkziel existiert nicht`; stderr `… 1 Befund(e)` |
+| M36 | M35 über `make docs-check > Datei 2>&1` | Exit 2; Reihenfolge: `docker run …`, Summenzeile, Befundzeile, `make: *** [d-check.mk:20: docs-check] Fehler 1` |
+| M37 | drei fehlende Linkziele über `make docs-check 2>&1`, fünf Läufe | je Exit 2, je Zeile 2 die Summenzeile `… 3 Befund(e)`, je letzte Zeile die Fehlerzeile von `make` |
+| M38 | `~/<Verzeichnis>/x` in Inline-Code, direkt | Exit 1; stdout `README.md:66` TAB der Pfad TAB `hostpath-forbidden` — drei Felder, kein Text |
+| M39 | unbekannter Schlüssel auf oberster Ebene von `.d-check.yml` | Exit 2; stdout leer; stderr zwei Zeilen: `d-check: error: .d-check.yml: yaml: unmarshal errors:` und `  line 348: field unbekannt not found` |
+| M40 | unbekannter Schlüssel unter `scan:` | Exit 2; stderr dieselbe Form, zweite Zeile `  line 4: field unbekannt not found { … }` |
+| M41 | `versions.current-from` auf eine fehlende Datei | Exit 2; stderr eine Zeile `d-check: error: versions.current-from nicht lesbar (…)` |
+| M42 | unbekanntes Modul `gibtsnicht` in `modules:` | Exit 2; stderr eine Zeile `d-check: error: unbekanntes Modul "gibtsnicht" in der Konfiguration — gültig: …` (Verifikation A-5) |
+| M43 | M39 über `make docs-check 2>&1` | Exit 2; die zwei Zeilen des Fehlers, danach `make: *** … Fehler 2` |
 
 **Gegenprobe der Quellen** (Implementer). Ausgänge: **S** = steht in
 `SPEC-040` · **V** = bleibt im Vertrag (Grund) · **E** = entfällt (Grund).
@@ -370,7 +382,8 @@ steht mit E und Grund.
 
 | Fall | Folge |
 |---|---|
-| Befund und Fehler über `make` | beide Exit 2 von `make`; es gilt die Schlusszeile (`<M> Befund(e)` oder `d-check: error`), M1a, M1b |
+| Befund und Fehler über `make` | beide Exit 2 von `make`; die letzte Zeile ist die Fehlerzeile von `make`, es gilt die Summenzeile (`<M> Befund(e)`) bzw. die Zeile `d-check: error: …` (M1a, M1b, M36, M43) |
+| Befund-Zeilen und Summenzeile | Befunde auf stdout, Summe auf stderr (M34, M35); über `make` mit `2>&1` die Summe vor den Befunden, in fünf Läufen gleich (M37) |
 | Konfigurationsfehler | kein Urteil über die Doku, kein Rückfall auf Defaults; der Lauf prüft nichts (M1b) |
 | Baum ohne `.git` | Exit 2 vor jeder Prüfung (M0); ein `git archive`-Export ist kein prüfbarer Baum |
 | Kennung mit Link auf ein anderes Dokument als ihr Definitions-Dokument | kein Treffer (M25, M26); ein falsches Ziel bleibt dem Review |
@@ -508,6 +521,21 @@ Commit `b36af1f1`):
   `architect-verdict-matrix-inactive-nur-link`; das Zählwort deckt vier
   Lücken nicht eindeutig. Der Ausgang steht bei der Closure an.
 - **N-3, N-4.** Keine Handlung.
+
+**Verifikation** (`docs/reviews/verify-slice-spec-festlegungen-doku-gates.md`,
+Commit `e4f609d8`):
+
+- **A-1, erledigt.** Absatz „Ausgänge“ von `SPEC-040` und die Historie-Zeile
+  auf das gemessene Verhalten gezogen (M34 bis M43): Befundzeilen auf stdout,
+  Summen- und Fehlerzeile auf stderr; `hostpaths` mit drei Feldern; Fehler des
+  YAML-Parsers mit zweiter Zeile `  line <n>: …`; über `make` mit `2>&1` die
+  Summenzeile vor den Befunden und die Fehlerzeile von `make` am Ende — der
+  Beleg ist die Summen- bzw. `d-check: error`-Zeile, nicht die letzte Zeile.
+  Vertrag §Ausgabe nachgezogen („Summenzeile“ statt „Schlusszeile“).
+- **A-2, erledigt.** Beleg von Liefer-Punkt 2 nennt „die Befund-Code-Tabelle“.
+- **A-5, erledigt.** Unbekanntes Modul in `modules:` als Exit-2-Fall in der
+  Tabelle (M42).
+- **A-3, A-4.** An die Closure (Planner), keine Handlung hier.
 
 ## 4. Trigger
 

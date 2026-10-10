@@ -2106,21 +2106,28 @@ Punkt-Segment (`~/.config/…`), die nackte Tilde, die Tilde in einem URL-Pfad u
 ein relativer Pfad. Ausgenommen ist nichts: weder `hostpaths.exempt-targets`
 noch eine Pfadliste noch ein Zeilen-Marker ist gesetzt.
 
-**Zu `SPEC-040` — Ausgänge.** Je Befund steht eine Zeile
-`<Datei>:<Zeile>`, Ziel, Grund-Code und Text, getrennt durch Tabulatoren; die
-letzte Zeile lautet `d-check: <N> Datei(en) geprüft, <M> Befund(e)` und sagt
-etwas über die gescannte Fläche, nicht über das Repo.
+**Zu `SPEC-040` — Ausgänge.** Auf stdout steht je Befund eine Zeile mit
+Feldern, getrennt durch Tabulatoren: `<Datei>:<Zeile>`, Ziel, Grund-Code und
+Text; eine Zeile von `hostpaths` hat drei Felder, ohne Text. Auf stderr steht
+nach einem Lauf, der geprüft hat, die Summenzeile `d-check: <N> Datei(en)
+geprüft, <M> Befund(e)`; sie sagt etwas über die gescannte Fläche, nicht über
+das Repo. Ein Lauf, der nicht prüft, schreibt statt ihrer eine Fehlermeldung
+nach stderr, die mit `d-check: error:` beginnt; ein Fehler des YAML-Parsers
+trägt eine zweite, eingerückte Zeile mit der Zeilennummer in `.d-check.yml`
+(`  line <n>: …`).
 
 | Exit | Bedeutung |
 |---|---|
 | 0 | kein Befund in der gescannten Fläche |
 | 1 | mindestens ein Befund |
-| 2 | Nutzungs- oder Konfigurationsfehler, kein Urteil über die Doku: ein unbekannter Schlüssel in `.d-check.yml`, `versions.current-from` nicht lesbar, kein lesbares git-Repository im Mount |
+| 2 | Nutzungs- oder Konfigurationsfehler, kein Urteil über die Doku: ein unbekannter Schlüssel in `.d-check.yml`, ein unbekanntes Modul in `modules:`, `versions.current-from` nicht lesbar, kein lesbares git-Repository im Mount |
 
 Bei einem Konfigurationsfehler fällt der Lauf nicht still auf Defaults zurück.
-Über `make` kommt jeder Exit ungleich 0 als der Make-eigene Exit 2 an; ob ein
-Befund oder ein Fehler vorliegt, sagt die letzte Zeile (`<M> Befund(e)` oder
-`d-check: error: …`).
+Über `make` kommt jeder Exit ungleich 0 als der Make-eigene Exit 2 an, und die
+letzte Zeile ist die Fehlerzeile von `make`. Über `make` mit beiden Strömen
+in einer Ausgabe (`2>&1`) steht die Summenzeile vor den Befundzeilen. Ob ein Befund oder
+ein Fehler vorliegt, sagt deshalb nicht die letzte Zeile, sondern die
+Summenzeile bzw. die Zeile `d-check: error: …`.
 
 ---
 
@@ -2205,4 +2212,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-10-05 | `SPEC-025`: Grenze der Zusatzlatenz ist max(0,10 ms ; 1,5 × `t_sync`) mit im selben Lauf gemessener Festschreib-Latenz, Verdikt auf jedem Host, Fehlerausgang bei nicht messbarem `t_sync`; `SPEC-036`: Messvorschrift für `t_sync` statt Band `fdatasync` ≤ 0,5 ms; `SPEC-037` neu (TLS-Optionen der Client-Bibliotheken: ein Vertrauensanker je SDK für HTTP, SSE und gRPC) |
 | 2026-10-05 | `LH-FA-SST-009.a`: die Artefakt-Namen der drei SDK-Packages stehen versionsneutral als Form mit `<Version>` und der Version-Datei je Sprache statt als Namen der Version 0.2.x; keine Änderung an Abdeckung, Paketierung oder Vertriebsweg |
 | 2026-10-07 | §7 „Festlegungen der Harness-Werkzeuge“ neu: `SPEC-038` (Referent-Messung `make zitat-vergleich`: Einheit je Verweisform, roh und Normalisierung, Stände, nicht messbarer Referent, Ausgänge) und `SPEC-039` (Leer-Test der Teil-Range vor `make doc-immutable`); die Historie ist §8, §1 verweist auf §2 bis §7. `SPEC-038`: in der Tabelle „Stellung“ beginnt der Block einer `id` in einer Zeile ohne Inhalt vor einem Absatz an der nächsten Zeile mit Inhalt; `SPEC-039`: geteilt wird auch am Umzugs-Commit eines aufgelösten Adaptions-Eintrags, bei mehreren solchen Commits an jedem in der Reihenfolge der Commits; `SPEC-038` „Stände“: eine leere oder nicht lesbare Einheit lässt die Korrektur nicht bestehen, auch bei mehrdeutiger Stellung (keine Einheit, kein nicht messbarer Referent) |
-| 2026-10-10 | §7: `SPEC-040` neu (`make docs-check`: gescannte Fläche und Eingabe, Befund je Modul der acht Module, Randformen der Verweis-Module, `structure`, `hostpaths`, Ausgänge); in den Randformen: der Kommentar `d-check:status-provenance` hebt ein Token von `matrix` für jede Regel auf, ein Link bleibt Befund, und eine Datei unter `matrix.exempt-paths` ist als Quelle ganz ausgenommen, als Ziel nicht; `matrix-inactive` meldet nur einen Link zwischen Dateien einer Klasse |
+| 2026-10-10 | §7: `SPEC-040` neu (`make docs-check`: gescannte Fläche und Eingabe, Befund je Modul der acht Module, Randformen der Verweis-Module, `structure`, `hostpaths`, Ausgänge: Befundzeilen auf stdout, Summen- und Fehlerzeile auf stderr, über `make` mit `2>&1` die Summenzeile vor den Befunden und die Fehlerzeile von `make` am Ende, Exit 2 auch bei unbekanntem Modul); in den Randformen: der Kommentar `d-check:status-provenance` hebt ein Token von `matrix` für jede Regel auf, ein Link bleibt Befund, und eine Datei unter `matrix.exempt-paths` ist als Quelle ganz ausgenommen, als Ziel nicht; `matrix-inactive` meldet nur einen Link zwischen Dateien einer Klasse |
