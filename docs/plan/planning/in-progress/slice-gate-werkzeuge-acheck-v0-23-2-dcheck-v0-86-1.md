@@ -263,12 +263,16 @@ Instanz B).
       §3 und `make docs-check` Exit 0 nach dem Nachzug.
 - [x] `make gates` grün, Exit-Code ungefiltert gesichert
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+      Report: [`review-slice-gate-werkzeuge-acheck-v0-23-2-dcheck-v0-86-1.md`](../../../reviews/review-slice-gate-werkzeuge-acheck-v0-23-2-dcheck-v0-86-1.md)
+      (1 MEDIUM, 1 LOW, 3 INFO; nicht merge-blockierend). Verifikation
+      **bestanden**:
+      [`verify-slice-gate-werkzeuge-acheck-v0-23-2-dcheck-v0-86-1.md`](../../../reviews/verify-slice-gate-werkzeuge-acheck-v0-23-2-dcheck-v0-86-1.md).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — die
       Roadmap führt unter *Offene Wellen* keine Welle, also trägt sie die
       Slice-Closure selbst (nach dem `git mv`).
@@ -456,9 +460,22 @@ Treffer, Exit 1; `git grep -c -e '--disable reviews' -- d-check.mk` →
 structure, hostpaths, tracked]`. Ein direkter Lauf mit dem Modul
 (`docker run --rm --network none -v <Klon>:/repo:ro <Digest> --enable reviews`)
 gegen den Bestand: alt Exit 0, `… 0 Befund(e)`; neu Exit 1, `… 132 Befund(e)`,
-alle `review-missing`. Das ist die angekündigte „nicht rein additive“ Änderung
-von 0.85.0/0.86.0; sie erreicht kein Ziel dieses Repos, solange `reviews`
-nicht aktiviert ist (eine Aktivierung ist nach §1 ein anderer Vorgang).
+alle `review-missing`. Das ist die angekündigte „nicht rein additive“ Änderung;
+sie erreicht kein Ziel dieses Repos, solange `reviews` nicht aktiviert ist
+(eine Aktivierung ist nach §1 ein anderer Vorgang), und sie trifft den
+Bestand bei der Aktivierung mit 132 Befunden. **Zuordnung (gemessen im Review
+am Klon von `d496d0ee`, `--enable reviews`):** v0.82.0 und v0.84.0 Exit 0,
+`0 Befund(e)`; v0.85.0 und v0.86.1 Exit 1, `132 Befund(e)`. Die 132 gehen
+damit auf v0.85.0 zurück; die Änderung an `reviews.match` in 0.86.0 ist im
+Changelog genannt, ihr Anteil an den 132 ist nicht gemessen. Die Folge bei
+Aktivierung trägt `BEO-PGC/modul-reviews-inaktiv-aktivierung-trifft-bestand`
+(§7).
+
+**Einzel-Ziele außerhalb der Liste von Liefer-Punkt 1** (*übernommen* aus dem
+Review, nicht vom Implementer gemessen): `make doc-trace`, `make doc-complete`,
+`make doc-doctor` und `make doc-repair` stehen in `d-check.mk`; mit dem neuen
+Digest sind sie alt gegen neu byte-gleich (je Exit 0; 90, 90, 2 und 1
+Zeilen).
 
 **Schlüssel-Gerüst, alt gegen neu.** `--print-config` beider d-check-Stände,
 `diff`: neu sind nur die Zeilen zu `vcs.ignore-link-targets`,
@@ -510,14 +527,17 @@ von v0.82.0 (`d28e9437…`) und von v0.86.1 (`3e0b9779…`), stdout, stderr und
 Exit je in eine eigene Datei. **Vergleich:** in jedem der 67 Läufe je Stand
 (M34 ist der Basislauf ohne Mutation; M1b und M39 sowie M19 und M38 sind je
 dieselbe Mutation) sind Exit, stderr und stdout (als Menge, nach `sort`)
-beider Stände gleich; die Spalte zeigt die Ausgabe von v0.86.1. Die Nummern
+beider Stände gleich; die Spalte zeigt die Ausgabe von v0.86.1. **Ausgenommen
+ist die Zeile „Basislauf mit `--enable reviews`“:** sie gehört nicht zu den 67
+Läufen, und dort unterscheiden sich die Stände (v0.82.0 Exit 0, v0.86.1 Exit 1
+mit 132 Befunden). Die Nummern
 M0 bis M43 folgen den Messungen, auf die sich
 [`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md)
 stützt (Plan von `slice-spec-festlegungen-doku-gates`, §3); M19b und M44 bis
 M64 sind neu; M35 ist hier M1a, M36, M37 und M43 liefen über `make` (unter
 der Tabelle).
 
-| # | Mutation | v0.86.1 (gleich v0.82.0) | Satz von `SPEC-040` |
+| # | Mutation | v0.86.1 (gleich v0.82.0, außer in der Zeile `--enable reviews`) | Satz von `SPEC-040` |
 |---|---|---|---|
 | M34 | keine (Basislauf) | Exit 0; stdout leer; stderr `d-check: 1848 Datei(en) geprüft, 0 Befund(e)` | Fläche; Ausgänge (Summenzeile auf stderr, Exit 0) |
 | M62 | `.harness/mut/x.md` mit Link auf eine fehlende Datei | Exit 0, `1848 Datei(en)` | Fläche: `.harness/**` aus `scan.ignore` |
@@ -525,7 +545,7 @@ der Tabelle).
 | M45 | neue, ungetrackte `unverfolgt.md`, Link aus `README.md` darauf | Exit 1, `target-untracked`, `1849 Datei(en)` | Fläche (neue `.md` gezählt); `tracked` |
 | M0 | Baum ohne `.git` (`git archive`) | Exit 2, `d-check: error: kein lesbares git-Repository unter /repo: …` | Eingabe braucht `.git`; Exit 2 |
 | M44 | Pfad `gibt/es/nicht.go` in Inline-Code | Exit 0 | `codepaths` nicht in der Liste |
-| — | Basislauf mit `--enable reviews` (Abschnitt oben) | Exit 1, 132 × `review-missing` | Block ohne Modul (`reviews:`) wirkt nicht, solange das Modul nicht läuft |
+| — | Basislauf mit `--enable reviews` (Abschnitt oben; nicht gleich: v0.82.0 Exit 0, 0 Befunde; nicht unter den 67 Läufen) | Exit 1, 132 × `review-missing` | Block ohne Modul (`reviews:`) wirkt nicht, solange das Modul nicht läuft |
 | M1a | Link auf eine fehlende Datei | Exit 1; stdout `README.md:65` TAB `gibt-es-nicht.md` TAB `target-missing` TAB `Linkziel existiert nicht` | `links`; Ausgänge (vier Felder) |
 | M18 | Link mit URL-Schema auf ein Ziel, das es nicht gibt | Exit 0 | `links`: URL-Schema kein Gegenstand |
 | M17 | Link auf ein fehlendes Heading und Link auf eine HTML-`id` | Exit 1, `anchor-missing` nur für das Heading | `anchors` |
@@ -728,8 +748,11 @@ dasteht.
   Läuft es doch irgendwo mit (ein Einzel-Ziel, ein Workflow), wird ein Slice
   rot, den bisher ein längerer Report-Name deckte. *Zu belegen durch:*
   `git grep -n -- '--enable reviews\|reviews' -- Makefile '*.mk' tools .github`
-  am Stand des Slice und die Läufe aus Liefer-Punkt 1. Erwarteter Ausgang:
-  entfallen, mit diesem Grund.
+  am Stand des Slice und die Läufe aus Liefer-Punkt 1. Ausgang: **weiter
+  offen** — das Modul läuft in keinem Ziel, bei Aktivierung meldet es am
+  Bestand 132 × `review-missing` (v0.84.0: 0; Zuordnung in §3); die Folge
+  steht im Register unter `BEO-PGC/modul-reviews-inaktiv-aktivierung-trifft-bestand`
+  (§7).
 - **`SPEC-040` beschreibt v0.86.1 nicht mehr.** Ein Default oder eine Randform
   eines aktiven Moduls ändert sich, ohne dass das Changelog es als Änderung
   nennt (die Changelogs sind gelesen, nicht gemessen). *Zu belegen durch:* die
@@ -761,13 +784,6 @@ Kein Workflow unter `.github/workflows/` ist berührt; [`AGENTS.md`](../../../..
 
 ## 7. Closure-Notiz
 
-<!-- BEDIENHINWEIS — keine Norm; faellt beim Kopieren weg (README.md
-§Verwendung, Schritt 5) und darf deshalb nichts Tragendes halten. Reihenfolge:
-diese Sektion vor dem `git mv` nach done/ fuellen — einzige Ausnahme ist das
-letzte DoD-Item in §2 (die Paarungen suchen in `done/`, also nach dem `git mv`).
-Im Repo ohne Wellen-Betrieb braucht die Closure dadurch drei Commits: Inhalt,
-`git mv`, Haekchen — das folgt aus der Hard Rule, es widerspricht ihr nicht. -->
-
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register (vorhandene `BEO-<KUERZEL>/<slug>` **zitieren** statt neu
 formulieren — sonst zählt das Register zwei Namen getrennt) ·
@@ -780,20 +796,137 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Gegenstand:** <übernommen von `slice-<Kennung>` | entfallen: <Grund>>
-  *(nur beim Ausgang ohne Arbeit; sonst Zeile löschen)*
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<KUERZEL>/<slug>` (<slice-kennung-a>, <slice-kennung-b>, <slice-kennung-c> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-<Kennung>.md` | `evidence/slice-<Kennung>.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-<Kennung> (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Geliefert:** Reichweiten-Abschnitt mit Urteil je Version vor den
+  Pin-Commits (`05c14aac`; Liefer-Punkt 1); Pins a-check v0.23.2
+  (`0845d926`) und d-check v0.86.1 (`17611a23`), je eine Datei (Liefer-Punkt 2);
+  `SPEC-040` und `SPEC-039` gegen v0.86.1 gehalten, ohne Nachzug, Trigger (a)
+  bis (c) von [`ADR-0163`](../../adr/0163-schaerft-spec-040-provenance-marker-und-exempt-paths.md)
+  nicht eingetreten (Liefer-Punkt 3; Belege `bf8e1762`, `606b7560`). Review
+  (1 MEDIUM, 1 LOW, 3 INFO, `c1e26ae7`), keine Fixrunde, kein Re-Review:
+  alle Funde sind Plan-Text der Closure. Verifikation in einem Lauf
+  **bestanden** (`4eb479d0`). Validator: entfällt — Harness-Werkzeug ohne
+  End-Nutzer-Wert, kein MVP-Slice.
+- **Was hat funktioniert:** Die Regel „Reichweite vor dem Pin-Commit“
+  (`harness/targets/pin-stale.md` §Bump eines Gate-Werkzeugs) hat getragen:
+  zehn Versionen mit Urteil, 67 Vergleichsläufe alt gegen neu und Mutationen
+  je Werkzeug vor dem Pin; kein Pin landete ohne Messung. Die Messung fand die
+  einzige Änderung, die ein Gate-Lauf nicht zeigt — das Modul `reviews`
+  meldet mit dem neuen Stand am Bestand 132 Befunde, in keinem Ziel dieses
+  Repos, weil es nirgends läuft. Null Befunde im Gate-Lauf hätten das nicht
+  gezeigt. Reviewer und Verifier haben unabhängig dieselbe Messung gefahren
+  (v0.82.0 und v0.84.0: 0, v0.85.0 und v0.86.1: 132).
+- **Was ging anders als geplant:**
+  (1) **Erwarteter Risiko-Ausgang trug nicht.** §6 setzte für die „nicht rein
+  additive“ Änderung vorab *entfallen* („läuft heute nicht mit“). Die Messung
+  zeigte eine latente Folge: bei Aktivierung von `reviews` 132 × `review-missing`.
+  „Läuft heute nicht“ beantwortet die Frage nach heute, nicht die nach der
+  Aktivierung; Review F-1 (MEDIUM). Der Ausgang ist *weiter offen*, siehe unten.
+  (2) **Die Tabellenüberschrift war breiter als ihre Zeilen** (F-2) und
+  **die Version, auf die eine Messung zurückgeht, stand ohne Messung im Text**
+  (F-3: 0.85.0/0.86.0, gemessen 0.85.0). Beides im Plan berichtigt.
+  (3) **Die Messliste der Einzel-Ziele war nicht aus `d-check.mk` hergeleitet**
+  (F-4): `doc-trace`, `doc-complete`, `doc-doctor`, `doc-repair` fehlten.
+  Der Reviewer maß sie (byte-gleich); sie stehen jetzt im Plan, als
+  *übernommen* gekennzeichnet.
+- **Review- und Verifikations-Pflichten in der Closure:**
+  - Review F-1 / Verifikation Abweichung 1 → **weiter offen**, ins Register:
+    `BEO-PGC/modul-reviews-inaktiv-aktivierung-trifft-bestand` (neu, Zähler
+    1×), mit der Zahl **132** und den Ständen in `observation.md`, nicht nur im
+    archivierbaren Reichweiten-Abschnitt. Frist der Sichtung: jede
+    Slice-Planung (§8) und jede Aktivierung des Moduls.
+  - Review F-2 (LOW) / Verifikation Abweichung 2 → **nachgezogen**: Kopf der
+    `SPEC-040`-Tabelle auf „außer in der Zeile `--enable reviews`“
+    eingeschränkt, die Zeile nennt v0.82.0 Exit 0 und ist von den 67 Läufen
+    ausgenommen (§3). Klasse „Nachzug widerspricht Nachbar im selben Träger“ =
+    `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`: Deckel bei 10× (vor dem
+    Merge vom Reviewer gefunden, ≤ LOW, bekannter Träger-Typ Slice-Plan) —
+    keine `evidence/`-Datei, hier mit Finding-Kennung geführt.
+  - Review F-3 (INFO) / Verifikation Abweichung 3 → **nachgezogen**: die
+    132 Befunde sind v0.85.0 zugeordnet (gemessen), der Anteil von 0.86.0 ist
+    als nicht gemessen gekennzeichnet (§3). Klasse „Ursprung einer Aussage
+    nicht gekennzeichnet“ = `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`:
+    Deckel bei 23× (INFO, vor dem Merge gefunden, Träger-Typ Slice-Plan) —
+    keine Datei, hier mit Finding-Kennung geführt.
+  - Review F-4 (INFO) → **nachgezogen**: die vier Ziele stehen im Plan (§3),
+    als *übernommen* gekennzeichnet. Die Klasse „Messliste unvollständig gegen
+    Zielliste“ ist neu: `BEO-PGC/bump-messliste-unvollstaendig-gegen-zielliste`
+    (Zähler 1×, offen).
+  - Review F-5 (INFO) → **hingenommen, mit Grund**: der Plan benennt die
+    Grenze selbst („nicht durch ein gesehenes Rot belegt“), `make doc-planning`
+    und `make doc-targets` sind keine Gates, und kein Satz von `SPEC-040`
+    hängt an ihnen. Ein Rot-Beleg bräuchte eine Konfiguration, die dieses
+    Repo nicht führt; das wäre ein anderer Vorgang (§1).
+  - Verifikation Hinweis 5 (67 Läufe nicht vollständig nachgefahren, Stichprobe
+    deckungsgleich) → **hingenommen**: Hinweis, kein Befund; der Reviewer fuhr
+    eine zweite Stichprobe, beide gleich.
+- **Steering-Loop-Eintrag:** benannte Lücke, nicht verkörpert: der Bump-Vertrag
+  (`harness/targets/pin-stale.md` §Bump eines Gate-Werkzeugs) sagt nicht, wie
+  eine „nicht rein additive“ Änderung an einem **inaktiven** Modul zu führen
+  ist — das Urteil „keine Reichweiten-Änderung eines Ziels“ ist wahr und
+  trägt die latente Folge nicht; er sagt auch nicht, woraus die Liste der
+  Einzel-Ziele einer Messung stammt (aus `d-check.mk`, nicht aus dem
+  Changelog). Beides steht je 1× im Register (siehe unten) und wird bei der
+  Schwelle dem Architect vorgelegt; mit diesem Slice ist weder eine Regel
+  geschärft noch ein Sensor gebaut. Neuer Sensor: keiner. Nicht
+  verkörpert, deshalb ohne `liegt in`.
+- **Lese-Schritt (wellenlos, Baseline-Regelwerk `modul-06-roadmap.md`
+  §Wann Arbeit eine Welle braucht):** kein Eintrag erreicht mit diesem Slice
+  3× ohne Ausgang (gemessen: jedes Verzeichnis mit mindestens drei
+  `evidence/`-Dateien trägt in `state.md` einen Ausgang; `adapter-fehler-ausgang`
+  und `rollen-verdrahtung` führen ihn als *umgesetzt* bzw. *eingetreten*).
+  `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger` (3×, verkörpert in
+  `harness/targets/pin-stale.md`): diese Arbeit folgte der Regel — Urteil je
+  Version vor dem Pin-Commit —, kein viertes Auftreten.
+  `BEO-PGC/vertrag-doppelt-die-festlegung` (2×, offen): kein Vertrag und keine
+  Festlegung nachgezogen, kein drittes Auftreten.
+- **Trigger-Audit:** Carveout — 0 aktiv (`docs/plan/carveouts/` trägt nur
+  `README.md`). Bootstrap-aware Gate — `make coverage-gate` steht auf der
+  Endstufe 80 (`harness/mk/coverage.mk`, `THRESHOLD ?= 80`), nichts fällig.
+  ADR — die Re-Evaluierungs-Trigger von `ADR-0163` (a) bis (c) sind nicht
+  eingetreten (Verifikation §4, selbst gemessen); beide Pins sind aktuell
+  (`make pin-stale-acheck`, `make pin-stale-dcheck` ohne `DRIFT`, Verifikation
+  §2), die Pin-Zeilen P6/P7 von [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md)
+  bleiben Stand-Angaben ihres Entscheidungszeitpunkts (§1). Hard Rule — kein
+  Auflösungs-Trigger in `AGENTS.md` eingetreten. Ergebnis: nichts fällig.
+- **Beobachtungs-Register (`../observations/`):**
+  - `BEO-PGC/modul-reviews-inaktiv-aktivierung-trifft-bestand/` neu angelegt,
+    Beleg `evidence/slice-gate-werkzeuge-acheck-v0-23-2-dcheck-v0-86-1.md`
+    (Review F-1, MEDIUM) — Zähler 1×, offen.
+  - `BEO-PGC/bump-messliste-unvollstaendig-gegen-zielliste/` neu angelegt,
+    Beleg `evidence/slice-gate-werkzeuge-acheck-v0-23-2-dcheck-v0-86-1.md`
+    (Review F-4, INFO) — Zähler 1×, offen.
+  - Unter dem Deckel, ohne Datei: F-2
+    (`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`, 27×) und F-3
+    (`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`, 30×), je vor dem
+    Merge gefunden, ≤ LOW bzw. INFO, bekannter Träger-Typ.
+  - Ohne Register-Eintrag: F-5 (hingenommen, oben) — vom Plan selbst benannte
+    Grenze, kein Mangel.
+  - Die in §8 gesichteten Einträge `vertrag-doppelt-die-festlegung`,
+    `pin-ohne-inventar-eintrag-driftet-unsichtbar` und
+    `messwerkzeug-grenze-unbenannt-fail-open`: kein Auftreten.
+- **Folge-Slices:** keiner. Die Übergabe-Zeile an
+  `slice-spec-festlegungen-code-gates` (§6, „Werkzeug-Stand der a-check-Festlegung“)
+  liegt dort seit `6884fb6b`; die Datei ist in `open/`.
+- **Risiken aus §6:** fünf Risiken, je ein Ausgang:
+  - „Ein Gate-Lauf bewegt sich über eine ‚nicht rein additive‘ Änderung“ →
+    *weiter offen*: Register `BEO-PGC/modul-reviews-inaktiv-aktivierung-trifft-bestand`
+    (132 Befunde bei Aktivierung von `reviews`; heute kein Ziel betroffen).
+  - „`SPEC-040` beschreibt v0.86.1 nicht mehr“ → *entfallen*: 67 Vergleichsläufe
+    und der volle `make docs-check`-Lauf ohne Unterschied, Verifikation 6
+    Mutationen und 12 Läufe über `make` gleich; `spec/pflichtenheft.md` blieb
+    unverändert.
+  - „Trigger (a) von `ADR-0163` tritt ein“ → *entfallen*: `--print-config`
+    beider Stände ändert am Block `matrix` keine Zeile (Plan §3, Verifikation §4).
+  - „Der Index-Digest bricht den Freshness-Vergleich“ → *entfallen*: beide
+    `pin-stale`-Läufe Exit 0 ohne `DRIFT`/`UNBESTIMMT` (Plan §3, Verifikation §2).
+  - „Die a-check-Festlegung beschreibt einen alten Stand“ → *entfallen*: dieser
+    Slice schließt vor `slice-spec-festlegungen-code-gates`, der Pin steht
+    auf v0.23.2; die Übergabe-Zeile steht in dessen §6.
+- **Archivierung:** keine — die Praxis wellenloser Slice-Closures in diesem
+  Repo legt kein `done/slice-<Kennung>-archiv.zip` an; der Plan bleibt flach in
+  `done/`. Der Reichweiten-Abschnitt (§3) und die Zahl 132 bleiben damit lesbar;
+  die Zahl steht zusätzlich im Register.
+- **Drei Paarungen:** nach dem `git mv` gemessen (unten nachgetragen).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
