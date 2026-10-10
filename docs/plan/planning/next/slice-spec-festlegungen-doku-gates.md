@@ -28,7 +28,7 @@ Festlegungen gelten Harness-Werkzeugen, nicht dem Produkt.
 **Berührte Spec-Stellen:** `spec/pflichtenheft.md` §7 „Festlegungen der
 Harness-Werkzeuge“ (neue Zeilen; die Kennungen vergibt der Implementer).
 
-**Verantwortlich:** —
+**Verantwortlich:** pt9912 (Implementer-Agent im Auftrag).
 <!-- BEDIENHINWEIS: Verantwortlich hält die Arbeit — der Rolleninhaber der
 Implementer-Rolle, gesetzt beim Übergang open→next (Baseline-Regelwerk
 modul-05-planning-harness.md §Lifecycle als State Machine). Der Autor schrieb
